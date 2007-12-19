@@ -72,7 +72,7 @@ typedef struct {
 
 
 #define PyStruct_Check(op) PyObject_TypeCheck(op, &PyStructType)
-#define PyStruct_CheckExact(op) (Py_Type(op) == &PyStructType)
+#define PyStruct_CheckExact(op) (Py_TYPE(op) == &PyStructType)
 
 
 /* Exception */
@@ -133,7 +133,7 @@ get_pylong(PyObject *v)
 		Py_INCREF(v);
 		return v;
 	}
-	m = Py_Type(v)->tp_as_number;
+	m = Py_TYPE(v)->tp_as_number;
 	if (m != NULL && m->nb_long != NULL) {
 		v = m->nb_long(v);
 		if (v == NULL)
@@ -1487,7 +1487,7 @@ s_dealloc(PyStructObject *s)
 		PyMem_FREE(s->s_codes);
 	}
 	Py_XDECREF(s->s_format);
-	Py_Type(s)->tp_free((PyObject *)s);
+	Py_TYPE(s)->tp_free((PyObject *)s);
 }
 
 static PyObject *
@@ -1856,7 +1856,7 @@ init_struct(void)
 	if (m == NULL)
 		return;
 
-	Py_Type(&PyStructType) = &PyType_Type;
+	Py_TYPE(&PyStructType) = &PyType_Type;
 	if (PyType_Ready(&PyStructType) < 0)
 		return;
 

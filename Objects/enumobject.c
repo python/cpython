@@ -46,7 +46,7 @@ enum_dealloc(enumobject *en)
 	Py_XDECREF(en->en_sit);
 	Py_XDECREF(en->en_result);
 	Py_XDECREF(en->en_longindex);
-	Py_Type(en)->tp_free(en);
+	Py_TYPE(en)->tp_free(en);
 }
 
 static int
@@ -108,7 +108,7 @@ enum_next(enumobject *en)
 	PyObject *result = en->en_result;
 	PyObject *it = en->en_sit;
 
-	next_item = (*Py_Type(it)->tp_iternext)(it);
+	next_item = (*Py_TYPE(it)->tp_iternext)(it);
 	if (next_item == NULL)
 		return NULL;
 
@@ -237,7 +237,7 @@ reversed_dealloc(reversedobject *ro)
 {
 	PyObject_GC_UnTrack(ro);
 	Py_XDECREF(ro->seq);
-	Py_Type(ro)->tp_free(ro);
+	Py_TYPE(ro)->tp_free(ro);
 }
 
 static int

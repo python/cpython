@@ -84,7 +84,7 @@ typedef struct {
 
 static PyTypeObject Random_Type;
 
-#define RandomObject_Check(v)	   (Py_Type(v) == &Random_Type)
+#define RandomObject_Check(v)	   (Py_TYPE(v) == &Random_Type)
 
 
 /* Random methods */
@@ -405,7 +405,7 @@ random_jumpahead(RandomObject *self, PyObject *n)
 	if (!PyInt_Check(n) && !PyLong_Check(n)) {
 		PyErr_Format(PyExc_TypeError, "jumpahead requires an "
 			     "integer, not '%s'",
-			     Py_Type(n)->tp_name);
+			     Py_TYPE(n)->tp_name);
 		return NULL;
 	}
 

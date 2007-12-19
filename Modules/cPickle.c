@@ -156,7 +156,7 @@ static PyTypeObject PdataType = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0L,0L,0L,0L, ""
 };
 
-#define Pdata_Check(O) (Py_Type(O) == &PdataType)
+#define Pdata_Check(O) (Py_TYPE(O) == &PdataType)
 
 static PyObject *
 Pdata_New(void)
@@ -316,7 +316,7 @@ Pdata_popList(Pdata *self, int start)
 }
 
 #define FREE_ARG_TUP(self) {                        \
-    if (Py_Refcnt(self->arg) > 1) {                 \
+    if (Py_REFCNT(self->arg) > 1) {                 \
       Py_DECREF(self->arg);                         \
       self->arg=NULL;                               \
     }                                               \
@@ -752,7 +752,7 @@ get(Picklerobject *self, PyObject *id)
 static int
 put(Picklerobject *self, PyObject *ob)
 {
-	if (Py_Refcnt(ob) < 2 || self->fast)
+	if (Py_REFCNT(ob) < 2 || self->fast)
 		return 0;
 
 	return put2(self, ob);
@@ -916,7 +916,7 @@ fast_save_enter(Picklerobject *self, PyObject *obj)
 			PyErr_Format(PyExc_ValueError,
 				     "fast mode: can't pickle cyclic objects "
 				     "including object type %s at %p",
-				     Py_Type(obj)->tp_name, obj);
+				     Py_TYPE(obj)->tp_name, obj);
 			self->fast_container = -1;
 			return 0;
 		}
@@ -2320,7 +2320,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		goto finally;
 	}
 
-	type = Py_Type(args);
+	type = Py_TYPE(args);
 
 	switch (type->tp_name[0]) {
 	case 'b':
@@ -2372,7 +2372,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 #endif
 	}
 
-	if (Py_Refcnt(args) > 1) {
+	if (Py_REFCNT(args) > 1) {
 		if (!( py_ob_id = PyLong_FromVoidPtr(args)))
 			goto finally;
 
@@ -2913,7 +2913,7 @@ Pickler_dealloc(Picklerobject *self)
 	Py_XDECREF(self->inst_pers_func);
 	Py_XDECREF(self->dispatch_table);
 	PyMem_Free(self->write_buf);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int
@@ -5253,7 +5253,7 @@ Unpickler_dealloc(Unpicklerobject *self)
 		free(self->buf);
 	}
 
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int
@@ -5706,9 +5706,9 @@ initcPickle(void)
 	PyObject *format_version;
 	PyObject *compatible_formats;
 
-	Py_Type(&Picklertype) = &PyType_Type;
-	Py_Type(&Unpicklertype) = &PyType_Type;
-	Py_Type(&PdataType) = &PyType_Type;
+	Py_TYPE(&Picklertype) = &PyType_Type;
+	Py_TYPE(&Unpicklertype) = &PyType_Type;
+	Py_TYPE(&PdataType) = &PyType_Type;
 
 	/* Initialize some pieces. We need to do this before module creation,
 	 * so we're forced to use a temporary dictionary. :(

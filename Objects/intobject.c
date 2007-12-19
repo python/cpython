@@ -56,8 +56,8 @@ fill_free_list(void)
 	p = &((PyIntBlock *)p)->objects[0];
 	q = p + N_INTOBJECTS;
 	while (--q > p)
-		Py_Type(q) = (struct _typeobject *)(q-1);
-	Py_Type(q) = NULL;
+		Py_TYPE(q) = (struct _typeobject *)(q-1);
+	Py_TYPE(q) = NULL;
 	return p + N_INTOBJECTS - 1;
 }
 
@@ -102,7 +102,7 @@ PyInt_FromLong(long ival)
 	}
 	/* Inline PyObject_New */
 	v = free_list;
-	free_list = (PyIntObject *)Py_Type(v);
+	free_list = (PyIntObject *)Py_TYPE(v);
 	PyObject_INIT(v, &PyInt_Type);
 	v->ob_ival = ival;
 	return (PyObject *) v;
@@ -128,17 +128,17 @@ static void
 int_dealloc(PyIntObject *v)
 {
 	if (PyInt_CheckExact(v)) {
-		Py_Type(v) = (struct _typeobject *)free_list;
+		Py_TYPE(v) = (struct _typeobject *)free_list;
 		free_list = v;
 	}
 	else
-		Py_Type(v)->tp_free((PyObject *)v);
+		Py_TYPE(v)->tp_free((PyObject *)v);
 }
 
 static void
 int_free(PyIntObject *v)
 {
-	Py_Type(v) = (struct _typeobject *)free_list;
+	Py_TYPE(v) = (struct _typeobject *)free_list;
 	free_list = v;
 }
 
@@ -152,7 +152,7 @@ PyInt_AsLong(register PyObject *op)
 	if (op && PyInt_Check(op))
 		return PyInt_AS_LONG((PyIntObject*) op);
 
-	if (op == NULL || (nb = Py_Type(op)->tp_as_number) == NULL ||
+	if (op == NULL || (nb = Py_TYPE(op)->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
 		PyErr_SetString(PyExc_TypeError, "an integer is required");
 		return -1;
@@ -207,7 +207,7 @@ PyInt_AsSsize_t(register PyObject *op)
 	return PyInt_AsLong(op);
 #else
 
-	if ((nb = Py_Type(op)->tp_as_number) == NULL ||
+	if ((nb = Py_TYPE(op)->tp_as_number) == NULL ||
 	    (nb->nb_int == NULL && nb->nb_long == 0)) {
 		PyErr_SetString(PyExc_TypeError, "an integer is required");
 		return -1;
@@ -256,7 +256,7 @@ PyInt_AsUnsignedLongMask(register PyObject *op)
 	if (op && PyLong_Check(op))
 		return PyLong_AsUnsignedLongMask(op);
 
-	if (op == NULL || (nb = Py_Type(op)->tp_as_number) == NULL ||
+	if (op == NULL || (nb = Py_TYPE(op)->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
 		PyErr_SetString(PyExc_TypeError, "an integer is required");
 		return (unsigned long)-1;
@@ -301,7 +301,7 @@ PyInt_AsUnsignedLongLongMask(register PyObject *op)
 	if (op && PyLong_Check(op))
 		return PyLong_AsUnsignedLongLongMask(op);
 
-	if (op == NULL || (nb = Py_Type(op)->tp_as_number) == NULL ||
+	if (op == NULL || (nb = Py_TYPE(op)->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
 		PyErr_SetString(PyExc_TypeError, "an integer is required");
 		return (unsigned PY_LONG_LONG)-1;
@@ -1172,7 +1172,7 @@ _PyInt_Init(void)
 			return 0;
 		/* PyObject_New is inlined */
 		v = free_list;
-		free_list = (PyIntObject *)Py_Type(v);
+		free_list = (PyIntObject *)Py_TYPE(v);
 		PyObject_INIT(v, &PyInt_Type);
 		v->ob_ival = ival;
 		small_ints[ival + NSMALLNEGINTS] = v;
@@ -1225,7 +1225,7 @@ PyInt_Fini(void)
 			     ctr++, p++) {
 				if (!PyInt_CheckExact(p) ||
 				    p->ob_refcnt == 0) {
-					Py_Type(p) = (struct _typeobject *)
+					Py_TYPE(p) = (struct _typeobject *)
 						free_list;
 					free_list = p;
 				}

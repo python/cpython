@@ -56,7 +56,7 @@ typedef struct {
 
 PyTypeObject PyCursesPanel_Type;
 
-#define PyCursesPanel_Check(v)	 (Py_Type(v) == &PyCursesPanel_Type)
+#define PyCursesPanel_Check(v)	 (Py_TYPE(v) == &PyCursesPanel_Type)
 
 /* Some helper functions. The problem is that there's always a window
    associated with a panel. To ensure that Python's GC doesn't pull
@@ -457,7 +457,7 @@ init_curses_panel(void)
     PyObject *m, *d, *v;
 
     /* Initialize object type */
-    Py_Type(&PyCursesPanel_Type) = &PyType_Type;
+    Py_TYPE(&PyCursesPanel_Type) = &PyType_Type;
 
     import_curses();
 

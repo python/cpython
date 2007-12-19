@@ -764,7 +764,7 @@ check_tzinfo_subclass(PyObject *p)
 	PyErr_Format(PyExc_TypeError,
 		     "tzinfo argument must be None or of a tzinfo subclass, "
 		     "not type '%s'",
-		     Py_Type(p)->tp_name);
+		     Py_TYPE(p)->tp_name);
 	return -1;
 }
 
@@ -855,7 +855,7 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 		PyErr_Format(PyExc_TypeError,
 			     "tzinfo.%s() must return None or "
 			     "timedelta, not '%s'",
-			     name, Py_Type(u)->tp_name);
+			     name, Py_TYPE(u)->tp_name);
 	}
 
 	Py_DECREF(u);
@@ -948,7 +948,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
 	if (result != NULL && result != Py_None && ! PyString_Check(result)) {
 		PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
 			     "return None or a string, not '%s'",
-			     Py_Type(result)->tp_name);
+			     Py_TYPE(result)->tp_name);
 		Py_DECREF(result);
 		result = NULL;
 	}
@@ -1421,7 +1421,7 @@ cmperror(PyObject *a, PyObject *b)
 {
 	PyErr_Format(PyExc_TypeError,
 		     "can't compare %s to %s",
-		     Py_Type(a)->tp_name, Py_Type(b)->tp_name);
+		     Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
 	return NULL;
 }
 
@@ -1876,7 +1876,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
 
 	PyErr_Format(PyExc_TypeError,
 		     "unsupported type for timedelta %s component: %s",
-		     tag, Py_Type(num)->tp_name);
+		     tag, Py_TYPE(num)->tp_name);
 	return NULL;
 }
 
@@ -1980,18 +1980,18 @@ delta_repr(PyDateTime_Delta *self)
 {
 	if (GET_TD_MICROSECONDS(self) != 0)
 		return PyString_FromFormat("%s(%d, %d, %d)",
-					   Py_Type(self)->tp_name,
+					   Py_TYPE(self)->tp_name,
 					   GET_TD_DAYS(self),
 					   GET_TD_SECONDS(self),
 					   GET_TD_MICROSECONDS(self));
 	if (GET_TD_SECONDS(self) != 0)
 		return PyString_FromFormat("%s(%d, %d)",
-					   Py_Type(self)->tp_name,
+					   Py_TYPE(self)->tp_name,
 					   GET_TD_DAYS(self),
 					   GET_TD_SECONDS(self));
 
 	return PyString_FromFormat("%s(%d)",
-				   Py_Type(self)->tp_name,
+				   Py_TYPE(self)->tp_name,
 				   GET_TD_DAYS(self));
 }
 
@@ -2055,7 +2055,7 @@ delta_getstate(PyDateTime_Delta *self)
 static PyObject *
 delta_reduce(PyDateTime_Delta* self)
 {
-	return Py_BuildValue("ON", Py_Type(self), delta_getstate(self));
+	return Py_BuildValue("ON", Py_TYPE(self), delta_getstate(self));
 }
 
 #define OFFSET(field)  offsetof(PyDateTime_Delta, field)
@@ -2414,7 +2414,7 @@ date_repr(PyDateTime_Date *self)
 	char buffer[1028];
 	const char *type_name;
 
-	type_name = Py_Type(self)->tp_name;
+	type_name = Py_TYPE(self)->tp_name;
 	PyOS_snprintf(buffer, sizeof(buffer), "%s(%d, %d, %d)",
 		      type_name,
 		      GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
@@ -2554,7 +2554,7 @@ date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	tuple = Py_BuildValue("iii", year, month, day);
 	if (tuple == NULL)
 		return NULL;
-	clone = date_new(Py_Type(self), tuple, NULL);
+	clone = date_new(Py_TYPE(self), tuple, NULL);
 	Py_DECREF(tuple);
 	return clone;
 }
@@ -2604,7 +2604,7 @@ date_getstate(PyDateTime_Date *self)
 static PyObject *
 date_reduce(PyDateTime_Date *self, PyObject *arg)
 {
-	return Py_BuildValue("(ON)", Py_Type(self), date_getstate(self));
+	return Py_BuildValue("(ON)", Py_TYPE(self), date_getstate(self));
 }
 
 static PyMethodDef date_methods[] = {
@@ -2906,10 +2906,10 @@ tzinfo_reduce(PyObject *self)
 
 	if (state == Py_None) {
 		Py_DECREF(state);
-		return Py_BuildValue("(ON)", Py_Type(self), args);
+		return Py_BuildValue("(ON)", Py_TYPE(self), args);
 	}
 	else
-		return Py_BuildValue("(ONN)", Py_Type(self), args, state);
+		return Py_BuildValue("(ONN)", Py_TYPE(self), args, state);
 }
 
 static PyMethodDef tzinfo_methods[] = {
@@ -3104,7 +3104,7 @@ time_dealloc(PyDateTime_Time *self)
 	if (HASTZINFO(self)) {
 		Py_XDECREF(self->tzinfo);
 	}
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 /*
@@ -3138,7 +3138,7 @@ static PyObject *
 time_repr(PyDateTime_Time *self)
 {
 	char buffer[100];
-	const char *type_name = Py_Type(self)->tp_name;
+	const char *type_name = Py_TYPE(self)->tp_name;
 	int h = TIME_GET_HOUR(self);
 	int m = TIME_GET_MINUTE(self);
 	int s = TIME_GET_SECOND(self);
@@ -3352,7 +3352,7 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
 	if (tuple == NULL)
 		return NULL;
-	clone = time_new(Py_Type(self), tuple, NULL);
+	clone = time_new(Py_TYPE(self), tuple, NULL);
 	Py_DECREF(tuple);
 	return clone;
 }
@@ -3406,7 +3406,7 @@ time_getstate(PyDateTime_Time *self)
 static PyObject *
 time_reduce(PyDateTime_Time *self, PyObject *arg)
 {
-	return Py_BuildValue("(ON)", Py_Type(self), time_getstate(self));
+	return Py_BuildValue("(ON)", Py_TYPE(self), time_getstate(self));
 }
 
 static PyMethodDef time_methods[] = {
@@ -3900,7 +3900,7 @@ datetime_dealloc(PyDateTime_DateTime *self)
 	if (HASTZINFO(self)) {
 		Py_XDECREF(self->tzinfo);
 	}
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 /*
@@ -4049,7 +4049,7 @@ static PyObject *
 datetime_repr(PyDateTime_DateTime *self)
 {
 	char buffer[1000];
-	const char *type_name = Py_Type(self)->tp_name;
+	const char *type_name = Py_TYPE(self)->tp_name;
 	PyObject *baserepr;
 
 	if (DATE_GET_MICROSECOND(self)) {
@@ -4270,7 +4270,7 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 	tuple = Py_BuildValue("iiiiiiiO", y, m, d, hh, mm, ss, us, tzinfo);
 	if (tuple == NULL)
 		return NULL;
-	clone = datetime_new(Py_Type(self), tuple, NULL);
+	clone = datetime_new(Py_TYPE(self), tuple, NULL);
 	Py_DECREF(tuple);
 	return clone;
 }
@@ -4458,7 +4458,7 @@ datetime_getstate(PyDateTime_DateTime *self)
 static PyObject *
 datetime_reduce(PyDateTime_DateTime *self, PyObject *arg)
 {
-	return Py_BuildValue("(ON)", Py_Type(self), datetime_getstate(self));
+	return Py_BuildValue("(ON)", Py_TYPE(self), datetime_getstate(self));
 }
 
 static PyMethodDef datetime_methods[] = {

@@ -312,7 +312,7 @@ void unicode_dealloc(register PyUnicodeObject *unicode)
     else {
 	PyMem_DEL(unicode->str);
 	Py_XDECREF(unicode->defenc);
-	Py_Type(unicode)->tp_free((PyObject *)unicode);
+	Py_TYPE(unicode)->tp_free((PyObject *)unicode);
     }
 }
 
@@ -326,7 +326,7 @@ int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length)
 	return -1;
     }
     v = (PyUnicodeObject *)*unicode;
-    if (v == NULL || !PyUnicode_Check(v) || Py_Refcnt(v) != 1 || length < 0) {
+    if (v == NULL || !PyUnicode_Check(v) || Py_REFCNT(v) != 1 || length < 0) {
 	PyErr_BadInternalCall();
 	return -1;
     }
@@ -554,7 +554,7 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 	PyErr_Format(PyExc_TypeError,
 			 "coercing to Unicode: need string or buffer, "
 			 "%.80s found",
-		     Py_Type(obj)->tp_name);
+		     Py_TYPE(obj)->tp_name);
 	goto onError;
     }
 
@@ -604,7 +604,7 @@ PyObject *PyUnicode_Decode(const char *s,
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError,
                      "decoder did not return an unicode object (type=%.400s)",
-                     Py_Type(unicode)->tp_name);
+                     Py_TYPE(unicode)->tp_name);
         Py_DECREF(unicode);
         goto onError;
     }
@@ -714,7 +714,7 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     if (!PyString_Check(v)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder did not return a string object (type=%.400s)",
-                     Py_Type(v)->tp_name);
+                     Py_TYPE(v)->tp_name);
         Py_DECREF(v);
         goto onError;
     }
@@ -3789,7 +3789,7 @@ charmapencode_result charmapencode_output(Py_UNICODE c, PyObject *mapping,
     char *outstart;
     Py_ssize_t outsize = PyString_GET_SIZE(*outobj);
 
-    if (Py_Type(mapping) == &EncodingMapType) {
+    if (Py_TYPE(mapping) == &EncodingMapType) {
         int res = encoding_map_lookup(c, mapping);
 	Py_ssize_t requiredsize = *outpos+1;
         if (res == -1)
@@ -3861,7 +3861,7 @@ int charmap_encoding_error(
     /* find all unencodable characters */
     while (collendpos < size) {
         PyObject *rep;
-        if (Py_Type(mapping) == &EncodingMapType) {
+        if (Py_TYPE(mapping) == &EncodingMapType) {
 	    int res = encoding_map_lookup(p[collendpos], mapping);
 	    if (res != -1)
 		break;
@@ -4920,7 +4920,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 	    PyErr_Format(PyExc_TypeError,
 			 "sequence item %zd: expected string or Unicode,"
 			 " %.80s found",
-			 i, Py_Type(item)->tp_name);
+			 i, Py_TYPE(item)->tp_name);
 	    goto onError;
 	}
 	item = PyUnicode_FromObject(item);
@@ -5920,7 +5920,7 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
         PyErr_Format(PyExc_TypeError,
                      "encoder did not return a string/unicode object "
                      "(type=%.400s)",
-                     Py_Type(v)->tp_name);
+                     Py_TYPE(v)->tp_name);
         Py_DECREF(v);
         return NULL;
     }
@@ -5956,7 +5956,7 @@ unicode_decode(PyUnicodeObject *self, PyObject *args)
         PyErr_Format(PyExc_TypeError,
                      "decoder did not return a string/unicode object "
                      "(type=%.400s)",
-                     Py_Type(v)->tp_name);
+                     Py_TYPE(v)->tp_name);
         Py_DECREF(v);
         return NULL;
     }
@@ -7777,7 +7777,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	arglen = -1;
 	argidx = -2;
     }
-    if (Py_Type(args)->tp_as_mapping && !PyTuple_Check(args) &&
+    if (Py_TYPE(args)->tp_as_mapping && !PyTuple_Check(args) &&
         !PyObject_TypeCheck(args, &PyBaseString_Type))
 	dict = args;
 

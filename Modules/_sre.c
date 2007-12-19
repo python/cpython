@@ -1689,7 +1689,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
 #endif
 
     /* get pointer to string buffer */
-    buffer = Py_Type(string)->tp_as_buffer;
+    buffer = Py_TYPE(string)->tp_as_buffer;
     if (!buffer || !buffer->bf_getreadbuffer || !buffer->bf_getsegcount ||
         buffer->bf_getsegcount(string, NULL) != 1) {
         PyErr_SetString(PyExc_TypeError, "expected string or buffer");

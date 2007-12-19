@@ -181,7 +181,7 @@ zipimporter_dealloc(ZipImporter *self)
 	Py_XDECREF(self->archive);
 	Py_XDECREF(self->prefix);
 	Py_XDECREF(self->files);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *

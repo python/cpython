@@ -576,7 +576,7 @@ init_sha(void)
 {
     PyObject *m;
 
-    Py_Type(&SHAtype) = &PyType_Type;
+    Py_TYPE(&SHAtype) = &PyType_Type;
     if (PyType_Ready(&SHAtype) < 0)
         return;
     m = Py_InitModule("_sha", SHA_functions);

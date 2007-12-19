@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1629: Renamed Py_Size, Py_Type and Py_Refcnt to Py_SIZE, Py_TYPE
+  and Py_REFCNT.
+
 - Issue #1635: Platform independent creation and representation of NaN
   and INF. float("nan"), float("inf") and float("-inf") now work on every
   platform with IEEE 754 semantics.

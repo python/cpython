@@ -39,7 +39,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyFunction_Type;
 
-#define PyFunction_Check(op) (Py_Type(op) == &PyFunction_Type)
+#define PyFunction_Check(op) (Py_TYPE(op) == &PyFunction_Type)
 
 PyAPI_FUNC(PyObject *) PyFunction_New(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetCode(PyObject *);

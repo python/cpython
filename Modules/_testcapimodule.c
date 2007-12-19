@@ -889,7 +889,7 @@ init_testcapi(void)
 	if (m == NULL)
 		return;
 
-	Py_Type(&test_structmembersType)=&PyType_Type;
+	Py_TYPE(&test_structmembersType)=&PyType_Type;
 	Py_INCREF(&test_structmembersType);
 	PyModule_AddObject(m, "test_structmembersType", (PyObject *)&test_structmembersType);
 

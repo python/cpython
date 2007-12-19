@@ -81,7 +81,7 @@ partial_dealloc(partialobject *pto)
 	Py_XDECREF(pto->args);
 	Py_XDECREF(pto->kw);
 	Py_XDECREF(pto->dict);
-	Py_Type(pto)->tp_free(pto);
+	Py_TYPE(pto)->tp_free(pto);
 }
 
 static PyObject *
