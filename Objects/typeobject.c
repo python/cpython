@@ -3230,28 +3230,22 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 		type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
 }
 
-/* Map rich comparison operators to their __xx__ namesakes */
-static char *name_op[] = {
-    "__lt__",
-    "__le__",
-    "__eq__",
-    "__ne__",
-    "__gt__",
-    "__ge__",
-    "__cmp__",
- 	/* These are only for overrides_hash(): */
-    "__hash__",
+static char *hash_name_op[] = {
+	"__eq__",
+	"__cmp__",
+	"__hash__",
+	NULL
 };
 
 static int
 overrides_hash(PyTypeObject *type)
 {
-	int i;
+	char **p;
 	PyObject *dict = type->tp_dict;
 
 	assert(dict != NULL);
-	for (i = 0; i < 8; i++) {
-		if (PyDict_GetItemString(dict, name_op[i]) != NULL)
+	for (p = hash_name_op; *p; p++) {
+		if (PyDict_GetItemString(dict, *p) != NULL)
 			return 1;
 	}
 	return 0;
@@ -4846,7 +4840,7 @@ slot_tp_hash(PyObject *self)
 
 	func = lookup_method(self, "__hash__", &hash_str);
 
-	if (func != NULL) {
+	if (func != NULL && func != Py_None) {
 		PyObject *res = PyEval_CallObject(func, NULL);
 		Py_DECREF(func);
 		if (res == NULL)
@@ -4970,6 +4964,15 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 	Py_DECREF(res);
 	return 0;
 }
+
+static char *name_op[] = {
+    "__lt__",
+    "__le__",
+    "__eq__",
+    "__ne__",
+    "__gt__",
+    "__ge__",
+};
 
 static PyObject *
 half_richcompare(PyObject *self, PyObject *other, int op)
