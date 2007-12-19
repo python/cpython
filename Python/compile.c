@@ -2924,7 +2924,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 	case Dict_kind:
 		n = asdl_seq_LEN(e->v.Dict.values);
 		ADDOP_I(c, BUILD_MAP, (n>255 ? 255 : n));
-		n = asdl_seq_LEN(e->v.Dict.values);
 		for (i = 0; i < n; i++) {
 			VISIT(c, expr, 
 				(expr_ty)asdl_seq_GET(e->v.Dict.values, i));
