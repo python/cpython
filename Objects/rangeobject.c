@@ -558,14 +558,23 @@ range_iter(PyObject *seq)
     rangeobject *r = (rangeobject *)seq;
     longrangeiterobject *it;
     PyObject *tmp, *len;
+    long lstart, lstop, lstep;
 
     assert(PyRange_Check(seq));
-    if (_PyLong_FitsInLong(r->start) &&
-        _PyLong_FitsInLong(r->stop) &&
-        _PyLong_FitsInLong(r->step))
-        return int_range_iter(PyLong_AsLong(r->start),
-                      PyLong_AsLong(r->stop),
-                      PyLong_AsLong(r->step));
+
+    /* If all three fields convert to long, use the int version */
+    lstart = PyLong_AsLong(r->start);
+    if (lstart != -1 || !PyErr_Occurred()) {
+	lstop = PyLong_AsLong(r->stop);
+	if (lstop != -1 || !PyErr_Occurred()) {
+	    lstep = PyLong_AsLong(r->step);
+	    if (lstep != -1 || !PyErr_Occurred())
+		return int_range_iter(lstart, lstop, lstep);
+	}
+    }
+    /* Some conversion failed, so there is an error set. Clear it,
+       and try again with a long range. */
+    PyErr_Clear();
 
     it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
     if (it == NULL)
@@ -605,27 +614,33 @@ range_reverse(PyObject *seq)
     rangeobject *range = (rangeobject*) seq;
     longrangeiterobject *it;
     PyObject *one, *sum, *diff, *len = NULL, *product;
+    long lstart, lstop, lstep;
 
     /* XXX(nnorwitz): do the calc for the new start/stop first,
         then if they fit, call the proper iter()?
     */
     assert(PyRange_Check(seq));
-    if (_PyLong_FitsInLong(range->start) &&
-        _PyLong_FitsInLong(range->stop) &&
-        _PyLong_FitsInLong(range->step)) {
-        long start = PyLong_AsLong(range->start);
-        long step = PyLong_AsLong(range->step);
-        long stop = PyLong_AsLong(range->stop);
-        /* XXX(nnorwitz): need to check for overflow and simplify. */
-        long len = get_len_of_range(start, stop, step);
-        long new_start = start + (len - 1) * step;
-        long new_stop = start;
-        if (step > 0)
-            new_stop -= 1;
-        else
-            new_stop += 1;
-        return int_range_iter(new_start, new_stop, -step);
+
+    /* If all three fields convert to long, use the int version */
+    lstart = PyLong_AsLong(range->start);
+    if (lstart != -1 || !PyErr_Occurred()) {
+	lstop = PyLong_AsLong(range->stop);
+	if (lstop != -1 || !PyErr_Occurred()) {
+	    lstep = PyLong_AsLong(range->step);
+	    if (lstep != -1 || !PyErr_Occurred()) {
+		/* XXX(nnorwitz): need to check for overflow and simplify. */
+		long len = get_len_of_range(lstart, lstop, lstep);
+		long new_start = lstart + (len - 1) * lstep;
+		long new_stop = lstart;
+		if (lstep > 0)
+		    new_stop -= 1;
+		else
+		    new_stop += 1;
+		return int_range_iter(new_start, new_stop, -lstep);
+	    }
+	}
     }
+    PyErr_Clear();
 
     it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
     if (it == NULL)
