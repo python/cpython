@@ -80,7 +80,7 @@ class UnicodeFileTests(unittest.TestCase):
         f1 = os.listdir(test_support.TESTFN)
         f2 = os.listdir(str(test_support.TESTFN.encode("utf-8"),
                                 sys.getfilesystemencoding()))
-        sf2 = set("\\".join((unicode(test_support.TESTFN), f))
+        sf2 = set("\\".join((str(test_support.TESTFN), f))
                   for f in f2)
         self.failUnlessEqual(len(f1), len(self.files))
         self.failUnlessEqual(sf2, set(self.files))
