@@ -50,7 +50,6 @@ PyAPI_DATA(int) _PyLong_DigitValue[256];
    be multiplied by SHIFT!  There may not be enough room in an int to store
    e*SHIFT directly. */
 PyAPI_FUNC(double) _PyLong_AsScaledDouble(PyObject *vv, int *e);
-  PyAPI_FUNC(int) _PyLong_FitsInLong(PyObject* vv);
 
 PyAPI_FUNC(double) PyLong_AsDouble(PyObject *);
 PyAPI_FUNC(PyObject *) PyLong_FromVoidPtr(void *);

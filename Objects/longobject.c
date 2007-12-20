@@ -392,19 +392,6 @@ PyLong_AsLong(PyObject *obj)
 	return result;
 }
 
-int
-_PyLong_FitsInLong(PyObject *vv)
-{
-	int size;
-	if (!PyLong_CheckExact(vv)) {
-		PyErr_BadInternalCall();
-		return 0;
-	}
-	/* conservative estimate */
-	size = Py_SIZE(vv);
-	return -2 <= size && size <= 2;
-}
-
 /* Get a Py_ssize_t from a long int object.
    Returns -1 and sets an error condition if overflow occurs. */
 
