@@ -4852,6 +4852,7 @@ slot_tp_hash(PyObject *self)
 		Py_DECREF(res);
 	}
 	else {
+		Py_XDECREF(func); /* may be None */
 		PyErr_Clear();
 		func = lookup_method(self, "__eq__", &eq_str);
 		if (func == NULL) {
