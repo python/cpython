@@ -310,9 +310,7 @@ class _Printer(object):
                 lineno += self.MAXLINES
                 key = None
                 while key is None:
-                    sys.stdout.write(prompt)
-                    sys.stdout.flush()
-                    key = sys.stdin.readline()
+                    key = input(prompt)
                     if key not in ('', 'q'):
                         key = None
                 if key == 'q':
