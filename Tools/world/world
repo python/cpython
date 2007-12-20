@@ -42,7 +42,7 @@ authoritative source of country code mappings is:
 
 The latest known change to this information was:
 
-    Friday, 5 April 2002, 12.00 CET 2002
+    Monday, 10 October 2006, 17:59:51 UTC 2006
 
 This script also knows about non-geographic top-level domains, and the
 additional ccTLDs reserved by IANA.
@@ -91,9 +91,9 @@ PROGRAM = sys.argv[0]
 
 
 def usage(code, msg=''):
-    print __doc__ % globals()
+    print(__doc__ % globals())
     if msg:
-        print msg
+        print(msg)
     sys.exit(code)
 
 
@@ -104,11 +104,11 @@ def resolve(rawaddr):
         # no top level domain found, bounce it to the next step
         return rawaddr
     addr = parts[-1]
-    if nameorgs.has_key(addr):
-        print rawaddr, 'is in the', nameorgs[addr], 'top level domain'
+    if addr in nameorgs:
+        print(rawaddr, 'is in the', nameorgs[addr], 'top level domain')
         return None
-    elif countries.has_key(addr):
-        print rawaddr, 'originated from', countries[addr]
+    elif addr in countries:
+        print(rawaddr, 'originated from', countries[addr])
         return None
     else:
         # Not resolved, bounce it to the next step
@@ -129,11 +129,11 @@ def reverse(regexp):
         return regexp
     if len(matches) == 1:
         code = matches[0]
-        print regexp, "matches code `%s', %s" % (code, all[code])
+        print(regexp, "matches code `%s', %s" % (code, all[code]))
     else:
-        print regexp, 'matches %d countries:' % len(matches)
+        print(regexp, 'matches %d countries:' % len(matches))
         for code in matches:
-            print "    %s: %s" % (code, all[code])
+            print("    %s: %s" % (code, all[code]))
     return None
 
 
@@ -141,14 +141,16 @@ def reverse(regexp):
 def parse(file, normalize):
     try:
         fp = open(file)
-    except IOError, (err, msg):
-        print msg, ':', file
+    except IOError as err:
+        errno, msg = err.args
+        print(msg, ':', file)
+        return
 
     cre = re.compile('(.*?)[ \t]+([A-Z]{2})[ \t]+[A-Z]{3}[ \t]+[0-9]{3}')
     scanning = 0
 
     if normalize:
-        print 'countries = {'
+        print('countries = {')
 
     while 1:
         line = fp.readline()
@@ -163,7 +165,7 @@ def parse(file, normalize):
                 elif line[0] == '-':
                     break
                 else:
-                    print 'Could not parse line:', line
+                    print('Could not parse line:', line)
                     continue
             country, code = mo.group(1, 2)
             if normalize:
@@ -173,30 +175,30 @@ def parse(file, normalize):
                     # XXX special cases
                     if w in ('AND', 'OF', 'OF)', 'name:', 'METROPOLITAN'):
                         words[i] = w.lower()
-                    elif w == 'THE' and i <> 1:
+                    elif w == 'THE' and i != 1:
                         words[i] = w.lower()
                     elif len(w) > 3 and w[1] == "'":
                         words[i] = w[0:3].upper() + w[3:].lower()
                     elif w in ('(U.S.)', 'U.S.'):
                         pass
-                    elif w[0] == '(' and w <> '(local':
+                    elif w[0] == '(' and w != '(local':
                         words[i] = '(' + w[1:].capitalize()
-                    elif w.find('-') <> -1:
+                    elif w.find('-') != -1:
                         words[i] = '-'.join(
                             [s.capitalize() for s in w.split('-')])
                     else:
                         words[i] = w.capitalize()
                 code = code.lower()
                 country = ' '.join(words)
-                print '    "%s": "%s",' % (code, country)
+                print('    "%s": "%s",' % (code, country))
             else:
-                print code, country
-            
+                print(code, country)
+
         elif line[0] == '-':
             scanning = 1
 
     if normalize:
-        print '    }'
+        print('    }')
 
 
 def main():
@@ -212,7 +214,7 @@ def main():
             sys.argv[1:],
             'p:rohd',
             ['parse=', 'reverse', 'outputdict', 'help', 'dump'])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     for opt, arg in opts:
@@ -231,17 +233,15 @@ def main():
         usage(status)
 
     if dump:
-        print 'Non-geographic domains:'
-        codes = nameorgs.keys()
-        codes.sort()
+        print('Official country coded domains:')
+        codes = sorted(countries)
         for code in codes:
-            print '    %4s:' % code, nameorgs[code]
+            print('      %2s:' % code, countries[code])
 
-        print '\nCountry coded domains:'
-        codes = countries.keys()
-        codes.sort()
+        print('\nOther top-level domains:')
+        codes = sorted(nameorgs)
         for code in codes:
-            print '    %2s:' % code, countries[code]
+            print('  %6s:' % code, nameorgs[code])
     elif parsefile:
         parse(parsefile, normalize)
     else:
@@ -249,7 +249,7 @@ def main():
             args = filter(None, map(resolve, args))
         args = filter(None, map(reverse, args))
         for arg in args:
-            print 'Where in the world is %s?' % arg
+            print('Where in the world is %s?' % arg)
 
 
 
@@ -258,26 +258,30 @@ nameorgs = {
     # New top level domains as described by ICANN
     # http://www.icann.org/tlds/
     "aero": "air-transport industry",
+    "asia": "from Asia/for Asia",
     "arpa": "Arpanet",
     "biz": "business",
+    "cat": "Catalan community",
     "com": "commercial",
     "coop": "cooperatives",
     "edu": "educational",
     "gov": "government",
     "info": "unrestricted `info'",
     "int": "international",
+    "jobs": "employment-related",
     "mil": "military",
+    "mobi": "mobile specific",
     "museum": "museums",
     "name": "`name' (for registration by individuals)",
     "net": "networking",
     "org": "non-commercial",
     "pro": "professionals",
+    "tel": "business telecommunications",
+    "travel": "travel and tourism",
     # These additional ccTLDs are included here even though they are not part
-    # of ISO 3166.  IANA has 5 reserved ccTLDs as described here:
+    # of ISO 3166.  IANA has a decoding table listing all reserved ccTLDs:
     #
-    # http://www.iso.org/iso/en/prods-services/iso3166ma/04background-on-iso-3166/iso3166-1-and-ccTLDs.html
-    #
-    # but I can't find an official list anywhere.
+    # http://www.iso.org/iso/iso-3166-1_decoding_table
     #
     # Note that `uk' is the common practice country code for the United
     # Kingdom.  AFAICT, the official `gb' code is routinely ignored!
@@ -292,9 +296,13 @@ nameorgs = {
     #
     # Also, `su', while obsolete is still in limited use.
     "ac": "Ascension Island",
-    "gg": "Guernsey",
-    "im": "Isle of Man",
-    "je": "Jersey",
+    "cp": "Clipperton Island",
+    "dg": "Diego Garcia",
+    "ea": "Ceuta, Melilla",
+    "eu": "European Union",
+    "fx": "Metropolitan France",
+    "ic": "Canary Islands",
+    "ta": "Tristan da Cunha",
     "uk": "United Kingdom (common practice)",
     "su": "Soviet Union (still in limited use)",
     }
@@ -303,6 +311,7 @@ nameorgs = {
 
 countries = {
     "af": "Afghanistan",
+    "ax": "Aland Islands",
     "al": "Albania",
     "dz": "Algeria",
     "as": "American Samoa",
@@ -328,7 +337,7 @@ countries = {
     "bm": "Bermuda",
     "bt": "Bhutan",
     "bo": "Bolivia",
-    "ba": "Bosnia and Herzegowina",
+    "ba": "Bosnia and Herzegovina",
     "bw": "Botswana",
     "bv": "Bouvet Island",
     "br": "Brazil",
@@ -363,7 +372,6 @@ countries = {
     "dj": "Djibouti",
     "dm": "Dominica",
     "do": "Dominican Republic",
-    "tp": "East Timor",
     "ec": "Ecuador",
     "eg": "Egypt",
     "sv": "El Salvador",
@@ -391,6 +399,7 @@ countries = {
     "gp": "Guadeloupe",
     "gu": "Guam",
     "gt": "Guatemala",
+    "gg": "Guernsey",
     "gn": "Guinea",
     "gw": "Guinea-Bissau",
     "gy": "Guyana",
@@ -403,15 +412,17 @@ countries = {
     "is": "Iceland",
     "in": "India",
     "id": "Indonesia",
-    "ir": "Iran, Islamic Republic of",
+    "ir": "Iran (Islamic Republic of)",
     "iq": "Iraq",
     "ie": "Ireland",
+    "im": "Isle of Man",
     "il": "Israel",
     "it": "Italy",
     "jm": "Jamaica",
     "jp": "Japan",
+    "je": "Jersey",
     "jo": "Jordan",
-    "kz": "Kazakstan",
+    "kz": "Kazakhstan",
     "ke": "Kenya",
     "ki": "Kiribati",
     "kp": "Korea, Democratic People's Republic of",
@@ -427,7 +438,7 @@ countries = {
     "li": "Liechtenstein",
     "lt": "Lithuania",
     "lu": "Luxembourg",
-    "mo": "Macau",
+    "mo": "Macao",
     "mk": "Macedonia, The Former Yugoslav Republic of",
     "mg": "Madagascar",
     "mw": "Malawi",
@@ -445,6 +456,7 @@ countries = {
     "md": "Moldova, Republic of",
     "mc": "Monaco",
     "mn": "Mongolia",
+    "me": "Montenegro",
     "ms": "Montserrat",
     "ma": "Morocco",
     "mz": "Mozambique",
@@ -491,6 +503,7 @@ countries = {
     "st": "Sao Tome and Principe",
     "sa": "Saudi Arabia",
     "sn": "Senegal",
+    "rs": "Serbia",
     "sc": "Seychelles",
     "sl": "Sierra Leone",
     "sg": "Singapore",
@@ -505,6 +518,8 @@ countries = {
     "sd": "Sudan",
     "sr": "Suriname",
     "sj": "Svalbard and Jan Mayen",
+    "sh": "St. Helena",
+    "pm": "St. Pierre and Miquelon",
     "sz": "Swaziland",
     "se": "Sweden",
     "ch": "Switzerland",
@@ -513,6 +528,7 @@ countries = {
     "tj": "Tajikistan",
     "tz": "Tanzania, United Republic of",
     "th": "Thailand",
+    "tl": "Timor-Leste",
     "tg": "Togo",
     "tk": "Tokelau",
     "to": "Tonga",
@@ -531,10 +547,11 @@ countries = {
     "uy": "Uruguay",
     "uz": "Uzbekistan",
     "vu": "Vanuatu",
+    "va": "Vatican City State (Holy See)",
     "ve": "Venezuela",
     "vn": "Viet Nam",
-    "vg": "Virgin Islands, British",
-    "vi": "Virgin Islands, U.S.",
+    "vg": "Virgin Islands (British)",
+    "vi": "Virgin Islands (U.S.)",
     "wf": "Wallis and Futuna",
     "eh": "Western Sahara",
     "ye": "Yemen",
