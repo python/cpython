@@ -173,23 +173,6 @@ class PathsTests(unittest.TestCase):
         shutil.rmtree(self.path)
         sys.path = self.syspath
 
-    def XXX_test_sys_path_with_unicode(self):
-        for i, subpath in enumerate(self.SAMPLES):
-            path = os.path.join(self.path, subpath)
-            os.mkdir(path)
-            self.failUnless(os.path.exists(path), os.listdir(self.path))
-            f = open(os.path.join(path, 'testimport%i.py' % i), 'w')
-            f.write("testdata = 'unicode path %i'\n" % i)
-            f.close()
-            sys.path.append(path)
-            try:
-                mod = __import__("testimport%i" % i)
-            except ImportError:
-                print(path, file=sys.stderr)
-                raise
-            self.assertEqual(mod.testdata, 'unicode path %i' % i)
-            unload("testimport%i" % i)
-
     # http://bugs.python.org/issue1293
     def test_trailing_slash(self):
         f = open(os.path.join(self.path, 'test_trailing_slash.py'), 'w')
