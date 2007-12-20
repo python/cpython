@@ -3439,10 +3439,10 @@ static int
 instrsize(struct instr *instr)
 {
 	if (!instr->i_hasarg)
-		return 1;
+		return 1;	/* 1 byte for the opcode*/
 	if (instr->i_oparg > 0xffff)
-		return 6;
-	return 3;
+		return 6;	/* 1 (opcode) + 1 (EXTENDED_ARG opcode) + 2 (oparg) + 2(oparg extended) */
+	return 3; 		/* 1 (opcode) + 2 (oparg) */
 }
 
 static int
