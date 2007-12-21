@@ -2531,7 +2531,7 @@ Instance Method Objects
 
 An instance method is a wrapper for a :cdata:`PyCFunction` and the new way
 to bind a :cdata:`PyCFunction` to a class object. It replaces the former call
-:cfunc:`PyMethod_New(func, NULL, class)`.
+``PyMethod_New(func, NULL, class)``.
 
 
 .. cvar:: PyTypeObject PyInstanceMethod_Type
