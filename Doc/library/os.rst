@@ -401,6 +401,12 @@ by file descriptors.
       :func:`fdopen`, use its :meth:`close` method.
 
 
+.. function:: device_encoding(fd)
+
+   Return a string describing the encoding of the device associated with *fd*
+   if it is connected to a terminal; else return :const:`None`.
+
+
 .. function:: dup(fd)
 
    Return a duplicate of file descriptor *fd*. Availability: Macintosh, Unix,
