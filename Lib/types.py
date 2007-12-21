@@ -1,6 +1,5 @@
-"""Define names for all type symbols known in the standard interpreter.
-
-Types that are part of optional modules (e.g. array) are not listed.
+"""
+Define names for built-in types that aren't directly accessible as a builtin.
 """
 import sys
 
