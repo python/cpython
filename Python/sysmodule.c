@@ -1025,7 +1025,7 @@ _PySys_Init(void)
 		}
 	}
 
-        /* stdin/stdout/stderr are now set by site.py. */
+        /* stdin/stdout/stderr are now set by pythonrun.c */
 
 	PyDict_SetItemString(sysdict, "__displayhook__",
                              PyDict_GetItemString(sysdict, "displayhook"));
