@@ -147,15 +147,16 @@ for processing the documentation.
 The input format is reStructured Text, 
 a markup commonly used in the Python community that supports
 custom extensions  and directives.   Sphinx concentrates 
-on its HTML output, producing attractively styled 
-and modern HTML. (XXX finish this -- mention new search feature)
+on HTML output, producing attractively styled 
+and modern HTML, but printed output is still supported through 
+conversion to LaTeX as an output format.
 
 .. seealso::
 
    `Docutils <http://docutils.sf.net>`__: The fundamental
    reStructured Text parser and toolset.
 
-   `Documenting Python <XXX>`__: Describes how to write for 
+   `Documenting Python <http://docs.python.org/dev/documenting/>`__: Describes how to write for 
    Python's documentation.
 
 
@@ -838,6 +839,27 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The :mod:`sets` module has been deprecated; it's better to 
   use the built-in :class:`set` and :class:`frozenset` types.
+
+* Integrating signal handling with GUI handling event loops 
+  like those used by Tkinter or GTk+ has long been a problem; most
+  software ends up polling, waking up every fraction of a second.  Thi
+  The :mod:`signal` module can now make this more efficient.
+  Calling ``signal.set_wakeup_fd(fd)`` sets a file descriptor
+  to be used; when a signal is received, a byte is written to that 
+  file descriptor.  There's also a C-level function,
+  :cfunc:`PySignal_SetWakeupFd`, for setting the descriptor.
+
+  Event loops will use this by opening a pipe to create two descriptors,
+  one for reading and one for writing.  The writeable descriptor
+  will be passed to :func:`set_wakeup_fd`, and the readable descriptor
+  will be added to the list of descriptors monitored by the event loop via
+  :cfunc:`select` or :cfunc:`poll`.
+  On receiving a signal, a byte will be written and the main event loop 
+  will be woken up, without the need to poll.
+
+  Contributed by Adam Olsen.
+
+  .. % Patch 1583
 
 * The :mod:`smtplib` module now supports SMTP over SSL thanks to the
   addition of the :class:`SMTP_SSL` class. This class supports an
