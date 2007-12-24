@@ -110,6 +110,20 @@ The :mod:`signal` module defines the following functions:
    :manpage:`signal(2)`.)
 
 
+.. function:: set_wakeup_fd(fd)
+
+   Set the wakeup fd to *fd*.  When a signal is received, a ``'\0'`` byte is
+   written to the fd.  This can be used by a library to wakeup a poll or select
+   call, allowing the signal to be fully processed.
+
+   The old wakeup fd is returned.  *fd* must be non-blocking.  It is up to the
+   library to remove any bytes before calling poll or select again.
+
+   When threads are enabled, this function can only be called from the main thread;
+   attempting to call it from other threads will cause a :exc:`ValueError`
+   exception to be raised.
+
+
 .. function:: signal(signalnum, handler)
 
    Set the handler for signal *signalnum* to the function *handler*.  *handler* can

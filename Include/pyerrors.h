@@ -227,6 +227,9 @@ PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject *, const char *,
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
 
+/* In signalmodule.c */
+int PySignal_SetWakeupFd(int fd);
+
 /* Support for adding program text to SyntaxErrors */
 PyAPI_FUNC(void) PyErr_SyntaxLocation(const char *, int);
 PyAPI_FUNC(PyObject *) PyErr_ProgramText(const char *, int);

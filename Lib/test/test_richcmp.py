@@ -85,6 +85,35 @@ class Vector:
             raise ValueError("Cannot compare vectors of different length")
         return other
 
+
+class SimpleOrder(object):
+    """
+    A simple class that defines order but not full comparison.
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __lt__(self, other):
+        if not isinstance(other, SimpleOrder):
+            return True
+        return self.value < other.value
+
+    def __gt__(self, other):
+        if not isinstance(other, SimpleOrder):
+            return False
+        return self.value > other.value
+
+
+class DumbEqualityWithoutHash(object):
+    """
+    A class that define __eq__, but no __hash__: it shouldn't be hashable.
+    """
+
+    def __eq__(self, other):
+        return False
+
+
 opmap = {
     "lt": (lambda a,b: a< b, operator.lt, operator.__lt__),
     "le": (lambda a,b: a<=b, operator.le, operator.__le__),
@@ -330,8 +359,39 @@ class ListTest(unittest.TestCase):
         for op in opmap["lt"]:
             self.assertIs(op(x, y), True)
 
+
+class HashableTest(unittest.TestCase):
+    """
+    Test hashability of classes with rich operators defined.
+    """
+
+    def test_simpleOrderHashable(self):
+        """
+        A class that only defines __gt__ and/or __lt__ should be hashable.
+        """
+        a = SimpleOrder(1)
+        b = SimpleOrder(2)
+        self.assert_(a < b)
+        self.assert_(b > a)
+        self.assert_(a.__hash__ is not None)
+
+    def test_notHashableException(self):
+        """
+        If a class is not hashable, it should raise a TypeError with an
+        understandable message.
+        """
+        a = DumbEqualityWithoutHash()
+        try:
+            hash(a)
+        except TypeError as e:
+            self.assertEquals(str(e),
+                              "unhashable type: 'DumbEqualityWithoutHash'")
+        else:
+            raise test_support.TestFailed("Should not be here")
+
+
 def test_main():
-    test_support.run_unittest(VectorTest, NumberTest, MiscTest, DictTest, ListTest)
+    test_support.run_unittest(VectorTest, NumberTest, MiscTest, DictTest, ListTest, HashableTest)
 
 if __name__ == "__main__":
     test_main()

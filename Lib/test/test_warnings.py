@@ -1,5 +1,7 @@
 import warnings
+import linecache
 import os
+from io import StringIO
 import sys
 import unittest
 from test import test_support
@@ -36,6 +38,8 @@ class TestModule(unittest.TestCase):
                     self.assert_(w.category is category)
 
     def test_filtering(self):
+        # Test filterwarnings().
+        # Implicitly also tests resetwarnings().
         with test_support.catch_warning() as w:
             warnings.filterwarnings("error", "", Warning, "", 0)
             self.assertRaises(UserWarning, warnings.warn, 'convert to error')
@@ -97,6 +101,33 @@ class TestModule(unittest.TestCase):
             self.assertEqual(os.path.basename(w.filename), "sys")
 
 
+class WarningsDisplayTests(unittest.TestCase):
+
+    def test_formatwarning(self):
+        message = "msg"
+        category = Warning
+        file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
+        line_num = 3
+        file_line = linecache.getline(file_name, line_num).strip()
+        expect = "%s:%s: %s: %s\n  %s\n" % (file_name, line_num, category.__name__,
+                                         message, file_line)
+        self.failUnlessEqual(warnings.formatwarning(message, category,
+                                                    file_name, line_num),
+                             expect)
+
+    def test_showwarning(self):
+        file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
+        line_num = 3
+        expected_file_line = linecache.getline(file_name, line_num).strip()
+        message = 'msg'
+        category = Warning
+        file_object = StringIO()
+        expect = warnings.formatwarning(message, category, file_name, line_num)
+        warnings.showwarning(message, category, file_name, line_num,
+                                file_object)
+        self.failUnlessEqual(file_object.getvalue(), expect)
+
+
 def test_main(verbose=None):
     # Obscure hack so that this test passes after reloads or repeated calls
     # to test_main (regrtest -R).
@@ -106,7 +137,7 @@ def test_main(verbose=None):
         del warning_tests.__warningregistry__
     if hasattr(sys, '__warningregistry__'):
         del sys.__warningregistry__
-    test_support.run_unittest(TestModule)
+    test_support.run_unittest(TestModule, WarningsDisplayTests)
 
 if __name__ == "__main__":
     test_main(verbose=True)

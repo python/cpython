@@ -184,13 +184,19 @@ static PyObject *
 builtin_all(PyObject *self, PyObject *v)
 {
 	PyObject *it, *item;
+	PyObject *(*iternext)(PyObject *);
+	int cmp;
 
 	it = PyObject_GetIter(v);
 	if (it == NULL)
 		return NULL;
+	iternext = *Py_TYPE(it)->tp_iternext;
 
-	while ((item = PyIter_Next(it)) != NULL) {
-		int cmp = PyObject_IsTrue(item);
+	for (;;) {
+		item = iternext(it);
+		if (item == NULL)
+			break;
+		cmp = PyObject_IsTrue(item);
 		Py_DECREF(item);
 		if (cmp < 0) {
 			Py_DECREF(it);
@@ -202,8 +208,12 @@ builtin_all(PyObject *self, PyObject *v)
 		}
 	}
 	Py_DECREF(it);
-	if (PyErr_Occurred())
-		return NULL;
+	if (PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_StopIteration))
+			PyErr_Clear();
+		else
+			return NULL;
+	}
 	Py_RETURN_TRUE;
 }
 
@@ -216,13 +226,19 @@ static PyObject *
 builtin_any(PyObject *self, PyObject *v)
 {
 	PyObject *it, *item;
+	PyObject *(*iternext)(PyObject *);
+	int cmp;
 
 	it = PyObject_GetIter(v);
 	if (it == NULL)
 		return NULL;
+	iternext = *Py_TYPE(it)->tp_iternext;
 
-	while ((item = PyIter_Next(it)) != NULL) {
-		int cmp = PyObject_IsTrue(item);
+	for (;;) {
+		item = iternext(it);
+		if (item == NULL)
+			break;
+		cmp = PyObject_IsTrue(item);
 		Py_DECREF(item);
 		if (cmp < 0) {
 			Py_DECREF(it);
@@ -234,8 +250,12 @@ builtin_any(PyObject *self, PyObject *v)
 		}
 	}
 	Py_DECREF(it);
-	if (PyErr_Occurred())
-		return NULL;
+	if (PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_StopIteration))
+			PyErr_Clear();
+		else
+			return NULL;
+	}
 	Py_RETURN_FALSE;
 }
 
