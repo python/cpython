@@ -3172,7 +3172,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 		return compiler_ifexp(c, e);
 	case Dict_kind:
 		n = asdl_seq_LEN(e->v.Dict.values);
-		ADDOP_I(c, BUILD_MAP, (n>255 ? 255 : n));
+		ADDOP_I(c, BUILD_MAP, (n>0xFFFF ? 0xFFFF : n));
 		for (i = 0; i < n; i++) {
 			VISIT(c, expr, 
 				(expr_ty)asdl_seq_GET(e->v.Dict.values, i));
@@ -3648,10 +3648,10 @@ static int
 instrsize(struct instr *instr)
 {
 	if (!instr->i_hasarg)
-		return 1;
+		return 1;	/* 1 byte for the opcode*/
 	if (instr->i_oparg > 0xffff)
-		return 6;
-	return 3;
+		return 6;	/* 1 (opcode) + 1 (EXTENDED_ARG opcode) + 2 (oparg) + 2(oparg extended) */
+	return 3; 		/* 1 (opcode) + 2 (oparg) */
 }
 
 static int

@@ -242,7 +242,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertEquals(rc, 2)
 
     def test_cwd(self):
-        tmpdir = os.getenv("TEMP", "/tmp")
+        tmpdir = tempfile.gettempdir()
         # We cannot use os.path.realpath to canonicalize the path,
         # since it doesn't expand Tru64 {memb} strings. See bug 1063571.
         cwd = os.getcwd()
