@@ -42,8 +42,10 @@ au BufRead,BufNewFile Makefile* set noexpandtab
 " Use the below highlight group when displaying bad whitespace is desired
 highlight BadWhitespace ctermbg=red guibg=red
 
-" Display tabs at the beginning of a line in Python mode as bad
+" Display tabs at the beginning of a line in Python mode as bad.
 au BufRead,BufNewFile *.py,*.pyw match BadWhitespace /^\t\+/
+" Make trailing whitespace be flagged as bad.
+au BufRead,BufNewFile *.py,*.pyw,*.c,*.h match BadWhitespace /\s\+$/
 
 " Wrap text after a certain number of characters
 " Python: 79 
@@ -85,12 +87,3 @@ au BufNewFile *.py,*.pyw,*.c,*.h set fileformat=unix
 " Keep indentation level from previous line: ``set autoindent``
 
 " Folding based on indentation: ``set foldmethod=indent``
-
-" Make trailing whitespace explicit (left off since this will automatically
-" insert the highlight or characters *as you type*, which can get annoying):
-"``match BadWhitespace /\s\+$/``
-"
-" or, for a non-colored, character-based solution:
-"
-"``set list listchars=trail:-``
-
