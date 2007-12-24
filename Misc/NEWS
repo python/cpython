@@ -51,6 +51,8 @@ Core and builtins
 Library
 -------
 
+- Issue #1695: Fixed typo in the docstrings for time.localtime() and gmtime().
+
 - Issue #1642: Fix segfault in ctypes when trying to delete attributes.
 
 - os.access now returns True on Windows for any existing directory.
