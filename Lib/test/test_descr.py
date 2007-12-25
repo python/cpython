@@ -2131,7 +2131,7 @@ def properties():
 
 
 def properties_plus():
-    class C:
+    class C(object):
         foo = property(doc="hello")
         @foo.getter
         def foo(self):
@@ -2146,8 +2146,11 @@ def properties_plus():
     assert C.foo.__doc__ == "hello"
     assert not hasattr(c, "foo")
     c.foo = -42
+    assert hasattr(c, '_foo')
+    assert c._foo == 42
     assert c.foo == 42
     del c.foo
+    assert not hasattr(c, '_foo')
     assert not hasattr(c, "foo")
 
     class D(C):
@@ -2163,20 +2166,20 @@ def properties_plus():
     del d.foo
     del d.foo
 
-    class E:
+    class E(object):
         @property
         def foo(self):
             return self._foo
         @foo.setter
-        def foo (self, value):
+        def foo(self, value):
             raise RuntimeError
         @foo.setter
+        def foo(self, value):
+            self._foo = abs(value)
         @foo.deleter
         def foo(self, value=None):
-            if value is None:
-                del self._foo
-            else:
-                self._foo = abs(value)
+            del self._foo
+
     e = E()
     e.foo = -42
     assert e.foo == 42
@@ -2193,6 +2196,7 @@ def properties_plus():
     f.foo = -10
     assert f.foo == 0
     del f.foo
+    print "*** HIT"
 
 
 def supers():
@@ -4477,6 +4481,7 @@ def test_main():
     recursions()
     weakrefs()
     properties()
+    properties_plus()
     supers()
     inherits()
     keywords()
