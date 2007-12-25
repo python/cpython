@@ -2196,7 +2196,6 @@ def properties_plus():
     f.foo = -10
     assert f.foo == 0
     del f.foo
-    print "*** HIT"
 
 
 def supers():
