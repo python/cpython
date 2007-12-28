@@ -45,6 +45,8 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*  UNRELEASED, but merged into 3.0
 
+- Configure Dialog: improved layout for keybinding.  Patch 1457 Tal Einat.
+
 - tabpage.py updated: tabbedPages.py now supports multiple dynamic rows
   of tabs.  Patch 1612746 Tal Einat.
 

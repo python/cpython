@@ -90,7 +90,7 @@ class ConfigDialog(Toplevel):
         self.buttonApply.pack(side=LEFT,padx=5)
         self.buttonCancel.pack(side=LEFT,padx=5)
         frameActionButtons.pack(side=BOTTOM)
-        Frame(self, border=0).pack(side=BOTTOM,pady=2)
+        Frame(self, height=2, borderwidth=0).pack(side=BOTTOM)
         self.tabPages.pack(side=TOP,expand=TRUE,fill=BOTH)
 
     def CreatePageFontTab(self):
@@ -274,26 +274,26 @@ class ConfigDialog(Toplevel):
         self.listBindings.config(xscrollcommand=scrollTargetX.set)
         self.buttonNewKeys=Button(frameCustom,text='Get New Keys for Selection',
             command=self.GetNewKeys,state=DISABLED)
-        buttonSaveCustomKeys=Button(frameCustom,
-                text='Save as New Custom Key Set',command=self.SaveAsNewKeySet)
         #frameKeySets
-        labelTypeTitle=Label(frameKeySets,text='Select : ')
-        self.radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysAreBuiltin,
-            value=1,command=self.SetKeysType,text='a Built-in Key Set')
-        self.radioKeysCustom=Radiobutton(frameKeySets,variable=self.keysAreBuiltin,
-            value=0,command=self.SetKeysType,text='a Custom Key Set')
-        self.optMenuKeysBuiltin=DynOptionMenu(frameKeySets,
+        frames = [Frame(frameKeySets, padx=2, pady=2, borderwidth=0)
+                  for i in range(2)]
+        self.radioKeysBuiltin=Radiobutton(frames[0],variable=self.keysAreBuiltin,
+            value=1,command=self.SetKeysType,text='Use a Built-in Key Set')
+        self.radioKeysCustom=Radiobutton(frames[0],variable=self.keysAreBuiltin,
+            value=0,command=self.SetKeysType,text='Use a Custom Key Set')
+        self.optMenuKeysBuiltin=DynOptionMenu(frames[0],
             self.builtinKeys,None,command=None)
-        self.optMenuKeysCustom=DynOptionMenu(frameKeySets,
+        self.optMenuKeysCustom=DynOptionMenu(frames[0],
             self.customKeys,None,command=None)
-        self.buttonDeleteCustomKeys=Button(frameKeySets,text='Delete Custom Key Set',
+        self.buttonDeleteCustomKeys=Button(frames[1],text='Delete Custom Key Set',
                 command=self.DeleteCustomKeys)
+        buttonSaveCustomKeys=Button(frames[1],
+                text='Save as New Custom Key Set',command=self.SaveAsNewKeySet)
         ##widget packing
         #body
-        frameCustom.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
-        frameKeySets.pack(side=LEFT,padx=5,pady=5,fill=Y)
+        frameCustom.pack(side=BOTTOM,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        frameKeySets.pack(side=BOTTOM,padx=5,pady=5,fill=BOTH)
         #frameCustom
-        buttonSaveCustomKeys.pack(side=BOTTOM,fill=X,padx=5,pady=5)
         self.buttonNewKeys.pack(side=BOTTOM,fill=X,padx=5,pady=5)
         frameTarget.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
         #frame target
@@ -304,12 +304,14 @@ class ConfigDialog(Toplevel):
         scrollTargetY.grid(row=1,column=1,sticky=NS)
         scrollTargetX.grid(row=2,column=0,sticky=EW)
         #frameKeySets
-        labelTypeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        self.radioKeysBuiltin.pack(side=TOP,anchor=W,padx=5)
-        self.radioKeysCustom.pack(side=TOP,anchor=W,padx=5,pady=2)
-        self.optMenuKeysBuiltin.pack(side=TOP,fill=X,padx=5,pady=5)
-        self.optMenuKeysCustom.pack(side=TOP,fill=X,anchor=W,padx=5,pady=5)
-        self.buttonDeleteCustomKeys.pack(side=TOP,fill=X,padx=5,pady=5)
+        self.radioKeysBuiltin.grid(row=0, column=0, sticky=W+NS)
+        self.radioKeysCustom.grid(row=1, column=0, sticky=W+NS)
+        self.optMenuKeysBuiltin.grid(row=0, column=1, sticky=NSEW)
+        self.optMenuKeysCustom.grid(row=1, column=1, sticky=NSEW)
+        self.buttonDeleteCustomKeys.pack(side=LEFT,fill=X,expand=True,padx=2)
+        buttonSaveCustomKeys.pack(side=LEFT,fill=X,expand=True,padx=2)
+        frames[0].pack(side=TOP, fill=BOTH, expand=True)
+        frames[1].pack(side=TOP, fill=X, expand=True, pady=2)
         return frame
 
     def CreatePageGeneral(self):
