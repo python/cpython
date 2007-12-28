@@ -1116,6 +1116,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
         self.decoder.setstate((buf, flag))
 
     def reset(self):
+        self.seennl = 0
         self.buffer = b''
         self.decoder.reset()
 
