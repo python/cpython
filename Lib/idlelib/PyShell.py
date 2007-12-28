@@ -828,6 +828,14 @@ class PyShell(OutputWindow):
             sys.stdout = self.stdout
             sys.stderr = self.stderr
             sys.stdin = self
+        try:
+            # page help() text to shell.
+            import pydoc # import must be done here to capture i/o rebinding.
+            # XXX KBK 27Dec07 use a textView someday, but must work w/o subproc
+            pydoc.pager = pydoc.plainpager
+        except:
+            sys.stderr = sys.__stderr__
+            raise
         #
         self.history = self.History(self.text)
         #

@@ -1,7 +1,9 @@
 What's New in IDLE 3.0a3?
 =========================
 
-*Release date: XX-XXX-200X*
+*Release date: XX-XXX-2008*
+
+- help() was not paging to the shell.  Issue1650.
 
 - CodeContext was not importing.
 
