@@ -159,7 +159,7 @@ loops that truncate the stream.
                   key = lambda x: x
               self.keyfunc = key
               self.it = iter(iterable)
-              self.tgtkey = self.currkey = self.currvalue = xrange(0)
+              self.tgtkey = self.currkey = self.currvalue = object()
           def __iter__(self):
               return self
           def next(self):
