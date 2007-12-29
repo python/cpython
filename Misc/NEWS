@@ -183,6 +183,8 @@ Documentation
 Build
 -----
 
+- Bug #1699: Define _BSD_SOURCE only on OpenBSD.
+
 - Bug #1608: use -fwrapv when GCC supports it.  This is important,
   newer GCC versions may optimize away overflow buffer overflow checks
   without this option!
