@@ -265,9 +265,6 @@ entitydefs = {}
 
 for (name, codepoint) in name2codepoint.items():
     codepoint2name[codepoint] = name
-    if codepoint <= 0xff:
-        entitydefs[name] = chr(codepoint)
-    else:
-        entitydefs[name] = '&#%d;' % codepoint
+    entitydefs[name] = chr(codepoint)
 
 del name, codepoint
