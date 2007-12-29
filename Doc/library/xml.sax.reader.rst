@@ -349,8 +349,8 @@ including the methods :meth:`copy`, :meth:`get`, :meth:`has_key`, :meth:`items`,
 
    Return the value of attribute *name*.
 
-.. % getValueByQName, getNameByQName, getQNameByName, getQNames available
-.. % here already, but documented only for derived class.
+.. getValueByQName, getNameByQName, getQNameByName, getQNames available
+.. here already, but documented only for derived class.
 
 
 .. _attributes-ns-objects:

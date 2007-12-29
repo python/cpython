@@ -1,4 +1,3 @@
-
 :mod:`xmlrpclib` --- XML-RPC client access
 ==========================================
 
@@ -8,8 +7,8 @@
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 
 
-.. % Not everything is documented yet.  It might be good to describe
-.. % Marshaller, Unmarshaller, getparser, dumps, loads, and Transport.
+.. XXX Not everything is documented yet.  It might be good to describe
+   Marshaller, Unmarshaller, getparser, dumps, loads, and Transport.
 
 .. versionadded:: 2.2
 
@@ -544,11 +543,9 @@ Example of Client Usage
        print "ERROR", v
 
 To access an XML-RPC server through a proxy, you need to define  a custom
-transport.  The following example,  written by NoboNobo, shows how:
+transport.  The following example shows how:
 
-.. % fill in original author's name if we ever learn it
-
-.. % Example taken from http://lowlife.jp/nobonobo/wiki/xmlrpcwithproxy.html
+.. Example taken from http://lowlife.jp/nobonobo/wiki/xmlrpcwithproxy.html
 
 ::
 

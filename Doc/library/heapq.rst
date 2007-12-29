@@ -1,4 +1,3 @@
-
 :mod:`heapq` --- Heap queue algorithm
 =====================================
 
@@ -7,9 +6,6 @@
 .. moduleauthor:: Kevin O'Connor
 .. sectionauthor:: Guido van Rossum <guido@python.org>
 .. sectionauthor:: François Pinard
-
-
-.. % Theoretical explanation:
 
 .. versionadded:: 2.3
 

@@ -14,7 +14,7 @@ common components  from the ElementTree API library.  In the current release,
 this package contains the :mod:`ElementTree`,  :mod:`ElementPath`, and
 :mod:`ElementInclude` modules from the full  ElementTree distribution.
 
-.. % XXX To be continued!
+.. XXX To be continued!
 
 
 .. seealso::

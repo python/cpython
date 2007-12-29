@@ -5,11 +5,11 @@
 :Author: A.M. Kuchling
 :Release: 0.05
 
-.. % TODO:
-.. % Document lookbehind assertions
-.. % Better way of displaying a RE, a string, and what it matches
-.. % Mention optional argument to match.groups()
-.. % Unicode (at least a reference)
+.. TODO:
+   Document lookbehind assertions
+   Better way of displaying a RE, a string, and what it matches
+   Mention optional argument to match.groups()
+   Unicode (at least a reference)
 
 
 .. topic:: Abstract
@@ -90,8 +90,6 @@ example, ``[abc]`` will match any of the characters ``a``, ``b``, or ``c``; this
 is the same as ``[a-c]``, which uses a range to express the same set of
 characters.  If you wanted to match only lowercase letters, your RE would be
 ``[a-z]``.
-
-.. % $
 
 Metacharacters are not active inside classes.  For example, ``[akm$]`` will
 match any of the characters ``'a'``, ``'k'``, ``'m'``, or ``'$'``; ``'$'`` is
@@ -679,8 +677,8 @@ given location, they can obviously be matched an infinite number of times.
       >>> print re.search('^From', 'Reciting From Memory')
       None
 
-   .. % To match a literal \character{\^}, use \regexp{\e\^} or enclose it
-   .. % inside a character class, as in \regexp{[{\e}\^]}.
+   .. To match a literal \character{\^}, use \regexp{\e\^} or enclose it
+   .. inside a character class, as in \regexp{[{\e}\^]}.
 
 ``$``
    Matches at the end of a line, which is defined as either the end of the string,
@@ -695,8 +693,6 @@ given location, they can obviously be matched an infinite number of times.
 
    To match a literal ``'$'``, use ``\$`` or enclose it inside a character class,
    as in  ``[$]``.
-
-   .. % $
 
 ``\A``
    Matches only at the start of the string.  When not in :const:`MULTILINE` mode,
@@ -980,11 +976,7 @@ filenames where the extension is not ``bat``? Some incorrect attempts:
 that the first character of the extension is not a ``b``.  This is wrong,
 because the pattern also doesn't match ``foo.bar``.
 
-.. % $
-
 ``.*[.]([^b]..|.[^a].|..[^t])$``
-
-.. % Messes up the HTML without the curly braces around \^
 
 The expression gets messier when you try to patch up the first solution by
 requiring one of the following cases to match: the first character of the
@@ -1013,15 +1005,11 @@ match, the whole pattern will fail.  The trailing ``$`` is required to ensure
 that something like ``sample.batch``, where the extension only starts with
 ``bat``, will be allowed.
 
-.. % $
-
 Excluding another filename extension is now easy; simply add it as an
 alternative inside the assertion.  The following pattern excludes filenames that
 end in either ``bat`` or ``exe``:
 
 ``.*[.](?!bat$|exe$).*$``
-
-.. % $
 
 
 Modifying Strings
@@ -1343,15 +1331,9 @@ enables REs to be formatted more neatly::
     \s*$                # Trailing whitespace to end-of-line
    """, re.VERBOSE)
 
-This is far more readable than:
-
-.. % $
-
-::
+This is far more readable than::
 
    pat = re.compile(r"\s*(?P<header>[^:]+)\s*:(?P<value>.*?)\s*$")
-
-.. % $
 
 
 Feedback

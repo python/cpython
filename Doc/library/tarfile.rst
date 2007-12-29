@@ -210,10 +210,6 @@ details.
    `GNU tar manual, Basic Tar Format <http://www.gnu.org/software/tar/manual/html_node/tar_134.html#SEC134>`_
       Documentation for tar archive files, including GNU tar extensions.
 
-.. % -----------------
-.. % TarFile Objects
-.. % -----------------
-
 
 .. _tarfile-objects:
 
@@ -440,10 +436,6 @@ object, see :ref:`tarinfo-objects` for details.
 
    .. versionadded:: 2.6
 
-.. % -----------------
-.. % TarInfo Objects
-.. % -----------------
-
 
 .. _tarinfo-objects:
 
@@ -599,10 +591,6 @@ A :class:`TarInfo` object also provides some convenient query methods:
 
    Return :const:`True` if it is one of character device, block device or FIFO.
 
-.. % ------------------------
-.. % Examples
-.. % ------------------------
-
 
 .. _tar-examples:
 
@@ -660,10 +648,6 @@ The *only* way to extract an uncompressed tar stream from ``sys.stdin``::
        tar.extract(tarinfo)
    tar.close()
 
-.. % ------------
-.. % Tar format
-.. % ------------
-
 
 .. _tar-formats:
 
@@ -703,11 +687,6 @@ created:
 
 * The SunOS tar extended format. This format is a variant of the POSIX.1-2001
   pax format, but is not compatible.
-
-.. % ----------------
-.. % Unicode issues
-.. % ----------------
-
 
 .. _tar-unicode:
 

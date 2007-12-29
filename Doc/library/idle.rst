@@ -1,20 +1,16 @@
 .. _idle:
 
-Idle
+IDLE
 ====
 
 .. moduleauthor:: Guido van Rossum <guido@Python.org>
 
-
-.. % \declaremodule{standard}{idle}
-.. % \modulesynopsis{A Python Integrated Development Environment}
-
 .. index::
-   single: Idle
+   single: IDLE
    single: Python Editor
    single: Integrated Development Environment
 
-Idle is the Python IDE built with the :mod:`Tkinter` GUI toolkit.
+IDLE is the Python IDE built with the :mod:`Tkinter` GUI toolkit.
 
 IDLE has the following features:
 

@@ -105,8 +105,6 @@ transformed name is extremely long (longer than 255 characters), implementation
 defined truncation may happen.  If the class name consists only of underscores,
 no transformation is done.
 
-.. % 
-.. % 
 
 
 .. _atom-literals:
@@ -979,6 +977,10 @@ must be plain or long integers.  The arguments are converted to a common type.
 
 
 .. _comparisons:
+.. _is:
+.. _isnot:
+.. _in:
+.. _notin:
 
 Comparisons
 ===========
@@ -1108,6 +1110,9 @@ yields the inverse truth value.
 
 
 .. _booleans:
+.. _and:
+.. _or:
+.. _not:
 
 Boolean operations
 ==================

@@ -155,11 +155,7 @@ then the result should be::
 
 Although the program is quite large for its functionality, most of the code is
 for data conversion between Python and C, and for error reporting.  The
-interesting part with respect to embedding Python starts with
-
-.. % $
-
-::
+interesting part with respect to embedding Python starts with ::
 
    Py_Initialize();
    pName = PyString_FromString(argv[1]);
@@ -239,15 +235,8 @@ With these extensions, the Python script can do things like ::
 In a real application, the methods will expose an API of the application to
 Python.
 
-.. % \section{For the future}
-.. % 
-.. % You don't happen to have a nice library to get textual
-.. % equivalents of numeric values do you :-) ?
-.. % Callbacks here ? (I may be using information from that section
-.. % ?!)
-.. % threads
-.. % code examples do not really behave well if errors happen
-.. % (what to watch out for)
+.. TODO: threads, code examples do not really behave well if errors happen
+   (what to watch out for)
 
 
 .. _embeddingincplusplus:

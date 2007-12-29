@@ -20,7 +20,7 @@ specified otherwise.
 
 This module provides support for a-LAW, u-LAW and Intel/DVI ADPCM encodings.
 
-.. % This para is mostly here to provide an excuse for the index entries...
+.. This para is mostly here to provide an excuse for the index entries...
 
 A few of the more complicated operations only take 16-bit samples, otherwise the
 sample size (in bytes) is always a parameter of the operation.

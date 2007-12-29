@@ -70,6 +70,8 @@ on a separate line for clarity.
 
 
 .. _if:
+.. _elif:
+.. _else:
 
 The :keyword:`if` statement
 ===========================
@@ -206,6 +208,8 @@ effect of Pascal's ``for i := a to b do``; e.g., ``range(3)`` returns the list
 
 
 .. _try:
+.. _except:
+.. _finally:
 
 The :keyword:`try` statement
 ============================
@@ -320,6 +324,7 @@ may be found in section :ref:`raise`.
 
 
 .. _with:
+.. _as:
 
 The :keyword:`with` statement
 =============================
@@ -386,6 +391,7 @@ The execution of the :keyword:`with` statement proceeds as follows:
 
 
 .. _function:
+.. _def:
 
 Function definitions
 ====================

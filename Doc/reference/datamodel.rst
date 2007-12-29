@@ -214,8 +214,6 @@ Numbers
       without causing overflow, will yield the same result in the long integer domain
       or when using mixed operands.
 
-      .. % Integers
-
    Floating point numbers
       .. index::
          object: floating point
@@ -240,8 +238,6 @@ Numbers
       floating point numbers.  The same caveats apply as for floating point numbers.
       The real and imaginary parts of a complex number ``z`` can be retrieved through
       the read-only attributes ``z.real`` and ``z.imag``.
-
-   .. % Numbers
 
 Sequences
    .. index::
@@ -346,8 +342,6 @@ Sequences
          by itself does not create a tuple, since parentheses must be usable for grouping
          of expressions).  An empty tuple can be formed by an empty pair of parentheses.
 
-      .. % Immutable sequences
-
    Mutable sequences
       .. index::
          object: mutable sequence
@@ -375,10 +369,6 @@ Sequences
 
       The extension module :mod:`array` provides an additional example of a mutable
       sequence type.
-
-      .. % Mutable sequences
-
-   .. % Sequences
 
 Set types
    .. index::
@@ -413,8 +403,6 @@ Set types
       :func:`frozenset` constructor.  As a frozenset is immutable and
       :term:`hashable`, it can be used again as an element of another set, or as
       a dictionary key.
-
-   .. % Set types
 
 Mappings
    .. index::
@@ -452,8 +440,6 @@ Mappings
 
       The extension modules :mod:`dbm`, :mod:`gdbm`, and :mod:`bsddb` provide
       additional examples of mapping types.
-
-   .. % Mapping types
 
 Callable types
    .. index::
@@ -725,8 +711,6 @@ Modules
    equivalent to ``m.__dict__["x"]``. A module object does not contain the code
    object used to initialize the module (since it isn't needed once the
    initialization is done).
-
-   .. % 
 
    Attribute assignment updates the module's namespace dictionary, e.g., ``m.x =
    1`` is equivalent to ``m.__dict__["x"] = 1``.
@@ -1078,10 +1062,6 @@ Internal types
       described above, under "User-defined methods". Class method objects are created
       by the built-in :func:`classmethod` constructor.
 
-   .. % Internal types
-
-.. % Types
-.. % =========================================================================
 
 .. _newstyle:
 
@@ -1127,8 +1107,6 @@ please see http://www.python.org/doc/newstyle.html for more information.
 The plan is to eventually drop old-style classes, leaving only the semantics of
 new-style classes.  This change will probably only be feasible in Python 3.0.
 new-style classic old-style
-
-.. % =========================================================================
 
 
 .. _specialnames:

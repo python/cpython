@@ -15,8 +15,8 @@
 The :mod:`weakref` module allows the Python programmer to create :dfn:`weak
 references` to objects.
 
-.. % When making changes to the examples in this file, be sure to update
-.. % Lib/test/test_weakref.py::libreftest too!
+.. When making changes to the examples in this file, be sure to update
+   Lib/test/test_weakref.py::libreftest too!
 
 In the following, the term :dfn:`referent` means the object which is referred to
 by a weak reference.
@@ -312,7 +312,7 @@ objects that it has seen before.  The IDs of the objects can then be used in
 other data structures without forcing the objects to remain alive, but the
 objects can still be retrieved by ID if they do.
 
-.. % Example contributed by Tim Peters.
+.. Example contributed by Tim Peters.
 
 ::
 

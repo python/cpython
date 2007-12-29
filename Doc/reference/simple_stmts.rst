@@ -142,8 +142,6 @@ Assignment of an object to a single target is recursively defined as follows.
   for the object previously bound to the name to reach zero, causing the object to
   be deallocated and its destructor (if it has one) to be called.
 
-  .. % nested
-
 * If the target is a target list enclosed in parentheses or in square brackets:
   The object must be a sequence with the same number of items as there are targets
   in the target list, and its items are assigned, from left to right, to the
@@ -295,16 +293,16 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
    single: __debug__
    exception: AssertionError
 
-These equivalences assume that ``__debug__`` and :exc:`AssertionError` refer to
+These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
-built-in variable ``__debug__`` is ``True`` under normal circumstances,
+built-in variable :const:`__debug__` is ``True`` under normal circumstances,
 ``False`` when optimization is requested (command line option -O).  The current
 code generator emits no code for an assert statement when optimization is
 requested at compile time.  Note that it is unnecessary to include the source
 code for the expression that failed in the error message; it will be displayed
 as part of the stack trace.
 
-Assignments to ``__debug__`` are illegal.  The value for the built-in variable
+Assignments to :const:`__debug__` are illegal.  The value for the built-in variable
 is determined when the interpreter starts.
 
 
@@ -634,6 +632,7 @@ cycle of the nearest enclosing loop.
 
 
 .. _import:
+.. _from:
 
 The :keyword:`import` statement
 ===============================
@@ -754,8 +753,6 @@ directory on ``sys.path`` that has a file :file:`__init__.py`. [XXX Can't be
 bothered to spell this out right now; see the URL
 http://www.python.org/doc/essays/packages.html for more details, also about how
 the module search works from inside a package.]
-
-.. % 
 
 .. index:: builtin: __import__
 

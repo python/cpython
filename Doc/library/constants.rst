@@ -25,6 +25,9 @@ A small number of constants live in the built-in namespace.  They are:
    represent the absence of a value, as when default arguments are not passed to a
    function.
 
+   .. versionchanged:: 2.4
+      Assignments to ``None`` are illegal and raise a :exc:`SyntaxError`.
+
 
 .. data:: NotImplemented
 
@@ -37,5 +40,11 @@ A small number of constants live in the built-in namespace.  They are:
 
    Special value used in conjunction with extended slicing syntax.
 
-   .. % XXX Someone who understands extended slicing should fill in here.
+   .. XXX Someone who understands extended slicing should fill in here.
 
+
+.. data:: __debug__
+
+   This constant is true if Python was not started with an :option:`-O` option.
+   Assignments to :const:`__debug__` are illegal and raise a :exc:`SyntaxError`.
+   See also the :keyword:`assert` statement.

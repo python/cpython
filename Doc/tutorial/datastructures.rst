@@ -400,7 +400,7 @@ combination of tuple packing and sequence unpacking!
 There is a small bit of asymmetry here:  packing multiple values always creates
 a tuple, and unpacking works for any sequence.
 
-.. % XXX Add a bit on the difference between tuples and lists.
+.. XXX Add a bit on the difference between tuples and lists.
 
 
 .. _tut-sets:

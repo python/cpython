@@ -124,22 +124,17 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: AttributeError
 
-   Raised when an attribute reference or assignment fails.  (When an object does
-   not support attribute references or attribute assignments at all,
-   :exc:`TypeError` is raised.)
-
-   .. % xref to attribute reference?
+   Raised when an attribute reference (see :ref:`attribute-references`) or
+   assignment fails.  (When an object does not support attribute references or
+   attribute assignments at all, :exc:`TypeError` is raised.)
 
 
 .. exception:: EOFError
 
    Raised when one of the built-in functions (:func:`input` or :func:`raw_input`)
    hits an end-of-file condition (EOF) without reading any data. (N.B.: the
-   :meth:`read` and :meth:`readline` methods of file objects return an empty string
+   :meth:`file.read` and :meth:`file.readline` methods return an empty string
    when they hit EOF.)
-
-   .. % XXXJH xrefs here
-   .. % XXXJH xrefs here
 
 
 .. exception:: FloatingPointError
@@ -167,8 +162,6 @@ The following exceptions are the exceptions that are actually raised.
    :func:`open` function or a method of a file object) fails for an I/O-related
    reason, e.g., "file not found" or "disk full".
 
-   .. % XXXJH xrefs here
-
    This class is derived from :exc:`EnvironmentError`.  See the discussion above
    for more information on exception instance attributes.
 
@@ -181,8 +174,6 @@ The following exceptions are the exceptions that are actually raised.
    Raised when an :keyword:`import` statement fails to find the module definition
    or when a ``from ... import`` fails to find a name that is to be imported.
 
-   .. % XXXJH xref to import statement?
-
 
 .. exception:: IndexError
 
@@ -190,14 +181,14 @@ The following exceptions are the exceptions that are actually raised.
    truncated to fall in the allowed range; if an index is not a plain integer,
    :exc:`TypeError` is raised.)
 
-   .. % XXXJH xref to sequences
+   .. XXX xref to sequences
 
 
 .. exception:: KeyError
 
    Raised when a mapping (dictionary) key is not found in the set of existing keys.
 
-   .. % XXXJH xref to mapping objects?
+   .. XXX xref to mapping objects?
 
 
 .. exception:: KeyboardInterrupt
@@ -208,8 +199,6 @@ The following exceptions are the exceptions that are actually raised.
    waiting for input also raise this exception. The exception inherits from
    :exc:`BaseException` so as to not be accidentally caught by code that catches
    :exc:`Exception` and thus prevent the interpreter from exiting.
-
-   .. % XXX(hylton) xrefs here
 
    .. versionchanged:: 2.5
       Changed to inherit from :exc:`BaseException`.
@@ -248,8 +237,6 @@ The following exceptions are the exceptions that are actually raised.
    :mod:`os` module's ``os.error`` exception. See :exc:`EnvironmentError` above for
    a description of the possible associated values.
 
-   .. % xref for os module
-
    .. versionadded:: 1.5.2
 
 
@@ -262,8 +249,6 @@ The following exceptions are the exceptions that are actually raised.
    aren't checked.  For plain integers, all operations that can overflow are
    checked except left shift, where typical applications prefer to drop bits than
    raise an exception.
-
-   .. % XXXJH reference to long's and/or int's?
 
 
 .. exception:: ReferenceError
@@ -302,8 +287,6 @@ The following exceptions are the exceptions that are actually raised.
    built-in function :func:`eval` or :func:`input`, or when reading the initial
    script or standard input (also interactively).
 
-   .. % XXXJH xref to these functions?
-
    Instances of this class have attributes :attr:`filename`, :attr:`lineno`,
    :attr:`offset` and :attr:`text` for easier access to the details.  :func:`str`
    of the exception instance returns only the message.
@@ -330,8 +313,6 @@ The following exceptions are the exceptions that are actually raised.
    to C's :cfunc:`exit` function); if it is ``None``, the exit status is zero; if
    it has another type (such as a string), the object's value is printed and the
    exit status is one.
-
-   .. % XXX(hylton) xref to module sys?
 
    Instances have an attribute :attr:`code` which is set to the proposed exit
    status or error message (defaulting to ``None``). Also, this exception derives

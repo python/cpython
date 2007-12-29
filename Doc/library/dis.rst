@@ -559,13 +559,6 @@ the more significant byte last.
    Unpacks TOS into *count* individual values, which are put onto the stack
    right-to-left.
 
-.. % \begin{opcodedesc}{UNPACK_LIST}{count}
-.. % This opcode is obsolete.
-.. % \end{opcodedesc}
-.. % \begin{opcodedesc}{UNPACK_ARG}{count}
-.. % This opcode is obsolete.
-.. % \end{opcodedesc}
-
 
 .. opcode:: DUP_TOPX (count)
 
@@ -592,10 +585,6 @@ the more significant byte last.
 .. opcode:: DELETE_GLOBAL (namei)
 
    Works as ``DELETE_NAME``, but deletes a global name.
-
-.. % \begin{opcodedesc}{UNPACK_VARARG}{argc}
-.. % This opcode is obsolete.
-.. % \end{opcodedesc}
 
 
 .. opcode:: LOAD_CONST (consti)
@@ -679,21 +668,10 @@ the more significant byte last.
    the iterator indicates it is exhausted ``TOS`` is popped, and the bytecode
    counter is incremented by *delta*.
 
-.. % \begin{opcodedesc}{FOR_LOOP}{delta}
-.. % This opcode is obsolete.
-.. % \end{opcodedesc}
-.. % \begin{opcodedesc}{LOAD_LOCAL}{namei}
-.. % This opcode is obsolete.
-.. % \end{opcodedesc}
-
 
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei]`` onto the stack.
-
-.. % \begin{opcodedesc}{SET_FUNC_ARGS}{argc}
-.. % This opcode is obsolete.
-.. % \end{opcodedesc}
 
 
 .. opcode:: SETUP_LOOP (delta)
@@ -792,7 +770,7 @@ the more significant byte last.
 
    Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2,
    ``slice(TOS1, TOS)`` is pushed; if it is 3, ``slice(TOS2, TOS1, TOS)`` is
-   pushed. See the ``slice()`` built-in function for more information.
+   pushed. See the :func:`slice` built-in function for more information.
 
 
 .. opcode:: EXTENDED_ARG (ext)

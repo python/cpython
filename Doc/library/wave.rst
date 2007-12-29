@@ -1,13 +1,10 @@
-.. % Documentations stolen and LaTeX'ed from comments in file.
-
-
 :mod:`wave` --- Read and write WAV files
 ========================================
 
 .. module:: wave
    :synopsis: Provide an interface to the WAV sound format.
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
+.. Documentations stolen from comments in file.
 
 The :mod:`wave` module provides a convenient interface to the WAV sound format.
 It does not support compression/decompression, but it does support mono/stereo.

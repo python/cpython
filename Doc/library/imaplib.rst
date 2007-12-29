@@ -1,4 +1,3 @@
-
 :mod:`imaplib` --- IMAP4 protocol client
 ========================================
 
@@ -6,20 +5,16 @@
    :synopsis: IMAP4 protocol client (requires sockets).
 .. moduleauthor:: Piers Lauder <piers@communitysolutions.com.au>
 .. sectionauthor:: Piers Lauder <piers@communitysolutions.com.au>
+.. revised by ESR, January 2000
+.. changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002
+.. changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>,
+   November 2002
 
 
 .. index::
    pair: IMAP4; protocol
    pair: IMAP4_SSL; protocol
    pair: IMAP4_stream; protocol
-
-.. % Based on HTML documentation by Piers Lauder
-.. % <piers@communitysolutions.com.au>;
-.. % converted by Fred L. Drake, Jr. <fdrake@acm.org>.
-.. % Revised by ESR, January 2000.
-.. % Changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002
-.. % Changes for IMAP4_stream by Piers Lauder
-.. % <piers@communitysolutions.com.au>, November 2002
 
 This module defines three classes, :class:`IMAP4`, :class:`IMAP4_SSL` and
 :class:`IMAP4_stream`, which encapsulate a connection to an IMAP4 server and

@@ -5,11 +5,7 @@
 .. module:: bisect
    :synopsis: Array bisection algorithms for binary searching.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
-.. % LaTeX produced by Fred L. Drake, Jr. <fdrake@acm.org>, with an
-.. % example based on the PyModules FAQ entry by Aaron Watters
-.. % <arw@pythonpros.com>.
+.. example based on the PyModules FAQ entry by Aaron Watters <arw@pythonpros.com>
 
 This module provides support for maintaining a list in sorted order without
 having to sort the list after each insertion.  For long lists of items with

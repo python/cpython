@@ -351,7 +351,7 @@ A :class:`Connection` instance has the following attributes and methods:
    memory overhead. It will probably be better than your own custom
    dictionary-based approach or even a db_row based solution.
 
-   .. % XXX what's a db_row-based solution?
+   .. XXX what's a db_row-based solution?
 
 
 .. attribute:: Connection.text_factory

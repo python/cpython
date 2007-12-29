@@ -6,7 +6,7 @@
 
 .. |release| replace:: 1.01
 
-.. % $Id: whatsnew23.tex 54631 2007-03-31 11:58:36Z georg.brandl $
+.. $Id: whatsnew23.tex 54631 2007-03-31 11:58:36Z georg.brandl $
 
 This article explains the new features in Python 2.3.  Python 2.3 was released
 on July 29, 2003.
@@ -34,7 +34,7 @@ Reference and the Python Reference Manual.  If you want to understand the
 complete implementation and design rationale, refer to the PEP for a particular
 new feature.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 218: A Standard Set Datatype
@@ -117,7 +117,7 @@ whether one set is a subset or superset of another::
       PEP written by Greg V. Wilson. Implemented by Greg V. Wilson, Alex Martelli, and
       GvR.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-generators:
@@ -248,7 +248,7 @@ a data structure.
       Written by Neil Schemenauer, Tim Peters, Magnus Lie Hetland.  Implemented mostly
       by Neil Schemenauer and Tim Peters, with other fixes from the Python Labs crew.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-encodings:
@@ -282,7 +282,7 @@ use characters outside of the usual alphanumerics.
       Written by Marc-André Lemburg and Martin von Löwis; implemented by Suzuki Hisao
       and Martin von Löwis.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 273: Importing Modules from ZIP Archives
@@ -329,7 +329,7 @@ import from the :file:`lib/` subdirectory within the archive.
       Just van Rossum  that uses the import hooks described in :pep:`302`. See section
       :ref:`section-pep302` for a description of the new import hooks.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 277: Unicode file name support for Windows NT
@@ -363,7 +363,7 @@ Under MacOS, :func:`os.listdir` may now return Unicode filenames.
       Written by Neil Hodgson; implemented by Neil Hodgson, Martin von Löwis, and Mark
       Hammond.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 278: Universal Newline Support
@@ -398,7 +398,7 @@ This feature can be disabled when compiling Python by specifying the
    :pep:`278` - Universal Newline Support
       Written and implemented by Jack Jansen.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-enumerate:
@@ -430,7 +430,7 @@ This can be rewritten using :func:`enumerate` as::
    :pep:`279` - The enumerate() built-in function
       Written and implemented by Raymond D. Hettinger.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 282: The logging Package
@@ -536,7 +536,7 @@ documentation for all of the details.  Reading :pep:`282` will also be helpful.
    :pep:`282` - A Logging System
       Written by Vinay Sajip and Trent Mick; implemented by Vinay Sajip.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-bool:
@@ -608,7 +608,7 @@ instead of ``'1'`` and ``'0'``.
    :pep:`285` - Adding a bool type
       Written and implemented by GvR.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 293: Codec Error Handling Callbacks
@@ -640,7 +640,7 @@ characters and "xmlcharrefreplace" emits XML character references.
    :pep:`293` - Codec Error Handling Callbacks
       Written and implemented by Walter Dörwald.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-pep301:
@@ -689,7 +689,7 @@ register --list-classifiers``.
    :pep:`301` - Package Index and Metadata for Distutils
       Written and implemented by Richard Jones.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-pep302:
@@ -755,7 +755,7 @@ Pseudo-code for Python's new import logic, therefore, looks something like this
    :pep:`302` - New Import Hooks
       Written by Just van Rossum and Paul Moore. Implemented by Just van Rossum.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-pep305:
@@ -801,7 +801,7 @@ of tuples or lists, quoting strings that contain the delimiter.
       Written and implemented  by Kevin Altis, Dave Cole, Andrew McNamara, Skip
       Montanaro, Cliff Wells.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-pep307:
@@ -844,7 +844,7 @@ codes for private use.  Currently no codes have been specified.
    :pep:`307` - Extensions to the pickle protocol
       Written and implemented  by Guido van Rossum and Tim Peters.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-slices:
@@ -954,7 +954,7 @@ now the type object for the slice type, and is no longer a function.  This is
 consistent with Python 2.2, where :class:`int`, :class:`str`, etc., underwent
 the same change.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Other Language Changes
@@ -1042,8 +1042,6 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   objects available in the :mod:`types` module.) For example, you can create a new
   module object with the following code:
 
-  .. % XXX should new.py use PendingDeprecationWarning?
-
   ::
 
      >>> import types
@@ -1115,7 +1113,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   assigned to :attr:`__bases__` along the lines of those relating to assigning to
   an instance's :attr:`__class__` attribute.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 String Changes
@@ -1179,7 +1177,7 @@ String Changes
   the usual way when the only reference to them is from the internal dictionary of
   interned strings.  (Implemented by Oren Tirosh.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Optimizations
@@ -1211,7 +1209,7 @@ Optimizations
 The net result of the 2.3 optimizations is that Python 2.3 runs the  pystone
 benchmark around 25% faster than Python 2.2.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 New, Improved, and Deprecated Modules
@@ -1566,8 +1564,6 @@ complete list of changes, or look through the CVS logs for all the details.
   http://mail.python.org/pipermail/python-dev/2002-December/031107.html for a more
   detailed explanation of this change.  (Implemented by Martin von Löwis.)
 
-  .. % 
-
 * Calling Tcl methods through :mod:`_tkinter` no longer  returns only strings.
   Instead, if Tcl returns other objects those objects are converted to their
   Python equivalent, if one exists, or wrapped with a :class:`_tkinter.Tcl_Obj`
@@ -1671,7 +1667,7 @@ complete list of changes, or look through the CVS logs for all the details.
   To implement this change, the :mod:`stringprep` module, the  ``mkstringprep``
   tool and the ``punycode`` encoding have been added.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Date/Time Type
@@ -1726,7 +1722,7 @@ support for parsing strings and getting back a :class:`date` or
 For more information, refer to the module's reference documentation.
 (Contributed by Tim Peters.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 The optparse Module
@@ -1791,7 +1787,7 @@ See the module's documentation for more details.
 Optik was written by Greg Ward, with suggestions from the readers of the Getopt
 SIG.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-pymalloc:
@@ -1864,7 +1860,7 @@ and bundle it with the source of your extension.
       of the file :file:`Objects/obmalloc.c` in the Python source code.  The above
       link points to the file within the SourceForge CVS browser.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Build and C API Changes
@@ -1926,7 +1922,7 @@ Changes to Python's build process and to the C API include:
   the type name leading up to the final period will no longer have the desired
   effect.  For more detail, read the API reference documentation or the  source.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Port-Specific Changes
@@ -1952,7 +1948,7 @@ source distribution, were updated for 2.3.  (Contributed by Sean Reifschneider.)
 Other new platforms now supported by Python include AtheOS
 (http://www.atheos.cx/), GNU/Hurd, and OpenVMS.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-other:
@@ -2003,7 +1999,7 @@ Some of the more notable changes are:
   executed next.  A ``jump`` command has been added to the :mod:`pdb` debugger
   taking advantage of this new feature. (Implemented by Richie Hindle.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Porting to Python 2.3
@@ -2042,8 +2038,6 @@ code:
   desired upper bits. For example, to clear just the top bit (bit 31), you could
   write ``0xffffffffL &~(1L<<31)``.
 
-  .. % The empty groups below prevent conversion to guillemets.
-
 * You can no longer disable assertions by assigning to ``__debug__``.
 
 * The Distutils :func:`setup` function has gained various new keyword arguments
@@ -2065,7 +2059,7 @@ code:
 * Names of extension types defined by the modules included with Python now
   contain the module and a ``'.'`` in front of the type name.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _acks:

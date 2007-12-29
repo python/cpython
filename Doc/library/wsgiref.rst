@@ -29,7 +29,7 @@ to the WSGI specification (:pep:`333`).
 See http://www.wsgi.org for more information about WSGI, and links to tutorials
 and other resources.
 
-.. % XXX If you're just trying to write a web application...
+.. XXX If you're just trying to write a web application...
 
 
 :mod:`wsgiref.util` -- WSGI environment utilities

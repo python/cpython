@@ -290,7 +290,7 @@ are often more then is comfortable to put in one line, many people do::
       calculate_number(10, 20) != forbulate(500, 360):
          pass
 
-You should realize that this is dangerous: a stray space after the ``XXX`` would
+You should realize that this is dangerous: a stray space after the ``\`` would
 make this line wrong, and stray spaces are notoriously hard to see in editors.
 In this case, at least it would be a syntax error, but if the code was::
 

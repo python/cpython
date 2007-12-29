@@ -45,7 +45,7 @@ The :mod:`new` module defines the following functions:
 
    This function is an interface to the :cfunc:`PyCode_New` C function.
 
-   .. % XXX This is still undocumented!!!!!!!!!!!
+   .. XXX This is still undocumented!
 
 
 .. function:: module(name[, doc])

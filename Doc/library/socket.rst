@@ -568,7 +568,7 @@ correspond to Unix system calls applicable to sockets.
    file object and socket object may be closed or garbage-collected independently.
    The socket must be in blocking mode (it can not have a timeout). The optional
    *mode* and *bufsize* arguments are interpreted the same way as by the built-in
-   :func:`file` function; see :ref:`built-in-funcs` for more information.
+   :func:`file` function.
 
 
 .. method:: socket.recv(bufsize[, flags])

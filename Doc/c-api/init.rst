@@ -266,7 +266,7 @@ Initialization, Finalization, and Threads
    as the list ``sys.path``, which may be modified to change the future search path
    for loaded modules.
 
-   .. % XXX should give the exact rules
+   .. XXX should give the exact rules
 
 
 .. cfunction:: const char* Py_GetVersion()
@@ -361,8 +361,8 @@ Initialization, Finalization, and Threads
    to initialize ``sys.argv``, a fatal condition is signalled using
    :cfunc:`Py_FatalError`.
 
-   .. % XXX impl. doesn't seem consistent in allowing 0/NULL for the params;
-   .. % check w/ Guido.
+   .. XXX impl. doesn't seem consistent in allowing 0/NULL for the params;
+      check w/ Guido.
 
 
 .. _threads:

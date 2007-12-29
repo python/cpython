@@ -6,8 +6,8 @@
 
 .. |release| replace:: 1.01
 
-.. % $Id: whatsnew25.tex 56611 2007-07-29 08:26:10Z georg.brandl $
-.. % Fix XXX comments
+.. $Id: whatsnew25.tex 56611 2007-07-29 08:26:10Z georg.brandl $
+.. Fix XXX comments
 
 This article explains the new features in Python 2.5.  The final release of
 Python 2.5 is scheduled for August 2006; :pep:`356` describes the planned
@@ -45,7 +45,7 @@ and design rationale, refer to the PEP for a particular new feature.
 Comments, suggestions, and error reports for this document are welcome; please
 e-mail them to the author or open a bug in the Python bug tracker.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-308:
@@ -123,7 +123,7 @@ conditional expressions, you won't run into this case.
       PEP written by Guido van Rossum and Raymond D. Hettinger; implemented by Thomas
       Wouters.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-309:
@@ -201,7 +201,7 @@ example would be::
       PEP proposed and written by Peter Harris; implemented by Hye-Shik Chang and Nick
       Coghlan, with adaptations by Raymond Hettinger.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-314:
@@ -248,7 +248,7 @@ Package uploading was implemented by Martin von Löwis and Richard Jones.
       PEP proposed and written by A.M. Kuchling, Richard Jones, and Fred Drake;
       implemented by Richard Jones and Fred Drake.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-328:
@@ -333,7 +333,7 @@ statement, only the ``from ... import`` form.
    http://codespeak.net/py/current/doc/index.html
       The py library by Holger Krekel, which contains the :mod:`py.std` package.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-338:
@@ -359,7 +359,7 @@ archive.
    :pep:`338` - Executing modules as scripts
       PEP written and  implemented by Nick Coghlan.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-341:
@@ -407,7 +407,7 @@ in the *final-block* is still run.
    :pep:`341` - Unifying try-except and try-finally
       PEP written by Georg Brandl;  implementation by Thomas Lee.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-342:
@@ -553,7 +553,7 @@ exhausted.
    http://www.sidhe.org/~dan/blog/archives/000178.html
       An explanation of coroutines from a Perl point of view, written by Dan Sugalski.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-343:
@@ -803,7 +803,7 @@ bound to a variable, and calls ``object.close`` at the end of the block. ::
 
    The documentation  for the :mod:`contextlib` module.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-352:
@@ -862,7 +862,7 @@ to be able to remove the string-exception feature in a few releases.
    :pep:`352` - Required Superclass for Exceptions
       PEP written by  Brett Cannon and Guido van Rossum; implemented by Brett Cannon.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-353:
@@ -921,7 +921,7 @@ read to learn about supporting 64-bit platforms.
    :pep:`353` - Using ssize_t as the index type
       PEP written and implemented by Martin von Löwis.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _pep-357:
@@ -964,7 +964,7 @@ A corresponding :attr:`nb_index` slot was added to the C-level
    :pep:`357` - Allowing Any Object to be Used for Slicing
       PEP written  and implemented by Travis Oliphant.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _other-lang:
@@ -1024,7 +1024,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 
   (Implemented by Georg Brandl following a suggestion by Tom Lynn.)
 
-  .. % RFE #1491485
+  .. RFE #1491485
 
 * The :func:`min` and :func:`max` built-in functions gained a ``key`` keyword
   parameter analogous to the ``key`` argument for :meth:`sort`.  This parameter
@@ -1055,7 +1055,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
   return non-negative numbers, and users often seem to use ``id(self)`` in
   :meth:`__hash__` methods (though this is discouraged).
 
-  .. % Bug #1536021
+  .. Bug #1536021
 
 * ASCII is now the default encoding for modules.  It's now  a syntax error if a
   module contains string literals with 8-bit characters but doesn't have an
@@ -1106,7 +1106,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 
   (Implemented by Brett Cannon.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _interactive:
@@ -1129,7 +1129,7 @@ The Python executable now accepts the standard long options  :option:`--help`
 and :option:`--version`; on Windows,  it also accepts the :option:`/?` option
 for displaying a help message. (Implemented by Georg Brandl.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _opts:
@@ -1155,14 +1155,14 @@ marked in the following list.
   Andrew Dalke at the NeedForSpeed sprint. Character maps were improved by Walter
   Dörwald and Martin von Löwis.)
 
-  .. % Patch 1313939, 1359618
+  .. Patch 1313939, 1359618
 
 * The :func:`long(str, base)` function is now faster on long digit strings
   because fewer intermediate results are calculated.  The peak is for strings of
   around 800--1000 digits where  the function is 6 times faster. (Contributed by
   Alan McIntyre and committed at the NeedForSpeed sprint.)
 
-  .. % Patch 1442927
+  .. Patch 1442927
 
 * It's now illegal to mix iterating over a file  with ``for line in file`` and
   calling  the file object's :meth:`read`/:meth:`readline`/:meth:`readlines`
@@ -1172,7 +1172,7 @@ marked in the following list.
   methods will now trigger a :exc:`ValueError` from the :meth:`read\*` method.
   (Implemented by Thomas Wouters.)
 
-  .. % Patch 1397960
+  .. Patch 1397960
 
 * The :mod:`struct` module now compiles structure format  strings into an
   internal representation and caches this representation, yielding a 20% speedup.
@@ -1194,8 +1194,8 @@ marked in the following list.
   sprint.)  Frame objects are also slightly smaller, which may improve cache
   locality and reduce memory usage a bit.  (Contributed by Neal Norwitz.)
 
-  .. % Patch 876206
-  .. % Patch 1337051
+  .. Patch 876206
+  .. Patch 1337051
 
 * Python's built-in exceptions are now new-style classes, a change that speeds
   up instantiation considerably.  Exception handling in Python 2.5 is therefore
@@ -1206,9 +1206,9 @@ marked in the following list.
   that the interpreter makes fewer  :cfunc:`open` and :cfunc:`stat` calls on
   startup. (Contributed by Martin von Löwis and Georg Brandl.)
 
-  .. % Patch 921466
+  .. Patch 921466
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _modules:
@@ -1234,7 +1234,7 @@ complete list of changes, or look through the SVN logs for all the details.
   entire input was fed to the non-incremental codec. See the :mod:`codecs` module
   documentation for details. (Designed and implemented by Walter Dörwald.)
 
-  .. % Patch  1436130
+  .. Patch  1436130
 
 * The :mod:`collections` module gained a new type, :class:`defaultdict`, that
   subclasses the standard :class:`dict` type.  The new type mostly behaves like a
@@ -1331,12 +1331,12 @@ complete list of changes, or look through the SVN logs for all the details.
   easier to use non-ASCII characters in  tests contained within a docstring.
   (Contributed by Bjorn Tillenius.)
 
-  .. % Patch 1080727
+  .. Patch 1080727
 
 * The :mod:`email` package has been updated to version 4.0. (Contributed by
   Barry Warsaw.)
 
-  .. % XXX need to provide some more detail here
+  .. XXX need to provide some more detail here
 
 * The :mod:`fileinput` module was made more flexible. Unicode filenames are now
   supported, and a *mode* parameter that defaults to ``"r"`` was added to the
@@ -1394,7 +1394,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   (Contributed by Georg Brandl.)
 
-  .. % Patch 1180296
+  .. Patch 1180296
 
 * The :mod:`mailbox` module underwent a massive rewrite to add the capability to
   modify mailboxes in addition to reading them.  A new set of classes that include
@@ -1462,7 +1462,7 @@ complete list of changes, or look through the SVN logs for all the details.
   :attr:`st_birthtime`. The :attr:`st_flags` member is also available, if the
   platform supports it. (Contributed by Antti Louko and  Diego Pettenò.)
 
-  .. % (Patch 1180695, 1212117)
+  .. (Patch 1180695, 1212117)
 
 * The Python debugger provided by the :mod:`pdb` module can now store lists of
   commands to execute when a breakpoint is reached and execution stops.  Once
@@ -1471,7 +1471,7 @@ complete list of changes, or look through the SVN logs for all the details.
   include commands that resume execution, such as ``continue`` or ``next``.
   (Contributed by Grégoire Dooms.)
 
-  .. % Patch 790710
+  .. Patch 790710
 
 * The :mod:`pickle` and :mod:`cPickle` modules no longer accept a return value
   of ``None`` from the :meth:`__reduce__` method; the method must return a tuple
@@ -1512,14 +1512,14 @@ complete list of changes, or look through the SVN logs for all the details.
   :mod:`readline` module and therefore now works on non-Unix platforms. (Patch
   from Robert Kiendl.)
 
-  .. % Patch #1472854
+  .. Patch #1472854
 
 * The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now have a
   :attr:`rpc_paths` attribute that constrains XML-RPC operations to a limited set
   of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.  Setting
   :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path checking.
 
-  .. % Bug #1473048
+  .. Bug #1473048
 
 * The :mod:`socket` module now supports :const:`AF_NETLINK` sockets on Linux,
   thanks to a patch from Philippe Biondi.   Netlink sockets are a Linux-specific
@@ -1585,7 +1585,7 @@ complete list of changes, or look through the SVN logs for all the details.
   The compression used for a tarfile opened in stream mode can now be autodetected
   using the mode ``'r|*'``. (Contributed by Lars Gustäbel.)
 
-  .. % patch 918101
+  .. patch 918101
 
 * The :mod:`threading` module now lets you set the stack size used when new
   threads are created. The :func:`stack_size([*size*])` function returns the
@@ -1593,7 +1593,7 @@ complete list of changes, or look through the SVN logs for all the details.
   sets a new value.  Not all platforms support changing the stack size, but
   Windows, POSIX threading, and OS/2 all do. (Contributed by Andrew MacIntyre.)
 
-  .. % Patch 1454481
+  .. Patch 1454481
 
 * The :mod:`unicodedata` module has been updated to use version 4.1.0 of the
   Unicode character database.  Version 3.2.0 is required  by some specifications,
@@ -1643,29 +1643,29 @@ complete list of changes, or look through the SVN logs for all the details.
   of additional browsers were added to the supported list such as Firefox, Opera,
   Konqueror, and elinks.  (Contributed by Oleg Broytmann and Georg Brandl.)
 
-  .. % Patch #754022
+  .. Patch #754022
 
 * The :mod:`xmlrpclib` module now supports returning  :class:`datetime` objects
   for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`loads`
   function or the :class:`Unmarshaller` class to enable this feature. (Contributed
   by Skip Montanaro.)
 
-  .. % Patch 1120353
+  .. Patch 1120353
 
 * The :mod:`zipfile` module now supports the ZIP64 version of the  format,
   meaning that a .zip archive can now be larger than 4 GiB and can contain
   individual files larger than 4 GiB.  (Contributed by Ronald Oussoren.)
 
-  .. % Patch 1446489
+  .. Patch 1446489
 
 * The :mod:`zlib` module's :class:`Compress` and :class:`Decompress` objects now
   support a :meth:`copy` method that makes a copy of the  object's internal state
   and returns a new  :class:`Compress` or :class:`Decompress` object.
   (Contributed by Chris AtLee.)
 
-  .. % Patch 1435422
+  .. Patch 1435422
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _module-ctypes:
@@ -1746,7 +1746,7 @@ modules, now that :mod:`ctypes` is included with core Python.
 
    The documentation  for the :mod:`ctypes` module.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _module-etree:
@@ -1863,7 +1863,7 @@ read the package's official documentation for more details.
    http://effbot.org/zone/element-index.htm
       Official documentation for ElementTree.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _module-hashlib:
@@ -1917,7 +1917,7 @@ with the same digest state.
 
    The documentation  for the :mod:`hashlib` module.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _module-sqlite:
@@ -2026,7 +2026,7 @@ http://www.sqlite.org.
    :pep:`249` - Database API Specification 2.0
       PEP written by Marc-André Lemburg.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _module-wsgiref:
@@ -2039,7 +2039,7 @@ between web servers and Python web applications and is described in :pep:`333`.
 The :mod:`wsgiref` package is a reference implementation of the WSGI
 specification.
 
-.. % XXX should this be in a PEP 333 section instead?
+.. XXX should this be in a PEP 333 section instead?
 
 The package includes a basic HTTP server that will run a WSGI application; this
 server is useful for debugging but isn't intended for  production use.  Setting
@@ -2054,8 +2054,8 @@ up a server takes only a few lines of code::
    httpd = simple_server.make_server(host, port, wsgi_app)
    httpd.serve_forever()
 
-.. % XXX discuss structure of WSGI applications?
-.. % XXX provide an example using Django or some other framework?
+.. XXX discuss structure of WSGI applications?
+.. XXX provide an example using Django or some other framework?
 
 
 .. seealso::
@@ -2066,7 +2066,7 @@ up a server takes only a few lines of code::
    :pep:`333` - Python Web Server Gateway Interface v1.0
       PEP written by Phillip J. Eby.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _build-api:
@@ -2125,8 +2125,8 @@ Changes to Python's build process and to the C API include:
   Schemenauer, plus the participants in a number of AST sprints at conferences
   such as PyCon.
 
-  .. % List of names taken from Jeremy's python-dev post at
-  .. % http://mail.python.org/pipermail/python-dev/2005-October/057500.html
+  .. List of names taken from Jeremy's python-dev post at
+  .. http://mail.python.org/pipermail/python-dev/2005-October/057500.html
 
 * Evan Jones's patch to obmalloc, first described in a talk at PyCon DC 2005,
   was applied.  Python 2.4 allocated small objects in 256K-sized arenas, but never
@@ -2194,7 +2194,7 @@ Changes to Python's build process and to the C API include:
      range = PyObject_CallFunction((PyObject*) &PyRange_Type, "lll", 
                                    start, stop, step);
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _ports:
@@ -2214,7 +2214,7 @@ Port-Specific Changes
   extension modules.  :file:`.pyd` is now the only filename extension that will be
   searched for.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _porting:
@@ -2269,7 +2269,7 @@ code:
   allocated with  one family's :cfunc:`\*_Malloc` must be  freed with the
   corresponding family's :cfunc:`\*_Free` function.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _acks:

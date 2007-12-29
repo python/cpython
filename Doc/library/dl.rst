@@ -7,9 +7,6 @@
    :synopsis: Call C functions in shared objects.
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
-
-.. % ?????????? Anyone????????????
-
 The :mod:`dl` module defines an interface to the :cfunc:`dlopen` function, which
 is the most common interface on Unix platforms for handling dynamically linked
 libraries. It allows the program to call arbitrary functions in such a library.

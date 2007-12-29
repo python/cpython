@@ -7,9 +7,6 @@
 .. moduleauthor:: James C. Ahlstrom <jim@interet.com>
 .. sectionauthor:: James C. Ahlstrom <jim@interet.com>
 
-
-.. % LaTeX markup by Fred L. Drake, Jr. <fdrake@acm.org>
-
 .. versionadded:: 1.6
 
 The ZIP file format is a common archive and compression standard. This module

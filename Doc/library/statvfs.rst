@@ -1,4 +1,3 @@
-
 :mod:`statvfs` --- Constants used with :func:`os.statvfs`
 =========================================================
 
@@ -6,8 +5,6 @@
    :synopsis: Constants for interpreting the result of os.statvfs().
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
-
-.. % LaTeX'ed from comments in module
 
 The :mod:`statvfs` module defines constants so interpreting the result if
 :func:`os.statvfs`, which returns a tuple, can be made without remembering
