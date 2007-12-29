@@ -361,16 +361,15 @@ loops that truncate the stream.
    is equivalent to::
 
       def tee(iterable):
-          def gen(next, data={}, cnt=[0]):
+          def gen(next, data={}):
               for i in count():
-                  if i == cnt[0]:
-                      item = data[i] = next()
-                      cnt[0] += 1
+                  if i in data:
+                      yield data.pop(i)
                   else:
-                      item = data.pop(i)
-                  yield item
+                      data[i] = next()
+                      yield data[i]
           it = iter(iterable)
-          return (gen(it.next), gen(it.next))
+          return gen(it.next), gen(it.next)
 
    Note, once :func:`tee` has made a split, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without the tee
