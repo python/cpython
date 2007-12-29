@@ -8,7 +8,8 @@ A small number of constants live in the built-in namespace.  They are:
 .. note::
 
    :data:`None`, :data:`False`, :data:`True` and :data:`__debug__` cannot be
-   reassigned, so they can be considered "true" constants.
+   reassigned (assignments to them raise :exc:`SyntaxError`), so they can be
+   considered "true" constants.
 
 .. XXX False, True, None are keywords too
 
