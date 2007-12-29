@@ -6,7 +6,7 @@
 
 .. |release| replace:: 1.01
 
-.. % $Id: whatsnew21.tex 50964 2006-07-30 03:03:43Z fred.drake $
+.. $Id: whatsnew21.tex 50964 2006-07-30 03:03:43Z fred.drake $
 
 
 Introduction
@@ -29,7 +29,7 @@ January, 3 months after the final version of 2.0 was released.
 
 The final release of Python 2.1 was made on April 17, 2001.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 227: Nested Scopes
@@ -123,7 +123,7 @@ all of 2.1's lifetime to fix any breakage resulting from their introduction.
    :pep:`227` - Statically Nested Scopes
       Written and implemented by Jeremy Hylton.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 236: __future__ Directives
@@ -153,7 +153,7 @@ precede any statement that will result in bytecodes being produced.
    :pep:`236` - Back to the :mod:`__future__`
       Written by Tim Peters, and primarily implemented by Jeremy Hylton.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 207: Rich Comparisons
@@ -223,7 +223,7 @@ comparison.  I won't cover the C API here, but will refer you to PEP 207, or to
       Written by Guido van Rossum, heavily based on earlier work by David Ascher, and
       implemented by Guido van Rossum.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 230: Warning Framework
@@ -295,7 +295,7 @@ Functions were also added to Python's C API for issuing warnings; refer to PEP
    :pep:`230` - Warning Framework
       Written and implemented by Guido van Rossum.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 229: New Build System
@@ -335,7 +335,7 @@ simpler.
    :pep:`229` - Using Distutils to Build Python
       Written and implemented by A.M. Kuchling.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 205: Weak References
@@ -416,7 +416,7 @@ exists.  If the object is deallocated, attempting to use a proxy will cause a
    :pep:`205` - Weak References
       Written and implemented by Fred L. Drake, Jr.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 232: Function Attributes
@@ -454,7 +454,7 @@ that behaves like a mapping.
    :pep:`232` - Function Attributes
       Written and implemented by Barry Warsaw.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 235: Importing Modules on Case-Insensitive Platforms
@@ -472,7 +472,7 @@ is found, so ``import file`` will not import a module named ``FILE.PY``.  Case-
 insensitive matching can be requested by setting the :envvar:`PYTHONCASEOK`
 environment variable before starting the Python interpreter.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 217: Interactive Display Hook
@@ -502,7 +502,7 @@ printing function::
    :pep:`217` - Display Hook for Interactive Use
       Written and implemented by Moshe Zadka.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 208: New Coercion Model
@@ -534,7 +534,7 @@ object's numeric methods).
       Marc-André Lemburg.  Read this to understand the fine points of how numeric
       operations will now be processed at the C level.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 241: Metadata in Python Packages
@@ -574,7 +574,7 @@ available from  the Distutils SIG at http://www.python.org/sigs/distutils-sig/.
       Written by Sean Reifschneider, this draft PEP describes a proposed mechanism for
       uploading  Python packages to a central server.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 New and Improved Modules
@@ -677,7 +677,7 @@ New and Improved Modules
   implementation.  Use it for debugging, and resist the temptation to put it into
   production code.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Other Changes and Fixes
@@ -782,7 +782,7 @@ And there's the usual list of minor bugfixes, minor memory leaks, docstring
 edits, and other tweaks, too lengthy to be worth itemizing; see the CVS logs for
 the full details if you want them.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Acknowledgements

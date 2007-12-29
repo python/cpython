@@ -1,13 +1,9 @@
-
 :mod:`mhlib` --- Access to MH mailboxes
 =======================================
 
 .. module:: mhlib
    :synopsis: Manipulate MH mailboxes from Python.
-
-
-.. % LaTeX'ized from the comments in the module by Skip Montanaro
-.. % <skip@pobox.com>.
+.. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 The :mod:`mhlib` module provides a Python interface to MH folders and their
 contents.

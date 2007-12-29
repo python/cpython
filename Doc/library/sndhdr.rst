@@ -5,9 +5,7 @@
 .. module:: sndhdr
    :synopsis: Determine type of a sound file.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
-.. % Based on comments in the module source file.
+.. Based on comments in the module source file.
 
 .. index::
    single: A-LAW

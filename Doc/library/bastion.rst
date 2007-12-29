@@ -22,11 +22,11 @@ object.  It must always be used with the :mod:`rexec` module, in order to allow
 restricted-mode programs access to certain safe attributes of an object, while
 denying access to other, unsafe attributes.
 
-.. % I'm concerned that the word 'bastion' won't be understood by people
-.. % for whom English is a second language, making the module name
-.. % somewhat mysterious.  Thus, the brief definition... --amk
+.. I'm concerned that the word 'bastion' won't be understood by people
+.. for whom English is a second language, making the module name
+.. somewhat mysterious.  Thus, the brief definition... --amk
 
-.. % I've punted on the issue of documenting keyword arguments for now.
+.. I've punted on the issue of documenting keyword arguments for now.
 
 
 .. function:: Bastion(object[, filter[, name[, class]]])

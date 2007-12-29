@@ -7,9 +7,6 @@
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Michael Hudson <mwh@python.net>
 
-
-.. % LaTeXed from excellent doc-string.
-
 The :mod:`codeop` module provides utilities upon which the Python
 read-eval-print loop can be emulated, as is done in the :mod:`code` module.  As
 a result, you probably don't want to use the module directly; if you want to
@@ -28,7 +25,6 @@ The :mod:`codeop` module provides a way of doing each of these things, and a way
 of doing them both.
 
 To do just the former:
-
 
 .. function:: compile_command(source[, filename[, symbol]])
 

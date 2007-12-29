@@ -6,9 +6,7 @@
    :platform: Mac
    :synopsis: Conversion between Python variables and AppleEvent data containers.
 .. sectionauthor:: Vincent Marchetti <vincem@en.com>
-
-
-.. % \moduleauthor{Jack Jansen?}{email}
+.. moduleauthor:: Jack Jansen
 
 The :mod:`aepack` module defines functions for converting (packing) Python
 variables to AppleEvent descriptors and back (unpacking). Within Python the

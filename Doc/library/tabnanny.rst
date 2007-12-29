@@ -8,9 +8,7 @@
 .. moduleauthor:: Tim Peters <tim_one@users.sourceforge.net>
 .. sectionauthor:: Peter Funk <pf@artcom-gmbh.de>
 
-
-.. % rudimentary documentation based on module comments, by Peter Funk
-.. % <pf@artcom-gmbh.de>
+.. rudimentary documentation based on module comments
 
 For the time being this module is intended to be called as a script. However it
 is possible to import it into an IDE and use the function :func:`check`
@@ -55,16 +53,11 @@ described below.
    This function is used by :func:`check` as a callback parameter to the function
    :func:`tokenize.tokenize`.
 
-.. % XXX FIXME: Document \function{errprint},
-.. % \function{format_witnesses} \class{Whitespace}
-.. % check_equal, indents
-.. % \function{reset_globals}
+.. XXX document errprint, format_witnesses, Whitespace, check_equal, indents,
+   reset_globals
 
 
 .. seealso::
 
    Module :mod:`tokenize`
       Lexical scanner for Python source code.
-
-   .. % XXX may be add a reference to IDLE?
-

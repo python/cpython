@@ -6,7 +6,7 @@
 
 .. |release| replace:: 1.02
 
-.. % $Id: whatsnew22.tex 37315 2004-09-10 19:33:00Z akuchling $
+.. $Id: whatsnew22.tex 37315 2004-09-10 19:33:00Z akuchling $
 
 
 Introduction
@@ -36,7 +36,7 @@ to the PEP for a particular new feature.
       "What's So Special About Python 2.2?" is also about the new 2.2 features, and
       was written by Cameron Laird and Kathryn Soraiz.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEPs 252 and 253: Type and Class Changes
@@ -414,7 +414,7 @@ for the type handling is in :file:`Objects/typeobject.c`, but you should only
 resort to it after all other avenues have been exhausted, including posting a
 question to python-list or python-dev.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 234: Iterators
@@ -535,7 +535,7 @@ requires a :meth:`next` method.
       Written by Ka-Ping Yee and GvR; implemented  by the Python Labs crew, mostly by
       GvR and Tim Peters.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 255: Simple Generators
@@ -662,7 +662,7 @@ a data structure.
       Written by Neil Schemenauer, Tim Peters, Magnus Lie Hetland.  Implemented mostly
       by Neil Schemenauer and Tim Peters, with other fixes from the Python Labs crew.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 237: Unifying Long Integers and Integers
@@ -702,7 +702,7 @@ rarely needed.
       Written by Moshe Zadka and Guido van Rossum.  Implemented mostly by Guido van
       Rossum.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 238: Changing the Division Operator
@@ -770,7 +770,7 @@ Here are the changes 2.2 introduces:
    :pep:`238` - Changing the Division Operator
       Written by Moshe Zadka and  Guido van Rossum.  Implemented by Guido van Rossum..
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Unicode Changes
@@ -832,7 +832,7 @@ implemented by Fredrik Lundh and Martin von Löwis.
    :pep:`261` - Support for 'wide' Unicode characters
       Written by Paul Prescod.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 227: Nested Scopes
@@ -927,7 +927,7 @@ anyway).
    :pep:`227` - Statically Nested Scopes
       Written and implemented by Jeremy Hylton.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 New and Improved Modules
@@ -1042,7 +1042,7 @@ New and Improved Modules
   scheduling an activity to happen at some future time.  (Contributed by Itamar
   Shtull-Trauring.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Interpreter Changes and Fixes
@@ -1122,7 +1122,7 @@ code, none of the changes described here will affect you very much.
   takes 2 parameters instead of 3.  The third argument was never used, and can
   simply be discarded when porting code from earlier versions to Python 2.2.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Other Changes and Fixes
@@ -1155,23 +1155,23 @@ Some of the more notable changes are:
   left commented out in :file:`setup.py`.  People who want to experiment with
   these modules can uncomment them manually.
 
-  .. % Jack's original comments:
-  .. % The main change is the possibility to build Python as a
-  .. % framework. This installs a self-contained Python installation plus the
-  .. % OSX framework "glue" into /Library/Frameworks/Python.framework (or
-  .. % another location of choice). For now there is little immedeate added
-  .. % benefit to this (actually, there is the disadvantage that you have to
-  .. % change your PATH to be able to find Python), but it is the basis for
-  .. % creating a fullblown Python application, porting the MacPython IDE,
-  .. % possibly using Python as a standard OSA scripting language and much
-  .. % more. You enable this with "configure --enable-framework".
-  .. % The other change is that most MacPython toolbox modules, which
-  .. % interface to all the MacOS APIs such as windowing, quicktime,
-  .. % scripting, etc. have been ported. Again, most of these are not of
-  .. % immedeate use, as they need a full application to be really useful, so
-  .. % they have been commented out in setup.py. People wanting to experiment
-  .. % can uncomment them. Gestalt and Internet Config modules are enabled by
-  .. % default.
+  .. Jack's original comments:
+     The main change is the possibility to build Python as a
+     framework. This installs a self-contained Python installation plus the
+     OSX framework "glue" into /Library/Frameworks/Python.framework (or
+     another location of choice). For now there is little immedeate added
+     benefit to this (actually, there is the disadvantage that you have to
+     change your PATH to be able to find Python), but it is the basis for
+     creating a fullblown Python application, porting the MacPython IDE,
+     possibly using Python as a standard OSA scripting language and much
+     more. You enable this with "configure --enable-framework".
+     The other change is that most MacPython toolbox modules, which
+     interface to all the MacOS APIs such as windowing, quicktime,
+     scripting, etc. have been ported. Again, most of these are not of
+     immedeate use, as they need a full application to be really useful, so
+     they have been commented out in setup.py. People wanting to experiment
+     can uncomment them. Gestalt and Internet Config modules are enabled by
+     default.
 
 * Keyword arguments passed to builtin functions that don't take them now cause a
   :exc:`TypeError` exception to be raised, with the message "*function* takes no
@@ -1253,7 +1253,7 @@ Some of the more notable changes are:
   unpredictably depending on the platform.  A call such as ``pow(2.0, 8.0, 7.0)``
   will now raise a :exc:`TypeError` exception.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Acknowledgements

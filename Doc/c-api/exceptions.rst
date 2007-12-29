@@ -37,8 +37,8 @@ Python variables ``sys.exc_type``, ``sys.exc_value`` and ``sys.exc_traceback``.
 API functions exist to interact with the error indicator in various ways.  There
 is a separate error indicator for each thread.
 
-.. % XXX Order of these should be more thoughtful.
-.. % Either alphabetical or some kind of structure.
+.. XXX Order of these should be more thoughtful.
+   Either alphabetical or some kind of structure.
 
 
 .. cfunction:: void PyErr_Print()

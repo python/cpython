@@ -4,15 +4,10 @@
 
 .. module:: poplib
    :synopsis: POP3 protocol client (requires sockets).
-
+.. sectionauthor:: Andrew T. Csillag
+.. revised by ESR, January 2000
 
 .. index:: pair: POP3; protocol
-
-.. % By Andrew T. Csillag
-.. % Even though I put it into LaTeX, I cannot really claim that I wrote
-.. % it since I just stole most of it from the poplib.py source code and
-.. % the imaplib ``chapter''.
-.. % Revised by ESR, January 2000
 
 This module defines a class, :class:`POP3`, which encapsulates a connection to a
 POP3 server and implements the protocol as defined in :rfc:`1725`.  The

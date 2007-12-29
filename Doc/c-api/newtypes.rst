@@ -476,7 +476,7 @@ type objects) *must* have the :attr:`ob_size` field.
    declare the instance struct) and this in turn includes the :attr:`_ob_prev` and
    :attr:`_ob_next` fields if they are present.  This means that the only correct
    way to get an initializer for the :attr:`tp_basicsize` is to use the
-   :keyword:`sizeof` operator on the struct used to declare the instance layout.
+   ``sizeof`` operator on the struct used to declare the instance layout.
    The basic size does not include the GC header size (this is new in Python 2.2;
    in 2.1 and 2.0, the GC header size was included in :attr:`tp_basicsize`).
 
@@ -1175,7 +1175,7 @@ The next fields, up to and including :attr:`tp_weaklist`, only exist if the
 
       PyObject * tp_descr_get(PyObject *self, PyObject *obj, PyObject *type);
 
-   XXX blah, blah.
+   XXX explain.
 
    This field is inherited by subtypes.
 
@@ -1190,7 +1190,7 @@ The next fields, up to and including :attr:`tp_weaklist`, only exist if the
 
    This field is inherited by subtypes.
 
-   XXX blah, blah.
+   XXX explain.
 
 
 .. cmember:: long PyTypeObject.tp_dictoffset
@@ -1734,10 +1734,9 @@ member in the :ctype:`PyTypeObject` structure should be *NULL*.  Otherwise, the
    and :exc:`SystemError` should be raised when *segment* specifies a segment that
    doesn't exist.
 
-   .. % Why doesn't it raise ValueError for this one?
-   .. % GJS: because you shouldn't be calling it with an invalid
-   .. % segment. That indicates a blatant programming error in the C
-   .. % code.
+   .. Why doesn't it raise ValueError for this one?
+      GJS: because you shouldn't be calling it with an invalid
+      segment. That indicates a blatant programming error in the C code.
 
 
 .. ctype:: Py_ssize_t (*segcountproc) (PyObject *self, Py_ssize_t *lenp)

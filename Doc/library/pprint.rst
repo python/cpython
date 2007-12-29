@@ -27,7 +27,7 @@ width constraint.
 
 The :mod:`pprint` module defines one class:
 
-.. % First the implementation class:
+.. First the implementation class:
 
 
 .. class:: PrettyPrinter(...)
@@ -68,8 +68,7 @@ The :mod:`pprint` module defines one class:
 
 The :class:`PrettyPrinter` class supports several derivative functions:
 
-.. % Now the derivative functions:
-
+.. Now the derivative functions:
 
 .. function:: pformat(object[, indent[, width[, depth]]])
 
@@ -130,9 +129,6 @@ One more support function is also defined:
    structures.  If the representation of *object* exposes a recursive entry, the
    recursive reference will be represented as ``<Recursion on typename with
    id=number>``.  The representation is not otherwise formatted.
-
-.. % This example is outside the {funcdesc} to keep it from running over
-.. % the right margin.
 
 ::
 

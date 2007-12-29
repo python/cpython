@@ -154,25 +154,35 @@ These changes to information units should be noted:
 
         Description.
 
-* **New information unit**
+* **New information units**
 
-  There is a new generic information unit called "describe" which can be used
-  to document things that are not covered by the other units::
+  There are new generic information units: One is called "describe" and can be
+  used to document things that are not covered by the other units::
 
      .. describe:: a == b
 
         The equals operator.
 
+  The others are::
+
+     .. cmdoption:: -O
+
+        Describes a command-line option.
+
+     .. envvar:: PYTHONINSPECT
+
+        Describes an environment variable.
+
 
 Structure
 ---------
 
-The LaTeX docs were split in several toplevel manuals.  Now, all files
-are part of the same documentation tree, as indicated by the *toctree*
-directives in the sources.  Every *toctree* directive embeds other files
-as subdocuments of the current file (this structure is not necessarily
-mirrored in the filesystem layout).  The toplevel file is
-:file:`contents.rst`.
+The LaTeX docs were split in several toplevel manuals.  Now, all files are part
+of the same documentation tree, as indicated by the *toctree* directives in the
+sources (though individual output formats may choose to split them up into parts
+again).  Every *toctree* directive embeds other files as subdocuments of the
+current file (this structure is not necessarily mirrored in the filesystem
+layout).  The toplevel file is :file:`contents.rst`.
 
 However, most of the old directory structure has been kept, with the
 directories renamed as follows:
@@ -184,7 +194,7 @@ directories renamed as follows:
 * :file:`inst` -> :file:`installing`
 * :file:`lib` -> :file:`library`
 * :file:`mac` -> merged into :file:`library`, with :file:`mac/using.tex`
-  moved to :file:`howto/pythonmac.rst`
+  moved to :file:`using/mac.rst`
 * :file:`ref` -> :file:`reference`
 * :file:`tut` -> :file:`tutorial`, with the single TeX file split up
 

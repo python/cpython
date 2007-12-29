@@ -316,8 +316,6 @@ indicates an error, the method raises one of the above exceptions.
    is supplied, then the returned *list* is an empty list. This is an optional NNTP
    extension, and may not be supported by all servers.
 
-   .. % XXX huh?  Should that be name, description?
-
    RFC2980 says "It is suggested that this extension be deprecated".  Use
    :meth:`descriptions` or :meth:`description` instead.
 

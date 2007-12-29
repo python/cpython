@@ -302,11 +302,11 @@ http://www.pythonology.com/success
    The Python Success Stories are a collection of stories from successful users of
    Python, with the emphasis on business and corporate users.
 
-.. % \term{\url{http://www.fsbassociates.com/books/pythonchpt1.htm}}
-.. % The first chapter of \emph{Internet Programming with Python} also
-.. % examines some of the reasons for using Python.  The book is well worth
-.. % buying, but the publishers have made the first chapter available on
-.. % the Web.
+.. http://www.fsbassociates.com/books/pythonchpt1.htm
+   The first chapter of \emph{Internet Programming with Python} also
+   examines some of the reasons for using Python.  The book is well worth
+   buying, but the publishers have made the first chapter available on
+   the Web.
 
 http://home.pacbell.net/ouster/scripting.html
    John Ousterhout's white paper on scripting is a good argument for the utility of
@@ -333,9 +333,9 @@ http://pythonjournal.cognizor.com/pyj1/Everitt-Feit_interview98-V1.html
    to show that choosing Python didn't introduce any difficulties into a company's
    development process, and provided some substantial benefits.
 
-.. % \term{\url{http://www.python.org/psa/Commercial.html}}
-.. % Robin Friedrich wrote this document on how to support Python's use in
-.. % commercial projects.
+.. http://www.python.org/psa/Commercial.html
+   Robin Friedrich wrote this document on how to support Python's use in
+   commercial projects.
 
 http://www.python.org/workshops/1997-10/proceedings/stein.ps
    For the 6th Python conference, Greg Stein presented a paper that traced Python's

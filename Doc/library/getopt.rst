@@ -9,12 +9,10 @@
 
 This module helps scripts to parse the command line arguments in ``sys.argv``.
 It supports the same conventions as the Unix :cfunc:`getopt` function (including
-the special meanings of arguments of the form '``-``' and '``-``\ ``-``'). Long
+the special meanings of arguments of the form '``-``' and '``--``').  Long
 options similar to those supported by GNU software may be used as well via an
 optional third argument. This module provides a single function and an
 exception:
-
-.. % That's to fool latex2html into leaving the two hyphens alone!
 
 
 .. function:: getopt(args, options[, long_options])

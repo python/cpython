@@ -78,16 +78,11 @@ The :mod:`jpeg` module defines an exception and some functions.
    |                 | decompression.                              |
    +-----------------+---------------------------------------------+
 
-   .. % 
-   .. % 
-   .. % 
-   .. % 
-
 
 .. seealso::
 
    JPEG Still Image Data Compression Standard
-      The  canonical reference for the JPEG image format, by Pennebaker and Mitchell.
+      The canonical reference for the JPEG image format, by Pennebaker and Mitchell.
 
    `Information Technology - Digital Compression and Coding of Continuous-tone Still Images - Requirements and Guidelines <http://www.w3.org/Graphics/JPEG/itu-t81.pdf>`_
       The ISO standard for JPEG is also published as ITU T.81.  This is available

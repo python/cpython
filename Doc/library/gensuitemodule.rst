@@ -6,9 +6,7 @@
    :platform: Mac
    :synopsis: Create a stub package from an OSA dictionary
 .. sectionauthor:: Jack Jansen <Jack.Jansen@cwi.nl>
-
-
-.. % \moduleauthor{Jack Jansen?}{email}
+.. moduleauthor:: Jack Jansen
 
 The :mod:`gensuitemodule` module creates a Python package implementing stub code
 for the AppleScript suites that are implemented by a specific application,

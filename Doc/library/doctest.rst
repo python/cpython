@@ -731,12 +731,7 @@ even a single character doesn't match, the test fails.  This will probably
 surprise you a few times, as you learn exactly what Python does and doesn't
 guarantee about output.  For example, when printing a dict, Python doesn't
 guarantee that the key-value pairs will be printed in any particular order, so a
-test like
-
-.. % Hey! What happened to Monty Python examples?
-.. % Tim: ask Guido -- it's his example!
-
-::
+test like ::
 
    >>> foo()
    {"Hermione": "hippogryph", "Harry": "broomstick"}

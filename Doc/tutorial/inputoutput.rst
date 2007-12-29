@@ -178,11 +178,9 @@ Reading and Writing Files
 :func:`open` returns a file object, and is most commonly used with two
 arguments: ``open(filename, mode)``.
 
-.. % Opening files
-
 ::
 
-   >>> f=open('/tmp/workfile', 'w')
+   >>> f = open('/tmp/workfile', 'w')
    >>> print f
    <open file '/tmp/workfile', mode 'w' at 80a0960>
 

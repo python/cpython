@@ -5,7 +5,6 @@ Other Graphical User Interface Packages
 
 There are an number of extension widget sets to :mod:`Tkinter`.
 
-
 .. seealso::
 
    `Python megawidgets <http://pmw.sourceforge.net/>`_
@@ -29,11 +28,9 @@ There are an number of extension widget sets to :mod:`Tkinter`.
       since they can operate directly on Python data structures, without having to
       transfer data through the Tk/Tcl layer.
 
-      .. % 
 
 The major cross-platform (Windows, Mac OS X, Unix-like) GUI toolkits that are
 also available for Python:
-
 
 .. seealso::
 

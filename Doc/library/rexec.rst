@@ -182,7 +182,7 @@ And their equivalents with access to restricted standard I/O streams:
 
    Unload the module object *module*.
 
-   .. % XXX what are the semantics of this?
+   .. XXX what are the semantics of this?
 
 
 .. _rexec-extension:
@@ -232,7 +232,7 @@ new values.  All these attributes are tuples of strings.
    'times', 'uname', 'getpid', 'getppid', 'getcwd', 'getuid', 'getgid', 'geteuid',
    'getegid')``.
 
-   .. % Should this be called ok_os_names?
+   .. Should this be called ok_os_names?
 
 
 .. attribute:: RExec.ok_sys_names
@@ -285,6 +285,3 @@ apart the filename and performing various operations on it.  In cases where
 security is at stake, it may be preferable to write simple code which is
 sometimes overly restrictive, instead of more general code that is also more
 complex and may harbor a subtle security hole.
-
-.. % 
-

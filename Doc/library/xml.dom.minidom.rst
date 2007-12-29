@@ -214,11 +214,11 @@ rules apply:
 
 * Operations are used as methods. Since the DOM uses only :keyword:`in`
   parameters, the arguments are passed in normal order (from left to right).
-  There are no optional arguments. :keyword:`void` operations return ``None``.
+  There are no optional arguments. ``void`` operations return ``None``.
 
 * IDL attributes map to instance attributes. For compatibility with the OMG IDL
   language mapping for Python, an attribute ``foo`` can also be accessed through
-  accessor methods :meth:`_get_foo` and :meth:`_set_foo`.  :keyword:`readonly`
+  accessor methods :meth:`_get_foo` and :meth:`_set_foo`.  ``readonly``
   attributes must not be changed; this is not enforced at runtime.
 
 * The types ``short int``, ``unsigned int``, ``unsigned long long``, and
@@ -229,7 +229,7 @@ rules apply:
   Values of type ``DOMString`` may also be ``None`` where allowed to have the IDL
   ``null`` value by the DOM specification from the W3C.
 
-* :keyword:`const` declarations map to variables in their respective scope (e.g.
+* ``const`` declarations map to variables in their respective scope (e.g.
   ``xml.dom.minidom.Node.PROCESSING_INSTRUCTION_NODE``); they must not be changed.
 
 * ``DOMException`` is currently not supported in :mod:`xml.dom.minidom`.

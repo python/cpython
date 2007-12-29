@@ -141,7 +141,7 @@ documentation:
    call :func:`fl.qread` to read the event from the queue.  Don't use the
    equivalent GL functions!
 
-   .. % \funcline{blkqread}{?}
+   .. \funcline{blkqread}{?}
 
 
 .. function:: color()
@@ -227,8 +227,6 @@ here.
 
    Find the last object in the form.
 
-.. % ---
-
 
 .. method:: form.add_box(type, x, y, w, h, name)
 
@@ -239,16 +237,14 @@ here.
 
    Add a text object to the form. No extra methods.
 
-.. % \begin{methoddesc}[form]{add_bitmap}{type, x, y, w, h, name}
-.. % Add a bitmap object to the form.
-.. % \end{methoddesc}
+.. \begin{methoddesc}[form]{add_bitmap}{type, x, y, w, h, name}
+.. Add a bitmap object to the form.
+.. \end{methoddesc}
 
 
 .. method:: form.add_clock(type, x, y, w, h, name)
 
    Add a clock object to the form.  ---  Method: :meth:`get_clock`.
-
-.. % ---
 
 
 .. method:: form.add_button(type, x, y, w, h,  name)
@@ -267,8 +263,6 @@ here.
 
    Add a roundbutton object to the form.  ---  Methods: :meth:`get_button`,
    :meth:`set_button`.
-
-.. % ---
 
 
 .. method:: form.add_slider(type, x, y, w, h, name)
@@ -308,15 +302,11 @@ here.
    :meth:`get_counter_value`, :meth:`set_counter_bounds`, :meth:`set_counter_step`,
    :meth:`set_counter_precision`, :meth:`set_counter_return`.
 
-.. % ---
-
 
 .. method:: form.add_input(type, x, y, w, h, name)
 
    Add a input object to the form.  ---  Methods: :meth:`set_input`,
    :meth:`get_input`, :meth:`set_input_color`, :meth:`set_input_return`.
-
-.. % ---
 
 
 .. method:: form.add_menu(type, x, y, w, h, name)
@@ -344,8 +334,6 @@ here.
    :meth:`isselected_browser_line`, :meth:`get_browser`,
    :meth:`set_browser_fontsize`, :meth:`set_browser_fontstyle`,
    :meth:`set_browser_specialkey`.
-
-.. % ---
 
 
 .. method:: form.add_timer(type, x, y, w, h, name)
@@ -428,10 +416,10 @@ also have the following methods:
 
 FORMS objects have these data attributes; see the FORMS documentation:
 
-.. % \begin{methoddesc}[FORMS object]{handle_object}{} XXX
-.. % \end{methoddesc}
-.. % \begin{methoddesc}[FORMS object]{handle_object_direct}{} XXX
-.. % \end{methoddesc}
+.. \begin{methoddesc}[FORMS object]{handle_object}{} XXX
+.. \end{methoddesc}
+.. \begin{methoddesc}[FORMS object]{handle_object_direct}{} XXX
+.. \end{methoddesc}
 
 +--------------------+-----------------+------------------+
 | Name               | C Type          | Meaning          |

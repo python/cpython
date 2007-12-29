@@ -11,18 +11,11 @@ with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
 
-.. % 
-.. % \footnote{
-.. % I'd prefer to use different fonts to distinguish input
-.. % from output, but the amount of LaTeX hacking that would require
-.. % is currently beyond my ability.
-.. % }
-
 Many of the examples in this manual, even those entered at the interactive
 prompt, include comments.  Comments in Python start with the hash character,
-``'#'``, and extend to the end of the physical line.  A comment may appear at
+``#``, and extend to the end of the physical line.  A comment may appear at
 the start of a line or following whitespace or code, but not within a string
-literal.  A hash  character within a string literal is just a hash character.
+literal.  A hash character within a string literal is just a hash character.
 
 Some examples::
 
@@ -642,5 +635,3 @@ This example introduces several new features.
 
   Note that the interpreter inserts a newline before it prints the next prompt if
   the last line was not completed.
-
-

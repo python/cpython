@@ -93,7 +93,7 @@ reset them before monitoring a calculation.
    * IEEE standard 854-1987, `Unofficial IEEE 854 Text
      <http://www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html>`_.
 
-.. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+.. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 .. _decimal-tutorial:
@@ -268,7 +268,7 @@ a single cast inside a loop.  With context set and decimals created, the bulk of
 the program manipulates the data no differently than with other Python numeric
 types.
 
-.. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+.. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 .. _decimal-decimal:
@@ -279,7 +279,7 @@ Decimal objects
 
 .. class:: Decimal([value [, context]])
 
-   Constructs a new :class:`Decimal` object based from *value*.
+   Construct a new :class:`Decimal` object based from *value*.
 
    *value* can be an integer, string, tuple, or another :class:`Decimal` object. If
    no *value* is given, returns ``Decimal("0")``.  If *value* is a string, it
@@ -538,7 +538,7 @@ also have a number of specialized methods:
 
    .. versionadded:: 2.6
 
-.. method:  Decimal.logb([context])
+.. method:: Decimal.logb([context])
 
    For a nonzero number, return the adjusted exponent of its operand
    as a :class:`Decimal` instance.  If the operand is a zero then
@@ -659,7 +659,7 @@ also have a number of specialized methods:
 
 .. method:: Decimal.quantize(exp[, rounding[, context[, watchexp]]])
 
-   Returns a value equal to the first operand after rounding and
+   Return a value equal to the first operand after rounding and
    having the exponent of the second operand.
 
    >>> Decimal("1.41421356").quantize(Decimal("1.000"))
@@ -680,8 +680,8 @@ also have a number of specialized methods:
    the given ``context`` argument; if neither argument is given the
    rounding mode of the current thread's context is used.
 
-   If watchexp is set (default), then an error is returned whenever 
-   the resulting exponent is greater than Emax or less than Etiny.
+   If *watchexp* is set (default), then an error is returned whenever the
+   resulting exponent is greater than :attr:`Emax` or less than :attr:`Etiny`.
 
 .. method:: Decimal.radix()
 
@@ -693,7 +693,7 @@ also have a number of specialized methods:
 
 .. method:: Decimal.remainder_near(other[, context])
 
-   Computes the modulo as either a positive or negative value depending on which is
+   Compute the modulo as either a positive or negative value depending on which is
    closest to zero.  For instance, ``Decimal(10).remainder_near(6)`` returns
    ``Decimal("-2")`` which is closer to zero than ``Decimal("4")``.
 
@@ -759,7 +759,7 @@ also have a number of specialized methods:
 
 .. method:: Decimal.to_integral_exact([rounding[, context]])
 
-   Round the argument to the nearest integer, signaling
+   Round to the nearest integer, signaling
    :const:`Inexact` or :const:`Rounded` as appropriate if rounding
    occurs.  The rounding mode is determined by the ``rounding``
    parameter if given, else by the given ``context``.  If neither
@@ -770,7 +770,7 @@ also have a number of specialized methods:
 
 .. method:: Decimal.to_integral_value([rounding[, context]])
 
-   Rounds to the nearest integer without signaling :const:`Inexact` or
+   Round to the nearest integer without signaling :const:`Inexact` or
    :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the rounding
    method in either the supplied *context* or the current context.
 
@@ -780,7 +780,7 @@ also have a number of specialized methods:
 
 .. method:: Decimal.trim()
 
-   Returns its argument with *insignificant* trailing zeros removed.
+   Return the decimal with *insignificant* trailing zeros removed.
    Here, a trailing zero is considered insignificant either if it
    follows the decimal point, or if the exponent of the argument (that
    is, the last element of the :meth:`as_tuple` representation) is
@@ -799,7 +799,7 @@ operands*.  A *logical operand* is a :class:`Decimal` instance whose
 exponent and sign are both zero, and whose digits are all either
 :const:`0` or :const:`1`.
 
-.. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+.. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 .. _decimal-context:
@@ -1075,7 +1075,7 @@ those for the :class:`Decimal` class and are only briefly recounted here.
 
    Converts a number to a string using scientific notation.
 
-.. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+.. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 .. _decimal-signals:
@@ -1196,7 +1196,7 @@ The following table summarizes the hierarchy of signals::
            Rounded
            Subnormal
 
-.. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+.. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 .. _decimal-notes:
@@ -1293,7 +1293,7 @@ the following calculation returns a value equal to zero::
    >>> 1 / Decimal('Infinity')
    Decimal("0E-1000000026")
 
-.. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+.. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 .. _decimal-threads:
@@ -1331,7 +1331,7 @@ threads calling :func:`getcontext`. For example::
    t3.start()
     . . .
 
-.. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+.. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 .. _decimal-recipes:
@@ -1487,7 +1487,7 @@ to work with the :class:`Decimal` class::
        return +s
 
 
-.. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+.. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 .. _decimal-faq:

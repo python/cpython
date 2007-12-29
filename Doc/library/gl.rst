@@ -65,7 +65,7 @@ The following functions are non-standard or have special argument conventions:
    converted to 3D double precision points by assuming ``z = 0.0`` if necessary (as
    indicated in the man page), and for each point ``v3d()`` is called.
 
-   .. % JHXXX the argument-argument added
+   .. XXX the argument-argument added
 
 
 .. function:: nvarray()
@@ -89,7 +89,7 @@ The following functions are non-standard or have special argument conventions:
    Defines a nurbs surface. The dimensions of ``ctl[][]`` are computed as follows:
    ``[len(s_k) - s_ord]``, ``[len(t_k) - t_ord]``.
 
-   .. % XXX s_k[], t_k[], ctl[][]
+   .. XXX s_k[], t_k[], ctl[][]
 
 
 .. function:: nurbscurve(knots, ctlpoints, order, type)

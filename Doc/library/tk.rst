@@ -36,8 +36,8 @@ libraries, see the :ref:`other-gui-packages` section.
    idle.rst
    othergui.rst
 
-.. % Other sections I have in mind are
-.. % Tkinter internals
-.. % Freezing Tkinter applications
+.. Other sections I have in mind are
+   Tkinter internals
+   Freezing Tkinter applications
 
 

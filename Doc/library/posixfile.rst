@@ -1,6 +1,3 @@
-.. % Manual text and implementation by Jaap Vermeulen
-
-
 :mod:`posixfile` --- File-like objects with locking support
 ===========================================================
 
@@ -15,8 +12,6 @@
 .. index:: pair: POSIX; file object
 
 .. deprecated:: 1.5
-   .. index:: single: lockf() (in module fcntl)
-
    The locking operation that this module provides is done better and more portably
    by the :func:`fcntl.lockf` call.
 
@@ -28,8 +23,6 @@ flags, and an easy interface to duplicate the file object. The module defines a
 new file object, the posixfile object.  It has all the standard file object
 methods and adds the methods described below.  This module only works for
 certain flavors of Unix, since it uses :func:`fcntl.fcntl` for file locking.
-
-.. % 
 
 To instantiate a posixfile object, use the :func:`open` function in the
 :mod:`posixfile` module.  The resulting object looks and feels roughly the same

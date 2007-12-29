@@ -1,6 +1,3 @@
-.. % XXX what order should the types be discussed in?
-
-
 :mod:`datetime` --- Basic date and time types
 =============================================
 
@@ -10,6 +7,7 @@
 .. sectionauthor:: Tim Peters <tim@zope.com>
 .. sectionauthor:: A.M. Kuchling <amk@amk.ca>
 
+.. XXX what order should the types be discussed in?
 
 .. versionadded:: 2.3
 
@@ -204,7 +202,7 @@ Instance attributes (read-only):
 
 Supported operations:
 
-.. % XXX this table is too wide!
+.. XXX this table is too wide!
 
 +--------------------------------+-----------------------------------------------+
 | Operation                      | Result                                        |

@@ -21,8 +21,6 @@ Interface summary::
 
 For module specific errors, :exc:`copy.error` is raised.
 
-.. % 
-
 The difference between shallow and deep copying is only relevant for compound
 objects (objects that contain other objects, like lists or class instances):
 

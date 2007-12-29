@@ -8,12 +8,11 @@
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
 .. sectionauthor:: Christopher Petrilli <petrilli@amber.org>
 .. sectionauthor:: Steve Holden <sholden@holdenweb.com>
+.. heavily adapted from original documentation by Sam Rushing
 
 
 This module provides the basic infrastructure for writing asynchronous  socket
 service clients and servers.
-
-.. % Heavily adapted from original documentation by Sam Rushing.
 
 There are only two ways to have a program on a single processor do  "more than
 one thing at a time." Multi-threaded programming is the  simplest and most

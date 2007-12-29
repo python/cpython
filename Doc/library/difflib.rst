@@ -6,9 +6,9 @@
    :synopsis: Helpers for computing differences between objects.
 .. moduleauthor:: Tim Peters <tim_one@users.sourceforge.net>
 .. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
+.. Markup by Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-.. % LaTeXification by Fred L. Drake, Jr. <fdrake@acm.org>.
 
 .. versionadded:: 2.1
 
@@ -386,7 +386,7 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
    then ``i+n != i'`` or ``j+n != j'``; in other words, adjacent triples always
    describe non-adjacent equal blocks.
 
-   .. % Explain why a dummy is used!
+   .. XXX Explain why a dummy is used!
 
    .. versionchanged:: 2.5
       The guarantee that adjacent triples always describe non-adjacent blocks was

@@ -131,7 +131,7 @@ converted to Unicode for syntactical analysis, then converted back to their
 original encoding before interpretation starts. The encoding declaration must
 appear on a line of its own.
 
-.. % XXX there should be a list of supported encodings.
+.. XXX there should be a list of supported encodings.
 
 
 .. _explicit-joining:
@@ -149,11 +149,7 @@ Two or more physical lines may be joined into logical lines using backslash
 characters (``\``), as follows: when a physical line ends in a backslash that is
 not part of a string literal or comment, it is joined with the following forming
 a single logical line, deleting the backslash and the following end-of-line
-character.  For example:
-
-.. % 
-
-::
+character.  For example::
 
    if 1900 < year < 2100 and 1 <= month <= 12 \
       and 1 <= day <= 31 and 0 <= hour < 24 \
