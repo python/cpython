@@ -5,9 +5,9 @@
 
 /* This file creates the getbuildinfo.o object, by first
    invoking subwcrev.exe (if found), and then invoking cl.exe.
-   As a side effect, it might generate PCBuild\getbuildinfo2.c
+   As a side effect, it might generate PC\VS7.1\getbuildinfo2.c
    also. If this isn't a subversion checkout, or subwcrev isn't
-   found, it compiles ..\\Modules\\getbuildinfo.c instead.
+   found, it compiles ..\\..\\Modules\\getbuildinfo.c instead.
 
    Currently, subwcrev.exe is found from the registry entries
    of TortoiseSVN.
@@ -44,7 +44,7 @@ int make_buildinfo2()
 	if (_stat(command+1, &st) < 0)
 		/* subwcrev.exe not part of the release */
 		return 0;
-	strcat(command, "\" .. ..\\Modules\\getbuildinfo.c getbuildinfo2.c");
+	strcat(command, "\" .. ..\\..\\Modules\\getbuildinfo.c getbuildinfo2.c");
 	puts(command); fflush(stdout);
 	if (system(command) < 0)
 		return 0;
@@ -80,8 +80,8 @@ int main(int argc, char*argv[])
 	if ((do_unlink = make_buildinfo2()))
 		strcat(command, "getbuildinfo2.c -DSUBWCREV ");
 	else
-		strcat(command, "..\\Modules\\getbuildinfo.c");
-	strcat(command, " -Fogetbuildinfo.o -I..\\Include -I..\\PC");
+		strcat(command, "..\\..\\Modules\\getbuildinfo.c");
+	strcat(command, " -Fogetbuildinfo.o -I..\\..\\Include -I..\\..\\PC");
 	puts(command); fflush(stdout);
 	result = system(command);
 	if (do_unlink)
