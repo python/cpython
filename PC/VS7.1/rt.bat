@@ -10,11 +10,11 @@ rem All leading instances of these switches are shifted off, and
 rem whatever remains is passed to regrtest.py.  For example,
 rem     rt -O -d -x test_thread
 rem runs
-rem     python_d -O ../lib/test/regrtest.py -x test_thread
+rem     python_d -O ../../lib/test/regrtest.py -x test_thread
 rem twice, and
 rem     rt -q -g test_binascii
 rem runs
-rem     python_d ../lib/test/regrtest.py -g test_binascii
+rem     python_d ../../lib/test/regrtest.py -g test_binascii
 rem to generate the expected-output file for binascii quickly.
 rem
 rem Confusing:  if you want to pass a comma-separated list, like
@@ -27,14 +27,14 @@ setlocal
 set exe=python
 set qmode=
 set dashO=
-PATH %PATH%;..\..\tcltk\bin
+PATH %PATH%;..\..\..\tcltk\bin
 
 :CheckOpts
 if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
 if "%1"=="-q" (set qmode=yes)    & shift & goto CheckOpts
 if "%1"=="-d" (set exe=python_d) & shift & goto CheckOpts
 
-set cmd=%exe% %dashO% -E -tt ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
+set cmd=%exe% %dashO% -E -tt ../../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 if defined qmode goto Qmode
 
 echo Deleting .pyc/.pyo files ...

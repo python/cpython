@@ -131,7 +131,7 @@ def main():
     print "Found a working perl at '%s'" % (perl,)
     sys.stdout.flush()
     # Look for SSL 2 levels up from pcbuild - ie, same place zlib etc all live.
-    ssl_dir = find_best_ssl_dir(("..\\..",))
+    ssl_dir = find_best_ssl_dir(("..\\..\\..",))
     if ssl_dir is None:
         sys.exit(1)
 
