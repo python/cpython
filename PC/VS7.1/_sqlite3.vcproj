@@ -21,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\Include;..\..\PC;..\..\..\sqlite-source-3.3.4"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -33,7 +33,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
+				AdditionalDependencies="..\..\..\sqlite-source-3.3.4\sqlite3.lib"
 				OutputFile="./_sqlite3_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -76,7 +76,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\Include;..\..\PC;..\..\..\sqlite-source-3.3.4"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -90,7 +90,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
+				AdditionalDependencies="..\..\..\sqlite-source-3.3.4\sqlite3.lib"
 				OutputFile="./_sqlite3.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -134,7 +134,7 @@
 				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\Include;..\..\PC;..\..\..\sqlite-source-3.3.4"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -152,7 +152,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\ia64\sqlite3.lib"
+				AdditionalDependencies="..\..\..\sqlite-source-3.3.4\ia64\sqlite3.lib"
 				OutputFile="./_sqlite3.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -196,7 +196,7 @@
 				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\Include;..\..\PC;..\..\..\sqlite-source-3.3.4"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -214,7 +214,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\amd64\sqlite3.lib"
+				AdditionalDependencies="..\..\..\sqlite-source-3.3.4\amd64\sqlite3.lib"
 				OutputFile="./_sqlite3.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -251,31 +251,31 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\_sqlite\cache.c">
+			RelativePath="..\..\Modules\_sqlite\cache.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sqlite\connection.c">
+			RelativePath="..\..\Modules\_sqlite\connection.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sqlite\cursor.c">
+			RelativePath="..\..\Modules\_sqlite\cursor.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sqlite\microprotocols.c">
+			RelativePath="..\..\Modules\_sqlite\microprotocols.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sqlite\module.c">
+			RelativePath="..\..\Modules\_sqlite\module.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sqlite\prepare_protocol.c">
+			RelativePath="..\..\Modules\_sqlite\prepare_protocol.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sqlite\row.c">
+			RelativePath="..\..\Modules\_sqlite\row.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sqlite\statement.c">
+			RelativePath="..\..\Modules\_sqlite\statement.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sqlite\util.c">
+			RelativePath="..\..\Modules\_sqlite\util.c">
 		</File>
 	</Files>
 	<Globals>

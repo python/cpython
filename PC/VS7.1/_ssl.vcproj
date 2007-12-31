@@ -73,10 +73,10 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\_ssl.c">
+			RelativePath="..\..\Modules\_ssl.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_hashopenssl.c">
+			RelativePath="..\..\Modules\_hashopenssl.c">
 		</File>
 	</Files>
 	<Globals>

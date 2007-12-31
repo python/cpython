@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -74,7 +74,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -131,7 +131,7 @@
 				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -192,7 +192,7 @@
 				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -246,7 +246,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\socketmodule.c">
+			RelativePath="..\..\Modules\socketmodule.c">
 		</File>
 	</Files>
 	<Globals>

@@ -23,7 +23,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -35,9 +35,9 @@
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine=".\make_versioninfo.exe &gt;..\PC\pythonnt_rc.h
+				CommandLine=".\make_versioninfo.exe &gt;..\..\PC\pythonnt_rc.h
 "
-				Outputs="..\PC\pythonnt_rc.h"/>
+				Outputs="..\..\PC\pythonnt_rc.h"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
@@ -53,7 +53,7 @@
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(TargetFileName) &gt; ..\PC\python_nt.h"/>
+				CommandLine="$(TargetFileName) &gt; ..\..\PC\python_nt.h"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -82,7 +82,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -93,9 +93,9 @@
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine=".\make_versioninfo_d.exe &gt;..\PC\pythonnt_rc_d.h
+				CommandLine=".\make_versioninfo_d.exe &gt;..\..\PC\pythonnt_rc_d.h
 "
-				Outputs="..\PC\pythonnt_rc_d.h"/>
+				Outputs="..\..\PC\pythonnt_rc_d.h"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
@@ -111,7 +111,7 @@
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(TargetFileName) &gt; ..\PC\python_nt_d.h"/>
+				CommandLine="$(TargetFileName) &gt; ..\..\PC\python_nt_d.h"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -134,7 +134,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\PC\make_versioninfo.c">
+			RelativePath="..\..\PC\make_versioninfo.c">
 		</File>
 	</Files>
 	<Globals>

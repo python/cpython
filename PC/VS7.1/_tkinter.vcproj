@@ -4,7 +4,7 @@
 	Version="7.10"
 	Name="_tkinter"
 	SccProjectName="_tkinter"
-	SccLocalPath="..\..\..">
+	SccLocalPath="..\..\..\..">
 	<Platforms>
 		<Platform
 			Name="Win32"/>
@@ -21,7 +21,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\tcltk\include,..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\..\tcltk\include,..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WITH_APPINIT"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -35,7 +35,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\tcltk\lib\tk84.lib ..\..\tcltk\lib\tcl84.lib odbccp32.lib"
+				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib odbccp32.lib"
 				OutputFile="./_tkinter.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -77,7 +77,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\tcltk\include,..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\..\tcltk\include,..\..\Include,..\..\PC"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;WITH_APPINIT"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -89,7 +89,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\tcltk\lib\tk84.lib ..\..\tcltk\lib\tcl84.lib odbccp32.lib"
+				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib odbccp32.lib"
 				OutputFile="./_tkinter_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -133,7 +133,7 @@
 				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\tcltk\include,..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\..\tcltk\include,..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WITH_APPINIT"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\tcltk\lib\tk84.lib ..\..\tcltk\lib\tcl84.lib odbccp32.lib"
+				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib odbccp32.lib"
 				OutputFile="./_tkinter.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -195,7 +195,7 @@
 				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\tcltk\include,..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\..\tcltk\include,..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WITH_APPINIT"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -213,7 +213,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\tcltk\lib\tk84.lib ..\..\tcltk\lib\tcl84.lib odbccp32.lib"
+				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib odbccp32.lib"
 				OutputFile="./_tkinter.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -250,10 +250,10 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\_tkinter.c">
+			RelativePath="..\..\Modules\_tkinter.c">
 		</File>
 		<File
-			RelativePath="..\Modules\tkappinit.c">
+			RelativePath="..\..\Modules\tkappinit.c">
 		</File>
 	</Files>
 	<Globals>
