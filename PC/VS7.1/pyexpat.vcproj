@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC,..\..\Modules\expat"
 				PreprocessorDefinitions="_DEBUG;HAVE_EXPAT_H;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -74,7 +74,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC,..\..\Modules\expat"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -131,7 +131,7 @@
 				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC,..\..\Modules\expat"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -192,7 +192,7 @@
 				AdditionalOptions=" /USECL:MS_OPTERON  /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC,..\..\Modules\expat"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -246,16 +246,16 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\pyexpat.c">
+			RelativePath="..\..\Modules\pyexpat.c">
 		</File>
 		<File
-			RelativePath="..\Modules\expat\xmlparse.c">
+			RelativePath="..\..\Modules\expat\xmlparse.c">
 		</File>
 		<File
-			RelativePath="..\Modules\expat\xmlrole.c">
+			RelativePath="..\..\Modules\expat\xmlrole.c">
 		</File>
 		<File
-			RelativePath="..\Modules\expat\xmltok.c">
+			RelativePath="..\..\Modules\expat\xmltok.c">
 		</File>
 	</Files>
 	<Globals>
