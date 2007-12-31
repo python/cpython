@@ -27,7 +27,7 @@ have_tcl = True
 # Where is sqlite3.dll located, relative to srcdir?
 sqlite_dir = "../sqlite-source-3.3.4"
 # path to PCbuild directory
-PCBUILD="PCbuild"
+PCBUILD="PC/VS7.1"
 #PCBUILD="PCbuild9"
 # msvcrt version
 MSVCR = "71"
