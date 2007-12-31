@@ -902,6 +902,8 @@ Library
 Extension Modules
 -----------------
 
+- Added bdist_wininst executable for VS 2008.
+
 - Bug #1604: collections.deque.__init__(iterable) now clears any prior contents
   before adding elements from the iterable.  This fix brings the behavior into
   line with that for list.__init__().

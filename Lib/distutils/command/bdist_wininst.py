@@ -323,6 +323,6 @@ class bdist_wininst (Command):
         directory = os.path.dirname(__file__)
         # we must use a wininst-x.y.exe built with the same C compiler
         # used for python.  XXX What about mingw, borland, and so on?
-        filename = os.path.join(directory, "wininst-%s.exe" % bv)
+        filename = os.path.join(directory, "wininst-%.1f.exe" % bv)
         return open(filename, "rb").read()
 # class bdist_wininst
