@@ -1,270 +1,544 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="9,00"
 	Name="bz2"
+	ProjectGUID="{73FCD2BD-F133-46B7-8EC1-144CD82A59D5}"
 	RootNamespace="bz2"
-	SccProjectName="bz2"
-	SccLocalPath="..">
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="196613"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-debug\bz2"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			InheritedPropertySheets=".\pyd_d.vsprops"
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\bzip2-1.0.3"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				AdditionalIncludeDirectories="$(bz2Dir)"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\bzip2-1.0.3\libbz2.lib"
-				OutputFile="./bz2_d.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames="msvcrt,libc"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./bz2_d.pdb"
-				SubSystem="2"
-				BaseAddress="0x1D170000"
-				ImportLibrary=".\./bz2_d.lib"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd ..\..\bzip2-1.0.3
-nmake /nologo /f makefile.msc
-"/>
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-Debug\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-Debug mkdir $(PlatformName)-Debug&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-Debug&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Debug\libbz2.lib"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyd_d.vsprops;.\x64.vsprops"
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="$(bz2Dir)"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-Debug\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-Debug mkdir $(PlatformName)-Debug&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-Debug&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Debug\libbz2.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-release\bz2"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			InheritedPropertySheets=".\pyd.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\bzip2-1.0.3"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
-				StringPooling="TRUE"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				AdditionalIncludeDirectories="$(bz2Dir)"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\bzip2-1.0.3\libbz2.lib"
-				OutputFile="./bz2.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames="libc"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./bz2.pdb"
-				SubSystem="2"
-				BaseAddress="0x1D170000"
-				ImportLibrary=".\./bz2.lib"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd ..\..\bzip2-1.0.3
-nmake /nologo /f makefile.msc lib
-"/>
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-Release\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-Release mkdir $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseItanium|Win32"
-			OutputDirectory="./."
-			IntermediateDirectory=".\ia64-temp-release\bz2"
+			Name="Release|x64"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\bzip2-1.0.3"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
-				StringPooling="TRUE"
-				BasicRuntimeChecks="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				AdditionalIncludeDirectories="$(bz2Dir)"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\bzip2-1.0.3\libbz2.lib"
-				OutputFile="./bz2.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames="libc"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./bz2.pdb"
-				SubSystem="2"
-				BaseAddress="0x1D170000"
-				ImportLibrary=".\./bz2.lib"
-				TargetMachine="0"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd ..\..\bzip2-1.0.3
-nmake /nologo /f makefile.msc lib
-"/>
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-Release\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-Release mkdir $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseAMD64|Win32"
-			OutputDirectory="."
-			IntermediateDirectory="amd64-temp-release\bz2"
+			Name="PGInstrument|Win32"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			InheritedPropertySheets=".\pyd.vsprops;.\pginstrument.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\bzip2-1.0.3"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
-				StringPooling="TRUE"
-				BasicRuntimeChecks="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				AdditionalIncludeDirectories="$(bz2Dir)"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\bzip2-1.0.3\libbz2.lib"
-				OutputFile="./bz2.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames="libc"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./bz2.pdb"
-				SubSystem="2"
-				BaseAddress="0x1D170000"
-				ImportLibrary=".\./bz2.lib"
-				TargetMachine="0"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd ..\..\bzip2-1.0.3
-nmake /nologo /f makefile.msc lib
-"/>
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-Release\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-Release mkdir $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGInstrument|x64"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops;.\pginstrument.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="$(bz2Dir)"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-Release\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-Release mkdir $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGUpdate|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyd.vsprops;.\pgupdate.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="$(bz2Dir)"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-Release\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-Release mkdir $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGUpdate|x64"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops;.\pgupdate.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="$(bz2Dir)"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-Release\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-Release mkdir $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-Release&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath="..\Modules\bz2module.c">
-		</File>
+		<Filter
+			Name="Source Files"
+			>
+			<File
+				RelativePath="..\Modules\bz2module.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

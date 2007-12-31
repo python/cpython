@@ -59,7 +59,7 @@ Or, more often::
    widget of Tk which usually is the main window of an application. Each instance
    has its own associated Tcl interpreter.
 
-   .. % FIXME: The following keyword arguments are currently recognized:
+   .. FIXME: The following keyword arguments are currently recognized:
 
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
@@ -113,8 +113,6 @@ Tkinter Life Preserver
 This section is not designed to be an exhaustive tutorial on either Tk or
 Tkinter.  Rather, it is intended as a stop gap, providing some introductory
 orientation on the system.
-
-.. % Converted to LaTeX by Mike Clarkson.
 
 Credits:
 
@@ -217,8 +215,6 @@ A (Very) Quick Look at Tcl/Tk
 The class hierarchy looks complicated, but in actual practice, application
 programmers almost always refer to the classes at the very bottom of the
 hierarchy.
-
-.. % BriefTclTk.html
 
 Notes:
 
@@ -334,13 +330,6 @@ the Form geometry manager. ::
 How Tk and Tkinter are Related
 ------------------------------
 
-.. % Relationship.html
-
-.. note::
-
-   This was derived from a graphical image; the image will be used more directly in
-   a subsequent version of this document.
-
 From the top down:
 
 Your App Here (Python)
@@ -453,8 +442,6 @@ The Packer
 
 .. index:: single: packing (widgets)
 
-.. % Packer.html
-
 The packer is one of Tk's geometry-management mechanisms.    Geometry managers
 are used to specify the relative positioning of the positioning of widgets
 within their container - their mutual *master*.  In contrast to the more
@@ -462,8 +449,6 @@ cumbersome *placer* (which is used less commonly, and we do not cover here), the
 packer takes qualitative relationship specification - *above*, *to the left of*,
 *filling*, etc - and works everything out to determine the exact placement
 coordinates for you.
-
-.. % See also \citetitle[classes/ClassPacker.html]{the Packer class interface}.
 
 The size of any *master* widget is determined by the size of the "slave widgets"
 inside.  The packer is used to control where slave widgets appear inside the
@@ -521,8 +506,6 @@ options are ``variable``, ``textvariable``, ``onvalue``, ``offvalue``, and
 ``value``.  This connection works both ways: if the variable changes for any
 reason, the widget it's connected to will be updated to reflect the new value.
 
-.. % VarCouplings.html
-
 Unfortunately, in the current implementation of :mod:`Tkinter` it is not
 possible to hand over an arbitrary Python variable to a widget through a
 ``variable`` or ``textvariable`` option.  The only kinds of variables for which
@@ -569,8 +552,6 @@ The Window Manager
 
 .. index:: single: window manager (widgets)
 
-.. % WindowMgr.html
-
 In Tk, there is a utility command, ``wm``, for interacting with the window
 manager.  Options to the ``wm`` command allow you to control things like titles,
 placement, icon bitmaps, and the like.  In :mod:`Tkinter`, these commands have
@@ -584,8 +565,6 @@ a frame, the master won't represent a toplevel window.  To get at the toplevel
 window that contains an arbitrary widget, you can call the :meth:`_root` method.
 This method begins with an underscore to denote the fact that this function is
 part of the implementation, and not an interface to Tk functionality.
-
-.. % See also \citetitle[classes/ClassWm.html]{the Wm class interface}.
 
 Here are some examples of typical usage::
 
@@ -613,8 +592,6 @@ Tk Option Data Types
 ^^^^^^^^^^^^^^^^^^^^
 
 .. index:: single: Tk Option Data Types
-
-.. % OptionTypes.html
 
 anchor
    Legal values are points of the compass: ``"n"``, ``"ne"``, ``"e"``, ``"se"``,
@@ -695,8 +672,6 @@ Bindings and Events
    single: bind (widgets)
    single: events (widgets)
 
-.. % Bindings.html
-
 The bind method from the widget command allows you to watch for certain events
 and to have a callback function trigger when that event type occurs.  The form
 of the bind method is::
@@ -751,8 +726,6 @@ The index Parameter
 A number of widgets require"index" parameters to be passed.  These are used to
 point at a specific place in a Text widget, or to particular characters in an
 Entry widget, or to particular menu items in a Menu widget.
-
-.. % Index.html
 
 Entry widget indexes (index, view index, etc.)
    Entry widgets have options that refer to character positions in the text being

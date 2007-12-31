@@ -6,9 +6,7 @@
    :platform: Mac
    :synopsis: Python representation of the Apple Event Object Model.
 .. sectionauthor:: Vincent Marchetti <vincem@en.com>
-
-
-.. % \moduleauthor{Jack Jansen?}{email}
+.. moduleauthor:: Jack Jansen
 
 The :mod:`aetypes` defines classes used to represent Apple Event data
 descriptors and Apple Event object specifiers.

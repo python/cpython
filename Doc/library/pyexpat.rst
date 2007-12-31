@@ -7,14 +7,13 @@
 .. moduleauthor:: Paul Prescod <paul@prescod.net>
 
 
-.. % Markup notes:
-.. % 
-.. % Many of the attributes of the XMLParser objects are callbacks.
-.. % Since signature information must be presented, these are described
-.. % using the methoddesc environment.  Since they are attributes which
-.. % are set by client code, in-text references to these attributes
-.. % should be marked using the \member macro and should not include the
-.. % parentheses used when marking functions and methods.
+.. Markup notes:
+
+   Many of the attributes of the XMLParser objects are callbacks.  Since
+   signature information must be presented, these are described using the method
+   directive.  Since they are attributes which are set by client code, in-text
+   references to these attributes should be marked using the :member: role.
+
 
 .. index:: single: Expat
 

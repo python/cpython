@@ -56,6 +56,10 @@ Available make targets are:
  * "latex", which builds LaTeX source files that can be run with "pdflatex"
    to produce PDF documents.
 
+ * "changes", which builds an overview over all versionadded/versionchanged/
+   deprecated items in the current version. This is meant as a help for the
+   writer of the "What's New" document.
+
 A "make update" updates the Subversion checkouts in `tools/`.
 
 

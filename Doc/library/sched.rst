@@ -1,13 +1,9 @@
-
 :mod:`sched` --- Event scheduler
 ================================
 
 .. module:: sched
    :synopsis: General purpose event scheduler.
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
-
-.. % LaTeXed and enhanced from comments in file
 
 .. index:: single: event scheduling
 

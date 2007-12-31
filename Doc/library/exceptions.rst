@@ -111,16 +111,15 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: AttributeError
 
-   Raised when an attribute reference or assignment fails.  (When an object does
-   not support attribute references or attribute assignments at all,
-   :exc:`TypeError` is raised.)
-
-   .. % xref to attribute reference?
+   Raised when an attribute reference (see :ref:`attribute-references`) or
+   assignment fails.  (When an object does not support attribute references or
+   attribute assignments at all, :exc:`TypeError` is raised.)
 
 
 .. exception:: EOFError
 
-   Raised when attempting to read beyond the end of a file. (N.B.: the
+   Raised when one of the built-in functions (:func:`input` or :func:`raw_input`)
+   hits an end-of-file condition (EOF) without reading any data. (N.B.: the
    :meth:`file.read` and :meth:`file.readline` methods return an empty string
    when they hit EOF.)
 
@@ -162,14 +161,14 @@ The following exceptions are the exceptions that are actually raised.
    truncated to fall in the allowed range; if an index is not a plain integer,
    :exc:`TypeError` is raised.)
 
-   .. % XXXJH xref to sequences
+   .. XXX xref to sequences
 
 
 .. exception:: KeyError
 
    Raised when a mapping (dictionary) key is not found in the set of existing keys.
 
-   .. % XXXJH xref to mapping objects?
+   .. XXX xref to mapping objects?
 
 
 .. exception:: KeyboardInterrupt

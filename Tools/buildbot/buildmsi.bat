@@ -9,7 +9,7 @@ if not exist ..\db-4.4.20\build_win32\release\libdb44s.lib (
 
 @rem build Python
 cmd /q/c Tools\buildbot\kill_python.bat
-devenv.com /useenv /build Release PCbuild\pcbuild.sln
+devenv.com /useenv /build Release PC\VS7.1\pcbuild.sln
 
 @rem build the documentation
 bash.exe -c 'cd Doc;make PYTHON=python2.5 update htmlhelp'

@@ -291,9 +291,8 @@ process and user.
 
    Set the current process' user id. Availability: Unix.
 
-.. % placed in this section since it relates to errno.... a little weak
 
-
+.. placed in this section since it relates to errno.... a little weak
 .. function:: strerror(code)
 
    Return the error message corresponding to the error code in *code*.

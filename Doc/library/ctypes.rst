@@ -69,7 +69,7 @@ the library by creating an instance of CDLL by calling the constructor::
    <CDLL 'libc.so.6', handle ... at ...>
    >>>
 
-.. % XXX Add section for Mac OS X.
+.. XXX Add section for Mac OS X.
 
 
 .. _ctypes-accessing-functions-from-loaded-dlls:
@@ -1255,10 +1255,6 @@ Enumeration types are not implemented. You can do it easily yourself, using
 :class:`c_int` as the base class.
 
 ``long double`` is not implemented.
-
-.. % Local Variables:
-.. % compile-command: "make.bat"
-.. % End:
 
 
 .. _ctypes-ctypes-reference:

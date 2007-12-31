@@ -2019,8 +2019,6 @@ Configuration
 Configuration functions
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. % 
-
 The following functions configure the logging module. They are located in the
 :mod:`logging.config` module.  Their use is optional --- you can configure the
 logging module using these functions or by making calls to the main API (defined
@@ -2204,13 +2202,12 @@ Sections which specify formatter configuration are typified by the following. ::
    class=logging.Formatter
 
 The ``format`` entry is the overall format string, and the ``datefmt`` entry is
-the :func:`strftime`\ -compatible date/time format string. If empty, the package
-substitutes ISO8601 format date/times, which is almost equivalent to specifying
-the date format string "The ISO8601 format also specifies milliseconds, which
-are appended to the result of using the above format string, with a comma
-separator. An example time in ISO8601 format is ``2003-01-23 00:29:50,411``.
-
-.. % Y-%m-%d %H:%M:%S".
+the :func:`strftime`\ -compatible date/time format string.  If empty, the
+package substitutes ISO8601 format date/times, which is almost equivalent to
+specifying the date format string ``"%Y-%m-%d %H:%M:%S"``.  The ISO8601 format
+also specifies milliseconds, which are appended to the result of using the above
+format string, with a comma separator.  An example time in ISO8601 format is
+``2003-01-23 00:29:50,411``.
 
 The ``class`` entry is optional.  It indicates the name of the formatter's class
 (as a dotted module and class name.)  This option is useful for instantiating a

@@ -455,7 +455,7 @@ in a different style:
 
 .. describe:: keyword
 
-   The name of a keyword in a programming language.
+   The name of a keyword in Python.
 
 .. describe:: mailheader
 

@@ -72,6 +72,8 @@ on a separate line for clarity.
 
 
 .. _if:
+.. _elif:
+.. _else:
 
 The :keyword:`if` statement
 ===========================
@@ -200,6 +202,8 @@ returns the list ``[0, 1, 2]``.
 
 
 .. _try:
+.. _except:
+.. _finally:
 
 The :keyword:`try` statement
 ============================
@@ -326,6 +330,7 @@ may be found in section :ref:`raise`.
 
 
 .. _with:
+.. _as:
 
 The :keyword:`with` statement
 =============================
@@ -382,6 +387,7 @@ The execution of the :keyword:`with` statement proceeds as follows:
 
 
 .. _function:
+.. _def:
 
 Function definitions
 ====================

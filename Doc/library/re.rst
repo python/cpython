@@ -84,8 +84,6 @@ the null byte using the ``\number`` notation, e.g., ``'\x00'``.
 
 The special characters are:
 
-.. % 
-
 ``'.'``
    (Dot.)  In the default mode, this matches any character except a newline.  If
    the :const:`DOTALL` flag has been specified, this matches any character
@@ -297,8 +295,6 @@ The special sequences consist of ``'\'`` and a character from the list below.
 If the ordinary character is not on the list, then the resulting RE will match
 the second character.  For example, ``\$`` matches the character ``'$'``.
 
-.. % 
-
 ``\number``
    Matches the contents of the group of the same number.  Groups are numbered
    starting from 1.  For example, ``(.+) \1`` matches ``'the the'`` or ``'55 55'``,
@@ -384,9 +380,6 @@ there are three octal digits, it is considered an octal escape. Otherwise, it is
 a group reference.  As for string literals, octal escapes are always at most
 three digits in length.
 
-.. % Note the lack of a period in the section title; it causes problems
-.. % with readers of the GNU info version.  See http://www.python.org/sf/581414.
-
 
 .. _matching-searching:
 
@@ -406,15 +399,11 @@ beginning with ``'^'``: ``'^'`` matches only at the start of the string, or in
 :const:`MULTILINE` mode also immediately following a newline.  The "match"
 operation succeeds only if the pattern matches at the start of the string
 regardless of mode, or at the starting position given by the optional *pos*
-argument regardless of whether a newline precedes it.
-
-.. % Examples from Tim Peters:
-
-::
+argument regardless of whether a newline precedes it.  ::
 
    >>> re.match("c", "abcdef") # No match
    >>> re.search("c", "abcdef")
-  <_sre.SRE_Match object at 0x827e9c0> # Match
+   <_sre.SRE_Match object at 0x827e9c0> # Match
 
 
 .. _contents-of-module-re:
@@ -450,10 +439,9 @@ form.
    but the version using :func:`compile` is more efficient when the expression
    will be used several times in a single program.
 
-   .. % (The compiled version of the last pattern passed to
-   .. % \function{re.match()} or \function{re.search()} is cached, so
-   .. % programs that use only a single regular expression at a time needn't
-   .. % worry about compiling regular expressions.)
+   .. (The compiled version of the last pattern passed to :func:`re.match` or
+      :func:`re.search` is cached, so programs that use only a single regular
+      expression at a time needn't worry about compiling regular expressions.)
 
 
 .. data:: I

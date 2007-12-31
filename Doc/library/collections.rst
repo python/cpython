@@ -100,7 +100,7 @@ particular functionality, for example::
    where only the most recent activity is of interest.
 
    .. versionchanged:: 2.6
-      Added *maxlen*
+      Added *maxlen* parameter.
 
 Deque objects support the following methods:
 

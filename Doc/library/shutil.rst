@@ -5,9 +5,7 @@
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
-.. % partly based on the docstrings
+.. partly based on the docstrings
 
 .. index::
    single: file; copying

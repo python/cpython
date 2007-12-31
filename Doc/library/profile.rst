@@ -72,47 +72,47 @@ is not so far as well-tested and might not be available on all systems.
 :mod:`cProfile` is really a compatibility layer on top of the internal
 :mod:`_lsprof` module.
 
-.. % \section{How Is This Profiler Different From The Old Profiler?}
-.. % \nodename{Profiler Changes}
-.. % 
-.. % (This section is of historical importance only; the old profiler
-.. % discussed here was last seen in Python 1.1.)
-.. % 
-.. % The big changes from old profiling module are that you get more
-.. % information, and you pay less CPU time.  It's not a trade-off, it's a
-.. % trade-up.
-.. % 
-.. % To be specific:
-.. % 
-.. % \begin{description}
-.. % 
-.. % \item[Bugs removed:]
-.. % Local stack frame is no longer molested, execution time is now charged
-.. % to correct functions.
-.. % 
-.. % \item[Accuracy increased:]
-.. % Profiler execution time is no longer charged to user's code,
-.. % calibration for platform is supported, file reads are not done \emph{by}
-.. % profiler \emph{during} profiling (and charged to user's code!).
-.. % 
-.. % \item[Speed increased:]
-.. % Overhead CPU cost was reduced by more than a factor of two (perhaps a
-.. % factor of five), lightweight profiler module is all that must be
-.. % loaded, and the report generating module (\module{pstats}) is not needed
-.. % during profiling.
-.. % 
-.. % \item[Recursive functions support:]
-.. % Cumulative times in recursive functions are correctly calculated;
-.. % recursive entries are counted.
-.. % 
-.. % \item[Large growth in report generating UI:]
-.. % Distinct profiles runs can be added together forming a comprehensive
-.. % report; functions that import statistics take arbitrary lists of
-.. % files; sorting criteria is now based on keywords (instead of 4 integer
-.. % options); reports shows what functions were profiled as well as what
-.. % profile file was referenced; output format has been improved.
-.. % 
-.. % \end{description}
+.. \section{How Is This Profiler Different From The Old Profiler?}
+   \nodename{Profiler Changes}
+   
+   (This section is of historical importance only; the old profiler
+   discussed here was last seen in Python 1.1.)
+   
+   The big changes from old profiling module are that you get more
+   information, and you pay less CPU time.  It's not a trade-off, it's a
+   trade-up.
+   
+   To be specific:
+   
+   \begin{description}
+   
+   \item[Bugs removed:]
+   Local stack frame is no longer molested, execution time is now charged
+   to correct functions.
+   
+   \item[Accuracy increased:]
+   Profiler execution time is no longer charged to user's code,
+   calibration for platform is supported, file reads are not done \emph{by}
+   profiler \emph{during} profiling (and charged to user's code!).
+   
+   \item[Speed increased:]
+   Overhead CPU cost was reduced by more than a factor of two (perhaps a
+   factor of five), lightweight profiler module is all that must be
+   loaded, and the report generating module (\module{pstats}) is not needed
+   during profiling.
+   
+   \item[Recursive functions support:]
+   Cumulative times in recursive functions are correctly calculated;
+   recursive entries are counted.
+   
+   \item[Large growth in report generating UI:]
+   Distinct profiles runs can be added together forming a comprehensive
+   report; functions that import statistics take arbitrary lists of
+   files; sorting criteria is now based on keywords (instead of 4 integer
+   options); reports shows what functions were profiled as well as what
+   profile file was referenced; output format has been improved.
+   
+   \end{description}
 
 
 .. _profile-instant:
@@ -172,7 +172,7 @@ second method sorted all the entries according to the standard module/line/name
 string that is printed. The third method printed out all the statistics.  You
 might try the following sort calls:
 
-.. % (this is to comply with the semantics of the old profiler).
+.. (this is to comply with the semantics of the old profiler).
 
 ::
 
@@ -363,6 +363,8 @@ Analysis of the profiler data is done using the :class:`Stats` class.
    a single report.  If additional files need to be combined with data in an
    existing :class:`Stats` object, the :meth:`add` method can be used.
 
+   .. (such as the old system profiler).
+
 
 .. _profile-stats:
 
@@ -457,7 +459,7 @@ The :class:`Stats` Class
    (numeric) is used, only one sort key (the numeric key) will be used, and
    additional arguments will be silently ignored.
 
-   .. % For compatibility with the old profiler,
+   .. For compatibility with the old profiler,
 
 
 .. method:: Stats.reverse_order()
@@ -466,8 +468,7 @@ The :class:`Stats` Class
    within the object.  Note that by default ascending vs descending order is
    properly selected based on the sort key of choice.
 
-   .. % This method is provided primarily for
-   .. % compatibility with the old profiler.
+   .. This method is provided primarily for compatibility with the old profiler.
 
 
 .. method:: Stats.print_stats([restriction, ...])

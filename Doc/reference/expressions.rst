@@ -937,6 +937,10 @@ must be integers.
 
 
 .. _comparisons:
+.. _is:
+.. _isnot:
+.. _in:
+.. _notin:
 
 Comparisons
 ===========
@@ -1058,6 +1062,9 @@ yields the inverse truth value.
 
 
 .. _booleans:
+.. _and:
+.. _or:
+.. _not:
 
 Boolean operations
 ==================

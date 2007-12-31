@@ -33,8 +33,6 @@ written using a "traditional" testing style that compares output printed to
 Writing Unit Tests for the :mod:`test` package
 ----------------------------------------------
 
-.. % 
-
 It is preferred that tests that use the :mod:`unittest` module follow a few
 guidelines. One is to name the test module by starting it with ``test_`` and end
 it with the name of the module being tested. The test methods in the test module

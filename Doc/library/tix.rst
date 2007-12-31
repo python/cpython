@@ -88,7 +88,7 @@ introduces over 40 widget classes to the :mod:`Tkinter`  repertoire.  There is a
 demo of all the :mod:`Tix` widgets in the :file:`Demo/tix` directory of the
 standard distribution.
 
-.. % The Python sample code is still being added to Python, hence commented out
+.. The Python sample code is still being added to Python, hence commented out
 
 
 Basic Widgets
@@ -103,8 +103,8 @@ Basic Widgets
    widget to which a Balloon widget has been bound, a small pop-up window with a
    descriptive message will be shown on the screen.
 
-.. % Python Demo of:
-.. % \ulink{Balloon}{http://tix.sourceforge.net/dist/current/demos/samples/Balloon.tcl}
+.. Python Demo of:
+.. \ulink{Balloon}{http://tix.sourceforge.net/dist/current/demos/samples/Balloon.tcl}
 
 
 .. class:: ButtonBox()
@@ -113,8 +113,8 @@ Basic Widgets
    <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixButtonBox.htm>`_
    widget creates a box of buttons, such as is commonly used for ``Ok Cancel``.
 
-.. % Python Demo of:
-.. % \ulink{ButtonBox}{http://tix.sourceforge.net/dist/current/demos/samples/BtnBox.tcl}
+.. Python Demo of:
+.. \ulink{ButtonBox}{http://tix.sourceforge.net/dist/current/demos/samples/BtnBox.tcl}
 
 
 .. class:: ComboBox()
@@ -125,8 +125,8 @@ Basic Widgets
    choice by either typing in the entry subwdget or selecting from the listbox
    subwidget.
 
-.. % Python Demo of:
-.. % \ulink{ComboBox}{http://tix.sourceforge.net/dist/current/demos/samples/ComboBox.tcl}
+.. Python Demo of:
+.. \ulink{ComboBox}{http://tix.sourceforge.net/dist/current/demos/samples/ComboBox.tcl}
 
 
 .. class:: Control()
@@ -138,8 +138,8 @@ Basic Widgets
    the entry. The new value will be checked against the user-defined upper and
    lower limits.
 
-.. % Python Demo of:
-.. % \ulink{Control}{http://tix.sourceforge.net/dist/current/demos/samples/Control.tcl}
+.. Python Demo of:
+.. \ulink{Control}{http://tix.sourceforge.net/dist/current/demos/samples/Control.tcl}
 
 
 .. class:: LabelEntry()
@@ -149,8 +149,8 @@ Basic Widgets
    widget packages an entry widget and a label into one mega widget. It can be used
    be used to simplify the creation of "entry-form" type of interface.
 
-.. % Python Demo of:
-.. % \ulink{LabelEntry}{http://tix.sourceforge.net/dist/current/demos/samples/LabEntry.tcl}
+.. Python Demo of:
+.. \ulink{LabelEntry}{http://tix.sourceforge.net/dist/current/demos/samples/LabEntry.tcl}
 
 
 .. class:: LabelFrame()
@@ -161,8 +161,8 @@ Basic Widgets
    widgets inside a LabelFrame widget, one creates the new widgets relative to the
    :attr:`frame` subwidget and manage them inside the :attr:`frame` subwidget.
 
-.. % Python Demo of:
-.. % \ulink{LabelFrame}{http://tix.sourceforge.net/dist/current/demos/samples/LabFrame.tcl}
+.. Python Demo of:
+.. \ulink{LabelFrame}{http://tix.sourceforge.net/dist/current/demos/samples/LabFrame.tcl}
 
 
 .. class:: Meter()
@@ -172,8 +172,8 @@ Basic Widgets
    can be used to show the progress of a background job which may take a long time
    to execute.
 
-.. % Python Demo of:
-.. % \ulink{Meter}{http://tix.sourceforge.net/dist/current/demos/samples/Meter.tcl}
+.. Python Demo of:
+.. \ulink{Meter}{http://tix.sourceforge.net/dist/current/demos/samples/Meter.tcl}
 
 
 .. class:: OptionMenu()
@@ -182,8 +182,8 @@ Basic Widgets
    <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixOptionMenu.htm>`_
    creates a menu button of options.
 
-.. % Python Demo of:
-.. % \ulink{OptionMenu}{http://tix.sourceforge.net/dist/current/demos/samples/OptMenu.tcl}
+.. Python Demo of:
+.. \ulink{OptionMenu}{http://tix.sourceforge.net/dist/current/demos/samples/OptMenu.tcl}
 
 
 .. class:: PopupMenu()
@@ -194,8 +194,8 @@ Basic Widgets
    of the :mod:`Tix` :class:`PopupMenu` widget is it requires less application code
    to manipulate.
 
-.. % Python Demo of:
-.. % \ulink{PopupMenu}{http://tix.sourceforge.net/dist/current/demos/samples/PopMenu.tcl}
+.. Python Demo of:
+.. \ulink{PopupMenu}{http://tix.sourceforge.net/dist/current/demos/samples/PopMenu.tcl}
 
 
 .. class:: Select()
@@ -205,8 +205,8 @@ Basic Widgets
    is a container of button subwidgets. It can be used to provide radio-box or
    check-box style of selection options for the user.
 
-.. % Python Demo of:
-.. % \ulink{Select}{http://tix.sourceforge.net/dist/current/demos/samples/Select.tcl}
+.. Python Demo of:
+.. \ulink{Select}{http://tix.sourceforge.net/dist/current/demos/samples/Select.tcl}
 
 
 .. class:: StdButtonBox()
@@ -215,8 +215,8 @@ Basic Widgets
    <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixStdButtonBox.htm>`_
    widget is a group of standard buttons for Motif-like dialog boxes.
 
-.. % Python Demo of:
-.. % \ulink{StdButtonBox}{http://tix.sourceforge.net/dist/current/demos/samples/StdBBox.tcl}
+.. Python Demo of:
+.. \ulink{StdButtonBox}{http://tix.sourceforge.net/dist/current/demos/samples/StdBBox.tcl}
 
 
 File Selectors
@@ -231,8 +231,8 @@ File Selectors
    sub-directories. The user can choose one of the directories displayed in the
    list or change to another directory.
 
-.. % Python Demo of:
-.. % \ulink{DirList}{http://tix.sourceforge.net/dist/current/demos/samples/DirList.tcl}
+.. Python Demo of:
+.. \ulink{DirList}{http://tix.sourceforge.net/dist/current/demos/samples/DirList.tcl}
 
 
 .. class:: DirTree()
@@ -243,8 +243,8 @@ File Selectors
    sub-directories. The user can choose one of the directories displayed in the
    list or change to another directory.
 
-.. % Python Demo of:
-.. % \ulink{DirTree}{http://tix.sourceforge.net/dist/current/demos/samples/DirTree.tcl}
+.. Python Demo of:
+.. \ulink{DirTree}{http://tix.sourceforge.net/dist/current/demos/samples/DirTree.tcl}
 
 
 .. class:: DirSelectDialog()
@@ -255,8 +255,8 @@ File Selectors
    can use this dialog window to navigate through the file system to select the
    desired directory.
 
-.. % Python Demo of:
-.. % \ulink{DirSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/DirDlg.tcl}
+.. Python Demo of:
+.. \ulink{DirSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/DirDlg.tcl}
 
 
 .. class:: DirSelectBox()
@@ -276,8 +276,8 @@ File Selectors
    :class:`ExFileSelectBox` widget is very similar to the standard file dialog on
    MS Windows 3.1.
 
-.. % Python Demo of:
-.. % \ulink{ExFileSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/EFileDlg.tcl}
+.. Python Demo of:
+.. \ulink{ExFileSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/EFileDlg.tcl}
 
 
 .. class:: FileSelectBox()
@@ -289,8 +289,8 @@ File Selectors
    selected into a :class:`ComboBox` widget so that they can be quickly selected
    again.
 
-.. % Python Demo of:
-.. % \ulink{FileSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/FileDlg.tcl}
+.. Python Demo of:
+.. \ulink{FileSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/FileDlg.tcl}
 
 
 .. class:: FileEntry()
@@ -301,8 +301,8 @@ File Selectors
    manually. Alternatively, the user can press the button widget that sits next to
    the entry, which will bring up a file selection dialog.
 
-.. % Python Demo of:
-.. % \ulink{FileEntry}{http://tix.sourceforge.net/dist/current/demos/samples/FileEnt.tcl}
+.. Python Demo of:
+.. \ulink{FileEntry}{http://tix.sourceforge.net/dist/current/demos/samples/FileEnt.tcl}
 
 
 Hierachical ListBox
@@ -317,8 +317,8 @@ Hierachical ListBox
    file system directory trees. The list entries are indented and connected by
    branch lines according to their places in the hierarchy.
 
-.. % Python Demo of:
-.. % \ulink{HList}{http://tix.sourceforge.net/dist/current/demos/samples/HList1.tcl}
+.. Python Demo of:
+.. \ulink{HList}{http://tix.sourceforge.net/dist/current/demos/samples/HList1.tcl}
 
 
 .. class:: CheckList()
@@ -329,12 +329,12 @@ Hierachical ListBox
    similarly to the Tk checkbutton or radiobutton widgets, except it is capable of
    handling many more items than checkbuttons or radiobuttons.
 
-.. % Python Demo of:
-.. % \ulink{ CheckList}{http://tix.sourceforge.net/dist/current/demos/samples/ChkList.tcl}
-.. % Python Demo of:
-.. % \ulink{ScrolledHList (1)}{http://tix.sourceforge.net/dist/current/demos/samples/SHList.tcl}
-.. % Python Demo of:
-.. % \ulink{ScrolledHList (2)}{http://tix.sourceforge.net/dist/current/demos/samples/SHList2.tcl}
+.. Python Demo of:
+.. \ulink{ CheckList}{http://tix.sourceforge.net/dist/current/demos/samples/ChkList.tcl}
+.. Python Demo of:
+.. \ulink{ScrolledHList (1)}{http://tix.sourceforge.net/dist/current/demos/samples/SHList.tcl}
+.. Python Demo of:
+.. \ulink{ScrolledHList (2)}{http://tix.sourceforge.net/dist/current/demos/samples/SHList2.tcl}
 
 
 .. class:: Tree()
@@ -344,10 +344,10 @@ Hierachical ListBox
    can be used to display hierarchical data in a tree form. The user can adjust the
    view of the tree by opening or closing parts of the tree.
 
-.. % Python Demo of:
-.. % \ulink{Tree}{http://tix.sourceforge.net/dist/current/demos/samples/Tree.tcl}
-.. % Python Demo of:
-.. % \ulink{Tree (Dynamic)}{http://tix.sourceforge.net/dist/current/demos/samples/DynTree.tcl}
+.. Python Demo of:
+.. \ulink{Tree}{http://tix.sourceforge.net/dist/current/demos/samples/Tree.tcl}
+.. Python Demo of:
+.. \ulink{Tree (Dynamic)}{http://tix.sourceforge.net/dist/current/demos/samples/DynTree.tcl}
 
 
 Tabular ListBox
@@ -364,18 +364,18 @@ Tabular ListBox
    in a two dimensional format and (2) you can use graphical images as well as
    multiple colors and fonts for the list entries.
 
-.. % Python Demo of:
-.. % \ulink{ScrolledTList (1)}{http://tix.sourceforge.net/dist/current/demos/samples/STList1.tcl}
-.. % Python Demo of:
-.. % \ulink{ScrolledTList (2)}{http://tix.sourceforge.net/dist/current/demos/samples/STList2.tcl}
-.. % Grid has yet to be added to Python
-.. % \subsubsection{Grid Widget}
-.. % Python Demo of:
-.. % \ulink{Simple Grid}{http://tix.sourceforge.net/dist/current/demos/samples/SGrid0.tcl}
-.. % Python Demo of:
-.. % \ulink{ScrolledGrid}{http://tix.sourceforge.net/dist/current/demos/samples/SGrid1.tcl}
-.. % Python Demo of:
-.. % \ulink{Editable Grid}{http://tix.sourceforge.net/dist/current/demos/samples/EditGrid.tcl}
+.. Python Demo of:
+.. \ulink{ScrolledTList (1)}{http://tix.sourceforge.net/dist/current/demos/samples/STList1.tcl}
+.. Python Demo of:
+.. \ulink{ScrolledTList (2)}{http://tix.sourceforge.net/dist/current/demos/samples/STList2.tcl}
+.. Grid has yet to be added to Python
+.. \subsubsection{Grid Widget}
+.. Python Demo of:
+.. \ulink{Simple Grid}{http://tix.sourceforge.net/dist/current/demos/samples/SGrid0.tcl}
+.. Python Demo of:
+.. \ulink{ScrolledGrid}{http://tix.sourceforge.net/dist/current/demos/samples/SGrid1.tcl}
+.. Python Demo of:
+.. \ulink{Editable Grid}{http://tix.sourceforge.net/dist/current/demos/samples/EditGrid.tcl}
 
 
 Manager Widgets
@@ -390,8 +390,8 @@ Manager Widgets
    The panes can be arranged either vertically or horizontally.  The user changes
    the sizes of the panes by dragging the resize handle between two panes.
 
-.. % Python Demo of:
-.. % \ulink{PanedWindow}{http://tix.sourceforge.net/dist/current/demos/samples/PanedWin.tcl}
+.. Python Demo of:
+.. \ulink{PanedWindow}{http://tix.sourceforge.net/dist/current/demos/samples/PanedWin.tcl}
 
 
 .. class:: ListNoteBook()
@@ -404,8 +404,8 @@ Manager Widgets
    can be shown. The user can navigate through these pages by choosing the name of
    the desired page in the :attr:`hlist` subwidget.
 
-.. % Python Demo of:
-.. % \ulink{ListNoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/ListNBK.tcl}
+.. Python Demo of:
+.. \ulink{ListNoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/ListNBK.tcl}
 
 
 .. class:: NoteBook()
@@ -417,18 +417,18 @@ Manager Widgets
    these pages can be shown. The user can navigate through these pages by choosing
    the visual "tabs" at the top of the NoteBook widget.
 
-.. % Python Demo of:
-.. % \ulink{NoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/NoteBook.tcl}
+.. Python Demo of:
+.. \ulink{NoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/NoteBook.tcl}
 
-.. % \subsubsection{Scrolled Widgets}
-.. % Python Demo of:
-.. % \ulink{ScrolledListBox}{http://tix.sourceforge.net/dist/current/demos/samples/SListBox.tcl}
-.. % Python Demo of:
-.. % \ulink{ScrolledText}{http://tix.sourceforge.net/dist/current/demos/samples/SText.tcl}
-.. % Python Demo of:
-.. % \ulink{ScrolledWindow}{http://tix.sourceforge.net/dist/current/demos/samples/SWindow.tcl}
-.. % Python Demo of:
-.. % \ulink{Canvas Object View}{http://tix.sourceforge.net/dist/current/demos/samples/CObjView.tcl}
+.. \subsubsection{Scrolled Widgets}
+.. Python Demo of:
+.. \ulink{ScrolledListBox}{http://tix.sourceforge.net/dist/current/demos/samples/SListBox.tcl}
+.. Python Demo of:
+.. \ulink{ScrolledText}{http://tix.sourceforge.net/dist/current/demos/samples/SText.tcl}
+.. Python Demo of:
+.. \ulink{ScrolledWindow}{http://tix.sourceforge.net/dist/current/demos/samples/SWindow.tcl}
+.. Python Demo of:
+.. \ulink{Canvas Object View}{http://tix.sourceforge.net/dist/current/demos/samples/CObjView.tcl}
 
 
 Image Types
@@ -440,10 +440,10 @@ The :mod:`Tix` module adds:
   capabilities to all :mod:`Tix` and :mod:`Tkinter` widgets to create color images
   from XPM files.
 
-  .. % Python Demo of:
-  .. % \ulink{XPM Image In Button}{http://tix.sourceforge.net/dist/current/demos/samples/Xpm.tcl}
-  .. % Python Demo of:
-  .. % \ulink{XPM Image In Menu}{http://tix.sourceforge.net/dist/current/demos/samples/Xpm1.tcl}
+  .. Python Demo of:
+  .. \ulink{XPM Image In Button}{http://tix.sourceforge.net/dist/current/demos/samples/Xpm.tcl}
+  .. Python Demo of:
+  .. \ulink{XPM Image In Menu}{http://tix.sourceforge.net/dist/current/demos/samples/Xpm1.tcl}
 
 * `Compound
   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/compound.htm>`_ image
@@ -453,14 +453,14 @@ The :mod:`Tix` module adds:
   display a bitmap and a text string simultaneously in a Tk :class:`Button`
   widget.
 
-  .. % Python Demo of:
-  .. % \ulink{Compound Image In Buttons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg.tcl}
-  .. % Python Demo of:
-  .. % \ulink{Compound Image In NoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg2.tcl}
-  .. % Python Demo of:
-  .. % \ulink{Compound Image Notebook Color Tabs}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg4.tcl}
-  .. % Python Demo of:
-  .. % \ulink{Compound Image Icons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg3.tcl}
+  .. Python Demo of:
+  .. \ulink{Compound Image In Buttons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg.tcl}
+  .. Python Demo of:
+  .. \ulink{Compound Image In NoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg2.tcl}
+  .. Python Demo of:
+  .. \ulink{Compound Image Notebook Color Tabs}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg4.tcl}
+  .. Python Demo of:
+  .. \ulink{Compound Image Icons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg3.tcl}
 
 
 Miscellaneous Widgets

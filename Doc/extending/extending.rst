@@ -306,7 +306,7 @@ function.
 The method table must be passed to the interpreter in the module's
 initialization function.  The initialization function must be named
 :cfunc:`initname`, where *name* is the name of the module, and should be the
-only non-\ :keyword:`static` item defined in the module file::
+only non-\ ``static`` item defined in the module file::
 
    PyMODINIT_FUNC
    initspam(void)
@@ -660,11 +660,7 @@ it returns false and raises an appropriate exception.
 .. index:: single: Philbrick, Geoff
 
 Here is an example module which uses keywords, based on an example by Geoff
-Philbrick (philbrick@hks.com):
-
-.. % 
-
-::
+Philbrick (philbrick@hks.com)::
 
    #include "Python.h"
 
@@ -762,8 +758,8 @@ Reference Counts
 
 In languages like C or C++, the programmer is responsible for dynamic allocation
 and deallocation of memory on the heap.  In C, this is done using the functions
-:cfunc:`malloc` and :cfunc:`free`.  In C++, the operators :keyword:`new` and
-:keyword:`delete` are used with essentially the same meaning and we'll restrict
+:cfunc:`malloc` and :cfunc:`free`.  In C++, the operators ``new`` and
+``delete`` are used with essentially the same meaning and we'll restrict
 the following discussion to the C case.
 
 Every block of memory allocated with :cfunc:`malloc` should eventually be
@@ -1036,11 +1032,10 @@ that it is always a tuple. [#]_
 
 It is a severe error to ever let a *NULL* pointer "escape" to the Python user.
 
-.. % Frank Stajano:
-.. % A pedagogically buggy example, along the lines of the previous listing,
-.. % would be helpful here -- showing in more concrete terms what sort of
-.. % actions could cause the problem. I can't very well imagine it from the
-.. % description.
+.. Frank Stajano:
+   A pedagogically buggy example, along the lines of the previous listing, would
+   be helpful here -- showing in more concrete terms what sort of actions could
+   cause the problem. I can't very well imagine it from the description.
 
 
 .. _cplusplus:
@@ -1076,7 +1071,7 @@ lists, this new collection type should have a set of C functions for direct
 manipulation from other extension modules.
 
 At first sight this seems easy: just write the functions (without declaring them
-:keyword:`static`, of course), provide an appropriate header file, and document
+``static``, of course), provide an appropriate header file, and document
 the C API. And in fact this would work if all extension modules were always
 linked statically with the Python interpreter. When modules are used as shared
 libraries, however, the symbols defined in one module may not be visible to
@@ -1089,7 +1084,7 @@ the module whose functions one wishes to call might not have been loaded yet!
 
 Portability therefore requires not to make any assumptions about symbol
 visibility. This means that all symbols in extension modules should be declared
-:keyword:`static`, except for the module's initialization function, in order to
+``static``, except for the module's initialization function, in order to
 avoid name clashes with other extension modules (as discussed in section
 :ref:`methodtable`). And it means that symbols that *should* be accessible from
 other extension modules must be exported in a different way.
@@ -1124,7 +1119,7 @@ reality (such as adding "spam" to every command). This function
 :cfunc:`PySpam_System` is also exported to other extension modules.
 
 The function :cfunc:`PySpam_System` is a plain C function, declared
-:keyword:`static` like everything else::
+``static`` like everything else::
 
    static int
    PySpam_System(const char *command)
@@ -1180,7 +1175,7 @@ function must take care of initializing the C API pointer array::
            PyModule_AddObject(m, "_C_API", c_api_object);
    }
 
-Note that ``PySpam_API`` is declared :keyword:`static`; otherwise the pointer
+Note that ``PySpam_API`` is declared ``static``; otherwise the pointer
 array would disappear when :func:`initspam` terminates!
 
 The bulk of the work is in the header file :file:`spammodule.h`, which looks

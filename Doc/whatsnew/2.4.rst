@@ -6,10 +6,10 @@
 
 .. |release| replace:: 1.02
 
-.. % $Id: whatsnew24.tex 55005 2007-04-27 19:54:29Z guido.van.rossum $
-.. % Don't write extensive text for new sections; I'll do that.
-.. % Feel free to add commented-out reminders of things that need
-.. % to be covered.  --amk
+.. $Id: whatsnew24.tex 54632 2007-03-31 11:59:54Z georg.brandl $
+.. Don't write extensive text for new sections; I'll do that.
+.. Feel free to add commented-out reminders of things that need
+.. to be covered.  --amk
 
 This article explains the new features in Python 2.4.1, released on March 30,
 2005.
@@ -29,7 +29,7 @@ Python Library Reference and the Python Reference Manual.  Often you will be
 referred to the PEP for a particular new feature for explanations of the
 implementation and design rationale.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 218: Built-In Set Objects
@@ -83,7 +83,7 @@ currently no plans to deprecate the module.
       Originally proposed by Greg Wilson and ultimately implemented by Raymond
       Hettinger.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 237: Unifying Long Integers and Integers
@@ -108,7 +108,7 @@ the correct answer, 8589934592.
       Original PEP written by Moshe Zadka and GvR.  The changes for 2.4 were
       implemented by  Kalle Svensson.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 289: Generator Expressions
@@ -165,7 +165,7 @@ list comprehensions match generator expressions in this respect.
       Proposed by Raymond Hettinger and implemented by Jiwon Seo with early efforts
       steered by Hye-Shik Chang.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 292: Simpler String Substitutions
@@ -199,17 +199,11 @@ PEP 292 adds a :class:`Template` class to the :mod:`string` module that uses
 
 If a key is missing from the dictionary, the :meth:`substitute` method will
 raise a :exc:`KeyError`.  There's also a :meth:`safe_substitute` method that
-ignores missing keys:
-
-.. % $ Terminate $-mode for Emacs
-
-::
+ignores missing keys::
 
    >>> t = string.Template('$page: $title')
    >>> t.safe_substitute({'page':3})
    '3: $title'
-
-.. % $ Terminate math-mode for Emacs
 
 
 .. seealso::
@@ -217,7 +211,7 @@ ignores missing keys:
    :pep:`292` - Simpler String Substitutions
       Written and implemented  by Barry Warsaw.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 318: Decorators for Functions and Methods
@@ -346,7 +340,7 @@ returned.
    http://www.python.org/moin/PythonDecoratorLibrary
       This Wiki page contains several examples of decorators.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 322: Reverse Iteration
@@ -382,7 +376,7 @@ you want to reverse an iterator, first convert it to  a list with :func:`list`.
    :pep:`322` - Reverse Iteration
       Written and implemented by Raymond Hettinger.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 324: New subprocess Module
@@ -468,7 +462,7 @@ of the PEP is highly recommended.
       Written and implemented by Peter Åstrand, with assistance from Fredrik Lundh and
       others.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 327: Decimal Data Type
@@ -698,7 +692,7 @@ includes a quick-start tutorial and a reference.
       proposed as a standard, and underlies the new Python decimal type.  Much of this
       material was written by Mike Cowlishaw, designer of the Rexx language.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 328: Multi-line Imports
@@ -734,7 +728,7 @@ PEP was not implemented for Python 2.4, but was completed for Python 2.5.
    :pep:`328` - Imports: Multi-Line and Absolute/Relative
       Written by Aahz.  Multi-line imports were implemented by Dima Dorfman.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 PEP 331: Locale-Independent Float/String Conversions
@@ -773,7 +767,7 @@ letting extensions such as GTK+  produce the correct results.
    :pep:`331` - Locale-Independent Float/String Conversions
       Written by Christian R. Reis, and implemented by Gustavo Carneiro.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Other Language Changes
@@ -932,7 +926,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
 * :const:`None` is now a constant; code that binds a new value to  the name
   ``None`` is now a syntax error. (Contributed by Raymond Hettinger.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Optimizations
@@ -983,15 +977,13 @@ benchmark around 5% faster than Python 2.3 and 35% faster than Python 2.2.
 measurement of Python's performance.  Your own applications may show greater or
 smaller benefits from Python 2.4.)
 
-.. % pystone is almost useless for comparing different versions of Python;
-.. % instead, it excels at predicting relative Python performance on
-.. % different machines.
-.. % So, this section would be more informative if it used other tools
-.. % such as pybench and parrotbench.  For a more application oriented
-.. % benchmark, try comparing the timings of test_decimal.py under 2.3
-.. % and 2.4.
+.. pystone is almost useless for comparing different versions of Python;
+   instead, it excels at predicting relative Python performance on different
+   machines.  So, this section would be more informative if it used other tools
+   such as pybench and parrotbench.  For a more application oriented benchmark,
+   try comparing the timings of test_decimal.py under 2.3 and 2.4.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 New, Improved, and Deprecated Modules
@@ -1322,9 +1314,9 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`mpz`, :mod:`rotor`, and :mod:`xreadlines` modules have  been
   removed.
 
-.. % ======================================================================
-.. % whole new modules get described in subsections here
-.. % =====================
+.. ======================================================================
+.. whole new modules get described in subsections here
+.. =====================
 
 
 cookielib
@@ -1348,7 +1340,7 @@ URLs.
 
 This module was contributed by John J. Lee.
 
-.. % ==================
+.. ==================
 
 
 doctest
@@ -1447,7 +1439,7 @@ you get the following output::
        +rather
    **********************************************************************
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Build and C API Changes
@@ -1500,7 +1492,7 @@ Some of the changes to Python's build process and to the C API are:
 * The :ctype:`tracebackobject` type has been renamed to
   :ctype:`PyTracebackObject`.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Port-Specific Changes
@@ -1509,7 +1501,7 @@ Port-Specific Changes
 * The Windows port now builds under MSVC++ 7.1 as well as version 6.
   (Contributed by Martin von Löwis.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Porting to Python 2.4
@@ -1556,7 +1548,7 @@ code:
   for certain illegal values; previously these errors would pass silently.  For
   example, you can no longer set a handler on the :const:`SIGKILL` signal.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _acks:

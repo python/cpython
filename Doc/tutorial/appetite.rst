@@ -75,8 +75,6 @@ Now that you are all excited about Python, you'll want to examine it in some
 more detail.  Since the best way to learn a language is to use it, the tutorial
 invites you to play with the Python interpreter as you read.
 
-.. % \section{Where From Here \label{where}}
-
 In the next chapter, the mechanics of using the interpreter are explained.  This
 is rather mundane information, but essential for trying out the examples shown
 later.

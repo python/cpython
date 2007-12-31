@@ -115,9 +115,8 @@ next (or whether to handle a new incoming request).  This is particularly
 important for stream services where each client can potentially be connected for
 a long time (if threads or subprocesses cannot be used).
 
-.. % XXX should data and methods be intermingled, or separate?
-.. % how should the distinction between class and instance variables be
-.. % drawn?
+.. XXX should data and methods be intermingled, or separate?
+   how should the distinction between class and instance variables be drawn?
 
 
 Server Objects
@@ -171,8 +170,7 @@ Server Objects
 
 The server classes support the following class variables:
 
-.. % XXX should class variables be covered before instance variables, or
-.. % vice versa?
+.. XXX should class variables be covered before instance variables, or vice versa?
 
 
 .. data:: allow_reuse_address
@@ -199,8 +197,8 @@ There are various server methods that can be overridden by subclasses of base
 server classes like :class:`TCPServer`; these methods aren't useful to external
 users of the server object.
 
-.. % should the default implementations of these be documented, or should
-.. % it be assumed that the user will look at SocketServer.py?
+.. XXX should the default implementations of these be documented, or should
+   it be assumed that the user will look at SocketServer.py?
 
 
 .. function:: finish_request()
@@ -230,9 +228,9 @@ users of the server object.
    or thread to handle the request; the :class:`ForkingMixIn` and
    :class:`ThreadingMixIn` classes do this.
 
-.. % Is there any point in documenting the following two functions?
-.. % What would the purpose of overriding them be: initializing server
-.. % instance variables, adding new network families?
+.. Is there any point in documenting the following two functions?
+   What would the purpose of overriding them be: initializing server
+   instance variables, adding new network families?
 
 
 .. function:: server_activate()

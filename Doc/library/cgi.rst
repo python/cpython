@@ -176,7 +176,7 @@ intuitive way.  The interface doesn't make the techniques described in previous
 sections obsolete --- they are still useful to process file uploads efficiently,
 for example.
 
-.. % XXX: Is this true ?
+.. XXX: Is this true ?
 
 The interface consists of two simple methods. Using the methods you can process
 form data in a generic way, without the need to worry whether only one or more

@@ -205,7 +205,7 @@ events in the input document:
    information to the application to expand prefixes in those contexts itself, if
    necessary.
 
-   .. % XXX This is not really the default, is it? MvL
+   .. XXX This is not really the default, is it? MvL
 
    Note that :meth:`startPrefixMapping` and :meth:`endPrefixMapping` events are not
    guaranteed to be properly nested relative to each-other: all

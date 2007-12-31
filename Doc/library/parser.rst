@@ -8,13 +8,12 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-.. % Copyright 1995 Virginia Polytechnic Institute and State University
-.. % and Fred L. Drake, Jr.  This copyright notice must be distributed on
-.. % all copies, but this document otherwise may be distributed as part
-.. % of the Python distribution.  No fee may be charged for this document
-.. % in any representation, either on paper or electronically.  This
-.. % restriction does not affect other elements in a distributed package
-.. % in any way.
+.. Copyright 1995 Virginia Polytechnic Institute and State University and Fred
+   L. Drake, Jr.  This copyright notice must be distributed on all copies, but
+   this document otherwise may be distributed as part of the Python
+   distribution.  No fee may be charged for this document in any representation,
+   either on paper or electronically.  This restriction does not affect other
+   elements in a distributed package in any way.
 
 .. index:: single: parsing; Python source code
 

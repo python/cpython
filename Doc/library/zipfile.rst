@@ -7,9 +7,6 @@
 .. moduleauthor:: James C. Ahlstrom <jim@interet.com>
 .. sectionauthor:: James C. Ahlstrom <jim@interet.com>
 
-
-.. % LaTeX markup by Fred L. Drake, Jr. <fdrake@acm.org>
-
 The ZIP file format is a common archive and compression standard. This module
 provides tools to create, read, write, append, and list a ZIP file.  Any
 advanced use of this module will require an understanding of the format, as

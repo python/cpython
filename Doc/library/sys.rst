@@ -458,9 +458,8 @@ always available.
    implementation and, where needed, by :mod:`sitecustomize`.  Once used by the
    :mod:`site` module, it is removed from the :mod:`sys` module's namespace.
 
-   .. % Note that \refmodule{site} is not imported if
-   .. % the \programopt{-S} option is passed to the interpreter, in which
-   .. % case this function will remain available.
+   .. Note that :mod:`site` is not imported if the :option:`-S` option is passed
+      to the interpreter, in which case this function will remain available.
 
 
 .. function:: setdlopenflags(n)

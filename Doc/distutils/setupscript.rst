@@ -137,7 +137,7 @@ the Distutils to go out and find the right files; you have to specify the
 extension name, source file(s), and any compile/link requirements (include
 directories, libraries to link with, etc.).
 
-.. % XXX read over this section
+.. XXX read over this section
 
 All of this is done through another keyword argument to :func:`setup`, the
 :option:`ext_modules` option.  :option:`ext_modules` is just a list of

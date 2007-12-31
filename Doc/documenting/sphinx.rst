@@ -47,14 +47,30 @@ unused_files : list of strings
    could be docs for temporarily disabled modules or documentation that's not
    yet ready for public consumption.
 
-last_updated_format : string
-   If this is not an empty string, it will be given to ``time.strftime()`` and
-   written to each generated output file after "last updated on:".
-
-use_smartypants : bool
-   If true, use SmartyPants to convert quotes and dashes to the typographically
-   correct entities.
-
 add_function_parentheses : bool
    If true, ``()`` will be appended to the content of ``:func:``, ``:meth:`` and
    ``:cfunc:`` cross-references.
+
+add_module_names : bool
+   If true, the current module name will be prepended to all description unit
+   titles (such as ``.. function::``).
+
+Builder-specific variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+html_download_base_url : string
+   The base URL for download links on the download page.
+
+html_last_updated_fmt : string
+   If this is not an empty string, it will be given to ``time.strftime()`` and
+   written to each generated output file after "last updated on:".
+
+html_use_smartypants : bool
+   If true, use SmartyPants to convert quotes and dashes to the typographically
+   correct entities.
+
+latex_paper_size : "letter" or "a4"
+   The paper size option for the LaTeX document class.
+
+latex_font_size : "10pt", "11pt" or "12pt"
+   The font size option for the LaTeX document class.

@@ -1,6 +1,3 @@
-.. % XXX what order should the types be discussed in?
-
-
 :mod:`datetime` --- Basic date and time types
 =============================================
 
@@ -10,6 +7,7 @@
 .. sectionauthor:: Tim Peters <tim@zope.com>
 .. sectionauthor:: A.M. Kuchling <amk@amk.ca>
 
+.. XXX what order should the types be discussed in?
 
 The :mod:`datetime` module supplies classes for manipulating dates and times in
 both simple and complex ways.  While date and time arithmetic is supported, the
@@ -202,7 +200,7 @@ Instance attributes (read-only):
 
 Supported operations:
 
-.. % XXX this table is too wide!
+.. XXX this table is too wide!
 
 +--------------------------------+-----------------------------------------------+
 | Operation                      | Result                                        |

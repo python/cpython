@@ -162,6 +162,24 @@ This table summarizes the comparison operations:
 +------------+-------------------------+-------+
 
 .. index::
+   pair: operator; comparison
+   operator: ==
+   operator: <
+   operator: <=
+   operator: >
+   operator: >=
+   operator: !=
+   operator: is
+   operator: is not
+
+Notes:
+
+(1)
+    ``!=`` can also be written ``<>``, but this is an obsolete usage
+    kept for backwards compatibility only. New code should always use
+    ``!=``.
+
+.. index::
    pair: object; numeric
    pair: objects; comparing
 
@@ -335,8 +353,8 @@ Notes:
    
    .. versionadded:: 2.6
 
-   
-.. % XXXJH exceptions: overflow (when? what operations?) zerodivision
+
+.. XXXJH exceptions: overflow (when? what operations?) zerodivision
 
 
 .. _bitstring-ops:
@@ -1154,6 +1172,8 @@ Notes:
 Since Python strings have an explicit length, ``%s`` conversions do not assume
 that ``'\0'`` is the end of the string.
 
+.. XXX Examples?
+
 For safety reasons, floating point precisions are clipped to 50; ``%f``
 conversions for numbers whose absolute value is over 1e25 are replaced by ``%g``
 conversions. [#]_  All other errors raise exceptions.
@@ -1845,8 +1865,7 @@ File Objects
 .. XXX this is quite out of date, must be updated with "io" module
 
 File objects are implemented using C's ``stdio`` package and can be
-created with the built-in :func:`file` and (more usually) :func:`open`
-constructors described in the :ref:`built-in-funcs` section. [#]_ File
+created with the built-in :func:`open` function.  File
 objects are also returned by some other built-in functions and methods,
 such as :func:`os.popen` and :func:`os.fdopen` and the :meth:`makefile`
 method of socket objects. Temporary files can be created using the
@@ -1870,7 +1889,7 @@ Files have the following methods:
 
    As of Python 2.5, you can avoid having to call this method explicitly if you use
    the :keyword:`with` statement.  For example, the following code will
-   automatically close ``f`` when the :keyword:`with` block is exited::
+   automatically close *f* when the :keyword:`with` block is exited::
 
       from __future__ import with_statement
 
@@ -1997,6 +2016,9 @@ Files have the following methods:
    legal.  Use of other offsets causes undefined behavior.
 
    Note that not all file objects are seekable.
+
+   .. versionchanged:: 2.6
+      Passing float values as offset has been deprecated.
 
 
 .. method:: file.tell()
@@ -2406,9 +2428,6 @@ types, where they are relevant.  Some of these are not reported by the
 .. [#] These numbers are fairly arbitrary.  They are intended to avoid printing endless
    strings of meaningless digits without hampering correct use and without having
    to know the exact precision of floating point values on a particular machine.
-
-.. [#] :func:`file` is new in Python 2.2.  The older built-in :func:`open` is an alias
-   for :func:`file`.
 
 .. [#] The advantage of leaving the newline on is that returning an empty string is
    then an unambiguous EOF indication.  It is also possible (in cases where it

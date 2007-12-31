@@ -6,7 +6,7 @@
 
 .. |release| replace:: 1.02
 
-.. % $Id: whatsnew20.tex 51211 2006-08-11 14:57:12Z thomas.wouters $
+.. $Id: whatsnew20.tex 50964 2006-07-30 03:03:43Z fred.drake $
 
 
 Introduction
@@ -26,7 +26,7 @@ progress is due to the five developers working for  PythonLabs are now getting
 paid to spend their days fixing bugs, and also due to the improved communication
 resulting  from moving to SourceForge.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 What About Python 1.6?
@@ -50,7 +50,7 @@ you're better off just going straight to 2.0.  Most of the really interesting
 features described in this document are only in 2.0, because a lot of work was
 done between May and September.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 New Development Process
@@ -134,7 +134,7 @@ http://www.python.org/peps/.  As of September 2000, there are 25 PEPS, ranging
 from PEP 201, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
 Operators".
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Unicode
@@ -255,7 +255,7 @@ interpret all string literals as Unicode string literals. This is intended to be
 used in testing and future-proofing your Python code, since some future version
 of Python may drop support for 8-bit strings and provide only Unicode strings.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 List Comprehensions
@@ -342,7 +342,7 @@ for adding them to Python and wrote the initial list comprehension patch, which
 was then discussed for a seemingly endless time on the python-dev mailing list
 and kept up-to-date by Skip Montanaro.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Augmented Assignment
@@ -360,7 +360,7 @@ named :meth:`__iadd__`, :meth:`__isub__`, etc.  For example, the following
 :class:`Number` class stores a number and supports using += to create a new
 instance with an incremented value.
 
-.. % The empty groups below prevent conversion to guillemets.
+.. The empty groups below prevent conversion to guillemets.
 
 ::
 
@@ -383,7 +383,7 @@ language, and most C-derived languages, such as :program:`awk`, C++, Java, Perl,
 and PHP also support them.  The augmented assignment patch was implemented by
 Thomas Wouters.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 String Methods
@@ -426,7 +426,7 @@ and is equivalent to the :func:`string.join` function from the old :mod:`string`
 module, with the arguments reversed. In other words, ``s.join(seq)`` is
 equivalent to the old ``string.join(seq, s)``.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Garbage Collection of Cycles
@@ -488,7 +488,7 @@ the way; the March 2000 archives of the python-dev mailing list contain most of
 the relevant discussion, especially in the threads titled "Reference cycle
 collection for Python" and "Finalization again".
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Other Core Changes
@@ -565,8 +565,8 @@ such as ``cmp(a,b)`` would always produce an answer, even if a user-defined
 :meth:`__cmp__` method encountered an error, since the resulting exception would
 simply be silently swallowed.
 
-.. % Starting URL:
-.. % http://www.python.org/pipermail/python-dev/2000-April/004834.html
+.. Starting URL:
+.. http://www.python.org/pipermail/python-dev/2000-April/004834.html
 
 Work has been done on porting Python to 64-bit Windows on the Itanium processor,
 mostly by Trent Mick of ActiveState.  (Confusingly, ``sys.platform`` is still
@@ -641,7 +641,7 @@ recursion depth can be read and modified using :func:`sys.getrecursionlimit` and
 value for a given platform can be found by running a new script,
 :file:`Misc/find_recursionlimit.py`.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Porting to 2.0
@@ -728,13 +728,13 @@ always be classes.  The :mod:`exceptions` module containing the standard
 exceptions was translated from Python to a built-in C module, written by Barry
 Warsaw and Fredrik Lundh.
 
-.. % Commented out for now -- I don't think anyone will care.
-.. % The pattern and match objects provided by SRE are C types, not Python
-.. % class instances as in 1.5.  This means you can no longer inherit from
-.. % \class{RegexObject} or \class{MatchObject}, but that shouldn't be much
-.. % of a problem since no one should have been doing that in the first
-.. % place.
-.. % ======================================================================
+.. Commented out for now -- I don't think anyone will care.
+   The pattern and match objects provided by SRE are C types, not Python
+   class instances as in 1.5.  This means you can no longer inherit from
+   \class{RegexObject} or \class{MatchObject}, but that shouldn't be much
+   of a problem since no one should have been doing that in the first
+   place.
+.. ======================================================================
 
 
 Extending/Embedding Changes
@@ -805,7 +805,7 @@ string.
 A wrapper API was added for Unix-style signal handlers. :func:`PyOS_getsig` gets
 a signal handler and :func:`PyOS_setsig` will set a new handler.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Distutils: Making Modules Easy to Install
@@ -875,7 +875,7 @@ development.
 All this is documented in a new manual, *Distributing Python Modules*, that
 joins the basic set of Python documentation.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 XML Modules
@@ -1024,7 +1024,7 @@ features in PyXML include:
 
 * The :mod:`sgmlop` parser accelerator module, written by Fredrik Lundh.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Module changes
@@ -1069,7 +1069,7 @@ been changed.  SRE, a new regular expression engine written by Fredrik Lundh and
 partially funded by Hewlett Packard, supports matching against both 8-bit
 strings and Unicode strings.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 New modules
@@ -1145,7 +1145,7 @@ module.
   import hooks, in comparison to the existing :mod:`ihooks` module.  (Implemented
   by Greg Stein, with much discussion on python-dev along the way.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 IDLE Improvements
@@ -1179,7 +1179,7 @@ partial list:
 * Three new keystroke commands: Check module (Alt-F5), Import module (F5) and
   Run script (Ctrl-F5).
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Deleted and Deprecated Modules

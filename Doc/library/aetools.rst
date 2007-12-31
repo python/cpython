@@ -6,9 +6,7 @@
    :platform: Mac
    :synopsis: Basic support for sending Apple Events
 .. sectionauthor:: Jack Jansen <Jack.Jansen@cwi.nl>
-
-
-.. % \moduleauthor{Jack Jansen?}{email}
+.. moduleauthor:: Jack Jansen
 
 The :mod:`aetools` module contains the basic functionality on which Python
 AppleScript client support is built. It also imports and re-exports the core

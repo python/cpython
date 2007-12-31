@@ -484,7 +484,7 @@ Here is the corresponding C code, in all its glory::
    single: PyErr_Clear()
    single: Py_XDECREF()
 
-This example represents an endorsed use of the :keyword:`goto` statement  in C!
+This example represents an endorsed use of the ``goto`` statement  in C!
 It illustrates the use of :cfunc:`PyErr_ExceptionMatches` and
 :cfunc:`PyErr_Clear` to handle specific exceptions, and the use of
 :cfunc:`Py_XDECREF` to dispose of owned references that may be *NULL* (note the

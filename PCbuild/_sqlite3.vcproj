@@ -1,282 +1,636 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="9,00"
 	Name="_sqlite3"
-	ProjectGUID="{2FF0A312-22F9-4C34-B070-842916DE27A9}"
-	SccProjectName="_sqlite3"
-	SccLocalPath="..">
+	ProjectGUID="{13CECB97-4119-4316-9D42-8534019A5A44}"
+	RootNamespace="_sqlite3"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="196613"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-debug\_sqlite3"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			InheritedPropertySheets=".\pyd_d.vsprops"
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build sqlite3 libs and dll"
+				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
+			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
-				OutputFile="./_sqlite3_d.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./_sqlite3_d.pdb"
-				SubSystem="2"
+				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
-				ImportLibrary=".\./_sqlite3_d.lib"
-				TargetMachine="1"/>
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyd_d.vsprops;.\x64.vsprops"
+			CharacterSet="0"
+			>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCCustomBuildTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build sqlite3 libs and dll"
+				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
+				BaseAddress="0x1e180000"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-release\_sqlite3"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			InheritedPropertySheets=".\pyd.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
-				StringPooling="TRUE"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build sqlite3 libs and dll"
+				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
+			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
-				OutputFile="./_sqlite3.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./_sqlite3.pdb"
-				SubSystem="2"
+				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
-				ImportLibrary=".\./_sqlite3.lib"
-				TargetMachine="1"/>
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseItanium|Win32"
-			OutputDirectory="./."
-			IntermediateDirectory=".\ia64-temp-release\_sqlite3"
+			Name="Release|x64"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
-				StringPooling="TRUE"
-				BasicRuntimeChecks="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build sqlite3 libs and dll"
+				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
+			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\ia64\sqlite3.lib"
-				OutputFile="./_sqlite3.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./_sqlite3.pdb"
-				SubSystem="2"
+				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
-				ImportLibrary=".\./_sqlite3.lib"
-				TargetMachine="0"/>
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseAMD64|Win32"
-			OutputDirectory="."
-			IntermediateDirectory="amd64-temp-release\_sqlite3"
+			Name="PGInstrument|Win32"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			InheritedPropertySheets=".\pyd.vsprops;.\pginstrument.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
-				StringPooling="TRUE"
-				BasicRuntimeChecks="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build sqlite3 libs and dll"
+				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
+			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\amd64\sqlite3.lib"
-				OutputFile="./_sqlite3.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./_sqlite3.pdb"
-				SubSystem="2"
+				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
-				ImportLibrary=".\./_sqlite3.lib"
-				TargetMachine="0"/>
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGInstrument|x64"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops;.\pginstrument.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCCustomBuildTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build sqlite3 libs and dll"
+				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
+				BaseAddress="0x1e180000"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGUpdate|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyd.vsprops;.\pgupdate.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build sqlite3 libs and dll"
+				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
+				BaseAddress="0x1e180000"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGUpdate|x64"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops;.\pgupdate.vsprops"
+			CharacterSet="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="Build sqlite3 libs and dll"
+				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
+				BaseAddress="0x1e180000"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath="..\Modules\_sqlite\cache.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\connection.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\cursor.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\microprotocols.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\module.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\prepare_protocol.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\row.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\statement.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\util.c">
-		</File>
+		<Filter
+			Name="Header Files"
+			>
+			<File
+				RelativePath="..\Modules\_sqlite\cache.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\connection.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\cursor.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\microprotocols.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\module.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\prepare_protocol.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\row.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\sqlitecompat.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\statement.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\util.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Source Files"
+			>
+			<File
+				RelativePath="..\Modules\_sqlite\cache.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\connection.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\cursor.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\microprotocols.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\module.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\prepare_protocol.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\row.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\statement.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_sqlite\util.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

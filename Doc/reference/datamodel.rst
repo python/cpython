@@ -202,8 +202,6 @@ Numbers
       operation except left shift, if it yields a result in the plain integer domain
       without causing overflow, will yield the same result when using mixed operands.
 
-      .. % Integers
-
    Floating point numbers
       .. index::
          object: floating point
@@ -228,8 +226,6 @@ Numbers
       floating point numbers.  The same caveats apply as for floating point numbers.
       The real and imaginary parts of a complex number ``z`` can be retrieved through
       the read-only attributes ``z.real`` and ``z.imag``.
-
-   .. % Numbers
 
 Sequences
    .. index::
@@ -302,8 +298,6 @@ Sequences
          parentheses must be usable for grouping of expressions).  An empty
          tuple can be formed by an empty pair of parentheses.
 
-      .. % Immutable sequences
-
    Mutable sequences
       .. index::
          object: mutable sequence
@@ -341,10 +335,6 @@ Sequences
       The extension module :mod:`array` provides an additional example of a
       mutable sequence type.
 
-      .. % Mutable sequences
-
-   .. % Sequences
-
 Set types
    .. index::
       builtin: len
@@ -378,8 +368,6 @@ Set types
       :func:`frozenset` constructor.  As a frozenset is immutable and
       :term:`hashable`, it can be used again as an element of another set, or as
       a dictionary key.
-
-   .. % Set types
 
 Mappings
    .. index::
@@ -417,8 +405,6 @@ Mappings
 
       The extension modules :mod:`dbm`, :mod:`gdbm`, and :mod:`bsddb` provide
       additional examples of mapping types.
-
-   .. % Mapping types
 
 Callable types
    .. index::
@@ -651,8 +637,6 @@ Modules
    equivalent to ``m.__dict__["x"]``. A module object does not contain the code
    object used to initialize the module (since it isn't needed once the
    initialization is done).
-
-   .. % 
 
    Attribute assignment updates the module's namespace dictionary, e.g., ``m.x =
    1`` is equivalent to ``m.__dict__["x"] = 1``.
@@ -992,11 +976,52 @@ Internal types
       described above, under "User-defined methods". Class method objects are created
       by the built-in :func:`classmethod` constructor.
 
-   .. % Internal types
-
-.. % =========================================================================
 
 .. _newstyle:
+
+New-style and classic classes
+=============================
+
+Classes and instances come in two flavors: old-style or classic, and new-style.
+
+Up to Python 2.1, old-style classes were the only flavour available to the user.
+The concept of (old-style) class is unrelated to the concept of type: if *x* is
+an instance of an old-style class, then ``x.__class__`` designates the class of
+*x*, but ``type(x)`` is always ``<type 'instance'>``.  This reflects the fact
+that all old-style instances, independently of their class, are implemented with
+a single built-in type, called ``instance``.
+
+New-style classes were introduced in Python 2.2 to unify classes and types.  A
+new-style class neither more nor less than a user-defined type.  If *x* is an
+instance of a new-style class, then ``type(x)`` is the same as ``x.__class__``.
+
+The major motivation for introducing new-style classes is to provide a unified
+object model with a full meta-model.  It also has a number of immediate
+benefits, like the ability to subclass most built-in types, or the introduction
+of "descriptors", which enable computed properties.
+
+For compatibility reasons, classes are still old-style by default.  New-style
+classes are created by specifying another new-style class (i.e. a type) as a
+parent class, or the "top-level type" :class:`object` if no other parent is
+needed.  The behaviour of new-style classes differs from that of old-style
+classes in a number of important details in addition to what :func:`type`
+returns.  Some of these changes are fundamental to the new object model, like
+the way special methods are invoked.  Others are "fixes" that could not be
+implemented before for compatibility concerns, like the method resolution order
+in case of multiple inheritance.
+
+This manual is not up-to-date with respect to new-style classes.  For now,
+please see http://www.python.org/doc/newstyle.html for more information.
+
+.. index::
+   single: class
+   single: class
+   single: class
+
+The plan is to eventually drop old-style classes, leaving only the semantics of
+new-style classes.  This change will probably only be feasible in Python 3.0.
+new-style classic old-style
+
 
 .. _specialnames:
 

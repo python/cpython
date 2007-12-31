@@ -31,11 +31,8 @@ example::
 There can be zero or more :keyword:`elif` parts, and the :keyword:`else` part is
 optional.  The keyword ':keyword:`elif`' is short for 'else if', and is useful
 to avoid excessive indentation.  An  :keyword:`if` ... :keyword:`elif` ...
-:keyword:`elif` ... sequence is a substitute for the :keyword:`switch` or
-:keyword:`case` statements found in other languages.
-
-.. % Weird spacings happen here if the wrapping of the source text
-.. % gets changed in the wrong way.
+:keyword:`elif` ... sequence is a substitute for the ``switch`` or
+``case`` statements found in other languages.
 
 
 .. _tut-for:
@@ -53,8 +50,8 @@ iteration step and halting condition (as C), Python's :keyword:`for` statement
 iterates over the items of any sequence (a list or a string), in the order that
 they appear in the sequence.  For example (no pun intended):
 
-.. % One suggestion was to give a real C example here, but that may only
-.. % serve to confuse non-C programmers.
+.. One suggestion was to give a real C example here, but that may only serve to
+   confuse non-C programmers.
 
 ::
 

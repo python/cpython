@@ -1,7 +1,3 @@
-.. % Copyright (C) 2001-2007 Python Software Foundation
-.. % Author: barry@python.org (Barry Warsaw)
-
-
 :mod:`email` --- An email and MIME handling package
 ===================================================
 
@@ -10,6 +6,7 @@
               including MIME documents.
 .. moduleauthor:: Barry A. Warsaw <barry@python.org>
 .. sectionauthor:: Barry A. Warsaw <barry@python.org>
+.. Copyright (C) 2001-2007 Python Software Foundation
 
 
 The :mod:`email` package is a library for managing email messages, including
