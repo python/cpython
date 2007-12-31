@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include;..\PC;&quot;..\..\db-4.4.20\build_win32&quot;"
+				AdditionalIncludeDirectories="..\..\Include;..\..\PC;&quot;..\..\..\db-4.4.20\build_win32&quot;"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -32,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\db-4.4.20\build_win32\Debug\libdb44sd.lib"
+				AdditionalDependencies="..\..\..\db-4.4.20\build_win32\Debug\libdb44sd.lib"
 				OutputFile="./_bsddb_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -75,7 +75,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;&quot;..\..\db-4.4.20\build_win32&quot;"
+				AdditionalIncludeDirectories="..\..\Include;..\..\PC;&quot;..\..\..\db-4.4.20\build_win32&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -89,7 +89,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\db-4.4.20\build_win32\Release\libdb44s.lib"
+				AdditionalDependencies="..\..\..\db-4.4.20\build_win32\Release\libdb44s.lib"
 				OutputFile="./_bsddb.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -133,7 +133,7 @@
 				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;&quot;..\..\db-4.4.20\build_win32&quot;"
+				AdditionalIncludeDirectories="..\..\Include;..\..\PC;&quot;..\..\..\db-4.4.20\build_win32&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\db-4.4.20\build_win32\Release_IA64\libdb44s.lib"
+				AdditionalDependencies="..\..\..\db-4.4.20\build_win32\Release_IA64\libdb44s.lib"
 				OutputFile="./_bsddb.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -195,7 +195,7 @@
 				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;&quot;..\..\db-4.4.20\build_win32&quot;"
+				AdditionalIncludeDirectories="..\..\Include;..\..\PC;&quot;..\..\..\db-4.4.20\build_win32&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -213,7 +213,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\db-4.4.20\build_win32\Release_AMD64\libdb44s.lib bufferoverflowU.lib"
+				AdditionalDependencies="..\..\..\db-4.4.20\build_win32\Release_AMD64\libdb44s.lib bufferoverflowU.lib"
 				OutputFile="./_bsddb.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -250,7 +250,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\_bsddb.c">
+			RelativePath="..\..\Modules\_bsddb.c">
 		</File>
 	</Files>
 	<Globals>

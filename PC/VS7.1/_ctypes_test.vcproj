@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="3"
@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -126,7 +126,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=" /USECL:MS_ITANIUM"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
@@ -181,7 +181,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=" /USECL:MS_OPTERON"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -234,7 +234,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\_ctypes\_ctypes_test.c">
+			RelativePath="..\..\Modules\_ctypes\_ctypes_test.c">
 		</File>
 	</Files>
 	<Globals>

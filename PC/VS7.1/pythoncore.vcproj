@@ -24,7 +24,7 @@
 				AdditionalOptions="/Zm200 "
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -63,7 +63,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\Include"/>
+				AdditionalIncludeDirectories="..\..\Include"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -86,7 +86,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -123,7 +123,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\Include"/>
+				AdditionalIncludeDirectories="..\..\Include"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -147,7 +147,7 @@
 				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -190,7 +190,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\Include"/>
+				AdditionalIncludeDirectories="..\..\Include"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -214,7 +214,7 @@
 				AdditionalOptions="/Zm200  /USECL:MS_OPTERON /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -257,7 +257,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\Include"/>
+				AdditionalIncludeDirectories="..\..\Include"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -277,528 +277,528 @@
 			Name="zlib"
 			Filter="">
 			<File
-				RelativePath="..\Modules\zlib\adler32.c">
+				RelativePath="..\..\Modules\zlib\adler32.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\compress.c">
+				RelativePath="..\..\Modules\zlib\compress.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\crc32.c">
+				RelativePath="..\..\Modules\zlib\crc32.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\deflate.c">
+				RelativePath="..\..\Modules\zlib\deflate.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\gzio.c">
+				RelativePath="..\..\Modules\zlib\gzio.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\infback.c">
+				RelativePath="..\..\Modules\zlib\infback.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\inffast.c">
+				RelativePath="..\..\Modules\zlib\inffast.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\inflate.c">
+				RelativePath="..\..\Modules\zlib\inflate.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\inftrees.c">
+				RelativePath="..\..\Modules\zlib\inftrees.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\trees.c">
+				RelativePath="..\..\Modules\zlib\trees.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\uncompr.c">
+				RelativePath="..\..\Modules\zlib\uncompr.c">
 			</File>
 			<File
-				RelativePath="..\Modules\zlibmodule.c">
+				RelativePath="..\..\Modules\zlibmodule.c">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\Modules\zlib"/>
+						AdditionalIncludeDirectories="..\..\Modules\zlib"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\Modules\zlib"/>
+						AdditionalIncludeDirectories="..\..\Modules\zlib"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseItanium|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\Modules\zlib"/>
+						AdditionalIncludeDirectories="..\..\Modules\zlib"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseAMD64|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\Modules\zlib"/>
+						AdditionalIncludeDirectories="..\..\Modules\zlib"/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\Modules\zlib\zutil.c">
+				RelativePath="..\..\Modules\zlib\zutil.c">
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\Modules\_bisectmodule.c">
+			RelativePath="..\..\Modules\_bisectmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\_codecs_cn.c">
+			RelativePath="..\..\Modules\cjkcodecs\_codecs_cn.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\_codecs_hk.c">
+			RelativePath="..\..\Modules\cjkcodecs\_codecs_hk.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\_codecs_iso2022.c">
+			RelativePath="..\..\Modules\cjkcodecs\_codecs_iso2022.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\_codecs_jp.c">
+			RelativePath="..\..\Modules\cjkcodecs\_codecs_jp.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\_codecs_kr.c">
+			RelativePath="..\..\Modules\cjkcodecs\_codecs_kr.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\_codecs_tw.c">
+			RelativePath="..\..\Modules\cjkcodecs\_codecs_tw.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_codecsmodule.c">
+			RelativePath="..\..\Modules\_codecsmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_csv.c">
+			RelativePath="..\..\Modules\_csv.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_functoolsmodule.c">
+			RelativePath="..\..\Modules\_functoolsmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_heapqmodule.c">
+			RelativePath="..\..\Modules\_heapqmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_hotshot.c">
+			RelativePath="..\..\Modules\_hotshot.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_localemodule.c">
+			RelativePath="..\..\Modules\_localemodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_lsprof.c">
+			RelativePath="..\..\Modules\_lsprof.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_randommodule.c">
+			RelativePath="..\..\Modules\_randommodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_sre.c">
+			RelativePath="..\..\Modules\_sre.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_struct.c">
+			RelativePath="..\..\Modules\_struct.c">
 		</File>
 		<File
-			RelativePath="..\Pc\_subprocess.c">
+			RelativePath="..\..\Pc\_subprocess.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_typesmodule.c">
+			RelativePath="..\..\Modules\_typesmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_weakref.c">
+			RelativePath="..\..\Modules\_weakref.c">
 		</File>
 		<File
-			RelativePath="..\Pc\_winreg.c">
+			RelativePath="..\..\Pc\_winreg.c">
 		</File>
 		<File
-			RelativePath="..\Objects\abstract.c">
+			RelativePath="..\..\Objects\abstract.c">
 		</File>
 		<File
-			RelativePath="..\Parser\acceler.c">
+			RelativePath="..\..\Parser\acceler.c">
 		</File>
 		<File
-			RelativePath="..\Modules\arraymodule.c">
+			RelativePath="..\..\Modules\arraymodule.c">
 		</File>
 		<File
-			RelativePath="..\Python\asdl.c">
+			RelativePath="..\..\Python\asdl.c">
 		</File>
 		<File
-			RelativePath="..\Python\ast.c">
+			RelativePath="..\..\Python\ast.c">
 		</File>
 		<File
-			RelativePath="..\Modules\audioop.c">
+			RelativePath="..\..\Modules\audioop.c">
 		</File>
 		<File
-			RelativePath="..\Modules\binascii.c">
+			RelativePath="..\..\Modules\binascii.c">
 		</File>
 		<File
-			RelativePath="..\Parser\bitset.c">
+			RelativePath="..\..\Parser\bitset.c">
 		</File>
 		<File
-			RelativePath="..\Python\bltinmodule.c">
+			RelativePath="..\..\Python\bltinmodule.c">
 		</File>
 		<File
-			RelativePath="..\Objects\boolobject.c">
+			RelativePath="..\..\Objects\boolobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\bufferobject.c">
+			RelativePath="..\..\Objects\bufferobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\cellobject.c">
+			RelativePath="..\..\Objects\cellobject.c">
 		</File>
 		<File
-			RelativePath="..\Python\ceval.c">
+			RelativePath="..\..\Python\ceval.c">
 		</File>
 		<File
-			RelativePath="..\Objects\classobject.c">
+			RelativePath="..\..\Objects\classobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cmathmodule.c">
+			RelativePath="..\..\Modules\cmathmodule.c">
 		</File>
 		<File
-			RelativePath="..\Objects\cobject.c">
+			RelativePath="..\..\Objects\cobject.c">
 		</File>
 		<File
-			RelativePath="..\Python\codecs.c">
+			RelativePath="..\..\Python\codecs.c">
 		</File>
 		<File
-			RelativePath="..\Objects\codeobject.c">
+			RelativePath="..\..\Objects\codeobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_collectionsmodule.c">
+			RelativePath="..\..\Modules\_collectionsmodule.c">
 		</File>
 		<File
-			RelativePath="..\Python\compile.c">
+			RelativePath="..\..\Python\compile.c">
 		</File>
 		<File
-			RelativePath="..\Objects\complexobject.c">
+			RelativePath="..\..\Objects\complexobject.c">
 		</File>
 		<File
-			RelativePath="..\PC\config.c">
+			RelativePath="..\..\PC\config.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cPickle.c">
+			RelativePath="..\..\Modules\cPickle.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cStringIO.c">
+			RelativePath="..\..\Modules\cStringIO.c">
 		</File>
 		<File
-			RelativePath="..\Modules\datetimemodule.c">
+			RelativePath="..\..\Modules\datetimemodule.c">
 		</File>
 		<File
-			RelativePath="..\Objects\descrobject.c">
+			RelativePath="..\..\Objects\descrobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\dictobject.c">
+			RelativePath="..\..\Objects\dictobject.c">
 		</File>
 		<!--File
-			RelativePath="..\Objects\doubledigits.c">
+			RelativePath="..\..\Objects\doubledigits.c">
 		</File-->
 		<File
-			RelativePath="..\PC\dl_nt.c">
+			RelativePath="..\..\PC\dl_nt.c">
 		</File>
 		<File
-			RelativePath="..\Python\dynload_win.c">
+			RelativePath="..\..\Python\dynload_win.c">
 		</File>
 		<File
-			RelativePath="..\Objects\enumobject.c">
+			RelativePath="..\..\Objects\enumobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\errnomodule.c">
+			RelativePath="..\..\Modules\errnomodule.c">
 		</File>
 		<File
-			RelativePath="..\Python\errors.c">
+			RelativePath="..\..\Python\errors.c">
 		</File>
 		<File
-			RelativePath="..\Objects\exceptions.c">
+			RelativePath="..\..\Objects\exceptions.c">
 		</File>
 		<File
-			RelativePath="..\Objects\fileobject.c">
+			RelativePath="..\..\Objects\fileobject.c">
 		</File>
 		<File
-			RelativePath="..\Parser\firstsets.c">
+			RelativePath="..\..\Parser\firstsets.c">
 		</File>
 		<File
-			RelativePath="..\Objects\floatobject.c">
+			RelativePath="..\..\Objects\floatobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\frameobject.c">
+			RelativePath="..\..\Objects\frameobject.c">
 		</File>
 		<File
-			RelativePath="..\Python\frozen.c">
+			RelativePath="..\..\Python\frozen.c">
 		</File>
 		<File
-			RelativePath="..\Objects\funcobject.c">
+			RelativePath="..\..\Objects\funcobject.c">
 		</File>
 		<File
-			RelativePath="..\Python\future.c">
+			RelativePath="..\..\Python\future.c">
 		</File>
 		<File
-			RelativePath="..\Modules\gcmodule.c">
+			RelativePath="..\..\Modules\gcmodule.c">
 		</File>
 		<File
-			RelativePath="..\Objects\genobject.c">
+			RelativePath="..\..\Objects\genobject.c">
 		</File>
 		<File
-			RelativePath="..\Python\getargs.c">
+			RelativePath="..\..\Python\getargs.c">
 		</File>
 		<File
-			RelativePath="..\Python\getcompiler.c">
+			RelativePath="..\..\Python\getcompiler.c">
 		</File>
 		<File
-			RelativePath="..\Python\getcopyright.c">
+			RelativePath="..\..\Python\getcopyright.c">
 		</File>
 		<File
-			RelativePath="..\Python\getmtime.c">
+			RelativePath="..\..\Python\getmtime.c">
 		</File>
 		<File
-			RelativePath="..\Python\getopt.c">
+			RelativePath="..\..\Python\getopt.c">
 		</File>
 		<File
-			RelativePath="..\PC\getpathp.c">
+			RelativePath="..\..\PC\getpathp.c">
 		</File>
 		<File
-			RelativePath="..\Python\getplatform.c">
+			RelativePath="..\..\Python\getplatform.c">
 		</File>
 		<File
-			RelativePath="..\Python\getversion.c">
+			RelativePath="..\..\Python\getversion.c">
 		</File>
 		<File
-			RelativePath="..\Python\graminit.c">
+			RelativePath="..\..\Python\graminit.c">
 		</File>
 		<File
-			RelativePath="..\Parser\grammar.c">
+			RelativePath="..\..\Parser\grammar.c">
 		</File>
 		<File
-			RelativePath="..\Parser\grammar1.c">
+			RelativePath="..\..\Parser\grammar1.c">
 		</File>
 		<File
-			RelativePath="..\Modules\imageop.c">
+			RelativePath="..\..\Modules\imageop.c">
 		</File>
 		<File
-			RelativePath="..\Python\import.c">
+			RelativePath="..\..\Python\import.c">
 		</File>
 		<File
-			RelativePath="..\PC\import_nt.c">
+			RelativePath="..\..\PC\import_nt.c">
 			<FileConfiguration
 				Name="Release|Win32">
 				<Tool
 					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\Python"/>
+					AdditionalIncludeDirectories="..\..\Python"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Debug|Win32">
 				<Tool
 					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\Python"/>
+					AdditionalIncludeDirectories="..\..\Python"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="ReleaseItanium|Win32">
 				<Tool
 					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\Python"/>
+					AdditionalIncludeDirectories="..\..\Python"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="ReleaseAMD64|Win32">
 				<Tool
 					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\Python"/>
+					AdditionalIncludeDirectories="..\..\Python"/>
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\Python\importdl.c">
+			RelativePath="..\..\Python\importdl.c">
 		</File>
 		<File
-			RelativePath="..\Objects\intobject.c">
+			RelativePath="..\..\Objects\intobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\iterobject.c">
+			RelativePath="..\..\Objects\iterobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\itertoolsmodule.c">
+			RelativePath="..\..\Modules\itertoolsmodule.c">
 		</File>
 		<File
-			RelativePath="..\Parser\listnode.c">
+			RelativePath="..\..\Parser\listnode.c">
 		</File>
 		<File
-			RelativePath="..\Objects\listobject.c">
+			RelativePath="..\..\Objects\listobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\longobject.c">
+			RelativePath="..\..\Objects\longobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\main.c">
+			RelativePath="..\..\Modules\main.c">
 		</File>
 		<File
-			RelativePath="..\Python\marshal.c">
+			RelativePath="..\..\Python\marshal.c">
 		</File>
 		<File
-			RelativePath="..\Modules\mathmodule.c">
+			RelativePath="..\..\Modules\mathmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\md5.c">
+			RelativePath="..\..\Modules\md5.c">
 		</File>
 		<File
-			RelativePath="..\Modules\md5module.c">
+			RelativePath="..\..\Modules\md5module.c">
 		</File>
 		<File
-			RelativePath="..\Parser\metagrammar.c">
+			RelativePath="..\..\Parser\metagrammar.c">
 		</File>
 		<File
-			RelativePath="..\Objects\methodobject.c">
+			RelativePath="..\..\Objects\methodobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\mmapmodule.c">
+			RelativePath="..\..\Modules\mmapmodule.c">
 		</File>
 		<File
-			RelativePath="..\Python\modsupport.c">
+			RelativePath="..\..\Python\modsupport.c">
 		</File>
 		<File
-			RelativePath="..\Objects\moduleobject.c">
+			RelativePath="..\..\Objects\moduleobject.c">
 		</File>
 		<File
-			RelativePath="..\PC\msvcrtmodule.c">
+			RelativePath="..\..\PC\msvcrtmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\multibytecodec.c">
+			RelativePath="..\..\Modules\cjkcodecs\multibytecodec.c">
 		</File>
 		<File
-			RelativePath="..\Parser\myreadline.c">
+			RelativePath="..\..\Parser\myreadline.c">
 		</File>
 		<File
-			RelativePath="..\Python\mysnprintf.c">
+			RelativePath="..\..\Python\mysnprintf.c">
 		</File>
 		<File
-			RelativePath="..\Python\mystrtoul.c">
+			RelativePath="..\..\Python\mystrtoul.c">
 		</File>
 		<File
-			RelativePath="..\Parser\node.c">
+			RelativePath="..\..\Parser\node.c">
 		</File>
 		<File
-			RelativePath="..\Objects\object.c">
+			RelativePath="..\..\Objects\object.c">
 		</File>
 		<File
-			RelativePath="..\Objects\obmalloc.c">
+			RelativePath="..\..\Objects\obmalloc.c">
 		</File>
 		<File
-			RelativePath="..\Modules\operator.c">
+			RelativePath="..\..\Modules\operator.c">
 		</File>
 		<File
-			RelativePath="..\Parser\parser.c">
+			RelativePath="..\..\Parser\parser.c">
 		</File>
 		<File
-			RelativePath="..\Modules\parsermodule.c">
+			RelativePath="..\..\Modules\parsermodule.c">
 		</File>
 		<File
-			RelativePath="..\Parser\parsetok.c">
+			RelativePath="..\..\Parser\parsetok.c">
 		</File>
 		<File
-			RelativePath="..\Python\peephole.c">
+			RelativePath="..\..\Python\peephole.c">
 		</File>
 		<File
-			RelativePath="..\Modules\posixmodule.c">
+			RelativePath="..\..\Modules\posixmodule.c">
 		</File>
 		<File
-			RelativePath="..\Python\pyarena.c">
+			RelativePath="..\..\Python\pyarena.c">
 		</File>
 		<File
-			RelativePath="..\Python\pyfpe.c">
+			RelativePath="..\..\Python\pyfpe.c">
 		</File>
 		<File
-			RelativePath="..\Python\pystate.c">
+			RelativePath="..\..\Python\pystate.c">
 		</File>
 		<File
-			RelativePath="..\Python\pystrcmp.c"
+			RelativePath="..\..\Python\pystrcmp.c"
 			>
 		</File>
 		<File
-			RelativePath="..\Python\pystrtod.c">
+			RelativePath="..\..\Python\pystrtod.c">
 		</File>
 		<File
-			RelativePath="..\Python\Python-ast.c">
+			RelativePath="..\..\Python\Python-ast.c">
 		</File>
 		<File
-			RelativePath="..\PC\python_nt.rc">
+			RelativePath="..\..\PC\python_nt.rc">
 		</File>
 		<File
-			RelativePath="..\Python\pythonrun.c">
+			RelativePath="..\..\Python\pythonrun.c">
 		</File>
 		<File
-			RelativePath="..\Objects\rangeobject.c">
+			RelativePath="..\..\Objects\rangeobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\rotatingtree.c">
+			RelativePath="..\..\Modules\rotatingtree.c">
 		</File>
 		<File
-			RelativePath="..\Objects\setobject.c">
+			RelativePath="..\..\Objects\setobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\sha256module.c">
+			RelativePath="..\..\Modules\sha256module.c">
 		</File>
 		<File
-			RelativePath="..\Modules\sha512module.c">
+			RelativePath="..\..\Modules\sha512module.c">
 		</File>
 		<File
-			RelativePath="..\Modules\shamodule.c">
+			RelativePath="..\..\Modules\shamodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\signalmodule.c">
+			RelativePath="..\..\Modules\signalmodule.c">
 		</File>
 		<File
-			RelativePath="..\Objects\sliceobject.c">
+			RelativePath="..\..\Objects\sliceobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\stringobject.c">
+			RelativePath="..\..\Objects\stringobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\stropmodule.c">
+			RelativePath="..\..\Modules\stropmodule.c">
 		</File>
 		<File
-			RelativePath="..\Python\structmember.c">
+			RelativePath="..\..\Python\structmember.c">
 		</File>
 		<File
-			RelativePath="..\Objects\structseq.c">
+			RelativePath="..\..\Objects\structseq.c">
 		</File>
 		<File
-			RelativePath="..\Python\symtable.c">
+			RelativePath="..\..\Python\symtable.c">
 		</File>
 		<File
-			RelativePath="..\Modules\symtablemodule.c">
+			RelativePath="..\..\Modules\symtablemodule.c">
 		</File>
 		<File
-			RelativePath="..\Python\sysmodule.c">
+			RelativePath="..\..\Python\sysmodule.c">
 		</File>
 		<File
-			RelativePath="..\Python\thread.c">
+			RelativePath="..\..\Python\thread.c">
 		</File>
 		<File
-			RelativePath="..\Modules\threadmodule.c">
+			RelativePath="..\..\Modules\threadmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\timemodule.c">
+			RelativePath="..\..\Modules\timemodule.c">
 		</File>
 		<File
-			RelativePath="..\Parser\tokenizer.c">
+			RelativePath="..\..\Parser\tokenizer.c">
 		</File>
 		<File
-			RelativePath="..\Python\traceback.c">
+			RelativePath="..\..\Python\traceback.c">
 		</File>
 		<File
-			RelativePath="..\Objects\tupleobject.c">
+			RelativePath="..\..\Objects\tupleobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\typeobject.c">
+			RelativePath="..\..\Objects\typeobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\unicodectype.c">
+			RelativePath="..\..\Objects\unicodectype.c">
 		</File>
 		<File
-			RelativePath="..\Objects\unicodeobject.c">
+			RelativePath="..\..\Objects\unicodeobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\weakrefobject.c">
+			RelativePath="..\..\Objects\weakrefobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\xxsubtype.c">
+			RelativePath="..\..\Modules\xxsubtype.c">
 		</File>
 		<File
-			RelativePath="..\Modules\yuvconvert.c">
+			RelativePath="..\..\Modules\yuvconvert.c">
 		</File>
 		<File
-			RelativePath="..\Modules\zipimport.c">
+			RelativePath="..\..\Modules\zipimport.c">
 		</File>
 	</Files>
 	<Globals>

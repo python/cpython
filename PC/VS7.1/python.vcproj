@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -80,7 +80,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -115,7 +115,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\Include"/>
+				AdditionalIncludeDirectories="..\..\Include"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -140,7 +140,7 @@
 				AdditionalOptions=" /USECL:MS_ITANIUM  /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -204,7 +204,7 @@
 				AdditionalOptions=" /USECL:MS_OPTERON"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -260,13 +260,13 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\PC\pycon.ico">
+			RelativePath="..\..\PC\pycon.ico">
 		</File>
 		<File
-			RelativePath="..\Modules\python.c">
+			RelativePath="..\..\Modules\python.c">
 		</File>
 		<File
-			RelativePath="..\PC\python_exe.rc">
+			RelativePath="..\..\PC\python_exe.rc">
 		</File>
 	</Files>
 	<Globals>
