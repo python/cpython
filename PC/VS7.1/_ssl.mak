@@ -12,7 +12,7 @@ CFLAGS=/Ox /MD /LD /DWIN32
 SSL_LIB_DIR=$(SSL_DIR)/out32
 !ENDIF
 
-INCLUDES=-I ../Include -I ../PC -I $(SSL_DIR)/inc32
+INCLUDES=-I ../../Include -I ../../PC -I $(SSL_DIR)/inc32
 
 SSL_LIBS=gdi32.lib wsock32.lib user32.lib advapi32.lib /LIBPATH:$(SSL_LIB_DIR) libeay32.lib ssleay32.lib
 SSL_SOURCE=../../Modules/_ssl.c 
