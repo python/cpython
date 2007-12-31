@@ -11,7 +11,7 @@ build the solution. Unless you are going to debug a problem in the core or
 you are going to create an optimized build you want to select "Release" as
 configuration.
 
-The PCbuild9 directory is compatible with all versions of Visual Studio from
+The PCbuild directory is compatible with all versions of Visual Studio from
 VS C++ Express Edition over the standard edition up to the professional
 edition. However the express edition does support features like solution
 folders or profile guided optimization (PGO). The missing bits and pieces
@@ -32,7 +32,7 @@ NOTE:
 When using the Debug setting, the output files have a _d added to
 their name:  python30_d.dll, python_d.exe, parser_d.pyd, and so on.
 
-The 32bit builds end up in the solution folder PCbuild9 while the x64 builds
+The 32bit builds end up in the solution folder PCbuild while the x64 builds
 land in the amd64 subfolder. The PGI and PGO builds for profile guided
 optimization end up in their own folders, too.
 
@@ -67,7 +67,7 @@ winsound
 The following subprojects will generally NOT build out of the box. They
 wrap code Python doesn't control, and you'll need to download the base
 packages first and unpack them into siblings of PCbuilds's parent
-directory; for example, if your PCbuild9 is  ..\dist\py3k\PCbuild9\,
+directory; for example, if your PCbuild is  ..\dist\py3k\PCbuild\,
 unpack into new subdirectories of ..\dist\.
 
 _tkinter
@@ -85,7 +85,7 @@ _tkinter
 
     Build with build_tkinter.py
     ---------------------------
-    The PCbuild9 directory contains a Python script which automates all
+    The PCbuild directory contains a Python script which automates all
     steps. Run the script in a Visual Studio 2009 command prompt with 
 
       python build_tkinter.py Win32
@@ -145,7 +145,7 @@ bz2
 
     A custom pre-link step in the bz2 project settings should manage to
     build bzip2-1.0.3\libbz2.lib by magic before bz2.pyd (or bz2_d.pyd) is
-    linked in PCbuild9\.
+    linked in PCbuild\.
     However, the bz2 project is not smart enough to remove anything under
     bzip2-1.0.3\ when you do a clean, so if you want to rebuild bzip2.lib
     you need to clean up bzip2-1.0.3\ by hand.
@@ -304,7 +304,7 @@ change the "Runtime Library" from "Multi-threaded DLL (/MD)" to
 Visual Studio properties
 ------------------------
 
-The PCbuild9 solution makes heavy use of Visual Studio property files 
+The PCbuild solution makes heavy use of Visual Studio property files 
 (*.vsprops). The properties can be viewed and altered in the Property
 Manager (View -> Other Windows -> Property Manager).
 

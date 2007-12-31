@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Moved PCbuild/ directory for VS 2003 to PC/VS7.1 and renamed PCBuild9/
+  directory to PCBuild/.
+
 - Issue #1629: Renamed Py_Size, Py_Type and Py_Refcnt to Py_SIZE, Py_TYPE
   and Py_REFCNT.
 
