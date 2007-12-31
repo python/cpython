@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC,..\..\Modules\_ctypes\libffi_msvc"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="3"
@@ -74,7 +74,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC,..\..\Modules\_ctypes\libffi_msvc"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -131,7 +131,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC,..\..\Modules\_ctypes\libffi_msvc"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -190,7 +190,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=" /USECL:MS_ITANIUM"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC,..\..\Modules\_ctypes\libffi_msvc"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -244,31 +244,31 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\_ctypes\_ctypes.c">
+			RelativePath="..\..\Modules\_ctypes\_ctypes.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\callbacks.c">
+			RelativePath="..\..\Modules\_ctypes\callbacks.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\callproc.c">
+			RelativePath="..\..\Modules\_ctypes\callproc.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\cfield.c">
+			RelativePath="..\..\Modules\_ctypes\cfield.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\libffi_msvc\ffi.c">
+			RelativePath="..\..\Modules\_ctypes\libffi_msvc\ffi.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\malloc_closure.c">
+			RelativePath="..\..\Modules\_ctypes\malloc_closure.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\libffi_msvc\prep_cif.c">
+			RelativePath="..\..\Modules\_ctypes\libffi_msvc\prep_cif.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\stgdict.c">
+			RelativePath="..\..\Modules\_ctypes\stgdict.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\libffi_msvc\win32.c">
+			RelativePath="..\..\Modules\_ctypes\libffi_msvc\win32.c">
 			<FileConfiguration
 				Name="ReleaseAMD64|Win32"
 				ExcludedFromBuild="TRUE">
@@ -277,7 +277,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\Modules\_ctypes\libffi_msvc\win64.asm">
+			RelativePath="..\..\Modules\_ctypes\libffi_msvc\win64.asm">
 			<FileConfiguration
 				Name="Debug|Win32"
 				ExcludedFromBuild="TRUE">

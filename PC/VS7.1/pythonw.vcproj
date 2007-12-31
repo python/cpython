@@ -4,7 +4,7 @@
 	Version="7.10"
 	Name="pythonw"
 	SccProjectName="pythonw"
-	SccLocalPath="..\pc">
+	SccLocalPath="..\..\pc">
 	<Platforms>
 		<Platform
 			Name="Win32"/>
@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -75,7 +75,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -133,7 +133,7 @@
 				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -195,7 +195,7 @@
 				AdditionalOptions=" /USECL:MS_OPTERON"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
+				AdditionalIncludeDirectories="..\..\Include,..\..\PC"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -250,10 +250,10 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\PC\python_exe.rc">
+			RelativePath="..\..\PC\python_exe.rc">
 		</File>
 		<File
-			RelativePath="..\PC\WinMain.c">
+			RelativePath="..\..\PC\WinMain.c">
 		</File>
 	</Files>
 	<Globals>
