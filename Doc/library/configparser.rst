@@ -87,7 +87,7 @@ write-back, as will be the keys within each section.
    well. New applications should prefer this version if they don't need to be
    compatible with older versions of Python.
 
-   .. % XXX Need to explain what's safer/more predictable about it.
+   .. XXX Need to explain what's safer/more predictable about it.
 
 
 .. exception:: NoSectionError

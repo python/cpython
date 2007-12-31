@@ -6,9 +6,9 @@
    :synopsis: Helpers for computing differences between objects.
 .. moduleauthor:: Tim Peters <tim_one@users.sourceforge.net>
 .. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
+.. Markup by Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-.. % LaTeXification by Fred L. Drake, Jr. <fdrake@acm.org>.
 
 This module provides classes and functions for comparing sequences. It
 can be used for example, for comparing files, and can produce difference
@@ -377,6 +377,12 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
    adjacent triples in the list, and the second is not the last triple in the list,
    then ``i+n != i'`` or ``j+n != j'``; in other words, adjacent triples always
    describe non-adjacent equal blocks.
+
+   .. XXX Explain why a dummy is used!
+
+   .. versionchanged:: 2.5
+      The guarantee that adjacent triples always describe non-adjacent blocks was
+      implemented.
 
    ::
 

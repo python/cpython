@@ -50,10 +50,6 @@ AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features]
 # them.
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
 
-# OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
-# also defined. This can be overridden by defining _BSD_SOURCE
-AC_DEFINE(_BSD_SOURCE, 1, [Define on OpenBSD to activate all library features])
-
 # The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # u_int on Irix 5.3. Defining _BSD_TYPES brings it back.
 AC_DEFINE(_BSD_TYPES, 1, [Define on Irix to enable u_int])
@@ -206,7 +202,12 @@ case $ac_sys_system/$ac_sys_release in
   # even though select is a POSIX function. Reported by J. Ribbens.
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
   OpenBSD/2.* | OpenBSD/3.@<:@0123456789@:>@ | OpenBSD/4.@<:@0@:>@) 
-    define_xopen_source=no;;
+    define_xopen_source=no
+    # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
+    # also defined. This can be overridden by defining _BSD_SOURCE
+    # As this has a different meaning on Linux, only define it on OpenBSD
+    AC_DEFINE(_BSD_SOURCE, 1, [Define on OpenBSD to activate all library features])
+    ;;
   # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
   # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
   # Marc Recht

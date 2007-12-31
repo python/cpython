@@ -2,54 +2,53 @@
   What's New in Python 2.6  
 ****************************
 
-.. % XXX mention switch to reST for documentation
-.. % XXX mention switch to Roundup for bug tracking
+.. XXX mention switch to Roundup for bug tracking
 
 :Author: A.M. Kuchling
 :Release: |release|
 :Date: |today|
 
-.. % $Id: whatsnew26.tex 55963 2007-06-13 18:07:49Z guido.van.rossum $
-.. % Rules for maintenance:
-.. % 
-.. % * Anyone can add text to this document.  Do not spend very much time
-.. % on the wording of your changes, because your text will probably
-.. % get rewritten to some degree.
-.. % 
-.. % * The maintainer will go through Misc/NEWS periodically and add
-.. % changes; it's therefore more important to add your changes to
-.. % Misc/NEWS than to this file.
-.. % 
-.. % * This is not a complete list of every single change; completeness
-.. % is the purpose of Misc/NEWS.  Some changes I consider too small
-.. % or esoteric to include.  If such a change is added to the text,
-.. % I'll just remove it.  (This is another reason you shouldn't spend
-.. % too much time on writing your addition.)
-.. % 
-.. % * If you want to draw your new text to the attention of the
-.. % maintainer, add 'XXX' to the beginning of the paragraph or
-.. % section.
-.. % 
-.. % * It's OK to just add a fragmentary note about a change.  For
-.. % example: "XXX Describe the transmogrify() function added to the
-.. % socket module."  The maintainer will research the change and
-.. % write the necessary text.
-.. % 
-.. % * You can comment out your additions if you like, but it's not
-.. % necessary (especially when a final release is some months away).
-.. % 
-.. % * Credit the author of a patch or bugfix.   Just the name is
-.. % sufficient; the e-mail address isn't necessary.
-.. % 
-.. % * It's helpful to add the bug/patch number as a comment:
-.. % 
-.. % % Patch 12345
-.. % XXX Describe the transmogrify() function added to the socket
-.. % module.
-.. % (Contributed by P.Y. Developer.)
-.. % 
-.. % This saves the maintainer the effort of going through the SVN log
-.. % when researching a change.
+.. $Id: whatsnew26.tex 55746 2007-06-02 18:33:53Z neal.norwitz $
+   Rules for maintenance:
+   
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+   
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+   
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+   
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+   
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+   
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+   
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+   
+   * It's helpful to add the bug/patch number as a comment:
+   
+   % Patch 12345
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer.)
+   
+   This saves the maintainer the effort of going through the SVN log
+   when researching a change.
 
 This article explains the new features in Python 2.6.  No release date for
 Python 2.6 has been set; it will probably be released in mid 2008.
@@ -60,14 +59,14 @@ should refer to the documentation for Python 2.6. If you want to understand the
 complete implementation and design rationale, refer to the PEP for a particular
 new feature.
 
-.. % Compare with previous release in 2 - 3 sentences here.
-.. % add hyperlink when the documentation becomes available online.
+.. Compare with previous release in 2 - 3 sentences here.
+   add hyperlink when the documentation becomes available online.
 
-.. % ======================================================================
-.. % Large, PEP-level features and changes should be described here.
-.. % Should there be a new section here for 3k migration?
-.. % Or perhaps a more general section describing module changes/deprecation?
-.. % ======================================================================
+.. ========================================================================
+.. Large, PEP-level features and changes should be described here.
+.. Should there be a new section here for 3k migration?
+.. Or perhaps a more general section describing module changes/deprecation?
+.. ========================================================================
 
 Python 3.0
 ================
@@ -156,7 +155,7 @@ conversion to LaTeX as an output format.
    `Docutils <http://docutils.sf.net>`__: The fundamental
    reStructured Text parser and toolset.
 
-   `Documenting Python <http://docs.python.org/dev/documenting/>`__: Describes how to write for 
+   :ref:`documenting-index`: Describes how to write for 
    Python's documentation.
 
 
@@ -407,7 +406,7 @@ bound to a variable, and calls ``object.close`` at the end of the block. ::
 
    The documentation  for the :mod:`contextlib` module.
 
-.. % ======================================================================
+.. ======================================================================
 
 .. _pep-0366:
 
@@ -425,7 +424,7 @@ importers can then set :attr:`__package__`.  The :mod:`runpy` module
 that implements the :option:`-m` switch now does this, so relative imports
 can now be used in scripts running from inside a package.
 
-.. % ======================================================================
+.. ======================================================================
 
 .. _pep-3110:
 
@@ -475,7 +474,7 @@ work.
    :pep:`3110` - Catching Exceptions in Python 3000
       PEP written and implemented by Collin Winter.
 
-.. % ======================================================================
+.. ======================================================================
 
 .. _pep-3119:
 
@@ -509,14 +508,14 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
     >>> f(**ud)
     ['a', 'b']
 
-  .. % Patch 1686487
+  .. Patch 1686487
 
 * The built-in types now have improved support for extended slicing syntax,
   where various combinations of ``(start, stop, step)`` are supplied.
   Previously, the support was partial and certain corner cases wouldn't work.
   (Implemented by Thomas Wouters.)
 
-  .. % Revision 57619
+  .. Revision 57619
 
 * Properties now have two attributes, 
   :attr:`setter` and :attr:`deleter`, that are useful shortcuts for
@@ -544,14 +543,14 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   This is a backport of a Python 3.0 change.
   (Contributed by Mark Dickinson.)
 
-  .. % Patch #1675423
+  .. Patch #1675423
 
   A numerical nicety: when creating a complex number from two floats
   on systems that support signed zeros (-0 and +0), the 
   :func:`complex()` constructor will now preserve the sign 
   of the zero.
 
-  .. % Patch 1507
+  .. Patch 1507
 
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6, 
@@ -564,26 +563,26 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   will not inadvertently catch :exc:`GeneratorExit`. 
   (Contributed by Chad Austin.)
 
-  .. % Patch #1537
+  .. Patch #1537
 
 * The :func:`compile` built-in function now accepts keyword arguments
   as well as positional parameters.  (Contributed by Thomas Wouters.)
 
-  .. % Patch 1444529
+  .. Patch 1444529
 
 * The :func:`complex` constructor now accepts strings containing 
   parenthesized complex numbers, letting ``complex(repr(cmplx))``
   will now round-trip values.  For example, ``complex('(3+4j)')``
   now returns the value (3+4j).
 
-  .. % Patch 1491866
+  .. Patch 1491866
 
 * The string :meth:`translate` method now accepts ``None`` as the 
   translation table parameter, which is treated as the identity 
   transformation.   This makes it easier to carry out operations
   that only delete characters.  (Contributed by Bengt Richter.)
 
-  .. % Patch 1193128
+  .. Patch 1193128
 
 * The built-in :func:`dir` function now checks for a :meth:`__dir__`
   method on the objects it receives.  This method must return a list
@@ -592,14 +591,14 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   Objects that have :meth:`__getattr__` or :meth:`__getattribute__` 
   methods can use this to advertise pseudo-attributes they will honor.
 
-  .. % Patch 1591665
+  .. Patch 1591665
 
 * An obscure change: when you use the the :func:`locals` function inside a
   :keyword:`class` statement, the resulting dictionary no longer returns free
   variables.  (Free variables, in this case, are variables referred to in the
   :keyword:`class` statement  that aren't attributes of the class.)
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Optimizations
@@ -612,7 +611,7 @@ Optimizations
 The net result of the 2.6 optimizations is that Python 2.6 runs the pystone
 benchmark around XX% faster than Python 2.5.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 New, Improved, and Deprecated Modules
@@ -627,7 +626,7 @@ complete list of changes, or look through the CVS logs for all the details.
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes.)
 
-  .. % Patch 1551443
+  .. Patch 1551443
 
 * A new data type in the :mod:`collections` module: :class:`namedtuple(typename,
   fieldnames)` is a factory function that creates subclasses of the standard tuple
@@ -677,14 +676,14 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`ctypes` module now supports a :class:`c_bool` datatype 
   that represents the C99 ``bool`` type.  (Contributed by David Remahl.)
 
-  .. % Patch 1649190
+  .. Patch 1649190
 
   The :mod:`ctypes` string, buffer and array types also have improved
   support for extended slicing syntax,
   where various combinations of ``(start, stop, step)`` are supplied.
   (Implemented by Thomas Wouters.)
 
-  .. % Revision 57769
+  .. Revision 57769
 
 
 * A new method in the :mod:`curses` module: for a window, :meth:`chgat` changes
@@ -722,12 +721,12 @@ complete list of changes, or look through the CVS logs for all the details.
   to drop the built-in in the 2.x series.  (Patched by 
   Christian Heimes.)
 
-  .. % Patch 1739906
+  .. Patch 1739906
 
 * The :func:`glob.glob` function can now return Unicode filenames if 
   a Unicode path was used and Unicode filenames are matched within the directory.
 
-  .. % Patch #1001604
+  .. Patch #1001604
 
 * The :mod:`gopherlib` module has been removed.
 
@@ -760,7 +759,7 @@ complete list of changes, or look through the CVS logs for all the details.
   :func:`macostools.touched` function to be removed because it depended on the
   :mod:`macfs` module.
 
-  .. % Patch #1490190
+  .. Patch #1490190
 
 * The :mod:`new` module has been removed from Python 3.0.
   Importing it therefore
@@ -783,13 +782,13 @@ complete list of changes, or look through the CVS logs for all the details.
   into an infinite recursion if there's a symlink that points to a
   parent directory.
        
-  .. % Patch 1273829
+  .. Patch 1273829
 
 * The ``os.environ`` object's :meth:`clear` method will now unset the 
   environment variables using :func:`os.unsetenv` in addition to clearing
   the object's keys.  (Contributed by Martin Horcicka.)
 
-  .. % Patch #1181 
+  .. Patch #1181 
 
 * In the :mod:`os.path` module, the :func:`splitext` function
   has been changed to not split on leading period characters.
@@ -797,27 +796,27 @@ complete list of changes, or look through the CVS logs for all the details.
   For example, ``os.path.splitext('.ipython')``
   now returns ``('.ipython', '')`` instead of ``('', '.ipython')``.
 
-  .. % Bug #115886
+  .. Bug #115886
 
   A new function, :func:`relpath(path, start)` returns a relative path
   from the ``start`` path, if it's supplied, or from the current
   working directory to the destination ``path``.  (Contributed by
   Richard Barran.)
 
-  .. % Patch 1339796
+  .. Patch 1339796
 
   On Windows, :func:`os.path.expandvars` will now expand environment variables 
   in the form "%var%", and "~user" will be expanded into the 
   user's home directory path.  (Contributed by Josiah Carlson.)
 
-  .. % Patch 957650
+  .. Patch 957650
 
 * The Python debugger provided by the :mod:`pdb` module 
   gained a new command: "run" restarts the Python program being debugged,
   and can optionally take new command-line arguments for the program.
   (Contributed by Rocky Bernstein.)
 
-  .. % Patch #1393667
+  .. Patch #1393667
 
 * New functions in the :mod:`posix` module: :func:`chflags` and :func:`lchflags`
   are wrappers for the corresponding system calls (where they're available).
@@ -833,7 +832,7 @@ complete list of changes, or look through the CVS logs for all the details.
   on earlier versions of Python.
   (Contributed by Shawn Ligocki.)
 
-  .. % Issue 1727780
+  .. Issue 1727780
 
 * The :mod:`rgbimg` module has been removed.
 
@@ -876,7 +875,7 @@ complete list of changes, or look through the CVS logs for all the details.
   added by Facundo Batista; LMTP implemented by Leif
   Hedstrom.)
 
-  .. % Patch #957003
+  .. Patch #957003
 
 * A new variable in the :mod:`sys` module,
   :attr:`float_info`, is a dictionary 
@@ -887,7 +886,7 @@ complete list of changes, or look through the CVS logs for all the details.
   (smallest difference between 1.0 and the next largest value
   representable), and several others.  (Contributed by Christian Heimes.)
 
-  .. % Patch 1534
+  .. Patch 1534
 
 * The :mod:`tarfile` module now supports POSIX.1-2001 (pax) and
   POSIX.1-1988 (ustar) format tarfiles, in addition to the GNU tar
@@ -923,7 +922,7 @@ complete list of changes, or look through the CVS logs for all the details.
   behaviour can now be changed by passing ``delete=False`` to the 
   constructor.  (Contributed by Damien Miller.)
 
-  .. % Patch #1537850
+  .. Patch #1537850
 
 * The :mod:`test.test_support` module now contains a
   :func:`EnvironmentVarGuard`
@@ -960,7 +959,7 @@ complete list of changes, or look through the CVS logs for all the details.
        whitespace.
     >>> 
 
-  .. % Patch #1581073
+  .. Patch #1581073
 
 * The :mod:`timeit` module now accepts callables as well as strings 
   for the statement being timed and for the setup code.
@@ -970,7 +969,7 @@ complete list of changes, or look through the CVS logs for all the details.
   ``timeit(stmt, setup, time, number)`` create an instance and call
   the corresponding method. (Contributed by Erik Demaine.)
 
-  .. % Patch #1533909
+  .. Patch #1533909
 
 * An optional ``timeout`` parameter was added to the
   :func:`urllib.urlopen` function and the
@@ -995,7 +994,7 @@ complete list of changes, or look through the CVS logs for all the details.
   open the socket and begin listening for connections.
   (Contributed by Peter Parente.)
 
-  .. % Patch 1599845
+  .. Patch 1599845
 
   :class:`SimpleXMLRPCServer` also has a :attr:`_send_traceback_header`
   attribute; if true, the exception and formatted traceback are returned 
@@ -1005,8 +1004,8 @@ complete list of changes, or look through the CVS logs for all the details.
   information.  (Contributed by Alan McIntyre as part of his 
   project for Google's Summer of Code 2007.)
 
-.. % ======================================================================
-.. % whole new modules get described in subsections here
+.. ======================================================================
+.. whole new modules get described in subsections here
 
 Improved SSL Support
 --------------------------------------------------
@@ -1028,7 +1027,7 @@ XXX Certain features require the OpenSSL package to be installed, notably
 
    SSL module documentation.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Build and C API Changes
@@ -1045,7 +1044,7 @@ Changes to Python's build process and to the C API include:
   that wish to use the :mod:`bsddb` module for their own purposes.
   (Contributed by Duncan Grisby.)
 
-  .. % Patch 1551895
+  .. Patch 1551895
 
 * Several functions return information about the platform's 
   floating-point support.  :cfunc:`PyFloat_GetMax` returns
@@ -1057,9 +1056,9 @@ Changes to Python's build process and to the C API include:
   (smallest difference between 1.0 and the next largest value
   representable), and several others.
 
-  .. % Issue 1534
+  .. Issue 1534
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Port-Specific Changes
@@ -1067,7 +1066,7 @@ Port-Specific Changes
 
 Platform-specific changes go here.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-other:
@@ -1084,7 +1083,7 @@ Some of the more notable changes are:
 
 * Details will go here.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Porting to Python 2.6
@@ -1098,9 +1097,9 @@ code:
   :exc:`StandardError` but now it is, through :exc:`IOError`.
   (Implemented by Gregory P. Smith.)
 
-  .. % http://bugs.python.org/issue1706815
+  .. Issue 1706815
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _acks:

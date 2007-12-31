@@ -390,7 +390,7 @@ is called with this new argument list.
 Random Remarks
 ==============
 
-.. % [These should perhaps be placed more carefully...]
+.. These should perhaps be placed more carefully...
 
 Data attributes override method attributes with the same name; to avoid
 accidental name conflicts, which may cause hard-to-find bugs in large programs,
@@ -506,7 +506,7 @@ Derived classes may override methods of their base classes.  Because methods
 have no special privileges when calling other methods of the same object, a
 method of a base class that calls another method defined in the same base class
 may end up calling a method of a derived class that overrides it.  (For C++
-programmers: all methods in Python are effectively :keyword:`virtual`.)
+programmers: all methods in Python are effectively ``virtual``.)
 
 An overriding method in a derived class may in fact want to extend rather than
 simply replace the base class method of the same name. There is a simple way to
@@ -617,12 +617,10 @@ instance, if you have a function that formats some data from a file object, you
 can define a class with methods :meth:`read` and :meth:`readline` that get the
 data from a string buffer instead, and pass it as an argument.
 
-.. % (Unfortunately, this
-.. % technique has its limitations: a class can't define operations that
-.. % are accessed by special syntax such as sequence subscripting or
-.. % arithmetic operators, and assigning such a ``pseudo-file'' to
-.. % \code{sys.stdin} will not cause the interpreter to read further input
-.. % from it.)
+.. (Unfortunately, this technique has its limitations: a class can't define
+   operations that are accessed by special syntax such as sequence subscripting
+   or arithmetic operators, and assigning such a "pseudo-file" to sys.stdin will
+   not cause the interpreter to read further input from it.)
 
 Instance method objects have attributes, too: ``m.__self__`` is the instance
 object with the method :meth:`m`, and ``m.__func__`` is the function object

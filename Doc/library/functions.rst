@@ -28,7 +28,7 @@ available.  They are listed here in alphabetical order.
    :func:`__import__` function.
 
    For example, the statement ``import spam`` results in the following call:
-   ``__import__('spam',`` ``globals(),`` ``locals(), [], -1)``; the statement
+   ``__import__('spam', globals(), locals(), [], -1)``; the statement
    ``from spam.ham import eggs`` results in ``__import__('spam.ham', globals(),
    locals(), ['eggs'], -1)``.  Note that even though ``locals()`` and ``['eggs']``
    are passed in as arguments, the :func:`__import__` function does not set the
@@ -359,7 +359,7 @@ available.  They are listed here in alphabetical order.
    access to the standard :mod:`builtins` module and restricted environments are
    propagated.  If the *locals* dictionary is omitted it defaults to the *globals*
    dictionary.  If both dictionaries are omitted, the expression is executed in the
-   environment where :keyword:`eval` is called.  The return value is the result of
+   environment where :func:`eval` is called.  The return value is the result of
    the evaluated expression. Syntax errors are reported as exceptions.  Example::
 
       >>> x = 1
@@ -632,7 +632,7 @@ available.  They are listed here in alphabetical order.
       The contents of this dictionary should not be modified; changes may not affect
       the values of local variables used by the interpreter.
 
-   Free variables are returned by *locals* when it is called in a function block.
+   Free variables are returned by :func:`locals` when it is called in a function block.
    Modifications of free variables may not affect the values used by the
    interpreter.  Free variables are not returned in class blocks.
 

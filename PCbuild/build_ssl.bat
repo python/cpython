@@ -1,5 +1,3 @@
-if "%1" == "ReleaseAMD64" call "%MSSdk%\SetEnv" /XP64 /RETAIL
-
 @echo off
 if not defined HOST_PYTHON (
   if %1 EQU Debug (
@@ -10,5 +8,5 @@ if not defined HOST_PYTHON (
     if not exist python30.dll exit 1
   )
 )
-%HOST_PYTHON% build_ssl.py %1 %2
+%HOST_PYTHON% build_ssl.py %1 %2 %3
 

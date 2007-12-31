@@ -1,7 +1,3 @@
-.. % THIS FILE IS AUTO-GENERATED!  DO NOT EDIT!
-.. % (Your changes will be lost the next time it is generated.)
-
-
 :mod:`optparse` --- More powerful command line option parser
 ============================================================
 
@@ -17,9 +13,6 @@ style of command-line parsing: you create an instance of :class:`OptionParser`,
 populate it with options, and parse the command line. ``optparse`` allows users
 to specify options in the conventional GNU/POSIX syntax, and additionally
 generates usage and help messages for you.
-
-.. % An intro blurb used only when generating LaTeX docs for the Python
-.. % manual (based on README.txt).
 
 Here's an example of using ``optparse`` in a simple script::
 
@@ -69,8 +62,6 @@ and ``optparse`` will print out a brief summary of your script's options::
 
 where the value of *yourscript* is determined at runtime (normally from
 ``sys.argv[0]``).
-
-.. % $Id: intro.txt 413 2004-09-28 00:59:13Z greg $
 
 
 .. _optparse-background:
@@ -232,8 +223,6 @@ the "Preferences" dialog of a GUI, or command-line options---the more options
 you implement, the more flexible your program is, and the more complicated its
 implementation becomes.  Too much flexibility has drawbacks as well, of course;
 too many options can overwhelm users and make your code much harder to maintain.
-
-.. % $Id: tao.txt 413 2004-09-28 00:59:13Z greg $
 
 
 .. _optparse-tutorial:
@@ -651,8 +640,6 @@ Here's what :mod:`optparse`\ -based scripts usually look like::
 
    if __name__ == "__main__":
        main()
-
-.. % $Id: tutorial.txt 515 2006-06-10 15:37:45Z gward $
 
 
 .. _optparse-reference-guide:
@@ -1329,8 +1316,6 @@ OptionParser supports several other public methods:
      parser.add_option("--novice", action="store_const",
                        dest="mode", const="novice")
 
-.. % $Id: reference.txt 519 2006-06-11 14:39:11Z gward $
-
 
 .. _optparse-option-callbacks:
 
@@ -1626,8 +1611,6 @@ in the arguments following ``"-c"`` will be interpreted as further options
 (probably causing an error), rather than as arguments to ``"-c"``.  Fixing this
 is left as an exercise for the reader.
 
-.. % $Id: callbacks.txt 415 2004-09-30 02:26:17Z greg $
-
 
 .. _optparse-extending-optparse:
 
@@ -1818,6 +1801,3 @@ Features of note:
   about setting a default value for the option destinations in question; they can
   just leave the default as None and :meth:`ensure_value` will take care of
   getting it right when it's needed.
-
-.. % $Id: extending.txt 517 2006-06-10 16:18:11Z gward $
-

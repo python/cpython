@@ -100,8 +100,7 @@ If an encoding is declared, the encoding name must be recognized by Python. The
 encoding is used for all lexical analysis, including string literals, comments
 and identifiers. The encoding declaration must appear on a line of its own.
 
-A list of standard encodings can be found in the section
-:ref:`standard-encodings`.
+.. XXX there should be a list of supported encodings.
 
 
 .. _explicit-joining:

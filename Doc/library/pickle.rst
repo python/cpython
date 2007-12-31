@@ -1,4 +1,3 @@
-
 :mod:`pickle` --- Python object serialization
 =============================================
 
@@ -12,10 +11,8 @@
 
 .. module:: pickle
    :synopsis: Convert Python objects to streams of bytes and back.
-
-
-.. % Substantial improvements by Jim Kerr <jbkerr@sr.hp.com>.
-.. % Rewritten by Barry Warsaw <barry@zope.com>
+.. sectionauthor:: Jim Kerr <jbkerr@sr.hp.com>.
+.. sectionauthor:: Barry Warsaw <barry@zope.com>
 
 The :mod:`pickle` module implements a fundamental, but powerful algorithm for
 serializing and de-serializing a Python object structure.  "Pickling" is the
@@ -607,10 +604,10 @@ object references without actually instantiating all the objects in a pickle.
 [#]_  Setting :attr:`persistent_load` to a list is usually used in conjunction
 with the :meth:`noload` method on the Unpickler.
 
-.. % BAW: Both pickle and cPickle support something called
-.. % inst_persistent_id() which appears to give unknown types a second
-.. % shot at producing a persistent id.  Since Jim Fulton can't remember
-.. % why it was added or what it's for, I'm leaving it undocumented.
+.. BAW: Both pickle and cPickle support something called inst_persistent_id()
+   which appears to give unknown types a second shot at producing a persistent
+   id.  Since Jim Fulton can't remember why it was added or what it's for, I'm
+   leaving it undocumented.
 
 
 .. _pickle-sub:

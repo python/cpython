@@ -175,7 +175,7 @@ For example, Motorola and Sun processors are big-endian; Intel and DEC
 processors are little-endian.
 
 Native size and alignment are determined using the C compiler's
-:keyword:`sizeof` expression.  This is always combined with native byte order.
+``sizeof`` expression.  This is always combined with native byte order.
 
 Standard size and alignment are as follows: no alignment is required for any
 type (so you have to use pad bytes); :ctype:`short` is 2 bytes; :ctype:`int` and

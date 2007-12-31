@@ -16,10 +16,11 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  html   to make standalone HTML files"
-	@echo "  web    to make file usable by Sphinx.web"
+	@echo "  html     to make standalone HTML files"
+	@echo "  web      to make file usable by Sphinx.web"
 	@echo "  htmlhelp to make HTML files and a HTML help project"
-	@echo "  latex  to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latex    to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  changes  to make an overview over all changed/added/deprecated items"
 
 checkout:
 	@if [ ! -d tools/sphinx ]; then \
@@ -65,6 +66,10 @@ latex: build
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."
+
+changes: BUILDER = changes
+changes: build
+	@echo "The overview file is in build/changes."
 
 clean:
 	-rm -rf build/*

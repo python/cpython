@@ -58,8 +58,6 @@ The module defines the following:
    class yourself, as long as it has an appropriate :meth:`fileno` method (that
    really returns a file descriptor, not just a random integer).
 
-   .. % 
-
    .. note::
 
       .. index:: single: WinSock

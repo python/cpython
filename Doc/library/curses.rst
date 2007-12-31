@@ -1167,7 +1167,7 @@ Several constants are available to specify character cell attributes:
 Keys are referred to by integer constants with names starting with  ``KEY_``.
 The exact keycaps available are system dependent.
 
-.. % XXX should this table be alphabetized?
+.. XXX this table is far too large! should it be alphabetized?
 
 +-------------------+--------------------------------------------+
 | Key constant      | Key                                        |

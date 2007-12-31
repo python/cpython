@@ -1,4 +1,4 @@
-/* This program looks for processes which have build\PCbuild\python.exe
+/* This program looks for processes which have build\PC\VS7.1\python.exe
    in their path and terminates them. */
 #include <windows.h>
 #include <psapi.h>
@@ -46,14 +46,14 @@ int main()
 		/* Check if we are running a buildbot version of Python.
 
 		   On Windows, this will always be a debug build from the
-		   PCbuild directory.  build\\PCbuild\\python_d.exe
+		   PC\VS7.1 directory.  build\\PC\\VS7.1\\python_d.exe
 		   
 		   On Cygwin, the pathname is similar to other Unixes.
 		   Use \\build\\python.exe to ensure we don't match
-		   PCbuild\\python.exe which could be a normal instance
+		   PC\\VS7.1\\python.exe which could be a normal instance
 		   of Python running on vanilla Windows.
 		*/
-		if ((strstr(path, "build\\pcbuild\\python_d.exe") != NULL) ||
+		if ((strstr(path, "build\\pc\\vs7.1\\python_d.exe") != NULL) ||
 		    (strstr(path, "\\build\\python.exe") != NULL)) {
 			printf("Terminating %s (pid %d)\n", path, pids[i]);
 			if (!TerminateProcess(hProcess, 1)) {

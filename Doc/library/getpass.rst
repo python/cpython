@@ -1,4 +1,3 @@
-
 :mod:`getpass` --- Portable password input
 ==========================================
 
@@ -6,9 +5,7 @@
    :synopsis: Portable reading of passwords and retrieval of the userid.
 .. moduleauthor:: Piers Lauder <piers@cs.su.oz.au>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
-.. % Windows (& Mac?) support by Guido van Rossum.
+.. Windows (& Mac?) support by Guido van Rossum.
 
 The :mod:`getpass` module provides two functions:
 

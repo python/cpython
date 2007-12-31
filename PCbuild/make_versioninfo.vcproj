@@ -1,141 +1,325 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="9,00"
 	Name="make_versioninfo"
+	ProjectGUID="{F0E0541E-F17D-430B-97C4-93ADF0DD284E}"
 	RootNamespace="make_versioninfo"
-	SccProjectName="make_versioninfo"
-	SccLocalPath="..">
+	TargetFrameworkVersion="131072"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-release\make_versioninfo"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+				Description="Build PC/pythonnt_rc(_d).h"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\PC\pythonnt_rc.h&#x0D;&#x0A;"
+				Outputs="$(SolutionDir)..\PC\pythonnt_rc.h"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
-				StringPooling="TRUE"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_CONSOLE"
+				StringPooling="true"
 				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				EnableFunctionLevelLinking="true"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"
-				CommandLine=".\make_versioninfo.exe &gt;..\PC\pythonnt_rc.h
-"
-				Outputs="..\PC\pythonnt_rc.h"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				OutputFile=".\./make_versioninfo.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./make_versioninfo.pdb"
+				OutputFile="$(SolutionDir)make_versioninfo.exe"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				SubSystem="1"
 				BaseAddress="0x1d000000"
-				TargetMachine="1"/>
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(TargetFileName) &gt; ..\PC\python_nt.h"/>
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\PC\python_nt.h&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops"
+			>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCCustomBuildTool"
+				Description="Build PC/pythonnt_rc(_d).h"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\PC\pythonnt_rc.h&#x0D;&#x0A;"
+				Outputs="$(SolutionDir)..\PC\pythonnt_rc.h"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCXMLDataGeneratorTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCMIDLTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="true"
+				PreprocessorDefinitions="_CONSOLE"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(SolutionDir)make_versioninfo.exe"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\PC\python_nt.h&#x0D;&#x0A;"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-debug\make_versioninfo"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\debug.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+				Description="Build PC/pythonnt_rc(_d).h"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\PC\pythonnt_rc_d.h&#x0D;&#x0A;"
+				Outputs="$(SolutionDir)..\PC\pythonnt_rc_d.h"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
-				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="false"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_CONSOLE"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"
-				CommandLine=".\make_versioninfo_d.exe &gt;..\PC\pythonnt_rc_d.h
-"
-				Outputs="..\PC\pythonnt_rc_d.h"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				OutputFile="./make_versioninfo_d.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./make_versioninfo_d.pdb"
+				OutputFile="$(SolutionDir)make_versioninfo_d.exe"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				SubSystem="1"
 				BaseAddress="0x1d000000"
-				TargetMachine="1"/>
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(TargetFileName) &gt; ..\PC\python_nt_d.h"/>
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\PC\python_nt_d.h&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\debug.vsprops"
+			>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCCustomBuildTool"
+				Description="Build PC/pythonnt_rc(_d).h"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\PC\pythonnt_rc_d.h&#x0D;&#x0A;"
+				Outputs="$(SolutionDir)..\PC\pythonnt_rc_d.h"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCXMLDataGeneratorTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="false"
+				PreprocessorDefinitions="_CONSOLE"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(SolutionDir)make_versioninfo_d.exe"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\PC\python_nt_d.h&#x0D;&#x0A;"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath="..\PC\make_versioninfo.c">
-		</File>
+		<Filter
+			Name="Source Files"
+			>
+			<File
+				RelativePath="..\PC\make_versioninfo.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

@@ -1,260 +1,617 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="9,00"
 	Name="pythonw"
-	SccProjectName="pythonw"
-	SccLocalPath="..\pc">
+	ProjectGUID="{F4229CC3-873C-49AE-9729-DD308ED4CD4A}"
+	TargetFrameworkVersion="131072"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-debug\pythonw"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\debug.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				EnableIntrinsicFunctions="false"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_WINDOWS"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile="./pythonw_d.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./pythonw_d.pdb"
-				SubSystem="2"
-				StackReserveSize="2000000"
-				BaseAddress="0x1d000000"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"/>
+				Culture="1033"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw_d.exe"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+				TargetMachine="1"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\debug.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				EnableIntrinsicFunctions="false"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_WINDOWS"
+				RuntimeLibrary="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw_d.exe"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-release\pythonw"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
-				StringPooling="TRUE"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_WINDOWS"
+				StringPooling="true"
 				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				EnableFunctionLevelLinking="true"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile=".\./pythonw.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./pythonw.pdb"
-				SubSystem="2"
-				StackReserveSize="2000000"
-				BaseAddress="0x1d000000"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"/>
+				Culture="1033"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw.exe"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+				TargetMachine="1"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseItanium|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\ia64-temp-release\pythonw"
+			Name="Release|x64"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_ITANIUM /GS-"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
-				StringPooling="TRUE"
-				BasicRuntimeChecks="0"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_WINDOWS"
+				StringPooling="true"
 				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				EnableFunctionLevelLinking="true"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				OutputFile=".\./pythonw.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./pythonw.pdb"
-				SubSystem="2"
-				StackReserveSize="2000000"
-				BaseAddress="0x1d000000"
-				TargetMachine="0"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"/>
+				Culture="1033"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw.exe"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseAMD64|Win32"
-			OutputDirectory="."
-			IntermediateDirectory="amd64-temp-release\pythonw"
+			Name="PGInstrument|Win32"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops;.\pginstrument.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_OPTERON"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
-				StringPooling="TRUE"
-				BasicRuntimeChecks="0"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_WINDOWS"
+				StringPooling="true"
 				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				EnableFunctionLevelLinking="true"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				OutputFile=".\./pythonw.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./pythonw.pdb"
-				SubSystem="2"
-				StackReserveSize="2000000"
-				BaseAddress="0x1d000000"
-				TargetMachine="0"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"/>
+				Culture="1033"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw.exe"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+				ImportLibrary=""
+				TargetMachine="1"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGInstrument|x64"
+			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops;.\pginstrument.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_WINDOWS"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw.exe"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+				ImportLibrary=""
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGUpdate|Win32"
+			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops;.\pgupdate.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_WINDOWS"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw.exe"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+				ImportLibrary=""
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGUpdate|x64"
+			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops;.\pgupdate.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_WINDOWS"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw.exe"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+				ImportLibrary=""
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath="..\PC\python_exe.rc">
-		</File>
-		<File
-			RelativePath="..\PC\WinMain.c">
-		</File>
+		<Filter
+			Name="Resource Files"
+			>
+			<File
+				RelativePath="..\PC\python_exe.rc"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Source Files"
+			>
+			<File
+				RelativePath="..\PC\WinMain.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

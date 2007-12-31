@@ -31,8 +31,8 @@ The error indicator consists of three Python objects corresponding to the result
 of ``sys.exc_info()``.  API functions exist to interact with the error indicator
 in various ways.  There is a separate error indicator for each thread.
 
-.. % XXX Order of these should be more thoughtful.
-.. % Either alphabetical or some kind of structure.
+.. XXX Order of these should be more thoughtful.
+   Either alphabetical or some kind of structure.
 
 
 .. cfunction:: void PyErr_Print()

@@ -194,15 +194,11 @@ Windows Platform
 Win95/98 specific
 ^^^^^^^^^^^^^^^^^
 
-
 .. function:: popen(cmd, mode='r', bufsize=None)
 
    Portable :func:`popen` interface.  Find a working popen implementation
    preferring :func:`win32pipe.popen`.  On Windows NT, :func:`win32pipe.popen`
    should work; on Windows 9x it hangs due to bugs in the MS C library.
-
-   .. % This KnowledgeBase article appears to be missing...
-   .. % See also \ulink{MS KnowledgeBase article Q150956}{}.
 
 
 Mac OS Platform
@@ -231,7 +227,7 @@ Unix Platforms
    Tries to determine the name of the OS distribution name Returns a tuple
    ``(distname, version, id)`` which defaults to the args given as parameters.
 
-.. % Document linux_distribution()?
+.. XXX Document linux_distribution()?
 
 
 .. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=2048)

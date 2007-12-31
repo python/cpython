@@ -158,8 +158,7 @@ installation directory.  So, if you had installed Python to
 :file:`C:\\Python\\Lib\\` and third-party modules should be stored in
 :file:`C:\\Python\\Lib\\site-packages\\`.
 
-.. % `` this fixes syntax highlighting errors in some editors
-   due to the \\ hackery
+.. `` this fixes syntax highlighting errors in some editors due to the \\ hackery
 
 You can add folders to your search path to make Python's import mechanism search
 in these directories as well.  Use :envvar:`PYTHONPATH`, as described in
@@ -167,7 +166,7 @@ in these directories as well.  Use :envvar:`PYTHONPATH`, as described in
 separated by semicolons, though, to distinguish them from drive identifiers
 (:file:`C:\\` etc.).
 
-.. % ``
+.. ``
 
 Modifying the module search path can also be done through the Windows registry:
 Edit

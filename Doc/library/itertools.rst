@@ -157,7 +157,7 @@ loops that truncate the stream.
                   key = lambda x: x
               self.keyfunc = key
               self.it = iter(iterable)
-              self.tgtkey = self.currkey = self.currvalue = []
+              self.tgtkey = self.currkey = self.currvalue = object()
           def __iter__(self):
               return self
           def __next__(self):
@@ -350,14 +350,13 @@ loops that truncate the stream.
    is equivalent to::
 
       def tee(iterable):
-          def gen(next, data={}, cnt=[0]):
+          def gen(next, data={}):
               for i in count():
-                  if i == cnt[0]:
-                      item = data[i] = next()
-                      cnt[0] += 1
+                  if i in data:
+                      yield data.pop(i)
                   else:
-                      item = data.pop(i)
-                  yield item
+                      data[i] = next()
+                      yield data[i]
           it = iter(iterable)
           return (gen(it.__next__), gen(it.__next__))
 

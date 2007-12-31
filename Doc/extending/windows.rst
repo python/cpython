@@ -7,8 +7,6 @@
 Building C and C++ Extensions on Windows
 ****************************************
 
-.. % 
-
 This chapter briefly explains how to create a Windows extension module for
 Python using Microsoft Visual C++, and follows with more detailed background
 information on how it works.  The explanatory material is useful for both the
