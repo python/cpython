@@ -1011,7 +1011,7 @@ def add_files(db):
     default_feature.set_current()
     lib = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
     lib.add_file("py.ico", src=srcdir+"/PC/py.ico")
-    lib.add_file("pyc.ico", src=srcdir"/PC/pyc.ico")
+    lib.add_file("pyc.ico", src=srcdir+"/PC/pyc.ico")
     dlls = []
     tclfiles = []
     for f in extensions:

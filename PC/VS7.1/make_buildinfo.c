@@ -44,7 +44,7 @@ int make_buildinfo2()
 	if (_stat(command+1, &st) < 0)
 		/* subwcrev.exe not part of the release */
 		return 0;
-	strcat(command, "\" .. ..\\..\\Modules\\getbuildinfo.c getbuildinfo2.c");
+	strcat(command, "\" ..\\.. ..\\..\\Modules\\getbuildinfo.c getbuildinfo2.c");
 	puts(command); fflush(stdout);
 	if (system(command) < 0)
 		return 0;
