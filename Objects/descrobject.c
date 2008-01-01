@@ -1204,6 +1204,7 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del,
 	}
 	
 	new =  PyObject_CallFunction(type, "OOOO", get, set, del, doc);
+	Py_DECREF(type);
 	if (new == NULL)
 		return NULL;
 	pnew = (propertyobject *)new;

@@ -341,8 +341,7 @@ class DateTimeTests(unittest.TestCase):
         if sqlite.sqlite_version_info < (3, 1):
             return
 
-        # SQLite's current_timestamp uses UTC time, while datetime.datetime.now() uses local time.
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         self.cur.execute("insert into test(ts) values (current_timestamp)")
         self.cur.execute("select ts from test")
         ts = self.cur.fetchone()[0]
