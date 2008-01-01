@@ -342,6 +342,9 @@ Core and builtins
 Library
 -------
 
+- Tk issue #1851526: Return results from Python callbacks to Tcl as
+  Tcl objects.
+
 - Issue #1642: Fix segfault in ctypes when trying to delete attributes.
 
 - Issue #1727780: Support loading pickles of random.Random objects created
