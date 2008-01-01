@@ -3167,28 +3167,22 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 		type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
 }
 
-/* Map rich comparison operators to their __xx__ namesakes */
-static char *name_op[] = {
-	"__lt__",
-	"__le__",
+static char *hash_name_op[] = {
 	"__eq__",
-	"__ne__",
-	"__gt__",
-	"__ge__",
-	/* These are only for overrides_cmp_or_hash(): */ 
 	"__cmp__",
 	"__hash__",
+	NULL
 };
 
 static int
-overrides_cmp_or_hash(PyTypeObject *type)
+overrides_hash(PyTypeObject *type)
 {
-	int i;
+	char **p;
 	PyObject *dict = type->tp_dict;
 
 	assert(dict != NULL);
-	for (i = 0; i < 8; i++) {
-		if (PyDict_GetItemString(dict, name_op[i]) != NULL)
+	for (p = hash_name_op; *p; p++) {
+		if (PyDict_GetItemString(dict, *p) != NULL)
 			return 1;
 	}
 	return 0;
@@ -3314,7 +3308,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		if (type->tp_compare == NULL &&
 		    type->tp_richcompare == NULL &&
 		    type->tp_hash == NULL &&
-		    !overrides_cmp_or_hash(type))
+		    !overrides_hash(type))
 		{
 			type->tp_compare = base->tp_compare;
 			type->tp_richcompare = base->tp_richcompare;
@@ -4738,6 +4732,15 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 	Py_DECREF(res);
 	return 0;
 }
+
+static char *name_op[] = {
+    "__lt__",
+    "__le__",
+    "__eq__",
+    "__ne__",
+    "__gt__",
+    "__ge__",
+};
 
 static PyObject *
 half_richcompare(PyObject *self, PyObject *other, int op)
