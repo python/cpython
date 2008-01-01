@@ -78,6 +78,7 @@ def _raw_input(prompt="", stream=None):
     prompt = str(prompt)
     if prompt:
         stream.write(prompt)
+        stream.flush()
     line = sys.stdin.readline()
     if not line:
         raise EOFError
