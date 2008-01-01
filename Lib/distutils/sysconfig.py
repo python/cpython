@@ -27,6 +27,10 @@ EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 project_base = os.path.dirname(os.path.abspath(sys.executable))
 if os.name == "nt" and "pcbuild" in project_base[-8:].lower():
     project_base = os.path.abspath(os.path.join(project_base, os.path.pardir))
+# PC/VS7.1
+if os.name == "nt" and "\\pc\\v" in project_base[-10:].lower():
+    project_base = os.path.abspath(os.path.join(project_base, os.path.pardir,
+                                                os.path.pardir))
 
 # python_build: (Boolean) if true, we're either building Python or
 # building an extension with an un-installed Python, so we use
