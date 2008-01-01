@@ -28,7 +28,7 @@ have_tcl = True
 sqlite_dir = "../sqlite-source-3.3.4"
 # path to PCbuild directory
 PCBUILD="PC\\VS7.1"
-#PCBUILD="PCbuild9"
+#PCBUILD="PCbuild"
 # msvcrt version
 MSVCR = "71"
 #MSVCR = "90"
@@ -334,7 +334,7 @@ def add_ui(db):
     if not os.path.exists(srcdir+r"\PC\python_icon.exe"):
         raise "Run icons.mak in PC directory"
     add_data(db, "Binary",
-             [("PythonWin", msilib.Binary(r"%s\%s\installer.bmp" % (srcdir, PCBUILD))), # 152x328 pixels
+             [("PythonWin", msilib.Binary(r"%s\PCbuild\installer.bmp" % srcdir)), # 152x328 pixels
               ("py.ico",msilib.Binary(srcdir+r"\PC\py.ico")),
              ])
     add_data(db, "Icon",
@@ -989,8 +989,10 @@ def add_files(db):
             lib.glob("*.gif")
             lib.add_file("idle.icns")
         if dir=="command" and parent.physical=="distutils":
-            lib.add_file("wininst-6.exe")
+            lib.add_file("wininst-6.0.exe")
             lib.add_file("wininst-7.1.exe")
+            lib.add_file("wininst-8.0.exe")
+            lib.add_file("wininst-9.0.exe")
         if dir=="setuptools":
             lib.add_file("cli.exe")
             lib.add_file("gui.exe")
@@ -1008,8 +1010,8 @@ def add_files(db):
     # Add DLLs
     default_feature.set_current()
     lib = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
-    lib.add_file("py.ico", src="../PC/py.ico")
-    lib.add_file("pyc.ico", src="../PC/pyc.ico")
+    lib.add_file("py.ico", src=srcdir+"/PC/py.ico")
+    lib.add_file("pyc.ico", src=srcdir"/PC/pyc.ico")
     dlls = []
     tclfiles = []
     for f in extensions:
