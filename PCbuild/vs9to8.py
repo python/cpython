@@ -11,7 +11,7 @@ def vs9to8(src, dest):
         destname = os.path.normpath(os.path.join(dest, name))
         print("%s -> %s" % (filename, destname))
 
-        with open(filename, 'r') as fin:
+        with open(filename, 'rU') as fin:
             lines = fin.read()
             lines = lines.replace('Version="9,00"', 'Version="8.00"')
             lines = lines.replace('Version="9.00"', 'Version="8.00"')
@@ -22,8 +22,9 @@ def vs9to8(src, dest):
             lines = lines.replace('..\\', '..\\..\\')
             lines = lines.replace('..\\..\\..\\..\\', '..\\..\\..\\')
 
-        with open(destname, 'w') as fout:
+        with open(destname, 'wb') as fout:
+            lines = lines.replace("\n", "\r\n")
             fout.write(lines)
 
 if __name__ == "__main__":
-    vs9to8(src=".", dest="..\PC\VS8.0")
+    vs9to8(src=".", dest="../PC/VS8.0")
