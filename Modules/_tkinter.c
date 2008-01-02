@@ -1906,7 +1906,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 	PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
 	PyObject *self, *func, *arg, *res, *s;
 	int i, rv;
-	Tcl_Obj *tres;
+	Tcl_Obj *obj_res;
 
 	ENTER_PYTHON
 
@@ -1939,13 +1939,13 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 	if (res == NULL)
 		return PythonCmd_Error(interp);
 
-	tres = AsObj(res);
-	if (tres == NULL) {
+	obj_res = AsObj(res);
+	if (obj_res == NULL) {
 		Py_DECREF(res);
 		return PythonCmd_Error(interp);
 	}
 	else {
-		Tcl_SetObjResult(Tkapp_Interp(self), tres);
+		Tcl_SetObjResult(Tkapp_Interp(self), obj_res);
 		rv = TCL_OK;
 	}
 

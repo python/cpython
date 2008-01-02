@@ -2,7 +2,7 @@
 
 @rem Assume we start inside the Python source directory
 cd ..
-call "%VS71COMNTOOLS%vsvars32.bat"
+call "%VS90COMNTOOLS%vsvars32.bat"
 
 @rem bzip
 if not exist bzip2-1.0.3 svn export http://svn.python.org/projects/external/bzip2-1.0.3
@@ -10,24 +10,29 @@ if not exist bzip2-1.0.3 svn export http://svn.python.org/projects/external/bzip
 @rem Sleepycat db
 if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4.20
 if not exist db-4.4.20\build_win32\debug\libdb44sd.lib (
-   devenv db-4.4.20\build_win32\Berkeley_DB.sln /build Debug /project db_static
+   vcbuild db-4.4.20\build_win32\Berkeley_DB.sln /build Debug /project db_static
 )
 
 @rem OpenSSL
-if not exist openssl-0.9.8a svn export http://svn.python.org/projects/external/openssl-0.9.8a
+if not exist openssl-0.9.8g (
+  if exist openssl-0.9.8a rd /s/q openssl-0.9.8a
+  svn export http://svn.python.org/projects/external/openssl-0.9.8g
+)
 
 @rem tcltk
-if not exist tcl8.4.12 (
+if not exist tcl8.4.16 (
    if exist tcltk rd /s/q tcltk
-   svn export http://svn.python.org/projects/external/tcl8.4.12
-   svn export http://svn.python.org/projects/external/tk8.4.12
-   cd tcl8.4.12\win
-   nmake -f makefile.vc
-   nmake -f makefile.vc INSTALLDIR=..\..\tcltk install
+   if exist tcl8.4.12 rd /s/q tcl8.4.12
+   if exist tk8.4.12 rd /s/q tk8.4.12
+   svn export http://svn.python.org/projects/external/tcl8.4.16
+   svn export http://svn.python.org/projects/external/tk8.4.16
+   cd tcl8.4.16\win
+   nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500
+   nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 INSTALLDIR=..\..\tcltk install
    cd ..\..
-   cd tk8.4.12\win
-   nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12
-   nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12 INSTALLDIR=..\..\tcltk install
+   cd tk8.4.16\win
+   nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 TCLDIR=..\..\tcl8.4.16
+   nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 TCLDIR=..\..\tcl8.4.16 INSTALLDIR=..\..\tcltk install
    cd ..\..
 )
 
