@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Removed PCbuild8/ directory and added a new build directory for VS 2005
+  based on the VS 2008 build directory to PC/VS8.0. The script 
+  PCbuild/vs8to9.py was added to sync changes from PCbuild to PC/VS8.0.
+
 - Moved PCbuild/ directory for VS 2003 to PC/VS7.1 and renamed PCBuild9/
   directory to PCBuild/.
 
