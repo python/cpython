@@ -1,5 +1,6 @@
 Building Python using VC++ 9.0
 ------------------------------
+
 This directory is used to build Python for Win32 platforms, e.g. Windows
 2000, XP and Vista.  It requires Microsoft Visual C++ 9.0
 (a.k.a. Visual Studio .NET 2008).
@@ -35,6 +36,36 @@ their name:  python30_d.dll, python_d.exe, parser_d.pyd, and so on.
 The 32bit builds end up in the solution folder PCbuild while the x64 builds
 land in the amd64 subfolder. The PGI and PGO builds for profile guided
 optimization end up in their own folders, too.
+
+Legacy support
+--------------
+
+You can find build directories for older versions of Visual Studio and 
+Visual C++ in the PC directory. The legacy build directories are no longer
+actively maintained and may not work out of the box.
+
+PC/VC6/
+    Visual C++ 6.0
+PC/VS7.1/
+    Visual Studio 2003 (7.1)
+PCbuild8/
+    Visual Studio 2005 (8.0)
+
+
+C RUNTIME
+---------
+
+Visual Studio 2008 uses version 9 of the C runtime (MSVCRT9).  The executables
+are linked to a CRT "side by side" assembly which must be present on the target
+machine.  This is avalible under the VC/Redist folder of your visual studio
+distribution. On XP and later operating systems that support
+side-by-side assemblies it is not enough to have the msvcrt80.dll present,
+it has to be there as a whole assembly, that is, a folder with the .dll
+and a .manifest.  Also, a check is made for the correct version.
+Therefore, one should distribute this assembly with the dlls, and keep
+it in the same directory.  For compatibility with older systems, one should
+also set the PATH to this directory so that the dll can be found.
+For more info, see the Readme in the VC/Redist folder.
 
 SUBPROJECTS
 -----------
