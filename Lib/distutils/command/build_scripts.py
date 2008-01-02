@@ -111,7 +111,8 @@ class build_scripts (Command):
                 if f:
                     f.close()
             else:
-                f.close()
+                if f:
+                    f.close()
                 self.copy_file(script, outfile)
 
         if os.name == 'posix':
