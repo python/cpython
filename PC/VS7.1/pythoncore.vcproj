@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="pythoncore"
-	ProjectGUID="{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}"
+	ProjectGUID="{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA30}"
 	RootNamespace="pythoncore"
 	SccProjectName="pythoncore"
 	SccLocalPath="..">
@@ -39,15 +39,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python26.dll"
+				OutputFile="./python30.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python26.pdb"
+				ProgramDatabaseFile=".\./python30.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python26.lib"
+				ImportLibrary=".\./python30.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -99,15 +99,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python26_d.dll"
+				OutputFile="./python30_d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python26_d.pdb"
+				ProgramDatabaseFile=".\./python30_d.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python26_d.lib"
+				ImportLibrary=".\./python30_d.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -166,15 +166,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python26.dll"
+				OutputFile="./python30.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="FALSE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python26.pdb"
+				ProgramDatabaseFile=".\./python30.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python26.lib"
+				ImportLibrary=".\./python30.lib"
 				TargetMachine="0"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -233,15 +233,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python26.dll"
+				OutputFile="./python30.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python26.pdb"
+				ProgramDatabaseFile=".\./python30.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python26.lib"
+				ImportLibrary=".\./python30.lib"
 				TargetMachine="0"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -368,13 +368,13 @@
 			RelativePath="..\..\Modules\_csv.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\_fileio.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\_functoolsmodule.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_heapqmodule.c">
-		</File>
-		<File
-			RelativePath="..\..\Modules\_hotshot.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_localemodule.c">
@@ -419,6 +419,9 @@
 			RelativePath="..\..\Python\ast.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\atexitmodule.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\audioop.c">
 		</File>
 		<File
@@ -434,7 +437,10 @@
 			RelativePath="..\..\Objects\boolobject.c">
 		</File>
 		<File
-			RelativePath="..\..\Objects\bufferobject.c">
+			RelativePath="..\..\Objects\bytes_methods.c">
+		</File>
+		<File
+			RelativePath="..\..\Objects\bytesobject.c">
 		</File>
 		<File
 			RelativePath="..\..\Objects\cellobject.c">
@@ -470,9 +476,6 @@
 			RelativePath="..\..\PC\config.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\cPickle.c">
-		</File>
-		<File
 			RelativePath="..\..\Modules\cStringIO.c">
 		</File>
 		<File
@@ -484,9 +487,6 @@
 		<File
 			RelativePath="..\..\Objects\dictobject.c">
 		</File>
-		<!--File
-			RelativePath="..\..\Objects\doubledigits.c">
-		</File-->
 		<File
 			RelativePath="..\..\PC\dl_nt.c">
 		</File>
@@ -516,6 +516,9 @@
 		</File>
 		<File
 			RelativePath="..\..\Objects\frameobject.c">
+		</File>
+		<File
+			RelativePath="..\..\Python\formatter_unicode.c">
 		</File>
 		<File
 			RelativePath="..\..\Python\frozen.c">
@@ -566,9 +569,6 @@
 			RelativePath="..\..\Parser\grammar1.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\imageop.c">
-		</File>
-		<File
 			RelativePath="..\..\Python\import.c">
 		</File>
 		<File
@@ -602,9 +602,6 @@
 			RelativePath="..\..\Python\importdl.c">
 		</File>
 		<File
-			RelativePath="..\..\Objects\intobject.c">
-		</File>
-		<File
 			RelativePath="..\..\Objects\iterobject.c">
 		</File>
 		<File
@@ -629,13 +626,10 @@
 			RelativePath="..\..\Modules\mathmodule.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\md5.c">
-		</File>
-		<File
-			RelativePath="..\..\Modules\md5module.c">
-		</File>
-		<File
 			RelativePath="..\..\Parser\metagrammar.c">
+		</File>
+		<File
+			RelativePath="..\..\Objects\memoryobject.c">
 		</File>
 		<File
 			RelativePath="..\..\Objects\methodobject.c">
@@ -732,7 +726,7 @@
 			RelativePath="..\..\Modules\sha512module.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\shamodule.c">
+			RelativePath="..\..\Modules\sha1module.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\signalmodule.c">
@@ -742,9 +736,6 @@
 		</File>
 		<File
 			RelativePath="..\..\Objects\stringobject.c">
-		</File>
-		<File
-			RelativePath="..\..\Modules\stropmodule.c">
 		</File>
 		<File
 			RelativePath="..\..\Python\structmember.c">
