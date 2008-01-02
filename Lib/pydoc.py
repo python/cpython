@@ -1532,11 +1532,6 @@ def writedocs(dir, pkgpath='', done=None):
         writedoc(modname)
     return
 
-def raw_input(prompt):
-    sys.stdout.write(prompt)
-    sys.stdout.flush()
-    return sys.stdin.readline()
-
 class Helper:
     keywords = {
         'and': 'BOOLEAN',
@@ -1706,9 +1701,9 @@ has the same effect as typing a particular string at the help> prompt.
             self.help(request)
 
     def getline(self, prompt):
-        """Read one line, using raw_input when available."""
+        """Read one line, using input() when appropriate."""
         if self.input is sys.stdin:
-            return raw_input(prompt)
+            return input(prompt)
         else:
             self.output.write(prompt)
             self.output.flush()
