@@ -253,13 +253,12 @@ class InteractiveConsole(InteractiveInterpreter):
         The returned line does not include the trailing newline.
         When the user enters the EOF key sequence, EOFError is raised.
 
-        The base implementation uses sys.stdin.readline(); a subclass
-        may replace this with a different implementation.
+        The base implementation uses the built-in function
+        input(); a subclass may replace this with a different
+        implementation.
 
         """
-        sys.stdout.write(prompt)
-        sys.stdout.flush()
-        return sys.stdin.readline()
+        return input(prompt)
 
 
 
