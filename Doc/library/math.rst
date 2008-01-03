@@ -66,6 +66,23 @@ Number-theoretic and representation functions:
    apart" the internal representation of a float in a portable way.
 
 
+.. function:: isinf(x)
+
+   Checks if the float *x* is positive or negative infinite.
+
+   ..versionadded:: 2.6
+
+
+.. function:: isnan(x)
+
+   Checks if the float *x* is a NaN (not a number). NaNs are part of the
+   IEEE 754 standards. Operation like but not limited to ``inf * 0``, 
+   ``inf / inf`` or any operation involving a NaN, e.g. ``nan * 1``, return
+   a NaN.
+
+   ..versionadded:: 2.6
+
+
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
