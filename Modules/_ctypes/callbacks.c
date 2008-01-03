@@ -370,7 +370,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 	if (context == NULL)
 		context = PyString_FromString("_ctypes.DllGetClassObject");
 
-	mod = PyImport_ImportModule("ctypes");
+	mod = PyImport_ImportModuleNoBlock("ctypes");
 	if (!mod) {
 		PyErr_WriteUnraisable(context ? context : Py_None);
 		/* There has been a warning before about this already */
@@ -449,7 +449,7 @@ long Call_CanUnloadNow(void)
 	if (context == NULL)
 		context = PyString_FromString("_ctypes.DllCanUnloadNow");
 
-	mod = PyImport_ImportModule("ctypes");
+	mod = PyImport_ImportModuleNoBlock("ctypes");
 	if (!mod) {
 /*		OutputDebugString("Could not import ctypes"); */
 		/* We assume that this error can only occur when shutting

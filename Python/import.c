@@ -1985,6 +1985,53 @@ PyImport_ImportModule(const char *name)
 	return result;
 }
 
+/* Import a module without blocking
+ *
+ * At first it tries to fetch the module from sys.modules. If the module was
+ * never loaded before it loads it with PyImport_ImportModule() unless another
+ * thread holds the import lock. In the latter case the function raises an
+ * ImportError instead of blocking.
+ *
+ * Returns the module object with incremented ref count.
+ */
+PyObject *
+PyImport_ImportModuleNoBlock(const char *name)
+{
+	PyObject *result;
+	PyObject *modules;
+	long me;
+
+	/* Try to get the module from sys.modules[name] */
+	modules = PyImport_GetModuleDict();
+	if (modules == NULL)
+		return NULL;
+
+	result = PyDict_GetItemString(modules, name);
+	if (result != NULL) {
+		Py_INCREF(result);
+		return result;
+	}
+	else {
+		PyErr_Clear();
+	}
+
+	/* check the import lock
+	 * me might be -1 but I ignore the error here, the lock function
+	 * takes care of the problem */
+	me = PyThread_get_thread_ident();
+	if (import_lock_thread == -1 || import_lock_thread == me) {
+		/* no thread or me is holding the lock */
+		return PyImport_ImportModule(name);
+	}
+	else {
+		PyErr_Format(PyExc_ImportError,
+			     "Failed to import %.200s because the import lock"
+			     "is held by another thread.",
+			     name);
+		return NULL;
+	}
+}
+
 /* Forward declarations for helper routines */
 static PyObject *get_parent(PyObject *globals, char *buf,
 			    Py_ssize_t *p_buflen, int level);
@@ -2053,26 +2100,6 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
 
 	return tail;
 }
-
-/* For DLL compatibility */
-#undef PyImport_ImportModuleEx
-PyObject *
-PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals,
-			PyObject *fromlist)
-{
-	PyObject *result;
-	lock_import();
-	result = import_module_level(name, globals, locals, fromlist, -1);
-	if (unlock_import() < 0) {
-		Py_XDECREF(result);
-		PyErr_SetString(PyExc_RuntimeError,
-				"not holding the import lock");
-		return NULL;
-	}
-	return result;
-}
-#define PyImport_ImportModuleEx(n, g, l, f) \
-	PyImport_ImportModuleLevel(n, g, l, f, -1);
 
 PyObject *
 PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
@@ -2646,9 +2673,10 @@ PyImport_Import(PyObject *module_name)
 	if (import == NULL)
 		goto err;
 
-	/* Call the __import__ function with the proper argument list */
-	r = PyObject_CallFunctionObjArgs(import, module_name, globals,
-					 globals, silly_list, NULL);
+	/* Call the __import__ function with the proper argument list
+	 * Always use absolute import here. */
+	r = PyObject_CallFunction(import, "OOOOi", module_name, globals,
+				  globals, silly_list, 0, NULL);
 
   err:
 	Py_XDECREF(globals);

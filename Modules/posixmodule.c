@@ -5651,7 +5651,7 @@ wait_helper(int pid, int status, struct rusage *ru)
 		return posix_error();
 
 	if (struct_rusage == NULL) {
-		PyObject *m = PyImport_ImportModule("resource");
+		PyObject *m = PyImport_ImportModuleNoBlock("resource");
 		if (m == NULL)
 			return NULL;
 		struct_rusage = PyObject_GetAttrString(m, "struct_rusage");

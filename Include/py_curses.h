@@ -90,7 +90,7 @@ static void **PyCurses_API;
 
 #define import_curses() \
 { \
-  PyObject *module = PyImport_ImportModule("_curses"); \
+  PyObject *module = PyImport_ImportModuleNoBlock("_curses"); \
   if (module != NULL) { \
     PyObject *module_dict = PyModule_GetDict(module); \
     PyObject *c_api_object = PyDict_GetItemString(module_dict, "_C_API"); \

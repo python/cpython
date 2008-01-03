@@ -1305,7 +1305,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	if (_PyString_Resize(&newfmt, usednew) < 0)
 		goto Done;
 	{
-		PyObject *time = PyImport_ImportModule("time");
+		PyObject *time = PyImport_ImportModuleNoBlock("time");
 		if (time == NULL)
 			goto Done;
 		result = PyObject_CallMethod(time, "strftime", "OO",
@@ -1353,7 +1353,7 @@ static PyObject *
 time_time(void)
 {
 	PyObject *result = NULL;
-	PyObject *time = PyImport_ImportModule("time");
+	PyObject *time = PyImport_ImportModuleNoBlock("time");
 
 	if (time != NULL) {
 		result = PyObject_CallMethod(time, "time", "()");
@@ -1371,7 +1371,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 	PyObject *time;
 	PyObject *result = NULL;
 
-	time = PyImport_ImportModule("time");
+	time = PyImport_ImportModuleNoBlock("time");
 	if (time != NULL) {
 		result = PyObject_CallMethod(time, "struct_time",
 					     "((iiiiiiiii))",
@@ -3827,7 +3827,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
 	if (!PyArg_ParseTuple(args, "ss:strptime", &string, &format))
 		return NULL;
 
-	if ((module = PyImport_ImportModule("time")) == NULL)
+	if ((module = PyImport_ImportModuleNoBlock("time")) == NULL)
 		return NULL;
 	obj = PyObject_CallMethod(module, "strptime", "ss", string, format);
 	Py_DECREF(module);

@@ -2255,7 +2255,7 @@ static int
 update_lines_cols(void)
 {
   PyObject *o;
-  PyObject *m = PyImport_ImportModule("curses");
+  PyObject *m = PyImport_ImportModuleNoBlock("curses");
 
   if (!m)
     return 0;
