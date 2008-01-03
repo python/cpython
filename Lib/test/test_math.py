@@ -229,6 +229,13 @@ class MathTests(unittest.TestCase):
         self.ftest('tanh(0)', math.tanh(0), 0)
         self.ftest('tanh(1)+tanh(-1)', math.tanh(1)+math.tanh(-1), 0)
 
+    def testCopysign(self):
+        self.assertEqual(math.copysign(1, 42), 1.0)
+        self.assertEqual(math.copysign(0., 42), 0.0)
+        self.assertEqual(math.copysign(1., -42), -1.0)
+        self.assertEqual(math.copysign(3, 0.), 3.0)
+        self.assertEqual(math.copysign(4., -0.), -4.0)
+
     def testIsnan(self):
         self.assert_(math.isnan(float("nan")))
         self.assert_(math.isnan(float("inf")* 0.))
