@@ -12,7 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
-- Issue #1638: %zd configure test fails on Linux
+- Bug #1517: Possible segfault in lookup().
+
+- Issue #1638: %zd configure test fails on Linux.
 
 - Issue #1553: An erroneous __length_hint__ can make list() raise a
   SystemError.
@@ -50,6 +52,9 @@ Core and builtins
 
 Library
 -------
+
+- Change ctypes version number to 1.0.3 (when Python 2.5.2 is released,
+  ctypes 1.0.3 will be also be released).
 
 - Issue #1695: Fixed typo in the docstrings for time.localtime() and gmtime().
 
@@ -359,7 +364,9 @@ Core and builtins
 Extension Modules
 -----------------
 
-- Bug #1563759: struct.unpack doens't support buffer protocol objects
+- Patch #1643738: Problem with signals in a single-threaded application.
+
+- Bug #1563759: struct.unpack doens't support buffer protocol objects.
 
 - Bug #1686475: Support stat'ing open files on Windows again.
 
