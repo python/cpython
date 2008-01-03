@@ -229,6 +229,22 @@ class MathTests(unittest.TestCase):
         self.ftest('tanh(0)', math.tanh(0), 0)
         self.ftest('tanh(1)+tanh(-1)', math.tanh(1)+math.tanh(-1), 0)
 
+    def testIsnan(self):
+        self.assert_(math.isnan(float("nan")))
+        self.assert_(math.isnan(float("inf")* 0.))
+        self.failIf(math.isnan(float("inf")))
+        self.failIf(math.isnan(0.))
+        self.failIf(math.isnan(1.))
+
+    def testIsinf(self):
+        self.assert_(math.isinf(float("inf")))
+        self.assert_(math.isinf(float("-inf")))
+        self.assert_(math.isinf(1E400))
+        self.assert_(math.isinf(-1E400))
+        self.failIf(math.isinf(float("nan")))
+        self.failIf(math.isinf(0.))
+        self.failIf(math.isinf(1.))
+
     # RED_FLAG 16-Oct-2000 Tim
     # While 2.0 is more consistent about exceptions than previous releases, it
     # still fails this part of the test on some platforms.  For now, we only
