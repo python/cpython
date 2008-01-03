@@ -53,6 +53,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1700: Regular expression inline flags incorrectly handle certain
+  unicode characters.
+
 - Change ctypes version number to 1.0.3 (when Python 2.5.2 is released,
   ctypes 1.0.3 will be also be released).
 
