@@ -768,7 +768,8 @@ float result is delivered. For example, ``10**2`` returns ``100``, but
 ``10**-2`` returns ``0.01``.
 
 Raising ``0.0`` to a negative power results in a :exc:`ZeroDivisionError`.
-Raising a negative number to a fractional power results in a :exc:`ValueError`.
+Raising a negative number to a fractional power results in a :class:`complex`
+number. (Since Python 2.6. In earlier versions it raised a :exc:`ValueError`.)
 
 
 .. _unary:

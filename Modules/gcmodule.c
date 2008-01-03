@@ -1199,7 +1199,7 @@ initgc(void)
 	 * the import and triggers an assertion.
 	 */
 	if (tmod == NULL) {
-		tmod = PyImport_ImportModule("time");
+		tmod = PyImport_ImportModuleNoBlock("time");
 		if (tmod == NULL)
 			PyErr_Clear();
 	}

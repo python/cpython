@@ -36,7 +36,7 @@ PyMac_StrError(int err)
 	PyObject *m;
 	PyObject *rv;
 
-	m = PyImport_ImportModule("MacOS");
+	m = PyImport_ImportModuleNoBlock("MacOS");
 	if (!m) {
 		if (Py_VerboseFlag)
 			PyErr_Print();

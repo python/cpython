@@ -152,7 +152,7 @@ Ellipsis
    object is accessed through the literal ``...`` or the built-in name
    ``Ellipsis``.  Its truth value is true.
 
-Numbers
+:class:`numbers.Number`
    .. index:: object: numeric
 
    These are created by numeric literals and returned as results by arithmetic
@@ -164,7 +164,7 @@ Numbers
    Python distinguishes between integers, floating point numbers, and complex
    numbers:
 
-   Integers
+   :class:`numbers.Integral`
       .. index:: object: integer
 
       These represent elements from the mathematical set of integers (positive and
@@ -202,7 +202,7 @@ Numbers
       operation except left shift, if it yields a result in the plain integer domain
       without causing overflow, will yield the same result when using mixed operands.
 
-   Floating point numbers
+   :class:`numbers.Real` (:class:`float`)
       .. index::
          object: floating point
          pair: floating point; number
@@ -217,7 +217,7 @@ Numbers
       overhead of using objects in Python, so there is no reason to complicate the
       language with two kinds of floating point numbers.
 
-   Complex numbers
+   :class:`numbers.Complex`
       .. index::
          object: complex
          pair: complex; number

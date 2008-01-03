@@ -133,6 +133,14 @@ FUNC1(cos, cos,
       "cos(x)\n\nReturn the cosine of x (measured in radians).")
 FUNC1(cosh, cosh,
       "cosh(x)\n\nReturn the hyperbolic cosine of x.")
+#if defined(MS_WINDOWS) || defined(HAVE_COPYSIGN)
+#ifdef MS_WINDOWS
+FUNC2(copysign, _copysign,
+#else
+FUNC2(copysign, copysign,
+#endif
+    "copysign(x,y)\n\nReturn x with the sign of y.");
+#endif
 FUNC1(exp, exp,
       "exp(x)\n\nReturn e raised to the power of x.")
 FUNC1(fabs, fabs,
@@ -315,9 +323,8 @@ math_log10(PyObject *self, PyObject *arg)
 PyDoc_STRVAR(math_log10_doc,
 "log10(x) -> the base 10 logarithm of x.");
 
-/* XXX(nnorwitz): Should we use the platform M_PI or something more accurate
-   like: 3.14159265358979323846264338327950288 */
-static const double degToRad = 3.141592653589793238462643383 / 180.0;
+static const double degToRad = Py_MATH_PI / 180.0;
+static const double radToDeg = 180.0 / Py_MATH_PI;
 
 static PyObject *
 math_degrees(PyObject *self, PyObject *arg)
@@ -325,7 +332,7 @@ math_degrees(PyObject *self, PyObject *arg)
 	double x = PyFloat_AsDouble(arg);
 	if (x == -1.0 && PyErr_Occurred())
 		return NULL;
-	return PyFloat_FromDouble(x / degToRad);
+	return PyFloat_FromDouble(x * radToDeg);
 }
 
 PyDoc_STRVAR(math_degrees_doc,
@@ -343,12 +350,42 @@ math_radians(PyObject *self, PyObject *arg)
 PyDoc_STRVAR(math_radians_doc,
 "radians(x) -> converts angle x from degrees to radians");
 
+static PyObject *
+math_isnan(PyObject *self, PyObject *arg)
+{
+	double x = PyFloat_AsDouble(arg);
+	if (x == -1.0 && PyErr_Occurred())
+		return NULL;
+	return PyBool_FromLong((long)Py_IS_NAN(x));
+}
+
+PyDoc_STRVAR(math_isnan_doc,
+"isnan(x) -> bool\n\
+Checks if float x is not a number (NaN)");
+
+static PyObject *
+math_isinf(PyObject *self, PyObject *arg)
+{
+	double x = PyFloat_AsDouble(arg);
+	if (x == -1.0 && PyErr_Occurred())
+		return NULL;
+	return PyBool_FromLong((long)Py_IS_INFINITY(x));
+}
+
+PyDoc_STRVAR(math_isinf_doc,
+"isinf(x) -> bool\n\
+Checks if float x is infinite (positive or negative)");
+
+
 static PyMethodDef math_methods[] = {
 	{"acos",	math_acos,	METH_O,		math_acos_doc},
 	{"asin",	math_asin,	METH_O,		math_asin_doc},
 	{"atan",	math_atan,	METH_O,		math_atan_doc},
 	{"atan2",	math_atan2,	METH_VARARGS,	math_atan2_doc},
 	{"ceil",	math_ceil,	METH_O,		math_ceil_doc},
+#if defined(MS_WINDOWS) || defined(HAVE_COPYSIGN)
+	{"copysign",	math_copysign,	METH_VARARGS,	math_copysign_doc},
+#endif
 	{"cos",		math_cos,	METH_O,		math_cos_doc},
 	{"cosh",	math_cosh,	METH_O,		math_cosh_doc},
 	{"degrees",	math_degrees,	METH_O,		math_degrees_doc},
@@ -358,6 +395,8 @@ static PyMethodDef math_methods[] = {
 	{"fmod",	math_fmod,	METH_VARARGS,	math_fmod_doc},
 	{"frexp",	math_frexp,	METH_O,		math_frexp_doc},
 	{"hypot",	math_hypot,	METH_VARARGS,	math_hypot_doc},
+	{"isinf",	math_isinf,	METH_O,		math_isinf_doc},
+	{"isnan",	math_isnan,	METH_O,		math_isnan_doc},
 	{"ldexp",	math_ldexp,	METH_VARARGS,	math_ldexp_doc},
 	{"log",		math_log,	METH_VARARGS,	math_log_doc},
 	{"log10",	math_log10,	METH_O,		math_log10_doc},
@@ -389,13 +428,13 @@ initmath(void)
 	if (d == NULL)
 		goto finally;
 
-        if (!(v = PyFloat_FromDouble(atan(1.0) * 4.0)))
+        if (!(v = PyFloat_FromDouble(Py_MATH_PI)))
                 goto finally;
 	if (PyDict_SetItemString(d, "pi", v) < 0)
                 goto finally;
 	Py_DECREF(v);
 
-        if (!(v = PyFloat_FromDouble(exp(1.0))))
+        if (!(v = PyFloat_FromDouble(Py_MATH_E)))
                 goto finally;
 	if (PyDict_SetItemString(d, "e", v) < 0)
                 goto finally;

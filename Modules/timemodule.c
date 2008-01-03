@@ -556,7 +556,7 @@ is not present, current time as returned by localtime() is used.");
 static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
-    PyObject *strptime_module = PyImport_ImportModule("_strptime");
+    PyObject *strptime_module = PyImport_ImportModuleNoBlock("_strptime");
     PyObject *strptime_result;
 
     if (!strptime_module)
@@ -668,7 +668,7 @@ time_tzset(PyObject *self, PyObject *unused)
 {
 	PyObject* m;
 
-	m = PyImport_ImportModule("time");
+	m = PyImport_ImportModuleNoBlock("time");
 	if (m == NULL) {
 	    return NULL;
 	}
