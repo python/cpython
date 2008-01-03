@@ -348,6 +348,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1700: Regular expression inline flags incorrectly handle certain
+  unicode characters.
+
 - Issue #1689: PEP 3141, numeric abstract base classes.
 
 - Tk issue #1851526: Return results from Python callbacks to Tcl as
