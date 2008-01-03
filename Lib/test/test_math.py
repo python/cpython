@@ -58,6 +58,19 @@ class MathTests(unittest.TestCase):
         self.ftest('ceil(-1.0)', math.ceil(-1.0), -1)
         self.ftest('ceil(-1.5)', math.ceil(-1.5), -1)
 
+        class TestCeil(object):
+            def __ceil__(self):
+                return 42
+        class TestNoCeil(object):
+            pass
+        self.ftest('ceil(TestCeil())', math.ceil(TestCeil()), 42)
+        self.assertRaises(TypeError, math.ceil, TestNoCeil())
+
+        t = TestNoCeil()
+        t.__ceil__ = lambda *args: args
+        self.assertRaises(TypeError, math.ceil, t)
+        self.assertRaises(TypeError, math.ceil, t, 0)
+
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
         self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0)
@@ -100,6 +113,19 @@ class MathTests(unittest.TestCase):
         # This fails on some platforms - so check it here
         self.ftest('floor(1.23e167)', math.floor(1.23e167), 1.23e167)
         self.ftest('floor(-1.23e167)', math.floor(-1.23e167), -1.23e167)
+
+        class TestFloor(object):
+            def __floor__(self):
+                return 42
+        class TestNoFloor(object):
+            pass
+        self.ftest('floor(TestFloor())', math.floor(TestFloor()), 42)
+        self.assertRaises(TypeError, math.floor, TestNoFloor())
+
+        t = TestNoFloor()
+        t.__floor__ = lambda *args: args
+        self.assertRaises(TypeError, math.floor, t)
+        self.assertRaises(TypeError, math.floor, t, 0)
 
     def testFmod(self):
         self.assertRaises(TypeError, math.fmod)

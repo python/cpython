@@ -270,9 +270,8 @@ numbers of mixed type use the same rule. [#]_ The constructors :func:`int`,
 :func:`long`, :func:`float`, and :func:`complex` can be used to produce numbers
 of a specific type.
 
-All numeric types (except complex) support the following operations, sorted by
-ascending priority (operations in the same box have the same priority; all
-numeric operations have a higher priority than comparison operations):
+All builtin numeric types support the following operations. See
+:ref:`power` and later sections for the operators' priorities.
 
 +--------------------+---------------------------------+--------+
 | Operation          | Result                          | Notes  |
@@ -285,7 +284,7 @@ numeric operations have a higher priority than comparison operations):
 +--------------------+---------------------------------+--------+
 | ``x / y``          | quotient of *x* and *y*         | \(1)   |
 +--------------------+---------------------------------+--------+
-| ``x // y``         | (floored) quotient of *x* and   | \(5)   |
+| ``x // y``         | (floored) quotient of *x* and   | (4)(5) |
 |                    | *y*                             |        |
 +--------------------+---------------------------------+--------+
 | ``x % y``          | remainder of ``x / y``          | \(4)   |
@@ -294,7 +293,7 @@ numeric operations have a higher priority than comparison operations):
 +--------------------+---------------------------------+--------+
 | ``+x``             | *x* unchanged                   |        |
 +--------------------+---------------------------------+--------+
-| ``abs(x)``         | absolute value or magnitude of  |        |
+| ``abs(x)``         | absolute value or magnitude of  | \(3)   |
 |                    | *x*                             |        |
 +--------------------+---------------------------------+--------+
 | ``int(x)``         | *x* converted to integer        | \(2)   |
@@ -308,11 +307,11 @@ numeric operations have a higher priority than comparison operations):
 |                    | *im* defaults to zero.          |        |
 +--------------------+---------------------------------+--------+
 | ``c.conjugate()``  | conjugate of the complex number |        |
-|                    | *c*                             |        |
+|                    | *c*. (Identity on real numbers) |        |
 +--------------------+---------------------------------+--------+
 | ``divmod(x, y)``   | the pair ``(x // y, x % y)``    | (3)(4) |
 +--------------------+---------------------------------+--------+
-| ``pow(x, y)``      | *x* to the power *y*            |        |
+| ``pow(x, y)``      | *x* to the power *y*            | \(3)   |
 +--------------------+---------------------------------+--------+
 | ``x ** y``         | *x* to the power *y*            |        |
 +--------------------+---------------------------------+--------+
@@ -341,9 +340,12 @@ Notes:
       pair: numeric; conversions
       pair: C; language
 
-   Conversion from floating point to (long or plain) integer may round or truncate
-   as in C; see functions :func:`floor` and :func:`ceil` in the :mod:`math` module
-   for well-defined conversions.
+   Conversion from floating point to (long or plain) integer may round or
+   truncate as in C.
+
+   .. deprecated:: 2.6
+      Instead, convert floats to long explicitly with :func:`trunc`,
+      :func:`math.floor`, or :func:`math.ceil`.
 
 (3)
    See :ref:`built-in-funcs` for a full description.
@@ -364,6 +366,22 @@ Notes:
    
    .. versionadded:: 2.6
 
+All :class:`numbers.Real` types (:class:`int`, :class:`long`, and
+:class:`float`) also include the following operations:
+
++--------------------+--------------------------------+--------+
+| Operation          | Result                         | Notes  |
++====================+================================+========+
+| ``trunc(x)``       | *x* truncated to Integral      |        |
++--------------------+--------------------------------+--------+
+| ``round(x[, n])``  | *x* rounded to n digits,       |        |
+|                    | rounding half to even. If n is |        |
+|                    | omitted, it defaults to 0.     |        |
++--------------------+--------------------------------+--------+
+| ``math.floor(x)``  | the greatest Integral <= *x*   |        |
++--------------------+--------------------------------+--------+
+| ``math.ceil(x)``   | the least Integral >= *x*      |        |
++--------------------+--------------------------------+--------+
 
 .. XXXJH exceptions: overflow (when? what operations?) zerodivision
 

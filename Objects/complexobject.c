@@ -385,6 +385,41 @@ complex_hash(PyComplexObject *v)
 	return combined;
 }
 
+/* This macro may return! */
+#define TO_COMPLEX(obj, c) \
+	if (PyComplex_Check(obj)) \
+		c = ((PyComplexObject *)(obj))->cval; \
+	else if (to_complex(&(obj), &(c)) < 0) \
+		return (obj)
+
+static int
+to_complex(PyObject **pobj, Py_complex *pc)
+{
+    PyObject *obj = *pobj;
+
+    pc->real = pc->imag = 0.0;
+    if (PyInt_Check(obj)) {
+        pc->real = PyInt_AS_LONG(obj);
+        return 0;
+    }
+    if (PyLong_Check(obj)) {
+        pc->real = PyLong_AsDouble(obj);
+        if (pc->real == -1.0 && PyErr_Occurred()) {
+            *pobj = NULL;
+            return -1;
+        }
+        return 0;
+    }
+    if (PyFloat_Check(obj)) {
+        pc->real = PyFloat_AsDouble(obj);
+        return 0;
+    }
+    Py_INCREF(Py_NotImplemented);
+    *pobj = Py_NotImplemented;
+    return -1;
+}
+		
+
 static PyObject *
 complex_add(PyComplexObject *v, PyComplexObject *w)
 {
@@ -502,24 +537,27 @@ complex_divmod(PyComplexObject *v, PyComplexObject *w)
 }
 
 static PyObject *
-complex_pow(PyComplexObject *v, PyObject *w, PyComplexObject *z)
+complex_pow(PyObject *v, PyObject *w, PyObject *z)
 {
 	Py_complex p;
 	Py_complex exponent;
 	long int_exponent;
+	Py_complex a, b;
+        TO_COMPLEX(v, a);
+        TO_COMPLEX(w, b);
 
- 	if ((PyObject *)z!=Py_None) {
+ 	if (z!=Py_None) {
 		PyErr_SetString(PyExc_ValueError, "complex modulo");
 		return NULL;
 	}
 	PyFPE_START_PROTECT("complex_pow", return 0)
 	errno = 0;
-	exponent = ((PyComplexObject*)w)->cval;
+	exponent = b;
 	int_exponent = (long)exponent.real;
 	if (exponent.imag == 0. && exponent.real == int_exponent)
-		p = c_powi(v->cval,int_exponent);
+		p = c_powi(a,int_exponent);
 	else
-		p = c_pow(v->cval,exponent);
+		p = c_pow(a,exponent);
 
 	PyFPE_END_PROTECT(p)
 	Py_ADJUST_ERANGE2(p.real, p.imag);
@@ -541,6 +579,10 @@ complex_int_div(PyComplexObject *v, PyComplexObject *w)
 {
 	PyObject *t, *r;
 	
+	if (PyErr_Warn(PyExc_DeprecationWarning,
+		       "complex divmod(), // and % are deprecated") < 0)
+		return NULL;
+
 	t = complex_divmod(v, w);
 	if (t != NULL) {
 		r = PyTuple_GET_ITEM(t, 0);
@@ -695,6 +737,11 @@ complex_conjugate(PyObject *self)
 	return PyComplex_FromCComplex(c);
 }
 
+PyDoc_STRVAR(complex_conjugate_doc,
+"complex.conjugate() -> complex\n"
+"\n"
+"Returns the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
+
 static PyObject *
 complex_getnewargs(PyComplexObject *v)
 {
@@ -702,7 +749,8 @@ complex_getnewargs(PyComplexObject *v)
 }
 
 static PyMethodDef complex_methods[] = {
-	{"conjugate",	(PyCFunction)complex_conjugate,	METH_NOARGS},
+	{"conjugate",	(PyCFunction)complex_conjugate,	METH_NOARGS,
+	 complex_conjugate_doc},
 	{"__getnewargs__",	(PyCFunction)complex_getnewargs,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };
