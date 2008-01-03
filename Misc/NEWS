@@ -14,24 +14,9 @@ Core and builtins
 
 - Issue #1640: Added math.isinf() and math.isnan() functions.
 
-- Issue #1726: Remove Python/atof.c from PCBuild/pythoncore.vcproj
-
-- Removed PCbuild8/ directory and added a new build directory for VS 2005
-  based on the VS 2008 build directory to PC/VS8.0. The script 
-  PCbuild/vs8to9.py was added to sync changes from PCbuild to PC/VS8.0.
-
-- Moved PCbuild/ directory for VS 2003 to PC/VS7.1 and renamed PCBuild9/
-  directory to PCBuild/.
-
-- Issue #1629: Renamed Py_Size, Py_Type and Py_Refcnt to Py_SIZE, Py_TYPE
-  and Py_REFCNT.
-
 - Issue #1635: Platform independent creation and representation of NaN
   and INF. float("nan"), float("inf") and float("-inf") now work on every
   platform with IEEE 754 semantics.
-
-- Added case insensitive comparsion methods ``PyOS_stricmp(char*, char*)``
-  and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
 
 - Compiler now generates simpler and faster code for dictionary literals.
   The oparg for BUILD_MAP now indicates an estimated dictionary size.
@@ -1165,6 +1150,15 @@ Tools/Demos
 Build
 -----
 
+- Issue #1726: Remove Python/atof.c from PCBuild/pythoncore.vcproj
+
+- Removed PCbuild8/ directory and added a new build directory for VS 2005
+  based on the VS 2008 build directory to PC/VS8.0. The script 
+  PCbuild/vs8to9.py was added to sync changes from PCbuild to PC/VS8.0.
+
+- Moved PCbuild/ directory for VS 2003 to PC/VS7.1 and renamed PCBuild9/
+  directory to PCBuild/.
+
 - Bug #1699: Define _BSD_SOURCE only on OpenBSD.
 
 - Bug #1608: use -fwrapv when GCC supports it.  This is important,
@@ -1224,6 +1218,18 @@ Build
 
 C API
 -----
+
+- Added a new API function ``PyImport_ImportModuleNoBlock``.
+
+- ``PyImport_Import`` and ``PyImport_ImportModule`` now always do absolute
+  imports. In earlier versions they might have used relative imports under
+  some conditions.
+
+- Issue #1629: Renamed Py_Size, Py_Type and Py_Refcnt to Py_SIZE, Py_TYPE
+  and Py_REFCNT.
+
+- Added case insensitive comparsion methods ``PyOS_stricmp(char*, char*)``
+  and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
 
 - Bug #1542693: remove semi-colon at end of PyImport_ImportModuleEx macro
   so it can be used as an expression.

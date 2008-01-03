@@ -776,7 +776,7 @@ get_decompress_func(void)
 			   let's avoid a stack overflow. */
 			return NULL;
 		importing_zlib = 1;
-		zlib = PyImport_ImportModule("zlib");	/* import zlib */
+		zlib = PyImport_ImportModuleNoBlock("zlib");
 		importing_zlib = 0;
 		if (zlib != NULL) {
 			decompress = PyObject_GetAttrString(zlib,

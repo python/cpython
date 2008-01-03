@@ -690,7 +690,7 @@ PyErr_WarnExplicit(PyObject *category, const char *message,
 {
 	PyObject *mod, *dict, *func = NULL;
 
-	mod = PyImport_ImportModule("warnings");
+	mod = PyImport_ImportModuleNoBlock("warnings");
 	if (mod != NULL) {
 		dict = PyModule_GetDict(mod);
 		func = PyDict_GetItemString(dict, "warn_explicit");

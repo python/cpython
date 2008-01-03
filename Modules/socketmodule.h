@@ -222,7 +222,7 @@ int PySocketModule_ImportModuleAndAPI(void)
 	void *api;
 
 	DPRINTF("Importing the %s C API...\n", apimodule);
-	mod = PyImport_ImportModule(apimodule);
+	mod = PyImport_ImportModuleNoBlock(apimodule);
 	if (mod == NULL)
 		goto onError;
 	DPRINTF(" %s package found\n", apimodule);

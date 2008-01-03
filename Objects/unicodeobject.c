@@ -2216,7 +2216,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             if (ucnhash_CAPI == NULL) {
                 /* load the unicode data module */
                 PyObject *m, *api;
-                m = PyImport_ImportModule("unicodedata");
+                m = PyImport_ImportModuleNoBlock("unicodedata");
                 if (m == NULL)
                     goto ucnhashError;
                 api = PyObject_GetAttrString(m, "ucnhash_CAPI");

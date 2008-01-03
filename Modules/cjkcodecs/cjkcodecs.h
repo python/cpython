@@ -245,7 +245,7 @@ getmultibytecodec(void)
 	static PyObject *cofunc = NULL;
 
 	if (cofunc == NULL) {
-		PyObject *mod = PyImport_ImportModule("_multibytecodec");
+		PyObject *mod = PyImport_ImportModuleNoBlock("_multibytecodec");
 		if (mod == NULL)
 			return NULL;
 		cofunc = PyObject_GetAttrString(mod, "__create_codec");
