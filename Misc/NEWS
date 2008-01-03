@@ -157,6 +157,8 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1301: Bad assert in _tkinter fixed.
+
 - Bug #1649098: Avoid declaration of zero-sized array declaration in
   structure.
 
