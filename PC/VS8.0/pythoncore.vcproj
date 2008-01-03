@@ -1374,10 +1374,6 @@
 				RelativePath="..\..\Objects\dictobject.c"
 				>
 			</File>
-			<!--File
-				RelativePath="..\..\Objects\doubledigits.c"
-				>
-			</File-->
 			<File
 				RelativePath="..\..\Objects\enumobject.c"
 				>
@@ -1604,10 +1600,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Python\ast.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Python\atof.c"
 				>
 			</File>
 			<File
