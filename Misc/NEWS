@@ -907,6 +907,8 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1301: Bad assert in _tkinter fixed.
+
 - Added bdist_wininst executable for VS 2008.
 
 - Bug #1604: collections.deque.__init__(iterable) now clears any prior contents
