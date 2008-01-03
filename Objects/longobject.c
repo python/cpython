@@ -1716,7 +1716,7 @@ PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 /* forward */
 static PyLongObject *x_divrem
 	(PyLongObject *, PyLongObject *, PyLongObject **);
-static PyObject *long_pos(PyLongObject *);
+static PyObject *long_long(PyObject *v);
 static int long_divrem(PyLongObject *, PyLongObject *,
 	PyLongObject **, PyLongObject **);
 
@@ -2906,17 +2906,6 @@ long_invert(PyLongObject *v)
 }
 
 static PyObject *
-long_pos(PyLongObject *v)
-{
-	if (PyLong_CheckExact(v)) {
-		Py_INCREF(v);
-		return (PyObject *)v;
-	}
-	else
-		return _PyLong_Copy(v);
-}
-
-static PyObject *
 long_neg(PyLongObject *v)
 {
 	PyLongObject *z;
@@ -2937,7 +2926,7 @@ long_abs(PyLongObject *v)
 	if (v->ob_size < 0)
 		return long_neg(v);
 	else
-		return long_pos(v);
+		return long_long((PyObject *)v);
 }
 
 static int
@@ -3373,9 +3362,72 @@ long_getnewargs(PyLongObject *v)
 	return Py_BuildValue("(N)", _PyLong_Copy(v));
 }
 
+static PyObject *
+long_getN(PyLongObject *v, void *context) {
+	return PyLong_FromLong((intptr_t)context);
+}
+
+static PyObject *
+long_round(PyObject *self, PyObject *args)
+{
+#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
+	int ndigits = UNDEF_NDIGITS;
+	double x;
+	PyObject *res;
+	
+	if (!PyArg_ParseTuple(args, "|i", &ndigits))
+		return NULL;
+
+	if (ndigits == UNDEF_NDIGITS)
+		return long_float(self);
+
+	/* If called with two args, defer to float.__round__(). */
+	x = PyLong_AsDouble(self);
+	if (x == -1.0 && PyErr_Occurred())
+		return NULL;
+	self = PyFloat_FromDouble(x);
+	if (self == NULL)
+		return NULL;
+	res = PyObject_CallMethod(self, "__round__", "i", ndigits);
+	Py_DECREF(self);
+	return res;
+#undef UNDEF_NDIGITS
+}
+
 static PyMethodDef long_methods[] = {
+	{"conjugate",	(PyCFunction)long_long,	METH_NOARGS,
+	 "Returns self, the complex conjugate of any long."},
+	{"__trunc__",	(PyCFunction)long_long,	METH_NOARGS,
+         "Truncating an Integral returns itself."},
+	{"__floor__",	(PyCFunction)long_long,	METH_NOARGS,
+         "Flooring an Integral returns itself."},
+	{"__ceil__",	(PyCFunction)long_long,	METH_NOARGS,
+         "Ceiling of an Integral returns itself."},
+	{"__round__",	(PyCFunction)long_round, METH_VARARGS,
+         "Rounding an Integral returns itself.\n"
+	 "Rounding with an ndigits arguments defers to float.__round__."},
 	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
+};
+
+static PyGetSetDef long_getset[] = {
+    {"real", 
+     (getter)long_long, (setter)NULL,
+     "the real part of a complex number",
+     NULL},
+    {"imag", 
+     (getter)long_getN, (setter)NULL,
+     "the imaginary part of a complex number",
+     (void*)0},
+    {"numerator", 
+     (getter)long_long, (setter)NULL,
+     "the numerator of a rational number in lowest terms",
+     NULL},
+    {"denominator", 
+     (getter)long_getN, (setter)NULL,
+     "the denominator of a rational number in lowest terms",
+     (void*)1},
+    {NULL}  /* Sentinel */
 };
 
 PyDoc_STRVAR(long_doc,
@@ -3396,7 +3448,7 @@ static PyNumberMethods long_as_number = {
 			long_divmod,	/*nb_divmod*/
 			long_pow,	/*nb_power*/
 	(unaryfunc) 	long_neg,	/*nb_negative*/
-	(unaryfunc) 	long_pos,	/*tp_positive*/
+	(unaryfunc) 	long_long,	/*tp_positive*/
 	(unaryfunc) 	long_abs,	/*tp_absolute*/
 	(inquiry)	long_nonzero,	/*tp_nonzero*/
 	(unaryfunc)	long_invert,	/*nb_invert*/
@@ -3461,7 +3513,7 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_iternext */
 	long_methods,				/* tp_methods */
 	0,					/* tp_members */
-	0,					/* tp_getset */
+	long_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */

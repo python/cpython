@@ -4,6 +4,8 @@
 #include "Python.h"
 #include <ctype.h>
 
+static PyObject *int_int(PyIntObject *v);
+
 long
 PyInt_GetMax(void)
 {
@@ -783,21 +785,10 @@ int_neg(PyIntObject *v)
 }
 
 static PyObject *
-int_pos(PyIntObject *v)
-{
-	if (PyInt_CheckExact(v)) {
-		Py_INCREF(v);
-		return (PyObject *)v;
-	}
-	else
-		return PyInt_FromLong(v->ob_ival);
-}
-
-static PyObject *
 int_abs(PyIntObject *v)
 {
 	if (v->ob_ival >= 0)
-		return int_pos(v);
+		return int_int(v);
 	else
 		return int_neg(v);
 }
@@ -827,7 +818,7 @@ int_lshift(PyIntObject *v, PyIntObject *w)
 		return NULL;
 	}
 	if (a == 0 || b == 0)
-		return int_pos(v);
+		return int_int(v);
 	if (b >= LONG_BIT) {
 		vv = PyLong_FromLong(PyInt_AS_LONG(v));
 		if (vv == NULL)
@@ -871,7 +862,7 @@ int_rshift(PyIntObject *v, PyIntObject *w)
 		return NULL;
 	}
 	if (a == 0 || b == 0)
-		return int_pos(v);
+		return int_int(v);
 	if (b >= LONG_BIT) {
 		if (a < 0)
 			a = -1;
@@ -1060,9 +1051,70 @@ int_getnewargs(PyIntObject *v)
 	return Py_BuildValue("(l)", v->ob_ival);
 }
 
+static PyObject *
+int_getN(PyIntObject *v, void *context) {
+	return PyInt_FromLong((intptr_t)context);
+}
+
+static PyObject *
+int_round(PyObject *self, PyObject *args)
+{
+#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
+	int ndigits = UNDEF_NDIGITS;
+	double x;
+	PyObject *res;
+	
+	if (!PyArg_ParseTuple(args, "|i", &ndigits))
+		return NULL;
+
+	if (ndigits == UNDEF_NDIGITS)
+          return int_float((PyIntObject *)self);
+
+	/* If called with two args, defer to float.__round__(). */
+	x = (double) PyInt_AS_LONG(self);
+	self = PyFloat_FromDouble(x);
+	if (self == NULL)
+		return NULL;
+	res = PyObject_CallMethod(self, "__round__", "i", ndigits);
+	Py_DECREF(self);
+	return res;
+#undef UNDEF_NDIGITS
+}
+
 static PyMethodDef int_methods[] = {
+	{"conjugate",	(PyCFunction)int_int,	METH_NOARGS,
+	 "Returns self, the complex conjugate of any int."},
+	{"__trunc__",	(PyCFunction)int_int,	METH_NOARGS,
+         "Truncating an Integral returns itself."},
+	{"__floor__",	(PyCFunction)int_int,	METH_NOARGS,
+         "Flooring an Integral returns itself."},
+	{"__ceil__",	(PyCFunction)int_int,	METH_NOARGS,
+         "Ceiling of an Integral returns itself."},
+	{"__round__",	(PyCFunction)int_round, METH_VARARGS,
+         "Rounding an Integral returns itself.\n"
+	 "Rounding with an ndigits arguments defers to float.__round__."},
 	{"__getnewargs__",	(PyCFunction)int_getnewargs,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
+};
+
+static PyGetSetDef int_getset[] = {
+	{"real", 
+	 (getter)int_int, (setter)NULL,
+	 "the real part of a complex number",
+	 NULL},
+	{"imag", 
+	 (getter)int_getN, (setter)NULL,
+	 "the imaginary part of a complex number",
+	 (void*)0},
+	{"numerator", 
+	 (getter)int_int, (setter)NULL,
+	 "the numerator of a rational number in lowest terms",
+	 NULL},
+	{"denominator", 
+	 (getter)int_getN, (setter)NULL,
+	 "the denominator of a rational number in lowest terms",
+	 (void*)1},
+	{NULL}  /* Sentinel */
 };
 
 PyDoc_STRVAR(int_doc,
@@ -1085,7 +1137,7 @@ static PyNumberMethods int_as_number = {
 	(binaryfunc)int_divmod,	/*nb_divmod*/
 	(ternaryfunc)int_pow,	/*nb_power*/
 	(unaryfunc)int_neg,	/*nb_negative*/
-	(unaryfunc)int_pos,	/*nb_positive*/
+	(unaryfunc)int_int,	/*nb_positive*/
 	(unaryfunc)int_abs,	/*nb_absolute*/
 	(inquiry)int_nonzero,	/*nb_nonzero*/
 	(unaryfunc)int_invert,	/*nb_invert*/
@@ -1149,7 +1201,7 @@ PyTypeObject PyInt_Type = {
 	0,					/* tp_iternext */
 	int_methods,				/* tp_methods */
 	0,					/* tp_members */
-	0,					/* tp_getset */
+	int_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */

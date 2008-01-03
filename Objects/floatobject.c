@@ -986,9 +986,10 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		 * bugs so we have to figure it out ourselves.
 		 */
 		if (iw != floor(iw)) {
-			PyErr_SetString(PyExc_ValueError, "negative number "
-				"cannot be raised to a fractional power");
-			return NULL;
+			/* Negative numbers raised to fractional powers
+			 * become complex.
+			 */
+			return PyComplex_Type.tp_as_number->nb_power(v, w, z);
 		}
 		/* iw is an exact integer, albeit perhaps a very large one.
 		 * -1 raised to an exact integer should never be exceptional.
@@ -1035,17 +1036,6 @@ float_neg(PyFloatObject *v)
 }
 
 static PyObject *
-float_pos(PyFloatObject *v)
-{
-	if (PyFloat_CheckExact(v)) {
-		Py_INCREF(v);
-		return (PyObject *)v;
-	}
-	else
-		return PyFloat_FromDouble(v->ob_fval);
-}
-
-static PyObject *
 float_abs(PyFloatObject *v)
 {
 	return PyFloat_FromDouble(fabs(v->ob_fval));
@@ -1083,14 +1073,7 @@ float_coerce(PyObject **pv, PyObject **pw)
 }
 
 static PyObject *
-float_long(PyObject *v)
-{
-	double x = PyFloat_AsDouble(v);
-	return PyLong_FromDouble(x);
-}
-
-static PyObject *
-float_int(PyObject *v)
+float_trunc(PyObject *v)
 {
 	double x = PyFloat_AsDouble(v);
 	double wholepart;	/* integral portion of x, rounded toward 0 */
@@ -1113,6 +1096,54 @@ float_int(PyObject *v)
 		return PyInt_FromLong(aslong);
 	}
 	return PyLong_FromDouble(wholepart);
+}
+
+static PyObject *
+float_round(PyObject *v, PyObject *args)
+{
+#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
+	double x;
+	double f;
+	double flr, cil;
+	double rounded;
+	int i;
+	int ndigits = UNDEF_NDIGITS;
+
+	if (!PyArg_ParseTuple(args, "|i", &ndigits))
+		return NULL;
+
+	x = PyFloat_AsDouble(v);
+
+	if (ndigits != UNDEF_NDIGITS) {
+		f = 1.0;
+		i = abs(ndigits);
+		while  (--i >= 0)
+			f = f*10.0;
+		if (ndigits < 0)
+			x /= f;
+		else
+			x *= f;
+	}
+
+	flr = floor(x);
+	cil = ceil(x);
+
+	if (x-flr > 0.5)
+		rounded = cil;
+	else if (x-flr == 0.5) 
+		rounded = fmod(flr, 2) == 0 ? flr : cil;
+	else
+		rounded = flr;
+
+	if (ndigits != UNDEF_NDIGITS) {
+		if (ndigits < 0)
+			rounded *= f;
+		else
+			rounded /= f;
+	}
+
+	return PyFloat_FromDouble(rounded);
+#undef UNDEF_NDIGITS
 }
 
 static PyObject *
@@ -1302,13 +1333,38 @@ PyDoc_STRVAR(float_setformat_doc,
 "Overrides the automatic determination of C-level floating point type.\n"
 "This affects how floats are converted to and from binary strings.");
 
+static PyObject *
+float_getzero(PyObject *v, void *closure)
+{
+	return PyFloat_FromDouble(0.0);
+}
+
 static PyMethodDef float_methods[] = {
+  	{"conjugate",	(PyCFunction)float_float,	METH_NOARGS,
+	 "Returns self, the complex conjugate of any float."},
+	{"__trunc__",	(PyCFunction)float_trunc, METH_NOARGS,
+         "Returns the Integral closest to x between 0 and x."},
+	{"__round__",	(PyCFunction)float_round, METH_VARARGS,
+         "Returns the Integral closest to x, rounding half toward even.\n"
+         "When an argument is passed, works like built-in round(x, ndigits)."},
 	{"__getnewargs__",	(PyCFunction)float_getnewargs,	METH_NOARGS},
 	{"__getformat__",	(PyCFunction)float_getformat,	
 	 METH_O|METH_CLASS,		float_getformat_doc},
 	{"__setformat__",	(PyCFunction)float_setformat,	
 	 METH_VARARGS|METH_CLASS,	float_setformat_doc},
 	{NULL,		NULL}		/* sentinel */
+};
+
+static PyGetSetDef float_getset[] = {
+    {"real", 
+     (getter)float_float, (setter)NULL,
+     "the real part of a complex number",
+     NULL},
+    {"imag", 
+     (getter)float_getzero, (setter)NULL,
+     "the imaginary part of a complex number",
+     NULL},
+    {NULL}  /* Sentinel */
 };
 
 PyDoc_STRVAR(float_doc,
@@ -1326,7 +1382,7 @@ static PyNumberMethods float_as_number = {
 	float_divmod, 	/*nb_divmod*/
 	float_pow, 	/*nb_power*/
 	(unaryfunc)float_neg, /*nb_negative*/
-	(unaryfunc)float_pos, /*nb_positive*/
+	(unaryfunc)float_float, /*nb_positive*/
 	(unaryfunc)float_abs, /*nb_absolute*/
 	(inquiry)float_nonzero, /*nb_nonzero*/
 	0,		/*nb_invert*/
@@ -1336,8 +1392,8 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
 	float_coerce, 	/*nb_coerce*/
-	float_int, 	/*nb_int*/
-	float_long, 	/*nb_long*/
+	float_trunc, 	/*nb_int*/
+	float_trunc, 	/*nb_long*/
 	float_float,	/*nb_float*/
 	0,		/* nb_oct */
 	0,		/* nb_hex */
@@ -1389,7 +1445,7 @@ PyTypeObject PyFloat_Type = {
 	0,					/* tp_iternext */
 	float_methods,				/* tp_methods */
 	0,					/* tp_members */
-	0,					/* tp_getset */
+	float_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */

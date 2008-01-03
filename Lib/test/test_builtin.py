@@ -1450,11 +1450,13 @@ class BuiltinTest(unittest.TestCase):
                     else:
                         self.assertAlmostEqual(pow(x, y, z), 24.0)
 
+        self.assertAlmostEqual(pow(-1, 0.5), 1j)
+        self.assertAlmostEqual(pow(-1, 1./3), 0.5 + 0.8660254037844386j)
+
         self.assertRaises(TypeError, pow, -1, -2, 3)
         self.assertRaises(ValueError, pow, 1, 2, 0)
         self.assertRaises(TypeError, pow, -1L, -2L, 3L)
         self.assertRaises(ValueError, pow, 1L, 2L, 0L)
-        self.assertRaises(ValueError, pow, -342.43, 0.234)
 
         self.assertRaises(TypeError, pow)
 
@@ -1622,6 +1624,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
+        self.assertEqual(type(round(0.0)), float)  # Will be int in 3.0.
         self.assertEqual(round(1.0), 1.0)
         self.assertEqual(round(10.0), 10.0)
         self.assertEqual(round(1000000000.0), 1000000000.0)
@@ -1650,11 +1653,49 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(round(-999999999.9), -1000000000.0)
 
         self.assertEqual(round(-8.0, -1), -10.0)
+        self.assertEqual(type(round(-8.0, -1)), float)
+
+        self.assertEqual(type(round(-8.0, 0)), float)
+        self.assertEqual(type(round(-8.0, 1)), float)
+
+        # Check even / odd rounding behaviour
+        self.assertEqual(round(5.5), 6)
+        self.assertEqual(round(6.5), 6)
+        self.assertEqual(round(-5.5), -6)
+        self.assertEqual(round(-6.5), -6)
+
+        # Check behavior on ints
+        self.assertEqual(round(0), 0)
+        self.assertEqual(round(8), 8)
+        self.assertEqual(round(-8), -8)
+        self.assertEqual(type(round(0)), float)  # Will be int in 3.0.
+        self.assertEqual(type(round(-8, -1)), float)
+        self.assertEqual(type(round(-8, 0)), float)
+        self.assertEqual(type(round(-8, 1)), float)
 
         # test new kwargs
         self.assertEqual(round(number=-8.0, ndigits=-1), -10.0)
 
         self.assertRaises(TypeError, round)
+
+        # test generic rounding delegation for reals
+        class TestRound(object):
+            def __round__(self):
+                return 23
+
+        class TestNoRound(object):
+            pass
+
+        self.assertEqual(round(TestRound()), 23)
+
+        self.assertRaises(TypeError, round, 1, 2, 3)
+        # XXX: This is not ideal, but see the comment in builtin_round().
+        self.assertRaises(AttributeError, round, TestNoRound())
+
+        t = TestNoRound()
+        t.__round__ = lambda *args: args
+        self.assertEquals((), round(t))
+        self.assertEquals((0,), round(t, 0))
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
@@ -1696,6 +1737,38 @@ class BuiltinTest(unittest.TestCase):
             def __getitem__(self, index):
                 raise ValueError
         self.assertRaises(ValueError, sum, BadSeq())
+
+    def test_trunc(self):
+
+        self.assertEqual(trunc(1), 1)
+        self.assertEqual(trunc(-1), -1)
+        self.assertEqual(type(trunc(1)), int)
+        self.assertEqual(type(trunc(1.5)), int)
+        self.assertEqual(trunc(1.5), 1)
+        self.assertEqual(trunc(-1.5), -1)
+        self.assertEqual(trunc(1.999999), 1)
+        self.assertEqual(trunc(-1.999999), -1)
+        self.assertEqual(trunc(-0.999999), -0)
+        self.assertEqual(trunc(-100.999), -100)
+
+        class TestTrunc(object):
+            def __trunc__(self):
+                return 23
+
+        class TestNoTrunc(object):
+            pass
+
+        self.assertEqual(trunc(TestTrunc()), 23)
+
+        self.assertRaises(TypeError, trunc)
+        self.assertRaises(TypeError, trunc, 1, 2)
+        # XXX: This is not ideal, but see the comment in builtin_trunc().
+        self.assertRaises(AttributeError, trunc, TestNoTrunc())
+
+        t = TestNoTrunc()
+        t.__trunc__ = lambda *args: args
+        self.assertEquals((), trunc(t))
+        self.assertRaises(TypeError, trunc, t, 0)
 
     def test_tuple(self):
         self.assertEqual(tuple(()), ())

@@ -150,7 +150,7 @@ Ellipsis
    indicate the presence of the ``...`` syntax in a slice.  Its truth value is
    true.
 
-Numbers
+:class:`numbers.Number`
    .. index:: object: numeric
 
    These are created by numeric literals and returned as results by arithmetic
@@ -162,7 +162,7 @@ Numbers
    Python distinguishes between integers, floating point numbers, and complex
    numbers:
 
-   Integers
+   :class:`numbers.Integral`
       .. index:: object: integer
 
       These represent elements from the mathematical set of integers (positive and
@@ -214,7 +214,7 @@ Numbers
       without causing overflow, will yield the same result in the long integer domain
       or when using mixed operands.
 
-   Floating point numbers
+   :class:`numbers.Real` (:class:`float`)
       .. index::
          object: floating point
          pair: floating point; number
@@ -229,7 +229,7 @@ Numbers
       overhead of using objects in Python, so there is no reason to complicate the
       language with two kinds of floating point numbers.
 
-   Complex numbers
+   :class:`numbers.Complex`
       .. index::
          object: complex
          pair: complex; number

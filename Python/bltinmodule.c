@@ -1926,39 +1926,31 @@ For most object types, eval(repr(object)) == object.");
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	double number;
-	double f;
-	int ndigits = 0;
-	int i;
+#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
+	int ndigits = UNDEF_NDIGITS;
 	static char *kwlist[] = {"number", "ndigits", 0};
+	PyObject *number;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "d|i:round",
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|i:round",
                 kwlist, &number, &ndigits))
                 return NULL;
-	f = 1.0;
-	i = abs(ndigits);
-	while  (--i >= 0)
-		f = f*10.0;
-	if (ndigits < 0)
-		number /= f;
-	else
-		number *= f;
-	if (number >= 0.0)
-		number = floor(number + 0.5);
-	else
-		number = ceil(number - 0.5);
-	if (ndigits < 0)
-		number *= f;
-	else
-		number /= f;
-	return PyFloat_FromDouble(number);
+
+        // The py3k branch gets better errors for this by using
+        // _PyType_Lookup(), but since float's mro isn't set in py2.6,
+        // we just use PyObject_CallMethod here.
+        if (ndigits == UNDEF_NDIGITS)
+                return PyObject_CallMethod(number, "__round__", "");
+        else
+                return PyObject_CallMethod(number, "__round__", "i", ndigits);
+#undef UNDEF_NDIGITS
 }
 
 PyDoc_STRVAR(round_doc,
 "round(number[, ndigits]) -> floating point number\n\
 \n\
 Round a number to a given precision in decimal digits (default 0 digits).\n\
-This always returns a floating point number.  Precision may be negative.");
+This returns an int when called with one argument, otherwise a float.\n\
+Precision may be negative.");
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
@@ -2038,6 +2030,20 @@ PyDoc_STRVAR(vars_doc,
 \n\
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
+
+static PyObject *
+builtin_trunc(PyObject *self, PyObject *number)
+{
+        // XXX: The py3k branch gets better errors for this by using
+        // _PyType_Lookup(), but since float's mro isn't set in py2.6,
+        // we just use PyObject_CallMethod here.
+	return PyObject_CallMethod(number, "__trunc__", "");
+}
+
+PyDoc_STRVAR(trunc_doc,
+"trunc(Real) -> Integral\n\
+\n\
+returns the integral closest to x between 0 and x.");
 
 
 static PyObject*
@@ -2387,6 +2393,7 @@ static PyMethodDef builtin_methods[] = {
  	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
 #endif
  	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
+ 	{"trunc",	builtin_trunc,      METH_O, trunc_doc},
   	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
 	{NULL,		NULL},
 };
