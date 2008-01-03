@@ -352,12 +352,19 @@ extern "C" {
 /* High precision defintion of pi and e (Euler)
  * The values are taken from libc6's math.h.
  */
+#ifndef Py_MATH_PIl
+#define Py_MATH_PIl 3.1415926535897932384626433832795029L
+#endif
 #ifndef Py_MATH_PI
-#define Py_MATH_PI 3.1415926535897932384626433832795029L
+#define Py_MATH_PI 3.14159265358979323846
+#endif
+
+#ifndef Py_MATH_El
+#define Py_MATH_El 2.7182818284590452353602874713526625L
 #endif
 
 #ifndef Py_MATH_E
-#define Py_MATH_E 2.7182818284590452353602874713526625L
+#define Py_MATH_E 2.7182818284590452354
 #endif
 
 /* Py_IS_NAN(X)
