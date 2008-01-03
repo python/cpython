@@ -133,6 +133,14 @@ FUNC1(cos, cos,
       "cos(x)\n\nReturn the cosine of x (measured in radians).")
 FUNC1(cosh, cosh,
       "cosh(x)\n\nReturn the hyperbolic cosine of x.")
+#if defined(MS_WINDOWS) || defined(HAVE_COPYSIGN)
+#ifdef MS_WINDOWS
+FUNC2(copysign, _copysign,
+#else
+FUNC2(copysign, copysign,
+#endif
+    "copysign(x,y)\n\nReturn x with the sign of y.");
+#endif
 FUNC1(exp, exp,
       "exp(x)\n\nReturn e raised to the power of x.")
 FUNC1(fabs, fabs,
@@ -375,6 +383,9 @@ static PyMethodDef math_methods[] = {
 	{"atan",	math_atan,	METH_O,		math_atan_doc},
 	{"atan2",	math_atan2,	METH_VARARGS,	math_atan2_doc},
 	{"ceil",	math_ceil,	METH_O,		math_ceil_doc},
+#if defined(MS_WINDOWS) || defined(HAVE_COPYSIGN)
+	{"copysign",	math_copysign,	METH_VARARGS,	math_copysign_doc},
+#endif
 	{"cos",		math_cos,	METH_O,		math_cos_doc},
 	{"cosh",	math_cosh,	METH_O,		math_cosh_doc},
 	{"degrees",	math_degrees,	METH_O,		math_degrees_doc},

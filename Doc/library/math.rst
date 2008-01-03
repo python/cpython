@@ -31,6 +31,14 @@ Number-theoretic and representation functions:
    should return an :class:`Integral` value.
 
 
+.. function:: copysign(x, y)
+
+   Return *x* with the sign of *y*. ``copysign`` copies the sign bit of an IEEE
+   754 float, ``copysign(1, -0.0)`` returns *-1.0*.
+
+   ..versionadded:: 2.6
+
+
 .. function:: fabs(x)
 
    Return the absolute value of *x*.
