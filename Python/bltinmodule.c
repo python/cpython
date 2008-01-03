@@ -281,7 +281,7 @@ static PyObject *
 builtin_filter(PyObject *self, PyObject *args)
 {
 	PyObject *itertools, *ifilter, *result;
-	itertools = PyImport_ImportModule("itertools");
+	itertools = PyImport_ImportModuleNoBlock("itertools");
 	if (itertools == NULL)
 		return NULL;
 	ifilter = PyObject_GetAttrString(itertools, "ifilter");
@@ -796,7 +796,7 @@ static PyObject *
 builtin_map(PyObject *self, PyObject *args)
 {
 	PyObject *itertools, *imap, *result;
-	itertools = PyImport_ImportModule("itertools");
+	itertools = PyImport_ImportModuleNoBlock("itertools");
 	if (itertools == NULL)
 		return NULL;
 	imap = PyObject_GetAttrString(itertools, "imap");

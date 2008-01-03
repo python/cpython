@@ -56,7 +56,7 @@ new_identifier(const char* n, PyArena *arena)
        identifier; if so, normalize to NFKC. */
     for (; *u; u++) {
 	if (*u >= 128) {
-	    PyObject *m = PyImport_ImportModule("unicodedata");
+	    PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
 	    PyObject *id2;
 	    if (!m)
 		return NULL;

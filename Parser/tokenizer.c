@@ -452,7 +452,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
 {
 	PyObject *readline = NULL, *stream = NULL, *io = NULL;
 
-	io = PyImport_ImportModule("io");
+	io = PyImport_ImportModuleNoBlock("io");
 	if (io == NULL)
 		goto cleanup;
 
