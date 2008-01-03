@@ -915,10 +915,13 @@ available.  They are listed here in alphabetical order.
 .. function:: round(x[, n])
 
    Return the floating point value *x* rounded to *n* digits after the decimal
-   point.  If *n* is omitted, it defaults to zero. The result is a floating point
-   number.  Values are rounded to the closest multiple of 10 to the power minus
-   *n*; if two multiples are equally close, rounding is done away from 0 (so. for
-   example, ``round(0.5)`` is ``1.0`` and ``round(-0.5)`` is ``-1.0``).
+   point.  If *n* is omitted, it defaults to zero.  Values are rounded to the
+   closest multiple of 10 to the power minus *n*; if two multiples are equally
+   close, rounding is done toward the even choice (so, for example, both
+   ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
+   ``2``). Delegates to ``x.__round__(n)``.
+
+   .. versionchanged:: 2.6
 
 
 .. function:: set([iterable])
@@ -1062,6 +1065,14 @@ available.  They are listed here in alphabetical order.
    explicit dotted attribute lookups such as ``super(C, self).__getitem__(name)``.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super(C, self)[name]``.
+
+
+.. function:: trunc(x)
+
+   Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
+   a long integer). Delegates to ``x.__trunc__()``.
+
+   .. versionadded:: 2.6
 
 
 .. function:: tuple([iterable])

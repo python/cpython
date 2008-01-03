@@ -14,13 +14,10 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleEx(
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
 PyAPI_FUNC(PyObject *) PyImport_AddModule(const char *name);
 PyAPI_FUNC(PyObject *) PyImport_ImportModule(const char *name);
+PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(const char *);
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(char *name,
 	PyObject *globals, PyObject *locals, PyObject *fromlist, int level);
 
-/* For DLL compatibility */
-#undef PyImport_ImportModuleEx
-PyAPI_FUNC(PyObject *) PyImport_ImportModuleEx(
-	char *name, PyObject *globals, PyObject *locals, PyObject *fromlist);
 #define PyImport_ImportModuleEx(n, g, l, f) \
 	PyImport_ImportModuleLevel(n, g, l, f, -1)
 

@@ -632,6 +632,36 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.compile("bla").match(a), None)
             self.assertEqual(re.compile("").match(a).groups(), ())
 
+    def test_inline_flags(self):
+        # Bug #1700
+        upper_char = unichr(0x1ea0) # Latin Capital Letter A with Dot Bellow
+        lower_char = unichr(0x1ea1) # Latin Small Letter A with Dot Bellow
+
+        p = re.compile(upper_char, re.I | re.U)
+        q = p.match(lower_char)
+        self.assertNotEqual(q, None)
+
+        p = re.compile(lower_char, re.I | re.U)
+        q = p.match(upper_char)
+        self.assertNotEqual(q, None)
+
+        p = re.compile('(?i)' + upper_char, re.U)
+        q = p.match(lower_char)
+        self.assertNotEqual(q, None)
+
+        p = re.compile('(?i)' + lower_char, re.U)
+        q = p.match(upper_char)
+        self.assertNotEqual(q, None)
+
+        p = re.compile('(?iu)' + upper_char)
+        q = p.match(lower_char)
+        self.assertNotEqual(q, None)
+
+        p = re.compile('(?iu)' + lower_char)
+        q = p.match(upper_char)
+        self.assertNotEqual(q, None)
+
+
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:

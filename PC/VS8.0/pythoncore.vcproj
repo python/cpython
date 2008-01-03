@@ -1599,10 +1599,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Python\atof.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Python\bltinmodule.c"
 				>
 			</File>

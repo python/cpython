@@ -184,7 +184,8 @@ Importing Modules
       single: modules (in module sys)
 
    This is a simplified interface to :cfunc:`PyImport_ImportModuleEx` below,
-   leaving the *globals* and *locals* arguments set to *NULL*.  When the *name*
+   leaving the *globals* and *locals* arguments set to *NULL* and *level* set
+   to 0.  When the *name*
    argument contains a dot (when it specifies a submodule of a package), the
    *fromlist* argument is set to the list ``['*']`` so that the return value is the
    named module rather than the top-level package containing it as would otherwise
@@ -195,6 +196,27 @@ Importing Modules
    the module may still be created in the failure case --- examine ``sys.modules``
    to find out.  Starting with Python 2.4, a failing import of a module no longer
    leaves the module in ``sys.modules``.
+
+   .. versionchanged:: 2.6
+      always use absolute imports
+
+   .. index:: single: modules (in module sys)
+
+
+.. cfunction:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
+
+   .. index::
+      single: `cfunc:PyImport_ImportModule`
+
+   This version of `cfunc:PyImport_ImportModule` does not block. It's intended
+   to be used in C function which import other modules to execute a function.
+   The import may block if another thread holds the import lock. The function
+  `cfunc:PyImport_ImportModuleNoBlock` doesn't block. It first tries to fetch
+   the module from sys.modules and falls back to `cfunc:PyImport_ImportModule`
+   unless the the lock is hold. In the latter case the function raises an
+   ImportError.
+
+   .. versionadded:: 2.6
 
 
 .. cfunction:: PyObject* PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
@@ -214,6 +236,24 @@ Importing Modules
    Failing imports remove incomplete module objects, like with
    :cfunc:`PyImport_ImportModule`.
 
+   .. versionchanged:: 2.6
+      The function is an alias for `cfunc:PyImport_ImportModuleLevel` with
+      -1 as level, meaning relative import.
+
+
+.. cfunction:: PyObject* PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
+
+   Import a module.  This is best described by referring to the built-in Python
+   function :func:`__import__`, as the standard :func:`__import__` function calls
+   this function directly.
+
+   The return value is a new reference to the imported module or top-level package,
+   or *NULL* with an exception set on failure.  Like for :func:`__import__`,
+   the return value when a submodule of a package was requested is normally the
+   top-level package, unless a non-empty *fromlist* was given.
+
+   ..versionadded:: 2.5
+
 
 .. cfunction:: PyObject* PyImport_Import(PyObject *name)
 
@@ -221,6 +261,9 @@ Importing Modules
    It invokes the :func:`__import__` function from the ``__builtins__`` of the
    current globals.  This means that the import is done using whatever import hooks
    are installed in the current environment.
+
+   .. versionchanged:: 2.6
+      always use absolute imports
 
 
 .. cfunction:: PyObject* PyImport_ReloadModule(PyObject *m)

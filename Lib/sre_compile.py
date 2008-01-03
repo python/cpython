@@ -516,7 +516,7 @@ def compile(p, flags=0):
         indexgroup[i] = k
 
     return _sre.compile(
-        pattern, flags, code,
+        pattern, flags | p.pattern.flags, code,
         p.pattern.groups-1,
         groupindex, indexgroup
         )
