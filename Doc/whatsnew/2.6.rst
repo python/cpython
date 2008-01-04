@@ -552,6 +552,14 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   .. Patch 1507
 
+* More floating-point features were also added.  The :func:`float` function
+  will now turn the strings ``+nan`` and ``-nan`` into the corresponding
+  IEEE 754 Not a Number values, and ``+inf`` and ``-inf`` into 
+  positive or negative infinity.  This works on any platform with 
+  IEEE 754 semantics.  (Contributed by XXX.)
+
+  .. Patch 1635.
+
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6, 
   the :attr:`message` attribute is being deprecated in favor of the
@@ -1058,11 +1066,31 @@ Changes to Python's build process and to the C API include:
 
   .. Issue 1534
 
+* Python's C API now includes two functions for case-insensitive string
+  comparisions, ``PyOS_stricmp(char*, char*)``
+  and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
+  (Contributed by XXX.)
+
+  .. Issue 1635
+
+* Some macros were renamed.  :cmacro:`Py_Size()` became :cmacro:`Py_SIZE()`,
+  :cmacro:`Py_Type()` became :cmacro:`Py_TYPE()`, and
+  :cmacro:`Py_Refcnt()` became :cmacro:`Py_REFCNT()`.  Macros for backward
+  compatibility are still available.
+
+  .. Issue 1629: XXX why was this done?
+
 .. ======================================================================
 
 
-Port-Specific Changes
----------------------
+Port-Specific Changes: Windows
+-----------------------------------
+
+* The :mod:`msvcrt` module now supports 
+  both the normal and wide char variants of the console I/O
+  API.  The :func:`getwch` function reads a keypress and returns a Unicode 
+  value, as does the :func:`getwche` function.  The :func:`putwch` function
+  takes a Unicode character and writes it to the console.
 
 Platform-specific changes go here.
 
@@ -1089,8 +1117,14 @@ Some of the more notable changes are:
 Porting to Python 2.6
 =====================
 
-This section lists previously described changes that may require changes to your
+This section lists previously described changes, and a few
+esoteric bugfixes, that may require changes to your
 code:
+
+* The :method:`__init__` method of :class:`collections.deque`
+  now clears any existing contents of the deque
+  before adding elements from the iterable.  This change makes the
+  behavior match that of ``list.__init__()``.  
 
 * The :mod:`socket` module exception :exc:`socket.error` now inherits
   from :exc:`IOError`.  Previously it wasn't a subclass of
