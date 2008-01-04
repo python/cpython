@@ -51,6 +51,10 @@ class MathTests(unittest.TestCase):
 
     def testCeil(self):
         self.assertRaises(TypeError, math.ceil)
+        # These types will be int in py3k.
+        self.assertEquals(float, type(math.ceil(1)))
+        self.assertEquals(float, type(math.ceil(1L)))
+        self.assertEquals(float, type(math.ceil(1.0)))
         self.ftest('ceil(0.5)', math.ceil(0.5), 1)
         self.ftest('ceil(1.0)', math.ceil(1.0), 1)
         self.ftest('ceil(1.5)', math.ceil(1.5), 2)
@@ -103,6 +107,10 @@ class MathTests(unittest.TestCase):
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
+        # These types will be int in py3k.
+        self.assertEquals(float, type(math.floor(1)))
+        self.assertEquals(float, type(math.floor(1L)))
+        self.assertEquals(float, type(math.floor(1.0)))
         self.ftest('floor(0.5)', math.floor(0.5), 0)
         self.ftest('floor(1.0)', math.floor(1.0), 1)
         self.ftest('floor(1.5)', math.floor(1.5), 1)

@@ -1086,9 +1086,9 @@ static PyMethodDef int_methods[] = {
 	 "Returns self, the complex conjugate of any int."},
 	{"__trunc__",	(PyCFunction)int_int,	METH_NOARGS,
          "Truncating an Integral returns itself."},
-	{"__floor__",	(PyCFunction)int_int,	METH_NOARGS,
+	{"__floor__",	(PyCFunction)int_float,	METH_NOARGS,
          "Flooring an Integral returns itself."},
-	{"__ceil__",	(PyCFunction)int_int,	METH_NOARGS,
+	{"__ceil__",	(PyCFunction)int_float,	METH_NOARGS,
          "Ceiling of an Integral returns itself."},
 	{"__round__",	(PyCFunction)int_round, METH_VARARGS,
          "Rounding an Integral returns itself.\n"
