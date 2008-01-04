@@ -898,10 +898,12 @@ AsObj(PyObject *value)
 		/* This #ifdef assumes that Tcl uses UCS-2.
 		   See TCL_UTF_MAX test above. */
 #if defined(Py_UNICODE_WIDE) && TCL_UTF_MAX == 3
-		Tcl_UniChar *outbuf;
+		Tcl_UniChar *outbuf = NULL;
 		Py_ssize_t i;
-		assert(size < size * sizeof(Tcl_UniChar));
-		outbuf = (Tcl_UniChar*)ckalloc(size * sizeof(Tcl_UniChar));
+		size_t allocsize = ((size_t)size) * sizeof(Tcl_UniChar);
+		if (allocsize >= size)
+			outbuf = (Tcl_UniChar*)ckalloc(allocsize);
+		/* Else overflow occurred, and we take the next exit */
 		if (!outbuf) {
 			PyErr_NoMemory();
 			return NULL;

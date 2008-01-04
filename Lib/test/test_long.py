@@ -537,6 +537,10 @@ class LongTest(unittest.TestCase):
         # conversion to string should fail
         self.assertRaises(ValueError, format, 3, "s")
 
+    def test_nan_inf(self):
+        self.assertRaises(OverflowError, long, float('inf'))
+        self.assertEqual(long(float('nan')), 0L)
+
 def test_main():
     test_support.run_unittest(LongTest)
 
