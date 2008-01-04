@@ -538,8 +538,8 @@ class LongTest(unittest.TestCase):
         self.assertRaises(ValueError, format, 3, "s")
 
     def test_nan_inf(self):
-        self.assertRaises(OverflowError, long, float('inf'))
-        self.assertEqual(long(float('nan')), 0L)
+        self.assertRaises(OverflowError, int, float('inf'))
+        self.assertEqual(int(float('nan')), 0)
 
 def test_main():
     test_support.run_unittest(LongTest)
