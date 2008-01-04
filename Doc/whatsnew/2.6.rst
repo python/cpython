@@ -556,7 +556,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   will now turn the strings ``+nan`` and ``-nan`` into the corresponding
   IEEE 754 Not a Number values, and ``+inf`` and ``-inf`` into 
   positive or negative infinity.  This works on any platform with 
-  IEEE 754 semantics.  (Contributed by XXX.)
+  IEEE 754 semantics.  (Contributed by Christian Heimes.)
 
   .. Patch 1635.
 
@@ -1063,20 +1063,21 @@ Changes to Python's build process and to the C API include:
   ``"mant_dig"`` (number of digits in the mantissa), ``"epsilon"``
   (smallest difference between 1.0 and the next largest value
   representable), and several others.
+  (Contributed by Christian Heimes.)
 
   .. Issue 1534
 
 * Python's C API now includes two functions for case-insensitive string
   comparisions, ``PyOS_stricmp(char*, char*)``
   and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
-  (Contributed by XXX.)
+  (Contributed by Christian Heimes.)
 
   .. Issue 1635
 
 * Some macros were renamed.  :cmacro:`Py_Size()` became :cmacro:`Py_SIZE()`,
   :cmacro:`Py_Type()` became :cmacro:`Py_TYPE()`, and
   :cmacro:`Py_Refcnt()` became :cmacro:`Py_REFCNT()`.  Macros for backward
-  compatibility are still available.
+  compatibility are still available for Python 2.6.
 
   .. Issue 1629: XXX why was this done?
 
