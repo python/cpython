@@ -1851,11 +1851,11 @@ PyTypeObject PyStructType = {
 /* ---- Standalone functions  ---- */
 
 #define MAXCACHE 100
+static PyObject *cache = NULL;
 
 static PyObject *
 cache_struct(PyObject *fmt)
 {
-	static PyObject *cache = NULL;
 	PyObject * s_object;
 
 	if (cache == NULL) {
@@ -1879,6 +1879,17 @@ cache_struct(PyObject *fmt)
 			PyErr_Clear();
 	}
 	return s_object;
+}
+
+PyDoc_STRVAR(clearcache_doc,
+"Clear the internal cache.");
+
+static PyObject *
+clearcache(PyObject *self)
+{
+	if (cache != NULL)
+		PyDict_Clear(cache);
+	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(calcsize_doc,
@@ -2006,6 +2017,7 @@ unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static struct PyMethodDef module_functions[] = {
+	{"_clearcache",	(PyCFunction)clearcache,	METH_NOARGS, 	clearcache_doc},
 	{"calcsize",	calcsize,	METH_O, 	calcsize_doc},
 	{"pack",	pack,		METH_VARARGS, 	pack_doc},
 	{"pack_into",	pack_into,	METH_VARARGS, 	pack_into_doc},
