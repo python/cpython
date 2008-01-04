@@ -342,6 +342,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1713: posixpath.ismount() claims symlink to a mountpoint is a mountpoint.
+
 - Bug #1687: Fxed plistlib.py restricts <integer> to Python int when writing
 
 - Issue #1700: Regular expression inline flags incorrectly handle certain
