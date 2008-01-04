@@ -2037,11 +2037,11 @@ class TarFile(object):
 
         # Set correct owner, mtime and filemode on directories.
         for tarinfo in directories:
-            path = os.path.join(path, tarinfo.name)
+            dirpath = os.path.join(path, tarinfo.name)
             try:
-                self.chown(tarinfo, path)
-                self.utime(tarinfo, path)
-                self.chmod(tarinfo, path)
+                self.chown(tarinfo, dirpath)
+                self.utime(tarinfo, dirpath)
+                self.chmod(tarinfo, dirpath)
             except ExtractError, e:
                 if self.errorlevel > 1:
                     raise
