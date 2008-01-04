@@ -124,20 +124,20 @@ Bug reports
 -----------
 
 To report or search for bugs, please use the Python Bug
-Tracker at http://sourceforge.net/bugs/?group_id=5470.
+Tracker at http://bugs.python.org.
 
 
 Patches and contributions
 -------------------------
 
 To submit a patch or other contribution, please use the Python Patch
-Manager at http://sourceforge.net/patch/?group_id=5470.  Guidelines
-for patch submission may be found at http://www.python.org/patches/.
+Manager at http://bugs.python.org.  Guidelines
+for patch submission may be found at http://www.python.org/dev/patches/.
 
 If you have a proposal to change Python, it's best to submit a Python
 Enhancement Proposal (PEP) first.  All current PEPs, as well as
 guidelines for submitting a new PEP, are listed at
-http://www.python.org/peps/.
+http://www.python.org/dev/peps/.
 
 
 Questions
