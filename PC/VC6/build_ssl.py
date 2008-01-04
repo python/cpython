@@ -8,7 +8,7 @@
 #   directory.  It is likely you will already find the zlib library and
 #   any other external packages there.
 # * Install ActivePerl and ensure it is somewhere on your path.
-# * Run this script from the PC/VC6 directory.
+# * Run this script from the PCBuild directory.
 #
 # it should configure and build SSL, then build the ssl Python extension
 # without intervention.

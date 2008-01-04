@@ -57,21 +57,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "_msi"=".\_msi.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "_socket"=".\_socket.dsp" - Package Owner=<4>
 
 Package=<5>
@@ -302,5 +287,4 @@ Package=<3>
 }}}
 
 ###############################################################################
-
 
