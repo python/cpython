@@ -1847,12 +1847,214 @@ PyTypeObject PyStructType = {
 	PyObject_Del,		/* tp_free */
 };
 
+
+/* ---- Standalone functions  ---- */
+
+#define MAXCACHE 100
+
+static PyObject *
+cache_struct(PyObject *fmt)
+{
+	static PyObject *cache = NULL;
+	PyObject * s_object;
+
+	if (cache == NULL) {
+		cache = PyDict_New();
+		if (cache == NULL)
+			return NULL;
+	}
+
+	s_object = PyDict_GetItem(cache, fmt);
+	if (s_object != NULL) {
+		Py_INCREF(s_object);
+		return s_object;
+	}
+
+	s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);
+	if (s_object != NULL) {
+		if (PyDict_Size(cache) >= MAXCACHE)
+			PyDict_Clear(cache);
+		/* Attempt to cache the result */
+		if (PyDict_SetItem(cache, fmt, s_object) == -1)
+			PyErr_Clear();
+	}
+	return s_object;
+}
+
+PyDoc_STRVAR(calcsize_doc,
+"Return size of C struct described by format string fmt.");
+
+static PyObject *
+calcsize(PyObject *self, PyObject *fmt)
+{
+	Py_ssize_t n;
+	PyObject *s_object = cache_struct(fmt);
+	if (s_object == NULL)
+		return NULL;
+	n = ((PyStructObject *)s_object)->s_size;
+	Py_DECREF(s_object);
+    	return PyInt_FromSsize_t(n);
+}
+
+PyDoc_STRVAR(pack_doc,
+"Return string containing values v1, v2, ... packed according to fmt.");
+
+static PyObject *
+pack(PyObject *self, PyObject *args)
+{
+	PyObject *s_object, *fmt, *newargs, *result;
+	Py_ssize_t n = PyTuple_GET_SIZE(args);
+
+	if (n == 0) {
+		PyErr_SetString(PyExc_TypeError, "missing format argument");
+		return NULL;
+	}
+	fmt = PyTuple_GET_ITEM(args, 0);
+	newargs = PyTuple_GetSlice(args, 1, n);
+	if (newargs == NULL)
+		return NULL;
+
+	s_object = cache_struct(fmt);
+	if (s_object == NULL) {
+		Py_DECREF(newargs);
+		return NULL;
+	}
+    	result = s_pack(s_object, newargs);
+	Py_DECREF(newargs);
+	Py_DECREF(s_object);
+	return result;
+}
+
+PyDoc_STRVAR(pack_into_doc,
+"Pack the values v1, v2, ... according to fmt.\n\
+Write the packed bytes into the writable buffer buf starting at offset.");
+
+static PyObject *
+pack_into(PyObject *self, PyObject *args)
+{
+	PyObject *s_object, *fmt, *newargs, *result;
+	Py_ssize_t n = PyTuple_GET_SIZE(args);
+
+	if (n == 0) {
+		PyErr_SetString(PyExc_TypeError, "missing format argument");
+		return NULL;
+	}
+	fmt = PyTuple_GET_ITEM(args, 0);
+	newargs = PyTuple_GetSlice(args, 1, n);
+	if (newargs == NULL)
+		return NULL;
+
+	s_object = cache_struct(fmt);
+	if (s_object == NULL) {
+		Py_DECREF(newargs);
+		return NULL;
+	}
+    	result = s_pack_into(s_object, newargs);
+	Py_DECREF(newargs);
+	Py_DECREF(s_object);
+	return result;
+}
+
+PyDoc_STRVAR(unpack_doc,
+"Unpack the string containing packed C structure data, according to fmt.\n\
+Requires len(string) == calcsize(fmt).");
+
+static PyObject *
+unpack(PyObject *self, PyObject *args)
+{
+	PyObject *s_object, *fmt, *inputstr, *result;
+
+	if (!PyArg_UnpackTuple(args, "unpack", 2, 2, &fmt, &inputstr))
+		return NULL;
+
+	s_object = cache_struct(fmt);
+	if (s_object == NULL)
+		return NULL;
+    	result = s_unpack(s_object, inputstr);
+	Py_DECREF(s_object);
+	return result;
+}
+
+PyDoc_STRVAR(unpack_from_doc,
+"Unpack the buffer, containing packed C structure data, according to\n\
+fmt, starting at offset. Requires len(buffer[offset:]) >= calcsize(fmt).");
+
+static PyObject *
+unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	PyObject *s_object, *fmt, *newargs, *result;
+	Py_ssize_t n = PyTuple_GET_SIZE(args);
+
+	if (n == 0) {
+		PyErr_SetString(PyExc_TypeError, "missing format argument");
+		return NULL;
+	}
+	fmt = PyTuple_GET_ITEM(args, 0);
+	newargs = PyTuple_GetSlice(args, 1, n);
+	if (newargs == NULL)
+		return NULL;
+
+	s_object = cache_struct(fmt);
+	if (s_object == NULL) {
+		Py_DECREF(newargs);
+		return NULL;
+	}
+    	result = s_unpack_from(s_object, newargs, kwds);
+	Py_DECREF(newargs);
+	Py_DECREF(s_object);
+	return result;
+}
+
+static struct PyMethodDef module_functions[] = {
+	{"calcsize",	calcsize,	METH_O, 	calcsize_doc},
+	{"pack",	pack,		METH_VARARGS, 	pack_doc},
+	{"pack_into",	pack_into,	METH_VARARGS, 	pack_into_doc},
+	{"unpack",	unpack,       	METH_VARARGS, 	unpack_doc},
+	{"unpack_from",	(PyCFunction)unpack_from, 	
+			METH_VARARGS|METH_KEYWORDS, 	unpack_from_doc},
+	{NULL,	 NULL}		/* sentinel */
+};
+
+
 /* Module initialization */
+
+PyDoc_STRVAR(module_doc,
+"Functions to convert between Python values and C structs.\n\
+Python strings are used to hold the data representing the C struct\n\
+and also as format strings to describe the layout of data in the C struct.\n\
+\n\
+The optional first format char indicates byte order, size and alignment:\n\
+ @: native order, size & alignment (default)\n\
+ =: native order, std. size & alignment\n\
+ <: little-endian, std. size & alignment\n\
+ >: big-endian, std. size & alignment\n\
+ !: same as >\n\
+\n\
+The remaining chars indicate types of args and must match exactly;\n\
+these can be preceded by a decimal repeat count:\n\
+  x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
+  h:short; H:unsigned short; i:int; I:unsigned int;\n\
+  l:long; L:unsigned long; f:float; d:double.\n\
+Special cases (preceding decimal count indicates length):\n\
+  s:string (array of char); p: pascal string (with count byte).\n\
+Special case (only available in native format):\n\
+  P:an integer type that is wide enough to hold a pointer.\n\
+Special case (not in native mode unless 'long long' in platform C):\n\
+  q:long long; Q:unsigned long long\n\
+Whitespace between formats is ignored.\n\
+\n\
+The variable struct.error is an exception raised on errors.\n");
 
 PyMODINIT_FUNC
 init_struct(void)
 {
-	PyObject *m = Py_InitModule("_struct", NULL);
+	PyObject *ver, *m;
+
+	ver = PyString_FromString("0.2");
+	if (ver == NULL)
+		return;
+
+	m = Py_InitModule3("_struct", module_functions, module_doc);
 	if (m == NULL)
 		return;
 
@@ -1932,6 +2134,8 @@ init_struct(void)
 
 	Py_INCREF((PyObject*)&PyStructType);
 	PyModule_AddObject(m, "Struct", (PyObject*)&PyStructType);
+
+	PyModule_AddObject(m, "__version__", ver);
 
 	PyModule_AddIntConstant(m, "_PY_STRUCT_RANGE_CHECKING", 1);
 #ifdef PY_STRUCT_OVERFLOW_MASKING
