@@ -12,6 +12,11 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Improve some exception messages when Windows fails to load an extension
+  module. Now we get for example '%1 is not a valid Win32 application' instead
+  of 'error code 193'.  Also use Unicode strings to deal with non-English
+  locales.
+
 - Issue #1587: Added instancemethod wrapper for PyCFunctions. The Python C API
   has gained a new type *PyInstanceMethod_Type* and the functions
   *PyInstanceMethod_Check(o)*, *PyInstanceMethod_New(func)* and
