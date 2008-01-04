@@ -101,9 +101,9 @@ Console I/O
    
 .. function:: getwch()
 
-   Wide char variant of `func:getch`, returns unicode.
+   Wide char variant of :func:`getch`, returning a Unicode value.
    
-   ..versionadded:: 2.6
+   .. versionadded:: 2.6
    
 
 .. function:: getche()
@@ -114,9 +114,9 @@ Console I/O
 
 .. function:: getwche()
 
-   Wide char variant of `func:getche`, returns unicode.
+   Wide char variant of :func:`getche`, returning a Unicode value.
    
-   ..versionadded:: 2.6
+   .. versionadded:: 2.6
 
 
 .. function:: putch(char)
@@ -126,9 +126,9 @@ Console I/O
    
 .. function:: putwch(unicode_char)
 
-   Wide char variant of `func:putch`, accepts unicode.
+   Wide char variant of :func:`putch`, accepting a Unicode value.
    
-   ..versionadded:: 2.6
+   .. versionadded:: 2.6
    
 
 .. function:: ungetch(char)
@@ -139,9 +139,9 @@ Console I/O
    
 .. function:: ungetwch(unicode_char)
 
-   Wide char variant of `func:ungetch`, accepts unicode.
+   Wide char variant of :func:`ungetch`, accepting a Unicode value.
    
-   ..versionadded:: 2.6
+   .. versionadded:: 2.6
 
 
 .. _msvcrt-other:
