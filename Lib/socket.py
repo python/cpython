@@ -141,7 +141,10 @@ _socketmethods = (
     'bind', 'connect', 'connect_ex', 'fileno', 'listen',
     'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
     'sendall', 'setblocking',
-    'settimeout', 'gettimeout', 'shutdown', 'ioctl')
+    'settimeout', 'gettimeout', 'shutdown')
+
+if os.name == "nt":
+    _socketmethods = _socketmethods + ('ioctl',)
 
 if sys.platform == "riscos":
     _socketmethods = _socketmethods + ('sleeptaskw',)
