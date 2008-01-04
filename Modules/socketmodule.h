@@ -22,6 +22,7 @@
 # define HAVE_GETNAMEINFO
 # define ENABLE_IPV6
 #else
+# define WIN32_LEAN_AND_MEAN
 # include <winsock.h>
 #endif
 #endif
