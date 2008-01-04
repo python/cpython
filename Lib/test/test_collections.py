@@ -17,6 +17,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__slots__, ())
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
+        self.assertEqual(Point._fields, ('x', 'y'))
 
         self.assertRaises(ValueError, namedtuple, 'abc%', 'efg ghi')       # type has non-alpha char
         self.assertRaises(ValueError, namedtuple, 'class', 'efg ghi')      # type has keyword
@@ -50,14 +51,6 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
         self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
         self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
-
-        # Verify that _fields is read-only
-        try:
-            p._fields = ('F1' ,'F2')
-        except AttributeError:
-            pass
-        else:
-            self.fail('The _fields attribute needs to be read-only')
 
         # verify that field string can have commas
         Point = namedtuple('Point', 'x, y')

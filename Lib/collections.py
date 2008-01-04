@@ -60,6 +60,7 @@ def namedtuple(typename, field_names, verbose=False):
     template = '''class %(typename)s(tuple):
         '%(typename)s(%(argtxt)s)' \n
         __slots__ = () \n
+        _fields = %(field_names)r \n
         def __new__(cls, %(argtxt)s):
             return tuple.__new__(cls, (%(argtxt)s)) \n
         _cast = classmethod(tuple.__new__) \n
@@ -70,10 +71,7 @@ def namedtuple(typename, field_names, verbose=False):
             return {%(dicttxt)s} \n
         def _replace(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
-            return %(typename)s._cast(map(kwds.get, %(field_names)r, self)) \n
-        @property
-        def _fields(self):
-            return %(field_names)r \n\n''' % locals()
+            return self.__class__._cast(map(kwds.get, %(field_names)r, self)) \n\n''' % locals()
     for i, name in enumerate(field_names):
         template += '        %s = property(itemgetter(%d))\n' % (name, i)
     if verbose:

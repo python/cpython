@@ -388,6 +388,8 @@ Example::
 
            __slots__ = ()
 
+           _fields = ('x', 'y')
+
            def __new__(cls, x, y):
                return tuple.__new__(cls, (x, y))
 
@@ -402,11 +404,7 @@ Example::
 
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
-               return Point._cast(map(kwds.get, ('x', 'y'), self))
-
-           @property
-           def _fields(self):
-               return ('x', 'y')
+               return self.__class__._cast(map(kwds.get, ('x', 'y'), self))
 
            x = property(itemgetter(0))
            y = property(itemgetter(1))
@@ -439,17 +437,22 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
        print emp.name, emp.title
 
 In addition to the methods inherited from tuples, named tuples support
-three additonal methods and a read-only attribute.
+three additonal methods and one attribute.
 
 .. method:: namedtuple._cast(iterable)
 
-   Class method returning a new instance taking the positional arguments from the *iterable*.
-   Useful for casting existing sequences and iterables to named tuples:
+   Class method returning a new instance taking the positional arguments from the
+   *iterable*. Useful for casting existing sequences and iterables to named tuples.
+
+   This fast constructor does not check the length of the inputs.  To achieve the
+   same effect with length checking, use the star-operator instead.
 
 ::
 
    >>> t = [11, 22]
-   >>> Point._cast(t)
+   >>> Point._cast(t)          # fast conversion
+   Point(x=11, y=22)
+   >>> Point(*t)               # slow conversion with length checking
    Point(x=11, y=22)
 
 .. method:: somenamedtuple._asdict()
@@ -476,7 +479,7 @@ three additonal methods and a read-only attribute.
 
 .. attribute:: somenamedtuple._fields
 
-   Return a tuple of strings listing the field names.  This is useful for introspection
+   Tuple of strings listing the field names.  This is useful for introspection
    and for creating new named tuple types from existing named tuples.
 
 ::
