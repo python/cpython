@@ -503,10 +503,12 @@ assert isinstance([], AppendableSequence)
 @abstractmethod decorator -- you can't instantiate classes w/
 an abstract method.
 
-@abstractproperty decorator
-@abstractproperty
-def readonly(self):
-   return self._x
+::
+
+    @abstractproperty decorator
+    @abstractproperty
+    def readonly(self):
+       return self._x
 
 
 .. seealso::
@@ -1163,7 +1165,7 @@ This section lists previously described changes, and a few
 esoteric bugfixes, that may require changes to your
 code:
 
-* The :method:`__init__` method of :class:`collections.deque`
+* The :meth:`__init__` method of :class:`collections.deque`
   now clears any existing contents of the deque
   before adding elements from the iterable.  This change makes the
   behavior match that of ``list.__init__()``.  
