@@ -2687,6 +2687,31 @@ PyDoc_STRVAR(shutdown_doc,
 Shut down the reading side of the socket (flag == SHUT_RD), the writing side\n\
 of the socket (flag == SHUT_WR), or both ends (flag == SHUT_RDWR).");
 
+#ifdef MS_WINDOWS
+static PyObject*
+sock_ioctl(PySocketSockObject *s, PyObject *arg)
+{
+	unsigned long cmd = SIO_RCVALL;
+	unsigned int option = RCVALL_ON;
+        DWORD recv;
+
+	if (!PyArg_ParseTuple(arg, "kI:ioctl", &cmd, &option))
+		return NULL;
+
+	if (WSAIoctl(s->sock_fd, cmd, &option, sizeof(option), 
+		     NULL, 0, &recv, NULL, NULL) == SOCKET_ERROR) {
+		return set_error();
+	}
+	return PyLong_FromUnsignedLong(recv);
+}
+PyDoc_STRVAR(sock_ioctl_doc,
+"ioctl(cmd, option) -> long\n\
+\n\
+Control the socket with WSAIoctl syscall. Currently only socket.SIO_RCVALL\n\
+is supported as control. Options must be one of the socket.RCVALL_*\n\
+constants.");
+
+#endif
 
 /* List of methods for socket objects */
 
@@ -2715,6 +2740,10 @@ static PyMethodDef sock_methods[] = {
 			  METH_NOARGS, getsockname_doc},
 	{"getsockopt",	  (PyCFunction)sock_getsockopt, METH_VARARGS,
 			  getsockopt_doc},
+#ifdef MS_WINDOWS
+	{"ioctl",	  (PyCFunction)sock_ioctl, METH_VARARGS,
+			  sock_ioctl_doc},
+#endif
 	{"listen",	  (PyCFunction)sock_listen, METH_O,
 			  listen_doc},
 #ifndef NO_DUP
@@ -4194,7 +4223,7 @@ See the socket module for documentation.");
 PyMODINIT_FUNC
 init_socket(void)
 {
-	PyObject *m, *has_ipv6;
+	PyObject *m, *has_ipv6, *tmp;
 
 	if (!os_init())
 		return;
@@ -5032,6 +5061,18 @@ init_socket(void)
 #else
 	PyModule_AddIntConstant(m, "SHUT_RDWR", 2);
 #endif
+
+#ifdef SIO_RCVALL
+	tmp = PyLong_FromUnsignedLong(SIO_RCVALL);
+	if (tmp == NULL)
+		return;
+	PyModule_AddObject(m, "SIO_RCVALL", tmp);
+	PyModule_AddIntConstant(m, "RCVALL_OFF", RCVALL_OFF);
+	PyModule_AddIntConstant(m, "RCVALL_ON", RCVALL_ON);
+	PyModule_AddIntConstant(m, "RCVALL_SOCKETLEVELONLY", RCVALL_SOCKETLEVELONLY);
+	PyModule_AddIntConstant(m, "RCVALL_IPLEVEL", RCVALL_IPLEVEL);
+	PyModule_AddIntConstant(m, "RCVALL_MAX", RCVALL_MAX);
+#endif /* _MSTCPIP_ */
 
 	/* Initialize gethostbyname lock */
 #if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)

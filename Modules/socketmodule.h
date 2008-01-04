@@ -16,6 +16,7 @@
 #if _MSC_VER >= 1300
 # include <winsock2.h>
 # include <ws2tcpip.h>
+# include <MSTcpIP.h> /* for SIO_RCVALL */
 # define HAVE_ADDRINFO
 # define HAVE_SOCKADDR_STORAGE
 # define HAVE_GETADDRINFO
