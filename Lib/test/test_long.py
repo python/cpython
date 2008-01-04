@@ -498,6 +498,10 @@ class LongTest(unittest.TestCase):
                 eq(x > y, Rcmp > 0, Frm("%r > %r %d", x, y, Rcmp))
                 eq(x >= y, Rcmp >= 0, Frm("%r >= %r %d", x, y, Rcmp))
 
+    def test_nan_inf(self):
+        self.assertRaises(OverflowError, long, float('inf'))
+        self.assertEqual(long(float('nan')), 0L)
+
 def test_main():
     test_support.run_unittest(LongTest)
 
