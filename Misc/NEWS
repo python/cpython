@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Improve some exception messages when Windows fails to load an extension
+  module. Now we get for example '%1 is not a valid Win32 application' instead
+  of 'error code 193'.
+
 - Bug #1481296: Fixed long(float('nan'))!=0L.
 
 - Issue #1640: Added math.isinf(x), math.isnan(x) and math.copysign(x, y)

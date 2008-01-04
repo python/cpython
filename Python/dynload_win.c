@@ -194,7 +194,8 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 			errorCode = GetLastError();
 
 			theLength = FormatMessage(
-				FORMAT_MESSAGE_FROM_SYSTEM, /* flags */
+				FORMAT_MESSAGE_FROM_SYSTEM |
+				FORMAT_MESSAGE_IGNORE_INSERTS, /* flags */
 				NULL, /* message source */
 				errorCode, /* the message (error) ID */
 				0, /* default language environment */
