@@ -170,6 +170,9 @@ PyLong_FromDouble(double dval)
 			"cannot convert float infinity to long");
 		return NULL;
 	}
+	if (Py_IS_NAN(dval)) {
+		return PyLong_FromLong(0L);
+	}
 	if (dval < 0.0) {
 		neg = 1;
 		dval = -dval;
