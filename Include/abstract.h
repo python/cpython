@@ -570,11 +570,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	   error (i.e. the object does not have a buffer interface or
 	   it is not working).
 
-	   If fortran is 'F', then if the object is multi-dimensional,
+	   If fort is 'F', then if the object is multi-dimensional,
 	   then the data will be copied into the array in
 	   Fortran-style (first dimension varies the fastest).  If
-	   fortran is 'C', then the data will be copied into the array
-	   in C-style (last dimension varies the fastest).  If fortran
+	   fort is 'C', then the data will be copied into the array
+	   in C-style (last dimension varies the fastest).  If fort
 	   is 'A', then it does not matter and the copy will be made
 	   in whatever way is more efficient.
 
@@ -585,7 +585,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         /* Copy the data from the src buffer to the buffer of destination
          */
 
-     PyAPI_FUNC(int) PyBuffer_IsContiguous(Py_buffer *view, char fortran);
+     PyAPI_FUNC(int) PyBuffer_IsContiguous(Py_buffer *view, char fort);
 
 
      PyAPI_FUNC(void) PyBuffer_FillContiguousStrides(int ndims, 
@@ -595,7 +595,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	     					    char fort);
 
        	/*  Fill the strides array with byte-strides of a contiguous
-            (Fortran-style if fortran is 'F' or C-style otherwise)
+            (Fortran-style if fort is 'F' or C-style otherwise)
             array of the given shape with the given number of bytes
             per element.
         */

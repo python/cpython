@@ -3530,7 +3530,7 @@ long_getnewargs(PyLongObject *v)
 
 static PyObject *
 long_getN(PyLongObject *v, void *context) {
-	return PyLong_FromLong((intptr_t)context);
+	return PyLong_FromLong((Py_intptr_t)context);
 }
 
 static PyObject *

@@ -44,6 +44,7 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
+#  define WIN32_LEAN_AND_MEAN
 #  include <winsock.h>
 #else
 #  define SOCKET int
