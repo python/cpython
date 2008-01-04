@@ -336,6 +336,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1687: Fxed plistlib.py restricts <integer> to Python int when writing
+
 - Issue #1700: Regular expression inline flags incorrectly handle certain
   unicode characters.
 

@@ -240,8 +240,8 @@ class PlistWriter(DumbXMLWriter):
                 self.simpleElement("true")
             else:
                 self.simpleElement("false")
-        elif isinstance(value, int):
-            self.simpleElement("integer", str(value))
+        elif isinstance(value, (int, long)):
+            self.simpleElement("integer", "%d" % value)
         elif isinstance(value, float):
             self.simpleElement("real", repr(value))
         elif isinstance(value, dict):
