@@ -36,7 +36,7 @@ Number-theoretic and representation functions:
    Return *x* with the sign of *y*. ``copysign`` copies the sign bit of an IEEE
    754 float, ``copysign(1, -0.0)`` returns *-1.0*.
 
-   ..versionadded:: 2.6
+   .. versionadded:: 2.6
 
 
 .. function:: fabs(x)
@@ -78,7 +78,7 @@ Number-theoretic and representation functions:
 
    Checks if the float *x* is positive or negative infinite.
 
-   ..versionadded:: 2.6
+   .. versionadded:: 2.6
 
 
 .. function:: isnan(x)
@@ -88,7 +88,7 @@ Number-theoretic and representation functions:
    ``inf / inf`` or any operation involving a NaN, e.g. ``nan * 1``, return
    a NaN.
 
-   ..versionadded:: 2.6
+   .. versionadded:: 2.6
 
 
 .. function:: ldexp(x, i)
