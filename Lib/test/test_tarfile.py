@@ -197,6 +197,34 @@ class ReadTest(BaseTest):
                 self.assert_(tarinfo.name.endswith("/"))
                 self.assert_(not tarinfo.name[:-1].endswith("/"))
 
+    def test_extractall(self):
+        # Test if extractall() correctly restores directory permissions
+        # and times (see issue1735).
+        if sys.platform == "win32":
+            # Win32 has no support for utime() on directories or
+            # fine grained permissions.
+            return
+
+        fobj = StringIO.StringIO()
+        tar = tarfile.open(fileobj=fobj, mode="w:")
+        for name in ("foo", "foo/bar"):
+            tarinfo = tarfile.TarInfo(name)
+            tarinfo.type = tarfile.DIRTYPE
+            tarinfo.mtime = 07606136617
+            tarinfo.mode = 0755
+            tar.addfile(tarinfo)
+        tar.close()
+        fobj.seek(0)
+
+        TEMPDIR = os.path.join(dirname(), "extract-test")
+        tar = tarfile.open(fileobj=fobj)
+        tar.extractall(TEMPDIR)
+        for tarinfo in tar.getmembers():
+            path = os.path.join(TEMPDIR, tarinfo.name)
+            self.assertEqual(tarinfo.mode, os.stat(path).st_mode & 0777)
+            self.assertEqual(tarinfo.mtime, os.path.getmtime(path))
+        tar.close()
+
 
 class ReadStreamTest(ReadTest):
     sep = "|"

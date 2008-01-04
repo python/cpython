@@ -53,6 +53,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1735: TarFile.extractall() now correctly sets directory permissions
+  and times.
+
 - Bug #1713: posixpath.ismount() claims symlink to a mountpoint is a mountpoint.
 
 - Issue #1700: Regular expression inline flags incorrectly handle certain
