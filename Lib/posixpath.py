@@ -178,8 +178,8 @@ def samestat(s1, s2):
 def ismount(path):
     """Test whether a path is a mount point"""
     try:
-        s1 = os.stat(path)
-        s2 = os.stat(join(path, '..'))
+        s1 = os.lstat(path)
+        s2 = os.lstat(join(path, '..'))
     except os.error:
         return False # It doesn't exist -- so not a mount point :-)
     dev1 = s1.st_dev
