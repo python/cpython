@@ -483,6 +483,32 @@ PEP 3119: Abstract Base Classes
 
 XXX
 
+How to identify a file object?
+
+ABCs are a collection of classes describing various interfaces.
+Classes can derive from an ABC to indicate they support that ABC's
+interface.  Concrete classes should obey the semantics specified by 
+an ABC, but Python can't check this; it's up to the implementor.
+
+A metaclass lets you declare that an existing class or type
+derives from a particular ABC.  You can even 
+
+class AppendableSequence:
+    __metaclass__ = ABCMeta
+
+AppendableSequence.register(list)
+assert issubclass(list, AppendableSequence)
+assert isinstance([], AppendableSequence)
+
+@abstractmethod decorator -- you can't instantiate classes w/
+an abstract method.
+
+@abstractproperty decorator
+@abstractproperty
+def readonly(self):
+   return self._x
+
+
 .. seealso::
 
    :pep:`3119` - Introducing Abstract Base Classes
@@ -554,11 +580,21 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
 * More floating-point features were also added.  The :func:`float` function
   will now turn the strings ``+nan`` and ``-nan`` into the corresponding
-  IEEE 754 Not a Number values, and ``+inf`` and ``-inf`` into 
+  IEEE 754 Not A Number values, and ``+inf`` and ``-inf`` into 
   positive or negative infinity.  This works on any platform with 
   IEEE 754 semantics.  (Contributed by Christian Heimes.)
 
   .. Patch 1635.
+
+  Other functions in the :mod:`math` module, :func:`isinf` and
+  :func:`isnan`, return true if their floating-point argument is
+  infinite or Not A Number.  
+  .. Patch 1640
+  The ``math.copysign(x, y)`` function
+  copies the sign bit of an IEEE 754 number, returning the absolute
+  value of *x* combined with the sign bit of *y*.  For example,
+  ``math.copysign(1, -0.0)`` returns -1.0.  (Contributed by Christian
+  Heimes.)
 
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6, 
@@ -611,6 +647,10 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
 Optimizations
 -------------
+
+* All of the functions in the :mod:`struct` module have been rewritten in
+  C, thanks to work at the Need For Speed sprint.
+  (Contributed by Raymond Hettinger.)
 
 * Internally, a bit is now set in type objects to indicate some of the standard
   built-in types.  This speeds up checking if an object is a subclass of one of
@@ -1074,12 +1114,13 @@ Changes to Python's build process and to the C API include:
 
   .. Issue 1635
 
-* Some macros were renamed.  :cmacro:`Py_Size()` became :cmacro:`Py_SIZE()`,
+* Some macros were renamed to make it clearer that they are macros,
+  not functions.  :cmacro:`Py_Size()` became :cmacro:`Py_SIZE()`,
   :cmacro:`Py_Type()` became :cmacro:`Py_TYPE()`, and
   :cmacro:`Py_Refcnt()` became :cmacro:`Py_REFCNT()`.  Macros for backward
   compatibility are still available for Python 2.6.
 
-  .. Issue 1629: XXX why was this done?
+  .. Issue 1629
 
 .. ======================================================================
 
