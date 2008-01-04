@@ -920,6 +920,9 @@ Library
 Extension Modules
 -----------------
 
+- Added interface for Windows' WSAIoctl to socket object and added an example
+  for a simple network sniffer.
+
 - Bug #1301: Bad assert in _tkinter fixed.
 
 - Added bdist_wininst executable for VS 2008.
