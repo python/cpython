@@ -1239,7 +1239,7 @@ C API
 - Issue #1629: Renamed Py_Size, Py_Type and Py_Refcnt to Py_SIZE, Py_TYPE
   and Py_REFCNT.
 
-- Added case insensitive comparsion methods ``PyOS_stricmp(char*, char*)``
+- Added case insensitive comparison methods ``PyOS_stricmp(char*, char*)``
   and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
 
 - Bug #1542693: remove semi-colon at end of PyImport_ImportModuleEx macro
