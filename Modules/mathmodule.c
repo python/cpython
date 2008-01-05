@@ -48,7 +48,8 @@ is_error(double x)
 }
 
 static PyObject *
-math_1(PyObject *arg, double (*func) (double))
+math_1_to_whatever(PyObject *arg, double (*func) (double),
+                   PyObject *(*from_double_func) (double))
 {
 	double x = PyFloat_AsDouble(arg);
 	if (x == -1.0 && PyErr_Occurred())
@@ -61,7 +62,19 @@ math_1(PyObject *arg, double (*func) (double))
 	if (errno && is_error(x))
 		return NULL;
 	else
-		return PyFloat_FromDouble(x);
+        	return (*from_double_func)(x);
+}
+
+static PyObject *
+math_1(PyObject *arg, double (*func) (double))
+{
+	return math_1_to_whatever(arg, func, PyFloat_FromDouble);
+}
+
+static PyObject *
+math_1_to_int(PyObject *arg, double (*func) (double))
+{
+	return math_1_to_whatever(arg, func, PyLong_FromDouble);
 }
 
 static PyObject *
@@ -120,13 +133,13 @@ static PyObject * math_ceil(PyObject *self, PyObject *number) {
 
 	method = _PyType_Lookup(Py_TYPE(number), ceil_str);
 	if (method == NULL)
-		return math_1(number, ceil);
+		return math_1_to_int(number, ceil);
 	else
 		return PyObject_CallFunction(method, "O", number);
 }
 
 PyDoc_STRVAR(math_ceil_doc,
-	     "ceil(x)\n\nReturn the ceiling of x as a float.\n"
+	     "ceil(x)\n\nReturn the ceiling of x as an int.\n"
 	     "This is the smallest integral value >= x.");
 
 FUNC1(cos, cos,
@@ -160,13 +173,13 @@ static PyObject * math_floor(PyObject *self, PyObject *number) {
 
 	method = _PyType_Lookup(Py_TYPE(number), floor_str);
 	if (method == NULL)
-		return math_1(number, floor);
+        	return math_1_to_int(number, floor);
 	else
 		return PyObject_CallFunction(method, "O", number);
 }
 
 PyDoc_STRVAR(math_floor_doc,
-	     "floor(x)\n\nReturn the floor of x as a float.\n"
+	     "floor(x)\n\nReturn the floor of x as an int.\n"
 	     "This is the largest integral value <= x.");
 
 FUNC2(fmod, fmod,
