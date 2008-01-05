@@ -34,7 +34,9 @@ simple statements is:
 Expression statements
 =====================
 
-.. index:: pair: expression; statement
+.. index::
+   pair: expression; statement
+   pair: expression; list
 
 Expression statements are used (mostly interactively) to compute and write a
 value, or (usually) to call a procedure (a function that returns no meaningful
@@ -44,8 +46,6 @@ expression statement is:
 
 .. productionlist::
    expression_stmt: `expression_list`
-
-.. index:: pair: expression; list
 
 An expression statement evaluates the expression list (which may be a single
 expression).
@@ -311,12 +311,12 @@ is determined when the interpreter starts.
 The :keyword:`pass` statement
 =============================
 
-.. index:: statement: pass
+.. index::
+   statement: pass
+   pair: null; operation
 
 .. productionlist::
    pass_stmt: "pass"
-
-.. index:: pair: null; operation
 
 :keyword:`pass` is a null operation --- when it is executed, nothing happens.
 It is useful as a placeholder when a statement is required syntactically, but no
@@ -332,14 +332,13 @@ code needs to be executed, for example::
 The :keyword:`del` statement
 ============================
 
-.. index:: statement: del
+.. index::
+   statement: del
+   pair: deletion; target
+   triple: deletion; target; list
 
 .. productionlist::
    del_stmt: "del" `target_list`
-
-.. index::
-   pair: deletion; target
-   triple: deletion; target; list
 
 Deletion is recursively defined very similar to the way assignment is defined.
 Rather that spelling it out in full details, here are some hints.
@@ -399,8 +398,6 @@ functional to write an empty string to standard output for this reason.)
 .. index::
    single: output
    pair: writing; values
-
-.. index::
    pair: trailing; comma
    pair: newline; suppression
 
@@ -434,14 +431,13 @@ then ``sys.stdout`` is used as the file for output.
 The :keyword:`return` statement
 ===============================
 
-.. index:: statement: return
+.. index::
+   statement: return
+   pair: function; definition
+   pair: class; definition
 
 .. productionlist::
    return_stmt: "return" [`expression_list`]
-
-.. index::
-   pair: function; definition
-   pair: class; definition
 
 :keyword:`return` may only occur syntactically nested in a function definition,
 not within a nested class definition.
@@ -468,16 +464,15 @@ raised.
 The :keyword:`yield` statement
 ==============================
 
-.. index:: statement: yield
-
-.. productionlist::
-   yield_stmt: `yield_expression`
-
 .. index::
+   statement: yield
    single: generator; function
    single: generator; iterator
    single: function; generator
    exception: StopIteration
+
+.. productionlist::
+   yield_stmt: `yield_expression`
 
 The :keyword:`yield` statement is only used when defining a generator function,
 and is only used in the body of the generator function. Using a :keyword:`yield`
@@ -528,14 +523,13 @@ clauses to execute.
 The :keyword:`raise` statement
 ==============================
 
-.. index:: statement: raise
+.. index::
+   statement: raise
+   single: exception
+   pair: raising; exception
 
 .. productionlist::
    raise_stmt: "raise" [`expression` ["," `expression` ["," `expression`]]]
-
-.. index::
-   single: exception
-   pair: raising; exception
 
 If no expressions are present, :keyword:`raise` re-raises the last exception
 that was active in the current scope.  If no exception is active in the current
@@ -578,15 +572,14 @@ and information about handling exceptions is in section :ref:`try`.
 The :keyword:`break` statement
 ==============================
 
-.. index:: statement: break
-
-.. productionlist::
-   break_stmt: "break"
-
 .. index::
+   statement: break
    statement: for
    statement: while
    pair: loop; statement
+
+.. productionlist::
+   break_stmt: "break"
 
 :keyword:`break` may only occur syntactically nested in a :keyword:`for` or
 :keyword:`while` loop, but not nested in a function or class definition within
@@ -614,16 +607,15 @@ really leaving the loop.
 The :keyword:`continue` statement
 =================================
 
-.. index:: statement: continue
-
-.. productionlist::
-   continue_stmt: "continue"
-
 .. index::
+   statement: continue
    statement: for
    statement: while
    pair: loop; statement
    keyword: finally
+
+.. productionlist::
+   continue_stmt: "continue"
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
 :keyword:`while` loop, but not nested in a function or class definition or
@@ -739,8 +731,6 @@ raise a :exc:`SyntaxError`.
 .. index::
    keyword: from
    statement: from
-
-.. index::
    triple: hierarchical; module; names
    single: packages
    single: __init__.py
@@ -840,12 +830,12 @@ after the script is executed.
 The :keyword:`global` statement
 ===============================
 
-.. index:: statement: global
+.. index::
+   statement: global
+   triple: global; name; binding
 
 .. productionlist::
    global_stmt: "global" `identifier` ("," `identifier`)*
-
-.. index:: triple: global; name; binding
 
 The :keyword:`global` statement is a declaration which holds for the entire
 current code block.  It means that the listed identifiers are to be interpreted
@@ -908,7 +898,7 @@ variables.  If two expressions are given, they are used for the global and local
 variables, respectively. If provided, *locals* can be any mapping object.
 
 .. versionchanged:: 2.4
-   formerly *locals* was required to be a dictionary.
+   Formerly, *locals* was required to be a dictionary.
 
 .. index::
    single: __builtins__
