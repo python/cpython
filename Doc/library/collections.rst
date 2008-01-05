@@ -410,7 +410,10 @@ Example::
 
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
-               return self.__class__._make(map(kwds.get, ('x', 'y'), self))
+               result = self.__class__._make(map(kwds.pop, ('x', 'y'), self))
+               if kwds:
+                   raise ValueError('Got unexpected field names: %r' % kwds.keys())
+               return result
 
            x = property(itemgetter(0))
            y = property(itemgetter(1))
