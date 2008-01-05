@@ -54,6 +54,7 @@ def namedtuple(typename, field_names, verbose=False):
         seen_names.add(name)
 
     # Create and fill-in the class template
+    numfields = len(field_names)
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
     dicttxt = ', '.join('%r: t[%d]' % (name, pos) for pos, name in enumerate(field_names))
@@ -63,7 +64,13 @@ def namedtuple(typename, field_names, verbose=False):
         _fields = %(field_names)r \n
         def __new__(cls, %(argtxt)s):
             return tuple.__new__(cls, (%(argtxt)s)) \n
-        _cast = classmethod(tuple.__new__) \n
+        @classmethod
+        def _make(cls, iterable):
+            'Make a new %(typename)s object from a sequence or iterable'
+            result = tuple.__new__(cls, iterable)
+            if len(result) != %(numfields)d:
+                raise TypeError('Expected %(numfields)d arguments, got %%d' %% len(result))
+            return result \n
         def __repr__(self):
             return '%(typename)s(%(reprtxt)s)' %% self \n
         def _asdict(t):
@@ -71,7 +78,7 @@ def namedtuple(typename, field_names, verbose=False):
             return {%(dicttxt)s} \n
         def _replace(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
-            return self.__class__._cast(map(kwds.get, %(field_names)r, self)) \n\n''' % locals()
+            return self.__class__._make(map(kwds.get, %(field_names)r, self)) \n\n''' % locals()
     for i, name in enumerate(field_names):
         template += '        %s = property(itemgetter(%d))\n' % (name, i)
     if verbose:

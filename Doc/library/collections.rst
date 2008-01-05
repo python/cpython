@@ -393,7 +393,13 @@ Example::
            def __new__(cls, x, y):
                return tuple.__new__(cls, (x, y))
 
-           _cast = classmethod(tuple.__new__)
+           @classmethod
+           def _make(cls, iterable):
+               'Make a new Point object from a sequence or iterable'
+               result = tuple.__new__(cls, iterable)
+               if len(result) != 2:
+                   raise TypeError('Expected 2 arguments, got %d' % len(result))
+               return result
 
            def __repr__(self):
                return 'Point(x=%r, y=%r)' % self
@@ -404,7 +410,7 @@ Example::
 
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
-               return self.__class__._cast(map(kwds.get, ('x', 'y'), self))
+               return self.__class__._make(map(kwds.get, ('x', 'y'), self))
 
            x = property(itemgetter(0))
            y = property(itemgetter(1))
@@ -426,34 +432,28 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
    EmployeeRecord = namedtuple('EmployeeRecord', 'name, age, title, department, paygrade')
 
    import csv
-   for emp in map(EmployeeRecord._cast, csv.reader(open("employees.csv", "rb"))):
+   for emp in map(EmployeeRecord._make, csv.reader(open("employees.csv", "rb"))):
        print emp.name, emp.title
 
    import sqlite3
    conn = sqlite3.connect('/companydata')
    cursor = conn.cursor()
    cursor.execute('SELECT name, age, title, department, paygrade FROM employees')
-   for emp in map(EmployeeRecord._cast, cursor.fetchall()):
+   for emp in map(EmployeeRecord._make, cursor.fetchall()):
        print emp.name, emp.title
 
 In addition to the methods inherited from tuples, named tuples support
-three additonal methods and one attribute.
+three additional methods and one attribute.
 
-.. method:: namedtuple._cast(iterable)
+.. method:: namedtuple._make(iterable)
 
-   Class method returning a new instance taking the positional arguments from the
-   *iterable*. Useful for casting existing sequences and iterables to named tuples.
-
-   This fast constructor does not check the length of the inputs.  To achieve the
-   same effect with length checking, use the star-operator instead.
+   Class method that makes a new instance from an existing sequence or iterable.
 
 ::
 
-   >>> t = [11, 22]
-   >>> Point._cast(t)          # fast conversion
-   Point(x=11, y=22)
-   >>> Point(*t)               # slow conversion with length checking
-   Point(x=11, y=22)
+      >>> t = [11, 22]
+      >>> Point._make(t)
+      Point(x=11, y=22)
 
 .. method:: somenamedtuple._asdict()
 
