@@ -302,9 +302,9 @@ Importing Modules
    :func:`compile`, load the module.  Return a new reference to the module object,
    or *NULL* with an exception set if an error occurred.  Before Python 2.4, the
    module could still be created in error cases.  Starting with Python 2.4, *name*
-   is removed from ``sys.modules`` in error cases, and even if *name* was already
-   in ``sys.modules`` on entry to :cfunc:`PyImport_ExecCodeModule`.  Leaving
-   incompletely initialized modules in ``sys.modules`` is dangerous, as imports of
+   is removed from :attr:`sys.modules` in error cases, and even if *name* was already
+   in :attr:`sys.modules` on entry to :cfunc:`PyImport_ExecCodeModule`.  Leaving
+   incompletely initialized modules in :attr:`sys.modules` is dangerous, as imports of
    such modules have no way to know that the module object is an unknown (and
    probably damaged with respect to the module author's intents) state.
 
@@ -315,7 +315,7 @@ Importing Modules
    structures not already created will still not be created.
 
    .. versionchanged:: 2.4
-      *name* is removed from ``sys.modules`` in error cases.
+      *name* is removed from :attr:`sys.modules` in error cases.
 
 
 .. cfunction:: long PyImport_GetMagicNumber()
