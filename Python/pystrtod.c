@@ -48,6 +48,8 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	size_t decimal_point_len;
 	const char *p, *decimal_point_pos;
 	const char *end = NULL; /* Silence gcc */
+	const char *digits_pos = NULL;
+	int negate = 0;
 
 	assert(nptr != NULL);
 
@@ -60,18 +62,41 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	assert(decimal_point_len != 0);
 
 	decimal_point_pos = NULL;
+
+	/* We process any leading whitespace and the optional sign manually,
+	   then pass the remainder to the system strtod.  This ensures that
+	   the result of an underflow has the correct sign. (bug #1725)  */
+
+	p = nptr;
+	/* Skip leading space */
+	while (ISSPACE(*p))
+		p++;
+
+	/* Process leading sign, if present */
+	if (*p == '-') {
+		negate = 1;
+		p++;
+	} else if (*p == '+') {
+		p++;
+	}
+
+	/* What's left should begin with a digit, a decimal point, or one of
+	   the letters i, I, n, N. It should not begin with 0x or 0X */
+	if ((!ISDIGIT(*p) &&
+	     *p != '.' && *p != 'i' && *p != 'I' && *p != 'n' && *p != 'N')
+	    ||
+	    (*p == '0' && (p[1] == 'x' || p[1] == 'X')))
+	{
+		if (endptr)
+			*endptr = (char*)nptr;
+		errno = EINVAL;
+		return val;
+	}
+	digits_pos = p;
+
 	if (decimal_point[0] != '.' || 
 	    decimal_point[1] != 0)
 	{
-		p = nptr;
-		  /* Skip leading space */
-		while (ISSPACE(*p))
-			p++;
-
-		  /* Skip leading optional sign */
-		if (*p == '+' || *p == '-')
-			p++;
-
 		while (ISDIGIT(*p))
 			p++;
 
@@ -93,7 +118,8 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		else if (strncmp(p, decimal_point, decimal_point_len) == 0)
 		{
 			/* Python bug #1417699 */
-			*endptr = (char*)nptr;
+			if (endptr)
+				*endptr = (char*)nptr;
 			errno = EINVAL;
 			return val;
 		}
@@ -109,7 +135,8 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		char *copy, *c;
 
 		/* We need to convert the '.' to the locale specific decimal point */
-		copy = (char *)PyMem_MALLOC(end - nptr + 1 + decimal_point_len);
+		copy = (char *)PyMem_MALLOC(end - digits_pos +
+					    1 + decimal_point_len);
 		if (copy == NULL) {
 			if (endptr)
 				*endptr = (char *)nptr;
@@ -118,8 +145,8 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		}
 
 		c = copy;
-		memcpy(c, nptr, decimal_point_pos - nptr);
-		c += decimal_point_pos - nptr;
+		memcpy(c, digits_pos, decimal_point_pos - digits_pos);
+		c += decimal_point_pos - digits_pos;
 		memcpy(c, decimal_point, decimal_point_len);
 		c += decimal_point_len;
 		memcpy(c, decimal_point_pos + 1, end - (decimal_point_pos + 1));
@@ -131,23 +158,26 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		if (fail_pos)
 		{
 			if (fail_pos > decimal_point_pos)
-				fail_pos = (char *)nptr + (fail_pos - copy) - (decimal_point_len - 1);
+				fail_pos = (char *)digits_pos +
+					(fail_pos - copy) -
+					(decimal_point_len - 1);
 			else
-				fail_pos = (char *)nptr + (fail_pos - copy);
+				fail_pos = (char *)digits_pos +
+					(fail_pos - copy);
 		}
 
 		PyMem_FREE(copy);
 
 	}
 	else {
-		unsigned i = 0;
-		if (nptr[i] == '-')
-			i++;
-		if (nptr[i] == '0' && (nptr[i+1] == 'x' || nptr[i+1] == 'X'))
-			fail_pos = (char*)nptr;
-		else
-			val = strtod(nptr, &fail_pos);
+		val = strtod(digits_pos, &fail_pos);
 	}
+
+	if (fail_pos == digits_pos)
+		fail_pos = (char *)nptr;
+
+	if (negate && fail_pos != nptr)
+		val = -val;
 
 	if (endptr)
 		*endptr = fail_pos;
