@@ -73,6 +73,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Travis B. Hartwell
    * Tim Hatch
    * Janko Hauser
+   * Thomas Heller
    * Bernhard Herzog
    * Magnus L. Hetland
    * Konrad Hinsen
