@@ -48,6 +48,9 @@ Number-theoretic and representation functions:
    Return the floor of *x* as a float, the largest integer value less than or equal
    to *x*.
 
+   .. versionchanged:: 2.6
+      Added :meth:`__floor__` delegation.
+
 
 .. function:: fmod(x, y)
 
