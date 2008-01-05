@@ -24,7 +24,9 @@ else:
 ROOT = os.path.abspath(os.path.join(here, par, par))
 # Windows 2000 compatibility: WINVER 0x0500
 # http://msdn2.microsoft.com/en-us/library/aa383745.aspx
-NMAKE = "nmake /nologo /f %s COMPILERFLAGS=-DWINVER=0x0500 %s %s"
+NMAKE = ('nmake /nologo /f %s '
+    'COMPILERFLAGS=\"-DWINVER=0x0500 -D_WIN32_WINNT=0x0500 -DNTDDI_VERSION=NTDDI_WIN2KSP4\"'
+    '%s %s')
 
 def nmake(makefile, command="", **kw):
     defines = ' '.join(k+'='+v for k, v in kw.items())
