@@ -51,6 +51,7 @@ class MathTests(unittest.TestCase):
 
     def testCeil(self):
         self.assertRaises(TypeError, math.ceil)
+        self.assertEquals(int, type(math.ceil(0.5)))
         self.ftest('ceil(0.5)', math.ceil(0.5), 1)
         self.ftest('ceil(1.0)', math.ceil(1.0), 1)
         self.ftest('ceil(1.5)', math.ceil(1.5), 2)
@@ -103,6 +104,7 @@ class MathTests(unittest.TestCase):
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
+        self.assertEquals(int, type(math.floor(0.5)))
         self.ftest('floor(0.5)', math.floor(0.5), 0)
         self.ftest('floor(1.0)', math.floor(1.0), 1)
         self.ftest('floor(1.5)', math.floor(1.5), 1)
