@@ -921,8 +921,6 @@ available.  They are listed here in alphabetical order.
    ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
    ``2``). Delegates to ``x.__round__(n)``.
 
-   .. versionchanged:: 2.6
-
 
 .. function:: set([iterable])
    :noindex:
@@ -1071,8 +1069,6 @@ available.  They are listed here in alphabetical order.
 
    Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
    a long integer). Delegates to ``x.__trunc__()``.
-
-   .. versionadded:: 2.6
 
 
 .. function:: tuple([iterable])

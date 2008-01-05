@@ -197,9 +197,6 @@ Importing Modules
    to find out.  Starting with Python 2.4, a failing import of a module no longer
    leaves the module in ``sys.modules``.
 
-   .. versionchanged:: 2.6
-      always use absolute imports
-
    .. index:: single: modules (in module sys)
 
 
@@ -215,8 +212,6 @@ Importing Modules
    the module from sys.modules and falls back to `cfunc:PyImport_ImportModule`
    unless the the lock is hold. In the latter case the function raises an
    ImportError.
-
-   .. versionadded:: 2.6
 
 
 .. cfunction:: PyObject* PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
@@ -236,9 +231,8 @@ Importing Modules
    Failing imports remove incomplete module objects, like with
    :cfunc:`PyImport_ImportModule`.
 
-   .. versionchanged:: 2.6
-      The function is an alias for `cfunc:PyImport_ImportModuleLevel` with
-      -1 as level, meaning relative import.
+   The function is an alias for `cfunc:PyImport_ImportModuleLevel` with -1 as
+   *level*, meaning relative import.
 
 
 .. cfunction:: PyObject* PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
@@ -252,18 +246,14 @@ Importing Modules
    the return value when a submodule of a package was requested is normally the
    top-level package, unless a non-empty *fromlist* was given.
 
-   ..versionadded:: 2.5
-
 
 .. cfunction:: PyObject* PyImport_Import(PyObject *name)
 
-   This is a higher-level interface that calls the current "import hook function".
-   It invokes the :func:`__import__` function from the ``__builtins__`` of the
-   current globals.  This means that the import is done using whatever import hooks
-   are installed in the current environment.
-
-   .. versionchanged:: 2.6
-      always use absolute imports
+   This is a higher-level interface that calls the current "import hook
+   function" (with an explicit *level* of 0, meaning absolute import).  It
+   invokes the :func:`__import__` function from the ``__builtins__`` of the
+   current globals.  This means that the import is done using whatever import
+   hooks are installed in the current environment.
 
 
 .. cfunction:: PyObject* PyImport_ReloadModule(PyObject *m)
@@ -1096,15 +1086,11 @@ The following functions provide locale-independent string to number conversions.
    Case insensitive comparsion of strings. The functions works almost
    identical to :cfunc:`strcmp` except that it ignores the case.
 
-   .. versionadded:: 2.6
-
 
 .. cfunction:: char * PyOS_strnicmp(char *s1, char *s2, Py_ssize_t  size)
 
    Case insensitive comparsion of strings. The functions works almost
    identical to :cfunc:`strncmp` except that it ignores the case.
-
-   .. versionadded:: 2.6
 
 
 .. _reflection:

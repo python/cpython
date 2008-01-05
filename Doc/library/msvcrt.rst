@@ -103,8 +103,6 @@ Console I/O
 
    Wide char variant of :func:`getch`, returning a Unicode value.
    
-   .. versionadded:: 2.6
-   
 
 .. function:: getche()
 
@@ -116,8 +114,6 @@ Console I/O
 
    Wide char variant of :func:`getche`, returning a Unicode value.
    
-   .. versionadded:: 2.6
-
 
 .. function:: putch(char)
 
@@ -127,8 +123,6 @@ Console I/O
 .. function:: putwch(unicode_char)
 
    Wide char variant of :func:`putch`, accepting a Unicode value.
-   
-   .. versionadded:: 2.6
    
 
 .. function:: ungetch(char)
@@ -141,8 +135,6 @@ Console I/O
 
    Wide char variant of :func:`ungetch`, accepting a Unicode value.
    
-   .. versionadded:: 2.6
-
 
 .. _msvcrt-other:
 

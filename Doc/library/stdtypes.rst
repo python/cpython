@@ -351,8 +351,6 @@ Notes:
    float also accepts the strings "nan" and "inf" with an optional prefix "+" 
    or "-" for Not a Number (NaN) and positive or negative infinity.
    
-   .. versionadded:: 2.6
-
 
 .. XXXJH exceptions: overflow (when? what operations?) zerodivision
 
@@ -2016,9 +2014,6 @@ Files have the following methods:
    legal.  Use of other offsets causes undefined behavior.
 
    Note that not all file objects are seekable.
-
-   .. versionchanged:: 2.6
-      Passing float values as offset has been deprecated.
 
 
 .. method:: file.tell()
