@@ -99,8 +99,6 @@ particular functionality, for example::
    Unix. They are also useful for tracking transactions and other pools of data
    where only the most recent activity is of interest.
 
-   .. versionchanged:: 2.6
-      Added *maxlen* parameter.
 
 Deque objects support the following methods:
 

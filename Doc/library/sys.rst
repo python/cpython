@@ -371,8 +371,6 @@ always available.
    take.  It's usually ``2**31 - 1`` on a 32-bit platform and ``2**63 - 1`` on a
    64-bit platform.
 
-   .. versionadded:: 3.0
-
 
 .. data:: maxunicode
 

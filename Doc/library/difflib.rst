@@ -380,10 +380,6 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
 
    .. XXX Explain why a dummy is used!
 
-   .. versionchanged:: 2.5
-      The guarantee that adjacent triples always describe non-adjacent blocks was
-      implemented.
-
    ::
 
       >>> s = SequenceMatcher(None, "abxcd", "abcd")
