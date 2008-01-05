@@ -342,6 +342,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1637: fix urlparse for URLs like 'http://x.com?arg=/foo'.
+
 - Patch #1698: allow '@' in username parsed by urlparse.py.
 
 - Issue #1735: TarFile.extractall() now correctly sets directory permissions
