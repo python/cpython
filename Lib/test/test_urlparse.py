@@ -254,6 +254,24 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), url)
 
+        # Addressing issue1698, which suggests Username can contain
+        # "@" character. Though not RFC complaint, many ftp sites allow
+        # and requests email ids as usernames.
+
+        url = "http://User@example.com:Pass@www.python.org:080/doc/?query=yes#frag"
+        p = urlparse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "User@example.com:Pass@www.python.org:080")
+        self.assertEqual(p.path, "/doc/")
+        self.assertEqual(p.query, "query=yes")
+        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.username, "User@example.com")
+        self.assertEqual(p.password, "Pass")
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, 80)
+        self.assertEqual(p.geturl(), url)
+
+
     def test_attributes_bad_port(self):
         """Check handling of non-integer ports."""
         p = urlparse.urlsplit("http://www.example.net:foo")
