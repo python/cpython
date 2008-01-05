@@ -1,6 +1,4 @@
 # Regex test suite and benchmark suite v1.5a2
-# Due to the use of r"aw" strings, this file will
-# only work with Python 1.5 or higher.
 
 # The 3 possible outcomes for each pattern
 [SUCCEED, FAIL, SYNTAX_ERROR] = range(3)
