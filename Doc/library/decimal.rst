@@ -840,7 +840,6 @@ the :func:`localcontext` function to temporarily change the active context.
    For example, the following code sets the current decimal precision to 42 places,
    performs a calculation, and then automatically restores the previous context::
 
-      from __future__ import with_statement
       from decimal import localcontext
 
       with localcontext() as ctx:

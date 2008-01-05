@@ -723,7 +723,6 @@ Currently, :class:`Lock`, :class:`RLock`, :class:`Condition`,
 :class:`Semaphore`, and :class:`BoundedSemaphore` objects may be used as
 :keyword:`with` statement context managers.  For example::
 
-   from __future__ import with_statement
    import threading
 
    some_rlock = threading.RLock()
