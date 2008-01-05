@@ -909,12 +909,7 @@ the .py suffix may be omitted.""", file=self.stdout)
 With a space separated list of breakpoint numbers, clear
 those breakpoints.  Without argument, clear all breaks (but
 first ask confirmation).  With a filename:lineno argument,
-clear all breaks at that line in that file.
-
-Note that the argument is different from previous versions of
-the debugger (in python distributions 1.5.1 and before) where
-a linenumber was used instead of either filename:lineno or
-breakpoint numbers.""", file=self.stdout)
+clear all breaks at that line in that file.""", file=self.stdout)
 
     def help_tbreak(self):
         print("""tbreak  same arguments as break, but breakpoint is

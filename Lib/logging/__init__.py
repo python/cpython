@@ -18,9 +18,6 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python, and influenced by Apache's log4j system.
 
-Should work under Python versions >= 1.5.2, except that source line
-information is not available unless 'sys._getframe()' is.
-
 Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
