@@ -746,7 +746,7 @@ type objects) *must* have the :attr:`ob_size` field.
    indicated by the :const:`Py_TPFLAGS_HAVE_RICHCOMPARE` flag bit) and have *NULL*
    values.
 
-   The following bit masks are currently defined; these can be or-ed together using
+   The following bit masks are currently defined; these can be ORed together using
    the ``|`` operator to form the value of the :attr:`tp_flags` field.  The macro
    :cfunc:`PyType_HasFeature` takes a type and a flags value, *tp* and *f*, and
    checks whether ``tp->tp_flags & f`` is non-zero.

@@ -909,7 +909,7 @@ Tests of `DocTestRunner`'s option flag handling.
 
 Several option flags can be used to customize the behavior of the test
 runner.  These are defined as module constants in doctest, and passed
-to the DocTestRunner constructor (multiple constants should be or-ed
+to the DocTestRunner constructor (multiple constants should be ORed
 together).
 
 The DONT_ACCEPT_TRUE_FOR_1 flag disables matches between True/False
