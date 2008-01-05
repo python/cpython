@@ -1097,16 +1097,15 @@ implemented before for compatibility concerns, like the method resolution order
 in case of multiple inheritance.
 
 This manual is not up-to-date with respect to new-style classes.  For now,
-please see http://www.python.org/doc/newstyle.html for more information.
+please see http://www.python.org/doc/newstyle/ for more information.
 
 .. index::
-   single: class
-   single: class
-   single: class
+   single: class; new-style
+   single: class; classic
+   single: class; old-style
 
 The plan is to eventually drop old-style classes, leaving only the semantics of
 new-style classes.  This change will probably only be feasible in Python 3.0.
-new-style classic old-style
 
 
 .. _specialnames:
@@ -2242,7 +2241,7 @@ For more information on context managers, see :ref:`typecontextmanager`.
    extensive revision, it must now be taken as authoritative only regarding
    "classic classes", that are still the default, for compatibility purposes, in
    Python 2.2 and 2.3.  For more information, see
-   http://www.python.org/doc/newstyle.html.
+   http://www.python.org/doc/newstyle/.
 
 .. [#] This, and other statements, are only roughly true for instances of new-style
    classes.
