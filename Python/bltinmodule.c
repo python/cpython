@@ -1926,31 +1926,39 @@ For most object types, eval(repr(object)) == object.");
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
-#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
-	int ndigits = UNDEF_NDIGITS;
+	double number;
+	double f;
+	int ndigits = 0;
+	int i;
 	static char *kwlist[] = {"number", "ndigits", 0};
-	PyObject *number;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|i:round",
-                kwlist, &number, &ndigits))
-                return NULL;
-
-        // The py3k branch gets better errors for this by using
-        // _PyType_Lookup(), but since float's mro isn't set in py2.6,
-        // we just use PyObject_CallMethod here.
-        if (ndigits == UNDEF_NDIGITS)
-                return PyObject_CallMethod(number, "__round__", "");
-        else
-                return PyObject_CallMethod(number, "__round__", "i", ndigits);
-#undef UNDEF_NDIGITS
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "d|i:round",
+		kwlist, &number, &ndigits))
+		return NULL;
+	f = 1.0;
+	i = abs(ndigits);
+	while  (--i >= 0)
+		f = f*10.0;
+	if (ndigits < 0)
+		number /= f;
+	else
+		number *= f;
+	if (number >= 0.0)
+		number = floor(number + 0.5);
+	else
+		number = ceil(number - 0.5);
+	if (ndigits < 0)
+		number *= f;
+	else
+		number /= f;
+	return PyFloat_FromDouble(number);
 }
 
 PyDoc_STRVAR(round_doc,
 "round(number[, ndigits]) -> floating point number\n\
 \n\
 Round a number to a given precision in decimal digits (default 0 digits).\n\
-This returns an int when called with one argument, otherwise a float.\n\
-Precision may be negative.");
+This always returns a floating point number.  Precision may be negative.");
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)

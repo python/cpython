@@ -986,10 +986,9 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		 * bugs so we have to figure it out ourselves.
 		 */
 		if (iw != floor(iw)) {
-			/* Negative numbers raised to fractional powers
-			 * become complex.
-			 */
-			return PyComplex_Type.tp_as_number->nb_power(v, w, z);
+			PyErr_SetString(PyExc_ValueError, "negative number "
+				"cannot be raised to a fractional power");
+			return NULL;
 		}
 		/* iw is an exact integer, albeit perhaps a very large one.
 		 * -1 raised to an exact integer should never be exceptional.
@@ -1096,54 +1095,6 @@ float_trunc(PyObject *v)
 		return PyInt_FromLong(aslong);
 	}
 	return PyLong_FromDouble(wholepart);
-}
-
-static PyObject *
-float_round(PyObject *v, PyObject *args)
-{
-#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
-	double x;
-	double f;
-	double flr, cil;
-	double rounded;
-	int i;
-	int ndigits = UNDEF_NDIGITS;
-
-	if (!PyArg_ParseTuple(args, "|i", &ndigits))
-		return NULL;
-
-	x = PyFloat_AsDouble(v);
-
-	if (ndigits != UNDEF_NDIGITS) {
-		f = 1.0;
-		i = abs(ndigits);
-		while  (--i >= 0)
-			f = f*10.0;
-		if (ndigits < 0)
-			x /= f;
-		else
-			x *= f;
-	}
-
-	flr = floor(x);
-	cil = ceil(x);
-
-	if (x-flr > 0.5)
-		rounded = cil;
-	else if (x-flr == 0.5) 
-		rounded = fmod(flr, 2) == 0 ? flr : cil;
-	else
-		rounded = flr;
-
-	if (ndigits != UNDEF_NDIGITS) {
-		if (ndigits < 0)
-			rounded *= f;
-		else
-			rounded /= f;
-	}
-
-	return PyFloat_FromDouble(rounded);
-#undef UNDEF_NDIGITS
 }
 
 static PyObject *
@@ -1344,9 +1295,6 @@ static PyMethodDef float_methods[] = {
 	 "Returns self, the complex conjugate of any float."},
 	{"__trunc__",	(PyCFunction)float_trunc, METH_NOARGS,
          "Returns the Integral closest to x between 0 and x."},
-	{"__round__",	(PyCFunction)float_round, METH_VARARGS,
-         "Returns the Integral closest to x, rounding half toward even.\n"
-         "When an argument is passed, works like built-in round(x, ndigits)."},
 	{"__getnewargs__",	(PyCFunction)float_getnewargs,	METH_NOARGS},
 	{"__getformat__",	(PyCFunction)float_getformat,	
 	 METH_O|METH_CLASS,		float_getformat_doc},

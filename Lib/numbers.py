@@ -189,25 +189,6 @@ class Real(Complex):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def __floor__(self):
-        """Finds the greatest Integral <= self."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def __ceil__(self):
-        """Finds the least Integral >= self."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def __round__(self, ndigits=None):
-        """Rounds self to ndigits decimal places, defaulting to 0.
-
-        If ndigits is omitted or None, returns an Integral, otherwise
-        returns a Real. Rounds half toward even.
-        """
-        raise NotImplementedError
-
     def __divmod__(self, other):
         """divmod(self, other): The pair (self // other, self % other).
 

@@ -1456,13 +1456,12 @@ class BuiltinTest(unittest.TestCase):
                     else:
                         self.assertAlmostEqual(pow(x, y, z), 24.0)
 
-        self.assertAlmostEqual(pow(-1, 0.5), 1j)
-        self.assertAlmostEqual(pow(-1, 1./3), 0.5 + 0.8660254037844386j)
-
         self.assertRaises(TypeError, pow, -1, -2, 3)
         self.assertRaises(ValueError, pow, 1, 2, 0)
         self.assertRaises(TypeError, pow, -1L, -2L, 3L)
         self.assertRaises(ValueError, pow, 1L, 2L, 0L)
+        # Will return complex in 3.0:
+        self.assertRaises(ValueError, pow, -342.43, 0.234)
 
         self.assertRaises(TypeError, pow)
 
@@ -1664,11 +1663,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(type(round(-8.0, 0)), float)
         self.assertEqual(type(round(-8.0, 1)), float)
 
-        # Check even / odd rounding behaviour
+        # Check half rounding behaviour.
         self.assertEqual(round(5.5), 6)
-        self.assertEqual(round(6.5), 6)
+        self.assertEqual(round(6.5), 7)
         self.assertEqual(round(-5.5), -6)
-        self.assertEqual(round(-6.5), -6)
+        self.assertEqual(round(-6.5), -7)
 
         # Check behavior on ints
         self.assertEqual(round(0), 0)
@@ -1686,8 +1685,8 @@ class BuiltinTest(unittest.TestCase):
 
         # test generic rounding delegation for reals
         class TestRound(object):
-            def __round__(self):
-                return 23
+            def __float__(self):
+                return 23.0
 
         class TestNoRound(object):
             pass
@@ -1695,13 +1694,12 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(round(TestRound()), 23)
 
         self.assertRaises(TypeError, round, 1, 2, 3)
-        # XXX: This is not ideal, but see the comment in builtin_round().
-        self.assertRaises(AttributeError, round, TestNoRound())
+        self.assertRaises(TypeError, round, TestNoRound())
 
         t = TestNoRound()
-        t.__round__ = lambda *args: args
-        self.assertEquals((), round(t))
-        self.assertEquals((0,), round(t, 0))
+        t.__float__ = lambda *args: args
+        self.assertRaises(TypeError, round, t)
+        self.assertRaises(TypeError, round, t, 0)
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
