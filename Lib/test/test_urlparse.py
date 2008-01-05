@@ -255,8 +255,8 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.geturl(), url)
 
         # Addressing issue1698, which suggests Username can contain
-        # "@" character. Though not RFC complaint, many ftp sites allow
-        # and requests email ids as usernames.
+        # "@" characters.  Though not RFC complaint, many ftp sites allow
+        # and request email addresses as usernames.
 
         url = "http://User@example.com:Pass@www.python.org:080/doc/?query=yes#frag"
         p = urlparse.urlsplit(url)
