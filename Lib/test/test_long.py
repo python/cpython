@@ -385,9 +385,7 @@ class LongTest(unittest.TestCase):
                      "1. ** huge", "huge ** 1.", "1. ** mhuge", "mhuge ** 1.",
                      "math.sin(huge)", "math.sin(mhuge)",
                      "math.sqrt(huge)", "math.sqrt(mhuge)", # should do better
-                     # math.floor() of an int returns an int now
-                     ##"math.floor(huge)", "math.floor(mhuge)",
-                     ]:
+                     "math.floor(huge)", "math.floor(mhuge)"]:
 
             self.assertRaises(OverflowError, eval, test, namespace)
 

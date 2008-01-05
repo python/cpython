@@ -1056,43 +1056,11 @@ int_getN(PyIntObject *v, void *context) {
 	return PyInt_FromLong((intptr_t)context);
 }
 
-static PyObject *
-int_round(PyObject *self, PyObject *args)
-{
-#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
-	int ndigits = UNDEF_NDIGITS;
-	double x;
-	PyObject *res;
-	
-	if (!PyArg_ParseTuple(args, "|i", &ndigits))
-		return NULL;
-
-	if (ndigits == UNDEF_NDIGITS)
-          return int_float((PyIntObject *)self);
-
-	/* If called with two args, defer to float.__round__(). */
-	x = (double) PyInt_AS_LONG(self);
-	self = PyFloat_FromDouble(x);
-	if (self == NULL)
-		return NULL;
-	res = PyObject_CallMethod(self, "__round__", "i", ndigits);
-	Py_DECREF(self);
-	return res;
-#undef UNDEF_NDIGITS
-}
-
 static PyMethodDef int_methods[] = {
 	{"conjugate",	(PyCFunction)int_int,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any int."},
 	{"__trunc__",	(PyCFunction)int_int,	METH_NOARGS,
          "Truncating an Integral returns itself."},
-	{"__floor__",	(PyCFunction)int_float,	METH_NOARGS,
-         "Flooring an Integral returns itself."},
-	{"__ceil__",	(PyCFunction)int_float,	METH_NOARGS,
-         "Ceiling of an Integral returns itself."},
-	{"__round__",	(PyCFunction)int_round, METH_VARARGS,
-         "Rounding an Integral returns itself.\n"
-	 "Rounding with an ndigits arguments defers to float.__round__."},
 	{"__getnewargs__",	(PyCFunction)int_getnewargs,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };

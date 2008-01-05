@@ -341,11 +341,11 @@ Notes:
       pair: C; language
 
    Conversion from floating point to (long or plain) integer may round or
-   truncate as in C.
+   truncate as in C; see functions :func:`math.floor` and :func:`math.ceil` for
+   well-defined conversions.
 
    .. deprecated:: 2.6
-      Instead, convert floats to long explicitly with :func:`trunc`,
-      :func:`math.floor`, or :func:`math.ceil`.
+      Instead, convert floats to long explicitly with :func:`trunc`.
 
 (3)
    See :ref:`built-in-funcs` for a full description.
@@ -369,19 +369,19 @@ Notes:
 All :class:`numbers.Real` types (:class:`int`, :class:`long`, and
 :class:`float`) also include the following operations:
 
-+--------------------+--------------------------------+--------+
-| Operation          | Result                         | Notes  |
-+====================+================================+========+
-| ``trunc(x)``       | *x* truncated to Integral      |        |
-+--------------------+--------------------------------+--------+
-| ``round(x[, n])``  | *x* rounded to n digits,       |        |
-|                    | rounding half to even. If n is |        |
-|                    | omitted, it defaults to 0.     |        |
-+--------------------+--------------------------------+--------+
-| ``math.floor(x)``  | the greatest Integral <= *x*   |        |
-+--------------------+--------------------------------+--------+
-| ``math.ceil(x)``   | the least Integral >= *x*      |        |
-+--------------------+--------------------------------+--------+
++--------------------+------------------------------------+--------+
+| Operation          | Result                             | Notes  |
++====================+====================================+========+
+| ``trunc(x)``       | *x* truncated to Integral          |        |
++--------------------+------------------------------------+--------+
+| ``round(x[, n])``  | *x* rounded to n digits,           |        |
+|                    | rounding half to even. If n is     |        |
+|                    | omitted, it defaults to 0.         |        |
++--------------------+------------------------------------+--------+
+| ``math.floor(x)``  | the greatest integral float <= *x* |        |
++--------------------+------------------------------------+--------+
+| ``math.ceil(x)``   | the least integral float >= *x*    |        |
++--------------------+------------------------------------+--------+
 
 .. XXXJH exceptions: overflow (when? what operations?) zerodivision
 

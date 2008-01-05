@@ -26,9 +26,8 @@ Number-theoretic and representation functions:
 
 .. function:: ceil(x)
 
-   Return the ceiling of *x* as a float, the smallest integer value greater than
-   or equal to *x*. If *x* is not a float, delegates to ``x.__ceil__()``, which
-   should return an :class:`Integral` value.
+   Return the ceiling of *x* as a float, the smallest integer value greater than or
+   equal to *x*.
 
 
 .. function:: copysign(x, y)
@@ -46,9 +45,8 @@ Number-theoretic and representation functions:
 
 .. function:: floor(x)
 
-   Return the floor of *x* as a float, the largest integer value less than or
-   equal to *x*. If *x* is not a float, delegates to ``x.__floor__()``, which
-   should return an :class:`Integral` value.
+   Return the floor of *x* as a float, the largest integer value less than or equal
+   to *x*.
 
 
 .. function:: fmod(x, y)

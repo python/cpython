@@ -63,8 +63,8 @@ class MathTests(unittest.TestCase):
         self.ftest('ceil(-1.5)', math.ceil(-1.5), -1)
 
         class TestCeil(object):
-            def __ceil__(self):
-                return 42
+            def __float__(self):
+                return 41.3
         class TestNoCeil(object):
             pass
         self.ftest('ceil(TestCeil())', math.ceil(TestCeil()), 42)
@@ -123,8 +123,8 @@ class MathTests(unittest.TestCase):
         self.ftest('floor(-1.23e167)', math.floor(-1.23e167), -1.23e167)
 
         class TestFloor(object):
-            def __floor__(self):
-                return 42
+            def __float__(self):
+                return 42.3
         class TestNoFloor(object):
             pass
         self.ftest('floor(TestFloor())', math.floor(TestFloor()), 42)
