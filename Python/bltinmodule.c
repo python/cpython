@@ -2042,9 +2042,9 @@ With an argument, equivalent to object.__dict__.");
 static PyObject *
 builtin_trunc(PyObject *self, PyObject *number)
 {
-        // XXX: The py3k branch gets better errors for this by using
-        // _PyType_Lookup(), but since float's mro isn't set in py2.6,
-        // we just use PyObject_CallMethod here.
+        /* XXX: The py3k branch gets better errors for this by using
+           _PyType_Lookup(), but since float's mro isn't set in py2.6,
+           we just use PyObject_CallMethod here. */
 	return PyObject_CallMethod(number, "__trunc__", "");
 }
 
