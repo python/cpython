@@ -67,7 +67,7 @@ File Operations
 .. function:: open_osfhandle(handle, flags)
 
    Create a C runtime file descriptor from the file handle *handle*.  The *flags*
-   parameter should be a bit-wise OR of :const:`os.O_APPEND`, :const:`os.O_RDONLY`,
+   parameter should be a bitwise OR of :const:`os.O_APPEND`, :const:`os.O_RDONLY`,
    and :const:`os.O_TEXT`.  The returned file descriptor may be used as a parameter
    to :func:`os.fdopen` to create a file object.
 

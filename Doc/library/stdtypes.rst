@@ -398,7 +398,7 @@ for bit-strings.  Negative numbers are treated as their 2's complement value
 (for long integers, this assumes a sufficiently large number of bits that no
 overflow occurs during the operation).
 
-The priorities of the binary bit-wise operations are all lower than the numeric
+The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
 same priority as the other unary numeric operations (``+`` and ``-``).
 
@@ -2029,7 +2029,12 @@ Files have the following methods:
    argument is optional and defaults to  ``os.SEEK_SET`` or ``0`` (absolute file
    positioning); other values are ``os.SEEK_CUR`` or ``1`` (seek relative to the
    current position) and ``os.SEEK_END`` or ``2``  (seek relative to the file's
-   end).  There is no return value.  Note that if the file is opened for appending
+   end).  There is no return value.
+   
+   For example, ``f.seek(2, os.SEEK_CUR)`` advances the position by two and
+   ``f.seek(-3, os.SEEK_END)`` sets the position to the third to last.
+
+   Note that if the file is opened for appending
    (mode ``'a'`` or ``'a+'``), any :meth:`seek` operations will be undone at the
    next write.  If the file is only opened for writing in append mode (mode
    ``'a'``), this method is essentially a no-op, but it remains useful for files

@@ -216,7 +216,7 @@ available.  They are listed here in alphabetical order.
    the *flags* argument is it -- the future statements in effect around the call to
    compile are ignored.
 
-   Future statements are specified by bits which can be bitwise or-ed together to
+   Future statements are specified by bits which can be bitwise ORed together to
    specify multiple statements.  The bitfield required to specify a given feature
    can be found as the :attr:`compiler_flag` attribute on the :class:`_Feature`
    instance in the :mod:`__future__` module.
