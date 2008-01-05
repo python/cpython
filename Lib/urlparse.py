@@ -82,7 +82,7 @@ class BaseResult(tuple):
     def username(self):
         netloc = self.netloc
         if "@" in netloc:
-            userinfo = netloc.split("@", 1)[0]
+            userinfo = netloc.rsplit("@", 1)[0]
             if ":" in userinfo:
                 userinfo = userinfo.split(":", 1)[0]
             return userinfo
@@ -92,7 +92,7 @@ class BaseResult(tuple):
     def password(self):
         netloc = self.netloc
         if "@" in netloc:
-            userinfo = netloc.split("@", 1)[0]
+            userinfo = netloc.rsplit("@", 1)[0]
             if ":" in userinfo:
                 return userinfo.split(":", 1)[1]
         return None
@@ -101,7 +101,7 @@ class BaseResult(tuple):
     def hostname(self):
         netloc = self.netloc
         if "@" in netloc:
-            netloc = netloc.split("@", 1)[1]
+            netloc = netloc.rsplit("@", 1)[1]
         if ":" in netloc:
             netloc = netloc.split(":", 1)[0]
         return netloc.lower() or None
@@ -110,7 +110,7 @@ class BaseResult(tuple):
     def port(self):
         netloc = self.netloc
         if "@" in netloc:
-            netloc = netloc.split("@", 1)[1]
+            netloc = netloc.rsplit("@", 1)[1]
         if ":" in netloc:
             port = netloc.split(":", 1)[1]
             return int(port, 10)
