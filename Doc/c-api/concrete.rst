@@ -585,6 +585,7 @@ Generic operations on sequence objects were discussed in the previous chapter;
 this section deals with the specific kinds of sequence objects that are
 intrinsic to the Python language.
 
+.. XXX sort out unicode, str, bytes and bytearray
 
 .. _stringobjects:
 
