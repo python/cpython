@@ -860,7 +860,7 @@ def _follow_symlinks(filepath):
     """ In case filepath is a symlink, follow it until a
         real file is reached.
     """
-    filepath = _abspath(filepath)
+    filepath = os.path.abspath(filepath)
     while os.path.islink(filepath):
         filepath = os.path.normpath(
             os.path.join(filepath,os.readlink(filepath)))
