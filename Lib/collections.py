@@ -78,7 +78,10 @@ def namedtuple(typename, field_names, verbose=False):
             return {%(dicttxt)s} \n
         def _replace(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
-            return self.__class__._make(map(kwds.get, %(field_names)r, self)) \n\n''' % locals()
+            result = self.__class__._make(map(kwds.pop, %(field_names)r, self))
+            if kwds:
+                raise ValueError('Got unexpected field names: %%r' %% kwds.keys())
+            return result \n\n''' % locals()
     for i, name in enumerate(field_names):
         template += '        %s = property(itemgetter(%d))\n' % (name, i)
     if verbose:
