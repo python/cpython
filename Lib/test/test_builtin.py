@@ -619,6 +619,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(float("  3.14  "), 3.14)
         self.assertRaises(ValueError, float, "  0x3.1  ")
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
+        self.assertRaises(ValueError, float, "  +0x3.p-1  ")
+        self.assertRaises(ValueError, float, "++3.14")
+        self.assertRaises(ValueError, float, "+-3.14")
+        self.assertRaises(ValueError, float, "-+3.14")
+        self.assertRaises(ValueError, float, "--3.14")
         if have_unicode:
             self.assertEqual(float(unicode("  3.14  ")), 3.14)
             self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
@@ -648,6 +653,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, float, "  -3,14  ")
         self.assertRaises(ValueError, float, "  0x3.1  ")
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
+        self.assertRaises(ValueError, float, "  +0x3.p-1  ")
         self.assertEqual(float("  25.e-1  "), 2.5)
         self.assertEqual(fcmp(float("  .25e-1  "), .025), 0)
 
