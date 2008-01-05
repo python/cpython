@@ -181,6 +181,7 @@ Importing Modules
    .. index::
       single: package variable; __all__
       single: __all__ (package variable)
+      single: modules (in module sys)
 
    This is a simplified interface to :cfunc:`PyImport_ImportModuleEx` below,
    leaving the *globals* and *locals* arguments set to *NULL* and *level* set
@@ -202,19 +203,14 @@ Importing Modules
    .. versionchanged:: 2.6
       always use absolute imports
 
-   .. index:: single: modules (in module sys)
-
 
 .. cfunction:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
 
-   .. index::
-      single: `cfunc:PyImport_ImportModule`
-
-   This version of `cfunc:PyImport_ImportModule` does not block. It's intended
+   This version of :cfunc:`PyImport_ImportModule` does not block. It's intended
    to be used in C function which import other modules to execute a function.
    The import may block if another thread holds the import lock. The function
-  `cfunc:PyImport_ImportModuleNoBlock` doesn't block. It first tries to fetch
-   the module from sys.modules and falls back to `cfunc:PyImport_ImportModule`
+   :cfunc:`PyImport_ImportModuleNoBlock` doesn't block. It first tries to fetch
+   the module from sys.modules and falls back to :cfunc:`PyImport_ImportModule`
    unless the the lock is hold. In the latter case the function raises an
    ImportError.
 
@@ -239,7 +235,7 @@ Importing Modules
       failing imports remove incomplete module objects.
 
    .. versionchanged:: 2.6
-      The function is an alias for `cfunc:PyImport_ImportModuleLevel` with
+      The function is an alias for :cfunc:`PyImport_ImportModuleLevel` with
       -1 as level, meaning relative import.
 
 
@@ -254,7 +250,7 @@ Importing Modules
    the return value when a submodule of a package was requested is normally the
    top-level package, unless a non-empty *fromlist* was given.
 
-   ..versionadded:: 2.5
+   .. versionadded:: 2.5
 
 
 .. cfunction:: PyObject* PyImport_Import(PyObject *name)
