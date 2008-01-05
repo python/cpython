@@ -12,6 +12,8 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Issue #1692: Interpreter was not displaying location of SyntaxError
+
 - Improve some exception messages when Windows fails to load an extension
   module. Now we get for example '%1 is not a valid Win32 application' instead
   of 'error code 193'.  Also use Unicode strings to deal with non-English
