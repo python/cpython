@@ -1103,7 +1103,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 		goto finally;
 	if (v == Py_None)
 		*filename = NULL;
-	else if (! (*filename = PyString_AsString(v)))
+	else if (! (*filename = PyUnicode_AsString(v)))
 		goto finally;
 
 	Py_DECREF(v);
