@@ -53,7 +53,7 @@ ABC                                    Notes
 :class:`collections.Sized`             Defines ``__len__()``
 =====================================  ========================================
 
-.. XXX Have not included them all and the notes are imcomplete
+.. XXX Have not included them all and the notes are incomplete
 .. Deliberately did one row wide to get a neater output
 
 These ABCs allow us to ask classes or instances if they provide
