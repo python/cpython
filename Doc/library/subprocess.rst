@@ -178,12 +178,14 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.poll()
 
-   Check if child process has terminated.  Returns returncode attribute.
+   Check if child process has terminated.  Set and return :attr:`returncode`
+   attribute.
 
 
 .. method:: Popen.wait()
 
-   Wait for child process to terminate.  Returns returncode attribute.
+   Wait for child process to terminate.  Set and return :attr:`returncode`
+   attribute.
 
 
 .. method:: Popen.communicate(input=None)
@@ -193,20 +195,20 @@ Instances of the :class:`Popen` class have the following methods:
    *input* argument should be a string to be sent to the child process, or
    ``None``, if no data should be sent to the child.
 
-   communicate() returns a tuple (stdout, stderr).
+   :meth:`communicate` returns a tuple ``(stdout, stderr)``.
 
    Note that if you want to send data to the process's stdin, you need to create
    the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
    ``None`` in the result tuple, you need to give ``stdout=PIPE`` and/or
    ``stderr=PIPE`` too.
 
-.. note::
+   .. note::
 
-      The data read is buffered in memory, so do not use this method if the data size
-      is large or unlimited.
+      The data read is buffered in memory, so do not use this method if the data
+      size is large or unlimited.
+
 
 The following attributes are also available:
-
 
 .. attribute:: Popen.stdin
 
@@ -233,9 +235,12 @@ The following attributes are also available:
 
 .. attribute:: Popen.returncode
 
-   The child return code.  A ``None`` value indicates that the process hasn't
-   terminated yet.  A negative value -N indicates that the child was terminated by
-   signal N (Unix only).
+   The child return code, set by :meth:`poll` and :meth:`wait` (and indirectly
+   by :meth:`communicate`).  A ``None`` value indicates that the process
+   hasn't terminated yet.
+   
+   A negative value ``-N`` indicates that the child was terminated by signal
+   ``N`` (Unix only).
 
 
 Replacing Older Functions with the subprocess Module
