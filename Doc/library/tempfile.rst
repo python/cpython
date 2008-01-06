@@ -34,7 +34,7 @@ The module defines the following user-callable functions:
 
 .. function:: TemporaryFile([mode='w+b'[, bufsize=-1[, suffix[, prefix[, dir]]]]])
 
-   Return a file (or file-like) object that can be used as a temporary storage
+   Return a file-like object that can be used as a temporary storage
    area.  The file is created using :func:`mkstemp`. It will be destroyed as soon
    as it is closed (including an implicit close when the object is garbage
    collected).  Under Unix, the directory entry for the file is removed immediately
@@ -49,6 +49,10 @@ The module defines the following user-callable functions:
 
    The *dir*, *prefix* and *suffix* parameters are passed to :func:`mkstemp`.
 
+   The returned object is a true file object on POSIX platforms.  On other
+   platforms, it is a file-like object whose :attr:`file` attribute is the
+   underlying true file object.
+
 
 .. function:: NamedTemporaryFile([mode='w+b'[, bufsize=-1[, suffix[, prefix[, dir[, delete]]]]]])
 
@@ -59,6 +63,9 @@ The module defines the following user-callable functions:
    the file a second time, while the named temporary file is still open, varies
    across platforms (it can be so used on Unix; it cannot on Windows NT or later).
    If *delete* is true (the default), the file is deleted as soon as it is closed.
+
+   The returned object is always a file-like object whose :attr:`file` attribute
+   is the underlying true file object.
 
    .. versionadded:: 2.3
 
@@ -75,6 +82,10 @@ The module defines the following user-callable functions:
 
    The resulting file has one additional method, :func:`rollover`, which causes the
    file to roll over to an on-disk file regardless of its size.
+
+   The returned object is a file-like object whose :attr:`_file` attribute
+   is either a :class:`StringIO` object or a true file object, depending on
+   whether :func:`rollover` has been called.
 
    .. versionadded:: 2.6
 
