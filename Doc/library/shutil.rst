@@ -17,16 +17,21 @@ copying and removal. For operations on individual files, see also the
 :mod:`os` module.
 
 .. warning::
+
+   Even the higher-level file copying functions (:func:`copy`, :func:`copy2`)
+   can't copy all file metadata.
    
-   On MacOS, the resource fork and other metadata are not used.  For file copies,
-   this means that resources will be lost and  file type and creator codes will
-   not be correct.
+   On POSIX platforms, this means that file owner and group are lost as well
+   as ACLs.  On MacOS, the resource fork and other metadata are not used.
+   This means that resources will be lost and file type and creator codes will
+   not be correct. On Windows, file owners, ACLs and alternate data streams
+   are not copied.
 
 
 .. function:: copyfile(src, dst)
 
-   Copy the contents of the file named *src* to a file named *dst*.  The
-   destination location must be writable; otherwise,  an :exc:`IOError` exception
+   Copy the contents (no metadata) of the file named *src* to a file named *dst*.
+   The destination location must be writable; otherwise,  an :exc:`IOError` exception
    will be raised. If *dst* already exists, it will be replaced.   Special files
    such as character or block devices and pipes cannot be copied with this
    function.  *src* and *dst* are path names given as strings.
@@ -81,7 +86,7 @@ copying and removal. For operations on individual files, see also the
    files are copied to the new tree.  If exception(s) occur, an :exc:`Error` is
    raised with a list of reasons.
 
-   The source code for this should be considered an example rather than  a tool.
+   The source code for this should be considered an example rather than a tool.
 
    .. versionchanged:: 2.3
       :exc:`Error` is raised if any exceptions occur during copying, rather than
@@ -114,7 +119,7 @@ copying and removal. For operations on individual files, see also the
 
    Recursively move a file or directory to another location.
 
-   If the destination is on our current filesystem, then simply use rename.
+   If the destination is on the current filesystem, then simply use rename.
    Otherwise, copy src to the dst and then remove src.
 
    .. versionadded:: 2.3
@@ -122,7 +127,7 @@ copying and removal. For operations on individual files, see also the
 
 .. exception:: Error
 
-   This exception collects exceptions that raised during a mult-file operation. For
+   This exception collects exceptions that raised during a multi-file operation. For
    :func:`copytree`, the exception argument is a list of 3-tuples (*srcname*,
    *dstname*, *exception*).
 
