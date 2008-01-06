@@ -32,8 +32,8 @@ def _cleanup():
                 pass
 
 class Popen3:
-    """Class representing a child process.  Normally instances are created
-    by the factory functions popen2() and popen3()."""
+    """Class representing a child process.  Normally, instances are created
+    internally by the functions popen2() and popen3()."""
 
     sts = -1                    # Child not completed yet
 
