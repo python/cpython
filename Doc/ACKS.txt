@@ -158,6 +158,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Jim Roskind
    * Guido van Rossum
    * Donald Wallace Rouse II
+   * Mark Russell
    * Nick Russo
    * Chris Ryland
    * Constantina S.

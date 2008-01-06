@@ -180,6 +180,11 @@ attributes:
    name.  If the optional *predicate* argument is supplied, only members for which
    the predicate returns a true value are included.
 
+   .. note::
+
+      :func:`getmembers` does not return metaclass attributes when the argument
+      is a class (this behavior is inherited from the :func:`dir` function).
+
 
 .. function:: getmoduleinfo(path)
 

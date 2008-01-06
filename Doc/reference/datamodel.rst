@@ -1688,6 +1688,20 @@ container; for mappings, :meth:`__iter__` should be the same as
    Iterator objects also need to implement this method; they are required to return
    themselves.  For more information on iterator objects, see :ref:`typeiter`.
 
+
+.. method:: object.__reversed__(self)
+
+   Called (if present) by the :func:`reversed` builtin to implement
+   reverse iteration.  It should return a new iterator object that iterates
+   over all the objects in the container in reverse order.
+
+   If the :meth:`__reversed__` method is not provided, the
+   :func:`reversed` builtin will fall back to using the sequence protocol
+   (:meth:`__len__` and :meth:`__getitem__`).  Objects should normally
+   only provide :meth:`__reversed__` if they do not support the sequence
+   protocol and an efficient implementation of reverse iteration is possible.
+
+
 The membership test operators (:keyword:`in` and :keyword:`not in`) are normally
 implemented as an iteration through a sequence.  However, container objects can
 supply the following special method with a more efficient implementation, which
