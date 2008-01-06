@@ -911,6 +911,22 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEquals(decoder.decode(b'\xe8\xa2\x88\r'), "\u8888")
         self.assertEquals(decoder.decode(b'\n'), "\n")
 
+        decoder = codecs.getincrementaldecoder("utf-8")()
+        decoder = io.IncrementalNewlineDecoder(decoder, translate=True)
+        self.assertEquals(decoder.newlines, None)
+        decoder.decode(b"abc\n\r")
+        self.assertEquals(decoder.newlines, '\n')
+        decoder.decode(b"\nabc")
+        self.assertEquals(decoder.newlines, ('\n', '\r\n'))
+        decoder.decode(b"abc\r")
+        self.assertEquals(decoder.newlines, ('\n', '\r\n'))
+        decoder.decode(b"abc")
+        self.assertEquals(decoder.newlines, ('\r', '\n', '\r\n'))
+        decoder.decode(b"abc\r")
+        decoder.reset()
+        self.assertEquals(decoder.decode(b"abc"), "abc")
+        self.assertEquals(decoder.newlines, None)
+
 # XXX Tests for open()
 
 class MiscIOTest(unittest.TestCase):
