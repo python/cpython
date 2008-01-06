@@ -2484,7 +2484,10 @@ object_richcompare(PyObject *self, PyObject *other, int op)
 	switch (op) {
 
 	case Py_EQ:
-		res = (self == other) ? Py_True : Py_False;
+		/* Return NotImplemented instead of False, so if two
+		   objects are compared, both get a chance at the
+		   comparison.  See issue #1393. */
+		res = (self == other) ? Py_True : Py_NotImplemented;
 		Py_INCREF(res);
 		break;
 
