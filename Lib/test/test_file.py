@@ -157,7 +157,7 @@ class OtherFileTests(unittest.TestCase):
                 s = str(msg)
                 if s.find(TESTFN) != -1 or s.find(bad_mode) == -1:
                     self.fail("bad error message for invalid mode: %s" % s)
-            # if msg[0] == 0, we're probably on Windows where there may be
+            # if msg.args[0] == 0, we're probably on Windows where there may be
             # no obvious way to discover why open() failed.
         else:
             f.close()

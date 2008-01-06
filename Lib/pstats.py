@@ -617,8 +617,8 @@ if __name__ == '__main__':
             if line:
                 try:
                     self.stats = Stats(line)
-                except IOError as args:
-                    print(args[1], file=self.stream)
+                except IOError as err:
+                    print(err.args[1], file=self.stream)
                     return
                 self.prompt = line + "% "
             elif len(self.prompt) > 2:
