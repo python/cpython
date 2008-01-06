@@ -1408,10 +1408,11 @@ Notes:
    *cmp* specifies a custom comparison function of two arguments (list items) which
    should return a negative, zero or positive number depending on whether the first
    argument is considered smaller than, equal to, or larger than the second
-   argument: ``cmp=lambda x,y: cmp(x.lower(), y.lower())``
+   argument: ``cmp=lambda x,y: cmp(x.lower(), y.lower())``.  The default value
+   is ``None``.
 
    *key* specifies a function of one argument that is used to extract a comparison
-   key from each list element: ``key=str.lower``
+   key from each list element: ``key=str.lower``.  The default value is ``None``.
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
