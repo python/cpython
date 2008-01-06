@@ -269,7 +269,7 @@ def grok_environment_error (exc, prefix="error: "):
             # include the filename in the exception object!
             error = prefix + "%s" % exc.strerror
     else:
-        error = prefix + str(exc[-1])
+        error = prefix + str(exc.args[-1])
 
     return error
 
