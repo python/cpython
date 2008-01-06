@@ -33,21 +33,6 @@ Using the built-in :func:`reload` function will fail if called on a module
 loaded from a ZIP archive; it is unlikely that :func:`reload` would be needed,
 since this would imply that the ZIP has been altered during runtime.
 
-The available attributes of this module are:
-
-
-.. exception:: ZipImportError
-
-   Exception raised by zipimporter objects. It's a subclass of :exc:`ImportError`,
-   so it can be caught as :exc:`ImportError`, too.
-
-
-.. class:: zipimporter
-
-   The class for importing ZIP files.  See section :ref:`zipimporter-objects`
-   for constructor details.
-
-
 .. seealso::
 
    `PKZIP Application Note <http://www.pkware.com/business_and_developers/developer/appnote/>`_
@@ -63,17 +48,32 @@ The available attributes of this module are:
       The PEP to add the import hooks that help this module work.
 
 
+This module defines an exception:
+
+.. exception:: ZipImportError
+
+   Exception raised by zipimporter objects. It's a subclass of :exc:`ImportError`,
+   so it can be caught as :exc:`ImportError`, too.
+
+
 .. _zipimporter-objects:
 
 zipimporter Objects
 -------------------
 
+:class:`zipimporter` is the class for importing ZIP files.
 
 .. class:: zipimporter(archivepath)
 
-   Create a new zipimporter instance. *archivepath* must be a path to a zipfile.
+   Create a new zipimporter instance. *archivepath* must be a path to a ZIP file.
    :exc:`ZipImportError` is raised if *archivepath* doesn't point to a valid ZIP
    archive.
+
+   *archivepath* can also contain a path within the ZIP file -- the importer
+   object will then look under that path instead of the ZIP file root.  For
+   example, an *archivepath* of :file:`foo/bar.zip/lib` will look for modules
+   in the :file:`lib` directory inside the ZIP file :file:`foo/bar.zip`
+   (provided that it exists).
 
 
 .. method:: zipimporter.find_module(fullname[, path])
@@ -116,10 +116,21 @@ zipimporter Objects
    :exc:`ZipImportError` if it wasn't found.
 
 
-Examples
---------
+.. attribute:: zipimporter.archive
+
+   The file name of the importer's associated ZIP file.
+
+
+.. attribute:: zipimporter.prefix
+
+   The path within the ZIP file where modules are searched; see
+   :class:`zipimporter` for details.
+
 
 .. _zipimport-examples:
+
+Examples
+--------
 
 Here is an example that imports a module from a ZIP archive - note that the
 :mod:`zipimport` module is not explicitly used. ::
