@@ -15,7 +15,7 @@ Core and Builtins
 - Issue #1393: object_richcompare() returns NotImplemented instead of
   False if the objects aren't equal, to give the other side a chance.
 
-- Issue #1692: Interpreter was not displaying location of SyntaxError
+- Issue #1692: Interpreter was not displaying location of SyntaxError.
 
 - Improve some exception messages when Windows fails to load an extension
   module. Now we get for example '%1 is not a valid Win32 application' instead
@@ -35,10 +35,10 @@ Core and Builtins
   "Floating-Point Printer Sample Code", by Robert G. Burger. For example
   repr(11./5) now returns '2.2' instead of '2.2000000000000002'.
 
-- Issue #1573: Improper use of the keyword-only syntax makes the parser crash
+- Issue #1573: Improper use of the keyword-only syntax makes the parser crash.
 
 - Issue #1564: The set implementation should special-case PyUnicode instead
-  of PyString
+  of PyString.
 
 
 Extension Modules
@@ -48,9 +48,21 @@ Extension Modules
 Library
 -------
 
-- Issue #1585: IDLE uses non-existent xrange() function
+- Issue #1703: getpass() should flush after writing prompt.
 
-- Issue #1578: Problems in win_getpass
+- Issue #1585: IDLE uses non-existent xrange() function.
+
+- Issue #1578: Problems in win_getpass.
+
+
+C API
+-----
+
+- Issue #1629: Renamed Py_Size, Py_Type and Py_Refcnt to Py_SIZE,
+  Py_TYPE and Py_REFCNT.
+
+- New API PyImport_ImportModuleNoBlock(), works like PyImport_ImportModule()
+  but won't block on the import lock (returning an error instead).
 
 
 What's New in Python 3.0a2?
