@@ -314,9 +314,9 @@ numeric operations have a higher priority than comparison operations):
 +---------------------+---------------------------------+-------+--------------------+
 | ``divmod(x, y)``    | the pair ``(x // y, x % y)``    | \(2)  | :func:`divmod`     |
 +---------------------+---------------------------------+-------+--------------------+
-| ``pow(x, y)``       | *x* to the power *y*            |       | :func:`pow`        |
+| ``pow(x, y)``       | *x* to the power *y*            | (7)   | :func:`pow`        |
 +---------------------+---------------------------------+-------+--------------------+
-| ``x ** y``          | *x* to the power *y*            |       |                    |
+| ``x ** y``          | *x* to the power *y*            | (7)   |                    |
 +---------------------+---------------------------------+-------+--------------------+
 
 .. index::
@@ -350,6 +350,11 @@ Notes:
 (6)
    float also accepts the strings "nan" and "inf" with an optional prefix "+" 
    or "-" for Not a Number (NaN) and positive or negative infinity.
+
+(7)
+   Python defines ``pow(0, 0)`` and ``0 ** 0`` to be ``1``, as is common for
+   programming languages.
+
    
 
 All :class:`numbers.Real` types (:class:`int` and

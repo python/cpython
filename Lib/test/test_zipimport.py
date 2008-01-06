@@ -220,6 +220,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             mod = __import__(module_path_to_dotted_name(mod_name))
             self.assertEquals(zi.get_source(TESTPACK), None)
             self.assertEquals(zi.get_source(mod_name), None)
+
+            # test prefix and archivepath members
+            zi2 = zipimport.zipimporter(TEMP_ZIP + os.sep + TESTPACK)
+            self.assertEquals(zi2.archive, TEMP_ZIP)
+            self.assertEquals(zi2.prefix, TESTPACK + os.sep)
         finally:
             z.close()
             os.remove(TEMP_ZIP)

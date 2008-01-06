@@ -232,6 +232,9 @@ available.  They are listed here in alphabetical order.
    can be found as the :attr:`compiler_flag` attribute on the :class:`_Feature`
    instance in the :mod:`__future__` module.
 
+   This function raises :exc:`SyntaxError` if the compiled source is invalid,
+   and :exc:`TypeError` if the source contains null bytes.
+
 
 .. function:: complex([real[, imag]])
 
@@ -313,7 +316,8 @@ available.  They are listed here in alphabetical order.
       Because :func:`dir` is supplied primarily as a convenience for use at an
       interactive prompt, it tries to supply an interesting set of names more than it
       tries to supply a rigorously or consistently defined set of names, and its
-      detailed behavior may change across releases.
+      detailed behavior may change across releases.  For example, metaclass attributes
+      are not in the result list when the argument is a class.
 
 
 .. function:: divmod(a, b)
@@ -907,9 +911,10 @@ available.  They are listed here in alphabetical order.
 
 .. function:: reversed(seq)
 
-   Return a reverse :term:`iterator`.  *seq* must be an object which supports
-   the sequence protocol (the :meth:`__len__` method and the :meth:`__getitem__`
-   method with integer arguments starting at ``0``).
+   Return a reverse :term:`iterator`.  *seq* must be an object which has
+   a :meth:`__reversed__` method or supports the sequence protocol (the
+   :meth:`__len__` method and the :meth:`__getitem__` method with integer
+   arguments starting at ``0``).
 
 
 .. function:: round(x[, n])
