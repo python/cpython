@@ -302,7 +302,8 @@ available.  They are listed here in alphabetical order.
       Because :func:`dir` is supplied primarily as a convenience for use at an
       interactive prompt, it tries to supply an interesting set of names more than it
       tries to supply a rigorously or consistently defined set of names, and its
-      detailed behavior may change across releases.
+      detailed behavior may change across releases.  For example, metaclass attributes
+      are not in the result list when the argument is a class.
 
 
 .. function:: divmod(a, b)
