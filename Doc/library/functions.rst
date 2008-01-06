@@ -1287,7 +1287,7 @@ available.  They are listed here in alphabetical order.
       Formerly, :func:`zip` required at least one argument and ``zip()`` raised a
       :exc:`TypeError` instead of returning an empty list.
 
-.. % ---------------------------------------------------------------------------
+..  ---------------------------------------------------------------------------
 
 
 .. _non-essential-built-in-funcs:
