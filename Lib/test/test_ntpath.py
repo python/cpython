@@ -166,6 +166,7 @@ tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
 tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
 tester('ntpath.relpath("a", "b/c")', '..\\..\\a')
 tester('ntpath.relpath("//conky/mountpoint/a", "//conky/mountpoint/b/c")', '..\\..\\a')
+tester('ntpath.relpath("a", "a")', '.')
 
 if errors:
     raise TestFailed(str(errors) + " errors.")
