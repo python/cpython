@@ -220,7 +220,6 @@ The :mod:`csv` module defines the following classes:
 
 The :class:`Sniffer` class provides two methods:
 
-
 .. method:: Sniffer.sniff(sample[, delimiters=None])
 
    Analyze the given *sample* and return a :class:`Dialect` subclass reflecting the
@@ -233,8 +232,16 @@ The :class:`Sniffer` class provides two methods:
    Analyze the sample text (presumed to be in CSV format) and return :const:`True`
    if the first row appears to be a series of column headers.
 
-The :mod:`csv` module defines the following constants:
+An example for :class:`Sniffer` use::
 
+   csvfile = open("example.csv")
+   dialect = csv.Sniffer().sniff(csvfile.read(1024))
+   csvfile.seek(0)
+   reader = csv.reader(csvfile, dialect)
+   # ... process CSV file contents here ...
+
+
+The :mod:`csv` module defines the following constants:
 
 .. data:: QUOTE_ALL
 
