@@ -227,7 +227,7 @@ available.  They are listed here in alphabetical order.
    the *flags* argument is it -- the future statements in effect around the call to
    compile are ignored.
 
-   Future statements are specified by bits which can be bitwise or-ed together to
+   Future statements are specified by bits which can be bitwise ORed together to
    specify multiple statements.  The bitfield required to specify a given feature
    can be found as the :attr:`compiler_flag` attribute on the :class:`_Feature`
    instance in the :mod:`__future__` module.
@@ -966,10 +966,11 @@ available.  They are listed here in alphabetical order.
    *cmp* specifies a custom comparison function of two arguments (iterable
    elements) which should return a negative, zero or positive number depending on
    whether the first argument is considered smaller than, equal to, or larger than
-   the second argument: ``cmp=lambda x,y: cmp(x.lower(), y.lower())``
+   the second argument: ``cmp=lambda x,y: cmp(x.lower(), y.lower())``.  The default
+   value is ``None``.
 
    *key* specifies a function of one argument that is used to extract a comparison
-   key from each list element: ``key=str.lower``
+   key from each list element: ``key=str.lower``.  The default value is ``None``.
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.

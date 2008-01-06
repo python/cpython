@@ -132,7 +132,6 @@ Lock objects have the following methods:
 In addition to these methods, lock objects can also be used via the
 :keyword:`with` statement, e.g.::
 
-   from __future__ import with_statement
    import thread
 
    a_lock = thread.allocate_lock()

@@ -769,7 +769,7 @@ float result is delivered. For example, ``10**2`` returns ``100``, but
 
 Raising ``0.0`` to a negative power results in a :exc:`ZeroDivisionError`.
 Raising a negative number to a fractional power results in a :class:`complex`
-number. (Since Python 2.6. In earlier versions it raised a :exc:`ValueError`.)
+number. (In earlier versions it raised a :exc:`ValueError`.)
 
 
 .. _unary:
@@ -779,9 +779,9 @@ Unary arithmetic operations
 
 .. index::
    triple: unary; arithmetic; operation
-   triple: unary; bit-wise; operation
+   triple: unary; bitwise; operation
 
-All unary arithmetic (and bit-wise) operations have the same priority:
+All unary arithmetic (and bitwise) operations have the same priority:
 
 .. productionlist::
    u_expr: `power` | "-" `u_expr` | "+" `u_expr` | "~" `u_expr`
@@ -798,9 +798,10 @@ The unary ``+`` (plus) operator yields its numeric argument unchanged.
 
 .. index:: single: inversion
 
-The unary ``~`` (invert) operator yields the bit-wise inversion of its integer
-argument.  The bit-wise inversion of ``x`` is defined as ``-(x+1)``.  It only
-applies to integral numbers.
+
+The unary ``~`` (invert) operator yields the bitwise inversion of its plain or
+long integer argument.  The bitwise inversion of ``x`` is defined as
+``-(x+1)``.  It only applies to integral numbers.
 
 .. index:: exception: TypeError
 
@@ -905,10 +906,10 @@ by *n* bits is defined as multiplication with ``pow(2,n)``.
 
 .. _bitwise:
 
-Binary bit-wise operations
-==========================
+Binary bitwise operations
+=========================
 
-.. index:: triple: binary; bit-wise; operation
+.. index:: triple: binary; bitwise; operation
 
 Each of the three bitwise operations has a different priority level:
 
@@ -917,20 +918,20 @@ Each of the three bitwise operations has a different priority level:
    xor_expr: `and_expr` | `xor_expr` "^" `and_expr`
    or_expr: `xor_expr` | `or_expr` "|" `xor_expr`
 
-.. index:: pair: bit-wise; and
+.. index:: pair: bitwise; and
 
 The ``&`` operator yields the bitwise AND of its arguments, which must be
 integers.
 
 .. index::
-   pair: bit-wise; xor
+   pair: bitwise; xor
    pair: exclusive; or
 
 The ``^`` operator yields the bitwise XOR (exclusive OR) of its arguments, which
 must be integers.
 
 .. index::
-   pair: bit-wise; or
+   pair: bitwise; or
    pair: inclusive; or
 
 The ``|`` operator yields the bitwise (inclusive) OR of its arguments, which

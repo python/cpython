@@ -197,19 +197,14 @@ Importing Modules
    to find out.  Starting with Python 2.4, a failing import of a module no longer
    leaves the module in ``sys.modules``.
 
-   .. index:: single: modules (in module sys)
-
 
 .. cfunction:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
 
-   .. index::
-      single: `cfunc:PyImport_ImportModule`
-
-   This version of `cfunc:PyImport_ImportModule` does not block. It's intended
+   This version of :cfunc:`PyImport_ImportModule` does not block. It's intended
    to be used in C function which import other modules to execute a function.
    The import may block if another thread holds the import lock. The function
-  `cfunc:PyImport_ImportModuleNoBlock` doesn't block. It first tries to fetch
-   the module from sys.modules and falls back to `cfunc:PyImport_ImportModule`
+   :cfunc:`PyImport_ImportModuleNoBlock` doesn't block. It first tries to fetch
+   the module from sys.modules and falls back to :cfunc:`PyImport_ImportModule`
    unless the the lock is hold. In the latter case the function raises an
    ImportError.
 
@@ -230,9 +225,6 @@ Importing Modules
 
    Failing imports remove incomplete module objects, like with
    :cfunc:`PyImport_ImportModule`.
-
-   The function is an alias for `cfunc:PyImport_ImportModuleLevel` with -1 as
-   *level*, meaning relative import.
 
 
 .. cfunction:: PyObject* PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
@@ -286,9 +278,9 @@ Importing Modules
    :func:`compile`, load the module.  Return a new reference to the module object,
    or *NULL* with an exception set if an error occurred.  Before Python 2.4, the
    module could still be created in error cases.  Starting with Python 2.4, *name*
-   is removed from ``sys.modules`` in error cases, and even if *name* was already
-   in ``sys.modules`` on entry to :cfunc:`PyImport_ExecCodeModule`.  Leaving
-   incompletely initialized modules in ``sys.modules`` is dangerous, as imports of
+   is removed from :attr:`sys.modules` in error cases, and even if *name* was already
+   in :attr:`sys.modules` on entry to :cfunc:`PyImport_ExecCodeModule`.  Leaving
+   incompletely initialized modules in :attr:`sys.modules` is dangerous, as imports of
    such modules have no way to know that the module object is an unknown (and
    probably damaged with respect to the module author's intents) state.
 

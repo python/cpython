@@ -9,6 +9,8 @@ import time
 import thread, threading
 import Queue
 import sys
+import os
+import array
 from weakref import proxy
 import signal
 
@@ -507,6 +509,15 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(sock.type, socket.SOCK_STREAM)
         self.assertEqual(sock.proto, 0)
         sock.close()
+
+    def test_sock_ioctl(self):
+        if os.name != "nt":
+            return
+        self.assert_(hasattr(socket.socket, 'ioctl'))
+        self.assert_(hasattr(socket, 'SIO_RCVALL'))
+        self.assert_(hasattr(socket, 'RCVALL_ON'))
+        self.assert_(hasattr(socket, 'RCVALL_OFF'))
+
 
 class BasicTCPTest(SocketConnectedTest):
 

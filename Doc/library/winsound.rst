@@ -32,7 +32,7 @@ provided by Windows platforms.  It includes functions and several constants.
 
    Call the underlying :cfunc:`PlaySound` function from the Platform API.  The
    *sound* parameter may be a filename, audio data as a string, or ``None``.  Its
-   interpretation depends on the value of *flags*, which can be a bit-wise ORed
+   interpretation depends on the value of *flags*, which can be a bitwise ORed
    combination of the constants described below.  If the system indicates an error,
    :exc:`RuntimeError` is raised.
 

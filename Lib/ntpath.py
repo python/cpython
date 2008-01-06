@@ -254,12 +254,10 @@ def walk(top, func, arg):
     except os.error:
         return
     func(arg, top, names)
-    exceptions = ('.', '..')
     for name in names:
-        if name not in exceptions:
-            name = join(top, name)
-            if isdir(name):
-                walk(name, func, arg)
+        name = join(top, name)
+        if isdir(name):
+            walk(name, func, arg)
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -492,4 +490,6 @@ def relpath(path, start=curdir):
         i += 1
 
     rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+    if not rel_list:
+        return curdir
     return join(*rel_list)

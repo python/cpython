@@ -378,7 +378,7 @@ following values:\n\
     LOCK_SH - acquire a shared lock\n\
     LOCK_EX - acquire an exclusive lock\n\
 \n\
-When operation is LOCK_SH or LOCK_EX, it can also be bit-wise OR'd with\n\
+When operation is LOCK_SH or LOCK_EX, it can also be bitwise ORed with\n\
 LOCK_NB to avoid blocking on lock acquisition.  If LOCK_NB is used and the\n\
 lock cannot be acquired, an IOError will be raised and the exception will\n\
 have an errno attribute set to EACCES or EAGAIN (depending on the operating\n\

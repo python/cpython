@@ -155,6 +155,12 @@ The module :mod:`socket` exports the following constants and functions:
    in the Unix header files are defined; for a few symbols, default values are
    provided.
 
+.. data:: SIO_*
+          RCVALL_*
+          
+   Constants for Windows' WSAIoctl(). The constants are used as arguments to the
+   :meth:`ioctl` method of socket objects.
+   
 
 .. data:: has_ipv6
 
@@ -524,6 +530,14 @@ correspond to Unix system calls applicable to sockets.
    contents of the buffer (see the optional built-in module :mod:`struct` for a way
    to decode C structures encoded as strings).
 
+   
+.. method:: socket.ioctl(control, option)
+
+   :platform: Windows 
+   
+   The `meth:ioctl` method is a limited interface to the WSAIoctl system
+   interface. Please refer to the MSDN documentation for more information.
+   
 
 .. method:: socket.listen(backlog)
 
@@ -822,3 +836,28 @@ sends traffic to the first one connected successfully. ::
    s.close()
    print('Received', repr(data))
 
+   
+The last example shows how to write a very simple network sniffer with raw
+sockets on Windows. The example requires administrator priviliges to modify
+the interface::
+
+   import socket
+
+   # the public network interface
+   HOST = socket.gethostbyname(socket.gethostname())
+   
+   # create a raw socket and bind it to the public interface
+   s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
+   s.bind((HOST, 0))
+   
+   # Include IP headers
+   s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+   
+   # receive all packages
+   s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
+   
+   # receive a package
+   print s.recvfrom(65565)
+   
+   # disabled promiscous mode
+   s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)

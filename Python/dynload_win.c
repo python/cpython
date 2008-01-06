@@ -1,12 +1,13 @@
 
 /* Support for dynamic loading of extension modules */
 
+#include "Python.h"
+
 #ifdef HAVE_DIRECT_H
 #include <direct.h>
 #endif
 #include <ctype.h>
 
-#include "Python.h"
 #include "importdl.h"
 #include <windows.h>
 
