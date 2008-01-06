@@ -311,9 +311,9 @@ All builtin numeric types support the following operations. See
 +--------------------+---------------------------------+--------+
 | ``divmod(x, y)``   | the pair ``(x // y, x % y)``    | (3)(4) |
 +--------------------+---------------------------------+--------+
-| ``pow(x, y)``      | *x* to the power *y*            | \(3)   |
+| ``pow(x, y)``      | *x* to the power *y*            | (3)(7) |
 +--------------------+---------------------------------+--------+
-| ``x ** y``         | *x* to the power *y*            |        |
+| ``x ** y``         | *x* to the power *y*            | \(7)   |
 +--------------------+---------------------------------+--------+
 
 .. index::
@@ -365,6 +365,10 @@ Notes:
    or "-" for Not a Number (NaN) and positive or negative infinity.
    
    .. versionadded:: 2.6
+
+(7)
+   Python defines ``pow(0, 0)`` and ``0 ** 0`` to be ``1``, as is common for
+   programming languages.
 
 All :class:`numbers.Real` types (:class:`int`, :class:`long`, and
 :class:`float`) also include the following operations:
