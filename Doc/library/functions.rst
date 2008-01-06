@@ -977,11 +977,15 @@ available.  They are listed here in alphabetical order.
 
 .. function:: reversed(seq)
 
-   Return a reverse :term:`iterator`.  *seq* must be an object which supports
-   the sequence protocol (the :meth:`__len__` method and the :meth:`__getitem__`
-   method with integer arguments starting at ``0``).
+   Return a reverse :term:`iterator`.  *seq* must be an object which has
+   a :meth:`__reversed__` method or supports the sequence protocol (the
+   :meth:`__len__` method and the :meth:`__getitem__` method with integer
+   arguments starting at ``0``).
 
    .. versionadded:: 2.4
+
+   .. versionchanged:: 2.6
+      Added the possibility to write a custom :meth:`__reversed__` method.
 
 
 .. function:: round(x[, n])
