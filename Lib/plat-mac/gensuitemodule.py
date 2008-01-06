@@ -191,7 +191,7 @@ def processfile(fullname, output=None, basepkgname=None,
     try:
         aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
     except MacOS.Error as arg:
-        if arg[0] in (-1701, -192): # errAEDescNotFound, resNotFound
+        if arg.args[0] in (-1701, -192): # errAEDescNotFound, resNotFound
             if verbose:
                 print("GetAppTerminology failed with errAEDescNotFound/resNotFound, trying manually", file=verbose)
             aedata, sig = getappterminology(fullname, verbose=verbose)

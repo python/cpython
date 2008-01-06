@@ -149,12 +149,12 @@ class dircmp:
             try:
                 a_stat = os.stat(a_path)
             except os.error as why:
-                # print 'Can\'t stat', a_path, ':', why[1]
+                # print('Can\'t stat', a_path, ':', why.args[1])
                 ok = 0
             try:
                 b_stat = os.stat(b_path)
             except os.error as why:
-                # print 'Can\'t stat', b_path, ':', why[1]
+                # print('Can\'t stat', b_path, ':', why.args[1])
                 ok = 0
 
             if ok:

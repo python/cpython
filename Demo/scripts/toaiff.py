@@ -89,8 +89,8 @@ def _toaiff(filename, temps):
             ftype = ftype[0] # All we're interested in
     except IOError as msg:
         if type(msg) == type(()) and len(msg) == 2 and \
-                type(msg[0]) == type(0) and type(msg[1]) == type(''):
-            msg = msg[1]
+                type(msg.args[0]) == type(0) and type(msg.args[1]) == type(''):
+            msg = msg.args[1]
         if type(msg) != type(''):
             msg = repr(msg)
         raise error(filename + ': ' + msg)
