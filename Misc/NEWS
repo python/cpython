@@ -53,6 +53,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1637: fix urlparse for URLs like 'http://x.com?arg=/foo'.
+
 - Issue #1735: TarFile.extractall() now correctly sets directory permissions
   and times.
 
