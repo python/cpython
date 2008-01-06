@@ -27,11 +27,10 @@ have_tcl = True
 # Where is sqlite3.dll located, relative to srcdir?
 sqlite_dir = "../sqlite-source-3.3.4"
 # path to PCbuild directory
-PCBUILD="PC\\VS7.1"
-#PCBUILD="PCbuild"
+PCBUILD="PCbuild"
 # msvcrt version
-MSVCR = "71"
-#MSVCR = "90"
+#MSVCR = "71"
+MSVCR = "90"
 
 try:
     from config import *
