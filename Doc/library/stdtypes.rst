@@ -2190,7 +2190,7 @@ to be provided for a context manager object to define a runtime context:
    the context expression in a :keyword:`with` statement.
 
    An example of a context manager that returns a related object is the one
-   returned by ``decimal.Context.get_manager()``. These managers set the active
+   returned by :func:`decimal.localcontext`. These managers set the active
    decimal context to a copy of the original decimal context and then return the
    copy. This allows changes to be made to the current decimal context in the body
    of the :keyword:`with` statement without affecting code outside the
