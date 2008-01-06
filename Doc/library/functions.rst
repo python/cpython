@@ -221,6 +221,9 @@ available.  They are listed here in alphabetical order.
    can be found as the :attr:`compiler_flag` attribute on the :class:`_Feature`
    instance in the :mod:`__future__` module.
 
+   This function raises :exc:`SyntaxError` if the compiled source is invalid,
+   and :exc:`TypeError` if the source contains null bytes.
+
 
 .. function:: complex([real[, imag]])
 
