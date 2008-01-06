@@ -86,7 +86,7 @@ def unpackevent(ae, formodulename=""):
         try:
             desc = ae.AEGetAttributeDesc(key, '****')
         except (AE.Error, MacOS.Error) as msg:
-            if msg[0] != -1701 and msg[0] != -1704:
+            if msg.args[0] not in (-1701, -1704):
                 raise
             continue
         attributes[key] = unpack(desc, formodulename)

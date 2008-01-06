@@ -651,7 +651,7 @@ def AskFileForOpen(
         rr = Nav.NavChooseFile(args)
         good = 1
     except Nav.error as arg:
-        if arg[0] != -128: # userCancelledErr
+        if arg.args[0] != -128: # userCancelledErr
             raise Nav.error(arg)
         return None
     if not rr.validRecord or not rr.selection:
@@ -704,7 +704,7 @@ def AskFileForSave(
         rr = Nav.NavPutFile(args)
         good = 1
     except Nav.error as arg:
-        if arg[0] != -128: # userCancelledErr
+        if arg.args[0] != -128: # userCancelledErr
             raise Nav.error(arg)
         return None
     if not rr.validRecord or not rr.selection:
@@ -764,7 +764,7 @@ def AskFolder(
         rr = Nav.NavChooseFolder(args)
         good = 1
     except Nav.error as arg:
-        if arg[0] != -128: # userCancelledErr
+        if arg.args[0] != -128: # userCancelledErr
             raise Nav.error(arg)
         return None
     if not rr.validRecord or not rr.selection:

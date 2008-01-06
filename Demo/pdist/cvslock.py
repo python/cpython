@@ -131,7 +131,7 @@ class Lock:
                 return
             except os.error as msg:
                 self.lockdir = None
-                if msg[0] == EEXIST:
+                if msg.args[0] == EEXIST:
                     try:
                         st = os.stat(self.cvslck)
                     except os.error:

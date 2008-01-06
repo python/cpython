@@ -67,7 +67,7 @@ def _spawn_nt(cmd, search_path=1, verbose=0, dry_run=0):
         except OSError as exc:
             # this seems to happen when the command isn't found
             raise DistutilsExecError(
-                  "command '%s' failed: %s" % (cmd[0], exc[-1]))
+                  "command '%s' failed: %s" % (cmd[0], exc.args[-1]))
         if rc != 0:
             # and this reflects the command running but failing
             raise DistutilsExecError(
@@ -88,7 +88,7 @@ def _spawn_os2(cmd, search_path=1, verbose=0, dry_run=0):
         except OSError as exc:
             # this seems to happen when the command isn't found
             raise DistutilsExecError(
-                  "command '%s' failed: %s" % (cmd[0], exc[-1]))
+                  "command '%s' failed: %s" % (cmd[0], exc.args[-1]))
         if rc != 0:
             # and this reflects the command running but failing
             print("command '%s' failed with exit status %d" % (cmd[0], rc))
@@ -124,7 +124,7 @@ def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
                 if exc.errno == errno.EINTR:
                     continue
                 raise DistutilsExecError(
-                      "command '%s' failed: %s" % (cmd[0], exc[-1]))
+                      "command '%s' failed: %s" % (cmd[0], exc.args[-1]))
             if os.WIFSIGNALED(status):
                 raise DistutilsExecError(
                       "command '%s' terminated by signal %d"

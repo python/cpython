@@ -139,7 +139,7 @@ def copy_file(src, dst, preserve_mode=1, preserve_times=1, update=0,
             macostools.copy(src, dst, 0, preserve_times)
         except os.error as exc:
             raise DistutilsFileError(
-                  "could not copy '%s' to '%s': %s" % (src, dst, exc[-1]))
+                  "could not copy '%s' to '%s': %s" % (src, dst, exc.args[-1]))
 
     # If linking (hard or symbolic), use the appropriate system call
     # (Unix only, of course, but that's the caller's responsibility)
