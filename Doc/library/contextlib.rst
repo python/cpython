@@ -21,7 +21,6 @@ Functions provided:
 
    A simple example (this is not recommended as a real way of generating HTML!)::
 
-      from __future__ import with_statement
       from contextlib import contextmanager
 
       @contextmanager
@@ -98,7 +97,6 @@ Functions provided:
 
    And lets you write code like this::
 
-      from __future__ import with_statement
       from contextlib import closing
       import urllib
 

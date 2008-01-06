@@ -82,7 +82,7 @@ class BaseResult(tuple):
     def username(self):
         netloc = self.netloc
         if "@" in netloc:
-            userinfo = netloc.split("@", 1)[0]
+            userinfo = netloc.rsplit("@", 1)[0]
             if ":" in userinfo:
                 userinfo = userinfo.split(":", 1)[0]
             return userinfo
@@ -92,7 +92,7 @@ class BaseResult(tuple):
     def password(self):
         netloc = self.netloc
         if "@" in netloc:
-            userinfo = netloc.split("@", 1)[0]
+            userinfo = netloc.rsplit("@", 1)[0]
             if ":" in userinfo:
                 return userinfo.split(":", 1)[1]
         return None
@@ -101,7 +101,7 @@ class BaseResult(tuple):
     def hostname(self):
         netloc = self.netloc
         if "@" in netloc:
-            netloc = netloc.split("@", 1)[1]
+            netloc = netloc.rsplit("@", 1)[1]
         if ":" in netloc:
             netloc = netloc.split(":", 1)[0]
         return netloc.lower() or None
@@ -110,7 +110,7 @@ class BaseResult(tuple):
     def port(self):
         netloc = self.netloc
         if "@" in netloc:
-            netloc = netloc.split("@", 1)[1]
+            netloc = netloc.rsplit("@", 1)[1]
         if ":" in netloc:
             port = netloc.split(":", 1)[1]
             return int(port, 10)
@@ -169,13 +169,12 @@ def _splitparams(url):
     return url[:i], url[i+1:]
 
 def _splitnetloc(url, start=0):
-    for c in '/?#': # the order is important!
-        delim = url.find(c, start)
-        if delim >= 0:
-            break
-    else:
-        delim = len(url)
-    return url[start:delim], url[delim:]
+    delim = len(url)   # position of end of domain part of url, default is end
+    for c in '/?#':    # look for delimiters; the order is NOT important
+        wdelim = url.find(c, start)        # find first of this delim
+        if wdelim >= 0:                    # if found
+            delim = min(delim, wdelim)     # use earliest delim position
+    return url[start:delim], url[delim:]   # return (domain, rest)
 
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:

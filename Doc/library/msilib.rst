@@ -40,7 +40,7 @@ structures.
    exposed.
 
 
-.. function:: UUIDCreate()
+.. function:: UuidCreate()
 
    Return the string representation of a new unique identifier. This wraps the
    Windows API functions :cfunc:`UuidCreate` and :cfunc:`UuidToString`.

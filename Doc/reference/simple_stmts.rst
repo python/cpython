@@ -33,7 +33,9 @@ simple statements is:
 Expression statements
 =====================
 
-.. index:: pair: expression; statement
+.. index::
+   pair: expression; statement
+   pair: expression; list
 .. index:: pair: expression; list
 
 Expression statements are used (mostly interactively) to compute and write a
@@ -327,7 +329,9 @@ is determined when the interpreter starts.
 The :keyword:`pass` statement
 =============================
 
-.. index:: statement: pass
+.. index::
+   statement: pass
+   pair: null; operation
            pair: null; operation
 
 .. productionlist::
@@ -347,9 +351,10 @@ code needs to be executed, for example::
 The :keyword:`del` statement
 ============================
 
-.. index:: statement: del
-           pair: deletion; target
-           triple: deletion; target; list
+.. index::
+   statement: del
+   pair: deletion; target
+   triple: deletion; target; list
 
 .. productionlist::
    del_stmt: "del" `target_list`
@@ -386,9 +391,10 @@ the sliced object).
 The :keyword:`return` statement
 ===============================
 
-.. index:: statement: return
-           pair: function; definition
-           pair: class; definition
+.. index::
+   statement: return
+   pair: function; definition
+   pair: class; definition
 
 .. productionlist::
    return_stmt: "return" [`expression_list`]
@@ -418,23 +424,34 @@ raised.
 The :keyword:`yield` statement
 ==============================
 
+.. index::
+   statement: yield
+   single: generator; function
+   single: generator; iterator
+   single: function; generator
+   exception: StopIteration
+
 .. productionlist::
    yield_stmt: `yield_expression`
 
-The yield statement is nothing but a yield expression used as a statement,
-see :ref:`yieldexpr`.
-
+The :keyword:`yield` statement is only used when defining a generator function,
+and is only used in the body of the generator function. Using a :keyword:`yield`
+statement in a function definition is sufficient to cause that definition to
+create a generator function instead of a normal function.
+>>>>>>> .merge-right.r59773
 
 .. _raise:
 
 The :keyword:`raise` statement
 ==============================
 
-.. index:: statement: raise
-           pair: raising; exception
+.. index::
+   statement: raise
+   single: exception
+   pair: raising; exception
 
 .. productionlist::
-   raise_stmt: "raise" [`expression` ["from" `expression`]]
+   raise_stmt: "raise" [`expression` ["," `expression` ["," `expression`]]]
 
 If no expressions are present, :keyword:`raise` re-raises the last exception
 that was active in the current scope.  If no exception is active in the current
@@ -476,10 +493,11 @@ and information about handling exceptions is in section :ref:`try`.
 The :keyword:`break` statement
 ==============================
 
-.. index:: statement: break
-           statement: for
-           statement: while
-           pair: loop; statement
+.. index::
+   statement: break
+   statement: for
+   statement: while
+   pair: loop; statement
 
 .. productionlist::
    break_stmt: "break"
@@ -509,11 +527,12 @@ really leaving the loop.
 The :keyword:`continue` statement
 =================================
 
-.. index:: statement: continue
-           statement: for
-           statement: while
-           pair: loop; statement
-           keyword: finally
+.. index::
+   statement: continue
+   statement: for
+   statement: while
+   pair: loop; statement
+   keyword: finally
 
 .. productionlist::
    continue_stmt: "continue"
@@ -631,6 +650,7 @@ raise a :exc:`SyntaxError`.
 
 .. index::
    keyword: from
+   statement: from
    triple: hierarchical; module; names
    single: packages
    single: __init__.py
@@ -731,12 +751,12 @@ after the script is executed.
 The :keyword:`global` statement
 ===============================
 
-.. index:: statement: global
+.. index::
+   statement: global
+   triple: global; name; binding
 
 .. productionlist::
    global_stmt: "global" `identifier` ("," `identifier`)*
-
-.. index:: triple: global; name; binding
 
 The :keyword:`global` statement is a declaration which holds for the entire
 current code block.  It means that the listed identifiers are to be interpreted
@@ -788,11 +808,6 @@ previously bound variables in the nearest enclosing scope.  This is important
 because the default behavior for binding is to search the local namespace 
 first.  The statement allows encapsulated code to rebind variables outside of
 the local scope besides the global (module) scope.
-
-.. note::
-
-   The outer scope for :keyword:`nonlocal` statements cannot be the module
-   scope.
 
 .. XXX not implemented
    The :keyword:`nonlocal` statement may prepend an assignment or augmented

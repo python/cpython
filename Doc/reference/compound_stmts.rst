@@ -78,7 +78,10 @@ on a separate line for clarity.
 The :keyword:`if` statement
 ===========================
 
-.. index:: statement: if
+.. index::
+   statement: if
+   keyword: elif
+   keyword: else
            keyword: elif
            keyword: else
 
@@ -105,6 +108,7 @@ The :keyword:`while` statement
    statement: while
    keyword: else
    pair: loop; statement
+   keyword: else
 
 The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
@@ -139,6 +143,9 @@ The :keyword:`for` statement
    keyword: else
    pair: target; list
    pair: loop; statement
+   keyword: in
+   keyword: else
+   pair: target; list
    object: sequence
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
@@ -208,7 +215,10 @@ returns the list ``[0, 1, 2]``.
 The :keyword:`try` statement
 ============================
 
-.. index:: statement: try
+.. index::
+   statement: try
+   keyword: except
+   keyword: finally
 .. index:: keyword: except
 
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
@@ -223,7 +233,8 @@ for a group of statements:
    try2_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
-The :keyword:`except` clause(s) specify one or more exception handlers.  When no
+
+The :keyword:`except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
 When an exception occurs in the :keyword:`try` suite, a search for an exception
 handler is started.  This search inspects the except clauses in turn until one
@@ -379,6 +390,10 @@ The execution of the :keyword:`with` statement proceeds as follows:
    location for the kind of exit that was taken.
 
 
+   In Python 2.5, the :keyword:`with` statement is only allowed when the
+   ``with_statement`` feature has been enabled.  It is always enabled in
+   Python 2.6.
+
 .. seealso::
 
    :pep:`0343` - The "with" statement
@@ -393,8 +408,10 @@ Function definitions
 ====================
 
 .. index::
-   pair: function; definition
    statement: def
+   pair: function; definition
+   pair: function; name
+   pair: name; binding
    object: user-defined function
    object: function
    pair: function; name
@@ -513,13 +530,13 @@ Class definitions
 =================
 
 .. index::
-   pair: class; definition
-   statement: class
    object: class
-   single: inheritance
+   statement: class
+   pair: class; definition
    pair: class; name
    pair: name; binding
    pair: execution; frame
+   single: inheritance
 
 A class definition defines a class object (see section :ref:`types`):
 
@@ -554,13 +571,13 @@ is equivalent to ::
    Foo = f1(arg)(f2(Foo))
 
 **Programmer's note:** Variables defined in the class definition are class
-variables; they are shared by all instances.  To define instance variables, they
-must be given a value in the :meth:`__init__` method or in another method.  Both
-class and instance variables are accessible through the notation
-"``self.name``", and an instance variable hides a class variable with the same
-name when accessed in this way.  Class variables with immutable values can be
-used as defaults for instance variables.  Descriptors can be used to create
-instance variables with different implementation details.
+can be set in a method with ``self.name = value``.  Both class and instance
+variables are accessible through the notation "``self.name``", and an instance
+variable hides a class variable with the same name when accessed in this way.
+Class variables can be used as defaults for instance variables, but using
+mutable values there can lead to unexpected results.  For :term:`new-style
+class`\es, descriptors can be used to create instance variables with different
+implementation details.
 
 .. XXX add link to descriptor docs above
 

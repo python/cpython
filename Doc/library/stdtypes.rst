@@ -352,6 +352,23 @@ Notes:
    or "-" for Not a Number (NaN) and positive or negative infinity.
    
 
+All :class:`numbers.Real` types (:class:`int` and
+:class:`float`) also include the following operations:
+
++--------------------+--------------------------------+--------+
+| Operation          | Result                         | Notes  |
++====================+================================+========+
+| ``trunc(x)``       | *x* truncated to Integral      |        |
++--------------------+--------------------------------+--------+
+| ``round(x[, n])``  | *x* rounded to n digits,       |        |
+|                    | rounding half to even. If n is |        |
+|                    | omitted, it defaults to 0.     |        |
++--------------------+--------------------------------+--------+
+| ``math.floor(x)``  | the greatest Integral <= *x*   |        |
++--------------------+--------------------------------+--------+
+| ``math.ceil(x)``   | the least Integral >= *x*      |        |
++--------------------+--------------------------------+--------+
+
 .. XXXJH exceptions: overflow (when? what operations?) zerodivision
 
 
@@ -366,7 +383,7 @@ Integers support additional operations that make sense only for bit-strings.
 Negative numbers are treated as their 2's complement value (this assumes a
 sufficiently large number of bits that no overflow occurs during the operation).
 
-The priorities of the binary bit-wise operations are all lower than the numeric
+The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
 same priority as the other unary numeric operations (``+`` and ``-``).
 
@@ -1319,10 +1336,11 @@ Notes:
    *cmp* specifies a custom comparison function of two arguments (list items) which
    should return a negative, zero or positive number depending on whether the first
    argument is considered smaller than, equal to, or larger than the second
-   argument: ``cmp=lambda x,y: cmp(x.lower(), y.lower())``
+   argument: ``cmp=lambda x,y: cmp(x.lower(), y.lower())``.  The default value
+   is ``None``.
 
    *key* specifies a function of one argument that is used to extract a comparison
-   key from each list element: ``key=str.lower``
+   key from each list element: ``key=str.lower``.  The default value is ``None``.
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
@@ -2005,7 +2023,12 @@ Files have the following methods:
    argument is optional and defaults to  ``os.SEEK_SET`` or ``0`` (absolute file
    positioning); other values are ``os.SEEK_CUR`` or ``1`` (seek relative to the
    current position) and ``os.SEEK_END`` or ``2``  (seek relative to the file's
-   end).  There is no return value.  Note that if the file is opened for appending
+   end).  There is no return value.
+   
+   For example, ``f.seek(2, os.SEEK_CUR)`` advances the position by two and
+   ``f.seek(-3, os.SEEK_END)`` sets the position to the third to last.
+
+   Note that if the file is opened for appending
    (mode ``'a'`` or ``'a+'``), any :meth:`seek` operations will be undone at the
    next write.  If the file is only opened for writing in append mode (mode
    ``'a'``), this method is essentially a no-op, but it remains useful for files
@@ -2138,7 +2161,7 @@ to be provided for a context manager object to define a runtime context:
    the context expression in a :keyword:`with` statement.
 
    An example of a context manager that returns a related object is the one
-   returned by ``decimal.Context.get_manager()``. These managers set the active
+   returned by :func:`decimal.localcontext`. These managers set the active
    decimal context to a copy of the original decimal context and then return the
    copy. This allows changes to be made to the current decimal context in the body
    of the :keyword:`with` statement without affecting code outside the

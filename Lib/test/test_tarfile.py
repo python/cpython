@@ -243,6 +243,23 @@ class MiscReadTest(ReadTest):
         data = open(os.path.join(TEMPDIR, "ustar/symtype"), "rb").read()
         self.assertEqual(md5sum(data), md5_regtype)
 
+    def test_extractall(self):
+        # Test if extractall() correctly restores directory permissions
+        # and times (see issue1735).
+        if sys.platform == "win32":
+            # Win32 has no support for utime() on directories or
+            # fine grained permissions.
+            return
+
+        tar = tarfile.open(tarname, encoding="iso8859-1")
+        directories = [t for t in tar if t.isdir()]
+        tar.extractall(TEMPDIR, directories)
+        for tarinfo in directories:
+            path = os.path.join(TEMPDIR, tarinfo.name)
+            self.assertEqual(tarinfo.mode & 0o777, os.stat(path).st_mode & 0o777)
+            self.assertEqual(tarinfo.mtime, os.path.getmtime(path))
+        tar.close()
+
 
 class StreamReadTest(ReadTest):
 

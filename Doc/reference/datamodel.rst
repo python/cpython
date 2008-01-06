@@ -1011,16 +1011,17 @@ implemented before for compatibility concerns, like the method resolution order
 in case of multiple inheritance.
 
 This manual is not up-to-date with respect to new-style classes.  For now,
-please see http://www.python.org/doc/newstyle.html for more information.
+please see http://www.python.org/doc/newstyle/ for more information.
 
 .. index::
-   single: class
-   single: class
-   single: class
+   single: class; new-style
+   single: class; classic
+   single: class; old-style
 
 The plan is to eventually drop old-style classes, leaving only the semantics of
 new-style classes.  This change will probably only be feasible in Python 3.0.
-new-style classic old-style
+
+XXX Remove old style classes from docs
 
 
 .. _specialnames:
@@ -1901,6 +1902,18 @@ For more information on context managers, see :ref:`typecontextmanager`.
       statement.
 
 .. rubric:: Footnotes
+
+.. [#] Since Python 2.2, a gradual merging of types and classes has been started that
+   makes this and a few other assertions made in this manual not 100% accurate and
+   complete: for example, it *is* now possible in some cases to change an object's
+   type, under certain controlled conditions.  Until this manual undergoes
+   extensive revision, it must now be taken as authoritative only regarding
+   "classic classes", that are still the default, for compatibility purposes, in
+   Python 2.2 and 2.3.  For more information, see
+   http://www.python.org/doc/newstyle/.
+
+.. [#] This, and other statements, are only roughly true for instances of new-style
+   classes.
 
 .. [#] A descriptor can define any combination of :meth:`__get__`,
    :meth:`__set__` and :meth:`__delete__`.  If it does not define :meth:`__get__`,

@@ -27,11 +27,10 @@ have_tcl = True
 # Where is sqlite3.dll located, relative to srcdir?
 sqlite_dir = "../sqlite-source-3.3.4"
 # path to PCbuild directory
-PCBUILD="PC\\VS7.1"
-#PCBUILD="PCbuild"
+PCBUILD="PCbuild"
 # msvcrt version
-MSVCR = "71"
-#MSVCR = "90"
+#MSVCR = "71"
+MSVCR = "90"
 
 try:
     from config import *
@@ -904,12 +903,15 @@ def add_files(db):
                     language=installer.FileVersion(pydllsrc, 1))
     # XXX determine dependencies
     if MSVCR == "90":
-        version, lang = extract_msvcr90()
-        dlldir.start_component("msvcr90", flags=8, keyfile="msvcr90.dll",
-                               uuid=msvcr90_uuid)
-        dlldir.add_file("msvcr90.dll", src=os.path.abspath("msvcr90.dll"),
-                        version=version, language=lang)
-        tmpfiles.append("msvcr90.dll")
+        # XXX don't package the CRT for the moment;
+        # this should probably use the merge module in the long run.
+        pass
+        #version, lang = extract_msvcr90()
+        #dlldir.start_component("msvcr90", flags=8, keyfile="msvcr90.dll",
+        #                       uuid=msvcr90_uuid)
+        #dlldir.add_file("msvcr90.dll", src=os.path.abspath("msvcr90.dll"),
+        #                version=version, language=lang)
+        #tmpfiles.append("msvcr90.dll")
     else:
         version, lang = extract_msvcr71()
         dlldir.start_component("msvcr71", flags=8, keyfile="msvcr71.dll",
