@@ -490,4 +490,6 @@ def relpath(path, start=curdir):
         i += 1
 
     rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+    if not rel_list:
+        return curdir
     return join(*rel_list)

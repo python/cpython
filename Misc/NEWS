@@ -342,6 +342,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1742: return os.curdir from os.path.relpath() if both arguments are
+  equal instead of raising an exception.
+
 - Patch #1637: fix urlparse for URLs like 'http://x.com?arg=/foo'.
 
 - Patch #1698: allow '@' in username parsed by urlparse.py.
