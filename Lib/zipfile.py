@@ -1,7 +1,7 @@
 """
 Read and write ZIP files.
 """
-import struct, os, time, sys
+import struct, os, time, sys, shutil
 import binascii, cStringIO
 
 try:
@@ -806,6 +806,62 @@ class ZipFile:
         if "U" in mode:
             zef.set_univ_newlines(True)
         return zef
+
+    def extract(self, member, path=None, pwd=None):
+        """Extract a member from the archive to the current working directory,
+           using its full name. Its file information is extracted as accurately
+           as possible. `member' may be a filename or a ZipInfo object. You can
+           specify a different directory using `path'.
+        """
+        if not isinstance(member, ZipInfo):
+            member = self.getinfo(member)
+
+        if path is None:
+            path = os.getcwd()
+
+        return self._extract_member(member, path, pwd)
+
+    def extractall(self, path=None, members=None, pwd=None):
+        """Extract all members from the archive to the current working
+           directory. `path' specifies a different directory to extract to.
+           `members' is optional and must be a subset of the list returned
+           by namelist().
+        """
+        if members is None:
+            members = self.namelist()
+
+        for zipinfo in members:
+            self.extract(zipinfo, path, pwd)
+
+    def _extract_member(self, member, targetpath, pwd):
+        """Extract the ZipInfo object 'member' to a physical
+           file on the path targetpath.
+        """
+        # build the destination pathname, replacing
+        # forward slashes to platform specific separators.
+        if targetpath[-1:] == "/":
+            targetpath = targetpath[:-1]
+
+        # don't include leading "/" from file name if present
+        if os.path.isabs(member.filename):
+            targetpath = os.path.join(targetpath, member.filename[1:])
+        else:
+            targetpath = os.path.join(targetpath, member.filename)
+
+        targetpath = os.path.normpath(targetpath)
+
+        # Create all upper directories if necessary.
+        upperdirs = os.path.dirname(targetpath)
+        if upperdirs and not os.path.exists(upperdirs):
+            os.makedirs(upperdirs)
+
+        source = self.open(member.filename, pwd=pwd)
+        target = file(targetpath, "wb")
+        shutil.copyfileobj(source, target)
+        source.close()
+        target.close()
+
+        return targetpath
 
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""

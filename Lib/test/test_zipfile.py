@@ -16,6 +16,11 @@ from test.test_support import TESTFN, run_unittest
 TESTFN2 = TESTFN + "2"
 FIXEDTEST_SIZE = 1000
 
+SMALL_TEST_DATA = [('_ziptest1', '1q2w3e4r5t'),
+                   ('ziptest2dir/_ziptest2', 'qawsedrftg'),
+                   ('/ziptest2dir/ziptest3dir/_ziptest3', 'azsxdcfvgb'),
+                   ('ziptest2dir/ziptest3dir/ziptest4dir/_ziptest3', '6y7u8i9o0p')]
+
 class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
         self.line_gen = ["Zipfile test line %d. random float: %f" % (i, random())
@@ -295,6 +300,57 @@ class TestsWithSourceFile(unittest.TestCase):
         zipf = zipfile.ZipFile(TESTFN2, mode="r")
         self.assertRaises(RuntimeError, zipf.write, TESTFN)
         zipf.close()
+
+    def testExtract(self):
+        zipfp = zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED)
+        for fpath, fdata in SMALL_TEST_DATA:
+            zipfp.writestr(fpath, fdata)
+        zipfp.close()
+
+        zipfp = zipfile.ZipFile(TESTFN2, "r")
+        for fpath, fdata in SMALL_TEST_DATA:
+            writtenfile = zipfp.extract(fpath)
+
+            # make sure it was written to the right place
+            if os.path.isabs(fpath):
+                correctfile = os.path.join(os.getcwd(), fpath[1:])
+            else:
+                correctfile = os.path.join(os.getcwd(), fpath)
+
+            self.assertEqual(writtenfile, correctfile)
+
+            # make sure correct data is in correct file
+            self.assertEqual(fdata, file(writtenfile, "rb").read())
+
+            os.remove(writtenfile)
+
+        zipfp.close()
+
+        # remove the test file subdirectories
+        shutil.rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
+
+    def testExtractAll(self):
+        zipfp = zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED)
+        for fpath, fdata in SMALL_TEST_DATA:
+            zipfp.writestr(fpath, fdata)
+        zipfp.close()
+
+        zipfp = zipfile.ZipFile(TESTFN2, "r")
+        zipfp.extractall()
+        for fpath, fdata in SMALL_TEST_DATA:
+            if os.path.isabs(fpath):
+                outfile = os.path.join(os.getcwd(), fpath[1:])
+            else:
+                outfile = os.path.join(os.getcwd(), fpath)
+
+            self.assertEqual(fdata, file(outfile, "rb").read())
+
+            os.remove(outfile)
+
+        zipfp.close()
+
+        # remove the test file subdirectories
+        shutil.rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
 
     def tearDown(self):
         os.remove(TESTFN)
