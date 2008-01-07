@@ -2931,6 +2931,17 @@ imp_new_module(PyObject *self, PyObject *args)
 	return PyModule_New(name);
 }
 
+static PyObject *
+imp_reload(PyObject *self, PyObject *v)
+{
+        return PyImport_ReloadModule(v);
+}
+
+PyDoc_STRVAR(doc_reload,
+"reload(module) -> module\n\
+\n\
+Reload the module.  The module must have been successfully imported before.");
+
 /* Doc strings */
 
 PyDoc_STRVAR(doc_imp,
@@ -2989,6 +3000,7 @@ static PyMethodDef imp_methods[] = {
 	{"lock_held",	 imp_lock_held,	   METH_NOARGS,  doc_lock_held},
 	{"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
 	{"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
+	{"reload",       imp_reload,       METH_O,       doc_reload},
 	/* The rest are obsolete */
 	{"get_frozen_object",	imp_get_frozen_object,	METH_VARARGS},
 	{"init_builtin",	imp_init_builtin,	METH_VARARGS},

@@ -60,6 +60,14 @@ class ImportTests(unittest.TestCase):
                          '"""Tokenization help for Python programs.\n')
         fp.close()
 
+    def test_reload(self):
+        import marshal
+        imp.reload(marshal)
+        import string
+        imp.reload(string)
+        ## import sys
+        ## self.assertRaises(ImportError, reload, sys)
+
 
 def test_main():
     test_support.run_unittest(
