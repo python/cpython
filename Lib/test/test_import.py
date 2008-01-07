@@ -1,4 +1,4 @@
-﻿from test.test_support import TESTFN, run_unittest, catch_warning
+from test.test_support import TESTFN, run_unittest, catch_warning
 
 import unittest
 import os
@@ -199,6 +199,27 @@ class ImportTest(unittest.TestCase):
             remove_files(TESTFN)
             if TESTFN in sys.modules:
                 del sys.modules[TESTFN]
+
+    def test_file_to_source(self):
+        # check if __file__ points to the source file where available
+        source = TESTFN + ".py"
+        with open(source, "w") as f:
+            f.write("test = None\n")
+
+        sys.path.insert(0, os.curdir)
+        try:
+            mod = __import__(TESTFN)
+            self.failUnless(mod.__file__.endswith('.py'))
+            os.remove(source)
+            del sys.modules[TESTFN]
+            mod = __import__(TESTFN)
+            self.failUnless(mod.__file__.endswith('.pyc'))
+        finally:
+            sys.path.pop(0)
+            remove_files(TESTFN)
+            if TESTFN in sys.modules:
+                del sys.modules[TESTFN]
+
 
 class PathsTests(unittest.TestCase):
     SAMPLES = ('test', 'test\u00e4\u00f6\u00fc\u00df', 'test\u00e9\u00e8',

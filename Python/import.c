@@ -78,9 +78,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 		      3080 (PEP 3137 make __file__ and __name__ unicode)
 		      3090 (kill str8 interning)
 		      3100 (merge from 2.6a0, see 62151)
+		      3102 (__file__ points to source file)
 .
 */
-#define MAGIC (3100 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3102 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
@@ -624,6 +625,8 @@ _RemoveModule(const char *name)
 			      "sys.modules failed");
 }
 
+static PyObject * get_sourcefile(const char *file);
+
 /* Execute a code object in a module and return the module object
  * WITH INCREMENTED REFERENCE COUNT.  If an error occurs, name is
  * removed from sys.modules, to avoid leaving damaged module objects
@@ -657,7 +660,7 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 	/* Remember the filename as the __file__ attribute */
 	v = NULL;
 	if (pathname != NULL) {
-		v = PyUnicode_DecodeFSDefault(pathname);
+		v = get_sourcefile(pathname);
 		if (v == NULL)
 			PyErr_Clear();
 	}
@@ -960,12 +963,43 @@ load_source_module(char *name, char *pathname, FILE *fp)
 	return m;
 }
 
+/* Get source file -> unicode or None
+ * Returns the path to the py file if available, else the given path
+ */
+static PyObject *
+get_sourcefile(const char *file)
+{
+	char py[MAXPATHLEN + 1];
+	Py_ssize_t len;
+	PyObject *u;
+	struct stat statbuf;
+
+	if (!file || !*file) {
+		Py_RETURN_NONE;
+	}
+
+	len = strlen(file);
+	if (len > MAXPATHLEN || PyOS_stricmp(&file[len-4], ".pyc") != 0) {
+		return PyUnicode_DecodeFSDefault(file);
+	}
+
+	strncpy(py, file, len-1);
+	py[len] = '\0';
+	if (stat(py, &statbuf) == 0 &&
+		S_ISREG(statbuf.st_mode)) {
+		u = PyUnicode_DecodeFSDefault(py);
+	}
+	else {
+		u = PyUnicode_DecodeFSDefault(file);
+	}
+	return u;
+}
 
 /* Forward */
 static PyObject *load_module(char *, FILE *, char *, int, PyObject *);
 static struct filedescr *find_module(char *, char *, PyObject *,
 				     char *, size_t, FILE **, PyObject **);
-static struct _frozen *find_frozen(char *name);
+static struct _frozen * find_frozen(char *);
 
 /* Load a package and return its module object WITH INCREMENTED
    REFERENCE COUNT */
@@ -988,7 +1022,7 @@ load_package(char *name, char *pathname)
 		PySys_WriteStderr("import %s # directory %s\n",
 			name, pathname);
 	d = PyModule_GetDict(m);
-	file = PyUnicode_DecodeFSDefault(pathname);
+	file = get_sourcefile(pathname);
 	if (file == NULL)
 		goto error;
 	path = Py_BuildValue("[O]", file);
