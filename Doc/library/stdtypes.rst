@@ -469,8 +469,9 @@ the iteration methods.
 One method needs to be defined for container objects to provide iteration
 support:
 
+.. XXX duplicated in reference/datamodel!
 
-.. method:: object.__iter__()
+.. method:: container.__iter__()
 
    Return an iterator object.  The object is required to support the iterator
    protocol described below.  If a container supports different types of
