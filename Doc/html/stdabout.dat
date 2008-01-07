@@ -28,12 +28,10 @@
 <h2>Comments and Questions</h2>
 
 <p> General comments and questions regarding this document should
-  be sent by email to <a href="mailto:docs@python.org"
-    >docs@python.org</a>.  If you find specific errors in
-  this document, either in the content or the presentation, please
-  report the bug at the <a
-    href="http://sourceforge.net/bugs/?group_id=5470">Python Bug
-    Tracker</a> at <a href="http://sourceforge.net/">SourceForge</a>.
+  be sent by email to <a href="mailto:docs@python.org">docs@python.org</a>.  
+  If you find specific errors in this document, either in the content or 
+  the presentation, please report the bug at the 
+  <a href="http://bugs.python.org/">Python Bug Tracker</a>.
   If you are able to provide suggested text, either to replace
   existing incorrect or unclear material, or additional text to
   supplement what's already available, we'd appreciate the
