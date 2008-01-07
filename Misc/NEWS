@@ -12,6 +12,9 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Issue #1762972: __file__ points to the source file instead of the pyc/pyo
+  file if the py file exists.
+
 - Issue #1393: object_richcompare() returns NotImplemented instead of
   False if the objects aren't equal, to give the other side a chance.
 
