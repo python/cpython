@@ -458,7 +458,7 @@ three additional methods and one attribute.
       >>> Point._make(t)
       Point(x=11, y=22)
 
-.. method:: somenamedtuple._asdict()
+.. method:: namedtuple._asdict()
 
    Return a new dict which maps field names to their corresponding values:
 
@@ -467,7 +467,7 @@ three additional methods and one attribute.
       >>> p._asdict()
       {'x': 11, 'y': 22}
       
-.. method:: somenamedtuple._replace(kwargs)
+.. method:: namedtuple._replace(kwargs)
 
    Return a new instance of the named tuple replacing specified fields with new values:
 
@@ -480,7 +480,7 @@ three additional methods and one attribute.
       >>> for partnum, record in inventory.items():
       ...     inventory[partnum] = record._replace(price=newprices[partnum], updated=time.now())
 
-.. attribute:: somenamedtuple._fields
+.. attribute:: namedtuple._fields
 
    Tuple of strings listing the field names.  This is useful for introspection
    and for creating new named tuple types from existing named tuples.
@@ -511,9 +511,7 @@ When casting a dictionary to a named tuple, use the double-star-operator [#]_::
 
 Since a named tuple is a regular Python class, it is easy to add or change
 functionality with a subclass.  Here is how to add a calculated field and
-a fixed-width print format:
-
-::
+a fixed-width print format::
 
     >>> class Point(namedtuple('Point', 'x y')):
         @property
@@ -528,7 +526,7 @@ a fixed-width print format:
     Point(x=1.286, y=6.000, hypot=6.136)
 
 Another use for subclassing is to replace performance critcal methods with
-faster versions that bypass error-checking and localize variable access:
+faster versions that bypass error-checking and localize variable access::
 
     >>> class Point(namedtuple('Point', 'x y')):
         _make = classmethod(tuple.__new__)
