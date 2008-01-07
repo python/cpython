@@ -1013,15 +1013,7 @@ in case of multiple inheritance.
 This manual is not up-to-date with respect to new-style classes.  For now,
 please see http://www.python.org/doc/newstyle/ for more information.
 
-.. index::
-   single: class; new-style
-   single: class; classic
-   single: class; old-style
-
-The plan is to eventually drop old-style classes, leaving only the semantics of
-new-style classes.  This change will probably only be feasible in Python 3.0.
-
-XXX Remove old style classes from docs
+.. XXX remove old style classes from docs
 
 
 .. _specialnames:
