@@ -65,9 +65,9 @@ def namedtuple(typename, field_names, verbose=False):
         def __new__(cls, %(argtxt)s):
             return tuple.__new__(cls, (%(argtxt)s)) \n
         @classmethod
-        def _make(cls, iterable):
+        def _make(cls, iterable, new=tuple.__new__, len=len):
             'Make a new %(typename)s object from a sequence or iterable'
-            result = tuple.__new__(cls, iterable)
+            result = new(cls, iterable)
             if len(result) != %(numfields)d:
                 raise TypeError('Expected %(numfields)d arguments, got %%d' %% len(result))
             return result \n
@@ -115,8 +115,22 @@ if __name__ == '__main__':
     assert p == loads(dumps(p))
 
     # test and demonstrate ability to override methods
-    Point.__repr__ = lambda self:  'Point(%.3f, %.3f)' % self
-    print(p)
+    class Point(namedtuple('Point', 'x y')):
+        @property
+        def hypot(self):
+            return (self.x ** 2 + self.y ** 2) ** 0.5
+        def __repr__(self):
+            return 'Point(x=%.3f, y=%.3f, hypot=%.3f)' % (self.x, self.y, self.hypot)
+
+    print(Point(3, 4),'\n', Point(2, 5), '\n', Point(9./7, 6))
+
+    class Point(namedtuple('Point', 'x y')):
+        'Point class with optimized _make() and _replace() without error-checking'
+        _make = classmethod(tuple.__new__)
+        def _replace(self, _map=map, **kwds):
+            return self._make(_map(kwds.pop, ('x', 'y'), self))
+
+    print(Point(11, 22)._replace(x=100))
 
     import doctest
     TestResults = namedtuple('TestResults', 'failed attempted')

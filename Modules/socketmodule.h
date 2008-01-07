@@ -61,6 +61,10 @@
 # include <netpacket/packet.h>
 #endif
 
+#ifdef HAVE_LINUX_TIPC_H
+# include <linux/tipc.h>
+#endif
+
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
 #ifdef __cplusplus

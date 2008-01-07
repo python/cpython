@@ -7,7 +7,8 @@ This module provides an interface to Berkeley socket IPC.
 Limitations:
 
 - Only AF_INET, AF_INET6 and AF_UNIX address families are supported in a
-  portable manner, though AF_PACKET and AF_NETLINK are supported under Linux.
+  portable manner, though AF_PACKET, AF_NETLINK and AF_TIPC are supported
+  under Linux.
 - No read/write operations (use sendall/recv or makefile instead).
 - Additional restrictions apply on some non-Unix platforms (compensated
   for by socket.py).
@@ -51,6 +52,25 @@ Module interface:
   the Ethernet protocol number to be received. For example:
   ("eth0",0x1234).  Optional 3rd,4th,5th elements in the tuple
   specify packet-type and ha-type/addr.
+- an AF_TIPC socket address is expressed as
+ (addr_type, v1, v2, v3 [, scope]); where addr_type can be one of:
+	TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, and TIPC_ADDR_ID;
+  and scope can be one of:
+	TIPC_ZONE_SCOPE, TIPC_CLUSTER_SCOPE, and TIPC_NODE_SCOPE.
+  The meaning of v1, v2 and v3 depends on the value of addr_type:
+	if addr_type is TIPC_ADDR_NAME:
+		v1 is the server type
+		v2 is the port identifier
+		v3 is ignored
+	if addr_type is TIPC_ADDR_NAMESEQ:
+		v1 is the server type
+		v2 is the lower port number
+		v3 is the upper port number
+	if addr_type is TIPC_ADDR_ID:
+		v1 is the node
+		v2 is the ref
+		v3 is ignored
+
 
 Local naming conventions:
 
@@ -1058,6 +1078,39 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 	}
 #endif
 
+#ifdef HAVE_LINUX_TIPC_H
+	case AF_TIPC:
+	{
+		struct sockaddr_tipc *a = (struct sockaddr_tipc *) addr;
+		if (a->addrtype == TIPC_ADDR_NAMESEQ) {
+			return Py_BuildValue("IIIII",
+					a->addrtype,
+					a->addr.nameseq.type,
+					a->addr.nameseq.lower,
+					a->addr.nameseq.upper,
+					a->scope);
+		} else if (a->addrtype == TIPC_ADDR_NAME) {
+			return Py_BuildValue("IIIII",
+					a->addrtype,
+					a->addr.name.name.type,
+					a->addr.name.name.instance,
+					a->addr.name.name.instance,
+					a->scope);
+		} else if (a->addrtype == TIPC_ADDR_ID) {
+			return Py_BuildValue("IIIII",
+					a->addrtype,
+					a->addr.id.node,
+					a->addr.id.ref,
+					0,
+					a->scope);
+		} else {
+			PyErr_SetString(PyExc_TypeError,
+					"Invalid address type");
+			return NULL;
+		}
+	}
+#endif
+
 	/* More cases here... */
 
 	default:
@@ -1343,6 +1396,56 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 	}
 #endif
 
+#ifdef HAVE_LINUX_TIPC_H
+	case AF_TIPC:
+	{
+		unsigned int atype, v1, v2, v3;
+		unsigned int scope = TIPC_CLUSTER_SCOPE;
+		struct sockaddr_tipc *addr;
+
+		if (!PyTuple_Check(args)) {
+			PyErr_Format(
+				PyExc_TypeError,
+				"getsockaddrarg: "
+				"AF_TIPC address must be tuple, not %.500s",
+				Py_TYPE(args)->tp_name);
+			return 0;
+		}
+
+		if (!PyArg_ParseTuple(args,
+					"IIII|I;Invalid TIPC address format",
+					&atype, &v1, &v2, &v3, &scope))
+			return 0;
+
+		addr = (struct sockaddr_tipc *) addr_ret;
+		memset(addr, 0, sizeof(struct sockaddr_tipc));
+
+		addr->family = AF_TIPC;
+		addr->scope = scope;
+		addr->addrtype = atype;
+
+		if (atype == TIPC_ADDR_NAMESEQ) {
+			addr->addr.nameseq.type = v1;
+			addr->addr.nameseq.lower = v2;
+			addr->addr.nameseq.upper = v3;
+		} else if (atype == TIPC_ADDR_NAME) {
+			addr->addr.name.name.type = v1;
+			addr->addr.name.name.instance = v2;
+		} else if (atype == TIPC_ADDR_ID) {
+			addr->addr.id.node = v1;
+			addr->addr.id.ref = v2;
+		} else {
+			/* Shouldn't happen */
+			PyErr_SetString(PyExc_TypeError, "Invalid address type");
+			return 0;
+		}
+
+		*len_ret = sizeof(*addr);
+
+		return 1;
+	}
+#endif
+
 	/* More cases here... */
 
 	default:
@@ -1424,6 +1527,14 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 	case AF_PACKET:
 	{
 		*len_ret = sizeof (struct sockaddr_ll);
+		return 1;
+	}
+#endif
+
+#ifdef HAVE_LINUX_TIPC_H
+	case AF_TIPC:
+	{
+		*len_ret = sizeof (struct sockaddr_tipc);
 		return 1;
 	}
 #endif
@@ -4209,6 +4320,47 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "PACKET_OUTGOING", PACKET_OUTGOING);
 	PyModule_AddIntConstant(m, "PACKET_LOOPBACK", PACKET_LOOPBACK);
 	PyModule_AddIntConstant(m, "PACKET_FASTROUTE", PACKET_FASTROUTE);
+#endif
+
+#ifdef HAVE_LINUX_TIPC_H
+	PyModule_AddIntConstant(m, "AF_TIPC", AF_TIPC);
+
+	/* for addresses */
+	PyModule_AddIntConstant(m, "TIPC_ADDR_NAMESEQ", TIPC_ADDR_NAMESEQ);
+	PyModule_AddIntConstant(m, "TIPC_ADDR_NAME", TIPC_ADDR_NAME);
+	PyModule_AddIntConstant(m, "TIPC_ADDR_ID", TIPC_ADDR_ID);
+
+	PyModule_AddIntConstant(m, "TIPC_ZONE_SCOPE", TIPC_ZONE_SCOPE);
+	PyModule_AddIntConstant(m, "TIPC_CLUSTER_SCOPE", TIPC_CLUSTER_SCOPE);
+	PyModule_AddIntConstant(m, "TIPC_NODE_SCOPE", TIPC_NODE_SCOPE);
+
+	/* for setsockopt() */
+	PyModule_AddIntConstant(m, "SOL_TIPC", SOL_TIPC);
+	PyModule_AddIntConstant(m, "TIPC_IMPORTANCE", TIPC_IMPORTANCE);
+	PyModule_AddIntConstant(m, "TIPC_SRC_DROPPABLE", TIPC_SRC_DROPPABLE);
+	PyModule_AddIntConstant(m, "TIPC_DEST_DROPPABLE",
+			TIPC_DEST_DROPPABLE);
+	PyModule_AddIntConstant(m, "TIPC_CONN_TIMEOUT", TIPC_CONN_TIMEOUT);
+
+	PyModule_AddIntConstant(m, "TIPC_LOW_IMPORTANCE",
+			TIPC_LOW_IMPORTANCE);
+	PyModule_AddIntConstant(m, "TIPC_MEDIUM_IMPORTANCE",
+			TIPC_MEDIUM_IMPORTANCE);
+	PyModule_AddIntConstant(m, "TIPC_HIGH_IMPORTANCE",
+			TIPC_HIGH_IMPORTANCE);
+	PyModule_AddIntConstant(m, "TIPC_CRITICAL_IMPORTANCE",
+			TIPC_CRITICAL_IMPORTANCE);
+
+	/* for subscriptions */
+	PyModule_AddIntConstant(m, "TIPC_SUB_PORTS", TIPC_SUB_PORTS);
+	PyModule_AddIntConstant(m, "TIPC_SUB_SERVICE", TIPC_SUB_SERVICE);
+	PyModule_AddIntConstant(m, "TIPC_SUB_CANCEL", TIPC_SUB_CANCEL);
+	PyModule_AddIntConstant(m, "TIPC_WAIT_FOREVER", TIPC_WAIT_FOREVER);
+	PyModule_AddIntConstant(m, "TIPC_PUBLISHED", TIPC_PUBLISHED);
+	PyModule_AddIntConstant(m, "TIPC_WITHDRAWN", TIPC_WITHDRAWN);
+	PyModule_AddIntConstant(m, "TIPC_SUBSCR_TIMEOUT", TIPC_SUBSCR_TIMEOUT);
+	PyModule_AddIntConstant(m, "TIPC_CFG_SRV", TIPC_CFG_SRV);
+	PyModule_AddIntConstant(m, "TIPC_TOP_SRV", TIPC_TOP_SRV);
 #endif
 
 	/* Socket types */
