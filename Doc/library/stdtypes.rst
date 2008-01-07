@@ -421,9 +421,9 @@ This table lists the bit-string operations sorted in ascending priority
 | ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
-| ``x << n`` | *x* shifted left by *n* bits   | (1), (2) |
+| ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
 +------------+--------------------------------+----------+
-| ``x >> n`` | *x* shifted right by *n* bits  | (1), (3) |
+| ``x >> n`` | *x* shifted right by *n* bits  | (1)(3)   |
 +------------+--------------------------------+----------+
 | ``~x``     | the bits of *x* inverted       |          |
 +------------+--------------------------------+----------+
@@ -585,9 +585,9 @@ are sequences of the same type; *n*, *i* and *j* are integers:
 +------------------+--------------------------------+----------+
 | ``s[i]``         | *i*'th item of *s*, origin 0   | \(3)     |
 +------------------+--------------------------------+----------+
-| ``s[i:j]``       | slice of *s* from *i* to *j*   | (3), (4) |
+| ``s[i:j]``       | slice of *s* from *i* to *j*   | (3)(4)   |
 +------------------+--------------------------------+----------+
-| ``s[i:j:k]``     | slice of *s* from *i* to *j*   | (3), (5) |
+| ``s[i:j:k]``     | slice of *s* from *i* to *j*   | (3)(5)   |
 |                  | with step *k*                  |          |
 +------------------+--------------------------------+----------+
 | ``len(s)``       | length of *s*                  |          |
@@ -1343,7 +1343,7 @@ defined on mutable sequence types (where *x* is an arbitrary object):
 | ``s.reverse()``              | reverses the items of *s* in   | \(7)                |
 |                              | place                          |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.sort([cmp[, key[,        | sort the items of *s* in place | (7), (8), (9), (10) |
+| ``s.sort([cmp[, key[,        | sort the items of *s* in place | (7)(8)(9)(10)       |
 | reverse]]])``                |                                |                     |
 +------------------------------+--------------------------------+---------------------+
 
