@@ -170,7 +170,7 @@ Ellipsis
       These represent elements from the mathematical set of integers (positive and
       negative).
 
-      There are three types of integers:
+      There are two types of integers:
 
       Plain integers
          .. index::
