@@ -954,8 +954,11 @@ load_source_module(char *name, char *pathname, FILE *fp)
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("import %s # from %s\n",
 				name, pathname);
-		if (cpathname)
-			write_compiled_module(co, cpathname, mtime);
+		if (cpathname) {
+			PyObject *ro = PySys_GetObject("dont_write_bytecode");
+			if (ro == NULL || !PyObject_IsTrue(ro))
+				write_compiled_module(co, cpathname, mtime);
+		}
 	}
 	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, pathname);
 	Py_DECREF(co);
@@ -1604,7 +1607,7 @@ case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, char *name)
 	FILEFINDBUF3 ffbuf;
 	APIRET rc;
 
-	if (getenv("PYTHONCASEOK") != NULL)
+	if (Py_GETENV("PYTHONCASEOK") != NULL)
 		return 1;
 
 	rc = DosFindFirst(buf,

@@ -1215,7 +1215,7 @@ def test_main():
         tests.append(TestLinuxAbstractNamespace)
     if isTipcAvailable():
         tests.append(TIPCTest)
-    tests.append(TIPCThreadableTest)
+        tests.append(TIPCThreadableTest)
 
     thread_info = test_support.threading_setup()
     test_support.run_unittest(*tests)

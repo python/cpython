@@ -382,7 +382,7 @@ Setting the :attr:`default_factory` to :class:`set` makes the
 .. _named-tuple-factory:
 
 :func:`namedtuple` Factory Function for Tuples with Named Fields
------------------------------------------------------------------
+----------------------------------------------------------------
 
 Named tuples assign meaning to each position in a tuple and allow for more readable,
 self-documenting code.  They can be used wherever regular tuples are used, and
@@ -398,7 +398,7 @@ they add the ability to access fields by name instead of position index.
 
    The *fieldnames* are a single string with each fieldname separated by whitespace
    and/or commas (for example 'x y' or 'x, y').  Alternatively, the *fieldnames*
-   can be specified as a list of strings (such as ['x', 'y']).
+   can be specified with a sequence of strings (such as ['x', 'y']).
 
    Any valid Python identifier may be used for a fieldname except for names
    starting with an underscore.  Valid identifiers consist of letters, digits,
@@ -479,7 +479,7 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
 In addition to the methods inherited from tuples, named tuples support
 three additional methods and one attribute.
 
-.. method:: namedtuple._make(iterable)
+.. method:: somenamedtuple._make(iterable)
 
    Class method that makes a new instance from an existing sequence or iterable.
 
@@ -489,7 +489,7 @@ three additional methods and one attribute.
       >>> Point._make(t)
       Point(x=11, y=22)
 
-.. method:: namedtuple._asdict()
+.. method:: somenamedtuple._asdict()
 
    Return a new dict which maps field names to their corresponding values:
 
@@ -498,7 +498,7 @@ three additional methods and one attribute.
       >>> p._asdict()
       {'x': 11, 'y': 22}
       
-.. method:: namedtuple._replace(kwargs)
+.. method:: somenamedtuple._replace(kwargs)
 
    Return a new instance of the named tuple replacing specified fields with new values:
 
@@ -509,9 +509,9 @@ three additional methods and one attribute.
       Point(x=33, y=22)
 
       >>> for partnum, record in inventory.items():
-      ...     inventory[partnum] = record._replace(price=newprices[partnum], updated=time.now())
+              inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
-.. attribute:: namedtuple._fields
+.. attribute:: somenamedtuple._fields
 
    Tuple of strings listing the field names.  This is useful for introspection
    and for creating new named tuple types from existing named tuples.
@@ -527,9 +527,7 @@ three additional methods and one attribute.
       Pixel(x=11, y=22, red=128, green=255, blue=0)'
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
-function:
-
-::
+function::
 
     >>> getattr(p, 'x')
     11
@@ -548,13 +546,15 @@ a fixed-width print format::
         @property
         def hypot(self):
             return (self.x ** 2 + self.y ** 2) ** 0.5
-        def __repr__(self):
-            return 'Point(x=%.3f, y=%.3f, hypot=%.3f)' % (self.x, self.y, self.hypot)
+        def __str__(self):
+            return 'Point: x=%6.3f y=%6.3f hypot=%6.3f' % (self.x, self.y, self.hypot)
 
-    >>> print Point(3, 4),'\n', Point(2, 5), '\n', Point(9./7, 6)
-    Point(x=3.000, y=4.000, hypot=5.000) 
-    Point(x=2.000, y=5.000, hypot=5.385) 
-    Point(x=1.286, y=6.000, hypot=6.136)
+    >>> for p in Point(3,4), Point(14,5), Point(9./7,6):
+            print p
+
+    Point: x= 3.000 y= 4.000 hypot= 5.000
+    Point: x=14.000 y= 5.000 hypot=14.866
+    Point: x= 1.286 y= 6.000 hypot= 6.136
 
 Another use for subclassing is to replace performance critcal methods with
 faster versions that bypass error-checking and localize variable access::
@@ -564,10 +564,8 @@ faster versions that bypass error-checking and localize variable access::
         def _replace(self, _map=map, **kwds):
             return self._make(_map(kwds.pop, ('x', 'y'), self))
 
-Default values can be implemented by starting with a prototype instance
-and customizing it with :meth:`_replace`:
-
-::
+Default values can be implemented by using :meth:`_replace`:: to
+customize a prototype instance::
 
     >>> Account = namedtuple('Account', 'owner balance transaction_count')
     >>> model_account = Account('<owner name>', 0.0, 0)

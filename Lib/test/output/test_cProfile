@@ -5,7 +5,7 @@ test_cProfile
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
         1    0.000    0.000    1.000    1.000 <string>:1(<module>)
-        2    0.000    0.000    0.000    0.000 io.py:1212(flush)
+        2    0.000    0.000    0.000    0.000 io.py:1213(flush)
         1    0.000    0.000    0.000    0.000 io.py:269(flush)
         1    0.000    0.000    0.000    0.000 io.py:656(closed)
         1    0.000    0.000    0.000    0.000 io.py:874(flush)
@@ -30,7 +30,7 @@ test_cProfile
 Function                                          called...
                                                       ncalls  tottime  cumtime
 <string>:1(<module>)                              ->       1    0.270    1.000  test_cProfile.py:30(testfunc)
-io.py:1212(flush)                                 ->       1    0.000    0.000  io.py:269(flush)
+io.py:1213(flush)                                 ->       1    0.000    0.000  io.py:269(flush)
                                                            1    0.000    0.000  io.py:874(flush)
 io.py:269(flush)                                  -> 
 io.py:656(closed)                                 -> 
@@ -53,7 +53,7 @@ test_cProfile.py:89(helper2_indirect)             ->       2    0.006    0.040  
 test_cProfile.py:93(helper2)                      ->       8    0.064    0.080  test_cProfile.py:103(subhelper)
                                                            8    0.000    0.008  {hasattr}
 {exec}                                            ->       1    0.000    1.000  <string>:1(<module>)
-                                                           2    0.000    0.000  io.py:1212(flush)
+                                                           2    0.000    0.000  io.py:1213(flush)
 {hasattr}                                         ->      12    0.012    0.012  test_cProfile.py:115(__getattr__)
 {method 'append' of 'list' objects}               -> 
 {method 'disable' of '_lsprof.Profiler' objects}  -> 
@@ -65,10 +65,10 @@ test_cProfile.py:93(helper2)                      ->       8    0.064    0.080  
 Function                                          was called by...
                                                       ncalls  tottime  cumtime
 <string>:1(<module>)                              <-       1    0.000    1.000  {exec}
-io.py:1212(flush)                                 <-       2    0.000    0.000  {exec}
-io.py:269(flush)                                  <-       1    0.000    0.000  io.py:1212(flush)
+io.py:1213(flush)                                 <-       2    0.000    0.000  {exec}
+io.py:269(flush)                                  <-       1    0.000    0.000  io.py:1213(flush)
 io.py:656(closed)                                 <-       1    0.000    0.000  io.py:874(flush)
-io.py:874(flush)                                  <-       1    0.000    0.000  io.py:1212(flush)
+io.py:874(flush)                                  <-       1    0.000    0.000  io.py:1213(flush)
 test_cProfile.py:103(subhelper)                   <-       8    0.064    0.080  test_cProfile.py:93(helper2)
 test_cProfile.py:115(__getattr__)                 <-      16    0.016    0.016  test_cProfile.py:103(subhelper)
                                                           12    0.012    0.012  {hasattr}
