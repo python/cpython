@@ -342,6 +342,8 @@ Core and builtins
 Library
 -------
 
+- Issue #1646: Make socket support the TIPC protocol.
+
 - Bug #1742: return os.curdir from os.path.relpath() if both arguments are
   equal instead of raising an exception.
 
@@ -926,6 +928,9 @@ Library
 
 Extension Modules
 -----------------
+
+- Issue #1646: Make socket support TIPC. The socket module now has support
+  for TIPC under Linux, see http://tipc.sf.net/ for more information.
 
 - Added interface for Windows' WSAIoctl to socket object and added an example
   for a simple network sniffer.

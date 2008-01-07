@@ -354,6 +354,9 @@
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
+/* Define to 1 if you have the <linux/tipc.h> header file. */
+#undef HAVE_LINUX_TIPC_H
+
 /* Define this if you have the type long long. */
 #undef HAVE_LONG_LONG
 
@@ -1039,5 +1042,4 @@
 #endif
 
 #endif /*Py_PYCONFIG_H*/
-
 
