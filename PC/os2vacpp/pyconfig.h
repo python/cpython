@@ -80,7 +80,6 @@
 /* #define SIZEOF_LONG_LONG   8 */ /* Count of Bytes in a (long long)       */
 
 /* unicode definines */
-#define Py_USING_UNICODE
 #define PY_UNICODE_TYPE    wchar_t
 #define Py_UNICODE_SIZE SIZEOF_SHORT
 

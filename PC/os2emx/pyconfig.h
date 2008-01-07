@@ -58,7 +58,6 @@
 #define WITH_DOC_STRINGS 1
 
 /* Unicode related */
-#define Py_USING_UNICODE 1
 #define PY_UNICODE_TYPE	wchar_t
 #define Py_UNICODE_SIZE SIZEOF_SHORT
 

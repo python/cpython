@@ -821,9 +821,6 @@
 /* Define as the size of the unicode type. */
 #undef Py_UNICODE_SIZE
 
-/* Define if you want to have a Unicode type. */
-#undef Py_USING_UNICODE
-
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 

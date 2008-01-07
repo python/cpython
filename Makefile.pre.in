@@ -171,7 +171,6 @@ DYNLOADFILE=	@DYNLOADFILE@
 MACHDEP_OBJS=	@MACHDEP_OBJS@
 LIBOBJDIR=	Python/
 LIBOBJS=	@LIBOBJS@
-UNICODE_OBJS=   @UNICODE_OBJS@
 
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
@@ -320,8 +319,9 @@ OBJECT_OBJS=	\
 		Objects/structseq.o \
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
-		Objects/weakrefobject.o \
-		$(UNICODE_OBJS)
+		Objects/unicodeobject.o \
+		Objects/unicodectype.o \
+		Objects/weakrefobject.o
 
 
 ##########################################################################

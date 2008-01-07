@@ -218,10 +218,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			assert(tok->cur - tok->buf < INT_MAX);
 			err_ret->offset = (int)(tok->cur - tok->buf);
 			len = tok->inp - tok->buf;
-#ifdef Py_USING_UNICODE
 			text = PyTokenizer_RestoreEncoding(tok, len, &err_ret->offset);
-
-#endif
 			if (text == NULL) {
 				text = (char *) PyObject_MALLOC(len + 1);
 				if (text != NULL) {

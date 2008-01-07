@@ -3003,72 +3003,55 @@ then
   ac_cv_wchar_t_signed=yes)])
   AC_MSG_RESULT($ac_cv_wchar_t_signed)
 fi
-  
-AC_MSG_CHECKING(what type to use for unicode)
-dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-AC_ARG_ENABLE(unicode, 
-              AC_HELP_STRING(--enable-unicode@<:@=ucs@<:@24@:>@@:>@, Enable Unicode strings (default is yes)),
-              [],
-              [enable_unicode=yes])
 
-if test $enable_unicode = yes
-then
-  # Without any arguments, Py_UNICODE defaults to two-byte mode
-  case "$have_ucs4_tcl" in
-  yes) enable_unicode="ucs4"
-       ;;
-  *)   enable_unicode="ucs2"
-       ;;
-  esac
+AC_MSG_CHECKING(what type to use for str)
+AC_ARG_WITH(wide-unicode, 
+            AC_HELP_STRING(--with-wide-unicode, Use 4-byte Unicode characters (default is 2 bytes)),
+[
+if test "$withval" != no
+then unicode_size="4"
+else unicode_size="2"
 fi
+],
+[
+case "$have_ucs4_tcl" in
+  yes) unicode_size="4" ;;
+  *)   unicode_size="2" ;;
+esac
+])
 
 AH_TEMPLATE(Py_UNICODE_SIZE,
   [Define as the size of the unicode type.])
-case "$enable_unicode" in
-ucs2) unicode_size="2"
-      AC_DEFINE(Py_UNICODE_SIZE,2)
-      ;;
-ucs4) unicode_size="4"
-      AC_DEFINE(Py_UNICODE_SIZE,4)
-      ;;
+case "$unicode_size" in
+  4) AC_DEFINE(Py_UNICODE_SIZE, 4) ;;
+  *) AC_DEFINE(Py_UNICODE_SIZE, 2) ;;
 esac
 
 AH_TEMPLATE(PY_UNICODE_TYPE,
   [Define as the integral type used for Unicode representation.])
 
-AC_SUBST(UNICODE_OBJS)
-if test "$enable_unicode" = "no"
-then
-  UNICODE_OBJS=""
-  AC_MSG_RESULT(not used)
-else
-  UNICODE_OBJS="Objects/unicodeobject.o Objects/unicodectype.o"
-  AC_DEFINE(Py_USING_UNICODE, 1,
-  [Define if you want to have a Unicode type.])
-
-  # wchar_t is only usable if it maps to an unsigned type
-  if test "$unicode_size" = "$ac_cv_sizeof_wchar_t" \
+# wchar_t is only usable if it maps to an unsigned type
+if test "$unicode_size" = "$ac_cv_sizeof_wchar_t" \
           -a "$ac_cv_wchar_t_signed" = "no"
-  then
-    PY_UNICODE_TYPE="wchar_t"
-    AC_DEFINE(HAVE_USABLE_WCHAR_T, 1,
-    [Define if you have a useable wchar_t type defined in wchar.h; useable
-     means wchar_t must be an unsigned type with at least 16 bits. (see
-     Include/unicodeobject.h).])
-    AC_DEFINE(PY_UNICODE_TYPE,wchar_t)
-  elif test "$ac_cv_sizeof_short" = "$unicode_size"
-  then
-       PY_UNICODE_TYPE="unsigned short"
-       AC_DEFINE(PY_UNICODE_TYPE,unsigned short)
-  elif test "$ac_cv_sizeof_long" = "$unicode_size"
-  then
-       PY_UNICODE_TYPE="unsigned long"
-       AC_DEFINE(PY_UNICODE_TYPE,unsigned long)
-  else
-       PY_UNICODE_TYPE="no type found"
-  fi
-  AC_MSG_RESULT($PY_UNICODE_TYPE)
+then
+  PY_UNICODE_TYPE="wchar_t"
+  AC_DEFINE(HAVE_USABLE_WCHAR_T, 1,
+  [Define if you have a useable wchar_t type defined in wchar.h; useable
+   means wchar_t must be an unsigned type with at least 16 bits. (see
+   Include/unicodeobject.h).])
+  AC_DEFINE(PY_UNICODE_TYPE,wchar_t)
+elif test "$ac_cv_sizeof_short" = "$unicode_size"
+then
+     PY_UNICODE_TYPE="unsigned short"
+     AC_DEFINE(PY_UNICODE_TYPE,unsigned short)
+elif test "$ac_cv_sizeof_long" = "$unicode_size"
+then
+     PY_UNICODE_TYPE="unsigned long"
+     AC_DEFINE(PY_UNICODE_TYPE,unsigned long)
+else
+     PY_UNICODE_TYPE="no type found"
 fi
+AC_MSG_RESULT($PY_UNICODE_TYPE)
 
 # check for endianness
 AC_C_BIGENDIAN

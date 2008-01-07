@@ -751,7 +751,7 @@ Encodings and Unicode
 
 Unicode strings are stored internally as sequences of codepoints (to be precise
 as :ctype:`Py_UNICODE` arrays). Depending on the way Python is compiled (either
-via :option:`--enable-unicode=ucs2` or :option:`--enable-unicode=ucs4`, with the
+via :option:`--without-wide-unicode` or :option:`--with-wide-unicode`, with the
 former being the default) :ctype:`Py_UNICODE` is either a 16-bit or 32-bit data
 type. Once a Unicode object is used outside of CPU and memory, CPU endianness
 and how these arrays are stored as bytes become an issue.  Transforming a
