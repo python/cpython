@@ -562,7 +562,7 @@ support slicing, concatenation or repetition, and using ``in``, ``not in``,
 Most sequence types support the following operations.  The ``in`` and ``not in``
 operations have the same priorities as the comparison operations.  The ``+`` and
 ``*`` operations have the same priority as the corresponding numeric operations.
-[#]_
+[#]_ Additional methods are provided for :ref:`typesseq-mutable`.
 
 This table lists the sequence operations sorted in ascending priority
 (operations in the same box have the same priority).  In the table, *s* and *t*
