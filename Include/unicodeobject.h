@@ -58,6 +58,9 @@ Copyright (c) Corporation for National Research Initiatives.
 
 /* --- Internal Unicode Format -------------------------------------------- */
 
+/* Python 3.x requires unicode */
+#define Py_USING_UNICODE 
+
 /* FIXME: MvL's new implementation assumes that Py_UNICODE_SIZE is
    properly set, but the default rules below doesn't set it.  I'll
    sort this out some other day -- fredrik@pythonware.com */
