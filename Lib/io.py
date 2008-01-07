@@ -1182,6 +1182,7 @@ class TextIOWrapper(TextIOBase):
         self._readnl = newline
         self._writetranslate = newline != ''
         self._writenl = newline or os.linesep
+        self._encoder = None
         self._decoder = None
         self._pending = ""
         self._snapshot = None
@@ -1240,8 +1241,9 @@ class TextIOWrapper(TextIOBase):
         haslf = (self._writetranslate or self._line_buffering) and "\n" in s
         if haslf and self._writetranslate and self._writenl != "\n":
             s = s.replace("\n", self._writenl)
+        encoder = self._encoder or self._get_encoder()
         # XXX What if we were just reading?
-        b = s.encode(self._encoding, self._errors)
+        b = encoder.encode(s)
         self.buffer.write(b)
         if self._line_buffering and (haslf or "\r" in s):
             self.flush()
@@ -1250,11 +1252,13 @@ class TextIOWrapper(TextIOBase):
             self._decoder.reset()
         return length
 
+    def _get_encoder(self):
+        make_encoder = codecs.getincrementalencoder(self._encoding)
+        self._encoder = make_encoder(self._errors)
+        return self._encoder
+
     def _get_decoder(self):
         make_decoder = codecs.getincrementaldecoder(self._encoding)
-        if make_decoder is None:
-            raise IOError("Can't find an incremental decoder for encoding %s" %
-                          self._encoding)
         decoder = make_decoder(self._errors)
         if self._readuniversal:
             decoder = IncrementalNewlineDecoder(decoder, self._readtranslate)
