@@ -335,6 +335,8 @@ Miscellaneous options
 Environment variables
 ---------------------
 
+These environment variables influence Python's behavior.
+
 .. envvar:: PYTHONHOME
    
    Change the location of the standard Python libraries.  By default, the
@@ -350,7 +352,7 @@ Environment variables
 
 .. envvar:: PYTHONPATH
 
-   Augments the default search path for module files.  The format is the same as
+   Augment the default search path for module files.  The format is the same as
    the shell's :envvar:`PATH`: one or more directory pathnames separated by
    colons.  Non-existent directories are silently ignored.
    
@@ -400,6 +402,9 @@ Environment variables
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-i` option.
 
+   This variable can also be modified by Python code using :data:`os.environ`
+   to force inspect mode on program termination.
+
 
 .. envvar:: PYTHONUNBUFFERED
    
@@ -422,7 +427,40 @@ Environment variables
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
 
-   If given, Python won't try to write ``.pyc`` or ``.pyo`` files on the
+   If this is set, Python won't try to write ``.pyc`` or ``.pyo`` files on the
    import of source modules.
 
    .. versionadded:: 2.6
+
+
+.. envvar:: PYTHONEXECUTABLE
+
+   If this environment variable is set, ``sys.argv[0]`` will be set to its
+   value instead of the value got through the C runtime.  Only works on
+   MacOS X.
+
+
+Debug-mode variables
+^^^^^^^^^^^^^^^^^^^^
+
+Setting these variables only has an effect in a debug build of Python, that is,
+if Python was configured with the :opt:`--with-pydebug` build option.
+
+.. envvar:: PYTHONTHREADDEBUG
+
+   If set, Python will print debug threading debug info.
+
+   .. versionchanged:: 2.6
+      Previously, this variable was called ``THREADDEBUG``.
+
+.. envvar:: PYTHONDUMPREFS
+
+   If set, Python will dump objects and reference counts still alive after
+   shutting down the interpreter.
+
+
+.. envvar:: PYTHONMALLOCSTATS
+
+   If set, Python will print memory allocation statistics every time a new
+   object arena is created, and on shutdown.
+

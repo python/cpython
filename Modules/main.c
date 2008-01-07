@@ -62,7 +62,7 @@ Options and arguments (and corresponding environment variables):\n\
 -B     : don't write .py[co] files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : debug output from parser; also PYTHONDEBUG=x\n\
--E     : ignore environment variables (such as PYTHONPATH)\n\
+-E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
 -i     : inspect interactively after running script; forces a prompt even\n\
 ";

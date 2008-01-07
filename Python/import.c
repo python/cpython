@@ -1630,7 +1630,7 @@ case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, char *name)
 	FILEFINDBUF3 ffbuf;
 	APIRET rc;
 
-	if (getenv("PYTHONCASEOK") != NULL)
+	if (Py_GETENV("PYTHONCASEOK") != NULL)
 		return 1;
 
 	rc = DosFindFirst(buf,
