@@ -1246,6 +1246,7 @@ ast_for_atom(struct compiling *c, const node *n)
     case STRING: {
         PyObject *str = parsestrplus(c, n);
         if (!str) {
+#ifdef Py_USING_UNICODE
             if (PyErr_ExceptionMatches(PyExc_UnicodeError)){
                 PyObject *type, *value, *tback, *errstr;
                 PyErr_Fetch(&type, &value, &tback);
@@ -1263,6 +1264,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 Py_DECREF(value);
                 Py_XDECREF(tback);
             }
+#endif
             return NULL;
         }
         PyArena_AddPyObject(c->c_arena, str);
