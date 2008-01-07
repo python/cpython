@@ -1533,7 +1533,6 @@ PyTokenizer_Get(struct tok_state *tok, char **p_start, char **p_end)
 	return result;
 }
 
-#ifdef Py_USING_UNICODE
 /* This function is only called from parsetok. However, it cannot live
    there, as it must be empty for PGEN, and we can check for PGEN only
    in this file. */
@@ -1545,6 +1544,7 @@ PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int* offset)
 	return NULL;
 }
 #else
+#ifdef Py_USING_UNICODE
 static PyObject *
 dec_utf8(const char *enc, const char *text, size_t len) {
 	PyObject *ret = NULL;	
@@ -1592,10 +1592,9 @@ PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int *offset)
 	return text;
 
 }
+#endif /* defined(Py_USING_UNICODE) */
 #endif
 
-#endif /* defined(Py_USING_UNICODE) */
-			   
 
 #ifdef Py_DEBUG
 
