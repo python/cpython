@@ -348,6 +348,9 @@ Core and builtins
 Library
 -------
 
+- Patch #467924: add ZipFile.extract() and ZipFile.extractall() in the
+  zipfile module.
+
 - Issue #1646: Make socket support the TIPC protocol.
 
 - Bug #1742: return os.curdir from os.path.relpath() if both arguments are
