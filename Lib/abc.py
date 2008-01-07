@@ -188,7 +188,7 @@ class ABCMeta(type):
                 cls._abc_negative_cache.add(subclass)
             return ok
         # Check if it's a direct subclass
-        if cls in subclass.__mro__:
+        if cls in getattr(subclass, '__mro__', ()):
             cls._abc_cache.add(subclass)
             return True
         # Check if it's a subclass of a registered class (recursive)
