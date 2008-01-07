@@ -494,25 +494,18 @@ PyObject *PyString_DecodeEscape(const char *s,
 /* -------------------------------------------------------------------- */
 /* object api */
 
-static Py_ssize_t
-string_getsize(register PyObject *op)
-{
-	char *s;
-	Py_ssize_t len;
-	if (PyString_AsStringAndSize(op, &s, &len))
-		return -1;
-	return len;
-}
-
 Py_ssize_t
 PyString_Size(register PyObject *op)
 {
-	if (!PyString_Check(op))
-		return string_getsize(op);
+	if (!PyString_Check(op)) {
+		PyErr_Format(PyExc_TypeError,
+		     "expected bytes, %.200s found", Py_TYPE(op)->tp_name);
+		return -1;
+	}
 	return Py_SIZE(op);
 }
 
-/*const*/ char *
+char *
 PyString_AsString(register PyObject *op)
 {
 	if (!PyString_Check(op)) {
@@ -520,7 +513,7 @@ PyString_AsString(register PyObject *op)
 		     "expected bytes, %.200s found", Py_TYPE(op)->tp_name);
 		return NULL;
 	}
-	return ((PyStringObject *)op) -> ob_sval;
+	return ((PyStringObject *)op)->ob_sval;
 }
 
 int
