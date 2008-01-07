@@ -693,7 +693,8 @@ functions.
 
    Does basic configuration for the logging system by creating a
    :class:`StreamHandler` with a default :class:`Formatter` and adding it to the
-   root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
+   root logger. The function does nothing if any handlers have been defined for
+   the root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
    :func:`error` and :func:`critical` will call :func:`basicConfig` automatically
    if no handlers are defined for the root logger.
 
@@ -2414,24 +2415,24 @@ Here is the auxiliary module::
 
 The output looks like this::
 
-    2005-03-23 23:47:11,663 - spam_application - INFO - 
+    2005-03-23 23:47:11,663 - spam_application - INFO -
        creating an instance of auxiliary_module.Auxiliary
-    2005-03-23 23:47:11,665 - spam_application.auxiliary.Auxiliary - INFO - 
+    2005-03-23 23:47:11,665 - spam_application.auxiliary.Auxiliary - INFO -
        creating an instance of Auxiliary
-    2005-03-23 23:47:11,665 - spam_application - INFO - 
+    2005-03-23 23:47:11,665 - spam_application - INFO -
        created an instance of auxiliary_module.Auxiliary
-    2005-03-23 23:47:11,668 - spam_application - INFO - 
+    2005-03-23 23:47:11,668 - spam_application - INFO -
        calling auxiliary_module.Auxiliary.do_something
-    2005-03-23 23:47:11,668 - spam_application.auxiliary.Auxiliary - INFO - 
+    2005-03-23 23:47:11,668 - spam_application.auxiliary.Auxiliary - INFO -
        doing something
-    2005-03-23 23:47:11,669 - spam_application.auxiliary.Auxiliary - INFO - 
+    2005-03-23 23:47:11,669 - spam_application.auxiliary.Auxiliary - INFO -
        done doing something
-    2005-03-23 23:47:11,670 - spam_application - INFO - 
+    2005-03-23 23:47:11,670 - spam_application - INFO -
        finished auxiliary_module.Auxiliary.do_something
-    2005-03-23 23:47:11,671 - spam_application - INFO - 
+    2005-03-23 23:47:11,671 - spam_application - INFO -
        calling auxiliary_module.some_function()
-    2005-03-23 23:47:11,672 - spam_application.auxiliary - INFO - 
+    2005-03-23 23:47:11,672 - spam_application.auxiliary - INFO -
        received a call to "some_function"
-    2005-03-23 23:47:11,673 - spam_application - INFO - 
+    2005-03-23 23:47:11,673 - spam_application - INFO -
        done with auxiliary_module.some_function()
 
