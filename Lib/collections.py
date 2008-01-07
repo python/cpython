@@ -125,6 +125,14 @@ if __name__ == '__main__':
 
     print Point(3, 4),'\n', Point(2, 5), '\n', Point(9./7, 6)
 
+    class Point(namedtuple('Point', 'x y')):
+        'Point class with optimized _make() and _replace() without error-checking'
+        _make = classmethod(tuple.__new__)
+        def _replace(self, _map=map, **kwds):
+            return self._make(_map(kwds.pop, ('x', 'y'), self))
+
+    print Point(11, 22)._replace(x=100)
+
     import doctest
     TestResults = namedtuple('TestResults', 'failed attempted')
     print TestResults(*doctest.testmod())

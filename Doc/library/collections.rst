@@ -527,6 +527,14 @@ a fixed-width print format:
     Point(x=2.000, y=5.000, hypot=5.385) 
     Point(x=1.286, y=6.000, hypot=6.136)
 
+Another use for subclassing is to replace performance critcal methods with
+faster versions that bypass error-checking and localize variable access:
+
+    >>> class Point(namedtuple('Point', 'x y')):
+        _make = classmethod(tuple.__new__)
+        def _replace(self, _map=map, **kwds):
+            return self._make(_map(kwds.pop, ('x', 'y'), self))
+
 Default values can be implemented by starting with a prototype instance
 and customizing it with :meth:`_replace`:
 
