@@ -531,7 +531,7 @@ faster versions that bypass error-checking and localize variable access::
     >>> class Point(namedtuple('Point', 'x y')):
         _make = classmethod(tuple.__new__)
         def _replace(self, _map=map, **kwds):
-            return self._make(_map(kwds.pop, ('x', 'y'), self))
+            return self._make(_map(kwds.get, ('x', 'y'), self))
 
 Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance::
