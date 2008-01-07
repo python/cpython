@@ -533,7 +533,7 @@ faster versions that bypass error-checking and localize variable access::
         def _replace(self, _map=map, **kwds):
             return self._make(_map(kwds.pop, ('x', 'y'), self))
 
-Default values can be implemented by using :meth:`_replace`:: to
+Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance::
 
     >>> Account = namedtuple('Account', 'owner balance transaction_count')
