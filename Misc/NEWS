@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1668: renamed THREADDEBUG envvar to PYTHONTHREADDEBUG.
+
 - Patch #602345: Add -B command line option, PYTHONDONTWRITEBYTECODE envvar
   and sys.dont_write_bytecode attribute. All these can be set to forbid Python
   to attempt to write compiled bytecode files.
