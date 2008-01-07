@@ -65,7 +65,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 
 	/* A subsequent pass will detect future imports that don't
 	   appear at the beginning of the file.  There's one case,
-	   however, that is easier to handl here: A series of imports
+	   however, that is easier to handle here: A series of imports
 	   joined by semi-colons, where the first import is a future
 	   statement but some subsequent import has the future form
 	   but is preceded by a regular import.
