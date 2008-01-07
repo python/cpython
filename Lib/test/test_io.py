@@ -765,6 +765,24 @@ class TextIOWrapperTest(unittest.TestCase):
         f.readline()
         f.tell()
 
+    def testEncodedWrites(self):
+        data = "1234567890"
+        tests = ("utf-16",
+                 "utf-16-le",
+                 "utf-16-be",
+                 "utf-32",
+                 "utf-32-le",
+                 "utf-32-be")
+        for encoding in tests:
+            buf = io.BytesIO()
+            f = io.TextIOWrapper(buf, encoding=encoding)
+            # Check if the BOM is written only once (see issue1753).
+            f.write(data)
+            f.write(data)
+            f.seek(0)
+            self.assertEquals(f.read(), data * 2)
+            self.assertEquals(buf.getvalue(), (data * 2).encode(encoding))
+
     def timingTest(self):
         timer = time.time
         enc = "utf8"
