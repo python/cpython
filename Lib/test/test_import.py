@@ -7,6 +7,7 @@ import shutil
 import sys
 import py_compile
 import warnings
+import imp
 from test.test_support import unlink, TESTFN, unload
 
 
@@ -159,6 +160,45 @@ class ImportTest(unittest.TestCase):
             # somewhere in sys.path...
             warnings.simplefilter('error', ImportWarning)
             self.assertRaises(ImportWarning, __import__, "site-packages")
+
+    def test_failing_reload(self):
+        # A failing reload should leave the module object in sys.modules.
+        source = TESTFN + ".py"
+        with open(source, "w") as f:
+            f.write("a = 1\nb=2\n")
+
+        sys.path.insert(0, os.curdir)
+        try:
+            mod = __import__(TESTFN)
+            self.assert_(TESTFN in sys.modules, "expected module in sys.modules")
+            self.assertEquals(mod.a, 1, "module has wrong attribute values")
+            self.assertEquals(mod.b, 2, "module has wrong attribute values")
+
+            # On WinXP, just replacing the .py file wasn't enough to
+            # convince reload() to reparse it.  Maybe the timestamp didn't
+            # move enough.  We force it to get reparsed by removing the
+            # compiled file too.
+            remove_files(TESTFN)
+
+            # Now damage the module.
+            with open(source, "w") as f:
+                f.write("a = 10\nb=20//0\n")
+
+            self.assertRaises(ZeroDivisionError, imp.reload, mod)
+            # But we still expect the module to be in sys.modules.
+            mod = sys.modules.get(TESTFN)
+            self.failIf(mod is None, "expected module to still be in sys.modules")
+
+            # We should have replaced a w/ 10, but the old b value should
+            # stick.
+            self.assertEquals(mod.a, 10, "module has wrong attribute values")
+            self.assertEquals(mod.b, 2, "module has wrong attribute values")
+
+        finally:
+            sys.path.pop(0)
+            remove_files(TESTFN)
+            if TESTFN in sys.modules:
+                del sys.modules[TESTFN]
 
 class PathsTests(unittest.TestCase):
     SAMPLES = ('test', 'test\u00e4\u00f6\u00fc\u00df', 'test\u00e9\u00e8',
