@@ -3220,8 +3220,10 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 		type->tp_flags |= Py_TPFLAGS_LONG_SUBCLASS;
 	else if (PyType_IsSubtype(base, &PyString_Type))
 		type->tp_flags |= Py_TPFLAGS_STRING_SUBCLASS;
+#ifdef Py_USING_UNICODE
 	else if (PyType_IsSubtype(base, &PyUnicode_Type))
 		type->tp_flags |= Py_TPFLAGS_UNICODE_SUBCLASS;
+#endif
 	else if (PyType_IsSubtype(base, &PyTuple_Type))
 		type->tp_flags |= Py_TPFLAGS_TUPLE_SUBCLASS;
 	else if (PyType_IsSubtype(base, &PyList_Type))
