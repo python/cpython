@@ -141,43 +141,25 @@ evaluated at all when ``x < y`` is found to be false).
 
 This table summarizes the comparison operations:
 
-+------------+-------------------------+-------+
-| Operation  | Meaning                 | Notes |
-+============+=========================+=======+
-| ``<``      | strictly less than      |       |
-+------------+-------------------------+-------+
-| ``<=``     | less than or equal      |       |
-+------------+-------------------------+-------+
-| ``>``      | strictly greater than   |       |
-+------------+-------------------------+-------+
-| ``>=``     | greater than or equal   |       |
-+------------+-------------------------+-------+
-| ``==``     | equal                   |       |
-+------------+-------------------------+-------+
-| ``!=``     | not equal               |       |
-+------------+-------------------------+-------+
-| ``is``     | object identity         |       |
-+------------+-------------------------+-------+
-| ``is not`` | negated object identity |       |
-+------------+-------------------------+-------+
-
-.. index::
-   pair: operator; comparison
-   operator: ==
-   operator: <
-   operator: <=
-   operator: >
-   operator: >=
-   operator: !=
-   operator: is
-   operator: is not
-
-Notes:
-
-(1)
-    ``!=`` can also be written ``<>``, but this is an obsolete usage
-    kept for backwards compatibility only. New code should always use
-    ``!=``.
++------------+-------------------------+
+| Operation  | Meaning                 |
++============+=========================+
+| ``<``      | strictly less than      |
++------------+-------------------------+
+| ``<=``     | less than or equal      |
++------------+-------------------------+
+| ``>``      | strictly greater than   |
++------------+-------------------------+
+| ``>=``     | greater than or equal   |
++------------+-------------------------+
+| ``==``     | equal                   |
++------------+-------------------------+
+| ``!=``     | not equal               |
++------------+-------------------------+
+| ``is``     | object identity         |
++------------+-------------------------+
+| ``is not`` | negated object identity |
++------------+-------------------------+
 
 .. index::
    pair: object; numeric
