@@ -1041,6 +1041,9 @@ _PySys_Init(void)
 	v = Py_BuildValue("(UUU)", "CPython", branch, svn_revision);
 	PyDict_SetItemString(sysdict, "subversion", v);
 	Py_XDECREF(v);
+        PyDict_SetItemString(sysdict, "dont_write_bytecode",
+                             v = PyBool_FromLong(Py_DontWriteBytecodeFlag));
+        Py_XDECREF(v);
 	/*
 	 * These release level checks are mutually exclusive and cover
 	 * the field, so don't get too fancy with the pre-processor!

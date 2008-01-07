@@ -173,6 +173,27 @@ ZipFile Objects
       operate independently of the  ZipFile.
 
 
+.. method:: ZipFile.extract(member[, path[, pwd]])
+
+   Extract a member from the archive to the current working directory, using its
+   full name.  Its file information is extracted as accurately as possible.
+   *path* specifies a different directory to extract to.   *member* can be a
+   filename or a :class:`ZipInfo` object.  *pwd* is the password used for
+   encrypted files.
+
+   .. versionadded:: 2.6
+
+
+.. method:: ZipFile.extractall([path[, members[, pwd]]])
+
+   Extract all members from the archive to the current working directory.  *path* 
+   specifies a different directory to extract to.  *members* is optional and must
+   be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
+   used for encrypted files.
+
+   .. versionadded:: 2.6
+
+
 .. method:: ZipFile.printdir()
 
    Print a table of contents for the archive to ``sys.stdout``.
@@ -236,6 +257,13 @@ ZipFile Objects
    opened with mode ``'w'`` or ``'a'`` -- calling  :meth:`writestr` on a ZipFile
    created with mode ``'r'``  will raise a :exc:`RuntimeError`.  Calling
    :meth:`writestr` on a closed ZipFile will raise a :exc:`RuntimeError`.
+
+   .. note::
+
+      When passing a :class:`ZipInfo` instance as the *zinfo_or_acrname* parameter, 
+      the compression method used will be that specified in the *compress_type* 
+      member of the given :class:`ZipInfo` instance.  By default, the 
+      :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
 
 The following data attribute is also available:
 

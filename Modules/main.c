@@ -44,7 +44,7 @@ static char **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS "bc:dEhim:OStuvVW:xX?"
+#define BASE_OPTS "bBc:dEhim:OStuvVW:xX?"
 
 #define PROGRAM_OPTS BASE_OPTS
 
@@ -57,9 +57,10 @@ static char *usage_1 = "\
 Options and arguments (and corresponding environment variables):\n\
 -b     : issue warnings about str(bytes_instance), str(buffer_instance)\n\
          and comparing bytes/buffer with str. (-bb: issue errors)\n\
+-B     : don't write .py[co] files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : debug output from parser; also PYTHONDEBUG=x\n\
--E     : ignore environment variables (such as PYTHONPATH)\n\
+-E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
 ";
 static char *usage_2 = "\
@@ -88,6 +89,8 @@ Other environment variables:\n\
 PYTHONSTARTUP: file executed on interactive startup (no default)\n\
 PYTHONPATH   : '%c'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
+";
+static char *usage_5 = "\
 PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n\
                The default module search path uses %s.\n\
 PYTHONCASEOK : ignore case in 'import' statements (Windows).\n\
@@ -106,7 +109,8 @@ usage(int exitcode, char* program)
 		fprintf(f, usage_1);
 		fprintf(f, usage_2);
 		fprintf(f, usage_3);
-		fprintf(f, usage_4, DELIM, DELIM, PYTHONHOMEHELP);
+		fprintf(f, usage_4, DELIM);
+		fprintf(f, usage_5, DELIM, PYTHONHOMEHELP);
 	}
 #if defined(__VMS)
 	if (exitcode == 0) {
@@ -311,6 +315,10 @@ Py_Main(int argc, char **argv)
 
 		case 'O':
 			Py_OptimizeFlag++;
+			break;
+
+		case 'B':
+			Py_DontWriteBytecodeFlag++;
 			break;
 
 		case 'S':

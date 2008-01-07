@@ -438,6 +438,17 @@ always available.
    implement a dynamic prompt.
 
 
+.. data:: dont_write_bytecode
+
+   If this is true, Python won't try to write ``.pyc`` or ``.pyo`` files on the
+   import of source modules.  This value is initially set to ``True`` or ``False``
+   depending on the ``-B`` command line option and the ``PYTHONDONTWRITEBYTECODE``
+   environment variable, but you can set it yourself to control bytecode file
+   generation.
+
+   .. versionadded:: 2.6
+
+
 .. function:: setcheckinterval(interval)
 
    Set the interpreter's "check interval".  This integer value determines how often
