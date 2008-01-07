@@ -470,7 +470,7 @@ One method needs to be defined for container objects to provide iteration
 support:
 
 
-.. method:: container.__iter__()
+.. method:: object.__iter__()
 
    Return an iterator object.  The object is required to support the iterator
    protocol described below.  If a container supports different types of
