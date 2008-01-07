@@ -72,6 +72,7 @@ int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 int Py_InspectFlag; /* Needed to determine whether to exit at SystemError */
 int Py_NoSiteFlag; /* Suppress 'import site' */
+int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.py[co]) */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_UnicodeFlag = 0; /* Needed by compile.c */
@@ -172,6 +173,8 @@ Py_InitializeEx(int install_sigs)
 		Py_VerboseFlag = add_flag(Py_VerboseFlag, p);
 	if ((p = Py_GETENV("PYTHONOPTIMIZE")) && *p != '\0')
 		Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
+	if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
+		Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
 
 	interp = PyInterpreterState_New();
 	if (interp == NULL)
