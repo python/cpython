@@ -1177,7 +1177,8 @@ Basic customization
    :meth:`__init__` method will not be invoked.
 
    :meth:`__new__` is intended mainly to allow subclasses of immutable types (like
-   int, str, or tuple) to customize instance creation.
+   int, str, or tuple) to customize instance creation.  It is also commonly
+   overridden in custom metaclasses in order to customize class creation.
 
 
 .. method:: object.__init__(self[, ...])
@@ -1651,7 +1652,7 @@ definition is read into a separate namespace and the value of class name is
 bound to the result of ``type(name, bases, dict)``.
 
 When the class definition is read, if *__metaclass__* is defined then the
-callable assigned to it will be called instead of :func:`type`. The allows
+callable assigned to it will be called instead of :func:`type`. This allows
 classes or functions to be written which monitor or alter the class creation
 process:
 
@@ -1659,6 +1660,20 @@ process:
 
 * Returning an instance of another class -- essentially performing the role of a
   factory function.
+
+These steps will have to be performed in the metaclass's :meth:`__new__` method
+-- :meth:`type.__new__` can then be called from this method to create a class
+with different properties.  This example adds a new element to the class
+dictionary before creating the class::
+
+  class metacls(type):
+      def __new__(mcs, name, bases, dict):
+          dict['foo'] = 'metacls was here'
+          return type.__new__(mcs, name, bases, dict)
+
+You can of course also override other class methods (or add new methods); for
+example defining a custom :meth:`__call__` method in the metaclass allows custom
+behavior when the class is called, e.g. not always creating a new instance.
 
 
 .. data:: __metaclass__
