@@ -7,7 +7,7 @@ Python News
 What's New in Python 3.0a3?
 ===========================
 
-*Release data: XX-XXX-2008*
+*Release date: XX-XXX-2008*
 
 Core and Builtins
 -----------------
@@ -46,6 +46,7 @@ Extension Modules
 
 - Issue #1762972: Readded the reload() function as imp.reload()
 
+
 Library
 -------
 
@@ -54,6 +55,13 @@ Library
 - Issue #1585: IDLE uses non-existent xrange() function.
 
 - Issue #1578: Problems in win_getpass.
+
+
+Build
+-----
+
+- Renamed --enable-unicode configure flag to --with-wide-unicode, since
+  Unicode strings can't be disabled anymore.
 
 
 C API
@@ -143,11 +151,11 @@ Library
 - Removed all types from the 'types' module that are easily accessable through
   builtins.
 
+
 What's New in Python 3.0a1?
 ==========================
 
 *Release date: 31-Aug-2007*
-
 
 Core and Builtins
 -----------------
