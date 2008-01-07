@@ -145,6 +145,14 @@ Generic options
 Miscellaneous options
 ~~~~~~~~~~~~~~~~~~~~~
 
+.. cmdoption:: -B
+
+   If given, Python won't try to write ``.pyc`` or ``.pyo`` files on the
+   import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
+
+   .. versionadded:: 2.6
+
+
 .. cmdoption:: -d
 
    Turn on parser debugging output (for wizards only, depending on compilation
@@ -411,3 +419,10 @@ Environment variables
    If this is set, Python ignores case in :keyword:`import` statements.  This
    only works on Windows.
 
+
+.. envvar:: PYTHONDONTWRITEBYTECODE
+
+   If given, Python won't try to write ``.pyc`` or ``.pyo`` files on the
+   import of source modules.
+
+   .. versionadded:: 2.6
