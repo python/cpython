@@ -511,7 +511,7 @@ When casting a dictionary to a named tuple, use the double-star-operator [#]_::
 
 Since a named tuple is a regular Python class, it is easy to add or change
 functionality with a subclass.  Here is how to add a calculated field and
-a custom fixed-width print format:
+a fixed-width print format:
 
 ::
 
@@ -522,10 +522,10 @@ a custom fixed-width print format:
         def __repr__(self):
             return 'Point(x=%.3f, y=%.3f, hypot=%.3f)' % (self.x, self.y, self.hypot)
 
-    >>> print Point(3, 4)
-    Point(x=3.000, y=4.000, hypot=5.000)
-    >>> Point(2, 5)
-    Point(x=2.000, y=5.000, hypot=5.385)
+    >>> print Point(3, 4),'\n', Point(2, 5), '\n', Point(9./7, 6)
+    Point(x=3.000, y=4.000, hypot=5.000) 
+    Point(x=2.000, y=5.000, hypot=5.385) 
+    Point(x=1.286, y=6.000, hypot=6.136)
 
 Default values can be implemented by starting with a prototype instance
 and customizing it with :meth:`_replace`:

@@ -123,8 +123,7 @@ if __name__ == '__main__':
         def __repr__(self):
             return 'Point(x=%.3f, y=%.3f, hypot=%.3f)' % (self.x, self.y, self.hypot)
 
-    print Point(3, 4)
-    print Point(2, 5)
+    print Point(3, 4),'\n', Point(2, 5), '\n', Point(9./7, 6)
 
     import doctest
     TestResults = namedtuple('TestResults', 'failed attempted')
