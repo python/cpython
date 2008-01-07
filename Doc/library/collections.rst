@@ -349,7 +349,7 @@ Setting the :attr:`default_factory` to :class:`set` makes the
 .. _named-tuple-factory:
 
 :func:`namedtuple` Factory Function for Tuples with Named Fields
------------------------------------------------------------------
+----------------------------------------------------------------
 
 Named tuples assign meaning to each position in a tuple and allow for more readable,
 self-documenting code.  They can be used wherever regular tuples are used, and
@@ -448,7 +448,7 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
 In addition to the methods inherited from tuples, named tuples support
 three additional methods and one attribute.
 
-.. method:: namedtuple._make(iterable)
+.. method:: somenamedtuple._make(iterable)
 
    Class method that makes a new instance from an existing sequence or iterable.
 
@@ -458,7 +458,7 @@ three additional methods and one attribute.
       >>> Point._make(t)
       Point(x=11, y=22)
 
-.. method:: namedtuple._asdict()
+.. method:: somenamedtuple._asdict()
 
    Return a new dict which maps field names to their corresponding values:
 
@@ -467,7 +467,7 @@ three additional methods and one attribute.
       >>> p._asdict()
       {'x': 11, 'y': 22}
       
-.. method:: namedtuple._replace(kwargs)
+.. method:: somenamedtuple._replace(kwargs)
 
    Return a new instance of the named tuple replacing specified fields with new values:
 
@@ -480,7 +480,7 @@ three additional methods and one attribute.
       >>> for partnum, record in inventory.items():
       ...     inventory[partnum] = record._replace(price=newprices[partnum], updated=time.now())
 
-.. attribute:: namedtuple._fields
+.. attribute:: somenamedtuple._fields
 
    Tuple of strings listing the field names.  This is useful for introspection
    and for creating new named tuple types from existing named tuples.
@@ -496,9 +496,7 @@ three additional methods and one attribute.
       Pixel(x=11, y=22, red=128, green=255, blue=0)'
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
-function:
-
-::
+function::
 
     >>> getattr(p, 'x')
     11
@@ -534,9 +532,7 @@ faster versions that bypass error-checking and localize variable access::
             return self._make(_map(kwds.pop, ('x', 'y'), self))
 
 Default values can be implemented by starting with a prototype instance
-and customizing it with :meth:`_replace`:
-
-::
+and customizing it with :meth:`_replace`::
 
     >>> Account = namedtuple('Account', 'owner balance transaction_count')
     >>> model_account = Account('<owner name>', 0.0, 0)
