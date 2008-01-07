@@ -510,15 +510,22 @@ When casting a dictionary to a named tuple, use the double-star-operator [#]_::
    Point(x=11, y=22)
 
 Since a named tuple is a regular Python class, it is easy to add or change
-functionality.  For example, the display format can be changed by overriding
-the :meth:`__repr__` method:
+functionality with a subclass.  Here is how to add a calculated field and
+a custom fixed-width print format:
 
 ::
 
-    >>> Point = namedtuple('Point', 'x y')
-    >>> Point.__repr__ = lambda self: 'Point(%.3f, %.3f)' % self
-    >>> Point(x=11, y=22)
-    Point(11.000, 22.000)
+    >>> class Point(namedtuple('Point', 'x y')):
+        @property
+        def hypot(self):
+            return (self.x ** 2 + self.y ** 2) ** 0.5
+        def __repr__(self):
+            return 'Point(x=%.3f, y=%.3f, hypot=%.3f)' % (self.x, self.y, self.hypot)
+
+    >>> print Point(3, 4)
+    Point(x=3.000, y=4.000, hypot=5.000)
+    >>> Point(2, 5)
+    Point(x=2.000, y=5.000, hypot=5.385)
 
 Default values can be implemented by starting with a prototype instance
 and customizing it with :meth:`_replace`:

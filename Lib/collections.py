@@ -116,8 +116,15 @@ if __name__ == '__main__':
     assert p == loads(dumps(p))
 
     # test and demonstrate ability to override methods
-    Point.__repr__ = lambda self:  'Point(%.3f, %.3f)' % self
-    print p
+    class Point(namedtuple('Point', 'x y')):
+        @property
+        def hypot(self):
+            return (self.x ** 2 + self.y ** 2) ** 0.5
+        def __repr__(self):
+            return 'Point(x=%.3f, y=%.3f, hypot=%.3f)' % (self.x, self.y, self.hypot)
+
+    print Point(3, 4)
+    print Point(2, 5)
 
     import doctest
     TestResults = namedtuple('TestResults', 'failed attempted')
