@@ -389,9 +389,9 @@ This table lists the bit-string operations sorted in ascending priority
 | ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
-| ``x << n`` | *x* shifted left by *n* bits   | (1), (2) |
+| ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
 +------------+--------------------------------+----------+
-| ``x >> n`` | *x* shifted right by *n* bits  | (1), (3) |
+| ``x >> n`` | *x* shifted right by *n* bits  | (1)(3)   |
 +------------+--------------------------------+----------+
 | ``~x``     | the bits of *x* inverted       |          |
 +------------+--------------------------------+----------+
@@ -436,7 +436,7 @@ One method needs to be defined for container objects to provide iteration
 support:
 
 
-.. method:: container.__iter__()
+.. method:: object.__iter__()
 
    Return an iterator object.  The object is required to support the iterator
    protocol described below.  If a container supports different types of
@@ -537,7 +537,7 @@ support slicing, concatenation or repetition, and using ``in``, ``not in``,
 Most sequence types support the following operations.  The ``in`` and ``not in``
 operations have the same priorities as the comparison operations.  The ``+`` and
 ``*`` operations have the same priority as the corresponding numeric operations.
-[#]_
+[#]_ Additional methods are provided for :ref:`typesseq-mutable`.
 
 This table lists the sequence operations sorted in ascending priority
 (operations in the same box have the same priority).  In the table, *s* and *t*
@@ -560,9 +560,9 @@ are sequences of the same type; *n*, *i* and *j* are integers:
 +------------------+--------------------------------+----------+
 | ``s[i]``         | *i*'th item of *s*, origin 0   | \(3)     |
 +------------------+--------------------------------+----------+
-| ``s[i:j]``       | slice of *s* from *i* to *j*   | (3), (4) |
+| ``s[i:j]``       | slice of *s* from *i* to *j*   | (3)(4)   |
 +------------------+--------------------------------+----------+
-| ``s[i:j:k]``     | slice of *s* from *i* to *j*   | (3), (5) |
+| ``s[i:j:k]``     | slice of *s* from *i* to *j*   | (3)(5)   |
 |                  | with step *k*                  |          |
 +------------------+--------------------------------+----------+
 | ``len(s)``       | length of *s*                  |          |

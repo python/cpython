@@ -44,6 +44,7 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- Issue #1762972: Readded the reload() function as imp.reload()
 
 Library
 -------

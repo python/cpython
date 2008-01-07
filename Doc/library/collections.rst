@@ -489,7 +489,7 @@ three additional methods and one attribute.
       >>> Point._make(t)
       Point(x=11, y=22)
 
-.. method:: somenamedtuple._asdict()
+.. method:: namedtuple._asdict()
 
    Return a new dict which maps field names to their corresponding values:
 
@@ -498,7 +498,7 @@ three additional methods and one attribute.
       >>> p._asdict()
       {'x': 11, 'y': 22}
       
-.. method:: somenamedtuple._replace(kwargs)
+.. method:: namedtuple._replace(kwargs)
 
    Return a new instance of the named tuple replacing specified fields with new values:
 
@@ -511,7 +511,7 @@ three additional methods and one attribute.
       >>> for partnum, record in inventory.items():
       ...     inventory[partnum] = record._replace(price=newprices[partnum], updated=time.now())
 
-.. attribute:: somenamedtuple._fields
+.. attribute:: namedtuple._fields
 
    Tuple of strings listing the field names.  This is useful for introspection
    and for creating new named tuple types from existing named tuples.
@@ -541,15 +541,28 @@ When casting a dictionary to a named tuple, use the double-star-operator [#]_::
    Point(x=11, y=22)
 
 Since a named tuple is a regular Python class, it is easy to add or change
-functionality.  For example, the display format can be changed by overriding
-the :meth:`__repr__` method:
+functionality with a subclass.  Here is how to add a calculated field and
+a fixed-width print format::
 
-::
+    >>> class Point(namedtuple('Point', 'x y')):
+        @property
+        def hypot(self):
+            return (self.x ** 2 + self.y ** 2) ** 0.5
+        def __repr__(self):
+            return 'Point(x=%.3f, y=%.3f, hypot=%.3f)' % (self.x, self.y, self.hypot)
 
-    >>> Point = namedtuple('Point', 'x y')
-    >>> Point.__repr__ = lambda self: 'Point(%.3f, %.3f)' % self
-    >>> Point(x=11, y=22)
-    Point(11.000, 22.000)
+    >>> print Point(3, 4),'\n', Point(2, 5), '\n', Point(9./7, 6)
+    Point(x=3.000, y=4.000, hypot=5.000) 
+    Point(x=2.000, y=5.000, hypot=5.385) 
+    Point(x=1.286, y=6.000, hypot=6.136)
+
+Another use for subclassing is to replace performance critcal methods with
+faster versions that bypass error-checking and localize variable access::
+
+    >>> class Point(namedtuple('Point', 'x y')):
+        _make = classmethod(tuple.__new__)
+        def _replace(self, _map=map, **kwds):
+            return self._make(_map(kwds.pop, ('x', 'y'), self))
 
 Default values can be implemented by starting with a prototype instance
 and customizing it with :meth:`_replace`:

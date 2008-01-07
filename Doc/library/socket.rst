@@ -65,6 +65,27 @@ numeric address in *host* portion.
 
 AF_NETLINK sockets are represented as  pairs ``pid, groups``.
 
+
+Linux-only support for TIPC is also available using the :const:`AF_TIPC`
+address family. TIPC is an open, non-IP based networked protocol designed
+for use in clustered computer environments.  Addresses are represented by a
+tuple, and the fields depend on the address type. The general tuple form is
+``(addr_type, v1, v2, v3 [, scope])``, where:
+
+   - *addr_type* is one of TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, or
+     TIPC_ADDR_ID.
+   - *scope* is one of TIPC_ZONE_SCOPE, TIPC_CLUSTER_SCOPE, and
+     TIPC_NODE_SCOPE.
+   - If *addr_type* is TIPC_ADDR_NAME, then *v1* is the server type, *v2* is
+     the port identifier, and *v3* should be 0.
+
+     If *addr_type* is TIPC_ADDR_NAMESEQ, then *v1* is the server type, *v2*
+     is the lower port number, and *v3* is the upper port number.
+
+     If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
+     reference, and *v3* should be set to 0.
+
+
 All errors raise exceptions.  The normal exceptions for invalid argument types
 and out-of-memory conditions can be raised; errors related to socket or address
 semantics raise the error :exc:`socket.error`.
@@ -161,6 +182,12 @@ The module :mod:`socket` exports the following constants and functions:
    Constants for Windows' WSAIoctl(). The constants are used as arguments to the
    :meth:`ioctl` method of socket objects.
    
+
+.. data:: TIPC_*
+
+   TIPC related constants, matching the ones exported by the C socket API. See
+   the TIPC documentation for more information.
+
 
 .. data:: has_ipv6
 
