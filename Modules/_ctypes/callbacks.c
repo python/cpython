@@ -201,7 +201,7 @@ static void _CallPythonObject(void *mem,
 	}
 
 #define CHECK(what, x) \
-if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
+if (x == NULL) _AddTraceback(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_Print()
 
 	result = PyObject_CallObject(callable, arglist);
 	CHECK("'calling callback function'", result);
