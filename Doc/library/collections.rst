@@ -446,7 +446,8 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
        print emp.name, emp.title
 
 In addition to the methods inherited from tuples, named tuples support
-three additional methods and one attribute.
+three additional methods and one attribute.  To prevent conflicts with
+field names, the method and attribute names start with an underscore.
 
 .. method:: somenamedtuple._make(iterable)
 
@@ -532,6 +533,11 @@ faster versions that bypass error-checking and that localize variable access::
         _make = classmethod(tuple.__new__)
         def _replace(self, _map=map, **kwds):
             return self._make(_map(kwds.get, ('x', 'y'), self))
+
+Subclassing is not useful for adding new, stored fields.  Instead, simply
+create a new named tuple type from the :attr:`_fields` attribute::
+
+    >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
 
 Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance::
