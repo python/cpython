@@ -800,13 +800,7 @@ class Decimal(object):
             return 0
         if self._isinteger():
             op = _WorkRep(self.to_integral_value())
-            # to make computation feasible for Decimals with large
-            # exponent, we use the fact that hash(n) == hash(m) for
-            # any two nonzero integers n and m such that (i) n and m
-            # have the same sign, and (ii) n is congruent to m modulo
-            # 2**64-1.  So we can replace hash((-1)**s*c*10**e) with
-            # hash((-1)**s*c*pow(10, e, 2**64-1).
-            return hash((-1)**op.sign*op.int*pow(10, op.exp, 2**64-1))
+            return hash((-1)**op.sign*op.int*10**op.exp)
         # The value of a nonzero nonspecial Decimal instance is
         # faithfully represented by the triple consisting of its sign,
         # its adjusted exponent, and its coefficient with trailing

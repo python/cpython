@@ -961,6 +961,16 @@ class DecimalUsabilityTest(unittest.TestCase):
                 # a value for which hash(n) != hash(n % (2**64-1))
                 # in Python pre-2.6
                 Decimal(2**64 + 2**32 - 1),
+                # selection of values which fail with the Python 2.6
+                # version of Decimal.__hash__ and the Python 2.5
+                # version of long.__hash__.  Included here to prevent
+                # an accidental backport of the Decimal.__hash__ from
+                # Python 2.6 to Python 2.5.
+                Decimal("1.634E100"),
+                Decimal("90.697E100"),
+                Decimal("188.83E100"),
+                Decimal("1652.9E100"),
+                Decimal("56531E100"),
                 ])
 
         # check that hash(d) == hash(int(d)) for integral values
