@@ -166,6 +166,10 @@ Extension Modules
 
 - Bug #1301: Bad assert in _tkinter fixed.
 
+- Patch #1114: fix curses module compilation on 64-bit AIX, & possibly
+  other 64-bit LP64 platforms where attr_t is not the same size as a long.  
+  (Contributed by Luke Mewburn.)
+
 - Bug #1649098: Avoid declaration of zero-sized array declaration in
   structure.
 
