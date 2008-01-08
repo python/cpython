@@ -788,8 +788,10 @@ class Decimal(object):
     def __hash__(self):
         """x.__hash__() <==> hash(x)"""
         # Decimal integers must hash the same as the ints
-        # Non-integer decimals are normalized and hashed as strings
-        # Normalization assures that hash(100E-1) == hash(10)
+        #
+        # The hash of a nonspecial noninteger Decimal must depend only
+        # on the value of that Decimal, and not on its representation.
+        # For example: hash(Decimal("100E-1")) == hash(Decimal("10")).
         if self._is_special:
             if self._isnan():
                 raise TypeError('Cannot hash a NaN value.')
@@ -805,7 +807,13 @@ class Decimal(object):
             # 2**64-1.  So we can replace hash((-1)**s*c*10**e) with
             # hash((-1)**s*c*pow(10, e, 2**64-1).
             return hash((-1)**op.sign*op.int*pow(10, op.exp, 2**64-1))
-        return hash(str(self.normalize()))
+        # The value of a nonzero nonspecial Decimal instance is
+        # faithfully represented by the triple consisting of its sign,
+        # its adjusted exponent, and its coefficient with trailing
+        # zeros removed.
+        return hash((self._sign,
+                     self._exp+len(self._int),
+                     self._int.rstrip('0')))
 
     def as_tuple(self):
         """Represents the number as a triple tuple.

@@ -980,6 +980,23 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assert_(hash(Decimal('Inf')))
         self.assert_(hash(Decimal('-Inf')))
 
+        # check that the value of the hash doesn't depend on the
+        # current context (issue #1757)
+        c = getcontext()
+        old_precision = c.prec
+        x = Decimal("123456789.1")
+
+        c.prec = 6
+        h1 = hash(x)
+        c.prec = 10
+        h2 = hash(x)
+        c.prec = 16
+        h3 = hash(x)
+
+        self.assertEqual(h1, h2)
+        self.assertEqual(h1, h3)
+        c.prec = old_precision
+
     def test_min_and_max_methods(self):
 
         d1 = Decimal('15.32')
