@@ -348,6 +348,9 @@ Core and builtins
 Library
 -------
 
+- Issue #846388. re.match is interruptible now, which is particularly
+  good for long regular expression matches.
+
 - pyexpat, patch #1137: allow setting buffer_size attribute 
   on Parser objects to set the character data buffer size.
 
