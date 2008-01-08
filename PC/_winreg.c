@@ -47,6 +47,7 @@ PyDoc_STRVAR(module_doc,
 "DeleteValue() - Removes a named value from the specified registry key.\n"
 "EnumKey() - Enumerates subkeys of the specified open registry key.\n"
 "EnumValue() - Enumerates values of the specified open registry key.\n"
+"ExpandEnvironmentStrings() - Expand the env strings in a REG_EXPAND_SZ string.\n"
 "FlushKey() - Writes all the attributes of the specified key to the registry.\n"
 "LoadKey() - Creates a subkey under HKEY_USER or HKEY_LOCAL_MACHINE and stores\n"
 "            registration information from a specified file into that subkey.\n"
@@ -145,6 +146,9 @@ PyDoc_STRVAR(EnumValue_doc,
 "value_data is an object that holds the value data, and whose type depends\n"
 " on the underlying registry type.\n"
 "data_type is an integer that identifies the type of the value data.");
+
+PyDoc_STRVAR(ExpandEnvironmentStrings_doc,
+"string = ExpandEnvironmentStrings(string) - Expand environment vars.\n");
 
 PyDoc_STRVAR(FlushKey_doc,
 "FlushKey(key) - Writes all the attributes of a key to the registry.\n"
@@ -518,9 +522,27 @@ PyHKEY_DetachMethod(PyObject *self, PyObject *args)
 	return PyLong_FromVoidPtr(ret);
 }
 
+static PyObject *
+PyHKEY_Enter(PyObject *self)
+{
+	Py_XINCREF(self);
+	return self;
+}
+
+static PyObject *
+PyHKEY_Exit(PyObject *self, PyObject *args)
+{
+	if (!PyHKEY_Close(self))
+		return NULL;
+	Py_RETURN_NONE;
+}
+
+
 static struct PyMethodDef PyHKEY_methods[] = {
 	{"Close",  PyHKEY_CloseMethod, METH_VARARGS, PyHKEY_Close_doc},
 	{"Detach", PyHKEY_DetachMethod, METH_VARARGS, PyHKEY_Detach_doc},
+	{"__enter__", (PyCFunction)PyHKEY_Enter, METH_NOARGS, NULL},
+	{"__exit__", PyHKEY_Exit, METH_VARARGS, NULL},
 	{NULL}
 };
 
@@ -1118,6 +1140,39 @@ PyEnumValue(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
+{
+	Py_UNICODE *retValue = NULL;
+	Py_UNICODE *src;
+	DWORD retValueSize;
+	DWORD rc;
+	PyObject *o;
+
+	if (!PyArg_ParseTuple(args, "u:ExpandEnvironmentStrings", &src))
+		return NULL;
+
+	retValueSize = ExpandEnvironmentStringsW(src, retValue, 0);
+	if (retValueSize == 0) {
+		return PyErr_SetFromWindowsErrWithFunction(retValueSize,
+						"ExpandEnvironmentStrings");
+	}
+	retValue = (Py_UNICODE *)PyMem_Malloc(retValueSize * sizeof(Py_UNICODE));
+	if (retValue == NULL) {
+		return PyErr_NoMemory();
+	}
+
+	rc = ExpandEnvironmentStringsW(src, retValue, retValueSize);
+	if (rc == 0) {
+		PyMem_Free(retValue);
+		return PyErr_SetFromWindowsErrWithFunction(retValueSize,
+						"ExpandEnvironmentStrings");
+	}
+	o = PyUnicode_FromUnicode(retValue, wcslen(retValue));
+	PyMem_Free(retValue);
+	return o;
+}
+
+static PyObject *
 PyFlushKey(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
@@ -1412,6 +1467,8 @@ static struct PyMethodDef winreg_methods[] = {
 	{"DeleteValue",      PyDeleteValue,     METH_VARARGS, DeleteValue_doc},
 	{"EnumKey",          PyEnumKey,         METH_VARARGS, EnumKey_doc},
 	{"EnumValue",        PyEnumValue,       METH_VARARGS, EnumValue_doc},
+	{"ExpandEnvironmentStrings", PyExpandEnvironmentStrings, METH_VARARGS,
+		ExpandEnvironmentStrings_doc },
 	{"FlushKey",         PyFlushKey,        METH_VARARGS, FlushKey_doc},
 	{"LoadKey",          PyLoadKey,         METH_VARARGS, LoadKey_doc},
 	{"OpenKey",          PyOpenKey,         METH_VARARGS, OpenKey_doc},
