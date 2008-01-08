@@ -348,6 +348,9 @@ Core and builtins
 Library
 -------
 
+- pyexpat, patch #1137: allow setting buffer_size attribute 
+  on Parser objects to set the character data buffer size.
+
 - Issue #1757: The hash of a Decimal instance is no longer affected by
   the current context.
 

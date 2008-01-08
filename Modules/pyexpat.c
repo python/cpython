@@ -1649,6 +1649,50 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
             self->specified_attributes = 0;
         return 0;
     }
+
+    if (strcmp(name, "buffer_size") == 0) {
+      long new_buffer_size;
+      if (!PyInt_Check(v)) {
+      	PyErr_SetString(PyExc_TypeError, "buffer_size must be an integer");
+      	return -1;
+      }
+
+      new_buffer_size=PyInt_AS_LONG(v);
+      /* trivial case -- no change */
+      if (new_buffer_size == self->buffer_size) {
+	return 0;
+      }
+
+      if (new_buffer_size <= 0) {
+	PyErr_SetString(PyExc_ValueError, "buffer_size must be greater than zero");
+	return -1;
+      }
+
+      /* check maximum */
+      if (new_buffer_size > INT_MAX) {
+	char errmsg[100];
+	sprintf(errmsg, "buffer_size must not be greater than %i", INT_MAX);
+	PyErr_SetString(PyExc_ValueError, errmsg);
+	return -1;	
+      }
+
+      if (self->buffer != NULL) {
+	/* there is already a buffer */
+	if (self->buffer_used != 0) {
+	  flush_character_buffer(self);
+	}
+	/* free existing buffer */
+	free(self->buffer);
+      }
+      self->buffer = malloc(new_buffer_size);
+      if (self->buffer == NULL) {
+	PyErr_NoMemory();
+	return -1;
+      }	  
+      self->buffer_size = new_buffer_size;
+      return 0;
+    }
+
     if (strcmp(name, "CharacterDataHandler") == 0) {
         /* If we're changing the character data handler, flush all
          * cached data with the old handler.  Not sure there's a

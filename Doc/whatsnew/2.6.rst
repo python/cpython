@@ -875,6 +875,13 @@ complete list of changes, or look through the CVS logs for all the details.
   changed and :const:`UF_APPEND` to indicate that data can only be appended to the
   file.  (Contributed by M. Levinson.)
 
+* The :mod:`pyexpat` module's :class:`Parser` objects now allow setting
+  their :attr:`buffer_size` attribute to change the size of the buffer 
+  used to hold character data.
+  (Contributed by Achim Gaedke.)
+
+  .. Patch 1137
+
 * The :mod:`random` module's :class:`Random` objects can
   now be pickled on a 32-bit system and unpickled on a 64-bit
   system, and vice versa.  Unfortunately, this change also means
