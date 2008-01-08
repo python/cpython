@@ -1,0 +1,88 @@
+------------------------------------------------------------------------
+-- ddCopyAbs.decTest -- quiet decDouble copy and set sign to zero     --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+-- All operands and results are decDoubles.
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- Sanity check
+ddcpa001 copyabs       +7.50  -> 7.50
+
+-- Infinities
+ddcpa011 copyabs  Infinity    -> Infinity
+ddcpa012 copyabs  -Infinity   -> Infinity
+
+-- NaNs, 0 payload
+ddcpa021 copyabs         NaN  -> NaN
+ddcpa022 copyabs        -NaN  -> NaN
+ddcpa023 copyabs        sNaN  -> sNaN
+ddcpa024 copyabs       -sNaN  -> sNaN
+
+-- NaNs, non-0 payload
+ddcpa031 copyabs       NaN10  -> NaN10
+ddcpa032 copyabs      -NaN15  -> NaN15
+ddcpa033 copyabs      sNaN15  -> sNaN15
+ddcpa034 copyabs     -sNaN10  -> sNaN10
+ddcpa035 copyabs       NaN7   -> NaN7
+ddcpa036 copyabs      -NaN7   -> NaN7
+ddcpa037 copyabs      sNaN101 -> sNaN101
+ddcpa038 copyabs     -sNaN101 -> sNaN101
+
+-- finites
+ddcpa101 copyabs          7   -> 7
+ddcpa102 copyabs         -7   -> 7
+ddcpa103 copyabs         75   -> 75
+ddcpa104 copyabs        -75   -> 75
+ddcpa105 copyabs       7.10   -> 7.10
+ddcpa106 copyabs      -7.10   -> 7.10
+ddcpa107 copyabs       7.500  -> 7.500
+ddcpa108 copyabs      -7.500  -> 7.500
+
+-- zeros
+ddcpa111 copyabs          0   -> 0
+ddcpa112 copyabs         -0   -> 0
+ddcpa113 copyabs       0E+6   -> 0E+6
+ddcpa114 copyabs      -0E+6   -> 0E+6
+ddcpa115 copyabs     0.0000   -> 0.0000
+ddcpa116 copyabs    -0.0000   -> 0.0000
+ddcpa117 copyabs      0E-141  -> 0E-141
+ddcpa118 copyabs     -0E-141  -> 0E-141
+
+-- full coefficients, alternating bits
+ddcpa121 copyabs  2682682682682682         -> 2682682682682682
+ddcpa122 copyabs  -2682682682682682        -> 2682682682682682
+ddcpa123 copyabs  1341341341341341         -> 1341341341341341
+ddcpa124 copyabs  -1341341341341341        -> 1341341341341341
+
+-- Nmax, Nmin, Ntiny
+ddcpa131 copyabs  9.999999999999999E+384   -> 9.999999999999999E+384
+ddcpa132 copyabs  1E-383                   -> 1E-383
+ddcpa133 copyabs  1.000000000000000E-383   -> 1.000000000000000E-383
+ddcpa134 copyabs  1E-398                   -> 1E-398
+
+ddcpa135 copyabs  -1E-398                  -> 1E-398
+ddcpa136 copyabs  -1.000000000000000E-383  -> 1.000000000000000E-383
+ddcpa137 copyabs  -1E-383                  -> 1E-383
+ddcpa138 copyabs  -9.999999999999999E+384  -> 9.999999999999999E+384

@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- divide.decTest -- decimal division                                 --
--- Copyright (c) IBM Corporation, 1981, 2004.  All rights reserved.   --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.39
+version: 2.57
 
 extended:    1
 precision:   9
@@ -47,41 +47,45 @@ divx017 divide  2.400 2    ->  1.200
 divx018 divide  2.    2    ->  1
 divx019 divide  20    20   ->  1
 
-divx020 divide  187   187  ->  1
-divx021 divide  5     2    ->  2.5
-divx022 divide  5     2.0    ->  2.5
-divx023 divide  5     2.000  ->  2.5
-divx024 divide  5     0.20   ->  25
-divx025 divide  5     0.200  ->  25
-divx026 divide  10    1      ->  10
-divx027 divide  100   1      ->  100
-divx028 divide  1000  1      ->  1000
-divx029 divide  1000  100    ->  10
+divx020 divide  187   187    ->  1
+divx021 divide  5     2      ->  2.5
+divx022 divide  50    20     ->  2.5
+divx023 divide  500   200    ->  2.5
+divx024 divide  50.0  20.0   ->  2.5
+divx025 divide  5.00  2.00   ->  2.5
+divx026 divide  5     2.0    ->  2.5
+divx027 divide  5     2.000  ->  2.5
+divx028 divide  5     0.20   ->  25
+divx029 divide  5     0.200  ->  25
+divx030 divide  10    1      ->  10
+divx031 divide  100   1      ->  100
+divx032 divide  1000  1      ->  1000
+divx033 divide  1000  100    ->  10
 
-divx030 divide  1     2      ->  0.5
-divx031 divide  1     4      ->  0.25
-divx032 divide  1     8      ->  0.125
-divx033 divide  1     16     ->  0.0625
-divx034 divide  1     32     ->  0.03125
-divx035 divide  1     64     ->  0.015625
-divx040 divide  1    -2      ->  -0.5
-divx041 divide  1    -4      ->  -0.25
-divx042 divide  1    -8      ->  -0.125
-divx043 divide  1    -16     ->  -0.0625
-divx044 divide  1    -32     ->  -0.03125
-divx045 divide  1    -64     ->  -0.015625
-divx050 divide -1     2      ->  -0.5
-divx051 divide -1     4      ->  -0.25
-divx052 divide -1     8      ->  -0.125
-divx053 divide -1     16     ->  -0.0625
-divx054 divide -1     32     ->  -0.03125
-divx055 divide -1     64     ->  -0.015625
-divx060 divide -1    -2      ->  0.5
-divx061 divide -1    -4      ->  0.25
-divx062 divide -1    -8      ->  0.125
-divx063 divide -1    -16     ->  0.0625
-divx064 divide -1    -32     ->  0.03125
-divx065 divide -1    -64     ->  0.015625
+divx035 divide  1     2      ->  0.5
+divx036 divide  1     4      ->  0.25
+divx037 divide  1     8      ->  0.125
+divx038 divide  1     16     ->  0.0625
+divx039 divide  1     32     ->  0.03125
+divx040 divide  1     64     ->  0.015625
+divx041 divide  1    -2      ->  -0.5
+divx042 divide  1    -4      ->  -0.25
+divx043 divide  1    -8      ->  -0.125
+divx044 divide  1    -16     ->  -0.0625
+divx045 divide  1    -32     ->  -0.03125
+divx046 divide  1    -64     ->  -0.015625
+divx047 divide -1     2      ->  -0.5
+divx048 divide -1     4      ->  -0.25
+divx049 divide -1     8      ->  -0.125
+divx050 divide -1     16     ->  -0.0625
+divx051 divide -1     32     ->  -0.03125
+divx052 divide -1     64     ->  -0.015625
+divx053 divide -1    -2      ->  0.5
+divx054 divide -1    -4      ->  0.25
+divx055 divide -1    -8      ->  0.125
+divx056 divide -1    -16     ->  0.0625
+divx057 divide -1    -32     ->  0.03125
+divx058 divide -1    -64     ->  0.015625
 
 divx070 divide  999999999        1    ->  999999999
 divx071 divide  999999999.4      1    ->  999999999 Inexact Rounded
@@ -763,9 +767,9 @@ divx963 divide 1e-600000000 1e+400000004 -> 1E-1000000004 Subnormal
 divx964 divide 1e-600000000 1e+400000005 -> 1E-1000000005 Subnormal
 divx965 divide 1e-600000000 1e+400000006 -> 1E-1000000006 Subnormal
 divx966 divide 1e-600000000 1e+400000007 -> 1E-1000000007 Subnormal
-divx967 divide 1e-600000000 1e+400000008 -> 0E-1000000007 Underflow Subnormal Inexact Rounded
-divx968 divide 1e-600000000 1e+400000009 -> 0E-1000000007 Underflow Subnormal Inexact Rounded
-divx969 divide 1e-600000000 1e+400000010 -> 0E-1000000007 Underflow Subnormal Inexact Rounded
+divx967 divide 1e-600000000 1e+400000008 -> 0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+divx968 divide 1e-600000000 1e+400000009 -> 0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+divx969 divide 1e-600000000 1e+400000010 -> 0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
 -- [no equivalent of 'subnormal' for overflow]
 divx970 divide 1e+600000000 1e-400000001 -> Infinity Overflow Inexact Rounded
 divx971 divide 1e+600000000 1e-400000002 -> Infinity Overflow Inexact Rounded
@@ -779,10 +783,10 @@ divx978 divide 1e+600000000 1e-400000009 -> Infinity Overflow Inexact Rounded
 divx979 divide 1e+600000000 1e-400000010 -> Infinity Overflow Inexact Rounded
 
 -- Sign after overflow and underflow
-divx980 divide  1e-600000000  1e+400000009 ->  0E-1000000007 Underflow Subnormal Inexact Rounded
-divx981 divide  1e-600000000 -1e+400000009 -> -0E-1000000007 Underflow Subnormal Inexact Rounded
-divx982 divide -1e-600000000  1e+400000009 -> -0E-1000000007 Underflow Subnormal Inexact Rounded
-divx983 divide -1e-600000000 -1e+400000009 ->  0E-1000000007 Underflow Subnormal Inexact Rounded
+divx980 divide  1e-600000000  1e+400000009 ->  0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+divx981 divide  1e-600000000 -1e+400000009 -> -0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+divx982 divide -1e-600000000  1e+400000009 -> -0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+divx983 divide -1e-600000000 -1e+400000009 ->  0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
 divx984 divide  1e+600000000  1e-400000009 ->  Infinity Overflow Inexact Rounded
 divx985 divide  1e+600000000 -1e-400000009 -> -Infinity Overflow Inexact Rounded
 divx986 divide -1e+600000000  1e-400000009 -> -Infinity Overflow Inexact Rounded
@@ -811,6 +815,38 @@ minExponent: -6143
 -- Unbounded answer to 40 digits:
 --   1.465811965811965811965811965811965811966E+7000
 divx1010 divide 343E6000  234E-1000 -> Infinity Overflow Inexact Rounded
+
+precision:   34
+rounding:    half_up
+maxExponent: 6144
+minExponent: -6143
+
+-- Examples from SQL proposal (Krishna Kulkarni)
+precision: 7
+divx1021  divide 1E0          1E0 -> 1
+divx1022  divide 1E0          2E0 -> 0.5
+divx1023  divide 1E0          3E0 -> 0.3333333 Inexact Rounded
+divx1024  divide 100E-2   1000E-3 -> 1
+divx1025  divide 24E-1        2E0 -> 1.2
+divx1026  divide 2400E-3      2E0 -> 1.200
+divx1027  divide 5E0          2E0 -> 2.5
+divx1028  divide 5E0        20E-1 -> 2.5
+divx1029  divide 5E0      2000E-3 -> 2.5
+divx1030  divide 5E0         2E-1 -> 25
+divx1031  divide 5E0        20E-2 -> 25
+divx1032  divide 480E-2       3E0 -> 1.60
+divx1033  divide 47E-1        2E0 -> 2.35
+
+-- ECMAScript bad examples
+rounding:    half_down
+precision: 7
+divx1050  divide 5 9  -> 0.5555556 Inexact Rounded
+rounding:    half_even
+divx1051  divide 5 11 -> 0.4545455 Inexact Rounded
+
+-- payload decapitate
+precision: 5
+divx1055  divide   sNaN987654321 1 ->  NaN54321  Invalid_operation
 
 -- Null tests
 divx9998 divide 10  # -> NaN Invalid_operation

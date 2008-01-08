@@ -1,0 +1,546 @@
+------------------------------------------------------------------------
+-- ddMultiply.decTest -- decDouble multiplication                     --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+-- This set of tests are for decDoubles only; all arguments are
+-- representable in a decDouble
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- sanity checks
+ddmul000 multiply 2      2 -> 4
+ddmul001 multiply 2      3 -> 6
+ddmul002 multiply 5      1 -> 5
+ddmul003 multiply 5      2 -> 10
+ddmul004 multiply 1.20   2 -> 2.40
+ddmul005 multiply 1.20   0 -> 0.00
+ddmul006 multiply 1.20  -2 -> -2.40
+ddmul007 multiply -1.20  2 -> -2.40
+ddmul008 multiply -1.20  0 -> -0.00
+ddmul009 multiply -1.20 -2 -> 2.40
+ddmul010 multiply 5.09 7.1 -> 36.139
+ddmul011 multiply 2.5    4 -> 10.0
+ddmul012 multiply 2.50   4 -> 10.00
+ddmul013 multiply 1.23456789 1.00000000 -> 1.234567890000000 Rounded
+ddmul015 multiply 2.50   4 -> 10.00
+ddmul016 multiply  9.999999999  9.999999999 ->  99.99999998000000 Inexact Rounded
+ddmul017 multiply  9.999999999 -9.999999999 -> -99.99999998000000 Inexact Rounded
+ddmul018 multiply -9.999999999  9.999999999 -> -99.99999998000000 Inexact Rounded
+ddmul019 multiply -9.999999999 -9.999999999 ->  99.99999998000000 Inexact Rounded
+
+-- zeros, etc.
+ddmul021 multiply  0      0     ->  0
+ddmul022 multiply  0     -0     -> -0
+ddmul023 multiply -0      0     -> -0
+ddmul024 multiply -0     -0     ->  0
+ddmul025 multiply -0.0   -0.0   ->  0.00
+ddmul026 multiply -0.0   -0.0   ->  0.00
+ddmul027 multiply -0.0   -0.0   ->  0.00
+ddmul028 multiply -0.0   -0.0   ->  0.00
+ddmul030 multiply  5.00   1E-3  ->  0.00500
+ddmul031 multiply  00.00  0.000 ->  0.00000
+ddmul032 multiply  00.00  0E-3  ->  0.00000     -- rhs is 0
+ddmul033 multiply  0E-3   00.00 ->  0.00000     -- lhs is 0
+ddmul034 multiply -5.00   1E-3  -> -0.00500
+ddmul035 multiply -00.00  0.000 -> -0.00000
+ddmul036 multiply -00.00  0E-3  -> -0.00000     -- rhs is 0
+ddmul037 multiply -0E-3   00.00 -> -0.00000     -- lhs is 0
+ddmul038 multiply  5.00  -1E-3  -> -0.00500
+ddmul039 multiply  00.00 -0.000 -> -0.00000
+ddmul040 multiply  00.00 -0E-3  -> -0.00000     -- rhs is 0
+ddmul041 multiply  0E-3  -00.00 -> -0.00000     -- lhs is 0
+ddmul042 multiply -5.00  -1E-3  ->  0.00500
+ddmul043 multiply -00.00 -0.000 ->  0.00000
+ddmul044 multiply -00.00 -0E-3  ->  0.00000     -- rhs is 0
+ddmul045 multiply -0E-3  -00.00 ->  0.00000     -- lhs is 0
+
+-- examples from decarith
+ddmul050 multiply 1.20 3        -> 3.60
+ddmul051 multiply 7    3        -> 21
+ddmul052 multiply 0.9  0.8      -> 0.72
+ddmul053 multiply 0.9  -0       -> -0.0
+ddmul054 multiply 654321 654321 -> 428135971041
+
+ddmul060 multiply 123.45 1e7  ->  1.2345E+9
+ddmul061 multiply 123.45 1e8  ->  1.2345E+10
+ddmul062 multiply 123.45 1e+9 ->  1.2345E+11
+ddmul063 multiply 123.45 1e10 ->  1.2345E+12
+ddmul064 multiply 123.45 1e11 ->  1.2345E+13
+ddmul065 multiply 123.45 1e12 ->  1.2345E+14
+ddmul066 multiply 123.45 1e13 ->  1.2345E+15
+
+
+-- test some intermediate lengths
+--                    1234567890123456
+ddmul080 multiply 0.1 1230123456456789     -> 123012345645678.9
+ddmul084 multiply 0.1 1230123456456789     -> 123012345645678.9
+ddmul090 multiply 1230123456456789     0.1 -> 123012345645678.9
+ddmul094 multiply 1230123456456789     0.1 -> 123012345645678.9
+
+-- test some more edge cases and carries
+ddmul101 multiply 9 9   -> 81
+ddmul102 multiply 9 90   -> 810
+ddmul103 multiply 9 900   -> 8100
+ddmul104 multiply 9 9000   -> 81000
+ddmul105 multiply 9 90000   -> 810000
+ddmul106 multiply 9 900000   -> 8100000
+ddmul107 multiply 9 9000000   -> 81000000
+ddmul108 multiply 9 90000000   -> 810000000
+ddmul109 multiply 9 900000000   -> 8100000000
+ddmul110 multiply 9 9000000000   -> 81000000000
+ddmul111 multiply 9 90000000000   -> 810000000000
+ddmul112 multiply 9 900000000000   -> 8100000000000
+ddmul113 multiply 9 9000000000000   -> 81000000000000
+ddmul114 multiply 9 90000000000000   -> 810000000000000
+ddmul115 multiply 9 900000000000000   -> 8100000000000000
+--ddmul116 multiply 9 9000000000000000   -> 81000000000000000
+--ddmul117 multiply 9 90000000000000000   -> 810000000000000000
+--ddmul118 multiply 9 900000000000000000   -> 8100000000000000000
+--ddmul119 multiply 9 9000000000000000000   -> 81000000000000000000
+--ddmul120 multiply 9 90000000000000000000   -> 810000000000000000000
+--ddmul121 multiply 9 900000000000000000000   -> 8100000000000000000000
+--ddmul122 multiply 9 9000000000000000000000   -> 81000000000000000000000
+--ddmul123 multiply 9 90000000000000000000000   -> 810000000000000000000000
+-- test some more edge cases without carries
+ddmul131 multiply 3 3   -> 9
+ddmul132 multiply 3 30   -> 90
+ddmul133 multiply 3 300   -> 900
+ddmul134 multiply 3 3000   -> 9000
+ddmul135 multiply 3 30000   -> 90000
+ddmul136 multiply 3 300000   -> 900000
+ddmul137 multiply 3 3000000   -> 9000000
+ddmul138 multiply 3 30000000   -> 90000000
+ddmul139 multiply 3 300000000   -> 900000000
+ddmul140 multiply 3 3000000000   -> 9000000000
+ddmul141 multiply 3 30000000000   -> 90000000000
+ddmul142 multiply 3 300000000000   -> 900000000000
+ddmul143 multiply 3 3000000000000   -> 9000000000000
+ddmul144 multiply 3 30000000000000   -> 90000000000000
+ddmul145 multiply 3 300000000000000   -> 900000000000000
+
+-- test some edge cases with exact rounding
+ddmul301 multiply 9 9   -> 81
+ddmul302 multiply 9 90   -> 810
+ddmul303 multiply 9 900   -> 8100
+ddmul304 multiply 9 9000   -> 81000
+ddmul305 multiply 9 90000   -> 810000
+ddmul306 multiply 9 900000   -> 8100000
+ddmul307 multiply 9 9000000   -> 81000000
+ddmul308 multiply 9 90000000   -> 810000000
+ddmul309 multiply 9 900000000   -> 8100000000
+ddmul310 multiply 9 9000000000   -> 81000000000
+ddmul311 multiply 9 90000000000   -> 810000000000
+ddmul312 multiply 9 900000000000   -> 8100000000000
+ddmul313 multiply 9 9000000000000   -> 81000000000000
+ddmul314 multiply 9 90000000000000   -> 810000000000000
+ddmul315 multiply 9 900000000000000   -> 8100000000000000
+ddmul316 multiply 9 9000000000000000   -> 8.100000000000000E+16  Rounded
+ddmul317 multiply 90 9000000000000000   -> 8.100000000000000E+17  Rounded
+ddmul318 multiply 900 9000000000000000   -> 8.100000000000000E+18  Rounded
+ddmul319 multiply 9000 9000000000000000   -> 8.100000000000000E+19  Rounded
+ddmul320 multiply 90000 9000000000000000   -> 8.100000000000000E+20  Rounded
+ddmul321 multiply 900000 9000000000000000   -> 8.100000000000000E+21  Rounded
+ddmul322 multiply 9000000 9000000000000000   -> 8.100000000000000E+22  Rounded
+ddmul323 multiply 90000000 9000000000000000   -> 8.100000000000000E+23  Rounded
+
+-- tryzeros cases
+ddmul504  multiply  0E-260 1000E-260  -> 0E-398 Clamped
+ddmul505  multiply  100E+260 0E+260   -> 0E+369 Clamped
+
+-- mixed with zeros
+ddmul541 multiply  0    -1     -> -0
+ddmul542 multiply -0    -1     ->  0
+ddmul543 multiply  0     1     ->  0
+ddmul544 multiply -0     1     -> -0
+ddmul545 multiply -1     0     -> -0
+ddmul546 multiply -1    -0     ->  0
+ddmul547 multiply  1     0     ->  0
+ddmul548 multiply  1    -0     -> -0
+
+ddmul551 multiply  0.0  -1     -> -0.0
+ddmul552 multiply -0.0  -1     ->  0.0
+ddmul553 multiply  0.0   1     ->  0.0
+ddmul554 multiply -0.0   1     -> -0.0
+ddmul555 multiply -1.0   0     -> -0.0
+ddmul556 multiply -1.0  -0     ->  0.0
+ddmul557 multiply  1.0   0     ->  0.0
+ddmul558 multiply  1.0  -0     -> -0.0
+
+ddmul561 multiply  0    -1.0   -> -0.0
+ddmul562 multiply -0    -1.0   ->  0.0
+ddmul563 multiply  0     1.0   ->  0.0
+ddmul564 multiply -0     1.0   -> -0.0
+ddmul565 multiply -1     0.0   -> -0.0
+ddmul566 multiply -1    -0.0   ->  0.0
+ddmul567 multiply  1     0.0   ->  0.0
+ddmul568 multiply  1    -0.0   -> -0.0
+
+ddmul571 multiply  0.0  -1.0   -> -0.00
+ddmul572 multiply -0.0  -1.0   ->  0.00
+ddmul573 multiply  0.0   1.0   ->  0.00
+ddmul574 multiply -0.0   1.0   -> -0.00
+ddmul575 multiply -1.0   0.0   -> -0.00
+ddmul576 multiply -1.0  -0.0   ->  0.00
+ddmul577 multiply  1.0   0.0   ->  0.00
+ddmul578 multiply  1.0  -0.0   -> -0.00
+
+
+-- Specials
+ddmul580 multiply  Inf  -Inf   -> -Infinity
+ddmul581 multiply  Inf  -1000  -> -Infinity
+ddmul582 multiply  Inf  -1     -> -Infinity
+ddmul583 multiply  Inf  -0     ->  NaN  Invalid_operation
+ddmul584 multiply  Inf   0     ->  NaN  Invalid_operation
+ddmul585 multiply  Inf   1     ->  Infinity
+ddmul586 multiply  Inf   1000  ->  Infinity
+ddmul587 multiply  Inf   Inf   ->  Infinity
+ddmul588 multiply -1000  Inf   -> -Infinity
+ddmul589 multiply -Inf   Inf   -> -Infinity
+ddmul590 multiply -1     Inf   -> -Infinity
+ddmul591 multiply -0     Inf   ->  NaN  Invalid_operation
+ddmul592 multiply  0     Inf   ->  NaN  Invalid_operation
+ddmul593 multiply  1     Inf   ->  Infinity
+ddmul594 multiply  1000  Inf   ->  Infinity
+ddmul595 multiply  Inf   Inf   ->  Infinity
+
+ddmul600 multiply -Inf  -Inf   ->  Infinity
+ddmul601 multiply -Inf  -1000  ->  Infinity
+ddmul602 multiply -Inf  -1     ->  Infinity
+ddmul603 multiply -Inf  -0     ->  NaN  Invalid_operation
+ddmul604 multiply -Inf   0     ->  NaN  Invalid_operation
+ddmul605 multiply -Inf   1     -> -Infinity
+ddmul606 multiply -Inf   1000  -> -Infinity
+ddmul607 multiply -Inf   Inf   -> -Infinity
+ddmul608 multiply -1000  Inf   -> -Infinity
+ddmul609 multiply -Inf  -Inf   ->  Infinity
+ddmul610 multiply -1    -Inf   ->  Infinity
+ddmul611 multiply -0    -Inf   ->  NaN  Invalid_operation
+ddmul612 multiply  0    -Inf   ->  NaN  Invalid_operation
+ddmul613 multiply  1    -Inf   -> -Infinity
+ddmul614 multiply  1000 -Inf   -> -Infinity
+ddmul615 multiply  Inf  -Inf   -> -Infinity
+
+ddmul621 multiply  NaN -Inf    ->  NaN
+ddmul622 multiply  NaN -1000   ->  NaN
+ddmul623 multiply  NaN -1      ->  NaN
+ddmul624 multiply  NaN -0      ->  NaN
+ddmul625 multiply  NaN  0      ->  NaN
+ddmul626 multiply  NaN  1      ->  NaN
+ddmul627 multiply  NaN  1000   ->  NaN
+ddmul628 multiply  NaN  Inf    ->  NaN
+ddmul629 multiply  NaN  NaN    ->  NaN
+ddmul630 multiply -Inf  NaN    ->  NaN
+ddmul631 multiply -1000 NaN    ->  NaN
+ddmul632 multiply -1    NaN    ->  NaN
+ddmul633 multiply -0    NaN    ->  NaN
+ddmul634 multiply  0    NaN    ->  NaN
+ddmul635 multiply  1    NaN    ->  NaN
+ddmul636 multiply  1000 NaN    ->  NaN
+ddmul637 multiply  Inf  NaN    ->  NaN
+
+ddmul641 multiply  sNaN -Inf   ->  NaN  Invalid_operation
+ddmul642 multiply  sNaN -1000  ->  NaN  Invalid_operation
+ddmul643 multiply  sNaN -1     ->  NaN  Invalid_operation
+ddmul644 multiply  sNaN -0     ->  NaN  Invalid_operation
+ddmul645 multiply  sNaN  0     ->  NaN  Invalid_operation
+ddmul646 multiply  sNaN  1     ->  NaN  Invalid_operation
+ddmul647 multiply  sNaN  1000  ->  NaN  Invalid_operation
+ddmul648 multiply  sNaN  NaN   ->  NaN  Invalid_operation
+ddmul649 multiply  sNaN sNaN   ->  NaN  Invalid_operation
+ddmul650 multiply  NaN  sNaN   ->  NaN  Invalid_operation
+ddmul651 multiply -Inf  sNaN   ->  NaN  Invalid_operation
+ddmul652 multiply -1000 sNaN   ->  NaN  Invalid_operation
+ddmul653 multiply -1    sNaN   ->  NaN  Invalid_operation
+ddmul654 multiply -0    sNaN   ->  NaN  Invalid_operation
+ddmul655 multiply  0    sNaN   ->  NaN  Invalid_operation
+ddmul656 multiply  1    sNaN   ->  NaN  Invalid_operation
+ddmul657 multiply  1000 sNaN   ->  NaN  Invalid_operation
+ddmul658 multiply  Inf  sNaN   ->  NaN  Invalid_operation
+ddmul659 multiply  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+ddmul661 multiply  NaN9 -Inf   ->  NaN9
+ddmul662 multiply  NaN8  999   ->  NaN8
+ddmul663 multiply  NaN71 Inf   ->  NaN71
+ddmul664 multiply  NaN6  NaN5  ->  NaN6
+ddmul665 multiply -Inf   NaN4  ->  NaN4
+ddmul666 multiply -999   NaN33 ->  NaN33
+ddmul667 multiply  Inf   NaN2  ->  NaN2
+
+ddmul671 multiply  sNaN99 -Inf    ->  NaN99 Invalid_operation
+ddmul672 multiply  sNaN98 -11     ->  NaN98 Invalid_operation
+ddmul673 multiply  sNaN97  NaN    ->  NaN97 Invalid_operation
+ddmul674 multiply  sNaN16 sNaN94  ->  NaN16 Invalid_operation
+ddmul675 multiply  NaN95  sNaN93  ->  NaN93 Invalid_operation
+ddmul676 multiply -Inf    sNaN92  ->  NaN92 Invalid_operation
+ddmul677 multiply  088    sNaN91  ->  NaN91 Invalid_operation
+ddmul678 multiply  Inf    sNaN90  ->  NaN90 Invalid_operation
+ddmul679 multiply  NaN    sNaN89  ->  NaN89 Invalid_operation
+
+ddmul681 multiply -NaN9 -Inf   -> -NaN9
+ddmul682 multiply -NaN8  999   -> -NaN8
+ddmul683 multiply -NaN71 Inf   -> -NaN71
+ddmul684 multiply -NaN6 -NaN5  -> -NaN6
+ddmul685 multiply -Inf  -NaN4  -> -NaN4
+ddmul686 multiply -999  -NaN33 -> -NaN33
+ddmul687 multiply  Inf  -NaN2  -> -NaN2
+
+ddmul691 multiply -sNaN99 -Inf    -> -NaN99 Invalid_operation
+ddmul692 multiply -sNaN98 -11     -> -NaN98 Invalid_operation
+ddmul693 multiply -sNaN97  NaN    -> -NaN97 Invalid_operation
+ddmul694 multiply -sNaN16 -sNaN94 -> -NaN16 Invalid_operation
+ddmul695 multiply -NaN95  -sNaN93 -> -NaN93 Invalid_operation
+ddmul696 multiply -Inf    -sNaN92 -> -NaN92 Invalid_operation
+ddmul697 multiply  088    -sNaN91 -> -NaN91 Invalid_operation
+ddmul698 multiply  Inf    -sNaN90 -> -NaN90 Invalid_operation
+ddmul699 multiply -NaN    -sNaN89 -> -NaN89 Invalid_operation
+
+ddmul701 multiply -NaN  -Inf   -> -NaN
+ddmul702 multiply -NaN   999   -> -NaN
+ddmul703 multiply -NaN   Inf   -> -NaN
+ddmul704 multiply -NaN  -NaN   -> -NaN
+ddmul705 multiply -Inf  -NaN0  -> -NaN
+ddmul706 multiply -999  -NaN   -> -NaN
+ddmul707 multiply  Inf  -NaN   -> -NaN
+
+ddmul711 multiply -sNaN   -Inf    -> -NaN Invalid_operation
+ddmul712 multiply -sNaN   -11     -> -NaN Invalid_operation
+ddmul713 multiply -sNaN00  NaN    -> -NaN Invalid_operation
+ddmul714 multiply -sNaN   -sNaN   -> -NaN Invalid_operation
+ddmul715 multiply -NaN    -sNaN   -> -NaN Invalid_operation
+ddmul716 multiply -Inf    -sNaN   -> -NaN Invalid_operation
+ddmul717 multiply  088    -sNaN   -> -NaN Invalid_operation
+ddmul718 multiply  Inf    -sNaN   -> -NaN Invalid_operation
+ddmul719 multiply -NaN    -sNaN   -> -NaN Invalid_operation
+
+-- overflow and underflow tests .. note subnormal results
+-- signs
+ddmul751 multiply  1e+277  1e+311 ->  Infinity Overflow Inexact Rounded
+ddmul752 multiply  1e+277 -1e+311 -> -Infinity Overflow Inexact Rounded
+ddmul753 multiply -1e+277  1e+311 -> -Infinity Overflow Inexact Rounded
+ddmul754 multiply -1e+277 -1e+311 ->  Infinity Overflow Inexact Rounded
+ddmul755 multiply  1e-277  1e-311 ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddmul756 multiply  1e-277 -1e-311 -> -0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddmul757 multiply -1e-277  1e-311 -> -0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddmul758 multiply -1e-277 -1e-311 ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
+
+-- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+ddmul760 multiply 1e-291 1e-101 -> 1E-392 Subnormal
+ddmul761 multiply 1e-291 1e-102 -> 1E-393 Subnormal
+ddmul762 multiply 1e-291 1e-103 -> 1E-394 Subnormal
+ddmul763 multiply 1e-291 1e-104 -> 1E-395 Subnormal
+ddmul764 multiply 1e-291 1e-105 -> 1E-396 Subnormal
+ddmul765 multiply 1e-291 1e-106 -> 1E-397 Subnormal
+ddmul766 multiply 1e-291 1e-107 -> 1E-398 Subnormal
+ddmul767 multiply 1e-291 1e-108 -> 0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddmul768 multiply 1e-291 1e-109 -> 0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddmul769 multiply 1e-291 1e-110 -> 0E-398 Underflow Subnormal Inexact Rounded Clamped
+-- [no equivalent of 'subnormal' for overflow]
+ddmul770 multiply 1e+60 1e+321 -> 1.000000000000E+381  Clamped
+ddmul771 multiply 1e+60 1e+322 -> 1.0000000000000E+382  Clamped
+ddmul772 multiply 1e+60 1e+323 -> 1.00000000000000E+383  Clamped
+ddmul773 multiply 1e+60 1e+324 -> 1.000000000000000E+384  Clamped
+ddmul774 multiply 1e+60 1e+325 -> Infinity Overflow Inexact Rounded
+ddmul775 multiply 1e+60 1e+326 -> Infinity Overflow Inexact Rounded
+ddmul776 multiply 1e+60 1e+327 -> Infinity Overflow Inexact Rounded
+ddmul777 multiply 1e+60 1e+328 -> Infinity Overflow Inexact Rounded
+ddmul778 multiply 1e+60 1e+329 -> Infinity Overflow Inexact Rounded
+ddmul779 multiply 1e+60 1e+330 -> Infinity Overflow Inexact Rounded
+
+ddmul801 multiply  1.0000E-394  1     -> 1.0000E-394 Subnormal
+ddmul802 multiply  1.000E-394   1e-1  -> 1.000E-395  Subnormal
+ddmul803 multiply  1.00E-394    1e-2  -> 1.00E-396   Subnormal
+ddmul804 multiply  1.0E-394     1e-3  -> 1.0E-397    Subnormal
+ddmul805 multiply  1.0E-394     1e-4  -> 1E-398     Subnormal Rounded
+ddmul806 multiply  1.3E-394     1e-4  -> 1E-398     Underflow Subnormal Inexact Rounded
+ddmul807 multiply  1.5E-394     1e-4  -> 2E-398     Underflow Subnormal Inexact Rounded
+ddmul808 multiply  1.7E-394     1e-4  -> 2E-398     Underflow Subnormal Inexact Rounded
+ddmul809 multiply  2.3E-394     1e-4  -> 2E-398     Underflow Subnormal Inexact Rounded
+ddmul810 multiply  2.5E-394     1e-4  -> 2E-398     Underflow Subnormal Inexact Rounded
+ddmul811 multiply  2.7E-394     1e-4  -> 3E-398     Underflow Subnormal Inexact Rounded
+ddmul812 multiply  1.49E-394    1e-4  -> 1E-398     Underflow Subnormal Inexact Rounded
+ddmul813 multiply  1.50E-394    1e-4  -> 2E-398     Underflow Subnormal Inexact Rounded
+ddmul814 multiply  1.51E-394    1e-4  -> 2E-398     Underflow Subnormal Inexact Rounded
+ddmul815 multiply  2.49E-394    1e-4  -> 2E-398     Underflow Subnormal Inexact Rounded
+ddmul816 multiply  2.50E-394    1e-4  -> 2E-398     Underflow Subnormal Inexact Rounded
+ddmul817 multiply  2.51E-394    1e-4  -> 3E-398     Underflow Subnormal Inexact Rounded
+
+ddmul818 multiply  1E-394       1e-4  -> 1E-398     Subnormal
+ddmul819 multiply  3E-394       1e-5  -> 0E-398     Underflow Subnormal Inexact Rounded Clamped
+ddmul820 multiply  5E-394       1e-5  -> 0E-398     Underflow Subnormal Inexact Rounded Clamped
+ddmul821 multiply  7E-394       1e-5  -> 1E-398     Underflow Subnormal Inexact Rounded
+ddmul822 multiply  9E-394       1e-5  -> 1E-398     Underflow Subnormal Inexact Rounded
+ddmul823 multiply  9.9E-394     1e-5  -> 1E-398     Underflow Subnormal Inexact Rounded
+
+ddmul824 multiply  1E-394      -1e-4  -> -1E-398    Subnormal
+ddmul825 multiply  3E-394      -1e-5  -> -0E-398    Underflow Subnormal Inexact Rounded Clamped
+ddmul826 multiply -5E-394       1e-5  -> -0E-398    Underflow Subnormal Inexact Rounded Clamped
+ddmul827 multiply  7E-394      -1e-5  -> -1E-398    Underflow Subnormal Inexact Rounded
+ddmul828 multiply -9E-394       1e-5  -> -1E-398    Underflow Subnormal Inexact Rounded
+ddmul829 multiply  9.9E-394    -1e-5  -> -1E-398    Underflow Subnormal Inexact Rounded
+ddmul830 multiply  3.0E-394    -1e-5  -> -0E-398    Underflow Subnormal Inexact Rounded Clamped
+
+ddmul831 multiply  1.0E-199     1e-200 -> 0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddmul832 multiply  1.0E-199     1e-199 -> 1E-398    Subnormal Rounded
+ddmul833 multiply  1.0E-199     1e-198 -> 1.0E-397    Subnormal
+ddmul834 multiply  2.0E-199     2e-198 -> 4.0E-397    Subnormal
+ddmul835 multiply  4.0E-199     4e-198 -> 1.60E-396   Subnormal
+ddmul836 multiply 10.0E-199    10e-198 -> 1.000E-395  Subnormal
+ddmul837 multiply 30.0E-199    30e-198 -> 9.000E-395  Subnormal
+ddmul838 multiply 40.0E-199    40e-188 -> 1.6000E-384 Subnormal
+ddmul839 multiply 40.0E-199    40e-187 -> 1.6000E-383
+ddmul840 multiply 40.0E-199    40e-186 -> 1.6000E-382
+
+-- Long operand overflow may be a different path
+ddmul870 multiply 100  9.999E+383         ->  Infinity Inexact Overflow Rounded
+ddmul871 multiply 100 -9.999E+383     -> -Infinity Inexact Overflow Rounded
+ddmul872 multiply      9.999E+383 100 ->  Infinity Inexact Overflow Rounded
+ddmul873 multiply     -9.999E+383 100 -> -Infinity Inexact Overflow Rounded
+
+-- check for double-rounded subnormals
+ddmul881 multiply  1.2347E-355 1.2347E-40  ->  1.524E-395 Inexact Rounded Subnormal Underflow
+ddmul882 multiply  1.234E-355 1.234E-40    ->  1.523E-395 Inexact Rounded Subnormal Underflow
+ddmul883 multiply  1.23E-355  1.23E-40     ->  1.513E-395 Inexact Rounded Subnormal Underflow
+ddmul884 multiply  1.2E-355   1.2E-40      ->  1.44E-395  Subnormal
+ddmul885 multiply  1.2E-355   1.2E-41      ->  1.44E-396  Subnormal
+ddmul886 multiply  1.2E-355   1.2E-42      ->  1.4E-397   Subnormal Inexact Rounded Underflow
+ddmul887 multiply  1.2E-355   1.3E-42      ->  1.6E-397   Subnormal Inexact Rounded Underflow
+ddmul888 multiply  1.3E-355   1.3E-42      ->  1.7E-397   Subnormal Inexact Rounded Underflow
+ddmul889 multiply  1.3E-355   1.3E-43      ->    2E-398   Subnormal Inexact Rounded Underflow
+ddmul890 multiply  1.3E-356   1.3E-43      ->    0E-398   Clamped Subnormal Inexact Rounded Underflow
+
+ddmul891 multiply  1.2345E-39   1.234E-355 ->  1.5234E-394 Inexact Rounded Subnormal Underflow
+ddmul892 multiply  1.23456E-39  1.234E-355 ->  1.5234E-394 Inexact Rounded Subnormal Underflow
+ddmul893 multiply  1.2345E-40   1.234E-355 ->  1.523E-395  Inexact Rounded Subnormal Underflow
+ddmul894 multiply  1.23456E-40  1.234E-355 ->  1.523E-395  Inexact Rounded Subnormal Underflow
+ddmul895 multiply  1.2345E-41   1.234E-355 ->  1.52E-396   Inexact Rounded Subnormal Underflow
+ddmul896 multiply  1.23456E-41  1.234E-355 ->  1.52E-396   Inexact Rounded Subnormal Underflow
+
+-- Now explore the case where we get a normal result with Underflow
+--                                                        1 234567890123456
+ddmul900 multiply  0.3000000000E-191 0.3000000000E-191 -> 9.00000000000000E-384 Subnormal Rounded
+ddmul901 multiply  0.3000000001E-191 0.3000000001E-191 -> 9.00000000600000E-384 Underflow Inexact Subnormal Rounded
+ddmul902 multiply  9.999999999999999E-383  0.0999999999999         -> 9.99999999999000E-384 Underflow Inexact Subnormal Rounded
+ddmul903 multiply  9.999999999999999E-383  0.09999999999999        -> 9.99999999999900E-384 Underflow Inexact Subnormal Rounded
+ddmul904 multiply  9.999999999999999E-383  0.099999999999999       -> 9.99999999999990E-384 Underflow Inexact Subnormal Rounded
+ddmul905 multiply  9.999999999999999E-383  0.0999999999999999      -> 9.99999999999999E-384 Underflow Inexact Subnormal Rounded
+-- prove operands are exact
+ddmul906 multiply  9.999999999999999E-383  1                       -> 9.999999999999999E-383
+ddmul907 multiply                       1  0.09999999999999999     -> 0.09999999999999999
+-- the next rounds to Nmin
+ddmul908 multiply  9.999999999999999E-383  0.09999999999999999     -> 1.000000000000000E-383 Underflow Inexact Subnormal Rounded
+
+-- hugest
+ddmul909 multiply  9999999999999999 9999999999999999 -> 9.999999999999998E+31 Inexact Rounded
+
+-- power-of-ten edge cases
+ddmul1001 multiply  1      10               -> 10
+ddmul1002 multiply  1      100              -> 100
+ddmul1003 multiply  1      1000             -> 1000
+ddmul1004 multiply  1      10000            -> 10000
+ddmul1005 multiply  1      100000           -> 100000
+ddmul1006 multiply  1      1000000          -> 1000000
+ddmul1007 multiply  1      10000000         -> 10000000
+ddmul1008 multiply  1      100000000        -> 100000000
+ddmul1009 multiply  1      1000000000       -> 1000000000
+ddmul1010 multiply  1      10000000000      -> 10000000000
+ddmul1011 multiply  1      100000000000     -> 100000000000
+ddmul1012 multiply  1      1000000000000    -> 1000000000000
+ddmul1013 multiply  1      10000000000000   -> 10000000000000
+ddmul1014 multiply  1      100000000000000  -> 100000000000000
+ddmul1015 multiply  1      1000000000000000 -> 1000000000000000
+ddmul1021 multiply  10     1                -> 10
+ddmul1022 multiply  10     10               -> 100
+ddmul1023 multiply  10     100              -> 1000
+ddmul1024 multiply  10     1000             -> 10000
+ddmul1025 multiply  10     10000            -> 100000
+ddmul1026 multiply  10     100000           -> 1000000
+ddmul1027 multiply  10     1000000          -> 10000000
+ddmul1028 multiply  10     10000000         -> 100000000
+ddmul1029 multiply  10     100000000        -> 1000000000
+ddmul1030 multiply  10     1000000000       -> 10000000000
+ddmul1031 multiply  10     10000000000      -> 100000000000
+ddmul1032 multiply  10     100000000000     -> 1000000000000
+ddmul1033 multiply  10     1000000000000    -> 10000000000000
+ddmul1034 multiply  10     10000000000000   -> 100000000000000
+ddmul1035 multiply  10     100000000000000  -> 1000000000000000
+ddmul1041 multiply  100    0.1              -> 10.0
+ddmul1042 multiply  100    1                -> 100
+ddmul1043 multiply  100    10               -> 1000
+ddmul1044 multiply  100    100              -> 10000
+ddmul1045 multiply  100    1000             -> 100000
+ddmul1046 multiply  100    10000            -> 1000000
+ddmul1047 multiply  100    100000           -> 10000000
+ddmul1048 multiply  100    1000000          -> 100000000
+ddmul1049 multiply  100    10000000         -> 1000000000
+ddmul1050 multiply  100    100000000        -> 10000000000
+ddmul1051 multiply  100    1000000000       -> 100000000000
+ddmul1052 multiply  100    10000000000      -> 1000000000000
+ddmul1053 multiply  100    100000000000     -> 10000000000000
+ddmul1054 multiply  100    1000000000000    -> 100000000000000
+ddmul1055 multiply  100    10000000000000   -> 1000000000000000
+ddmul1061 multiply  1000   0.01             -> 10.00
+ddmul1062 multiply  1000   0.1              -> 100.0
+ddmul1063 multiply  1000   1                -> 1000
+ddmul1064 multiply  1000   10               -> 10000
+ddmul1065 multiply  1000   100              -> 100000
+ddmul1066 multiply  1000   1000             -> 1000000
+ddmul1067 multiply  1000   10000            -> 10000000
+ddmul1068 multiply  1000   100000           -> 100000000
+ddmul1069 multiply  1000   1000000          -> 1000000000
+ddmul1070 multiply  1000   10000000         -> 10000000000
+ddmul1071 multiply  1000   100000000        -> 100000000000
+ddmul1072 multiply  1000   1000000000       -> 1000000000000
+ddmul1073 multiply  1000   10000000000      -> 10000000000000
+ddmul1074 multiply  1000   100000000000     -> 100000000000000
+ddmul1075 multiply  1000   1000000000000    -> 1000000000000000
+ddmul1081 multiply  10000  0.001            -> 10.000
+ddmul1082 multiply  10000  0.01             -> 100.00
+ddmul1083 multiply  10000  0.1              -> 1000.0
+ddmul1084 multiply  10000  1                -> 10000
+ddmul1085 multiply  10000  10               -> 100000
+ddmul1086 multiply  10000  100              -> 1000000
+ddmul1087 multiply  10000  1000             -> 10000000
+ddmul1088 multiply  10000  10000            -> 100000000
+ddmul1089 multiply  10000  100000           -> 1000000000
+ddmul1090 multiply  10000  1000000          -> 10000000000
+ddmul1091 multiply  10000  10000000         -> 100000000000
+ddmul1092 multiply  10000  100000000        -> 1000000000000
+ddmul1093 multiply  10000  1000000000       -> 10000000000000
+ddmul1094 multiply  10000  10000000000      -> 100000000000000
+ddmul1095 multiply  10000  100000000000     -> 1000000000000000
+
+ddmul1097 multiply  10000   99999999999     ->  999999999990000
+ddmul1098 multiply  10000   99999999999     ->  999999999990000
+
+
+
+
+-- Null tests
+ddmul9990 multiply 10  # -> NaN Invalid_operation
+ddmul9991 multiply  # 10 -> NaN Invalid_operation
+
+
+
+

@@ -1,0 +1,334 @@
+------------------------------------------------------------------------
+-- or.decTest -- digitwise logical OR                                 --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 999
+minExponent: -999
+
+-- Sanity check (truth table)
+orx001 or             0    0 ->    0
+orx002 or             0    1 ->    1
+orx003 or             1    0 ->    1
+orx004 or             1    1 ->    1
+orx005 or          1100 1010 -> 1110
+-- and at msd and msd-1
+orx006 or 000000000 000000000 ->           0
+orx007 or 000000000 100000000 ->   100000000
+orx008 or 100000000 000000000 ->   100000000
+orx009 or 100000000 100000000 ->   100000000
+orx010 or 000000000 000000000 ->           0
+orx011 or 000000000 010000000 ->    10000000
+orx012 or 010000000 000000000 ->    10000000
+orx013 or 010000000 010000000 ->    10000000
+
+-- Various lengths
+--        123456789     123456789      123456789
+orx021 or 111111111     111111111  ->  111111111
+orx022 or 111111111111  111111111  ->  111111111
+orx023 or  11111111      11111111  ->   11111111
+orx025 or   1111111       1111111  ->    1111111
+orx026 or    111111        111111  ->     111111
+orx027 or     11111         11111  ->      11111
+orx028 or      1111          1111  ->       1111
+orx029 or       111           111  ->        111
+orx031 or        11            11  ->         11
+orx032 or         1             1  ->          1
+orx033 or 111111111111 1111111111  ->  111111111
+orx034 or 11111111111 11111111111  ->  111111111
+orx035 or 1111111111 111111111111  ->  111111111
+orx036 or 111111111 1111111111111  ->  111111111
+
+orx040 or 111111111  111111111111  ->  111111111
+orx041 or  11111111  111111111111  ->  111111111
+orx042 or  11111111     111111111  ->  111111111
+orx043 or   1111111     100000010  ->  101111111
+orx044 or    111111     100000100  ->  100111111
+orx045 or     11111     100001000  ->  100011111
+orx046 or      1111     100010000  ->  100011111
+orx047 or       111     100100000  ->  100100111
+orx048 or        11     101000000  ->  101000011
+orx049 or         1     110000000  ->  110000001
+
+orx050 or 1111111111  1  ->  111111111
+orx051 or  111111111  1  ->  111111111
+orx052 or   11111111  1  ->  11111111
+orx053 or    1111111  1  ->  1111111
+orx054 or     111111  1  ->  111111
+orx055 or      11111  1  ->  11111
+orx056 or       1111  1  ->  1111
+orx057 or        111  1  ->  111
+orx058 or         11  1  ->  11
+orx059 or          1  1  ->  1
+
+orx060 or 1111111111  0  ->  111111111
+orx061 or  111111111  0  ->  111111111
+orx062 or   11111111  0  ->  11111111
+orx063 or    1111111  0  ->  1111111
+orx064 or     111111  0  ->  111111
+orx065 or      11111  0  ->  11111
+orx066 or       1111  0  ->  1111
+orx067 or        111  0  ->  111
+orx068 or         11  0  ->  11
+orx069 or          1  0  ->  1
+
+orx070 or 1  1111111111  ->  111111111
+orx071 or 1   111111111  ->  111111111
+orx072 or 1    11111111  ->  11111111
+orx073 or 1     1111111  ->  1111111
+orx074 or 1      111111  ->  111111
+orx075 or 1       11111  ->  11111
+orx076 or 1        1111  ->  1111
+orx077 or 1         111  ->  111
+orx078 or 1          11  ->  11
+orx079 or 1           1  ->  1
+
+orx080 or 0  1111111111  ->  111111111
+orx081 or 0   111111111  ->  111111111
+orx082 or 0    11111111  ->  11111111
+orx083 or 0     1111111  ->  1111111
+orx084 or 0      111111  ->  111111
+orx085 or 0       11111  ->  11111
+orx086 or 0        1111  ->  1111
+orx087 or 0         111  ->  111
+orx088 or 0          11  ->  11
+orx089 or 0           1  ->  1
+
+orx090 or 011111111  111101111  ->  111111111
+orx091 or 101111111  111101111  ->  111111111
+orx092 or 110111111  111101111  ->  111111111
+orx093 or 111011111  111101111  ->  111111111
+orx094 or 111101111  111101111  ->  111101111
+orx095 or 111110111  111101111  ->  111111111
+orx096 or 111111011  111101111  ->  111111111
+orx097 or 111111101  111101111  ->  111111111
+orx098 or 111111110  111101111  ->  111111111
+
+orx100 or 111101111  011111111  ->  111111111
+orx101 or 111101111  101111111  ->  111111111
+orx102 or 111101111  110111111  ->  111111111
+orx103 or 111101111  111011111  ->  111111111
+orx104 or 111101111  111101111  ->  111101111
+orx105 or 111101111  111110111  ->  111111111
+orx106 or 111101111  111111011  ->  111111111
+orx107 or 111101111  111111101  ->  111111111
+orx108 or 111101111  111111110  ->  111111111
+
+-- non-0/1 should not be accepted, nor should signs
+orx220 or 111111112  111111111  ->  NaN Invalid_operation
+orx221 or 333333333  333333333  ->  NaN Invalid_operation
+orx222 or 555555555  555555555  ->  NaN Invalid_operation
+orx223 or 777777777  777777777  ->  NaN Invalid_operation
+orx224 or 999999999  999999999  ->  NaN Invalid_operation
+orx225 or 222222222  999999999  ->  NaN Invalid_operation
+orx226 or 444444444  999999999  ->  NaN Invalid_operation
+orx227 or 666666666  999999999  ->  NaN Invalid_operation
+orx228 or 888888888  999999999  ->  NaN Invalid_operation
+orx229 or 999999999  222222222  ->  NaN Invalid_operation
+orx230 or 999999999  444444444  ->  NaN Invalid_operation
+orx231 or 999999999  666666666  ->  NaN Invalid_operation
+orx232 or 999999999  888888888  ->  NaN Invalid_operation
+-- a few randoms
+orx240 or  567468689 -934981942 ->  NaN Invalid_operation
+orx241 or  567367689  934981942 ->  NaN Invalid_operation
+orx242 or -631917772 -706014634 ->  NaN Invalid_operation
+orx243 or -756253257  138579234 ->  NaN Invalid_operation
+orx244 or  835590149  567435400 ->  NaN Invalid_operation
+-- test MSD
+orx250 or  200000000 100000000 ->  NaN Invalid_operation
+orx251 or  700000000 100000000 ->  NaN Invalid_operation
+orx252 or  800000000 100000000 ->  NaN Invalid_operation
+orx253 or  900000000 100000000 ->  NaN Invalid_operation
+orx254 or  200000000 000000000 ->  NaN Invalid_operation
+orx255 or  700000000 000000000 ->  NaN Invalid_operation
+orx256 or  800000000 000000000 ->  NaN Invalid_operation
+orx257 or  900000000 000000000 ->  NaN Invalid_operation
+orx258 or  100000000 200000000 ->  NaN Invalid_operation
+orx259 or  100000000 700000000 ->  NaN Invalid_operation
+orx260 or  100000000 800000000 ->  NaN Invalid_operation
+orx261 or  100000000 900000000 ->  NaN Invalid_operation
+orx262 or  000000000 200000000 ->  NaN Invalid_operation
+orx263 or  000000000 700000000 ->  NaN Invalid_operation
+orx264 or  000000000 800000000 ->  NaN Invalid_operation
+orx265 or  000000000 900000000 ->  NaN Invalid_operation
+-- test MSD-1
+orx270 or  020000000 100000000 ->  NaN Invalid_operation
+orx271 or  070100000 100000000 ->  NaN Invalid_operation
+orx272 or  080010000 100000001 ->  NaN Invalid_operation
+orx273 or  090001000 100000010 ->  NaN Invalid_operation
+orx274 or  100000100 020010100 ->  NaN Invalid_operation
+orx275 or  100000000 070001000 ->  NaN Invalid_operation
+orx276 or  100000010 080010100 ->  NaN Invalid_operation
+orx277 or  100000000 090000010 ->  NaN Invalid_operation
+-- test LSD
+orx280 or  001000002 100000000 ->  NaN Invalid_operation
+orx281 or  000000007 100000000 ->  NaN Invalid_operation
+orx282 or  000000008 100000000 ->  NaN Invalid_operation
+orx283 or  000000009 100000000 ->  NaN Invalid_operation
+orx284 or  100000000 000100002 ->  NaN Invalid_operation
+orx285 or  100100000 001000007 ->  NaN Invalid_operation
+orx286 or  100010000 010000008 ->  NaN Invalid_operation
+orx287 or  100001000 100000009 ->  NaN Invalid_operation
+-- test Middie
+orx288 or  001020000 100000000 ->  NaN Invalid_operation
+orx289 or  000070001 100000000 ->  NaN Invalid_operation
+orx290 or  000080000 100010000 ->  NaN Invalid_operation
+orx291 or  000090000 100001000 ->  NaN Invalid_operation
+orx292 or  100000010 000020100 ->  NaN Invalid_operation
+orx293 or  100100000 000070010 ->  NaN Invalid_operation
+orx294 or  100010100 000080001 ->  NaN Invalid_operation
+orx295 or  100001000 000090000 ->  NaN Invalid_operation
+-- signs
+orx296 or -100001000 -000000000 ->  NaN Invalid_operation
+orx297 or -100001000  000010000 ->  NaN Invalid_operation
+orx298 or  100001000 -000000000 ->  NaN Invalid_operation
+orx299 or  100001000  000011000 ->  100011000
+
+-- Nmax, Nmin, Ntiny
+orx331 or  2   9.99999999E+999     -> NaN Invalid_operation
+orx332 or  3   1E-999              -> NaN Invalid_operation
+orx333 or  4   1.00000000E-999     -> NaN Invalid_operation
+orx334 or  5   1E-1007             -> NaN Invalid_operation
+orx335 or  6   -1E-1007            -> NaN Invalid_operation
+orx336 or  7   -1.00000000E-999    -> NaN Invalid_operation
+orx337 or  8   -1E-999             -> NaN Invalid_operation
+orx338 or  9   -9.99999999E+999    -> NaN Invalid_operation
+orx341 or  9.99999999E+999     -18 -> NaN Invalid_operation
+orx342 or  1E-999               01 -> NaN Invalid_operation
+orx343 or  1.00000000E-999     -18 -> NaN Invalid_operation
+orx344 or  1E-1007              18 -> NaN Invalid_operation
+orx345 or  -1E-1007            -10 -> NaN Invalid_operation
+orx346 or  -1.00000000E-999     18 -> NaN Invalid_operation
+orx347 or  -1E-999              10 -> NaN Invalid_operation
+orx348 or  -9.99999999E+999    -18 -> NaN Invalid_operation
+
+-- A few other non-integers
+orx361 or  1.0                  1  -> NaN Invalid_operation
+orx362 or  1E+1                 1  -> NaN Invalid_operation
+orx363 or  0.0                  1  -> NaN Invalid_operation
+orx364 or  0E+1                 1  -> NaN Invalid_operation
+orx365 or  9.9                  1  -> NaN Invalid_operation
+orx366 or  9E+1                 1  -> NaN Invalid_operation
+orx371 or  0 1.0                   -> NaN Invalid_operation
+orx372 or  0 1E+1                  -> NaN Invalid_operation
+orx373 or  0 0.0                   -> NaN Invalid_operation
+orx374 or  0 0E+1                  -> NaN Invalid_operation
+orx375 or  0 9.9                   -> NaN Invalid_operation
+orx376 or  0 9E+1                  -> NaN Invalid_operation
+
+-- All Specials are in error
+orx780 or -Inf  -Inf   -> NaN Invalid_operation
+orx781 or -Inf  -1000  -> NaN Invalid_operation
+orx782 or -Inf  -1     -> NaN Invalid_operation
+orx783 or -Inf  -0     -> NaN Invalid_operation
+orx784 or -Inf   0     -> NaN Invalid_operation
+orx785 or -Inf   1     -> NaN Invalid_operation
+orx786 or -Inf   1000  -> NaN Invalid_operation
+orx787 or -1000 -Inf   -> NaN Invalid_operation
+orx788 or -Inf  -Inf   -> NaN Invalid_operation
+orx789 or -1    -Inf   -> NaN Invalid_operation
+orx790 or -0    -Inf   -> NaN Invalid_operation
+orx791 or  0    -Inf   -> NaN Invalid_operation
+orx792 or  1    -Inf   -> NaN Invalid_operation
+orx793 or  1000 -Inf   -> NaN Invalid_operation
+orx794 or  Inf  -Inf   -> NaN Invalid_operation
+
+orx800 or  Inf  -Inf   -> NaN Invalid_operation
+orx801 or  Inf  -1000  -> NaN Invalid_operation
+orx802 or  Inf  -1     -> NaN Invalid_operation
+orx803 or  Inf  -0     -> NaN Invalid_operation
+orx804 or  Inf   0     -> NaN Invalid_operation
+orx805 or  Inf   1     -> NaN Invalid_operation
+orx806 or  Inf   1000  -> NaN Invalid_operation
+orx807 or  Inf   Inf   -> NaN Invalid_operation
+orx808 or -1000  Inf   -> NaN Invalid_operation
+orx809 or -Inf   Inf   -> NaN Invalid_operation
+orx810 or -1     Inf   -> NaN Invalid_operation
+orx811 or -0     Inf   -> NaN Invalid_operation
+orx812 or  0     Inf   -> NaN Invalid_operation
+orx813 or  1     Inf   -> NaN Invalid_operation
+orx814 or  1000  Inf   -> NaN Invalid_operation
+orx815 or  Inf   Inf   -> NaN Invalid_operation
+
+orx821 or  NaN -Inf    -> NaN Invalid_operation
+orx822 or  NaN -1000   -> NaN Invalid_operation
+orx823 or  NaN -1      -> NaN Invalid_operation
+orx824 or  NaN -0      -> NaN Invalid_operation
+orx825 or  NaN  0      -> NaN Invalid_operation
+orx826 or  NaN  1      -> NaN Invalid_operation
+orx827 or  NaN  1000   -> NaN Invalid_operation
+orx828 or  NaN  Inf    -> NaN Invalid_operation
+orx829 or  NaN  NaN    -> NaN Invalid_operation
+orx830 or -Inf  NaN    -> NaN Invalid_operation
+orx831 or -1000 NaN    -> NaN Invalid_operation
+orx832 or -1    NaN    -> NaN Invalid_operation
+orx833 or -0    NaN    -> NaN Invalid_operation
+orx834 or  0    NaN    -> NaN Invalid_operation
+orx835 or  1    NaN    -> NaN Invalid_operation
+orx836 or  1000 NaN    -> NaN Invalid_operation
+orx837 or  Inf  NaN    -> NaN Invalid_operation
+
+orx841 or  sNaN -Inf   ->  NaN  Invalid_operation
+orx842 or  sNaN -1000  ->  NaN  Invalid_operation
+orx843 or  sNaN -1     ->  NaN  Invalid_operation
+orx844 or  sNaN -0     ->  NaN  Invalid_operation
+orx845 or  sNaN  0     ->  NaN  Invalid_operation
+orx846 or  sNaN  1     ->  NaN  Invalid_operation
+orx847 or  sNaN  1000  ->  NaN  Invalid_operation
+orx848 or  sNaN  NaN   ->  NaN  Invalid_operation
+orx849 or  sNaN sNaN   ->  NaN  Invalid_operation
+orx850 or  NaN  sNaN   ->  NaN  Invalid_operation
+orx851 or -Inf  sNaN   ->  NaN  Invalid_operation
+orx852 or -1000 sNaN   ->  NaN  Invalid_operation
+orx853 or -1    sNaN   ->  NaN  Invalid_operation
+orx854 or -0    sNaN   ->  NaN  Invalid_operation
+orx855 or  0    sNaN   ->  NaN  Invalid_operation
+orx856 or  1    sNaN   ->  NaN  Invalid_operation
+orx857 or  1000 sNaN   ->  NaN  Invalid_operation
+orx858 or  Inf  sNaN   ->  NaN  Invalid_operation
+orx859 or  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+orx861 or  NaN1   -Inf    -> NaN Invalid_operation
+orx862 or +NaN2   -1000   -> NaN Invalid_operation
+orx863 or  NaN3    1000   -> NaN Invalid_operation
+orx864 or  NaN4    Inf    -> NaN Invalid_operation
+orx865 or  NaN5   +NaN6   -> NaN Invalid_operation
+orx866 or -Inf     NaN7   -> NaN Invalid_operation
+orx867 or -1000    NaN8   -> NaN Invalid_operation
+orx868 or  1000    NaN9   -> NaN Invalid_operation
+orx869 or  Inf    +NaN10  -> NaN Invalid_operation
+orx871 or  sNaN11  -Inf   -> NaN Invalid_operation
+orx872 or  sNaN12  -1000  -> NaN Invalid_operation
+orx873 or  sNaN13   1000  -> NaN Invalid_operation
+orx874 or  sNaN14   NaN17 -> NaN Invalid_operation
+orx875 or  sNaN15  sNaN18 -> NaN Invalid_operation
+orx876 or  NaN16   sNaN19 -> NaN Invalid_operation
+orx877 or -Inf    +sNaN20 -> NaN Invalid_operation
+orx878 or -1000    sNaN21 -> NaN Invalid_operation
+orx879 or  1000    sNaN22 -> NaN Invalid_operation
+orx880 or  Inf     sNaN23 -> NaN Invalid_operation
+orx881 or +NaN25  +sNaN24 -> NaN Invalid_operation
+orx882 or -NaN26    NaN28 -> NaN Invalid_operation
+orx883 or -sNaN27  sNaN29 -> NaN Invalid_operation
+orx884 or  1000    -NaN30 -> NaN Invalid_operation
+orx885 or  1000   -sNaN31 -> NaN Invalid_operation
