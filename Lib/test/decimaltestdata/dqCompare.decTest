@@ -1,0 +1,753 @@
+------------------------------------------------------------------------
+-- dqCompare.decTest -- decQuad comparison that allows quiet NaNs     --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+-- Note that we cannot assume add/subtract tests cover paths adequately,
+-- here, because the code might be quite different (comparison cannot
+-- overflow or underflow, so actual subtractions are not necessary).
+
+-- All operands and results are decQuads.
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+-- sanity checks
+dqcom001 compare  -2  -2  -> 0
+dqcom002 compare  -2  -1  -> -1
+dqcom003 compare  -2   0  -> -1
+dqcom004 compare  -2   1  -> -1
+dqcom005 compare  -2   2  -> -1
+dqcom006 compare  -1  -2  -> 1
+dqcom007 compare  -1  -1  -> 0
+dqcom008 compare  -1   0  -> -1
+dqcom009 compare  -1   1  -> -1
+dqcom010 compare  -1   2  -> -1
+dqcom011 compare   0  -2  -> 1
+dqcom012 compare   0  -1  -> 1
+dqcom013 compare   0   0  -> 0
+dqcom014 compare   0   1  -> -1
+dqcom015 compare   0   2  -> -1
+dqcom016 compare   1  -2  -> 1
+dqcom017 compare   1  -1  -> 1
+dqcom018 compare   1   0  -> 1
+dqcom019 compare   1   1  -> 0
+dqcom020 compare   1   2  -> -1
+dqcom021 compare   2  -2  -> 1
+dqcom022 compare   2  -1  -> 1
+dqcom023 compare   2   0  -> 1
+dqcom025 compare   2   1  -> 1
+dqcom026 compare   2   2  -> 0
+
+dqcom031 compare  -20  -20  -> 0
+dqcom032 compare  -20  -10  -> -1
+dqcom033 compare  -20   00  -> -1
+dqcom034 compare  -20   10  -> -1
+dqcom035 compare  -20   20  -> -1
+dqcom036 compare  -10  -20  -> 1
+dqcom037 compare  -10  -10  -> 0
+dqcom038 compare  -10   00  -> -1
+dqcom039 compare  -10   10  -> -1
+dqcom040 compare  -10   20  -> -1
+dqcom041 compare   00  -20  -> 1
+dqcom042 compare   00  -10  -> 1
+dqcom043 compare   00   00  -> 0
+dqcom044 compare   00   10  -> -1
+dqcom045 compare   00   20  -> -1
+dqcom046 compare   10  -20  -> 1
+dqcom047 compare   10  -10  -> 1
+dqcom048 compare   10   00  -> 1
+dqcom049 compare   10   10  -> 0
+dqcom050 compare   10   20  -> -1
+dqcom051 compare   20  -20  -> 1
+dqcom052 compare   20  -10  -> 1
+dqcom053 compare   20   00  -> 1
+dqcom055 compare   20   10  -> 1
+dqcom056 compare   20   20  -> 0
+
+dqcom061 compare  -2.0  -2.0  -> 0
+dqcom062 compare  -2.0  -1.0  -> -1
+dqcom063 compare  -2.0   0.0  -> -1
+dqcom064 compare  -2.0   1.0  -> -1
+dqcom065 compare  -2.0   2.0  -> -1
+dqcom066 compare  -1.0  -2.0  -> 1
+dqcom067 compare  -1.0  -1.0  -> 0
+dqcom068 compare  -1.0   0.0  -> -1
+dqcom069 compare  -1.0   1.0  -> -1
+dqcom070 compare  -1.0   2.0  -> -1
+dqcom071 compare   0.0  -2.0  -> 1
+dqcom072 compare   0.0  -1.0  -> 1
+dqcom073 compare   0.0   0.0  -> 0
+dqcom074 compare   0.0   1.0  -> -1
+dqcom075 compare   0.0   2.0  -> -1
+dqcom076 compare   1.0  -2.0  -> 1
+dqcom077 compare   1.0  -1.0  -> 1
+dqcom078 compare   1.0   0.0  -> 1
+dqcom079 compare   1.0   1.0  -> 0
+dqcom080 compare   1.0   2.0  -> -1
+dqcom081 compare   2.0  -2.0  -> 1
+dqcom082 compare   2.0  -1.0  -> 1
+dqcom083 compare   2.0   0.0  -> 1
+dqcom085 compare   2.0   1.0  -> 1
+dqcom086 compare   2.0   2.0  -> 0
+
+-- now some cases which might overflow if subtract were used
+dqcom090 compare  9.999999999999999999999999999999999E+6144 9.999999999999999999999999999999999E+6144  -> 0
+dqcom091 compare -9.999999999999999999999999999999999E+6144 9.999999999999999999999999999999999E+6144  -> -1
+dqcom092 compare  9.999999999999999999999999999999999E+6144 -9.999999999999999999999999999999999E+6144 -> 1
+dqcom093 compare -9.999999999999999999999999999999999E+6144 -9.999999999999999999999999999999999E+6144 -> 0
+
+-- some differing length/exponent cases
+dqcom100 compare   7.0    7.0    -> 0
+dqcom101 compare   7.0    7      -> 0
+dqcom102 compare   7      7.0    -> 0
+dqcom103 compare   7E+0   7.0    -> 0
+dqcom104 compare   70E-1  7.0    -> 0
+dqcom105 compare   0.7E+1 7      -> 0
+dqcom106 compare   70E-1  7      -> 0
+dqcom107 compare   7.0    7E+0   -> 0
+dqcom108 compare   7.0    70E-1  -> 0
+dqcom109 compare   7      0.7E+1 -> 0
+dqcom110 compare   7      70E-1  -> 0
+
+dqcom120 compare   8.0    7.0    -> 1
+dqcom121 compare   8.0    7      -> 1
+dqcom122 compare   8      7.0    -> 1
+dqcom123 compare   8E+0   7.0    -> 1
+dqcom124 compare   80E-1  7.0    -> 1
+dqcom125 compare   0.8E+1 7      -> 1
+dqcom126 compare   80E-1  7      -> 1
+dqcom127 compare   8.0    7E+0   -> 1
+dqcom128 compare   8.0    70E-1  -> 1
+dqcom129 compare   8      0.7E+1  -> 1
+dqcom130 compare   8      70E-1  -> 1
+
+dqcom140 compare   8.0    9.0    -> -1
+dqcom141 compare   8.0    9      -> -1
+dqcom142 compare   8      9.0    -> -1
+dqcom143 compare   8E+0   9.0    -> -1
+dqcom144 compare   80E-1  9.0    -> -1
+dqcom145 compare   0.8E+1 9      -> -1
+dqcom146 compare   80E-1  9      -> -1
+dqcom147 compare   8.0    9E+0   -> -1
+dqcom148 compare   8.0    90E-1  -> -1
+dqcom149 compare   8      0.9E+1 -> -1
+dqcom150 compare   8      90E-1  -> -1
+
+-- and again, with sign changes -+ ..
+dqcom200 compare  -7.0    7.0    -> -1
+dqcom201 compare  -7.0    7      -> -1
+dqcom202 compare  -7      7.0    -> -1
+dqcom203 compare  -7E+0   7.0    -> -1
+dqcom204 compare  -70E-1  7.0    -> -1
+dqcom205 compare  -0.7E+1 7      -> -1
+dqcom206 compare  -70E-1  7      -> -1
+dqcom207 compare  -7.0    7E+0   -> -1
+dqcom208 compare  -7.0    70E-1  -> -1
+dqcom209 compare  -7      0.7E+1 -> -1
+dqcom210 compare  -7      70E-1  -> -1
+
+dqcom220 compare  -8.0    7.0    -> -1
+dqcom221 compare  -8.0    7      -> -1
+dqcom222 compare  -8      7.0    -> -1
+dqcom223 compare  -8E+0   7.0    -> -1
+dqcom224 compare  -80E-1  7.0    -> -1
+dqcom225 compare  -0.8E+1 7      -> -1
+dqcom226 compare  -80E-1  7      -> -1
+dqcom227 compare  -8.0    7E+0   -> -1
+dqcom228 compare  -8.0    70E-1  -> -1
+dqcom229 compare  -8      0.7E+1 -> -1
+dqcom230 compare  -8      70E-1  -> -1
+
+dqcom240 compare  -8.0    9.0    -> -1
+dqcom241 compare  -8.0    9      -> -1
+dqcom242 compare  -8      9.0    -> -1
+dqcom243 compare  -8E+0   9.0    -> -1
+dqcom244 compare  -80E-1  9.0    -> -1
+dqcom245 compare  -0.8E+1 9      -> -1
+dqcom246 compare  -80E-1  9      -> -1
+dqcom247 compare  -8.0    9E+0   -> -1
+dqcom248 compare  -8.0    90E-1  -> -1
+dqcom249 compare  -8      0.9E+1 -> -1
+dqcom250 compare  -8      90E-1  -> -1
+
+-- and again, with sign changes +- ..
+dqcom300 compare   7.0    -7.0    -> 1
+dqcom301 compare   7.0    -7      -> 1
+dqcom302 compare   7      -7.0    -> 1
+dqcom303 compare   7E+0   -7.0    -> 1
+dqcom304 compare   70E-1  -7.0    -> 1
+dqcom305 compare   .7E+1  -7      -> 1
+dqcom306 compare   70E-1  -7      -> 1
+dqcom307 compare   7.0    -7E+0   -> 1
+dqcom308 compare   7.0    -70E-1  -> 1
+dqcom309 compare   7      -.7E+1  -> 1
+dqcom310 compare   7      -70E-1  -> 1
+
+dqcom320 compare   8.0    -7.0    -> 1
+dqcom321 compare   8.0    -7      -> 1
+dqcom322 compare   8      -7.0    -> 1
+dqcom323 compare   8E+0   -7.0    -> 1
+dqcom324 compare   80E-1  -7.0    -> 1
+dqcom325 compare   .8E+1  -7      -> 1
+dqcom326 compare   80E-1  -7      -> 1
+dqcom327 compare   8.0    -7E+0   -> 1
+dqcom328 compare   8.0    -70E-1  -> 1
+dqcom329 compare   8      -.7E+1  -> 1
+dqcom330 compare   8      -70E-1  -> 1
+
+dqcom340 compare   8.0    -9.0    -> 1
+dqcom341 compare   8.0    -9      -> 1
+dqcom342 compare   8      -9.0    -> 1
+dqcom343 compare   8E+0   -9.0    -> 1
+dqcom344 compare   80E-1  -9.0    -> 1
+dqcom345 compare   .8E+1  -9      -> 1
+dqcom346 compare   80E-1  -9      -> 1
+dqcom347 compare   8.0    -9E+0   -> 1
+dqcom348 compare   8.0    -90E-1  -> 1
+dqcom349 compare   8      -.9E+1  -> 1
+dqcom350 compare   8      -90E-1  -> 1
+
+-- and again, with sign changes -- ..
+dqcom400 compare   -7.0    -7.0    -> 0
+dqcom401 compare   -7.0    -7      -> 0
+dqcom402 compare   -7      -7.0    -> 0
+dqcom403 compare   -7E+0   -7.0    -> 0
+dqcom404 compare   -70E-1  -7.0    -> 0
+dqcom405 compare   -.7E+1  -7      -> 0
+dqcom406 compare   -70E-1  -7      -> 0
+dqcom407 compare   -7.0    -7E+0   -> 0
+dqcom408 compare   -7.0    -70E-1  -> 0
+dqcom409 compare   -7      -.7E+1  -> 0
+dqcom410 compare   -7      -70E-1  -> 0
+
+dqcom420 compare   -8.0    -7.0    -> -1
+dqcom421 compare   -8.0    -7      -> -1
+dqcom422 compare   -8      -7.0    -> -1
+dqcom423 compare   -8E+0   -7.0    -> -1
+dqcom424 compare   -80E-1  -7.0    -> -1
+dqcom425 compare   -.8E+1  -7      -> -1
+dqcom426 compare   -80E-1  -7      -> -1
+dqcom427 compare   -8.0    -7E+0   -> -1
+dqcom428 compare   -8.0    -70E-1  -> -1
+dqcom429 compare   -8      -.7E+1  -> -1
+dqcom430 compare   -8      -70E-1  -> -1
+
+dqcom440 compare   -8.0    -9.0    -> 1
+dqcom441 compare   -8.0    -9      -> 1
+dqcom442 compare   -8      -9.0    -> 1
+dqcom443 compare   -8E+0   -9.0    -> 1
+dqcom444 compare   -80E-1  -9.0    -> 1
+dqcom445 compare   -.8E+1  -9      -> 1
+dqcom446 compare   -80E-1  -9      -> 1
+dqcom447 compare   -8.0    -9E+0   -> 1
+dqcom448 compare   -8.0    -90E-1  -> 1
+dqcom449 compare   -8      -.9E+1  -> 1
+dqcom450 compare   -8      -90E-1  -> 1
+
+-- misalignment traps for little-endian
+dqcom451 compare      1.0       0.1  -> 1
+dqcom452 compare      0.1       1.0  -> -1
+dqcom453 compare     10.0       0.1  -> 1
+dqcom454 compare      0.1      10.0  -> -1
+dqcom455 compare      100       1.0  -> 1
+dqcom456 compare      1.0       100  -> -1
+dqcom457 compare     1000      10.0  -> 1
+dqcom458 compare     10.0      1000  -> -1
+dqcom459 compare    10000     100.0  -> 1
+dqcom460 compare    100.0     10000  -> -1
+dqcom461 compare   100000    1000.0  -> 1
+dqcom462 compare   1000.0    100000  -> -1
+dqcom463 compare  1000000   10000.0  -> 1
+dqcom464 compare  10000.0   1000000  -> -1
+
+-- testcases that subtract to lots of zeros at boundaries [pgr]
+dqcom473 compare 123.9999999999999999994560000000000E-89 123.999999999999999999456E-89 -> 0
+dqcom474 compare 123.999999999999999999456000000000E+89 123.999999999999999999456E+89 -> 0
+dqcom475 compare 123.99999999999999999945600000000E-89 123.999999999999999999456E-89 -> 0
+dqcom476 compare 123.9999999999999999994560000000E+89 123.999999999999999999456E+89 -> 0
+dqcom477 compare 123.999999999999999999456000000E-89 123.999999999999999999456E-89 -> 0
+dqcom478 compare 123.99999999999999999945600000E+89 123.999999999999999999456E+89 -> 0
+dqcom479 compare 123.9999999999999999994560000E-89 123.999999999999999999456E-89 -> 0
+dqcom480 compare 123.999999999999999999456000E+89 123.999999999999999999456E+89 -> 0
+dqcom481 compare 123.99999999999999999945600E-89 123.999999999999999999456E-89 -> 0
+dqcom482 compare 123.9999999999999999994560E+89 123.999999999999999999456E+89 -> 0
+dqcom483 compare 123.999999999999999999456E-89 123.999999999999999999456E-89 -> 0
+dqcom487 compare 123.999999999999999999456E+89 123.9999999999999999994560000000000E+89 -> 0
+dqcom488 compare 123.999999999999999999456E-89 123.999999999999999999456000000000E-89 -> 0
+dqcom489 compare 123.999999999999999999456E+89 123.99999999999999999945600000000E+89 -> 0
+dqcom490 compare 123.999999999999999999456E-89 123.9999999999999999994560000000E-89 -> 0
+dqcom491 compare 123.999999999999999999456E+89 123.999999999999999999456000000E+89 -> 0
+dqcom492 compare 123.999999999999999999456E-89 123.99999999999999999945600000E-89 -> 0
+dqcom493 compare 123.999999999999999999456E+89 123.9999999999999999994560000E+89 -> 0
+dqcom494 compare 123.999999999999999999456E-89 123.999999999999999999456000E-89 -> 0
+dqcom495 compare 123.999999999999999999456E+89 123.99999999999999999945600E+89 -> 0
+dqcom496 compare 123.999999999999999999456E-89 123.9999999999999999994560E-89 -> 0
+dqcom497 compare 123.999999999999999999456E+89 123.999999999999999999456E+89 -> 0
+
+-- wide-ranging, around precision; signs equal
+dqcom500 compare    1     1E-15    -> 1
+dqcom501 compare    1     1E-14    -> 1
+dqcom502 compare    1     1E-13    -> 1
+dqcom503 compare    1     1E-12    -> 1
+dqcom504 compare    1     1E-11    -> 1
+dqcom505 compare    1     1E-10    -> 1
+dqcom506 compare    1     1E-9     -> 1
+dqcom507 compare    1     1E-8     -> 1
+dqcom508 compare    1     1E-7     -> 1
+dqcom509 compare    1     1E-6     -> 1
+dqcom510 compare    1     1E-5     -> 1
+dqcom511 compare    1     1E-4     -> 1
+dqcom512 compare    1     1E-3     -> 1
+dqcom513 compare    1     1E-2     -> 1
+dqcom514 compare    1     1E-1     -> 1
+dqcom515 compare    1     1E-0     -> 0
+dqcom516 compare    1     1E+1     -> -1
+dqcom517 compare    1     1E+2     -> -1
+dqcom518 compare    1     1E+3     -> -1
+dqcom519 compare    1     1E+4     -> -1
+dqcom521 compare    1     1E+5     -> -1
+dqcom522 compare    1     1E+6     -> -1
+dqcom523 compare    1     1E+7     -> -1
+dqcom524 compare    1     1E+8     -> -1
+dqcom525 compare    1     1E+9     -> -1
+dqcom526 compare    1     1E+10    -> -1
+dqcom527 compare    1     1E+11    -> -1
+dqcom528 compare    1     1E+12    -> -1
+dqcom529 compare    1     1E+13    -> -1
+dqcom530 compare    1     1E+14    -> -1
+dqcom531 compare    1     1E+15    -> -1
+-- LR swap
+dqcom540 compare    1E-15  1       -> -1
+dqcom541 compare    1E-14  1       -> -1
+dqcom542 compare    1E-13  1       -> -1
+dqcom543 compare    1E-12  1       -> -1
+dqcom544 compare    1E-11  1       -> -1
+dqcom545 compare    1E-10  1       -> -1
+dqcom546 compare    1E-9   1       -> -1
+dqcom547 compare    1E-8   1       -> -1
+dqcom548 compare    1E-7   1       -> -1
+dqcom549 compare    1E-6   1       -> -1
+dqcom550 compare    1E-5   1       -> -1
+dqcom551 compare    1E-4   1       -> -1
+dqcom552 compare    1E-3   1       -> -1
+dqcom553 compare    1E-2   1       -> -1
+dqcom554 compare    1E-1   1       -> -1
+dqcom555 compare    1E-0   1       ->  0
+dqcom556 compare    1E+1   1       ->  1
+dqcom557 compare    1E+2   1       ->  1
+dqcom558 compare    1E+3   1       ->  1
+dqcom559 compare    1E+4   1       ->  1
+dqcom561 compare    1E+5   1       ->  1
+dqcom562 compare    1E+6   1       ->  1
+dqcom563 compare    1E+7   1       ->  1
+dqcom564 compare    1E+8   1       ->  1
+dqcom565 compare    1E+9   1       ->  1
+dqcom566 compare    1E+10  1       ->  1
+dqcom567 compare    1E+11  1       ->  1
+dqcom568 compare    1E+12  1       ->  1
+dqcom569 compare    1E+13  1       ->  1
+dqcom570 compare    1E+14  1       ->  1
+dqcom571 compare    1E+15  1       ->  1
+-- similar with a useful coefficient, one side only
+dqcom580 compare  0.000000987654321     1E-15    -> 1
+dqcom581 compare  0.000000987654321     1E-14    -> 1
+dqcom582 compare  0.000000987654321     1E-13    -> 1
+dqcom583 compare  0.000000987654321     1E-12    -> 1
+dqcom584 compare  0.000000987654321     1E-11    -> 1
+dqcom585 compare  0.000000987654321     1E-10    -> 1
+dqcom586 compare  0.000000987654321     1E-9     -> 1
+dqcom587 compare  0.000000987654321     1E-8     -> 1
+dqcom588 compare  0.000000987654321     1E-7     -> 1
+dqcom589 compare  0.000000987654321     1E-6     -> -1
+dqcom590 compare  0.000000987654321     1E-5     -> -1
+dqcom591 compare  0.000000987654321     1E-4     -> -1
+dqcom592 compare  0.000000987654321     1E-3     -> -1
+dqcom593 compare  0.000000987654321     1E-2     -> -1
+dqcom594 compare  0.000000987654321     1E-1     -> -1
+dqcom595 compare  0.000000987654321     1E-0     -> -1
+dqcom596 compare  0.000000987654321     1E+1     -> -1
+dqcom597 compare  0.000000987654321     1E+2     -> -1
+dqcom598 compare  0.000000987654321     1E+3     -> -1
+dqcom599 compare  0.000000987654321     1E+4     -> -1
+
+-- check some unit-y traps
+dqcom600 compare   12            12.2345 -> -1
+dqcom601 compare   12.0          12.2345 -> -1
+dqcom602 compare   12.00         12.2345 -> -1
+dqcom603 compare   12.000        12.2345 -> -1
+dqcom604 compare   12.0000       12.2345 -> -1
+dqcom605 compare   12.00000      12.2345 -> -1
+dqcom606 compare   12.000000     12.2345 -> -1
+dqcom607 compare   12.0000000    12.2345 -> -1
+dqcom608 compare   12.00000000   12.2345 -> -1
+dqcom609 compare   12.000000000  12.2345 -> -1
+dqcom610 compare   12.1234 12            ->  1
+dqcom611 compare   12.1234 12.0          ->  1
+dqcom612 compare   12.1234 12.00         ->  1
+dqcom613 compare   12.1234 12.000        ->  1
+dqcom614 compare   12.1234 12.0000       ->  1
+dqcom615 compare   12.1234 12.00000      ->  1
+dqcom616 compare   12.1234 12.000000     ->  1
+dqcom617 compare   12.1234 12.0000000    ->  1
+dqcom618 compare   12.1234 12.00000000   ->  1
+dqcom619 compare   12.1234 12.000000000  ->  1
+dqcom620 compare  -12           -12.2345 ->  1
+dqcom621 compare  -12.0         -12.2345 ->  1
+dqcom622 compare  -12.00        -12.2345 ->  1
+dqcom623 compare  -12.000       -12.2345 ->  1
+dqcom624 compare  -12.0000      -12.2345 ->  1
+dqcom625 compare  -12.00000     -12.2345 ->  1
+dqcom626 compare  -12.000000    -12.2345 ->  1
+dqcom627 compare  -12.0000000   -12.2345 ->  1
+dqcom628 compare  -12.00000000  -12.2345 ->  1
+dqcom629 compare  -12.000000000 -12.2345 ->  1
+dqcom630 compare  -12.1234 -12           -> -1
+dqcom631 compare  -12.1234 -12.0         -> -1
+dqcom632 compare  -12.1234 -12.00        -> -1
+dqcom633 compare  -12.1234 -12.000       -> -1
+dqcom634 compare  -12.1234 -12.0000      -> -1
+dqcom635 compare  -12.1234 -12.00000     -> -1
+dqcom636 compare  -12.1234 -12.000000    -> -1
+dqcom637 compare  -12.1234 -12.0000000   -> -1
+dqcom638 compare  -12.1234 -12.00000000  -> -1
+dqcom639 compare  -12.1234 -12.000000000 -> -1
+
+-- extended zeros
+dqcom640 compare   0     0   -> 0
+dqcom641 compare   0    -0   -> 0
+dqcom642 compare   0    -0.0 -> 0
+dqcom643 compare   0     0.0 -> 0
+dqcom644 compare  -0     0   -> 0
+dqcom645 compare  -0    -0   -> 0
+dqcom646 compare  -0    -0.0 -> 0
+dqcom647 compare  -0     0.0 -> 0
+dqcom648 compare   0.0   0   -> 0
+dqcom649 compare   0.0  -0   -> 0
+dqcom650 compare   0.0  -0.0 -> 0
+dqcom651 compare   0.0   0.0 -> 0
+dqcom652 compare  -0.0   0   -> 0
+dqcom653 compare  -0.0  -0   -> 0
+dqcom654 compare  -0.0  -0.0 -> 0
+dqcom655 compare  -0.0   0.0 -> 0
+
+dqcom656 compare  -0E1   0.0 -> 0
+dqcom657 compare  -0E2   0.0 -> 0
+dqcom658 compare   0E1   0.0 -> 0
+dqcom659 compare   0E2   0.0 -> 0
+dqcom660 compare  -0E1   0   -> 0
+dqcom661 compare  -0E2   0   -> 0
+dqcom662 compare   0E1   0   -> 0
+dqcom663 compare   0E2   0   -> 0
+dqcom664 compare  -0E1  -0E1 -> 0
+dqcom665 compare  -0E2  -0E1 -> 0
+dqcom666 compare   0E1  -0E1 -> 0
+dqcom667 compare   0E2  -0E1 -> 0
+dqcom668 compare  -0E1  -0E2 -> 0
+dqcom669 compare  -0E2  -0E2 -> 0
+dqcom670 compare   0E1  -0E2 -> 0
+dqcom671 compare   0E2  -0E2 -> 0
+dqcom672 compare  -0E1   0E1 -> 0
+dqcom673 compare  -0E2   0E1 -> 0
+dqcom674 compare   0E1   0E1 -> 0
+dqcom675 compare   0E2   0E1 -> 0
+dqcom676 compare  -0E1   0E2 -> 0
+dqcom677 compare  -0E2   0E2 -> 0
+dqcom678 compare   0E1   0E2 -> 0
+dqcom679 compare   0E2   0E2 -> 0
+
+-- trailing zeros; unit-y
+dqcom680 compare   12    12           -> 0
+dqcom681 compare   12    12.0         -> 0
+dqcom682 compare   12    12.00        -> 0
+dqcom683 compare   12    12.000       -> 0
+dqcom684 compare   12    12.0000      -> 0
+dqcom685 compare   12    12.00000     -> 0
+dqcom686 compare   12    12.000000    -> 0
+dqcom687 compare   12    12.0000000   -> 0
+dqcom688 compare   12    12.00000000  -> 0
+dqcom689 compare   12    12.000000000 -> 0
+dqcom690 compare   12              12 -> 0
+dqcom691 compare   12.0            12 -> 0
+dqcom692 compare   12.00           12 -> 0
+dqcom693 compare   12.000          12 -> 0
+dqcom694 compare   12.0000         12 -> 0
+dqcom695 compare   12.00000        12 -> 0
+dqcom696 compare   12.000000       12 -> 0
+dqcom697 compare   12.0000000      12 -> 0
+dqcom698 compare   12.00000000     12 -> 0
+dqcom699 compare   12.000000000    12 -> 0
+
+-- first, second, & last digit
+dqcom700 compare   1234567899999999999999999990123456 1234567899999999999999999990123455 -> 1
+dqcom701 compare   1234567899999999999999999990123456 1234567899999999999999999990123456 -> 0
+dqcom702 compare   1234567899999999999999999990123456 1234567899999999999999999990123457 -> -1
+dqcom703 compare   1234567899999999999999999990123456 0234567899999999999999999990123456 -> 1
+dqcom704 compare   1234567899999999999999999990123456 1234567899999999999999999990123456 -> 0
+dqcom705 compare   1234567899999999999999999990123456 2234567899999999999999999990123456 -> -1
+dqcom706 compare   1134567899999999999999999990123456 1034567899999999999999999990123456 -> 1
+dqcom707 compare   1134567899999999999999999990123456 1134567899999999999999999990123456 -> 0
+dqcom708 compare   1134567899999999999999999990123456 1234567899999999999999999990123456 -> -1
+
+-- miscellaneous
+dqcom721 compare 12345678000 1 -> 1
+dqcom722 compare 1 12345678000 -> -1
+dqcom723 compare 1234567800  1 -> 1
+dqcom724 compare 1 1234567800  -> -1
+dqcom725 compare 1234567890  1 -> 1
+dqcom726 compare 1 1234567890  -> -1
+dqcom727 compare 1234567891  1 -> 1
+dqcom728 compare 1 1234567891  -> -1
+dqcom729 compare 12345678901 1 -> 1
+dqcom730 compare 1 12345678901 -> -1
+dqcom731 compare 1234567896  1 -> 1
+dqcom732 compare 1 1234567896  -> -1
+
+-- residue cases at lower precision
+dqcom740 compare  1  0.9999999  -> 1
+dqcom741 compare  1  0.999999   -> 1
+dqcom742 compare  1  0.99999    -> 1
+dqcom743 compare  1  1.0000     -> 0
+dqcom744 compare  1  1.00001    -> -1
+dqcom745 compare  1  1.000001   -> -1
+dqcom746 compare  1  1.0000001  -> -1
+dqcom750 compare  0.9999999  1  -> -1
+dqcom751 compare  0.999999   1  -> -1
+dqcom752 compare  0.99999    1  -> -1
+dqcom753 compare  1.0000     1  -> 0
+dqcom754 compare  1.00001    1  -> 1
+dqcom755 compare  1.000001   1  -> 1
+dqcom756 compare  1.0000001  1  -> 1
+
+-- Specials
+dqcom780 compare  Inf  -Inf   ->  1
+dqcom781 compare  Inf  -1000  ->  1
+dqcom782 compare  Inf  -1     ->  1
+dqcom783 compare  Inf  -0     ->  1
+dqcom784 compare  Inf   0     ->  1
+dqcom785 compare  Inf   1     ->  1
+dqcom786 compare  Inf   1000  ->  1
+dqcom787 compare  Inf   Inf   ->  0
+dqcom788 compare -1000  Inf   -> -1
+dqcom789 compare -Inf   Inf   -> -1
+dqcom790 compare -1     Inf   -> -1
+dqcom791 compare -0     Inf   -> -1
+dqcom792 compare  0     Inf   -> -1
+dqcom793 compare  1     Inf   -> -1
+dqcom794 compare  1000  Inf   -> -1
+dqcom795 compare  Inf   Inf   ->  0
+
+dqcom800 compare -Inf  -Inf   ->  0
+dqcom801 compare -Inf  -1000  -> -1
+dqcom802 compare -Inf  -1     -> -1
+dqcom803 compare -Inf  -0     -> -1
+dqcom804 compare -Inf   0     -> -1
+dqcom805 compare -Inf   1     -> -1
+dqcom806 compare -Inf   1000  -> -1
+dqcom807 compare -Inf   Inf   -> -1
+dqcom808 compare -Inf  -Inf   ->  0
+dqcom809 compare -1000 -Inf   ->  1
+dqcom810 compare -1    -Inf   ->  1
+dqcom811 compare -0    -Inf   ->  1
+dqcom812 compare  0    -Inf   ->  1
+dqcom813 compare  1    -Inf   ->  1
+dqcom814 compare  1000 -Inf   ->  1
+dqcom815 compare  Inf  -Inf   ->  1
+
+dqcom821 compare  NaN -Inf    ->  NaN
+dqcom822 compare  NaN -1000   ->  NaN
+dqcom823 compare  NaN -1      ->  NaN
+dqcom824 compare  NaN -0      ->  NaN
+dqcom825 compare  NaN  0      ->  NaN
+dqcom826 compare  NaN  1      ->  NaN
+dqcom827 compare  NaN  1000   ->  NaN
+dqcom828 compare  NaN  Inf    ->  NaN
+dqcom829 compare  NaN  NaN    ->  NaN
+dqcom830 compare -Inf  NaN    ->  NaN
+dqcom831 compare -1000 NaN    ->  NaN
+dqcom832 compare -1    NaN    ->  NaN
+dqcom833 compare -0    NaN    ->  NaN
+dqcom834 compare  0    NaN    ->  NaN
+dqcom835 compare  1    NaN    ->  NaN
+dqcom836 compare  1000 NaN    ->  NaN
+dqcom837 compare  Inf  NaN    ->  NaN
+dqcom838 compare -NaN -NaN    -> -NaN
+dqcom839 compare +NaN -NaN    ->  NaN
+dqcom840 compare -NaN +NaN    -> -NaN
+
+dqcom841 compare  sNaN -Inf   ->  NaN  Invalid_operation
+dqcom842 compare  sNaN -1000  ->  NaN  Invalid_operation
+dqcom843 compare  sNaN -1     ->  NaN  Invalid_operation
+dqcom844 compare  sNaN -0     ->  NaN  Invalid_operation
+dqcom845 compare  sNaN  0     ->  NaN  Invalid_operation
+dqcom846 compare  sNaN  1     ->  NaN  Invalid_operation
+dqcom847 compare  sNaN  1000  ->  NaN  Invalid_operation
+dqcom848 compare  sNaN  NaN   ->  NaN  Invalid_operation
+dqcom849 compare  sNaN sNaN   ->  NaN  Invalid_operation
+dqcom850 compare  NaN  sNaN   ->  NaN  Invalid_operation
+dqcom851 compare -Inf  sNaN   ->  NaN  Invalid_operation
+dqcom852 compare -1000 sNaN   ->  NaN  Invalid_operation
+dqcom853 compare -1    sNaN   ->  NaN  Invalid_operation
+dqcom854 compare -0    sNaN   ->  NaN  Invalid_operation
+dqcom855 compare  0    sNaN   ->  NaN  Invalid_operation
+dqcom856 compare  1    sNaN   ->  NaN  Invalid_operation
+dqcom857 compare  1000 sNaN   ->  NaN  Invalid_operation
+dqcom858 compare  Inf  sNaN   ->  NaN  Invalid_operation
+dqcom859 compare  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+dqcom860 compare  NaN9 -Inf   ->  NaN9
+dqcom861 compare  NaN8  999   ->  NaN8
+dqcom862 compare  NaN77 Inf   ->  NaN77
+dqcom863 compare -NaN67 NaN5  -> -NaN67
+dqcom864 compare -Inf  -NaN4  -> -NaN4
+dqcom865 compare -999  -NaN33 -> -NaN33
+dqcom866 compare  Inf   NaN2  ->  NaN2
+dqcom867 compare -NaN41 -NaN42 -> -NaN41
+dqcom868 compare +NaN41 -NaN42 ->  NaN41
+dqcom869 compare -NaN41 +NaN42 -> -NaN41
+dqcom870 compare +NaN41 +NaN42 ->  NaN41
+
+dqcom871 compare -sNaN99 -Inf    -> -NaN99 Invalid_operation
+dqcom872 compare  sNaN98 -11     ->  NaN98 Invalid_operation
+dqcom873 compare  sNaN97  NaN    ->  NaN97 Invalid_operation
+dqcom874 compare  sNaN16 sNaN94  ->  NaN16 Invalid_operation
+dqcom875 compare  NaN85  sNaN83  ->  NaN83 Invalid_operation
+dqcom876 compare -Inf    sNaN92  ->  NaN92 Invalid_operation
+dqcom877 compare  088    sNaN81  ->  NaN81 Invalid_operation
+dqcom878 compare  Inf    sNaN90  ->  NaN90 Invalid_operation
+dqcom879 compare  NaN   -sNaN89  -> -NaN89 Invalid_operation
+
+-- wide range
+dqcom880 compare +1.23456789012345E-0 9E+6144 -> -1
+dqcom881 compare 9E+6144 +1.23456789012345E-0 ->  1
+dqcom882 compare +0.100 9E-6143               ->  1
+dqcom883 compare 9E-6143 +0.100               -> -1
+dqcom885 compare -1.23456789012345E-0 9E+6144 -> -1
+dqcom886 compare 9E+6144 -1.23456789012345E-0 ->  1
+dqcom887 compare -0.100 9E-6143               -> -1
+dqcom888 compare 9E-6143 -0.100               ->  1
+
+-- signs
+dqcom901 compare  1e+77  1e+11 ->  1
+dqcom902 compare  1e+77 -1e+11 ->  1
+dqcom903 compare -1e+77  1e+11 -> -1
+dqcom904 compare -1e+77 -1e+11 -> -1
+dqcom905 compare  1e-77  1e-11 -> -1
+dqcom906 compare  1e-77 -1e-11 ->  1
+dqcom907 compare -1e-77  1e-11 -> -1
+dqcom908 compare -1e-77 -1e-11 ->  1
+
+-- full alignment range, both ways
+dqcomp1001 compare 1 1.000000000000000000000000000000000  -> 0
+dqcomp1002 compare 1 1.00000000000000000000000000000000   -> 0
+dqcomp1003 compare 1 1.0000000000000000000000000000000    -> 0
+dqcomp1004 compare 1 1.000000000000000000000000000000     -> 0
+dqcomp1005 compare 1 1.00000000000000000000000000000      -> 0
+dqcomp1006 compare 1 1.0000000000000000000000000000       -> 0
+dqcomp1007 compare 1 1.000000000000000000000000000        -> 0
+dqcomp1008 compare 1 1.00000000000000000000000000         -> 0
+dqcomp1009 compare 1 1.0000000000000000000000000          -> 0
+dqcomp1010 compare 1 1.000000000000000000000000           -> 0
+dqcomp1011 compare 1 1.00000000000000000000000            -> 0
+dqcomp1012 compare 1 1.0000000000000000000000             -> 0
+dqcomp1013 compare 1 1.000000000000000000000              -> 0
+dqcomp1014 compare 1 1.00000000000000000000               -> 0
+dqcomp1015 compare 1 1.0000000000000000000                -> 0
+dqcomp1016 compare 1 1.000000000000000000                 -> 0
+dqcomp1017 compare 1 1.00000000000000000                  -> 0
+dqcomp1018 compare 1 1.0000000000000000                   -> 0
+dqcomp1019 compare 1 1.000000000000000  -> 0
+dqcomp1020 compare 1 1.00000000000000   -> 0
+dqcomp1021 compare 1 1.0000000000000    -> 0
+dqcomp1022 compare 1 1.000000000000     -> 0
+dqcomp1023 compare 1 1.00000000000      -> 0
+dqcomp1024 compare 1 1.0000000000       -> 0
+dqcomp1025 compare 1 1.000000000        -> 0
+dqcomp1026 compare 1 1.00000000         -> 0
+dqcomp1027 compare 1 1.0000000          -> 0
+dqcomp1028 compare 1 1.000000           -> 0
+dqcomp1029 compare 1 1.00000            -> 0
+dqcomp1030 compare 1 1.0000             -> 0
+dqcomp1031 compare 1 1.000              -> 0
+dqcomp1032 compare 1 1.00               -> 0
+dqcomp1033 compare 1 1.0                -> 0
+
+dqcomp1041 compare 1.000000000000000000000000000000000  1 -> 0
+dqcomp1042 compare 1.00000000000000000000000000000000   1 -> 0
+dqcomp1043 compare 1.0000000000000000000000000000000    1 -> 0
+dqcomp1044 compare 1.000000000000000000000000000000     1 -> 0
+dqcomp1045 compare 1.00000000000000000000000000000      1 -> 0
+dqcomp1046 compare 1.0000000000000000000000000000       1 -> 0
+dqcomp1047 compare 1.000000000000000000000000000        1 -> 0
+dqcomp1048 compare 1.00000000000000000000000000         1 -> 0
+dqcomp1049 compare 1.0000000000000000000000000          1 -> 0
+dqcomp1050 compare 1.000000000000000000000000           1 -> 0
+dqcomp1051 compare 1.00000000000000000000000            1 -> 0
+dqcomp1052 compare 1.0000000000000000000000             1 -> 0
+dqcomp1053 compare 1.000000000000000000000              1 -> 0
+dqcomp1054 compare 1.00000000000000000000               1 -> 0
+dqcomp1055 compare 1.0000000000000000000                1 -> 0
+dqcomp1056 compare 1.000000000000000000                 1 -> 0
+dqcomp1057 compare 1.00000000000000000                  1 -> 0
+dqcomp1058 compare 1.0000000000000000                   1 -> 0
+dqcomp1059 compare 1.000000000000000  1 -> 0
+dqcomp1060 compare 1.00000000000000   1 -> 0
+dqcomp1061 compare 1.0000000000000    1 -> 0
+dqcomp1062 compare 1.000000000000     1 -> 0
+dqcomp1063 compare 1.00000000000      1 -> 0
+dqcomp1064 compare 1.0000000000       1 -> 0
+dqcomp1065 compare 1.000000000        1 -> 0
+dqcomp1066 compare 1.00000000         1 -> 0
+dqcomp1067 compare 1.0000000          1 -> 0
+dqcomp1068 compare 1.000000           1 -> 0
+dqcomp1069 compare 1.00000            1 -> 0
+dqcomp1070 compare 1.0000             1 -> 0
+dqcomp1071 compare 1.000              1 -> 0
+dqcomp1072 compare 1.00               1 -> 0
+dqcomp1073 compare 1.0                1 -> 0
+
+-- check MSD always detected non-zero
+dqcomp1080 compare 0 0.000000000000000000000000000000000  -> 0
+dqcomp1081 compare 0 1.000000000000000000000000000000000  -> -1
+dqcomp1082 compare 0 2.000000000000000000000000000000000  -> -1
+dqcomp1083 compare 0 3.000000000000000000000000000000000  -> -1
+dqcomp1084 compare 0 4.000000000000000000000000000000000  -> -1
+dqcomp1085 compare 0 5.000000000000000000000000000000000  -> -1
+dqcomp1086 compare 0 6.000000000000000000000000000000000  -> -1
+dqcomp1087 compare 0 7.000000000000000000000000000000000  -> -1
+dqcomp1088 compare 0 8.000000000000000000000000000000000  -> -1
+dqcomp1089 compare 0 9.000000000000000000000000000000000  -> -1
+dqcomp1090 compare 0.000000000000000000000000000000000  0 -> 0
+dqcomp1091 compare 1.000000000000000000000000000000000  0 -> 1
+dqcomp1092 compare 2.000000000000000000000000000000000  0 -> 1
+dqcomp1093 compare 3.000000000000000000000000000000000  0 -> 1
+dqcomp1094 compare 4.000000000000000000000000000000000  0 -> 1
+dqcomp1095 compare 5.000000000000000000000000000000000  0 -> 1
+dqcomp1096 compare 6.000000000000000000000000000000000  0 -> 1
+dqcomp1097 compare 7.000000000000000000000000000000000  0 -> 1
+dqcomp1098 compare 8.000000000000000000000000000000000  0 -> 1
+dqcomp1099 compare 9.000000000000000000000000000000000  0 -> 1
+
+-- Null tests
+dqcom990 compare 10  # -> NaN Invalid_operation
+dqcom991 compare  # 10 -> NaN Invalid_operation

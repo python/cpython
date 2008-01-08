@@ -1,0 +1,404 @@
+------------------------------------------------------------------------
+-- maxmag.decTest -- decimal maximum by magnitude                     --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+-- we assume that base comparison is tested in compare.decTest, so
+-- these mainly cover special cases and rounding
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 384
+minexponent: -383
+
+-- sanity checks
+mxgx001 maxmag  -2  -2  -> -2
+mxgx002 maxmag  -2  -1  -> -2
+mxgx003 maxmag  -2   0  -> -2
+mxgx004 maxmag  -2   1  -> -2
+mxgx005 maxmag  -2   2  ->  2
+mxgx006 maxmag  -1  -2  -> -2
+mxgx007 maxmag  -1  -1  -> -1
+mxgx008 maxmag  -1   0  -> -1
+mxgx009 maxmag  -1   1  ->  1
+mxgx010 maxmag  -1   2  ->  2
+mxgx011 maxmag   0  -2  -> -2
+mxgx012 maxmag   0  -1  -> -1
+mxgx013 maxmag   0   0  ->  0
+mxgx014 maxmag   0   1  ->  1
+mxgx015 maxmag   0   2  ->  2
+mxgx016 maxmag   1  -2  -> -2
+mxgx017 maxmag   1  -1  ->  1
+mxgx018 maxmag   1   0  ->  1
+mxgx019 maxmag   1   1  ->  1
+mxgx020 maxmag   1   2  ->  2
+mxgx021 maxmag   2  -2  ->  2
+mxgx022 maxmag   2  -1  ->  2
+mxgx023 maxmag   2   0  ->  2
+mxgx025 maxmag   2   1  ->  2
+mxgx026 maxmag   2   2  ->  2
+
+-- extended zeros
+mxgx030 maxmag   0     0   ->  0
+mxgx031 maxmag   0    -0   ->  0
+mxgx032 maxmag   0    -0.0 ->  0
+mxgx033 maxmag   0     0.0 ->  0
+mxgx034 maxmag  -0     0   ->  0    -- note: -0 = 0, but 0 chosen
+mxgx035 maxmag  -0    -0   -> -0
+mxgx036 maxmag  -0    -0.0 -> -0.0
+mxgx037 maxmag  -0     0.0 ->  0.0
+mxgx038 maxmag   0.0   0   ->  0
+mxgx039 maxmag   0.0  -0   ->  0.0
+mxgx040 maxmag   0.0  -0.0 ->  0.0
+mxgx041 maxmag   0.0   0.0 ->  0.0
+mxgx042 maxmag  -0.0   0   ->  0
+mxgx043 maxmag  -0.0  -0   -> -0.0
+mxgx044 maxmag  -0.0  -0.0 -> -0.0
+mxgx045 maxmag  -0.0   0.0 ->  0.0
+
+mxgx050 maxmag  -0E1   0E1 ->  0E+1
+mxgx051 maxmag  -0E2   0E2 ->  0E+2
+mxgx052 maxmag  -0E2   0E1 ->  0E+1
+mxgx053 maxmag  -0E1   0E2 ->  0E+2
+mxgx054 maxmag   0E1  -0E1 ->  0E+1
+mxgx055 maxmag   0E2  -0E2 ->  0E+2
+mxgx056 maxmag   0E2  -0E1 ->  0E+2
+mxgx057 maxmag   0E1  -0E2 ->  0E+1
+
+mxgx058 maxmag   0E1   0E1 ->  0E+1
+mxgx059 maxmag   0E2   0E2 ->  0E+2
+mxgx060 maxmag   0E2   0E1 ->  0E+2
+mxgx061 maxmag   0E1   0E2 ->  0E+2
+mxgx062 maxmag  -0E1  -0E1 -> -0E+1
+mxgx063 maxmag  -0E2  -0E2 -> -0E+2
+mxgx064 maxmag  -0E2  -0E1 -> -0E+1
+mxgx065 maxmag  -0E1  -0E2 -> -0E+1
+
+-- Specials
+precision: 9
+mxgx090 maxmag  Inf  -Inf   ->  Infinity
+mxgx091 maxmag  Inf  -1000  ->  Infinity
+mxgx092 maxmag  Inf  -1     ->  Infinity
+mxgx093 maxmag  Inf  -0     ->  Infinity
+mxgx094 maxmag  Inf   0     ->  Infinity
+mxgx095 maxmag  Inf   1     ->  Infinity
+mxgx096 maxmag  Inf   1000  ->  Infinity
+mxgx097 maxmag  Inf   Inf   ->  Infinity
+mxgx098 maxmag -1000  Inf   ->  Infinity
+mxgx099 maxmag -Inf   Inf   ->  Infinity
+mxgx100 maxmag -1     Inf   ->  Infinity
+mxgx101 maxmag -0     Inf   ->  Infinity
+mxgx102 maxmag  0     Inf   ->  Infinity
+mxgx103 maxmag  1     Inf   ->  Infinity
+mxgx104 maxmag  1000  Inf   ->  Infinity
+mxgx105 maxmag  Inf   Inf   ->  Infinity
+
+mxgx120 maxmag -Inf  -Inf   -> -Infinity
+mxgx121 maxmag -Inf  -1000  -> -Infinity
+mxgx122 maxmag -Inf  -1     -> -Infinity
+mxgx123 maxmag -Inf  -0     -> -Infinity
+mxgx124 maxmag -Inf   0     -> -Infinity
+mxgx125 maxmag -Inf   1     -> -Infinity
+mxgx126 maxmag -Inf   1000  -> -Infinity
+mxgx127 maxmag -Inf   Inf   ->  Infinity
+mxgx128 maxmag -Inf  -Inf   -> -Infinity
+mxgx129 maxmag -1000 -Inf   -> -Infinity
+mxgx130 maxmag -1    -Inf   -> -Infinity
+mxgx131 maxmag -0    -Inf   -> -Infinity
+mxgx132 maxmag  0    -Inf   -> -Infinity
+mxgx133 maxmag  1    -Inf   -> -Infinity
+mxgx134 maxmag  1000 -Inf   -> -Infinity
+mxgx135 maxmag  Inf  -Inf   ->  Infinity
+
+-- 2004.08.02 754r chooses number over NaN in mixed cases
+mxgx141 maxmag  NaN -Inf    -> -Infinity
+mxgx142 maxmag  NaN -1000   -> -1000
+mxgx143 maxmag  NaN -1      -> -1
+mxgx144 maxmag  NaN -0      -> -0
+mxgx145 maxmag  NaN  0      ->  0
+mxgx146 maxmag  NaN  1      ->  1
+mxgx147 maxmag  NaN  1000   ->  1000
+mxgx148 maxmag  NaN  Inf    ->  Infinity
+mxgx149 maxmag  NaN  NaN    ->  NaN
+mxgx150 maxmag -Inf  NaN    -> -Infinity
+mxgx151 maxmag -1000 NaN    -> -1000
+mxgx152 maxmag -1    NaN    -> -1
+mxgx153 maxmag -0    NaN    -> -0
+mxgx154 maxmag  0    NaN    ->  0
+mxgx155 maxmag  1    NaN    ->  1
+mxgx156 maxmag  1000 NaN    ->  1000
+mxgx157 maxmag  Inf  NaN    ->  Infinity
+
+mxgx161 maxmag  sNaN -Inf   ->  NaN  Invalid_operation
+mxgx162 maxmag  sNaN -1000  ->  NaN  Invalid_operation
+mxgx163 maxmag  sNaN -1     ->  NaN  Invalid_operation
+mxgx164 maxmag  sNaN -0     ->  NaN  Invalid_operation
+mxgx165 maxmag  sNaN  0     ->  NaN  Invalid_operation
+mxgx166 maxmag  sNaN  1     ->  NaN  Invalid_operation
+mxgx167 maxmag  sNaN  1000  ->  NaN  Invalid_operation
+mxgx168 maxmag  sNaN  NaN   ->  NaN  Invalid_operation
+mxgx169 maxmag  sNaN sNaN   ->  NaN  Invalid_operation
+mxgx170 maxmag  NaN  sNaN   ->  NaN  Invalid_operation
+mxgx171 maxmag -Inf  sNaN   ->  NaN  Invalid_operation
+mxgx172 maxmag -1000 sNaN   ->  NaN  Invalid_operation
+mxgx173 maxmag -1    sNaN   ->  NaN  Invalid_operation
+mxgx174 maxmag -0    sNaN   ->  NaN  Invalid_operation
+mxgx175 maxmag  0    sNaN   ->  NaN  Invalid_operation
+mxgx176 maxmag  1    sNaN   ->  NaN  Invalid_operation
+mxgx177 maxmag  1000 sNaN   ->  NaN  Invalid_operation
+mxgx178 maxmag  Inf  sNaN   ->  NaN  Invalid_operation
+mxgx179 maxmag  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+mxgx181 maxmag  NaN9  -Inf   -> -Infinity
+mxgx182 maxmag  NaN8     9   ->  9
+mxgx183 maxmag -NaN7   Inf   ->  Infinity
+
+mxgx184 maxmag -NaN1   NaN11 -> -NaN1
+mxgx185 maxmag  NaN2   NaN12 ->  NaN2
+mxgx186 maxmag -NaN13 -NaN7  -> -NaN13
+mxgx187 maxmag  NaN14 -NaN5  ->  NaN14
+
+mxgx188 maxmag -Inf    NaN4  -> -Infinity
+mxgx189 maxmag -9     -NaN3  -> -9
+mxgx190 maxmag  Inf    NaN2  ->  Infinity
+
+mxgx191 maxmag  sNaN99 -Inf    ->  NaN99 Invalid_operation
+mxgx192 maxmag  sNaN98 -1      ->  NaN98 Invalid_operation
+mxgx193 maxmag -sNaN97  NaN    -> -NaN97 Invalid_operation
+mxgx194 maxmag  sNaN96 sNaN94  ->  NaN96 Invalid_operation
+mxgx195 maxmag  NaN95  sNaN93  ->  NaN93 Invalid_operation
+mxgx196 maxmag -Inf    sNaN92  ->  NaN92 Invalid_operation
+mxgx197 maxmag  0      sNaN91  ->  NaN91 Invalid_operation
+mxgx198 maxmag  Inf   -sNaN90  -> -NaN90 Invalid_operation
+mxgx199 maxmag  NaN    sNaN89  ->  NaN89 Invalid_operation
+
+-- rounding checks
+maxexponent: 999
+minexponent: -999
+precision: 9
+mxgx201 maxmag 12345678000 1  -> 1.23456780E+10 Rounded
+mxgx202 maxmag 1 12345678000  -> 1.23456780E+10 Rounded
+mxgx203 maxmag 1234567800  1  -> 1.23456780E+9 Rounded
+mxgx204 maxmag 1 1234567800   -> 1.23456780E+9 Rounded
+mxgx205 maxmag 1234567890  1  -> 1.23456789E+9 Rounded
+mxgx206 maxmag 1 1234567890   -> 1.23456789E+9 Rounded
+mxgx207 maxmag 1234567891  1  -> 1.23456789E+9 Inexact Rounded
+mxgx208 maxmag 1 1234567891   -> 1.23456789E+9 Inexact Rounded
+mxgx209 maxmag 12345678901 1  -> 1.23456789E+10 Inexact Rounded
+mxgx210 maxmag 1 12345678901  -> 1.23456789E+10 Inexact Rounded
+mxgx211 maxmag 1234567896  1  -> 1.23456790E+9 Inexact Rounded
+mxgx212 maxmag 1 1234567896   -> 1.23456790E+9 Inexact Rounded
+mxgx213 maxmag -1234567891  1 -> -1.23456789E+9   Inexact Rounded
+mxgx214 maxmag 1 -1234567891  -> -1.23456789E+9   Inexact Rounded
+mxgx215 maxmag -12345678901 1 -> -1.23456789E+10  Inexact Rounded
+mxgx216 maxmag 1 -12345678901 -> -1.23456789E+10  Inexact Rounded
+mxgx217 maxmag -1234567896  1 -> -1.23456790E+9   Inexact Rounded
+mxgx218 maxmag 1 -1234567896  -> -1.23456790E+9   Inexact Rounded
+
+precision: 15
+mxgx221 maxmag 12345678000 1  -> 12345678000
+mxgx222 maxmag 1 12345678000  -> 12345678000
+mxgx223 maxmag 1234567800  1  -> 1234567800
+mxgx224 maxmag 1 1234567800   -> 1234567800
+mxgx225 maxmag 1234567890  1  -> 1234567890
+mxgx226 maxmag 1 1234567890   -> 1234567890
+mxgx227 maxmag 1234567891  1  -> 1234567891
+mxgx228 maxmag 1 1234567891   -> 1234567891
+mxgx229 maxmag 12345678901 1  -> 12345678901
+mxgx230 maxmag 1 12345678901  -> 12345678901
+mxgx231 maxmag 1234567896  1  -> 1234567896
+mxgx232 maxmag 1 1234567896   -> 1234567896
+mxgx233 maxmag -1234567891  1 -> -1234567891
+mxgx234 maxmag 1 -1234567891  -> -1234567891
+mxgx235 maxmag -12345678901 1 -> -12345678901
+mxgx236 maxmag 1 -12345678901 -> -12345678901
+mxgx237 maxmag -1234567896  1 -> -1234567896
+mxgx238 maxmag 1 -1234567896  -> -1234567896
+
+-- from examples
+mxgx280 maxmag '3'   '2'  ->  '3'
+mxgx281 maxmag '-10' '3'  ->  '-10'
+mxgx282 maxmag '1.0' '1'  ->  '1'
+mxgx283 maxmag '1' '1.0'  ->  '1'
+mxgx284 maxmag '7' 'NaN'  ->  '7'
+
+-- overflow and underflow tests ...
+maxExponent: 999999999
+minexponent: -999999999
+mxgx330 maxmag +1.23456789012345E-0 9E+999999999 ->  9E+999999999
+mxgx331 maxmag 9E+999999999 +1.23456789012345E-0 ->  9E+999999999
+mxgx332 maxmag +0.100 9E-999999999               ->  0.100
+mxgx333 maxmag 9E-999999999 +0.100               ->  0.100
+mxgx335 maxmag -1.23456789012345E-0 9E+999999999 ->  9E+999999999
+mxgx336 maxmag 9E+999999999 -1.23456789012345E-0 ->  9E+999999999
+mxgx337 maxmag -0.100 9E-999999999               ->  -0.100
+mxgx338 maxmag 9E-999999999 -0.100               ->  -0.100
+
+mxgx339 maxmag 1e-599999999 1e-400000001   ->  1E-400000001
+mxgx340 maxmag 1e-599999999 1e-400000000   ->  1E-400000000
+mxgx341 maxmag 1e-600000000 1e-400000000   ->  1E-400000000
+mxgx342 maxmag 9e-999999998 0.01           ->  0.01
+mxgx343 maxmag 9e-999999998 0.1            ->  0.1
+mxgx344 maxmag 0.01 9e-999999998           ->  0.01
+mxgx345 maxmag 1e599999999 1e400000001     ->  1E+599999999
+mxgx346 maxmag 1e599999999 1e400000000     ->  1E+599999999
+mxgx347 maxmag 1e600000000 1e400000000     ->  1E+600000000
+mxgx348 maxmag 9e999999998 100             ->  9E+999999998
+mxgx349 maxmag 9e999999998 10              ->  9E+999999998
+mxgx350 maxmag 100  9e999999998            ->  9E+999999998
+-- signs
+mxgx351 maxmag  1e+777777777  1e+411111111 ->  1E+777777777
+mxgx352 maxmag  1e+777777777 -1e+411111111 ->  1E+777777777
+mxgx353 maxmag -1e+777777777  1e+411111111 -> -1E+777777777
+mxgx354 maxmag -1e+777777777 -1e+411111111 -> -1E+777777777
+mxgx355 maxmag  1e-777777777  1e-411111111 ->  1E-411111111
+mxgx356 maxmag  1e-777777777 -1e-411111111 -> -1E-411111111
+mxgx357 maxmag -1e-777777777  1e-411111111 ->  1E-411111111
+mxgx358 maxmag -1e-777777777 -1e-411111111 -> -1E-411111111
+
+-- expanded list from min/max 754r purple prose
+-- [explicit tests for exponent ordering]
+mxgx401 maxmag  Inf    1.1     ->  Infinity
+mxgx402 maxmag  1.1    1       ->  1.1
+mxgx403 maxmag  1      1.0     ->  1
+mxgx404 maxmag  1.0    0.1     ->  1.0
+mxgx405 maxmag  0.1    0.10    ->  0.1
+mxgx406 maxmag  0.10   0.100   ->  0.10
+mxgx407 maxmag  0.10   0       ->  0.10
+mxgx408 maxmag  0      0.0     ->  0
+mxgx409 maxmag  0.0   -0       ->  0.0
+mxgx410 maxmag  0.0   -0.0     ->  0.0
+mxgx411 maxmag  0.00  -0.0     ->  0.00
+mxgx412 maxmag  0.0   -0.00    ->  0.0
+mxgx413 maxmag  0     -0.0     ->  0
+mxgx414 maxmag  0     -0       ->  0
+mxgx415 maxmag -0.0   -0       -> -0.0
+mxgx416 maxmag -0     -0.100   -> -0.100
+mxgx417 maxmag -0.100 -0.10    -> -0.100
+mxgx418 maxmag -0.10  -0.1     -> -0.10
+mxgx419 maxmag -0.1   -1.0     -> -1.0
+mxgx420 maxmag -1.0   -1       -> -1.0
+mxgx421 maxmag -1     -1.1     -> -1.1
+mxgx423 maxmag -1.1   -Inf     -> -Infinity
+-- same with operands reversed
+mxgx431 maxmag  1.1    Inf     ->  Infinity
+mxgx432 maxmag  1      1.1     ->  1.1
+mxgx433 maxmag  1.0    1       ->  1
+mxgx434 maxmag  0.1    1.0     ->  1.0
+mxgx435 maxmag  0.10   0.1     ->  0.1
+mxgx436 maxmag  0.100  0.10    ->  0.10
+mxgx437 maxmag  0      0.10    ->  0.10
+mxgx438 maxmag  0.0    0       ->  0
+mxgx439 maxmag -0      0.0     ->  0.0
+mxgx440 maxmag -0.0    0.0     ->  0.0
+mxgx441 maxmag -0.0    0.00    ->  0.00
+mxgx442 maxmag -0.00   0.0     ->  0.0
+mxgx443 maxmag -0.0    0       ->  0
+mxgx444 maxmag -0      0       ->  0
+mxgx445 maxmag -0     -0.0     -> -0.0
+mxgx446 maxmag -0.100 -0       -> -0.100
+mxgx447 maxmag -0.10  -0.100   -> -0.100
+mxgx448 maxmag -0.1   -0.10    -> -0.10
+mxgx449 maxmag -1.0   -0.1     -> -1.0
+mxgx450 maxmag -1     -1.0     -> -1.0
+mxgx451 maxmag -1.1   -1       -> -1.1
+mxgx453 maxmag -Inf   -1.1     -> -Infinity
+-- largies
+mxgx460 maxmag  1000   1E+3    ->  1E+3
+mxgx461 maxmag  1E+3   1000    ->  1E+3
+mxgx462 maxmag  1000  -1E+3    ->  1000
+mxgx463 maxmag  1E+3  -1000    ->  1E+3
+mxgx464 maxmag -1000   1E+3    ->  1E+3
+mxgx465 maxmag -1E+3   1000    ->  1000
+mxgx466 maxmag -1000  -1E+3    -> -1000
+mxgx467 maxmag -1E+3  -1000    -> -1000
+
+-- rounding (results treated as though plus)
+maxexponent: 999999999
+minexponent: -999999999
+precision: 3
+
+mxgx470 maxmag  1      .5     ->  1
+mxgx471 maxmag  10     5      ->  10
+mxgx472 maxmag  100    50     ->  100
+mxgx473 maxmag  1000   500    ->  1.00E+3 Rounded
+mxgx474 maxmag  10000  5000   ->  1.00E+4 Rounded
+mxgx475 maxmag  6      .5     ->  6
+mxgx476 maxmag  66     5      ->  66
+mxgx477 maxmag  666    50     ->  666
+mxgx478 maxmag  6666   500    ->  6.67E+3 Rounded Inexact
+mxgx479 maxmag  66666  5000   ->  6.67E+4 Rounded Inexact
+mxgx480 maxmag  33333  5000   ->  3.33E+4 Rounded Inexact
+mxgx481 maxmag  .5     1      ->  1
+mxgx482 maxmag  .5     10     ->  10
+mxgx483 maxmag  .5     100    ->  100
+mxgx484 maxmag  .5     1000   ->  1.00E+3 Rounded
+mxgx485 maxmag  .5     10000  ->  1.00E+4 Rounded
+mxgx486 maxmag  .5     6      ->  6
+mxgx487 maxmag  .5     66     ->  66
+mxgx488 maxmag  .5     666    ->  666
+mxgx489 maxmag  .5     6666   ->  6.67E+3 Rounded Inexact
+mxgx490 maxmag  .5     66666  ->  6.67E+4 Rounded Inexact
+mxgx491 maxmag  .5     33333  ->  3.33E+4 Rounded Inexact
+
+-- overflow tests
+maxexponent: 999999999
+minexponent: -999999999
+precision: 3
+mxgx500 maxmag 9.999E+999999999  0 ->  Infinity Inexact Overflow Rounded
+mxgx501 maxmag -9.999E+999999999 0 -> -Infinity Inexact Overflow Rounded
+
+-- subnormals and underflow
+precision: 3
+maxexponent: 999
+minexponent: -999
+mxgx510 maxmag  1.00E-999       0  ->   1.00E-999
+mxgx511 maxmag  0.1E-999        0  ->   1E-1000   Subnormal
+mxgx512 maxmag  0.10E-999       0  ->   1.0E-1000 Subnormal
+mxgx513 maxmag  0.100E-999      0  ->   1.0E-1000 Subnormal Rounded
+mxgx514 maxmag  0.01E-999       0  ->   1E-1001   Subnormal
+-- next is rounded to Nmin
+mxgx515 maxmag  0.999E-999      0  ->   1.00E-999 Inexact Rounded Subnormal Underflow
+mxgx516 maxmag  0.099E-999      0  ->   1.0E-1000 Inexact Rounded Subnormal Underflow
+mxgx517 maxmag  0.009E-999      0  ->   1E-1001   Inexact Rounded Subnormal Underflow
+mxgx518 maxmag  0.001E-999      0  ->   0E-1001   Inexact Rounded Subnormal Underflow Clamped
+mxgx519 maxmag  0.0009E-999     0  ->   0E-1001   Inexact Rounded Subnormal Underflow Clamped
+mxgx520 maxmag  0.0001E-999     0  ->   0E-1001   Inexact Rounded Subnormal Underflow Clamped
+
+mxgx530 maxmag -1.00E-999       0  ->  -1.00E-999
+mxgx531 maxmag -0.1E-999        0  ->  -1E-1000   Subnormal
+mxgx532 maxmag -0.10E-999       0  ->  -1.0E-1000 Subnormal
+mxgx533 maxmag -0.100E-999      0  ->  -1.0E-1000 Subnormal Rounded
+mxgx534 maxmag -0.01E-999       0  ->  -1E-1001   Subnormal
+-- next is rounded to -Nmin
+mxgx535 maxmag -0.999E-999      0  ->  -1.00E-999 Inexact Rounded Subnormal Underflow
+mxgx536 maxmag -0.099E-999      0  ->  -1.0E-1000 Inexact Rounded Subnormal Underflow
+mxgx537 maxmag -0.009E-999      0  ->  -1E-1001   Inexact Rounded Subnormal Underflow
+mxgx538 maxmag -0.001E-999      0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
+mxgx539 maxmag -0.0009E-999     0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
+mxgx540 maxmag -0.0001E-999     0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
+
+-- Null tests
+mxgx900 maxmag 10  #  -> NaN Invalid_operation
+mxgx901 maxmag  # 10  -> NaN Invalid_operation
+
+
+

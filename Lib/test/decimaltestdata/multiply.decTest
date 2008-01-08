@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- multiply.decTest -- decimal multiplication                         --
--- Copyright (c) IBM Corporation, 1981, 2004.  All rights reserved.   --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.39
+version: 2.57
 
 extended:    1
 precision:   9
@@ -44,21 +44,28 @@ mulx014 multiply 9.999999999 9.999999999 -> 100.000000 Inexact Rounded
 mulx015 multiply 2.50   4 -> 10.00
 precision: 6
 mulx016 multiply 2.50   4 -> 10.00
-mulx017 multiply 9.999999999 9.999999999 -> 100.000 Inexact Rounded
+mulx017 multiply  9.999999999  9.999999999 ->  100.000 Inexact Rounded
+mulx018 multiply  9.999999999 -9.999999999 -> -100.000 Inexact Rounded
+mulx019 multiply -9.999999999  9.999999999 -> -100.000 Inexact Rounded
+mulx020 multiply -9.999999999 -9.999999999 ->  100.000 Inexact Rounded
 
 -- 1999.12.21: next one is a edge case if intermediate longs are used
 precision: 15
-mulx019 multiply 999999999999 9765625 -> 9.76562499999023E+18 Inexact Rounded
+mulx059 multiply 999999999999 9765625 -> 9.76562499999023E+18 Inexact Rounded
 precision: 30
 mulx160 multiply 999999999999 9765625 -> 9765624999990234375
 precision: 9
 -----
 
 -- zeros, etc.
-mulx020 multiply  0      0     ->  0
-mulx021 multiply  0     -0     -> -0
-mulx022 multiply -0      0     -> -0
-mulx023 multiply -0     -0     ->  0
+mulx021 multiply  0      0     ->  0
+mulx022 multiply  0     -0     -> -0
+mulx023 multiply -0      0     -> -0
+mulx024 multiply -0     -0     ->  0
+mulx025 multiply -0.0   -0.0   ->  0.00
+mulx026 multiply -0.0   -0.0   ->  0.00
+mulx027 multiply -0.0   -0.0   ->  0.00
+mulx028 multiply -0.0   -0.0   ->  0.00
 mulx030 multiply  5.00   1E-3  ->  0.00500
 mulx031 multiply  00.00  0.000 ->  0.00000
 mulx032 multiply  00.00  0E-3  ->  0.00000     -- rhs is 0
@@ -94,17 +101,17 @@ mulx066 multiply 123.45 1e13 ->  1.2345E+15
 
 -- test some intermediate lengths
 precision: 9
-mulx080 multiply 0.1 123456789           -> 12345678.9
-mulx081 multiply 0.1 1234567891          -> 123456789 Inexact Rounded
-mulx082 multiply 0.1 12345678912         -> 1.23456789E+9 Inexact Rounded
-mulx083 multiply 0.1 12345678912345      -> 1.23456789E+12 Inexact Rounded
-mulx084 multiply 0.1 123456789           -> 12345678.9
+mulx080 multiply 0.1 123456789          -> 12345678.9
+mulx081 multiply 0.1 1234567891         -> 123456789 Inexact Rounded
+mulx082 multiply 0.1 12345678912        -> 1.23456789E+9 Inexact Rounded
+mulx083 multiply 0.1 12345678912345     -> 1.23456789E+12 Inexact Rounded
+mulx084 multiply 0.1 123456789          -> 12345678.9
 precision: 8
-mulx085 multiply 0.1 12345678912         -> 1.2345679E+9 Inexact Rounded
-mulx086 multiply 0.1 12345678912345      -> 1.2345679E+12 Inexact Rounded
+mulx085 multiply 0.1 12345678912        -> 1.2345679E+9 Inexact Rounded
+mulx086 multiply 0.1 12345678912345     -> 1.2345679E+12 Inexact Rounded
 precision: 7
-mulx087 multiply 0.1 12345678912         -> 1.234568E+9 Inexact Rounded
-mulx088 multiply 0.1 12345678912345      -> 1.234568E+12 Inexact Rounded
+mulx087 multiply 0.1 12345678912        -> 1.234568E+9 Inexact Rounded
+mulx088 multiply 0.1 12345678912345     -> 1.234568E+12 Inexact Rounded
 
 precision: 9
 mulx090 multiply 123456789          0.1 -> 12345678.9
@@ -279,6 +286,41 @@ precision:  2
 mulx277 multiply 30269.587755640502150977251770554 4.8046009735990873395936309640543 -> 1.5E+5                         Inexact Rounded
 precision:  1
 mulx278 multiply 30269.587755640502150977251770554 4.8046009735990873395936309640543 -> 1E+5                          Inexact Rounded
+
+-- test some edge cases with exact rounding
+maxexponent: 9999
+minexponent: -9999
+precision: 9
+mulx301 multiply 9 9   -> 81
+mulx302 multiply 9 90   -> 810
+mulx303 multiply 9 900   -> 8100
+mulx304 multiply 9 9000   -> 81000
+mulx305 multiply 9 90000   -> 810000
+mulx306 multiply 9 900000   -> 8100000
+mulx307 multiply 9 9000000   -> 81000000
+mulx308 multiply 9 90000000   -> 810000000
+mulx309 multiply 9 900000000   -> 8.10000000E+9   Rounded
+mulx310 multiply 9 9000000000   -> 8.10000000E+10  Rounded
+mulx311 multiply 9 90000000000   -> 8.10000000E+11  Rounded
+mulx312 multiply 9 900000000000   -> 8.10000000E+12  Rounded
+mulx313 multiply 9 9000000000000   -> 8.10000000E+13  Rounded
+mulx314 multiply 9 90000000000000   -> 8.10000000E+14  Rounded
+mulx315 multiply 9 900000000000000   -> 8.10000000E+15  Rounded
+mulx316 multiply 9 9000000000000000   -> 8.10000000E+16  Rounded
+mulx317 multiply 9 90000000000000000   -> 8.10000000E+17  Rounded
+mulx318 multiply 9 900000000000000000   -> 8.10000000E+18  Rounded
+mulx319 multiply 9 9000000000000000000   -> 8.10000000E+19  Rounded
+mulx320 multiply 9 90000000000000000000   -> 8.10000000E+20  Rounded
+mulx321 multiply 9 900000000000000000000   -> 8.10000000E+21  Rounded
+mulx322 multiply 9 9000000000000000000000   -> 8.10000000E+22  Rounded
+mulx323 multiply 9 90000000000000000000000   -> 8.10000000E+23  Rounded
+
+-- fastpath breakers
+precision:   29
+mulx330 multiply 1.491824697641270317824852952837224 1.105170918075647624811707826490246514675628614562883537345747603 -> 1.6487212707001281468486507878 Inexact Rounded
+precision:   55
+mulx331 multiply 0.8958341352965282506768545828765117803873717284891040428 0.8958341352965282506768545828765117803873717284891040428 -> 0.8025187979624784829842553829934069955890983696752228299 Inexact Rounded
+
 
 -- tryzeros cases
 precision:   7
@@ -486,10 +528,10 @@ mulx751 multiply  1e+777777777  1e+411111111 ->  Infinity Overflow Inexact Round
 mulx752 multiply  1e+777777777 -1e+411111111 -> -Infinity Overflow Inexact Rounded
 mulx753 multiply -1e+777777777  1e+411111111 -> -Infinity Overflow Inexact Rounded
 mulx754 multiply -1e+777777777 -1e+411111111 ->  Infinity Overflow Inexact Rounded
-mulx755 multiply  1e-777777777  1e-411111111 ->  0E-1000000007 Underflow Subnormal Inexact Rounded
-mulx756 multiply  1e-777777777 -1e-411111111 -> -0E-1000000007 Underflow Subnormal Inexact Rounded
-mulx757 multiply -1e-777777777  1e-411111111 -> -0E-1000000007 Underflow Subnormal Inexact Rounded
-mulx758 multiply -1e-777777777 -1e-411111111 ->  0E-1000000007 Underflow Subnormal Inexact Rounded
+mulx755 multiply  1e-777777777  1e-411111111 ->  0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+mulx756 multiply  1e-777777777 -1e-411111111 -> -0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+mulx757 multiply -1e-777777777  1e-411111111 -> -0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+mulx758 multiply -1e-777777777 -1e-411111111 ->  0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
 
 -- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
 precision: 9
@@ -500,9 +542,9 @@ mulx763 multiply 1e-600000000 1e-400000004 -> 1E-1000000004 Subnormal
 mulx764 multiply 1e-600000000 1e-400000005 -> 1E-1000000005 Subnormal
 mulx765 multiply 1e-600000000 1e-400000006 -> 1E-1000000006 Subnormal
 mulx766 multiply 1e-600000000 1e-400000007 -> 1E-1000000007 Subnormal
-mulx767 multiply 1e-600000000 1e-400000008 -> 0E-1000000007 Underflow Subnormal Inexact Rounded
-mulx768 multiply 1e-600000000 1e-400000009 -> 0E-1000000007 Underflow Subnormal Inexact Rounded
-mulx769 multiply 1e-600000000 1e-400000010 -> 0E-1000000007 Underflow Subnormal Inexact Rounded
+mulx767 multiply 1e-600000000 1e-400000008 -> 0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+mulx768 multiply 1e-600000000 1e-400000009 -> 0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
+mulx769 multiply 1e-600000000 1e-400000010 -> 0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
 -- [no equivalent of 'subnormal' for overflow]
 mulx770 multiply 1e+600000000 1e+400000001 -> Infinity Overflow Inexact Rounded
 mulx771 multiply 1e+600000000 1e+400000002 -> Infinity Overflow Inexact Rounded
@@ -520,31 +562,31 @@ precision: 99
 mulx780 multiply 1e-600000000 1e-400000007 -> 1E-1000000007 Subnormal
 mulx781 multiply 1e-600000000 1e-400000008 -> 1E-1000000008 Subnormal
 mulx782 multiply 1e-600000000 1e-400000097 -> 1E-1000000097 Subnormal
-mulx783 multiply 1e-600000000 1e-400000098 -> 0E-1000000097 Underflow Subnormal Inexact Rounded
+mulx783 multiply 1e-600000000 1e-400000098 -> 0E-1000000097 Underflow Subnormal Inexact Rounded Clamped
 precision: 999
 mulx784 multiply 1e-600000000 1e-400000997 -> 1E-1000000997 Subnormal
-mulx785 multiply 1e-600000000 1e-400000998 -> 0E-1000000997 Underflow Subnormal Inexact Rounded
+mulx785 multiply 1e-600000000 1e-400000998 -> 0E-1000000997 Underflow Subnormal Inexact Rounded Clamped
 
 -- following testcases [through mulx800] not yet run against code
 precision: 9999
 mulx786 multiply 1e-600000000 1e-400009997 -> 1E-1000009997 Subnormal
-mulx787 multiply 1e-600000000 1e-400009998 -> 0E-1000009997 Underflow Subnormal Inexact Rounded
+mulx787 multiply 1e-600000000 1e-400009998 -> 0E-1000009997 Underflow Subnormal Inexact Rounded Clamped
 precision: 99999
 mulx788 multiply 1e-600000000 1e-400099997 -> 1E-1000099997 Subnormal
-mulx789 multiply 1e-600000000 1e-400099998 -> 0E-1000099997 Underflow Subnormal Inexact Rounded
+mulx789 multiply 1e-600000000 1e-400099998 -> 0E-1000099997 Underflow Subnormal Inexact Rounded Clamped
 precision: 999999
 mulx790 multiply 1e-600000000 1e-400999997 -> 1E-1000999997 Subnormal
-mulx791 multiply 1e-600000000 1e-400999998 -> 0E-1000999997 Underflow Subnormal Inexact Rounded
+mulx791 multiply 1e-600000000 1e-400999998 -> 0E-1000999997 Underflow Subnormal Inexact Rounded Clamped
 precision: 9999999
 mulx792 multiply 1e-600000000 1e-409999997 -> 1E-1009999997 Subnormal
-mulx793 multiply 1e-600000000 1e-409999998 -> 0E-1009999997 Underflow Subnormal Inexact Rounded
+mulx793 multiply 1e-600000000 1e-409999998 -> 0E-1009999997 Underflow Subnormal Inexact Rounded Clamped
 precision: 99999999
 mulx794 multiply 1e-600000000 1e-499999997 -> 1E-1099999997 Subnormal
-mulx795 multiply 1e-600000000 1e-499999998 -> 0E-1099999997 Underflow Subnormal Inexact Rounded
+mulx795 multiply 1e-600000000 1e-499999998 -> 0E-1099999997 Underflow Subnormal Inexact Rounded Clamped
 precision: 999999999
 mulx796 multiply 1e-999999999 1e-999999997 -> 1E-1999999996 Subnormal
 mulx797 multiply 1e-999999999 1e-999999998 -> 1E-1999999997 Subnormal
-mulx798 multiply 1e-999999999 1e-999999999 -> 0E-1999999997 Underflow Subnormal Inexact Rounded
+mulx798 multiply 1e-999999999 1e-999999999 -> 0E-1999999997 Underflow Subnormal Inexact Rounded Clamped
 mulx799 multiply 1e-600000000 1e-400000007 -> 1E-1000000007 Subnormal
 mulx800 multiply 1e-600000000 1e-400000008 -> 1E-1000000008 Subnormal
 
@@ -573,19 +615,19 @@ mulx816 multiply  2.50E-999    1e-4  -> 2E-1003     Underflow Subnormal Inexact 
 mulx817 multiply  2.51E-999    1e-4  -> 3E-1003     Underflow Subnormal Inexact Rounded
 
 mulx818 multiply  1E-999       1e-4  -> 1E-1003     Subnormal
-mulx819 multiply  3E-999       1e-5  -> 0E-1003     Underflow Subnormal Inexact Rounded
-mulx820 multiply  5E-999       1e-5  -> 0E-1003     Underflow Subnormal Inexact Rounded
+mulx819 multiply  3E-999       1e-5  -> 0E-1003     Underflow Subnormal Inexact Rounded Clamped
+mulx820 multiply  5E-999       1e-5  -> 0E-1003     Underflow Subnormal Inexact Rounded Clamped
 mulx821 multiply  7E-999       1e-5  -> 1E-1003     Underflow Subnormal Inexact Rounded
 mulx822 multiply  9E-999       1e-5  -> 1E-1003     Underflow Subnormal Inexact Rounded
 mulx823 multiply  9.9E-999     1e-5  -> 1E-1003     Underflow Subnormal Inexact Rounded
 
 mulx824 multiply  1E-999      -1e-4  -> -1E-1003    Subnormal
-mulx825 multiply  3E-999      -1e-5  -> -0E-1003    Underflow Subnormal Inexact Rounded
-mulx826 multiply -5E-999       1e-5  -> -0E-1003    Underflow Subnormal Inexact Rounded
+mulx825 multiply  3E-999      -1e-5  -> -0E-1003    Underflow Subnormal Inexact Rounded Clamped
+mulx826 multiply -5E-999       1e-5  -> -0E-1003    Underflow Subnormal Inexact Rounded Clamped
 mulx827 multiply  7E-999      -1e-5  -> -1E-1003    Underflow Subnormal Inexact Rounded
 mulx828 multiply -9E-999       1e-5  -> -1E-1003    Underflow Subnormal Inexact Rounded
 mulx829 multiply  9.9E-999    -1e-5  -> -1E-1003    Underflow Subnormal Inexact Rounded
-mulx830 multiply  3.0E-999    -1e-5  -> -0E-1003    Underflow Subnormal Inexact Rounded
+mulx830 multiply  3.0E-999    -1e-5  -> -0E-1003    Underflow Subnormal Inexact Rounded Clamped
 
 mulx831 multiply  1.0E-501     1e-501 -> 1.0E-1002   Subnormal
 mulx832 multiply  2.0E-501     2e-501 -> 4.0E-1002   Subnormal
@@ -595,7 +637,7 @@ mulx835 multiply 30.0E-501    30e-501 -> 9.000E-1000 Subnormal
 mulx836 multiply 40.0E-501    40e-501 -> 1.6000E-999
 
 -- squares
-mulx840 multiply  1E-502       1e-502 -> 0E-1003     Underflow Subnormal Inexact Rounded
+mulx840 multiply  1E-502       1e-502 -> 0E-1003     Underflow Subnormal Inexact Rounded Clamped
 mulx841 multiply  1E-501       1e-501 -> 1E-1002     Subnormal
 mulx842 multiply  2E-501       2e-501 -> 4E-1002     Subnormal
 mulx843 multiply  4E-501       4e-501 -> 1.6E-1001   Subnormal
@@ -604,7 +646,7 @@ mulx845 multiply 30E-501      30e-501 -> 9.00E-1000  Subnormal
 mulx846 multiply 40E-501      40e-501 -> 1.600E-999
 
 -- cubes
-mulx850 multiply  1E-670     1e-335 -> 0E-1003    Underflow Subnormal Inexact Rounded
+mulx850 multiply  1E-670     1e-335 -> 0E-1003    Underflow Subnormal Inexact Rounded Clamped
 mulx851 multiply  1E-668     1e-334 -> 1E-1002    Subnormal
 mulx852 multiply  4E-668     2e-334 -> 8E-1002    Subnormal
 mulx853 multiply  9E-668     3e-334 -> 2.7E-1001  Subnormal
@@ -612,7 +654,7 @@ mulx854 multiply 16E-668     4e-334 -> 6.4E-1001  Subnormal
 mulx855 multiply 25E-668     5e-334 -> 1.25E-1000 Subnormal
 mulx856 multiply 10E-668   100e-334 -> 1.000E-999
 
--- test from 0.099 ** 999 at 15 digits
+-- test derived from result of 0.099 ** 999 at 15 digits with unlimited exponent
 precision: 19
 mulx860 multiply  6636851557994578716E-520 6636851557994578716E-520 -> 4.40477986028551E-1003 Underflow Subnormal Inexact Rounded
 
@@ -629,14 +671,16 @@ mulx873 multiply   -9.999E+999999999 1 -> -Infinity Inexact Overflow Rounded
 precision:   5
 maxexponent: 79
 minexponent: -79
-mulx881 multiply  1.2347E-40  1.2347E-40  ->  1.524E-80 Inexact Rounded Subnormal Underflow
-mulx882 multiply  1.234E-40  1.234E-40  ->  1.523E-80 Inexact Rounded Subnormal Underflow
-mulx883 multiply  1.23E-40   1.23E-40   ->  1.513E-80 Inexact Rounded Subnormal Underflow
-mulx884 multiply  1.2E-40    1.2E-40    ->  1.44E-80  Subnormal
-mulx885 multiply  1.2E-40    1.2E-41    ->  1.44E-81  Subnormal
-mulx886 multiply  1.2E-40    1.2E-42    ->  1.4E-82   Subnormal Inexact Rounded Underflow
-mulx887 multiply  1.2E-40    1.3E-42    ->  1.6E-82   Subnormal Inexact Rounded Underflow
-mulx888 multiply  1.3E-40    1.3E-42    ->  1.7E-82   Subnormal Inexact Rounded Underflow
+mulx881 multiply  1.2347E-40  1.2347E-40  ->  1.524E-80  Inexact Rounded Subnormal Underflow
+mulx882 multiply  1.234E-40  1.234E-40    ->  1.523E-80  Inexact Rounded Subnormal Underflow
+mulx883 multiply  1.23E-40   1.23E-40     ->  1.513E-80  Inexact Rounded Subnormal Underflow
+mulx884 multiply  1.2E-40    1.2E-40      ->  1.44E-80   Subnormal
+mulx885 multiply  1.2E-40    1.2E-41      ->  1.44E-81   Subnormal
+mulx886 multiply  1.2E-40    1.2E-42      ->  1.4E-82    Subnormal Inexact Rounded Underflow
+mulx887 multiply  1.2E-40    1.3E-42      ->  1.6E-82    Subnormal Inexact Rounded Underflow
+mulx888 multiply  1.3E-40    1.3E-42      ->  1.7E-82    Subnormal Inexact Rounded Underflow
+mulx889 multiply  1.3E-40    1.3E-43      ->    2E-83    Subnormal Inexact Rounded Underflow
+mulx890 multiply  1.3E-41    1.3E-43      ->    0E-83    Clamped Subnormal Inexact Rounded Underflow
 
 mulx891 multiply  1.2345E-39   1.234E-40  ->  1.5234E-79 Inexact Rounded
 mulx892 multiply  1.23456E-39  1.234E-40  ->  1.5234E-79 Inexact Rounded
@@ -645,7 +689,43 @@ mulx894 multiply  1.23456E-40  1.234E-40  ->  1.523E-80  Inexact Rounded Subnorm
 mulx895 multiply  1.2345E-41   1.234E-40  ->  1.52E-81   Inexact Rounded Subnormal Underflow
 mulx896 multiply  1.23456E-41  1.234E-40  ->  1.52E-81   Inexact Rounded Subnormal Underflow
 
+-- Now explore the case where we get a normal result with Underflow
+precision:   16
+rounding:    half_up
+maxExponent: 384
+minExponent: -383
+
+mulx900 multiply  0.3000000000E-191 0.3000000000E-191 -> 9.00000000000000E-384 Subnormal Rounded
+mulx901 multiply  0.3000000001E-191 0.3000000001E-191 -> 9.00000000600000E-384 Underflow Inexact Subnormal Rounded
+mulx902 multiply  9.999999999999999E-383  0.0999999999999         -> 9.99999999999000E-384 Underflow Inexact Subnormal Rounded
+mulx903 multiply  9.999999999999999E-383  0.09999999999999        -> 9.99999999999900E-384 Underflow Inexact Subnormal Rounded
+mulx904 multiply  9.999999999999999E-383  0.099999999999999       -> 9.99999999999990E-384 Underflow Inexact Subnormal Rounded
+mulx905 multiply  9.999999999999999E-383  0.0999999999999999      -> 9.99999999999999E-384 Underflow Inexact Subnormal Rounded
+-- prove operands are exact
+mulx906 multiply  9.999999999999999E-383  1                       -> 9.999999999999999E-383
+mulx907 multiply                       1  0.09999999999999999     -> 0.09999999999999999
+-- the next rounds to Nmin
+mulx908 multiply  9.999999999999999E-383  0.09999999999999999     -> 1.000000000000000E-383 Underflow Inexact Subnormal Rounded
+mulx909 multiply  9.999999999999999E-383  0.099999999999999999    -> 1.000000000000000E-383 Underflow Inexact Subnormal Rounded
+mulx910 multiply  9.999999999999999E-383  0.0999999999999999999   -> 1.000000000000000E-383 Underflow Inexact Subnormal Rounded
+mulx911 multiply  9.999999999999999E-383  0.09999999999999999999  -> 1.000000000000000E-383 Underflow Inexact Subnormal Rounded
+
+
+-- Examples from SQL proposal (Krishna Kulkarni)
+precision:   34
+rounding:    half_up
+maxExponent: 6144
+minExponent: -6143
+mulx1001  multiply 130E-2  120E-2 -> 1.5600
+mulx1002  multiply 130E-2  12E-1  -> 1.560
+mulx1003  multiply 130E-2  1E0    -> 1.30
+mulx1004  multiply 1E2     1E4    -> 1E+6
+
+-- payload decapitate
+precision: 5
+mulx1010  multiply 11 -sNaN1234567890 -> -NaN67890  Invalid_operation
+
 -- Null tests
-mulx900 multiply 10  # -> NaN Invalid_operation
-mulx901 multiply  # 10 -> NaN Invalid_operation
+mulx990 multiply 10  # -> NaN Invalid_operation
+mulx991 multiply  # 10 -> NaN Invalid_operation
 

@@ -1,0 +1,790 @@
+------------------------------------------------------------------------
+-- comparetotmag.decTest -- decimal comparison, abs. total ordering   --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+-- Note that it cannot be assumed that add/subtract tests cover paths
+-- for this operation adequately, here, because the code might be
+-- quite different (comparison cannot overflow or underflow, so
+-- actual subtractions are not necessary). Similarly, comparetotal
+-- will have some radically different paths than compare.
+
+extended:    1
+precision:   16
+rounding:    half_up
+maxExponent: 384
+minExponent: -383
+
+-- sanity checks
+ctmx001 comparetotmag  -2  -2   ->   0
+ctmx002 comparetotmag  -2  -1   ->   1
+ctmx003 comparetotmag  -2   0   ->   1
+ctmx004 comparetotmag  -2   1   ->   1
+ctmx005 comparetotmag  -2   2   ->   0
+ctmx006 comparetotmag  -1  -2   ->  -1
+ctmx007 comparetotmag  -1  -1   ->   0
+ctmx008 comparetotmag  -1   0   ->   1
+ctmx009 comparetotmag  -1   1   ->   0
+ctmx010 comparetotmag  -1   2   ->  -1
+ctmx011 comparetotmag   0  -2   ->  -1
+ctmx012 comparetotmag   0  -1   ->  -1
+ctmx013 comparetotmag   0   0   ->   0
+ctmx014 comparetotmag   0   1   ->  -1
+ctmx015 comparetotmag   0   2   ->  -1
+ctmx016 comparetotmag   1  -2   ->  -1
+ctmx017 comparetotmag   1  -1   ->   0
+ctmx018 comparetotmag   1   0   ->   1
+ctmx019 comparetotmag   1   1   ->   0
+ctmx020 comparetotmag   1   2   ->  -1
+ctmx021 comparetotmag   2  -2   ->   0
+ctmx022 comparetotmag   2  -1   ->   1
+ctmx023 comparetotmag   2   0   ->   1
+ctmx025 comparetotmag   2   1   ->   1
+ctmx026 comparetotmag   2   2   ->   0
+
+ctmx031 comparetotmag  -20  -20   ->   0
+ctmx032 comparetotmag  -20  -10   ->   1
+ctmx033 comparetotmag  -20   00   ->   1
+ctmx034 comparetotmag  -20   10   ->   1
+ctmx035 comparetotmag  -20   20   ->   0
+ctmx036 comparetotmag  -10  -20   ->  -1
+ctmx037 comparetotmag  -10  -10   ->   0
+ctmx038 comparetotmag  -10   00   ->   1
+ctmx039 comparetotmag  -10   10   ->   0
+ctmx040 comparetotmag  -10   20   ->  -1
+ctmx041 comparetotmag   00  -20   ->  -1
+ctmx042 comparetotmag   00  -10   ->  -1
+ctmx043 comparetotmag   00   00   ->   0
+ctmx044 comparetotmag   00   10   ->  -1
+ctmx045 comparetotmag   00   20   ->  -1
+ctmx046 comparetotmag   10  -20   ->  -1
+ctmx047 comparetotmag   10  -10   ->   0
+ctmx048 comparetotmag   10   00   ->   1
+ctmx049 comparetotmag   10   10   ->   0
+ctmx050 comparetotmag   10   20   ->  -1
+ctmx051 comparetotmag   20  -20   ->   0
+ctmx052 comparetotmag   20  -10   ->   1
+ctmx053 comparetotmag   20   00   ->   1
+ctmx055 comparetotmag   20   10   ->   1
+ctmx056 comparetotmag   20   20   ->   0
+
+ctmx061 comparetotmag  -2.0  -2.0   ->   0
+ctmx062 comparetotmag  -2.0  -1.0   ->   1
+ctmx063 comparetotmag  -2.0   0.0   ->   1
+ctmx064 comparetotmag  -2.0   1.0   ->   1
+ctmx065 comparetotmag  -2.0   2.0   ->   0
+ctmx066 comparetotmag  -1.0  -2.0   ->  -1
+ctmx067 comparetotmag  -1.0  -1.0   ->   0
+ctmx068 comparetotmag  -1.0   0.0   ->   1
+ctmx069 comparetotmag  -1.0   1.0   ->   0
+ctmx070 comparetotmag  -1.0   2.0   ->  -1
+ctmx071 comparetotmag   0.0  -2.0   ->  -1
+ctmx072 comparetotmag   0.0  -1.0   ->  -1
+ctmx073 comparetotmag   0.0   0.0   ->   0
+ctmx074 comparetotmag   0.0   1.0   ->  -1
+ctmx075 comparetotmag   0.0   2.0   ->  -1
+ctmx076 comparetotmag   1.0  -2.0   ->  -1
+ctmx077 comparetotmag   1.0  -1.0   ->   0
+ctmx078 comparetotmag   1.0   0.0   ->   1
+ctmx079 comparetotmag   1.0   1.0   ->   0
+ctmx080 comparetotmag   1.0   2.0   ->  -1
+ctmx081 comparetotmag   2.0  -2.0   ->   0
+ctmx082 comparetotmag   2.0  -1.0   ->   1
+ctmx083 comparetotmag   2.0   0.0   ->   1
+ctmx085 comparetotmag   2.0   1.0   ->   1
+ctmx086 comparetotmag   2.0   2.0   ->   0
+
+-- now some cases which might overflow if subtract were used
+maxexponent: 999999999
+minexponent: -999999999
+ctmx090 comparetotmag  9.99999999E+999999999 9.99999999E+999999999   ->   0
+ctmx091 comparetotmag -9.99999999E+999999999 9.99999999E+999999999   ->   0
+ctmx092 comparetotmag  9.99999999E+999999999 -9.99999999E+999999999  ->   0
+ctmx093 comparetotmag -9.99999999E+999999999 -9.99999999E+999999999  ->   0
+
+-- some differing length/exponent cases
+-- in this first group, compare would compare all equal
+ctmx100 comparetotmag   7.0    7.0     ->   0
+ctmx101 comparetotmag   7.0    7       ->  -1
+ctmx102 comparetotmag   7      7.0     ->   1
+ctmx103 comparetotmag   7E+0   7.0     ->   1
+ctmx104 comparetotmag   70E-1  7.0     ->   0
+ctmx105 comparetotmag   0.7E+1 7       ->   0
+ctmx106 comparetotmag   70E-1  7       ->  -1
+ctmx107 comparetotmag   7.0    7E+0    ->  -1
+ctmx108 comparetotmag   7.0    70E-1   ->   0
+ctmx109 comparetotmag   7      0.7E+1  ->   0
+ctmx110 comparetotmag   7      70E-1   ->   1
+
+ctmx120 comparetotmag   8.0    7.0     ->   1
+ctmx121 comparetotmag   8.0    7       ->   1
+ctmx122 comparetotmag   8      7.0     ->   1
+ctmx123 comparetotmag   8E+0   7.0     ->   1
+ctmx124 comparetotmag   80E-1  7.0     ->   1
+ctmx125 comparetotmag   0.8E+1 7       ->   1
+ctmx126 comparetotmag   80E-1  7       ->   1
+ctmx127 comparetotmag   8.0    7E+0    ->   1
+ctmx128 comparetotmag   8.0    70E-1   ->   1
+ctmx129 comparetotmag   8      0.7E+1   ->   1
+ctmx130 comparetotmag   8      70E-1   ->   1
+
+ctmx140 comparetotmag   8.0    9.0     ->  -1
+ctmx141 comparetotmag   8.0    9       ->  -1
+ctmx142 comparetotmag   8      9.0     ->  -1
+ctmx143 comparetotmag   8E+0   9.0     ->  -1
+ctmx144 comparetotmag   80E-1  9.0     ->  -1
+ctmx145 comparetotmag   0.8E+1 9       ->  -1
+ctmx146 comparetotmag   80E-1  9       ->  -1
+ctmx147 comparetotmag   8.0    9E+0    ->  -1
+ctmx148 comparetotmag   8.0    90E-1   ->  -1
+ctmx149 comparetotmag   8      0.9E+1  ->  -1
+ctmx150 comparetotmag   8      90E-1   ->  -1
+
+-- and again, with sign changes -+ ..
+ctmx200 comparetotmag  -7.0    7.0     ->   0
+ctmx201 comparetotmag  -7.0    7       ->  -1
+ctmx202 comparetotmag  -7      7.0     ->   1
+ctmx203 comparetotmag  -7E+0   7.0     ->   1
+ctmx204 comparetotmag  -70E-1  7.0     ->   0
+ctmx205 comparetotmag  -0.7E+1 7       ->   0
+ctmx206 comparetotmag  -70E-1  7       ->  -1
+ctmx207 comparetotmag  -7.0    7E+0    ->  -1
+ctmx208 comparetotmag  -7.0    70E-1   ->   0
+ctmx209 comparetotmag  -7      0.7E+1  ->   0
+ctmx210 comparetotmag  -7      70E-1   ->   1
+
+ctmx220 comparetotmag  -8.0    7.0     ->   1
+ctmx221 comparetotmag  -8.0    7       ->   1
+ctmx222 comparetotmag  -8      7.0     ->   1
+ctmx223 comparetotmag  -8E+0   7.0     ->   1
+ctmx224 comparetotmag  -80E-1  7.0     ->   1
+ctmx225 comparetotmag  -0.8E+1 7       ->   1
+ctmx226 comparetotmag  -80E-1  7       ->   1
+ctmx227 comparetotmag  -8.0    7E+0    ->   1
+ctmx228 comparetotmag  -8.0    70E-1   ->   1
+ctmx229 comparetotmag  -8      0.7E+1  ->   1
+ctmx230 comparetotmag  -8      70E-1   ->   1
+
+ctmx240 comparetotmag  -8.0    9.0     ->  -1
+ctmx241 comparetotmag  -8.0    9       ->  -1
+ctmx242 comparetotmag  -8      9.0     ->  -1
+ctmx243 comparetotmag  -8E+0   9.0     ->  -1
+ctmx244 comparetotmag  -80E-1  9.0     ->  -1
+ctmx245 comparetotmag  -0.8E+1 9       ->  -1
+ctmx246 comparetotmag  -80E-1  9       ->  -1
+ctmx247 comparetotmag  -8.0    9E+0    ->  -1
+ctmx248 comparetotmag  -8.0    90E-1   ->  -1
+ctmx249 comparetotmag  -8      0.9E+1  ->  -1
+ctmx250 comparetotmag  -8      90E-1   ->  -1
+
+-- and again, with sign changes +- ..
+ctmx300 comparetotmag   7.0    -7.0     ->   0
+ctmx301 comparetotmag   7.0    -7       ->  -1
+ctmx302 comparetotmag   7      -7.0     ->   1
+ctmx303 comparetotmag   7E+0   -7.0     ->   1
+ctmx304 comparetotmag   70E-1  -7.0     ->   0
+ctmx305 comparetotmag   .7E+1  -7       ->   0
+ctmx306 comparetotmag   70E-1  -7       ->  -1
+ctmx307 comparetotmag   7.0    -7E+0    ->  -1
+ctmx308 comparetotmag   7.0    -70E-1   ->   0
+ctmx309 comparetotmag   7      -.7E+1   ->   0
+ctmx310 comparetotmag   7      -70E-1   ->   1
+
+ctmx320 comparetotmag   8.0    -7.0     ->   1
+ctmx321 comparetotmag   8.0    -7       ->   1
+ctmx322 comparetotmag   8      -7.0     ->   1
+ctmx323 comparetotmag   8E+0   -7.0     ->   1
+ctmx324 comparetotmag   80E-1  -7.0     ->   1
+ctmx325 comparetotmag   .8E+1  -7       ->   1
+ctmx326 comparetotmag   80E-1  -7       ->   1
+ctmx327 comparetotmag   8.0    -7E+0    ->   1
+ctmx328 comparetotmag   8.0    -70E-1   ->   1
+ctmx329 comparetotmag   8      -.7E+1   ->   1
+ctmx330 comparetotmag   8      -70E-1   ->   1
+
+ctmx340 comparetotmag   8.0    -9.0     ->  -1
+ctmx341 comparetotmag   8.0    -9       ->  -1
+ctmx342 comparetotmag   8      -9.0     ->  -1
+ctmx343 comparetotmag   8E+0   -9.0     ->  -1
+ctmx344 comparetotmag   80E-1  -9.0     ->  -1
+ctmx345 comparetotmag   .8E+1  -9       ->  -1
+ctmx346 comparetotmag   80E-1  -9       ->  -1
+ctmx347 comparetotmag   8.0    -9E+0    ->  -1
+ctmx348 comparetotmag   8.0    -90E-1   ->  -1
+ctmx349 comparetotmag   8      -.9E+1   ->  -1
+ctmx350 comparetotmag   8      -90E-1   ->  -1
+
+-- and again, with sign changes -- ..
+ctmx400 comparetotmag   -7.0    -7.0     ->   0
+ctmx401 comparetotmag   -7.0    -7       ->  -1
+ctmx402 comparetotmag   -7      -7.0     ->   1
+ctmx403 comparetotmag   -7E+0   -7.0     ->   1
+ctmx404 comparetotmag   -70E-1  -7.0     ->   0
+ctmx405 comparetotmag   -.7E+1  -7       ->   0
+ctmx406 comparetotmag   -70E-1  -7       ->  -1
+ctmx407 comparetotmag   -7.0    -7E+0    ->  -1
+ctmx408 comparetotmag   -7.0    -70E-1   ->   0
+ctmx409 comparetotmag   -7      -.7E+1   ->   0
+ctmx410 comparetotmag   -7      -70E-1   ->   1
+
+ctmx420 comparetotmag   -8.0    -7.0     ->   1
+ctmx421 comparetotmag   -8.0    -7       ->   1
+ctmx422 comparetotmag   -8      -7.0     ->   1
+ctmx423 comparetotmag   -8E+0   -7.0     ->   1
+ctmx424 comparetotmag   -80E-1  -7.0     ->   1
+ctmx425 comparetotmag   -.8E+1  -7       ->   1
+ctmx426 comparetotmag   -80E-1  -7       ->   1
+ctmx427 comparetotmag   -8.0    -7E+0    ->   1
+ctmx428 comparetotmag   -8.0    -70E-1   ->   1
+ctmx429 comparetotmag   -8      -.7E+1   ->   1
+ctmx430 comparetotmag   -8      -70E-1   ->   1
+
+ctmx440 comparetotmag   -8.0    -9.0     ->  -1
+ctmx441 comparetotmag   -8.0    -9       ->  -1
+ctmx442 comparetotmag   -8      -9.0     ->  -1
+ctmx443 comparetotmag   -8E+0   -9.0     ->  -1
+ctmx444 comparetotmag   -80E-1  -9.0     ->  -1
+ctmx445 comparetotmag   -.8E+1  -9       ->  -1
+ctmx446 comparetotmag   -80E-1  -9       ->  -1
+ctmx447 comparetotmag   -8.0    -9E+0    ->  -1
+ctmx448 comparetotmag   -8.0    -90E-1   ->  -1
+ctmx449 comparetotmag   -8      -.9E+1   ->  -1
+ctmx450 comparetotmag   -8      -90E-1   ->  -1
+
+
+-- testcases that subtract to lots of zeros at boundaries [pgr]
+precision: 40
+ctmx470 comparetotmag 123.4560000000000000E789 123.456E789  ->  -1
+ctmx471 comparetotmag 123.456000000000000E-89 123.456E-89  ->  -1
+ctmx472 comparetotmag 123.45600000000000E789 123.456E789  ->  -1
+ctmx473 comparetotmag 123.4560000000000E-89 123.456E-89  ->  -1
+ctmx474 comparetotmag 123.456000000000E789 123.456E789  ->  -1
+ctmx475 comparetotmag 123.45600000000E-89 123.456E-89  ->  -1
+ctmx476 comparetotmag 123.4560000000E789 123.456E789  ->  -1
+ctmx477 comparetotmag 123.456000000E-89 123.456E-89  ->  -1
+ctmx478 comparetotmag 123.45600000E789 123.456E789  ->  -1
+ctmx479 comparetotmag 123.4560000E-89 123.456E-89  ->  -1
+ctmx480 comparetotmag 123.456000E789 123.456E789  ->  -1
+ctmx481 comparetotmag 123.45600E-89 123.456E-89  ->  -1
+ctmx482 comparetotmag 123.4560E789 123.456E789  ->  -1
+ctmx483 comparetotmag 123.456E-89 123.456E-89  ->   0
+ctmx484 comparetotmag 123.456E-89 123.4560000000000000E-89  ->   1
+ctmx485 comparetotmag 123.456E789 123.456000000000000E789  ->   1
+ctmx486 comparetotmag 123.456E-89 123.45600000000000E-89  ->   1
+ctmx487 comparetotmag 123.456E789 123.4560000000000E789  ->   1
+ctmx488 comparetotmag 123.456E-89 123.456000000000E-89  ->   1
+ctmx489 comparetotmag 123.456E789 123.45600000000E789  ->   1
+ctmx490 comparetotmag 123.456E-89 123.4560000000E-89  ->   1
+ctmx491 comparetotmag 123.456E789 123.456000000E789  ->   1
+ctmx492 comparetotmag 123.456E-89 123.45600000E-89  ->   1
+ctmx493 comparetotmag 123.456E789 123.4560000E789  ->   1
+ctmx494 comparetotmag 123.456E-89 123.456000E-89  ->   1
+ctmx495 comparetotmag 123.456E789 123.45600E789  ->   1
+ctmx496 comparetotmag 123.456E-89 123.4560E-89  ->   1
+ctmx497 comparetotmag 123.456E789 123.456E789  ->   0
+
+-- wide-ranging, around precision; signs equal
+precision: 9
+ctmx500 comparetotmag    1     1E-15     ->   1
+ctmx501 comparetotmag    1     1E-14     ->   1
+ctmx502 comparetotmag    1     1E-13     ->   1
+ctmx503 comparetotmag    1     1E-12     ->   1
+ctmx504 comparetotmag    1     1E-11     ->   1
+ctmx505 comparetotmag    1     1E-10     ->   1
+ctmx506 comparetotmag    1     1E-9      ->   1
+ctmx507 comparetotmag    1     1E-8      ->   1
+ctmx508 comparetotmag    1     1E-7      ->   1
+ctmx509 comparetotmag    1     1E-6      ->   1
+ctmx510 comparetotmag    1     1E-5      ->   1
+ctmx511 comparetotmag    1     1E-4      ->   1
+ctmx512 comparetotmag    1     1E-3      ->   1
+ctmx513 comparetotmag    1     1E-2      ->   1
+ctmx514 comparetotmag    1     1E-1      ->   1
+ctmx515 comparetotmag    1     1E-0      ->   0
+ctmx516 comparetotmag    1     1E+1      ->  -1
+ctmx517 comparetotmag    1     1E+2      ->  -1
+ctmx518 comparetotmag    1     1E+3      ->  -1
+ctmx519 comparetotmag    1     1E+4      ->  -1
+ctmx521 comparetotmag    1     1E+5      ->  -1
+ctmx522 comparetotmag    1     1E+6      ->  -1
+ctmx523 comparetotmag    1     1E+7      ->  -1
+ctmx524 comparetotmag    1     1E+8      ->  -1
+ctmx525 comparetotmag    1     1E+9      ->  -1
+ctmx526 comparetotmag    1     1E+10     ->  -1
+ctmx527 comparetotmag    1     1E+11     ->  -1
+ctmx528 comparetotmag    1     1E+12     ->  -1
+ctmx529 comparetotmag    1     1E+13     ->  -1
+ctmx530 comparetotmag    1     1E+14     ->  -1
+ctmx531 comparetotmag    1     1E+15     ->  -1
+-- LR swap
+ctmx540 comparetotmag    1E-15  1        ->  -1
+ctmx541 comparetotmag    1E-14  1        ->  -1
+ctmx542 comparetotmag    1E-13  1        ->  -1
+ctmx543 comparetotmag    1E-12  1        ->  -1
+ctmx544 comparetotmag    1E-11  1        ->  -1
+ctmx545 comparetotmag    1E-10  1        ->  -1
+ctmx546 comparetotmag    1E-9   1        ->  -1
+ctmx547 comparetotmag    1E-8   1        ->  -1
+ctmx548 comparetotmag    1E-7   1        ->  -1
+ctmx549 comparetotmag    1E-6   1        ->  -1
+ctmx550 comparetotmag    1E-5   1        ->  -1
+ctmx551 comparetotmag    1E-4   1        ->  -1
+ctmx552 comparetotmag    1E-3   1        ->  -1
+ctmx553 comparetotmag    1E-2   1        ->  -1
+ctmx554 comparetotmag    1E-1   1        ->  -1
+ctmx555 comparetotmag    1E-0   1        ->   0
+ctmx556 comparetotmag    1E+1   1        ->   1
+ctmx557 comparetotmag    1E+2   1        ->   1
+ctmx558 comparetotmag    1E+3   1        ->   1
+ctmx559 comparetotmag    1E+4   1        ->   1
+ctmx561 comparetotmag    1E+5   1        ->   1
+ctmx562 comparetotmag    1E+6   1        ->   1
+ctmx563 comparetotmag    1E+7   1        ->   1
+ctmx564 comparetotmag    1E+8   1        ->   1
+ctmx565 comparetotmag    1E+9   1        ->   1
+ctmx566 comparetotmag    1E+10  1        ->   1
+ctmx567 comparetotmag    1E+11  1        ->   1
+ctmx568 comparetotmag    1E+12  1        ->   1
+ctmx569 comparetotmag    1E+13  1        ->   1
+ctmx570 comparetotmag    1E+14  1        ->   1
+ctmx571 comparetotmag    1E+15  1        ->   1
+-- similar with an useful coefficient, one side only
+ctmx580 comparetotmag  0.000000987654321     1E-15     ->   1
+ctmx581 comparetotmag  0.000000987654321     1E-14     ->   1
+ctmx582 comparetotmag  0.000000987654321     1E-13     ->   1
+ctmx583 comparetotmag  0.000000987654321     1E-12     ->   1
+ctmx584 comparetotmag  0.000000987654321     1E-11     ->   1
+ctmx585 comparetotmag  0.000000987654321     1E-10     ->   1
+ctmx586 comparetotmag  0.000000987654321     1E-9      ->   1
+ctmx587 comparetotmag  0.000000987654321     1E-8      ->   1
+ctmx588 comparetotmag  0.000000987654321     1E-7      ->   1
+ctmx589 comparetotmag  0.000000987654321     1E-6      ->  -1
+ctmx590 comparetotmag  0.000000987654321     1E-5      ->  -1
+ctmx591 comparetotmag  0.000000987654321     1E-4      ->  -1
+ctmx592 comparetotmag  0.000000987654321     1E-3      ->  -1
+ctmx593 comparetotmag  0.000000987654321     1E-2      ->  -1
+ctmx594 comparetotmag  0.000000987654321     1E-1      ->  -1
+ctmx595 comparetotmag  0.000000987654321     1E-0      ->  -1
+ctmx596 comparetotmag  0.000000987654321     1E+1      ->  -1
+ctmx597 comparetotmag  0.000000987654321     1E+2      ->  -1
+ctmx598 comparetotmag  0.000000987654321     1E+3      ->  -1
+ctmx599 comparetotmag  0.000000987654321     1E+4      ->  -1
+
+-- check some unit-y traps
+precision: 20
+ctmx600 comparetotmag   12            12.2345  ->  -1
+ctmx601 comparetotmag   12.0          12.2345  ->  -1
+ctmx602 comparetotmag   12.00         12.2345  ->  -1
+ctmx603 comparetotmag   12.000        12.2345  ->  -1
+ctmx604 comparetotmag   12.0000       12.2345  ->  -1
+ctmx605 comparetotmag   12.00000      12.2345  ->  -1
+ctmx606 comparetotmag   12.000000     12.2345  ->  -1
+ctmx607 comparetotmag   12.0000000    12.2345  ->  -1
+ctmx608 comparetotmag   12.00000000   12.2345  ->  -1
+ctmx609 comparetotmag   12.000000000  12.2345  ->  -1
+ctmx610 comparetotmag   12.1234 12             ->   1
+ctmx611 comparetotmag   12.1234 12.0           ->   1
+ctmx612 comparetotmag   12.1234 12.00          ->   1
+ctmx613 comparetotmag   12.1234 12.000         ->   1
+ctmx614 comparetotmag   12.1234 12.0000        ->   1
+ctmx615 comparetotmag   12.1234 12.00000       ->   1
+ctmx616 comparetotmag   12.1234 12.000000      ->   1
+ctmx617 comparetotmag   12.1234 12.0000000     ->   1
+ctmx618 comparetotmag   12.1234 12.00000000    ->   1
+ctmx619 comparetotmag   12.1234 12.000000000   ->   1
+ctmx620 comparetotmag  -12           -12.2345  ->  -1
+ctmx621 comparetotmag  -12.0         -12.2345  ->  -1
+ctmx622 comparetotmag  -12.00        -12.2345  ->  -1
+ctmx623 comparetotmag  -12.000       -12.2345  ->  -1
+ctmx624 comparetotmag  -12.0000      -12.2345  ->  -1
+ctmx625 comparetotmag  -12.00000     -12.2345  ->  -1
+ctmx626 comparetotmag  -12.000000    -12.2345  ->  -1
+ctmx627 comparetotmag  -12.0000000   -12.2345  ->  -1
+ctmx628 comparetotmag  -12.00000000  -12.2345  ->  -1
+ctmx629 comparetotmag  -12.000000000 -12.2345  ->  -1
+ctmx630 comparetotmag  -12.1234 -12            ->   1
+ctmx631 comparetotmag  -12.1234 -12.0          ->   1
+ctmx632 comparetotmag  -12.1234 -12.00         ->   1
+ctmx633 comparetotmag  -12.1234 -12.000        ->   1
+ctmx634 comparetotmag  -12.1234 -12.0000       ->   1
+ctmx635 comparetotmag  -12.1234 -12.00000      ->   1
+ctmx636 comparetotmag  -12.1234 -12.000000     ->   1
+ctmx637 comparetotmag  -12.1234 -12.0000000    ->   1
+ctmx638 comparetotmag  -12.1234 -12.00000000   ->   1
+ctmx639 comparetotmag  -12.1234 -12.000000000  ->   1
+precision: 9
+
+-- extended zeros
+ctmx640 comparetotmag   0     0    ->   0
+ctmx641 comparetotmag   0    -0    ->   0
+ctmx642 comparetotmag   0    -0.0  ->   1
+ctmx643 comparetotmag   0     0.0  ->   1
+ctmx644 comparetotmag  -0     0    ->   0
+ctmx645 comparetotmag  -0    -0    ->   0
+ctmx646 comparetotmag  -0    -0.0  ->   1
+ctmx647 comparetotmag  -0     0.0  ->   1
+ctmx648 comparetotmag   0.0   0    ->  -1
+ctmx649 comparetotmag   0.0  -0    ->  -1
+ctmx650 comparetotmag   0.0  -0.0  ->   0
+ctmx651 comparetotmag   0.0   0.0  ->   0
+ctmx652 comparetotmag  -0.0   0    ->  -1
+ctmx653 comparetotmag  -0.0  -0    ->  -1
+ctmx654 comparetotmag  -0.0  -0.0  ->   0
+ctmx655 comparetotmag  -0.0   0.0  ->   0
+
+ctmx656 comparetotmag  -0E1   0.0  ->   1
+ctmx657 comparetotmag  -0E2   0.0  ->   1
+ctmx658 comparetotmag   0E1   0.0  ->   1
+ctmx659 comparetotmag   0E2   0.0  ->   1
+ctmx660 comparetotmag  -0E1   0    ->   1
+ctmx661 comparetotmag  -0E2   0    ->   1
+ctmx662 comparetotmag   0E1   0    ->   1
+ctmx663 comparetotmag   0E2   0    ->   1
+ctmx664 comparetotmag  -0E1  -0E1  ->   0
+ctmx665 comparetotmag  -0E2  -0E1  ->   1
+ctmx666 comparetotmag   0E1  -0E1  ->   0
+ctmx667 comparetotmag   0E2  -0E1  ->   1
+ctmx668 comparetotmag  -0E1  -0E2  ->  -1
+ctmx669 comparetotmag  -0E2  -0E2  ->   0
+ctmx670 comparetotmag   0E1  -0E2  ->  -1
+ctmx671 comparetotmag   0E2  -0E2  ->   0
+ctmx672 comparetotmag  -0E1   0E1  ->   0
+ctmx673 comparetotmag  -0E2   0E1  ->   1
+ctmx674 comparetotmag   0E1   0E1  ->   0
+ctmx675 comparetotmag   0E2   0E1  ->   1
+ctmx676 comparetotmag  -0E1   0E2  ->  -1
+ctmx677 comparetotmag  -0E2   0E2  ->   0
+ctmx678 comparetotmag   0E1   0E2  ->  -1
+ctmx679 comparetotmag   0E2   0E2  ->   0
+
+-- trailing zeros; unit-y
+precision: 20
+ctmx680 comparetotmag   12    12            ->   0
+ctmx681 comparetotmag   12    12.0          ->   1
+ctmx682 comparetotmag   12    12.00         ->   1
+ctmx683 comparetotmag   12    12.000        ->   1
+ctmx684 comparetotmag   12    12.0000       ->   1
+ctmx685 comparetotmag   12    12.00000      ->   1
+ctmx686 comparetotmag   12    12.000000     ->   1
+ctmx687 comparetotmag   12    12.0000000    ->   1
+ctmx688 comparetotmag   12    12.00000000   ->   1
+ctmx689 comparetotmag   12    12.000000000  ->   1
+ctmx690 comparetotmag   12              12  ->   0
+ctmx691 comparetotmag   12.0            12  ->  -1
+ctmx692 comparetotmag   12.00           12  ->  -1
+ctmx693 comparetotmag   12.000          12  ->  -1
+ctmx694 comparetotmag   12.0000         12  ->  -1
+ctmx695 comparetotmag   12.00000        12  ->  -1
+ctmx696 comparetotmag   12.000000       12  ->  -1
+ctmx697 comparetotmag   12.0000000      12  ->  -1
+ctmx698 comparetotmag   12.00000000     12  ->  -1
+ctmx699 comparetotmag   12.000000000    12  ->  -1
+
+-- long operand checks
+maxexponent: 999
+minexponent: -999
+precision: 9
+ctmx701 comparetotmag 12345678000  1  ->   1
+ctmx702 comparetotmag 1 12345678000   ->  -1
+ctmx703 comparetotmag 1234567800   1  ->   1
+ctmx704 comparetotmag 1 1234567800    ->  -1
+ctmx705 comparetotmag 1234567890   1  ->   1
+ctmx706 comparetotmag 1 1234567890    ->  -1
+ctmx707 comparetotmag 1234567891   1  ->   1
+ctmx708 comparetotmag 1 1234567891    ->  -1
+ctmx709 comparetotmag 12345678901  1  ->   1
+ctmx710 comparetotmag 1 12345678901   ->  -1
+ctmx711 comparetotmag 1234567896   1  ->   1
+ctmx712 comparetotmag 1 1234567896    ->  -1
+ctmx713 comparetotmag -1234567891  1  ->   1
+ctmx714 comparetotmag 1 -1234567891   ->  -1
+ctmx715 comparetotmag -12345678901 1  ->   1
+ctmx716 comparetotmag 1 -12345678901  ->  -1
+ctmx717 comparetotmag -1234567896  1  ->   1
+ctmx718 comparetotmag 1 -1234567896   ->  -1
+
+precision: 15
+-- same with plenty of precision
+ctmx721 comparetotmag 12345678000 1  ->   1
+ctmx722 comparetotmag 1 12345678000  ->  -1
+ctmx723 comparetotmag 1234567800  1  ->   1
+ctmx724 comparetotmag 1 1234567800   ->  -1
+ctmx725 comparetotmag 1234567890  1  ->   1
+ctmx726 comparetotmag 1 1234567890   ->  -1
+ctmx727 comparetotmag 1234567891  1  ->   1
+ctmx728 comparetotmag 1 1234567891   ->  -1
+ctmx729 comparetotmag 12345678901 1  ->   1
+ctmx730 comparetotmag 1 12345678901  ->  -1
+ctmx731 comparetotmag 1234567896  1  ->   1
+ctmx732 comparetotmag 1 1234567896   ->  -1
+
+-- residue cases
+precision: 5
+ctmx740 comparetotmag  1  0.9999999   ->   1
+ctmx741 comparetotmag  1  0.999999    ->   1
+ctmx742 comparetotmag  1  0.99999     ->   1
+ctmx743 comparetotmag  1  1.0000      ->   1
+ctmx744 comparetotmag  1  1.00001     ->  -1
+ctmx745 comparetotmag  1  1.000001    ->  -1
+ctmx746 comparetotmag  1  1.0000001   ->  -1
+ctmx750 comparetotmag  0.9999999  1   ->  -1
+ctmx751 comparetotmag  0.999999   1   ->  -1
+ctmx752 comparetotmag  0.99999    1   ->  -1
+ctmx753 comparetotmag  1.0000     1   ->  -1
+ctmx754 comparetotmag  1.00001    1   ->   1
+ctmx755 comparetotmag  1.000001   1   ->   1
+ctmx756 comparetotmag  1.0000001  1   ->   1
+
+-- a selection of longies
+ctmx760 comparetotmag -36852134.84194296250843579428931 -5830629.8347085025808756560357940  ->   1
+ctmx761 comparetotmag -36852134.84194296250843579428931 -36852134.84194296250843579428931   ->   0
+ctmx762 comparetotmag -36852134.94194296250843579428931 -36852134.84194296250843579428931   ->   1
+ctmx763 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+-- precisions above or below the difference should have no effect
+precision:   11
+ctmx764 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:   10
+ctmx765 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    9
+ctmx766 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    8
+ctmx767 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    7
+ctmx768 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    6
+ctmx769 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    5
+ctmx770 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    4
+ctmx771 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    3
+ctmx772 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    2
+ctmx773 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+precision:    1
+ctmx774 comparetotmag -36852134.84194296250843579428931 -36852134.94194296250843579428931   ->  -1
+
+-- Specials
+precision:   9
+ctmx780 comparetotmag  Inf  -Inf   ->  0
+ctmx781 comparetotmag  Inf  -1000  ->  1
+ctmx782 comparetotmag  Inf  -1     ->  1
+ctmx783 comparetotmag  Inf  -0     ->  1
+ctmx784 comparetotmag  Inf   0     ->  1
+ctmx785 comparetotmag  Inf   1     ->  1
+ctmx786 comparetotmag  Inf   1000  ->  1
+ctmx787 comparetotmag  Inf   Inf   ->  0
+ctmx788 comparetotmag -1000  Inf   -> -1
+ctmx789 comparetotmag -Inf   Inf   ->  0
+ctmx790 comparetotmag -1     Inf   -> -1
+ctmx791 comparetotmag -0     Inf   -> -1
+ctmx792 comparetotmag  0     Inf   -> -1
+ctmx793 comparetotmag  1     Inf   -> -1
+ctmx794 comparetotmag  1000  Inf   -> -1
+ctmx795 comparetotmag  Inf   Inf   ->  0
+
+ctmx800 comparetotmag -Inf  -Inf   ->  0
+ctmx801 comparetotmag -Inf  -1000  ->  1
+ctmx802 comparetotmag -Inf  -1     ->  1
+ctmx803 comparetotmag -Inf  -0     ->  1
+ctmx804 comparetotmag -Inf   0     ->  1
+ctmx805 comparetotmag -Inf   1     ->  1
+ctmx806 comparetotmag -Inf   1000  ->  1
+ctmx807 comparetotmag -Inf   Inf   ->  0
+ctmx808 comparetotmag -Inf  -Inf   ->  0
+ctmx809 comparetotmag -1000 -Inf   -> -1
+ctmx810 comparetotmag -1    -Inf   -> -1
+ctmx811 comparetotmag -0    -Inf   -> -1
+ctmx812 comparetotmag  0    -Inf   -> -1
+ctmx813 comparetotmag  1    -Inf   -> -1
+ctmx814 comparetotmag  1000 -Inf   -> -1
+ctmx815 comparetotmag  Inf  -Inf   ->  0
+
+ctmx821 comparetotmag  NaN -Inf    ->  1
+ctmx822 comparetotmag  NaN -1000   ->  1
+ctmx823 comparetotmag  NaN -1      ->  1
+ctmx824 comparetotmag  NaN -0      ->  1
+ctmx825 comparetotmag  NaN  0      ->  1
+ctmx826 comparetotmag  NaN  1      ->  1
+ctmx827 comparetotmag  NaN  1000   ->  1
+ctmx828 comparetotmag  NaN  Inf    ->  1
+ctmx829 comparetotmag  NaN  NaN    ->  0
+ctmx830 comparetotmag -Inf  NaN    ->  -1
+ctmx831 comparetotmag -1000 NaN    ->  -1
+ctmx832 comparetotmag -1    NaN    ->  -1
+ctmx833 comparetotmag -0    NaN    ->  -1
+ctmx834 comparetotmag  0    NaN    ->  -1
+ctmx835 comparetotmag  1    NaN    ->  -1
+ctmx836 comparetotmag  1000 NaN    ->  -1
+ctmx837 comparetotmag  Inf  NaN    ->  -1
+ctmx838 comparetotmag -NaN -NaN    ->  0
+ctmx839 comparetotmag +NaN -NaN    ->  0
+ctmx840 comparetotmag -NaN +NaN    ->  0
+
+ctmx841 comparetotmag  sNaN -sNaN  ->  0
+ctmx842 comparetotmag  sNaN -NaN   ->  -1
+ctmx843 comparetotmag  sNaN -Inf   ->  1
+ctmx844 comparetotmag  sNaN -1000  ->  1
+ctmx845 comparetotmag  sNaN -1     ->  1
+ctmx846 comparetotmag  sNaN -0     ->  1
+ctmx847 comparetotmag  sNaN  0     ->  1
+ctmx848 comparetotmag  sNaN  1     ->  1
+ctmx849 comparetotmag  sNaN  1000  ->  1
+ctmx850 comparetotmag  sNaN  NaN   ->  -1
+ctmx851 comparetotmag  sNaN sNaN   ->  0
+
+ctmx852 comparetotmag -sNaN sNaN   ->  0
+ctmx853 comparetotmag -NaN  sNaN   ->  1
+ctmx854 comparetotmag -Inf  sNaN   ->  -1
+ctmx855 comparetotmag -1000 sNaN   ->  -1
+ctmx856 comparetotmag -1    sNaN   ->  -1
+ctmx857 comparetotmag -0    sNaN   ->  -1
+ctmx858 comparetotmag  0    sNaN   ->  -1
+ctmx859 comparetotmag  1    sNaN   ->  -1
+ctmx860 comparetotmag  1000 sNaN   ->  -1
+ctmx861 comparetotmag  Inf  sNaN   ->  -1
+ctmx862 comparetotmag  NaN  sNaN   ->  1
+ctmx863 comparetotmag  sNaN sNaN   ->  0
+
+ctmx871 comparetotmag  -sNaN -sNaN  ->  0
+ctmx872 comparetotmag  -sNaN -NaN   ->  -1
+ctmx873 comparetotmag  -sNaN -Inf   ->  1
+ctmx874 comparetotmag  -sNaN -1000  ->  1
+ctmx875 comparetotmag  -sNaN -1     ->  1
+ctmx876 comparetotmag  -sNaN -0     ->  1
+ctmx877 comparetotmag  -sNaN  0     ->  1
+ctmx878 comparetotmag  -sNaN  1     ->  1
+ctmx879 comparetotmag  -sNaN  1000  ->  1
+ctmx880 comparetotmag  -sNaN  NaN   ->  -1
+ctmx881 comparetotmag  -sNaN sNaN   ->  0
+
+ctmx882 comparetotmag -sNaN -sNaN   ->  0
+ctmx883 comparetotmag -NaN  -sNaN   ->  1
+ctmx884 comparetotmag -Inf  -sNaN   ->  -1
+ctmx885 comparetotmag -1000 -sNaN   ->  -1
+ctmx886 comparetotmag -1    -sNaN   ->  -1
+ctmx887 comparetotmag -0    -sNaN   ->  -1
+ctmx888 comparetotmag  0    -sNaN   ->  -1
+ctmx889 comparetotmag  1    -sNaN   ->  -1
+ctmx890 comparetotmag  1000 -sNaN   ->  -1
+ctmx891 comparetotmag  Inf  -sNaN   ->  -1
+ctmx892 comparetotmag  NaN  -sNaN   ->  1
+ctmx893 comparetotmag  sNaN -sNaN   ->  0
+
+-- NaNs with payload
+ctmx960 comparetotmag  NaN9 -Inf   ->  1
+ctmx961 comparetotmag  NaN8  999   ->  1
+ctmx962 comparetotmag  NaN77 Inf   ->  1
+ctmx963 comparetotmag -NaN67 NaN5  ->  1
+ctmx964 comparetotmag -Inf  -NaN4  ->  -1
+ctmx965 comparetotmag -999  -NaN33 ->  -1
+ctmx966 comparetotmag  Inf   NaN2  ->  -1
+
+ctmx970 comparetotmag -NaN41 -NaN42 -> -1
+ctmx971 comparetotmag +NaN41 -NaN42 -> -1
+ctmx972 comparetotmag -NaN41 +NaN42 -> -1
+ctmx973 comparetotmag +NaN41 +NaN42 -> -1
+ctmx974 comparetotmag -NaN42 -NaN01 ->  1
+ctmx975 comparetotmag +NaN42 -NaN01 ->  1
+ctmx976 comparetotmag -NaN42 +NaN01 ->  1
+ctmx977 comparetotmag +NaN42 +NaN01 ->  1
+
+ctmx980 comparetotmag -sNaN771 -sNaN772 -> -1
+ctmx981 comparetotmag +sNaN771 -sNaN772 -> -1
+ctmx982 comparetotmag -sNaN771 +sNaN772 -> -1
+ctmx983 comparetotmag +sNaN771 +sNaN772 -> -1
+ctmx984 comparetotmag -sNaN772 -sNaN771 ->  1
+ctmx985 comparetotmag +sNaN772 -sNaN771 ->  1
+ctmx986 comparetotmag -sNaN772 +sNaN771 ->  1
+ctmx987 comparetotmag +sNaN772 +sNaN771 ->  1
+
+ctmx991 comparetotmag -sNaN99 -Inf    ->  1
+ctmx992 comparetotmag  sNaN98 -11     ->  1
+ctmx993 comparetotmag  sNaN97  NaN    -> -1
+ctmx994 comparetotmag  sNaN16 sNaN94  -> -1
+ctmx995 comparetotmag  NaN85  sNaN83  ->  1
+ctmx996 comparetotmag -Inf    sNaN92  -> -1
+ctmx997 comparetotmag  088    sNaN81  -> -1
+ctmx998 comparetotmag  Inf    sNaN90  -> -1
+ctmx999 comparetotmag  NaN   -sNaN89  ->  1
+
+-- overflow and underflow tests .. subnormal results now allowed
+maxExponent: 999999999
+minexponent: -999999999
+ctmx1080 comparetotmag +1.23456789012345E-0 9E+999999999  ->  -1
+ctmx1081 comparetotmag 9E+999999999 +1.23456789012345E-0  ->   1
+ctmx1082 comparetotmag +0.100 9E-999999999                ->   1
+ctmx1083 comparetotmag 9E-999999999 +0.100                ->  -1
+ctmx1085 comparetotmag -1.23456789012345E-0 9E+999999999  ->  -1
+ctmx1086 comparetotmag 9E+999999999 -1.23456789012345E-0  ->   1
+ctmx1087 comparetotmag -0.100 9E-999999999                ->   1
+ctmx1088 comparetotmag 9E-999999999 -0.100                ->  -1
+
+ctmx1089 comparetotmag 1e-599999999 1e-400000001    ->  -1
+ctmx1090 comparetotmag 1e-599999999 1e-400000000    ->  -1
+ctmx1091 comparetotmag 1e-600000000 1e-400000000    ->  -1
+ctmx1092 comparetotmag 9e-999999998 0.01            ->  -1
+ctmx1093 comparetotmag 9e-999999998 0.1             ->  -1
+ctmx1094 comparetotmag 0.01 9e-999999998            ->   1
+ctmx1095 comparetotmag 1e599999999 1e400000001      ->   1
+ctmx1096 comparetotmag 1e599999999 1e400000000      ->   1
+ctmx1097 comparetotmag 1e600000000 1e400000000      ->   1
+ctmx1098 comparetotmag 9e999999998 100              ->   1
+ctmx1099 comparetotmag 9e999999998 10               ->   1
+ctmx1100 comparetotmag 100  9e999999998             ->  -1
+-- signs
+ctmx1101 comparetotmag  1e+777777777  1e+411111111  ->   1
+ctmx1102 comparetotmag  1e+777777777 -1e+411111111  ->   1
+ctmx1103 comparetotmag -1e+777777777  1e+411111111  ->   1
+ctmx1104 comparetotmag -1e+777777777 -1e+411111111  ->   1
+ctmx1105 comparetotmag  1e-777777777  1e-411111111  ->  -1
+ctmx1106 comparetotmag  1e-777777777 -1e-411111111  ->  -1
+ctmx1107 comparetotmag -1e-777777777  1e-411111111  ->  -1
+ctmx1108 comparetotmag -1e-777777777 -1e-411111111  ->  -1
+
+-- spread zeros
+ctmx1110 comparetotmag   0E-383  0        ->  -1
+ctmx1111 comparetotmag   0E-383 -0        ->  -1
+ctmx1112 comparetotmag  -0E-383  0        ->  -1
+ctmx1113 comparetotmag  -0E-383 -0        ->  -1
+ctmx1114 comparetotmag   0E-383  0E+384   ->  -1
+ctmx1115 comparetotmag   0E-383 -0E+384   ->  -1
+ctmx1116 comparetotmag  -0E-383  0E+384   ->  -1
+ctmx1117 comparetotmag  -0E-383 -0E+384   ->  -1
+ctmx1118 comparetotmag   0       0E+384   ->  -1
+ctmx1119 comparetotmag   0      -0E+384   ->  -1
+ctmx1120 comparetotmag  -0       0E+384   ->  -1
+ctmx1121 comparetotmag  -0      -0E+384   ->  -1
+
+ctmx1130 comparetotmag   0E+384  0        ->   1
+ctmx1131 comparetotmag   0E+384 -0        ->   1
+ctmx1132 comparetotmag  -0E+384  0        ->   1
+ctmx1133 comparetotmag  -0E+384 -0        ->   1
+ctmx1134 comparetotmag   0E+384  0E-383   ->   1
+ctmx1135 comparetotmag   0E+384 -0E-383   ->   1
+ctmx1136 comparetotmag  -0E+384  0E-383   ->   1
+ctmx1137 comparetotmag  -0E+384 -0E-383   ->   1
+ctmx1138 comparetotmag   0       0E-383   ->   1
+ctmx1139 comparetotmag   0      -0E-383   ->   1
+ctmx1140 comparetotmag  -0       0E-383   ->   1
+ctmx1141 comparetotmag  -0      -0E-383   ->   1
+
+-- Null tests
+ctmx9990 comparetotmag 10  # -> NaN Invalid_operation
+ctmx9991 comparetotmag  # 10 -> NaN Invalid_operation

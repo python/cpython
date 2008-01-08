@@ -1,0 +1,159 @@
+------------------------------------------------------------------------
+-- ddLogB.decTest -- integral 754r adjusted exponent, for decDoubles  --
+-- Copyright (c) IBM Corporation, 2005, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- basics
+ddlogb000 logb  0                 -> -Infinity  Division_by_zero
+ddlogb001 logb  1E-398            -> -398
+ddlogb002 logb  1E-383            -> -383
+ddlogb003 logb  0.001             -> -3
+ddlogb004 logb  0.03              -> -2
+ddlogb005 logb  1                 ->  0
+ddlogb006 logb  2                 ->  0
+ddlogb007 logb  2.5               ->  0
+ddlogb008 logb  2.500             ->  0
+ddlogb009 logb  10                ->  1
+ddlogb010 logb  70                ->  1
+ddlogb011 logb  100               ->  2
+ddlogb012 logb  333               ->  2
+ddlogb013 logb  9E+384            ->  384
+ddlogb014 logb +Infinity          ->  Infinity
+
+-- negatives appear to be treated as positives
+ddlogb021 logb -0                 -> -Infinity  Division_by_zero
+ddlogb022 logb -1E-398            -> -398
+ddlogb023 logb -9E-383            -> -383
+ddlogb024 logb -0.001             -> -3
+ddlogb025 logb -1                 ->  0
+ddlogb026 logb -2                 ->  0
+ddlogb027 logb -10                ->  1
+ddlogb028 logb -70                ->  1
+ddlogb029 logb -100               ->  2
+ddlogb030 logb -9E+384            ->  384
+ddlogb031 logb -Infinity          ->  Infinity
+
+-- zeros
+ddlogb111 logb          0   -> -Infinity  Division_by_zero
+ddlogb112 logb         -0   -> -Infinity  Division_by_zero
+ddlogb113 logb       0E+4   -> -Infinity  Division_by_zero
+ddlogb114 logb      -0E+4   -> -Infinity  Division_by_zero
+ddlogb115 logb     0.0000   -> -Infinity  Division_by_zero
+ddlogb116 logb    -0.0000   -> -Infinity  Division_by_zero
+ddlogb117 logb      0E-141  -> -Infinity  Division_by_zero
+ddlogb118 logb     -0E-141  -> -Infinity  Division_by_zero
+
+-- full coefficients, alternating bits
+ddlogb121 logb   268268268        -> 8
+ddlogb122 logb  -268268268        -> 8
+ddlogb123 logb   134134134        -> 8
+ddlogb124 logb  -134134134        -> 8
+
+-- Nmax, Nmin, Ntiny
+ddlogb131 logb  9.999999999999999E+384   ->  384
+ddlogb132 logb  1E-383                   -> -383
+ddlogb133 logb  1.000000000000000E-383   -> -383
+ddlogb134 logb  1E-398                   -> -398
+
+ddlogb135 logb  -1E-398                  -> -398
+ddlogb136 logb  -1.000000000000000E-383  -> -383
+ddlogb137 logb  -1E-383                  -> -383
+ddlogb138 logb  -9.999999999999999E+384  ->  384
+
+-- ones
+ddlogb0061 logb  1                 ->   0
+ddlogb0062 logb  1.0               ->   0
+ddlogb0063 logb  1.000000000000000 ->   0
+
+-- notable cases -- exact powers of 10
+ddlogb1100 logb 1             -> 0
+ddlogb1101 logb 10            -> 1
+ddlogb1102 logb 100           -> 2
+ddlogb1103 logb 1000          -> 3
+ddlogb1104 logb 10000         -> 4
+ddlogb1105 logb 100000        -> 5
+ddlogb1106 logb 1000000       -> 6
+ddlogb1107 logb 10000000      -> 7
+ddlogb1108 logb 100000000     -> 8
+ddlogb1109 logb 1000000000    -> 9
+ddlogb1110 logb 10000000000   -> 10
+ddlogb1111 logb 100000000000  -> 11
+ddlogb1112 logb 1000000000000 -> 12
+ddlogb1113 logb 0.00000000001 -> -11
+ddlogb1114 logb 0.0000000001 -> -10
+ddlogb1115 logb 0.000000001 -> -9
+ddlogb1116 logb 0.00000001 -> -8
+ddlogb1117 logb 0.0000001 -> -7
+ddlogb1118 logb 0.000001 -> -6
+ddlogb1119 logb 0.00001 -> -5
+ddlogb1120 logb 0.0001 -> -4
+ddlogb1121 logb 0.001 -> -3
+ddlogb1122 logb 0.01 -> -2
+ddlogb1123 logb 0.1 -> -1
+ddlogb1124 logb 1E-99  -> -99
+ddlogb1125 logb 1E-100 -> -100
+ddlogb1127 logb 1E-299 -> -299
+ddlogb1126 logb 1E-383 -> -383
+
+-- suggestions from Ilan Nehama
+ddlogb1400 logb 10E-3    -> -2
+ddlogb1401 logb 10E-2    -> -1
+ddlogb1402 logb 100E-2   ->  0
+ddlogb1403 logb 1000E-2  ->  1
+ddlogb1404 logb 10000E-2 ->  2
+ddlogb1405 logb 10E-1    ->  0
+ddlogb1406 logb 100E-1   ->  1
+ddlogb1407 logb 1000E-1  ->  2
+ddlogb1408 logb 10000E-1 ->  3
+ddlogb1409 logb 10E0     ->  1
+ddlogb1410 logb 100E0    ->  2
+ddlogb1411 logb 1000E0   ->  3
+ddlogb1412 logb 10000E0  ->  4
+ddlogb1413 logb 10E1     ->  2
+ddlogb1414 logb 100E1    ->  3
+ddlogb1415 logb 1000E1   ->  4
+ddlogb1416 logb 10000E1  ->  5
+ddlogb1417 logb 10E2     ->  3
+ddlogb1418 logb 100E2    ->  4
+ddlogb1419 logb 1000E2   ->  5
+ddlogb1420 logb 10000E2  ->  6
+
+-- special values
+ddlogb820  logb   Infinity ->   Infinity
+ddlogb821  logb   0        ->  -Infinity Division_by_zero
+ddlogb822  logb   NaN      ->   NaN
+ddlogb823  logb   sNaN     ->   NaN     Invalid_operation
+-- propagating NaNs
+ddlogb824  logb   sNaN123  ->   NaN123  Invalid_operation
+ddlogb825  logb   -sNaN321 ->  -NaN321  Invalid_operation
+ddlogb826  logb   NaN456   ->   NaN456
+ddlogb827  logb   -NaN654  ->  -NaN654
+ddlogb828  logb   NaN1     ->   NaN1
+
+-- Null test
+ddlogb900  logb #   -> NaN Invalid_operation
+
+

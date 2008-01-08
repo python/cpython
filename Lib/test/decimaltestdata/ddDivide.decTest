@@ -1,0 +1,854 @@
+------------------------------------------------------------------------
+-- ddDivide.decTest -- decDouble division                             --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- sanity checks
+dddiv001 divide  1     1    ->  1
+dddiv002 divide  2     1    ->  2
+dddiv003 divide  1     2    ->  0.5
+dddiv004 divide  2     2    ->  1
+dddiv005 divide  0     1    ->  0
+dddiv006 divide  0     2    ->  0
+dddiv007 divide  1     3    ->  0.3333333333333333 Inexact Rounded
+dddiv008 divide  2     3    ->  0.6666666666666667 Inexact Rounded
+dddiv009 divide  3     3    ->  1
+
+dddiv010 divide  2.4   1    ->  2.4
+dddiv011 divide  2.4   -1   ->  -2.4
+dddiv012 divide  -2.4  1    ->  -2.4
+dddiv013 divide  -2.4  -1   ->  2.4
+dddiv014 divide  2.40  1    ->  2.40
+dddiv015 divide  2.400 1    ->  2.400
+dddiv016 divide  2.4   2    ->  1.2
+dddiv017 divide  2.400 2    ->  1.200
+dddiv018 divide  2.    2    ->  1
+dddiv019 divide  20    20   ->  1
+
+dddiv020 divide  187   187    ->  1
+dddiv021 divide  5     2      ->  2.5
+dddiv022 divide  50    20     ->  2.5
+dddiv023 divide  500   200    ->  2.5
+dddiv024 divide  50.0  20.0   ->  2.5
+dddiv025 divide  5.00  2.00   ->  2.5
+dddiv026 divide  5     2.0    ->  2.5
+dddiv027 divide  5     2.000  ->  2.5
+dddiv028 divide  5     0.20   ->  25
+dddiv029 divide  5     0.200  ->  25
+dddiv030 divide  10    1      ->  10
+dddiv031 divide  100   1      ->  100
+dddiv032 divide  1000  1      ->  1000
+dddiv033 divide  1000  100    ->  10
+
+dddiv035 divide  1     2      ->  0.5
+dddiv036 divide  1     4      ->  0.25
+dddiv037 divide  1     8      ->  0.125
+dddiv038 divide  1     16     ->  0.0625
+dddiv039 divide  1     32     ->  0.03125
+dddiv040 divide  1     64     ->  0.015625
+dddiv041 divide  1    -2      ->  -0.5
+dddiv042 divide  1    -4      ->  -0.25
+dddiv043 divide  1    -8      ->  -0.125
+dddiv044 divide  1    -16     ->  -0.0625
+dddiv045 divide  1    -32     ->  -0.03125
+dddiv046 divide  1    -64     ->  -0.015625
+dddiv047 divide -1     2      ->  -0.5
+dddiv048 divide -1     4      ->  -0.25
+dddiv049 divide -1     8      ->  -0.125
+dddiv050 divide -1     16     ->  -0.0625
+dddiv051 divide -1     32     ->  -0.03125
+dddiv052 divide -1     64     ->  -0.015625
+dddiv053 divide -1    -2      ->  0.5
+dddiv054 divide -1    -4      ->  0.25
+dddiv055 divide -1    -8      ->  0.125
+dddiv056 divide -1    -16     ->  0.0625
+dddiv057 divide -1    -32     ->  0.03125
+dddiv058 divide -1    -64     ->  0.015625
+
+-- bcdTime
+dddiv060 divide  1 7                   -> 0.1428571428571429 Inexact Rounded
+dddiv061 divide 1.2345678  1.9876543   -> 0.6211179680490717 Inexact Rounded
+
+--               1234567890123456
+dddiv071 divide  9999999999999999 1  ->  9999999999999999
+dddiv072 divide  999999999999999  1  ->  999999999999999
+dddiv073 divide  99999999999999   1  ->  99999999999999
+dddiv074 divide  9999999999999    1  ->  9999999999999
+dddiv075 divide  999999999999     1  ->  999999999999
+dddiv076 divide  99999999999      1  ->  99999999999
+dddiv077 divide  9999999999       1  ->  9999999999
+dddiv078 divide  999999999        1  ->  999999999
+dddiv079 divide  99999999         1  ->  99999999
+dddiv080 divide  9999999          1  ->  9999999
+dddiv081 divide  999999           1  ->  999999
+dddiv082 divide  99999            1  ->  99999
+dddiv083 divide  9999             1  ->  9999
+dddiv084 divide  999              1  ->  999
+dddiv085 divide  99               1  ->  99
+dddiv086 divide  9                1  ->  9
+
+dddiv090 divide  0.            1    ->  0
+dddiv091 divide  .0            1    ->  0.0
+dddiv092 divide  0.00          1    ->  0.00
+dddiv093 divide  0.00E+9       1    ->  0E+7
+dddiv094 divide  0.0000E-50    1    ->  0E-54
+
+dddiv095 divide  1            1E-8  ->  1E+8
+dddiv096 divide  1            1E-9  ->  1E+9
+dddiv097 divide  1            1E-10 ->  1E+10
+dddiv098 divide  1            1E-11 ->  1E+11
+dddiv099 divide  1            1E-12 ->  1E+12
+
+dddiv100 divide  1  1   -> 1
+dddiv101 divide  1  2   -> 0.5
+dddiv102 divide  1  3   -> 0.3333333333333333 Inexact Rounded
+dddiv103 divide  1  4   -> 0.25
+dddiv104 divide  1  5   -> 0.2
+dddiv105 divide  1  6   -> 0.1666666666666667 Inexact Rounded
+dddiv106 divide  1  7   -> 0.1428571428571429 Inexact Rounded
+dddiv107 divide  1  8   -> 0.125
+dddiv108 divide  1  9   -> 0.1111111111111111 Inexact Rounded
+dddiv109 divide  1  10  -> 0.1
+dddiv110 divide  1  1   -> 1
+dddiv111 divide  2  1   -> 2
+dddiv112 divide  3  1   -> 3
+dddiv113 divide  4  1   -> 4
+dddiv114 divide  5  1   -> 5
+dddiv115 divide  6  1   -> 6
+dddiv116 divide  7  1   -> 7
+dddiv117 divide  8  1   -> 8
+dddiv118 divide  9  1   -> 9
+dddiv119 divide  10 1   -> 10
+
+dddiv120 divide  3E+1 0.001  -> 3E+4
+dddiv121 divide  2.200 2     -> 1.100
+
+dddiv130 divide  12345  4.999  ->  2469.493898779756    Inexact Rounded
+dddiv131 divide  12345  4.99   ->  2473.947895791583    Inexact Rounded
+dddiv132 divide  12345  4.9    ->  2519.387755102041    Inexact Rounded
+dddiv133 divide  12345  5      ->  2469
+dddiv134 divide  12345  5.1    ->  2420.588235294118    Inexact Rounded
+dddiv135 divide  12345  5.01   ->  2464.071856287425    Inexact Rounded
+dddiv136 divide  12345  5.001  ->  2468.506298740252    Inexact Rounded
+
+-- test possibly imprecise results
+dddiv220 divide 391   597 ->  0.6549413735343384  Inexact Rounded
+dddiv221 divide 391  -597 -> -0.6549413735343384  Inexact Rounded
+dddiv222 divide -391  597 -> -0.6549413735343384  Inexact Rounded
+dddiv223 divide -391 -597 ->  0.6549413735343384  Inexact Rounded
+
+-- test some cases that are close to exponent overflow
+dddiv270 divide 1 1e384                  -> 1E-384                 Subnormal
+dddiv271 divide 1 0.9e384                -> 1.11111111111111E-384  Rounded Inexact Subnormal Underflow
+dddiv272 divide 1 0.99e384               -> 1.01010101010101E-384  Rounded Inexact Subnormal Underflow
+dddiv273 divide 1 0.9999999999999999e384 -> 1.00000000000000E-384  Rounded Inexact Subnormal Underflow
+dddiv274 divide 9e384    1               -> 9.000000000000000E+384 Clamped
+dddiv275 divide 9.9e384  1               -> 9.900000000000000E+384 Clamped
+dddiv276 divide 9.99e384 1               -> 9.990000000000000E+384 Clamped
+dddiv277 divide 9.999999999999999e384 1  -> 9.999999999999999E+384
+
+-- Divide into 0 tests
+dddiv301 divide    0    7     -> 0
+dddiv302 divide    0    7E-5  -> 0E+5
+dddiv303 divide    0    7E-1  -> 0E+1
+dddiv304 divide    0    7E+1  -> 0.0
+dddiv305 divide    0    7E+5  -> 0.00000
+dddiv306 divide    0    7E+6  -> 0.000000
+dddiv307 divide    0    7E+7  -> 0E-7
+dddiv308 divide    0   70E-5  -> 0E+5
+dddiv309 divide    0   70E-1  -> 0E+1
+dddiv310 divide    0   70E+0  -> 0
+dddiv311 divide    0   70E+1  -> 0.0
+dddiv312 divide    0   70E+5  -> 0.00000
+dddiv313 divide    0   70E+6  -> 0.000000
+dddiv314 divide    0   70E+7  -> 0E-7
+dddiv315 divide    0  700E-5  -> 0E+5
+dddiv316 divide    0  700E-1  -> 0E+1
+dddiv317 divide    0  700E+0  -> 0
+dddiv318 divide    0  700E+1  -> 0.0
+dddiv319 divide    0  700E+5  -> 0.00000
+dddiv320 divide    0  700E+6  -> 0.000000
+dddiv321 divide    0  700E+7  -> 0E-7
+dddiv322 divide    0  700E+77 -> 0E-77
+
+dddiv331 divide 0E-3    7E-5  -> 0E+2
+dddiv332 divide 0E-3    7E-1  -> 0.00
+dddiv333 divide 0E-3    7E+1  -> 0.0000
+dddiv334 divide 0E-3    7E+5  -> 0E-8
+dddiv335 divide 0E-1    7E-5  -> 0E+4
+dddiv336 divide 0E-1    7E-1  -> 0
+dddiv337 divide 0E-1    7E+1  -> 0.00
+dddiv338 divide 0E-1    7E+5  -> 0.000000
+dddiv339 divide 0E+1    7E-5  -> 0E+6
+dddiv340 divide 0E+1    7E-1  -> 0E+2
+dddiv341 divide 0E+1    7E+1  -> 0
+dddiv342 divide 0E+1    7E+5  -> 0.0000
+dddiv343 divide 0E+3    7E-5  -> 0E+8
+dddiv344 divide 0E+3    7E-1  -> 0E+4
+dddiv345 divide 0E+3    7E+1  -> 0E+2
+dddiv346 divide 0E+3    7E+5  -> 0.00
+
+-- These were 'input rounding'
+dddiv441 divide 12345678000 1 -> 12345678000
+dddiv442 divide 1 12345678000 -> 8.100000664200054E-11 Inexact Rounded
+dddiv443 divide 1234567800  1 -> 1234567800
+dddiv444 divide 1 1234567800  -> 8.100000664200054E-10 Inexact Rounded
+dddiv445 divide 1234567890  1 -> 1234567890
+dddiv446 divide 1 1234567890  -> 8.100000073710001E-10 Inexact Rounded
+dddiv447 divide 1234567891  1 -> 1234567891
+dddiv448 divide 1 1234567891  -> 8.100000067149001E-10 Inexact Rounded
+dddiv449 divide 12345678901 1 -> 12345678901
+dddiv450 divide 1 12345678901 -> 8.100000073053901E-11 Inexact Rounded
+dddiv451 divide 1234567896  1 -> 1234567896
+dddiv452 divide 1 1234567896  -> 8.100000034344000E-10 Inexact Rounded
+
+-- high-lows
+dddiv453 divide 1e+1   1    ->   1E+1
+dddiv454 divide 1e+1   1.0  ->   1E+1
+dddiv455 divide 1e+1   1.00 ->   1E+1
+dddiv456 divide 1e+2   2    ->   5E+1
+dddiv457 divide 1e+2   2.0  ->   5E+1
+dddiv458 divide 1e+2   2.00 ->   5E+1
+
+-- some from IEEE discussions
+dddiv460 divide 3e0      2e0     -> 1.5
+dddiv461 divide 30e-1    2e0     -> 1.5
+dddiv462 divide 300e-2   2e0     -> 1.50
+dddiv464 divide 3000e-3  2e0     -> 1.500
+dddiv465 divide 3e0      20e-1   -> 1.5
+dddiv466 divide 30e-1    20e-1   -> 1.5
+dddiv467 divide 300e-2   20e-1   -> 1.5
+dddiv468 divide 3000e-3  20e-1   -> 1.50
+dddiv469 divide 3e0      200e-2  -> 1.5
+dddiv470 divide 30e-1    200e-2  -> 1.5
+dddiv471 divide 300e-2   200e-2  -> 1.5
+dddiv472 divide 3000e-3  200e-2  -> 1.5
+dddiv473 divide 3e0      2000e-3 -> 1.5
+dddiv474 divide 30e-1    2000e-3 -> 1.5
+dddiv475 divide 300e-2   2000e-3 -> 1.5
+dddiv476 divide 3000e-3  2000e-3 -> 1.5
+
+-- some reciprocals
+dddiv480 divide 1        1.0E+33 -> 1E-33
+dddiv481 divide 1        10E+33  -> 1E-34
+dddiv482 divide 1        1.0E-33 -> 1E+33
+dddiv483 divide 1        10E-33  -> 1E+32
+
+-- RMS discussion table
+dddiv484 divide 0e5     1e3 ->   0E+2
+dddiv485 divide 0e5     2e3 ->   0E+2
+dddiv486 divide 0e5    10e2 ->   0E+3
+dddiv487 divide 0e5    20e2 ->   0E+3
+dddiv488 divide 0e5   100e1 ->   0E+4
+dddiv489 divide 0e5   200e1 ->   0E+4
+
+dddiv491 divide 1e5     1e3 ->   1E+2
+dddiv492 divide 1e5     2e3 ->   5E+1
+dddiv493 divide 1e5    10e2 ->   1E+2
+dddiv494 divide 1e5    20e2 ->   5E+1
+dddiv495 divide 1e5   100e1 ->   1E+2
+dddiv496 divide 1e5   200e1 ->   5E+1
+
+-- tryzeros cases
+rounding:    half_up
+dddiv497  divide  0E+380 1000E-13  -> 0E+369 Clamped
+dddiv498  divide  0E-390 1000E+13  -> 0E-398 Clamped
+
+rounding:    half_up
+
+-- focus on trailing zeros issues
+dddiv500 divide  1      9.9    ->  0.1010101010101010  Inexact Rounded
+dddiv501 divide  1      9.09   ->  0.1100110011001100  Inexact Rounded
+dddiv502 divide  1      9.009  ->  0.1110001110001110  Inexact Rounded
+
+dddiv511 divide 1         2    -> 0.5
+dddiv512 divide 1.0       2    -> 0.5
+dddiv513 divide 1.00      2    -> 0.50
+dddiv514 divide 1.000     2    -> 0.500
+dddiv515 divide 1.0000    2    -> 0.5000
+dddiv516 divide 1.00000   2    -> 0.50000
+dddiv517 divide 1.000000  2    -> 0.500000
+dddiv518 divide 1.0000000 2    -> 0.5000000
+dddiv519 divide 1.00      2.00 -> 0.5
+
+dddiv521 divide 2    1         -> 2
+dddiv522 divide 2    1.0       -> 2
+dddiv523 divide 2    1.00      -> 2
+dddiv524 divide 2    1.000     -> 2
+dddiv525 divide 2    1.0000    -> 2
+dddiv526 divide 2    1.00000   -> 2
+dddiv527 divide 2    1.000000  -> 2
+dddiv528 divide 2    1.0000000 -> 2
+dddiv529 divide 2.00 1.00      -> 2
+
+dddiv530 divide  2.40   2      ->  1.20
+dddiv531 divide  2.40   4      ->  0.60
+dddiv532 divide  2.40  10      ->  0.24
+dddiv533 divide  2.40   2.0    ->  1.2
+dddiv534 divide  2.40   4.0    ->  0.6
+dddiv535 divide  2.40  10.0    ->  0.24
+dddiv536 divide  2.40   2.00   ->  1.2
+dddiv537 divide  2.40   4.00   ->  0.6
+dddiv538 divide  2.40  10.00   ->  0.24
+dddiv539 divide  0.9    0.1    ->  9
+dddiv540 divide  0.9    0.01   ->  9E+1
+dddiv541 divide  0.9    0.001  ->  9E+2
+dddiv542 divide  5      2      ->  2.5
+dddiv543 divide  5      2.0    ->  2.5
+dddiv544 divide  5      2.00   ->  2.5
+dddiv545 divide  5      20     ->  0.25
+dddiv546 divide  5      20.0   ->  0.25
+dddiv547 divide  2.400  2      ->  1.200
+dddiv548 divide  2.400  2.0    ->  1.20
+dddiv549 divide  2.400  2.400  ->  1
+
+dddiv550 divide  240    1      ->  240
+dddiv551 divide  240    10     ->  24
+dddiv552 divide  240    100    ->  2.4
+dddiv553 divide  240    1000   ->  0.24
+dddiv554 divide  2400   1      ->  2400
+dddiv555 divide  2400   10     ->  240
+dddiv556 divide  2400   100    ->  24
+dddiv557 divide  2400   1000   ->  2.4
+
+-- +ve exponent
+dddiv600 divide  2.4E+9     2  ->  1.2E+9
+dddiv601 divide  2.40E+9    2  ->  1.20E+9
+dddiv602 divide  2.400E+9   2  ->  1.200E+9
+dddiv603 divide  2.4000E+9  2  ->  1.2000E+9
+dddiv604 divide  24E+8      2  ->  1.2E+9
+dddiv605 divide  240E+7     2  ->  1.20E+9
+dddiv606 divide  2400E+6    2  ->  1.200E+9
+dddiv607 divide  24000E+5   2  ->  1.2000E+9
+
+-- more zeros, etc.
+dddiv731 divide 5.00 1E-3    -> 5.00E+3
+dddiv732 divide 00.00 0.000  -> NaN Division_undefined
+dddiv733 divide 00.00 0E-3   -> NaN Division_undefined
+dddiv734 divide  0    -0     -> NaN Division_undefined
+dddiv735 divide -0     0     -> NaN Division_undefined
+dddiv736 divide -0    -0     -> NaN Division_undefined
+
+dddiv741 divide  0    -1     -> -0
+dddiv742 divide -0    -1     ->  0
+dddiv743 divide  0     1     ->  0
+dddiv744 divide -0     1     -> -0
+dddiv745 divide -1     0     -> -Infinity Division_by_zero
+dddiv746 divide -1    -0     ->  Infinity Division_by_zero
+dddiv747 divide  1     0     ->  Infinity Division_by_zero
+dddiv748 divide  1    -0     -> -Infinity Division_by_zero
+
+dddiv751 divide  0.0  -1     -> -0.0
+dddiv752 divide -0.0  -1     ->  0.0
+dddiv753 divide  0.0   1     ->  0.0
+dddiv754 divide -0.0   1     -> -0.0
+dddiv755 divide -1.0   0     -> -Infinity Division_by_zero
+dddiv756 divide -1.0  -0     ->  Infinity Division_by_zero
+dddiv757 divide  1.0   0     ->  Infinity Division_by_zero
+dddiv758 divide  1.0  -0     -> -Infinity Division_by_zero
+
+dddiv761 divide  0    -1.0   -> -0E+1
+dddiv762 divide -0    -1.0   ->  0E+1
+dddiv763 divide  0     1.0   ->  0E+1
+dddiv764 divide -0     1.0   -> -0E+1
+dddiv765 divide -1     0.0   -> -Infinity Division_by_zero
+dddiv766 divide -1    -0.0   ->  Infinity Division_by_zero
+dddiv767 divide  1     0.0   ->  Infinity Division_by_zero
+dddiv768 divide  1    -0.0   -> -Infinity Division_by_zero
+
+dddiv771 divide  0.0  -1.0   -> -0
+dddiv772 divide -0.0  -1.0   ->  0
+dddiv773 divide  0.0   1.0   ->  0
+dddiv774 divide -0.0   1.0   -> -0
+dddiv775 divide -1.0   0.0   -> -Infinity Division_by_zero
+dddiv776 divide -1.0  -0.0   ->  Infinity Division_by_zero
+dddiv777 divide  1.0   0.0   ->  Infinity Division_by_zero
+dddiv778 divide  1.0  -0.0   -> -Infinity Division_by_zero
+
+-- Specials
+dddiv780 divide  Inf  -Inf   ->  NaN Invalid_operation
+dddiv781 divide  Inf  -1000  -> -Infinity
+dddiv782 divide  Inf  -1     -> -Infinity
+dddiv783 divide  Inf  -0     -> -Infinity
+dddiv784 divide  Inf   0     ->  Infinity
+dddiv785 divide  Inf   1     ->  Infinity
+dddiv786 divide  Inf   1000  ->  Infinity
+dddiv787 divide  Inf   Inf   ->  NaN Invalid_operation
+dddiv788 divide -1000  Inf   -> -0E-398 Clamped
+dddiv789 divide -Inf   Inf   ->  NaN Invalid_operation
+dddiv790 divide -1     Inf   -> -0E-398 Clamped
+dddiv791 divide -0     Inf   -> -0E-398 Clamped
+dddiv792 divide  0     Inf   ->  0E-398 Clamped
+dddiv793 divide  1     Inf   ->  0E-398 Clamped
+dddiv794 divide  1000  Inf   ->  0E-398 Clamped
+dddiv795 divide  Inf   Inf   ->  NaN Invalid_operation
+
+dddiv800 divide -Inf  -Inf   ->  NaN Invalid_operation
+dddiv801 divide -Inf  -1000  ->  Infinity
+dddiv802 divide -Inf  -1     ->  Infinity
+dddiv803 divide -Inf  -0     ->  Infinity
+dddiv804 divide -Inf   0     -> -Infinity
+dddiv805 divide -Inf   1     -> -Infinity
+dddiv806 divide -Inf   1000  -> -Infinity
+dddiv807 divide -Inf   Inf   ->  NaN Invalid_operation
+dddiv808 divide -1000  Inf   -> -0E-398 Clamped
+dddiv809 divide -Inf  -Inf   ->  NaN Invalid_operation
+dddiv810 divide -1    -Inf   ->  0E-398 Clamped
+dddiv811 divide -0    -Inf   ->  0E-398 Clamped
+dddiv812 divide  0    -Inf   -> -0E-398 Clamped
+dddiv813 divide  1    -Inf   -> -0E-398 Clamped
+dddiv814 divide  1000 -Inf   -> -0E-398 Clamped
+dddiv815 divide  Inf  -Inf   ->  NaN Invalid_operation
+
+dddiv821 divide  NaN -Inf    ->  NaN
+dddiv822 divide  NaN -1000   ->  NaN
+dddiv823 divide  NaN -1      ->  NaN
+dddiv824 divide  NaN -0      ->  NaN
+dddiv825 divide  NaN  0      ->  NaN
+dddiv826 divide  NaN  1      ->  NaN
+dddiv827 divide  NaN  1000   ->  NaN
+dddiv828 divide  NaN  Inf    ->  NaN
+dddiv829 divide  NaN  NaN    ->  NaN
+dddiv830 divide -Inf  NaN    ->  NaN
+dddiv831 divide -1000 NaN    ->  NaN
+dddiv832 divide -1    NaN    ->  NaN
+dddiv833 divide -0    NaN    ->  NaN
+dddiv834 divide  0    NaN    ->  NaN
+dddiv835 divide  1    NaN    ->  NaN
+dddiv836 divide  1000 NaN    ->  NaN
+dddiv837 divide  Inf  NaN    ->  NaN
+
+dddiv841 divide  sNaN -Inf   ->  NaN  Invalid_operation
+dddiv842 divide  sNaN -1000  ->  NaN  Invalid_operation
+dddiv843 divide  sNaN -1     ->  NaN  Invalid_operation
+dddiv844 divide  sNaN -0     ->  NaN  Invalid_operation
+dddiv845 divide  sNaN  0     ->  NaN  Invalid_operation
+dddiv846 divide  sNaN  1     ->  NaN  Invalid_operation
+dddiv847 divide  sNaN  1000  ->  NaN  Invalid_operation
+dddiv848 divide  sNaN  NaN   ->  NaN  Invalid_operation
+dddiv849 divide  sNaN sNaN   ->  NaN  Invalid_operation
+dddiv850 divide  NaN  sNaN   ->  NaN  Invalid_operation
+dddiv851 divide -Inf  sNaN   ->  NaN  Invalid_operation
+dddiv852 divide -1000 sNaN   ->  NaN  Invalid_operation
+dddiv853 divide -1    sNaN   ->  NaN  Invalid_operation
+dddiv854 divide -0    sNaN   ->  NaN  Invalid_operation
+dddiv855 divide  0    sNaN   ->  NaN  Invalid_operation
+dddiv856 divide  1    sNaN   ->  NaN  Invalid_operation
+dddiv857 divide  1000 sNaN   ->  NaN  Invalid_operation
+dddiv858 divide  Inf  sNaN   ->  NaN  Invalid_operation
+dddiv859 divide  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+dddiv861 divide  NaN9 -Inf   ->  NaN9
+dddiv862 divide  NaN8  1000  ->  NaN8
+dddiv863 divide  NaN7  Inf   ->  NaN7
+dddiv864 divide  NaN6  NaN5  ->  NaN6
+dddiv865 divide -Inf   NaN4  ->  NaN4
+dddiv866 divide -1000  NaN3  ->  NaN3
+dddiv867 divide  Inf   NaN2  ->  NaN2
+
+dddiv871 divide  sNaN99 -Inf    ->  NaN99 Invalid_operation
+dddiv872 divide  sNaN98 -1      ->  NaN98 Invalid_operation
+dddiv873 divide  sNaN97  NaN    ->  NaN97 Invalid_operation
+dddiv874 divide  sNaN96 sNaN94  ->  NaN96 Invalid_operation
+dddiv875 divide  NaN95  sNaN93  ->  NaN93 Invalid_operation
+dddiv876 divide -Inf    sNaN92  ->  NaN92 Invalid_operation
+dddiv877 divide  0      sNaN91  ->  NaN91 Invalid_operation
+dddiv878 divide  Inf    sNaN90  ->  NaN90 Invalid_operation
+dddiv879 divide  NaN    sNaN89  ->  NaN89 Invalid_operation
+
+dddiv881 divide  -NaN9  -Inf   ->  -NaN9
+dddiv882 divide  -NaN8   1000  ->  -NaN8
+dddiv883 divide  -NaN7   Inf   ->  -NaN7
+dddiv884 divide  -NaN6  -NaN5  ->  -NaN6
+dddiv885 divide  -Inf   -NaN4  ->  -NaN4
+dddiv886 divide  -1000  -NaN3  ->  -NaN3
+dddiv887 divide   Inf   -NaN2  ->  -NaN2
+
+dddiv891 divide -sNaN99 -Inf    -> -NaN99 Invalid_operation
+dddiv892 divide -sNaN98 -1      -> -NaN98 Invalid_operation
+dddiv893 divide -sNaN97  NaN    -> -NaN97 Invalid_operation
+dddiv894 divide -sNaN96 -sNaN94 -> -NaN96 Invalid_operation
+dddiv895 divide -NaN95  -sNaN93 -> -NaN93 Invalid_operation
+dddiv896 divide -Inf    -sNaN92 -> -NaN92 Invalid_operation
+dddiv897 divide  0      -sNaN91 -> -NaN91 Invalid_operation
+dddiv898 divide  Inf    -sNaN90 -> -NaN90 Invalid_operation
+dddiv899 divide -NaN    -sNaN89 -> -NaN89 Invalid_operation
+
+-- Various flavours of divide by 0
+dddiv901 divide    0       0   ->  NaN Division_undefined
+dddiv902 divide    0.0E5   0   ->  NaN Division_undefined
+dddiv903 divide    0.000   0   ->  NaN Division_undefined
+dddiv904 divide    0.0001  0   ->  Infinity Division_by_zero
+dddiv905 divide    0.01    0   ->  Infinity Division_by_zero
+dddiv906 divide    0.1     0   ->  Infinity Division_by_zero
+dddiv907 divide    1       0   ->  Infinity Division_by_zero
+dddiv908 divide    1       0.0 ->  Infinity Division_by_zero
+dddiv909 divide   10       0.0 ->  Infinity Division_by_zero
+dddiv910 divide   1E+100   0.0 ->  Infinity Division_by_zero
+dddiv911 divide   1E+100   0   ->  Infinity Division_by_zero
+
+dddiv921 divide   -0.0001  0   -> -Infinity Division_by_zero
+dddiv922 divide   -0.01    0   -> -Infinity Division_by_zero
+dddiv923 divide   -0.1     0   -> -Infinity Division_by_zero
+dddiv924 divide   -1       0   -> -Infinity Division_by_zero
+dddiv925 divide   -1       0.0 -> -Infinity Division_by_zero
+dddiv926 divide  -10       0.0 -> -Infinity Division_by_zero
+dddiv927 divide  -1E+100   0.0 -> -Infinity Division_by_zero
+dddiv928 divide  -1E+100   0   -> -Infinity Division_by_zero
+
+dddiv931 divide    0.0001 -0   -> -Infinity Division_by_zero
+dddiv932 divide    0.01   -0   -> -Infinity Division_by_zero
+dddiv933 divide    0.1    -0   -> -Infinity Division_by_zero
+dddiv934 divide    1      -0   -> -Infinity Division_by_zero
+dddiv935 divide    1      -0.0 -> -Infinity Division_by_zero
+dddiv936 divide   10      -0.0 -> -Infinity Division_by_zero
+dddiv937 divide   1E+100  -0.0 -> -Infinity Division_by_zero
+dddiv938 divide   1E+100  -0   -> -Infinity Division_by_zero
+
+dddiv941 divide   -0.0001 -0   ->  Infinity Division_by_zero
+dddiv942 divide   -0.01   -0   ->  Infinity Division_by_zero
+dddiv943 divide   -0.1    -0   ->  Infinity Division_by_zero
+dddiv944 divide   -1      -0   ->  Infinity Division_by_zero
+dddiv945 divide   -1      -0.0 ->  Infinity Division_by_zero
+dddiv946 divide  -10      -0.0 ->  Infinity Division_by_zero
+dddiv947 divide  -1E+100  -0.0 ->  Infinity Division_by_zero
+dddiv948 divide  -1E+100  -0   ->  Infinity Division_by_zero
+
+-- Examples from SQL proposal (Krishna Kulkarni)
+dddiv1021  divide 1E0          1E0 -> 1
+dddiv1022  divide 1E0          2E0 -> 0.5
+dddiv1023  divide 1E0          3E0 -> 0.3333333333333333 Inexact Rounded
+dddiv1024  divide 100E-2   1000E-3 -> 1
+dddiv1025  divide 24E-1        2E0 -> 1.2
+dddiv1026  divide 2400E-3      2E0 -> 1.200
+dddiv1027  divide 5E0          2E0 -> 2.5
+dddiv1028  divide 5E0        20E-1 -> 2.5
+dddiv1029  divide 5E0      2000E-3 -> 2.5
+dddiv1030  divide 5E0         2E-1 -> 25
+dddiv1031  divide 5E0        20E-2 -> 25
+dddiv1032  divide 480E-2       3E0 -> 1.60
+dddiv1033  divide 47E-1        2E0 -> 2.35
+
+-- ECMAScript bad examples
+rounding:    half_down
+dddiv1040  divide 5 9  -> 0.5555555555555556 Inexact Rounded
+rounding:    half_even
+dddiv1041  divide 6 11 -> 0.5454545454545455 Inexact Rounded
+
+-- overflow and underflow tests .. note subnormal results
+-- signs
+dddiv1051 divide  1e+277  1e-311 ->  Infinity Overflow Inexact Rounded
+dddiv1052 divide  1e+277 -1e-311 -> -Infinity Overflow Inexact Rounded
+dddiv1053 divide -1e+277  1e-311 -> -Infinity Overflow Inexact Rounded
+dddiv1054 divide -1e+277 -1e-311 ->  Infinity Overflow Inexact Rounded
+dddiv1055 divide  1e-277  1e+311 ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
+dddiv1056 divide  1e-277 -1e+311 -> -0E-398 Underflow Subnormal Inexact Rounded Clamped
+dddiv1057 divide -1e-277  1e+311 -> -0E-398 Underflow Subnormal Inexact Rounded Clamped
+dddiv1058 divide -1e-277 -1e+311 ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
+
+-- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+dddiv1060 divide 1e-291 1e+101 -> 1E-392 Subnormal
+dddiv1061 divide 1e-291 1e+102 -> 1E-393 Subnormal
+dddiv1062 divide 1e-291 1e+103 -> 1E-394 Subnormal
+dddiv1063 divide 1e-291 1e+104 -> 1E-395 Subnormal
+dddiv1064 divide 1e-291 1e+105 -> 1E-396 Subnormal
+dddiv1065 divide 1e-291 1e+106 -> 1E-397 Subnormal
+dddiv1066 divide 1e-291 1e+107 -> 1E-398 Subnormal
+dddiv1067 divide 1e-291 1e+108 -> 0E-398 Underflow Subnormal Inexact Rounded Clamped
+dddiv1068 divide 1e-291 1e+109 -> 0E-398 Underflow Subnormal Inexact Rounded Clamped
+dddiv1069 divide 1e-291 1e+110 -> 0E-398 Underflow Subnormal Inexact Rounded Clamped
+-- [no equivalent of 'subnormal' for overflow]
+dddiv1070 divide 1e+60 1e-321 -> 1.000000000000E+381  Clamped
+dddiv1071 divide 1e+60 1e-322 -> 1.0000000000000E+382  Clamped
+dddiv1072 divide 1e+60 1e-323 -> 1.00000000000000E+383  Clamped
+dddiv1073 divide 1e+60 1e-324 -> 1.000000000000000E+384  Clamped
+dddiv1074 divide 1e+60 1e-325 -> Infinity Overflow Inexact Rounded
+dddiv1075 divide 1e+60 1e-326 -> Infinity Overflow Inexact Rounded
+dddiv1076 divide 1e+60 1e-327 -> Infinity Overflow Inexact Rounded
+dddiv1077 divide 1e+60 1e-328 -> Infinity Overflow Inexact Rounded
+dddiv1078 divide 1e+60 1e-329 -> Infinity Overflow Inexact Rounded
+dddiv1079 divide 1e+60 1e-330 -> Infinity Overflow Inexact Rounded
+
+dddiv1101 divide  1.0000E-394  1     -> 1.0000E-394 Subnormal
+dddiv1102 divide  1.000E-394   1e+1  -> 1.000E-395  Subnormal
+dddiv1103 divide  1.00E-394    1e+2  -> 1.00E-396   Subnormal
+dddiv1104 divide  1.0E-394     1e+3  -> 1.0E-397    Subnormal
+dddiv1105 divide  1.0E-394     1e+4  -> 1E-398     Subnormal Rounded
+dddiv1106 divide  1.3E-394     1e+4  -> 1E-398     Underflow Subnormal Inexact Rounded
+dddiv1107 divide  1.5E-394     1e+4  -> 2E-398     Underflow Subnormal Inexact Rounded
+dddiv1108 divide  1.7E-394     1e+4  -> 2E-398     Underflow Subnormal Inexact Rounded
+dddiv1109 divide  2.3E-394     1e+4  -> 2E-398     Underflow Subnormal Inexact Rounded
+dddiv1110 divide  2.5E-394     1e+4  -> 2E-398     Underflow Subnormal Inexact Rounded
+dddiv1111 divide  2.7E-394     1e+4  -> 3E-398     Underflow Subnormal Inexact Rounded
+dddiv1112 divide  1.49E-394    1e+4  -> 1E-398     Underflow Subnormal Inexact Rounded
+dddiv1113 divide  1.50E-394    1e+4  -> 2E-398     Underflow Subnormal Inexact Rounded
+dddiv1114 divide  1.51E-394    1e+4  -> 2E-398     Underflow Subnormal Inexact Rounded
+dddiv1115 divide  2.49E-394    1e+4  -> 2E-398     Underflow Subnormal Inexact Rounded
+dddiv1116 divide  2.50E-394    1e+4  -> 2E-398     Underflow Subnormal Inexact Rounded
+dddiv1117 divide  2.51E-394    1e+4  -> 3E-398     Underflow Subnormal Inexact Rounded
+
+dddiv1118 divide  1E-394       1e+4  -> 1E-398     Subnormal
+dddiv1119 divide  3E-394       1e+5  -> 0E-398     Underflow Subnormal Inexact Rounded Clamped
+dddiv1120 divide  5E-394       1e+5  -> 0E-398     Underflow Subnormal Inexact Rounded Clamped
+dddiv1121 divide  7E-394       1e+5  -> 1E-398     Underflow Subnormal Inexact Rounded
+dddiv1122 divide  9E-394       1e+5  -> 1E-398     Underflow Subnormal Inexact Rounded
+dddiv1123 divide  9.9E-394     1e+5  -> 1E-398     Underflow Subnormal Inexact Rounded
+
+dddiv1124 divide  1E-394      -1e+4  -> -1E-398    Subnormal
+dddiv1125 divide  3E-394      -1e+5  -> -0E-398    Underflow Subnormal Inexact Rounded Clamped
+dddiv1126 divide -5E-394       1e+5  -> -0E-398    Underflow Subnormal Inexact Rounded Clamped
+dddiv1127 divide  7E-394      -1e+5  -> -1E-398    Underflow Subnormal Inexact Rounded
+dddiv1128 divide -9E-394       1e+5  -> -1E-398    Underflow Subnormal Inexact Rounded
+dddiv1129 divide  9.9E-394    -1e+5  -> -1E-398    Underflow Subnormal Inexact Rounded
+dddiv1130 divide  3.0E-394    -1e+5  -> -0E-398    Underflow Subnormal Inexact Rounded Clamped
+
+dddiv1131 divide  1.0E-199     1e+200 -> 0E-398    Underflow Subnormal Inexact Rounded Clamped
+dddiv1132 divide  1.0E-199     1e+199 -> 1E-398    Subnormal Rounded
+dddiv1133 divide  1.0E-199     1e+198 -> 1.0E-397  Subnormal
+dddiv1134 divide  2.0E-199     2e+198 -> 1.0E-397  Subnormal
+dddiv1135 divide  4.0E-199     4e+198 -> 1.0E-397  Subnormal
+dddiv1136 divide 10.0E-199    10e+198 -> 1.0E-397  Subnormal
+dddiv1137 divide 30.0E-199    30e+198 -> 1.0E-397  Subnormal
+
+-- randoms
+dddiv2010  divide  -3.303226714900711E-35   8.796578842713183E+73   ->  -3.755126594058783E-109 Inexact Rounded
+dddiv2011  divide   933153327821073.6       68782181090246.25       ->   13.56678885475763 Inexact Rounded
+dddiv2012  divide   5.04752436057906E-72   -8.179481771238642E+64   ->  -6.170958627632835E-137 Inexact Rounded
+dddiv2013  divide  -3707613309582318        3394911196503.048       ->  -1092.109070010836 Inexact Rounded
+dddiv2014  divide   99689.0555190461       -4.735208553891464       ->  -21052.72753765411 Inexact Rounded
+dddiv2015  divide  -1447915775613329        269750797.8184875       ->  -5367605.164925653 Inexact Rounded
+dddiv2016  divide  -9.394881304225258E-19  -830585.0252671636       ->   1.131116143251358E-24 Inexact Rounded
+dddiv2017  divide  -1.056283432738934       88.58754555124013       ->  -0.01192361100159352 Inexact Rounded
+dddiv2018  divide   5763220933343.081       689089567025052.1       ->   0.008363529516524456 Inexact Rounded
+dddiv2019  divide   873819.122103216        9.740612494523300E-49   ->   8.970884763093948E+53 Inexact Rounded
+dddiv2020  divide   8022914.838533576       6178.566801742713       ->   1298.507420243583 Inexact Rounded
+dddiv2021  divide   203982.7605650363      -2158.283639053435       ->  -94.51156320422168 Inexact Rounded
+dddiv2022  divide   803.6310547013030       7101143795399.238       ->   1.131692411611166E-10 Inexact Rounded
+dddiv2023  divide   9.251697842123399E-82  -1.342350220606119E-7    ->  -6.892163982321936E-75 Inexact Rounded
+dddiv2024  divide  -1.980600645637992E-53  -5.474262753214457E+77   ->   3.618022617703168E-131 Inexact Rounded
+dddiv2025  divide  -210.0322996351690      -8.580951835872843E+80   ->   2.447657365434971E-79 Inexact Rounded
+dddiv2026  divide  -1.821980314020370E+85  -3.018915267138165       ->   6.035215144503042E+84 Inexact Rounded
+dddiv2027  divide  -772264503601.1047       5.158258271408988E-86   ->  -1.497141986630614E+97 Inexact Rounded
+dddiv2028  divide  -767.0532415847106       2.700027228028939E-59   ->  -2.840909282772941E+61 Inexact Rounded
+dddiv2029  divide   496724.8548250093       7.32700588163100E+66    ->   6.779370220929013E-62 Inexact Rounded
+dddiv2030  divide  -304232651447703.9      -108.9730808657440       ->   2791814721862.565 Inexact Rounded
+dddiv2031  divide  -7.233817192699405E+42  -5711302004.149411       ->   1.266579352211430E+33 Inexact Rounded
+dddiv2032  divide  -9.999221444912745E+96   4010569406446197        ->  -2.493217404202250E+81 Inexact Rounded
+dddiv2033  divide  -1837272.061937622       8.356322838066762       ->  -219866.0939196882 Inexact Rounded
+dddiv2034  divide   2168.517555606529       209.1910258615061       ->   10.36620737756784 Inexact Rounded
+dddiv2035  divide  -1.884389790576371E+88   2.95181953870583E+20    ->  -6.383824505079828E+67 Inexact Rounded
+dddiv2036  divide   732263.6037438196       961222.3634446889       ->   0.7618045850698269 Inexact Rounded
+dddiv2037  divide  -813461419.0348336       5.376293753809143E+84   ->  -1.513052404285927E-76 Inexact Rounded
+dddiv2038  divide  -45562133508108.50      -9.776843494690107E+51   ->   4.660208945029519E-39 Inexact Rounded
+dddiv2039  divide  -6.489393172441016E+80  -9101965.097852113       ->   7.129661674897421E+73 Inexact Rounded
+dddiv2040  divide   3.694576237117349E+93   6683512.012622003       ->   5.527896456443912E+86 Inexact Rounded
+dddiv2041  divide  -2.252877726403272E+19  -7451913256.181367       ->   3023220546.125531 Inexact Rounded
+dddiv2042  divide   518303.1989111842       50.01587020474133       ->   10362.77479107123 Inexact Rounded
+dddiv2043  divide   2.902087881880103E+24   33.32400992305702       ->   8.708699488989578E+22 Inexact Rounded
+dddiv2044  divide   549619.4559510557       1660824845196338        ->   3.309316196351104E-10 Inexact Rounded
+dddiv2045  divide  -6775670774684043        8292152023.077262       ->  -817118.4941891062 Inexact Rounded
+dddiv2046  divide  -77.50923921524079      -5.636882655425815E+74   ->   1.375037302588405E-73 Inexact Rounded
+dddiv2047  divide  -2.984889459605149E-10  -88106156784122.99       ->   3.387833005721384E-24 Inexact Rounded
+dddiv2048  divide   0.949517293997085       44767115.96450998       ->   2.121015110175589E-8 Inexact Rounded
+dddiv2049  divide  -2760937211.084521      -1087015876975408        ->   0.000002539923537057024 Inexact Rounded
+dddiv2050  divide   28438351.85030536      -4.209397904088624E-47   ->  -6.755919135770688E+53 Inexact Rounded
+dddiv2051  divide  -85562731.6820956       -7.166045442530185E+45   ->   1.194002080621542E-38 Inexact Rounded
+dddiv2052  divide   2533802852165.25        7154.119606235955       ->   354173957.3317501 Inexact Rounded
+dddiv2053  divide  -8858831346851.474       97.59734208801716       ->  -90769186509.83577 Inexact Rounded
+dddiv2054  divide   176783629801387.5       840073263.3109817       ->   210438.3480848206 Inexact Rounded
+dddiv2055  divide  -493506471796175.6       79733894790822.03       ->  -6.189418854940746 Inexact Rounded
+dddiv2056  divide   790.1682542103445       829.9449370367435       ->   0.9520731062371214 Inexact Rounded
+dddiv2057  divide  -8920459838.583164      -4767.889187899214       ->   1870945.294035581 Inexact Rounded
+dddiv2058  divide   53536687164422.1        53137.5007032689        ->   1007512330.385698 Inexact Rounded
+dddiv2059  divide   4.051532311146561E-74  -2.343089768972261E+94   ->  -1.729140882606332E-168 Inexact Rounded
+dddiv2060  divide  -14847758778636.88       3.062543516383807E-43   ->  -4.848178874587497E+55 Inexact Rounded
+
+-- Division probably has pre-rounding, so need to test rounding
+-- explicitly rather than assume included through other tests;
+-- tests include simple rounding and also the tricky cases of sticky
+-- bits following two zeros
+--
+--   1/99999 gives 0.0000100001000010000100001000010000100001
+--                       1234567890123456
+--
+--   1/999999 gives 0.000001000001000001000001000001000001000001
+--                         1234567890123456
+
+rounding: ceiling
+dddiv3001  divide  1     3    ->  0.3333333333333334 Inexact Rounded
+dddiv3002  divide  2     3    ->  0.6666666666666667 Inexact Rounded
+dddiv3003  divide  1 99999    ->  0.00001000010000100002  Inexact Rounded
+dddiv3004  divide  1 999999   ->  0.000001000001000001001 Inexact Rounded
+
+rounding: floor
+dddiv3011  divide  1     3    ->  0.3333333333333333 Inexact Rounded
+dddiv3012  divide  2     3    ->  0.6666666666666666 Inexact Rounded
+dddiv3013  divide  1 99999    ->  0.00001000010000100001  Inexact Rounded
+dddiv3014  divide  1 999999   ->  0.000001000001000001000 Inexact Rounded
+
+rounding: up
+dddiv3021  divide  1     3    ->  0.3333333333333334 Inexact Rounded
+dddiv3022  divide  2     3    ->  0.6666666666666667 Inexact Rounded
+dddiv3023  divide  1 99999    ->  0.00001000010000100002  Inexact Rounded
+dddiv3024  divide  1 999999   ->  0.000001000001000001001 Inexact Rounded
+
+rounding: down
+dddiv3031  divide  1     3    ->  0.3333333333333333 Inexact Rounded
+dddiv3032  divide  2     3    ->  0.6666666666666666 Inexact Rounded
+dddiv3033  divide  1 99999    ->  0.00001000010000100001  Inexact Rounded
+dddiv3034  divide  1 999999   ->  0.000001000001000001000 Inexact Rounded
+
+rounding: half_up
+dddiv3041  divide  1     3    ->  0.3333333333333333 Inexact Rounded
+dddiv3042  divide  2     3    ->  0.6666666666666667 Inexact Rounded
+dddiv3043  divide  1 99999    ->  0.00001000010000100001  Inexact Rounded
+dddiv3044  divide  1 999999   ->  0.000001000001000001000 Inexact Rounded
+
+rounding: half_down
+dddiv3051  divide  1     3    ->  0.3333333333333333 Inexact Rounded
+dddiv3052  divide  2     3    ->  0.6666666666666667 Inexact Rounded
+dddiv3053  divide  1 99999    ->  0.00001000010000100001  Inexact Rounded
+dddiv3054  divide  1 999999   ->  0.000001000001000001000 Inexact Rounded
+
+rounding: half_even
+dddiv3061  divide  1     3    ->  0.3333333333333333 Inexact Rounded
+dddiv3062  divide  2     3    ->  0.6666666666666667 Inexact Rounded
+dddiv3063  divide  1 99999    ->  0.00001000010000100001  Inexact Rounded
+dddiv3064  divide  1 999999   ->  0.000001000001000001000 Inexact Rounded
+
+rounding: 05up
+dddiv3071  divide  1     3    ->  0.3333333333333333 Inexact Rounded
+dddiv3072  divide  2     3    ->  0.6666666666666666 Inexact Rounded
+dddiv3073  divide  1 99999    ->  0.00001000010000100001  Inexact Rounded
+dddiv3074  divide  1 999999   ->  0.000001000001000001001 Inexact Rounded
+
+-- random divide tests with result near 1
+rounding: half_even
+dddiv4001 divide  3195385192916917   3195385192946695  ->  0.9999999999906809  Inexact Rounded
+dddiv4002 divide  1393723067526993   1393723067519475  ->  1.000000000005394  Inexact Rounded
+dddiv4003 divide   759985543702302    759985543674015  ->  1.000000000037220  Inexact Rounded
+dddiv4004 divide  9579158456027302   9579158456036864  ->  0.9999999999990018  Inexact Rounded
+dddiv4005 divide  7079398299143569   7079398299156904  ->  0.9999999999981164  Inexact Rounded
+dddiv4006 divide  6636169255366598   6636169255336386  ->  1.000000000004553  Inexact Rounded
+dddiv4007 divide  6964813971340090   6964813971321554  ->  1.000000000002661  Inexact Rounded
+dddiv4008 divide  4182275225480784   4182275225454009  ->  1.000000000006402  Inexact Rounded
+dddiv4009 divide  9228325124938029   9228325124918730  ->  1.000000000002091  Inexact Rounded
+dddiv4010 divide  3428346338630192   3428346338609843  ->  1.000000000005936  Inexact Rounded
+dddiv4011 divide  2143511550722893   2143511550751754  ->  0.9999999999865356  Inexact Rounded
+dddiv4012 divide  1672732924396785   1672732924401811  ->  0.9999999999969953  Inexact Rounded
+dddiv4013 divide  4190714611948216   4190714611948664  ->  0.9999999999998931  Inexact Rounded
+dddiv4014 divide  3942254800848877   3942254800814556  ->  1.000000000008706  Inexact Rounded
+dddiv4015 divide  2854459826952334   2854459826960762  ->  0.9999999999970474  Inexact Rounded
+dddiv4016 divide  2853258953664731   2853258953684471  ->  0.9999999999930816  Inexact Rounded
+dddiv4017 divide  9453512638125978   9453512638146425  ->  0.9999999999978371  Inexact Rounded
+dddiv4018 divide   339476633940369    339476633912887  ->  1.000000000080954  Inexact Rounded
+dddiv4019 divide  4542181492688467   4542181492697735  ->  0.9999999999979596  Inexact Rounded
+dddiv4020 divide  7312600192399197   7312600192395424  ->  1.000000000000516  Inexact Rounded
+dddiv4021 divide  1811674985570111   1811674985603935  ->  0.9999999999813300  Inexact Rounded
+dddiv4022 divide  1706462639003481   1706462639017740  ->  0.9999999999916441  Inexact Rounded
+dddiv4023 divide  6697052654940368   6697052654934110  ->  1.000000000000934  Inexact Rounded
+dddiv4024 divide  5015283664277539   5015283664310719  ->  0.9999999999933842  Inexact Rounded
+dddiv4025 divide  2359501561537464   2359501561502464  ->  1.000000000014834  Inexact Rounded
+dddiv4026 divide  2669850227909157   2669850227901548  ->  1.000000000002850  Inexact Rounded
+dddiv4027 divide  9329725546974648   9329725547002445  ->  0.9999999999970206  Inexact Rounded
+dddiv4028 divide  3228562867071248   3228562867106206  ->  0.9999999999891723  Inexact Rounded
+dddiv4029 divide  4862226644921175   4862226644909380  ->  1.000000000002426  Inexact Rounded
+dddiv4030 divide  1022267997054529   1022267997071329  ->  0.9999999999835660  Inexact Rounded
+dddiv4031 divide  1048777482023719   1048777482000948  ->  1.000000000021712  Inexact Rounded
+dddiv4032 divide  9980113777337098   9980113777330539  ->  1.000000000000657  Inexact Rounded
+dddiv4033 divide  7506839167963908   7506839167942901  ->  1.000000000002798  Inexact Rounded
+dddiv4034 divide   231119751977860    231119751962453  ->  1.000000000066662  Inexact Rounded
+dddiv4035 divide  4034903664762962   4034903664795526  ->  0.9999999999919294  Inexact Rounded
+dddiv4036 divide  5700122152274696   5700122152251386  ->  1.000000000004089  Inexact Rounded
+dddiv4037 divide  6869599590293110   6869599590293495  ->  0.9999999999999440  Inexact Rounded
+dddiv4038 divide  5576281960092797   5576281960105579  ->  0.9999999999977078  Inexact Rounded
+dddiv4039 divide  2304844888381318   2304844888353073  ->  1.000000000012255  Inexact Rounded
+dddiv4040 divide  3265933651656452   3265933651682779  ->  0.9999999999919389  Inexact Rounded
+dddiv4041 divide  5235714985079914   5235714985066131  ->  1.000000000002632  Inexact Rounded
+dddiv4042 divide  5578481572827551   5578481572822945  ->  1.000000000000826  Inexact Rounded
+dddiv4043 divide  4909616081396134   4909616081373076  ->  1.000000000004696  Inexact Rounded
+dddiv4044 divide   636447224349537    636447224338757  ->  1.000000000016938  Inexact Rounded
+dddiv4045 divide  1539373428396640   1539373428364727  ->  1.000000000020731  Inexact Rounded
+dddiv4046 divide  2028786707377893   2028786707378866  ->  0.9999999999995204  Inexact Rounded
+dddiv4047 divide   137643260486222    137643260487419  ->  0.9999999999913036  Inexact Rounded
+dddiv4048 divide   247451519746765    247451519752267  ->  0.9999999999777653  Inexact Rounded
+dddiv4049 divide  7877858475022054   7877858474999794  ->  1.000000000002826  Inexact Rounded
+dddiv4050 divide  7333242694766258   7333242694744628  ->  1.000000000002950  Inexact Rounded
+dddiv4051 divide   124051503698592    124051503699397  ->  0.9999999999935108  Inexact Rounded
+dddiv4052 divide  8944737432385188   8944737432406860  ->  0.9999999999975771  Inexact Rounded
+dddiv4053 divide  9883948923406874   9883948923424843  ->  0.9999999999981820  Inexact Rounded
+dddiv4054 divide  6829178741654284   6829178741671973  ->  0.9999999999974098  Inexact Rounded
+dddiv4055 divide  7342752479768122   7342752479793385  ->  0.9999999999965595  Inexact Rounded
+dddiv4056 divide  8066426579008783   8066426578977563  ->  1.000000000003870  Inexact Rounded
+dddiv4057 divide  8992775071383295   8992775071352712  ->  1.000000000003401  Inexact Rounded
+dddiv4058 divide  5485011755545641   5485011755543611  ->  1.000000000000370  Inexact Rounded
+dddiv4059 divide  5779983054353918   5779983054365300  ->  0.9999999999980308  Inexact Rounded
+dddiv4060 divide  9502265102713774   9502265102735208  ->  0.9999999999977443  Inexact Rounded
+dddiv4061 divide  2109558399130981   2109558399116281  ->  1.000000000006968  Inexact Rounded
+dddiv4062 divide  5296182636350471   5296182636351521  ->  0.9999999999998017  Inexact Rounded
+dddiv4063 divide  1440019225591883   1440019225601844  ->  0.9999999999930827  Inexact Rounded
+dddiv4064 divide  8182110791881341   8182110791847174  ->  1.000000000004176  Inexact Rounded
+dddiv4065 divide   489098235512060    489098235534516  ->  0.9999999999540869  Inexact Rounded
+dddiv4066 divide  6475687084782038   6475687084756089  ->  1.000000000004007  Inexact Rounded
+dddiv4067 divide  8094348555736948   8094348555759236  ->  0.9999999999972465  Inexact Rounded
+dddiv4068 divide  1982766816291543   1982766816309463  ->  0.9999999999909621  Inexact Rounded
+dddiv4069 divide  9277314300113251   9277314300084467  ->  1.000000000003103  Inexact Rounded
+dddiv4070 divide  4335532959318934   4335532959293167  ->  1.000000000005943  Inexact Rounded
+dddiv4071 divide  7767113032981348   7767113032968132  ->  1.000000000001702  Inexact Rounded
+dddiv4072 divide  1578548053342868   1578548053370448  ->  0.9999999999825282  Inexact Rounded
+dddiv4073 divide  3790420686666898   3790420686636315  ->  1.000000000008068  Inexact Rounded
+dddiv4074 divide   871682421955147    871682421976441  ->  0.9999999999755714  Inexact Rounded
+dddiv4075 divide   744141054479940    744141054512329  ->  0.9999999999564746  Inexact Rounded
+dddiv4076 divide  8956824183670735   8956824183641741  ->  1.000000000003237  Inexact Rounded
+dddiv4077 divide  8337291694485682   8337291694451193  ->  1.000000000004137  Inexact Rounded
+dddiv4078 divide  4107775944683669   4107775944657097  ->  1.000000000006469  Inexact Rounded
+dddiv4079 divide  8691900057964648   8691900057997555  ->  0.9999999999962141  Inexact Rounded
+dddiv4080 divide  2229528520536462   2229528520502337  ->  1.000000000015306  Inexact Rounded
+dddiv4081 divide   398442083774322    398442083746273  ->  1.000000000070397  Inexact Rounded
+dddiv4082 divide  5319819776808759   5319819776838313  ->  0.9999999999944445  Inexact Rounded
+dddiv4083 divide  7710491299066855   7710491299041858  ->  1.000000000003242  Inexact Rounded
+dddiv4084 divide  9083231296087266   9083231296058160  ->  1.000000000003204  Inexact Rounded
+dddiv4085 divide  3566873574904559   3566873574890328  ->  1.000000000003990  Inexact Rounded
+dddiv4086 divide   596343290550525    596343290555614  ->  0.9999999999914663  Inexact Rounded
+dddiv4087 divide   278227925093192    278227925068104  ->  1.000000000090171  Inexact Rounded
+dddiv4088 divide  3292902958490649   3292902958519881  ->  0.9999999999911227  Inexact Rounded
+dddiv4089 divide  5521871364245881   5521871364229536  ->  1.000000000002960  Inexact Rounded
+dddiv4090 divide  2406505602883617   2406505602857997  ->  1.000000000010646  Inexact Rounded
+dddiv4091 divide  7741146984869208   7741146984867255  ->  1.000000000000252  Inexact Rounded
+dddiv4092 divide  4576041832414909   4576041832405102  ->  1.000000000002143  Inexact Rounded
+dddiv4093 divide  9183756982878057   9183756982901934  ->  0.9999999999974001  Inexact Rounded
+dddiv4094 divide  6215736513855159   6215736513870342  ->  0.9999999999975573  Inexact Rounded
+dddiv4095 divide   248554968534533    248554968551417  ->  0.9999999999320714  Inexact Rounded
+dddiv4096 divide   376314165668645    376314165659755  ->  1.000000000023624  Inexact Rounded
+dddiv4097 divide  5513569249809718   5513569249808906  ->  1.000000000000147  Inexact Rounded
+dddiv4098 divide  3367992242167904   3367992242156228  ->  1.000000000003467  Inexact Rounded
+dddiv4099 divide  6134869538966967   6134869538985986  ->  0.9999999999968999  Inexact Rounded
+
+-- Null tests
+dddiv9998 divide 10  # -> NaN Invalid_operation
+dddiv9999 divide  # 10 -> NaN Invalid_operation
+

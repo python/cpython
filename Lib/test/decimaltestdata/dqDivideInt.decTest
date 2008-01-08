@@ -1,0 +1,453 @@
+------------------------------------------------------------------------
+-- dqDivideInt.decTest -- decQuad integer division                    --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+
+dqdvi001 divideint  1     1    ->  1
+dqdvi002 divideint  2     1    ->  2
+dqdvi003 divideint  1     2    ->  0
+dqdvi004 divideint  2     2    ->  1
+dqdvi005 divideint  0     1    ->  0
+dqdvi006 divideint  0     2    ->  0
+dqdvi007 divideint  1     3    ->  0
+dqdvi008 divideint  2     3    ->  0
+dqdvi009 divideint  3     3    ->  1
+
+dqdvi010 divideint  2.4   1    ->  2
+dqdvi011 divideint  2.4   -1   ->  -2
+dqdvi012 divideint  -2.4  1    ->  -2
+dqdvi013 divideint  -2.4  -1   ->  2
+dqdvi014 divideint  2.40  1    ->  2
+dqdvi015 divideint  2.400 1    ->  2
+dqdvi016 divideint  2.4   2    ->  1
+dqdvi017 divideint  2.400 2    ->  1
+dqdvi018 divideint  2.    2    ->  1
+dqdvi019 divideint  20    20   ->  1
+
+dqdvi020 divideint  187   187  ->  1
+dqdvi021 divideint  5     2    ->  2
+dqdvi022 divideint  5     2.0    ->  2
+dqdvi023 divideint  5     2.000  ->  2
+dqdvi024 divideint  5     0.200  ->  25
+dqdvi025 divideint  5     0.200  ->  25
+
+dqdvi030 divideint  1     2      ->  0
+dqdvi031 divideint  1     4      ->  0
+dqdvi032 divideint  1     8      ->  0
+dqdvi033 divideint  1     16     ->  0
+dqdvi034 divideint  1     32     ->  0
+dqdvi035 divideint  1     64     ->  0
+dqdvi040 divideint  1    -2      -> -0
+dqdvi041 divideint  1    -4      -> -0
+dqdvi042 divideint  1    -8      -> -0
+dqdvi043 divideint  1    -16     -> -0
+dqdvi044 divideint  1    -32     -> -0
+dqdvi045 divideint  1    -64     -> -0
+dqdvi050 divideint -1     2      -> -0
+dqdvi051 divideint -1     4      -> -0
+dqdvi052 divideint -1     8      -> -0
+dqdvi053 divideint -1     16     -> -0
+dqdvi054 divideint -1     32     -> -0
+dqdvi055 divideint -1     64     -> -0
+dqdvi060 divideint -1    -2      ->  0
+dqdvi061 divideint -1    -4      ->  0
+dqdvi062 divideint -1    -8      ->  0
+dqdvi063 divideint -1    -16     ->  0
+dqdvi064 divideint -1    -32     ->  0
+dqdvi065 divideint -1    -64     ->  0
+
+-- similar with powers of ten
+dqdvi160 divideint  1     1         ->  1
+dqdvi161 divideint  1     10        ->  0
+dqdvi162 divideint  1     100       ->  0
+dqdvi163 divideint  1     1000      ->  0
+dqdvi164 divideint  1     10000     ->  0
+dqdvi165 divideint  1     100000    ->  0
+dqdvi166 divideint  1     1000000   ->  0
+dqdvi167 divideint  1     10000000  ->  0
+dqdvi168 divideint  1     100000000 ->  0
+dqdvi170 divideint  1    -1         -> -1
+dqdvi171 divideint  1    -10        -> -0
+dqdvi172 divideint  1    -100       -> -0
+dqdvi173 divideint  1    -1000      -> -0
+dqdvi174 divideint  1    -10000     -> -0
+dqdvi175 divideint  1    -100000    -> -0
+dqdvi176 divideint  1    -1000000   -> -0
+dqdvi177 divideint  1    -10000000  -> -0
+dqdvi178 divideint  1    -100000000 -> -0
+dqdvi180 divideint -1     1         -> -1
+dqdvi181 divideint -1     10        -> -0
+dqdvi182 divideint -1     100       -> -0
+dqdvi183 divideint -1     1000      -> -0
+dqdvi184 divideint -1     10000     -> -0
+dqdvi185 divideint -1     100000    -> -0
+dqdvi186 divideint -1     1000000   -> -0
+dqdvi187 divideint -1     10000000  -> -0
+dqdvi188 divideint -1     100000000 -> -0
+dqdvi190 divideint -1    -1         ->  1
+dqdvi191 divideint -1    -10        ->  0
+dqdvi192 divideint -1    -100       ->  0
+dqdvi193 divideint -1    -1000      ->  0
+dqdvi194 divideint -1    -10000     ->  0
+dqdvi195 divideint -1    -100000    ->  0
+dqdvi196 divideint -1    -1000000   ->  0
+dqdvi197 divideint -1    -10000000  ->  0
+dqdvi198 divideint -1    -100000000 ->  0
+
+-- some long operand (at p=9) cases
+dqdvi070 divideint  999999999     1  ->  999999999
+dqdvi071 divideint  999999999.4   1  ->  999999999
+dqdvi072 divideint  999999999.5   1  ->  999999999
+dqdvi073 divideint  999999999.9   1  ->  999999999
+dqdvi074 divideint  999999999.999 1  ->  999999999
+
+dqdvi090 divideint  0.            1    ->  0
+dqdvi091 divideint  .0            1    ->  0
+dqdvi092 divideint  0.00          1    ->  0
+dqdvi093 divideint  0.00E+9       1    ->  0
+dqdvi094 divideint  0.0000E-50    1    ->  0
+
+dqdvi100 divideint  1  1   -> 1
+dqdvi101 divideint  1  2   -> 0
+dqdvi102 divideint  1  3   -> 0
+dqdvi103 divideint  1  4   -> 0
+dqdvi104 divideint  1  5   -> 0
+dqdvi105 divideint  1  6   -> 0
+dqdvi106 divideint  1  7   -> 0
+dqdvi107 divideint  1  8   -> 0
+dqdvi108 divideint  1  9   -> 0
+dqdvi109 divideint  1  10  -> 0
+dqdvi110 divideint  1  1   -> 1
+dqdvi111 divideint  2  1   -> 2
+dqdvi112 divideint  3  1   -> 3
+dqdvi113 divideint  4  1   -> 4
+dqdvi114 divideint  5  1   -> 5
+dqdvi115 divideint  6  1   -> 6
+dqdvi116 divideint  7  1   -> 7
+dqdvi117 divideint  8  1   -> 8
+dqdvi118 divideint  9  1   -> 9
+dqdvi119 divideint  10 1   -> 10
+
+-- from DiagBigDecimal
+dqdvi131 divideint  101.3   1     ->  101
+dqdvi132 divideint  101.0   1     ->  101
+dqdvi133 divideint  101.3   3     ->  33
+dqdvi134 divideint  101.0   3     ->  33
+dqdvi135 divideint  2.4     1     ->  2
+dqdvi136 divideint  2.400   1     ->  2
+dqdvi137 divideint  18      18    ->  1
+dqdvi138 divideint  1120    1000  ->  1
+dqdvi139 divideint  2.4     2     ->  1
+dqdvi140 divideint  2.400   2     ->  1
+dqdvi141 divideint  0.5     2.000 ->  0
+dqdvi142 divideint  8.005   7     ->  1
+dqdvi143 divideint  5       2     ->  2
+dqdvi144 divideint  0       2     ->  0
+dqdvi145 divideint  0.00    2     ->  0
+
+-- Others
+dqdvi150 divideint  12345  4.999  ->  2469
+dqdvi151 divideint  12345  4.99   ->  2473
+dqdvi152 divideint  12345  4.9    ->  2519
+dqdvi153 divideint  12345  5      ->  2469
+dqdvi154 divideint  12345  5.1    ->  2420
+dqdvi155 divideint  12345  5.01   ->  2464
+dqdvi156 divideint  12345  5.001  ->  2468
+dqdvi157 divideint    101  7.6    ->  13
+
+-- Various flavours of divideint by 0
+dqdvi201 divideint  0      0   -> NaN Division_undefined
+dqdvi202 divideint  0.0E5  0   -> NaN Division_undefined
+dqdvi203 divideint  0.000  0   -> NaN Division_undefined
+dqdvi204 divideint  0.0001 0   -> Infinity Division_by_zero
+dqdvi205 divideint  0.01   0   -> Infinity Division_by_zero
+dqdvi206 divideint  0.1    0   -> Infinity Division_by_zero
+dqdvi207 divideint  1      0   -> Infinity Division_by_zero
+dqdvi208 divideint  1      0.0 -> Infinity Division_by_zero
+dqdvi209 divideint 10      0.0 -> Infinity Division_by_zero
+dqdvi210 divideint 1E+100  0.0 -> Infinity Division_by_zero
+dqdvi211 divideint 1E+380  0   -> Infinity Division_by_zero
+dqdvi214 divideint  -0.0001 0   -> -Infinity Division_by_zero
+dqdvi215 divideint  -0.01   0   -> -Infinity Division_by_zero
+dqdvi216 divideint  -0.1    0   -> -Infinity Division_by_zero
+dqdvi217 divideint  -1      0   -> -Infinity Division_by_zero
+dqdvi218 divideint  -1      0.0 -> -Infinity Division_by_zero
+dqdvi219 divideint -10      0.0 -> -Infinity Division_by_zero
+dqdvi220 divideint -1E+100  0.0 -> -Infinity Division_by_zero
+dqdvi221 divideint -1E+380  0   -> -Infinity Division_by_zero
+
+-- test some cases that are close to exponent overflow
+dqdvi270 divideint 1 1e384          -> 0
+dqdvi271 divideint 1 0.9e384        -> 0
+dqdvi272 divideint 1 0.99e384       -> 0
+dqdvi273 divideint 1 0.9999999999999999e384       -> 0
+dqdvi274 divideint 9e384    1       -> NaN Division_impossible
+dqdvi275 divideint 9.9e384  1       -> NaN Division_impossible
+dqdvi276 divideint 9.99e384 1       -> NaN Division_impossible
+dqdvi277 divideint 9.999999999999999e384 1 -> NaN Division_impossible
+
+dqdvi280 divideint 0.1 9e-383       -> NaN Division_impossible
+dqdvi281 divideint 0.1 99e-383      -> NaN Division_impossible
+dqdvi282 divideint 0.1 999e-383     -> NaN Division_impossible
+dqdvi283 divideint 0.1 9e-382       -> NaN Division_impossible
+dqdvi284 divideint 0.1 99e-382      -> NaN Division_impossible
+
+-- GD edge cases: lhs smaller than rhs but more digits
+dqdvi301  divideint  0.9      2      ->  0
+dqdvi302  divideint  0.9      2.0    ->  0
+dqdvi303  divideint  0.9      2.1    ->  0
+dqdvi304  divideint  0.9      2.00   ->  0
+dqdvi305  divideint  0.9      2.01   ->  0
+dqdvi306  divideint  0.12     1      ->  0
+dqdvi307  divideint  0.12     1.0    ->  0
+dqdvi308  divideint  0.12     1.00   ->  0
+dqdvi309  divideint  0.12     1.0    ->  0
+dqdvi310  divideint  0.12     1.00   ->  0
+dqdvi311  divideint  0.12     2      ->  0
+dqdvi312  divideint  0.12     2.0    ->  0
+dqdvi313  divideint  0.12     2.1    ->  0
+dqdvi314  divideint  0.12     2.00   ->  0
+dqdvi315  divideint  0.12     2.01   ->  0
+
+-- edge cases of impossible
+dqdvi330  divideint  1234567987654321987654321890123456  10    ->  123456798765432198765432189012345
+dqdvi331  divideint  1234567987654321987654321890123456   1    ->  1234567987654321987654321890123456
+dqdvi332  divideint  1234567987654321987654321890123456   0.1  ->  NaN Division_impossible
+dqdvi333  divideint  1234567987654321987654321890123456   0.01 ->  NaN Division_impossible
+
+-- overflow and underflow tests [from divide]
+dqdvi1051 divideint  1e+277  1e-311 ->  NaN Division_impossible
+dqdvi1052 divideint  1e+277 -1e-311 ->  NaN Division_impossible
+dqdvi1053 divideint -1e+277  1e-311 ->  NaN Division_impossible
+dqdvi1054 divideint -1e+277 -1e-311 ->  NaN Division_impossible
+dqdvi1055 divideint  1e-277  1e+311 ->  0
+dqdvi1056 divideint  1e-277 -1e+311 -> -0
+dqdvi1057 divideint -1e-277  1e+311 -> -0
+dqdvi1058 divideint -1e-277 -1e+311 ->  0
+
+-- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+dqdvi1060 divideint 1e-291 1e+101 -> 0
+dqdvi1061 divideint 1e-291 1e+102 -> 0
+dqdvi1062 divideint 1e-291 1e+103 -> 0
+dqdvi1063 divideint 1e-291 1e+104 -> 0
+dqdvi1064 divideint 1e-291 1e+105 -> 0
+dqdvi1065 divideint 1e-291 1e+106 -> 0
+dqdvi1066 divideint 1e-291 1e+107 -> 0
+dqdvi1067 divideint 1e-291 1e+108 -> 0
+dqdvi1068 divideint 1e-291 1e+109 -> 0
+dqdvi1069 divideint 1e-291 1e+110 -> 0
+
+dqdvi1101 divideint  1.0000E-394  1     -> 0
+dqdvi1102 divideint  1.000E-394   1e+1  -> 0
+dqdvi1103 divideint  1.00E-394    1e+2  -> 0
+
+dqdvi1118 divideint  1E-394       1e+4  -> 0
+dqdvi1119 divideint  3E-394      -1e+5  -> -0
+dqdvi1120 divideint  5E-394       1e+5  -> 0
+
+dqdvi1124 divideint  1E-394      -1e+4  -> -0
+dqdvi1130 divideint  3.0E-394    -1e+5  -> -0
+
+dqdvi1131 divideint  1.0E-199     1e+200 -> 0
+dqdvi1132 divideint  1.0E-199     1e+199 -> 0
+dqdvi1133 divideint  1.0E-199     1e+198 -> 0
+dqdvi1134 divideint  2.0E-199     2e+198 -> 0
+dqdvi1135 divideint  4.0E-199     4e+198 -> 0
+
+-- long operand checks
+dqdvi401 divideint 12345678000 100 -> 123456780
+dqdvi402 divideint 1 12345678000   -> 0
+dqdvi403 divideint 1234567800  10  -> 123456780
+dqdvi404 divideint 1 1234567800    -> 0
+dqdvi405 divideint 1234567890  10  -> 123456789
+dqdvi406 divideint 1 1234567890    -> 0
+dqdvi407 divideint 1234567891  10  -> 123456789
+dqdvi408 divideint 1 1234567891    -> 0
+dqdvi409 divideint 12345678901 100 -> 123456789
+dqdvi410 divideint 1 12345678901   -> 0
+dqdvi411 divideint 1234567896  10  -> 123456789
+dqdvi412 divideint 1 1234567896    -> 0
+dqdvi413 divideint 12345678948 100 -> 123456789
+dqdvi414 divideint 12345678949 100 -> 123456789
+dqdvi415 divideint 12345678950 100 -> 123456789
+dqdvi416 divideint 12345678951 100 -> 123456789
+dqdvi417 divideint 12345678999 100 -> 123456789
+dqdvi441 divideint 12345678000 1 -> 12345678000
+dqdvi442 divideint 1 12345678000 -> 0
+dqdvi443 divideint 1234567800  1 -> 1234567800
+dqdvi444 divideint 1 1234567800  -> 0
+dqdvi445 divideint 1234567890  1 -> 1234567890
+dqdvi446 divideint 1 1234567890  -> 0
+dqdvi447 divideint 1234567891  1 -> 1234567891
+dqdvi448 divideint 1 1234567891  -> 0
+dqdvi449 divideint 12345678901 1 -> 12345678901
+dqdvi450 divideint 1 12345678901 -> 0
+dqdvi451 divideint 1234567896  1 -> 1234567896
+dqdvi452 divideint 1 1234567896  -> 0
+
+-- more zeros, etc.
+dqdvi531 divideint 5.00 1E-3    -> 5000
+dqdvi532 divideint 00.00 0.000  -> NaN Division_undefined
+dqdvi533 divideint 00.00 0E-3   -> NaN Division_undefined
+dqdvi534 divideint  0    -0     -> NaN Division_undefined
+dqdvi535 divideint -0     0     -> NaN Division_undefined
+dqdvi536 divideint -0    -0     -> NaN Division_undefined
+
+dqdvi541 divideint  0    -1     -> -0
+dqdvi542 divideint -0    -1     ->  0
+dqdvi543 divideint  0     1     ->  0
+dqdvi544 divideint -0     1     -> -0
+dqdvi545 divideint -1     0     -> -Infinity Division_by_zero
+dqdvi546 divideint -1    -0     ->  Infinity Division_by_zero
+dqdvi547 divideint  1     0     ->  Infinity Division_by_zero
+dqdvi548 divideint  1    -0     -> -Infinity Division_by_zero
+
+dqdvi551 divideint  0.0  -1     -> -0
+dqdvi552 divideint -0.0  -1     ->  0
+dqdvi553 divideint  0.0   1     ->  0
+dqdvi554 divideint -0.0   1     -> -0
+dqdvi555 divideint -1.0   0     -> -Infinity Division_by_zero
+dqdvi556 divideint -1.0  -0     ->  Infinity Division_by_zero
+dqdvi557 divideint  1.0   0     ->  Infinity Division_by_zero
+dqdvi558 divideint  1.0  -0     -> -Infinity Division_by_zero
+
+dqdvi561 divideint  0    -1.0   -> -0
+dqdvi562 divideint -0    -1.0   ->  0
+dqdvi563 divideint  0     1.0   ->  0
+dqdvi564 divideint -0     1.0   -> -0
+dqdvi565 divideint -1     0.0   -> -Infinity Division_by_zero
+dqdvi566 divideint -1    -0.0   ->  Infinity Division_by_zero
+dqdvi567 divideint  1     0.0   ->  Infinity Division_by_zero
+dqdvi568 divideint  1    -0.0   -> -Infinity Division_by_zero
+
+dqdvi571 divideint  0.0  -1.0   -> -0
+dqdvi572 divideint -0.0  -1.0   ->  0
+dqdvi573 divideint  0.0   1.0   ->  0
+dqdvi574 divideint -0.0   1.0   -> -0
+dqdvi575 divideint -1.0   0.0   -> -Infinity Division_by_zero
+dqdvi576 divideint -1.0  -0.0   ->  Infinity Division_by_zero
+dqdvi577 divideint  1.0   0.0   ->  Infinity Division_by_zero
+dqdvi578 divideint  1.0  -0.0   -> -Infinity Division_by_zero
+
+-- Specials
+dqdvi580 divideint  Inf  -Inf   ->  NaN Invalid_operation
+dqdvi581 divideint  Inf  -1000  -> -Infinity
+dqdvi582 divideint  Inf  -1     -> -Infinity
+dqdvi583 divideint  Inf  -0     -> -Infinity
+dqdvi584 divideint  Inf   0     ->  Infinity
+dqdvi585 divideint  Inf   1     ->  Infinity
+dqdvi586 divideint  Inf   1000  ->  Infinity
+dqdvi587 divideint  Inf   Inf   ->  NaN Invalid_operation
+dqdvi588 divideint -1000  Inf   -> -0
+dqdvi589 divideint -Inf   Inf   ->  NaN Invalid_operation
+dqdvi590 divideint -1     Inf   -> -0
+dqdvi591 divideint -0     Inf   -> -0
+dqdvi592 divideint  0     Inf   ->  0
+dqdvi593 divideint  1     Inf   ->  0
+dqdvi594 divideint  1000  Inf   ->  0
+dqdvi595 divideint  Inf   Inf   ->  NaN Invalid_operation
+
+dqdvi600 divideint -Inf  -Inf   ->  NaN Invalid_operation
+dqdvi601 divideint -Inf  -1000  ->  Infinity
+dqdvi602 divideint -Inf  -1     ->  Infinity
+dqdvi603 divideint -Inf  -0     ->  Infinity
+dqdvi604 divideint -Inf   0     -> -Infinity
+dqdvi605 divideint -Inf   1     -> -Infinity
+dqdvi606 divideint -Inf   1000  -> -Infinity
+dqdvi607 divideint -Inf   Inf   ->  NaN Invalid_operation
+dqdvi608 divideint -1000  Inf   -> -0
+dqdvi609 divideint -Inf  -Inf   ->  NaN Invalid_operation
+dqdvi610 divideint -1    -Inf   ->  0
+dqdvi611 divideint -0    -Inf   ->  0
+dqdvi612 divideint  0    -Inf   -> -0
+dqdvi613 divideint  1    -Inf   -> -0
+dqdvi614 divideint  1000 -Inf   -> -0
+dqdvi615 divideint  Inf  -Inf   ->  NaN Invalid_operation
+
+dqdvi621 divideint  NaN -Inf    ->  NaN
+dqdvi622 divideint  NaN -1000   ->  NaN
+dqdvi623 divideint  NaN -1      ->  NaN
+dqdvi624 divideint  NaN -0      ->  NaN
+dqdvi625 divideint  NaN  0      ->  NaN
+dqdvi626 divideint  NaN  1      ->  NaN
+dqdvi627 divideint  NaN  1000   ->  NaN
+dqdvi628 divideint  NaN  Inf    ->  NaN
+dqdvi629 divideint  NaN  NaN    ->  NaN
+dqdvi630 divideint -Inf  NaN    ->  NaN
+dqdvi631 divideint -1000 NaN    ->  NaN
+dqdvi632 divideint -1    NaN    ->  NaN
+dqdvi633 divideint -0    NaN    ->  NaN
+dqdvi634 divideint  0    NaN    ->  NaN
+dqdvi635 divideint  1    NaN    ->  NaN
+dqdvi636 divideint  1000 NaN    ->  NaN
+dqdvi637 divideint  Inf  NaN    ->  NaN
+
+dqdvi641 divideint  sNaN -Inf   ->  NaN  Invalid_operation
+dqdvi642 divideint  sNaN -1000  ->  NaN  Invalid_operation
+dqdvi643 divideint  sNaN -1     ->  NaN  Invalid_operation
+dqdvi644 divideint  sNaN -0     ->  NaN  Invalid_operation
+dqdvi645 divideint  sNaN  0     ->  NaN  Invalid_operation
+dqdvi646 divideint  sNaN  1     ->  NaN  Invalid_operation
+dqdvi647 divideint  sNaN  1000  ->  NaN  Invalid_operation
+dqdvi648 divideint  sNaN  NaN   ->  NaN  Invalid_operation
+dqdvi649 divideint  sNaN sNaN   ->  NaN  Invalid_operation
+dqdvi650 divideint  NaN  sNaN   ->  NaN  Invalid_operation
+dqdvi651 divideint -Inf  sNaN   ->  NaN  Invalid_operation
+dqdvi652 divideint -1000 sNaN   ->  NaN  Invalid_operation
+dqdvi653 divideint -1    sNaN   ->  NaN  Invalid_operation
+dqdvi654 divideint -0    sNaN   ->  NaN  Invalid_operation
+dqdvi655 divideint  0    sNaN   ->  NaN  Invalid_operation
+dqdvi656 divideint  1    sNaN   ->  NaN  Invalid_operation
+dqdvi657 divideint  1000 sNaN   ->  NaN  Invalid_operation
+dqdvi658 divideint  Inf  sNaN   ->  NaN  Invalid_operation
+dqdvi659 divideint  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+dqdvi661 divideint  NaN9 -Inf   ->  NaN9
+dqdvi662 divideint  NaN8  1000  ->  NaN8
+dqdvi663 divideint  NaN7  Inf   ->  NaN7
+dqdvi664 divideint -NaN6  NaN5  -> -NaN6
+dqdvi665 divideint -Inf   NaN4  ->  NaN4
+dqdvi666 divideint -1000  NaN3  ->  NaN3
+dqdvi667 divideint  Inf  -NaN2  -> -NaN2
+
+dqdvi671 divideint -sNaN99 -Inf    -> -NaN99 Invalid_operation
+dqdvi672 divideint  sNaN98 -1      ->  NaN98 Invalid_operation
+dqdvi673 divideint  sNaN97  NaN    ->  NaN97 Invalid_operation
+dqdvi674 divideint  sNaN96 sNaN94  ->  NaN96 Invalid_operation
+dqdvi675 divideint  NaN95  sNaN93  ->  NaN93 Invalid_operation
+dqdvi676 divideint -Inf    sNaN92  ->  NaN92 Invalid_operation
+dqdvi677 divideint  0      sNaN91  ->  NaN91 Invalid_operation
+dqdvi678 divideint  Inf   -sNaN90  -> -NaN90 Invalid_operation
+dqdvi679 divideint  NaN    sNaN89  ->  NaN89 Invalid_operation
+
+-- Gyuris example
+dqdvi700 divideint 8.336804418094040989630006819881709E-6143 8.336804418094040989630006819889000E-6143 -> 0
+
+-- Null tests
+dqdvi900 divideint  10  # -> NaN Invalid_operation
+dqdvi901 divideint   # 10 -> NaN Invalid_operation

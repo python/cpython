@@ -1,0 +1,337 @@
+------------------------------------------------------------------------
+-- ddXor.decTest -- digitwise logical XOR for decDoubles              --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- Sanity check (truth table)
+ddxor001 xor             0    0 ->    0
+ddxor002 xor             0    1 ->    1
+ddxor003 xor             1    0 ->    1
+ddxor004 xor             1    1 ->    0
+ddxor005 xor          1100 1010 ->  110
+-- and at msd and msd-1
+ddxor006 xor 0000000000000000 0000000000000000 ->           0
+ddxor007 xor 0000000000000000 1000000000000000 ->   1000000000000000
+ddxor008 xor 1000000000000000 0000000000000000 ->   1000000000000000
+ddxor009 xor 1000000000000000 1000000000000000 ->           0
+ddxor010 xor 0000000000000000 0000000000000000 ->           0
+ddxor011 xor 0000000000000000 0100000000000000 ->    100000000000000
+ddxor012 xor 0100000000000000 0000000000000000 ->    100000000000000
+ddxor013 xor 0100000000000000 0100000000000000 ->           0
+
+-- Various lengths
+--          1234567890123456     1234567890123456 1234567890123456
+ddxor021 xor 1111111110000000     1111111110000000  ->  0
+ddxor022 xor  111111110000000      111111110000000  ->  0
+ddxor023 xor   11111110000000       11111110000000  ->  0
+ddxor024 xor    1111110000000        1111110000000  ->  0
+ddxor025 xor     111110000000         111110000000  ->  0
+ddxor026 xor      11110000000          11110000000  ->  0
+ddxor027 xor       1110000000           1110000000  ->  0
+ddxor028 xor        110000000            110000000  ->  0
+ddxor029 xor         10000000             10000000  ->  0
+ddxor030 xor          1000000              1000000  ->  0
+ddxor031 xor           100000               100000  ->  0
+ddxor032 xor            10000                10000  ->  0
+ddxor033 xor             1000                 1000  ->  0
+ddxor034 xor              100                  100  ->  0
+ddxor035 xor               10                   10  ->  0
+ddxor036 xor                1                    1  ->  0
+
+ddxor040 xor 111111111  111111111111  ->  111000000000
+ddxor041 xor  11111111  111111111111  ->  111100000000
+ddxor042 xor  11111111     111111111  ->  100000000
+ddxor043 xor   1111111     100000010  ->  101111101
+ddxor044 xor    111111     100000100  ->  100111011
+ddxor045 xor     11111     100001000  ->  100010111
+ddxor046 xor      1111     100010000  ->  100011111
+ddxor047 xor       111     100100000  ->  100100111
+ddxor048 xor        11     101000000  ->  101000011
+ddxor049 xor         1     110000000  ->  110000001
+
+ddxor050 xor 1111111111  1  ->  1111111110
+ddxor051 xor  111111111  1  ->  111111110
+ddxor052 xor   11111111  1  ->  11111110
+ddxor053 xor    1111111  1  ->  1111110
+ddxor054 xor     111111  1  ->  111110
+ddxor055 xor      11111  1  ->  11110
+ddxor056 xor       1111  1  ->  1110
+ddxor057 xor        111  1  ->  110
+ddxor058 xor         11  1  ->  10
+ddxor059 xor          1  1  ->  0
+
+ddxor060 xor 1111111111  0  ->  1111111111
+ddxor061 xor  111111111  0  ->  111111111
+ddxor062 xor   11111111  0  ->  11111111
+ddxor063 xor    1111111  0  ->  1111111
+ddxor064 xor     111111  0  ->  111111
+ddxor065 xor      11111  0  ->  11111
+ddxor066 xor       1111  0  ->  1111
+ddxor067 xor        111  0  ->  111
+ddxor068 xor         11  0  ->  11
+ddxor069 xor          1  0  ->  1
+
+ddxor070 xor 1  1111111111  ->  1111111110
+ddxor071 xor 1   111111111  ->  111111110
+ddxor072 xor 1    11111111  ->  11111110
+ddxor073 xor 1     1111111  ->  1111110
+ddxor074 xor 1      111111  ->  111110
+ddxor075 xor 1       11111  ->  11110
+ddxor076 xor 1        1111  ->  1110
+ddxor077 xor 1         111  ->  110
+ddxor078 xor 1          11  ->  10
+ddxor079 xor 1           1  ->  0
+
+ddxor080 xor 0  1111111111  ->  1111111111
+ddxor081 xor 0   111111111  ->  111111111
+ddxor082 xor 0    11111111  ->  11111111
+ddxor083 xor 0     1111111  ->  1111111
+ddxor084 xor 0      111111  ->  111111
+ddxor085 xor 0       11111  ->  11111
+ddxor086 xor 0        1111  ->  1111
+ddxor087 xor 0         111  ->  111
+ddxor088 xor 0          11  ->  11
+ddxor089 xor 0           1  ->  1
+
+ddxor090 xor 011111111  111101111  ->  100010000
+ddxor091 xor 101111111  111101111  ->   10010000
+ddxor092 xor 110111111  111101111  ->    1010000
+ddxor093 xor 111011111  111101111  ->     110000
+ddxor094 xor 111101111  111101111  ->          0
+ddxor095 xor 111110111  111101111  ->      11000
+ddxor096 xor 111111011  111101111  ->      10100
+ddxor097 xor 111111101  111101111  ->      10010
+ddxor098 xor 111111110  111101111  ->      10001
+
+ddxor100 xor 111101111  011111111  ->  100010000
+ddxor101 xor 111101111  101111111  ->   10010000
+ddxor102 xor 111101111  110111111  ->    1010000
+ddxor103 xor 111101111  111011111  ->     110000
+ddxor104 xor 111101111  111101111  ->          0
+ddxor105 xor 111101111  111110111  ->      11000
+ddxor106 xor 111101111  111111011  ->      10100
+ddxor107 xor 111101111  111111101  ->      10010
+ddxor108 xor 111101111  111111110  ->      10001
+
+-- non-0/1 should not be accepted, nor should signs
+ddxor220 xor 111111112  111111111  ->  NaN Invalid_operation
+ddxor221 xor 333333333  333333333  ->  NaN Invalid_operation
+ddxor222 xor 555555555  555555555  ->  NaN Invalid_operation
+ddxor223 xor 777777777  777777777  ->  NaN Invalid_operation
+ddxor224 xor 999999999  999999999  ->  NaN Invalid_operation
+ddxor225 xor 222222222  999999999  ->  NaN Invalid_operation
+ddxor226 xor 444444444  999999999  ->  NaN Invalid_operation
+ddxor227 xor 666666666  999999999  ->  NaN Invalid_operation
+ddxor228 xor 888888888  999999999  ->  NaN Invalid_operation
+ddxor229 xor 999999999  222222222  ->  NaN Invalid_operation
+ddxor230 xor 999999999  444444444  ->  NaN Invalid_operation
+ddxor231 xor 999999999  666666666  ->  NaN Invalid_operation
+ddxor232 xor 999999999  888888888  ->  NaN Invalid_operation
+-- a few randoms
+ddxor240 xor  567468689 -934981942 ->  NaN Invalid_operation
+ddxor241 xor  567367689  934981942 ->  NaN Invalid_operation
+ddxor242 xor -631917772 -706014634 ->  NaN Invalid_operation
+ddxor243 xor -756253257  138579234 ->  NaN Invalid_operation
+ddxor244 xor  835590149  567435400 ->  NaN Invalid_operation
+-- test MSD
+ddxor250 xor  2000000000000000 1000000000000000 ->  NaN Invalid_operation
+ddxor251 xor  7000000000000000 1000000000000000 ->  NaN Invalid_operation
+ddxor252 xor  8000000000000000 1000000000000000 ->  NaN Invalid_operation
+ddxor253 xor  9000000000000000 1000000000000000 ->  NaN Invalid_operation
+ddxor254 xor  2000000000000000 0000000000000000 ->  NaN Invalid_operation
+ddxor255 xor  7000000000000000 0000000000000000 ->  NaN Invalid_operation
+ddxor256 xor  8000000000000000 0000000000000000 ->  NaN Invalid_operation
+ddxor257 xor  9000000000000000 0000000000000000 ->  NaN Invalid_operation
+ddxor258 xor  1000000000000000 2000000000000000 ->  NaN Invalid_operation
+ddxor259 xor  1000000000000000 7000000000000000 ->  NaN Invalid_operation
+ddxor260 xor  1000000000000000 8000000000000000 ->  NaN Invalid_operation
+ddxor261 xor  1000000000000000 9000000000000000 ->  NaN Invalid_operation
+ddxor262 xor  0000000000000000 2000000000000000 ->  NaN Invalid_operation
+ddxor263 xor  0000000000000000 7000000000000000 ->  NaN Invalid_operation
+ddxor264 xor  0000000000000000 8000000000000000 ->  NaN Invalid_operation
+ddxor265 xor  0000000000000000 9000000000000000 ->  NaN Invalid_operation
+-- test MSD-1
+ddxor270 xor  0200001000000000 1000100000000010 ->  NaN Invalid_operation
+ddxor271 xor  0700000100000000 1000010000000100 ->  NaN Invalid_operation
+ddxor272 xor  0800000010000000 1000001000001000 ->  NaN Invalid_operation
+ddxor273 xor  0900000001000000 1000000100010000 ->  NaN Invalid_operation
+ddxor274 xor  1000000000100000 0200000010100000 ->  NaN Invalid_operation
+ddxor275 xor  1000000000010000 0700000001000000 ->  NaN Invalid_operation
+ddxor276 xor  1000000000001000 0800000010100000 ->  NaN Invalid_operation
+ddxor277 xor  1000000000000100 0900000000010000 ->  NaN Invalid_operation
+-- test LSD
+ddxor280 xor  0010000000000002 1000000100000001 ->  NaN Invalid_operation
+ddxor281 xor  0001000000000007 1000001000000011 ->  NaN Invalid_operation
+ddxor282 xor  0000100000000008 1000010000000001 ->  NaN Invalid_operation
+ddxor283 xor  0000010000000009 1000100000000001 ->  NaN Invalid_operation
+ddxor284 xor  1000001000000000 0001000000000002 ->  NaN Invalid_operation
+ddxor285 xor  1000000100000000 0010000000000007 ->  NaN Invalid_operation
+ddxor286 xor  1000000010000000 0100000000000008 ->  NaN Invalid_operation
+ddxor287 xor  1000000001000000 1000000000000009 ->  NaN Invalid_operation
+-- test Middie
+ddxor288 xor  0010000020000000 1000001000000000 ->  NaN Invalid_operation
+ddxor289 xor  0001000070000001 1000000100000000 ->  NaN Invalid_operation
+ddxor290 xor  0000100080000010 1000000010000000 ->  NaN Invalid_operation
+ddxor291 xor  0000010090000100 1000000001000000 ->  NaN Invalid_operation
+ddxor292 xor  1000001000001000 0000000020100000 ->  NaN Invalid_operation
+ddxor293 xor  1000000100010000 0000000070010000 ->  NaN Invalid_operation
+ddxor294 xor  1000000010100000 0000000080001000 ->  NaN Invalid_operation
+ddxor295 xor  1000000001000000 0000000090000100 ->  NaN Invalid_operation
+-- signs
+ddxor296 xor -1000000001000000 -0000010000000100 ->  NaN Invalid_operation
+ddxor297 xor -1000000001000000  0000000010000100 ->  NaN Invalid_operation
+ddxor298 xor  1000000001000000 -0000001000000100 ->  NaN Invalid_operation
+ddxor299 xor  1000000001000000  0000000011000100 ->  1000000010000100
+
+-- Nmax, Nmin, Ntiny-like
+ddxor331 xor  2   9.99999999E+299     -> NaN Invalid_operation
+ddxor332 xor  3   1E-299              -> NaN Invalid_operation
+ddxor333 xor  4   1.00000000E-299     -> NaN Invalid_operation
+ddxor334 xor  5   1E-200              -> NaN Invalid_operation
+ddxor335 xor  6   -1E-200             -> NaN Invalid_operation
+ddxor336 xor  7   -1.00000000E-299    -> NaN Invalid_operation
+ddxor337 xor  8   -1E-299             -> NaN Invalid_operation
+ddxor338 xor  9   -9.99999999E+299    -> NaN Invalid_operation
+ddxor341 xor  9.99999999E+299     -18 -> NaN Invalid_operation
+ddxor342 xor  1E-299               01 -> NaN Invalid_operation
+ddxor343 xor  1.00000000E-299     -18 -> NaN Invalid_operation
+ddxor344 xor  1E-208               18 -> NaN Invalid_operation
+ddxor345 xor  -1E-207             -10 -> NaN Invalid_operation
+ddxor346 xor  -1.00000000E-299     18 -> NaN Invalid_operation
+ddxor347 xor  -1E-299              10 -> NaN Invalid_operation
+ddxor348 xor  -9.99999999E+299    -18 -> NaN Invalid_operation
+
+-- A few other non-integers
+ddxor361 xor  1.0                  1  -> NaN Invalid_operation
+ddxor362 xor  1E+1                 1  -> NaN Invalid_operation
+ddxor363 xor  0.0                  1  -> NaN Invalid_operation
+ddxor364 xor  0E+1                 1  -> NaN Invalid_operation
+ddxor365 xor  9.9                  1  -> NaN Invalid_operation
+ddxor366 xor  9E+1                 1  -> NaN Invalid_operation
+ddxor371 xor  0 1.0                   -> NaN Invalid_operation
+ddxor372 xor  0 1E+1                  -> NaN Invalid_operation
+ddxor373 xor  0 0.0                   -> NaN Invalid_operation
+ddxor374 xor  0 0E+1                  -> NaN Invalid_operation
+ddxor375 xor  0 9.9                   -> NaN Invalid_operation
+ddxor376 xor  0 9E+1                  -> NaN Invalid_operation
+
+-- All Specials are in error
+ddxor780 xor -Inf  -Inf   -> NaN Invalid_operation
+ddxor781 xor -Inf  -1000  -> NaN Invalid_operation
+ddxor782 xor -Inf  -1     -> NaN Invalid_operation
+ddxor783 xor -Inf  -0     -> NaN Invalid_operation
+ddxor784 xor -Inf   0     -> NaN Invalid_operation
+ddxor785 xor -Inf   1     -> NaN Invalid_operation
+ddxor786 xor -Inf   1000  -> NaN Invalid_operation
+ddxor787 xor -1000 -Inf   -> NaN Invalid_operation
+ddxor788 xor -Inf  -Inf   -> NaN Invalid_operation
+ddxor789 xor -1    -Inf   -> NaN Invalid_operation
+ddxor790 xor -0    -Inf   -> NaN Invalid_operation
+ddxor791 xor  0    -Inf   -> NaN Invalid_operation
+ddxor792 xor  1    -Inf   -> NaN Invalid_operation
+ddxor793 xor  1000 -Inf   -> NaN Invalid_operation
+ddxor794 xor  Inf  -Inf   -> NaN Invalid_operation
+
+ddxor800 xor  Inf  -Inf   -> NaN Invalid_operation
+ddxor801 xor  Inf  -1000  -> NaN Invalid_operation
+ddxor802 xor  Inf  -1     -> NaN Invalid_operation
+ddxor803 xor  Inf  -0     -> NaN Invalid_operation
+ddxor804 xor  Inf   0     -> NaN Invalid_operation
+ddxor805 xor  Inf   1     -> NaN Invalid_operation
+ddxor806 xor  Inf   1000  -> NaN Invalid_operation
+ddxor807 xor  Inf   Inf   -> NaN Invalid_operation
+ddxor808 xor -1000  Inf   -> NaN Invalid_operation
+ddxor809 xor -Inf   Inf   -> NaN Invalid_operation
+ddxor810 xor -1     Inf   -> NaN Invalid_operation
+ddxor811 xor -0     Inf   -> NaN Invalid_operation
+ddxor812 xor  0     Inf   -> NaN Invalid_operation
+ddxor813 xor  1     Inf   -> NaN Invalid_operation
+ddxor814 xor  1000  Inf   -> NaN Invalid_operation
+ddxor815 xor  Inf   Inf   -> NaN Invalid_operation
+
+ddxor821 xor  NaN -Inf    -> NaN Invalid_operation
+ddxor822 xor  NaN -1000   -> NaN Invalid_operation
+ddxor823 xor  NaN -1      -> NaN Invalid_operation
+ddxor824 xor  NaN -0      -> NaN Invalid_operation
+ddxor825 xor  NaN  0      -> NaN Invalid_operation
+ddxor826 xor  NaN  1      -> NaN Invalid_operation
+ddxor827 xor  NaN  1000   -> NaN Invalid_operation
+ddxor828 xor  NaN  Inf    -> NaN Invalid_operation
+ddxor829 xor  NaN  NaN    -> NaN Invalid_operation
+ddxor830 xor -Inf  NaN    -> NaN Invalid_operation
+ddxor831 xor -1000 NaN    -> NaN Invalid_operation
+ddxor832 xor -1    NaN    -> NaN Invalid_operation
+ddxor833 xor -0    NaN    -> NaN Invalid_operation
+ddxor834 xor  0    NaN    -> NaN Invalid_operation
+ddxor835 xor  1    NaN    -> NaN Invalid_operation
+ddxor836 xor  1000 NaN    -> NaN Invalid_operation
+ddxor837 xor  Inf  NaN    -> NaN Invalid_operation
+
+ddxor841 xor  sNaN -Inf   ->  NaN  Invalid_operation
+ddxor842 xor  sNaN -1000  ->  NaN  Invalid_operation
+ddxor843 xor  sNaN -1     ->  NaN  Invalid_operation
+ddxor844 xor  sNaN -0     ->  NaN  Invalid_operation
+ddxor845 xor  sNaN  0     ->  NaN  Invalid_operation
+ddxor846 xor  sNaN  1     ->  NaN  Invalid_operation
+ddxor847 xor  sNaN  1000  ->  NaN  Invalid_operation
+ddxor848 xor  sNaN  NaN   ->  NaN  Invalid_operation
+ddxor849 xor  sNaN sNaN   ->  NaN  Invalid_operation
+ddxor850 xor  NaN  sNaN   ->  NaN  Invalid_operation
+ddxor851 xor -Inf  sNaN   ->  NaN  Invalid_operation
+ddxor852 xor -1000 sNaN   ->  NaN  Invalid_operation
+ddxor853 xor -1    sNaN   ->  NaN  Invalid_operation
+ddxor854 xor -0    sNaN   ->  NaN  Invalid_operation
+ddxor855 xor  0    sNaN   ->  NaN  Invalid_operation
+ddxor856 xor  1    sNaN   ->  NaN  Invalid_operation
+ddxor857 xor  1000 sNaN   ->  NaN  Invalid_operation
+ddxor858 xor  Inf  sNaN   ->  NaN  Invalid_operation
+ddxor859 xor  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+ddxor861 xor  NaN1   -Inf    -> NaN Invalid_operation
+ddxor862 xor +NaN2   -1000   -> NaN Invalid_operation
+ddxor863 xor  NaN3    1000   -> NaN Invalid_operation
+ddxor864 xor  NaN4    Inf    -> NaN Invalid_operation
+ddxor865 xor  NaN5   +NaN6   -> NaN Invalid_operation
+ddxor866 xor -Inf     NaN7   -> NaN Invalid_operation
+ddxor867 xor -1000    NaN8   -> NaN Invalid_operation
+ddxor868 xor  1000    NaN9   -> NaN Invalid_operation
+ddxor869 xor  Inf    +NaN10  -> NaN Invalid_operation
+ddxor871 xor  sNaN11  -Inf   -> NaN Invalid_operation
+ddxor872 xor  sNaN12  -1000  -> NaN Invalid_operation
+ddxor873 xor  sNaN13   1000  -> NaN Invalid_operation
+ddxor874 xor  sNaN14   NaN17 -> NaN Invalid_operation
+ddxor875 xor  sNaN15  sNaN18 -> NaN Invalid_operation
+ddxor876 xor  NaN16   sNaN19 -> NaN Invalid_operation
+ddxor877 xor -Inf    +sNaN20 -> NaN Invalid_operation
+ddxor878 xor -1000    sNaN21 -> NaN Invalid_operation
+ddxor879 xor  1000    sNaN22 -> NaN Invalid_operation
+ddxor880 xor  Inf     sNaN23 -> NaN Invalid_operation
+ddxor881 xor +NaN25  +sNaN24 -> NaN Invalid_operation
+ddxor882 xor -NaN26    NaN28 -> NaN Invalid_operation
+ddxor883 xor -sNaN27  sNaN29 -> NaN Invalid_operation
+ddxor884 xor  1000    -NaN30 -> NaN Invalid_operation
+ddxor885 xor  1000   -sNaN31 -> NaN Invalid_operation

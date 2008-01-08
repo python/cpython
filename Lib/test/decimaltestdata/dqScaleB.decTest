@@ -1,0 +1,260 @@
+------------------------------------------------------------------------
+-- dqScalebB.decTest -- scale a decQuad by powers of 10               --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+-- Max |rhs| is 2*(6144+34) = 12356
+
+-- Sanity checks
+dqscb001 scaleb       7.50   10 -> 7.50E+10
+dqscb002 scaleb       7.50    3 -> 7.50E+3
+dqscb003 scaleb       7.50    2 -> 750
+dqscb004 scaleb       7.50    1 -> 75.0
+dqscb005 scaleb       7.50    0 -> 7.50
+dqscb006 scaleb       7.50   -1 -> 0.750
+dqscb007 scaleb       7.50   -2 -> 0.0750
+dqscb008 scaleb       7.50  -10 -> 7.50E-10
+dqscb009 scaleb      -7.50    3 -> -7.50E+3
+dqscb010 scaleb      -7.50    2 -> -750
+dqscb011 scaleb      -7.50    1 -> -75.0
+dqscb012 scaleb      -7.50    0 -> -7.50
+dqscb013 scaleb      -7.50   -1 -> -0.750
+
+-- Infinities
+dqscb014 scaleb  Infinity   1 -> Infinity
+dqscb015 scaleb  -Infinity  2 -> -Infinity
+dqscb016 scaleb  Infinity  -1 -> Infinity
+dqscb017 scaleb  -Infinity -2 -> -Infinity
+
+-- Next two are somewhat undefined in 754r; treat as non-integer
+dqscb018 scaleb  10  Infinity -> NaN Invalid_operation
+dqscb019 scaleb  10 -Infinity -> NaN Invalid_operation
+
+-- NaNs are undefined in 754r; assume usual processing
+-- NaNs, 0 payload
+dqscb021 scaleb         NaN  1 -> NaN
+dqscb022 scaleb        -NaN -1 -> -NaN
+dqscb023 scaleb        sNaN  1 -> NaN Invalid_operation
+dqscb024 scaleb       -sNaN  1 -> -NaN Invalid_operation
+dqscb025 scaleb    4    NaN    -> NaN
+dqscb026 scaleb -Inf   -NaN    -> -NaN
+dqscb027 scaleb    4   sNaN    -> NaN Invalid_operation
+dqscb028 scaleb  Inf  -sNaN    -> -NaN Invalid_operation
+
+-- non-integer RHS
+dqscb030 scaleb  1.23    1    ->  12.3
+dqscb031 scaleb  1.23    1.00 ->  NaN Invalid_operation
+dqscb032 scaleb  1.23    1.1  ->  NaN Invalid_operation
+dqscb033 scaleb  1.23    1.01 ->  NaN Invalid_operation
+dqscb034 scaleb  1.23    0.01 ->  NaN Invalid_operation
+dqscb035 scaleb  1.23    0.11 ->  NaN Invalid_operation
+dqscb036 scaleb  1.23    0.999999999 ->  NaN Invalid_operation
+dqscb037 scaleb  1.23   -1    ->  0.123
+dqscb0614 scaleb  1.23   -1.00 ->  NaN Invalid_operation
+dqscb039 scaleb  1.23   -1.1  ->  NaN Invalid_operation
+dqscb040 scaleb  1.23   -1.01 ->  NaN Invalid_operation
+dqscb041 scaleb  1.23   -0.01 ->  NaN Invalid_operation
+dqscb042 scaleb  1.23   -0.11 ->  NaN Invalid_operation
+dqscb043 scaleb  1.23   -0.999999999 ->  NaN Invalid_operation
+dqscb044 scaleb  1.23    0.1         ->  NaN Invalid_operation
+dqscb045 scaleb  1.23    1E+1        ->  NaN Invalid_operation
+dqscb046 scaleb  1.23    1.1234E+6   ->  NaN Invalid_operation
+dqscb047 scaleb  1.23    1.123E+4    ->  NaN Invalid_operation
+
+-- out-of range RHS
+dqscb120 scaleb  1.23    12355       ->  Infinity Overflow Inexact Rounded
+dqscb121 scaleb  1.23    12356       ->  Infinity Overflow Inexact Rounded
+dqscb122 scaleb  1.23    12357       ->  NaN Invalid_operation
+dqscb123 scaleb  1.23    12358       ->  NaN Invalid_operation
+dqscb124 scaleb  1.23   -12355       ->  0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqscb125 scaleb  1.23   -12356       ->  0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqscb126 scaleb  1.23   -12357       ->  NaN Invalid_operation
+dqscb127 scaleb  1.23   -12358       ->  NaN Invalid_operation
+
+-- NaNs, non-0 payload
+-- propagating NaNs
+dqscb861 scaleb  NaN01   -Inf     ->  NaN1
+dqscb862 scaleb -NaN02   -1000    -> -NaN2
+dqscb863 scaleb  NaN03    1000    ->  NaN3
+dqscb864 scaleb  NaN04    Inf     ->  NaN4
+dqscb865 scaleb  NaN05    NaN61   ->  NaN5
+dqscb866 scaleb -Inf     -NaN71   -> -NaN71
+dqscb867 scaleb -1000     NaN81   ->  NaN81
+dqscb868 scaleb  1000     NaN91   ->  NaN91
+dqscb869 scaleb  Inf      NaN101  ->  NaN101
+dqscb871 scaleb  sNaN011  -Inf    ->  NaN11  Invalid_operation
+dqscb872 scaleb  sNaN012  -1000   ->  NaN12  Invalid_operation
+dqscb873 scaleb -sNaN013   1000   -> -NaN13  Invalid_operation
+dqscb874 scaleb  sNaN014   NaN171 ->  NaN14  Invalid_operation
+dqscb875 scaleb  sNaN015  sNaN181 ->  NaN15  Invalid_operation
+dqscb876 scaleb  NaN016   sNaN191 ->  NaN191 Invalid_operation
+dqscb877 scaleb -Inf      sNaN201 ->  NaN201 Invalid_operation
+dqscb878 scaleb -1000     sNaN211 ->  NaN211 Invalid_operation
+dqscb879 scaleb  1000    -sNaN221 -> -NaN221 Invalid_operation
+dqscb880 scaleb  Inf      sNaN231 ->  NaN231 Invalid_operation
+dqscb881 scaleb  NaN025   sNaN241 ->  NaN241 Invalid_operation
+
+-- finites
+dqscb051 scaleb          7   -2  -> 0.07
+dqscb052 scaleb         -7   -2  -> -0.07
+dqscb053 scaleb         75   -2  -> 0.75
+dqscb054 scaleb        -75   -2  -> -0.75
+dqscb055 scaleb       7.50   -2  -> 0.0750
+dqscb056 scaleb      -7.50   -2  -> -0.0750
+dqscb057 scaleb       7.500  -2  -> 0.07500
+dqscb058 scaleb      -7.500  -2  -> -0.07500
+dqscb061 scaleb          7   -1  -> 0.7
+dqscb062 scaleb         -7   -1  -> -0.7
+dqscb063 scaleb         75   -1  -> 7.5
+dqscb064 scaleb        -75   -1  -> -7.5
+dqscb065 scaleb       7.50   -1  -> 0.750
+dqscb066 scaleb      -7.50   -1  -> -0.750
+dqscb067 scaleb       7.500  -1  -> 0.7500
+dqscb068 scaleb      -7.500  -1  -> -0.7500
+dqscb071 scaleb          7    0  -> 7
+dqscb072 scaleb         -7    0  -> -7
+dqscb073 scaleb         75    0  -> 75
+dqscb074 scaleb        -75    0  -> -75
+dqscb075 scaleb       7.50    0  -> 7.50
+dqscb076 scaleb      -7.50    0  -> -7.50
+dqscb077 scaleb       7.500   0  -> 7.500
+dqscb078 scaleb      -7.500   0  -> -7.500
+dqscb081 scaleb          7    1  -> 7E+1
+dqscb082 scaleb         -7    1  -> -7E+1
+dqscb083 scaleb         75    1  -> 7.5E+2
+dqscb084 scaleb        -75    1  -> -7.5E+2
+dqscb085 scaleb       7.50    1  -> 75.0
+dqscb086 scaleb      -7.50    1  -> -75.0
+dqscb087 scaleb       7.500   1  -> 75.00
+dqscb088 scaleb      -7.500   1  -> -75.00
+dqscb091 scaleb          7    2  -> 7E+2
+dqscb092 scaleb         -7    2  -> -7E+2
+dqscb093 scaleb         75    2  -> 7.5E+3
+dqscb094 scaleb        -75    2  -> -7.5E+3
+dqscb095 scaleb       7.50    2  -> 750
+dqscb096 scaleb      -7.50    2  -> -750
+dqscb097 scaleb       7.500   2  -> 750.0
+dqscb098 scaleb      -7.500   2  -> -750.0
+
+-- zeros
+dqscb111 scaleb          0  1 -> 0E+1
+dqscb112 scaleb         -0  2 -> -0E+2
+dqscb113 scaleb       0E+4  3 -> 0E+7
+dqscb114 scaleb      -0E+4  4 -> -0E+8
+dqscb115 scaleb     0.0000  5 -> 0E+1
+dqscb116 scaleb    -0.0000  6 -> -0E+2
+dqscb117 scaleb      0E-141 7 -> 0E-134
+dqscb118 scaleb     -0E-141 8 -> -0E-133
+
+-- Nmax, Nmin, Ntiny
+dqscb132 scaleb  9.999999999999999999999999999999999E+6144  +6144 -> Infinity    Overflow Inexact Rounded
+dqscb133 scaleb  9.999999999999999999999999999999999E+6144  +10 -> Infinity     Overflow Inexact Rounded
+dqscb134 scaleb  9.999999999999999999999999999999999E+6144  +1  -> Infinity     Overflow Inexact Rounded
+dqscb135 scaleb  9.999999999999999999999999999999999E+6144   0  -> 9.999999999999999999999999999999999E+6144
+dqscb136 scaleb  9.999999999999999999999999999999999E+6144  -1  -> 9.999999999999999999999999999999999E+6143
+dqscb137 scaleb  1E-6143           +1  -> 1E-6142
+dqscb1614 scaleb  1E-6143           -0  -> 1E-6143
+dqscb139 scaleb  1E-6143           -1  -> 1E-6144          Subnormal
+dqscb140 scaleb  1.000000000000000000000000000000000E-6143  +1  -> 1.000000000000000000000000000000000E-6142
+dqscb141 scaleb  1.000000000000000000000000000000000E-6143   0  -> 1.000000000000000000000000000000000E-6143
+dqscb142 scaleb  1.000000000000000000000000000000000E-6143  -1  -> 1.00000000000000000000000000000000E-6144 Subnormal Rounded
+dqscb143 scaleb  1E-6176          +1  -> 1E-6175         Subnormal
+dqscb144 scaleb  1E-6176          -0  -> 1E-6176         Subnormal
+dqscb145 scaleb  1E-6176          -1  -> 0E-6176         Underflow Subnormal Inexact Rounded Clamped
+
+dqscb150 scaleb  -1E-6176         +1  -> -1E-6175        Subnormal
+dqscb151 scaleb  -1E-6176         -0  -> -1E-6176        Subnormal
+dqscb152 scaleb  -1E-6176         -1  -> -0E-6176        Underflow Subnormal Inexact Rounded Clamped
+dqscb153 scaleb  -1.000000000000000000000000000000000E-6143 +1  -> -1.000000000000000000000000000000000E-6142
+dqscb154 scaleb  -1.000000000000000000000000000000000E-6143 +0  -> -1.000000000000000000000000000000000E-6143
+dqscb155 scaleb  -1.000000000000000000000000000000000E-6143 -1  -> -1.00000000000000000000000000000000E-6144 Subnormal Rounded
+dqscb156 scaleb  -1E-6143          +1  -> -1E-6142
+dqscb157 scaleb  -1E-6143          -0  -> -1E-6143
+dqscb158 scaleb  -1E-6143          -1  -> -1E-6144          Subnormal
+dqscb159 scaleb  -9.999999999999999999999999999999999E+6144 +1  -> -Infinity        Overflow Inexact Rounded
+dqscb160 scaleb  -9.999999999999999999999999999999999E+6144 +0  -> -9.999999999999999999999999999999999E+6144
+dqscb161 scaleb  -9.999999999999999999999999999999999E+6144 -1  -> -9.999999999999999999999999999999999E+6143
+dqscb162 scaleb  -9E+6144          +1  -> -Infinity        Overflow Inexact Rounded
+dqscb163 scaleb  -1E+6144          +1  -> -Infinity        Overflow Inexact Rounded
+
+-- some Origami
+-- (these check that overflow is being done correctly)
+dqscb171 scaleb   1000E+6109  +1 -> 1.000E+6113
+dqscb172 scaleb   1000E+6110  +1 -> 1.000E+6114
+dqscb173 scaleb   1000E+6111  +1 -> 1.0000E+6115                    Clamped
+dqscb174 scaleb   1000E+6112  +1 -> 1.00000E+6116                   Clamped
+dqscb175 scaleb   1000E+6113  +1 -> 1.000000E+6117                  Clamped
+dqscb176 scaleb   1000E+6114  +1 -> 1.0000000E+6118                 Clamped
+dqscb177 scaleb   1000E+6131  +1 -> 1.000000000000000000000000E+6135                Clamped
+dqscb178 scaleb   1000E+6132  +1 -> 1.0000000000000000000000000E+6136               Clamped
+dqscb179 scaleb   1000E+6133  +1 -> 1.00000000000000000000000000E+6137              Clamped
+dqscb180 scaleb   1000E+6134  +1 -> 1.000000000000000000000000000E+6138             Clamped
+dqscb181 scaleb   1000E+6135  +1 -> 1.0000000000000000000000000000E+6139            Clamped
+dqscb182 scaleb   1000E+6136  +1 -> 1.00000000000000000000000000000E+6140           Clamped
+dqscb183 scaleb   1000E+6137  +1 -> 1.000000000000000000000000000000E+6141          Clamped
+dqscb184 scaleb   1000E+6138  +1 -> 1.0000000000000000000000000000000E+6142         Clamped
+dqscb185 scaleb   1000E+6139  +1 -> 1.00000000000000000000000000000000E+6143        Clamped
+dqscb186 scaleb   1000E+6140  +1 -> 1.000000000000000000000000000000000E+6144       Clamped
+dqscb187 scaleb   1000E+6141  +1 -> Infinity    Overflow Inexact Rounded
+
+-- and a few more subnormal truncations
+-- (these check that underflow is being done correctly)
+dqscb221 scaleb  1.000000000000000000000000000000000E-6143   0  -> 1.000000000000000000000000000000000E-6143
+dqscb222 scaleb  1.000000000000000000000000000000000E-6143  -1  -> 1.00000000000000000000000000000000E-6144 Subnormal Rounded
+dqscb223 scaleb  1.000000000000000000000000000000000E-6143  -2  -> 1.0000000000000000000000000000000E-6145 Subnormal Rounded
+dqscb224 scaleb  1.000000000000000000000000000000000E-6143  -3  -> 1.000000000000000000000000000000E-6146 Subnormal Rounded
+dqscb225 scaleb  1.000000000000000000000000000000000E-6143  -4  -> 1.00000000000000000000000000000E-6147 Subnormal Rounded
+dqscb226 scaleb  1.000000000000000000000000000000000E-6143  -5  -> 1.0000000000000000000000000000E-6148 Subnormal Rounded
+dqscb227 scaleb  1.000000000000000000000000000000000E-6143  -6  -> 1.000000000000000000000000000E-6149 Subnormal Rounded
+dqscb228 scaleb  1.000000000000000000000000000000000E-6143  -7  -> 1.00000000000000000000000000E-6150 Subnormal Rounded
+dqscb229 scaleb  1.000000000000000000000000000000000E-6143  -8  -> 1.0000000000000000000000000E-6151 Subnormal Rounded
+dqscb230 scaleb  1.000000000000000000000000000000000E-6143  -9  -> 1.000000000000000000000000E-6152 Subnormal Rounded
+dqscb231 scaleb  1.000000000000000000000000000000000E-6143  -10 -> 1.00000000000000000000000E-6153 Subnormal Rounded
+dqscb232 scaleb  1.000000000000000000000000000000000E-6143  -11 -> 1.0000000000000000000000E-6154 Subnormal Rounded
+dqscb233 scaleb  1.000000000000000000000000000000000E-6143  -12 -> 1.000000000000000000000E-6155 Subnormal Rounded
+dqscb234 scaleb  1.000000000000000000000000000000000E-6143  -13 -> 1.00000000000000000000E-6156 Subnormal Rounded
+dqscb235 scaleb  1.000000000000000000000000000000000E-6143  -14 -> 1.0000000000000000000E-6157 Subnormal Rounded
+dqscb236 scaleb  1.000000000000000000000000000000000E-6143  -15 -> 1.000000000000000000E-6158 Subnormal Rounded
+dqscb237 scaleb  1.000000000000000000000000000000000E-6143  -16 -> 1.00000000000000000E-6159 Subnormal Rounded
+dqscb238 scaleb  1.000000000000000000000000000000000E-6143  -17 -> 1.0000000000000000E-6160 Subnormal Rounded
+dqscb239 scaleb  1.000000000000000000000000000000000E-6143  -18 -> 1.000000000000000E-6161 Subnormal Rounded
+dqscb202 scaleb  1.000000000000000000000000000000000E-6143  -19 -> 1.00000000000000E-6162 Subnormal Rounded
+dqscb203 scaleb  1.000000000000000000000000000000000E-6143  -20 -> 1.0000000000000E-6163 Subnormal Rounded
+dqscb204 scaleb  1.000000000000000000000000000000000E-6143  -21 -> 1.000000000000E-6164 Subnormal Rounded
+dqscb205 scaleb  1.000000000000000000000000000000000E-6143  -22 -> 1.00000000000E-6165 Subnormal Rounded
+dqscb206 scaleb  1.000000000000000000000000000000000E-6143  -23 -> 1.0000000000E-6166 Subnormal Rounded
+dqscb207 scaleb  1.000000000000000000000000000000000E-6143  -24 -> 1.000000000E-6167 Subnormal Rounded
+dqscb208 scaleb  1.000000000000000000000000000000000E-6143  -25 -> 1.00000000E-6168 Subnormal Rounded
+dqscb209 scaleb  1.000000000000000000000000000000000E-6143  -26 -> 1.0000000E-6169 Subnormal Rounded
+dqscb210 scaleb  1.000000000000000000000000000000000E-6143  -27 -> 1.000000E-6170 Subnormal Rounded
+dqscb211 scaleb  1.000000000000000000000000000000000E-6143  -28 -> 1.00000E-6171 Subnormal Rounded
+dqscb212 scaleb  1.000000000000000000000000000000000E-6143  -29 -> 1.0000E-6172 Subnormal Rounded
+dqscb213 scaleb  1.000000000000000000000000000000000E-6143  -30 -> 1.000E-6173 Subnormal Rounded
+dqscb214 scaleb  1.000000000000000000000000000000000E-6143  -31 -> 1.00E-6174 Subnormal Rounded
+dqscb215 scaleb  1.000000000000000000000000000000000E-6143  -32 -> 1.0E-6175 Subnormal Rounded
+dqscb216 scaleb  1.000000000000000000000000000000000E-6143  -33 -> 1E-6176 Subnormal Rounded
+dqscb217 scaleb  1.000000000000000000000000000000000E-6143  -34 -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqscb218 scaleb  1.000000000000000000000000000000000E-6143  -35 -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped

@@ -1,0 +1,1300 @@
+------------------------------------------------------------------------
+-- ddAdd.decTest -- decDouble addition                                --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.57
+
+-- This set of tests are for decDoubles only; all arguments are
+-- representable in a decDouble
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- [first group are 'quick confidence check']
+ddadd001 add 1       1       ->  2
+ddadd002 add 2       3       ->  5
+ddadd003 add '5.75'  '3.3'   ->  9.05
+ddadd004 add '5'     '-3'    ->  2
+ddadd005 add '-5'    '-3'    ->  -8
+ddadd006 add '-7'    '2.5'   ->  -4.5
+ddadd007 add '0.7'   '0.3'   ->  1.0
+ddadd008 add '1.25'  '1.25'  ->  2.50
+ddadd009 add '1.23456789'  '1.00000000' -> '2.23456789'
+ddadd010 add '1.23456789'  '1.00000011' -> '2.23456800'
+
+--             1234567890123456      1234567890123456
+ddadd011 add '0.4444444444444446'  '0.5555555555555555' -> '1.000000000000000' Inexact Rounded
+ddadd012 add '0.4444444444444445'  '0.5555555555555555' -> '1.000000000000000' Rounded
+ddadd013 add '0.4444444444444444'  '0.5555555555555555' -> '0.9999999999999999'
+ddadd014 add   '4444444444444444' '0.49'   -> '4444444444444444' Inexact Rounded
+ddadd015 add   '4444444444444444' '0.499'  -> '4444444444444444' Inexact Rounded
+ddadd016 add   '4444444444444444' '0.4999' -> '4444444444444444' Inexact Rounded
+ddadd017 add   '4444444444444444' '0.5000' -> '4444444444444444' Inexact Rounded
+ddadd018 add   '4444444444444444' '0.5001' -> '4444444444444445' Inexact Rounded
+ddadd019 add   '4444444444444444' '0.501'  -> '4444444444444445' Inexact Rounded
+ddadd020 add   '4444444444444444' '0.51'   -> '4444444444444445' Inexact Rounded
+
+ddadd021 add 0 1 -> 1
+ddadd022 add 1 1 -> 2
+ddadd023 add 2 1 -> 3
+ddadd024 add 3 1 -> 4
+ddadd025 add 4 1 -> 5
+ddadd026 add 5 1 -> 6
+ddadd027 add 6 1 -> 7
+ddadd028 add 7 1 -> 8
+ddadd029 add 8 1 -> 9
+ddadd030 add 9 1 -> 10
+
+-- some carrying effects
+ddadd031 add '0.9998'  '0.0000' -> '0.9998'
+ddadd032 add '0.9998'  '0.0001' -> '0.9999'
+ddadd033 add '0.9998'  '0.0002' -> '1.0000'
+ddadd034 add '0.9998'  '0.0003' -> '1.0001'
+
+ddadd035 add '70'  '10000e+16' -> '1.000000000000000E+20' Inexact Rounded
+ddadd036 add '700'  '10000e+16' -> '1.000000000000000E+20' Inexact Rounded
+ddadd037 add '7000'  '10000e+16' -> '1.000000000000000E+20' Inexact Rounded
+ddadd038 add '70000'  '10000e+16' -> '1.000000000000001E+20' Inexact Rounded
+ddadd039 add '700000'  '10000e+16' -> '1.000000000000007E+20' Rounded
+
+-- symmetry:
+ddadd040 add '10000e+16'  '70' -> '1.000000000000000E+20' Inexact Rounded
+ddadd041 add '10000e+16'  '700' -> '1.000000000000000E+20' Inexact Rounded
+ddadd042 add '10000e+16'  '7000' -> '1.000000000000000E+20' Inexact Rounded
+ddadd044 add '10000e+16'  '70000' -> '1.000000000000001E+20' Inexact Rounded
+ddadd045 add '10000e+16'  '700000' -> '1.000000000000007E+20' Rounded
+
+-- same, without rounding
+ddadd046 add '10000e+9'  '7' -> '10000000000007'
+ddadd047 add '10000e+9'  '70' -> '10000000000070'
+ddadd048 add '10000e+9'  '700' -> '10000000000700'
+ddadd049 add '10000e+9'  '7000' -> '10000000007000'
+ddadd050 add '10000e+9'  '70000' -> '10000000070000'
+ddadd051 add '10000e+9'  '700000' -> '10000000700000'
+ddadd052 add '10000e+9'  '7000000' -> '10000007000000'
+
+-- examples from decarith
+ddadd053 add '12' '7.00' -> '19.00'
+ddadd054 add '1.3' '-1.07' -> '0.23'
+ddadd055 add '1.3' '-1.30' -> '0.00'
+ddadd056 add '1.3' '-2.07' -> '-0.77'
+ddadd057 add '1E+2' '1E+4' -> '1.01E+4'
+
+-- leading zero preservation
+ddadd061 add 1 '0.0001' -> '1.0001'
+ddadd062 add 1 '0.00001' -> '1.00001'
+ddadd063 add 1 '0.000001' -> '1.000001'
+ddadd064 add 1 '0.0000001' -> '1.0000001'
+ddadd065 add 1 '0.00000001' -> '1.00000001'
+
+-- some funny zeros [in case of bad signum]
+ddadd070 add 1  0    -> 1
+ddadd071 add 1 0.    -> 1
+ddadd072 add 1  .0   -> 1.0
+ddadd073 add 1 0.0   -> 1.0
+ddadd074 add 1 0.00  -> 1.00
+ddadd075 add  0  1   -> 1
+ddadd076 add 0.  1   -> 1
+ddadd077 add  .0 1   -> 1.0
+ddadd078 add 0.0 1   -> 1.0
+ddadd079 add 0.00 1  -> 1.00
+
+-- some carries
+ddadd080 add 999999998 1  -> 999999999
+ddadd081 add 999999999 1  -> 1000000000
+ddadd082 add  99999999 1  -> 100000000
+ddadd083 add   9999999 1  -> 10000000
+ddadd084 add    999999 1  -> 1000000
+ddadd085 add     99999 1  -> 100000
+ddadd086 add      9999 1  -> 10000
+ddadd087 add       999 1  -> 1000
+ddadd088 add        99 1  -> 100
+ddadd089 add         9 1  -> 10
+
+
+-- more LHS swaps
+ddadd090 add '-56267E-10'   0 ->  '-0.0000056267'
+ddadd091 add '-56267E-6'    0 ->  '-0.056267'
+ddadd092 add '-56267E-5'    0 ->  '-0.56267'
+ddadd093 add '-56267E-4'    0 ->  '-5.6267'
+ddadd094 add '-56267E-3'    0 ->  '-56.267'
+ddadd095 add '-56267E-2'    0 ->  '-562.67'
+ddadd096 add '-56267E-1'    0 ->  '-5626.7'
+ddadd097 add '-56267E-0'    0 ->  '-56267'
+ddadd098 add '-5E-10'       0 ->  '-5E-10'
+ddadd099 add '-5E-7'        0 ->  '-5E-7'
+ddadd100 add '-5E-6'        0 ->  '-0.000005'
+ddadd101 add '-5E-5'        0 ->  '-0.00005'
+ddadd102 add '-5E-4'        0 ->  '-0.0005'
+ddadd103 add '-5E-1'        0 ->  '-0.5'
+ddadd104 add '-5E0'         0 ->  '-5'
+ddadd105 add '-5E1'         0 ->  '-50'
+ddadd106 add '-5E5'         0 ->  '-500000'
+ddadd107 add '-5E15'        0 ->  '-5000000000000000'
+ddadd108 add '-5E16'        0 ->  '-5.000000000000000E+16'  Rounded
+ddadd109 add '-5E17'        0 ->  '-5.000000000000000E+17'  Rounded
+ddadd110 add '-5E18'        0 ->  '-5.000000000000000E+18'  Rounded
+ddadd111 add '-5E100'       0 ->  '-5.000000000000000E+100' Rounded
+
+-- more RHS swaps
+ddadd113 add 0  '-56267E-10' ->  '-0.0000056267'
+ddadd114 add 0  '-56267E-6'  ->  '-0.056267'
+ddadd116 add 0  '-56267E-5'  ->  '-0.56267'
+ddadd117 add 0  '-56267E-4'  ->  '-5.6267'
+ddadd119 add 0  '-56267E-3'  ->  '-56.267'
+ddadd120 add 0  '-56267E-2'  ->  '-562.67'
+ddadd121 add 0  '-56267E-1'  ->  '-5626.7'
+ddadd122 add 0  '-56267E-0'  ->  '-56267'
+ddadd123 add 0  '-5E-10'     ->  '-5E-10'
+ddadd124 add 0  '-5E-7'      ->  '-5E-7'
+ddadd125 add 0  '-5E-6'      ->  '-0.000005'
+ddadd126 add 0  '-5E-5'      ->  '-0.00005'
+ddadd127 add 0  '-5E-4'      ->  '-0.0005'
+ddadd128 add 0  '-5E-1'      ->  '-0.5'
+ddadd129 add 0  '-5E0'       ->  '-5'
+ddadd130 add 0  '-5E1'       ->  '-50'
+ddadd131 add 0  '-5E5'       ->  '-500000'
+ddadd132 add 0  '-5E15'      ->  '-5000000000000000'
+ddadd133 add 0  '-5E16'      ->  '-5.000000000000000E+16'   Rounded
+ddadd134 add 0  '-5E17'      ->  '-5.000000000000000E+17'   Rounded
+ddadd135 add 0  '-5E18'      ->  '-5.000000000000000E+18'   Rounded
+ddadd136 add 0  '-5E100'     ->  '-5.000000000000000E+100'  Rounded
+
+-- related
+ddadd137 add  1  '0E-19'      ->  '1.000000000000000'  Rounded
+ddadd138 add -1  '0E-19'      ->  '-1.000000000000000' Rounded
+ddadd139 add '0E-19' 1        ->  '1.000000000000000'  Rounded
+ddadd140 add '0E-19' -1       ->  '-1.000000000000000' Rounded
+ddadd141 add 1E+11   0.0000   ->  '100000000000.0000'
+ddadd142 add 1E+11   0.00000  ->  '100000000000.0000'  Rounded
+ddadd143 add 0.000   1E+12    ->  '1000000000000.000'
+ddadd144 add 0.0000  1E+12    ->  '1000000000000.000'  Rounded
+
+-- [some of the next group are really constructor tests]
+ddadd146 add '00.0'  0       ->  '0.0'
+ddadd147 add '0.00'  0       ->  '0.00'
+ddadd148 add  0      '0.00'  ->  '0.00'
+ddadd149 add  0      '00.0'  ->  '0.0'
+ddadd150 add '00.0'  '0.00'  ->  '0.00'
+ddadd151 add '0.00'  '00.0'  ->  '0.00'
+ddadd152 add '3'     '.3'    ->  '3.3'
+ddadd153 add '3.'    '.3'    ->  '3.3'
+ddadd154 add '3.0'   '.3'    ->  '3.3'
+ddadd155 add '3.00'  '.3'    ->  '3.30'
+ddadd156 add '3'     '3'     ->  '6'
+ddadd157 add '3'     '+3'    ->  '6'
+ddadd158 add '3'     '-3'    ->  '0'
+ddadd159 add '0.3'   '-0.3'  ->  '0.0'
+ddadd160 add '0.03'  '-0.03' ->  '0.00'
+
+-- try borderline precision, with carries, etc.
+ddadd161 add '1E+12' '-1'    -> '999999999999'
+ddadd162 add '1E+12'  '1.11' -> '1000000000001.11'
+ddadd163 add '1.11'  '1E+12' -> '1000000000001.11'
+ddadd164 add '-1'    '1E+12' -> '999999999999'
+ddadd165 add '7E+12' '-1'    -> '6999999999999'
+ddadd166 add '7E+12'  '1.11' -> '7000000000001.11'
+ddadd167 add '1.11'  '7E+12' -> '7000000000001.11'
+ddadd168 add '-1'    '7E+12' -> '6999999999999'
+
+rounding: half_up
+--           1.234567890123456      1234567890123456      1 234567890123456
+ddadd170 add '4.444444444444444'  '0.5555555555555567' -> '5.000000000000001' Inexact Rounded
+ddadd171 add '4.444444444444444'  '0.5555555555555566' -> '5.000000000000001' Inexact Rounded
+ddadd172 add '4.444444444444444'  '0.5555555555555565' -> '5.000000000000001' Inexact Rounded
+ddadd173 add '4.444444444444444'  '0.5555555555555564' -> '5.000000000000000' Inexact Rounded
+ddadd174 add '4.444444444444444'  '0.5555555555555553' -> '4.999999999999999' Inexact Rounded
+ddadd175 add '4.444444444444444'  '0.5555555555555552' -> '4.999999999999999' Inexact Rounded
+ddadd176 add '4.444444444444444'  '0.5555555555555551' -> '4.999999999999999' Inexact Rounded
+ddadd177 add '4.444444444444444'  '0.5555555555555550' -> '4.999999999999999' Rounded
+ddadd178 add '4.444444444444444'  '0.5555555555555545' -> '4.999999999999999' Inexact Rounded
+ddadd179 add '4.444444444444444'  '0.5555555555555544' -> '4.999999999999998' Inexact Rounded
+ddadd180 add '4.444444444444444'  '0.5555555555555543' -> '4.999999999999998' Inexact Rounded
+ddadd181 add '4.444444444444444'  '0.5555555555555542' -> '4.999999999999998' Inexact Rounded
+ddadd182 add '4.444444444444444'  '0.5555555555555541' -> '4.999999999999998' Inexact Rounded
+ddadd183 add '4.444444444444444'  '0.5555555555555540' -> '4.999999999999998' Rounded
+
+-- and some more, including residue effects and different roundings
+rounding: half_up
+ddadd200 add '1234560123456789' 0             -> '1234560123456789'
+ddadd201 add '1234560123456789' 0.000000001   -> '1234560123456789' Inexact Rounded
+ddadd202 add '1234560123456789' 0.000001      -> '1234560123456789' Inexact Rounded
+ddadd203 add '1234560123456789' 0.1           -> '1234560123456789' Inexact Rounded
+ddadd204 add '1234560123456789' 0.4           -> '1234560123456789' Inexact Rounded
+ddadd205 add '1234560123456789' 0.49          -> '1234560123456789' Inexact Rounded
+ddadd206 add '1234560123456789' 0.499999      -> '1234560123456789' Inexact Rounded
+ddadd207 add '1234560123456789' 0.499999999   -> '1234560123456789' Inexact Rounded
+ddadd208 add '1234560123456789' 0.5           -> '1234560123456790' Inexact Rounded
+ddadd209 add '1234560123456789' 0.500000001   -> '1234560123456790' Inexact Rounded
+ddadd210 add '1234560123456789' 0.500001      -> '1234560123456790' Inexact Rounded
+ddadd211 add '1234560123456789' 0.51          -> '1234560123456790' Inexact Rounded
+ddadd212 add '1234560123456789' 0.6           -> '1234560123456790' Inexact Rounded
+ddadd213 add '1234560123456789' 0.9           -> '1234560123456790' Inexact Rounded
+ddadd214 add '1234560123456789' 0.99999       -> '1234560123456790' Inexact Rounded
+ddadd215 add '1234560123456789' 0.999999999   -> '1234560123456790' Inexact Rounded
+ddadd216 add '1234560123456789' 1             -> '1234560123456790'
+ddadd217 add '1234560123456789' 1.000000001   -> '1234560123456790' Inexact Rounded
+ddadd218 add '1234560123456789' 1.00001       -> '1234560123456790' Inexact Rounded
+ddadd219 add '1234560123456789' 1.1           -> '1234560123456790' Inexact Rounded
+
+rounding: half_even
+ddadd220 add '1234560123456789' 0             -> '1234560123456789'
+ddadd221 add '1234560123456789' 0.000000001   -> '1234560123456789' Inexact Rounded
+ddadd222 add '1234560123456789' 0.000001      -> '1234560123456789' Inexact Rounded
+ddadd223 add '1234560123456789' 0.1           -> '1234560123456789' Inexact Rounded
+ddadd224 add '1234560123456789' 0.4           -> '1234560123456789' Inexact Rounded
+ddadd225 add '1234560123456789' 0.49          -> '1234560123456789' Inexact Rounded
+ddadd226 add '1234560123456789' 0.499999      -> '1234560123456789' Inexact Rounded
+ddadd227 add '1234560123456789' 0.499999999   -> '1234560123456789' Inexact Rounded
+ddadd228 add '1234560123456789' 0.5           -> '1234560123456790' Inexact Rounded
+ddadd229 add '1234560123456789' 0.500000001   -> '1234560123456790' Inexact Rounded
+ddadd230 add '1234560123456789' 0.500001      -> '1234560123456790' Inexact Rounded
+ddadd231 add '1234560123456789' 0.51          -> '1234560123456790' Inexact Rounded
+ddadd232 add '1234560123456789' 0.6           -> '1234560123456790' Inexact Rounded
+ddadd233 add '1234560123456789' 0.9           -> '1234560123456790' Inexact Rounded
+ddadd234 add '1234560123456789' 0.99999       -> '1234560123456790' Inexact Rounded
+ddadd235 add '1234560123456789' 0.999999999   -> '1234560123456790' Inexact Rounded
+ddadd236 add '1234560123456789' 1             -> '1234560123456790'
+ddadd237 add '1234560123456789' 1.00000001    -> '1234560123456790' Inexact Rounded
+ddadd238 add '1234560123456789' 1.00001       -> '1234560123456790' Inexact Rounded
+ddadd239 add '1234560123456789' 1.1           -> '1234560123456790' Inexact Rounded
+-- critical few with even bottom digit...
+ddadd240 add '1234560123456788' 0.499999999   -> '1234560123456788' Inexact Rounded
+ddadd241 add '1234560123456788' 0.5           -> '1234560123456788' Inexact Rounded
+ddadd242 add '1234560123456788' 0.500000001   -> '1234560123456789' Inexact Rounded
+
+rounding: down
+ddadd250 add '1234560123456789' 0             -> '1234560123456789'
+ddadd251 add '1234560123456789' 0.000000001   -> '1234560123456789' Inexact Rounded
+ddadd252 add '1234560123456789' 0.000001      -> '1234560123456789' Inexact Rounded
+ddadd253 add '1234560123456789' 0.1           -> '1234560123456789' Inexact Rounded
+ddadd254 add '1234560123456789' 0.4           -> '1234560123456789' Inexact Rounded
+ddadd255 add '1234560123456789' 0.49          -> '1234560123456789' Inexact Rounded
+ddadd256 add '1234560123456789' 0.499999      -> '1234560123456789' Inexact Rounded
+ddadd257 add '1234560123456789' 0.499999999   -> '1234560123456789' Inexact Rounded
+ddadd258 add '1234560123456789' 0.5           -> '1234560123456789' Inexact Rounded
+ddadd259 add '1234560123456789' 0.500000001   -> '1234560123456789' Inexact Rounded
+ddadd260 add '1234560123456789' 0.500001      -> '1234560123456789' Inexact Rounded
+ddadd261 add '1234560123456789' 0.51          -> '1234560123456789' Inexact Rounded
+ddadd262 add '1234560123456789' 0.6           -> '1234560123456789' Inexact Rounded
+ddadd263 add '1234560123456789' 0.9           -> '1234560123456789' Inexact Rounded
+ddadd264 add '1234560123456789' 0.99999       -> '1234560123456789' Inexact Rounded
+ddadd265 add '1234560123456789' 0.999999999   -> '1234560123456789' Inexact Rounded
+ddadd266 add '1234560123456789' 1             -> '1234560123456790'
+ddadd267 add '1234560123456789' 1.00000001    -> '1234560123456790' Inexact Rounded
+ddadd268 add '1234560123456789' 1.00001       -> '1234560123456790' Inexact Rounded
+ddadd269 add '1234560123456789' 1.1           -> '1234560123456790' Inexact Rounded
+
+-- 1 in last place tests
+rounding: half_up
+ddadd301 add  -1   1      ->   0
+ddadd302 add   0   1      ->   1
+ddadd303 add   1   1      ->   2
+ddadd304 add  12   1      ->  13
+ddadd305 add  98   1      ->  99
+ddadd306 add  99   1      -> 100
+ddadd307 add 100   1      -> 101
+ddadd308 add 101   1      -> 102
+ddadd309 add  -1  -1      ->  -2
+ddadd310 add   0  -1      ->  -1
+ddadd311 add   1  -1      ->   0
+ddadd312 add  12  -1      ->  11
+ddadd313 add  98  -1      ->  97
+ddadd314 add  99  -1      ->  98
+ddadd315 add 100  -1      ->  99
+ddadd316 add 101  -1      -> 100
+
+ddadd321 add -0.01  0.01    ->  0.00
+ddadd322 add  0.00  0.01    ->  0.01
+ddadd323 add  0.01  0.01    ->  0.02
+ddadd324 add  0.12  0.01    ->  0.13
+ddadd325 add  0.98  0.01    ->  0.99
+ddadd326 add  0.99  0.01    ->  1.00
+ddadd327 add  1.00  0.01    ->  1.01
+ddadd328 add  1.01  0.01    ->  1.02
+ddadd329 add -0.01 -0.01    -> -0.02
+ddadd330 add  0.00 -0.01    -> -0.01
+ddadd331 add  0.01 -0.01    ->  0.00
+ddadd332 add  0.12 -0.01    ->  0.11
+ddadd333 add  0.98 -0.01    ->  0.97
+ddadd334 add  0.99 -0.01    ->  0.98
+ddadd335 add  1.00 -0.01    ->  0.99
+ddadd336 add  1.01 -0.01    ->  1.00
+
+-- some more cases where adding 0 affects the coefficient
+ddadd340 add 1E+3    0    ->         1000
+ddadd341 add 1E+15   0    ->    1000000000000000
+ddadd342 add 1E+16   0    ->   1.000000000000000E+16  Rounded
+ddadd343 add 1E+20   0    ->   1.000000000000000E+20  Rounded
+-- which simply follow from these cases ...
+ddadd344 add 1E+3    1    ->         1001
+ddadd345 add 1E+15   1    ->    1000000000000001
+ddadd346 add 1E+16   1    ->   1.000000000000000E+16  Inexact Rounded
+ddadd347 add 1E+20   1    ->   1.000000000000000E+20  Inexact Rounded
+ddadd348 add 1E+3    7    ->         1007
+ddadd349 add 1E+15   7    ->    1000000000000007
+ddadd350 add 1E+16   7    ->   1.000000000000001E+16  Inexact Rounded
+ddadd351 add 1E+20   7    ->   1.000000000000000E+20  Inexact Rounded
+
+-- tryzeros cases
+rounding:    half_up
+ddadd360  add 0E+50 10000E+1  -> 1.0000E+5
+ddadd361  add 0E-50 10000E+1  -> 100000.0000000000 Rounded
+ddadd362  add 10000E+1 0E-50  -> 100000.0000000000 Rounded
+ddadd363  add 10000E+1 10000E-50  -> 100000.0000000000 Rounded Inexact
+ddadd364  add 9.999999999999999E+384 -9.999999999999999E+384 -> 0E+369
+
+-- a curiosity from JSR 13 testing
+rounding:    half_down
+ddadd370 add  999999999999999 815 -> 1000000000000814
+ddadd371 add 9999999999999999 815 -> 1.000000000000081E+16 Rounded Inexact
+rounding:    half_up
+ddadd372 add  999999999999999 815 -> 1000000000000814
+ddadd373 add 9999999999999999 815 -> 1.000000000000081E+16 Rounded Inexact
+rounding:    half_even
+ddadd374 add  999999999999999 815 -> 1000000000000814
+ddadd375 add 9999999999999999 815 -> 1.000000000000081E+16 Rounded Inexact
+
+-- operands folded
+ddadd380 add   1E+384  1E+384  ->  2.000000000000000E+384  Clamped
+ddadd381 add   1E+380  1E+380  ->  2.00000000000E+380      Clamped
+ddadd382 add   1E+376  1E+376  ->  2.0000000E+376          Clamped
+ddadd383 add   1E+372  1E+372  ->  2.000E+372              Clamped
+ddadd384 add   1E+370  1E+370  ->  2.0E+370                Clamped
+ddadd385 add   1E+369  1E+369  ->  2E+369
+ddadd386 add   1E+368  1E+368  ->  2E+368
+
+-- ulp replacement tests
+ddadd400 add   1   77e-14      ->  1.00000000000077
+ddadd401 add   1   77e-15      ->  1.000000000000077
+ddadd402 add   1   77e-16      ->  1.000000000000008 Inexact Rounded
+ddadd403 add   1   77e-17      ->  1.000000000000001 Inexact Rounded
+ddadd404 add   1   77e-18      ->  1.000000000000000 Inexact Rounded
+ddadd405 add   1   77e-19      ->  1.000000000000000 Inexact Rounded
+ddadd406 add   1   77e-299     ->  1.000000000000000 Inexact Rounded
+
+ddadd410 add  10   77e-14      ->  10.00000000000077
+ddadd411 add  10   77e-15      ->  10.00000000000008 Inexact Rounded
+ddadd412 add  10   77e-16      ->  10.00000000000001 Inexact Rounded
+ddadd413 add  10   77e-17      ->  10.00000000000000 Inexact Rounded
+ddadd414 add  10   77e-18      ->  10.00000000000000 Inexact Rounded
+ddadd415 add  10   77e-19      ->  10.00000000000000 Inexact Rounded
+ddadd416 add  10   77e-299     ->  10.00000000000000 Inexact Rounded
+
+ddadd420 add  77e-14       1   ->  1.00000000000077
+ddadd421 add  77e-15       1   ->  1.000000000000077
+ddadd422 add  77e-16       1   ->  1.000000000000008 Inexact Rounded
+ddadd423 add  77e-17       1   ->  1.000000000000001 Inexact Rounded
+ddadd424 add  77e-18       1   ->  1.000000000000000 Inexact Rounded
+ddadd425 add  77e-19       1   ->  1.000000000000000 Inexact Rounded
+ddadd426 add  77e-299      1   ->  1.000000000000000 Inexact Rounded
+
+ddadd430 add  77e-14      10   ->  10.00000000000077
+ddadd431 add  77e-15      10   ->  10.00000000000008 Inexact Rounded
+ddadd432 add  77e-16      10   ->  10.00000000000001 Inexact Rounded
+ddadd433 add  77e-17      10   ->  10.00000000000000 Inexact Rounded
+ddadd434 add  77e-18      10   ->  10.00000000000000 Inexact Rounded
+ddadd435 add  77e-19      10   ->  10.00000000000000 Inexact Rounded
+ddadd436 add  77e-299     10   ->  10.00000000000000 Inexact Rounded
+
+-- negative ulps
+ddadd6440 add   1   -77e-14      ->  0.99999999999923
+ddadd6441 add   1   -77e-15      ->  0.999999999999923
+ddadd6442 add   1   -77e-16      ->  0.9999999999999923
+ddadd6443 add   1   -77e-17      ->  0.9999999999999992 Inexact Rounded
+ddadd6444 add   1   -77e-18      ->  0.9999999999999999 Inexact Rounded
+ddadd6445 add   1   -77e-19      ->  1.000000000000000 Inexact Rounded
+ddadd6446 add   1   -77e-99      ->  1.000000000000000 Inexact Rounded
+
+ddadd6450 add  10   -77e-14      ->   9.99999999999923
+ddadd6451 add  10   -77e-15      ->   9.999999999999923
+ddadd6452 add  10   -77e-16      ->   9.999999999999992 Inexact Rounded
+ddadd6453 add  10   -77e-17      ->   9.999999999999999 Inexact Rounded
+ddadd6454 add  10   -77e-18      ->  10.00000000000000 Inexact Rounded
+ddadd6455 add  10   -77e-19      ->  10.00000000000000 Inexact Rounded
+ddadd6456 add  10   -77e-99      ->  10.00000000000000 Inexact Rounded
+
+ddadd6460 add  -77e-14       1   ->  0.99999999999923
+ddadd6461 add  -77e-15       1   ->  0.999999999999923
+ddadd6462 add  -77e-16       1   ->  0.9999999999999923
+ddadd6463 add  -77e-17       1   ->  0.9999999999999992 Inexact Rounded
+ddadd6464 add  -77e-18       1   ->  0.9999999999999999 Inexact Rounded
+ddadd6465 add  -77e-19       1   ->  1.000000000000000 Inexact Rounded
+ddadd6466 add  -77e-99       1   ->  1.000000000000000 Inexact Rounded
+
+ddadd6470 add  -77e-14      10   ->   9.99999999999923
+ddadd6471 add  -77e-15      10   ->   9.999999999999923
+ddadd6472 add  -77e-16      10   ->   9.999999999999992 Inexact Rounded
+ddadd6473 add  -77e-17      10   ->   9.999999999999999 Inexact Rounded
+ddadd6474 add  -77e-18      10   ->  10.00000000000000 Inexact Rounded
+ddadd6475 add  -77e-19      10   ->  10.00000000000000 Inexact Rounded
+ddadd6476 add  -77e-99      10   ->  10.00000000000000 Inexact Rounded
+
+-- negative ulps
+ddadd6480 add  -1    77e-14      ->  -0.99999999999923
+ddadd6481 add  -1    77e-15      ->  -0.999999999999923
+ddadd6482 add  -1    77e-16      ->  -0.9999999999999923
+ddadd6483 add  -1    77e-17      ->  -0.9999999999999992 Inexact Rounded
+ddadd6484 add  -1    77e-18      ->  -0.9999999999999999 Inexact Rounded
+ddadd6485 add  -1    77e-19      ->  -1.000000000000000 Inexact Rounded
+ddadd6486 add  -1    77e-99      ->  -1.000000000000000 Inexact Rounded
+
+ddadd6490 add -10    77e-14      ->   -9.99999999999923
+ddadd6491 add -10    77e-15      ->   -9.999999999999923
+ddadd6492 add -10    77e-16      ->   -9.999999999999992 Inexact Rounded
+ddadd6493 add -10    77e-17      ->   -9.999999999999999 Inexact Rounded
+ddadd6494 add -10    77e-18      ->  -10.00000000000000 Inexact Rounded
+ddadd6495 add -10    77e-19      ->  -10.00000000000000 Inexact Rounded
+ddadd6496 add -10    77e-99      ->  -10.00000000000000 Inexact Rounded
+
+ddadd6500 add   77e-14      -1   ->  -0.99999999999923
+ddadd6501 add   77e-15      -1   ->  -0.999999999999923
+ddadd6502 add   77e-16      -1   ->  -0.9999999999999923
+ddadd6503 add   77e-17      -1   ->  -0.9999999999999992 Inexact Rounded
+ddadd6504 add   77e-18      -1   ->  -0.9999999999999999 Inexact Rounded
+ddadd6505 add   77e-19      -1   ->  -1.000000000000000 Inexact Rounded
+ddadd6506 add   77e-99      -1   ->  -1.000000000000000 Inexact Rounded
+
+ddadd6510 add   77e-14      -10  ->   -9.99999999999923
+ddadd6511 add   77e-15      -10  ->   -9.999999999999923
+ddadd6512 add   77e-16      -10  ->   -9.999999999999992 Inexact Rounded
+ddadd6513 add   77e-17      -10  ->   -9.999999999999999 Inexact Rounded
+ddadd6514 add   77e-18      -10  ->  -10.00000000000000 Inexact Rounded
+ddadd6515 add   77e-19      -10  ->  -10.00000000000000 Inexact Rounded
+ddadd6516 add   77e-99      -10  ->  -10.00000000000000 Inexact Rounded
+
+-- and some more residue effects and different roundings
+rounding: half_up
+ddadd6540 add '6543210123456789' 0             -> '6543210123456789'
+ddadd6541 add '6543210123456789' 0.000000001   -> '6543210123456789' Inexact Rounded
+ddadd6542 add '6543210123456789' 0.000001      -> '6543210123456789' Inexact Rounded
+ddadd6543 add '6543210123456789' 0.1           -> '6543210123456789' Inexact Rounded
+ddadd6544 add '6543210123456789' 0.4           -> '6543210123456789' Inexact Rounded
+ddadd6545 add '6543210123456789' 0.49          -> '6543210123456789' Inexact Rounded
+ddadd6546 add '6543210123456789' 0.499999      -> '6543210123456789' Inexact Rounded
+ddadd6547 add '6543210123456789' 0.499999999   -> '6543210123456789' Inexact Rounded
+ddadd6548 add '6543210123456789' 0.5           -> '6543210123456790' Inexact Rounded
+ddadd6549 add '6543210123456789' 0.500000001   -> '6543210123456790' Inexact Rounded
+ddadd6550 add '6543210123456789' 0.500001      -> '6543210123456790' Inexact Rounded
+ddadd6551 add '6543210123456789' 0.51          -> '6543210123456790' Inexact Rounded
+ddadd6552 add '6543210123456789' 0.6           -> '6543210123456790' Inexact Rounded
+ddadd6553 add '6543210123456789' 0.9           -> '6543210123456790' Inexact Rounded
+ddadd6554 add '6543210123456789' 0.99999       -> '6543210123456790' Inexact Rounded
+ddadd6555 add '6543210123456789' 0.999999999   -> '6543210123456790' Inexact Rounded
+ddadd6556 add '6543210123456789' 1             -> '6543210123456790'
+ddadd6557 add '6543210123456789' 1.000000001   -> '6543210123456790' Inexact Rounded
+ddadd6558 add '6543210123456789' 1.00001       -> '6543210123456790' Inexact Rounded
+ddadd6559 add '6543210123456789' 1.1           -> '6543210123456790' Inexact Rounded
+
+rounding: half_even
+ddadd6560 add '6543210123456789' 0             -> '6543210123456789'
+ddadd6561 add '6543210123456789' 0.000000001   -> '6543210123456789' Inexact Rounded
+ddadd6562 add '6543210123456789' 0.000001      -> '6543210123456789' Inexact Rounded
+ddadd6563 add '6543210123456789' 0.1           -> '6543210123456789' Inexact Rounded
+ddadd6564 add '6543210123456789' 0.4           -> '6543210123456789' Inexact Rounded
+ddadd6565 add '6543210123456789' 0.49          -> '6543210123456789' Inexact Rounded
+ddadd6566 add '6543210123456789' 0.499999      -> '6543210123456789' Inexact Rounded
+ddadd6567 add '6543210123456789' 0.499999999   -> '6543210123456789' Inexact Rounded
+ddadd6568 add '6543210123456789' 0.5           -> '6543210123456790' Inexact Rounded
+ddadd6569 add '6543210123456789' 0.500000001   -> '6543210123456790' Inexact Rounded
+ddadd6570 add '6543210123456789' 0.500001      -> '6543210123456790' Inexact Rounded
+ddadd6571 add '6543210123456789' 0.51          -> '6543210123456790' Inexact Rounded
+ddadd6572 add '6543210123456789' 0.6           -> '6543210123456790' Inexact Rounded
+ddadd6573 add '6543210123456789' 0.9           -> '6543210123456790' Inexact Rounded
+ddadd6574 add '6543210123456789' 0.99999       -> '6543210123456790' Inexact Rounded
+ddadd6575 add '6543210123456789' 0.999999999   -> '6543210123456790' Inexact Rounded
+ddadd6576 add '6543210123456789' 1             -> '6543210123456790'
+ddadd6577 add '6543210123456789' 1.00000001    -> '6543210123456790' Inexact Rounded
+ddadd6578 add '6543210123456789' 1.00001       -> '6543210123456790' Inexact Rounded
+ddadd6579 add '6543210123456789' 1.1           -> '6543210123456790' Inexact Rounded
+
+-- critical few with even bottom digit...
+ddadd7540 add '6543210123456788' 0.499999999   -> '6543210123456788' Inexact Rounded
+ddadd7541 add '6543210123456788' 0.5           -> '6543210123456788' Inexact Rounded
+ddadd7542 add '6543210123456788' 0.500000001   -> '6543210123456789' Inexact Rounded
+
+rounding: down
+ddadd7550 add '6543210123456789' 0             -> '6543210123456789'
+ddadd7551 add '6543210123456789' 0.000000001   -> '6543210123456789' Inexact Rounded
+ddadd7552 add '6543210123456789' 0.000001      -> '6543210123456789' Inexact Rounded
+ddadd7553 add '6543210123456789' 0.1           -> '6543210123456789' Inexact Rounded
+ddadd7554 add '6543210123456789' 0.4           -> '6543210123456789' Inexact Rounded
+ddadd7555 add '6543210123456789' 0.49          -> '6543210123456789' Inexact Rounded
+ddadd7556 add '6543210123456789' 0.499999      -> '6543210123456789' Inexact Rounded
+ddadd7557 add '6543210123456789' 0.499999999   -> '6543210123456789' Inexact Rounded
+ddadd7558 add '6543210123456789' 0.5           -> '6543210123456789' Inexact Rounded
+ddadd7559 add '6543210123456789' 0.500000001   -> '6543210123456789' Inexact Rounded
+ddadd7560 add '6543210123456789' 0.500001      -> '6543210123456789' Inexact Rounded
+ddadd7561 add '6543210123456789' 0.51          -> '6543210123456789' Inexact Rounded
+ddadd7562 add '6543210123456789' 0.6           -> '6543210123456789' Inexact Rounded
+ddadd7563 add '6543210123456789' 0.9           -> '6543210123456789' Inexact Rounded
+ddadd7564 add '6543210123456789' 0.99999       -> '6543210123456789' Inexact Rounded
+ddadd7565 add '6543210123456789' 0.999999999   -> '6543210123456789' Inexact Rounded
+ddadd7566 add '6543210123456789' 1             -> '6543210123456790'
+ddadd7567 add '6543210123456789' 1.00000001    -> '6543210123456790' Inexact Rounded
+ddadd7568 add '6543210123456789' 1.00001       -> '6543210123456790' Inexact Rounded
+ddadd7569 add '6543210123456789' 1.1           -> '6543210123456790' Inexact Rounded
+
+-- verify a query
+rounding:     down
+ddadd7661 add 1e-398 9.000000000000000E+384 -> 9.000000000000000E+384 Inexact Rounded
+ddadd7662 add      0 9.000000000000000E+384 -> 9.000000000000000E+384 Rounded
+ddadd7663 add 1e-388 9.000000000000000E+374 -> 9.000000000000000E+374 Inexact Rounded
+ddadd7664 add      0 9.000000000000000E+374 -> 9.000000000000000E+374 Rounded
+
+-- more zeros, etc.
+rounding: half_even
+
+ddadd7701 add 5.00 1.00E-3 -> 5.00100
+ddadd7702 add 00.00 0.000  -> 0.000
+ddadd7703 add 00.00 0E-3   -> 0.000
+ddadd7704 add 0E-3  00.00  -> 0.000
+
+ddadd7710 add 0E+3  00.00  -> 0.00
+ddadd7711 add 0E+3  00.0   -> 0.0
+ddadd7712 add 0E+3  00.    -> 0
+ddadd7713 add 0E+3  00.E+1 -> 0E+1
+ddadd7714 add 0E+3  00.E+2 -> 0E+2
+ddadd7715 add 0E+3  00.E+3 -> 0E+3
+ddadd7716 add 0E+3  00.E+4 -> 0E+3
+ddadd7717 add 0E+3  00.E+5 -> 0E+3
+ddadd7718 add 0E+3  -00.0   -> 0.0
+ddadd7719 add 0E+3  -00.    -> 0
+ddadd7731 add 0E+3  -00.E+1 -> 0E+1
+
+ddadd7720 add 00.00  0E+3  -> 0.00
+ddadd7721 add 00.0   0E+3  -> 0.0
+ddadd7722 add 00.    0E+3  -> 0
+ddadd7723 add 00.E+1 0E+3  -> 0E+1
+ddadd7724 add 00.E+2 0E+3  -> 0E+2
+ddadd7725 add 00.E+3 0E+3  -> 0E+3
+ddadd7726 add 00.E+4 0E+3  -> 0E+3
+ddadd7727 add 00.E+5 0E+3  -> 0E+3
+ddadd7728 add -00.00 0E+3  -> 0.00
+ddadd7729 add -00.0  0E+3  -> 0.0
+ddadd7730 add -00.   0E+3  -> 0
+
+ddadd7732 add  0     0     ->  0
+ddadd7733 add  0    -0     ->  0
+ddadd7734 add -0     0     ->  0
+ddadd7735 add -0    -0     -> -0     -- IEEE 854 special case
+
+ddadd7736 add  1    -1     ->  0
+ddadd7737 add -1    -1     -> -2
+ddadd7738 add  1     1     ->  2
+ddadd7739 add -1     1     ->  0
+
+ddadd7741 add  0    -1     -> -1
+ddadd7742 add -0    -1     -> -1
+ddadd7743 add  0     1     ->  1
+ddadd7744 add -0     1     ->  1
+ddadd7745 add -1     0     -> -1
+ddadd7746 add -1    -0     -> -1
+ddadd7747 add  1     0     ->  1
+ddadd7748 add  1    -0     ->  1
+
+ddadd7751 add  0.0  -1     -> -1.0
+ddadd7752 add -0.0  -1     -> -1.0
+ddadd7753 add  0.0   1     ->  1.0
+ddadd7754 add -0.0   1     ->  1.0
+ddadd7755 add -1.0   0     -> -1.0
+ddadd7756 add -1.0  -0     -> -1.0
+ddadd7757 add  1.0   0     ->  1.0
+ddadd7758 add  1.0  -0     ->  1.0
+
+ddadd7761 add  0    -1.0   -> -1.0
+ddadd7762 add -0    -1.0   -> -1.0
+ddadd7763 add  0     1.0   ->  1.0
+ddadd7764 add -0     1.0   ->  1.0
+ddadd7765 add -1     0.0   -> -1.0
+ddadd7766 add -1    -0.0   -> -1.0
+ddadd7767 add  1     0.0   ->  1.0
+ddadd7768 add  1    -0.0   ->  1.0
+
+ddadd7771 add  0.0  -1.0   -> -1.0
+ddadd7772 add -0.0  -1.0   -> -1.0
+ddadd7773 add  0.0   1.0   ->  1.0
+ddadd7774 add -0.0   1.0   ->  1.0
+ddadd7775 add -1.0   0.0   -> -1.0
+ddadd7776 add -1.0  -0.0   -> -1.0
+ddadd7777 add  1.0   0.0   ->  1.0
+ddadd7778 add  1.0  -0.0   ->  1.0
+
+-- Specials
+ddadd7780 add -Inf  -Inf   -> -Infinity
+ddadd7781 add -Inf  -1000  -> -Infinity
+ddadd7782 add -Inf  -1     -> -Infinity
+ddadd7783 add -Inf  -0     -> -Infinity
+ddadd7784 add -Inf   0     -> -Infinity
+ddadd7785 add -Inf   1     -> -Infinity
+ddadd7786 add -Inf   1000  -> -Infinity
+ddadd7787 add -1000 -Inf   -> -Infinity
+ddadd7788 add -Inf  -Inf   -> -Infinity
+ddadd7789 add -1    -Inf   -> -Infinity
+ddadd7790 add -0    -Inf   -> -Infinity
+ddadd7791 add  0    -Inf   -> -Infinity
+ddadd7792 add  1    -Inf   -> -Infinity
+ddadd7793 add  1000 -Inf   -> -Infinity
+ddadd7794 add  Inf  -Inf   ->  NaN  Invalid_operation
+
+ddadd7800 add  Inf  -Inf   ->  NaN  Invalid_operation
+ddadd7801 add  Inf  -1000  ->  Infinity
+ddadd7802 add  Inf  -1     ->  Infinity
+ddadd7803 add  Inf  -0     ->  Infinity
+ddadd7804 add  Inf   0     ->  Infinity
+ddadd7805 add  Inf   1     ->  Infinity
+ddadd7806 add  Inf   1000  ->  Infinity
+ddadd7807 add  Inf   Inf   ->  Infinity
+ddadd7808 add -1000  Inf   ->  Infinity
+ddadd7809 add -Inf   Inf   ->  NaN  Invalid_operation
+ddadd7810 add -1     Inf   ->  Infinity
+ddadd7811 add -0     Inf   ->  Infinity
+ddadd7812 add  0     Inf   ->  Infinity
+ddadd7813 add  1     Inf   ->  Infinity
+ddadd7814 add  1000  Inf   ->  Infinity
+ddadd7815 add  Inf   Inf   ->  Infinity
+
+ddadd7821 add  NaN -Inf    ->  NaN
+ddadd7822 add  NaN -1000   ->  NaN
+ddadd7823 add  NaN -1      ->  NaN
+ddadd7824 add  NaN -0      ->  NaN
+ddadd7825 add  NaN  0      ->  NaN
+ddadd7826 add  NaN  1      ->  NaN
+ddadd7827 add  NaN  1000   ->  NaN
+ddadd7828 add  NaN  Inf    ->  NaN
+ddadd7829 add  NaN  NaN    ->  NaN
+ddadd7830 add -Inf  NaN    ->  NaN
+ddadd7831 add -1000 NaN    ->  NaN
+ddadd7832 add -1    NaN    ->  NaN
+ddadd7833 add -0    NaN    ->  NaN
+ddadd7834 add  0    NaN    ->  NaN
+ddadd7835 add  1    NaN    ->  NaN
+ddadd7836 add  1000 NaN    ->  NaN
+ddadd7837 add  Inf  NaN    ->  NaN
+
+ddadd7841 add  sNaN -Inf   ->  NaN  Invalid_operation
+ddadd7842 add  sNaN -1000  ->  NaN  Invalid_operation
+ddadd7843 add  sNaN -1     ->  NaN  Invalid_operation
+ddadd7844 add  sNaN -0     ->  NaN  Invalid_operation
+ddadd7845 add  sNaN  0     ->  NaN  Invalid_operation
+ddadd7846 add  sNaN  1     ->  NaN  Invalid_operation
+ddadd7847 add  sNaN  1000  ->  NaN  Invalid_operation
+ddadd7848 add  sNaN  NaN   ->  NaN  Invalid_operation
+ddadd7849 add  sNaN sNaN   ->  NaN  Invalid_operation
+ddadd7850 add  NaN  sNaN   ->  NaN  Invalid_operation
+ddadd7851 add -Inf  sNaN   ->  NaN  Invalid_operation
+ddadd7852 add -1000 sNaN   ->  NaN  Invalid_operation
+ddadd7853 add -1    sNaN   ->  NaN  Invalid_operation
+ddadd7854 add -0    sNaN   ->  NaN  Invalid_operation
+ddadd7855 add  0    sNaN   ->  NaN  Invalid_operation
+ddadd7856 add  1    sNaN   ->  NaN  Invalid_operation
+ddadd7857 add  1000 sNaN   ->  NaN  Invalid_operation
+ddadd7858 add  Inf  sNaN   ->  NaN  Invalid_operation
+ddadd7859 add  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+ddadd7861 add  NaN1   -Inf    ->  NaN1
+ddadd7862 add +NaN2   -1000   ->  NaN2
+ddadd7863 add  NaN3    1000   ->  NaN3
+ddadd7864 add  NaN4    Inf    ->  NaN4
+ddadd7865 add  NaN5   +NaN6   ->  NaN5
+ddadd7866 add -Inf     NaN7   ->  NaN7
+ddadd7867 add -1000    NaN8   ->  NaN8
+ddadd7868 add  1000    NaN9   ->  NaN9
+ddadd7869 add  Inf    +NaN10  ->  NaN10
+ddadd7871 add  sNaN11  -Inf   ->  NaN11  Invalid_operation
+ddadd7872 add  sNaN12  -1000  ->  NaN12  Invalid_operation
+ddadd7873 add  sNaN13   1000  ->  NaN13  Invalid_operation
+ddadd7874 add  sNaN14   NaN17 ->  NaN14  Invalid_operation
+ddadd7875 add  sNaN15  sNaN18 ->  NaN15  Invalid_operation
+ddadd7876 add  NaN16   sNaN19 ->  NaN19  Invalid_operation
+ddadd7877 add -Inf    +sNaN20 ->  NaN20  Invalid_operation
+ddadd7878 add -1000    sNaN21 ->  NaN21  Invalid_operation
+ddadd7879 add  1000    sNaN22 ->  NaN22  Invalid_operation
+ddadd7880 add  Inf     sNaN23 ->  NaN23  Invalid_operation
+ddadd7881 add +NaN25  +sNaN24 ->  NaN24  Invalid_operation
+ddadd7882 add -NaN26    NaN28 -> -NaN26
+ddadd7883 add -sNaN27  sNaN29 -> -NaN27  Invalid_operation
+ddadd7884 add  1000    -NaN30 -> -NaN30
+ddadd7885 add  1000   -sNaN31 -> -NaN31  Invalid_operation
+
+-- Here we explore near the boundary of rounding a subnormal to Nmin
+ddadd7575 add  1E-383 -1E-398 ->  9.99999999999999E-384  Subnormal
+ddadd7576 add -1E-383 +1E-398 -> -9.99999999999999E-384  Subnormal
+
+-- check overflow edge case
+--               1234567890123456
+ddadd7972 apply   9.999999999999999E+384         -> 9.999999999999999E+384
+ddadd7973 add     9.999999999999999E+384  1      -> 9.999999999999999E+384 Inexact Rounded
+ddadd7974 add      9999999999999999E+369  1      -> 9.999999999999999E+384 Inexact Rounded
+ddadd7975 add      9999999999999999E+369  1E+369  -> Infinity Overflow Inexact Rounded
+ddadd7976 add      9999999999999999E+369  9E+368  -> Infinity Overflow Inexact Rounded
+ddadd7977 add      9999999999999999E+369  8E+368  -> Infinity Overflow Inexact Rounded
+ddadd7978 add      9999999999999999E+369  7E+368  -> Infinity Overflow Inexact Rounded
+ddadd7979 add      9999999999999999E+369  6E+368  -> Infinity Overflow Inexact Rounded
+ddadd7980 add      9999999999999999E+369  5E+368  -> Infinity Overflow Inexact Rounded
+ddadd7981 add      9999999999999999E+369  4E+368  -> 9.999999999999999E+384 Inexact Rounded
+ddadd7982 add      9999999999999999E+369  3E+368  -> 9.999999999999999E+384 Inexact Rounded
+ddadd7983 add      9999999999999999E+369  2E+368  -> 9.999999999999999E+384 Inexact Rounded
+ddadd7984 add      9999999999999999E+369  1E+368  -> 9.999999999999999E+384 Inexact Rounded
+
+ddadd7985 apply  -9.999999999999999E+384         -> -9.999999999999999E+384
+ddadd7986 add    -9.999999999999999E+384 -1      -> -9.999999999999999E+384 Inexact Rounded
+ddadd7987 add     -9999999999999999E+369 -1      -> -9.999999999999999E+384 Inexact Rounded
+ddadd7988 add     -9999999999999999E+369 -1E+369  -> -Infinity Overflow Inexact Rounded
+ddadd7989 add     -9999999999999999E+369 -9E+368  -> -Infinity Overflow Inexact Rounded
+ddadd7990 add     -9999999999999999E+369 -8E+368  -> -Infinity Overflow Inexact Rounded
+ddadd7991 add     -9999999999999999E+369 -7E+368  -> -Infinity Overflow Inexact Rounded
+ddadd7992 add     -9999999999999999E+369 -6E+368  -> -Infinity Overflow Inexact Rounded
+ddadd7993 add     -9999999999999999E+369 -5E+368  -> -Infinity Overflow Inexact Rounded
+ddadd7994 add     -9999999999999999E+369 -4E+368  -> -9.999999999999999E+384 Inexact Rounded
+ddadd7995 add     -9999999999999999E+369 -3E+368  -> -9.999999999999999E+384 Inexact Rounded
+ddadd7996 add     -9999999999999999E+369 -2E+368  -> -9.999999999999999E+384 Inexact Rounded
+ddadd7997 add     -9999999999999999E+369 -1E+368  -> -9.999999999999999E+384 Inexact Rounded
+
+-- And for round down full and subnormal results
+rounding:     down
+ddadd71100 add 1e+2 -1e-383    -> 99.99999999999999 Rounded Inexact
+ddadd71101 add 1e+1 -1e-383    -> 9.999999999999999  Rounded Inexact
+ddadd71103 add   +1 -1e-383    -> 0.9999999999999999  Rounded Inexact
+ddadd71104 add 1e-1 -1e-383    -> 0.09999999999999999  Rounded Inexact
+ddadd71105 add 1e-2 -1e-383    -> 0.009999999999999999  Rounded Inexact
+ddadd71106 add 1e-3 -1e-383    -> 0.0009999999999999999  Rounded Inexact
+ddadd71107 add 1e-4 -1e-383    -> 0.00009999999999999999  Rounded Inexact
+ddadd71108 add 1e-5 -1e-383    -> 0.000009999999999999999  Rounded Inexact
+ddadd71109 add 1e-6 -1e-383    -> 9.999999999999999E-7  Rounded Inexact
+
+rounding:     ceiling
+ddadd71110 add -1e+2 +1e-383   -> -99.99999999999999 Rounded Inexact
+ddadd71111 add -1e+1 +1e-383   -> -9.999999999999999  Rounded Inexact
+ddadd71113 add    -1 +1e-383   -> -0.9999999999999999  Rounded Inexact
+ddadd71114 add -1e-1 +1e-383   -> -0.09999999999999999  Rounded Inexact
+ddadd71115 add -1e-2 +1e-383   -> -0.009999999999999999  Rounded Inexact
+ddadd71116 add -1e-3 +1e-383   -> -0.0009999999999999999  Rounded Inexact
+ddadd71117 add -1e-4 +1e-383   -> -0.00009999999999999999  Rounded Inexact
+ddadd71118 add -1e-5 +1e-383   -> -0.000009999999999999999  Rounded Inexact
+ddadd71119 add -1e-6 +1e-383   -> -9.999999999999999E-7  Rounded Inexact
+
+-- tests based on Gunnar Degnbol's edge case
+rounding:     half_even
+
+ddadd71300 add 1E16  -0.5                 ->  1.000000000000000E+16 Inexact Rounded
+ddadd71310 add 1E16  -0.51                ->  9999999999999999      Inexact Rounded
+ddadd71311 add 1E16  -0.501               ->  9999999999999999      Inexact Rounded
+ddadd71312 add 1E16  -0.5001              ->  9999999999999999      Inexact Rounded
+ddadd71313 add 1E16  -0.50001             ->  9999999999999999      Inexact Rounded
+ddadd71314 add 1E16  -0.500001            ->  9999999999999999      Inexact Rounded
+ddadd71315 add 1E16  -0.5000001           ->  9999999999999999      Inexact Rounded
+ddadd71316 add 1E16  -0.50000001          ->  9999999999999999      Inexact Rounded
+ddadd71317 add 1E16  -0.500000001         ->  9999999999999999      Inexact Rounded
+ddadd71318 add 1E16  -0.5000000001        ->  9999999999999999      Inexact Rounded
+ddadd71319 add 1E16  -0.50000000001       ->  9999999999999999      Inexact Rounded
+ddadd71320 add 1E16  -0.500000000001      ->  9999999999999999      Inexact Rounded
+ddadd71321 add 1E16  -0.5000000000001     ->  9999999999999999      Inexact Rounded
+ddadd71322 add 1E16  -0.50000000000001    ->  9999999999999999      Inexact Rounded
+ddadd71323 add 1E16  -0.500000000000001   ->  9999999999999999      Inexact Rounded
+ddadd71324 add 1E16  -0.5000000000000001  ->  9999999999999999      Inexact Rounded
+ddadd71325 add 1E16  -0.5000000000000000  ->  1.000000000000000E+16 Inexact Rounded
+ddadd71326 add 1E16  -0.500000000000000   ->  1.000000000000000E+16 Inexact Rounded
+ddadd71327 add 1E16  -0.50000000000000    ->  1.000000000000000E+16 Inexact Rounded
+ddadd71328 add 1E16  -0.5000000000000     ->  1.000000000000000E+16 Inexact Rounded
+ddadd71329 add 1E16  -0.500000000000      ->  1.000000000000000E+16 Inexact Rounded
+ddadd71330 add 1E16  -0.50000000000       ->  1.000000000000000E+16 Inexact Rounded
+ddadd71331 add 1E16  -0.5000000000        ->  1.000000000000000E+16 Inexact Rounded
+ddadd71332 add 1E16  -0.500000000         ->  1.000000000000000E+16 Inexact Rounded
+ddadd71333 add 1E16  -0.50000000          ->  1.000000000000000E+16 Inexact Rounded
+ddadd71334 add 1E16  -0.5000000           ->  1.000000000000000E+16 Inexact Rounded
+ddadd71335 add 1E16  -0.500000            ->  1.000000000000000E+16 Inexact Rounded
+ddadd71336 add 1E16  -0.50000             ->  1.000000000000000E+16 Inexact Rounded
+ddadd71337 add 1E16  -0.5000              ->  1.000000000000000E+16 Inexact Rounded
+ddadd71338 add 1E16  -0.500               ->  1.000000000000000E+16 Inexact Rounded
+ddadd71339 add 1E16  -0.50                ->  1.000000000000000E+16 Inexact Rounded
+
+ddadd71340 add 1E16  -5000000.000010001   ->  9999999995000000      Inexact Rounded
+ddadd71341 add 1E16  -5000000.000000001   ->  9999999995000000      Inexact Rounded
+
+ddadd71349 add 9999999999999999 0.4                 ->  9999999999999999      Inexact Rounded
+ddadd71350 add 9999999999999999 0.49                ->  9999999999999999      Inexact Rounded
+ddadd71351 add 9999999999999999 0.499               ->  9999999999999999      Inexact Rounded
+ddadd71352 add 9999999999999999 0.4999              ->  9999999999999999      Inexact Rounded
+ddadd71353 add 9999999999999999 0.49999             ->  9999999999999999      Inexact Rounded
+ddadd71354 add 9999999999999999 0.499999            ->  9999999999999999      Inexact Rounded
+ddadd71355 add 9999999999999999 0.4999999           ->  9999999999999999      Inexact Rounded
+ddadd71356 add 9999999999999999 0.49999999          ->  9999999999999999      Inexact Rounded
+ddadd71357 add 9999999999999999 0.499999999         ->  9999999999999999      Inexact Rounded
+ddadd71358 add 9999999999999999 0.4999999999        ->  9999999999999999      Inexact Rounded
+ddadd71359 add 9999999999999999 0.49999999999       ->  9999999999999999      Inexact Rounded
+ddadd71360 add 9999999999999999 0.499999999999      ->  9999999999999999      Inexact Rounded
+ddadd71361 add 9999999999999999 0.4999999999999     ->  9999999999999999      Inexact Rounded
+ddadd71362 add 9999999999999999 0.49999999999999    ->  9999999999999999      Inexact Rounded
+ddadd71363 add 9999999999999999 0.499999999999999   ->  9999999999999999      Inexact Rounded
+ddadd71364 add 9999999999999999 0.4999999999999999  ->  9999999999999999      Inexact Rounded
+ddadd71365 add 9999999999999999 0.5000000000000000  ->  1.000000000000000E+16 Inexact Rounded
+ddadd71367 add 9999999999999999 0.500000000000000   ->  1.000000000000000E+16 Inexact Rounded
+ddadd71368 add 9999999999999999 0.50000000000000    ->  1.000000000000000E+16 Inexact Rounded
+ddadd71369 add 9999999999999999 0.5000000000000     ->  1.000000000000000E+16 Inexact Rounded
+ddadd71370 add 9999999999999999 0.500000000000      ->  1.000000000000000E+16 Inexact Rounded
+ddadd71371 add 9999999999999999 0.50000000000       ->  1.000000000000000E+16 Inexact Rounded
+ddadd71372 add 9999999999999999 0.5000000000        ->  1.000000000000000E+16 Inexact Rounded
+ddadd71373 add 9999999999999999 0.500000000         ->  1.000000000000000E+16 Inexact Rounded
+ddadd71374 add 9999999999999999 0.50000000          ->  1.000000000000000E+16 Inexact Rounded
+ddadd71375 add 9999999999999999 0.5000000           ->  1.000000000000000E+16 Inexact Rounded
+ddadd71376 add 9999999999999999 0.500000            ->  1.000000000000000E+16 Inexact Rounded
+ddadd71377 add 9999999999999999 0.50000             ->  1.000000000000000E+16 Inexact Rounded
+ddadd71378 add 9999999999999999 0.5000              ->  1.000000000000000E+16 Inexact Rounded
+ddadd71379 add 9999999999999999 0.500               ->  1.000000000000000E+16 Inexact Rounded
+ddadd71380 add 9999999999999999 0.50                ->  1.000000000000000E+16 Inexact Rounded
+ddadd71381 add 9999999999999999 0.5                 ->  1.000000000000000E+16 Inexact Rounded
+ddadd71382 add 9999999999999999 0.5000000000000001  ->  1.000000000000000E+16 Inexact Rounded
+ddadd71383 add 9999999999999999 0.500000000000001   ->  1.000000000000000E+16 Inexact Rounded
+ddadd71384 add 9999999999999999 0.50000000000001    ->  1.000000000000000E+16 Inexact Rounded
+ddadd71385 add 9999999999999999 0.5000000000001     ->  1.000000000000000E+16 Inexact Rounded
+ddadd71386 add 9999999999999999 0.500000000001      ->  1.000000000000000E+16 Inexact Rounded
+ddadd71387 add 9999999999999999 0.50000000001       ->  1.000000000000000E+16 Inexact Rounded
+ddadd71388 add 9999999999999999 0.5000000001        ->  1.000000000000000E+16 Inexact Rounded
+ddadd71389 add 9999999999999999 0.500000001         ->  1.000000000000000E+16 Inexact Rounded
+ddadd71390 add 9999999999999999 0.50000001          ->  1.000000000000000E+16 Inexact Rounded
+ddadd71391 add 9999999999999999 0.5000001           ->  1.000000000000000E+16 Inexact Rounded
+ddadd71392 add 9999999999999999 0.500001            ->  1.000000000000000E+16 Inexact Rounded
+ddadd71393 add 9999999999999999 0.50001             ->  1.000000000000000E+16 Inexact Rounded
+ddadd71394 add 9999999999999999 0.5001              ->  1.000000000000000E+16 Inexact Rounded
+ddadd71395 add 9999999999999999 0.501               ->  1.000000000000000E+16 Inexact Rounded
+ddadd71396 add 9999999999999999 0.51                ->  1.000000000000000E+16 Inexact Rounded
+
+-- More GD edge cases, where difference between the unadjusted
+-- exponents is larger than the maximum precision and one side is 0
+ddadd71420 add  0 1.123456789012345     -> 1.123456789012345
+ddadd71421 add  0 1.123456789012345E-1  -> 0.1123456789012345
+ddadd71422 add  0 1.123456789012345E-2  -> 0.01123456789012345
+ddadd71423 add  0 1.123456789012345E-3  -> 0.001123456789012345
+ddadd71424 add  0 1.123456789012345E-4  -> 0.0001123456789012345
+ddadd71425 add  0 1.123456789012345E-5  -> 0.00001123456789012345
+ddadd71426 add  0 1.123456789012345E-6  -> 0.000001123456789012345
+ddadd71427 add  0 1.123456789012345E-7  -> 1.123456789012345E-7
+ddadd71428 add  0 1.123456789012345E-8  -> 1.123456789012345E-8
+ddadd71429 add  0 1.123456789012345E-9  -> 1.123456789012345E-9
+ddadd71430 add  0 1.123456789012345E-10 -> 1.123456789012345E-10
+ddadd71431 add  0 1.123456789012345E-11 -> 1.123456789012345E-11
+ddadd71432 add  0 1.123456789012345E-12 -> 1.123456789012345E-12
+ddadd71433 add  0 1.123456789012345E-13 -> 1.123456789012345E-13
+ddadd71434 add  0 1.123456789012345E-14 -> 1.123456789012345E-14
+ddadd71435 add  0 1.123456789012345E-15 -> 1.123456789012345E-15
+ddadd71436 add  0 1.123456789012345E-16 -> 1.123456789012345E-16
+ddadd71437 add  0 1.123456789012345E-17 -> 1.123456789012345E-17
+ddadd71438 add  0 1.123456789012345E-18 -> 1.123456789012345E-18
+ddadd71439 add  0 1.123456789012345E-19 -> 1.123456789012345E-19
+
+-- same, reversed 0
+ddadd71440 add 1.123456789012345     0 -> 1.123456789012345
+ddadd71441 add 1.123456789012345E-1  0 -> 0.1123456789012345
+ddadd71442 add 1.123456789012345E-2  0 -> 0.01123456789012345
+ddadd71443 add 1.123456789012345E-3  0 -> 0.001123456789012345
+ddadd71444 add 1.123456789012345E-4  0 -> 0.0001123456789012345
+ddadd71445 add 1.123456789012345E-5  0 -> 0.00001123456789012345
+ddadd71446 add 1.123456789012345E-6  0 -> 0.000001123456789012345
+ddadd71447 add 1.123456789012345E-7  0 -> 1.123456789012345E-7
+ddadd71448 add 1.123456789012345E-8  0 -> 1.123456789012345E-8
+ddadd71449 add 1.123456789012345E-9  0 -> 1.123456789012345E-9
+ddadd71450 add 1.123456789012345E-10 0 -> 1.123456789012345E-10
+ddadd71451 add 1.123456789012345E-11 0 -> 1.123456789012345E-11
+ddadd71452 add 1.123456789012345E-12 0 -> 1.123456789012345E-12
+ddadd71453 add 1.123456789012345E-13 0 -> 1.123456789012345E-13
+ddadd71454 add 1.123456789012345E-14 0 -> 1.123456789012345E-14
+ddadd71455 add 1.123456789012345E-15 0 -> 1.123456789012345E-15
+ddadd71456 add 1.123456789012345E-16 0 -> 1.123456789012345E-16
+ddadd71457 add 1.123456789012345E-17 0 -> 1.123456789012345E-17
+ddadd71458 add 1.123456789012345E-18 0 -> 1.123456789012345E-18
+ddadd71459 add 1.123456789012345E-19 0 -> 1.123456789012345E-19
+
+-- same, Es on the 0
+ddadd71460 add 1.123456789012345  0E-0   -> 1.123456789012345
+ddadd71461 add 1.123456789012345  0E-1   -> 1.123456789012345
+ddadd71462 add 1.123456789012345  0E-2   -> 1.123456789012345
+ddadd71463 add 1.123456789012345  0E-3   -> 1.123456789012345
+ddadd71464 add 1.123456789012345  0E-4   -> 1.123456789012345
+ddadd71465 add 1.123456789012345  0E-5   -> 1.123456789012345
+ddadd71466 add 1.123456789012345  0E-6   -> 1.123456789012345
+ddadd71467 add 1.123456789012345  0E-7   -> 1.123456789012345
+ddadd71468 add 1.123456789012345  0E-8   -> 1.123456789012345
+ddadd71469 add 1.123456789012345  0E-9   -> 1.123456789012345
+ddadd71470 add 1.123456789012345  0E-10  -> 1.123456789012345
+ddadd71471 add 1.123456789012345  0E-11  -> 1.123456789012345
+ddadd71472 add 1.123456789012345  0E-12  -> 1.123456789012345
+ddadd71473 add 1.123456789012345  0E-13  -> 1.123456789012345
+ddadd71474 add 1.123456789012345  0E-14  -> 1.123456789012345
+ddadd71475 add 1.123456789012345  0E-15  -> 1.123456789012345
+-- next four flag Rounded because the 0 extends the result
+ddadd71476 add 1.123456789012345  0E-16  -> 1.123456789012345 Rounded
+ddadd71477 add 1.123456789012345  0E-17  -> 1.123456789012345 Rounded
+ddadd71478 add 1.123456789012345  0E-18  -> 1.123456789012345 Rounded
+ddadd71479 add 1.123456789012345  0E-19  -> 1.123456789012345 Rounded
+
+-- sum of two opposite-sign operands is exactly 0 and floor => -0
+rounding:    half_up
+-- exact zeros from zeros
+ddadd71500 add  0        0E-19  ->  0E-19
+ddadd71501 add -0        0E-19  ->  0E-19
+ddadd71502 add  0       -0E-19  ->  0E-19
+ddadd71503 add -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddadd71511 add -11      11    ->  0
+ddadd71512 add  11     -11    ->  0
+
+rounding:    half_down
+-- exact zeros from zeros
+ddadd71520 add  0        0E-19  ->  0E-19
+ddadd71521 add -0        0E-19  ->  0E-19
+ddadd71522 add  0       -0E-19  ->  0E-19
+ddadd71523 add -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddadd71531 add -11      11    ->  0
+ddadd71532 add  11     -11    ->  0
+
+rounding:    half_even
+-- exact zeros from zeros
+ddadd71540 add  0        0E-19  ->  0E-19
+ddadd71541 add -0        0E-19  ->  0E-19
+ddadd71542 add  0       -0E-19  ->  0E-19
+ddadd71543 add -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddadd71551 add -11      11    ->  0
+ddadd71552 add  11     -11    ->  0
+
+rounding:    up
+-- exact zeros from zeros
+ddadd71560 add  0        0E-19  ->  0E-19
+ddadd71561 add -0        0E-19  ->  0E-19
+ddadd71562 add  0       -0E-19  ->  0E-19
+ddadd71563 add -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddadd71571 add -11      11    ->  0
+ddadd71572 add  11     -11    ->  0
+
+rounding:    down
+-- exact zeros from zeros
+ddadd71580 add  0        0E-19  ->  0E-19
+ddadd71581 add -0        0E-19  ->  0E-19
+ddadd71582 add  0       -0E-19  ->  0E-19
+ddadd71583 add -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddadd71591 add -11      11    ->  0
+ddadd71592 add  11     -11    ->  0
+
+rounding:    ceiling
+-- exact zeros from zeros
+ddadd71600 add  0        0E-19  ->  0E-19
+ddadd71601 add -0        0E-19  ->  0E-19
+ddadd71602 add  0       -0E-19  ->  0E-19
+ddadd71603 add -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddadd71611 add -11      11    ->  0
+ddadd71612 add  11     -11    ->  0
+
+-- and the extra-special ugly case; unusual minuses marked by -- *
+rounding:    floor
+-- exact zeros from zeros
+ddadd71620 add  0        0E-19  ->  0E-19
+ddadd71621 add -0        0E-19  -> -0E-19           -- *
+ddadd71622 add  0       -0E-19  -> -0E-19           -- *
+ddadd71623 add -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddadd71631 add -11      11    ->  -0                -- *
+ddadd71632 add  11     -11    ->  -0                -- *
+
+-- Examples from SQL proposal (Krishna Kulkarni)
+ddadd71701 add 130E-2    120E-2    -> 2.50
+ddadd71702 add 130E-2    12E-1     -> 2.50
+ddadd71703 add 130E-2    1E0       -> 2.30
+ddadd71704 add 1E2       1E4       -> 1.01E+4
+ddadd71705 add 130E-2   -120E-2 -> 0.10
+ddadd71706 add 130E-2   -12E-1  -> 0.10
+ddadd71707 add 130E-2   -1E0    -> 0.30
+ddadd71708 add 1E2      -1E4    -> -9.9E+3
+
+-- query from Vincent Kulandaisamy
+rounding: ceiling
+ddadd71801  add  7.8822773805862E+277    -5.1757503820663E-21 -> 7.882277380586200E+277 Inexact Rounded
+ddadd71802  add  7.882277380586200E+277  12.341               -> 7.882277380586201E+277 Inexact Rounded
+ddadd71803  add  7.882277380586201E+277  2.7270545046613E-31  -> 7.882277380586202E+277 Inexact Rounded
+
+ddadd71811  add                   12.341 -5.1757503820663E-21 -> 12.34100000000000      Inexact Rounded
+ddadd71812  add        12.34100000000000 2.7270545046613E-31  -> 12.34100000000001      Inexact Rounded
+ddadd71813  add        12.34100000000001 7.8822773805862E+277 -> 7.882277380586201E+277 Inexact Rounded
+
+-- Gappy coefficients; check residue handling even with full coefficient gap
+rounding: half_even
+
+ddadd75001 add 1234567890123456 1      -> 1234567890123457
+ddadd75002 add 1234567890123456 0.6    -> 1234567890123457  Inexact Rounded
+ddadd75003 add 1234567890123456 0.06   -> 1234567890123456  Inexact Rounded
+ddadd75004 add 1234567890123456 6E-3   -> 1234567890123456  Inexact Rounded
+ddadd75005 add 1234567890123456 6E-4   -> 1234567890123456  Inexact Rounded
+ddadd75006 add 1234567890123456 6E-5   -> 1234567890123456  Inexact Rounded
+ddadd75007 add 1234567890123456 6E-6   -> 1234567890123456  Inexact Rounded
+ddadd75008 add 1234567890123456 6E-7   -> 1234567890123456  Inexact Rounded
+ddadd75009 add 1234567890123456 6E-8   -> 1234567890123456  Inexact Rounded
+ddadd75010 add 1234567890123456 6E-9   -> 1234567890123456  Inexact Rounded
+ddadd75011 add 1234567890123456 6E-10  -> 1234567890123456  Inexact Rounded
+ddadd75012 add 1234567890123456 6E-11  -> 1234567890123456  Inexact Rounded
+ddadd75013 add 1234567890123456 6E-12  -> 1234567890123456  Inexact Rounded
+ddadd75014 add 1234567890123456 6E-13  -> 1234567890123456  Inexact Rounded
+ddadd75015 add 1234567890123456 6E-14  -> 1234567890123456  Inexact Rounded
+ddadd75016 add 1234567890123456 6E-15  -> 1234567890123456  Inexact Rounded
+ddadd75017 add 1234567890123456 6E-16  -> 1234567890123456  Inexact Rounded
+ddadd75018 add 1234567890123456 6E-17  -> 1234567890123456  Inexact Rounded
+ddadd75019 add 1234567890123456 6E-18  -> 1234567890123456  Inexact Rounded
+ddadd75020 add 1234567890123456 6E-19  -> 1234567890123456  Inexact Rounded
+ddadd75021 add 1234567890123456 6E-20  -> 1234567890123456  Inexact Rounded
+
+-- widening second argument at gap
+ddadd75030 add 12345678 1                       -> 12345679
+ddadd75031 add 12345678 0.1                     -> 12345678.1
+ddadd75032 add 12345678 0.12                    -> 12345678.12
+ddadd75033 add 12345678 0.123                   -> 12345678.123
+ddadd75034 add 12345678 0.1234                  -> 12345678.1234
+ddadd75035 add 12345678 0.12345                 -> 12345678.12345
+ddadd75036 add 12345678 0.123456                -> 12345678.123456
+ddadd75037 add 12345678 0.1234567               -> 12345678.1234567
+ddadd75038 add 12345678 0.12345678              -> 12345678.12345678
+ddadd75039 add 12345678 0.123456789             -> 12345678.12345679 Inexact Rounded
+ddadd75040 add 12345678 0.123456785             -> 12345678.12345678 Inexact Rounded
+ddadd75041 add 12345678 0.1234567850            -> 12345678.12345678 Inexact Rounded
+ddadd75042 add 12345678 0.1234567851            -> 12345678.12345679 Inexact Rounded
+ddadd75043 add 12345678 0.12345678501           -> 12345678.12345679 Inexact Rounded
+ddadd75044 add 12345678 0.123456785001          -> 12345678.12345679 Inexact Rounded
+ddadd75045 add 12345678 0.1234567850001         -> 12345678.12345679 Inexact Rounded
+ddadd75046 add 12345678 0.12345678500001        -> 12345678.12345679 Inexact Rounded
+ddadd75047 add 12345678 0.123456785000001       -> 12345678.12345679 Inexact Rounded
+ddadd75048 add 12345678 0.1234567850000001      -> 12345678.12345679 Inexact Rounded
+ddadd75049 add 12345678 0.1234567850000000      -> 12345678.12345678 Inexact Rounded
+--                               90123456
+rounding: half_even
+ddadd75050 add 12345678 0.0234567750000000      -> 12345678.02345678 Inexact Rounded
+ddadd75051 add 12345678 0.0034567750000000      -> 12345678.00345678 Inexact Rounded
+ddadd75052 add 12345678 0.0004567750000000      -> 12345678.00045678 Inexact Rounded
+ddadd75053 add 12345678 0.0000567750000000      -> 12345678.00005678 Inexact Rounded
+ddadd75054 add 12345678 0.0000067750000000      -> 12345678.00000678 Inexact Rounded
+ddadd75055 add 12345678 0.0000007750000000      -> 12345678.00000078 Inexact Rounded
+ddadd75056 add 12345678 0.0000000750000000      -> 12345678.00000008 Inexact Rounded
+ddadd75057 add 12345678 0.0000000050000000      -> 12345678.00000000 Inexact Rounded
+ddadd75060 add 12345678 0.0234567750000001      -> 12345678.02345678 Inexact Rounded
+ddadd75061 add 12345678 0.0034567750000001      -> 12345678.00345678 Inexact Rounded
+ddadd75062 add 12345678 0.0004567750000001      -> 12345678.00045678 Inexact Rounded
+ddadd75063 add 12345678 0.0000567750000001      -> 12345678.00005678 Inexact Rounded
+ddadd75064 add 12345678 0.0000067750000001      -> 12345678.00000678 Inexact Rounded
+ddadd75065 add 12345678 0.0000007750000001      -> 12345678.00000078 Inexact Rounded
+ddadd75066 add 12345678 0.0000000750000001      -> 12345678.00000008 Inexact Rounded
+ddadd75067 add 12345678 0.0000000050000001      -> 12345678.00000001 Inexact Rounded
+-- far-out residues (full coefficient gap is 16+15 digits)
+rounding: up
+ddadd75070 add 12345678 1E-8                    -> 12345678.00000001
+ddadd75071 add 12345678 1E-9                    -> 12345678.00000001 Inexact Rounded
+ddadd75072 add 12345678 1E-10                   -> 12345678.00000001 Inexact Rounded
+ddadd75073 add 12345678 1E-11                   -> 12345678.00000001 Inexact Rounded
+ddadd75074 add 12345678 1E-12                   -> 12345678.00000001 Inexact Rounded
+ddadd75075 add 12345678 1E-13                   -> 12345678.00000001 Inexact Rounded
+ddadd75076 add 12345678 1E-14                   -> 12345678.00000001 Inexact Rounded
+ddadd75077 add 12345678 1E-15                   -> 12345678.00000001 Inexact Rounded
+ddadd75078 add 12345678 1E-16                   -> 12345678.00000001 Inexact Rounded
+ddadd75079 add 12345678 1E-17                   -> 12345678.00000001 Inexact Rounded
+ddadd75080 add 12345678 1E-18                   -> 12345678.00000001 Inexact Rounded
+ddadd75081 add 12345678 1E-19                   -> 12345678.00000001 Inexact Rounded
+ddadd75082 add 12345678 1E-20                   -> 12345678.00000001 Inexact Rounded
+ddadd75083 add 12345678 1E-25                   -> 12345678.00000001 Inexact Rounded
+ddadd75084 add 12345678 1E-30                   -> 12345678.00000001 Inexact Rounded
+ddadd75085 add 12345678 1E-31                   -> 12345678.00000001 Inexact Rounded
+ddadd75086 add 12345678 1E-32                   -> 12345678.00000001 Inexact Rounded
+ddadd75087 add 12345678 1E-33                   -> 12345678.00000001 Inexact Rounded
+ddadd75088 add 12345678 1E-34                   -> 12345678.00000001 Inexact Rounded
+ddadd75089 add 12345678 1E-35                   -> 12345678.00000001 Inexact Rounded
+
+-- Punit's
+ddadd75100 add 1.000 -200.000                   -> -199.000
+
+-- Rounding swathe
+rounding: half_even
+ddadd81100 add  .2300    12345678901234.00    ->  12345678901234.23  Rounded
+ddadd81101 add  .2301    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81102 add  .2310    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81103 add  .2350    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81104 add  .2351    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81105 add  .2450    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81106 add  .2451    12345678901234.00    ->  12345678901234.25  Inexact Rounded
+ddadd81107 add  .2360    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81108 add  .2370    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81109 add  .2399    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81120 add  9999999999999999E+369  9E+369  ->  Infinity Overflow  Inexact Rounded
+ddadd81121 add -9999999999999999E+369 -9E+369 -> -Infinity Overflow  Inexact Rounded
+
+rounding: half_up
+ddadd81200 add  .2300    12345678901234.00    ->  12345678901234.23  Rounded
+ddadd81201 add  .2301    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81202 add  .2310    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81203 add  .2350    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81204 add  .2351    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81205 add  .2450    12345678901234.00    ->  12345678901234.25  Inexact Rounded
+ddadd81206 add  .2451    12345678901234.00    ->  12345678901234.25  Inexact Rounded
+ddadd81207 add  .2360    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81208 add  .2370    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81209 add  .2399    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81220 add  9999999999999999E+369  9E+369 ->  Infinity Overflow  Inexact Rounded
+ddadd81221 add -9999999999999999E+369 -9E+369 -> -Infinity Overflow  Inexact Rounded
+
+rounding: half_down
+ddadd81300 add  .2300    12345678901234.00    ->  12345678901234.23  Rounded
+ddadd81301 add  .2301    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81302 add  .2310    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81303 add  .2350    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81304 add  .2351    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81305 add  .2450    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81306 add  .2451    12345678901234.00    ->  12345678901234.25  Inexact Rounded
+ddadd81307 add  .2360    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81308 add  .2370    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81309 add  .2399    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81320 add  9999999999999999E+369  9E+369 ->  Infinity Overflow  Inexact Rounded
+ddadd81321 add -9999999999999999E+369 -9E+369 -> -Infinity Overflow  Inexact Rounded
+
+rounding: up
+ddadd81400 add  .2300    12345678901234.00    ->  12345678901234.23  Rounded
+ddadd81401 add  .2301    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81402 add  .2310    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81403 add  .2350    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81404 add  .2351    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81405 add  .2450    12345678901234.00    ->  12345678901234.25  Inexact Rounded
+ddadd81406 add  .2451    12345678901234.00    ->  12345678901234.25  Inexact Rounded
+ddadd81407 add  .2360    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81408 add  .2370    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81409 add  .2399    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81411 add -.2399   -12345678901234.00    -> -12345678901234.24  Inexact Rounded
+ddadd81420 add  9999999999999999E+369  9E+369 ->  Infinity Overflow  Inexact Rounded
+ddadd81421 add -9999999999999999E+369 -9E+369 -> -Infinity Overflow  Inexact Rounded
+
+rounding: down
+ddadd81500 add  .2300    12345678901234.00    ->  12345678901234.23  Rounded
+ddadd81501 add  .2301    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81502 add  .2310    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81503 add  .2350    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81504 add  .2351    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81505 add  .2450    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81506 add  .2451    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81507 add  .2360    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81508 add  .2370    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81509 add  .2399    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81511 add -.2399   -12345678901234.00    -> -12345678901234.23  Inexact Rounded
+ddadd81520 add  9999999999999999E+369  9E+369 ->  9.999999999999999E+384 Overflow  Inexact Rounded
+ddadd81521 add -9999999999999999E+369 -9E+369 -> -9.999999999999999E+384 Overflow  Inexact Rounded
+
+rounding: ceiling
+ddadd81600 add  .2300    12345678901234.00    ->  12345678901234.23  Rounded
+ddadd81601 add  .2301    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81602 add  .2310    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81603 add  .2350    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81604 add  .2351    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81605 add  .2450    12345678901234.00    ->  12345678901234.25  Inexact Rounded
+ddadd81606 add  .2451    12345678901234.00    ->  12345678901234.25  Inexact Rounded
+ddadd81607 add  .2360    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81608 add  .2370    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81609 add  .2399    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81611 add -.2399   -12345678901234.00    -> -12345678901234.23  Inexact Rounded
+ddadd81620 add  9999999999999999E+369  9E+369 ->  Infinity Overflow  Inexact Rounded
+ddadd81621 add -9999999999999999E+369 -9E+369 -> -9.999999999999999E+384 Overflow  Inexact Rounded
+
+rounding: floor
+ddadd81700 add  .2300    12345678901234.00    ->  12345678901234.23  Rounded
+ddadd81701 add  .2301    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81702 add  .2310    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81703 add  .2350    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81704 add  .2351    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81705 add  .2450    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81706 add  .2451    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd81707 add  .2360    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81708 add  .2370    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81709 add  .2399    12345678901234.00    ->  12345678901234.23  Inexact Rounded
+ddadd81711 add -.2399   -12345678901234.00    -> -12345678901234.24  Inexact Rounded
+ddadd81720 add  9999999999999999E+369  9E+369 ->  9.999999999999999E+384 Overflow  Inexact Rounded
+ddadd81721 add -9999999999999999E+369 -9E+369 -> -Infinity Overflow  Inexact Rounded
+
+rounding: 05up
+ddadd81800 add  .2000    12345678901234.00    ->  12345678901234.20  Rounded
+ddadd81801 add  .2001    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81802 add  .2010    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81803 add  .2050    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81804 add  .2051    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81807 add  .2060    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81808 add  .2070    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81809 add  .2099    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81811 add -.2099   -12345678901234.00    -> -12345678901234.21  Inexact Rounded
+ddadd81820 add  9999999999999999E+369  9E+369 ->  9.999999999999999E+384 Overflow  Inexact Rounded
+ddadd81821 add -9999999999999999E+369 -9E+369 -> -9.999999999999999E+384 Overflow  Inexact Rounded
+
+ddadd81900 add  .2100    12345678901234.00    ->  12345678901234.21  Rounded
+ddadd81901 add  .2101    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81902 add  .2110    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81903 add  .2150    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81904 add  .2151    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81907 add  .2160    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81908 add  .2170    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81909 add  .2199    12345678901234.00    ->  12345678901234.21  Inexact Rounded
+ddadd81911 add -.2199   -12345678901234.00    -> -12345678901234.21  Inexact Rounded
+
+ddadd82000 add  .2400    12345678901234.00    ->  12345678901234.24  Rounded
+ddadd82001 add  .2401    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd82002 add  .2410    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd82003 add  .2450    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd82004 add  .2451    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd82007 add  .2460    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd82008 add  .2470    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd82009 add  .2499    12345678901234.00    ->  12345678901234.24  Inexact Rounded
+ddadd82011 add -.2499   -12345678901234.00    -> -12345678901234.24  Inexact Rounded
+
+ddadd82100 add  .2500    12345678901234.00    ->  12345678901234.25  Rounded
+ddadd82101 add  .2501    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82102 add  .2510    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82103 add  .2550    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82104 add  .2551    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82107 add  .2560    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82108 add  .2570    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82109 add  .2599    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82111 add -.2599   -12345678901234.00    -> -12345678901234.26  Inexact Rounded
+
+ddadd82200 add  .2600    12345678901234.00    ->  12345678901234.26  Rounded
+ddadd82201 add  .2601    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82202 add  .2610    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82203 add  .2650    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82204 add  .2651    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82207 add  .2660    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82208 add  .2670    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82209 add  .2699    12345678901234.00    ->  12345678901234.26  Inexact Rounded
+ddadd82211 add -.2699   -12345678901234.00    -> -12345678901234.26  Inexact Rounded
+
+ddadd82300 add  .2900    12345678901234.00    ->  12345678901234.29  Rounded
+ddadd82301 add  .2901    12345678901234.00    ->  12345678901234.29  Inexact Rounded
+ddadd82302 add  .2910    12345678901234.00    ->  12345678901234.29  Inexact Rounded
+ddadd82303 add  .2950    12345678901234.00    ->  12345678901234.29  Inexact Rounded
+ddadd82304 add  .2951    12345678901234.00    ->  12345678901234.29  Inexact Rounded
+ddadd82307 add  .2960    12345678901234.00    ->  12345678901234.29  Inexact Rounded
+ddadd82308 add  .2970    12345678901234.00    ->  12345678901234.29  Inexact Rounded
+ddadd82309 add  .2999    12345678901234.00    ->  12345678901234.29  Inexact Rounded
+ddadd82311 add -.2999   -12345678901234.00    -> -12345678901234.29  Inexact Rounded
+
+-- Null tests
+ddadd9990 add 10  # -> NaN Invalid_operation
+ddadd9991 add  # 10 -> NaN Invalid_operation
