@@ -34,7 +34,8 @@ def namedtuple(typename, field_names, verbose=False):
 
     """
 
-    # Parse and validate the field names
+    # Parse and validate the field names.  Validation serves two purposes,
+    # generating informative error messages and preventing template injection attacks.
     if isinstance(field_names, basestring):
         field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
     field_names = tuple(field_names)
