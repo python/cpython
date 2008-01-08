@@ -1060,6 +1060,10 @@ Extension Modules
 
 - Bug #1548092: fix curses.tparm seg fault on invalid input.
 
+- Patch #1114: fix curses module compilation on 64-bit AIX, & possibly
+  other 64-bit LP64 platforms where attr_t is not the same size as a long.  
+  (Contributed by Luke Mewburn.)
+
 - Bug #1550714: fix SystemError from itertools.tee on negative value for n.
 
 - Fixed a few bugs on cjkcodecs:
