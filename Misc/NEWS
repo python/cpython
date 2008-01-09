@@ -53,6 +53,11 @@ Core and builtins
 Library
 -------
 
+- Issue #1182: many arithmetic bugs in the decimal module have been
+  fixed, and the decimal module has been updated to comply with the
+  latest IBM Decimal Arithmetic specification (version 1.66) and
+  testsuite (version 2.57).  (Backported from Python 2.6a0.)
+
 - Patch #1637: fix urlparse for URLs like 'http://x.com?arg=/foo'.
 
 - Issue #1735: TarFile.extractall() now correctly sets directory permissions
