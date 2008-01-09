@@ -2055,6 +2055,16 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
 	Py_ssize_t buflen = 0;
 	PyObject *parent, *head, *next, *tail;
 
+	if (strchr(name, '/') != NULL
+#ifdef MS_WINDOWS
+	    || strchr(name, '\\') != NULL
+#endif
+		) {
+		PyErr_SetString(PyExc_ImportError,
+				"Import by filename is not supported.");
+		return NULL;
+	}
+
 	parent = get_parent(globals, buf, &buflen, level);
 	if (parent == NULL)
 		return NULL;

@@ -1,4 +1,4 @@
-﻿from test.test_support import TESTFN, run_unittest, catch_warning
+from test.test_support import TESTFN, run_unittest, catch_warning
 
 import unittest
 import os
@@ -222,6 +222,16 @@ class ImportTest(unittest.TestCase):
             # somewhere in sys.path...
             warnings.simplefilter('error', ImportWarning)
             self.assertRaises(ImportWarning, __import__, "site-packages")
+
+    def test_importbyfilename(self):
+        path = os.path.abspath(TESTFN)
+        try:
+            __import__(path)
+        except ImportError, err:
+            self.assertEqual("Import by filename is not supported.",
+                              err.args[0])
+        else:
+            self.fail("import by path didn't raise an exception")
 
 class PathsTests(unittest.TestCase):
     path = TESTFN
