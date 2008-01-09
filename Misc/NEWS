@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1776: __import__ must not accept filenames. Python 2.6 does no longer
+  support module loading by filename. It worked on some system by coincident
+  but it was never intended to work.
+
 - Patch #1668: renamed THREADDEBUG envvar to PYTHONTHREADDEBUG.
 
 - Patch #602345: Add -B command line option, PYTHONDONTWRITEBYTECODE envvar
