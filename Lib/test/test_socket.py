@@ -1133,7 +1133,7 @@ def isTipcAvailable():
         for line in f:
             if line.startswith("tipc "):
                 return True
-    if test_support.debug:
+    if test_support.verbose:
         print("TIPC module is not loaded, please 'sudo modprobe tipc'")
     return False
 

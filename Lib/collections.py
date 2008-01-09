@@ -34,7 +34,8 @@ def namedtuple(typename, field_names, verbose=False):
 
     """
 
-    # Parse and validate the field names
+    # Parse and validate the field names.  Validation serves two purposes,
+    # generating informative error messages and preventing template injection attacks.
     if isinstance(field_names, str):
         field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
     field_names = tuple(field_names)
@@ -129,7 +130,7 @@ if __name__ == '__main__':
         'Point class with optimized _make() and _replace() without error-checking'
         _make = classmethod(tuple.__new__)
         def _replace(self, _map=map, **kwds):
-            return self._make(_map(kwds.pop, ('x', 'y'), self))
+            return self._make(_map(kwds.get, ('x', 'y'), self))
 
     print(Point(11, 22)._replace(x=100))
 

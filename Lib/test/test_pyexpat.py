@@ -2,6 +2,7 @@
 # handler, are obscure and unhelpful.
 
 from io import BytesIO
+import sys
 import unittest
 
 import pyexpat
@@ -385,6 +386,130 @@ class sf1296433Test(unittest.TestCase):
 
         self.assertRaises(Exception, parser.Parse, xml)
 
+class ChardataBufferTest(unittest.TestCase):
+    """
+    test setting of chardata buffer size
+    """
+
+    def test_1025_bytes(self):
+        self.assertEquals(self.small_buffer_test(1025), 2)
+
+    def test_1000_bytes(self):
+        self.assertEquals(self.small_buffer_test(1000), 1)
+
+    def test_wrong_size(self):
+        parser = expat.ParserCreate()
+        parser.buffer_text = 1
+        def f(size):
+            parser.buffer_size = size
+
+        self.assertRaises(ValueError, f, -1)
+        self.assertRaises(ValueError, f, 0)
+
+    def test_unchanged_size(self):
+        xml1 = ("<?xml version='1.0' encoding='iso8859'?><s>%s" % ('a' * 512))
+        xml2 = 'a'*512 + '</s>'
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = self.counting_handler
+        parser.buffer_size = 512
+        parser.buffer_text = 1
+
+        # Feed 512 bytes of character data: the handler should be called
+        # once.
+        self.n = 0
+        parser.Parse(xml1)
+        self.assertEquals(self.n, 1)
+
+        # Reassign to buffer_size, but assign the same size.
+        parser.buffer_size = parser.buffer_size
+        self.assertEquals(self.n, 1)
+
+        # Try parsing rest of the document
+        parser.Parse(xml2)
+        self.assertEquals(self.n, 2)
+
+
+    def test_disabling_buffer(self):
+        xml1 = "<?xml version='1.0' encoding='iso8859'?><a>%s" % ('a' * 512)
+        xml2 = ('b' * 1024)
+        xml3 = "%s</a>" % ('c' * 1024)
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = self.counting_handler
+        parser.buffer_text = 1
+        parser.buffer_size = 1024
+        self.assertEquals(parser.buffer_size, 1024)
+
+        # Parse one chunk of XML
+        self.n = 0
+        parser.Parse(xml1, 0)
+        self.assertEquals(parser.buffer_size, 1024)
+        self.assertEquals(self.n, 1)
+
+        # Turn off buffering and parse the next chunk.
+        parser.buffer_text = 0
+        self.assertFalse(parser.buffer_text)
+        self.assertEquals(parser.buffer_size, 1024)
+        for i in range(10):
+            parser.Parse(xml2, 0)
+        self.assertEquals(self.n, 11)
+
+        parser.buffer_text = 1
+        self.assertTrue(parser.buffer_text)
+        self.assertEquals(parser.buffer_size, 1024)
+        parser.Parse(xml3, 1)
+        self.assertEquals(self.n, 12)
+
+
+
+    def make_document(self, bytes):
+        return ("<?xml version='1.0'?><tag>" + bytes * 'a' + '</tag>')
+
+    def counting_handler(self, text):
+        self.n += 1
+
+    def small_buffer_test(self, buffer_len):
+        xml = "<?xml version='1.0' encoding='iso8859'?><s>%s</s>" % ('a' * buffer_len)
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = self.counting_handler
+        parser.buffer_size = 1024
+        parser.buffer_text = 1
+
+        self.n = 0
+        parser.Parse(xml)
+        return self.n
+
+    def test_change_size_1(self):
+        xml1 = "<?xml version='1.0' encoding='iso8859'?><a><s>%s" % ('a' * 1024)
+        xml2 = "aaa</s><s>%s</s></a>" % ('a' * 1025)
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = self.counting_handler
+        parser.buffer_text = 1
+        parser.buffer_size = 1024
+        self.assertEquals(parser.buffer_size, 1024)
+
+        self.n = 0
+        parser.Parse(xml1, 0)
+        parser.buffer_size *= 2
+        self.assertEquals(parser.buffer_size, 2048)
+        parser.Parse(xml2, 1)
+        self.assertEquals(self.n, 2)
+
+    def test_change_size_2(self):
+        xml1 = "<?xml version='1.0' encoding='iso8859'?><a>a<s>%s" % ('a' * 1023)
+        xml2 = "aaa</s><s>%s</s></a>" % ('a' * 1025)
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = self.counting_handler
+        parser.buffer_text = 1
+        parser.buffer_size = 2048
+        self.assertEquals(parser.buffer_size, 2048)
+
+        self.n=0
+        parser.Parse(xml1, 0)
+        parser.buffer_size = parser.buffer_size // 2
+        self.assertEquals(parser.buffer_size, 1024)
+        parser.Parse(xml2, 1)
+        self.assertEquals(self.n, 4)
+
 
 def test_main():
     run_unittest(SetAttributeTest,
@@ -394,7 +519,8 @@ def test_main():
                  BufferTextTest,
                  HandlerExceptionTest,
                  PositionTest,
-                 sf1296433Test)
+                 sf1296433Test,
+                 ChardataBufferTest)
 
 if __name__ == "__main__":
     test_main()

@@ -397,8 +397,8 @@ they add the ability to access fields by name instead of position index.
    method which lists the tuple contents in a ``name=value`` format.
 
    The *fieldnames* are a single string with each fieldname separated by whitespace
-   and/or commas (for example 'x y' or 'x, y').  Alternatively, the *fieldnames*
-   can be specified with a sequence of strings (such as ['x', 'y']).
+   and/or commas (for example 'x y' or 'x, y').  Alternatively, *fieldnames*
+   can be a sequence of strings (such as ['x', 'y']).
 
    Any valid Python identifier may be used for a fieldname except for names
    starting with an underscore.  Valid identifiers consist of letters, digits,
@@ -477,7 +477,8 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
        print emp.name, emp.title
 
 In addition to the methods inherited from tuples, named tuples support
-three additional methods and one attribute.
+three additional methods and one attribute.  To prevent conflicts with
+field names, the method and attribute names start with an underscore.
 
 .. method:: somenamedtuple._make(iterable)
 
@@ -513,7 +514,7 @@ three additional methods and one attribute.
 
 .. attribute:: somenamedtuple._fields
 
-   Tuple of strings listing the field names.  This is useful for introspection
+   Tuple of strings listing the field names.  Useful for introspection
    and for creating new named tuple types from existing named tuples.
 
 ::
@@ -532,7 +533,7 @@ function::
     >>> getattr(p, 'x')
     11
 
-When casting a dictionary to a named tuple, use the double-star-operator [#]_::
+To cast a dictionary to a named tuple, use the double-star-operator [#]_::
 
    >>> d = {'x': 11, 'y': 22}
    >>> Point(**d)
@@ -557,14 +558,20 @@ a fixed-width print format::
     Point: x= 1.286 y= 6.000 hypot= 6.136
 
 Another use for subclassing is to replace performance critcal methods with
-faster versions that bypass error-checking and localize variable access::
+faster versions that bypass error-checking and that localize variable access::
 
     >>> class Point(namedtuple('Point', 'x y')):
         _make = classmethod(tuple.__new__)
         def _replace(self, _map=map, **kwds):
-            return self._make(_map(kwds.pop, ('x', 'y'), self))
+            return self._make(_map(kwds.get, ('x', 'y'), self))
 
-Default values can be implemented by using :meth:`_replace`:: to
+
+Subclassing is not useful for adding new, stored fields.  Instead, simply
+create a new named tuple type from the :attr:`_fields` attribute::
+
+    >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
+
+Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance::
 
     >>> Account = namedtuple('Account', 'owner balance transaction_count')

@@ -131,6 +131,16 @@ This module offers the following functions:
    +-------+--------------------------------------------+
 
 
+.. function:: ExpandEnvironmentStrings(unicode)
+
+   Expands environment strings %NAME% in unicode string like const:`REG_EXPAND_SZ`::
+
+      >>> ExpandEnvironmentStrings(u"%windir%")
+      u"C:\\Windows"
+
+   .. versionadded:: 2.6
+
+
 .. function:: FlushKey(key)
 
    Writes all the attributes of a key to the registry.
@@ -415,4 +425,17 @@ handle, and also disconnect the Windows handle from the handle object.
    After calling this function, the handle is effectively invalidated, but the
    handle is not closed.  You would call this function when  you need the
    underlying Win32 handle to exist beyond the lifetime  of the handle object.
+
+.. method:: PyHKEY.__enter__()
+            PyHKEY.__exit__(\*exc_info)
+
+   The HKEY object implements :meth:`__enter__` and :meth:`__exit__` and thus
+   supports the context protocol for the :keyword:`with` statement::
+
+      with OpenKey(HKEY_LOCAL_MACHINE, "foo") as key:
+          # ... work with key ...
+
+   will automatically close *key* when control leaves the :keyword:`with` block.
+
+   .. versionadded:: 2.6
 
