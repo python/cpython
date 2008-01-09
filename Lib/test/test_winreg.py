@@ -73,26 +73,26 @@ class WinregTests(unittest.TestCase):
 
         key = OpenKey(root_key, test_key_name)
         # Read the sub-keys
-        sub_key = OpenKey(key, subkeystr)
-        # Check I can enumerate over the values.
-        index = 0
-        while 1:
-            try:
-                data = EnumValue(sub_key, index)
-            except EnvironmentError:
-                break
-            self.assertEquals(data in test_data, True,
-                              "Didn't read back the correct test data")
-            index = index + 1
-        self.assertEquals(index, len(test_data),
-                          "Didn't read the correct number of items")
-        # Check I can directly access each item
-        for value_name, value_data, value_type in test_data:
-            read_val, read_typ = QueryValueEx(sub_key, value_name)
-            self.assertEquals(read_val, value_data,
-                              "Could not directly read the value")
-            self.assertEquals(read_typ, value_type,
-                              "Could not directly read the value")
+        with OpenKey(key, "sub_key") as sub_key:
+            # Check I can enumerate over the values.
+            index = 0
+            while 1:
+                try:
+                    data = EnumValue(sub_key, index)
+                except EnvironmentError:
+                    break
+                self.assertEquals(data in test_data, True,
+                                  "Didn't read back the correct test data")
+                index = index + 1
+            self.assertEquals(index, len(test_data),
+                              "Didn't read the correct number of items")
+            # Check I can directly access each item
+            for value_name, value_data, value_type in test_data:
+                read_val, read_typ = QueryValueEx(sub_key, value_name)
+                self.assertEquals(read_val, value_data,
+                                  "Could not directly read the value")
+                self.assertEquals(read_typ, value_type,
+                                  "Could not directly read the value")
         sub_key.Close()
         # Enumerate our main key.
         read_val = EnumKey(key, 0)
@@ -154,6 +154,11 @@ class WinregTests(unittest.TestCase):
             return # remote machine name not specified
         remote_key = ConnectRegistry(self.remote_name, HKEY_CURRENT_USER)
         self.TestAll(remote_key)
+
+    def testExpandEnvironmentStrings(self):
+        r = ExpandEnvironmentStrings("%windir%\\test")
+        self.assertEqual(type(r), str)
+        self.assertEqual(r, os.environ["windir"] + "\\test")
 
 def test_main():
     test_support.run_unittest(WinregTests)

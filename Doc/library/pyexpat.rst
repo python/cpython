@@ -177,8 +177,13 @@ XMLParser Objects
 
 .. attribute:: xmlparser.buffer_size
 
-   The size of the buffer used when :attr:`buffer_text` is true.  This value cannot
-   be changed at this time.
+   The size of the buffer used when :attr:`buffer_text` is true.  
+   A new buffer size can be set by assigning a new integer value 
+   to this attribute.  
+   When the size is changed, the buffer will be flushed.
+
+   .. versionchanged:: 2.6
+      The buffer size can now be changed.
 
 
 .. attribute:: xmlparser.buffer_text

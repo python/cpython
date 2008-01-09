@@ -188,16 +188,17 @@ of your Python installation directory).  This suppresses the terminal window on
 startup.
 
 You can also make all ``.py`` scripts execute with :program:`pythonw.exe`,
-setting this through the usual facilites, for example (names might differ,
-depending on your version of Windows):
+setting this through the usual facilites, for example (might require
+administrative rights):
 
-#. Open the context menu of a :file:`{*}.py` file.
-#. Click :menuselection:`Open with...`.
-#. Choose the interpreter of your choice (utilize :guilabel:`Other...` or
-   :guilabel:`Choose Program...` if it is not in the list of default programs).
-#. Check :guilabel:`Always open files with this program`.
-#. Click :guilabel:`OK`.
+#. Launch a command prompt.
+#. Associate the correct file group with ``.py`` scripts::
+   
+      assoc .py=Python.File
 
+#. Redirect all Python files to the new executable::
+   
+      ftype Python.File=C:\Path\to\pythonw.exe "%1" %*
 
 
 Additional modules
