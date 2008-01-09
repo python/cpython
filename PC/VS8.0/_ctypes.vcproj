@@ -643,6 +643,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						CommandLine="ml64 /nologo /c /Fo &quot;$(IntDir)\win64.obj&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="$(IntDir)\win64.obj"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
