@@ -670,25 +670,30 @@ PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
   int num = -1;
   short color;
   attr_t attr = A_NORMAL;
+  long lattr;
   int use_xy = FALSE;
 
   switch (PyTuple_Size(args)) {
   case 1:
-    if (!PyArg_ParseTuple(args,"l;attr", &attr))
+    if (!PyArg_ParseTuple(args,"l;attr", &lattr))
       return NULL;
+    attr = lattr;
     break;
   case 2:
-    if (!PyArg_ParseTuple(args,"il;n,attr", &num, &attr))
+    if (!PyArg_ParseTuple(args,"il;n,attr", &num, &lattr))
       return NULL;
+    attr = lattr;
     break;
   case 3:
-    if (!PyArg_ParseTuple(args,"iil;int,int,attr", &y, &x, &attr))
+    if (!PyArg_ParseTuple(args,"iil;int,int,attr", &y, &x, &lattr))
       return NULL;
+    attr = lattr;
     use_xy = TRUE;
     break;
   case 4:
-    if (!PyArg_ParseTuple(args,"iiil;int,int,n,attr", &y, &x, &num, &attr))
+    if (!PyArg_ParseTuple(args,"iiil;int,int,n,attr", &y, &x, &num, &lattr))
       return NULL;
+    attr = lattr;
     use_xy = TRUE;
     break;
   default:
