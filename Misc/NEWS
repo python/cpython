@@ -947,8 +947,8 @@ Library
 Extension Modules
 -----------------
 
-- _winreg's HKEY object have gained __enter__ and __exit__ functions to support he
-  context manager protocol. The _winreg module also got a new function
+- _winreg's HKEY object has gained __enter__ and __exit__ methods to support
+  the context manager protocol.  The _winreg module also gained a new function
   ``ExpandEnvironmentStrings`` to expand REG_EXPAND_SZ keys.
 
 - Issue #1646: Make socket support TIPC. The socket module now has support
