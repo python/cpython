@@ -494,7 +494,7 @@ field names, the method and attribute names start with an underscore.
       >>> Color = namedtuple('Color', 'red green blue')
       >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
       >>> Pixel(11, 22, 128, 255, 0)
-      Pixel(x=11, y=22, red=128, green=255, blue=0)'
+      Pixel(x=11, y=22, red=128, green=255, blue=0)
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
 function::
