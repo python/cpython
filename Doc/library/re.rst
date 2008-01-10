@@ -98,7 +98,9 @@ The special characters are:
    string, and in :const:`MULTILINE` mode also matches before a newline.  ``foo``
    matches both 'foo' and 'foobar', while the regular expression ``foo$`` matches
    only 'foo'.  More interestingly, searching for ``foo.$`` in ``'foo1\nfoo2\n'``
-   matches 'foo2' normally, but 'foo1' in :const:`MULTILINE` mode.
+   matches 'foo2' normally, but 'foo1' in :const:`MULTILINE` mode; searching for
+   a single ``$`` in ``'foo\n'`` will find two (empty) matches: one just before
+   the newline, and one at the end of the string.
 
 ``'*'``
    Causes the resulting RE to match 0 or more repetitions of the preceding RE, as
