@@ -474,7 +474,7 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
    cursor = conn.cursor()
    cursor.execute('SELECT name, age, title, department, paygrade FROM employees')
    for emp in map(EmployeeRecord._make, cursor.fetchall()):
-       print emp.name, emp.title
+       print(emp.name, emp.title)
 
 In addition to the methods inherited from tuples, named tuples support
 three additional methods and one attribute.  To prevent conflicts with
@@ -551,7 +551,7 @@ a fixed-width print format::
     ...         return 'Point: x=%6.3f y=%6.3f hypot=%6.3f' % (self.x, self.y, self.hypot)
 
     >>> for p in Point(3,4), Point(14,5), Point(9./7,6):
-    ...     print p
+    ...     print(p)
 
     Point: x= 3.000 y= 4.000 hypot= 5.000
     Point: x=14.000 y= 5.000 hypot=14.866
