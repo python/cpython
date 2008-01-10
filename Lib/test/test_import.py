@@ -221,6 +221,16 @@ class ImportTest(unittest.TestCase):
                 del sys.modules[TESTFN]
 
 
+    def test_importbyfilename(self):
+        path = os.path.abspath(TESTFN)
+        try:
+            __import__(path)
+        except ImportError as err:
+            self.assertEqual("Import by filename is not supported.",
+                              err.args[0])
+        else:
+            self.fail("import by path didn't raise an exception")
+
 class PathsTests(unittest.TestCase):
     SAMPLES = ('test', 'test\u00e4\u00f6\u00fc\u00df', 'test\u00e9\u00e8',
                'test\u00b0\u00b3\u00b2')
