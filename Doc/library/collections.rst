@@ -538,7 +538,7 @@ faster versions that bypass error-checking and that localize variable access::
 Subclassing is not useful for adding new, stored fields.  Instead, simply
 create a new named tuple type from the :attr:`_fields` attribute::
 
-    >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
+    >>> Point3D = namedtuple('Point3D', Point._fields + ('z',))
 
 Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance::
