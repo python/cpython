@@ -117,7 +117,7 @@ _tkinter
     Build with build_tkinter.py
     ---------------------------
     The PCbuild directory contains a Python script which automates all
-    steps. Run the script in a Visual Studio 2009 command prompt with 
+    steps. Run the script in a Visual Studio 2008 command prompt with 
 
       python build_tkinter.py Win32
 
@@ -312,9 +312,11 @@ Edition.
 Profile Guided Optimization
 ---------------------------
 
-The solution has two configurations for PGO. The PGInstrument configuration
-must be build first. The PGInstrument binaries are lniked against a profiling
-library and contain extra debug information. The PGUpdate configuration takes the profiling data and generates optimized binaries.
+The solution has two configurations for PGO. The PGInstrument
+configuration must be build first. The PGInstrument binaries are
+lniked against a profiling library and contain extra debug
+information. The PGUpdate configuration takes the profiling data and
+generates optimized binaries.
 
 The build_pgo.bat script automates the creation of optimized binaries. It
 creates the PGI files, runs the unit test suite or PyBench with the PGI
