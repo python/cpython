@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_ctypes"
 	ProjectGUID="{0E9791DB-593A-465F-98BC-681011311618}"
 	RootNamespace="_ctypes"
@@ -643,6 +643,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						CommandLine="ml64 /nologo /c /Fo &quot;$(IntDir)\win64.obj&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="$(IntDir)\win64.obj"
 					/>
 				</FileConfiguration>
 				<FileConfiguration

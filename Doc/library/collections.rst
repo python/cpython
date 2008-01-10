@@ -510,7 +510,7 @@ field names, the method and attribute names start with an underscore.
       Point(x=33, y=22)
 
       >>> for partnum, record in inventory.items():
-              inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
+      ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
 .. attribute:: somenamedtuple._fields
 
@@ -525,7 +525,7 @@ field names, the method and attribute names start with an underscore.
       >>> Color = namedtuple('Color', 'red green blue')
       >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
       >>> Pixel(11, 22, 128, 255, 0)
-      Pixel(x=11, y=22, red=128, green=255, blue=0)'
+      Pixel(x=11, y=22, red=128, green=255, blue=0)
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
 function::
@@ -544,14 +544,14 @@ functionality with a subclass.  Here is how to add a calculated field and
 a fixed-width print format::
 
     >>> class Point(namedtuple('Point', 'x y')):
-        @property
-        def hypot(self):
-            return (self.x ** 2 + self.y ** 2) ** 0.5
-        def __str__(self):
-            return 'Point: x=%6.3f y=%6.3f hypot=%6.3f' % (self.x, self.y, self.hypot)
+    ...     @property
+    ...     def hypot(self):
+    ...         return (self.x ** 2 + self.y ** 2) ** 0.5
+    ...     def __str__(self):
+    ...         return 'Point: x=%6.3f y=%6.3f hypot=%6.3f' % (self.x, self.y, self.hypot)
 
     >>> for p in Point(3,4), Point(14,5), Point(9./7,6):
-            print p
+    ...     print p
 
     Point: x= 3.000 y= 4.000 hypot= 5.000
     Point: x=14.000 y= 5.000 hypot=14.866
@@ -560,7 +560,7 @@ a fixed-width print format::
 Another use for subclassing is to replace performance critcal methods with
 faster versions that bypass error-checking and that localize variable access::
 
-    >>> class Point(namedtuple('Point', 'x y')):
+    class Point(namedtuple('Point', 'x y')):
         _make = classmethod(tuple.__new__)
         def _replace(self, _map=map, **kwds):
             return self._make(_map(kwds.get, ('x', 'y'), self))

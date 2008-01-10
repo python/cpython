@@ -1,50 +1,43 @@
 @rem Fetches (and builds if necessary) external dependencies
-setlocal
 
-@rem need this so that 'devenv' is found
-call "%VS71COMNTOOLS%vsvars32.bat"
-@rem set the build environment
-call "%MSSdk%\SetEnv" /XP64 /RETAIL
+@REM XXX FIXME - building for x64 disabled for now.
 
 @rem Assume we start inside the Python source directory
-for %%i in (.) do set CWD=%%~fi
 cd ..
-
-@rem sqlite
-if not exist sqlite-source-3.3.4 (
-   svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
-   if exist %CWD%\PCbuild\sqlite3.dll del %CWD%\PCbuild\sqlite3.dll
-)
-if not exist %CWD%\PCbuild\sqlite3.dll (
-   cd sqlite-source-3.3.4\amd64
-   cl ..\*.c
-   link /def:..\sqlite3.def  /dll *.obj /out:sqlite3.dll bufferoverflowU.lib
-   cd ..\..
-   copy sqlite-source-3.3.4\amd64\sqlite3.dll %CWD%\PCbuild
-)
+call "%VS90COMNTOOLS%vsvars32.bat"
 
 @rem bzip
 if not exist bzip2-1.0.3 svn export http://svn.python.org/projects/external/bzip2-1.0.3
-if not exist bzip2-1.0.3\libbz2.lib (
-   cd bzip2-1.0.3
-   nmake /f makefile.msc CFLAGS="-DWIN32 -MD -Ox -D_FILE_OFFSET_BITS=64 -nologo /GS-"
-   cd ..
-)
 
 @rem Sleepycat db
 if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4.20
-if not exist "db-4.4.20\build_win32\Release_AMD64\libdb44s.lib" (
-   cd db-4.4.20\build_win32
-   devenv Berkeley_DB.sln /build "Release AMD64" /project db_static /useenv
-   cd ..\..
-)
+@REM if not exist db-4.4.20\build_win32\debug\libdb44sd.lib (
+@REM    vcbuild db-4.4.20\build_win32\Berkeley_DB.sln /build Debug /project db_static
+@REM )
 
 @rem OpenSSL
-if not exist openssl-0.9.8a svn export http://svn.python.org/projects/external/openssl-0.9.8a
+if not exist openssl-0.9.8g (
+  if exist openssl-0.9.8a rd /s/q openssl-0.9.8a
+  svn export http://svn.python.org/projects/external/openssl-0.9.8g
+)
 
 @rem tcltk
-if not exist tcl8.4.12 (
+if not exist tcl8.4.16 (
    if exist tcltk rd /s/q tcltk
-   svn export http://svn.python.org/projects/external/tcl8.4.12
-   svn export http://svn.python.org/projects/external/tk8.4.12
+   if exist tcl8.4.12 rd /s/q tcl8.4.12
+   if exist tk8.4.12 rd /s/q tk8.4.12
+   svn export http://svn.python.org/projects/external/tcl8.4.16
+   svn export http://svn.python.org/projects/external/tk8.4.16
+@REM    cd tcl8.4.16\win
+@REM    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500
+@REM    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 INSTALLDIR=..\..\tcltk install
+@REM    cd ..\..
+@REM    cd tk8.4.16\win
+@REM    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 TCLDIR=..\..\tcl8.4.16
+@REM    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 TCLDIR=..\..\tcl8.4.16 INSTALLDIR=..\..\tcltk install
+@REM    cd ..\..
 )
+
+@rem sqlite
+if not exist sqlite-source-3.3.4 svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
+@REM if not exist build\PCbuild\sqlite3.dll copy sqlite-source-3.3.4\sqlite3.dll build\PCbuild
