@@ -123,7 +123,7 @@ if __name__ == '__main__':
         def hypot(self):
             return (self.x ** 2 + self.y ** 2) ** 0.5
         def __str__(self):
-            return 'Point: x=%6.3f y=%6.3f hypot=%6.3f' % (self.x, self.y, self.hypot)
+            return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
 
     for p in Point(3, 4), Point(14, 5/7.):
         print p

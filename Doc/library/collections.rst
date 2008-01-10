@@ -364,8 +364,8 @@ they add the ability to access fields by name instead of position index.
    method which lists the tuple contents in a ``name=value`` format.
 
    The *fieldnames* are a single string with each fieldname separated by whitespace
-   and/or commas (for example 'x y' or 'x, y').  Alternatively, *fieldnames*
-   can be a sequence of strings (such as ['x', 'y']).
+   and/or commas, for example ``'x y'`` or ``'x, y'``.  Alternatively, *fieldnames*
+   can be a sequence of strings such as ``['x', 'y']``.
 
    Any valid Python identifier may be used for a fieldname except for names
    starting with an underscore.  Valid identifiers consist of letters, digits,
@@ -373,7 +373,7 @@ they add the ability to access fields by name instead of position index.
    a :mod:`keyword` such as *class*, *for*, *return*, *global*, *pass*, *print*,
    or *raise*.
 
-   If *verbose* is true, will print the class definition.
+   If *verbose* is true, the class definition is printed just before being built.
 
    Named tuple instances do not have per-instance dictionaries, so they are
    lightweight and require no more memory than regular tuples.
@@ -518,16 +518,16 @@ a fixed-width print format::
     ...     def hypot(self):
     ...         return (self.x ** 2 + self.y ** 2) ** 0.5
     ...     def __str__(self):
-    ...         return 'Point: x=%6.3f y=%6.3f hypot=%6.3f' % (self.x, self.y, self.hypot)
+    ...         return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
 
     >>> for p in Point(3, 4), Point(14, 5/7.):
     ...     print p
 
-    Point: x= 3.000 y= 4.000 hypot= 5.000
-    Point: x=14.000 y= 0.714 hypot=14.018
+    Point: x= 3.000  y= 4.000  hypot= 5.000
+    Point: x=14.000  y= 0.714  hypot=14.018
 
 Another use for subclassing is to replace performance critcal methods with
-faster versions that bypass error-checking and that localize variable access::
+faster versions that bypass error-checking::
 
     class Point(namedtuple('Point', 'x y')):
         __slots__ = ()
