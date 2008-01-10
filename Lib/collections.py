@@ -137,6 +137,9 @@ if __name__ == '__main__':
 
     print Point(11, 22)._replace(x=100)
 
+    Point3D = namedtuple('Point3D', Point._fields + ('z',))
+    print Point3D.__doc__
+
     import doctest
     TestResults = namedtuple('TestResults', 'failed attempted')
     print TestResults(*doctest.testmod())
