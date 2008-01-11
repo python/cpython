@@ -2950,12 +2950,8 @@ object_format(PyObject *self, PyObject *args)
         PyObject *result = NULL;
         PyObject *format_meth = NULL;
 
-        if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+        if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
                 return NULL;
-        if (!PyUnicode_Check(format_spec)) {
-                PyErr_SetString(PyExc_TypeError, "Unicode object required");
-                return NULL;
-        }
 
         self_as_str = PyObject_Str(self);
         if (self_as_str != NULL) {

@@ -558,6 +558,10 @@ class BuiltinTest(unittest.TestCase):
         # TypeError because self.__format__ returns the wrong type
         self.assertRaises(TypeError, format, B(), "")
 
+        # TypeError because format_spec is not unicode
+        self.assertRaises(TypeError, format, object(), 4)
+        self.assertRaises(TypeError, format, object(), object())
+
         # make sure we can take a subclass of str as a format spec
         self.assertEqual(format(0, C('10')), '         0')
 
