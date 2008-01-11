@@ -351,6 +351,9 @@ Core and builtins
 Library
 -------
 
+- Decimal.as_tuple(), difflib.find_longest_match() and inspect functions
+  that returned a tuple now return a named tuple.
+
 - Doctest now returns results as a named tuple for readability:  
       (0, 7) --> TestResults(failed=0, attempted=7)
 
