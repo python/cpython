@@ -1,4 +1,4 @@
-import unittest
+import unittest, doctest
 from test import test_support
 from collections import namedtuple
 from collections import Hashable, Iterable, Iterator
@@ -304,10 +304,12 @@ class TestCollectionABCs(unittest.TestCase):
             self.failUnless(issubclass(sample, MutableSequence))
         self.failIf(issubclass(basestring, MutableSequence))
 
+import doctest, collections
+NamedTupleDocs = doctest.DocTestSuite(module=collections)
 
 def test_main(verbose=None):
     import collections as CollectionsModule
-    test_classes = [TestNamedTuple, TestOneTrickPonyABCs, TestCollectionABCs]
+    test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs, TestCollectionABCs]
     test_support.run_unittest(*test_classes)
     test_support.run_doctest(CollectionsModule, verbose)
 
