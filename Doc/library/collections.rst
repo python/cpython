@@ -502,7 +502,7 @@ function::
     >>> getattr(p, 'x')
     11
 
-To cast a dictionary to a named tuple, use the double-star-operator [#]_::
+To convert a dictionary to a named tuple, use the double-star-operator [#]_::
 
    >>> d = {'x': 11, 'y': 22}
    >>> Point(**d)
