@@ -120,12 +120,11 @@ between conformable Python objects and XML on the wire.
 .. seealso::
 
    `XML-RPC HOWTO <http://www.tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
-      A good description of XML operation and client software in several languages.
+      A good description of XML-RPC operation and client software in several languages.
       Contains pretty much everything an XML-RPC client developer needs to know.
 
-   `XML-RPC Hacks page <http://xmlrpc-c.sourceforge.net/hacks.php>`_
-      Extensions for various open-source libraries to support introspection and
-      multicall.
+   `XML-RPC Introspection <http://xmlrpc-c.sourceforge.net/introspection.html>`_
+      Describes the XML-RPC protocol extension for introspection.
 
 
 .. _serverproxy-objects:
@@ -176,11 +175,6 @@ grouped under the reserved :attr:`system` member:
    server.  It returns a documentation string describing the use of that method. If
    no such string is available, an empty string is returned. The documentation
    string may contain HTML markup.
-
-Introspection methods are currently supported by servers written in PHP, C and
-Microsoft .NET. Partial introspection support is included in recent updates to
-UserLand Frontier. Introspection support for Perl, Python and Java is available
-at the `XML-RPC Hacks <http://xmlrpc-c.sourceforge.net/hacks.php>`_ page.
 
 
 .. _boolean-objects:
