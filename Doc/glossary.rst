@@ -327,6 +327,13 @@ Glossary
    mutable
       Mutable objects can change their value but keep their :func:`id`.  See
       also :term:`immutable`.
+
+   named tuple
+      A tuple subclass whose elements also are accessible as attributes via
+      fixed names (the class name and field names are indicated in the
+      individual documentation of a named tuple type, like ``TestResults(failed,
+      attempted)``).  Named tuple classes are created by
+      :func:`collections.namedtuple`.
     
    namespace
       The place where a variable is stored.  Namespaces are implemented as

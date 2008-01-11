@@ -328,7 +328,11 @@ also have a number of specialized methods:
 
 .. method:: Decimal.as_tuple()
 
-   Return a tuple representation of the number: ``(sign, digit_tuple, exponent)``.
+   Return a :term:`named tuple` representation of the number:
+   ``DecimalTuple(sign, digits, exponent)``.
+
+   .. versionchanged:: 2.6
+      Use a named tuple.
 
 
 .. method:: Decimal.canonical()

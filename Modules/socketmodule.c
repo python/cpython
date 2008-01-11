@@ -4097,7 +4097,7 @@ See the socket module for documentation.");
 PyMODINIT_FUNC
 init_socket(void)
 {
-	PyObject *m, *has_ipv6, *tmp;
+	PyObject *m, *has_ipv6;
 
 	if (!os_init())
 		return;
@@ -4354,7 +4354,10 @@ init_socket(void)
 	/* for subscriptions */
 	PyModule_AddIntConstant(m, "TIPC_SUB_PORTS", TIPC_SUB_PORTS);
 	PyModule_AddIntConstant(m, "TIPC_SUB_SERVICE", TIPC_SUB_SERVICE);
+#ifdef TIPC_SUB_CANCEL
+	/* doesn't seem to be available everywhere */
 	PyModule_AddIntConstant(m, "TIPC_SUB_CANCEL", TIPC_SUB_CANCEL);
+#endif
 	PyModule_AddIntConstant(m, "TIPC_WAIT_FOREVER", TIPC_WAIT_FOREVER);
 	PyModule_AddIntConstant(m, "TIPC_PUBLISHED", TIPC_PUBLISHED);
 	PyModule_AddIntConstant(m, "TIPC_WITHDRAWN", TIPC_WITHDRAWN);

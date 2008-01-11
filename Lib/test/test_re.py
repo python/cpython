@@ -661,6 +661,18 @@ class ReTests(unittest.TestCase):
         q = p.match(upper_char)
         self.assertNotEqual(q, None)
 
+    def test_dollar_matches_twice(self):
+        "$ matches the end of string, and just before the terminating \n"
+        pattern = re.compile('$')
+        self.assertEqual(pattern.sub('#', 'a\nb\n'), 'a\nb#\n#')
+        self.assertEqual(pattern.sub('#', 'a\nb\nc'), 'a\nb\nc#')
+        self.assertEqual(pattern.sub('#', '\n'), '#\n#')
+
+        pattern = re.compile('$', re.MULTILINE)
+        self.assertEqual(pattern.sub('#', 'a\nb\n' ), 'a#\nb#\n#' )
+        self.assertEqual(pattern.sub('#', 'a\nb\nc'), 'a#\nb#\nc#')
+        self.assertEqual(pattern.sub('#', '\n'), '#\n#')
+
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
