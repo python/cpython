@@ -123,5 +123,11 @@ class CFuncPtrTestCase(unittest.TestCase):
         self.failUnlessEqual(strtok(None, "\n"), "c")
         self.failUnlessEqual(strtok(None, "\n"), None)
 
+    def test_NULL_funcptr(self):
+        tp = CFUNCTYPE(c_int)
+        func = tp() # NULL function pointer
+        # raise a ValueError when we try to call it
+        self.assertRaises(ValueError, func)
+
 if __name__ == '__main__':
     unittest.main()
