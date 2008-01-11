@@ -12,6 +12,8 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Prevent a segfault when a ctypes NULL function pointer is called.
+
 - Bug #1517: Possible segfault in lookup().
 
 - Issue #1638: %zd configure test fails on Linux.
