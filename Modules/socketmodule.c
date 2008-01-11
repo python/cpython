@@ -4591,7 +4591,7 @@ init_socket(void)
 	/* for subscriptions */
 	PyModule_AddIntConstant(m, "TIPC_SUB_PORTS", TIPC_SUB_PORTS);
 	PyModule_AddIntConstant(m, "TIPC_SUB_SERVICE", TIPC_SUB_SERVICE);
-	PyModule_AddIntConstant(m, "TIPC_SUB_CANCEL", TIPC_SUB_CANCEL);
+     /* PyModule_AddIntConstant(m, "TIPC_SUB_CANCEL", TIPC_SUB_CANCEL); XXX This var is missing on gcc (GCC) 4.1.1 (Gentoo 4.1.1) and it breaks the build */
 	PyModule_AddIntConstant(m, "TIPC_WAIT_FOREVER", TIPC_WAIT_FOREVER);
 	PyModule_AddIntConstant(m, "TIPC_PUBLISHED", TIPC_PUBLISHED);
 	PyModule_AddIntConstant(m, "TIPC_WITHDRAWN", TIPC_WITHDRAWN);
