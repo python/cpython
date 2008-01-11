@@ -982,7 +982,8 @@ get_sourcefile(const char *file)
 	}
 
 	len = strlen(file);
-	if (len > MAXPATHLEN || PyOS_stricmp(&file[len-4], ".pyc") != 0) {
+        /* match '*.py?' */
+	if (len > MAXPATHLEN || PyOS_strnicmp(&file[len-4], ".py", 3) != 0) {
 		return PyUnicode_DecodeFSDefault(file);
 	}
 

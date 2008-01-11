@@ -213,7 +213,8 @@ class ImportTest(unittest.TestCase):
             os.remove(source)
             del sys.modules[TESTFN]
             mod = __import__(TESTFN)
-            self.failUnless(mod.__file__.endswith('.pyc'))
+            ext = mod.__file__[-4:]
+            self.failUnless(ext in ('.pyc', '.pyo'), ext)
         finally:
             sys.path.pop(0)
             remove_files(TESTFN)
