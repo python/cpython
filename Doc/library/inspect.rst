@@ -188,7 +188,8 @@ attributes:
 
 .. function:: getmoduleinfo(path)
 
-   Return a tuple of values that describe how Python will interpret the file
+   Returns a :term:`named tuple` ``ModuleInfo(name, suffix, mode,
+   module_type)`` of values that describe how Python will interpret the file
    identified by *path* if it is a module, or ``None`` if it would not be
    identified as a module.  The return tuple is ``(name, suffix, mode, mtype)``,
    where *name* is the name of the module without the name of any enclosing
@@ -377,8 +378,9 @@ Classes and functions
 
 .. function:: getargspec(func)
 
-   Get the names and default values of a function's arguments. A tuple of four
-   things is returned: ``(args, varargs, varkw, defaults)``. *args* is a list of
+   Get the names and default values of a function's arguments. A 
+   :term:`named tuple` ``ArgSpec(args, varargs, keywords,
+   defaults)`` is returned. *args* is a list of
    the argument names. *varargs* and *varkw* are the names of the ``*`` and
    ``**`` arguments or ``None``. *defaults* is a tuple of default argument
    values or None if there are no default arguments; if this tuple has *n*
@@ -391,10 +393,10 @@ Classes and functions
 
 .. function:: getfullargspec(func)
 
-   Get the names and default values of a function's arguments.  A tuple of seven
-   things is returned:
+   Get the names and default values of a function's arguments.  A :term:`named tuple`
+   is returned:
 
-   ``(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations)``
+   ``FullArgSpec(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations)``
 
    *args* is a list of the argument names.  *varargs* and *varkw* are the names
    of the ``*`` and ``**`` arguments or ``None``.  *defaults* is an n-tuple of
@@ -408,8 +410,8 @@ Classes and functions
 
 .. function:: getargvalues(frame)
 
-   Get information about arguments passed into a particular frame. A tuple of four
-   things is returned: ``(args, varargs, varkw, locals)``. *args* is a list of the
+   Get information about arguments passed into a particular frame. A :term:`named tuple` 
+   ``ArgInfo(args, varargs, keywords, locals)`` is returned. *args* is a list of the
    argument names (it may contain nested lists). *varargs* and *varkw* are the
    names of the ``*`` and ``**`` arguments or ``None``. *locals* is the locals
    dictionary of the given frame.
@@ -476,8 +478,8 @@ line.
 
 .. function:: getframeinfo(frame[, context])
 
-   Get information about a frame or traceback object.  A 5-tuple is returned, the
-   last five elements of the frame's frame record.
+   Get information about a frame or traceback object.  A :term:`named tuple` 
+   ``Traceback(filename, lineno, function, code_context, index)`` is returned.
 
 
 .. function:: getouterframes(frame[, context])

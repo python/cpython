@@ -40,7 +40,7 @@ class PyclbrTest(TestCase):
         if key in ignore: return
         if key not in obj:
             print("***",key, file=sys.stderr)
-        self.failUnless(key in obj)
+        self.failUnless(key in obj, "%r in %r" % (key, obj))
 
     def assertEqualsOrIgnored(self, a, b, ignore):
         ''' succeed iff a == b or a in ignore or b in ignore '''
@@ -140,9 +140,9 @@ class PyclbrTest(TestCase):
 
     def test_easy(self):
         self.checkModule('pyclbr')
-        self.checkModule('doctest')
+        self.checkModule('doctest', ignore=("TestResults",))
         self.checkModule('rfc822')
-        self.checkModule('difflib')
+        self.checkModule('difflib', ignore=("Match",))
 
     def test_decorators(self):
         # XXX: See comment in pyclbr_input.py for a test that would fail
