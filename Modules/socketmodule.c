@@ -4334,7 +4334,7 @@ See the socket module for documentation.");
 PyMODINIT_FUNC
 init_socket(void)
 {
-	PyObject *m, *has_ipv6, *tmp;
+	PyObject *m, *has_ipv6;
 
 	if (!os_init())
 		return;
