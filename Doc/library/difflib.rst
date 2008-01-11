@@ -344,7 +344,7 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
 
    Find longest matching block in ``a[alo:ahi]`` and ``b[blo:bhi]``.
 
-   If *isjunk* was omitted or ``None``, :meth:`get_longest_match` returns ``(i, j,
+   If *isjunk* was omitted or ``None``, :meth:`find_longest_match` returns ``(i, j,
    k)`` such that ``a[i:i+k]`` is equal to ``b[j:j+k]``, where ``alo <= i <= i+k <=
    ahi`` and ``blo <= j <= j+k <= bhi``. For all ``(i', j', k')`` meeting those
    conditions, the additional conditions ``k >= k'``, ``i <= i'``, and if ``i ==
@@ -372,6 +372,9 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
       (1, 0, 4)
 
    If no blocks match, this returns ``(alo, blo, 0)``.
+
+   .. versionchanged:: 2.6
+      This method returns a :term:`named tuple` ``Match(a, b, size)``.
 
 
 .. method:: SequenceMatcher.get_matching_blocks()

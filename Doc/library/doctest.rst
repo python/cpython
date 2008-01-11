@@ -1506,10 +1506,13 @@ DocTestRunner objects
 .. method:: DocTestRunner.summarize([verbose])
 
    Print a summary of all the test cases that have been run by this DocTestRunner,
-   and return a tuple ``(failure_count, test_count)``.
+   and return a :term:`named tuple` ``TestResults(failed, attempted)``.
 
    The optional *verbose* argument controls how detailed the summary is.  If the
    verbosity is not specified, then the :class:`DocTestRunner`'s verbosity is used.
+
+   .. versionchanged:: 2.6
+      Use a named tuple.
 
 
 .. _doctest-outputchecker:

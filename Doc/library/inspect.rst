@@ -214,6 +214,10 @@ Note:
    defined in the :mod:`imp` module; see the documentation for that module for
    more information on module types.
 
+   .. versionchanged:: 2.6
+      Returns a :term:`named tuple` ``ModuleInfo(name, suffix, mode,
+      module_type)``.
+
 
 .. function:: getmodulename(path)
 
@@ -405,6 +409,10 @@ Classes and functions
    default argument values or None if there are no default arguments; if this tuple
    has *n* elements, they correspond to the last *n* elements listed in *args*.
 
+   .. versionchanged:: 2.6
+      Returns a :term:`named tuple` ``ArgSpec(args, varargs, keywords,
+      defaults)``.
+
 
 .. function:: getargvalues(frame)
 
@@ -413,6 +421,10 @@ Classes and functions
    argument names (it may contain nested lists). *varargs* and *varkw* are the
    names of the ``*`` and ``**`` arguments or ``None``. *locals* is the locals
    dictionary of the given frame.
+
+   .. versionchanged:: 2.6
+      Returns a :term:`named tuple` ``ArgInfo(args, varargs, keywords,
+      locals)``.
 
 
 .. function:: formatargspec(args[, varargs, varkw, defaults, formatarg, formatvarargs, formatvarkw, formatvalue, join])
@@ -478,6 +490,10 @@ line.
 
    Get information about a frame or traceback object.  A 5-tuple is returned, the
    last five elements of the frame's frame record.
+
+   .. versionchanged:: 2.6
+      Returns a :term:`named tuple` ``Traceback(filename, lineno, function,
+      code_context, index)``.
 
 
 .. function:: getouterframes(frame[, context])
