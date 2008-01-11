@@ -658,7 +658,7 @@ given DocTest case in a given namespace (globs).  It returns a tuple
 of tried tests.
 
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 3)
+    TestResults(failed=0, attempted=3)
 
 If any example produces incorrect output, then the test runner reports
 the failure and proceeds to the next example:
@@ -695,7 +695,7 @@ the failure and proceeds to the next example:
     Expecting:
         6
     ok
-    (1, 3)
+    TestResults(failed=1, attempted=3)
 """
     def verbose_flag(): r"""
 The `verbose` flag makes the test runner generate more detailed
@@ -726,7 +726,7 @@ output:
     Expecting:
         6
     ok
-    (0, 3)
+    TestResults(failed=0, attempted=3)
 
 If the `verbose` flag is unspecified, then the output will be verbose
 iff `-v` appears in sys.argv:
@@ -737,7 +737,7 @@ iff `-v` appears in sys.argv:
     >>> # If -v does not appear in sys.argv, then output isn't verbose.
     >>> sys.argv = ['test']
     >>> doctest.DocTestRunner().run(test)
-    (0, 3)
+    TestResults(failed=0, attempted=3)
 
     >>> # If -v does appear in sys.argv, then output is verbose.
     >>> sys.argv = ['test', '-v']
@@ -756,7 +756,7 @@ iff `-v` appears in sys.argv:
     Expecting:
         6
     ok
-    (0, 3)
+    TestResults(failed=0, attempted=3)
 
     >>> # Restore sys.argv
     >>> sys.argv = old_argv
@@ -780,7 +780,7 @@ replaced with any other string:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 2)
+    TestResults(failed=0, attempted=2)
 
 An example may not generate output before it raises an exception; if
 it does, then the traceback message will not be recognized as
@@ -805,7 +805,7 @@ unexpected exception:
     Exception raised:
         ...
         ZeroDivisionError: integer division or modulo by zero
-    (1, 2)
+    TestResults(failed=1, attempted=2)
 
 Exception messages may contain newlines:
 
@@ -819,7 +819,7 @@ Exception messages may contain newlines:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 1)
+    TestResults(failed=0, attempted=1)
 
 If an exception is expected, but an exception with the wrong type or
 message is raised, then it is reported as a failure:
@@ -844,7 +844,7 @@ message is raised, then it is reported as a failure:
         Traceback (most recent call last):
         ...
         ValueError: message
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
 However, IGNORE_EXCEPTION_DETAIL can be used to allow a mismatch in the
 detail:
@@ -857,7 +857,7 @@ detail:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 1)
+    TestResults(failed=0, attempted=1)
 
 But IGNORE_EXCEPTION_DETAIL does not allow a mismatch in the exception type:
 
@@ -881,7 +881,7 @@ But IGNORE_EXCEPTION_DETAIL does not allow a mismatch in the exception type:
         Traceback (most recent call last):
         ...
         ValueError: message
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
 If an exception is raised but not expected, then it is reported as an
 unexpected exception:
@@ -902,7 +902,7 @@ unexpected exception:
         Traceback (most recent call last):
         ...
         ZeroDivisionError: integer division or modulo by zero
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 """
     def optionflags(): r"""
 Tests of `DocTestRunner`'s option flag handling.
@@ -921,7 +921,7 @@ and 1/0:
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 1)
+    TestResults(failed=0, attempted=1)
 
     >>> # With the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -936,7 +936,7 @@ and 1/0:
         1
     Got:
         True
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
 The DONT_ACCEPT_BLANKLINE flag disables the match between blank lines
 and the '<BLANKLINE>' marker:
@@ -947,7 +947,7 @@ and the '<BLANKLINE>' marker:
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 1)
+    TestResults(failed=0, attempted=1)
 
     >>> # With the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -966,7 +966,7 @@ and the '<BLANKLINE>' marker:
         a
     <BLANKLINE>
         b
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
 The NORMALIZE_WHITESPACE flag causes all sequences of whitespace to be
 treated as equal:
@@ -987,13 +987,13 @@ treated as equal:
          3
     Got:
         1 2 3
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
     >>> # With the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> flags = doctest.NORMALIZE_WHITESPACE
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
-    (0, 1)
+    TestResults(failed=0, attempted=1)
 
     An example from the docs:
     >>> print range(20) #doctest: +NORMALIZE_WHITESPACE
@@ -1018,13 +1018,13 @@ output to match any substring in the actual output:
         [0, 1, 2, ..., 14]
     Got:
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
     >>> # With the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> flags = doctest.ELLIPSIS
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
-    (0, 1)
+    TestResults(failed=0, attempted=1)
 
     ... also matches nothing:
 
@@ -1105,7 +1105,7 @@ and actual outputs to be displayed using a unified diff:
         e
         f
         g
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
     >>> # With the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -1127,7 +1127,7 @@ and actual outputs to be displayed using a unified diff:
          f
          g
         -h
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
 The REPORT_CDIFF flag causes failures that involve multi-line expected
 and actual outputs to be displayed using a context diff:
@@ -1159,7 +1159,7 @@ and actual outputs to be displayed using a context diff:
         + e
           f
           g
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
 
 The REPORT_NDIFF flag causes failures to use the difflib.Differ algorithm
@@ -1184,7 +1184,7 @@ marking, as well as interline differences.
         ?                       ^
         + a b  c d e f g h i   j k l m
         ?     +              ++    ^
-    (1, 1)
+    TestResults(failed=1, attempted=1)
 
 The REPORT_ONLY_FIRST_FAILURE supresses result output after the first
 failing example:
@@ -1214,7 +1214,7 @@ failing example:
         200
     Got:
         2
-    (3, 5)
+    TestResults(failed=3, attempted=5)
 
 However, output from `report_start` is not supressed:
 
@@ -1237,7 +1237,7 @@ However, output from `report_start` is not supressed:
         200
     Got:
         2
-    (3, 5)
+    TestResults(failed=3, attempted=5)
 
 For the purposes of REPORT_ONLY_FIRST_FAILURE, unexpected exceptions
 count as failures:
@@ -1266,7 +1266,7 @@ count as failures:
     Exception raised:
         ...
         ValueError: 2
-    (3, 5)
+    TestResults(failed=3, attempted=5)
 
 New option flags can also be registered, via register_optionflag().  Here
 we reach into doctest's internals a bit.
@@ -1315,7 +1315,7 @@ example with a comment of the form ``# doctest: +OPTION``:
         [0, 1, ..., 9]
     Got:
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    (1, 2)
+    TestResults(failed=1, attempted=2)
 
 To turn an option off for an example, follow that example with a
 comment of the form ``# doctest: -OPTION``:
@@ -1340,7 +1340,7 @@ comment of the form ``# doctest: -OPTION``:
         [0, 1, ..., 9]
     Got:
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    (1, 2)
+    TestResults(failed=1, attempted=2)
 
 Option directives affect only the example that they appear with; they
 do not change the options for surrounding examples:
@@ -1374,7 +1374,7 @@ do not change the options for surrounding examples:
         [0, 1, ..., 9]
     Got:
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    (2, 3)
+    TestResults(failed=2, attempted=3)
 
 Multiple options may be modified by a single option directive.  They
 may be separated by whitespace, commas, or both:
@@ -1397,7 +1397,7 @@ may be separated by whitespace, commas, or both:
         [0, 1,  ...,   9]
     Got:
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    (1, 2)
+    TestResults(failed=1, attempted=2)
 
     >>> def f(x): r'''
     ...     >>> print range(10)       # Should fail
@@ -1417,7 +1417,7 @@ may be separated by whitespace, commas, or both:
         [0, 1,  ...,   9]
     Got:
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    (1, 2)
+    TestResults(failed=1, attempted=2)
 
     >>> def f(x): r'''
     ...     >>> print range(10)       # Should fail
@@ -1437,7 +1437,7 @@ may be separated by whitespace, commas, or both:
         [0, 1,  ...,   9]
     Got:
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    (1, 2)
+    TestResults(failed=1, attempted=2)
 
 The option directive may be put on the line following the source, as
 long as a continuation prompt is used:
@@ -1449,7 +1449,7 @@ long as a continuation prompt is used:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 1)
+    TestResults(failed=0, attempted=1)
 
 For examples with multi-line source, the option directive may appear
 at the end of any line:
@@ -1465,7 +1465,7 @@ at the end of any line:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 2)
+    TestResults(failed=0, attempted=2)
 
 If more than one line of an example with multi-line source has an
 option directive, then they are combined:
@@ -1478,7 +1478,7 @@ option directive, then they are combined:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 1)
+    TestResults(failed=0, attempted=1)
 
 It is an error to have a comment of the form ``# doctest:`` that is
 *not* followed by words of the form ``+OPTION`` or ``-OPTION``, where
@@ -1613,7 +1613,7 @@ def test_pdb_set_trace():
       (Pdb) print x
       42
       (Pdb) continue
-      (0, 2)
+      TestResults(failed=0, attempted=2)
 
       You can also put pdb.set_trace in a function called from a test:
 
@@ -1649,7 +1649,7 @@ def test_pdb_set_trace():
       (Pdb) print x
       1
       (Pdb) continue
-      (0, 2)
+      TestResults(failed=0, attempted=2)
 
     During interactive debugging, source code is shown, even for
     doctest examples:
@@ -1706,7 +1706,7 @@ def test_pdb_set_trace():
       Expected nothing
       Got:
           9
-      (1, 3)
+      TestResults(failed=1, attempted=3)
       """
 
 def test_pdb_set_trace_nested():
@@ -1791,7 +1791,7 @@ def test_pdb_set_trace_nested():
     (Pdb) print foo
     *** NameError: name 'foo' is not defined
     (Pdb) continue
-    (0, 2)
+    TestResults(failed=0, attempted=2)
 """
 
 def test_DocTestSuite():
@@ -2152,7 +2152,7 @@ calling module.  The return value is (#failures, #tests).
     1 items had failures:
        1 of   2 in test_doctest.txt
     ***Test Failed*** 1 failures.
-    (1, 2)
+    TestResults(failed=1, attempted=2)
     >>> doctest.master = None  # Reset master.
 
 (Note: we'll be clearing doctest.master after each call to
@@ -2163,7 +2163,7 @@ Globals may be specified with the `globs` and `extraglobs` parameters:
 
     >>> globs = {'favorite_color': 'blue'}
     >>> doctest.testfile('test_doctest.txt', globs=globs)
-    (0, 2)
+    TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
 
     >>> extraglobs = {'favorite_color': 'red'}
@@ -2181,7 +2181,7 @@ Globals may be specified with the `globs` and `extraglobs` parameters:
     1 items had failures:
        1 of   2 in test_doctest.txt
     ***Test Failed*** 1 failures.
-    (1, 2)
+    TestResults(failed=1, attempted=2)
     >>> doctest.master = None  # Reset master.
 
 The file may be made relative to a given module or package, using the
@@ -2189,7 +2189,7 @@ optional `module_relative` parameter:
 
     >>> doctest.testfile('test_doctest.txt', globs=globs,
     ...                  module_relative='test')
-    (0, 2)
+    TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
 
 Verbosity can be increased with the optional `verbose` paremter:
@@ -2215,7 +2215,7 @@ Verbosity can be increased with the optional `verbose` paremter:
     2 tests in 1 items.
     2 passed and 0 failed.
     Test passed.
-    (0, 2)
+    TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
 
 The name of the test may be specified with the optional `name`
@@ -2226,7 +2226,7 @@ parameter:
     **********************************************************************
     File "...", line 6, in newname
     ...
-    (1, 2)
+    TestResults(failed=1, attempted=2)
     >>> doctest.master = None  # Reset master.
 
 The summary report may be supressed with the optional `report`
@@ -2241,7 +2241,7 @@ parameter:
     Exception raised:
         ...
         NameError: name 'favorite_color' is not defined
-    (1, 2)
+    TestResults(failed=1, attempted=2)
     >>> doctest.master = None  # Reset master.
 
 The optional keyword argument `raise_on_error` can be used to raise an
@@ -2273,11 +2273,11 @@ using the optional keyword argument `encoding`:
     1 items had failures:
        2 of   4 in test_doctest4.txt
     ***Test Failed*** 2 failures.
-    (2, 4)
+    TestResults(failed=2, attempted=4)
     >>> doctest.master = None  # Reset master.
 
     >>> doctest.testfile('test_doctest4.txt', encoding='utf-8')
-    (0, 4)
+    TestResults(failed=0, attempted=4)
     >>> doctest.master = None  # Reset master.
 """
 
@@ -2307,15 +2307,15 @@ Expected:
     42
 Got:
     84
-(1, 2)
+TestResults(failed=1, attempted=2)
 >>> t.runstring(">>> x = x * 2\n>>> print x\n84\n", 'example2')
-(0, 2)
+TestResults(failed=0, attempted=2)
 >>> t.summarize()
 **********************************************************************
 1 items had failures:
    1 of   2 in XYZ
 ***Test Failed*** 1 failures.
-(1, 4)
+TestResults(failed=1, attempted=4)
 >>> t.summarize(verbose=1)
 1 items passed all tests:
    2 tests in example2
@@ -2325,7 +2325,7 @@ Got:
 4 tests in 2 items.
 3 passed and 1 failed.
 ***Test Failed*** 1 failures.
-(1, 4)
+TestResults(failed=1, attempted=4)
 """
 
 def old_test2(): r"""
@@ -2349,7 +2349,7 @@ def old_test2(): r"""
             3
         ok
         0 of 2 examples failed in string Example
-        (0, 2)
+        TestResults(failed=0, attempted=2)
 """
 
 def old_test3(): r"""
@@ -2362,7 +2362,7 @@ def old_test3(): r"""
         ...     return 32
         ...
         >>> t.rundoc(_f)  # expect 0 failures in 1 example
-        (0, 1)
+        TestResults(failed=0, attempted=1)
 """
 
 def old_test4(): """
@@ -2392,19 +2392,19 @@ def old_test4(): """
         >>> from doctest import Tester
         >>> t = Tester(globs={}, verbose=0)
         >>> t.rundict(m1.__dict__, "rundict_test", m1)  # f2 and g2 and h2 skipped
-        (0, 4)
+        TestResults(failed=0, attempted=4)
 
         Once more, not excluding stuff outside m1:
 
         >>> t = Tester(globs={}, verbose=0)
         >>> t.rundict(m1.__dict__, "rundict_test_pvt")  # None are skipped.
-        (0, 8)
+        TestResults(failed=0, attempted=8)
 
         The exclusion of objects from outside the designated module is
         meant to be invoked automagically by testmod.
 
         >>> doctest.testmod(m1, verbose=False)
-        (0, 4)
+        TestResults(failed=0, attempted=4)
 """
 
 ######################################################################

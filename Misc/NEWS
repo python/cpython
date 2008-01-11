@@ -351,6 +351,9 @@ Core and builtins
 Library
 -------
 
+- Doctest now returns results as a named tuple for readability:  
+      (0, 7) --> TestResults(failed=0, attempted=7)
+
 - Issue #846388. re.match is interruptible now, which is particularly
   good for long regular expression matches.
 
