@@ -562,6 +562,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, format, object(), 4)
         self.assertRaises(TypeError, format, object(), object())
 
+        # first argument to object.__format__ must be string
+        self.assertRaises(TypeError, object().__format__, 3)
+        self.assertRaises(TypeError, object().__format__, object())
+        self.assertRaises(TypeError, object().__format__, None)
+
         # make sure we can take a subclass of str as a format spec
         self.assertEqual(format(0, C('10')), '         0')
 
