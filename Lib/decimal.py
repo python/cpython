@@ -136,6 +136,12 @@ __all__ = [
 
 import copy as _copy
 
+try:
+    from collections import namedtuple as _namedtuple
+    DecimalTuple = _namedtuple('DecimalTuple', 'sign digits exponent')
+except ImportError:
+    DecimalTuple = lambda *args: args
+
 # Rounding
 ROUND_DOWN = 'ROUND_DOWN'
 ROUND_HALF_UP = 'ROUND_HALF_UP'
@@ -820,7 +826,7 @@ class Decimal(object):
 
         To show the internals exactly as they are.
         """
-        return (self._sign, tuple(map(int, self._int)), self._exp)
+        return DecimalTuple(self._sign, tuple(map(int, self._int)), self._exp)
 
     def __repr__(self):
         """Represents the number as an instance of Decimal."""
