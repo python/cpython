@@ -523,6 +523,8 @@ class Decimal(object):
         Decimal("314")
         >>> Decimal(Decimal(314))        # another decimal instance
         Decimal("314")
+        >>> Decimal('  3.14  \\n')        # leading and trailing whitespace okay
+        Decimal("3.14")
         """
 
         # Note that the coefficient, self._int, is actually stored as
@@ -538,7 +540,7 @@ class Decimal(object):
         # From a string
         # REs insist on real strings, so we can too.
         if isinstance(value, basestring):
-            m = _parser(value)
+            m = _parser(value.strip())
             if m is None:
                 if context is None:
                     context = getcontext()
@@ -3533,7 +3535,16 @@ class Context(object):
         return rounding
 
     def create_decimal(self, num='0'):
-        """Creates a new Decimal instance but using self as context."""
+        """Creates a new Decimal instance but using self as context.
+
+        This method implements the to-number operation of the
+        IBM Decimal specification."""
+
+        if isinstance(num, basestring) and num != num.strip():
+            return self._raise_error(ConversionSyntax,
+                                     "no trailing or leading whitespace is "
+                                     "permitted.")
+
         d = Decimal(num, context=self)
         if d._isnan() and len(d._int) > self.prec - self._clamp:
             return self._raise_error(ConversionSyntax,
@@ -5148,7 +5159,7 @@ _parser = re.compile(r"""     # A numeric string consists of:
         (?P<diag>\d*)         # with (possibly empty) diagnostic information.
     )
 #    \s*
-    $
+    \Z
 """, re.VERBOSE | re.IGNORECASE).match
 
 _all_zeros = re.compile('0*$').match
