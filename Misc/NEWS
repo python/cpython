@@ -351,6 +351,10 @@ Core and builtins
 Library
 -------
 
+- Issue #1780: The Decimal constructor now accepts arbitrary leading
+  and trailing whitespace when constructing from a string.
+  Context.create_decimal no longer accepts trailing newlines.
+
 - Decimal.as_tuple(), difflib.find_longest_match() and inspect functions
   that returned a tuple now return a named tuple.
 
