@@ -1,4 +1,3 @@
-
 :mod:`os` --- Miscellaneous operating system interfaces
 =======================================================
 
@@ -6,54 +5,33 @@
    :synopsis: Miscellaneous operating system interfaces.
 
 
-This module provides a more portable way of using operating system dependent
-functionality than importing an operating system dependent built-in module like
-:mod:`posix` or :mod:`nt`. If you just want to read or write a file see
-:func:`open`, if you want to manipulate paths, see the :mod:`os.path`
-module, and if you want to read all the lines in all the files on the
-command line see the :mod:`fileinput` module. For creating temporary
-files and directories see the :mod:`tempfile` module, and for high-level
-file and directory handling see the :mod:`shutil` module.
+This module provides a portable way of using operating system dependent
+functionality.  If you just want to read or write a file see :func:`open`, if
+you want to manipulate paths, see the :mod:`os.path` module, and if you want to
+read all the lines in all the files on the command line see the :mod:`fileinput`
+module.  For creating temporary files and directories see the :mod:`tempfile`
+module, and for high-level file and directory handling see the :mod:`shutil`
+module.
 
-This module searches for an operating system dependent built-in module like
-:mod:`mac` or :mod:`posix` and exports the same functions and data as found
-there.  The design of all built-in operating system dependent modules of Python
-is such that as long as the same functionality is available, it uses the same
-interface; for example, the function ``os.stat(path)`` returns stat information
-about *path* in the same format (which happens to have originated with the POSIX
+The design of all built-in operating system dependent modules of Python is such
+that as long as the same functionality is available, it uses the same interface;
+for example, the function ``os.stat(path)`` returns stat information about
+*path* in the same format (which happens to have originated with the POSIX
 interface).
 
 Extensions peculiar to a particular operating system are also available through
 the :mod:`os` module, but using them is of course a threat to portability!
 
-Note that after the first time :mod:`os` is imported, there is *no* performance
-penalty in using functions from :mod:`os` instead of directly from the operating
-system dependent built-in module, so there should be *no* reason not to use
-:mod:`os`!
+.. note::
 
-The :mod:`os` module contains many functions and data values. The items below
-and in the following sub-sections are all available directly from the :mod:`os`
-module.
+   All functions in this module raise :exc:`OSError` in the case of invalid or
+   inaccessible file names and paths, or other arguments that have the correct
+   type, but are not accepted by the operating system.
 
 
 .. exception:: error
 
-   .. index:: module: errno
-
-   This exception is raised when a function returns a system-related error (not for
-   illegal argument types or other incidental errors). This is also known as the
-   built-in exception :exc:`OSError`.  The accompanying value is a pair containing
-   the numeric error code from :cdata:`errno` and the corresponding string, as
-   would be printed by the C function :cfunc:`perror`.  See the module
-   :mod:`errno`, which contains names for the error codes defined by the underlying
-   operating system.
-
-   When exceptions are classes, this exception carries two attributes,
-   :attr:`errno` and :attr:`strerror`.  The first holds the value of the C
-   :cdata:`errno` variable, and the latter holds the corresponding error message
-   from :cfunc:`strerror`.  For exceptions that involve a file system path (such as
-   :func:`chdir` or :func:`unlink`), the exception instance will contain a third
-   attribute, :attr:`filename`, which is the file name passed to the function.
+   An alias for the built-in :exc:`OSError` exception.
 
 
 .. data:: name
@@ -747,7 +725,6 @@ platforms.  For descriptions of their availability and use, consult
 
 Files and Directories
 ---------------------
-
 
 .. function:: access(path, mode)
 
@@ -2032,8 +2009,8 @@ Miscellaneous System Information
 
 .. function:: getloadavg()
 
-   Return the number of processes in the system run queue averaged over the last 1,
-   5, and 15 minutes or raises :exc:`OSError` if the load  average was
+   Return the number of processes in the system run queue averaged over the last
+   1, 5, and 15 minutes or raises :exc:`OSError` if the load average was
    unobtainable.
 
    .. versionadded:: 2.3
