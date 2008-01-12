@@ -276,9 +276,10 @@ Decimal objects
 
    Construct a new :class:`Decimal` object based from *value*.
 
-   *value* can be an integer, string, tuple, or another :class:`Decimal` object. If
-   no *value* is given, returns ``Decimal("0")``.  If *value* is a string, it
-   should conform to the decimal numeric string syntax::
+   *value* can be an integer, string, tuple, or another :class:`Decimal`
+   object. If no *value* is given, returns ``Decimal("0")``.  If *value* is a
+   string, it should conform to the decimal numeric string syntax after leading
+   and trailing whitespace characters are removed::
 
       sign           ::=  '+' | '-'
       digit          ::=  '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
@@ -307,6 +308,10 @@ Decimal objects
    :const:`NaN`.
 
    Once constructed, :class:`Decimal` objects are immutable.
+
+   .. versionchanged:: 2.6
+      leading and trailing whitespace characters are permitted when
+      creating a Decimal instance from a string.
 
 Decimal floating point objects share many properties with the other built-in
 numeric types such as :class:`float` and :class:`int`.  All of the usual math
@@ -925,6 +930,9 @@ method.  For example, ``C.exp(x)`` is equivalent to
       >>> Decimal("3.4445") + Decimal(0) + Decimal("1.0023")
       Decimal("4.44")
 
+   This method implements the to-number operation of the IBM
+   specification.  If the argument is a string, no leading or trailing
+   whitespace is permitted.
 
 .. method:: Context.Etiny()
 

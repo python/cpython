@@ -429,6 +429,10 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         #just not a number
         self.assertEqual(str(Decimal('ugly')), 'NaN')
 
+        #leading and trailing whitespace permitted
+        self.assertEqual(str(Decimal('1.3E4 \n')), '1.3E+4')
+        self.assertEqual(str(Decimal('  -7.89')), '-7.89')
+
     def test_explicit_from_tuples(self):
 
         #zero
@@ -517,6 +521,10 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertEqual(str(d), '456789')
         d = nc.create_decimal('456789')
         self.assertEqual(str(d), '4.57E+5')
+        # leading and trailing whitespace should result in a NaN;
+        # spaces are already checked in Cowlishaw's test-suite, so
+        # here we just check that a trailing newline results in a NaN
+        self.assertEqual(str(nc.create_decimal('3.14\n')), 'NaN')
 
         # from tuples
         d = Decimal( (1, (4, 3, 4, 9, 1, 3, 5, 3, 4), -25) )

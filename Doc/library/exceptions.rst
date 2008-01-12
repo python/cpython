@@ -207,9 +207,19 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: OSError
 
-   This class is derived from :exc:`EnvironmentError` and is used primarily as the
-   :mod:`os` module's ``os.error`` exception. See :exc:`EnvironmentError` above for
-   a description of the possible associated values.
+   .. index:: module: errno
+
+   This exception is derived from :exc:`EnvironmentError`.  It is raised when a
+   function returns a system-related error (not for illegal argument types or
+   other incidental errors).  The :attr:`errno` attribute is a numeric error
+   code from :cdata:`errno`, and the :attr:`strerror` attribute is the
+   corresponding string, as would be printed by the C function :cfunc:`perror`.
+   See the module :mod:`errno`, which contains names for the error codes defined
+   by the underlying operating system.
+
+   For exceptions that involve a file system path (such as :func:`chdir` or
+   :func:`unlink`), the exception instance will contain a third attribute,
+   :attr:`filename`, which is the file name passed to the function.
 
 
 .. exception:: OverflowError
