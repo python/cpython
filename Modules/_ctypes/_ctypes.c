@@ -2882,7 +2882,7 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	    && (PyLong_Check(PyTuple_GET_ITEM(args, 0)))) {
 		CDataObject *ob;
 		void *ptr = PyLong_AsVoidPtr(PyTuple_GET_ITEM(args, 0));
-		if (ptr == NULL)
+		if (ptr == NULL && PyErr_Occurred())
 			return NULL;
 		ob = (CDataObject *)GenericCData_new(type, args, kwds);
 		if (ob == NULL)
@@ -3291,6 +3291,11 @@ CFuncPtr_call(CFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 
 
 	pProc = *(void **)self->b_ptr;
+	if (pProc == NULL) {
+		PyErr_SetString(PyExc_ValueError,
+				"attempt to call NULL function pointer");
+		return NULL;
+	}
 #ifdef MS_WIN32
 	if (self->index) {
 		/* It's a COM method */

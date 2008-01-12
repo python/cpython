@@ -506,10 +506,10 @@ the more significant byte last.
    Works as ``BUILD_TUPLE``, but creates a set.
 
 
-.. opcode:: BUILD_MAP (zero)
+.. opcode:: BUILD_MAP (count)
 
-   Pushes a new empty dictionary object onto the stack.  The argument is ignored
-   and set to zero by the compiler.
+   Pushes a new dictionary object onto the stack.  The dictionary is pre-sized
+   to hold *count* entries.
 
 
 .. opcode:: LOAD_ATTR (namei)
@@ -589,6 +589,10 @@ the more significant byte last.
    Pushes a try block from a try-except clause onto the block stack. *delta* points
    to the finally block.
 
+.. opcode:: STORE_MAP ()
+
+   Store a key and value pair in a dictionary.  Pops the key and value while leaving
+   the dictionary on the stack.
 
 .. opcode:: LOAD_FAST (var_num)
 

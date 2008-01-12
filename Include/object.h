@@ -374,6 +374,9 @@ typedef struct _typeobject {
 	PyObject *tp_weaklist;
 	destructor tp_del;
 
+	/* Type attribute cache version tag. Added in version 2.6 */
+	unsigned int tp_version_tag;
+
 #ifdef COUNT_ALLOCS
 	/* these must be last and never explicitly initialized */
 	Py_ssize_t tp_allocs;
@@ -525,6 +528,10 @@ given type object has a specified feature.
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
 #endif
 
+/* Objects support type attribute cache */
+#define Py_TPFLAGS_HAVE_VERSION_TAG   (1L<<18)
+#define Py_TPFLAGS_VALID_VERSION_TAG  (1L<<19)
+
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_INT_SUBCLASS		(1L<<23)
 #define Py_TPFLAGS_LONG_SUBCLASS	(1L<<24)
@@ -538,6 +545,7 @@ given type object has a specified feature.
 
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
+                             Py_TPFLAGS_HAVE_VERSION_TAG | \
                             0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
