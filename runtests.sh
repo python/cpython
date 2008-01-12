@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 HELP="Usage: ./runtests.py [-h] [-x] [flags] [tests]
 
