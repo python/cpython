@@ -1,4 +1,3 @@
-
 :mod:`posix` --- The most common POSIX system calls
 ===================================================
 
@@ -22,13 +21,8 @@ available through the :mod:`os` interface.  Once :mod:`os` is imported, there is
 :mod:`os` provides some additional functionality, such as automatically calling
 :func:`putenv` when an entry in ``os.environ`` is changed.
 
-The descriptions below are very terse; refer to the corresponding Unix manual
-(or POSIX documentation) entry for more information. Arguments called *path*
-refer to a pathname given as a string.
-
 Errors are reported as exceptions; the usual exceptions are given for type
-errors, while errors reported by the system calls raise :exc:`error` (a synonym
-for the standard exception :exc:`OSError`), described below.
+errors, while errors reported by the system calls raise :exc:`OSError`.
 
 
 .. _posix-large-files:
@@ -42,9 +36,8 @@ Large File Support
 
 .. sectionauthor:: Steve Clift <clift@mail.anacapa.net>
 
-
-Several operating systems (including AIX, HPUX, Irix and Solaris) provide
-support for files that are larger than 2 Gb from a C programming model where
+Several operating systems (including AIX, HP-UX, Irix and Solaris) provide
+support for files that are larger than 2 GB from a C programming model where
 :ctype:`int` and :ctype:`long` are 32-bit values. This is typically accomplished
 by defining the relevant size and offset types as 64-bit values. Such files are
 sometimes referred to as :dfn:`large files`.
@@ -68,16 +61,16 @@ On large-file-capable Linux systems, this might work::
 
 .. _posix-contents:
 
-Module Contents
----------------
+Notable Module Contents
+-----------------------
 
-Module :mod:`posix` defines the following data item:
-
+In addition to many functions described in the :mod:`os` module documentation,
+:mod:`posix` defines the following data item:
 
 .. data:: environ
 
-   A dictionary representing the string environment at the time the interpreter was
-   started. For example, ``environ['HOME']`` is the pathname of your home
+   A dictionary representing the string environment at the time the interpreter
+   was started.  For example, ``environ['HOME']`` is the pathname of your home
    directory, equivalent to ``getenv("HOME")`` in C.
 
    Modifying this dictionary does not affect the string environment passed on by
@@ -91,7 +84,3 @@ Module :mod:`posix` defines the following data item:
       updates the environment on modification.  Note also that updating ``os.environ``
       will render this dictionary obsolete.  Use of the :mod:`os` module version of
       this is recommended over direct access to the :mod:`posix` module.
-
-Additional contents of this module should only be accessed via the :mod:`os`
-module; refer to the documentation for that module for further information.
-
