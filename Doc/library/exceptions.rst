@@ -233,11 +233,6 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: OSError
 
-    and is used primarily as
-   the :mod:`os` module's :exc:`os.error` exception.  See :exc:`EnvironmentError`
-   above for a description of the possible associated values.
-
-   .. versionadded:: 1.5.2
    .. index:: module: errno
 
    This exception is derived from :exc:`EnvironmentError`.  It is raised when a
@@ -251,6 +246,8 @@ The following exceptions are the exceptions that are actually raised.
    For exceptions that involve a file system path (such as :func:`chdir` or
    :func:`unlink`), the exception instance will contain a third attribute,
    :attr:`filename`, which is the file name passed to the function.
+
+   .. versionadded:: 1.5.2
 
 
 .. exception:: OverflowError
