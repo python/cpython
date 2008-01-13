@@ -5218,10 +5218,13 @@ init_socket(void)
 #endif
 
 #ifdef SIO_RCVALL
-	tmp = PyLong_FromUnsignedLong(SIO_RCVALL);
-	if (tmp == NULL)
-		return;
-	PyModule_AddObject(m, "SIO_RCVALL", tmp);
+	{
+		PyObject *tmp;
+		tmp = PyLong_FromUnsignedLong(SIO_RCVALL);
+		if (tmp == NULL)
+			return;
+		PyModule_AddObject(m, "SIO_RCVALL", tmp);
+	}
 	PyModule_AddIntConstant(m, "RCVALL_OFF", RCVALL_OFF);
 	PyModule_AddIntConstant(m, "RCVALL_ON", RCVALL_ON);
 	PyModule_AddIntConstant(m, "RCVALL_SOCKETLEVELONLY", RCVALL_SOCKETLEVELONLY);
