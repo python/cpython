@@ -734,7 +734,9 @@ available.  They are listed here in alphabetical order.
    writing (truncating the file if it already exists), and ``'a'`` for appending
    (which on *some* Unix systems means that *all* writes append to the end of the
    file regardless of the current seek position).  If *mode* is omitted, it
-   defaults to ``'r'``.  When opening a binary file, you should append ``'b'`` to
+   defaults to ``'r'``.  The default is to use text mode, which may convert
+   ``'\n'`` characters to a platform-specific representation on writing and back
+   on reading.  Thus, when opening a binary file, you should append ``'b'`` to
    the *mode* value to open the file in binary mode, which will improve
    portability.  (Appending ``'b'`` is useful even on systems that don't treat
    binary and text files differently, where it serves as documentation.)  See below
