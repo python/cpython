@@ -42,21 +42,6 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, self.gen.seed, 1, 2)
         self.assertRaises(TypeError, type(self.gen), [])
 
-    def test_jumpahead(self):
-        self.gen.seed()
-        state1 = self.gen.getstate()
-        self.gen.jumpahead(100)
-        state2 = self.gen.getstate()    # s/b distinct from state1
-        self.assertNotEqual(state1, state2)
-        self.gen.jumpahead(100)
-        state3 = self.gen.getstate()    # s/b distinct from state2
-        self.assertNotEqual(state2, state3)
-
-        self.assertRaises(TypeError, self.gen.jumpahead)  # needs an arg
-        self.assertRaises(TypeError, self.gen.jumpahead, "ick")  # wrong type
-        self.assertRaises(TypeError, self.gen.jumpahead, 2.3)  # wrong type
-        self.assertRaises(TypeError, self.gen.jumpahead, 2, 3)  # too many
-
     def test_sample(self):
         # For the entire allowable range of 0 <= k <= N, validate that
         # the sample is of the correct length and contains only unique items
@@ -157,48 +142,6 @@ class TestBasicOps(unittest.TestCase):
             f.close()
             self.assertEqual(r.randrange(1000), value)
 
-class WichmannHill_TestBasicOps(TestBasicOps):
-    gen = random.WichmannHill()
-
-    def test_setstate_first_arg(self):
-        self.assertRaises(ValueError, self.gen.setstate, (2, None, None))
-
-    def test_strong_jumpahead(self):
-        # tests that jumpahead(n) semantics correspond to n calls to random()
-        N = 1000
-        s = self.gen.getstate()
-        self.gen.jumpahead(N)
-        r1 = self.gen.random()
-        # now do it the slow way
-        self.gen.setstate(s)
-        for i in range(N):
-            self.gen.random()
-        r2 = self.gen.random()
-        self.assertEqual(r1, r2)
-
-    def test_gauss_with_whseed(self):
-        # Ensure that the seed() method initializes all the hidden state.  In
-        # particular, through 2.2.1 it failed to reset a piece of state used
-        # by (and only by) the .gauss() method.
-
-        for seed in 1, 12, 123, 1234, 12345, 123456, 654321:
-            self.gen.whseed(seed)
-            x1 = self.gen.random()
-            y1 = self.gen.gauss(0, 1)
-
-            self.gen.whseed(seed)
-            x2 = self.gen.random()
-            y2 = self.gen.gauss(0, 1)
-
-            self.assertEqual(x1, x2)
-            self.assertEqual(y1, y2)
-
-    def test_bigrand(self):
-        # Verify warnings are raised when randrange is too large for random()
-        with test_support.catch_warning():
-            warnings.filterwarnings("error", "Underlying random")
-            self.assertRaises(UserWarning, self.gen.randrange, 2**60)
-
 class SystemRandom_TestBasicOps(TestBasicOps):
     gen = random.SystemRandom()
 
@@ -213,10 +156,6 @@ class SystemRandom_TestBasicOps(TestBasicOps):
     def test_seedargs(self):
         # Doesn't need to do anything except not fail
         self.gen.seed(100)
-
-    def test_jumpahead(self):
-        # Doesn't need to do anything except not fail
-        self.gen.jumpahead(100)
 
     def test_gauss(self):
         self.gen.gauss_next = None
@@ -541,8 +480,7 @@ class TestModule(unittest.TestCase):
 
 
 def test_main(verbose=None):
-    testclasses =    [WichmannHill_TestBasicOps,
-                      MersenneTwister_TestBasicOps,
+    testclasses =    [MersenneTwister_TestBasicOps,
                       TestDistributions,
                       TestModule]
 

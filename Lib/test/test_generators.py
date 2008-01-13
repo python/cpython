@@ -444,7 +444,7 @@ Subject: Re: PEP 255: Simple Generators
 >>> roots = sets[:]
 
 >>> import random
->>> gen = random.WichmannHill(42)
+>>> gen = random.Random(42)
 >>> while 1:
 ...     for s in sets:
 ...         print(" %s->%s" % (s, s.find()), end='')
@@ -458,29 +458,29 @@ Subject: Re: PEP 255: Simple Generators
 ...     else:
 ...         break
  A->A B->B C->C D->D E->E F->F G->G H->H I->I J->J K->K L->L M->M
-merged D into G
- A->A B->B C->C D->G E->E F->F G->G H->H I->I J->J K->K L->L M->M
-merged C into F
- A->A B->B C->F D->G E->E F->F G->G H->H I->I J->J K->K L->L M->M
+merged I into A
+ A->A B->B C->C D->D E->E F->F G->G H->H I->A J->J K->K L->L M->M
+merged D into C
+ A->A B->B C->C D->C E->E F->F G->G H->H I->A J->J K->K L->L M->M
+merged K into H
+ A->A B->B C->C D->C E->E F->F G->G H->H I->A J->J K->H L->L M->M
 merged L into A
- A->A B->B C->F D->G E->E F->F G->G H->H I->I J->J K->K L->A M->M
-merged H into E
- A->A B->B C->F D->G E->E F->F G->G H->E I->I J->J K->K L->A M->M
-merged B into E
- A->A B->E C->F D->G E->E F->F G->G H->E I->I J->J K->K L->A M->M
+ A->A B->B C->C D->C E->E F->F G->G H->H I->A J->J K->H L->A M->M
+merged E into A
+ A->A B->B C->C D->C E->A F->F G->G H->H I->A J->J K->H L->A M->M
+merged B into G
+ A->A B->G C->C D->C E->A F->F G->G H->H I->A J->J K->H L->A M->M
+merged A into F
+ A->F B->G C->C D->C E->F F->F G->G H->H I->F J->J K->H L->F M->M
+merged H into G
+ A->F B->G C->C D->C E->F F->F G->G H->G I->F J->J K->G L->F M->M
+merged F into J
+ A->J B->G C->C D->C E->J F->J G->G H->G I->J J->J K->G L->J M->M
+merged M into C
+ A->J B->G C->C D->C E->J F->J G->G H->G I->J J->J K->G L->J M->C
 merged J into G
- A->A B->E C->F D->G E->E F->F G->G H->E I->I J->G K->K L->A M->M
-merged E into G
- A->A B->G C->F D->G E->G F->F G->G H->G I->I J->G K->K L->A M->M
-merged M into G
- A->A B->G C->F D->G E->G F->F G->G H->G I->I J->G K->K L->A M->G
-merged I into K
- A->A B->G C->F D->G E->G F->F G->G H->G I->K J->G K->K L->A M->G
-merged K into A
- A->A B->G C->F D->G E->G F->F G->G H->G I->A J->G K->A L->A M->G
-merged F into A
- A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
-merged A into G
+ A->G B->G C->C D->C E->G F->G G->G H->G I->G J->G K->G L->G M->C
+merged C into G
  A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
 
 """

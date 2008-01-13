@@ -352,6 +352,9 @@ Core and Builtins
 Library
 -------
 
+- Removed defunct parts of the random module (the Wichmann-Hill generator
+  and the jumpahead() method).
+
 - Patch #467924: add ZipFile.extract() and ZipFile.extractall() in the
   zipfile module.
 
