@@ -5,171 +5,6 @@
 
 #include <ctype.h>
 
-
-/* Support type attribute cache */
-
-/* The cache can keep references to the names alive for longer than
-   they normally would.  This is why the maximum size is limited to
-   MCACHE_MAX_ATTR_SIZE, since it might be a problem if very large
-   strings are used as attribute names. */
-#define MCACHE_MAX_ATTR_SIZE	100
-#define MCACHE_SIZE_EXP		10
-#define MCACHE_HASH(version, name_hash)					\
-		(((unsigned int)(version) * (unsigned int)(name_hash))	\
-		 >> (8*sizeof(unsigned int) - MCACHE_SIZE_EXP))
-#define MCACHE_HASH_METHOD(type, name)                                  \
-		MCACHE_HASH((type)->tp_version_tag,                     \
-		            ((PyStringObject *)(name))->ob_shash)
-#define MCACHE_CACHEABLE_NAME(name)                                     \
-		PyString_CheckExact(name) &&                            \
-		PyString_GET_SIZE(name) <= MCACHE_MAX_ATTR_SIZE
-
-struct method_cache_entry {
-	unsigned int version;
-	PyObject *name;		/* reference to exactly a str or None */
-	PyObject *value;	/* borrowed */
-};
-
-static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
-static unsigned int next_version_tag = 0;
-
-static void
-type_modified(PyTypeObject *type)
-{
-	/* Invalidate any cached data for the specified type and all
-	   subclasses.  This function is called after the base
-	   classes, mro, or attributes of the type are altered.
-
-	   Invariants:
-
-	   - Py_TPFLAGS_VALID_VERSION_TAG is never set if
-	     Py_TPFLAGS_HAVE_VERSION_TAG is not set (e.g. on type
-	     objects coming from non-recompiled extension modules)
-
-	   - before Py_TPFLAGS_VALID_VERSION_TAG can be set on a type,
-	     it must first be set on all super types.
-
-	   This function clears the Py_TPFLAGS_VALID_VERSION_TAG of a
-	   type (so it must first clear it on all subclasses).  The
-	   tp_version_tag value is meaningless unless this flag is set.
-	   We don't assign new version tags eagerly, but only as
-	   needed.
-	 */
-	PyObject *raw, *ref;
-	Py_ssize_t i, n;
-
-	if(!PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
-		return;
-
-	raw = type->tp_subclasses;
-	if (raw != NULL) {
-		n = PyList_GET_SIZE(raw);
-		for (i = 0; i < n; i++) {
-			ref = PyList_GET_ITEM(raw, i);
-			ref = PyWeakref_GET_OBJECT(ref);
-			if (ref != Py_None) {
-				type_modified((PyTypeObject *)ref);
-			}
-		}
-	}
-	type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-}
-
-static void
-type_mro_modified(PyTypeObject *type, PyObject *bases) {
-	/*
-	   Check that all base classes or elements of the mro of type are
-	   able to be cached.  This function is called after the base
-	   classes or mro of the type are altered.
-
-	   Unset HAVE_VERSION_TAG and VALID_VERSION_TAG if the type
-	   inherits from an old-style class, either directly or if it
-	   appears in the MRO of a new-style class.  No support either for
-	   custom MROs that include types that are not officially super
-	   types.
-
-	   Called from mro_internal, which will subsequently be called on
-	   each subclass when their mro is recursively updated.
-	 */
-	Py_ssize_t i, n;
-	int clear = 0;
-
-	if(!PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
-		return;
-
-	n = PyTuple_GET_SIZE(bases);
-	for (i = 0; i < n; i++) {
-		PyObject *b = PyTuple_GET_ITEM(bases, i);
-		PyTypeObject *cls;
-
-		if (!PyType_Check(b) ) {
-			clear = 1;
-			break;
-		}
-
-		cls = (PyTypeObject *)b;
-
-		if (!PyType_HasFeature(cls, Py_TPFLAGS_HAVE_VERSION_TAG) ||
-		    !PyType_IsSubtype(type, cls)) {
-			clear = 1;
-			break;
-		}
-	}
-
-	if (clear)
-		type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
-		                    Py_TPFLAGS_VALID_VERSION_TAG);
-}
-
-static int
-assign_version_tag(PyTypeObject *type)
-{
-	/* Ensure that the tp_version_tag is valid and set
-	   Py_TPFLAGS_VALID_VERSION_TAG.  To respect the invariant, this
-	   must first be done on all super classes.  Return 0 if this
-	   cannot be done, 1 if Py_TPFLAGS_VALID_VERSION_TAG.
-	*/
-	Py_ssize_t i, n;
-	PyObject *bases;
-
-	if (PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
-		return 1;
-	if (!PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
-		return 0;
-	if (!PyType_HasFeature(type, Py_TPFLAGS_READY))
-		return 0;
-
-	type->tp_version_tag = next_version_tag++;
-	/* for stress-testing: next_version_tag &= 0xFF; */
-
-	if (type->tp_version_tag == 0) {
-		/* wrap-around or just starting Python - clear the whole
-		   cache by filling names with references to Py_None.
-		   Values are also set to NULL for added protection, as they
-		   are borrowed reference */
-		for (i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-			method_cache[i].value = NULL;
-			Py_XDECREF(method_cache[i].name);
-			method_cache[i].name = Py_None;
-			Py_INCREF(Py_None);
-		}
-		/* mark all version tags as invalid */
-		type_modified(&PyBaseObject_Type);
-		return 1;
-	}
-	bases = type->tp_bases;
-	n = PyTuple_GET_SIZE(bases);
-	for (i = 0; i < n; i++) {
-		PyObject *b = PyTuple_GET_ITEM(bases, i);
-		assert(PyType_Check(b));
-		if (!assign_version_tag((PyTypeObject *)b))
-			return 0;
-	}
-	type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
-	return 1;
-}
-
-
 static PyMemberDef type_members[] = {
 	{"__basicsize__", T_INT, offsetof(PyTypeObject,tp_basicsize),READONLY},
 	{"__itemsize__", T_INT, offsetof(PyTypeObject, tp_itemsize), READONLY},
@@ -281,8 +116,6 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 			     "can't delete %s.__module__", type->tp_name);
 		return -1;
 	}
-
-	type_modified(type);
 
 	return PyDict_SetItemString(type->tp_dict, "__module__", value);
 }
@@ -1518,14 +1351,6 @@ mro_internal(PyTypeObject *type)
 		}
 	}
 	type->tp_mro = tuple;
-
-	type_mro_modified(type, type->tp_mro);
-	/* corner case: the old-style super class might have been hidden
-	   from the custom MRO */
-	type_mro_modified(type, type->tp_bases);
-
-	type_modified(type);
-
 	return 0;
 }
 
@@ -2318,16 +2143,6 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
 	Py_ssize_t i, n;
 	PyObject *mro, *res, *base, *dict;
-	unsigned int h;
-
-	if (MCACHE_CACHEABLE_NAME(name) &&
-	    PyType_HasFeature(type,Py_TPFLAGS_VALID_VERSION_TAG)) {
-		/* fast path */
-		h = MCACHE_HASH_METHOD(type, name);
-		if (method_cache[h].version == type->tp_version_tag &&
-		    method_cache[h].name == name)
-		    return method_cache[h].value;
-	}
 
 	/* Look in tp_dict of types in MRO */
 	mro = type->tp_mro;
@@ -2338,7 +2153,6 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 	if (mro == NULL)
 		return NULL;
 
-	res = NULL;
 	assert(PyTuple_Check(mro));
 	n = PyTuple_GET_SIZE(mro);
 	for (i = 0; i < n; i++) {
@@ -2352,18 +2166,9 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 		assert(dict && PyDict_Check(dict));
 		res = PyDict_GetItem(dict, name);
 		if (res != NULL)
-			break;
+			return res;
 	}
-
-	if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
-		h = MCACHE_HASH_METHOD(type, name);
-		method_cache[h].version = type->tp_version_tag;
-		method_cache[h].value = res;  /* borrowed */
-		Py_INCREF(name);
-		Py_DECREF(method_cache[h].name);
-		method_cache[h].name = name;
-	}
-	return res;
+	return NULL;
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -2453,6 +2258,10 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 			type->tp_name);
 		return -1;
 	}
+	/* XXX Example of how I expect this to be used...
+	if (update_subclasses(type, name, invalidate_cache, NULL) < 0)
+		return -1;
+	*/
 	if (PyObject_GenericSetAttr((PyObject *)type, name, value) < 0)
 		return -1;
 	return update_slot(type, name);
@@ -5874,13 +5683,6 @@ update_slot(PyTypeObject *type, PyObject *name)
 	slotdef *p;
 	slotdef **pp;
 	int offset;
-
-	/* Clear the VALID_VERSION flag of 'type' and all its
-	   subclasses.  This could possibly be unified with the
-	   update_subclasses() recursion below, but carefully:
-	   they each have their own conditions on which to stop
-	   recursing into subclasses. */
-	type_modified(type);
 
 	init_slotdefs();
 	pp = ptrs;

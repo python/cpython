@@ -1287,7 +1287,6 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 			goto done;
 	}
 
-#if 0 /* XXX this is not quite _PyType_Lookup anymore */
 	/* Inline _PyType_Lookup */
 	{
 		Py_ssize_t i, n;
@@ -1312,9 +1311,6 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 				break;
 		}
 	}
-#else
-	descr = _PyType_Lookup(tp, name);
-#endif
 
 	Py_XINCREF(descr);
 
