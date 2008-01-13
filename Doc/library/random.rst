@@ -28,25 +28,14 @@ for cryptographic purposes.
 
 The functions supplied by this module are actually bound methods of a hidden
 instance of the :class:`random.Random` class.  You can instantiate your own
-instances of :class:`Random` to get generators that don't share state.  This is
-especially useful for multi-threaded programs, creating a different instance of
-:class:`Random` for each thread, and using the :meth:`jumpahead` method to make
-it likely that the generated sequences seen by each thread don't overlap.
+instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
 basic generator of your own devising: in that case, override the :meth:`random`,
-:meth:`seed`, :meth:`getstate`, :meth:`setstate` and :meth:`jumpahead` methods.
+:meth:`seed`, :meth:`getstate`, and :meth:`setstate`.
 Optionally, a new generator can supply a :meth:`getrandombits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
 
-As an example of subclassing, the :mod:`random` module provides the
-:class:`WichmannHill` class that implements an alternative generator in pure
-Python.  The class provides a backward compatible way to reproduce results from
-earlier versions of Python, which used the Wichmann-Hill algorithm as the core
-generator.  Note that this Wichmann-Hill generator can no longer be recommended:
-its period is too short by contemporary standards, and the sequence generated is
-known to fail some stringent randomness tests.  See the references below for a
-recent variant that repairs these flaws.
 
 Bookkeeping functions:
 
@@ -77,17 +66,6 @@ Bookkeeping functions:
    *state* should have been obtained from a previous call to :func:`getstate`, and
    :func:`setstate` restores the internal state of the generator to what it was at
    the time :func:`setstate` was called.
-
-
-.. function:: jumpahead(n)
-
-   Change the internal state to one different from and likely far away from the
-   current state.  *n* is a non-negative integer which is used to scramble the
-   current state vector.  This is most useful in multi-threaded programs, in
-   conjuction with multiple instances of the :class:`Random` class:
-   :meth:`setstate` or :meth:`seed` can be used to force all instances into the
-   same internal state, and then :meth:`jumpahead` can be used to force the
-   instances' states far apart.
 
 
 .. function:: getrandbits(k)
@@ -224,24 +202,6 @@ be found in any statistics text.
 
 Alternative Generators:
 
-.. class:: WichmannHill([seed])
-
-   Class that implements the Wichmann-Hill algorithm as the core generator. Has all
-   of the same methods as :class:`Random` plus the :meth:`whseed` method described
-   below.  Because this class is implemented in pure Python, it is not threadsafe
-   and may require locks between calls.  The period of the generator is
-   6,953,607,871,644 which is small enough to require care that two independent
-   random sequences do not overlap.
-
-
-.. function:: whseed([x])
-
-   This is obsolete, supplied for bit-level compatibility with versions of Python
-   prior to 2.1. See :func:`seed` for details.  :func:`whseed` does not guarantee
-   that distinct integer arguments yield distinct internal states, and can yield no
-   more than about 2\*\*24 distinct internal states in all.
-
-
 .. class:: SystemRandom([seed])
 
    Class that uses the :func:`os.urandom` function for generating random numbers
@@ -281,6 +241,4 @@ Examples of basic usage::
    equidistributed uniform pseudorandom number generator", ACM Transactions on
    Modeling and Computer Simulation Vol. 8, No. 1, January pp.3-30 1998.
 
-   Wichmann, B. A. & Hill, I. D., "Algorithm AS 183: An efficient and portable
-   pseudo-random number generator", Applied Statistics 31 (1982) 188-190.
 
