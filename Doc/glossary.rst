@@ -342,7 +342,7 @@ Glossary
    named tuple
       Any tuple-like class whose indexable fields are also accessible with
       named attributes (for example, :func:`time.localtime` returns a
-      tuple-like object where the *year* is accessable either with an
+      tuple-like object where the *year* is accessible either with an
       index such as ``t[0]`` or with a named attribute like ``t.tm_year``).
 
       A named tuple can be a built-in type such as :class:`time.struct_time`,
