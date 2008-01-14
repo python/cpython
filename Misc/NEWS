@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- sys.float_info / PyFloat_GetInfo: The floating point information
+  object was converted from a dict to a specialized structseq object.
+
 - Patch #1816: Added sys.flags structseq. It exposes the status of most
   command line arguments and PYTHON* environment variables. 
 
