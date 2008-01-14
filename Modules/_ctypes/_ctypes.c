@@ -410,7 +410,7 @@ static int
 StructType_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
 	/* XXX Should we disallow deleting _fields_? */
-	if (-1 == Py_TYPE(self)->tp_base->tp_setattro(self, key, value))
+	if (-1 == PyType_Type.tp_setattro(self, key, value))
 		return -1;
 	
 	if (value && PyString_Check(key) &&
