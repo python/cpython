@@ -267,7 +267,7 @@ class Random(_random.Random):
             x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k):
-        """Chooses k unique random elements from a population sequence.
+        """Chooses k unique random elements from a population sequence or set.
 
         Returns a new list containing elements from the population while
         leaving the original population unchanged.  The resulting list is
@@ -284,15 +284,6 @@ class Random(_random.Random):
         large population:   sample(range(10000000), 60)
         """
 
-        # XXX Although the documentation says `population` is "a sequence",
-        # XXX attempts are made to cater to any iterable with a __len__
-        # XXX method.  This has had mixed success.  Examples from both
-        # XXX sides:  sets work fine, and should become officially supported;
-        # XXX dicts are much harder, and have failed in various subtle
-        # XXX ways across attempts.  Support for mapping types should probably
-        # XXX be dropped (and users should pass mapping.keys() or .values()
-        # XXX explicitly).
-
         # Sampling without replacement entails tracking either potential
         # selections (the pool) in a list or previous selections in a set.
 
@@ -303,37 +294,35 @@ class Random(_random.Random):
         # preferred since the list takes less space than the
         # set and it doesn't suffer from frequent reselections.
 
+        if isinstance(population, (set, frozenset)):
+            population = tuple(population)
+        if not hasattr(population, '__getitem__') or hasattr(population, 'keys'):
+            raise TypeError("Population must be a sequence or set.  For dicts, use dict.keys().")
+        random = self.random
         n = len(population)
         if not 0 <= k <= n:
-            raise ValueError("sample larger than population")
-        random = self.random
+            raise ValueError("Sample larger than population")
         _int = int
         result = [None] * k
         setsize = 21        # size of a small set minus size of an empty list
         if k > 5:
             setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
-        if n <= setsize or hasattr(population, "keys"):
-            # An n-length list is smaller than a k-length set, or this is a
-            # mapping type so the other algorithm wouldn't work.
+        if n <= setsize:
+            # An n-length list is smaller than a k-length set
             pool = list(population)
             for i in range(k):         # invariant:  non-selected at [0,n-i)
                 j = _int(random() * (n-i))
                 result[i] = pool[j]
                 pool[j] = pool[n-i-1]   # move non-selected item into vacancy
         else:
-            try:
-                selected = set()
-                selected_add = selected.add
-                for i in range(k):
+            selected = set()
+            selected_add = selected.add
+            for i in range(k):
+                j = _int(random() * n)
+                while j in selected:
                     j = _int(random() * n)
-                    while j in selected:
-                        j = _int(random() * n)
-                    selected_add(j)
-                    result[i] = population[j]
-            except (TypeError, KeyError):   # handle (at least) sets
-                if isinstance(population, list):
-                    raise
-                return self.sample(tuple(population), k)
+                selected_add(j)
+                result[i] = population[j]
         return result
 
 ## -------------------- real-valued distributions  -------------------
