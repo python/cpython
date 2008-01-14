@@ -280,12 +280,12 @@ always available.
 
 .. data:: float_info
 
-   A dict holding information about the float type. It contains low level
+   A structseq holding information about the float type. It contains low level
    information about the precision and internal representation. Please study
    your system's :file:`float.h` for more information.
 
    +---------------------+--------------------------------------------------+
-   | key                 |  explanation                                     |
+   | attribute           |  explanation                                     |
    +=====================+==================================================+
    | :const:`epsilon`    | Difference between 1 and the next representable  |
    |                     | floating point number                            |

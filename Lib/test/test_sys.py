@@ -329,8 +329,8 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(sys.copyright, basestring))
         self.assert_(isinstance(sys.exec_prefix, basestring))
         self.assert_(isinstance(sys.executable, basestring))
-        self.assert_(isinstance(sys.float_info, dict))
         self.assertEqual(len(sys.float_info), 11)
+        self.assertEqual(sys.float_info.radix, 2)
         self.assert_(isinstance(sys.hexversion, int))
         self.assert_(isinstance(sys.maxint, int))
         if test.test_support.have_unicode:

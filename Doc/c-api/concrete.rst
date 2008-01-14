@@ -559,7 +559,7 @@ Floating Point Objects
 
 .. cfunction:: PyObject* PyFloat_GetInfo(void)
 
-   Return a :ctype:`PyDictObject` object which contains information about the
+   Return a structseq instance which contains information about the
    precision, minimum and maximum values of a float. It's a thin wrapper
    around the header file :file:`float.h`.
 

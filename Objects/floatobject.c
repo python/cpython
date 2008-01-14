@@ -5,9 +5,11 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
+#include "structseq.h"
 
 #include <ctype.h>
 #include <float.h>
+
 
 #if !defined(__STDC__)
 extern double fmod(double, double);
@@ -59,39 +61,86 @@ PyFloat_GetMin(void)
 	return DBL_MIN;
 }
 
+static PyTypeObject FloatInfoType = {0};
+
+PyDoc_STRVAR(floatinfo__doc__,
+"sys.floatinfo\n\
+\n\
+A structseq holding information about the float type. It contains low level\n\
+information about the precision and internal representation. Please study\n\
+your system's :file:`float.h` for more information.");
+
+static PyStructSequence_Field floatinfo_fields[] = {
+	{"max",		"DBL_MAX -- maximum representable finite float"},
+	{"max_exp",	"DBL_MAX_EXP -- maximum int e such that radix**(e-1) "
+			"is representable"},
+	{"max_10_exp",	"DBL_MAX_10_EXP -- maximum int e such that 10**e "
+			"is representable"},
+	{"min",		"DBL_MIN -- Minimum positive normalizer float"},
+	{"min_exp",	"DBL_MIN_EXP -- minimum int e such that radix**(e-1) "
+			"is a normalized float"},
+	{"min_10_exp",	"DBL_MIN_10_EXP -- minimum int e such that 10**e is "
+			"a normalized"},
+	{"dig",		"DBL_DIG -- digits"},
+	{"mant_dig",	"DBL_MANT_DIG -- mantissa digits"},
+	{"epsilon",	"DBL_EPSILON -- Difference between 1 and the next "
+			"representable float"},
+	{"radix",	"FLT_RADIX -- radix of exponent"},
+	{"rounds",	"FLT_ROUNDS -- addition rounds"},
+	{0}
+};
+
+static PyStructSequence_Desc floatinfo_desc = {
+	"sys.floatinfo",	/* name */
+	floatinfo__doc__,	/* doc */
+	floatinfo_fields,	/* fields */
+	11
+};
+
 PyObject *
 PyFloat_GetInfo(void)
 {
-	PyObject *d, *tmp;
+	static PyObject* floatinfo;
+	int pos = 0;
 
-#define SET_FLOAT_CONST(d, key, const) \
-	tmp = PyFloat_FromDouble(const); \
-	if (tmp == NULL) return NULL; \
-	if (PyDict_SetItemString(d, key, tmp)) return NULL; \
-	Py_DECREF(tmp)
-#define SET_INT_CONST(d, key, const) \
-	tmp = PyInt_FromLong(const); \
-	if (tmp == NULL) return NULL; \
-	if (PyDict_SetItemString(d, key, tmp)) return NULL; \
-	Py_DECREF(tmp)
+	if (floatinfo != NULL) {
+		Py_INCREF(floatinfo);
+		return floatinfo;
+	}
+	PyStructSequence_InitType(&FloatInfoType, &floatinfo_desc);
+	
+	floatinfo = PyStructSequence_New(&FloatInfoType);
+	if (floatinfo == NULL) {
+		return NULL;
+	}
 
-	d = PyDict_New();
+#define SetIntFlag(flag) \
+	PyStructSequence_SET_ITEM(floatinfo, pos++, PyInt_FromLong(flag))
+#define SetDblFlag(flag) \
+	PyStructSequence_SET_ITEM(floatinfo, pos++, PyFloat_FromDouble(flag))
 
-	SET_FLOAT_CONST(d, "max", DBL_MAX);
-	SET_INT_CONST(d, "max_exp", DBL_MAX_EXP);
-	SET_INT_CONST(d, "max_10_exp", DBL_MAX_10_EXP);
-	SET_FLOAT_CONST(d, "min", DBL_MIN);
-	SET_INT_CONST(d, "min_exp", DBL_MIN_EXP);
-	SET_INT_CONST(d, "min_10_exp", DBL_MIN_10_EXP);
-	SET_INT_CONST(d, "dig", DBL_DIG);
-	SET_INT_CONST(d, "mant_dig", DBL_MANT_DIG);
-	SET_FLOAT_CONST(d, "epsilon", DBL_EPSILON);
-	SET_INT_CONST(d, "radix", FLT_RADIX);
-	SET_INT_CONST(d, "rounds", FLT_ROUNDS);
+	SetDblFlag(DBL_MAX);
+	SetIntFlag(DBL_MAX_EXP);
+	SetIntFlag(DBL_MAX_10_EXP);
+	SetDblFlag(DBL_MIN);
+	SetIntFlag(DBL_MIN_EXP);
+	SetIntFlag(DBL_MIN_10_EXP);
+	SetIntFlag(DBL_DIG);
+	SetIntFlag(DBL_MANT_DIG);
+	SetDblFlag(DBL_EPSILON);
+	SetIntFlag(FLT_RADIX);
+	SetIntFlag(FLT_ROUNDS);
+#undef SetIntFlag
+#undef SetDblFlag
+	
+	if (PyErr_Occurred()) {
+		Py_CLEAR(floatinfo);
+		return NULL;
+	}
 
-	return d;
+	Py_INCREF(floatinfo);
+	return floatinfo;
 }
-
 
 PyObject *
 PyFloat_FromDouble(double fval)
