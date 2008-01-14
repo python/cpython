@@ -414,6 +414,9 @@ Extension Modules
 
 - Bug #1653736: Fix signature of time_isoformat.
 
+- Issue #1698398 Zipfile.printdir() crashed because the format string
+  expected a tuple type of length six instead of time.struct_time object.
+
 - operator.count() now raises an OverflowError when the count reaches sys.maxint.
 
 - Bug #1575169: operator.isSequenceType() now returns False for subclasses of dict.
