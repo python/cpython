@@ -12,8 +12,11 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
-- Object/structseq.c: Implemented new structseq representation. structseqs
-  like the return value of os.stat are more readable.
+- Patch #1816: Added sys.flags structseq. It exposes the status of most
+  command line arguments and PYTHON* environment variables. 
+
+- Object/structseq.c: Implemented new structseq representation. The patch
+  makes structseqs (e.g. the return value of os.stat) more readable.
 
 - Patch #1700288: added a type attribute cache that caches method accesses,
   resulting in speedups in heavily object-oriented code.

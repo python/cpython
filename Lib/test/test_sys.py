@@ -352,6 +352,18 @@ class SysModuleTest(unittest.TestCase):
         # the test runs under regrtest.
         self.assert_(sys.__stdout__.encoding == sys.__stderr__.encoding)
 
+    def test_sys_flags(self):
+        self.failUnless(sys.flags)
+        attrs = ("debug", "py3k_warning", "division_warning", "division_new",
+                 "inspect", "interactive", "optimize", "dont_write_bytecode",
+                 "no_site", "ingnore_environment", "tabcheck", "verbose",
+                 "unicode")
+        for attr in attrs:
+            self.assert_(hasattr(sys.flags, attr), attr)
+            self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
+        self.assert_(repr(sys.flags))
+
+
 def test_main():
     test.test_support.run_unittest(SysModuleTest)
 
