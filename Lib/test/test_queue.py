@@ -9,6 +9,9 @@ from test.test_support import verify, TestFailed, verbose
 
 QUEUE_SIZE = 5
 
+def qfull(q):
+    return q.maxsize > 0 and q.qsize() == q.maxsize
+
 # A thread to run a function that unclogs a blocked Queue.
 class _TriggerThread(threading.Thread):
     def __init__(self, fn, args):
@@ -96,7 +99,7 @@ class FailingQueue(Queue.Queue):
         return Queue.Queue._get(self)
 
 def FailingQueueTest(q):
-    if not q.empty():
+    if q.qsize():
         raise RuntimeError("Call this function with an empty queue")
     for i in range(QUEUE_SIZE-1):
         q.put(i)
@@ -114,7 +117,7 @@ def FailingQueueTest(q):
     except FailingQueueException:
         pass
     q.put("last")
-    verify(q.full(), "Queue should be full")
+    verify(qfull(q), "Queue should be full")
     # Test a failing blocking put
     q.fail_next_put = True
     try:
@@ -136,17 +139,17 @@ def FailingQueueTest(q):
     # Check the Queue isn't damaged.
     # put failed, but get succeeded - re-add
     q.put("last")
-    verify(q.full(), "Queue should be full")
+    verify(qfull(q), "Queue should be full")
     q.get()
-    verify(not q.full(), "Queue should not be full")
+    verify(not qfull(q), "Queue should not be full")
     q.put("last")
-    verify(q.full(), "Queue should be full")
+    verify(qfull(q), "Queue should be full")
     # Test a blocking put
     _doBlockingTest( q.put, ("full",), q.get, ())
     # Empty it
     for i in range(QUEUE_SIZE):
         q.get()
-    verify(q.empty(), "Queue should be empty")
+    verify(not q.qsize(), "Queue should be empty")
     q.put("first")
     q.fail_next_get = True
     try:
@@ -154,16 +157,16 @@ def FailingQueueTest(q):
         raise TestFailed("The queue didn't fail when it should have")
     except FailingQueueException:
         pass
-    verify(not q.empty(), "Queue should not be empty")
+    verify(q.qsize(), "Queue should not be empty")
     q.fail_next_get = True
     try:
         q.get(timeout=0.1)
         raise TestFailed("The queue didn't fail when it should have")
     except FailingQueueException:
         pass
-    verify(not q.empty(), "Queue should not be empty")
+    verify(q.qsize(), "Queue should not be empty")
     q.get()
-    verify(q.empty(), "Queue should be empty")
+    verify(not q.qsize(), "Queue should be empty")
     q.fail_next_get = True
     try:
         _doExceptionalBlockingTest(q.get, (), q.put, ('empty',),
@@ -172,12 +175,12 @@ def FailingQueueTest(q):
     except FailingQueueException:
         pass
     # put succeeded, but get failed.
-    verify(not q.empty(), "Queue should not be empty")
+    verify(q.qsize(), "Queue should not be empty")
     q.get()
-    verify(q.empty(), "Queue should be empty")
+    verify(not q.qsize(), "Queue should be empty")
 
 def SimpleQueueTest(q):
-    if not q.empty():
+    if q.qsize():
         raise RuntimeError("Call this function with an empty queue")
     # I guess we better check things actually queue correctly a little :)
     q.put(111)
@@ -186,10 +189,10 @@ def SimpleQueueTest(q):
            "Didn't seem to queue the correct data!")
     for i in range(QUEUE_SIZE-1):
         q.put(i)
-        verify(not q.empty(), "Queue should not be empty")
-    verify(not q.full(), "Queue should not be full")
+        verify(q.qsize(), "Queue should not be empty")
+    verify(not qfull(q), "Queue should not be full")
     q.put("last")
-    verify(q.full(), "Queue should be full")
+    verify(qfull(q), "Queue should be full")
     try:
         q.put("full", block=0)
         raise TestFailed("Didn't appear to block with a full queue")
@@ -206,7 +209,7 @@ def SimpleQueueTest(q):
     # Empty it
     for i in range(QUEUE_SIZE):
         q.get()
-    verify(q.empty(), "Queue should be empty")
+    verify(not q.qsize(), "Queue should be empty")
     try:
         q.get(block=0)
         raise TestFailed("Didn't appear to block with an empty queue")

@@ -352,6 +352,9 @@ Core and Builtins
 Library
 -------
 
+- Removed Queue.empty() and Queue.full().  Instead use Queue.qsize() or
+  trap the Empty and Full exceptions.
+
 - Removed defunct parts of the random module (the Wichmann-Hill generator
   and the jumpahead() method).
 

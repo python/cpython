@@ -118,7 +118,7 @@ class ThreadableTest:
         self.__tearDown()
         self.done.wait()
 
-        if not self.queue.empty():
+        if self.queue.qsize():
             msg = self.queue.get()
             self.fail(msg)
 
