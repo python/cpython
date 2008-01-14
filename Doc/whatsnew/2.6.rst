@@ -935,11 +935,11 @@ complete list of changes, or look through the CVS logs for all the details.
   .. Patch #957003
 
 * A new variable in the :mod:`sys` module,
-  :attr:`float_info`, is a dictionary 
+  :attr:`float_info`, is an object
   containing information about the platform's floating-point support
-  derived from the :file:`float.h` file.  Key/value pairs 
-  in this dictionary include 
-  ``"mant_dig"`` (number of digits in the mantissa), ``"epsilon"``
+  derived from the :file:`float.h` file.  Attributes of this object
+  include 
+  :attr:`mant_dig` (number of digits in the mantissa), :attr:`epsilon`
   (smallest difference between 1.0 and the next largest value
   representable), and several others.  (Contributed by Christian Heimes.)
 
