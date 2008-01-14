@@ -445,7 +445,7 @@ class ZipFile:
         """Print a table of contents for the zip file."""
         print "%-46s %19s %12s" % ("File Name", "Modified    ", "Size")
         for zinfo in self.filelist:
-            date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time
+            date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time[:6]
             print "%-46s %s %12d" % (zinfo.filename, date, zinfo.file_size)
 
     def testzip(self):
@@ -606,7 +606,7 @@ class ZipFile:
         the name of the file in the archive."""
         if not isinstance(zinfo_or_arcname, ZipInfo):
             zinfo = ZipInfo(filename=zinfo_or_arcname,
-                            date_time=time.localtime(time.time()))
+                            date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
         else:
             zinfo = zinfo_or_arcname
