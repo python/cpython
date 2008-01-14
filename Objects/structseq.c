@@ -30,7 +30,7 @@ PyObject *
 PyStructSequence_New(PyTypeObject *type)
 {
 	PyStructSequence *obj;
-       
+
 	obj = PyObject_New(PyStructSequence, type);
 	Py_SIZE(obj) = VISIBLE_SIZE_TP(type);
 
@@ -230,11 +230,64 @@ make_tuple(PyStructSequence *obj)
 static PyObject *
 structseq_repr(PyStructSequence *obj)
 {
-	PyObject *tup, *str;
-	tup = make_tuple(obj);
-	str = PyObject_Repr(tup);
+	PyObject *tup, *val, *repr;
+	PyTypeObject *typ = Py_TYPE(obj);
+	int i, len;
+	char buf[250+5]; /* "...)\0" */
+	char *cname, *crepr;
+	char *pbuf = buf;
+ 	char *endbuf = &buf[250];
+
+	strncpy(pbuf, typ->tp_name, 50);
+	pbuf += strlen(typ->tp_name) > 50 ? 50 : strlen(typ->tp_name);
+	*pbuf++ = '(';
+
+	if ((tup = make_tuple(obj)) == NULL) {
+		return NULL;
+	}
+	for (i=0; i < VISIBLE_SIZE(obj); i++) {
+		cname = typ->tp_members[i].name;
+		val = PyTuple_GetItem(tup, i);
+		if (cname == NULL || val == NULL) {
+			return NULL;
+		}
+		repr = PyObject_Repr(val);
+		if (repr == NULL) {
+			Py_DECREF(tup);
+			return NULL;
+		}
+		crepr = PyString_AsString(repr);
+		if (crepr == NULL) {
+			Py_DECREF(tup);
+			Py_DECREF(repr);
+			return NULL;
+		}
+		len = strlen(cname) + strlen(crepr) + 3;
+		if ((pbuf+len) < endbuf) {
+			strcpy(pbuf, cname);
+			pbuf += strlen(cname);
+			*pbuf++ = '=';
+			strcpy(pbuf, crepr);
+			pbuf += strlen(crepr);
+			*pbuf++ = ',';
+			*pbuf++ = ' ';
+			Py_DECREF(repr);
+		}
+		else {
+			strcpy(pbuf, "...");
+			pbuf += 5;
+			Py_DECREF(repr);
+			break;
+		}
+	}
 	Py_DECREF(tup);
-	return str;
+
+	pbuf-=2;
+	*pbuf++ = ')';
+	*pbuf = '\0';
+
+	repr = PyString_FromString(buf);
+	return repr;
 }
 
 static PyObject *
