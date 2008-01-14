@@ -111,8 +111,8 @@ Functions for sequences:
 
 .. function:: sample(population, k)
 
-   Return a *k* length list of unique elements chosen from the population sequence.
-   Used for random sampling without replacement.
+   Return a *k* length list of unique elements chosen from the population sequence
+   or set. Used for random sampling without replacement.
 
    Returns a new list containing elements from the population while leaving the
    original population unchanged.  The resulting list is in selection order so that
