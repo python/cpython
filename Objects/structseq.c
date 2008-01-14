@@ -30,7 +30,7 @@ PyObject *
 PyStructSequence_New(PyTypeObject *type)
 {
 	PyStructSequence *obj;
-       
+
 	obj = PyObject_New(PyStructSequence, type);
 	Py_SIZE(obj) = VISIBLE_SIZE_TP(type);
 
@@ -230,11 +230,83 @@ make_tuple(PyStructSequence *obj)
 static PyObject *
 structseq_repr(PyStructSequence *obj)
 {
-	PyObject *tup, *str;
-	tup = make_tuple(obj);
-	str = PyObject_Repr(tup);
+	/* buffer and type size were chosen well considered. */
+#define REPR_BUFFER_SIZE 512
+#define TYPE_MAXSIZE 100
+
+	PyObject *tup;
+	PyTypeObject *typ = Py_TYPE(obj);
+	int i, removelast = 0;
+	Py_ssize_t len;
+	char buf[REPR_BUFFER_SIZE];
+	char *endofbuf, *pbuf = buf;
+
+	/* pointer to end of writeable buffer; safes space for "...)\0" */
+	endofbuf= &buf[REPR_BUFFER_SIZE-5];
+
+	if ((tup = make_tuple(obj)) == NULL) {
+		return NULL;
+	}
+
+	/* "typename(", limited to  TYPE_MAXSIZE */
+	len = strlen(typ->tp_name) > TYPE_MAXSIZE ? TYPE_MAXSIZE :
+						    strlen(typ->tp_name);
+	strncpy(pbuf, typ->tp_name, len);
+	pbuf += len;
+	*pbuf++ = '(';
+
+	for (i=0; i < VISIBLE_SIZE(obj); i++) {
+		PyObject *val, *repr;
+		char *cname, *crepr;
+
+		cname = typ->tp_members[i].name;
+		
+		val = PyTuple_GetItem(tup, i);
+		if (cname == NULL || val == NULL) {
+			return NULL;
+		}
+		repr = PyObject_Repr(val);
+		if (repr == NULL) {
+			Py_DECREF(tup);
+			return NULL;
+		}
+		crepr = PyUnicode_AsString(repr);
+		if (crepr == NULL) {
+			Py_DECREF(tup);
+			Py_DECREF(repr);
+			return NULL;
+		}
+		
+		/* + 3: keep space for "=" and ", " */
+ 		len = strlen(cname) + strlen(crepr) + 3;
+		if ((pbuf+len) <= endofbuf) {
+			strcpy(pbuf, cname);
+			pbuf += strlen(cname);
+			*pbuf++ = '=';
+			strcpy(pbuf, crepr);
+			pbuf += strlen(crepr);
+			*pbuf++ = ',';
+			*pbuf++ = ' ';
+			removelast = 1;
+			Py_DECREF(repr);
+		}
+		else {
+			strcpy(pbuf, "...");
+			pbuf += 3;
+			removelast = 0;
+			Py_DECREF(repr);
+			break;
+		}
+	}
 	Py_DECREF(tup);
-	return str;
+	if (removelast) {
+		/* overwrite last ", " */
+		pbuf-=2;
+	}
+	*pbuf++ = ')';
+	*pbuf = '\0';
+
+	return PyUnicode_FromString(buf);
 }
 
 static PyObject *

@@ -15,6 +15,7 @@ Data members:
 */
 
 #include "Python.h"
+#include "structseq.h"
 #include "code.h"
 #include "frameobject.h"
 #include "eval.h"
@@ -1002,6 +1003,84 @@ Py_SubversionShortBranch()
 	return shortbranch;
 }
 
+
+PyDoc_STRVAR(flags__doc__,
+"sys.flags\n\
+\n\
+Flags provided through command line arguments or environment vars.");
+
+static PyTypeObject FlagsType;
+
+static PyStructSequence_Field flags_fields[] = {
+	{"debug",		"-d"},
+	{"division_warning",	"-Q"},
+	{"inspect",		"-i"},
+	{"interactive",		"-i"},
+	{"optimize",		"-O or -OO"},
+	{"dont_write_bytecode",	"-B"},
+	/* {"no_user_site",	"-s"}, */
+	{"no_site",		"-S"},
+	{"ingnore_environment",	"-E"},
+	{"tabcheck",		"-t or -tt"},
+	{"verbose",		"-v"},
+#ifdef RISCOS
+	{"ricos_wimp",		"???"},
+#endif
+	/* {"unbuffered",		"-u"}, */
+	/* {"skip_first",		"-x"}, */
+	{0}
+};
+
+static PyStructSequence_Desc flags_desc = {
+	"sys.flags",	/* name */
+	flags__doc__,	/* doc */
+	flags_fields,	/* fields */
+#ifdef RISCOS
+	11
+#else
+	10
+#endif
+};
+
+static PyObject*
+make_flags(void)
+{
+	int pos = 0;
+	PyObject *seq;
+
+	seq = PyStructSequence_New(&FlagsType);
+	if (seq == NULL)
+		return NULL;
+
+#define SetFlag(flag) \
+	PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
+
+	SetFlag(Py_DebugFlag);
+	SetFlag(Py_DivisionWarningFlag);
+	SetFlag(Py_InspectFlag);
+	SetFlag(Py_InteractiveFlag);
+	SetFlag(Py_OptimizeFlag);
+	SetFlag(Py_DontWriteBytecodeFlag);
+	/* SetFlag(Py_NoUserSiteDirectory); */
+	SetFlag(Py_NoSiteFlag);
+	SetFlag(Py_IgnoreEnvironmentFlag);
+	SetFlag(Py_TabcheckFlag);
+	SetFlag(Py_VerboseFlag);
+#ifdef RISCOS
+	SetFlag(Py_RISCOSWimpFlag);
+#endif
+	/* SetFlag(saw_unbuffered_flag); */
+	/* SetFlag(skipfirstline); */
+#undef SetFlag
+
+	if (PyErr_Occurred()) {
+		return NULL;
+	}
+
+	Py_INCREF(seq);
+	return seq;
+}
+
 PyObject *
 _PySys_Init(void)
 {
@@ -1041,9 +1120,9 @@ _PySys_Init(void)
 	v = Py_BuildValue("(UUU)", "CPython", branch, svn_revision);
 	PyDict_SetItemString(sysdict, "subversion", v);
 	Py_XDECREF(v);
-        PyDict_SetItemString(sysdict, "dont_write_bytecode",
-                             v = PyBool_FromLong(Py_DontWriteBytecodeFlag));
-        Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "dont_write_bytecode",
+			     v = PyBool_FromLong(Py_DontWriteBytecodeFlag));
+	Py_XDECREF(v);
 	/*
 	 * These release level checks are mutually exclusive and cover
 	 * the field, so don't get too fancy with the pre-processor!
@@ -1120,6 +1199,12 @@ _PySys_Init(void)
 	if (warnoptions != NULL) {
 		PyDict_SetItemString(sysdict, "warnoptions", warnoptions);
 	}
+
+	PyStructSequence_InitType(&FlagsType, &flags_desc);
+	PyDict_SetItemString(sysdict, "flags", make_flags());
+	/* prevent user from creating new instances */
+	FlagsType.tp_init = NULL;
+	FlagsType.tp_new = NULL;
 
 	if (PyErr_Occurred())
 		return NULL;

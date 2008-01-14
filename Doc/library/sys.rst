@@ -184,14 +184,52 @@ always available.
    error occurs.
 
 
+.. data:: flags
+
+   The struct sequence *flags* exposes the status of command line flags. The
+   attributes are read only.
+
+   +------------------------------+------------------------------------------+
+   | attribute                    | flag                                     |
+   +==============================+==========================================+
+   | :const:`debug`               | -d                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`py3k_warning`        | -3                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`division_warning`    | -Q                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`division_new`        | -Qnew                                    |
+   +------------------------------+------------------------------------------+
+   | :const:`inspect`             | -i                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`interactive`         | -i                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`optimize`            | -O or -OO                                |
+   +------------------------------+------------------------------------------+
+   | :const:`dont_write_bytecode` | -B                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`no_site`             | -S                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`ingnore_environment` | -E                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`tabcheck`            | -t or -tt                                |
+   +------------------------------+------------------------------------------+
+   | :const:`verbose`             | -v                                       |
+   +------------------------------+------------------------------------------+
+   | :const:`unicode`             | -U                                       |
+   +------------------------------+------------------------------------------+
+
+   .. versionadded:: 2.6
+
+
 .. data:: float_info
 
-   A dict holding information about the float type. It contains low level
+   A structseq holding information about the float type. It contains low level
    information about the precision and internal representation. Please study
    your system's :file:`float.h` for more information.
 
    +---------------------+--------------------------------------------------+
-   | key                 |  explanation                                     |
+   | attribute           |  explanation                                     |
    +=====================+==================================================+
    | :const:`epsilon`    | Difference between 1 and the next representable  |
    |                     | floating point number                            |

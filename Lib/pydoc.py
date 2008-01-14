@@ -1834,7 +1834,9 @@ Please wait a moment while I gather a list of all available modules...
                     modname = modname[:-9] + ' (package)'
                 if modname.find('.') < 0:
                     modules[modname] = 1
-            ModuleScanner().run(callback)
+            def onerror(modname):
+                callback(None, modname, None)
+            ModuleScanner().run(callback, onerror=onerror)
             self.list(modules.keys())
             self.output.write('''
 Enter any module name to get more help.  Or, type "modules spam" to search
@@ -1870,7 +1872,7 @@ class Scanner:
 class ModuleScanner:
     """An interruptible scanner that searches module synopses."""
 
-    def run(self, callback, key=None, completer=None):
+    def run(self, callback, key=None, completer=None, onerror=None):
         if key: key = key.lower()
         self.quit = False
         seen = {}
@@ -1887,7 +1889,7 @@ class ModuleScanner:
                     if name.lower().find(key) >= 0:
                         callback(None, modname, desc)
 
-        for importer, modname, ispkg in pkgutil.walk_packages():
+        for importer, modname, ispkg in pkgutil.walk_packages(onerror=onerror):
             if self.quit:
                 break
             if key is None:
