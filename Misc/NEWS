@@ -363,6 +363,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1698398 Zipfile.printdir() crashed because the format string
+  expected a tuple type of length six instead of time.struct_time object.
+
 - Issue #1780: The Decimal constructor now accepts arbitrary leading
   and trailing whitespace when constructing from a string.
   Context.create_decimal no longer accepts trailing newlines.
