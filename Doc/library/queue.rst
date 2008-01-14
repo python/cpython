@@ -53,18 +53,6 @@ See the source code for details.  The public methods are:
    this number is not reliable.
 
 
-.. method:: Queue.empty()
-
-   Return ``True`` if the queue is empty, ``False`` otherwise. Because of
-   multithreading semantics, this is not reliable.
-
-
-.. method:: Queue.full()
-
-   Return ``True`` if the queue is full, ``False`` otherwise. Because of
-   multithreading semantics, this is not reliable.
-
-
 .. method:: Queue.put(item[, block[, timeout]])
 
    Put *item* into the queue. If optional args *block* is true and *timeout* is
