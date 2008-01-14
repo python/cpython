@@ -329,11 +329,17 @@ Glossary
       also :term:`immutable`.
 
    named tuple
-      A tuple subclass whose elements also are accessible as attributes via
-      fixed names (the class name and field names are indicated in the
-      individual documentation of a named tuple type, like ``TestResults(failed,
-      attempted)``).  Named tuple classes are created by
-      :func:`collections.namedtuple`.
+      Any tuple-like class whose indexable fields are also accessible with
+      named attributes (for example, :func:`time.localtime` returns a
+      tuple-like object where the *year* is accessible either with an
+      index such as ``t[0]`` or with a named attribute like ``t.tm_year``).
+
+      A named tuple can be a built-in type such as :class:`time.struct_time`,
+      or it can be created with a regular class definition.  A full featured
+      named tuple can also be created with the factory function
+      :func:`collections.namedtuple`.  The latter approach automatically
+      provides extra features such as a self-documenting representation like
+      ``Employee(name='jones', title='programmer')``.
     
    namespace
       The place where a variable is stored.  Namespaces are implemented as

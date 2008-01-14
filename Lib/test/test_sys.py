@@ -279,8 +279,8 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(sys.copyright, str))
         self.assert_(isinstance(sys.exec_prefix, str))
         self.assert_(isinstance(sys.executable, str))
-        self.assert_(isinstance(sys.float_info, dict))
         self.assertEqual(len(sys.float_info), 11)
+        self.assertEqual(sys.float_info.radix, 2)
         self.assert_(isinstance(sys.hexversion, int))
         self.assert_(isinstance(sys.maxsize, int))
         self.assert_(isinstance(sys.maxunicode, int))
@@ -318,6 +318,17 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
+
+
+    def test_sys_flags(self):
+        self.failUnless(sys.flags)
+        attrs = ("debug", "division_warning",
+                 "inspect", "interactive", "optimize", "dont_write_bytecode",
+                 "no_site", "ingnore_environment", "tabcheck", "verbose")
+        for attr in attrs:
+            self.assert_(hasattr(sys.flags, attr), attr)
+            self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
+        self.assert_(repr(sys.flags))
 
 
 def test_main():

@@ -743,10 +743,17 @@ available.  They are listed here in alphabetical order.
    * 'U' universal newline mode (for backwards compatibility;
      unnecessary in new code)
 
-   Combine ``'b'`` with ``'r'``, ``'w'``, or ``'a'``, for binary
-   mode, e.g., ``'rb'`` to open a file for reading in binary mode.
-   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note
-   that ``'w+'`` truncates the file).
+   The most commonly-used values of *mode* are ``'r'`` for reading, ``'w'`` for
+   writing (truncating the file if it already exists), and ``'a'`` for appending
+   (which on *some* Unix systems means that *all* writes append to the end of the
+   file regardless of the current seek position).  If *mode* is omitted, it
+   defaults to ``'r'``.  The default is to use text mode, which may convert
+   ``'\n'`` characters to a platform-specific representation on writing and back
+   on reading.  Thus, when opening a binary file, you should append ``'b'`` to
+   the *mode* value to open the file in binary mode, which will improve
+   portability.  (Appending ``'b'`` is useful even on systems that don't treat
+   binary and text files differently, where it serves as documentation.)  See below
+   for more possible values of *mode*.
 
    Python distinguishes between files opened in binary and text modes, even
    when the underlying operating system doesn't.  Files opened in binary
