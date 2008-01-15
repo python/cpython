@@ -49,20 +49,25 @@ See the source code for details.  The public methods are:
 
 .. method:: Queue.qsize()
 
-   Return the approximate size of the queue.  Because of multithreading semantics,
-   this number is not reliable.
+   Return the approximate size of the queue.  qsize() > 0 doesn't guarantee
+   that a subsequent get() will not block, nor that qsize() < maxsize
+   guarantee that put() will not block.
 
 
 .. method:: Queue.empty()
 
-   Return ``True`` if the queue is empty, ``False`` otherwise. Because of
-   multithreading semantics, this is not reliable.
+   Return ``True`` if the queue is empty, ``False`` otherwise.  If empty()
+   returns ``True`` it doesn't guarantee that a subsequent call to put()
+   will not block.  Similarly, if empty() returns ``False`` it doesn't
+   guarantee that a subsequent call to get() will not block.
 
 
 .. method:: Queue.full()
 
-   Return ``True`` if the queue is full, ``False`` otherwise. Because of
-   multithreading semantics, this is not reliable.
+   Return ``True`` if the queue is full, ``False`` otherwise.  If full()
+   returns ``True`` it doesn't guarantee that a subsequent call to get()
+   will not block.  Similarly, if full() returns ``False`` it doesn't
+   guarantee that a subsequent call to put() will not block.
 
 
 .. method:: Queue.put(item[, block[, timeout]])
