@@ -1022,14 +1022,6 @@ complete list of changes, or look through the CVS logs for all the details.
   These attributes are all read-only.
   (Contributed by Christian Heimes.)
 
-  The :attr:`dont_write_bytecode` variable controls whether Python
-  writes any :file:`.pyc` or :file:`.pyo` files on importing a module.
-  If this variable is true, the compiled files are not written.  The
-  variable can be set by Python code, by supplying the :option:`-B`
-  switch, or by setting the :envvar:`PYTHONDONTWRITEBYTECODE`
-  environment variable to any non-empty string when running the Python
-  interpreter.
-
 * The :mod:`tarfile` module now supports POSIX.1-2001 (pax) and
   POSIX.1-1988 (ustar) format tarfiles, in addition to the GNU tar
   format that was already supported.  The default format 
@@ -1270,9 +1262,9 @@ Some of the more notable changes are:
   or :file:`.pyo` files by either supplying the :option:`-B` switch
   or setting the :envvar:`PYTHONDONTWRITEBYTECODE` environment variable
   to any non-empty string when running the Python interpreter.  These
-  are used to set a :attr:`dont_write_bytecode` variable in the 
-  :mod:`sys` module.  Python code can change this variable to 
-  control whether bytecode files are subsequently written.
+  are also used to set the :data:`sys.dont_write_bytecode` attribute;
+  Python code can change this variable to control whether bytecode
+  files are subsequently written.
   (Contributed by Neal Norwitz and Georg Brandl.)
 
 .. ======================================================================
