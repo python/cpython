@@ -358,10 +358,14 @@ Core and builtins
 
 - Bug #1664966: Fix crash in exec if Unicode filename can't be decoded.
 
-- Issue #1537: Changed GeneratorExit's base class from Exception to BaseException.
+- Issue #1537: Changed GeneratorExit's base class from Exception to
+  BaseException.
 
 Library
 -------
+
+- Issue #1786: pdb should use its own stdin/stdout around an exec call
+  and when creating a recursive instance.
 
 - Issue #1698398 Zipfile.printdir() crashed because the format string
   expected a tuple type of length six instead of time.struct_time object.
