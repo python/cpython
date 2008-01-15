@@ -198,7 +198,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         globals = self.curframe.f_globals
         try:
             code = compile(line + '\n', '<stdin>', 'single')
-            exec(code, globals, locals)
+            try:
+                sys.stdin = self.stdin
+                sys.stdout = self.stdout
+                exec(code, globals, locals)
+            finally:
+                sys.stdout = save_stdout
+                sys.stdin = save_stdin
         except:
             t, v = sys.exc_info()[:2]
             if type(t) == type(''):
@@ -656,7 +662,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         sys.settrace(None)
         globals = self.curframe.f_globals
         locals = self.curframe.f_locals
-        p = Pdb()
+        p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         print("ENTERING RECURSIVE DEBUGGER", file=self.stdout)
         sys.call_tracing(p.run, (arg, globals, locals))

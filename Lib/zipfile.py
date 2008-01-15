@@ -718,7 +718,7 @@ class ZipFile:
         print("%-46s %19s %12s" % ("File Name", "Modified    ", "Size"),
               file=file)
         for zinfo in self.filelist:
-            date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time
+            date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time[:6]
             print("%-46s %s %12d" % (zinfo.filename, date, zinfo.file_size),
                   file=file)
 
@@ -975,7 +975,7 @@ class ZipFile:
             data = data.encode("utf-8")
         if not isinstance(zinfo_or_arcname, ZipInfo):
             zinfo = ZipInfo(filename=zinfo_or_arcname,
-                            date_time=time.localtime(time.time()))
+                            date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
         else:
             zinfo = zinfo_or_arcname
