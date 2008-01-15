@@ -49,8 +49,8 @@ See the source code for details.  The public methods are:
 
 .. method:: Queue.qsize()
 
-   Return the approximate size of the queue.  qsize() > 0 doesn't guarantee
-   that a subsequent get() will not block, nor that qsize() < maxsize
+   Return the approximate size of the queue.  Note, qsize() > 0 doesn't
+   guarantee that a subsequent get() will not block, nor will qsize() < maxsize
    guarantee that put() will not block.
 
 
