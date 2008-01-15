@@ -1065,11 +1065,11 @@ static PyStructSequence_Field flags_fields[] = {
 	{"dont_write_bytecode",	"-B"},
 	/* {"no_user_site",	"-s"}, */
 	{"no_site",		"-S"},
-	{"ingnore_environment",	"-E"},
+	{"ignore_environment",	"-E"},
 	{"tabcheck",		"-t or -tt"},
 	{"verbose",		"-v"},
 #ifdef RISCOS
-	{"ricos_wimp",		"???"},
+	{"riscos_wimp",		"???"},
 #endif
 	/* {"unbuffered",		"-u"}, */
 	{"unicode",		"-U"},
