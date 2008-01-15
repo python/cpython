@@ -453,11 +453,9 @@ class TokenEater:
         # sort all the entries by their first item.
         reverse = {}
         for k, v in self.__messages.items():
-            keys = v.keys()
-            keys.sort()
+            keys = sorted(v.keys())
             reverse.setdefault(tuple(keys), []).append((k, v))
-        rkeys = reverse.keys()
-        rkeys.sort()
+        rkeys = sorted(reverse.keys())
         for rkey in rkeys:
             rentries = reverse[rkey]
             rentries.sort()
@@ -469,8 +467,7 @@ class TokenEater:
                 # k is the message string, v is a dictionary-set of (filename,
                 # lineno) tuples.  We want to sort the entries in v first by
                 # file name and then by line number.
-                v = v.keys()
-                v.sort()
+                v = sorted(v.keys())
                 if not options.writelocations:
                     pass
                 # location comments are different b/w Solaris and GNU:
@@ -662,7 +659,6 @@ def main():
 if __name__ == '__main__':
     main()
     # some more test strings
-    _(u'a unicode string')
     # this one creates a warning
     _('*** Seen unexpected token "%(token)s"') % {'token': 'test'}
     _('more' 'than' 'one' 'string')
