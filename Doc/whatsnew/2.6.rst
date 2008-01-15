@@ -1015,6 +1015,17 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Patch 1534
 
+  Another new variable, :attr:`dont_write_bytecode`, controls whether Python
+  writes any :file:`.pyc` or :file:`.pyo` files on importing a module.
+  If this variable is true, the compiled files are not written.  The
+  variable is initially set on start-up by supplying the :option:`-B`
+  switch to the Python interpreter, or by setting the
+  :envvar:`PYTHONDONTWRITEBYTECODE` environment variable before
+  running the interpreter.  Python code can subsequently 
+  change the value of this variable to control whether bytecode files
+  are written or not.
+  (Contributed by Neal Norwitz and Georg Brandl.)
+
   Information about the command-line arguments supplied to the Python 
   interpreter are available as attributes of a ``sys.flags`` named 
   tuple.  For example, the :attr:`verbose` attribute is true if Python 
