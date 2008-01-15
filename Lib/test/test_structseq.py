@@ -26,12 +26,6 @@ class StructSeqTest(unittest.TestCase):
         for i in xrange(-len(t), len(t)-1):
             self.assertEqual(t[i], astuple[i])
 
-    def test_tuple_subclass(self):
-        # Issue 1820
-        t = time.localtime()
-        s = ('%s ' * len(t)) % t        # This used to fail because t was not a tuple subclass
-        self.assert_(isinstance(t, tuple))
-
     def test_repr(self):
         t = time.gmtime()
         self.assert_(repr(t))
