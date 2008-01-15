@@ -255,7 +255,9 @@ PyLong_FromDouble(double dval)
 		return NULL;
 	}
 	if (Py_IS_NAN(dval)) {
-		return PyLong_FromLong(0L);
+		PyErr_SetString(PyExc_OverflowError,
+			"cannot convert float NaN to int");
+		return NULL;
 	}
 	if (dval < 0.0) {
 		neg = 1;
