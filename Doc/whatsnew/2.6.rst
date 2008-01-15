@@ -426,6 +426,29 @@ can now be used in scripts running from inside a package.
 
 .. ======================================================================
 
+.. ::
+
+    .. _pep-0370:
+
+    PEP 370: XXX
+    =====================================================
+
+    When you run Python, the module search page ``sys.modules`` usually
+    includes a directory whose path ends in ``"site-packages"``.  This
+    directory is intended to hold locally-installed packages available to
+    all users on a machine or using a particular site installation.
+
+    Python 2.6 introduces a convention for user-specific site directories.
+
+    .. seealso::
+
+       :pep:`370` - XXX
+
+       PEP written by XXX; implemented by Christian Heimes.
+
+  
+.. ======================================================================
+
 .. _pep-3110:
 
 PEP 3110: Exception-Handling Changes
@@ -650,6 +673,18 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 Optimizations
 -------------
 
+* Type objects now have a cache of methods that can reduce
+  the amount of work required to find the correct method implementation
+  for a particular class; once cached, the interpreter doesn't need to
+  traverse base classes to figure out the right method to call.  
+  The cache is cleared if a base class or the class itself is modified, 
+  so the cache should remain correct even in the face of Python's dynamic 
+  nature.
+  (Original optimization implemented by Armin Rigo, updated for 
+  Python 2.6 by Kevin Jacobs.) 
+
+  .. % Patch 1700288
+
 * All of the functions in the :mod:`struct` module have been rewritten in
   C, thanks to work at the Need For Speed sprint.
   (Contributed by Raymond Hettinger.)
@@ -699,6 +734,11 @@ complete list of changes, or look through the CVS logs for all the details.
      >>> v2 = var._replace('name', 'amplitude')
      >>> v2
      variable(id=1, name='amplitude', type='int', size=4)
+
+  Where the new :class:`namedtuple` type proved suitable, the standard
+  library has been modified to return them.  For example, 
+  the :meth:`Decimal.as_tuple` method now returns a named tuple with 
+  :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
 
   (Contributed by Raymond Hettinger.)
 
@@ -758,7 +798,17 @@ complete list of changes, or look through the CVS logs for all the details.
     >>> Decimal(1000).log10()
     Decimal("3")
 
-  (Implemented by Facundo Batista and Mark Dickinson.)
+  The :meth:`as_tuple` method of :class:`Decimal` objects now returns a 
+  named tuple with :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
+  
+  (Implemented by Facundo Batista and Mark Dickinson.  Named tuple
+  support added by Raymond Hettinger.)
+
+* The :mod:`difflib` module's :class:`SequenceMatcher` class 
+  now returns named tuples representing matches. 
+  In addition to behaving like tuples, the returned values
+  also have :attr:`a`, :attr:`b`, and :attr:`size` attributes.
+  (Contributed by Raymond Hettinger.)
 
 * An optional ``timeout`` parameter was added to the
   :class:`ftplib.FTP` class constructor as well as the :meth:`connect`
@@ -794,6 +844,12 @@ complete list of changes, or look through the CVS logs for all the details.
   :class:`httplib.HTTPConnection` and :class:`HTTPSConnection` 
   class constructors, specifying a timeout measured in seconds.
   (Added by Facundo Batista.)
+
+* Most of the :mod:`inspect` module's functions, such as 
+  :func:`getmoduleinfo` and :func:`getargs`, now return named tuples.  
+  In addition to behaving like tuples, the elements of the  return value
+  can also be accessed as attributes.
+  (Contributed by Raymond Hettinger.)
 
 * A new function in the :mod:`itertools` module: ``izip_longest(iter1, iter2,
   ...[, fillvalue])`` makes tuples from each of the elements; if some of the
@@ -891,6 +947,13 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Issue 1727780
 
+* Long regular expression searches carried out by the  :mod:`re`
+  module will now check for signals being delivered, so especially
+  long searches can now be interrupted.
+  (Contributed by Josh Hoyt and Ralf Schmitt.)
+
+  .. % Patch 846388
+
 * The :mod:`rgbimg` module has been removed.
 
 * The :mod:`sets` module has been deprecated; it's better to 
@@ -934,16 +997,41 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Patch #957003
 
+* The :mod:`socket` module now supports TIPC (http://tipc.sf.net),
+  a high-performance non-IP-based protocol designed for use in clustered
+  environments.  TIPC addresses are 4- or 5-tuples.
+  (Contributed by Alberto Bertogli.)
+
+  .. Patch #1646
+ 
 * A new variable in the :mod:`sys` module,
-  :attr:`float_info`, is a dictionary 
+  :attr:`float_info`, is an object
   containing information about the platform's floating-point support
-  derived from the :file:`float.h` file.  Key/value pairs 
-  in this dictionary include 
-  ``"mant_dig"`` (number of digits in the mantissa), ``"epsilon"``
+  derived from the :file:`float.h` file.  Attributes of this object
+  include 
+  :attr:`mant_dig` (number of digits in the mantissa), :attr:`epsilon`
   (smallest difference between 1.0 and the next largest value
   representable), and several others.  (Contributed by Christian Heimes.)
 
   .. Patch 1534
+
+  Another new variable, :attr:`dont_write_bytecode`, controls whether Python
+  writes any :file:`.pyc` or :file:`.pyo` files on importing a module.
+  If this variable is true, the compiled files are not written.  The
+  variable is initially set on start-up by supplying the :option:`-B`
+  switch to the Python interpreter, or by setting the
+  :envvar:`PYTHONDONTWRITEBYTECODE` environment variable before
+  running the interpreter.  Python code can subsequently 
+  change the value of this variable to control whether bytecode files
+  are written or not.
+  (Contributed by Neal Norwitz and Georg Brandl.)
+
+  Information about the command-line arguments supplied to the Python 
+  interpreter are available as attributes of a ``sys.flags`` named 
+  tuple.  For example, the :attr:`verbose` attribute is true if Python 
+  was executed in verbose mode, :attr:`debug` is true in debugging mode, etc.
+  These attributes are all read-only.
+  (Contributed by Christian Heimes.)
 
 * The :mod:`tarfile` module now supports POSIX.1-2001 (pax) and
   POSIX.1-1988 (ustar) format tarfiles, in addition to the GNU tar
@@ -1061,6 +1149,22 @@ complete list of changes, or look through the CVS logs for all the details.
   information.  (Contributed by Alan McIntyre as part of his 
   project for Google's Summer of Code 2007.)
 
+* The :mod:`zipfile` module's :class:`ZipFile` class now has 
+  :meth:`extract` and :meth:`extractall` methods that will unpack 
+  a single file or all the files in the archive to the current directory, or 
+  to a specified directory::
+
+    z = zipfile.ZipFile('python-251.zip')
+
+    # Unpack a single file, writing it relative to the /tmp directory.
+    z.extract('Python/sysmodule.c', '/tmp')
+
+    # Unpack all the files in the archive.
+    z.extractall()
+
+  (Contributed by Alan McIntyre.)
+  .. % Patch 467924
+
 .. ======================================================================
 .. whole new modules get described in subsections here
 
@@ -1143,7 +1247,12 @@ Port-Specific Changes: Windows
   value, as does the :func:`getwche` function.  The :func:`putwch` function
   takes a Unicode character and writes it to the console.
 
-Platform-specific changes go here.
+* The :mod:`_winreg` module now has a function, 
+  :func:`ExpandEnvironmentStrings`, 
+  that expands environment variable references such as ``%NAME%``
+  in an input string.  The handle objects provided by this
+  module now support the context protocol, so they can be used 
+  in :keyword:`with` statements.
 
 .. ======================================================================
 
@@ -1153,14 +1262,21 @@ Platform-specific changes go here.
 Other Changes and Fixes
 =======================
 
-As usual, there were a bunch of other improvements and bugfixes scattered
-throughout the source tree.  A search through the change logs finds there were
-XXX patches applied and YYY bugs fixed between Python 2.5 and 2.6.  Both figures
-are likely to be underestimates.
+As usual, there were a bunch of other improvements and bugfixes
+scattered throughout the source tree.  A search through the change
+logs finds there were XXX patches applied and YYY bugs fixed between
+Python 2.5 and 2.6.  Both figures are likely to be underestimates.
 
 Some of the more notable changes are:
 
-* Details will go here.
+* It's now possible to prevent Python from writing any :file:`.pyc` 
+  or :file:`.pyo` files by either supplying the :option:`-B` switch
+  or setting the :envvar:`PYTHONDONTWRITEBYTECODE` environment variable
+  to any non-empty string when running the Python interpreter.  These
+  are also used to set the :data:`sys.dont_write_bytecode` attribute;
+  Python code can change this variable to control whether bytecode
+  files are subsequently written.
+  (Contributed by Neal Norwitz and Georg Brandl.)
 
 .. ======================================================================
 
@@ -1176,6 +1292,19 @@ code:
   now clears any existing contents of the deque
   before adding elements from the iterable.  This change makes the
   behavior match that of ``list.__init__()``.  
+
+* The :class:`Decimal` constructor now accepts leading and trailing 
+  whitespace when passed a string.  Previously it would raise an
+  :exc:`InvalidOperation` exception.  On the other hand, the
+  :meth:`create_decimal` method of :class:`Context` objects now
+  explicitly disallows extra whitespace, raising a 
+  :exc:`ConversionSyntax` exception.
+
+* Due to an implementation accident, if you passed a file path to 
+  the built-in  :func:`__import__` function, it would actually import
+  the specified file.  This was never intended to work, however, and 
+  the implementation now explicitly checks for this case and raises 
+  an :exc:`ImportError`.
 
 * The :mod:`socket` module exception :exc:`socket.error` now inherits
   from :exc:`IOError`.  Previously it wasn't a subclass of

@@ -300,7 +300,7 @@ The :mod:`test.test_support` module defines the following functions:
 
    This is a context manager than runs the :keyword:`with` statement body using
    a :class:`StringIO.StringIO` object as sys.stdout.  That object can be
-   retrieved using the ``as`` clause of the with statement.
+   retrieved using the ``as`` clause of the :keyword:`with` statement.
 
    Example use::
 

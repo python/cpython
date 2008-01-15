@@ -49,8 +49,9 @@ See the source code for details.  The public methods are:
 
 .. method:: Queue.qsize()
 
-   Return the approximate size of the queue.  Because of multithreading semantics,
-   this number is not reliable.
+   Return the approximate size of the queue.  Note, qsize() > 0 doesn't
+   guarantee that a subsequent get() will not block, nor will qsize() < maxsize
+   guarantee that put() will not block.
 
 
 .. method:: Queue.put(item[, block[, timeout]])

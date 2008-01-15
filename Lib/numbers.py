@@ -5,6 +5,7 @@
 
 TODO: Fill out more detailed documentation on the operators."""
 
+from __future__ import division
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 __all__ = ["Number", "Exact", "Inexact",
@@ -61,7 +62,8 @@ class Complex(Number):
     def __complex__(self):
         """Return a builtin complex instance. Called for complex(self)."""
 
-    def __bool__(self):
+    # Will be __bool__ in 3.0.
+    def __nonzero__(self):
         """True if self != 0. Called for bool(self)."""
         return self != 0
 
@@ -96,6 +98,7 @@ class Complex(Number):
         """-self"""
         raise NotImplementedError
 
+    @abstractmethod
     def __pos__(self):
         """+self"""
         raise NotImplementedError
@@ -120,12 +123,28 @@ class Complex(Number):
 
     @abstractmethod
     def __div__(self, other):
-        """self / other; should promote to float or complex when necessary."""
+        """self / other without __future__ division
+
+        May promote to float.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def __rdiv__(self, other):
-        """other / self"""
+        """other / self without __future__ division"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def __truediv__(self, other):
+        """self / other with __future__ division.
+
+        Should promote to float when necessary.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def __rtruediv__(self, other):
+        """other / self with __future__ division"""
         raise NotImplementedError
 
     @abstractmethod
