@@ -23,6 +23,7 @@ class Queue:
             import threading
         except ImportError:
             import dummy_threading as threading
+        self.maxsize = maxsize
         self._init(maxsize)
         # mutex must be held whenever the queue is mutating.  All methods
         # that acquire mutex must release it before returning.  mutex
@@ -91,14 +92,14 @@ class Queue:
     def empty(self):
         """Return True if the queue is empty, False otherwise (not reliable!)."""
         self.mutex.acquire()
-        n = self._empty()
+        n = not self._qsize()
         self.mutex.release()
         return n
 
     def full(self):
         """Return True if the queue is full, False otherwise (not reliable!)."""
         self.mutex.acquire()
-        n = self._full()
+        n = 0 < self.maxsize == self._qsize()
         self.mutex.release()
         return n
 
@@ -115,21 +116,22 @@ class Queue:
         """
         self.not_full.acquire()
         try:
-            if not block:
-                if self._full():
-                    raise Full
-            elif timeout is None:
-                while self._full():
-                    self.not_full.wait()
-            else:
-                if timeout < 0:
-                    raise ValueError("'timeout' must be a positive number")
-                endtime = _time() + timeout
-                while self._full():
-                    remaining = endtime - _time()
-                    if remaining <= 0.0:
+            if self.maxsize > 0:
+                if not block:
+                    if self._qsize() == self.maxsize:
                         raise Full
-                    self.not_full.wait(remaining)
+                elif timeout is None:
+                    while self._qsize() == self.maxsize:
+                        self.not_full.wait()
+                elif timeout < 0:
+                    raise ValueError("'timeout' must be a positive number")
+                else:
+                    endtime = _time() + timeout
+                    while self._qsize() == self.maxsize:
+                        remaining = endtime - _time()
+                        if remaining <= 0.0:
+                            raise Full
+                        self.not_full.wait(remaining)
             self._put(item)
             self.unfinished_tasks += 1
             self.not_empty.notify()
@@ -158,16 +160,16 @@ class Queue:
         self.not_empty.acquire()
         try:
             if not block:
-                if self._empty():
+                if not self._qsize():
                     raise Empty
             elif timeout is None:
-                while self._empty():
+                while not self._qsize():
                     self.not_empty.wait()
+            elif timeout < 0:
+                raise ValueError("'timeout' must be a positive number")
             else:
-                if timeout < 0:
-                    raise ValueError("'timeout' must be a positive number")
                 endtime = _time() + timeout
-                while self._empty():
+                while not self._qsize():
                     remaining = endtime - _time()
                     if remaining <= 0.0:
                         raise Empty
@@ -192,19 +194,10 @@ class Queue:
 
     # Initialize the queue representation
     def _init(self, maxsize):
-        self.maxsize = maxsize
         self.queue = deque()
 
     def _qsize(self):
         return len(self.queue)
-
-    # Check whether the queue is empty
-    def _empty(self):
-        return not self.queue
-
-    # Check whether the queue is full
-    def _full(self):
-        return self.maxsize > 0 and len(self.queue) == self.maxsize
 
     # Put a new item in the queue
     def _put(self, item):
