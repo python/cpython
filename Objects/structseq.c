@@ -460,7 +460,7 @@ static PyTypeObject _struct_sequence_template = {
 	structseq_methods,      		/* tp_methods */
         NULL,			             	/* tp_members */
 	0,			          	/* tp_getset */
-	0,					/* tp_base */
+	&PyTuple_Type,				/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */

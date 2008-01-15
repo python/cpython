@@ -975,6 +975,10 @@ Library
 Extension Modules
 -----------------
 
+- Issue 1820: structseq objects did not subclass from tuple so they did
+  not pass isinstance(t, tuple) tests and they could not be passed to
+  the % string formatting operator as an input tuple.
+
 - _winreg's HKEY object has gained __enter__ and __exit__ methods to support
   the context manager protocol.  The _winreg module also gained a new function
   ``ExpandEnvironmentStrings`` to expand REG_EXPAND_SZ keys.
