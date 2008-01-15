@@ -675,9 +675,11 @@ Optimizations
 
 * Type objects now have a cache of methods that can reduc
   the amount of work required to find the correct method implementation
-  for a particular class; the interpreter may not need to traverse base 
-  classes 
-
+  for a particular class; once cached, the interpreter doesn't need to
+  traverse base classes to figure out the right method to call.  
+  The cache is cleared if a base class or the class itself is modified, 
+  so the cache should remain correct even in the face of Python's dynamic 
+  nature.
   (Original optimization implemented by Armin Rigo, updated for 
   Python 2.6 by Kevin Jacobs.) 
 
