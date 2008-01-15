@@ -102,18 +102,17 @@ class Queue:
         """
         self.not_full.acquire()
         try:
-            if not block:
-                if self.maxsize > 0 and self._qsize() == self.maxsize:
-                    raise Full
-            elif timeout is None:
-                if self.maxsize > 0:
+            if self.maxsize > 0:
+                if not block:
+                    if self._qsize() == self.maxsize:
+                        raise Full
+                elif timeout is None:
                     while self._qsize() == self.maxsize:
                         self.not_full.wait()
-            else:
-                if timeout < 0:
+                elif timeout < 0:
                     raise ValueError("'timeout' must be a positive number")
-                endtime = _time() + timeout
-                if self.maxsize > 0:
+                else:
+                    endtime = _time() + timeout
                     while self._qsize() == self.maxsize:
                         remaining = endtime - _time()
                         if remaining <= 0.0:
@@ -152,9 +151,9 @@ class Queue:
             elif timeout is None:
                 while not self._qsize():
                     self.not_empty.wait()
+            elif timeout < 0:
+                raise ValueError("'timeout' must be a positive number")
             else:
-                if timeout < 0:
-                    raise ValueError("'timeout' must be a positive number")
                 endtime = _time() + timeout
                 while not self._qsize():
                     remaining = endtime - _time()
