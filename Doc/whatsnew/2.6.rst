@@ -673,7 +673,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 Optimizations
 -------------
 
-* Type objects now have a cache of methods that can reduc
+* Type objects now have a cache of methods that can reduce
   the amount of work required to find the correct method implementation
   for a particular class; once cached, the interpreter doesn't need to
   traverse base classes to figure out the right method to call.  
