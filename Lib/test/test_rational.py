@@ -148,12 +148,10 @@ class RationalTest(unittest.TestCase):
         self.assertTypedEquals(10.0 + 0j, (1.0 + 0j) / R(1, 10))
 
         self.assertTypedEquals(0, R(1, 10) // 1)
-        # XXX Jeffrey: why does this fail?
-        ##self.assertTypedEquals(0.0, R(1, 10) // 1.0)
+        self.assertTypedEquals(0, R(1, 10) // 1.0)
         self.assertTypedEquals(10, 1 // R(1, 10))
         self.assertTypedEquals(10**23, 10**22 // R(1, 10))
-        # XXX Jeffrey: why does this fail?
-        ##self.assertTypedEquals(10.0, 1.0 // R(1, 10))
+        self.assertTypedEquals(10, 1.0 // R(1, 10))
 
         self.assertTypedEquals(R(1, 10), R(1, 10) % 1)
         self.assertTypedEquals(0.1, R(1, 10) % 1.0)
