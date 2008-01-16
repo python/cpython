@@ -2971,7 +2971,7 @@ class Decimal(object):
     def _islogical(self):
         """Return True if self is a logical operand.
 
-        For being logical, it must be a finite numbers with a sign of 0,
+        For being logical, it must be a finite number with a sign of 0,
         an exponent of 0, and a coefficient whose digits must all be
         either 0 or 1.
         """
@@ -4089,7 +4089,7 @@ class Context(object):
         """max compares two values numerically and returns the maximum.
 
         If either operand is a NaN then the general rules apply.
-        Otherwise, the operands are compared as as though by the compare
+        Otherwise, the operands are compared as though by the compare
         operation.  If they are numerically equal then the left-hand operand
         is chosen as the result.  Otherwise the maximum (closer to positive
         infinity) of the two operands is chosen as the result.
@@ -4113,7 +4113,7 @@ class Context(object):
         """min compares two values numerically and returns the minimum.
 
         If either operand is a NaN then the general rules apply.
-        Otherwise, the operands are compared as as though by the compare
+        Otherwise, the operands are compared as though by the compare
         operation.  If they are numerically equal then the left-hand operand
         is chosen as the result.  Otherwise the minimum (closer to negative
         infinity) of the two operands is chosen as the result.
