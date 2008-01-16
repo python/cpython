@@ -590,7 +590,7 @@ correspond to Unix system calls applicable to sockets.
 
    :platform: Windows 
    
-   The `meth:ioctl` method is a limited interface to the WSAIoctl system
+   The :meth:`ioctl` method is a limited interface to the WSAIoctl system
    interface. Please refer to the MSDN documentation for more information.
    
    .. versionadded:: 2.6
