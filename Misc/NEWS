@@ -364,6 +364,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1831: ctypes now raises a TypeError if conflicting positional
+  and named arguments are passed to a Structure or Union initializer.
+
 - Convert the internal ctypes array type cache to a WeakValueDict so
   that array types do not live longer than needed.
 
