@@ -127,6 +127,7 @@ bytes(cdata)
 
 PyObject *PyExc_ArgError;
 static PyTypeObject Simple_Type;
+PyObject *array_types_cache;
 
 char *conversion_mode_encoding = NULL;
 char *conversion_mode_errors = NULL;
@@ -4086,16 +4087,10 @@ PyTypeObject Array_Type = {
 PyObject *
 CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 {
-	static PyObject *cache;
 	PyObject *key;
 	PyObject *result;
 	char name[256];
 
-	if (cache == NULL) {
-		cache = PyDict_New();
-		if (cache == NULL)
-			return NULL;
-	}
 #if (PY_VERSION_HEX < 0x02050000)
 	key = Py_BuildValue("(Oi)", itemtype, length);
 #else
@@ -4103,12 +4098,12 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 #endif
 	if (!key)
 		return NULL;
-	result = PyDict_GetItem(cache, key);
+	result = PyObject_GetItem(array_types_cache, key);
 	if (result) {
-		Py_INCREF(result);
 		Py_DECREF(key);
 		return result;
-	}
+	} else
+		PyErr_Clear();
 
 	if (!PyType_Check(itemtype)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -4138,7 +4133,11 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 		);
 	if (!result)
 		return NULL;
-	PyDict_SetItem(cache, key, result);
+	if (-1 == PyObject_SetItem(array_types_cache, key, result)) {
+		Py_DECREF(key);
+		Py_DECREF(result);
+		return NULL;
+	}
 	Py_DECREF(key);
 	return result;
 }
@@ -4951,6 +4950,7 @@ PyMODINIT_FUNC
 init_ctypes(void)
 {
 	PyObject *m;
+	PyObject *weakref;
 
 /* Note:
    ob_type is the metatype (the 'type'), defaults to PyType_Type,
@@ -4962,6 +4962,16 @@ init_ctypes(void)
 	m = Py_InitModule3("_ctypes", module_methods, module_docs);
 	if (!m)
 		return;
+
+	weakref = PyImport_ImportModule("weakref");
+	if (weakref == NULL)
+		return;
+	array_types_cache = PyObject_CallMethod(weakref,
+						"WeakValueDictionary",
+						NULL);
+	if (array_types_cache == NULL)
+		return;
+	Py_DECREF(weakref);
 
 	if (PyType_Ready(&PyCArg_Type) < 0)
 		return;
