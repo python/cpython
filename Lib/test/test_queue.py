@@ -181,8 +181,13 @@ def SimpleQueueTest(q):
         raise RuntimeError, "Call this function with an empty queue"
     # I guess we better check things actually queue correctly a little :)
     q.put(111)
+    q.put(333)
     q.put(222)
-    verify(q.get() == 111 and q.get() == 222,
+    target_order = dict(Queue = [111, 333, 222],
+                        LifoQueue = [222, 333, 111],
+                        PriorityQueue = [111, 222, 333])
+    actual_order = [q.get(), q.get(), q.get()]
+    verify(actual_order == target_order[q.__class__.__name__],
            "Didn't seem to queue the correct data!")
     for i in range(QUEUE_SIZE-1):
         q.put(i)
@@ -260,18 +265,20 @@ def QueueTaskDoneTest(q):
         raise TestFailed("Did not detect task count going negative")
 
 def test():
-    q = Queue.Queue()
-    QueueTaskDoneTest(q)
-    QueueJoinTest(q)
-    QueueJoinTest(q)
-    QueueTaskDoneTest(q)
+    for Q in Queue.Queue, Queue.LifoQueue, Queue.PriorityQueue:
+        q = Q()
+        QueueTaskDoneTest(q)
+        QueueJoinTest(q)
+        QueueJoinTest(q)
+        QueueTaskDoneTest(q)
 
-    q = Queue.Queue(QUEUE_SIZE)
-    # Do it a couple of times on the same queue
-    SimpleQueueTest(q)
-    SimpleQueueTest(q)
-    if verbose:
-        print "Simple Queue tests seemed to work"
+        q = Q(QUEUE_SIZE)
+        # Do it a couple of times on the same queue
+        SimpleQueueTest(q)
+        SimpleQueueTest(q)
+        if verbose:
+            print "Simple Queue tests seemed to work for", Q.__name__
+
     q = FailingQueue(QUEUE_SIZE)
     FailingQueueTest(q)
     FailingQueueTest(q)
