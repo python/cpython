@@ -995,7 +995,7 @@ Q_get_sw(void *ptr, Py_ssize_t size)
 
 
 static PyObject *
-D_set(void *ptr, PyObject *value, Py_ssize_t size)
+g_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
 	long double x;
 
@@ -1011,7 +1011,7 @@ D_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-D_get(void *ptr, Py_ssize_t size)
+g_get(void *ptr, Py_ssize_t size)
 {
 	long double val;
 	memcpy(&val, ptr, sizeof(long double));
@@ -1612,7 +1612,7 @@ static struct fielddesc formattable[] = {
 	{ 'B', B_set, B_get, &ffi_type_uchar},
 	{ 'c', c_set, c_get, &ffi_type_schar},
 	{ 'd', d_set, d_get, &ffi_type_double, d_set_sw, d_get_sw},
-	{ 'D', D_set, D_get, &ffi_type_longdouble},
+	{ 'g', g_set, g_get, &ffi_type_longdouble},
 	{ 'f', f_set, f_get, &ffi_type_float, f_set_sw, f_get_sw},
 	{ 'h', h_set, h_get, &ffi_type_sshort, h_set_sw, h_get_sw},
 	{ 'H', H_set, H_get, &ffi_type_ushort, H_set_sw, H_get_sw},
