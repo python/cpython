@@ -185,7 +185,7 @@ class c_double(_SimpleCData):
 _check_size(c_double)
 
 class c_longdouble(_SimpleCData):
-    _type_ = "D"
+    _type_ = "g"
 if sizeof(c_longdouble) == sizeof(c_double):
     c_longdouble = c_double
 
