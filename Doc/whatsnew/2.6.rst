@@ -541,6 +541,100 @@ an abstract method.
       Implemented by XXX.
       Backported to 2.6 by Benjamin Aranguren, with Alex Martelli.
 
+.. ======================================================================
+
+.. _pep-3141:
+
+PEP 3141: A Type Hierarchy for Numbers
+=====================================================
+
+In Python 3.0, several abstract base classes for numeric types,
+inspired by Scheme's numeric tower (XXX add link), are being added.
+This change was backported to 2.6 as the :mod:`numbers` module.
+
+The most general ABC is :class:`Number`.  It defines no operations at
+all, and only exists to allow checking if an object is a number by
+doing ``isinstance(obj, Number)``.
+
+Numbers are further divided into :class:`Exact` and :class:`Inexact`.
+Exact numbers can represent values precisely and operations never
+round off the results or introduce tiny errors that may break the
+communtativity and associativity properties; inexact numbers may
+perform such rounding or introduce small errors.  Integers, long
+integers, and rational numbers are exact, while floating-point 
+and complex numbers are inexact.
+
+:class:`Complex` is a subclass of :class:`Number`.  Complex numbers
+can undergo the basic operations of addition, subtraction,
+multiplication, division, and exponentiation, and you can retrieve the
+real and imaginary parts and obtain a number's conjugate.  Python's built-in 
+complex type is an implementation of :class:`Complex`.
+
+:class:`Real` further derives from :class:`Complex`, and adds 
+operations that only work on real numbers: :func:`floor`, :func:`trunc`, 
+rounding, taking the remainder mod N, floor division, 
+and comparisons.  
+
+:class:`Rational` numbers derive from :class:`Real`, have
+:attr:`numerator` and :attr:`denominator` properties, and can be
+converted to floats.  Python 2.6 adds a simple rational-number class
+in the :mod:`rational` module.
+
+:class:`Integral` numbers derive from :class:`Rational`, and
+can be shifted left and right with ``<<`` and ``>>``, 
+combined using bitwise operations such as ``&`` and ``|``, 
+and can be used as array indexes and slice boundaries.
+
+The PEP slightly redefines the existing built-ins :func:`math.floor`,
+:func:`math.ceil`, :func:`round`, and adds a new one, :func:`trunc`.  All of them
+take a :class:`Real` value and return an :class:`Integral`.
+
+* :func:`math.floor` returns the closest :class:`Integral` that's 
+  smaller than the function's argument.  Numeric types can define a 
+  :meth:`__floor__` method to provide a custom implementation.
+
+* :func:`math.ceil` returns the closest :class:`Integral` that's 
+  greater than the function's argument.  It can be provided by a 
+  :meth:`__ceil__` method.
+
+* :func:`trunc` rounds toward zero, returning the closest 
+  :class:`Integral` that's between the function's argument and zero.
+  It can be provided by a :meth:`__trunc` method.
+
+* :func:`round` takes a :class:`Real` and rounds it off, optionally to a 
+  specified number of decimal places.  It will call a :meth:`__round__`
+  method. Whether .5 should be rounded up, or down, or toward the
+  nearest even number, is left up to the type's implementation.
+
+
+The Rational Module
+--------------------------------------------------
+
+To fill out the hierarchy of numeric types, a rational-number class
+has been added as the :mod:`rational` module.  Rational numbers are
+represented as a fraction; rational numbers can exactly represent
+numbers such as two-thirds that floating-point numbers can only
+approximate.
+
+The :class:`Rational` constructor takes two :class:`Integral` values
+that will be the numerator and denominator of the resulting fraction. ::
+
+    >>> from rational import Rational
+    >>> a = Rational(2, 3)
+    >>> b = Rational(2, 5)
+    >>> float(a), float(b)
+    (0.66666666666666663, 0.40000000000000002)
+    >>> a+b
+    rational.Rational(16,15)
+    >>> a/b
+    rational.Rational(5,3)
+
+The :mod:`rational` module is based upon an implementation by Sjoerd
+Mullender that was in Python's :file:`Demo/classes/` directory for a
+long time.  This implementation was significantly updated by Jeffrey
+Yaskin.
+
+
 Other Language Changes
 ======================
 
