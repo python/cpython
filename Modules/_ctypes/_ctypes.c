@@ -3578,6 +3578,21 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 				return IBUG("_fields_[i][0] failed");
 			}
 
+			if (kwds && PyDict_GetItem(kwds, name)) {
+				char *field = PyString_AsString(name);
+				if (field == NULL) {
+					PyErr_Clear();
+					field = "???";
+				}
+				PyErr_Format(PyExc_TypeError,
+					     "duplicate values for field %s",
+					     field);
+				Py_DECREF(pair);
+				Py_DECREF(name);
+				Py_DECREF(fields);
+				return -1;
+			}
+
 			val = PyTuple_GET_ITEM(args, i);
 			if (-1 == PyObject_SetAttr(self, name, val)) {
 				Py_DECREF(pair);

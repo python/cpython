@@ -215,6 +215,15 @@ class StructureTestCase(unittest.TestCase):
         # too long
         self.assertRaises(ValueError, Person, "1234567", 5)
 
+    def test_conflicting_initializers(self):
+        class POINT(Structure):
+            _fields_ = [("x", c_int), ("y", c_int)]
+        # conflicting positional and keyword args
+        self.assertRaises(TypeError, POINT, 2, 3, x=4)
+        self.assertRaises(TypeError, POINT, 2, 3, y=4)
+
+        # Should this raise TypeError instead?
+        self.assertRaises(ValueError, POINT, 2, 3, 4)
 
     def test_keyword_initializers(self):
         class POINT(Structure):
