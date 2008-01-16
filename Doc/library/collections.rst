@@ -536,8 +536,7 @@ faster versions that bypass error-checking::
             return self._make(_map(kwds.get, ('x', 'y'), self))
 
 The subclasses shown above set ``__slots__`` to an empty tuple.  This keeps
-the named tuples from having per-instance dictionaries, so they will
-continue to be lightweight and require no more memory than regular tuples.
+keep memory requirements low by preventing the creation of instance dictionaries.
 
 Subclassing is not useful for adding new, stored fields.  Instead, simply
 create a new named tuple type from the :attr:`_fields` attribute::

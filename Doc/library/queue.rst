@@ -6,23 +6,46 @@
    :synopsis: A synchronized queue class.
 
 
-The :mod:`Queue` module implements a multi-producer, multi-consumer FIFO queue.
+The :mod:`Queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
 exchanged safely between multiple threads.  The :class:`Queue` class in this
 module implements all the required locking semantics.  It depends on the
 availability of thread support in Python; see the :mod:`threading`
 module.
 
-The :mod:`Queue` module defines the following class and exception:
+Implements three types of queue whose only difference is the order that
+the entries are retrieved.  In a FIFO queue, the first tasks added are
+the first retrieved. In a LIFO queue, the most recently added entry is
+the first retrieved (operating like a stack).  With a priority queue,
+the entries are kept sorted (using the :mod:`heapq` module) and the
+lowest valued entry is retrieved first.
 
+The :mod:`Queue` module defines the following classes and exceptions:
 
 .. class:: Queue(maxsize)
 
-   Constructor for the class.  *maxsize* is an integer that sets the upperbound
+   Constructor for a FIFO queue.  *maxsize* is an integer that sets the upperbound
    limit on the number of items that can be placed in the queue.  Insertion will
    block once this size has been reached, until queue items are consumed.  If
    *maxsize* is less than or equal to zero, the queue size is infinite.
 
+.. class:: LifoQueue(maxsize)
+
+   Constructor for a LIFO queue.  *maxsize* is an integer that sets the upperbound
+   limit on the number of items that can be placed in the queue.  Insertion will
+   block once this size has been reached, until queue items are consumed.  If
+   *maxsize* is less than or equal to zero, the queue size is infinite.
+
+.. class:: PriorityQueue(maxsize)
+
+   Constructor for a priority queue.  *maxsize* is an integer that sets the upperbound
+   limit on the number of items that can be placed in the queue.  Insertion will
+   block once this size has been reached, until queue items are consumed.  If
+   *maxsize* is less than or equal to zero, the queue size is infinite.
+
+   The lowest valued entries are retrieved first (the lowest valued entry is the
+   one returned by ``sorted(list(entries))[0]``).  A typical pattern for entries
+   is a tuple in the form: ``(priority_number, data)``.
 
 .. exception:: Empty
 
@@ -41,10 +64,8 @@ The :mod:`Queue` module defines the following class and exception:
 Queue Objects
 -------------
 
-Class :class:`Queue` implements queue objects and has the methods described
-below.  This class can be derived from in order to implement other queue
-organizations (e.g. stack) but the inheritable interface is not described here.
-See the source code for details.  The public methods are:
+Queue objects (:class:``Queue``, :class:``LifoQueue``, or :class:``PriorityQueue``
+provide the public methods described below.  
 
 
 .. method:: Queue.qsize()
