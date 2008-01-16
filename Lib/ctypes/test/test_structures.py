@@ -222,8 +222,8 @@ class StructureTestCase(unittest.TestCase):
         self.assertRaises(TypeError, POINT, 2, 3, x=4)
         self.assertRaises(TypeError, POINT, 2, 3, y=4)
 
-        # Should this raise TypeError instead?
-        self.assertRaises(ValueError, POINT, 2, 3, 4)
+        # too many initializers
+        self.assertRaises(TypeError, POINT, 2, 3, 4)
 
     def test_keyword_initializers(self):
         class POINT(Structure):
@@ -320,9 +320,9 @@ class StructureTestCase(unittest.TestCase):
         self.failUnlessEqual(cls, RuntimeError)
         if issubclass(Exception, object):
             self.failUnlessEqual(msg,
-                                 "(Phone) <type 'exceptions.ValueError'>: too many initializers")
+                                 "(Phone) <type 'exceptions.TypeError'>: too many initializers")
         else:
-            self.failUnlessEqual(msg, "(Phone) exceptions.ValueError: too many initializers")
+            self.failUnlessEqual(msg, "(Phone) exceptions.TypeError: too many initializers")
 
 
     def get_except(self, func, *args):
