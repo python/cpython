@@ -3557,7 +3557,7 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 		if (PyTuple_GET_SIZE(args) > PySequence_Length(fields)) {
 			Py_DECREF(fields);
-			PyErr_SetString(PyExc_ValueError,
+			PyErr_SetString(PyExc_TypeError,
 					"too many initializers");
 			return -1;
 		}
