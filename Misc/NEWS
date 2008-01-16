@@ -364,6 +364,9 @@ Core and builtins
 Library
 -------
 
+- Convert the internal ctypes array type cache to a WeakValueDict so
+  that array types do not live longer than needed.
+
 - Issue #1786: pdb should use its own stdin/stdout around an exec call
   and when creating a recursive instance.
 
