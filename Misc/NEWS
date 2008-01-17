@@ -364,6 +364,9 @@ Core and builtins
 Library
 -------
 
+- #1861: Added an attribute to the sched module which returns an ordered
+  list of upcoming events (displayed as named tuples).
+
 - #1837: The queue module now also supports a LIFO queue and a priority queue.
 
 - Issue #1831: ctypes now raises a TypeError if conflicting positional
