@@ -57,14 +57,15 @@ Example::
     >>> def print_some_times():
     ...     print time.time()
     ...     Timer(5, print_time, ()).start()
-    ...     Timer(10, 1, print_time, ())
-    ...     print time.time()     # executes before the time-delay events 
+    ...     Timer(10, print_time, ()).start()
+    ...     time.sleep(11)	# sleep while time-delay events execute
+    ...     print time.time()     
     ...
     >>> print_some_times()
     930343690.257
-    930343690.301
     From print_time 930343695.274
     From print_time 930343700.273
+    930343701.301
 
 
 .. _scheduler-objects:
