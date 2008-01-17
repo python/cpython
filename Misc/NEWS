@@ -993,6 +993,9 @@ Extension Modules
   the context manager protocol.  The _winreg module also gained a new function
   ``ExpandEnvironmentStrings`` to expand REG_EXPAND_SZ keys.
 
+- itertools.starmap() now accepts any iterable input. Previously, it required
+  the function inputs to be tuples.
+
 - Issue #1646: Make socket support TIPC. The socket module now has support
   for TIPC under Linux, see http://tipc.sf.net/ for more information.
 
