@@ -986,6 +986,10 @@ Library
 - The implementation of UnicodeError objects has been simplified (start and end
   attributes are now stored directly as Py_ssize_t members).
 
+- Issue829951: In the smtplib module, SMTP.starttls() now complies with 
+  RFC 3207 and forgets any knowledge obtained from the server not obtained
+  from the TLS negotiation itself.  Patch contributed by Bill Fenner.
+
 Extension Modules
 -----------------
 
