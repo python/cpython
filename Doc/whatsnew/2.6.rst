@@ -1091,6 +1091,12 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Patch #957003
 
+* In the :mod:`smtplib` module, SMTP.starttls() now complies with :rfc:`3207`
+  and forgets any knowledge obtained from the server not obtained from
+  the TLS negotiation itself.  Patch contributed by Bill Fenner.
+
+  .. Issue 829951
+
 * The :mod:`socket` module now supports TIPC (http://tipc.sf.net),
   a high-performance non-IP-based protocol designed for use in clustered
   environments.  TIPC addresses are 4- or 5-tuples.
