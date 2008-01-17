@@ -217,7 +217,7 @@ extern void ffi_call_STDCALL(void (*)(char *, extended_cif *),
 #endif /* X86_WIN32 */
 
 void ffi_call(/*@dependent@*/ ffi_cif *cif, 
-	      void (*fn)(), 
+	      void (*fn)(void), 
 	      /*@out@*/ void *rvalue, 
 	      /*@dependent@*/ void **avalue)
 {
