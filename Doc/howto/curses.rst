@@ -367,8 +367,8 @@ It's possible to change this behavior with the method :meth:`nodelay`. After
 ``nodelay(1)``, :meth:`getch` for the window becomes non-blocking and returns
 ``curses.ERR`` (a value of -1) when no input is ready.  There's also a
 :func:`halfdelay` function, which can be used to (in effect) set a timer on each
-:meth:`getch`; if no input becomes available within the number of milliseconds
-specified as the argument to :func:`halfdelay`, curses raises an exception.
+:meth:`getch`; if no input becomes available within a specified
+delay (measured in tenths of a second), curses raises an exception.
 
 The :meth:`getch` method returns an integer; if it's between 0 and 255, it
 represents the ASCII code of the key pressed.  Values greater than 255 are
