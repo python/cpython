@@ -2,8 +2,9 @@
 
 from time import time as _time
 from collections import deque
+import heapq
 
-__all__ = ['Empty', 'Full', 'Queue']
+__all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue']
 
 class Empty(Exception):
     "Exception raised by Queue.get(block=0)/get_nowait()."
@@ -182,7 +183,7 @@ class Queue:
     def _init(self, maxsize):
         self.queue = deque()
 
-    def _qsize(self):
+    def _qsize(self, len=len):
         return len(self.queue)
 
     # Put a new item in the queue
@@ -192,3 +193,38 @@ class Queue:
     # Get an item from the queue
     def _get(self):
         return self.queue.popleft()
+
+
+class PriorityQueue(Queue):
+    '''Variant of Queue that retrieves open entries in priority order (lowest first).
+
+    Entries are typically tuples of the form:  (priority number, data).
+    '''
+
+    def _init(self, maxsize):
+        self.queue = []
+
+    def _qsize(self, len=len):
+        return len(self.queue)
+
+    def _put(self, item, heappush=heapq.heappush):
+        heappush(self.queue, item)
+
+    def _get(self, heappop=heapq.heappop):
+        return heappop(self.queue)
+
+
+class LifoQueue(Queue):
+    '''Variant of Queue that retrieves most recently added entries first.'''
+
+    def _init(self, maxsize):
+        self.queue = []
+
+    def _qsize(self, len=len):
+        return len(self.queue)
+
+    def _put(self, item):
+        self.queue.append(item)
+
+    def _get(self):
+        return self.queue.pop()
