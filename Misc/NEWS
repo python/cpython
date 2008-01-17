@@ -165,6 +165,10 @@ Library
 - Issue1385: The hmac module now computes the correct hmac when using hashes
   with a block size other than 64 bytes (such as sha384 and sha512).
 
+- Issue829951: In the smtplib module, SMTP.starttls() now complies with 
+  RFC 3207 and forgets any knowledge obtained from the server not obtained
+  from the TLS negotiation itself.  Patch contributed by Bill Fenner.
+
 
 Extension Modules
 -----------------
