@@ -47,7 +47,7 @@ Example::
 Scheduler Objects
 -----------------
 
-:class:`scheduler` instances have the following methods:
+:class:`scheduler` instances have the following methods and attributes:
 
 
 .. method:: scheduler.enterabs(time, priority, action, argument)
@@ -98,3 +98,8 @@ Scheduler Objects
    the calling code is responsible for canceling  events which are no longer
    pertinent.
 
+.. attribute:: scheduler.queue
+
+   Read-only attribute returning a list of upcoming events in the order they
+   will be run.  Each event is shown as a :term:`named tuple` with the
+   following fields:  time, priority, action, argument.
