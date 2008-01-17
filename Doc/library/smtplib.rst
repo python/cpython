@@ -191,6 +191,16 @@ An :class:`SMTP` instance has the following methods:
    necessary to call this method explicitly.  It will be implicitly called by
    :meth:`sendmail` when necessary.
 
+.. method:: SMTP.ehlo_or_helo_if_needed()
+
+   This method call :meth:`ehlo` and or :meth:`helo` if there has been no
+   previous ``EHLO`` or ``HELO`` command this session.  It tries ESMTP ``EHLO``
+   first.
+
+   :exc:SMTPHeloError
+     The server didn't reply properly to the ``HELO`` greeting.
+
+   .. versionadded:: 2.6
 
 .. method:: SMTP.has_extn(name)
 
@@ -236,6 +246,22 @@ An :class:`SMTP` instance has the following methods:
 
    If *keyfile* and *certfile* are provided, these are passed to the :mod:`socket`
    module's :func:`ssl` function.
+
+   If there has been no previous ``EHLO`` or ``HELO`` command this session,
+   this method tries ESMTP ``EHLO`` first.
+
+   .. versionchanged:: 2.6
+
+   :exc:`SMTPHeloError`
+      The server didn't reply properly to the ``HELO`` greeting.
+
+   :exc:`SMTPException`
+     The server does not support the STARTTLS extension.
+
+   .. versionchanged:: 2.6
+
+   :exc:`RuntimeError`
+     SSL/TLS support is not available to your python interpreter.
 
 
 .. method:: SMTP.sendmail(from_addr, to_addrs, msg[, mail_options, rcpt_options])
