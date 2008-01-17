@@ -652,10 +652,10 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   .. Revision 57619
 
-* Properties now have two attributes, 
+* Properties now have three attributes, :attr:`getter`,
   :attr:`setter` and :attr:`deleter`, that are useful shortcuts for
-  adding a setter or deleter function to an existing property.  
-  You would use them like this::
+  adding or modifying a getter, setter or deleter function to an 
+  existing property. You would use them like this::
 
     class C(object):
 	@property                                                              
@@ -669,6 +669,15 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 	@x.deleter                                                             
 	def x(self): 
 	    del self._x             
+
+    class D(C):
+        @C.x.getter
+        def x(self):
+            return self._x * 2
+
+        @x.setter
+        def x(self, value):
+            self._x = value / 2
 
 
 * C functions and methods that use 
@@ -1336,6 +1345,7 @@ Port-Specific Changes: Windows
   API.  The :func:`getwch` function reads a keypress and returns a Unicode 
   value, as does the :func:`getwche` function.  The :func:`putwch` function
   takes a Unicode character and writes it to the console.
+  (Contributed by Christian Heimes.)
 
 * :func:`os.path.expandvars` will now expand environment variables 
   in the form "%var%", and "~user" will be expanded into the 
@@ -1350,7 +1360,15 @@ Port-Specific Changes: Windows
   that expands environment variable references such as ``%NAME%``
   in an input string.  The handle objects provided by this
   module now support the context protocol, so they can be used 
-  in :keyword:`with` statements.
+  in :keyword:`with` statements. (Contributed by Christian Heimes.)
+
+* The new default compiler on Windows is Visual Studio 2008 (VS 9.0). The 
+  build directories for Visual Studio 2003 (VS7.1) and 2005 (VS8.0)
+  were moved into the PC/ directory. The new PCbuild directory supports
+  cross compilation for X64, debug builds and Profile Guided Optimization
+  (PGO). PGO builds are roughly 10% faster than normal builds.
+  (Contributed by Christian Heimes with help from Amaury Forgeot d'Arc and
+  Martin von Loewis.)
 
 .. ======================================================================
 
