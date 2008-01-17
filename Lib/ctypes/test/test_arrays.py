@@ -116,5 +116,19 @@ class ArrayTestCase(unittest.TestCase):
             self.failUnlessEqual(sz[1:4:2], "o")
             self.failUnlessEqual(sz.value, "foo")
 
+    def test_cache(self):
+        # Array types are cached internally in the _ctypes extension,
+        # in a WeakValueDictionary.  Make sure the array type is
+        # removed from the cache when the itemtype goes away.  This
+        # test will not fail, but will show a leak in the testsuite.
+
+        # Create a new type:
+        class my_int(c_int):
+            pass
+        # Create a new array type based on it:
+        t1 = my_int * 1
+        t2 = my_int * 1
+        self.failUnless(t1 is t2)
+
 if __name__ == '__main__':
     unittest.main()

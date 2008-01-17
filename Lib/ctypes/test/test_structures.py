@@ -215,6 +215,15 @@ class StructureTestCase(unittest.TestCase):
         # too long
         self.assertRaises(ValueError, Person, "1234567", 5)
 
+    def test_conflicting_initializers(self):
+        class POINT(Structure):
+            _fields_ = [("x", c_int), ("y", c_int)]
+        # conflicting positional and keyword args
+        self.assertRaises(TypeError, POINT, 2, 3, x=4)
+        self.assertRaises(TypeError, POINT, 2, 3, y=4)
+
+        # too many initializers
+        self.assertRaises(TypeError, POINT, 2, 3, 4)
 
     def test_keyword_initializers(self):
         class POINT(Structure):
@@ -305,9 +314,9 @@ class StructureTestCase(unittest.TestCase):
         self.failUnlessEqual(cls, RuntimeError)
         if issubclass(Exception, object):
             self.failUnlessEqual(msg,
-                                 "(Phone) <type 'ValueError'>: too many initializers")
+                                 "(Phone) <type 'TypeError'>: too many initializers")
         else:
-            self.failUnlessEqual(msg, "(Phone) ValueError: too many initializers")
+            self.failUnlessEqual(msg, "(Phone) TypeError: too many initializers")
 
 
     def get_except(self, func, *args):

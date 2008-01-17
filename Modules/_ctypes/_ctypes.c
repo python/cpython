@@ -122,6 +122,7 @@ bytes(cdata)
 
 PyObject *PyExc_ArgError;
 static PyTypeObject Simple_Type;
+PyObject *array_types_cache;
 
 char *conversion_mode_encoding = NULL;
 char *conversion_mode_errors = NULL;
@@ -1112,7 +1113,7 @@ _type_ attribute.
 
 */
 
-static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOvtD";
+static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOvtg";
 
 static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)
@@ -3535,7 +3536,7 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 		if (PyTuple_GET_SIZE(args) > PySequence_Length(fields)) {
 			Py_DECREF(fields);
-			PyErr_SetString(PyExc_ValueError,
+			PyErr_SetString(PyExc_TypeError,
 					"too many initializers");
 			return -1;
 		}
@@ -3554,6 +3555,21 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 				Py_DECREF(pair);
 				Py_DECREF(fields);
 				return IBUG("_fields_[i][0] failed");
+			}
+
+			if (kwds && PyDict_GetItem(kwds, name)) {
+				char *field = PyString_AsString(name);
+				if (field == NULL) {
+					PyErr_Clear();
+					field = "???";
+				}
+				PyErr_Format(PyExc_TypeError,
+					     "duplicate values for field %s",
+					     field);
+				Py_DECREF(pair);
+				Py_DECREF(name);
+				Py_DECREF(fields);
+				return -1;
 			}
 
 			val = PyTuple_GET_ITEM(args, i);
@@ -3977,25 +3993,19 @@ PyTypeObject Array_Type = {
 PyObject *
 CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 {
-	static PyObject *cache;
 	PyObject *key;
 	PyObject *result;
 	char name[256];
 
-	if (cache == NULL) {
-		cache = PyDict_New();
-		if (cache == NULL)
-			return NULL;
-	}
 	key = Py_BuildValue("(On)", itemtype, length);
 	if (!key)
 		return NULL;
-	result = PyDict_GetItem(cache, key);
+	result = PyObject_GetItem(array_types_cache, key);
 	if (result) {
-		Py_INCREF(result);
 		Py_DECREF(key);
 		return result;
-	}
+	} else
+		PyErr_Clear();
 
 	if (!PyType_Check(itemtype)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -4021,7 +4031,11 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 		);
 	if (!result)
 		return NULL;
-	PyDict_SetItem(cache, key, result);
+	if (-1 == PyObject_SetItem(array_types_cache, key, result)) {
+		Py_DECREF(key);
+		Py_DECREF(result);
+		return NULL;
+	}
 	Py_DECREF(key);
 	return result;
 }
@@ -4778,6 +4792,7 @@ PyMODINIT_FUNC
 init_ctypes(void)
 {
 	PyObject *m;
+	PyObject *weakref;
 
 /* Note:
    ob_type is the metatype (the 'type'), defaults to PyType_Type,
@@ -4789,6 +4804,16 @@ init_ctypes(void)
 	m = Py_InitModule3("_ctypes", module_methods, module_docs);
 	if (!m)
 		return;
+
+	weakref = PyImport_ImportModule("weakref");
+	if (weakref == NULL)
+		return;
+	array_types_cache = PyObject_CallMethod(weakref,
+						"WeakValueDictionary",
+						NULL);
+	if (array_types_cache == NULL)
+		return;
+	Py_DECREF(weakref);
 
 	if (PyType_Ready(&PyCArg_Type) < 0)
 		return;
