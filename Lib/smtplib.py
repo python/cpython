@@ -492,6 +492,23 @@ class SMTP:
 
     # some useful methods
 
+    def ehlo_or_helo_if_needed(self):
+        """Call self.ehlo() and/or self.helo() if needed.
+
+        If there has been no previous EHLO or HELO command this session, this
+        method tries ESMTP EHLO first.
+
+        This method may raise the following exceptions:
+
+         SMTPHeloError            The server didn't reply properly to
+                                  the helo greeting.
+        """
+        if self.helo_resp is None and self.ehlo_resp is None:
+            if not (200 <= self.ehlo()[0] <= 299):
+                (code, resp) = self.helo()
+                if not (200 <= code <= 299):
+                    raise SMTPHeloError(code, resp)
+
     def login(self, user, password):
         """Log in on an SMTP server that requires authentication.
 
@@ -527,11 +544,7 @@ class SMTP:
         AUTH_CRAM_MD5 = "CRAM-MD5"
         AUTH_LOGIN = "LOGIN"
 
-        if self.helo_resp is None and self.ehlo_resp is None:
-            if not (200 <= self.ehlo()[0] <= 299):
-                (code, resp) = self.helo()
-                if not (200 <= code <= 299):
-                    raise SMTPHeloError(code, resp)
+        self.ehlo_or_helo_if_needed()
 
         if not self.has_extn("auth"):
             raise SMTPException("SMTP AUTH extension not supported by server.")
@@ -577,12 +590,23 @@ class SMTP:
     def starttls(self, keyfile = None, certfile = None):
         """Puts the connection to the SMTP server into TLS mode.
 
+        If there has been no previous EHLO or HELO command this session, this
+        method tries ESMTP EHLO first.
+
         If the server supports TLS, this will encrypt the rest of the SMTP
         session. If you provide the keyfile and certfile parameters,
         the identity of the SMTP server and client can be checked. This,
         however, depends on whether the socket module really checks the
         certificates.
+
+        This method may raise the following exceptions:
+
+         SMTPHeloError            The server didn't reply properly to
+                                  the helo greeting.
         """
+        self.ehlo_or_helo_if_needed()
+        if not self.has_extn("starttls"):
+            raise SMTPException("STARTTLS extension not supported by server.")
         (resp, reply) = self.docmd("STARTTLS")
         if resp == 220:
             if not _have_ssl:
@@ -656,11 +680,7 @@ class SMTP:
         empty dictionary.
 
         """
-        if self.helo_resp is None and self.ehlo_resp is None:
-            if not (200 <= self.ehlo()[0] <= 299):
-                (code,resp) = self.helo()
-                if not (200 <= code <= 299):
-                    raise SMTPHeloError(code, resp)
+        self.ehlo_or_helo_if_needed()
         esmtp_opts = []
         if self.does_esmtp:
             # Hmmm? what's this? -ddm

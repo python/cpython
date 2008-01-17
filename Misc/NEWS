@@ -990,6 +990,12 @@ Library
   RFC 3207 and forgets any knowledge obtained from the server not obtained
   from the TLS negotiation itself.  Patch contributed by Bill Fenner.
 
+- Issue1339: The smtplib.SMTP class has been refactored a bit such
+  that the SMTP.starttls() caller no longer needs to call ehlo()
+  beforehand.  SMTP.starttls() now raises an exception of the server
+  does not claim to support starttls.  Adds the SMTP.ehlo_or_helo_if_needed()
+  method.  Patch contributed by Bill Fenner.
+
 Extension Modules
 -----------------
 
