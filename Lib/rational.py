@@ -3,7 +3,6 @@
 
 """Rational, infinite-precision, real numbers."""
 
-from __future__ import division
 import math
 import numbers
 import operator
@@ -203,28 +202,14 @@ class Rational(RationalAbc):
                         a.denominator * b.numerator)
 
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
-    __div__, __rdiv__ = _operator_fallbacks(_div, operator.truediv)
-
-    @classmethod
-    def _floordiv(cls, a, b):
-        div = a / b
-        if isinstance(div, RationalAbc):
-            # trunc(math.floor(div)) doesn't work if the rational is
-            # more precise than a float because the intermediate
-            # rounding may cross an integer boundary.
-            return div.numerator // div.denominator
-        else:
-            return math.floor(div)
 
     def __floordiv__(a, b):
         """a // b"""
-        # Will be math.floor(a / b) in 3.0.
-        return a._floordiv(a, b)
+        return math.floor(a / b)
 
     def __rfloordiv__(b, a):
         """a // b"""
-        # Will be math.floor(a / b) in 3.0.
-        return b._floordiv(a, b)
+        return math.floor(a / b)
 
     @classmethod
     def _mod(cls, a, b):
@@ -324,11 +309,11 @@ class Rational(RationalAbc):
         shift = 10**abs(ndigits)
         # See _operator_fallbacks.forward to check that the results of
         # these operations will always be Rational and therefore have
-        # __round__().
+        # round().
         if ndigits > 0:
-            return Rational((self * shift).__round__(), shift)
+            return Rational(round(self * shift), shift)
         else:
-            return Rational((self / shift).__round__() * shift)
+            return Rational(round(self / shift) * shift)
 
     def __hash__(self):
         """hash(self)
