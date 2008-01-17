@@ -74,14 +74,14 @@ class RationalTest(unittest.TestCase):
 
     def testConversions(self):
         self.assertTypedEquals(-1, trunc(R(-11, 10)))
-        self.assertTypedEquals(-2, R(-11, 10).__floor__())
-        self.assertTypedEquals(-1, R(-11, 10).__ceil__())
-        self.assertTypedEquals(-1, R(-10, 10).__ceil__())
+        self.assertTypedEquals(-2, math.floor(R(-11, 10)))
+        self.assertTypedEquals(-1, math.ceil(R(-11, 10)))
+        self.assertTypedEquals(-1, math.ceil(R(-10, 10)))
 
-        self.assertTypedEquals(0, R(-1, 10).__round__())
-        self.assertTypedEquals(0, R(-5, 10).__round__())
-        self.assertTypedEquals(-2, R(-15, 10).__round__())
-        self.assertTypedEquals(-1, R(-7, 10).__round__())
+        self.assertTypedEquals(0, round(R(-1, 10)))
+        self.assertTypedEquals(0, round(R(-5, 10)))
+        self.assertTypedEquals(-2, round(R(-15, 10)))
+        self.assertTypedEquals(-1, round(R(-7, 10)))
 
         self.assertEquals(False, bool(R(0, 1)))
         self.assertEquals(True, bool(R(3, 2)))
@@ -96,11 +96,11 @@ class RationalTest(unittest.TestCase):
         self.assertTypedEquals(0.1+0j, complex(R(1,10)))
 
     def testRound(self):
-        self.assertTypedEquals(R(-200), R(-150).__round__(-2))
-        self.assertTypedEquals(R(-200), R(-250).__round__(-2))
-        self.assertTypedEquals(R(30), R(26).__round__(-1))
-        self.assertTypedEquals(R(-2, 10), R(-15, 100).__round__(1))
-        self.assertTypedEquals(R(-2, 10), R(-25, 100).__round__(1))
+        self.assertTypedEquals(R(-200), round(R(-150), -2))
+        self.assertTypedEquals(R(-200), round(R(-250), -2))
+        self.assertTypedEquals(R(30), round(R(26), -1))
+        self.assertTypedEquals(R(-2, 10), round(R(-15, 100), 1))
+        self.assertTypedEquals(R(-2, 10), round(R(-25, 100), 1))
 
 
     def testArithmetic(self):
