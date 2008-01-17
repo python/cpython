@@ -549,7 +549,7 @@ PEP 3141: A Type Hierarchy for Numbers
 =====================================================
 
 In Python 3.0, several abstract base classes for numeric types,
-inspired by Scheme's numeric tower (XXX add link), are being added.
+inspired by Scheme's numeric tower, are being added.
 This change was backported to 2.6 as the :mod:`numbers` module.
 
 The most general ABC is :class:`Number`.  It defines no operations at
@@ -585,27 +585,17 @@ can be shifted left and right with ``<<`` and ``>>``,
 combined using bitwise operations such as ``&`` and ``|``, 
 and can be used as array indexes and slice boundaries.
 
-The PEP slightly redefines the existing built-ins :func:`math.floor`,
-:func:`math.ceil`, :func:`round`, and adds a new one, :func:`trunc`.  All of them
-take a :class:`Real` value and return an :class:`Integral`.
+In Python 3.0, the PEP slightly redefines the existing built-ins
+:func:`math.floor`, :func:`math.ceil`, :func:`round`, and adds a new
+one, :func:`trunc`, that's been backported to Python 2.6. 
+:func:`trunc` rounds toward zero, returning the closest 
+:class:`Integral` that's between the function's argument and zero.
 
-* :func:`math.floor` returns the closest :class:`Integral` that's 
-  smaller than the function's argument.  Numeric types can define a 
-  :meth:`__floor__` method to provide a custom implementation.
+.. seealso::
 
-* :func:`math.ceil` returns the closest :class:`Integral` that's 
-  greater than the function's argument.  It can be provided by a 
-  :meth:`__ceil__` method.
+  XXX link: Discusses Scheme's numeric tower.
 
-* :func:`trunc` rounds toward zero, returning the closest 
-  :class:`Integral` that's between the function's argument and zero.
-  It can be provided by a :meth:`__trunc` method.
-
-* :func:`round` takes a :class:`Real` and rounds it off, optionally to a 
-  specified number of decimal places.  It will call a :meth:`__round__`
-  method. Whether .5 should be rounded up, or down, or toward the
-  nearest even number, is left up to the type's implementation.
-
+  
 
 The Rational Module
 --------------------------------------------------
@@ -1346,6 +1336,14 @@ Port-Specific Changes: Windows
   API.  The :func:`getwch` function reads a keypress and returns a Unicode 
   value, as does the :func:`getwche` function.  The :func:`putwch` function
   takes a Unicode character and writes it to the console.
+
+* :func:`os.path.expandvars` will now expand environment variables 
+  in the form "%var%", and "~user" will be expanded into the 
+  user's home directory path.  (Contributed by Josiah Carlson.)
+
+* The :mod:`socket` module's socket objects now have an 
+  :meth:`ioctl` method that provides a limited interface to the 
+  :cfunc:`WSAIoctl` system interface.
 
 * The :mod:`_winreg` module now has a function, 
   :func:`ExpandEnvironmentStrings`, 
