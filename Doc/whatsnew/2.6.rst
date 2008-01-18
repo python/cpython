@@ -541,6 +541,90 @@ an abstract method.
       Implemented by XXX.
       Backported to 2.6 by Benjamin Aranguren, with Alex Martelli.
 
+.. ======================================================================
+
+.. _pep-3141:
+
+PEP 3141: A Type Hierarchy for Numbers
+=====================================================
+
+In Python 3.0, several abstract base classes for numeric types,
+inspired by Scheme's numeric tower, are being added.
+This change was backported to 2.6 as the :mod:`numbers` module.
+
+The most general ABC is :class:`Number`.  It defines no operations at
+all, and only exists to allow checking if an object is a number by
+doing ``isinstance(obj, Number)``.
+
+Numbers are further divided into :class:`Exact` and :class:`Inexact`.
+Exact numbers can represent values precisely and operations never
+round off the results or introduce tiny errors that may break the
+communtativity and associativity properties; inexact numbers may
+perform such rounding or introduce small errors.  Integers, long
+integers, and rational numbers are exact, while floating-point 
+and complex numbers are inexact.
+
+:class:`Complex` is a subclass of :class:`Number`.  Complex numbers
+can undergo the basic operations of addition, subtraction,
+multiplication, division, and exponentiation, and you can retrieve the
+real and imaginary parts and obtain a number's conjugate.  Python's built-in 
+complex type is an implementation of :class:`Complex`.
+
+:class:`Real` further derives from :class:`Complex`, and adds 
+operations that only work on real numbers: :func:`floor`, :func:`trunc`, 
+rounding, taking the remainder mod N, floor division, 
+and comparisons.  
+
+:class:`Rational` numbers derive from :class:`Real`, have
+:attr:`numerator` and :attr:`denominator` properties, and can be
+converted to floats.  Python 2.6 adds a simple rational-number class
+in the :mod:`rational` module.
+
+:class:`Integral` numbers derive from :class:`Rational`, and
+can be shifted left and right with ``<<`` and ``>>``, 
+combined using bitwise operations such as ``&`` and ``|``, 
+and can be used as array indexes and slice boundaries.
+
+In Python 3.0, the PEP slightly redefines the existing built-ins
+:func:`math.floor`, :func:`math.ceil`, :func:`round`, and adds a new
+one, :func:`trunc`, that's been backported to Python 2.6. 
+:func:`trunc` rounds toward zero, returning the closest 
+:class:`Integral` that's between the function's argument and zero.
+
+.. seealso::
+
+  XXX link: Discusses Scheme's numeric tower.
+
+  
+
+The Rational Module
+--------------------------------------------------
+
+To fill out the hierarchy of numeric types, a rational-number class
+has been added as the :mod:`rational` module.  Rational numbers are
+represented as a fraction; rational numbers can exactly represent
+numbers such as two-thirds that floating-point numbers can only
+approximate.
+
+The :class:`Rational` constructor takes two :class:`Integral` values
+that will be the numerator and denominator of the resulting fraction. ::
+
+    >>> from rational import Rational
+    >>> a = Rational(2, 3)
+    >>> b = Rational(2, 5)
+    >>> float(a), float(b)
+    (0.66666666666666663, 0.40000000000000002)
+    >>> a+b
+    rational.Rational(16,15)
+    >>> a/b
+    rational.Rational(5,3)
+
+The :mod:`rational` module is based upon an implementation by Sjoerd
+Mullender that was in Python's :file:`Demo/classes/` directory for a
+long time.  This implementation was significantly updated by Jeffrey
+Yaskin.
+
+
 Other Language Changes
 ======================
 
@@ -568,10 +652,10 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   .. Revision 57619
 
-* Properties now have two attributes, 
+* Properties now have three attributes, :attr:`getter`,
   :attr:`setter` and :attr:`deleter`, that are useful shortcuts for
-  adding a setter or deleter function to an existing property.  
-  You would use them like this::
+  adding or modifying a getter, setter or deleter function to an 
+  existing property. You would use them like this::
 
     class C(object):
 	@property                                                              
@@ -585,6 +669,15 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 	@x.deleter                                                             
 	def x(self): 
 	    del self._x             
+
+    class D(C):
+        @C.x.getter
+        def x(self):
+            return self._x * 2
+
+        @x.setter
+        def x(self, value):
+            self._x = value / 2
 
 
 * C functions and methods that use 
@@ -997,6 +1090,12 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Patch #957003
 
+* In the :mod:`smtplib` module, SMTP.starttls() now complies with :rfc:`3207`
+  and forgets any knowledge obtained from the server not obtained from
+  the TLS negotiation itself.  Patch contributed by Bill Fenner.
+
+  .. Issue 829951
+
 * The :mod:`socket` module now supports TIPC (http://tipc.sf.net),
   a high-performance non-IP-based protocol designed for use in clustered
   environments.  TIPC addresses are 4- or 5-tuples.
@@ -1246,13 +1345,30 @@ Port-Specific Changes: Windows
   API.  The :func:`getwch` function reads a keypress and returns a Unicode 
   value, as does the :func:`getwche` function.  The :func:`putwch` function
   takes a Unicode character and writes it to the console.
+  (Contributed by Christian Heimes.)
+
+* :func:`os.path.expandvars` will now expand environment variables 
+  in the form "%var%", and "~user" will be expanded into the 
+  user's home directory path.  (Contributed by Josiah Carlson.)
+
+* The :mod:`socket` module's socket objects now have an 
+  :meth:`ioctl` method that provides a limited interface to the 
+  :cfunc:`WSAIoctl` system interface.
 
 * The :mod:`_winreg` module now has a function, 
   :func:`ExpandEnvironmentStrings`, 
   that expands environment variable references such as ``%NAME%``
   in an input string.  The handle objects provided by this
   module now support the context protocol, so they can be used 
-  in :keyword:`with` statements.
+  in :keyword:`with` statements. (Contributed by Christian Heimes.)
+
+* The new default compiler on Windows is Visual Studio 2008 (VS 9.0). The 
+  build directories for Visual Studio 2003 (VS7.1) and 2005 (VS8.0)
+  were moved into the PC/ directory. The new PCbuild directory supports
+  cross compilation for X64, debug builds and Profile Guided Optimization
+  (PGO). PGO builds are roughly 10% faster than normal builds.
+  (Contributed by Christian Heimes with help from Amaury Forgeot d'Arc and
+  Martin von Loewis.)
 
 .. ======================================================================
 

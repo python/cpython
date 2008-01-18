@@ -348,7 +348,17 @@ element_resize(ElementObject* self, int extra)
     if (size > self->extra->allocated) {
         /* use Python 2.4's list growth strategy */
         size = (size >> 3) + (size < 9 ? 3 : 6) + size;
+        /* Coverity CID #182 size_error: Allocating 1 bytes to pointer "children"
+         * which needs at least 4 bytes. 
+         * Although it's a false alarm always assume at least one child to 
+         * be safe.
+         */
+        size = size ? size : 1;
         if (self->extra->children != self->extra->_children) {
+            /* Coverity CID #182 size_error: Allocating 1 bytes to pointer
+             * "children", which needs at least 4 bytes. Although it's a 
+             * false alarm always assume at least one child to be safe.
+             */
             children = PyObject_Realloc(self->extra->children,
                                         size * sizeof(PyObject*));
             if (!children)

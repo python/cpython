@@ -101,8 +101,14 @@ class PyBuildExt(build_ext):
         missing = self.detect_modules()
 
         # Remove modules that are present on the disabled list
-        self.extensions = [ext for ext in self.extensions
-                           if ext.name not in disabled_module_list]
+        extensions = [ext for ext in self.extensions
+                      if ext.name not in disabled_module_list]
+        # move ctypes to the end, it depends on other modules
+        ext_map = dict((ext.name, i) for i, ext in enumerate(extensions))
+        if "_ctypes" in ext_map:
+            ctypes = extensions.pop(ext_map["_ctypes"])
+            extensions.append(ctypes)
+        self.extensions = extensions
 
         # Fix up the autodetected modules, prefixing all the source files
         # with Modules/ and adding Python's include directory to the path.

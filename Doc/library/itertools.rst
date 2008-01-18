@@ -319,16 +319,19 @@ loops that truncate the stream.
 
 .. function:: starmap(function, iterable)
 
-   Make an iterator that computes the function using arguments tuples obtained from
+   Make an iterator that computes the function using arguments obtained from
    the iterable.  Used instead of :func:`imap` when argument parameters are already
    grouped in tuples from a single iterable (the data has been "pre-zipped").  The
    difference between :func:`imap` and :func:`starmap` parallels the distinction
    between ``function(a,b)`` and ``function(*c)``. Equivalent to::
 
       def starmap(function, iterable):
-          iterable = iter(iterable)
-          while True:
-              yield function(*next(iterable))
+          for args in iterable:
+              yield function(*args)
+
+   .. versionchanged:: 2.6
+      Previously, :func:`starmap` required the function arguments to be tuples.
+      Now, any iterable is allowed.
 
 
 .. function:: takewhile(predicate, iterable)

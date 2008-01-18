@@ -41,13 +41,39 @@ Example::
    From print_time 930343700.273
    930343700.276
 
+In multi-threaded environments, the :class:`scheduler` class has limitations
+with respect to thread-safety, inability to insert a new task before 
+the one currently pending in a running scheduler, and holding up the main
+thread until the event queue is empty.  Instead, the preferred approach
+is to use the :class:`threading.Timer` class instead.
+
+Example::
+
+    >>> import time
+    >>> from threading import Timer
+    >>> def print_time():
+    ...     print "From print_time", time.time()
+    ...
+    >>> def print_some_times():
+    ...     print time.time()
+    ...     Timer(5, print_time, ()).start()
+    ...     Timer(10, print_time, ()).start()
+    ...     time.sleep(11)	# sleep while time-delay events execute
+    ...     print time.time()     
+    ...
+    >>> print_some_times()
+    930343690.257
+    From print_time 930343695.274
+    From print_time 930343700.273
+    930343701.301
+
 
 .. _scheduler-objects:
 
 Scheduler Objects
 -----------------
 
-:class:`scheduler` instances have the following methods:
+:class:`scheduler` instances have the following methods and attributes:
 
 
 .. method:: scheduler.enterabs(time, priority, action, argument)
@@ -98,3 +124,10 @@ Scheduler Objects
    the calling code is responsible for canceling  events which are no longer
    pertinent.
 
+.. attribute:: scheduler.queue
+
+   Read-only attribute returning a list of upcoming events in the order they
+   will be run.  Each event is shown as a :term:`named tuple` with the
+   following fields:  time, priority, action, argument.
+
+   .. versionadded:: 2.6
