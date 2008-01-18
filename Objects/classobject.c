@@ -646,6 +646,16 @@ instance_dealloc(register PyInstanceObject *inst)
 	 */
 	assert(inst->ob_refcnt > 0);
 	if (--inst->ob_refcnt == 0) {
+
+		/* New weakrefs could be created during the finalizer call.
+		    If this occurs, clear them out without calling their
+		    finalizers since they might rely on part of the object
+		    being finalized that has already been destroyed. */
+		while (inst->in_weakreflist != NULL) {
+			_PyWeakref_ClearRef((PyWeakReference *)
+                                            (inst->in_weakreflist));
+		}
+
 		Py_DECREF(inst->in_class);
 		Py_XDECREF(inst->in_dict);
 		PyObject_GC_Del(inst);
