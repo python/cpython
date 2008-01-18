@@ -135,6 +135,8 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 	FILE *xfp;
 	char linebuf[2000];
 	int i;
+	char namebuf[MAXPATHLEN+1];
+
 	if (filename == NULL || name == NULL)
 		return -1;
 	/* This is needed by Emacs' compile command */
@@ -153,7 +155,6 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 			Py_ssize_t _npath = PyList_Size(path);
 			int npath = Py_SAFE_DOWNCAST(_npath, Py_ssize_t, int);
 			size_t taillen = strlen(tail);
-			char namebuf[MAXPATHLEN+1];
 			for (i = 0; i < npath; i++) {
 				PyObject *v = PyList_GetItem(path, i);
 				if (v == NULL) {

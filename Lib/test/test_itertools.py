@@ -300,7 +300,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(3, starmap(operator.pow, izip(count(), count(1)))),
                          [0**1, 1**2, 2**3])
         self.assertEqual(list(starmap(operator.pow, [])), [])
-        self.assertRaises(TypeError, list, starmap(operator.pow, [[4,5]]))
+        self.assertEqual(list(starmap(operator.pow, [iter([4,5])])), [4**5])
+        self.assertRaises(TypeError, list, starmap(operator.pow, [None]))
         self.assertRaises(TypeError, starmap)
         self.assertRaises(TypeError, starmap, operator.pow, [(4,5)], 'extra')
         self.assertRaises(TypeError, next, starmap(10, [(4,5)]))

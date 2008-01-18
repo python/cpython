@@ -198,6 +198,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         globals = self.curframe.f_globals
         try:
             code = compile(line + '\n', '<stdin>', 'single')
+            save_stdout = sys.stdout
+            save_stdin = sys.stdin
             try:
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout

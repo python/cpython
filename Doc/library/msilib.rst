@@ -146,7 +146,7 @@ Database Objects
 
 .. seealso::
 
-   `MSIOpenView <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/msiopenview.asp>`_
+   `MSIDatabaseOpenView <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/msidatabaseopenview.asp>`_
    `MSIDatabaseCommit <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/msidatabasecommit.asp>`_
    `MSIGetSummaryInformation <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/msigetsummaryinformation.asp>`_
 

@@ -11,12 +11,13 @@ import sys
 
 if __name__ == '__main__':
 
-    if not (2, 5, 1) <= sys.version_info[:3] < (3, 0, 0):
-        sys.stderr.write("""\
-Error: Sphinx needs to be executed with Python 2.5.1 or newer (not 3.0 though).
-If you run this from the Makefile, you can set the PYTHON variable to the path
-of an alternative interpreter executable, e.g., ``make html PYTHON=python2.5``.)
-""")
+    if sys.version_info[:3] < (2, 4, 0):
+        print("""\
+Error: Sphinx needs to be executed with Python 2.4 or newer (not 3.0 though).
+(If you run this from the Makefile, you can set the PYTHON variable
+to the path of an alternative interpreter executable, e.g.,
+``make html PYTHON=python2.5``).
+""", file=sys.stderr)
         sys.exit(1)
 
     from sphinx import main

@@ -1918,8 +1918,7 @@ PyDoc_STRVAR(clearcache_doc,
 static PyObject *
 clearcache(PyObject *self)
 {
-	if (cache != NULL)
-		PyDict_Clear(cache);
+	Py_CLEAR(cache);
 	Py_RETURN_NONE;
 }
 

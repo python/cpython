@@ -1356,10 +1356,11 @@ starmap_next(starmapobject *lz)
 	if (args == NULL)
 		return NULL;
 	if (!PyTuple_CheckExact(args)) {
+		PyObject *newargs = PySequence_Tuple(args);
 		Py_DECREF(args);
-		PyErr_SetString(PyExc_TypeError,
-				"iterator must return a tuple");
-		return NULL;
+		if (newargs == NULL)
+			return NULL;
+		args = newargs;
 	}
 	result = PyObject_Call(lz->func, args, NULL);
 	Py_DECREF(args);
