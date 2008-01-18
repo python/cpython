@@ -1,4 +1,4 @@
-# Copyright 2001-2007 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2008 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python, and influenced by Apache's log4j system.
 
-Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2008 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -38,8 +38,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.5.0.3"
-__date__    = "26 September 2007"
+__version__ = "0.5.0.4"
+__date__    = "18 January 2008"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -1076,7 +1076,7 @@ class Logger(Filterer):
         specialized LogRecords.
         """
         rv = LogRecord(name, level, fn, lno, msg, args, exc_info, func)
-        if extra:
+        if extra is not None:
             for key in extra:
                 if (key in ["message", "asctime"]) or (key in rv.__dict__):
                     raise KeyError("Attempt to overwrite %r in LogRecord" % key)
@@ -1188,6 +1188,96 @@ class RootLogger(Logger):
         Logger.__init__(self, "root", level)
 
 _loggerClass = Logger
+
+class LoggerAdapter:
+    """
+    An adapter for loggers which makes it easier to specify contextual
+    information in logging output.
+    """
+
+    def __init__(self, logger, extra):
+        """
+        Initialize the adapter with a logger and a dict-like object which
+        provides contextual information. This constructor signature allows
+        easy stacking of LoggerAdapters, if so desired.
+
+        You can effectively pass keyword arguments as shown in the
+        following example:
+
+        adapter = LoggerAdapter(someLogger, dict(p1=v1, p2="v2"))
+        """
+        self.logger = logger
+        self.extra = extra
+
+    def process(self, msg, kwargs):
+        """
+        Process the logging message and keyword arguments passed in to
+        a logging call to insert contextual information. You can either
+        manipulate the message itself, the keyword args or both. Return
+        the message and kwargs modified (or not) to suit your needs.
+
+        Normally, you'll only need to override this one method in a
+        LoggerAdapter subclass for your specific needs.
+        """
+        kwargs["extra"] = self.extra
+        return msg, kwargs
+
+    def debug(self, msg, *args, **kwargs):
+        """
+        Delegate a debug call to the underlying logger, after adding
+        contextual information from this adapter instance.
+        """
+        msg, kwargs = self.process(msg, kwargs)
+        self.logger.debug(msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        """
+        Delegate an info call to the underlying logger, after adding
+        contextual information from this adapter instance.
+        """
+        msg, kwargs = self.process(msg, kwargs)
+        self.logger.info(msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        """
+        Delegate a warning call to the underlying logger, after adding
+        contextual information from this adapter instance.
+        """
+        msg, kwargs = self.process(msg, kwargs)
+        self.logger.warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        """
+        Delegate an error call to the underlying logger, after adding
+        contextual information from this adapter instance.
+        """
+        msg, kwargs = self.process(msg, kwargs)
+        self.logger.error(msg, *args, **kwargs)
+
+    def exception(self, msg, *args, **kwargs):
+        """
+        Delegate an exception call to the underlying logger, after adding
+        contextual information from this adapter instance.
+        """
+        msg, kwargs = self.process(msg, kwargs)
+        kwargs["exc_info"] = 1
+        self.logger.error(msg, *args, **kwargs)
+
+    def critical(self, msg, *args, **kwargs):
+        """
+        Delegate a critical call to the underlying logger, after adding
+        contextual information from this adapter instance.
+        """
+        msg, kwargs = self.process(msg, kwargs)
+        self.logger.critical(msg, *args, **kwargs)
+
+    def log(self, level, msg, *args, **kwargs):
+        """
+        Delegate a log call to the underlying logger, after adding
+        contextual information from this adapter instance.
+        """
+        msg, kwargs = self.process(msg, kwargs)
+        self.logger.log(level, msg, *args, **kwargs)
 
 root = RootLogger(WARNING)
 Logger.root = root
