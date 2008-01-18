@@ -3238,6 +3238,9 @@ parsestr(const char *s, const char *encoding)
                         quote = *++s;
                         unicode = 1;
                 }
+                if (quote == 'b' || quote == 'B') {
+                        quote = *++s;
+                }
                 if (quote == 'r' || quote == 'R') {
                         quote = *++s;
                         rawmode = 1;

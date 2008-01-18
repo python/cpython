@@ -1263,6 +1263,14 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	if (isalpha(c) || c == '_') {
 		/* Process r"", u"" and ur"" */
 		switch (c) {
+		case 'b':
+		case 'B':
+			c = tok_nextc(tok);
+			if (c == 'r' || c == 'R')
+				c = tok_nextc(tok);
+			if (c == '"' || c == '\'')
+				goto letter_quote;
+			break;
 		case 'r':
 		case 'R':
 			c = tok_nextc(tok);
