@@ -1422,10 +1422,12 @@ extra_ivars(PyTypeObject *type, PyTypeObject *base)
 			type->tp_itemsize != base->tp_itemsize;
 	}
 	if (type->tp_weaklistoffset && base->tp_weaklistoffset == 0 &&
-	    type->tp_weaklistoffset + sizeof(PyObject *) == t_size)
+	    type->tp_weaklistoffset + sizeof(PyObject *) == t_size &&
+	    type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		t_size -= sizeof(PyObject *);
 	if (type->tp_dictoffset && base->tp_dictoffset == 0 &&
-	    type->tp_dictoffset + sizeof(PyObject *) == t_size)
+	    type->tp_dictoffset + sizeof(PyObject *) == t_size &&
+	    type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		t_size -= sizeof(PyObject *);
 
 	return t_size != b_size;
@@ -1451,12 +1453,73 @@ static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
 
+/*
+ * Helpers for  __dict__ descriptor.  We don't want to expose the dicts
+ * inherited from various builtin types.  The builtin base usually provides
+ * its own __dict__ descriptor, so we use that when we can.
+ */
+static PyTypeObject *
+get_builtin_base_with_dict(PyTypeObject *type)
+{
+	while (type->tp_base != NULL) {
+		if (type->tp_dictoffset != 0 &&
+		    !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+			return type;
+		type = type->tp_base;
+	}
+	return NULL;
+}
+
+static PyObject *
+get_dict_descriptor(PyTypeObject *type)
+{
+	static PyObject *dict_str;
+	PyObject *descr;
+
+	if (dict_str == NULL) {
+		dict_str = PyString_InternFromString("__dict__");
+		if (dict_str == NULL)
+			return NULL;
+	}
+	descr = _PyType_Lookup(type, dict_str);
+	if (descr == NULL || !PyDescr_IsData(descr))
+		return NULL;
+
+	return descr;
+}
+
+static void
+raise_dict_descr_error(PyObject *obj)
+{
+	PyErr_Format(PyExc_TypeError,
+		     "this __dict__ descriptor does not support "
+		     "'%.200s' objects", obj->ob_type->tp_name);
+}
+
 static PyObject *
 subtype_dict(PyObject *obj, void *context)
 {
-	PyObject **dictptr = _PyObject_GetDictPtr(obj);
+	PyObject **dictptr;
 	PyObject *dict;
+	PyTypeObject *base;
 
+	base = get_builtin_base_with_dict(obj->ob_type);
+	if (base != NULL) {
+		descrgetfunc func;
+		PyObject *descr = get_dict_descriptor(base);
+		if (descr == NULL) {
+			raise_dict_descr_error(obj);
+			return NULL;
+		}
+		func = descr->ob_type->tp_descr_get;
+		if (func == NULL) {
+			raise_dict_descr_error(obj);
+			return NULL;
+		}
+		return func(descr, obj, (PyObject *)(obj->ob_type));
+	}
+
+	dictptr = _PyObject_GetDictPtr(obj);
 	if (dictptr == NULL) {
 		PyErr_SetString(PyExc_AttributeError,
 				"This object has no __dict__");
@@ -1472,9 +1535,27 @@ subtype_dict(PyObject *obj, void *context)
 static int
 subtype_setdict(PyObject *obj, PyObject *value, void *context)
 {
-	PyObject **dictptr = _PyObject_GetDictPtr(obj);
+	PyObject **dictptr;
 	PyObject *dict;
+	PyTypeObject *base;
 
+	base = get_builtin_base_with_dict(obj->ob_type);
+	if (base != NULL) {
+		descrsetfunc func;
+		PyObject *descr = get_dict_descriptor(base);
+		if (descr == NULL) {
+			raise_dict_descr_error(obj);
+			return -1;
+		}
+		func = descr->ob_type->tp_descr_set;
+		if (func == NULL) {
+			raise_dict_descr_error(obj);
+			return -1;
+		}
+		return func(descr, obj, value);
+	}
+
+	dictptr = _PyObject_GetDictPtr(obj);
 	if (dictptr == NULL) {
 		PyErr_SetString(PyExc_AttributeError,
 				"This object has no __dict__");

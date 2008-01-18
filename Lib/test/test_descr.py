@@ -3,6 +3,7 @@
 from test.test_support import verify, vereq, verbose, TestFailed, TESTFN, get_original_stdout
 from copy import deepcopy
 import warnings
+import types
 
 warnings.filterwarnings("ignore",
          r'complex divmod\(\), // and % are deprecated$',
@@ -844,6 +845,16 @@ def pymods():
     vereq(log, [("setattr", "foo", 12),
                 ("getattr", "foo"),
                 ("delattr", "foo")])
+
+    # http://python.org/sf/1174712
+    try:
+        class Module(types.ModuleType, str):
+            pass
+    except TypeError:
+        pass
+    else:
+        raise TestFailed("inheriting from ModuleType and str at the "
+                          "same time should fail")
 
 def multi():
     if verbose: print "Testing multiple inheritance..."
@@ -2815,8 +2826,73 @@ def setdict():
     cant(a, [])
     cant(a, 1)
     del a.__dict__ # Deleting __dict__ is allowed
-    # Classes don't allow __dict__ assignment
-    cant(C, {})
+
+    class Base(object):
+        pass
+    def verify_dict_readonly(x):
+        """
+        x has to be an instance of a class inheriting from Base.
+        """
+        cant(x, {})
+        try:
+            del x.__dict__
+        except (AttributeError, TypeError):
+            pass
+        else:
+            raise TestFailed, "shouldn't allow del %r.__dict__" % x
+        dict_descr = Base.__dict__["__dict__"]
+        try:
+            dict_descr.__set__(x, {})
+        except (AttributeError, TypeError):
+            pass
+        else:
+            raise TestFailed, "dict_descr allowed access to %r's dict" % x
+
+    # Classes don't allow __dict__ assignment and have readonly dicts
+    class Meta1(type, Base):
+        pass
+    class Meta2(Base, type):
+        pass
+    class D(object):
+        __metaclass__ = Meta1
+    class E(object):
+        __metaclass__ = Meta2
+    for cls in C, D, E:
+        verify_dict_readonly(cls)
+        class_dict = cls.__dict__
+        try:
+            class_dict["spam"] = "eggs"
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "%r's __dict__ can be modified" % cls
+
+    # Modules also disallow __dict__ assignment
+    class Module1(types.ModuleType, Base):
+        pass
+    class Module2(Base, types.ModuleType):
+        pass
+    for ModuleType in Module1, Module2:
+        mod = ModuleType("spam")
+        verify_dict_readonly(mod)
+        mod.__dict__["spam"] = "eggs"
+
+    # Exception's __dict__ can be replaced, but not deleted
+    class Exception1(Exception, Base):
+        pass
+    class Exception2(Base, Exception):
+        pass
+    for ExceptionType in Exception, Exception1, Exception2:
+        e = ExceptionType()
+        e.__dict__ = {"a": 1}
+        vereq(e.a, 1)
+        try:
+            del e.__dict__
+        except (TypeError, AttributeError):
+            pass
+        else:
+            raise TestFaied, "%r's __dict__ can be deleted" % e
+
 
 def pickles():
     if verbose:
