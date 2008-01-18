@@ -547,8 +547,8 @@ Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance::
 
     >>> Account = namedtuple('Account', 'owner balance transaction_count')
-    >>> model_account = Account('<owner name>', 0.0, 0)
-    >>> johns_account = model_account._replace(owner='John')
+    >>> default_account = Account('<owner name>', 0.0, 0)
+    >>> johns_account = default_account._replace(owner='John')
 
 .. rubric:: Footnotes
 
