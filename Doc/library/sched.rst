@@ -43,7 +43,7 @@ Example::
 
 In multi-threaded environments, the :class:`scheduler` class has limitations
 with respect to thread-safety, inability to insert a new task before 
-the one currently pending in a running scheduler, and holding-up the main
+the one currently pending in a running scheduler, and holding up the main
 thread until the event queue is empty.  Instead, the preferred approach
 is to use the :class:`threading.Timer` class instead.
 
