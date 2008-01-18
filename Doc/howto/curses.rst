@@ -3,7 +3,7 @@
 **********************************
 
 :Author: A.M. Kuchling, Eric S. Raymond
-:Release: 2.02
+:Release: 2.03
 
 
 .. topic:: Abstract
