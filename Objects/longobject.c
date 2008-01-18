@@ -70,6 +70,7 @@ _PyLong_New(Py_ssize_t size)
 		PyErr_NoMemory();
 		return NULL;
 	}
+	/* coverity[ampersand_in_size] */
 	return PyObject_NEW_VAR(PyLongObject, &PyLong_Type, size);
 }
 
