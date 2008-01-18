@@ -1196,6 +1196,10 @@ Tests
 Tools
 -----
 
+- Tools/scripts/win_add2path.py was added. The simple script modifes the
+  PATH environment var of the HKCU tree and adds the python bin and script
+  directory.
+
 - Tools/18n/pygettext.py was added to the list of scripts installed by
   Tools/scripts/setup.py (tracker item 642309).
 
