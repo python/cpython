@@ -109,21 +109,34 @@ endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "uR'''": single3prog, 'uR"""': double3prog,
             "Ur'''": single3prog, 'Ur"""': double3prog,
             "UR'''": single3prog, 'UR"""': double3prog,
-            'r': None, 'R': None, 'u': None, 'U': None}
+            "b'''": single3prog, 'b"""': double3prog,
+            "br'''": single3prog, 'br"""': double3prog,
+            "B'''": single3prog, 'B"""': double3prog,
+            "bR'''": single3prog, 'bR"""': double3prog,
+            "Br'''": single3prog, 'Br"""': double3prog,
+            "BR'''": single3prog, 'BR"""': double3prog,
+            'r': None, 'R': None, 'u': None, 'U': None,
+            'b': None, 'B': None}
 
 triple_quoted = {}
 for t in ("'''", '"""',
           "r'''", 'r"""', "R'''", 'R"""',
           "u'''", 'u"""', "U'''", 'U"""',
           "ur'''", 'ur"""', "Ur'''", 'Ur"""',
-          "uR'''", 'uR"""', "UR'''", 'UR"""'):
+          "uR'''", 'uR"""', "UR'''", 'UR"""',
+          "b'''", 'b"""', "B'''", 'B"""',
+          "br'''", 'br"""', "Br'''", 'Br"""',
+          "bR'''", 'bR"""', "BR'''", 'BR"""'):
     triple_quoted[t] = t
 single_quoted = {}
 for t in ("'", '"',
           "r'", 'r"', "R'", 'R"',
           "u'", 'u"', "U'", 'U"',
           "ur'", 'ur"', "Ur'", 'Ur"',
-          "uR'", 'uR"', "UR'", 'UR"' ):
+          "uR'", 'uR"', "UR'", 'UR"',
+          "b'", 'b"', "B'", 'B"',
+          "br'", 'br"', "Br'", 'Br"',
+          "bR'", 'bR"', "BR'", 'BR"' ):
     single_quoted[t] = t
 
 tabsize = 8
