@@ -1001,6 +1001,8 @@ parse_dostime(int dostime, int dosdate)
 {
 	struct tm stm;
 
+	memset((void *) &stm, '\0', sizeof(stm));
+
 	stm.tm_sec   =  (dostime        & 0x1f) * 2;
 	stm.tm_min   =  (dostime >> 5)  & 0x3f;
 	stm.tm_hour  =  (dostime >> 11) & 0x1f;
