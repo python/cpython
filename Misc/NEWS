@@ -369,6 +369,10 @@ Core and builtins
 Library
 -------
 
+- #1336: fix a race condition in subprocess.Popen if the garbage
+  collector kicked in at the wrong time that would cause the process
+  to hang when the child wrote to stderr.
+
 - #1146: fix how textwrap breaks a long word that would start in the
   last column of a line.
 
