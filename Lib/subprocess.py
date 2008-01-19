@@ -497,7 +497,7 @@ def list2cmdline(seq):
         if result:
             result.append(' ')
 
-        needquote = (" " in arg) or ("\t" in arg) or arg == ""
+        needquote = (" " in arg) or ("\t" in arg) or not arg
         if needquote:
             result.append('"')
 
@@ -506,7 +506,7 @@ def list2cmdline(seq):
                 # Don't know if we need to double yet.
                 bs_buf.append(c)
             elif c == '"':
-                # Double backspaces.
+                # Double backslashes.
                 result.append('\\' * len(bs_buf)*2)
                 bs_buf = []
                 result.append('\\"')
@@ -517,7 +517,7 @@ def list2cmdline(seq):
                     bs_buf = []
                 result.append(c)
 
-        # Add remaining backspaces, if any.
+        # Add remaining backslashes, if any.
         if bs_buf:
             result.extend(bs_buf)
 

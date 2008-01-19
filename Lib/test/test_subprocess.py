@@ -422,6 +422,8 @@ class ProcessTestCase(unittest.TestCase):
                          '"a b c" d e')
         self.assertEqual(subprocess.list2cmdline(['ab"c', '\\', 'd']),
                          'ab\\"c \\ d')
+        self.assertEqual(subprocess.list2cmdline(['ab"c', ' \\', 'd']),
+                         'ab\\"c " \\\\" d')
         self.assertEqual(subprocess.list2cmdline(['a\\\\\\b', 'de fg', 'h']),
                          'a\\\\\\b "de fg" h')
         self.assertEqual(subprocess.list2cmdline(['a\\"b', 'c', 'd']),
