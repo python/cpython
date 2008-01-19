@@ -367,6 +367,9 @@ Core and builtins
 Library
 -------
 
+- #1822: MIMEMultipart.is_multipart() behaves correctly for a just-created
+  (and empty) instance. Thanks Jonathan Share.
+
 - #1861: Added an attribute to the sched module which returns an ordered
   list of upcoming events (displayed as named tuples).
 

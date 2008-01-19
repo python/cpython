@@ -1861,6 +1861,9 @@ message 2
         eq(msg.get_payload(0), text1)
         eq(msg.get_payload(1), text2)
 
+    def test_default_multipart_constructor(self):
+        msg = MIMEMultipart()
+        self.assertTrue(msg.is_multipart())
 
 
 # A general test of parser->model->generator idempotency.  IOW, read a message
