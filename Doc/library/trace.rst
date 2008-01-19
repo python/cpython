@@ -64,12 +64,14 @@ The following command-line arguments are supported:
    stdout for each file processed.
 
 :option:`--ignore-module`
-   Ignore the named module and its submodules (if it is a package).  May be given
+   Accepts comma separated list of module names. Ignore each of the named
+   module and its submodules (if it is a package).  May be given 
    multiple times.
 
 :option:`--ignore-dir`
-   Ignore all modules and packages in the named directory and subdirectories.  May
-   be given multiple times.
+   Ignore all modules and packages in the named directory and subdirectories
+   (multiple directories can be joined by os.pathsep).  May be given multiple
+   times. 
 
 
 .. _trace-api:
