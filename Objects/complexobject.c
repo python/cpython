@@ -489,7 +489,7 @@ complex_classic_div(PyComplexObject *v, PyComplexObject *w)
 static PyObject *
 complex_remainder(PyComplexObject *v, PyComplexObject *w)
 {
-        Py_complex div, mod;
+	Py_complex div, mod;
 
 	if (PyErr_Warn(PyExc_DeprecationWarning,
 		       "complex divmod(), // and % are deprecated") < 0)
@@ -512,7 +512,7 @@ complex_remainder(PyComplexObject *v, PyComplexObject *w)
 static PyObject *
 complex_divmod(PyComplexObject *v, PyComplexObject *w)
 {
-        Py_complex div, mod;
+	Py_complex div, mod;
 	PyObject *d, *m, *z;
 
 	if (PyErr_Warn(PyExc_DeprecationWarning,
@@ -543,8 +543,8 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
 	Py_complex exponent;
 	long int_exponent;
 	Py_complex a, b;
-        TO_COMPLEX(v, a);
-        TO_COMPLEX(w, b);
+	TO_COMPLEX(v, a);
+	TO_COMPLEX(w, b);
 
  	if (z!=Py_None) {
 		PyErr_SetString(PyExc_ValueError, "complex modulo");
@@ -809,11 +809,11 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	start = s;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-    if (s[0] == '\0') {
+	if (s[0] == '\0') {
 		PyErr_SetString(PyExc_ValueError,
 				"complex() arg is an empty string");
 		return NULL;
-    }
+	}
 	if (s[0] == '(') {
 		/* Skip over possible bracket from repr(). */
 		got_bracket = 1;
@@ -973,7 +973,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					"complex() can't take second arg"
 					" if first is a string");
 			return NULL;
-                }
+		}
 		return complex_subtype_from_string(type, r);
 	}
 	if (i != NULL && (PyString_Check(i) || PyUnicode_Check(i))) {
@@ -1051,7 +1051,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			return NULL;
 		}
 		cr.real = PyFloat_AsDouble(tmp);
-                cr.imag = 0.0; /* Shut up compiler warning */
+		cr.imag = 0.0; /* Shut up compiler warning */
 		Py_DECREF(tmp);
 	}
 	if (i == NULL) {
