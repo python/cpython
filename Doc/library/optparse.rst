@@ -539,6 +539,35 @@ help message:
   default value.  If an option has no default value (or the default value is
   ``None``), ``%default`` expands to ``none``.
 
+When dealing with many options, it is convenient to group these
+options for better help output.  An :class:`OptionParser` can contain
+several option groups, each of which can contain several options.
+
+Continuing with the parser defined above, adding an
+:class:`OptionGroup` to a parser is easy::
+
+    group = OptionGroup(parser, "Dangerous Options",
+			"Caution: use these options at your own risk.  "
+			"It is believed that some of them bite.")
+    group.add_option("-g", action="store_true", help="Group option.")
+    parser.add_option_group(group)
+
+This would result in the following help output::
+
+    usage:  [options] arg1 arg2
+
+    options:
+      -h, --help           show this help message and exit
+      -v, --verbose        make lots of noise [default]
+      -q, --quiet          be vewwy quiet (I'm hunting wabbits)
+      -fFILE, --file=FILE  write output to FILE
+      -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
+			   [default], 'expert'
+
+      Dangerous Options:
+	Caution: use of these options is at your own risk.  It is believed that
+	some of them bite.
+	-g                 Group option.
 
 .. _optparse-printing-version-string:
 
