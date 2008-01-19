@@ -23,8 +23,8 @@ Linux and the BSD variants of Unix.
 
    Since version 5.4, the ncurses library decides how to interpret non-ASCII data
    using the ``nl_langinfo`` function.  That means that you have to call
-   :func:`locale.setlocale` in the application and use one of the system's
-   available encodings to encode Unicode strings with it.  This example uses the
+   :func:`locale.setlocale` in the application and encode Unicode strings
+   using one of the system's available encodings.  This example uses the
    system's default encoding::
 
       import locale
