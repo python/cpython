@@ -173,7 +173,12 @@ class TextWrapper:
         Handle a chunk of text (most likely a word, not whitespace) that
         is too long to fit in any line.
         """
-        space_left = max(width - cur_len, 1)
+        # Figure out when indent is larger than the specified width, and make
+        # sure at least one character is stripped off on every pass
+        if width < 1:
+            space_left = 1
+        else:
+            space_left = width - cur_len
 
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
