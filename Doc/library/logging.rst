@@ -1198,65 +1198,65 @@ to do what you need. Here's an example script which uses this class, which
 also illustrates what dict-like behaviour is needed from an arbitrary
 "dict-like" object for use in the constructor::
 
-import logging
-
-class ConnInfo:
-    """
-    An example class which shows how an arbitrary class can be used as
-    the 'extra' context information repository passed to a LoggerAdapter.
-    """
-
-    def __getitem__(self, name):
-        """
-        To allow this instance to look like a dict.
-        """
-        from random import choice
-        if name == "ip":
-            result = choice(["127.0.0.1", "192.168.0.1"])
-        elif name == "user":
-            result = choice(["jim", "fred", "sheila"])
-        else:
-            result = self.__dict__.get(name, "?")
-        return result
-
-    def __iter__(self):
-        """
-        To allow iteration over keys, which will be merged into
-        the LogRecord dict before formatting and output.
-        """
-        keys = ["ip", "user"]
-        keys.extend(self.__dict__.keys())
-        return keys.__iter__()
-
-if __name__ == "__main__":
-    from random import choice
-    levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
-    a1 = logging.LoggerAdapter(logging.getLogger("a.b.c"),
-                               { "ip" : "123.231.231.123", "user" : "sheila" })
-    logging.basicConfig(level=logging.DEBUG,
-                        format="%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s")
-    a1.debug("A debug message")
-    a1.info("An info message with %s", "some parameters")
-    a2 = logging.LoggerAdapter(logging.getLogger("d.e.f"), ConnInfo())
-    for x in range(10):
-        lvl = choice(levels)
-        lvlname = logging.getLevelName(lvl)
-        a2.log(lvl, "A message at %s level with %d %s", lvlname, 2, "parameters")
+   import logging
+   
+   class ConnInfo:
+       """
+       An example class which shows how an arbitrary class can be used as
+       the 'extra' context information repository passed to a LoggerAdapter.
+       """
+   
+       def __getitem__(self, name):
+           """
+           To allow this instance to look like a dict.
+           """
+           from random import choice
+           if name == "ip":
+               result = choice(["127.0.0.1", "192.168.0.1"])
+           elif name == "user":
+               result = choice(["jim", "fred", "sheila"])
+           else:
+               result = self.__dict__.get(name, "?")
+           return result
+   
+       def __iter__(self):
+           """
+           To allow iteration over keys, which will be merged into
+           the LogRecord dict before formatting and output.
+           """
+           keys = ["ip", "user"]
+           keys.extend(self.__dict__.keys())
+           return keys.__iter__()
+   
+   if __name__ == "__main__":
+       from random import choice
+       levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
+       a1 = logging.LoggerAdapter(logging.getLogger("a.b.c"),
+                                  { "ip" : "123.231.231.123", "user" : "sheila" })
+       logging.basicConfig(level=logging.DEBUG,
+                           format="%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s")
+       a1.debug("A debug message")
+       a1.info("An info message with %s", "some parameters")
+       a2 = logging.LoggerAdapter(logging.getLogger("d.e.f"), ConnInfo())
+       for x in range(10):
+           lvl = choice(levels)
+           lvlname = logging.getLevelName(lvl)
+           a2.log(lvl, "A message at %s level with %d %s", lvlname, 2, "parameters")
 
 When this script is run, the output should look something like this::
 
-2008-01-18 14:49:54,023 a.b.c DEBUG    IP: 123.231.231.123 User: sheila   A debug message
-2008-01-18 14:49:54,023 a.b.c INFO     IP: 123.231.231.123 User: sheila   An info message with some parameters
-2008-01-18 14:49:54,023 d.e.f CRITICAL IP: 192.168.0.1     User: jim      A message at CRITICAL level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f INFO     IP: 192.168.0.1     User: jim      A message at INFO level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: sheila   A message at WARNING level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f ERROR    IP: 127.0.0.1       User: fred     A message at ERROR level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f ERROR    IP: 127.0.0.1       User: sheila   A message at ERROR level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: sheila   A message at WARNING level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: jim      A message at WARNING level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f INFO     IP: 192.168.0.1     User: fred     A message at INFO level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: sheila   A message at WARNING level with 2 parameters
-2008-01-18 14:49:54,033 d.e.f WARNING  IP: 127.0.0.1       User: jim      A message at WARNING level with 2 parameters
+   2008-01-18 14:49:54,023 a.b.c DEBUG    IP: 123.231.231.123 User: sheila   A debug message
+   2008-01-18 14:49:54,023 a.b.c INFO     IP: 123.231.231.123 User: sheila   An info message with some parameters
+   2008-01-18 14:49:54,023 d.e.f CRITICAL IP: 192.168.0.1     User: jim      A message at CRITICAL level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f INFO     IP: 192.168.0.1     User: jim      A message at INFO level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: sheila   A message at WARNING level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f ERROR    IP: 127.0.0.1       User: fred     A message at ERROR level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f ERROR    IP: 127.0.0.1       User: sheila   A message at ERROR level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: sheila   A message at WARNING level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: jim      A message at WARNING level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f INFO     IP: 192.168.0.1     User: fred     A message at INFO level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: sheila   A message at WARNING level with 2 parameters
+   2008-01-18 14:49:54,033 d.e.f WARNING  IP: 127.0.0.1       User: jim      A message at WARNING level with 2 parameters
 
 .. versionadded:: 2.6
 
