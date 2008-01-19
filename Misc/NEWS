@@ -53,6 +53,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1687: Fixed plistlib.py restricts <integer> to Python int when writing.
+
 - Issue #1182: many arithmetic bugs in the decimal module have been
   fixed, and the decimal module has been updated to comply with the
   latest IBM Decimal Arithmetic specification (version 1.66) and
