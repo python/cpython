@@ -7,6 +7,7 @@ from __future__ import division
 import math
 import numbers
 import operator
+import re
 
 __all__ = ["Rational"]
 
@@ -76,6 +77,10 @@ def _binary_float_to_ratio(x):
         return (top, 2 ** -e)
 
 
+_RATIONAL_FORMAT = re.compile(
+    r'^\s*(?P<sign>[-+]?)(?P<num>\d+)(?:/(?P<denom>\d+))?\s*$')
+
+
 class Rational(RationalAbc):
     """This class implements rational numbers.
 
@@ -84,18 +89,41 @@ class Rational(RationalAbc):
     and the denominator defaults to 1 so that Rational(3) == 3 and
     Rational() == 0.
 
+    Rationals can also be constructed from strings of the form
+    '[-+]?[0-9]+(/[0-9]+)?', optionally surrounded by spaces.
+
     """
 
     __slots__ = ('_numerator', '_denominator')
 
-    def __init__(self, numerator=0, denominator=1):
-        if (not isinstance(numerator, numbers.Integral) and
-            isinstance(numerator, RationalAbc) and
-            denominator == 1):
-            # Handle copies from other rationals.
-            other_rational = numerator
-            numerator = other_rational.numerator
-            denominator = other_rational.denominator
+    # We're immutable, so use __new__ not __init__
+    def __new__(cls, numerator=0, denominator=1):
+        """Constructs a Rational.
+
+        Takes a string, another Rational, or a numerator/denominator pair.
+
+        """
+        self = super(Rational, cls).__new__(cls)
+
+        if denominator == 1:
+            if isinstance(numerator, basestring):
+                # Handle construction from strings.
+                input = numerator
+                m = _RATIONAL_FORMAT.match(input)
+                if m is None:
+                    raise ValueError('Invalid literal for Rational: ' + input)
+                numerator = int(m.group('num'))
+                # Default denominator to 1. That's the only optional group.
+                denominator = int(m.group('denom') or 1)
+                if m.group('sign') == '-':
+                    numerator = -numerator
+
+            elif (not isinstance(numerator, numbers.Integral) and
+                  isinstance(numerator, RationalAbc)):
+                # Handle copies from other rationals.
+                other_rational = numerator
+                numerator = other_rational.numerator
+                denominator = other_rational.denominator
 
         if (not isinstance(numerator, numbers.Integral) or
             not isinstance(denominator, numbers.Integral)):
@@ -108,16 +136,41 @@ class Rational(RationalAbc):
         g = _gcd(numerator, denominator)
         self._numerator = int(numerator // g)
         self._denominator = int(denominator // g)
+        return self
 
     @classmethod
     def from_float(cls, f):
-        """Converts a float to a rational number, exactly."""
+        """Converts a finite float to a rational number, exactly.
+
+        Beware that Rational.from_float(0.3) != Rational(3, 10).
+
+        """
         if not isinstance(f, float):
             raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
                             (cls.__name__, f, type(f).__name__))
         if math.isnan(f) or math.isinf(f):
             raise TypeError("Cannot convert %r to %s." % (f, cls.__name__))
         return cls(*_binary_float_to_ratio(f))
+
+    @classmethod
+    def from_decimal(cls, dec):
+        """Converts a finite Decimal instance to a rational number, exactly."""
+        from decimal import Decimal
+        if not isinstance(dec, Decimal):
+            raise TypeError(
+                "%s.from_decimal() only takes Decimals, not %r (%s)" %
+                (cls.__name__, dec, type(dec).__name__))
+        if not dec.is_finite():
+            # Catches infinities and nans.
+            raise TypeError("Cannot convert %s to %s." % (dec, cls.__name__))
+        sign, digits, exp = dec.as_tuple()
+        digits = int(''.join(map(str, digits)))
+        if sign:
+            digits = -digits
+        if exp >= 0:
+            return cls(digits * 10 ** exp)
+        else:
+            return cls(digits, 10 ** -exp)
 
     @property
     def numerator(a):
@@ -129,15 +182,14 @@ class Rational(RationalAbc):
 
     def __repr__(self):
         """repr(self)"""
-        return ('rational.Rational(%r,%r)' %
-                (self.numerator, self.denominator))
+        return ('Rational(%r,%r)' % (self.numerator, self.denominator))
 
     def __str__(self):
         """str(self)"""
         if self.denominator == 1:
             return str(self.numerator)
         else:
-            return '(%s/%s)' % (self.numerator, self.denominator)
+            return '%s/%s' % (self.numerator, self.denominator)
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
