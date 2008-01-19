@@ -26,6 +26,10 @@ Extension Modules
 Library
 -------
 
+- Issue #1336: fix a race condition in subprocess.Popen if the garbage
+  collector kicked in at the wrong time that would cause the process
+  to hang when the child wrote to stderr.
+
 - Bug #1728403: Fix a bug that CJKCodecs StreamReader hangs when it
   reads a file that ends with incomplete sequence and sizehint argument
   for .read() is specified.
