@@ -1946,9 +1946,9 @@ def serve(port, callback=None, completer=None):
         def send_document(self, title, contents):
             try:
                 self.send_response(200)
-                self.send_header('Content-Type', 'text/html')
+                self.send_header('Content-Type', 'text/html; charset=UTF-8')
                 self.end_headers()
-                self.wfile.write(html.page(title, contents))
+                self.wfile.write(html.page(title, contents).encode('utf-8'))
             except IOError: pass
 
         def do_GET(self):
@@ -1974,7 +1974,7 @@ def serve(port, callback=None, completer=None):
                     return '<a href="%s.html">%s</a>' % (name, name)
                 names = filter(lambda x: x != '__main__',
                                sys.builtin_module_names)
-                contents = html.multicolumn(names, bltinlink)
+                contents = html.multicolumn(list(names), bltinlink)
                 indices = ['<p>' + html.bigsection(
                     'Built-in Modules', '#ffffff', '#ee77aa', contents)]
 
