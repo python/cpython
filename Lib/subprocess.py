@@ -358,6 +358,7 @@ mswindows = (sys.platform == "win32")
 import os
 import types
 import traceback
+import gc
 
 # Exception classes used by this module.
 class CalledProcessError(Exception):
@@ -1002,7 +1003,16 @@ class Popen(object):
             errpipe_read, errpipe_write = os.pipe()
             self._set_cloexec_flag(errpipe_write)
 
-            self.pid = os.fork()
+            gc_was_enabled = gc.isenabled()
+            # Disable gc to avoid bug where gc -> file_dealloc ->
+            # write to stderr -> hang.  http://bugs.python.org/issue1336
+            gc.disable()
+            try:
+                self.pid = os.fork()
+            except:
+                if gc_was_enabled:
+                    gc.enable()
+                raise
             self._child_created = True
             if self.pid == 0:
                 # Child
@@ -1062,6 +1072,8 @@ class Popen(object):
                 os._exit(255)
 
             # Parent
+            if gc_was_enabled:
+                gc.enable()
             os.close(errpipe_write)
             if p2cread and p2cwrite:
                 os.close(p2cread)
