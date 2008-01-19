@@ -369,6 +369,9 @@ Core and builtins
 Library
 -------
 
+- #1189216: Fix the zipfile module to work on archives with headers
+  past the 2**31 byte boundary.
+
 - #1336: fix a race condition in subprocess.Popen if the garbage
   collector kicked in at the wrong time that would cause the process
   to hang when the child wrote to stderr.
