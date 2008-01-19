@@ -49,7 +49,7 @@ class BitBucket:
     def write(self, line):
         pass
 
-L = [
+test_conv_no_sign = [
         ('0', 0),
         ('1', 1),
         ('9', 9),
@@ -63,6 +63,28 @@ L = [
         (repr(sys.maxsize), sys.maxsize),
         ('  1x', ValueError),
         ('  1  ', 1),
+        ('  1\02  ', ValueError),
+        ('', ValueError),
+        (' ', ValueError),
+        ('  \t\t  ', ValueError),
+        (str(b'\u0663\u0661\u0664 ','raw-unicode-escape'), 314),
+        (chr(0x200), ValueError),
+]
+
+test_conv_sign = [
+        ('0', 0),
+        ('1', 1),
+        ('9', 9),
+        ('10', 10),
+        ('99', 99),
+        ('100', 100),
+        ('314', 314),
+        (' 314', ValueError),
+        ('314 ', 314),
+        ('  \t\t  314  \t\t  ', ValueError),
+        (repr(sys.maxsize), sys.maxsize),
+        ('  1x', ValueError),
+        ('  1  ', ValueError),
         ('  1\02  ', ValueError),
         ('', ValueError),
         (' ', ValueError),
@@ -641,8 +663,18 @@ class BuiltinTest(unittest.TestCase):
         # Different base:
         self.assertEqual(int("10",16), 16)
         # Test conversion from strings and various anomalies
-        for s, v in L:
-            for sign in "", "+", "-":
+        # Testing with no sign at front
+        for s, v in test_conv_no_sign:
+            for prefix in "", " ", "\t", "  \t\t  ":
+                ss = prefix + s
+                vv = v
+                try:
+                    self.assertEqual(int(ss), vv)
+                except v:
+                    pass
+        # No whitespaces allowed between + or - sign and the number
+        for s, v in test_conv_sign:
+            for sign in "+", "-":
                 for prefix in "", " ", "\t", "  \t\t  ":
                     ss = prefix + sign + s
                     vv = v
