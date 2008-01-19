@@ -53,6 +53,10 @@ Core and builtins
 Library
 -------
 
+- Issue #1336: fix a race condition in subprocess.Popen if the garbage
+  collector kicked in at the wrong time that would cause the process
+  to hang when the child wrote to stderr.
+
 - Bug #1687: Fixed plistlib.py restricts <integer> to Python int when writing.
 
 - Issue #1182: many arithmetic bugs in the decimal module have been
