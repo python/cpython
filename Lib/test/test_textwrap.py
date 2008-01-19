@@ -385,6 +385,19 @@ How *do* you spell that odd word, anyways?
                          '               o'],
                         subsequent_indent = ' '*15)
 
+        # bug 1146.  Prevent a long word to be wrongly wrapped when the
+        # preceding word is exactly one character shorter than the width
+        self.check_wrap(self.text, 12,
+                        ['Did you say ',
+                         '"supercalifr',
+                         'agilisticexp',
+                         'ialidocious?',
+                         '" How *do*',
+                         'you spell',
+                         'that odd',
+                         'word,',
+                         'anyways?'])
+
     def test_nobreak_long(self):
         # Test with break_long_words disabled
         self.wrapper.break_long_words = 0

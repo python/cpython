@@ -116,12 +116,30 @@ PyOS_strtoul(register char *str, char **ptr, int base)
 		if (*str == '0') {
 			++str;
 			if (*str == 'x' || *str == 'X') {
+				/* there must be at least one digit after 0x */
+				if (_PyLong_DigitValue[Py_CHARMASK(str[1])] >= 16) {
+					if (ptr)
+						*ptr = str;
+					return 0;
+				}
 				++str;
 				base = 16;
 			} else if (*str == 'o' || *str == 'O') {
+				/* there must be at least one digit after 0o */
+				if (_PyLong_DigitValue[Py_CHARMASK(str[1])] >= 8) {
+					if (ptr)
+						*ptr = str;
+					return 0;
+				}
 				++str;
 				base = 8;
 			} else if (*str == 'b' || *str == 'B') {
+				/* there must be at least one digit after 0b */
+				if (_PyLong_DigitValue[Py_CHARMASK(str[1])] >= 2) {
+					if (ptr)
+						*ptr = str;
+					return 0;
+				}
 				++str;
 				base = 2;
 			} else {
@@ -143,22 +161,43 @@ PyOS_strtoul(register char *str, char **ptr, int base)
 	case 16:
 		if (*str == '0') {
 			++str;
-			if (*str == 'x' || *str == 'X')
+			if (*str == 'x' || *str == 'X') {
+				/* there must be at least one digit after 0x */
+				if (_PyLong_DigitValue[Py_CHARMASK(str[1])] >= 16) {
+					if (ptr)
+						*ptr = str;
+					return 0;
+				}
 				++str;
+			}
 		}
 		break;
 	case 8:
 		if (*str == '0') {
 			++str;
-			if (*str == 'o' || *str == 'O')
+			if (*str == 'o' || *str == 'O') {
+				/* there must be at least one digit after 0o */
+				if (_PyLong_DigitValue[Py_CHARMASK(str[1])] >= 8) {
+					if (ptr)
+						*ptr = str;
+					return 0;
+				}
 				++str;
+			}
 		}
 		break;
 	case 2:
 		if(*str == '0') {
 			++str;
-			if (*str == 'b' || *str == 'B')
+			if (*str == 'b' || *str == 'B') {
+				/* there must be at least one digit after 0b */
+				if (_PyLong_DigitValue[Py_CHARMASK(str[1])] >= 2) {
+					if (ptr)
+						*ptr = str;
+					return 0;
+				}
 				++str;
+			}
 		}
 		break;
 	}

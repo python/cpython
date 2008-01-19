@@ -49,9 +49,9 @@ Comment = r'#[^\r\n]*'
 Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
 Name = r'[a-zA-Z_]\w*'
 
-Hexnumber = r'0[xX][\da-fA-F]*'
-Binnumber = r'0[bB][01]*'
-Octnumber = r'0[oO][0-7]*'
+Hexnumber = r'0[xX][\da-fA-F]+'
+Binnumber = r'0[bB][01]+'
+Octnumber = r'0[oO][0-7]+'
 Decnumber = r'(?:0+|[1-9]\d*)'
 Intnumber = group(Hexnumber, Binnumber, Octnumber, Decnumber)
 Exponent = r'[eE][-+]?\d+'

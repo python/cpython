@@ -288,7 +288,6 @@ class GeneralModuleTests(unittest.TestCase):
 
     def testRefCountGetNameInfo(self):
         # Testing reference count for getnameinfo
-        import sys
         if hasattr(sys, "getrefcount"):
             try:
                 # On some versions, this loses a reference

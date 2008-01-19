@@ -38,6 +38,27 @@ def handle_error(prefix):
 
 class BasicTests(unittest.TestCase):
 
+    def testSSLconnect(self):
+        if not test_support.is_resource_enabled('network'):
+            return
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE)
+        s.connect(("svn.python.org", 443))
+        c = s.getpeercert()
+        if c:
+            raise test_support.TestFailed("Peer cert %s shouldn't be here!")
+        s.close()
+
+        # this should fail because we have no verification certs
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_REQUIRED)
+        try:
+            s.connect(("svn.python.org", 443))
+        except ssl.SSLError:
+            pass
+        finally:
+            s.close()
+
     def testCrucialConstants(self):
         ssl.PROTOCOL_SSLv2
         ssl.PROTOCOL_SSLv23
@@ -81,7 +102,6 @@ class BasicTests(unittest.TestCase):
 class NetworkedTests(unittest.TestCase):
 
     def testConnect(self):
-
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_NONE)
         s.connect(("svn.python.org", 443))

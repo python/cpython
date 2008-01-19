@@ -252,6 +252,42 @@ class MmapTests(unittest.TestCase):
                 self.assertEqual(m.find(slice + b'x'), -1)
         m.close()
 
+    def test_find_end(self):
+        # test the new 'end' parameter works as expected
+        f = open(TESTFN, 'w+')
+        data = 'one two ones'
+        n = len(data)
+        f.write(data)
+        f.flush()
+        m = mmap.mmap(f.fileno(), n)
+        f.close()
+
+        self.assertEqual(m.find('one'), 0)
+        self.assertEqual(m.find('ones'), 8)
+        self.assertEqual(m.find('one', 0, -1), 0)
+        self.assertEqual(m.find('one', 1), 8)
+        self.assertEqual(m.find('one', 1, -1), 8)
+        self.assertEqual(m.find('one', 1, -2), -1)
+
+
+    def test_rfind(self):
+        # test the new 'end' parameter works as expected
+        f = open(TESTFN, 'w+')
+        data = 'one two ones'
+        n = len(data)
+        f.write(data)
+        f.flush()
+        m = mmap.mmap(f.fileno(), n)
+        f.close()
+
+        self.assertEqual(m.rfind('one'), 8)
+        self.assertEqual(m.rfind('one '), 0)
+        self.assertEqual(m.rfind('one', 0, -1), 8)
+        self.assertEqual(m.rfind('one', 0, -2), 0)
+        self.assertEqual(m.rfind('one', 1, -1), 8)
+        self.assertEqual(m.rfind('one', 1, -2), -1)
+
+
     def test_double_close(self):
         # make sure a double close doesn't crash on Solaris (Bug# 665913)
         f = open(TESTFN, 'wb+')

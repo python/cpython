@@ -615,18 +615,19 @@ impossible to detect the termination of alien threads.
 
    When the *timeout* argument is present and not ``None``, it should be a floating
    point number specifying a timeout for the operation in seconds (or fractions
-   thereof). As :meth:`join` always  returns ``None``, you must call
-   :meth:`isAlive` to decide whether  a timeout happened.
+   thereof). As :meth:`join` always returns ``None``, you must call :meth:`isAlive`
+   after :meth:`join` to decide whether a timeout happened -- if the thread is
+   still alive, the :meth:`join` call timed out.
 
    When the *timeout* argument is not present or ``None``, the operation will block
    until the thread terminates.
 
    A thread can be :meth:`join`\ ed many times.
 
-   :meth:`join` may throw a :exc:`RuntimeError`, if an attempt is made to join the
-   current thread as that would cause a deadlock. It is also an error to
-   :meth:`join` a thread before it has been started and attempts to do so raises
-   same exception.
+   :meth:`join` raises a :exc:`RuntimeError` if an attempt is made to join
+   the current thread as that would cause a deadlock. It is also an error to
+   :meth:`join` a thread before it has been started and attempts to do so
+   raises the same exception.
 
 
 .. method:: Thread.getName()
