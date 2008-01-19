@@ -1320,7 +1320,7 @@ These are the UTF-8 codec APIs:
 
 .. cfunction:: PyObject* PyUnicode_AsUTF8String(PyObject *unicode)
 
-   Encode a Unicode objects using UTF-8 and return the result as Python string
+   Encode a Unicode object using UTF-8 and return the result as Python string
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
@@ -1482,7 +1482,7 @@ These are the "Unicode Escape" codec APIs:
 
 .. cfunction:: PyObject* PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
-   Encode a Unicode objects using Unicode-Escape and return the result as Python
+   Encode a Unicode object using Unicode-Escape and return the result as Python
    string object.  Error handling is "strict". Return *NULL* if an exception was
    raised by the codec.
 
@@ -1506,7 +1506,7 @@ These are the "Raw Unicode Escape" codec APIs:
 
 .. cfunction:: PyObject* PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 
-   Encode a Unicode objects using Raw-Unicode-Escape and return the result as
+   Encode a Unicode object using Raw-Unicode-Escape and return the result as
    Python string object. Error handling is "strict". Return *NULL* if an exception
    was raised by the codec.
 
@@ -1530,7 +1530,7 @@ ordinals and only these are accepted by the codecs during encoding.
 
 .. cfunction:: PyObject* PyUnicode_AsLatin1String(PyObject *unicode)
 
-   Encode a Unicode objects using Latin-1 and return the result as Python string
+   Encode a Unicode object using Latin-1 and return the result as Python string
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
@@ -1554,7 +1554,7 @@ codes generate errors.
 
 .. cfunction:: PyObject* PyUnicode_AsASCIIString(PyObject *unicode)
 
-   Encode a Unicode objects using ASCII and return the result as Python string
+   Encode a Unicode object using ASCII and return the result as Python string
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
@@ -1606,7 +1606,7 @@ characters to different code points.
 
 .. cfunction:: PyObject* PyUnicode_AsCharmapString(PyObject *unicode, PyObject *mapping)
 
-   Encode a Unicode objects using the given *mapping* object and return the result
+   Encode a Unicode object using the given *mapping* object and return the result
    as Python string object.  Error handling is "strict".  Return *NULL* if an
    exception was raised by the codec.
 
@@ -1658,7 +1658,7 @@ the user settings on the machine running the codec.
 
 .. cfunction:: PyObject* PyUnicode_AsMBCSString(PyObject *unicode)
 
-   Encode a Unicode objects using MBCS and return the result as Python string
+   Encode a Unicode object using MBCS and return the result as Python string
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
