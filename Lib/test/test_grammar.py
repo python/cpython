@@ -32,6 +32,8 @@ class TokenTests(unittest.TestCase):
         self.assertEquals(0o377, 255)
         self.assertEquals(2147483647, 0o17777777777)
         self.assertEquals(0b1001, 9)
+        # "0x" is not a valid literal
+        self.assertRaises(SyntaxError, eval, "0x")
         from sys import maxsize
         if maxsize == 2147483647:
             self.assertEquals(-2147483647-1, -0o20000000000)
