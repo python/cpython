@@ -15,6 +15,7 @@ Rational number class.
 
 .. class:: Rational(numerator=0, denominator=1)
            Rational(other_rational)
+           Rational(string)
 
    The first version requires that *numerator* and *denominator* are
    instances of :class:`numbers.Integral` and returns a new
@@ -22,10 +23,12 @@ Rational number class.
    *denominator* is :const:`0`, raises a :exc:`ZeroDivisionError`. The
    second version requires that *other_rational* is an instance of
    :class:`numbers.Rational` and returns an instance of
-   :class:`Rational` with the same value.
+   :class:`Rational` with the same value. The third version expects a
+   string of the form ``[-+]?[0-9]+(/[0-9]+)?``, optionally surrounded
+   by spaces.
 
    Implements all of the methods and operations from
-   :class:`numbers.Rational` and is hashable.
+   :class:`numbers.Rational` and is immutable and hashable.
 
 
 .. method:: Rational.from_float(flt)
@@ -34,6 +37,13 @@ Rational number class.
    exact value of *flt*, which must be a :class:`float`. Beware that
    ``Rational.from_float(0.3)`` is not the same value as ``Rational(3,
    10)``
+
+
+.. method:: Rational.from_decimal(dec)
+
+   This classmethod constructs a :class:`Rational` representing the
+   exact value of *dec*, which must be a
+   :class:`decimal.Decimal`.
 
 
 .. method:: Rational.__floor__()
