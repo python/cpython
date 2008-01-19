@@ -248,19 +248,22 @@ mmap_read_method(mmap_object *self,
 }
 
 static PyObject *
-mmap_find_method(mmap_object *self,
-		 PyObject *args)
+mmap_gfind(mmap_object *self,
+	   PyObject *args,
+	   int reverse)
 {
 	Py_ssize_t start = self->pos;
+        Py_ssize_t end = self->size;
 	char *needle;
 	Py_ssize_t len;
 
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, "s#|n:find", &needle, &len, &start)) {
+	if (!PyArg_ParseTuple(args, reverse ? "s#|nn:rfind" : "s#|nn:find",
+			      &needle, &len, &start, &end)) {
 		return NULL;
 	} else {
 		char *p;
-		char *e = self->data + self->size;
+		char sign = reverse ? -1 : 1;
 
                 if (start < 0)
 			start += self->size;
@@ -269,7 +272,18 @@ mmap_find_method(mmap_object *self,
                 else if ((size_t)start > self->size)
 			start = self->size;
 
-		for (p = self->data + start; p + len <= e; ++p) {
+                if (end < 0)
+			end += self->size;
+		if (end < 0)
+			end = 0;
+		else if ((size_t)end > self->size)
+			end = self->size;
+
+		start += (Py_ssize_t)self->data;
+		end += (Py_ssize_t)self->data;
+
+		for (p = (char *)(reverse ? end - len : start);
+		     p >= (char *)start && p + len <= (char *)end; p+=sign) {
 			Py_ssize_t i;
 			for (i = 0; i < len && needle[i] == p[i]; ++i)
 				/* nothing */;
@@ -279,6 +293,20 @@ mmap_find_method(mmap_object *self,
 		}
 		return PyInt_FromLong(-1);
 	}
+}
+
+static PyObject *
+mmap_find_method(mmap_object *self,
+		 PyObject *args)
+{
+	return mmap_gfind(self, args, 0);
+}
+
+static PyObject *
+mmap_rfind_method(mmap_object *self,
+		 PyObject *args)
+{
+	return mmap_gfind(self, args, 1);
 }
 
 static int
@@ -593,6 +621,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
 static struct PyMethodDef mmap_object_methods[] = {
 	{"close",	(PyCFunction) mmap_close_method,	METH_NOARGS},
 	{"find",	(PyCFunction) mmap_find_method,		METH_VARARGS},
+	{"rfind",	(PyCFunction) mmap_rfind_method,	METH_VARARGS},
 	{"flush",	(PyCFunction) mmap_flush_method,	METH_VARARGS},
 	{"move",	(PyCFunction) mmap_move_method,		METH_VARARGS},
 	{"read",	(PyCFunction) mmap_read_method,		METH_VARARGS},

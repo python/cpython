@@ -139,11 +139,12 @@ Memory-mapped file objects support the following methods:
    an exception being raised.
 
 
-.. method:: mmap.find(string[, start])
+.. method:: mmap.find(string[, start[, end]])
 
-   Returns the lowest index in the object where the substring *string* is found.
-   Returns ``-1`` on failure.  *start* is the index at which the search begins, and
-   defaults to zero.
+   Returns the lowest index in the object where the substring *string* is found,
+   such that *string* is contained in the range [*start*, *end*]. Optional
+   arguments *start* and *end* are interpreted as in slice notation.
+   Returns ``-1`` on failure.
 
 
 .. method:: mmap.flush([offset, size])
@@ -186,6 +187,14 @@ Memory-mapped file objects support the following methods:
    Resizes the map and the underlying file, if any. If the mmap was created with
    :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will throw a
    :exc:`TypeError` exception.
+
+
+.. method:: mmap.rfind(string[, start[, end]])
+
+   Returns the highest index in the object where the substring *string* is
+   found, such that *string* is contained in the range [*start*,
+   *end*]. Optional arguments *start* and *end* are interpreted as in slice
+   notation.  Returns ``-1`` on failure.
 
 
 .. method:: mmap.seek(pos[, whence])
