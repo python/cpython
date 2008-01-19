@@ -367,6 +367,9 @@ Core and builtins
 Library
 -------
 
+- #1693149: trace.py --ignore-module - accept multiple comma-separated
+  modules to be given.
+
 - #1822: MIMEMultipart.is_multipart() behaves correctly for a just-created
   (and empty) instance. Thanks Jonathan Share.
 
