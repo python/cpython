@@ -471,8 +471,8 @@ def list2cmdline(seq):
 
     2) A string surrounded by double quotation marks is
        interpreted as a single argument, regardless of white space
-       contained within.  A quoted string can be embedded in an
-       argument.
+       or pipe characters contained within.  A quoted string can be
+       embedded in an argument.
 
     3) A double quotation mark preceded by a backslash is
        interpreted as a literal double quotation mark.
@@ -498,7 +498,7 @@ def list2cmdline(seq):
         if result:
             result.append(' ')
 
-        needquote = (" " in arg) or ("\t" in arg) or not arg
+        needquote = (" " in arg) or ("\t" in arg) or ("|" in arg) or not arg
         if needquote:
             result.append('"')
 
