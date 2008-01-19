@@ -45,6 +45,44 @@ class RationalTest(unittest.TestCase):
         self.assertRaises(TypeError, R, 1.5)
         self.assertRaises(TypeError, R, 1.5 + 3j)
 
+        self.assertRaises(TypeError, R, R(1, 2), 3)
+        self.assertRaises(TypeError, R, "3/2", 3)
+
+    def testFromString(self):
+        self.assertEquals((5, 1), _components(R("5")))
+        self.assertEquals((3, 2), _components(R("3/2")))
+        self.assertEquals((3, 2), _components(R(" \n  +3/2")))
+        self.assertEquals((-3, 2), _components(R("-3/2  ")))
+        self.assertEquals((3, 2), _components(R("    03/02 \n  ")))
+        self.assertEquals((3, 2), _components(R("    03/02 \n  ")))
+
+        self.assertRaisesMessage(
+            ZeroDivisionError, "Rational(3, 0)",
+            R, "3/0")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Rational: 3/",
+            R, "3/")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Rational: 3 /2",
+            R, "3 /2")
+        self.assertRaisesMessage(
+            # Denominators don't need a sign.
+            ValueError, "Invalid literal for Rational: 3/+2",
+            R, "3/+2")
+        self.assertRaisesMessage(
+            # Imitate float's parsing.
+            ValueError, "Invalid literal for Rational: + 3/2",
+            R, "+ 3/2")
+        self.assertRaisesMessage(
+            # Only parse fractions, not decimals.
+            ValueError, "Invalid literal for Rational: 3.2",
+            R, "3.2")
+
+    def testImmutable(self):
+        r = R(7, 3)
+        r.__init__(2, 15)
+        self.assertEquals((7, 3), _components(r))
+
     def testFromFloat(self):
         self.assertRaisesMessage(
             TypeError, "Rational.from_float() only takes floats, not 3 (int)",
@@ -71,6 +109,31 @@ class RationalTest(unittest.TestCase):
         self.assertRaisesMessage(
             TypeError, "Cannot convert nan to Rational.",
             R.from_float, nan)
+
+    def testFromDecimal(self):
+        self.assertRaisesMessage(
+            TypeError,
+            "Rational.from_decimal() only takes Decimals, not 3 (int)",
+            R.from_decimal, 3)
+        self.assertEquals(R(0), R.from_decimal(Decimal("-0")))
+        self.assertEquals(R(5, 10), R.from_decimal(Decimal("0.5")))
+        self.assertEquals(R(5, 1000), R.from_decimal(Decimal("5e-3")))
+        self.assertEquals(R(5000), R.from_decimal(Decimal("5e3")))
+        self.assertEquals(1 - R(1, 10**30),
+                          R.from_decimal(Decimal("0." + "9" * 30)))
+
+        self.assertRaisesMessage(
+            TypeError, "Cannot convert Infinity to Rational.",
+            R.from_decimal, Decimal("inf"))
+        self.assertRaisesMessage(
+            TypeError, "Cannot convert -Infinity to Rational.",
+            R.from_decimal, Decimal("-inf"))
+        self.assertRaisesMessage(
+            TypeError, "Cannot convert NaN to Rational.",
+            R.from_decimal, Decimal("nan"))
+        self.assertRaisesMessage(
+            TypeError, "Cannot convert sNaN to Rational.",
+            R.from_decimal, Decimal("snan"))
 
     def testConversions(self):
         self.assertTypedEquals(-1, trunc(R(-11, 10)))
@@ -175,7 +238,7 @@ class RationalTest(unittest.TestCase):
         self.assertTypedEquals(1.0 + 0j, (1.0 + 0j) ** R(1, 10))
 
     def testMixingWithDecimal(self):
-        """Decimal refuses mixed comparisons."""
+        # Decimal refuses mixed comparisons.
         self.assertRaisesMessage(
             TypeError,
             "unsupported operand type(s) for +: 'Rational' and 'Decimal'",
@@ -238,8 +301,8 @@ class RationalTest(unittest.TestCase):
         self.assertFalse(R(5, 2) == 2)
 
     def testStringification(self):
-        self.assertEquals("rational.Rational(7,3)", repr(R(7, 3)))
-        self.assertEquals("(7/3)", str(R(7, 3)))
+        self.assertEquals("Rational(7,3)", repr(R(7, 3)))
+        self.assertEquals("7/3", str(R(7, 3)))
         self.assertEquals("7", str(R(7, 1)))
 
     def testHash(self):

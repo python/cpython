@@ -34,6 +34,12 @@ class MIMEMultipart(MIMEBase):
         keyword arguments (or passed into the _params argument).
         """
         MIMEBase.__init__(self, 'multipart', _subtype, **_params)
+
+        # Initialise _payload to an empty list as the Message superclass's
+        # implementation of is_multipart assumes that _payload is a list for
+        # multipart messages.
+        self._payload = []
+
         if _subparts:
             for p in _subparts:
                 self.attach(p)
