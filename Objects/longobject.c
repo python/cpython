@@ -1685,8 +1685,6 @@ PyLong_FromString(char *str, char **pend, int base)
 		++str;
 		sign = -1;
 	}
-	while (*str != '\0' && isspace(Py_CHARMASK(*str)))
-		str++;
 	if (base == 0) {
 		if (str[0] != '0')
 			base = 10;

@@ -12,6 +12,8 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Issue #1769: Now int("- 1") is not allowed any more.
+
 - Object/longobject.c: long(float('nan')) raises an OverflowError instead
   of returning 0.
 
