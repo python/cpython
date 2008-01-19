@@ -139,7 +139,7 @@ class Textbox:
             if stop == 0 and self.stripspaces:
                 continue
             for x in range(self.maxx+1):
-                if self.stripspaces and x == stop:
+                if self.stripspaces and x > stop:
                     break
                 result = result + chr(ascii.ascii(self.win.inch(y, x)))
             if self.maxy > 0:
