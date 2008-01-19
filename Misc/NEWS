@@ -1011,6 +1011,10 @@ Library
 Extension Modules
 -----------------
 
+- Patch 976880: ``mmap`` objects now have an ``rfind`` method that
+  works as expected.  ``mmap.find`` also takes an optional ``end``
+  parameter.
+
 - _winreg's HKEY object has gained __enter__ and __exit__ methods to support
   the context manager protocol.  The _winreg module also gained a new function
   ``ExpandEnvironmentStrings`` to expand REG_EXPAND_SZ keys.
