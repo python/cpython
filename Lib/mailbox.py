@@ -315,7 +315,10 @@ class Maildir(Mailbox):
         subpath = self._lookup(key)
         f = open(os.path.join(self._path, subpath), 'r')
         try:
-            msg = MaildirMessage(f)
+            if self._factory:
+                msg = self._factory(f)
+            else:
+                msg = MaildirMessage(f)
         finally:
             f.close()
         subdir, name = os.path.split(subpath)
