@@ -369,6 +369,9 @@ Core and builtins
 Library
 -------
 
+- #1146: fix how textwrap breaks a long word that would start in the
+  last column of a line.
+
 - #1693149: trace.py --ignore-module - accept multiple comma-separated
   modules to be given.
 
