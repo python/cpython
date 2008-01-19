@@ -1986,15 +1986,22 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 #else
 
 	if (s->sock_timeout > 0.0) {
-		if (res < 0 && errno == EINPROGRESS && IS_SELECTABLE(s)) {
-			timeout = internal_select(s, 1);
-			if (timeout == 0) {
-				res = connect(s->sock_fd, addr, addrlen);
-				if (res < 0 && errno == EISCONN)
-					res = 0;
-			}
-			else if (timeout == -1)
-				res = errno;		/* had error */
+                if (res < 0 && errno == EINPROGRESS && IS_SELECTABLE(s)) {
+                        timeout = internal_select(s, 1);
+                        if (timeout == 0) {
+                                /* Bug #1019808: in case of an EINPROGRESS, 
+                                   use getsockopt(SO_ERROR) to get the real 
+                                   error. */
+                                socklen_t res_size = sizeof res;
+                                (void)getsockopt(s->sock_fd, SOL_SOCKET, 
+                                                 SO_ERROR, &res, &res_size);
+                                if (res == EISCONN)
+                                        res = 0;
+                                errno = res;
+                        }
+                        else if (timeout == -1) {
+                                res = errno;            /* had error */
+                        }
 			else
 				res = EWOULDBLOCK;	/* timed out */
 		}

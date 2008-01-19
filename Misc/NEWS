@@ -1120,6 +1120,9 @@ Extension Modules
 - Patch #1544279: Improve thread-safety of the socket module by moving
   the sock_addr_t storage out of the socket object.
 
+- Patch #1019808: fix bug that causes an incorrect error to be returned 
+  when a socket timeout is set and a connection attempt fails.
+
 - Speed up function calls into the math module.
 
 - Bug #1588217: don't parse "= " as a soft line break in binascii's
