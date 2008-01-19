@@ -2677,7 +2677,7 @@ _compile(PyObject* self_, PyObject* args)
         return NULL;
 
     n = PyList_GET_SIZE(code);
-
+    /* coverity[ampersand_in_size] */
     self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, n);
     if (!self)
         return NULL;
@@ -3187,6 +3187,7 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, int status)
     if (status > 0) {
 
         /* create match object (with room for extra group marks) */
+        /* coverity[ampersand_in_size] */
         match = PyObject_NEW_VAR(MatchObject, &Match_Type,
                                  2*(pattern->groups+1));
         if (!match)

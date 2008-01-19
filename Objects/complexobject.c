@@ -375,24 +375,24 @@ complex_hash(PyComplexObject *v)
 static int
 to_complex(PyObject **pobj, Py_complex *pc)
 {
-    PyObject *obj = *pobj;
+	PyObject *obj = *pobj;
 
-    pc->real = pc->imag = 0.0;
-    if (PyLong_Check(obj)) {
-        pc->real = PyLong_AsDouble(obj);
-        if (pc->real == -1.0 && PyErr_Occurred()) {
-            *pobj = NULL;
-            return -1;
-        }
-        return 0;
-    }
-    if (PyFloat_Check(obj)) {
-        pc->real = PyFloat_AsDouble(obj);
-        return 0;
-    }
-    Py_INCREF(Py_NotImplemented);
-    *pobj = Py_NotImplemented;
-    return -1;
+	pc->real = pc->imag = 0.0;
+	if (PyLong_Check(obj)) {
+		pc->real = PyLong_AsDouble(obj);
+		if (pc->real == -1.0 && PyErr_Occurred()) {
+			*pobj = NULL;
+			return -1;
+		}
+		return 0;
+	}
+	if (PyFloat_Check(obj)) {
+		pc->real = PyFloat_AsDouble(obj);
+		return 0;
+	}
+	Py_INCREF(Py_NotImplemented);
+	*pobj = Py_NotImplemented;
+	return -1;
 }
 		
 
@@ -401,8 +401,8 @@ complex_add(PyObject *v, PyObject *w)
 {
 	Py_complex result;
 	Py_complex a, b;
-        TO_COMPLEX(v, a);
-        TO_COMPLEX(w, b);
+	TO_COMPLEX(v, a);
+	TO_COMPLEX(w, b);
 	PyFPE_START_PROTECT("complex_add", return 0)
 	result = c_sum(a, b);
 	PyFPE_END_PROTECT(result)
@@ -414,8 +414,8 @@ complex_sub(PyObject *v, PyObject *w)
 {
 	Py_complex result;
 	Py_complex a, b;
-        TO_COMPLEX(v, a);
-        TO_COMPLEX(w, b);
+	TO_COMPLEX(v, a);
+	TO_COMPLEX(w, b);
 	PyFPE_START_PROTECT("complex_sub", return 0)
 	result = c_diff(a, b);
 	PyFPE_END_PROTECT(result)
@@ -427,8 +427,8 @@ complex_mul(PyObject *v, PyObject *w)
 {
 	Py_complex result;
 	Py_complex a, b;
-        TO_COMPLEX(v, a);
-        TO_COMPLEX(w, b);
+	TO_COMPLEX(v, a);
+	TO_COMPLEX(w, b);
 	PyFPE_START_PROTECT("complex_mul", return 0)
 	result = c_prod(a, b);
 	PyFPE_END_PROTECT(result)
@@ -440,8 +440,8 @@ complex_div(PyObject *v, PyObject *w)
 {
 	Py_complex quot;
 	Py_complex a, b;
-        TO_COMPLEX(v, a);
-        TO_COMPLEX(w, b);
+	TO_COMPLEX(v, a);
+	TO_COMPLEX(w, b);
 	PyFPE_START_PROTECT("complex_div", return 0)
 	errno = 0;
 	quot = c_quot(a, b);
@@ -477,8 +477,8 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
 	Py_complex exponent;
 	long int_exponent;
 	Py_complex a, b;
-        TO_COMPLEX(v, a);
-        TO_COMPLEX(w, b);
+	TO_COMPLEX(v, a);
+	TO_COMPLEX(w, b);
 
  	if (z != Py_None) {
 		PyErr_SetString(PyExc_ValueError, "complex modulo");
@@ -557,8 +557,8 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
 {
 	PyObject *res;
 	Py_complex i, j;
-        TO_COMPLEX(v, i);
-        TO_COMPLEX(w, j);
+	TO_COMPLEX(v, i);
+	TO_COMPLEX(w, j);
 
 	if (op != Py_EQ && op != Py_NE) {
 		/* XXX Should eventually return NotImplemented */
@@ -673,11 +673,11 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	start = s;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-    if (s[0] == '\0') {
+	if (s[0] == '\0') {
 		PyErr_SetString(PyExc_ValueError,
 				"complex() arg is an empty string");
 		return NULL;
-    }
+	}
 	if (s[0] == '(') {
 		/* Skip over possible bracket from repr(). */
 		got_bracket = 1;
@@ -837,7 +837,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					"complex() can't take second arg"
 					" if first is a string");
 			return NULL;
-                }
+		}
 		return complex_subtype_from_string(type, r);
 	}
 	if (i != NULL && PyUnicode_Check(i)) {
@@ -915,7 +915,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			return NULL;
 		}
 		cr.real = PyFloat_AsDouble(tmp);
-                cr.imag = 0.0; /* Shut up compiler warning */
+		cr.imag = 0.0; /* Shut up compiler warning */
 		Py_DECREF(tmp);
 	}
 	if (i == NULL) {
