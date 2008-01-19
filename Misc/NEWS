@@ -704,6 +704,9 @@ Library
   be equal to calling getsockname() on the server's socket. Fixed by
   patch #1545011.
 
+- Patch #742598: Add .timeout attribute to SocketServer that calls
+  .handle_timeout() when no requests are received.
+
 - Bug #1651235: When a tuple was passed to a ctypes function call,
   Python would crash instead of raising an error.
 
