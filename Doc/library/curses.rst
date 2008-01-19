@@ -19,6 +19,19 @@ for DOS, OS/2, and possibly other systems as well.  This extension module is
 designed to match the API of ncurses, an open-source curses library hosted on
 Linux and the BSD variants of Unix.
 
+.. note::
+
+   Since version 5.4, the ncurses library decides how to interpret non-ASCII data
+   using the ``nl_langinfo`` function.  That means that you have to call
+   :func:`locale.setlocale` in the application and use one of the system's
+   available encodings to encode Unicode strings with it.  This example uses the
+   system's default encoding::
+
+      import locale
+      locale.setlocale(locale.LC_ALL, '')
+      code = locale.getpreferredencoding()
+
+   Then use *code* as the encoding for :meth:`str.encode` calls.
 
 .. seealso::
 
