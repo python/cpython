@@ -37,7 +37,8 @@ def handle_error(prefix):
 class BasicTests(unittest.TestCase):
 
     def testSSLconnect(self):
-        import os
+        if not test_support.is_resource_enabled('network'):
+            return
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_NONE)
         s.connect(("svn.python.org", 443))
@@ -101,7 +102,6 @@ class BasicTests(unittest.TestCase):
 class NetworkTests(unittest.TestCase):
 
     def testConnect(self):
-        import os
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_NONE)
         s.connect(("svn.python.org", 443))
