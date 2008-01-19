@@ -24,4 +24,4 @@ document the API functions in detail.
    concrete.rst
    init.rst
    memory.rst
-   newtypes.rst
+   objimpl.rst
