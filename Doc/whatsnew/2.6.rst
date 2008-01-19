@@ -960,6 +960,13 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Patch #1490190
 
+* :class:`mmap` objects now have a :meth:`rfind` method that finds
+  a substring, beginning at the end of the string and searching
+  backwards.  The :meth:`find` method
+  also gained a *end* parameter containing the index at which to stop
+  the forward search.
+  (Contributed by John Lenton.)
+
 * The :mod:`new` module has been removed from Python 3.0.
   Importing it therefore
   triggers a warning message when Python is running in 3.0-warning
