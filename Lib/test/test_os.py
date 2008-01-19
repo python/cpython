@@ -23,6 +23,12 @@ class FileTests(unittest.TestCase):
         os.close(f)
         self.assert_(os.access(test_support.TESTFN, os.W_OK))
 
+    def test_closerange(self):
+        f = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
+        # close a fd that is open, and one that isn't
+        os.closerange(f, f+2)
+        self.assertRaises(OSError, os.write, f, "a")
+
 
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):

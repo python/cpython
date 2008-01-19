@@ -481,6 +481,20 @@ by file descriptors.
       :func:`fdopen`, use its :meth:`close` method.
 
 
+.. function:: closerange(fd_low, fd_high)
+
+   Close all file descriptors from *fd_low* (inclusive) to *fd_high* (exclusive),
+   ignoring errors. Availability: Macintosh, Unix, Windows. Equivalent to::
+
+      for fd in xrange(fd_low, fd_high):
+          try:
+              os.close(fd)
+          except OSError:
+              pass
+
+   .. versionadded:: 2.6
+
+
 .. function:: dup(fd)
 
    Return a duplicate of file descriptor *fd*. Availability: Macintosh, Unix,

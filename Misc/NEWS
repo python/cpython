@@ -1019,6 +1019,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1663329: added ``os.closerange()`` function to quickly close a range
+  of file descriptors without considering errors.
+
 - Patch 976880: ``mmap`` objects now have an ``rfind`` method that
   works as expected.  ``mmap.find`` also takes an optional ``end``
   parameter.
