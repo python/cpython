@@ -965,13 +965,8 @@ class Popen(object):
 
 
         def _close_fds(self, but):
-            for i in xrange(3, MAXFD):
-                if i == but:
-                    continue
-                try:
-                    os.close(i)
-                except:
-                    pass
+            os.closerange(3, but)
+            os.closerange(but + 1, MAXFD)
 
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
