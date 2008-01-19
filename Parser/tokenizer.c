@@ -1332,7 +1332,14 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 				goto imaginary;
 #endif
 			if (c == 'x' || c == 'X') {
+
 				/* Hex */
+				c = tok_nextc(tok);
+				if (!isxdigit(c)) {
+					tok->done = E_TOKEN;
+					tok_backup(tok, c);
+					return ERRORTOKEN;
+				}
 				do {
 					c = tok_nextc(tok);
 				} while (isxdigit(c));

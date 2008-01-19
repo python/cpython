@@ -816,6 +816,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(int('0123', 0), 83)
         self.assertEqual(int('0x123', 16), 291)
 
+        # Bug 1679: "0x" is not a valid hex literal
+        self.assertRaises(ValueError, int, "0x", 16)
+        self.assertRaises(ValueError, int, "0x", 0)
+
+
         # SF bug 1334662: int(string, base) wrong answers
         # Various representations of 2**32 evaluated to 0
         # rather than 2**32 in previous versions
