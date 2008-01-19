@@ -621,11 +621,23 @@ PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
 int 
 PyModule_AddIntConstant(PyObject *m, const char *name, long value)
 {
-	return PyModule_AddObject(m, name, PyInt_FromLong(value));
+	PyObject *o = PyInt_FromLong(value);
+	if (!o)
+		return -1;
+	if (PyModule_AddObject(m, name, o) == 0)
+		return 0;
+	Py_DECREF(o);
+	return -1;
 }
 
 int 
 PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 {
-	return PyModule_AddObject(m, name, PyString_FromString(value));
+	PyObject *o = PyString_FromString(value);
+	if (!o)
+		return -1;
+	if (PyModule_AddObject(m, name, o) == 0)
+		return 0;
+	Py_DECREF(o);
+	return -1;
 }
