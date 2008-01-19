@@ -1611,6 +1611,9 @@ Core and builtins
 Library
 -------
 
+- Fix #1693149.  Now you can pass several modules separated by
+  comma to trace.py in the same --ignore-module option. 
+
 - Correction of patch #1455898: In the mbcs decoder, set final=False
   for stream decoder, but final=True for the decode function.
 
