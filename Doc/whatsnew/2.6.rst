@@ -1102,6 +1102,13 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Alberto Bertogli.)
 
   .. Patch #1646
+
+* The base classes in the :mod:`SocketServer` module now support
+  calling a :meth:`handle_timeout` method after a span of inactivity 
+  specified by the server's :attr:`timeout` attribute.  (Contributed 
+  by Michael Pomraning.)
+
+  .. Patch #742598
  
 * A new variable in the :mod:`sys` module,
   :attr:`float_info`, is an object
