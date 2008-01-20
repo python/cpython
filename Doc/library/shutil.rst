@@ -93,18 +93,24 @@ copying and removal. For operations on individual files, see also the
 
    .. index:: single: directory; deleting
 
-   Delete an entire directory tree (*path* must point to a directory). If
-   *ignore_errors* is true, errors resulting from failed removals will be ignored;
-   if false or omitted, such errors are handled by calling a handler specified by
-   *onerror* or, if that is omitted, they raise an exception.
+   Delete an entire directory tree; *path* must point to a directory (but not a
+   symbolic link to a directory).  If *ignore_errors* is true, errors resulting
+   from failed removals will be ignored; if false or omitted, such errors are
+   handled by calling a handler specified by *onerror* or, if that is omitted,
+   they raise an exception.
 
-   If *onerror* is provided, it must be a callable that accepts three parameters:
-   *function*, *path*, and *excinfo*. The first parameter, *function*, is the
-   function which raised the exception; it will be :func:`os.listdir`,
-   :func:`os.remove` or :func:`os.rmdir`.  The second parameter, *path*, will be
-   the path name passed to *function*.  The third parameter, *excinfo*, will be the
-   exception information return by :func:`sys.exc_info`.  Exceptions raised by
-   *onerror* will not be caught.
+   If *onerror* is provided, it must be a callable that accepts three
+   parameters: *function*, *path*, and *excinfo*. The first parameter,
+   *function*, is the function which raised the exception; it will be
+   :func:`os.path.islink`, :func:`os.listdir`, :func:`os.remove` or
+   :func:`os.rmdir`.  The second parameter, *path*, will be the path name passed
+   to *function*.  The third parameter, *excinfo*, will be the exception
+   information return by :func:`sys.exc_info`.  Exceptions raised by *onerror*
+   will not be caught.
+
+   .. versionchanged:: 2.6
+      Explicitly check for *path* being a symbolic link and raise :exc:`OSError`
+      in that case.
 
 
 .. function:: move(src, dst)

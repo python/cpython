@@ -25,6 +25,9 @@
    the case on Motorola V4 (R40V4.2) */
 #undef GETTIMEOFDAY_NO_TZ
 
+/* Define to 1 if you have the `acosh' function. */
+#undef HAVE_ACOSH
+
 /* struct addrinfo (netdb.h) */
 #undef HAVE_ADDRINFO
 
@@ -34,8 +37,14 @@
 /* Define this if your time.h defines altzone. */
 #undef HAVE_ALTZONE
 
+/* Define to 1 if you have the `asinh' function. */
+#undef HAVE_ASINH
+
 /* Define to 1 if you have the <asm/types.h> header file. */
 #undef HAVE_ASM_TYPES_H
+
+/* Define to 1 if you have the `atanh' function. */
+#undef HAVE_ATANH
 
 /* Define if GCC supports __attribute__((format(PyArg_ParseTuple, 2, 3))) */
 #undef HAVE_ATTRIBUTE_FORMAT_PARSETUPLE
@@ -141,6 +150,9 @@
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
 
+/* Define to 1 if you have the `expm1' function. */
+#undef HAVE_EXPM1
+
 /* Define if you have the 'fchdir' function. */
 #undef HAVE_FCHDIR
 
@@ -155,6 +167,9 @@
 
 /* Define if you have the 'fdatasync' function. */
 #undef HAVE_FDATASYNC
+
+/* Define to 1 if you have the `finite' function. */
+#undef HAVE_FINITE
 
 /* Define if you have the 'flock' function. */
 #undef HAVE_FLOCK
@@ -288,9 +303,6 @@
 /* Define to 1 if you have the <io.h> header file. */
 #undef HAVE_IO_H
 
-/* Define to 1 if you have the `isfinite' function. */
-#undef HAVE_ISFINITE
-
 /* Define to 1 if you have the `isinf' function. */
 #undef HAVE_ISINF
 
@@ -353,6 +365,9 @@
 
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
+
+/* Define to 1 if you have the `log1p' function. */
+#undef HAVE_LOG1P
 
 /* Define this if you have the type long double. */
 #undef HAVE_LONG_DOUBLE

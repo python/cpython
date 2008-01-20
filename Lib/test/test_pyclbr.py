@@ -158,6 +158,7 @@ class PyclbrTest(TestCase):
         cm('cgi', ignore=('log',))      # set with = in module
         cm('mhlib')
         cm('urllib', ignore=('getproxies_registry',
+                             'proxy_bypass_registry',
                              'open_https',
                              '_https_connection',
                              'getproxies_internetconfig',)) # not on all platforms

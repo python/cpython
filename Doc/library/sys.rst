@@ -326,6 +326,35 @@ always available.
    This function should be used for internal and specialized purposes only.
 
 
+.. function:: getprofile()
+
+   .. index::
+      single: profile function
+      single: profiler
+
+   Get the profiler function as set by :func:`setprofile`.
+
+   .. versionadded:: 2.6
+
+
+.. function:: gettrace()
+
+   .. index::
+      single: trace function
+      single: debugger
+
+   Get the trace function as set by :func:`settrace`.
+
+   .. note::
+
+      The :func:`gettrace` function is intended only for implementing debuggers,
+      profilers, coverage tools and the like. Its behavior is part of the
+      implementation platform, rather than part of the language definition,
+      and thus may not be available in all Python implementations.
+
+   .. versionadded:: 2.6
+
+
 .. function:: getwindowsversion()
 
    Return a tuple containing five components, describing the Windows version
@@ -444,9 +473,26 @@ always available.
 
 .. data:: platform
 
-   This string contains a platform identifier, e.g. ``'sunos5'`` or ``'linux1'``.
-   This can be used to append platform-specific components to ``path``, for
-   instance.
+   This string contains a platform identifier that can be used to append
+   platform-specific components to :data:`sys.path`, for instance.
+
+   For Unix systems, this is the lowercased OS name as returned by ``uname -s``
+   with the first part of the version as returned by ``uname -r`` appended,
+   e.g. ``'sunos5'`` or ``'linux2'``, *at the time when Python was built*.
+   For other systems, the values are:
+
+   ================ ===========================
+   System           :data:`platform` value
+   ================ ===========================
+   Windows          ``'win32'``
+   Windows/Cygwin   ``'cygwin'``
+   MacOS X          ``'darwin'``
+   MacOS 9          ``'mac'``
+   OS/2             ``'os2'``
+   OS/2 EMX         ``'os2emx'``
+   RiscOS           ``'riscos'``
+   AtheOS           ``'atheos'``
+   ================ ===========================
 
 
 .. data:: prefix
