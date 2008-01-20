@@ -390,6 +390,10 @@ Library
 
 - #1837: The queue module now also supports a LIFO queue and a priority queue.
 
+- Patch #1048820: Add insert-mode editing to curses.textpad.Textbox
+  (patch by Stefan Wehr).  Also, fix an off-by-one bug in 
+  Textbox.gather().
+
 - Issue #1831: ctypes now raises a TypeError if conflicting positional
   and named arguments are passed to a Structure or Union initializer.
   When too many positional arguments are passed, also a TypeError is

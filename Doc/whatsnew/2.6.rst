@@ -868,16 +868,19 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Revision 57769
 
-
 * A new method in the :mod:`curses` module: for a window, :meth:`chgat` changes
   the display characters for a  certain number of characters on a single line.
+  (Contributed by Fabian Kreutz.)
   ::
 
      # Boldface text starting at y=0,x=21 
      # and affecting the rest of the line.
      stdscr.chgat(0,21, curses.A_BOLD)  
 
-  (Contributed by Fabian Kreutz.)
+  The :class:`Textbox` class in the :mod:`curses.textpad` module
+  now supports editing in insert mode as well as overwrite mode.
+  Insert mode is enabled by supplying a true value for the *insert_mode*
+  parameter when creating the :class:`Textbox` instance.
 
 * The :mod:`decimal` module was updated to version 1.66 of 
   `the General Decimal Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`__.  New features
