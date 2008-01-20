@@ -405,8 +405,8 @@ extern "C" {
  * macro for this particular test is useful
  */
 #ifndef Py_IS_FINITE
-#ifdef HAVE_ISFINITE
-#define Py_IS_FINITE(X) isfinite
+#ifdef HAVE_FINITE
+#define Py_IS_FINITE(X) finite
 #else
 #define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
 #endif

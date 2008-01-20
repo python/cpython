@@ -2978,12 +2978,11 @@ fi],
 # ************************************
 # * Check for mathematical functions *
 # ************************************
-# check for hypot() in math library
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 AC_REPLACE_FUNCS(hypot)
 
-AC_CHECK_FUNCS(copysign isfinite isnan isinf)
+AC_CHECK_FUNCS(acosh asinh atanh copysign expm1 finite isinf isnan log1p)
 
 LIBS=$LIBS_SAVE
 
