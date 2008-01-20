@@ -389,8 +389,6 @@ by file descriptors.
           except OSError:
               pass
 
-   .. versionadded:: 2.6
-
 
 .. function:: device_encoding(fd)
 
