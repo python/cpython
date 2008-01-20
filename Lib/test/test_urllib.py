@@ -47,7 +47,7 @@ class urlopen_FileTests(unittest.TestCase):
     def test_interface(self):
         # Make sure object returned by urlopen() has the specified methods
         for attr in ("read", "readline", "readlines", "fileno",
-                     "close", "info", "geturl", "__iter__"):
+                     "close", "info", "geturl", "getcode", "__iter__"):
             self.assert_(hasattr(self.returned_obj, attr),
                          "object returned by urlopen() lacks %s attribute" %
                          attr)
@@ -87,6 +87,9 @@ class urlopen_FileTests(unittest.TestCase):
     def test_geturl(self):
         self.assertEqual(self.returned_obj.geturl(), self.pathname)
 
+    def test_getcode(self):
+        self.assertEqual(self.returned_obj.getcode(), None)
+
     def test_iter(self):
         # Test iterator
         # Don't need to count number of iterations since test would fail the
@@ -123,6 +126,8 @@ class urlopen_HttpTests(unittest.TestCase):
             fp = urllib.urlopen("http://python.org/")
             self.assertEqual(fp.readline(), 'Hello!')
             self.assertEqual(fp.readline(), '')
+            self.assertEqual(fp.geturl(), 'http://python.org/')
+            self.assertEqual(fp.getcode(), 200)
         finally:
             self.unfakehttp()
 

@@ -343,7 +343,7 @@ class URLopener:
         # According to RFC 2616, "2xx" code indicates that the client's
         # request was successfully received, understood, and accepted.
         if (200 <= errcode < 300):
-            return addinfourl(fp, headers, "http:" + url)
+            return addinfourl(fp, headers, "http:" + url, errcode)
         else:
             if data is None:
                 return self.http_error(url, fp, errcode, errmsg, headers)
@@ -438,7 +438,7 @@ class URLopener:
             # According to RFC 2616, "2xx" code indicates that the client's
             # request was successfully received, understood, and accepted.
             if (200 <= errcode < 300):
-                return addinfourl(fp, headers, "https:" + url)
+                return addinfourl(fp, headers, "https:" + url, errcode)
             else:
                 if data is None:
                     return self.http_error(url, fp, errcode, errmsg, headers)
@@ -610,7 +610,7 @@ class FancyURLopener(URLopener):
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
         """Default error handling -- don't raise an exception."""
-        return addinfourl(fp, headers, "http:" + url)
+        return addinfourl(fp, headers, "http:" + url, errcode)
 
     def http_error_302(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 302 -- relocated (temporarily)."""
@@ -953,13 +953,17 @@ class addinfo(addbase):
 class addinfourl(addbase):
     """class to add info() and geturl() methods to an open file."""
 
-    def __init__(self, fp, headers, url):
+    def __init__(self, fp, headers, url, code=None):
         addbase.__init__(self, fp)
         self.headers = headers
         self.url = url
+        self.code = code
 
     def info(self):
         return self.headers
+
+    def getcode(self):
+        return self.code
 
     def geturl(self):
         return self.url
