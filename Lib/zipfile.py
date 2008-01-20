@@ -302,7 +302,7 @@ class _ZipDecrypter:
 
     ZIP supports a password-based form of encryption. Even though known
     plaintext attacks have been found against it, it is still useful
-    for low-level securicy.
+    to be able to get data out of such a file.
 
     Usage:
         zd = _ZipDecrypter(mypwd)
