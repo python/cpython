@@ -4,6 +4,22 @@ import unittest
 
 from test import test_support
 
+class TestGetProfile(unittest.TestCase):
+    def setUp(self):
+        sys.setprofile(None)
+
+    def tearDown(self):
+        sys.setprofile(None)
+
+    def test_empty(self):
+        assert sys.getprofile() == None
+
+    def test_setget(self):
+        def fn(*args):
+            pass
+
+        sys.setprofile(fn)
+        assert sys.getprofile() == fn
 
 class HookWatcher:
     def __init__(self):
@@ -359,6 +375,7 @@ def show_events(callable):
 
 def test_main():
     test_support.run_unittest(
+        TestGetProfile,
         ProfileHookTestCase,
         ProfileSimulatorTestCase
     )

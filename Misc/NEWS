@@ -1042,6 +1042,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1648: added ``sys.getprofile()`` and ``sys.gettrace()``.
+
 - Patch #1663329: added ``os.closerange()`` function to quickly close a range
   of file descriptors without considering errors.
 

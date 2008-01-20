@@ -392,6 +392,35 @@ always available.
    This function should be used for internal and specialized purposes only.
 
 
+.. function:: getprofile()
+
+   .. index::
+      single: profile function
+      single: profiler
+
+   Get the profiler function as set by :func:`setprofile`.
+
+   .. versionadded:: 2.6
+
+
+.. function:: gettrace()
+
+   .. index::
+      single: trace function
+      single: debugger
+
+   Get the trace function as set by :func:`settrace`.
+
+   .. note::
+
+      The :func:`gettrace` function is intended only for implementing debuggers,
+      profilers, coverage tools and the like. Its behavior is part of the
+      implementation platform, rather than part of the language definition,
+      and thus may not be available in all Python implementations.
+
+   .. versionadded:: 2.6
+
+
 .. function:: getwindowsversion()
 
    Return a tuple containing five components, describing the Windows version

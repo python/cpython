@@ -398,6 +398,25 @@ function call.  See the debugger chapter in the library manual."
 );
 
 static PyObject *
+sys_gettrace(PyObject *self, PyObject *args)
+{
+	PyThreadState *tstate = PyThreadState_GET();
+	PyObject *temp = tstate->c_traceobj;
+
+	if (temp == NULL)
+		temp = Py_None;
+	Py_INCREF(temp);
+	return temp;
+}
+
+PyDoc_STRVAR(gettrace_doc,
+"gettrace()\n\
+\n\
+Return the global debug tracing function set with sys.settrace.\n\
+See the debugger chapter in the library manual."
+);
+
+static PyObject *
 sys_setprofile(PyObject *self, PyObject *args)
 {
 	if (trace_init() == -1)
@@ -415,6 +434,25 @@ PyDoc_STRVAR(setprofile_doc,
 \n\
 Set the profiling function.  It will be called on each function call\n\
 and return.  See the profiler chapter in the library manual."
+);
+
+static PyObject *
+sys_getprofile(PyObject *self, PyObject *args)
+{
+	PyThreadState *tstate = PyThreadState_GET();
+	PyObject *temp = tstate->c_profileobj;
+
+	if (temp == NULL)
+		temp = Py_None;
+	Py_INCREF(temp);
+	return temp;
+}
+
+PyDoc_STRVAR(getprofile_doc,
+"getprofile()\n\
+\n\
+Return the profiling function set with sys.setprofile.\n\
+See the profiler chapter in the library manual."
 );
 
 static PyObject *
@@ -793,12 +831,14 @@ static PyMethodDef sys_methods[] = {
 	 setdlopenflags_doc},
 #endif
 	{"setprofile",	sys_setprofile, METH_O, setprofile_doc},
+	{"getprofile",	sys_getprofile, METH_NOARGS, getprofile_doc},
 	{"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS,
 	 setrecursionlimit_doc},
 #ifdef WITH_TSC
 	{"settscdump", sys_settscdump, METH_VARARGS, settscdump_doc},
 #endif
 	{"settrace",	sys_settrace, METH_O, settrace_doc},
+	{"gettrace",	sys_gettrace, METH_NOARGS, gettrace_doc},
 	{"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
 	{NULL,		NULL}		/* sentinel */
 };
@@ -941,8 +981,10 @@ exc_info() -- return thread-safe information about the current exception\n\
 exc_clear() -- clear the exception state for the current thread\n\
 exit() -- exit the interpreter by raising SystemExit\n\
 getdlopenflags() -- returns flags to be used for dlopen() calls\n\
+getprofile() -- get the global profiling function\n\
 getrefcount() -- return the reference count for an object (plus one :-)\n\
 getrecursionlimit() -- return the max recursion depth for the interpreter\n\
+gettrace() -- get the global debug tracing function\n\
 setcheckinterval() -- control how often the interpreter checks for events\n\
 setdlopenflags() -- set the flags to be used for dlopen() calls\n\
 setprofile() -- set the global profiling function\n\
