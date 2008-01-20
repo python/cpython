@@ -294,7 +294,7 @@ The following two methods can be called by clients to use a debugger to debug a
 
 .. method:: Bdb.run(cmd, [globals, [locals]])
 
-   Debug a statement executed via the :keyword:`exec` statement.  *globals*
+   Debug a statement executed via the :func:`exec` function.  *globals*
    defaults to :attr:`__main__.__dict__`, *locals* defaults to *globals*.
 
 .. method:: Bdb.runeval(expr, [globals, [locals]])
