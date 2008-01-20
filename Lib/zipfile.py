@@ -34,9 +34,9 @@ ZIP_DEFLATED = 8
 # Other ZIP compression methods not supported
 
 # Here are some struct module formats for reading headers
-structEndArchive = "<4s4H2lH"     # 9 items, end of archive, 22 bytes
+structEndArchive = "<4s4H2LH"     # 9 items, end of archive, 22 bytes
 stringEndArchive = b"PK\005\006"   # magic number for end of archive record
-structCentralDir = "<4s4B4HlLL5HLl"# 19 items, central directory, 46 bytes
+structCentralDir = "<4s4B4HlLL5HLL"# 19 items, central directory, 46 bytes
 stringCentralDir = b"PK\001\002"   # magic number for central directory
 structFileHeader = "<4s2B4HlLL2H"  # 12 items, file header record, 30 bytes
 stringFileHeader = b"PK\003\004"   # magic number for file header
@@ -188,6 +188,7 @@ class ZipInfo (object):
             'CRC',
             'compress_size',
             'file_size',
+            '_raw_time',
         )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
@@ -303,7 +304,7 @@ class _ZipDecrypter:
 
     ZIP supports a password-based form of encryption. Even though known
     plaintext attacks have been found against it, it is still useful
-    for low-level securicy.
+    to be able to get data out of such a file.
 
     Usage:
         zd = _ZipDecrypter(mypwd)
@@ -690,6 +691,7 @@ class ZipFile:
                 x.CRC, x.compress_size, x.file_size) = centdir[1:12]
             x.volume, x.internal_attr, x.external_attr = centdir[15:18]
             # Convert date/time code to (year, month, day, hour, min, sec)
+            x._raw_time = t
             x.date_time = ( (d>>9)+1980, (d>>5)&0xF, d&0x1F,
                                      t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
 
@@ -800,11 +802,18 @@ class ZipFile:
             # The first 12 bytes in the cypher stream is an encryption header
             #  used to strengthen the algorithm. The first 11 bytes are
             #  completely random, while the 12th contains the MSB of the CRC,
+            #  or the MSB of the file time depending on the header type
             #  and is used to check the correctness of the password.
             bytes = zef_file.read(12)
             h = list(map(zd, bytes[0:12]))
-            if h[11] != ((zinfo.CRC>>24) & 255):
-                raise RuntimeError("Bad password for file %s" % name)
+            if zinfo.flag_bits & 0x8:
+                # compare against the file type from extended local headers
+                check_byte = (zinfo._raw_time >> 8) & 0xff
+            else:
+                # compare against the CRC otherwise
+                check_byte = (zinfo.CRC >> 24) & 0xff
+            if h[11] != check_byte:
+                raise RuntimeError("Bad password for file", name)
 
         # build and return a ZipExtFile
         if zd is None:

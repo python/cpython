@@ -4716,6 +4716,24 @@ posix_close(PyObject *self, PyObject *args)
 }
 
 
+PyDoc_STRVAR(posix_closerange__doc__, 
+"closerange(fd_low, fd_high)\n\n\
+Closes all file descriptors in [fd_low, fd_high), ignoring errors.");
+
+static PyObject *
+posix_closerange(PyObject *self, PyObject *args)
+{
+	int fd_from, fd_to, i;
+	if (!PyArg_ParseTuple(args, "ii:closerange", &fd_from, &fd_to))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	for (i = fd_from; i < fd_to; i++)
+		close(i);
+	Py_END_ALLOW_THREADS
+	Py_RETURN_NONE;
+}
+
+
 PyDoc_STRVAR(posix_dup__doc__,
 "dup(fd) -> fd2\n\n\
 Return a duplicate of a file descriptor.");
@@ -6919,6 +6937,7 @@ static PyMethodDef posix_methods[] = {
 #endif /* HAVE_TCSETPGRP */
 	{"open",	posix_open, METH_VARARGS, posix_open__doc__},
 	{"close",	posix_close, METH_VARARGS, posix_close__doc__},
+	{"closerange",	posix_closerange, METH_VARARGS, posix_closerange__doc__},
 	{"device_encoding", device_encoding, METH_VARARGS, device_encoding__doc__},
 	{"dup",		posix_dup, METH_VARARGS, posix_dup__doc__},
 	{"dup2",	posix_dup2, METH_VARARGS, posix_dup2__doc__},
