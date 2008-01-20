@@ -268,6 +268,20 @@ class TraceTestCase(unittest.TestCase):
         self.compare_events(func.func_code.co_firstlineno,
                             tracer.events, func.events)
 
+    def set_and_retrieve_none(self):
+        sys.settrace(None)
+        assert sys.gettrace() is None
+
+    def set_and_retrieve_func(self):
+        def fn(*args):
+            pass
+
+        sys.settrace(fn)
+        try:
+            assert sys.gettrace() is fn
+        finally:
+            sys.settrace(None)
+
     def test_01_basic(self):
         self.run_test(basic)
     def test_02_arigo(self):
