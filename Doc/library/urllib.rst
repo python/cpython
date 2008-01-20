@@ -27,16 +27,17 @@ High-level interface
    a server somewhere on the network.  If the connection cannot be made the
    :exc:`IOError` exception is raised.  If all went well, a file-like object is
    returned.  This supports the following methods: :meth:`read`, :meth:`readline`,
-   :meth:`readlines`, :meth:`fileno`, :meth:`close`, :meth:`info` and
+   :meth:`readlines`, :meth:`fileno`, :meth:`close`, :meth:`info`, :meth:`getcode` and
    :meth:`geturl`.  It also has proper support for the :term:`iterator` protocol. One
    caveat: the :meth:`read` method, if the size argument is omitted or negative,
    may not read until the end of the data stream; there is no good way to determine
    that the entire stream from a socket has been read in the general case.
 
-   Except for the :meth:`info` and :meth:`geturl` methods, these methods have the
-   same interface as for file objects --- see section :ref:`bltin-file-objects` in
-   this manual.  (It is not a built-in file object, however, so it can't be used at
-   those few places where a true built-in file object is required.)
+   Except for the :meth:`info`, :meth:`getcode` and :meth:`geturl` methods,
+   these methods have the same interface as for file objects --- see section
+   :ref:`bltin-file-objects` in this manual.  (It is not a built-in file object,
+   however, so it can't be used at those few places where a true built-in file
+   object is required.)
 
    .. index:: module: mimetools
 
@@ -57,6 +58,9 @@ High-level interface
    handles this transparently, but in some cases the caller needs to know which URL
    the client was redirected to.  The :meth:`geturl` method can be used to get at
    this redirected URL.
+
+   The :meth:`getcode` method returns the HTTP status code that was sent with the
+   response, or ``None`` if the URL is no HTTP URL.
 
    If the *url* uses the :file:`http:` scheme identifier, the optional *data*
    argument may be given to specify a ``POST`` request (normally the request type

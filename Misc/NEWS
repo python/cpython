@@ -369,6 +369,9 @@ Core and builtins
 Library
 -------
 
+- #1178141: add a getcode() method to the addinfourls that urllib.open()
+  returns so that you can retrieve the HTTP status code.
+
 - Issue #1003: Fix zipfile decryption check, it would fail zip files
   with extended local headers.
 

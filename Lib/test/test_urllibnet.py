@@ -83,6 +83,16 @@ class urlopenNetworkTests(unittest.TestCase):
             open_url.close()
         self.assertEqual(gotten_url, URL)
 
+    def test_getcode(self):
+        # test getcode() with the fancy opener to get 404 error codes
+        URL = "http://www.python.org/XXXinvalidXXX"
+        open_url = urllib.FancyURLopener().open(URL)
+        try:
+            code = open_url.getcode()
+        finally:
+            open_url.close()
+        self.assertEqual(code, 404)
+
     def test_fileno(self):
         if (sys.platform in ('win32',) or
                 not hasattr(os, 'fdopen')):
