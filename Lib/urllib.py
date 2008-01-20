@@ -872,9 +872,19 @@ class ftpwrapper:
         if not conn:
             # Set transfer mode to ASCII!
             self.ftp.voidcmd('TYPE A')
-            # Try a directory listing
-            if file: cmd = 'LIST ' + file
-            else: cmd = 'LIST'
+            # Try a directory listing. Verify that directory exists.
+            if file:
+                pwd = self.ftp.pwd()
+                try:
+                    try:
+                        self.ftp.cwd(file)
+                    except ftplib.error_perm, reason:
+                        raise IOError, ('ftp error', reason), sys.exc_info()[2]
+                finally:
+                    self.ftp.cwd(pwd)
+                cmd = 'LIST ' + file
+            else:
+                cmd = 'LIST'
             conn = self.ftp.ntransfercmd(cmd)
         self.busy = 1
         # Pass back both a suitably decorated object and a retrieval length
