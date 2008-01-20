@@ -75,39 +75,6 @@ There are situations in which ``from module import *`` is just fine:
 * When the module advertises itself as ``from import *`` safe.
 
 
-Unadorned :keyword:`exec` and friends
--------------------------------------
-
-The word "unadorned" refers to the use without an explicit dictionary, in which
-case those constructs evaluate code in the *current* environment. This is
-dangerous for the same reasons ``from import *`` is dangerous --- it might step
-over variables you are counting on and mess up things for the rest of your code.
-Simply do not do that.
-
-Bad examples::
-
-   >>> for name in sys.argv[1:]:
-   >>>     exec "%s=1" % name
-   >>> def func(s, **kw):
-   >>>     for var, val in kw.items():
-   >>>         exec "s.%s=val" % var  # invalid!
-   >>> exec(open("handler.py").read())
-   >>> handle()
-
-Good examples::
-
-   >>> d = {}
-   >>> for name in sys.argv[1:]:
-   >>>     d[name] = 1
-   >>> def func(s, **kw):
-   >>>     for var, val in kw.items():
-   >>>         setattr(s, var, val)
-   >>> d={}
-   >>> exec(open("handle.py").read(), d, d)
-   >>> handle = d['handle']
-   >>> handle()
-
-
 from module import name1, name2
 -------------------------------
 
