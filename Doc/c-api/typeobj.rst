@@ -662,13 +662,19 @@ The following three fields only exist if the
 
 .. cmember:: richcmpfunc PyTypeObject.tp_richcompare
 
-   An optional pointer to the rich comparison function.
+   An optional pointer to the rich comparison function, whose signature is
+   ``PyObject *tp_richcompare(PyObject *a, PyObject *b, int op)``.
 
-   The signature is the same as for :cfunc:`PyObject_RichCompare`. The function
-   should return the result of the comparison (usually ``Py_True`` or
-   ``Py_False``).  If the comparison is undefined, it must return
-   ``Py_NotImplemented``, if another error occurred it must return ``NULL`` and set
-   an exception condition.
+   The function should return the result of the comparison (usually ``Py_True``
+   or ``Py_False``).  If the comparison is undefined, it must return
+   ``Py_NotImplemented``, if another error occurred it must return ``NULL`` and
+   set an exception condition.
+
+   .. note::
+
+      If you want to implement a type for which only a limited set of
+      comparisons makes sense (e.g. ``==`` and ``!=``, but not ``<`` and
+      friends), directly raise :exc:`TypeError` in the rich comparison function.
 
    This field is inherited by subtypes together with :attr:`tp_compare` and
    :attr:`tp_hash`: a subtype inherits all three of :attr:`tp_compare`,
@@ -694,9 +700,9 @@ The following three fields only exist if the
    | :const:`Py_GE` | ``>=``     |
    +----------------+------------+
 
+
 The next field only exists if the :const:`Py_TPFLAGS_HAVE_WEAKREFS` flag bit is
 set.
-
 
 .. cmember:: long PyTypeObject.tp_weaklistoffset
 
