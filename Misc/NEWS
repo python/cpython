@@ -369,6 +369,9 @@ Core and builtins
 Library
 -------
 
+- #1669: don't allow shutil.rmtree() to be called on a symlink to a
+  directory.
+
 - #1664522: in urllib, don't read non-existing directories in ftp mode,
   returning a 0-byte file -- raise an IOError instead.
 
