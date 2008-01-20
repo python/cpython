@@ -369,6 +369,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1003: Fix zipfile decryption check, it would fail zip files
+  with extended local headers.
+
 - #1189216: Fix the zipfile module to work on archives with headers
   past the 2**31 byte boundary.
 
