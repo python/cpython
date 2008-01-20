@@ -511,6 +511,8 @@ available.  They are listed here in alphabetical order.
    topic, and a help page is printed on the console.  If the argument is any other
    kind of object, a help page on the object is generated.
 
+   This function is added to the built-in namespace by the :mod:`site` module.
+
    .. versionadded:: 2.2
 
 
