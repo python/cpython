@@ -369,6 +369,9 @@ Core and builtins
 Library
 -------
 
+- #856047: respect the ``no_proxy`` environment variable when using the
+  ``http_proxy`` etc. environment variables in urllib.
+
 - #1178141: add a getcode() method to the addinfourls that urllib.open()
   returns so that you can retrieve the HTTP status code.
 
