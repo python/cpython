@@ -389,7 +389,8 @@ changes to your code:
 
 * Everything is all in the details!
 
-* Developers can include intobject.h after Python.h for some PyInt_ aliases.
+* Developers can include :file:`intobject.h` after :file:`Python.h` for
+  some ``PyInt_`` aliases.
 
 .. ======================================================================
 
