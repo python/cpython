@@ -382,9 +382,9 @@ class OperatorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, operator.attrgetter('x', (), 'y'), record)
 
         class C(object):
-            def __getattr(self, name):
+            def __getattr__(self, name):
                 raise SyntaxError
-        self.failUnlessRaises(AttributeError, operator.attrgetter('foo'), C())
+        self.failUnlessRaises(SyntaxError, operator.attrgetter('foo'), C())
 
     def test_itemgetter(self):
         a = 'ABCDE'
@@ -394,9 +394,9 @@ class OperatorTestCase(unittest.TestCase):
         self.assertRaises(IndexError, f, a)
 
         class C(object):
-            def __getitem(self, name):
+            def __getitem__(self, name):
                 raise SyntaxError
-        self.failUnlessRaises(TypeError, operator.itemgetter(42), C())
+        self.failUnlessRaises(SyntaxError, operator.itemgetter(42), C())
 
         f = operator.itemgetter('name')
         self.assertRaises(TypeError, f, a)
