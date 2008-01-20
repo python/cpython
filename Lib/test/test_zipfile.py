@@ -698,31 +698,52 @@ class DecryptionTests(unittest.TestCase):
     '\x1a\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x01\x00 \x00\xb6\x81'
     '\x00\x00\x00\x00test.txtPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x006\x00'
     '\x00\x00L\x00\x00\x00\x00\x00' )
+    data2 = (
+    'PK\x03\x04\x14\x00\t\x00\x08\x00\xcf}38xu\xaa\xb2\x14\x00\x00\x00\x00\x02'
+    '\x00\x00\x04\x00\x15\x00zeroUT\t\x00\x03\xd6\x8b\x92G\xda\x8b\x92GUx\x04'
+    '\x00\xe8\x03\xe8\x03\xc7<M\xb5a\xceX\xa3Y&\x8b{oE\xd7\x9d\x8c\x98\x02\xc0'
+    'PK\x07\x08xu\xaa\xb2\x14\x00\x00\x00\x00\x02\x00\x00PK\x01\x02\x17\x03'
+    '\x14\x00\t\x00\x08\x00\xcf}38xu\xaa\xb2\x14\x00\x00\x00\x00\x02\x00\x00'
+    '\x04\x00\r\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa4\x81\x00\x00\x00\x00ze'
+    'roUT\x05\x00\x03\xd6\x8b\x92GUx\x00\x00PK\x05\x06\x00\x00\x00\x00\x01'
+    '\x00\x01\x00?\x00\x00\x00[\x00\x00\x00\x00\x00' )
 
     plain = 'zipfile.py encryption test'
+    plain2 = '\x00'*512
 
     def setUp(self):
         fp = open(TESTFN, "wb")
         fp.write(self.data)
         fp.close()
         self.zip = zipfile.ZipFile(TESTFN, "r")
+        fp = open(TESTFN2, "wb")
+        fp.write(self.data2)
+        fp.close()
+        self.zip2 = zipfile.ZipFile(TESTFN2, "r")
 
     def tearDown(self):
         self.zip.close()
         os.unlink(TESTFN)
+        self.zip2.close()
+        os.unlink(TESTFN2)
 
     def testNoPassword(self):
         # Reading the encrypted file without password
         # must generate a RunTime exception
         self.assertRaises(RuntimeError, self.zip.read, "test.txt")
+        self.assertRaises(RuntimeError, self.zip2.read, "zero")
 
     def testBadPassword(self):
         self.zip.setpassword("perl")
         self.assertRaises(RuntimeError, self.zip.read, "test.txt")
+        self.zip2.setpassword("perl")
+        self.assertRaises(RuntimeError, self.zip2.read, "zero")
 
     def testGoodPassword(self):
         self.zip.setpassword("python")
         self.assertEquals(self.zip.read("test.txt"), self.plain)
+        self.zip2.setpassword("12345")
+        self.assertEquals(self.zip2.read("zero"), self.plain2)
 
 
 class TestsWithRandomBinaryFiles(unittest.TestCase):
