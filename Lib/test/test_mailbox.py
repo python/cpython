@@ -506,6 +506,20 @@ class TestMaildir(TestMailbox):
         self.assertEqual(msg_returned.get_flags(), 'S')
         self.assertEqual(msg_returned.get_payload(), '3')
 
+    def test_consistent_factory(self):
+        # Add a message.
+        msg = mailbox.MaildirMessage(self._template % 0)
+        msg.set_subdir('cur')
+        msg.set_flags('RF')
+        key = self._box.add(msg)
+
+        # Create new mailbox with
+        class FakeMessage(mailbox.MaildirMessage):
+            pass
+        box = mailbox.Maildir(self._path, factory=FakeMessage)
+        msg2 = box.get_message(key)
+        self.assert_(isinstance(msg2, FakeMessage))
+
     def test_initialize_new(self):
         # Initialize a non-existent mailbox
         self.tearDown()

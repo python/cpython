@@ -39,8 +39,9 @@ class Textbox:
     KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P, KEY_DOWN = Ctrl-N
     KEY_BACKSPACE = Ctrl-h
     """
-    def __init__(self, win):
+    def __init__(self, win, insert_mode=False):
         self.win = win
+        self.insert_mode = insert_mode
         (self.maxy, self.maxx) = win.getmaxyx()
         self.maxy = self.maxy - 1
         self.maxx = self.maxx - 1
@@ -49,9 +50,10 @@ class Textbox:
         win.keypad(1)
 
     def _end_of_line(self, y):
-        "Go to the location of the first blank on the given line."
+        """Go to the location of the first blank on the given line,
+        returning the index of the last non-blank character."""
         last = self.maxx
-        while 1:
+        while True:
             if ascii.ascii(self.win.inch(y, last)) != ascii.SP:
                 last = min(self.maxx, last+1)
                 break
@@ -60,19 +62,31 @@ class Textbox:
             last = last - 1
         return last
 
+    def _insert_printable_char(self, ch):
+        (y, x) = self.win.getyx()
+        if y < self.maxy or x < self.maxx:
+            if self.insert_mode:
+                oldch = self.win.inch()
+            # The try-catch ignores the error we trigger from some curses
+            # versions by trying to write into the lowest-rightmost spot
+            # in the window.
+            try:
+                self.win.addch(ch)
+            except curses.error:
+                pass
+            if self.insert_mode:
+                (backy, backx) = self.win.getyx()
+                if ascii.isprint(oldch):
+                    self._insert_printable_char(oldch)
+                    self.win.move(backy, backx)
+
     def do_command(self, ch):
         "Process a single editing command."
         (y, x) = self.win.getyx()
         self.lastcmd = ch
         if ascii.isprint(ch):
             if y < self.maxy or x < self.maxx:
-                # The try-catch ignores the error we trigger from some curses
-                # versions by trying to write into the lowest-rightmost spot
-                # in the window.
-                try:
-                    self.win.addch(ch)
-                except curses.error:
-                    pass
+                self._insert_printable_char(ch)
         elif ch == ascii.SOH:                           # ^a
             self.win.move(y, 0)
         elif ch in (ascii.STX,curses.KEY_LEFT, ascii.BS,curses.KEY_BACKSPACE):
@@ -139,7 +153,7 @@ class Textbox:
             if stop == 0 and self.stripspaces:
                 continue
             for x in range(self.maxx+1):
-                if self.stripspaces and x == stop:
+                if self.stripspaces and x > stop:
                     break
                 result = result + chr(ascii.ascii(self.win.inch(y, x)))
             if self.maxy > 0:
