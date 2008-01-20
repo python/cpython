@@ -18,6 +18,7 @@ include the :const:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
 
 
 .. data:: Py_TPFLAGS_HAVE_GC
+   :noindex:
 
    Objects with a type with this flag set must conform with the rules documented
    here.  For convenience these objects will be referred to as container objects.
