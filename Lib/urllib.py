@@ -1283,9 +1283,32 @@ def getproxies_environment():
     proxies = {}
     for name, value in os.environ.items():
         name = name.lower()
+        if name == 'no_proxy':
+            # handled in proxy_bypass_environment
+            continue
         if value and name[-6:] == '_proxy':
             proxies[name[:-6]] = value
     return proxies
+
+def proxy_bypass_environment(host):
+    """Test if proxies should not be used for a particular host.
+
+    Checks the environment for a variable named no_proxy, which should
+    be a list of DNS suffixes separated by commas, or '*' for all hosts.
+    """
+    no_proxy = os.environ.get('no_proxy', '') or os.environ.get('NO_PROXY', '')
+    # '*' is special case for always bypass
+    if no_proxy == '*':
+        return 1
+    # strip port off host
+    hostonly, port = splitport(host)
+    # check if the host ends with any of the DNS suffixes
+    for name in no_proxy.split(','):
+        if name and (hostonly.endswith(name) or host.endswith(name)):
+            return 1
+    # otherwise, don't bypass
+    return 0
+
 
 if sys.platform == 'darwin':
     def getproxies_internetconfig():
@@ -1314,12 +1337,15 @@ if sys.platform == 'darwin':
                 pass
             else:
                 proxies['http'] = 'http://%s' % value
-        # FTP: XXXX To be done.
-        # Gopher: XXXX To be done.
+        # FTP: XXX To be done.
+        # Gopher: XXX To be done.
         return proxies
 
-    def proxy_bypass(x):
-        return 0
+    def proxy_bypass(host):
+        if getproxies_environment():
+            return proxy_bypass_environment(host)
+        else:
+            return 0
 
     def getproxies():
         return getproxies_environment() or getproxies_internetconfig()
@@ -1379,7 +1405,7 @@ elif os.name == 'nt':
         """
         return getproxies_environment() or getproxies_registry()
 
-    def proxy_bypass(host):
+    def proxy_bypass_registry(host):
         try:
             import _winreg
             import re
@@ -1438,12 +1464,22 @@ elif os.name == 'nt':
                     return 1
         return 0
 
+    def proxy_bypass(host):
+        """Return a dictionary of scheme -> proxy server URL mappings.
+
+        Returns settings gathered from the environment, if specified,
+        or the registry.
+
+        """
+        if getproxies_environment():
+            return proxy_bypass_environment(host)
+        else:
+            return proxy_bypass_registry(host)
+
 else:
     # By default use environment variables
     getproxies = getproxies_environment
-
-    def proxy_bypass(host):
-        return 0
+    proxy_bypass = proxy_bypass_environment
 
 # Test and time quote() and unquote()
 def test1():

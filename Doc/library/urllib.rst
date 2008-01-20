@@ -79,6 +79,11 @@ High-level interface
       % python
       ...
 
+   The :envvar:`no_proxy` environment variable can be used to specify hosts which
+   shouldn't be reached via proxy; if set, it should be a comma-separated list
+   of hostname suffixes, optionally with ``:port`` appended, for example
+   ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
+
    In a Windows environment, if no proxy environment variables are set, proxy
    settings are obtained from the registry's Internet Settings section.
 
@@ -111,6 +116,10 @@ High-level interface
 
    .. versionchanged:: 2.3
       Added the *proxies* support.
+
+   .. versionchanged:: 2.6
+      Added :meth:`getcode` to returned object and support for the
+      :envvar:`no_proxy` environment variable.
 
 
 .. function:: urlretrieve(url[, filename[, reporthook[, data]]])
