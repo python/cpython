@@ -156,6 +156,14 @@ def rmtree(path, ignore_errors=False, onerror=None):
     elif onerror is None:
         def onerror(*args):
             raise
+    try:
+        if os.path.islink(path):
+            # symlinks to directories are forbidden, see bug #1669
+            raise OSError("Cannot call rmtree on a symbolic link")
+    except OSError:
+        onerror(os.path.islink, path, sys.exc_info())
+        # can't continue even if onerror hook returns
+        return
     names = []
     try:
         names = os.listdir(path)

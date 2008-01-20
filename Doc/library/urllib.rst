@@ -27,16 +27,17 @@ High-level interface
    a server somewhere on the network.  If the connection cannot be made the
    :exc:`IOError` exception is raised.  If all went well, a file-like object is
    returned.  This supports the following methods: :meth:`read`, :meth:`readline`,
-   :meth:`readlines`, :meth:`fileno`, :meth:`close`, :meth:`info` and
+   :meth:`readlines`, :meth:`fileno`, :meth:`close`, :meth:`info`, :meth:`getcode` and
    :meth:`geturl`.  It also has proper support for the :term:`iterator` protocol. One
    caveat: the :meth:`read` method, if the size argument is omitted or negative,
    may not read until the end of the data stream; there is no good way to determine
    that the entire stream from a socket has been read in the general case.
 
-   Except for the :meth:`info` and :meth:`geturl` methods, these methods have the
-   same interface as for file objects --- see section :ref:`bltin-file-objects` in
-   this manual.  (It is not a built-in file object, however, so it can't be used at
-   those few places where a true built-in file object is required.)
+   Except for the :meth:`info`, :meth:`getcode` and :meth:`geturl` methods,
+   these methods have the same interface as for file objects --- see section
+   :ref:`bltin-file-objects` in this manual.  (It is not a built-in file object,
+   however, so it can't be used at those few places where a true built-in file
+   object is required.)
 
    .. index:: module: mimetools
 
@@ -58,6 +59,9 @@ High-level interface
    the client was redirected to.  The :meth:`geturl` method can be used to get at
    this redirected URL.
 
+   The :meth:`getcode` method returns the HTTP status code that was sent with the
+   response, or ``None`` if the URL is no HTTP URL.
+
    If the *url* uses the :file:`http:` scheme identifier, the optional *data*
    argument may be given to specify a ``POST`` request (normally the request type
    is ``GET``).  The *data* argument must be in standard
@@ -74,6 +78,11 @@ High-level interface
       % export http_proxy
       % python
       ...
+
+   The :envvar:`no_proxy` environment variable can be used to specify hosts which
+   shouldn't be reached via proxy; if set, it should be a comma-separated list
+   of hostname suffixes, optionally with ``:port`` appended, for example
+   ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
 
    In a Windows environment, if no proxy environment variables are set, proxy
    settings are obtained from the registry's Internet Settings section.
