@@ -1051,9 +1051,11 @@ class TextDoc(Doc):
             if visiblename(key, all):
                 data.append((key, value))
 
+        modpkgs = []
+        modpkgs_names = set()
         if hasattr(object, '__path__'):
-            modpkgs = []
             for importer, modname, ispkg in pkgutil.iter_modules(object.__path__):
+                modpkgs_names.add(modname)
                 if ispkg:
                     modpkgs.append(modname + ' (package)')
                 else:
@@ -1062,6 +1064,16 @@ class TextDoc(Doc):
             modpkgs.sort()
             result = result + self.section(
                 'PACKAGE CONTENTS', join(modpkgs, '\n'))
+
+        # Detect submodules as sometimes created by C extensions
+        submodules = []
+        for key, value in inspect.getmembers(object, inspect.ismodule):
+            if value.__name__.startswith(name + '.') and key not in modpkgs_names:
+                submodules.append(key)
+        if submodules:
+            submodules.sort()
+            result = result + self.section(
+                'SUBMODULES', join(submodules, '\n'))
 
         if classes:
             classlist = map(lambda (key, value): value, classes)
