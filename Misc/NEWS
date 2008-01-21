@@ -369,6 +369,10 @@ Core and builtins
 Library
 -------
 
+- Bug #1530959: distutils' build command now uses different build directory
+  when building extension modules against versions of Python compiled
+  with ``--with-pydebug``.
+
 - #1555501: move plistlib from plat-mac directory to general library.
 
 - #1269: fix a bug in pstats.add_callers() and add a unit test file for
