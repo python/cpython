@@ -169,6 +169,12 @@ The script can be given an executable mode, or permission, using the
 
    $ chmod +x myscript.py
 
+On Windows systems, there is no notion of an "executable mode".  The Python
+installer automatically associates ``.py`` files with ``python.exe`` so that
+a double-click on a Python file will run it as a script.  The extension can
+also be ``.pyw``, in that case, the console window that normally appears is
+suppressed.
+
 
 Source Code Encoding
 --------------------

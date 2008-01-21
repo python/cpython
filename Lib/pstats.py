@@ -511,7 +511,8 @@ def add_callers(target, source):
         new_callers[func] = caller
     for func, caller in source.items():
         if func in new_callers:
-            new_callers[func] = caller + new_callers[func]
+            new_callers[func] = tuple([i[0] + i[1] for i in
+                                       zip(caller, new_callers[func])])
         else:
             new_callers[func] = caller
     return new_callers
