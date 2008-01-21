@@ -62,9 +62,7 @@ def main():
     fp = open(iptfile)
     strprog = re.compile('"([^"]+)"')
     lines = []
-    while 1:
-        line = fp.readline()
-        if not line: break
+    for line in fp:
         if '{1, "' in line:
             match = strprog.search(line)
             if match:
