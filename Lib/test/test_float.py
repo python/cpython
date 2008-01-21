@@ -99,6 +99,27 @@ class IEEEFormatTestCase(unittest.TestCase):
                               ('<f', LE_FLOAT_NAN)]:
                 struct.unpack(fmt, data)
 
+    if float.__getformat__("double").startswith("IEEE"):
+        def test_negative_zero(self):
+            import math
+            def pos_pos():
+                return 0.0, math.atan2(0.0, -1)
+            def pos_neg():
+                return 0.0, math.atan2(-0.0, -1)
+            def neg_pos():
+                return -0.0, math.atan2(0.0, -1)
+            def neg_neg():
+                return -0.0, math.atan2(-0.0, -1)
+            self.assertEquals(pos_pos(), neg_pos())
+            self.assertEquals(pos_neg(), neg_neg())
+
+    if float.__getformat__("double").startswith("IEEE"):
+        def test_underflow_sign(self):
+            import math
+            # check that -1e-1000 gives -0.0, not 0.0
+            self.assertEquals(math.atan2(-1e-1000, -1), math.atan2(-0.0, -1))
+            self.assertEquals(math.atan2(float('-1e-1000'), -1),
+                              math.atan2(-0.0, -1))
 
 def test_main():
     test_support.run_unittest(
