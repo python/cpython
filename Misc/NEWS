@@ -21,7 +21,7 @@ Core and builtins
   object was converted from a dict to a specialized structseq object.
 
 - Patch #1816: Added sys.flags structseq. It exposes the status of most
-  command line arguments and PYTHON* environment variables. 
+  command line arguments and PYTHON* environment variables.
 
 - Object/structseq.c: Implemented new structseq representation. The patch
   makes structseqs (e.g. the return value of os.stat) more readable.
@@ -88,7 +88,7 @@ Core and builtins
 
 - Expose the Py_Py3kWarningFlag as sys.py3kwarning.
 
-- Issue #1445: Fix a SystemError when accessing the ``cell_contents`` 
+- Issue #1445: Fix a SystemError when accessing the ``cell_contents``
   attribute of an empty cell object.
 
 - Issue #1460: The utf-7 incremental decoder did not accept truncated input.
@@ -369,6 +369,17 @@ Core and builtins
 Library
 -------
 
+- #1836: fix an off-by-one bug in TimedRotatingHandler's rollover
+  time calculation.
+
+- #1021: fix a bug to allow basicConfig to accept NOTSET as a level.
+
+- #932563: add LoggerAdapter convenience class to make it easier to add
+  contextual information in logging output.
+
+- #1760556: fix a bug to avoid FileHandler throwing an exception in
+  flush().
+
 - Bug #1530959: distutils' build command now uses different build directory
   when building extension modules against versions of Python compiled
   with ``--with-pydebug``.
@@ -415,7 +426,7 @@ Library
 - #1837: The queue module now also supports a LIFO queue and a priority queue.
 
 - Patch #1048820: Add insert-mode editing to curses.textpad.Textbox
-  (patch by Stefan Wehr).  Also, fix an off-by-one bug in 
+  (patch by Stefan Wehr).  Also, fix an off-by-one bug in
   Textbox.gather().
 
 - Issue #1831: ctypes now raises a TypeError if conflicting positional
@@ -439,13 +450,13 @@ Library
 - Decimal.as_tuple(), difflib.find_longest_match() and inspect functions
   that returned a tuple now return a named tuple.
 
-- Doctest now returns results as a named tuple for readability:  
+- Doctest now returns results as a named tuple for readability:
       (0, 7) --> TestResults(failed=0, attempted=7)
 
 - Issue #846388. re.match is interruptible now, which is particularly
   good for long regular expression matches.
 
-- pyexpat, patch #1137: allow setting buffer_size attribute 
+- pyexpat, patch #1137: allow setting buffer_size attribute
   on Parser objects to set the character data buffer size.
 
 - Issue #1757: The hash of a Decimal instance is no longer affected by
@@ -572,7 +583,7 @@ Library
 
 - Bug #1734723: Fix repr.Repr() so it doesn't ignore the maxtuple attribute.
 
-- The urlopen function of urllib2 now has an optional timeout parameter (note 
+- The urlopen function of urllib2 now has an optional timeout parameter (note
   that it actually works with HTTP, HTTPS, FTP and FTPS connections).
 
 - In ftplib, the FTP.ntransfercmd method, when in passive mode, now uses
@@ -760,8 +771,8 @@ Library
 
 - Patch #1481079: add support for HTTP_REFERER to CGIHTTPServer.
 
-- Patch #1675424: Added tests for uncovered code in the zipfile module. 
-  The KeyError raised by Zipfile.getinfo for nonexistent names now has 
+- Patch #1675424: Added tests for uncovered code in the zipfile module.
+  The KeyError raised by Zipfile.getinfo for nonexistent names now has
   a descriptive message.
 
 - Bug #1115886: os.path.splitext('.cshrc') gives now ('.cshrc', '').
@@ -1041,7 +1052,7 @@ Library
 - The implementation of UnicodeError objects has been simplified (start and end
   attributes are now stored directly as Py_ssize_t members).
 
-- Issue829951: In the smtplib module, SMTP.starttls() now complies with 
+- Issue829951: In the smtplib module, SMTP.starttls() now complies with
   RFC 3207 and forgets any knowledge obtained from the server not obtained
   from the TLS negotiation itself.  Patch contributed by Bill Fenner.
 
@@ -1054,7 +1065,7 @@ Library
 Extension Modules
 -----------------
 
-- #1087741: mmap.mmap is now a class, not a factory function. It is also 
+- #1087741: mmap.mmap is now a class, not a factory function. It is also
   subclassable now.
 
 - Patch #1648: added ``sys.getprofile()`` and ``sys.gettrace()``.
@@ -1160,7 +1171,7 @@ Extension Modules
 - Patch #1544279: Improve thread-safety of the socket module by moving
   the sock_addr_t storage out of the socket object.
 
-- Patch #1019808: fix bug that causes an incorrect error to be returned 
+- Patch #1019808: fix bug that causes an incorrect error to be returned
   when a socket timeout is set and a connection attempt fails.
 
 - Speed up function calls into the math module.
@@ -1193,7 +1204,7 @@ Extension Modules
 - Bug #1548092: fix curses.tparm seg fault on invalid input.
 
 - Patch #1114: fix curses module compilation on 64-bit AIX, & possibly
-  other 64-bit LP64 platforms where attr_t is not the same size as a long.  
+  other 64-bit LP64 platforms where attr_t is not the same size as a long.
   (Contributed by Luke Mewburn.)
 
 - Bug #1550714: fix SystemError from itertools.tee on negative value for n.
@@ -1283,6 +1294,12 @@ Tools
 Documentation
 -------------
 
+- Bug #932563: Added section on getting contextual information into logging
+  output, and added documentation for the new LoggerAdapter class.
+
+- Bug #1295: Added information about caching of formatted exception
+  information in the LogRecord by Formatter.format().
+
 - Bug #1637365: add subsection about "__name__ == __main__" to the
   Python tutorial.
 
@@ -1339,7 +1356,7 @@ Build
 - Issue #1726: Remove Python/atof.c from PCBuild/pythoncore.vcproj
 
 - Removed PCbuild8/ directory and added a new build directory for VS 2005
-  based on the VS 2008 build directory to PC/VS8.0. The script 
+  based on the VS 2008 build directory to PC/VS8.0. The script
   PCbuild/vs8to9.py was added to sync changes from PCbuild to PC/VS8.0.
 
 - Moved PCbuild/ directory for VS 2003 to PC/VS7.1 and renamed PCBuild9/
@@ -1666,7 +1683,7 @@ Library
 -------
 
 - Fix #1693149.  Now you can pass several modules separated by
-  comma to trace.py in the same --ignore-module option. 
+  comma to trace.py in the same --ignore-module option.
 
 - Correction of patch #1455898: In the mbcs decoder, set final=False
   for stream decoder, but final=True for the decode function.
