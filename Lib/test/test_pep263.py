@@ -1,5 +1,5 @@
 #! -*- coding: koi8-r -*-
-# This file is marked as binary in the CVS, to prevent MacCVS from recoding it.
+# This file is marked as binary in SVN, to prevent MacCVS from recoding it.
 
 import unittest
 from test import test_support
@@ -15,6 +15,14 @@ class PEP263Test(unittest.TestCase):
             u"\П".encode("utf-8"),
             '\\\xd0\x9f'
         )
+
+    def test_compilestring(self):
+        # see #1882
+        c = compile("\n# coding: utf-8\nu = u'\xc3\xb3'\n", "dummy", "exec")
+        d = {}
+        exec c in d
+        self.assertEqual(d['u'], u'\xf3')
+
 
 def test_main():
     test_support.run_unittest(PEP263Test)
