@@ -21,4 +21,3 @@ Mac-specific Python programming.
    autogil.rst
    carbon.rst
    colorpicker.rst
-   bundlebuilder.rst
