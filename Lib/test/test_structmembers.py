@@ -8,10 +8,16 @@ from _testcapi import test_structmembersType, \
 import warnings, exceptions, unittest, sys
 from test import test_support
 
-ts=test_structmembersType(1,2,3,4,5,6,7,8,9.99999,10.1010101010)
+ts=test_structmembersType(False,1,2,3,4,5,6,7,8,9.99999,10.1010101010)
 
 class ReadWriteTests(unittest.TestCase):
     def test_types(self):
+        ts.T_BOOL=True
+        self.assertEquals(ts.T_BOOL, True)
+        ts.T_BOOL=False
+        self.assertEquals(ts.T_BOOL, False)
+        self.assertRaises(TypeError, setattr, ts, 'T_BOOL', 1)
+
         ts.T_BYTE=CHAR_MAX
         self.assertEquals(ts.T_BYTE, CHAR_MAX)
         ts.T_BYTE=CHAR_MIN

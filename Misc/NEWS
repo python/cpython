@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1720595: add T_BOOL to the range of structmember types.
+
 - Issue #1882: when compiling code from a string, encoding cookies in the
   second line of code were not always recognized correctly.
 
