@@ -16,3 +16,4 @@ that aren't markup languages or are related to e-mail.
    robotparser.rst
    netrc.rst
    xdrlib.rst
+   plistlib.rst
