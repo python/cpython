@@ -762,6 +762,7 @@ static PyMethodDef TestMethods[] = {
 #define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
 
 typedef struct {
+	char bool_member;
 	char byte_member;
 	unsigned char ubyte_member;
 	short short_member;
@@ -784,6 +785,7 @@ typedef struct {
 } test_structmembers;
 
 static struct PyMemberDef test_members[] = {
+	{"T_BOOL", T_BOOL, offsetof(test_structmembers, structmembers.bool_member), 0, NULL},
 	{"T_BYTE", T_BYTE, offsetof(test_structmembers, structmembers.byte_member), 0, NULL},
 	{"T_UBYTE", T_UBYTE, offsetof(test_structmembers, structmembers.ubyte_member), 0, NULL},
 	{"T_SHORT", T_SHORT, offsetof(test_structmembers, structmembers.short_member), 0, NULL},
@@ -803,13 +805,13 @@ static struct PyMemberDef test_members[] = {
 
 
 static PyObject *test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
-	static char *keywords[]={"T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT", "T_INT", "T_UINT",
+	static char *keywords[]={"T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT", "T_INT", "T_UINT",
 		"T_LONG", "T_ULONG", "T_FLOAT", "T_DOUBLE",
 		#ifdef HAVE_LONG_LONG	
 		"T_LONGLONG", "T_ULONGLONG",
 		#endif
 		NULL};
-	static char *fmt="|bBhHiIlkfd"
+	static char *fmt="|bbBhHiIlkfd"
 		#ifdef HAVE_LONG_LONG
 		"LK"
 		#endif
@@ -819,6 +821,7 @@ static PyObject *test_structmembers_new(PyTypeObject *type, PyObject *args, PyOb
 		return NULL;
 	memset(&ob->structmembers, 0, sizeof(all_structmembers));
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
+		&ob->structmembers.bool_member,
 		&ob->structmembers.byte_member, &ob->structmembers.ubyte_member,
 		&ob->structmembers.short_member, &ob->structmembers.ushort_member,
 		&ob->structmembers.int_member, &ob->structmembers.uint_member, 
