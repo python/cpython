@@ -368,6 +368,8 @@ Core and builtins
 
 Library
 -------
+- #1087741: mmap.mmap is now a class, not a factory function. It is also 
+  subclassable now.
 
 - #1269: fix a bug in pstats.add_callers() and add a unit test file for
   pstats.
