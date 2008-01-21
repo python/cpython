@@ -297,14 +297,14 @@ These environment variables influence Python's behavior.
 .. envvar:: PYTHONHOME
    
    Change the location of the standard Python libraries.  By default, the
-   libraries are searched in :file:`{prefix}/lib/python<version>` and
-   :file:`{exec_prefix}/lib/python<version>`, where :file:`{prefix}` and
+   libraries are searched in :file:`{prefix}/lib/python{version}` and
+   :file:`{exec_prefix}/lib/python{version}`, where :file:`{prefix}` and
    :file:`{exec_prefix}` are installation-dependent directories, both defaulting
    to :file:`/usr/local`.
    
    When :envvar:`PYTHONHOME` is set to a single directory, its value replaces
    both :file:`{prefix}` and :file:`{exec_prefix}`.  To specify different values
-   for these, set :envvar:`PYTHONHOME` to :file:`{prefix}:{exec_prefix}``.
+   for these, set :envvar:`PYTHONHOME` to :file:`{prefix}:{exec_prefix}`.
 
 
 .. envvar:: PYTHONPATH
@@ -314,7 +314,7 @@ These environment variables influence Python's behavior.
    colons.  Non-existent directories are silently ignored.
    
    The default search path is installation dependent, but generally begins with
-   :file:`{prefix}/lib/python<version>`` (see :envvar:`PYTHONHOME` above).  It
+   :file:`{prefix}/lib/python{version}`` (see :envvar:`PYTHONHOME` above).  It
    is *always* appended to :envvar:`PYTHONPATH`.
    
    If a script argument is given, the directory containing the script is

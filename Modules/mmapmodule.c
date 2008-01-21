@@ -666,12 +666,6 @@ mmap_buffer_releasebuf(mmap_object *self, Py_buffer *view)
         self->exports--;
 }
 
-static PyObject *
-mmap_object_getattr(mmap_object *self, char *name)
-{
-	return Py_FindMethod(mmap_object_methods, (PyObject *)self, name);
-}
-
 static Py_ssize_t
 mmap_length(mmap_object *self)
 {
@@ -901,6 +895,30 @@ static PyBufferProcs mmap_as_buffer = {
         (releasebufferproc)mmap_buffer_releasebuf,
 };
 
+PyDoc_STRVAR(mmap_doc,
+"Windows: mmap(fileno, length[, tagname[, access[, offset]]])\n\
+\n\
+Maps length bytes from the file specified by the file handle fileno,\n\
+and returns a mmap object.  If length is larger than the current size\n\
+of the file, the file is extended to contain length bytes.  If length\n\
+is 0, the maximum length of the map is the current size of the file,\n\
+except that if the file is empty Windows raises an exception (you cannot\n\
+create an empty mapping on Windows).\n\
+\n\
+Unix: mmap(fileno, length[, flags[, prot[, access[, offset]]]])\n\
+\n\
+Maps length bytes from the file specified by the file descriptor fileno,\n\
+and returns a mmap object.  If length is 0, the maximum length of the map\n\
+will be the current size of the file when mmap is called.\n\
+flags specifies the nature of the mapping. MAP_PRIVATE creates a\n\
+private copy-on-write mapping, so changes to the contents of the mmap\n\
+object will be private to this process, and MAP_SHARED`creates a mapping\n\
+that's shared with all other processes mapping the same areas of the file.\n\
+The default value is MAP_SHARED.\n\
+\n\
+To map anonymous memory, pass -1 as the fileno (both versions).");
+
+
 static PyTypeObject mmap_object_type = {
 	PyVarObject_HEAD_INIT(0, 0) /* patched in module init */
 	"mmap.mmap",				/* tp_name */
@@ -909,7 +927,7 @@ static PyTypeObject mmap_object_type = {
 	/* methods */
 	(destructor) mmap_object_dealloc,	/* tp_dealloc */
 	0,					/* tp_print */
-	(getattrfunc) mmap_object_getattr,	/* tp_getattr */
+	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	0,					/* tp_repr */
@@ -919,11 +937,19 @@ static PyTypeObject mmap_object_type = {
 	0,					/*tp_hash*/
 	0,					/*tp_call*/
 	0,					/*tp_str*/
-	0,					/*tp_getattro*/
+	PyObject_GenericGetAttr,		/*tp_getattro*/
 	0,					/*tp_setattro*/
 	&mmap_as_buffer,			/*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT,			/*tp_flags*/
-	0,					/*tp_doc*/
+	mmap_doc,				/*tp_doc*/
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	mmap_object_methods,			/* tp_methods */
+
 };
 
 
@@ -1265,7 +1291,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 /* List of functions exported by this module */
 static struct PyMethodDef mmap_functions[] = {
 	{"mmap",	(PyCFunction) new_mmap_object,
-	 METH_VARARGS|METH_KEYWORDS},
+	 METH_VARARGS|METH_KEYWORDS, mmap_doc},
 	{NULL,		NULL}	     /* Sentinel */
 };
 
