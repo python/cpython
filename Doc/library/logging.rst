@@ -1199,13 +1199,13 @@ also illustrates what dict-like behaviour is needed from an arbitrary
 "dict-like" object for use in the constructor::
 
    import logging
-   
+
    class ConnInfo:
        """
        An example class which shows how an arbitrary class can be used as
        the 'extra' context information repository passed to a LoggerAdapter.
        """
-   
+
        def __getitem__(self, name):
            """
            To allow this instance to look like a dict.
@@ -1218,7 +1218,7 @@ also illustrates what dict-like behaviour is needed from an arbitrary
            else:
                result = self.__dict__.get(name, "?")
            return result
-   
+
        def __iter__(self):
            """
            To allow iteration over keys, which will be merged into
@@ -1227,7 +1227,7 @@ also illustrates what dict-like behaviour is needed from an arbitrary
            keys = ["ip", "user"]
            keys.extend(self.__dict__.keys())
            return keys.__iter__()
-   
+
    if __name__ == "__main__":
        from random import choice
        levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
@@ -2163,7 +2163,10 @@ LoggerAdapter Objects
 .. versionadded:: 2.6
 
 :class:`LoggerAdapter` instances are used to conveniently pass contextual
-information into logging calls. For a usage example , see context-info_.
+information into logging calls. For a usage example , see the section on
+`adding contextual information to your logging output`__.
+
+__ context-info_
 
 .. class:: LoggerAdapter(logger, extra)
 
