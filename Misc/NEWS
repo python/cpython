@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Issue #1882: when compiling code from a string, encoding cookies in the
+  second line of code were not always recognized correctly.
+
 - Bug #1517: Possible segfault in lookup().
 
 - Issue #1638: %zd configure test fails on Linux.
