@@ -974,6 +974,9 @@ static PyBufferProcs mmap_as_buffer = {
 	(charbufferproc)mmap_buffer_getcharbuffer,
 };
 
+static PyObject *
+new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict);
+
 PyDoc_STRVAR(mmap_doc,
 "Windows: mmap(fileno, length[, tagname[, access[, offset]]])\n\
 \n\
@@ -999,7 +1002,7 @@ To map anonymous memory, pass -1 as the fileno (both versions).");
 
 
 static PyTypeObject mmap_object_type = {
-	PyVarObject_HEAD_INIT(0, 0) /* patched in module init */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"mmap.mmap",				/* tp_name */
 	sizeof(mmap_object),			/* tp_size */
 	0,					/* tp_itemsize */
@@ -1019,16 +1022,26 @@ static PyTypeObject mmap_object_type = {
 	PyObject_GenericGetAttr,		/*tp_getattro*/
 	0,					/*tp_setattro*/
 	&mmap_as_buffer,			/*tp_as_buffer*/
-	Py_TPFLAGS_HAVE_GETCHARBUFFER,		/*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GETCHARBUFFER,		/*tp_flags*/
 	mmap_doc,				/*tp_doc*/
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	0,					/* tp_iter */
-	0,					/* tp_iternext */
+	0,		                        /* tp_iter */
+	0,		                        /* tp_iternext */
 	mmap_object_methods,			/* tp_methods */
-
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,                                      /* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	new_mmap_object,			/* tp_new */
+	PyObject_Del,                           /* tp_free */
 };
 
 
@@ -1060,7 +1073,7 @@ _GetMapSize(PyObject *o, const char* param)
 
 #ifdef UNIX
 static PyObject *
-new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
+new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
 #ifdef HAVE_FSTAT
 	struct stat st;
@@ -1128,7 +1141,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		}
 	}
 #endif
-	m_obj = PyObject_New(mmap_object, &mmap_object_type);
+	m_obj = (mmap_object *)type->tp_alloc(type, 0);
 	if (m_obj == NULL) {return NULL;}
 	m_obj->data = NULL;
 	m_obj->size = (size_t) map_size;
@@ -1182,7 +1195,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 
 #ifdef MS_WINDOWS
 static PyObject *
-new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
+new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
 	mmap_object *m_obj;
 	PyObject *map_size_obj = NULL, *offset_obj = NULL;
@@ -1250,7 +1263,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		lseek(fileno, 0, SEEK_SET);
 	}
 
-	m_obj = PyObject_New(mmap_object, &mmap_object_type);
+	m_obj = (mmap_object *)type->tp_alloc(type, 0);
 	if (m_obj == NULL)
 		return NULL;
 	/* Set every field to an invalid marker, so we can safely
@@ -1364,13 +1377,6 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 }
 #endif /* MS_WINDOWS */
 
-/* List of functions exported by this module */
-static struct PyMethodDef mmap_functions[] = {
-	{"mmap",	(PyCFunction) new_mmap_object,
-	 METH_VARARGS|METH_KEYWORDS, mmap_doc},
-	{NULL,		NULL}	     /* Sentinel */
-};
-
 static void
 setint(PyObject *d, const char *name, long value)
 {
@@ -1381,14 +1387,14 @@ setint(PyObject *d, const char *name, long value)
 }
 
 PyMODINIT_FUNC
-	initmmap(void)
+initmmap(void)
 {
 	PyObject *dict, *module;
 
-	/* Patch the object type */
-	Py_TYPE(&mmap_object_type) = &PyType_Type;
+	if (PyType_Ready(&mmap_object_type) < 0)
+		return;
 
-	module = Py_InitModule("mmap", mmap_functions);
+	module = Py_InitModule("mmap", NULL);
 	if (module == NULL)
 		return;
 	dict = PyModule_GetDict(module);
@@ -1396,6 +1402,7 @@ PyMODINIT_FUNC
 		return;
 	mmap_module_error = PyExc_EnvironmentError;
 	PyDict_SetItemString(dict, "error", mmap_module_error);
+	PyDict_SetItemString(dict, "mmap", (PyObject*) &mmap_object_type);
 #ifdef PROT_EXEC
 	setint(dict, "PROT_EXEC", PROT_EXEC);
 #endif
