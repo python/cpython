@@ -446,3 +446,5 @@ The function ``opt_move`` below can be used to move options between sections::
            # Create non-existent section
            config.add_section(section2)
            opt_move(config, section1, section2, option)
+       else:
+           config.remove_option(section1, option)
