@@ -29,7 +29,8 @@ concatenate ordinary characters, so last matches the string 'last'.
 The special characters are:
     "."      Matches any character except a newline.
     "^"      Matches the start of the string.
-    "$"      Matches the end of the string.
+    "$"      Matches the end of the string or just before the newline at
+             the end of the string.
     "*"      Matches 0 or more (greedy) repetitions of the preceding RE.
              Greedy means that it will match as many repetitions as possible.
     "+"      Matches 1 or more (greedy) repetitions of the preceding RE.
@@ -83,8 +84,10 @@ This module exports the following functions:
 Some of the functions in this module takes flags as optional parameters:
     I  IGNORECASE  Perform case-insensitive matching.
     L  LOCALE      Make \w, \W, \b, \B, dependent on the current locale.
-    M  MULTILINE   "^" matches the beginning of lines as well as the string.
-                   "$" matches the end of lines as well as the string.
+    M  MULTILINE   "^" matches the beginning of lines (after a newline)
+                   as well as the string.
+                   "$" matches the end of lines (before a newline) as well
+                   as the end of the string.
     S  DOTALL      "." matches any character at all, including the newline.
     X  VERBOSE     Ignore whitespace and comments for nicer looking RE's.
     U  UNICODE     Make \w, \W, \b, \B, dependent on the Unicode locale.

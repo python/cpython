@@ -15,7 +15,7 @@ substring by assigning to a slice: ``obj[i1:i2] = '...'``.  You can also read
 and write data starting at the current file position, and :meth:`seek` through
 the file to different positions.
 
-A memory-mapped file is created by the :func:`mmap` function, which is different
+A memory-mapped file is created by the :class:`mmap` constructor, which is different
 on Unix and on Windows.  In either case you must provide a file descriptor for a
 file opened for update. If you wish to map an existing Python file object, use
 its :meth:`fileno` method to obtain the correct value for the *fileno*
@@ -23,7 +23,7 @@ parameter.  Otherwise, you can open the file using the :func:`os.open` function,
 which returns a file descriptor directly (the file still needs to be closed when
 done).
 
-For both the Unix and Windows versions of the function, *access* may be
+For both the Unix and Windows versions of the constructor, *access* may be
 specified as an optional keyword parameter. *access* accepts one of three
 values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY` to
 specify readonly, write-through or copy-on-write memory respectively. *access*
@@ -37,11 +37,10 @@ not update the underlying file.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
-
-.. function:: mmap(fileno, length[, tagname[, access[, offset]]])
+.. class:: mmap(fileno, length[, tagname[, access[, offset]]])
 
    **(Windows version)** Maps *length* bytes from the file specified by the file
-   handle *fileno*, and returns a mmap object.  If *length* is larger than the
+   handle *fileno*, and creates a mmap object.  If *length* is larger than the
    current size of the file, the file is extended to contain *length* bytes.  If
    *length* is ``0``, the maximum length of the map is the current size of the
    file, except that if the file is empty Windows raises an exception (you cannot
@@ -59,12 +58,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    *offset* must be a multiple of the ALLOCATIONGRANULARITY.
 
 
-.. function:: mmap(fileno, length[, flags[, prot[, access[, offset]]]])
+.. class:: mmap(fileno, length[, flags[, prot[, access[, offset]]]])
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
    descriptor *fileno*, and returns a mmap object.  If *length* is ``0``, the
-   maximum length of the map will be the current size of the file when :func:`mmap`
+   maximum length of the map will be the current size of the file when :class:`mmap`
    is called.
 
    *flags* specifies the nature of the mapping. :const:`MAP_PRIVATE` creates a
@@ -85,7 +84,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    be relative to the offset from the beginning of the file. *offset* defaults to 0.
    *offset* must be a multiple of the PAGESIZE or ALLOCATIONGRANULARITY.
    
-   This example shows a simple way of using :func:`mmap`::
+   This example shows a simple way of using :class:`mmap`::
 
       import mmap
 

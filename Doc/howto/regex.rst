@@ -335,9 +335,8 @@ Performing Matches
 
 Once you have an object representing a compiled regular expression, what do you
 do with it?  :class:`RegexObject` instances have several methods and attributes.
-Only the most significant ones will be covered here; consult `the Library
-Reference <http://www.python.org/doc/lib/module-re.html>`_ for a complete
-listing.
+Only the most significant ones will be covered here; consult the :mod:`re` docs
+for a complete listing.
 
 +------------------+-----------------------------------------------+
 | Method/Attribute | Purpose                                       |
