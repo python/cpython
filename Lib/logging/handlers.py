@@ -229,13 +229,16 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             #         Days to rollover is 6 - 5 + 3, or 4.  In this case, it's the
             #         number of days left in the current week (1) plus the number
             #         of days in the next week until the rollover day (3).
+            # The calculations described in 2) and 3) above need to have a day added.
+            # This is because the above time calculation takes us to midnight on this
+            # day, i.e. the start of the next day.
             if when.startswith('W'):
                 day = t[6] # 0 is Monday
                 if day != self.dayOfWeek:
                     if day < self.dayOfWeek:
-                        daysToWait = self.dayOfWeek - day - 1
+                        daysToWait = self.dayOfWeek - day
                     else:
-                        daysToWait = 6 - day + self.dayOfWeek
+                        daysToWait = 6 - day + self.dayOfWeek + 1
                     self.rolloverAt = self.rolloverAt + (daysToWait * (60 * 60 * 24))
 
         #print "Will rollover at %d, %d seconds from now" % (self.rolloverAt, self.rolloverAt - currentTime)
