@@ -224,6 +224,10 @@ PGOBJS=		\
 		Parser/printgrammar.o \
 		Parser/pgenmain.o
 
+PARSER_HEADERS= \
+		Parser/parser.h \
+		Parser/tokenizer.h
+
 PGENOBJS=	$(PGENMAIN) $(POBJS) $(PGOBJS)
 
 ##########################################################################
@@ -515,12 +519,15 @@ Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 # Header files
 
 PYTHON_HEADERS= \
-		Include/Python.h \
 		Include/Python-ast.h \
-		Include/asdl.h \
+		Include/Python.h \
 		Include/abstract.h \
+		Include/asdl.h \
+		Include/ast.h \
+		Include/bitset.h \
 		Include/boolobject.h \
 		Include/bufferobject.h \
+		Include/cellobject.h \
 		Include/ceval.h \
 		Include/classobject.h \
 		Include/cobject.h \
@@ -531,46 +538,61 @@ PYTHON_HEADERS= \
 		Include/descrobject.h \
 		Include/dictobject.h \
 		Include/enumobject.h \
-		Include/genobject.h \
+		Include/errcode.h \
+		Include/eval.h \
 		Include/fileobject.h \
 		Include/floatobject.h \
+		Include/frameobject.h \
 		Include/funcobject.h \
+		Include/genobject.h \
 		Include/import.h \
 		Include/intobject.h \
 		Include/intrcheck.h \
 		Include/iterobject.h \
 		Include/listobject.h \
+		Include/longintrepr.h \
 		Include/longobject.h \
+		Include/marshal.h \
+		Include/metagrammar.h \
 		Include/methodobject.h \
 		Include/modsupport.h \
 		Include/moduleobject.h \
+		Include/node.h \
 		Include/object.h \
 		Include/objimpl.h \
+		Include/opcode.h \
+		Include/osdefs.h \
 		Include/parsetok.h \
 		Include/patchlevel.h \
+		Include/pgen.h \
+		Include/pgenheaders.h \
 		Include/pyarena.h \
 		Include/pydebug.h \
 		Include/pyerrors.h \
 		Include/pyfpe.h \
+		Include/pygetopt.h \
 		Include/pymem.h \
 		Include/pyport.h \
 		Include/pystate.h \
-		Include/pystrtod.h \
 		Include/pystrcmp.h \
+		Include/pystrtod.h \
 		Include/pythonrun.h \
+		Include/pythread.h \
 		Include/rangeobject.h \
-                Include/setobject.h \
+		Include/setobject.h \
 		Include/sliceobject.h \
 		Include/stringobject.h \
-		Include/structseq.h \
 		Include/structmember.h \
+		Include/structseq.h \
 		Include/symtable.h \
 		Include/sysmodule.h \
 		Include/traceback.h \
 		Include/tupleobject.h \
+		Include/ucnhash.h \
 		Include/unicodeobject.h \
 		Include/weakrefobject.h \
-		pyconfig.h
+		pyconfig.h \
+		$(PARSER_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Modules/python.o: $(PYTHON_HEADERS)
 
