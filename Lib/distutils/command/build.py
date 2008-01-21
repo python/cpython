@@ -66,6 +66,12 @@ class build(Command):
     def finalize_options(self):
         plat_specifier = ".%s-%s" % (get_platform(), sys.version[0:3])
 
+        # Make it so Python 2.x and Python 2.x with --with-pydebug don't
+        # share the same build directories. Doing so confuses the build
+        # process for C modules
+        if hasattr(sys, 'gettotalrefcount'):
+            plat_specifier += '-pydebug'
+
         # 'build_purelib' and 'build_platlib' just default to 'lib' and
         # 'lib.<plat>' under the base build directory.  We only use one of
         # them for a given distribution, though --

@@ -7,23 +7,27 @@
 # The contents of this file are pickled, so don't put values in the namespace
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
+import sys, os, time
+sys.path.append('tools/sphinxext')
+
 # General configuration
 # ---------------------
 
 # General substitutions.
 project = 'Python'
-copyright = '1990-2007, Python Software Foundation'
+copyright = '1990-%s, Python Software Foundation' % time.strftime('%Y')
 
 # The default replacements for |version| and |release|.
-# If '<auto>', Sphinx looks for the Include/patchlevel.h file in the current Python
-# source tree and replaces the values accordingly.
 #
 # The short X.Y version.
 # version = '2.6'
-version = '<auto>'
 # The full version, including alpha/beta/rc tags.
 # release = '2.6a0'
-release = '<auto>'
+
+# We look for the Include/patchlevel.h file in the current Python source tree
+# and replace the values accordingly.
+import patchlevel
+version, release = patchlevel.get_version_info()
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -119,7 +123,6 @@ latex_documents = [
      'What\'s New in Python', 'A. M. Kuchling', 'howto'),
 ]
 # Collect all HOWTOs individually
-import os
 latex_documents.extend(('howto/' + fn, 'howto-' + fn[:-4] + '.tex',
                         'HOWTO', _stdauthor, 'howto')
                        for fn in os.listdir('howto')

@@ -305,9 +305,7 @@ def test():
     else:
         from io import StringIO
         fp = StringIO(test_input)
-    while 1:
-        line = fp.readline()
-        if not line: break
+    for line in fp:
         words = line.split()
         if not words:
             continue

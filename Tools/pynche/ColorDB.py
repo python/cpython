@@ -50,10 +50,7 @@ class ColorDB:
         self.__byname = {}
         # all unique names (non-aliases).  built-on demand
         self.__allnames = None
-        while 1:
-            line = fp.readline()
-            if not line:
-                break
+        for line in fp:
             # get this compiled regular expression from derived class
             mo = self._re.match(line)
             if not mo:

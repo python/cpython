@@ -640,6 +640,7 @@ decode_str(const char *str, struct tok_state *tok)
 {
 	PyObject* utf8 = NULL;
 	const char *s;
+	char *newl[2] = {NULL, NULL};
 	int lineno = 0;
 	tok->enc = NULL;
 	tok->str = str;
@@ -656,13 +657,23 @@ decode_str(const char *str, struct tok_state *tok)
 	for (s = str;; s++) {
 		if (*s == '\0') break;
 		else if (*s == '\n') {
+			newl[lineno] = s;
 			lineno++;
 			if (lineno == 2) break;
 		}
 	}
 	tok->enc = NULL;
-	if (!check_coding_spec(str, s - str, tok, buf_setreadl))
-		return error_ret(tok);
+	/* need to check line 1 and 2 separately since check_coding_spec
+	   assumes a single line as input */
+	if (newl[0]) {
+		if (!check_coding_spec(str, newl[0] - str, tok, buf_setreadl))
+			return error_ret(tok);
+		if (tok->enc == NULL && newl[1]) {
+			if (!check_coding_spec(newl[0]+1, newl[1] - newl[0],
+					       tok, buf_setreadl))
+				return error_ret(tok);
+		}
+	}
 	if (tok->enc != NULL) {
 		assert(utf8 == NULL);
 		utf8 = translate_into_utf8(str, tok->enc);
