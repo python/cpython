@@ -27,7 +27,7 @@ to a file named "<name>.html".
 
 Module docs for core modules are assumed to be in
 
-    http://www.python.org/doc/current/lib/
+    http://docs.python.org/library/
 
 This can be overridden by setting the PYTHONDOCS environment variable
 to a different URL or to a local directory containing the Library
@@ -346,7 +346,7 @@ class Doc:
             file = '(built-in)'
 
         docloc = os.environ.get("PYTHONDOCS",
-                                "http://www.python.org/doc/current/lib")
+                                "http://docs.python.org/library")
         basedir = os.path.join(sys.exec_prefix, "lib",
                                "python"+sys.version[0:3])
         if (isinstance(object, type(os)) and
@@ -355,11 +355,10 @@ class Doc:
                                  'thread', 'zipimport') or
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages'))))):
-            htmlfile = "module-%s.html" % object.__name__
             if docloc.startswith("http://"):
-                docloc = "%s/%s" % (docloc.rstrip("/"), htmlfile)
+                docloc = "%s/%s" % (docloc.rstrip("/"), object.__name__)
             else:
-                docloc = os.path.join(docloc, htmlfile)
+                docloc = os.path.join(docloc, object.__name__ + ".html")
         else:
             docloc = None
         return docloc
@@ -541,7 +540,7 @@ class HTMLDoc(Doc):
                 url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif pep:
-                url = 'http://www.python.org/peps/pep-%04d.html' % int(pep)
+                url = 'http://www.python.org/peps/pep-%04d' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif text[end:end+1] == '(':
                 results.append(self.namelink(name, methods, funcs, classes))
@@ -1710,7 +1709,7 @@ has the same effect as typing a particular string at the help> prompt.
 Welcome to Python %s!  This is the online help utility.
 
 If this is your first time using Python, you should definitely check out
-the tutorial on the Internet at http://www.python.org/doc/tut/.
+the tutorial on the Internet at http://docs.python.org/tutorial/.
 
 Enter the name of any module, keyword, or topic to get help on writing
 Python programs and using Python modules.  To quit this help utility and
