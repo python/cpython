@@ -372,6 +372,8 @@ Core and builtins
 Library
 -------
 
+- #1715: include sub-extension modules in pydoc's text output.
+
 - #1836: fix an off-by-one bug in TimedRotatingHandler's rollover
   time calculation.
 
