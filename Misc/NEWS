@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Issue #1678380: distinction between 0.0 and -0.0 was lost during constant
+  folding optimization.  This was a regression from Python 2.4.
+
 - Issue #1882: when compiling code from a string, encoding cookies in the
   second line of code were not always recognized correctly.
 
