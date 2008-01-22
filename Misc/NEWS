@@ -55,6 +55,10 @@ Core and builtins
 
 - Bug #1733488: Fix compilation of bufferobject.c on AIX.
 
+- Fix Issue #1703448: A joined thread could show up in the
+  threading.enumerate() list after the join() for a brief period until
+  it actually exited.
+
 
 Library
 -------

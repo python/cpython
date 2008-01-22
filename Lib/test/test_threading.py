@@ -3,6 +3,7 @@
 import test.test_support
 from test.test_support import verbose
 import random
+import sys
 import threading
 import thread
 import time
@@ -200,6 +201,24 @@ class ThreadTests(unittest.TestCase):
         if t.finished:
             t.join()
         # else the thread is still running, and we have no way to kill it
+
+    def test_enumerate_after_join(self):
+        # Try hard to trigger #1703448: a thread is still returned in
+        # threading.enumerate() after it has been join()ed.
+        enum = threading.enumerate
+        old_interval = sys.getcheckinterval()
+        sys.setcheckinterval(1)
+        try:
+            for i in xrange(1, 1000):
+                t = threading.Thread(target=lambda: None)
+                t.start()
+                t.join()
+                l = enum()
+                self.assertFalse(t in l,
+                    "#1703448 triggered after %d trials: %s" % (i, l))
+        finally:
+            sys.setcheckinterval(old_interval)
+
 
 def test_main():
     test.test_support.run_unittest(ThreadTests)
