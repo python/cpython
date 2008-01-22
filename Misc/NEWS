@@ -12,6 +12,9 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- map() and itertools.imap() no longer accept None for the first argument.
+  Use zip() instead.
+
 - Issue #1769: Now int("- 1") is not allowed any more.
 
 - Object/longobject.c: long(float('nan')) raises an OverflowError instead

@@ -1100,18 +1100,6 @@ class BuiltinTest(unittest.TestCase):
 
     def test_map(self):
         self.assertEqual(
-            list(map(None, 'hello')),
-            [('h',), ('e',), ('l',), ('l',), ('o',)]
-        )
-        self.assertEqual(
-            list(map(None, 'abcd', 'efg')),
-            [('a', 'e'), ('b', 'f'), ('c', 'g')]
-        )
-        self.assertEqual(
-            list(map(None, range(3))),
-            [(0,), (1,), (2,)]
-        )
-        self.assertEqual(
             list(map(lambda x: x*x, range(1,4))),
             [1, 4, 9]
         )
@@ -1146,16 +1134,8 @@ class BuiltinTest(unittest.TestCase):
             [1+4+1, 3+9+1, 7+2+0]
         )
         self.assertEqual(
-            list(map(None, Squares(10))),
-            [(0,), (1,), (4,), (9,), (16,), (25,), (36,), (49,), (64,), (81,)]
-        )
-        self.assertEqual(
             list(map(int, Squares(10))),
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
-        )
-        self.assertEqual(
-            list(map(None, Squares(3), Squares(2))),
-            [(0,0), (1,1)]
         )
         def Max(a, b):
             if a is None:
@@ -1169,7 +1149,6 @@ class BuiltinTest(unittest.TestCase):
         )
         self.assertRaises(TypeError, map)
         self.assertRaises(TypeError, map, lambda x: x, 42)
-        self.assertEqual(list(map(None, [42])), [(42,)])
         class BadSeq:
             def __iter__(self):
                 raise ValueError

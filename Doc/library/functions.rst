@@ -648,17 +648,7 @@ available.  They are listed here in alphabetical order.
    Return an iterator that applies *function* to every item of *iterable*,
    yielding the results.  If additional *iterable* arguments are passed,
    *function* must take that many arguments and is applied to the items from all
-   iterables in parallel.  If one iterable is shorter than another it is assumed
-   to be extended with ``None`` items.  If *function* is ``None``, the identity
-   function is assumed; if there are multiple arguments, :func:`map` returns a
-   list consisting of tuples containing the corresponding items from all
-   iterables (a kind of transpose operation).  The *iterable* arguments may be a
-   sequence or any iterable object; the result is always a list.
-
-   Note that for only one *iterable* argument, ``map(function, iterable)`` is
-   equivalent to the generator expression ``(function(item) for item in
-   iterable)`` if *function* is not ``None``.
-
+   iterables in parallel.
 
 .. function:: max(iterable[, args...], *[, key])
 

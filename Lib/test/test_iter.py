@@ -382,13 +382,10 @@ class TestCase(unittest.TestCase):
 
     # Test map()'s use of iterators.
     def test_builtin_map(self):
-        self.assertEqual(list(map(None, SequenceClass(5))),
-                         [(0,), (1,), (2,), (3,), (4,)])
         self.assertEqual(list(map(lambda x: x+1, SequenceClass(5))),
                          list(range(1, 6)))
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(list(map(None, d)), [(k,) for k in d])
         self.assertEqual(list(map(lambda k, d=d: (k, d[k]), d)),
                          list(d.items()))
         dkeys = list(d.keys())
@@ -396,11 +393,6 @@ class TestCase(unittest.TestCase):
                      i,
                      i < len(d) and dkeys[i] or None)
                     for i in range(3)]
-        self.assertEqual(list(map(None,
-                                  d,
-                                  SequenceClass(5),
-                                  iter(d.keys()))),
-                         expected)
 
         f = open(TESTFN, "w")
         try:

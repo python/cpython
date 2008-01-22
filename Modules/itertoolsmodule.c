@@ -1490,31 +1490,6 @@ imap_traverse(imapobject *lz, visitproc visit, void *arg)
 	return 0;
 }
 
-/*	
-imap() is an iterator version of __builtins__.map() except that it does
-not have the None fill-in feature.  That was intentionally left out for
-the following reasons:
-
-  1) Itertools are designed to be easily combined and chained together.
-     Having all tools stop with the shortest input is a unifying principle
-     that makes it easier to combine finite iterators (supplying data) with
-     infinite iterators like count() and repeat() (for supplying sequential
-     or constant arguments to a function).
-
-  2) In typical use cases for combining itertools, having one finite data 
-     supplier run out before another is likely to be an error condition which
-     should not pass silently by automatically supplying None.
-
-  3) The use cases for automatic None fill-in are rare -- not many functions
-     do something useful when a parameter suddenly switches type and becomes
-     None.  
-
-  4) If a need does arise, it can be met by __builtins__.map() or by 
-     writing:  chain(iterable, repeat(None)).
-
-  5) Similar toolsets in Haskell and SML do not have automatic None fill-in.
-*/
-
 static PyObject *
 imap_next(imapobject *lz)
 {
@@ -1536,8 +1511,6 @@ imap_next(imapobject *lz)
 		}
 		PyTuple_SET_ITEM(argtuple, i, val);
 	}
-	if (lz->func == Py_None) 
-		return argtuple;
 	result = PyObject_Call(lz->func, argtuple, NULL);
 	Py_DECREF(argtuple);
 	return result;
@@ -1547,10 +1520,7 @@ PyDoc_STRVAR(imap_doc,
 "imap(func, *iterables) --> imap object\n\
 \n\
 Make an iterator that computes the function using arguments from\n\
-each of the iterables.	Like map() except that it returns\n\
-an iterator instead of a list and that it stops when the shortest\n\
-iterable is exhausted instead of filling in None for shorter\n\
-iterables.");
+each of the iterables.	Stops when the shortest iterable is exhausted.");
 
 static PyTypeObject imap_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
