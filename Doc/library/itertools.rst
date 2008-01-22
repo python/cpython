@@ -218,7 +218,7 @@ loops that truncate the stream.
       def imap(function, *iterables):
           iterables = map(iter, iterables)
           while True:
-              args = [i.next() for i in iterables]
+              args = [it.next() for it in iterables]
               if function is None:
                   yield tuple(args)
               else:
