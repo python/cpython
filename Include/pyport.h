@@ -406,7 +406,7 @@ extern "C" {
  */
 #ifndef Py_IS_FINITE
 #ifdef HAVE_FINITE
-#define Py_IS_FINITE(X) finite
+#define Py_IS_FINITE(X) finite(X)
 #else
 #define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
 #endif
