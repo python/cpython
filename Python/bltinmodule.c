@@ -815,7 +815,6 @@ Return an iterator yielding the results of applying the function to the\n\
 items of the argument iterables(s).  If more than one iterable is given,\n\
 the function is called with an argument list consisting of the\n\
 corresponding item of each iterable, until an iterable is exhausted.\n\
-If the function is None, 'lambda *a: a' is assumed.\n\
 (This is identical to itertools.imap().)");
 
 

@@ -236,7 +236,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(izip_longest('abcdef')), list(zip('abcdef')))
 
         self.assertEqual(list(izip_longest('abc', 'defg', **{})),
-                         list(map(None, list('abc')+[None], 'defg'))) # empty keyword dict
+                         list(izip(list('abc')+[None], 'defg'))) # empty keyword dict
         self.assertRaises(TypeError, izip_longest, 3)
         self.assertRaises(TypeError, izip_longest, range(3), 3)
 
@@ -281,14 +281,17 @@ class TestBasicOps(unittest.TestCase):
     def test_imap(self):
         self.assertEqual(list(imap(operator.pow, range(3), range(1,7))),
                          [0**1, 1**2, 2**3])
-        self.assertEqual(list(imap(None, 'abc', range(5))),
+        def tupleize(*args):
+            return args
+        self.assertEqual(list(imap(tupleize, 'abc', range(5))),
                          [('a',0),('b',1),('c',2)])
-        self.assertEqual(list(imap(None, 'abc', count())),
+        self.assertEqual(list(imap(tupleize, 'abc', count())),
                          [('a',0),('b',1),('c',2)])
-        self.assertEqual(take(2,imap(None, 'abc', count())),
+        self.assertEqual(take(2,imap(tupleize, 'abc', count())),
                          [('a',0),('b',1)])
         self.assertEqual(list(imap(operator.pow, [])), [])
         self.assertRaises(TypeError, imap)
+        self.assertRaises(TypeError, list, imap(None, range(3), range(3)))
         self.assertRaises(TypeError, imap, operator.neg)
         self.assertRaises(TypeError, next, imap(10, range(5)))
         self.assertRaises(ValueError, next, imap(errfunc, [4], [5]))

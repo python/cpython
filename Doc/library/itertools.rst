@@ -204,21 +204,13 @@ loops that truncate the stream.
 .. function:: imap(function, *iterables)
 
    Make an iterator that computes the function using arguments from each of the
-   iterables.  If *function* is set to ``None``, then :func:`imap` returns the
-   arguments as a tuple.  Like :func:`map` but stops when the shortest iterable is
-   exhausted instead of filling in ``None`` for shorter iterables.  The reason for
-   the difference is that infinite iterator arguments are typically an error for
-   :func:`map` (because the output is fully evaluated) but represent a common and
-   useful way of supplying arguments to :func:`imap`. Equivalent to::
+   iterables.  Equivalent to::
 
       def imap(function, *iterables):
-          iterables = map(iter, iterables)
+          iterables = [iter(it) for it in iterables)
           while True:
-              args = [next(i) for i in iterables]
-              if function is None:
-                  yield tuple(args)
-              else:
-                  yield function(*args)
+              args = [next(it) for it in iterables]
+              yield function(*args)
 
 
 .. function:: islice(iterable, [start,] stop [, step])
