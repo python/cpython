@@ -1285,6 +1285,10 @@ available.  They are listed here in alphabetical order.
    sequence argument, it returns a list of 1-tuples. With no arguments, it returns
    an empty list.
 
+   The left-to-right evaluation order of the iterables is guaranteed. This
+   makes possible an idiom for clustering a data series into n-length groups
+   using ``zip(*[iter(s)]*n)``.
+
    .. versionadded:: 2.0
 
    .. versionchanged:: 2.4
