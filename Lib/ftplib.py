@@ -313,7 +313,7 @@ class FTP:
         expected size may be None if it could not be determined.
 
         Optional `rest' argument can be a string that is sent as the
-        argument to a RESTART command.  This is essentially a server
+        argument to a REST command.  This is essentially a server
         marker used to tell the server to skip over any data up to the
         given marker.
         """
@@ -403,7 +403,7 @@ class FTP:
         """Retrieve data in line mode.  A new port is created for you.
 
         Args:
-          cmd: A RETR or LIST command.
+          cmd: A RETR, LIST, NLST, or MLSD command.
           callback: An optional single parameter callable that is called
                     for each line with the trailing CRLF stripped.
                     [default: print_line()]
@@ -539,7 +539,7 @@ class FTP:
 
     def size(self, filename):
         '''Retrieve the size of a file.'''
-        # Note that the RFC doesn't say anything about 'SIZE'
+        # The SIZE command is defined in RFC-3659
         resp = self.sendcmd('SIZE ' + filename)
         if resp[:3] == '213':
             s = resp[3:].strip()
