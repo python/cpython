@@ -371,6 +371,10 @@ Core and builtins
 - Issue #1537: Changed GeneratorExit's base class from Exception to
   BaseException.
 
+- Fix Issue #1703448: A joined thread could show up in the
+  threading.enumerate() list after the join() for a brief period until
+  it actually exited.
+
 Library
 -------
 

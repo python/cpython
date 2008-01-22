@@ -515,11 +515,14 @@ class Thread(_Verbose):
                 if __debug__:
                     self._note("%s.__bootstrap(): normal return", self)
         finally:
-            self.__stop()
-            try:
-                self.__delete()
-            except:
-                pass
+            with _active_limbo_lock:
+                self.__stop()
+                try:
+                    # We don't call self.__delete() because it also
+                    # grabs _active_limbo_lock.
+                    del _active[_get_ident()]
+                except:
+                    pass
 
     def __stop(self):
         with self.__block:
