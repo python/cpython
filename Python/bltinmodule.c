@@ -1218,11 +1218,14 @@ min_max(PyObject *args, PyObject *kwds, int op)
 				"%s() got an unexpected keyword argument", name);
 			return NULL;
 		}
+		Py_INCREF(keyfunc);
 	}
 
 	it = PyObject_GetIter(v);
-	if (it == NULL)
+	if (it == NULL) {
+		Py_XDECREF(keyfunc);
 		return NULL;
+	}
 
 	maxitem = NULL; /* the result */
 	maxval = NULL;  /* the value associated with the result */
@@ -1271,6 +1274,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
 	else
 		Py_DECREF(maxval);
 	Py_DECREF(it);
+	Py_XDECREF(keyfunc);
 	return maxitem;
 
 Fail_it_item_and_val:
@@ -1281,6 +1285,7 @@ Fail_it:
 	Py_XDECREF(maxval);
 	Py_XDECREF(maxitem);
 	Py_DECREF(it);
+	Py_XDECREF(keyfunc);
 	return NULL;
 }
 
