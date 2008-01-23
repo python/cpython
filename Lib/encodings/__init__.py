@@ -60,7 +60,7 @@ def normalize_encoding(encoding):
     """
     # Make sure we have an 8-bit string, because .translate() works
     # differently for Unicode strings.
-    if type(encoding) is types.UnicodeType:
+    if hasattr(types, "UnicodeType") and type(encoding) is types.UnicodeType:
         # Note that .encode('latin-1') does *not* use the codec
         # registry, so this call doesn't recurse. (See unicodeobject.c
         # PyUnicode_AsEncodedString() for details)

@@ -12,6 +12,10 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Bug #1915: Python compiles with --enable-unicode=no again. However
+  several extension methods and modules do not work without unicode
+  support.
+
 - Issue #1678380: distinction between 0.0 and -0.0 was lost during constant
   folding optimization.  This was a regression from Python 2.4.
 
