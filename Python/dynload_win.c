@@ -171,11 +171,16 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		HINSTANCE hDLL = NULL;
 		char pathbuf[260];
 		LPTSTR dummy;
+		unsigned int old_mode;
 		/* We use LoadLibraryEx so Windows looks for dependent DLLs 
 		    in directory of pathname first.  However, Windows95
 		    can sometimes not work correctly unless the absolute
 		    path is used.  If GetFullPathName() fails, the LoadLibrary
 		    will certainly fail too, so use its error code */
+
+		/* Don't display a message box when Python can't load a DLL */
+		old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
+
 		if (GetFullPathName(pathname,
 				    sizeof(pathbuf),
 				    pathbuf,
@@ -183,6 +188,10 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 			/* XXX This call doesn't exist in Windows CE */
 			hDLL = LoadLibraryEx(pathname, NULL,
 					     LOAD_WITH_ALTERED_SEARCH_PATH);
+
+		/* restore old error mode settings */
+		SetErrorMode(old_mode);
+
 		if (hDLL==NULL){
 			char errBuf[256];
 			unsigned int errorCode;
