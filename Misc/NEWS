@@ -378,6 +378,8 @@ Core and builtins
 Library
 -------
 
+- The pprint module now supports sets and frozensets.
+
 - #1221598: add optional callbacks to ftplib.FTP's storbinary() and
   storlines() methods.  (Contributed by Phil Schwartz)
 
