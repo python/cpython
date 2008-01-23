@@ -25,6 +25,9 @@ width constraint.
    dictionary was sorted only if its display required more than one line, although
    that wasn't documented.
 
+.. versionchanged:: 2.6
+   Added support for :class:`set` and :class:`frozenset`.
+
 The :mod:`pprint` module defines one class:
 
 .. First the implementation class:

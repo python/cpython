@@ -162,11 +162,24 @@ class PrettyPrinter:
             write('}')
             return
 
-        if (issubclass(typ, list) and r is list.__repr__) or \
-           (issubclass(typ, tuple) and r is tuple.__repr__):
+        if ((issubclass(typ, list) and r is list.__repr__) or
+            (issubclass(typ, tuple) and r is tuple.__repr__) or
+            (issubclass(typ, set) and r is set.__repr__) or
+            (issubclass(typ, frozenset) and r is frozenset.__repr__)
+           ):
             if issubclass(typ, list):
                 write('[')
                 endchar = ']'
+            elif issubclass(typ, set):
+                write('set([')
+                endchar = '])'
+                object = sorted(object)
+                indent += 4
+            elif issubclass(typ, frozenset):
+                write('frozenset([')
+                endchar = '])'
+                object = sorted(object)
+                indent += 9
             else:
                 write('(')
                 endchar = ')'
