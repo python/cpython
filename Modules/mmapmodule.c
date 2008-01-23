@@ -129,7 +129,7 @@ mmap_object_dealloc(mmap_object *m_obj)
 	}
 #endif /* UNIX */
 
-	m_obj->ob_type->tp_free((PyObject*)m_obj);
+	Py_TYPE(m_obj)->tp_free((PyObject*)m_obj);
 }
 
 static PyObject *
