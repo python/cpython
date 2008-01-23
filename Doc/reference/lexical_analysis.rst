@@ -502,7 +502,7 @@ Notes:
 
 (4)
    Individual code units which form parts of a surrogate pair can be encoded using
-   this escape sequence.
+   this escape sequence. Unlike in Standard C, exactly two hex digits are required.
 
 (5)
    Any Unicode character can be encoded this way, but characters outside the Basic

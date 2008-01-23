@@ -96,6 +96,8 @@ def addbuilddir():
     (especially for Guido :-)"""
     from distutils.util import get_platform
     s = "build/lib.%s-%.3s" % (get_platform(), sys.version)
+    if hasattr(sys, 'gettotalrefcount'):
+        s += '-pydebug'
     s = os.path.join(os.path.dirname(sys.path[-1]), s)
     sys.path.append(s)
 
