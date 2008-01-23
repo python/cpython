@@ -18,7 +18,7 @@ class PEP263Test(unittest.TestCase):
 
     def test_compilestring(self):
         # see #1882
-        c = compile("\n# coding: utf-8\nu = '\xc3\xb3'\n", "dummy", "exec")
+        c = compile(b"\n# coding: utf-8\nu = '\xc3\xb3'\n", "dummy", "exec")
         d = {}
         exec(c, d)
         self.assertEqual(d['u'], '\xf3')
