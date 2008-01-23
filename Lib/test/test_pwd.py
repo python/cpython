@@ -35,6 +35,9 @@ class PwdTest(unittest.TestCase):
             entriesbyname.setdefault(e.pw_name, []).append(e)
             entriesbyuid.setdefault(e.pw_uid, []).append(e)
 
+        if len(entries) > 1000:  # Huge passwd file (NIS?) -- skip the rest
+            return
+
         # check whether the entry returned by getpwuid()
         # for each uid is among those from getpwall() for this uid
         for e in entries:
