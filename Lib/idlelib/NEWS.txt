@@ -1,7 +1,10 @@
 What's New in IDLE 2.6a1?
 =========================
 
-*Release date: XX-XXX-200X*
+*Release date: XX-XXX-2008*
+
+- Could not open files in .idlerc directory if latter was hidden on Windows.
+  Issue 1743, Issue 1862.
 
 - Configure Dialog: improved layout for keybinding.  Patch 1457 Tal Einat.
 
