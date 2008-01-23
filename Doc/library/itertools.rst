@@ -210,7 +210,10 @@ loops that truncate the stream.
           iterables = [iter(it) for it in iterables)
           while True:
               args = [next(it) for it in iterables]
-              yield function(*args)
+              if function is None:
+                  yield tuple(args)
+              else:
+                  yield function(*args)
 
 
 .. function:: islice(iterable, [start,] stop [, step])
@@ -252,12 +255,11 @@ loops that truncate the stream.
 
    When no iterables are specified, return a zero length iterator.
 
-   Note, the left-to-right evaluation order of the iterables is guaranteed. This
-   makes possible an idiom for clustering a data series into n-length groups using
-   ``izip(*[iter(s)]*n)``.  For data that doesn't fit n-length groups exactly, the
-   last tuple can be pre-padded with fill values using ``izip(*[chain(s,
-   [None]*(n-1))]*n)``.
+   The left-to-right evaluation order of the iterables is guaranteed. This
+   makes possible an idiom for clustering a data series into n-length groups
+   using ``izip(*[iter(s)]*n)``.
 
+<<<<<<< .working
    Note, when :func:`izip` is used with unequal length inputs, subsequent
    iteration over the longer iterables cannot reliably be continued after
    :func:`izip` terminates.  Potentially, up to one entry will be missing from
@@ -268,6 +270,11 @@ loops that truncate the stream.
    the iterator for retrieval with ``next(it)``).  In general, :func:`izip`
    should only be used with unequal length inputs when you don't care about
    trailing, unmatched values from the longer iterables.
+=======
+   :func:`izip` should only be used with unequal length inputs when you don't
+   care about trailing, unmatched values from the longer iterables.  If those
+   values are important, use :func:`izip_longest` instead.
+>>>>>>> .merge-right.r60208
 
 
 .. function:: izip_longest(*iterables[, fillvalue])

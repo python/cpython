@@ -32,6 +32,7 @@ python ftplib.py -d localhost -l -p -l
 # Changes and improvements suggested by Steve Majewski.
 # Modified by Jack to work on the mac.
 # Modified by Siebren to support docstrings and PASV.
+# Modified by Phil Schwartz to add storbinary and storlines callbacks.
 #
 
 import os
@@ -313,7 +314,7 @@ class FTP:
         expected size may be None if it could not be determined.
 
         Optional `rest' argument can be a string that is sent as the
-        argument to a RESTART command.  This is essentially a server
+        argument to a REST command.  This is essentially a server
         marker used to tell the server to skip over any data up to the
         given marker.
         """
@@ -376,14 +377,18 @@ class FTP:
         return resp
 
     def retrbinary(self, cmd, callback, blocksize=8192, rest=None):
-        """Retrieve data in binary mode.
+        """Retrieve data in binary mode.  A new port is created for you.
 
-        `cmd' is a RETR command.  `callback' is a callback function is
-        called for each block.  No more than `blocksize' number of
-        bytes will be read from the socket.  Optional `rest' is passed
-        to transfercmd().
+        Args:
+          cmd: A RETR command.
+          callback: A single parameter callable to be called on each
+                    block of data read.
+          blocksize: The maximum number of bytes to read from the
+                     socket at one time.  [default: 8192]
+          rest: Passed to transfercmd().  [default: None]
 
-        A new port is created for you.  Return the response code.
+        Returns:
+          The response code.
         """
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd, rest)
@@ -396,11 +401,17 @@ class FTP:
         return self.voidresp()
 
     def retrlines(self, cmd, callback = None):
-        '''Retrieve data in line mode.
-        The argument is a RETR or LIST command.
-        The callback function (2nd argument) is called for each line,
-        with trailing CRLF stripped.  This creates a new port for you.
-        print_line() is the default callback.'''
+        """Retrieve data in line mode.  A new port is created for you.
+
+        Args:
+          cmd: A RETR, LIST, NLST, or MLSD command.
+          callback: An optional single parameter callable that is called
+                    for each line with the trailing CRLF stripped.
+                    [default: print_line()]
+
+        Returns:
+          The response code.
+        """
         if callback is None: callback = print_line
         resp = self.sendcmd('TYPE A')
         conn = self.transfercmd(cmd)
@@ -419,19 +430,42 @@ class FTP:
         conn.close()
         return self.voidresp()
 
-    def storbinary(self, cmd, fp, blocksize=8192):
-        '''Store a file in binary mode.'''
+    def storbinary(self, cmd, fp, blocksize=8192, callback=None):
+        """Store a file in binary mode.  A new port is created for you.
+
+        Args:
+          cmd: A STOR command.
+          fp: A file-like object with a read(num_bytes) method.
+          blocksize: The maximum data size to read from fp and send over
+                     the connection at once.  [default: 8192]
+          callback: An optional single parameter callable that is called on
+                    on each block of data after it is sent.  [default: None]
+
+        Returns:
+          The response code.
+        """
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd)
         while 1:
             buf = fp.read(blocksize)
             if not buf: break
             conn.sendall(buf)
+            if callback: callback(buf)
         conn.close()
         return self.voidresp()
 
-    def storlines(self, cmd, fp):
-        '''Store a file in line mode.'''
+    def storlines(self, cmd, fp, callback=None):
+        """Store a file in line mode.  A new port is created for you.
+
+        Args:
+          cmd: A STOR command.
+          fp: A file-like object with a readline() method.
+          callback: An optional single parameter callable that is called on
+                    on each line after it is sent.  [default: None]
+
+        Returns:
+          The response code.
+        """
         self.voidcmd('TYPE A')
         conn = self.transfercmd(cmd)
         while 1:
@@ -441,6 +475,7 @@ class FTP:
                 if buf[-1] in CRLF: buf = buf[:-1]
                 buf = buf + CRLF
             conn.sendall(buf)
+            if callback: callback(buf)
         conn.close()
         return self.voidresp()
 
@@ -505,7 +540,7 @@ class FTP:
 
     def size(self, filename):
         '''Retrieve the size of a file.'''
-        # Note that the RFC doesn't say anything about 'SIZE'
+        # The SIZE command is defined in RFC-3659
         resp = self.sendcmd('SIZE ' + filename)
         if resp[:3] == '213':
             s = resp[3:].strip()

@@ -640,7 +640,7 @@ decode_str(const char *str, struct tok_state *tok)
 {
 	PyObject* utf8 = NULL;
 	const char *s;
-	char *newl[2] = {NULL, NULL};
+	const char *newl[2] = {NULL, NULL};
 	int lineno = 0;
 	tok->enc = NULL;
 	tok->str = str;

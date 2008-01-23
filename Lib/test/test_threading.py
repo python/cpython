@@ -236,6 +236,24 @@ class ThreadTests(unittest.TestCase):
             """])
         self.assertEqual(rc, 42)
 
+    def test_enumerate_after_join(self):
+        # Try hard to trigger #1703448: a thread is still returned in
+        # threading.enumerate() after it has been join()ed.
+        enum = threading.enumerate
+        old_interval = sys.getcheckinterval()
+        sys.setcheckinterval(1)
+        try:
+            for i in range(1, 1000):
+                t = threading.Thread(target=lambda: None)
+                t.start()
+                t.join()
+                l = enum()
+                self.assertFalse(t in l,
+                    "#1703448 triggered after %d trials: %s" % (i, l))
+        finally:
+            sys.setcheckinterval(old_interval)
+
+
 class ThreadingExceptionTests(unittest.TestCase):
     # A RuntimeError should be raised if Thread.start() is called
     # multiple times.

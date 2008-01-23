@@ -25,6 +25,9 @@ class GroupDatabaseTestCase(unittest.TestCase):
         for e in entries:
             self.check_value(e)
 
+        if len(entries) > 1000:  # Huge group file (NIS?) -- skip the rest
+            return
+
         for e in entries:
             e2 = grp.getgrgid(e.gr_gid)
             self.check_value(e2)

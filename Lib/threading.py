@@ -346,27 +346,18 @@ class _Event(_Verbose):
         return self._flag
 
     def set(self):
-        self._cond.acquire()
-        try:
+        with self._cond:
             self._flag = True
             self._cond.notifyAll()
-        finally:
-            self._cond.release()
 
     def clear(self):
-        self._cond.acquire()
-        try:
+        with self._cond:
             self._flag = False
-        finally:
-            self._cond.release()
 
     def wait(self, timeout=None):
-        self._cond.acquire()
-        try:
+        with self._cond:
             if not self._flag:
                 self._cond.wait(timeout)
-        finally:
-            self._cond.release()
 
 # Helper to generate new thread names
 _counter = 0
@@ -523,17 +514,19 @@ class Thread(_Verbose):
                 if __debug__:
                     self._note("%s.__bootstrap(): normal return", self)
         finally:
-            self._stop()
-            try:
-                self._delete()
-            except:
-                pass
+            with _active_limbo_lock:
+                self._stop()
+                try:
+                    # We don't call self.__delete() because it also
+                    # grabs _active_limbo_lock.
+                    del _active[_get_ident()]
+                except:
+                    pass
 
     def _stop(self):
-        self._block.acquire()
-        self._stopped = True
-        self._block.notifyAll()
-        self._block.release()
+        with self._block:
+            self._stopped = True
+            self._block.notifyAll()
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
@@ -559,15 +552,12 @@ class Thread(_Verbose):
         # since it isn't if dummy_threading is *not* being used then don't
         # hide the exception.
 
-        _active_limbo_lock.acquire()
-        try:
+        with _active_limbo_lock:
             try:
                 del _active[_get_ident()]
             except KeyError:
                 if 'dummy_threading' not in _sys.modules:
                     raise
-        finally:
-            _active_limbo_lock.release()
 
     def join(self, timeout=None):
         if not self._initialized:
@@ -580,8 +570,7 @@ class Thread(_Verbose):
         if __debug__:
             if not self._stopped:
                 self._note("%s.join(): waiting until thread stops", self)
-        self._block.acquire()
-        try:
+        with self._block:
             if timeout is None:
                 while not self._stopped:
                     self._block.wait()
@@ -599,8 +588,6 @@ class Thread(_Verbose):
                 else:
                     if __debug__:
                         self._note("%s.join(): thread stopped", self)
-        finally:
-            self._block.release()
 
     def getName(self):
         assert self._initialized, "Thread.__init__() not called"

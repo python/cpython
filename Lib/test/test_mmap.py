@@ -419,6 +419,13 @@ class MmapTests(unittest.TestCase):
             except OSError:
                 pass
 
+    def test_subclass(self):
+        class anon_mmap(mmap.mmap):
+            def __new__(klass, *args, **kwargs):
+                return mmap.mmap.__new__(klass, -1, *args, **kwargs)
+        anon_mmap(PAGESIZE)
+
+
 def test_main():
     run_unittest(MmapTests)
 
