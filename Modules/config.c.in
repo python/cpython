@@ -43,7 +43,7 @@ struct _inittab _PyImport_Inittab[] = {
 	/* This lives in Python/Python-ast.c */
 	{"_ast", init_ast},
 
-	/* This lives in Python/_types.c */
+	/* This lives in Modules/_typesmodule.c */
 	{"_types", init_types},
 
 	/* These entries are here for sys.builtin_module_names */
