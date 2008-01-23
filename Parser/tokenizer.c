@@ -1563,7 +1563,7 @@ PyTokenizer_Get(struct tok_state *tok, char **p_start, char **p_end)
    there, as it must be empty for PGEN, and we can check for PGEN only
    in this file. */
 
-#ifdef PGEN
+#if defined(PGEN) || !defined(Py_USING_UNICODE)
 char*
 PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int* offset)
 {
@@ -1584,7 +1584,6 @@ dec_utf8(const char *enc, const char *text, size_t len) {
 	}
 	return ret;
 }
-
 char *
 PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int *offset)
 {
