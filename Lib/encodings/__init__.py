@@ -30,6 +30,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 import codecs
 from encodings import aliases
+import __builtin__
 
 _cache = {}
 _unknown = '--unknown--'
@@ -60,7 +61,7 @@ def normalize_encoding(encoding):
     """
     # Make sure we have an 8-bit string, because .translate() works
     # differently for Unicode strings.
-    if isinstance(encoding, unicode):
+    if hasattr(__builtin__, "unicode") and isinstance(encoding, unicode):
         # Note that .encode('latin-1') does *not* use the codec
         # registry, so this call doesn't recurse. (See unicodeobject.c
         # PyUnicode_AsEncodedString() for details)

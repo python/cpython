@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1915: Python compiles with --enable-unicode=no again. However
+  several extension methods and modules do not work without unicode
+  support.
+
 - Patch #1720595: add T_BOOL to the range of structmember types.
 
 - Issue #1882: when compiling code from a string, encoding cookies in the

@@ -824,7 +824,11 @@ except NameError:
     (True, False) = (1, 0)
 
 def isbasestring(x):
-    return isinstance(x, types.StringType) or isinstance(x, types.UnicodeType)
+    try:
+        return isinstance(x, basestring)
+    except:
+        return isinstance(x, types.StringType) or isinstance(x, types.UnicodeType)
+
 
 class Values:
 
