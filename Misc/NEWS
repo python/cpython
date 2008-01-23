@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1069410: The "can't load dll" message box on Windows is 
+  suppressed while an extension is loaded by calling SetErrorMode in
+  dynload_win.c. The error is still reported properly.
+
 - Bug #1915: Python compiles with --enable-unicode=no again. However
   several extension methods and modules do not work without unicode
   support.
