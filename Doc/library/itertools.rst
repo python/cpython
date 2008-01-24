@@ -259,22 +259,9 @@ loops that truncate the stream.
    makes possible an idiom for clustering a data series into n-length groups
    using ``izip(*[iter(s)]*n)``.
 
-<<<<<<< .working
-   Note, when :func:`izip` is used with unequal length inputs, subsequent
-   iteration over the longer iterables cannot reliably be continued after
-   :func:`izip` terminates.  Potentially, up to one entry will be missing from
-   each of the left-over iterables. This occurs because a value is fetched from
-   each iterator in- turn, but the process ends when one of the iterators
-   terminates.  This leaves the last fetched values in limbo (they cannot be
-   returned in a final, incomplete tuple and they are cannot be pushed back into
-   the iterator for retrieval with ``next(it)``).  In general, :func:`izip`
-   should only be used with unequal length inputs when you don't care about
-   trailing, unmatched values from the longer iterables.
-=======
    :func:`izip` should only be used with unequal length inputs when you don't
    care about trailing, unmatched values from the longer iterables.  If those
    values are important, use :func:`izip_longest` instead.
->>>>>>> .merge-right.r60208
 
 
 .. function:: izip_longest(*iterables[, fillvalue])
