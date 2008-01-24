@@ -140,12 +140,23 @@ class RationalTest(unittest.TestCase):
         phi = R.from_continued_fraction([1]*100)
         self.assertEquals(round(phi - (1 + 5 ** 0.5) / 2, 10), 0.0)
 
+        minusphi = R.from_continued_fraction([-1]*100)
+        self.assertEquals(round(minusphi + (1 + 5 ** 0.5) / 2, 10), 0.0)
+
+        self.assertEquals(R.from_continued_fraction([0]), R(0))
+        self.assertEquals(R.from_continued_fraction([]), R(0))
+
     def testAsContinuedFraction(self):
         self.assertEqual(R.from_float(math.pi).as_continued_fraction()[:15],
                          [3, 7, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, 3, 3])
+        self.assertEqual(R.from_float(-math.pi).as_continued_fraction()[:16],
+                         [-4, 1, 6, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, 3, 3])
+        self.assertEqual(R(0).as_continued_fraction(), [0])
 
     def testApproximateFromFloat(self):
         self.assertEqual(R.approximate_from_float(math.pi, 10000), R(355, 113))
+        self.assertEqual(R.approximate_from_float(-math.pi, 10000), R(-355, 113))
+        self.assertEqual(R.approximate_from_float(0.0, 10000), R(0))
 
     def testConversions(self):
         self.assertTypedEquals(-1, trunc(R(-11, 10)))
