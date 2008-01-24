@@ -2523,7 +2523,7 @@ _CData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 		  only it's object list.  So we create a tuple, containing
 		  b_objects list PLUS the array itself, and return that!
 		*/
-		return Py_BuildValue("(OO)", keep, value);
+		return PyTuple_Pack(2, keep, value);
 	}
 	PyErr_Format(PyExc_TypeError,
 		     "incompatible types, %s instance instead of %s instance",
@@ -4228,17 +4228,18 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 	PyObject *key;
 	PyObject *result;
 	char name[256];
+	PyObject *len;
 
 	if (cache == NULL) {
 		cache = PyDict_New();
 		if (cache == NULL)
 			return NULL;
 	}
-#if (PY_VERSION_HEX < 0x02050000)
-	key = Py_BuildValue("(Oi)", itemtype, length);
-#else
-	key = Py_BuildValue("(On)", itemtype, length);
-#endif
+	len = PyInt_FromSsize_t(length);
+	if (len == NULL)
+		return NULL;
+	key = PyTuple_Pack(2, itemtype, len);
+	Py_DECREF(len);
 	if (!key)
 		return NULL;
 	result = PyDict_GetItemProxy(cache, key);
@@ -4274,8 +4275,10 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 				       "_type_",
 				       itemtype
 		);
-	if (!result)
+	if (result == NULL) {
+		Py_DECREF(key);
 		return NULL;
+	}
 	if (-1 == PyDict_SetItemProxy(cache, key, result)) {
 		Py_DECREF(key);
 		Py_DECREF(result);
