@@ -171,6 +171,42 @@ class Rational(RationalAbc):
         else:
             return cls(digits, 10 ** -exp)
 
+    @classmethod
+    def from_continued_fraction(cls, seq):
+        'Build a Rational from a continued fraction expessed as a sequence'
+        n, d = 1, 0
+        for e in reversed(seq):
+            n, d = d, n
+            n += e * d
+        return cls(n, d) if seq else cls(0)
+
+    def as_continued_fraction(self):
+        'Return continued fraction expressed as a list'
+        n = self.numerator
+        d = self.denominator
+        cf = []
+        while d:
+            e = int(n // d)
+            cf.append(e)
+            n -= e * d
+            n, d = d, n
+        return cf
+
+    @classmethod
+    def approximate_from_float(cls, f, max_denominator):
+        'Best rational approximation to f with a denominator <= max_denominator'
+        # XXX First cut at algorithm
+        # Still needs rounding rules as specified at
+        #       http://en.wikipedia.org/wiki/Continued_fraction
+        cf = cls.from_float(f).as_continued_fraction()
+        result = Rational(0)
+        for i in range(1, len(cf)):
+            new = cls.from_continued_fraction(cf[:i])
+            if new.denominator > max_denominator:
+                break
+            result = new
+        return result
+
     @property
     def numerator(a):
         return a._numerator

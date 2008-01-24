@@ -1,7 +1,7 @@
 # Test enhancements related to descriptors and new-style classes
 
-from test.test_support import verify, vereq, verbose, TestFailed, TESTFN
-from test.test_support import get_original_stdout
+# XXX Please, please, please, someone convert this to unittest style!
+from test.test_support import verify, vereq, verbose, TestFailed, TESTFN, get_original_stdout
 from copy import deepcopy
 import types
 
@@ -4173,6 +4173,8 @@ def test_assign_slice():
     # ceval.c's assign_slice used to check for
     # tp->tp_as_sequence->sq_slice instead of
     # tp->tp_as_sequence->sq_ass_slice
+    if verbose:
+        print("Testing assign_slice...")
 
     class C(object):
         def __setitem__(self, idx, value):
@@ -4182,8 +4184,72 @@ def test_assign_slice():
     c[1:2] = 3
     vereq(c.value, 3)
 
+def test_weakref_in_del_segfault():
+    # This used to segfault until r60057
+    if verbose:
+        print("Testing weakref in del segfault...")
+
+    import weakref
+    global ref
+
+    class Target():
+        def __del__(self):
+            global ref
+            ref = weakref.ref(self)
+
+    w = Target()
+    del w
+    del ref
+
+def test_borrowed_ref_3_segfault():
+    # This used to segfault until r60224
+    if verbose:
+        print("Testing borrowed ref 3 segfault...")
+
+    class KeyFunc(object):
+        def __call__(self, n):
+            del d['key']
+            return 1
+
+    d = {'key': KeyFunc()}
+    try:
+        min(range(10), **d)
+    except:
+        pass
+
+def test_borrowed_ref_4_segfault():
+    # This used to segfault until r60224
+    if verbose:
+        print("Testing borrowed ref 4 segfault...")
+
+    import types
+    import builtins
+
+    class X(object):
+        def __getattr__(self, name):
+            # this is called with name == '__bases__' by PyObject_IsInstance()
+            # during the unbound method call -- it frees the unbound method
+            # itself before it invokes its im_func.
+            del builtins.__import__
+            return ()
+
+    pseudoclass = X()
+
+    class Y(object):
+        def __call__(self, *args):
+            # 'self' was freed already
+            return (self, args)
+
+    # make an unbound method
+    orig_import = __import__
+    try:
+        builtins.__import__ = types.MethodType(Y(), (pseudoclass, str))
+        import spam
+    finally:
+        builtins.__import__ = orig_import
+
 def test_main():
-    weakref_segfault() # Must be first, somehow
+    #XXXweakref_segfault() # Must be first, somehow
     wrapper_segfault() # NB This one is slow
     do_this_first()
     class_docstrings()
@@ -4279,6 +4345,9 @@ def test_main():
     methodwrapper()
     notimplemented()
     test_assign_slice()
+    test_weakref_in_del_segfault()
+    test_borrowed_ref_3_segfault()
+    test_borrowed_ref_4_segfault()
 
     if verbose: print("All OK")
 

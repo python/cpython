@@ -966,7 +966,7 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
 #ifdef linux
 		if (a->sun_path[0] == 0) {  /* Linux abstract namespace */
-			addrlen -= (sizeof(*a) - sizeof(a->sun_path));
+			addrlen -= offsetof(struct sockaddr_un, sun_path);
 			return PyString_FromStringAndSize(a->sun_path, addrlen);
 		}
 		else
@@ -1171,7 +1171,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #if defined(PYOS_OS2)
 		*len_ret = sizeof(*addr);
 #else
-		*len_ret = len + sizeof(*addr) - sizeof(addr->sun_path);
+		*len_ret = len + offsetof(struct sockaddr_un, sun_path);
 #endif
 		return 1;
 	}

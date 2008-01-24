@@ -1833,6 +1833,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 						"__import__ not found");
 				break;
 			}
+			Py_INCREF(x);
 			v = POP();
 			u = TOP();
 			if (PyLong_AsLong(u) != -1 || PyErr_Occurred())
@@ -1854,11 +1855,14 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(u);
 			if (w == NULL) {
 				u = POP();
+				Py_DECREF(x);
 				x = NULL;
 				break;
 			}
 			READ_TIMESTAMP(intr0);
-			x = PyEval_CallObject(x, w);
+			v = x;
+			x = PyEval_CallObject(v, w);
+			Py_DECREF(v);
 			READ_TIMESTAMP(intr1);
 			Py_DECREF(w);
 			SET_TOP(x);
