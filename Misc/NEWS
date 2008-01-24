@@ -1,4 +1,4 @@
-﻿+++++++++++
++++++++++++
 Python News
 +++++++++++
 
@@ -11,6 +11,14 @@ What's New in Python 2.5.2c1?
 
 Core and builtins
 -----------------
+
+- A few crashers fixed: weakref_in_del.py (issue #1377858);
+  loosing_dict_ref.py (issue #1303614, test67.py);
+  borrowed_ref_[34].py (not in tracker).
+
+- Fix for #1303614 and #1174712 backported from the trunk:
+  __dict__ descriptor abuse for subclasses of built-in types;
+  subclassing from both ModuleType and another built-in types.
 
 - Bug #1915: Python compiles with --enable-unicode=no again. However
   several extension methods and modules do not work without unicode
