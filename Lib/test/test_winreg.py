@@ -73,7 +73,7 @@ class WinregTests(unittest.TestCase):
 
         key = OpenKey(root_key, test_key_name)
         # Read the sub-keys
-        with OpenKey(key, "sub_key") as sub_key:
+        with OpenKey(key, subkeystr) as sub_key:
             # Check I can enumerate over the values.
             index = 0
             while 1:
