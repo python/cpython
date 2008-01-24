@@ -511,6 +511,15 @@ while 0: pass
 while 0: pass
 else: pass
 
+# Issue1920: "while 0" is optimized away,
+# ensure that the "else" clause is still present.
+x = 0
+while 0:
+    x = 1
+else:
+    x = 2
+assert x == 2
+
 print 'for_stmt' # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
 for i in 1, 2, 3: pass
 for i, j, k in (): pass
