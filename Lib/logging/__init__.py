@@ -38,8 +38,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.5.0.4"
-__date__    = "18 January 2008"
+__version__ = "0.5.0.5"
+__date__    = "24 January 2008"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -760,7 +760,7 @@ class FileHandler(StreamHandler):
     """
     A handler class which writes formatted logging records to disk files.
     """
-    def __init__(self, filename, mode='a', encoding=None):
+    def __init__(self, filename, mode='a', encoding=None, delay=0):
         """
         Open the specified file and use it as the stream for logging.
         """
@@ -771,8 +771,11 @@ class FileHandler(StreamHandler):
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
-        stream = self._open()
-        StreamHandler.__init__(self, stream)
+        if delay:
+            self.stream = None
+        else:
+            stream = self._open()
+            StreamHandler.__init__(self, stream)
 
     def close(self):
         """
@@ -794,6 +797,18 @@ class FileHandler(StreamHandler):
         else:
             stream = codecs.open(self.baseFilename, self.mode, self.encoding)
         return stream
+
+    def emit(self, record):
+        """
+        Emit a record.
+
+        If the stream was not opened because 'delay' was specified in the
+        constructor, open it before calling the superclass's emit.
+        """
+        if self.stream is None:
+            stream = self._open()
+            StreamHandler.__init__(self, stream)
+        StreamHandler.emit(self, record)
 
 #---------------------------------------------------------------------------
 #   Manager classes and functions

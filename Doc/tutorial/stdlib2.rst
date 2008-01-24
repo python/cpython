@@ -134,8 +134,10 @@ Working with Binary Data Record Layouts
 
 The :mod:`struct` module provides :func:`pack` and :func:`unpack` functions for
 working with variable length binary record formats.  The following example shows
-how to loop through header information in a ZIP file (with pack codes ``"H"``
-and ``"L"`` representing two and four byte unsigned numbers respectively)::
+how to loop through header information in a ZIP file without using the
+:mod:`zipfile` module.  Pack codes ``"H"`` and ``"I"`` represent two and four
+byte unsigned numbers respectively.  The ``"<"`` indicates that they are
+standard size and in little-endian byte order::
 
    import struct
 
@@ -143,7 +145,7 @@ and ``"L"`` representing two and four byte unsigned numbers respectively)::
    start = 0
    for i in range(3):                      # show the first 3 file headers
        start += 14
-       fields = struct.unpack('LLLHH', data[start:start+16])
+       fields = struct.unpack('<IIIHH', data[start:start+16])
        crc32, comp_size, uncomp_size, filenamesize, extra_size = fields
 
        start += 16

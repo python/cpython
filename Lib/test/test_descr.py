@@ -4249,7 +4249,7 @@ def test_borrowed_ref_4_segfault():
         builtins.__import__ = orig_import
 
 def test_main():
-    #XXXweakref_segfault() # Must be first, somehow
+    weakref_segfault() # Must be first, somehow
     wrapper_segfault() # NB This one is slow
     do_this_first()
     class_docstrings()

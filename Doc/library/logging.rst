@@ -1517,12 +1517,13 @@ sends logging output to a disk file.  It inherits the output functionality from
 :class:`StreamHandler`.
 
 
-.. class:: FileHandler(filename[, mode[, encoding]])
+.. class:: FileHandler(filename[, mode[, encoding[, delay]]])
 
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
    :const:`'a'` is used.  If *encoding* is not *None*, it is used to open the file
-   with that encoding.  By default, the file grows indefinitely.
+   with that encoding.  If *delay* is true, then file opening is deferred until the
+   first call to :meth:`emit`. By default, the file grows indefinitely.
 
 
 .. method:: FileHandler.close()
@@ -1556,12 +1557,13 @@ exclusive locks - and so there is no need for such a handler. Furthermore,
 this value.
 
 
-.. class:: WatchedFileHandler(filename[,mode[, encoding]])
+.. class:: WatchedFileHandler(filename[,mode[, encoding[, delay]]])
 
    Returns a new instance of the :class:`WatchedFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
    :const:`'a'` is used.  If *encoding* is not *None*, it is used to open the file
-   with that encoding.  By default, the file grows indefinitely.
+   with that encoding.  If *delay* is true, then file opening is deferred until the
+   first call to :meth:`emit`.  By default, the file grows indefinitely.
 
 
 .. method:: WatchedFileHandler.emit(record)
@@ -1578,11 +1580,13 @@ The :class:`RotatingFileHandler` class, located in the :mod:`logging.handlers`
 module, supports rotation of disk log files.
 
 
-.. class:: RotatingFileHandler(filename[, mode[, maxBytes[, backupCount]]])
+.. class:: RotatingFileHandler(filename[, mode[, maxBytes[, backupCount[, encoding[, delay]]]]])
 
    Returns a new instance of the :class:`RotatingFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
-   ``'a'`` is used. By default, the file grows indefinitely.
+   ``'a'`` is used.  If *encoding* is not *None*, it is used to open the file
+   with that encoding.  If *delay* is true, then file opening is deferred until the
+   first call to :meth:`emit`.  By default, the file grows indefinitely.
 
    You can use the *maxBytes* and *backupCount* values to allow the file to
    :dfn:`rollover` at a predetermined size. When the size is about to be exceeded,
@@ -1616,7 +1620,7 @@ The :class:`TimedRotatingFileHandler` class, located in the
 timed intervals.
 
 
-.. class:: TimedRotatingFileHandler(filename [,when [,interval [,backupCount]]])
+.. class:: TimedRotatingFileHandler(filename [,when [,interval [,backupCount[, encoding[, delay]]]]])
 
    Returns a new instance of the :class:`TimedRotatingFileHandler` class. The
    specified file is opened and used as the stream for logging. On rotating it also
@@ -2053,7 +2057,13 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
    record is computed using *msg* % *args*. If the formatting string contains
    ``'(asctime)'``, :meth:`formatTime` is called to format the event time. If there
    is exception information, it is formatted using :meth:`formatException` and
-   appended to the message.
+   appended to the message. Note that the formatted exception information is cached
+   in attribute *exc_text*. This is useful because the exception information can
+   be pickled and sent across the wire, but you should be careful if you have more
+   than one :class:`Formatter` subclass which customizes the formatting of exception
+   information. In this case, you will have to clear the cached value after a
+   formatter has done its formatting, so that the next formatter to handle the event
+   doesn't use the cached value but recalculates it afresh.
 
 
 .. method:: Formatter.formatTime(record[, datefmt])
