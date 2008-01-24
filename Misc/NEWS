@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- A few crashers fixed: weakref_in_del.py (issue #1377858);
+  loosing_dict_ref.py (issue #1303614, test67.py);
+  borrowed_ref_[34].py (not in tracker).
+
 - Issue #1069410: The "can't load dll" message box on Windows is
   suppressed while an extension is loaded by calling SetErrorMode in
   dynload_win.c. The error is still reported properly.
