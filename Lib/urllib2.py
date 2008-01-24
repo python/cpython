@@ -1286,7 +1286,7 @@ class FTPHandler(BaseHandler):
             headers = mimetools.Message(sf)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
-            raise URLError('ftp error %s' % msg).with_traceback(sys.exc_info()[2])
+            raise URLError('ftp error: %s' % msg).with_traceback(sys.exc_info()[2])
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         fw = ftpwrapper(user, passwd, host, port, dirs, timeout)
