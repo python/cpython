@@ -67,6 +67,9 @@ Core and builtins
 Library
 -------
 
+- The ctypes int types did not accept objects implementing
+  __int__() in the constructor.
+
 - #1189216: Fix the zipfile module to work on archives with headers
   past the 2**31 byte boundary.
 
