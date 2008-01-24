@@ -179,9 +179,7 @@ class Rational(RationalAbc):
         for e in reversed(seq):
             n, d = d, n
             n += e * d
-        if seq:
-            return cls(n, d)
-        return cls(0)
+        return cls(n, d) if seq else cls(0)
 
     def as_continued_fraction(self):
         'Return continued fraction expressed as a list'
