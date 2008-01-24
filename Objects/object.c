@@ -1349,12 +1349,15 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 		dictptr = (PyObject **) ((char *)obj + dictoffset);
 		dict = *dictptr;
 		if (dict != NULL) {
+			Py_INCREF(dict);
 			res = PyDict_GetItem(dict, name);
 			if (res != NULL) {
 				Py_INCREF(res);
 				Py_XDECREF(descr);
+                                Py_DECREF(dict);
 				goto done;
 			}
+                        Py_DECREF(dict);
 		}
 	}
 
@@ -1435,12 +1438,14 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 			*dictptr = dict;
 		}
 		if (dict != NULL) {
+			Py_INCREF(dict);
 			if (value == NULL)
 				res = PyDict_DelItem(dict, name);
 			else
 				res = PyDict_SetItem(dict, name, value);
 			if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
 				PyErr_SetObject(PyExc_AttributeError, name);
+			Py_DECREF(dict);
 			goto done;
 		}
 	}
