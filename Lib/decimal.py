@@ -1433,6 +1433,8 @@ class Decimal(object):
         else:
             return s*int(self._int[:self._exp] or '0')
 
+    __trunc__ = __int__
+
     def __long__(self):
         """Converts to a long.
 

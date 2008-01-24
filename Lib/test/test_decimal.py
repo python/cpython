@@ -1151,6 +1151,7 @@ class DecimalUsabilityTest(unittest.TestCase):
         checkSameDec("__floordiv__", True)
         checkSameDec("__hash__")
         checkSameDec("__int__")
+        checkSameDec("__trunc__")
         checkSameDec("__long__")
         checkSameDec("__mod__", True)
         checkSameDec("__mul__", True)
@@ -1215,6 +1216,16 @@ class DecimalPythonAPItests(unittest.TestCase):
             d = Decimal(s)
             r = d.to_integral(ROUND_DOWN)
             self.assertEqual(Decimal(int(d)), r)
+
+    def test_trunc(self):
+        for x in range(-250, 250):
+            s = '%0.2f' % (x / 100.0)
+            # should work the same as for floats
+            self.assertEqual(int(Decimal(s)), int(float(s)))
+            # should work the same as to_integral in the ROUND_DOWN mode
+            d = Decimal(s)
+            r = d.to_integral(ROUND_DOWN)
+            self.assertEqual(Decimal(trunc(d)), r)
 
 class ContextAPItests(unittest.TestCase):
 
