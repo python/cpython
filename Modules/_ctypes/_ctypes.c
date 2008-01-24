@@ -127,12 +127,134 @@ bytes(cdata)
 
 PyObject *PyExc_ArgError;
 static PyTypeObject Simple_Type;
-PyObject *array_types_cache;
 
 char *conversion_mode_encoding = NULL;
 char *conversion_mode_errors = NULL;
 
 
+/****************************************************************/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *key;
+	PyObject *dict;
+} DictRemoverObject;
+
+static void
+_DictRemover_dealloc(PyObject *_self)
+{
+	DictRemoverObject *self = (DictRemoverObject *)_self;
+	Py_XDECREF(self->key);
+	Py_XDECREF(self->dict);
+	Py_TYPE(self)->tp_free(_self);
+}
+
+static PyObject *
+_DictRemover_call(PyObject *_self, PyObject *args, PyObject *kw)
+{
+	DictRemoverObject *self = (DictRemoverObject *)_self;
+	if (self->key && self->dict) {
+		if (-1 == PyDict_DelItem(self->dict, self->key))
+			/* XXX Error context */
+			PyErr_WriteUnraisable(Py_None);
+		Py_DECREF(self->key);
+		self->key = NULL;
+		Py_DECREF(self->dict);
+		self->dict = NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyTypeObject DictRemover_Type = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"_ctypes.DictRemover",			/* tp_name */
+	sizeof(DictRemoverObject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	_DictRemover_dealloc,			/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,			       		/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	_DictRemover_call,			/* tp_call */
+	0,					/* tp_str */
+	0,					/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+/* XXX should participate in GC? */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	"deletes a key from a dictionary",	/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	PyType_GenericNew,			/* tp_new */
+	0,					/* tp_free */
+};
+
+int
+PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
+{
+	PyObject *obj;
+	DictRemoverObject *remover;
+	PyObject *proxy;
+	int result;
+
+	obj = PyObject_CallObject((PyObject *)&DictRemover_Type, NULL);
+	if (obj == NULL)
+		return -1;
+
+	remover = (DictRemoverObject *)obj;
+	assert(remover->key == NULL);
+	assert(remover->dict == NULL);
+	Py_INCREF(key);
+	remover->key = key;
+	Py_INCREF(dict);
+	remover->dict = dict;
+
+	proxy = PyWeakref_NewProxy(item, obj);
+	Py_DECREF(obj);
+	if (proxy == NULL)
+		return -1;
+
+	result = PyDict_SetItem(dict, key, proxy);
+	Py_DECREF(proxy);
+	return result;
+}
+
+PyObject *
+PyDict_GetItemProxy(PyObject *dict, PyObject *key)
+{
+	PyObject *result;
+	PyObject *item = PyDict_GetItem(dict, key);
+
+	if (item == NULL)
+		return NULL;
+	if (!PyWeakref_CheckProxy(item))
+		return item;
+	result = PyWeakref_GET_OBJECT(item);
+	if (result == Py_None)
+		return NULL;
+	return result;
+}
+
 /******************************************************************/
 /*
   StructType_Type - a meta type/class.  Creating a new class using this one as
@@ -4102,10 +4224,16 @@ PyTypeObject Array_Type = {
 PyObject *
 CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 {
+	static PyObject *cache;
 	PyObject *key;
 	PyObject *result;
 	char name[256];
 
+	if (cache == NULL) {
+		cache = PyDict_New();
+		if (cache == NULL)
+			return NULL;
+	}
 #if (PY_VERSION_HEX < 0x02050000)
 	key = Py_BuildValue("(Oi)", itemtype, length);
 #else
@@ -4113,12 +4241,12 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 #endif
 	if (!key)
 		return NULL;
-	result = PyObject_GetItem(array_types_cache, key);
+	result = PyDict_GetItemProxy(cache, key);
 	if (result) {
+		Py_INCREF(result);
 		Py_DECREF(key);
 		return result;
-	} else
-		PyErr_Clear();
+	}
 
 	if (!PyType_Check(itemtype)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -4148,7 +4276,7 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 		);
 	if (!result)
 		return NULL;
-	if (-1 == PyObject_SetItem(array_types_cache, key, result)) {
+	if (-1 == PyDict_SetItemProxy(cache, key, result)) {
 		Py_DECREF(key);
 		Py_DECREF(result);
 		return NULL;
@@ -4965,7 +5093,6 @@ PyMODINIT_FUNC
 init_ctypes(void)
 {
 	PyObject *m;
-	PyObject *weakref;
 
 /* Note:
    ob_type is the metatype (the 'type'), defaults to PyType_Type,
@@ -4977,16 +5104,6 @@ init_ctypes(void)
 	m = Py_InitModule3("_ctypes", module_methods, module_docs);
 	if (!m)
 		return;
-
-	weakref = PyImport_ImportModule("weakref");
-	if (weakref == NULL)
-		return;
-	array_types_cache = PyObject_CallMethod(weakref,
-						"WeakValueDictionary",
-						NULL);
-	if (array_types_cache == NULL)
-		return;
-	Py_DECREF(weakref);
 
 	if (PyType_Ready(&PyCArg_Type) < 0)
 		return;
@@ -5082,6 +5199,10 @@ init_ctypes(void)
 	 *
 	 * Other stuff
 	 */
+
+	DictRemover_Type.tp_new = PyType_GenericNew;
+	if (PyType_Ready(&DictRemover_Type) < 0)
+		return;
 
 #ifdef MS_WIN32
 	if (create_comerror() < 0)
