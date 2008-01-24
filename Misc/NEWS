@@ -12,7 +12,7 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
-- Issue #1069410: The "can't load dll" message box on Windows is 
+- Issue #1069410: The "can't load dll" message box on Windows is
   suppressed while an extension is loaded by calling SetErrorMode in
   dynload_win.c. The error is still reported properly.
 
@@ -385,6 +385,10 @@ Core and builtins
 
 Library
 -------
+
+- #1765140: add an optional delay argument to FileHandler and its
+  subclasses. Defaults to false (existing behaviour), but if true,
+  defers opening the file until the first call to emit().
 
 - The pprint module now supports sets and frozensets.
 
@@ -1317,6 +1321,9 @@ Tools
 
 Documentation
 -------------
+
+- RFE #1765140: Updated documentation on FileHandler and subclasses to
+  include new optional delay argument.
 
 - Bug #932563: Added section on getting contextual information into logging
   output, and added documentation for the new LoggerAdapter class.
