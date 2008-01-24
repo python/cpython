@@ -53,13 +53,13 @@ class BaseRotatingHandler(logging.FileHandler):
     Not meant to be instantiated directly.  Instead, use RotatingFileHandler
     or TimedRotatingFileHandler.
     """
-    def __init__(self, filename, mode, encoding=None):
+    def __init__(self, filename, mode, encoding=None, delay=0):
         """
         Use the specified filename for streamed logging
         """
         if codecs is None:
             encoding = None
-        logging.FileHandler.__init__(self, filename, mode, encoding)
+        logging.FileHandler.__init__(self, filename, mode, encoding, delay)
         self.mode = mode
         self.encoding = encoding
 
@@ -84,7 +84,7 @@ class RotatingFileHandler(BaseRotatingHandler):
     Handler for logging to a set of files, which switches from one file
     to the next when the current file reaches a certain size.
     """
-    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None):
+    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=0):
         """
         Open the specified file and use it as the stream for logging.
 
@@ -107,7 +107,7 @@ class RotatingFileHandler(BaseRotatingHandler):
         """
         if maxBytes > 0:
             mode = 'a' # doesn't make sense otherwise!
-        BaseRotatingHandler.__init__(self, filename, mode, encoding)
+        BaseRotatingHandler.__init__(self, filename, mode, encoding, delay)
         self.maxBytes = maxBytes
         self.backupCount = backupCount
 
@@ -156,8 +156,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     If backupCount is > 0, when rollover is done, no more than backupCount
     files are kept - the oldest ones are deleted.
     """
-    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None):
-        BaseRotatingHandler.__init__(self, filename, 'a', encoding)
+    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=0):
+        BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
         self.when = string.upper(when)
         self.backupCount = backupCount
         # Calculate the real rollover interval, which is just the number of
@@ -302,10 +302,13 @@ class WatchedFileHandler(logging.FileHandler):
     This handler is based on a suggestion and patch by Chad J.
     Schroeder.
     """
-    def __init__(self, filename, mode='a', encoding=None):
-        logging.FileHandler.__init__(self, filename, mode, encoding)
-        stat = os.stat(self.baseFilename)
-        self.dev, self.ino = stat[ST_DEV], stat[ST_INO]
+    def __init__(self, filename, mode='a', encoding=None, delay=0):
+        logging.FileHandler.__init__(self, filename, mode, encoding, delay)
+        if not os.path.exists(self.baseFilename):
+            self.dev, self.ino = -1, -1
+        else:
+            stat = os.stat(self.baseFilename)
+            self.dev, self.ino = stat[ST_DEV], stat[ST_INO]
 
     def emit(self, record):
         """
@@ -321,7 +324,7 @@ class WatchedFileHandler(logging.FileHandler):
         else:
             stat = os.stat(self.baseFilename)
             changed = (stat[ST_DEV] != self.dev) or (stat[ST_INO] != self.ino)
-        if changed:
+        if changed and self.stream is not None:
             self.stream.flush()
             self.stream.close()
             self.stream = self._open()
