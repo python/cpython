@@ -4505,7 +4505,7 @@ def test_borrowed_ref_4_segfault():
         __builtin__.__import__ = orig_import
 
 def test_main():
-    #XXXweakref_segfault() # Must be first, somehow
+    weakref_segfault() # Must be first, somehow
     wrapper_segfault()
     do_this_first()
     class_docstrings()
