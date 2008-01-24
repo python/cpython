@@ -105,15 +105,31 @@ class NumberTestCase(unittest.TestCase):
     def test_floats(self):
         # c_float and c_double can be created from
         # Python int, long and float
+        class FloatLike(object):
+            def __float__(self):
+                return 2.0
+        f = FloatLike()
         for t in float_types:
             self.failUnlessEqual(t(2.0).value, 2.0)
             self.failUnlessEqual(t(2).value, 2.0)
             self.failUnlessEqual(t(2L).value, 2.0)
+            self.failUnlessEqual(t(f).value, 2.0)
 
     def test_integers(self):
-        # integers cannot be constructed from floats
+        class FloatLike(object):
+            def __float__(self):
+                return 2.0
+        f = FloatLike()
+        class IntLike(object):
+            def __int__(self):
+                return 2
+        i = IntLike()
+        # integers cannot be constructed from floats,
+        # but from integer-like objects
         for t in signed_types + unsigned_types:
             self.assertRaises(TypeError, t, 3.14)
+            self.assertRaises(TypeError, t, f)
+            self.failUnlessEqual(t(i).value, 2)
 
     def test_sizes(self):
         for t in signed_types + unsigned_types + float_types + bool_types:
