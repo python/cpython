@@ -4481,7 +4481,6 @@ def test_borrowed_ref_4_segfault():
     import types
     import __builtin__
 
-
     class X(object):
         def __getattr__(self, name):
             # this is called with name == '__bases__' by PyObject_IsInstance()
@@ -4498,9 +4497,12 @@ def test_borrowed_ref_4_segfault():
             return (self, args)
 
     # make an unbound method
-    __builtin__.__import__ = types.MethodType(Y(), None, (pseudoclass, str))
-    import spam
-
+    orig_import = __import__
+    try:
+        __builtin__.__import__ = types.MethodType(Y(), None, (pseudoclass, str))
+        import spam
+    finally:
+        __builtin__.__import__ = orig_import
 
 def test_main():
     #XXXweakref_segfault() # Must be first, somehow
