@@ -160,6 +160,7 @@ class RationalTest(unittest.TestCase):
 
     def testConversions(self):
         self.assertTypedEquals(-1, trunc(R(-11, 10)))
+        self.assertTypedEquals(-1, int(R(-11, 10)))
         self.assertTypedEquals(-2, R(-11, 10).__floor__())
         self.assertTypedEquals(-1, R(-11, 10).__ceil__())
         self.assertTypedEquals(-1, R(-10, 10).__ceil__())
