@@ -12,6 +12,11 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Issue #1920: "while 0" statements were completely removed by the compiler,
+  even in the presence of an "else" clause, which is supposed to be run when 
+  the condition is false. Now the compiler correctly emits bytecode for the
+  "else" suite.
+
 - A few crashers fixed: weakref_in_del.py (issue #1377858);
   loosing_dict_ref.py (issue #1303614, test67.py);
   borrowed_ref_[34].py (not in tracker).
