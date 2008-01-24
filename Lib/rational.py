@@ -285,8 +285,9 @@ class Rational(RationalAbc):
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
     __div__, __rdiv__ = _operator_fallbacks(_div, operator.div)
 
-    @classmethod
-    def _floordiv(cls, a, b):
+    def __floordiv__(a, b):
+        """a // b"""
+        # Will be math.floor(a / b) in 3.0.
         div = a / b
         if isinstance(div, RationalAbc):
             # trunc(math.floor(div)) doesn't work if the rational is
@@ -296,28 +297,27 @@ class Rational(RationalAbc):
         else:
             return math.floor(div)
 
-    def __floordiv__(a, b):
-        """a // b"""
-        # Will be math.floor(a / b) in 3.0.
-        return a._floordiv(a, b)
-
     def __rfloordiv__(b, a):
         """a // b"""
         # Will be math.floor(a / b) in 3.0.
-        return b._floordiv(a, b)
-
-    @classmethod
-    def _mod(cls, a, b):
-        div = a // b
-        return a - b * div
+        div = a / b
+        if isinstance(div, RationalAbc):
+            # trunc(math.floor(div)) doesn't work if the rational is
+            # more precise than a float because the intermediate
+            # rounding may cross an integer boundary.
+            return div.numerator // div.denominator
+        else:
+            return math.floor(div)
 
     def __mod__(a, b):
         """a % b"""
-        return a._mod(a, b)
+        div = a // b
+        return a - b * div
 
     def __rmod__(b, a):
         """a % b"""
-        return b._mod(a, b)
+        div = a // b
+        return a - b * div
 
     def __pow__(a, b):
         """a ** b
