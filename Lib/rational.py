@@ -179,7 +179,9 @@ class Rational(RationalAbc):
         for e in reversed(seq):
             n, d = d, n
             n += e * d
-        return cls(n, d)
+        if seq:
+            return cls(n, d)
+        return cls(0)
 
     def as_continued_fraction(self):
         'Return continued fraction expressed as a list'
@@ -200,7 +202,7 @@ class Rational(RationalAbc):
         # Still needs rounding rules as specified at
         #       http://en.wikipedia.org/wiki/Continued_fraction
         cf = cls.from_float(f).as_continued_fraction()
-        result = new = Rational(0, 1)
+        result = Rational(0)
         for i in range(1, len(cf)):
             new = cls.from_continued_fraction(cf[:i])
             if new.denominator > max_denominator:
