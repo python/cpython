@@ -94,7 +94,7 @@ class Rational(RationalAbc):
 
     """
 
-    __slots__ = ('_numerator', '_denominator')
+    __slots__ = ('numerator', 'denominator')
 
     # We're immutable, so use __new__ not __init__
     def __new__(cls, numerator=0, denominator=1):
@@ -134,8 +134,8 @@ class Rational(RationalAbc):
             raise ZeroDivisionError('Rational(%s, 0)' % numerator)
 
         g = _gcd(numerator, denominator)
-        self._numerator = int(numerator // g)
-        self._denominator = int(denominator // g)
+        self.numerator = int(numerator // g)
+        self.denominator = int(denominator // g)
         return self
 
     @classmethod
@@ -207,14 +207,6 @@ class Rational(RationalAbc):
                 break
             result = new
         return result
-
-    @property
-    def numerator(a):
-        return a._numerator
-
-    @property
-    def denominator(a):
-        return a._denominator
 
     def __repr__(self):
         """repr(self)"""
