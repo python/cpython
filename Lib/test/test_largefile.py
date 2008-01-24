@@ -6,7 +6,7 @@
 #----------------------------------------------------------------------
 
 from test import test_support
-import os, struct, stat, sys
+import os, stat, sys
 
 try:
     import signal
