@@ -1598,8 +1598,11 @@ compiler_while(struct compiler *c, stmt_ty s)
 	basicblock *loop, *orelse, *end, *anchor = NULL;
 	int constant = expr_constant(s->v.While.test);
 
-	if (constant == 0)
+	if (constant == 0) {
+		if (s->v.While.orelse)
+			VISIT_SEQ(c, stmt, s->v.While.orelse);
 		return 1;
+	}
 	loop = compiler_new_block(c);
 	end = compiler_new_block(c);
 	if (constant == -1) {
