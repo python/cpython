@@ -502,7 +502,7 @@ list_repeat(PyListObject *a, Py_ssize_t n)
 	if (n && size/n != Py_SIZE(a))
 		return PyErr_NoMemory();
 	if (size == 0)
-              return PyList_New(0);
+		return PyList_New(0);
 	np = (PyListObject *) PyList_New(size);
 	if (np == NULL)
 		return NULL;
@@ -669,11 +669,11 @@ static PyObject *
 list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 {
 	PyObject **items;
-	Py_ssize_t size, i, j, p, newsize;
+	Py_ssize_t size, i, j, p;
 
 
 	size = PyList_GET_SIZE(self);
-	if (size == 0) {
+	if (size == 0 || n == 1) {
 		Py_INCREF(self);
 		return (PyObject *)self;
 	}
@@ -684,10 +684,11 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 		return (PyObject *)self;
 	}
 
-	newsize = size * n;
-	if (newsize/n != size)
+	if (size > SSIZE_MAX / n) {
 		return PyErr_NoMemory();
-	if (list_resize(self, newsize) == -1)
+	}
+
+	if (list_resize(self, size*n) == -1)
 		return NULL;
 
 	p = size;
