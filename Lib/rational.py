@@ -40,6 +40,8 @@ def _binary_float_to_ratio(x):
     >>> _binary_float_to_ratio(-.25)
     (-1, 4)
     """
+    # XXX Consider moving this to to floatobject.c
+    # with a name like float.as_intger_ratio()
 
     if x == 0:
         return 0, 1
@@ -218,6 +220,16 @@ class Rational(RationalAbc):
             return str(self.numerator)
         else:
             return '%s/%s' % (self.numerator, self.denominator)
+
+    """ XXX This section needs a lot more commentary
+
+    * Explain the typical sequence of checks, calls, and fallbacks.
+    * Explain the subtle reasons why this logic was needed.
+    * It is not clear how common cases are handled (for example, how
+      does the ratio of two huge integers get converted to a float
+      without overflowing the long-->float conversion.
+
+    """
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
@@ -419,6 +431,7 @@ class Rational(RationalAbc):
         float must have the same hash as that float.
 
         """
+        # XXX since this method is expensive, consider caching the result
         if self.denominator == 1:
             # Get integers right.
             return hash(self.numerator)
