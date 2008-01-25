@@ -18,14 +18,17 @@ PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
 PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLong(unsigned long);
 PyAPI_FUNC(PyObject *) PyLong_FromDouble(double);
+PyAPI_FUNC(PyObject *) PyLong_FromSize_t(size_t);
+PyAPI_FUNC(PyObject *) PyLong_FromSsize_t(Py_ssize_t);
 PyAPI_FUNC(long) PyLong_AsLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
+PyAPI_FUNC(Py_ssize_t) PyLong_AsSsize_t(PyObject *);
 
 /* For use by intobject.c only */
-PyAPI_FUNC(Py_ssize_t) _PyLong_AsSsize_t(PyObject *);
-PyAPI_FUNC(PyObject *) _PyLong_FromSize_t(size_t);
-PyAPI_FUNC(PyObject *) _PyLong_FromSsize_t(Py_ssize_t);
+#define _PyLong_AsSsize_t PyLong_AsSsize_t
+#define _PyLong_FromSize_t PyLong_FromSize_t
+#define _PyLong_FromSsize_t PyLong_FromSsize_t
 PyAPI_DATA(int) _PyLong_DigitValue[256];
 
 /* _PyLong_AsScaledDouble returns a double x and an exponent e such that

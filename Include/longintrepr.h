@@ -24,11 +24,11 @@ typedef unsigned int wdigit; /* digit widened to parameter size */
 typedef unsigned BASE_TWODIGITS_TYPE twodigits;
 typedef BASE_TWODIGITS_TYPE stwodigits; /* signed variant of twodigits */
 
-#define SHIFT	15
-#define BASE	((digit)1 << SHIFT)
-#define MASK	((int)(BASE - 1))
+#define PyLong_SHIFT    15
+#define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
+#define PyLong_MASK     ((int)(PyLong_BASE - 1))
 
-#if SHIFT % 5 != 0
+#if PyLong_SHIFT % 5 != 0
 #error "longobject.c requires that SHIFT be divisible by 5"
 #endif
 
