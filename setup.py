@@ -420,6 +420,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_heapq", ["_heapqmodule.c"]) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
+        # Python 3.0 _fileio module
+        exts.append( Extension("_fileio", ["_fileio.c"]) )
         # _functools
         exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
         # Python C API test module

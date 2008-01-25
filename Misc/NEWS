@@ -1,4 +1,4 @@
-﻿+++++++++++
++++++++++++
 Python News
 +++++++++++
 
@@ -11,6 +11,10 @@ What's New in Python 2.6 alpha 1?
 
 Core and builtins
 -----------------
+
+- Backport of PyUnicode_FromString(), _FromStringAndSize(), _Format and
+  _FormatV from Python 3.0. Made PyLong_AsSsize_t and PyLong_FromSsize_t
+  public functions.
 
 - Issue #1920: "while 0" statements were completely removed by the compiler,
   even in the presence of an "else" clause, which is supposed to be run when 
@@ -1101,6 +1105,8 @@ Library
 
 Extension Modules
 -----------------
+
+- Backport of _fileio module from Python 3.0.
 
 - #1087741: mmap.mmap is now a class, not a factory function. It is also
   subclassable now.
