@@ -6,6 +6,8 @@ import math
 import operator
 import rational
 import unittest
+from copy import copy, deepcopy
+from cPickle import dumps, loads
 R = rational.Rational
 
 def _components(r):
@@ -358,6 +360,12 @@ class RationalTest(unittest.TestCase):
             sign *= -1
             s += num / fact * sign
         self.assertAlmostEquals(math.cos(1), s)
+
+    def test_copy_deepcopy_pickle(self):
+        r = R(13, 7)
+        self.assertEqual(r, loads(dumps(r)))
+        self.assertEqual(id(r), id(copy(r)))
+        self.assertEqual(id(r), id(deepcopy(r)))
 
 def test_main():
     run_unittest(RationalTest)
