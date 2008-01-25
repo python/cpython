@@ -14,7 +14,7 @@ __all__ = ["Rational"]
 RationalAbc = numbers.Rational
 
 
-def _gcd(a, b):
+def _gcd(a, b):                     # XXX This is a useful function. Consider making it public.
     """Calculate the Greatest Common Divisor.
 
     Unless b==0, the result will have the same sign as b (so that when
