@@ -10,6 +10,20 @@ import sys
 import os
 import mimetools
 
+
+def _urlopen_with_retry(host, *args, **kwargs):
+    # Connecting to remote hosts is flaky.  Make it more robust
+    # by retrying the connection several times.
+    for i in range(3):
+        try:
+            return urllib2.urlopen(host, *args, **kwargs)
+        except urllib2.URLError, last_exc:
+            continue
+        except:
+            raise
+    raise last_exc
+
+
 class URLTimeoutTest(unittest.TestCase):
 
     TIMEOUT = 10.0
@@ -21,7 +35,7 @@ class URLTimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
-        f = urllib2.urlopen("http://www.python.org/")
+        f = _urlopen_with_retry("http://www.python.org/")
         x = f.read()
 
 
@@ -42,7 +56,7 @@ class AuthTests(unittest.TestCase):
 #
 #        # failure
 #        try:
-#            urllib2.urlopen(test_url)
+#            _urlopen_with_retry(test_url)
 #        except urllib2.HTTPError, exc:
 #            self.assertEqual(exc.code, 401)
 #        else:
@@ -54,7 +68,7 @@ class AuthTests(unittest.TestCase):
 #                                  test_user, test_password)
 #        opener = urllib2.build_opener(auth_handler)
 #        f = opener.open('http://localhost/')
-#        response = urllib2.urlopen("http://www.python.org/")
+#        response = _urlopen_with_retry("http://www.python.org/")
 #
 #        # The 'userinfo' URL component is deprecated by RFC 3986 for security
 #        # reasons, let's not implement it!  (it's already implemented for proxy
@@ -73,7 +87,7 @@ class CloseSocketTest(unittest.TestCase):
         # underlying socket
 
         # delve deep into response to fetch socket._socketobject
-        response = urllib2.urlopen("http://www.python.org/")
+        response = _urlopen_with_retry("http://www.python.org/")
         abused_fileobject = response.fp
         self.assert_(abused_fileobject.__class__ is socket._fileobject)
         httpresponse = abused_fileobject._sock
@@ -102,7 +116,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_basic(self):
         # Simple test expected to pass.
-        open_url = urllib2.urlopen("http://www.python.org/")
+        open_url = _urlopen_with_retry("http://www.python.org/")
         for attr in ("read", "close", "info", "geturl"):
             self.assert_(hasattr(open_url, attr), "object returned from "
                             "urlopen lacks the %s attribute" % attr)
@@ -113,7 +127,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_info(self):
         # Test 'info'.
-        open_url = urllib2.urlopen("http://www.python.org/")
+        open_url = _urlopen_with_retry("http://www.python.org/")
         try:
             info_obj = open_url.info()
         finally:
@@ -126,7 +140,7 @@ class urlopenNetworkTests(unittest.TestCase):
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
         URL = "http://www.python.org/"
-        open_url = urllib2.urlopen(URL)
+        open_url = _urlopen_with_retry(URL)
         try:
             gotten_url = open_url.geturl()
         finally:
@@ -157,7 +171,7 @@ class OtherNetworkTests(unittest.TestCase):
     def test_range (self):
         req = urllib2.Request("http://www.python.org",
                               headers={'Range': 'bytes=20-39'})
-        result = urllib2.urlopen(req)
+        result = _urlopen_with_retry(req)
         data = result.read()
         self.assertEqual(len(data), 20)
 
@@ -184,7 +198,7 @@ class OtherNetworkTests(unittest.TestCase):
                 'file:'+sanepathname2url(os.path.abspath(TESTFN)),
                 ('file:///nonsensename/etc/passwd', None, urllib2.URLError),
                 ]
-            self._test_urls(urls, self._extra_handlers())
+            self._test_urls(urls, self._extra_handlers(), urllib2.urlopen)
         finally:
             os.remove(TESTFN)
 
@@ -226,7 +240,7 @@ class OtherNetworkTests(unittest.TestCase):
 
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
-    def _test_urls(self, urls, handlers):
+    def _test_urls(self, urls, handlers, urlopen=_urlopen_with_retry):
         import socket
         import time
         import logging
@@ -241,7 +255,7 @@ class OtherNetworkTests(unittest.TestCase):
                 req = expected_err = None
             debug(url)
             try:
-                f = urllib2.urlopen(url, req)
+                f = urlopen(url, req)
             except EnvironmentError, err:
                 debug(err)
                 if expected_err:
@@ -267,45 +281,47 @@ class OtherNetworkTests(unittest.TestCase):
 
 class TimeoutTest(unittest.TestCase):
     def test_http_basic(self):
-        u = urllib2.urlopen("http://www.python.org")
+        u = _urlopen_with_retry("http://www.python.org")
         self.assertTrue(u.fp._sock.fp._sock.gettimeout() is None)
 
     def test_http_NoneWithdefault(self):
         prev = socket.getdefaulttimeout()
         socket.setdefaulttimeout(60)
         try:
-            u = urllib2.urlopen("http://www.python.org", timeout=None)
+            u = _urlopen_with_retry("http://www.python.org", timeout=None)
             self.assertEqual(u.fp._sock.fp._sock.gettimeout(), 60)
         finally:
             socket.setdefaulttimeout(prev)
 
     def test_http_Value(self):
-        u = urllib2.urlopen("http://www.python.org", timeout=120)
+        u = _urlopen_with_retry("http://www.python.org", timeout=120)
         self.assertEqual(u.fp._sock.fp._sock.gettimeout(), 120)
 
     def test_http_NoneNodefault(self):
-        u = urllib2.urlopen("http://www.python.org", timeout=None)
+        u = _urlopen_with_retry("http://www.python.org", timeout=None)
         self.assertTrue(u.fp._sock.fp._sock.gettimeout() is None)
 
+    FTP_HOST = "ftp://ftp.mirror.nl/pub/mirror/gnu/"
+
     def test_ftp_basic(self):
-        u = urllib2.urlopen("ftp://ftp.mirror.nl/pub/mirror/gnu/")
+        u = _urlopen_with_retry(self.FTP_HOST)
         self.assertTrue(u.fp.fp._sock.gettimeout() is None)
 
     def test_ftp_NoneWithdefault(self):
         prev = socket.getdefaulttimeout()
         socket.setdefaulttimeout(60)
         try:
-            u = urllib2.urlopen("ftp://ftp.mirror.nl/pub/mirror/gnu/", timeout=None)
+            u = _urlopen_with_retry(self.FTP_HOST, timeout=None)
             self.assertEqual(u.fp.fp._sock.gettimeout(), 60)
         finally:
             socket.setdefaulttimeout(prev)
 
     def test_ftp_NoneNodefault(self):
-        u = urllib2.urlopen("ftp://ftp.mirror.nl/pub/mirror/gnu/", timeout=None)
+        u = _urlopen_with_retry(self.FTP_HOST, timeout=None)
         self.assertTrue(u.fp.fp._sock.gettimeout() is None)
 
     def test_ftp_Value(self):
-        u = urllib2.urlopen("ftp://ftp.mirror.nl/pub/mirror/gnu/", timeout=60)
+        u = _urlopen_with_retry(self.FTP_HOST, timeout=60)
         self.assertEqual(u.fp.fp._sock.gettimeout(), 60)
 
 
