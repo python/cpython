@@ -82,6 +82,10 @@ def _binary_float_to_ratio(x):
 _RATIONAL_FORMAT = re.compile(
     r'^\s*(?P<sign>[-+]?)(?P<num>\d+)(?:/(?P<denom>\d+))?\s*$')
 
+# XXX Consider accepting decimal strings as input since they are exact.
+# Rational("2.01") --> s="2.01" ; Rational.from_decimal(Decimal(s)) --> Rational(201, 100)"
+# If you want to avoid going through the decimal module, just parse the string directly:
+# s.partition('.') --> ('2', '.', '01') --> Rational(int('2'+'01'), 10**len('01')) --> Rational(201, 100)
 
 class Rational(RationalAbc):
     """This class implements rational numbers.
