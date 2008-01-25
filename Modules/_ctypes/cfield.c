@@ -334,10 +334,10 @@ static int
 get_long(PyObject *v, long *p)
 {
 	long x;
-	if (!PyLong_Check(v)) {
-		PyErr_Format(PyExc_TypeError,
-			     "int expected instead of %s instance",
-			     v->ob_type->tp_name);
+
+	if (PyFloat_Check(v)) {
+		PyErr_SetString(PyExc_TypeError,
+				"int expected instead of float");
 		return -1;
 	}
 	x = PyLong_AsUnsignedLongMask(v);
@@ -353,10 +353,10 @@ static int
 get_ulong(PyObject *v, unsigned long *p)
 {
 	unsigned long x;
-	if (!PyLong_Check(v)) {
-		PyErr_Format(PyExc_TypeError,
-			     "int expected instead of %s instance",
-			     v->ob_type->tp_name);
+
+	if (PyFloat_Check(v)) {
+		PyErr_SetString(PyExc_TypeError,
+				"int expected instead of float");
 		return -1;
 	}
 	x = PyLong_AsUnsignedLongMask(v);
@@ -374,11 +374,10 @@ static int
 get_longlong(PyObject *v, PY_LONG_LONG *p)
 {
 	PY_LONG_LONG x;
-	if (!PyLong_Check(v)) {
-		PyErr_Format(PyExc_TypeError,
-			     "int expected instead of %s instance",
-			     v->ob_type->tp_name);
-		return -1;
+	if (PyFloat_Check(v)) {
+		PyErr_SetString(PyExc_TypeError,
+				"int expected instead of float");
+ 		return -1;
 	}
 	x = PyLong_AsUnsignedLongLongMask(v);
 	if (x == -1 && PyErr_Occurred())
@@ -393,12 +392,11 @@ static int
 get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 {
 	unsigned PY_LONG_LONG x;
-	if (!PyLong_Check(v)) {
-		PyErr_Format(PyExc_TypeError,
-			     "int expected instead of %s instance",
-			     v->ob_type->tp_name);
-		return -1;
-	}
+	if (PyFloat_Check(v)) {
+		PyErr_SetString(PyExc_TypeError,
+				"int expected instead of float");
+ 		return -1;
+ 	}
 	x = PyLong_AsUnsignedLongLongMask(v);
 	if (x == -1 && PyErr_Occurred())
 		return -1;

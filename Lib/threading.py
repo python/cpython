@@ -346,18 +346,27 @@ class _Event(_Verbose):
         return self._flag
 
     def set(self):
-        with self._cond:
+        self._cond.acquire()
+        try:
             self._flag = True
             self._cond.notifyAll()
+        finally:
+            self._cond.release()
 
     def clear(self):
-        with self._cond:
+        self._cond.acquire()
+        try:
             self._flag = False
+        finally:
+            self._cond.release()
 
     def wait(self, timeout=None):
-        with self._cond:
+        self._cond.acquire()
+        try:
             if not self._flag:
                 self._cond.wait(timeout)
+        finally:
+            self._cond.release()
 
 # Helper to generate new thread names
 _counter = 0
@@ -524,9 +533,10 @@ class Thread(_Verbose):
                     pass
 
     def _stop(self):
-        with self._block:
-            self._stopped = True
-            self._block.notifyAll()
+        self._block.acquire()
+        self._stopped = True
+        self._block.notifyAll()
+        self._block.release()
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
@@ -552,12 +562,15 @@ class Thread(_Verbose):
         # since it isn't if dummy_threading is *not* being used then don't
         # hide the exception.
 
-        with _active_limbo_lock:
+        _active_limbo_lock.acquire()
+        try:
             try:
                 del _active[_get_ident()]
             except KeyError:
                 if 'dummy_threading' not in _sys.modules:
                     raise
+        finally:
+            _active_limbo_lock.release()
 
     def join(self, timeout=None):
         if not self._initialized:
@@ -570,7 +583,9 @@ class Thread(_Verbose):
         if __debug__:
             if not self._stopped:
                 self._note("%s.join(): waiting until thread stops", self)
-        with self._block:
+
+        self._block.acquire()
+        try:
             if timeout is None:
                 while not self._stopped:
                     self._block.wait()
@@ -588,6 +603,8 @@ class Thread(_Verbose):
                 else:
                     if __debug__:
                         self._note("%s.join(): thread stopped", self)
+        finally:
+            self._block.release()
 
     def getName(self):
         assert self._initialized, "Thread.__init__() not called"

@@ -4248,6 +4248,29 @@ def test_borrowed_ref_4_segfault():
     finally:
         builtins.__import__ = orig_import
 
+def test_losing_dict_ref_segfault():
+    # This used to segfault;
+    # derived from issue #1303614, test67.py
+    if verbose:
+        print("Testing losing dict ref segfault...")
+
+    class Strange(object):
+        def __hash__(self):
+            return hash('hello')
+
+        def __eq__(self, other):
+            x.__dict__ = {}   # the old x.__dict__ is deallocated
+            return False
+
+    class X(object):
+        pass
+
+    v = 123
+    x = X()
+    x.__dict__ = {Strange(): 42, 'hello': v+456}
+    x.hello
+
+
 def test_main():
     weakref_segfault() # Must be first, somehow
     wrapper_segfault() # NB This one is slow
@@ -4348,6 +4371,7 @@ def test_main():
     test_weakref_in_del_segfault()
     test_borrowed_ref_3_segfault()
     test_borrowed_ref_4_segfault()
+    test_losing_dict_ref_segfault()
 
     if verbose: print("All OK")
 

@@ -17,6 +17,11 @@ extern double fmod(double, double);
 extern double pow(double, double);
 #endif
 
+#ifdef _OSF_SOURCE
+/* OSF1 5.1 doesn't make this available with XOPEN_SOURCE_EXTENDED defined */
+extern int finite(double);
+#endif
+
 /* Special free list -- see comments for same code in intobject.c. */
 #define BLOCK_SIZE	1000	/* 1K less typical malloc overhead */
 #define BHEAD_SIZE	8	/* Enough for a 64-bit pointer */

@@ -1451,6 +1451,8 @@ class Decimal(_numbers.Real, _numbers.Inexact):
         else:
             return s*int(self._int[:self._exp] or '0')
 
+    __trunc__ = __int__
+
     def _fix_nan(self, context):
         """Decapitate the payload of a NaN to fit the context"""
         payload = self._int

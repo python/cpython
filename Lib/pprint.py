@@ -164,25 +164,31 @@ class PrettyPrinter:
                 (issubclass(typ, set) and r is set.__repr__) or
                 (issubclass(typ, frozenset) and r is frozenset.__repr__)
                ):
+                length = _len(object)
                 if issubclass(typ, list):
                     write('[')
                     endchar = ']'
                 elif issubclass(typ, set):
+                    if not length:
+                        write('set()')
+                        return
                     write('{')
                     endchar = '}'
                     object = sorted(object)
                     indent += 4
                 elif issubclass(typ, frozenset):
+                    if not length:
+                        write('frozenset()')
+                        return
                     write('frozenset([')
                     endchar = '])'
                     object = sorted(object)
-                    indent += 9
+                    indent += 10
                 else:
                     write('(')
                     endchar = ')'
                 if self._indent_per_level > 1:
                     write((self._indent_per_level - 1) * ' ')
-                length = _len(object)
                 if length:
                     context[objid] = 1
                     indent = indent + self._indent_per_level
