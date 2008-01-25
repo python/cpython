@@ -200,14 +200,6 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(ValueError, {}.update, [(1, 2, 3)])
 
-        # SF #1615701:  make d.update(m) honor __getitem__() and keys() in dict subclasses
-        class KeyUpperDict(dict):
-            def __getitem__(self, key):
-                return key.upper()
-        d.clear()
-        d.update(KeyUpperDict.fromkeys('abc'))
-        self.assertEqual(d, {'a':'A', 'b':'B', 'c':'C'})
-
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = {}
