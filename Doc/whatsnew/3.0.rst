@@ -248,7 +248,7 @@ language and built-in functions.
   built-in integral type, named ``int``; but it behaves like the old
   ``long`` type, with the exception that the literal suffix ``L`` is
   neither supported by the parser nor produced by ``repr()`` anymore.
-  ``sys.maxint`` was also removed since the int type has maximum
+  ``sys.maxint`` was also removed since the int type has no maximum
   value anymore. 
 
 * PEP 238: int division returns a float.
