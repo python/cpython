@@ -13,7 +13,7 @@ __all__ = ["Rational"]
 RationalAbc = numbers.Rational
 
 
-def _gcd(a, b):
+def _gcd(a, b):                     # XXX This is a useful function. Consider making it public.
     """Calculate the Greatest Common Divisor.
 
     Unless b==0, the result will have the same sign as b (so that when
@@ -39,6 +39,8 @@ def _binary_float_to_ratio(x):
     >>> _binary_float_to_ratio(-.25)
     (-1, 4)
     """
+    # XXX Consider moving this to to floatobject.c
+    # with a name like float.as_intger_ratio()
 
     if x == 0:
         return 0, 1
@@ -79,6 +81,10 @@ def _binary_float_to_ratio(x):
 _RATIONAL_FORMAT = re.compile(
     r'^\s*(?P<sign>[-+]?)(?P<num>\d+)(?:/(?P<denom>\d+))?\s*$')
 
+# XXX Consider accepting decimal strings as input since they are exact.
+# Rational("2.01") --> s="2.01" ; Rational.from_decimal(Decimal(s)) --> Rational(201, 100)"
+# If you want to avoid going through the decimal module, just parse the string directly:
+# s.partition('.') --> ('2', '.', '01') --> Rational(int('2'+'01'), 10**len('01')) --> Rational(201, 100)
 
 class Rational(RationalAbc):
     """This class implements rational numbers.
@@ -93,7 +99,7 @@ class Rational(RationalAbc):
 
     """
 
-    __slots__ = ('_numerator', '_denominator')
+    __slots__ = ('numerator', 'denominator')
 
     # We're immutable, so use __new__ not __init__
     def __new__(cls, numerator=0, denominator=1):
@@ -133,8 +139,8 @@ class Rational(RationalAbc):
             raise ZeroDivisionError('Rational(%s, 0)' % numerator)
 
         g = _gcd(numerator, denominator)
-        self._numerator = int(numerator // g)
-        self._denominator = int(denominator // g)
+        self.numerator = int(numerator // g)
+        self.denominator = int(denominator // g)
         return self
 
     @classmethod
@@ -192,28 +198,21 @@ class Rational(RationalAbc):
             n, d = d, n
         return cf
 
-    @classmethod
-    def approximate_from_float(cls, f, max_denominator):
-        'Best rational approximation to f with a denominator <= max_denominator'
+    def approximate(self, max_denominator):
+        'Best rational approximation with a denominator <= max_denominator'
         # XXX First cut at algorithm
         # Still needs rounding rules as specified at
         #       http://en.wikipedia.org/wiki/Continued_fraction
-        cf = cls.from_float(f).as_continued_fraction()
+        if self.denominator <= max_denominator:
+            return self
+        cf = self.as_continued_fraction()
         result = Rational(0)
         for i in range(1, len(cf)):
-            new = cls.from_continued_fraction(cf[:i])
+            new = self.from_continued_fraction(cf[:i])
             if new.denominator > max_denominator:
                 break
             result = new
         return result
-
-    @property
-    def numerator(a):
-        return a._numerator
-
-    @property
-    def denominator(a):
-        return a._denominator
 
     def __repr__(self):
         """repr(self)"""
@@ -225,6 +224,16 @@ class Rational(RationalAbc):
             return str(self.numerator)
         else:
             return '%s/%s' % (self.numerator, self.denominator)
+
+    """ XXX This section needs a lot more commentary
+
+    * Explain the typical sequence of checks, calls, and fallbacks.
+    * Explain the subtle reasons why this logic was needed.
+    * It is not clear how common cases are handled (for example, how
+      does the ratio of two huge integers get converted to a float
+      without overflowing the long-->float conversion.
+
+    """
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
@@ -299,18 +308,15 @@ class Rational(RationalAbc):
         """a // b"""
         return math.floor(a / b)
 
-    @classmethod
-    def _mod(cls, a, b):
+    def __mod__(a, b):
+        """a % b"""
         div = a // b
         return a - b * div
 
-    def __mod__(a, b):
-        """a % b"""
-        return a._mod(a, b)
-
     def __rmod__(b, a):
         """a % b"""
-        return b._mod(a, b)
+        div = a // b
+        return a - b * div
 
     def __pow__(a, b):
         """a ** b
@@ -369,6 +375,8 @@ class Rational(RationalAbc):
         else:
             return a.numerator // a.denominator
 
+    __int__ = __trunc__
+
     def __floor__(a):
         """Will be math.floor(a) in 3.0."""
         return a.numerator // a.denominator
@@ -410,6 +418,7 @@ class Rational(RationalAbc):
         float must have the same hash as that float.
 
         """
+        # XXX since this method is expensive, consider caching the result
         if self.denominator == 1:
             # Get integers right.
             return hash(self.numerator)
@@ -481,3 +490,18 @@ class Rational(RationalAbc):
     def __bool__(a):
         """a != 0"""
         return a.numerator != 0
+
+    # support for pickling, copy, and deepcopy
+
+    def __reduce__(self):
+        return (self.__class__, (str(self),))
+
+    def __copy__(self):
+        if type(self) == Rational:
+            return self     # I'm immutable; therefore I am my own clone
+        return self.__class__(self.numerator, self.denominator)
+
+    def __deepcopy__(self, memo):
+        if type(self) == Rational:
+            return self     # My components are also immutable
+        return self.__class__(self.numerator, self.denominator)

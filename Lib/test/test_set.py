@@ -8,6 +8,7 @@ import os
 from random import randrange, shuffle
 import sys
 import warnings
+import collections
 
 class PassThru(Exception):
     pass
@@ -1605,6 +1606,110 @@ class TestVariousIteratorArgs(unittest.TestCase):
                 self.assertRaises(TypeError, getattr(set('january'), methname), N(data))
                 self.assertRaises(ZeroDivisionError, getattr(set('january'), methname), E(data))
 
+# Application tests (based on David Eppstein's graph recipes ====================================
+
+def powerset(U):
+    """Generates all subsets of a set or sequence U."""
+    U = iter(U)
+    try:
+        x = frozenset([next(U)])
+        for S in powerset(U):
+            yield S
+            yield S | x
+    except StopIteration:
+        yield frozenset()
+
+def cube(n):
+    """Graph of n-dimensional hypercube."""
+    singletons = [frozenset([x]) for x in range(n)]
+    return dict([(x, frozenset([x^s for s in singletons]))
+                 for x in powerset(range(n))])
+
+def linegraph(G):
+    """Graph, the vertices of which are edges of G,
+    with two vertices being adjacent iff the corresponding
+    edges share a vertex."""
+    L = {}
+    for x in G:
+        for y in G[x]:
+            nx = [frozenset([x,z]) for z in G[x] if z != y]
+            ny = [frozenset([y,z]) for z in G[y] if z != x]
+            L[frozenset([x,y])] = frozenset(nx+ny)
+    return L
+
+def faces(G):
+    'Return a set of faces in G.  Where a face is a set of vertices on that face'
+    # currently limited to triangles,squares, and pentagons
+    f = set()
+    for v1, edges in G.items():
+        for v2 in edges:
+            for v3 in G[v2]:
+                if v1 == v3:
+                    continue
+                if v1 in G[v3]:
+                    f.add(frozenset([v1, v2, v3]))
+                else:
+                    for v4 in G[v3]:
+                        if v4 == v2:
+                            continue
+                        if v1 in G[v4]:
+                            f.add(frozenset([v1, v2, v3, v4]))
+                        else:
+                            for v5 in G[v4]:
+                                if v5 == v3 or v5 == v2:
+                                    continue
+                                if v1 in G[v5]:
+                                    f.add(frozenset([v1, v2, v3, v4, v5]))
+    return f
+
+
+class TestGraphs(unittest.TestCase):
+
+    def test_cube(self):
+
+        g = cube(3)                             # vert --> {v1, v2, v3}
+        vertices1 = set(g)
+        self.assertEqual(len(vertices1), 8)     # eight vertices
+        for edge in g.values():
+            self.assertEqual(len(edge), 3)      # each vertex connects to three edges
+        vertices2 = set(v for edges in g.values() for v in edges)
+        self.assertEqual(vertices1, vertices2)  # edge vertices in original set
+
+        cubefaces = faces(g)
+        self.assertEqual(len(cubefaces), 6)     # six faces
+        for face in cubefaces:
+            self.assertEqual(len(face), 4)      # each face is a square
+
+    def test_cuboctahedron(self):
+
+        # http://en.wikipedia.org/wiki/Cuboctahedron
+        # 8 triangular faces and 6 square faces
+        # 12 indentical vertices each connecting a triangle and square
+
+        g = cube(3)
+        cuboctahedron = linegraph(g)            # V( --> {V1, V2, V3, V4}
+        self.assertEqual(len(cuboctahedron), 12)# twelve vertices
+
+        vertices = set(cuboctahedron)
+        for edges in cuboctahedron.values():
+            self.assertEqual(len(edges), 4)     # each vertex connects to four other vertices
+        othervertices = set(edge for edges in cuboctahedron.values() for edge in edges)
+        self.assertEqual(vertices, othervertices)   # edge vertices in original set
+
+        cubofaces = faces(cuboctahedron)
+        facesizes = collections.defaultdict(int)
+        for face in cubofaces:
+            facesizes[len(face)] += 1
+        self.assertEqual(facesizes[3], 8)       # eight triangular faces
+        self.assertEqual(facesizes[4], 6)       # six square faces
+
+        for vertex in cuboctahedron:
+            edge = vertex                       # Cuboctahedron vertices are edges in Cube
+            self.assertEqual(len(edge), 2)      # Two cube vertices define an edge
+            for cubevert in edge:
+                self.assert_(cubevert in g)
+
+
 #==============================================================================
 
 def test_main(verbose=None):
@@ -1644,6 +1749,7 @@ def test_main(verbose=None):
         TestCopyingNested,
         TestIdentities,
         TestVariousIteratorArgs,
+        TestGraphs,
         )
 
     test_support.run_unittest(*test_classes)
