@@ -912,7 +912,7 @@ set_update_internal(PySetObject *so, PyObject *other)
 {
 	PyObject *key, *it;
 
-	if (PyAnySet_CheckExact(other))
+	if (PyAnySet_Check(other))
 		return set_merge(so, other);
 
 	if (PyDict_CheckExact(other)) {
@@ -1207,7 +1207,7 @@ set_intersection(PySetObject *so, PyObject *other)
 	if (result == NULL)
 		return NULL;
 
-	if (PyAnySet_CheckExact(other)) {		
+	if (PyAnySet_Check(other)) {		
 		Py_ssize_t pos = 0;
 		setentry *entry;
 
@@ -1398,7 +1398,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 	if ((PyObject *)so == other)
 		return set_clear_internal(so);
 	
-	if (PyAnySet_CheckExact(other)) {
+	if (PyAnySet_Check(other)) {
 		setentry *entry;
 		Py_ssize_t pos = 0;
 
@@ -1447,7 +1447,7 @@ set_difference(PySetObject *so, PyObject *other)
 	setentry *entry;
 	Py_ssize_t pos = 0;
 
-	if (!PyAnySet_CheckExact(other)  && !PyDict_CheckExact(other)) {
+	if (!PyAnySet_Check(other)  && !PyDict_CheckExact(other)) {
 		result = set_copy(so);
 		if (result == NULL)
 			return NULL;
@@ -1554,7 +1554,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 		Py_RETURN_NONE;
 	}
 
-	if (PyAnySet_CheckExact(other)) {
+	if (PyAnySet_Check(other)) {
 		Py_INCREF(other);
 		otherset = (PySetObject *)other;
 	} else {
@@ -1637,7 +1637,7 @@ set_issubset(PySetObject *so, PyObject *other)
 	setentry *entry;
 	Py_ssize_t pos = 0;
 
-	if (!PyAnySet_CheckExact(other)) {
+	if (!PyAnySet_Check(other)) {
 		PyObject *tmp, *result;
 		tmp = make_new_set(&PySet_Type, other);
 		if (tmp == NULL)
@@ -1666,7 +1666,7 @@ set_issuperset(PySetObject *so, PyObject *other)
 {
 	PyObject *tmp, *result;
 
-	if (!PyAnySet_CheckExact(other)) {
+	if (!PyAnySet_Check(other)) {
 		tmp = make_new_set(&PySet_Type, other);
 		if (tmp == NULL)
 			return NULL;
