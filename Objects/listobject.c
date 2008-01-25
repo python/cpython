@@ -672,7 +672,7 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 		return (PyObject *)self;
 	}
 
-	if (size > SSIZE_MAX / n) {
+	if (size > Py_SSIZE_T_MAX / n) {
 		return PyErr_NoMemory();
 	}
 
