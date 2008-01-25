@@ -490,3 +490,18 @@ class Rational(RationalAbc):
     def __nonzero__(a):
         """a != 0"""
         return a.numerator != 0
+
+    # support for pickling, copy, and deepcopy
+
+    def __reduce__(self):
+        return (self.__class__, (str(self),))
+
+    def __copy__(self):
+        if type(self) == Rational:
+            return self     # I'm immutable; therefore I am my own clone
+        return self.__class__(self.numerator, self.denominator)
+
+    def __deepcopy__(self, memo):
+        if type(self) == Rational:
+            return self     # My components are also immutable
+        return self.__class__(self.numerator, self.denominator)
