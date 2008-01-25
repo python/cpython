@@ -155,10 +155,10 @@ class RationalTest(unittest.TestCase):
                          [-4, 1, 6, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, 3, 3])
         self.assertEqual(R(0).as_continued_fraction(), [0])
 
-    def testApproximateFromFloat(self):
-        self.assertEqual(R.approximate_from_float(math.pi, 10000), R(355, 113))
-        self.assertEqual(R.approximate_from_float(-math.pi, 10000), R(-355, 113))
-        self.assertEqual(R.approximate_from_float(0.0, 10000), R(0))
+    def testApproximateFrom(self):
+        self.assertEqual(R.from_float(math.pi).approximate(10000), R(355, 113))
+        self.assertEqual(R.from_float(-math.pi).approximate(10000), R(-355, 113))
+        self.assertEqual(R.from_float(0.0).approximate(10000), R(0))
 
     def testConversions(self):
         self.assertTypedEquals(-1, trunc(R(-11, 10)))

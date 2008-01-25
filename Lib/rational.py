@@ -195,16 +195,17 @@ class Rational(RationalAbc):
             n, d = d, n
         return cf
 
-    @classmethod
-    def approximate_from_float(cls, f, max_denominator):
-        'Best rational approximation to f with a denominator <= max_denominator'
+    def approximate(self, max_denominator):
+        'Best rational approximation with a denominator <= max_denominator'
         # XXX First cut at algorithm
         # Still needs rounding rules as specified at
         #       http://en.wikipedia.org/wiki/Continued_fraction
-        cf = cls.from_float(f).as_continued_fraction()
+        if self.denominator <= max_denominator:
+            return self
+        cf = self.as_continued_fraction()
         result = Rational(0)
         for i in range(1, len(cf)):
-            new = cls.from_continued_fraction(cf[:i])
+            new = self.from_continued_fraction(cf[:i])
             if new.denominator > max_denominator:
                 break
             result = new
