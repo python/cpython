@@ -253,8 +253,8 @@ mmap_gfind(mmap_object *self,
 	   int reverse)
 {
 	Py_ssize_t start = self->pos;
-        Py_ssize_t end = self->size;
-	char *needle;
+	Py_ssize_t end = self->size;
+	const char *needle;
 	Py_ssize_t len;
 
 	CHECK_VALID(NULL);
@@ -262,7 +262,7 @@ mmap_gfind(mmap_object *self,
 			      &needle, &len, &start, &end)) {
 		return NULL;
 	} else {
-		char *p;
+		const char *p, *start_p, *end_p;
 		char sign = reverse ? -1 : 1;
 
                 if (start < 0)
@@ -279,11 +279,11 @@ mmap_gfind(mmap_object *self,
 		else if ((size_t)end > self->size)
 			end = self->size;
 
-		start += (Py_ssize_t)self->data;
-		end += (Py_ssize_t)self->data;
+		start_p = self->data + start;
+		end_p = self->data + end;
 
-		for (p = (char *)(reverse ? end - len : start);
-		     p >= (char *)start && p + len <= (char *)end; p+=sign) {
+		for (p = (reverse ? end_p - len : start_p);
+		     (p >= start_p) && (p + len <= end_p); p += sign) {
 			Py_ssize_t i;
 			for (i = 0; i < len && needle[i] == p[i]; ++i)
 				/* nothing */;
