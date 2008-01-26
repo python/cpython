@@ -15,7 +15,6 @@ class ResourceTest(unittest.TestCase):
         self.assertRaises(TypeError, resource.setrlimit, 42, 42, 42)
 
     def test_fsize_ismax(self):
-
         try:
             (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
         except AttributeError:
@@ -63,10 +62,10 @@ class ResourceTest(unittest.TestCase):
                         resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
                 finally:
                     f.close()
-                    os.unlink(test_support.TESTFN)
             finally:
                 if limit_set:
                     resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
+                test_support.unlink(test_support.TESTFN)
 
     def test_fsize_toobig(self):
         # Be sure that setrlimit is checking for really large values
