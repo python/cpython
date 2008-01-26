@@ -16,7 +16,7 @@ from test_all import verbose
 class DBSequenceTest(unittest.TestCase):
     def setUp(self):
         self.int_32_max = 0x100000000
-        self.homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        self.homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
         try:
             os.mkdir(self.homeDir)
         except os.error:

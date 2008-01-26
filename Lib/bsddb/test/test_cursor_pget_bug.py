@@ -1,4 +1,5 @@
 import unittest
+import tempfile
 import sys, os, glob
 
 try:
@@ -16,7 +17,7 @@ class pget_bugTestCase(unittest.TestCase):
     db_name = 'test-cursor_pget.db'
 
     def setUp(self):
-        self.homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        self.homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
         try:
             os.mkdir(self.homeDir)
         except os.error:
