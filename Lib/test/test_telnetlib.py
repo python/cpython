@@ -13,6 +13,7 @@ def server(evt):
     serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     serv.bind(("", 9091))
     serv.listen(5)
+    evt.set()
     try:
         conn, addr = serv.accept()
     except socket.timeout:
@@ -26,6 +27,8 @@ class GeneralTests(TestCase):
     def setUp(self):
         self.evt = threading.Event()
         threading.Thread(target=server, args=(self.evt,)).start()
+        self.evt.wait()
+        self.evt.clear()
         time.sleep(.1)
 
     def tearDown(self):
