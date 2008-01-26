@@ -2198,10 +2198,6 @@ PySet_Discard(PyObject *set, PyObject *key)
 int
 PySet_Add(PyObject *set, PyObject *key)
 {
-	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
 	return set_add_key((PySetObject *)set, key);
 }
 
