@@ -212,6 +212,9 @@ Library
 Extension Modules
 -----------------
 
+- #1940: make it possible to use curses.filter() before curses.initscr()
+  as the documentation says.
+
 - Fix a potential 'SystemError: NULL result without error' in _ctypes.
 
 - Prevent a segfault when a ctypes NULL function pointer is called.
