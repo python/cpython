@@ -200,7 +200,8 @@ characters in text files are automatically altered slightly when data is read or
 written.  This behind-the-scenes modification to file data is fine for ASCII
 text files, but it'll corrupt binary data like that in :file:`JPEG` or
 :file:`EXE` files.  Be very careful to use binary mode when reading and writing
-such files.
+such files.  On Unix, it doesn't hurt to append a ``'b'`` to the mode, so
+you can use it platform-independently for all binary files.
 
 
 .. _tut-filemethods:
