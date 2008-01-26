@@ -2341,7 +2341,6 @@ test_c_api(PySetObject *so)
 	f = PyFrozenSet_New(dup);
 	assert(PySet_Size(f) == 3);
 	assert(PyFrozenSet_CheckExact(f));
-	assertRaises(PySet_Add(f, elem) == -1, PyExc_SystemError);
 	assertRaises(PySet_Discard(f, elem) == -1, PyExc_SystemError);
 	assertRaises(PySet_Pop(f) == NULL, PyExc_SystemError);
 	Py_DECREF(f);
