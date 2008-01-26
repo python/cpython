@@ -560,14 +560,14 @@ class HTTPResponse:
     def _read_chunked(self, amt):
         assert self.chunked != _UNKNOWN
         chunk_left = self.chunk_left
-        value = ""
+        value = b""
 
         # XXX This accumulates chunks by repeated string concatenation,
         # which is not efficient as the number or size of chunks gets big.
         while True:
             if chunk_left is None:
                 line = self.fp.readline()
-                i = line.find(";")
+                i = line.find(b";")
                 if i >= 0:
                     line = line[:i] # strip chunk-extensions
                 chunk_left = int(line, 16)
