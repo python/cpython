@@ -1103,8 +1103,12 @@ Library
   does not claim to support starttls.  Adds the SMTP.ehlo_or_helo_if_needed()
   method.  Patch contributed by Bill Fenner.
 
+
 Extension Modules
 -----------------
+
+- #1940: make it possible to use curses.filter() before curses.initscr()
+  as the documentation says.
 
 - Backport of _fileio module from Python 3.0.
 
