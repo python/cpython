@@ -382,7 +382,7 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <type 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['close', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
+['close', 'gi_code', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
 >>> print i.next.__doc__
 x.next() -> the next value, or raise StopIteration
 >>> iter(i) is i
@@ -899,6 +899,24 @@ This one caused a crash (see SF bug 567538):
 >>> print g.next()
 Traceback (most recent call last):
 StopIteration
+
+
+Test the gi_code attribute
+
+>>> def f():
+...     yield 5
+...
+>>> g = f()
+>>> g.gi_code is f.func_code
+True
+>>> g.next()
+5
+>>> g.next()
+Traceback (most recent call last):
+StopIteration
+>>> g.gi_code is f.func_code
+True
+
 """
 
 # conjoin is a simple backtracking generator, named in honor of Icon's
