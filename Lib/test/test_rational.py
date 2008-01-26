@@ -7,7 +7,7 @@ import operator
 import rational
 import unittest
 from copy import copy, deepcopy
-from cPickle import dumps, loads
+from pickle import dumps, loads
 R = rational.Rational
 
 def _components(r):
