@@ -360,7 +360,8 @@ class URLopener:
         # According to RFC 2616, "2xx" code indicates that the client's
         # request was successfully received, understood, and accepted.
         if (200 <= response.status < 300):
-            return addinfourl(response.fp, response.msg, "http:" + url)
+            return addinfourl(response.fp, response.msg, "http:" + url,
+                              response.status)
         else:
             return self.http_error(
                 url, response.fp,
