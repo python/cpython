@@ -340,18 +340,12 @@ def http_server(evt, numrequests):
         PORT = None
         evt.set()
 
-# TODO(nnorwitz): 25-Jan-2008 since we now notify the test when the server
-# is totally ready to serve, this function should not be necessary.
-# It is disabled by returning False.  If the buildbots don't show any
-# failures for this test over the next week, all the code associated
-# with this function should be removed.  The code that needs to be removed
-# is this function, the NOTE below, and the entire except body that
-# calls this function.
+# This function prevents errors like:
+#    <ProtocolError for localhost:57527/RPC2: 500 Internal Server Error>
 def is_unavailable_exception(e):
     '''Returns True if the given ProtocolError is the product of a server-side
        exception caused by the 'temporarily unavailable' response sometimes
        given by operations on non-blocking sockets.'''
-    return False
 
     # sometimes we get a -1 error code and/or empty headers
     if e.errcode == -1 or e.headers is None:
