@@ -860,7 +860,7 @@ r_object(RFILE *p)
 			retval = NULL;
 			break;
 		}
-                v = (type == TYPE_SET) ? PySet_New(NULL) : PyFrozenSet_New(NULL);
+		v = PyTuple_New((int)n);
 		if (v == NULL) {
 			retval = NULL;
 			break;
@@ -875,14 +875,18 @@ r_object(RFILE *p)
 				v = NULL;
 				break;
 			}
-			if (PySet_Add(v, v2) == -1) {
-                                Py_DECREF(v);
-                                Py_DECREF(v2);
-                                v = NULL;
-                                break;
-                        }
+			PyTuple_SET_ITEM(v, (int)i, v2);
 		}
-		retval = (v == NULL) ? NULL : v;
+		if (v == NULL) {
+			retval = NULL;
+			break;
+		}
+		if (type == TYPE_SET)
+			v3 = PySet_New(v);
+		else
+			v3 = PyFrozenSet_New(v);
+		Py_DECREF(v);
+		retval = v3;
 		break;
 
 	case TYPE_CODE:

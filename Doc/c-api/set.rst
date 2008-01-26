@@ -112,6 +112,9 @@ or :class:`frozenset` or instances of their subtypes.
    the *key* is unhashable. Raise :exc:`PyExc_SystemError` if *anyset* is not a
    :class:`set`, :class:`frozenset`, or an instance of a subtype.
 
+The following functions are available for instances of :class:`set` or its
+subtypes but not for instances of :class:`frozenset` or its subtypes.
+
 
 .. cfunction:: int PySet_Add(PyObject *set, PyObject *key)
 
@@ -120,14 +123,6 @@ or :class:`frozenset` or instances of their subtypes.
    the *key* is unhashable. Raise a :exc:`MemoryError` if there is no room to grow.
    Raise a :exc:`SystemError` if *set* is an not an instance of :class:`set` or its
    subtype.
-
-   .. versionchanged:: 2.6
-      Now works with instances of :class:`frozenset` or its subtypes.
-      Like :cfunc:`PyTuple_SetItem` in that it can be used to fill-in the
-      values of brand new frozensets before they are exposed to other code.
-
-The following functions are available for instances of :class:`set` or its
-subtypes but not for instances of :class:`frozenset` or its subtypes.
 
 
 .. cfunction:: int PySet_Discard(PyObject *set, PyObject *key)
