@@ -17,7 +17,8 @@ def _urlopen_with_retry(host, *args, **kwargs):
     for i in range(3):
         try:
             return urllib2.urlopen(host, *args, **kwargs)
-        except urllib2.URLError as last_exc:
+        except urllib2.URLError as e:
+            last_exc = e
             continue
         except:
             raise
@@ -310,13 +311,13 @@ class TimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(60)
         try:
             u = _urlopen_with_retry(self.FTP_HOST, timeout=None)
-            self.assertEqual(u.fp.fp._sock.gettimeout(), 60)
+            self.assertEqual(u.fp.fp.raw._sock.gettimeout(), 60)
         finally:
             socket.setdefaulttimeout(prev)
 
     def test_ftp_NoneNodefault(self):
         u = _urlopen_with_retry(self.FTP_HOST, timeout=None)
-        self.assertTrue(u.fp.fp._sock.gettimeout() is None)
+        self.assertTrue(u.fp.fp.raw._sock.gettimeout() is None)
 
     def test_ftp_Value(self):
         u = _urlopen_with_retry(self.FTP_HOST, timeout=60)
