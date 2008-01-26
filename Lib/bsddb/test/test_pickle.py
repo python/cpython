@@ -6,6 +6,7 @@ try:
 except ImportError:
     cPickle = None
 import unittest
+import tempfile
 import glob
 
 try:
@@ -24,7 +25,7 @@ class pickleTestCase(unittest.TestCase):
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
         self.homeDir = homeDir
         try: os.mkdir(homeDir)
         except os.error: pass
