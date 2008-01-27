@@ -13,10 +13,12 @@ import mimetools
 def _open_with_retry(func, host, *args, **kwargs):
     # Connecting to remote hosts is flaky.  Make it more robust
     # by retrying the connection several times.
+    last_exc = None
     for i in range(3):
         try:
             return func(host, *args, **kwargs)
-        except IOError, last_exc:
+        except IOError as err:
+            last_exc = err
             continue
         except:
             raise
