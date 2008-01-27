@@ -133,13 +133,10 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(0.01, ''), '0.01')
         self.assertEqual(format(0.01, 'g'), '0.01')
 
-        self.assertEqual(format(0, 'f'), '0.000000')
 
         self.assertEqual(format(1.0, 'f'), '1.000000')
-        self.assertEqual(format(1, 'f'), '1.000000')
 
         self.assertEqual(format(-1.0, 'f'), '-1.000000')
-        self.assertEqual(format(-1, 'f'), '-1.000000')
 
         self.assertEqual(format( 1.0, ' f'), ' 1.000000')
         self.assertEqual(format(-1.0, ' f'), '-1.000000')
@@ -152,6 +149,18 @@ class FormatTestCase(unittest.TestCase):
         # conversion to string should fail
         self.assertRaises(ValueError, format, 3.0, "s")
 
+        # other format specifiers shouldn't work on floats,
+        #  in particular int specifiers
+        for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
+                            [chr(x) for x in range(ord('A'), ord('Z')+1)]):
+            if not format_spec in 'eEfFgGn%':
+                self.assertRaises(ValueError, format, 0.0, format_spec)
+                self.assertRaises(ValueError, format, 1.0, format_spec)
+                self.assertRaises(ValueError, format, -1.0, format_spec)
+                self.assertRaises(ValueError, format, 1e100, format_spec)
+                self.assertRaises(ValueError, format, -1e100, format_spec)
+                self.assertRaises(ValueError, format, 1e-100, format_spec)
+                self.assertRaises(ValueError, format, -1e-100, format_spec)
 
 class ReprTestCase(unittest.TestCase):
     def test_repr(self):
