@@ -1983,9 +1983,8 @@ def serve(port, callback=None, completer=None):
 '#ffffff', '#7799ee')
                 def bltinlink(name):
                     return '<a href="%s.html">%s</a>' % (name, name)
-                names = filter(lambda x: x != '__main__',
-                               sys.builtin_module_names)
-                contents = html.multicolumn(list(names), bltinlink)
+                names = [x for x in sys.builtin_module_names if x != '__main__']
+                contents = html.multicolumn(names, bltinlink)
                 indices = ['<p>' + html.bigsection(
                     'Built-in Modules', '#ffffff', '#ee77aa', contents)]
 
