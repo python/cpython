@@ -788,37 +788,6 @@ FORMAT_STRING(PyObject* value, PyObject* args)
         /* no type conversion needed, already a string.  do the formatting */
         result = format_string_internal(value, &format);
         break;
-#if 0
-    case 'b':
-    case 'c':
-    case 'd':
-    case 'o':
-    case 'x':
-    case 'X':
-        /* convert to integer */
-        /* XXX: make a stringlib function to do this when backporting,
-           since FromUnicode differs from FromString */
-        tmp = PyLong_FromUnicode(STRINGLIB_STR(value), STRINGLIB_LEN(value), 0);
-        if (tmp == NULL)
-            goto done;
-        result = format_long_internal(tmp, &format);
-        break;
-
-    case 'e':
-    case 'E':
-    case 'f':
-    case 'F':
-    case 'g':
-    case 'G':
-    case 'n':
-    case '%':
-        /* convert to float */
-        tmp = PyFloat_FromString(value);
-        if (tmp == NULL)
-            goto done;
-        result = format_float_internal(tmp, &format);
-        break;
-#endif
     default:
         /* unknown */
         PyErr_Format(PyExc_ValueError, "Unknown conversion type %c",
@@ -855,15 +824,6 @@ FORMAT_LONG(PyObject* value, PyObject* args)
 
     /* type conversion? */
     switch (format.type) {
-#if 0
-    case 's':
-        /* convert to string/unicode */
-        tmp = STRINGLIB_TOSTR(value);
-        if (tmp == NULL)
-            goto done;
-        result = format_string_internal(tmp, &format);
-        break;
-#endif
     case 'b':
     case 'c':
     case 'd':
@@ -872,21 +832,6 @@ FORMAT_LONG(PyObject* value, PyObject* args)
     case 'X':
         /* no type conversion needed, already an int.  do the formatting */
         result = format_long_internal(value, &format);
-        break;
-
-    case 'e':
-    case 'E':
-    case 'f':
-    case 'F':
-    case 'g':
-    case 'G':
-    case 'n':
-    case '%':
-        /* convert to float */
-        tmp = PyNumber_Float(value);
-        if (tmp == NULL)
-            goto done;
-        result = format_float_internal(value, &format);
         break;
 
     default:
@@ -925,28 +870,6 @@ FORMAT_FLOAT(PyObject *value, PyObject *args)
 
     /* type conversion? */
     switch (format.type) {
-#if 0
-    case 's':
-        /* convert to string/unicode */
-        tmp = STRINGLIB_TOSTR(value);
-        if (tmp == NULL)
-            goto done;
-        result = format_string_internal(tmp, &format);
-        break;
-#endif
-    case 'b':
-    case 'c':
-    case 'd':
-    case 'o':
-    case 'x':
-    case 'X':
-        /* convert to integer */
-        tmp = PyNumber_Long(value);
-        if (tmp == NULL)
-            goto done;
-        result = format_long_internal(tmp, &format);
-        break;
-
     case 'e':
     case 'E':
     case 'f':
