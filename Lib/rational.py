@@ -103,7 +103,7 @@ class Rational(RationalAbc):
     def __new__(cls, numerator=0, denominator=1):
         """Constructs a Rational.
 
-        Takes a string like '3/2' or '3.2', another Rational, or a
+        Takes a string like '3/2' or '1.5', another Rational, or a
         numerator/denominator pair.
 
         """
