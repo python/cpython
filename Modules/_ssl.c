@@ -684,7 +684,7 @@ _get_peer_alt_names (X509 *certificate) {
 		}
 
 		p = ext->value->data;
-		if(method->it)
+		if (method->it)
 			names = (GENERAL_NAMES*)
                           (ASN1_item_d2i(NULL,
                                          &p,
