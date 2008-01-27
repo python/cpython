@@ -309,6 +309,7 @@ class TestsWithSourceFile(unittest.TestCase):
                 correctfile = os.path.join(os.getcwd(), fpath[1:])
             else:
                 correctfile = os.path.join(os.getcwd(), fpath)
+            correctfile = os.path.normpath(correctfile)
 
             self.assertEqual(writtenfile, correctfile)
 

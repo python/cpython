@@ -6,6 +6,7 @@ import shutil
 import sys, os, re
 from io import StringIO
 import tempfile
+import test_all
 
 import unittest
 try:
@@ -55,7 +56,12 @@ class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
 
     def setUp (self):
         self.filename = self.__class__.__name__ + '.db'
-        self.homeDir = tempfile.mkdtemp()
+        homeDir = os.path.join (tempfile.gettempdir(), 'db_home')
+        self.homeDir = homeDir
+        try:
+            os.mkdir (homeDir)
+        except os.error:
+            pass
 
         env = db.DBEnv ()
         env.open (self.homeDir,

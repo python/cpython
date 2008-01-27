@@ -259,8 +259,8 @@ mmap_gfind(mmap_object *self,
 	   int reverse)
 {
 	Py_ssize_t start = self->pos;
-        Py_ssize_t end = self->size;
-	char *needle;
+	Py_ssize_t end = self->size;
+	const char *needle;
 	Py_ssize_t len;
 
 	CHECK_VALID(NULL);
@@ -268,8 +268,8 @@ mmap_gfind(mmap_object *self,
 			      &needle, &len, &start, &end)) {
 		return NULL;
 	} else {
-		char *p;
-		char sign = reverse ? -1 : 1;
+		const char *p, *start_p, *end_p;
+		int sign = reverse ? -1 : 1;
 
                 if (start < 0)
 			start += self->size;
@@ -285,11 +285,11 @@ mmap_gfind(mmap_object *self,
 		else if ((size_t)end > self->size)
 			end = self->size;
 
-		start += (Py_ssize_t)self->data;
-		end += (Py_ssize_t)self->data;
+		start_p = self->data + start;
+		end_p = self->data + end;
 
-		for (p = (char *)(reverse ? end - len : start);
-		     p >= (char *)start && p + len <= (char *)end; p+=sign) {
+		for (p = (reverse ? end_p - len : start_p);
+		     (p >= start_p) && (p + len <= end_p); p += sign) {
 			Py_ssize_t i;
 			for (i = 0; i < len && needle[i] == p[i]; ++i)
 				/* nothing */;
@@ -543,23 +543,21 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 	if ((size_t)(offset + size) > self->size) {
 		PyErr_SetString(PyExc_ValueError, "flush values out of range");
 		return NULL;
-	} else {
-#ifdef MS_WINDOWS
-		return PyLong_FromLong((long)
-                                      FlushViewOfFile(self->data+offset, size));
-#endif /* MS_WINDOWS */
-#ifdef UNIX
-		/* XXX semantics of return value? */
-		/* XXX flags for msync? */
-		if (-1 == msync(self->data + offset, size,
-				MS_SYNC))
-		{
-			PyErr_SetFromErrno(mmap_module_error);
-			return NULL;
-		}
-		return PyLong_FromLong(0);
-#endif /* UNIX */
 	}
+#ifdef MS_WINDOWS
+	return PyLong_FromLong((long) FlushViewOfFile(self->data+offset, size));
+#elif defined(UNIX)
+	/* XXX semantics of return value? */
+	/* XXX flags for msync? */
+	if (-1 == msync(self->data + offset, size, MS_SYNC)) {
+		PyErr_SetFromErrno(mmap_module_error);
+		return NULL;
+	}
+	return PyLong_FromLong(0);
+#else
+	PyErr_SetString(PyExc_ValueError, "flush not supported on this system");
+	return NULL;
+#endif
 }
 
 static PyObject *

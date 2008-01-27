@@ -557,16 +557,7 @@ a fixed-width print format::
     Point: x= 3.000  y= 4.000  hypot= 5.000
     Point: x=14.000  y= 0.714  hypot=14.018
 
-Another use for subclassing is to replace performance critcal methods with
-faster versions that bypass error-checking::
-
-    class Point(namedtuple('Point', 'x y')):
-        __slots__ = ()
-        _make = classmethod(tuple.__new__)
-        def _replace(self, _map=map, **kwds):
-            return self._make(_map(kwds.get, ('x', 'y'), self))
-
-The subclasses shown above set ``__slots__`` to an empty tuple.  This keeps
+The subclass shown above sets ``__slots__`` to an empty tuple.  This keeps
 keep memory requirements low by preventing the creation of instance dictionaries.
 
 

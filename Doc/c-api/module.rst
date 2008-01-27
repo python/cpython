@@ -18,12 +18,12 @@ There are only a few functions special to module objects.
    is exposed to Python programs as ``types.ModuleType``.
 
 
-.. cmacro:: int PyModule_Check(PyObject *p)
+.. cfunction:: int PyModule_Check(PyObject *p)
 
    Return true if *p* is a module object, or a subtype of a module object.
 
 
-.. cmacro:: int PyModule_CheckExact(PyObject *p)
+.. cfunction:: int PyModule_CheckExact(PyObject *p)
 
    Return true if *p* is a module object, but not a subtype of
    :cdata:`PyModule_Type`.
@@ -94,7 +94,7 @@ There are only a few functions special to module objects.
    null-terminated.  Return ``-1`` on error, ``0`` on success.
 
 
-.. cmacro:: int PyModule_AddIntMacro(PyObject *module, macro)
+.. cfunction:: int PyModule_AddIntMacro(PyObject *module, macro)
 
    Add an int constant to *module*. The name and the value are taken from 
    *macro*. For example ``PyModule_AddConstant(module, AF_INET)`` adds the int
@@ -102,7 +102,7 @@ There are only a few functions special to module objects.
    Return ``-1`` on error, ``0`` on success.
 
 
-.. cmacro:: int PyModule_AddStringMacro(PyObject *module, macro)
+.. cfunction:: int PyModule_AddStringMacro(PyObject *module, macro)
 
    Add a string constant to *module*.
 

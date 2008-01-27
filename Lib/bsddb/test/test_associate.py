@@ -141,7 +141,15 @@ class AssociateTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        self.homeDir = tempfile.mkdtemp()
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        self.homeDir = homeDir
+        try:
+            os.mkdir(homeDir)
+        except os.error:
+            import glob
+            files = glob.glob(os.path.join(self.homeDir, '*'))
+            for file in files:
+                os.remove(file)
         self.env = db.DBEnv()
         self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL |
                                db.DB_INIT_LOCK | db.DB_THREAD | self.envFlags)

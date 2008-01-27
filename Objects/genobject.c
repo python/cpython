@@ -11,6 +11,7 @@ static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
 	Py_VISIT((PyObject *)gen->gi_frame);
+	Py_VISIT(gen->gi_code);
 	return 0;
 }
 
@@ -35,6 +36,7 @@ gen_dealloc(PyGenObject *gen)
 
 	_PyObject_GC_UNTRACK(self);
 	Py_CLEAR(gen->gi_frame);
+	Py_CLEAR(gen->gi_code);
 	PyObject_GC_Del(gen);
 }
 
@@ -283,6 +285,7 @@ gen_iternext(PyGenObject *gen)
 static PyMemberDef gen_memberlist[] = {
 	{"gi_frame",	T_OBJECT, offsetof(PyGenObject, gi_frame),	READONLY},
 	{"gi_running",	T_INT,    offsetof(PyGenObject, gi_running),	READONLY},
+	{"gi_code",     T_OBJECT, offsetof(PyGenObject, gi_code),  READONLY},
 	{NULL}	/* Sentinel */
 };
 
@@ -353,6 +356,8 @@ PyGen_New(PyFrameObject *f)
 		return NULL;
 	}
 	gen->gi_frame = f;
+	Py_INCREF(f->f_code);
+	gen->gi_code = (PyObject *)(f->f_code);
 	gen->gi_running = 0;
 	gen->gi_weakreflist = NULL;
 	_PyObject_GC_TRACK(gen);

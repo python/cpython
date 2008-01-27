@@ -9,6 +9,20 @@ import sys
 import os
 import mimetools
 
+
+def _open_with_retry(func, host, *args, **kwargs):
+    # Connecting to remote hosts is flaky.  Make it more robust
+    # by retrying the connection several times.
+    for i in range(3):
+        try:
+            return func(host, *args, **kwargs)
+        except IOError, last_exc:
+            continue
+        except:
+            raise
+    raise last_exc
+
+
 class URLTimeoutTest(unittest.TestCase):
 
     TIMEOUT = 10.0
@@ -20,7 +34,7 @@ class URLTimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
-        f = urllib.urlopen("http://www.python.org/")
+        f = _open_with_retry(urllib.urlopen, "http://www.python.org/")
         x = f.read()
 
 class urlopenNetworkTests(unittest.TestCase):
@@ -38,9 +52,12 @@ class urlopenNetworkTests(unittest.TestCase):
 
     """
 
+    def urlopen(self, *args):
+        return _open_with_retry(urllib.urlopen, *args)
+
     def test_basic(self):
         # Simple test expected to pass.
-        open_url = urllib.urlopen("http://www.python.org/")
+        open_url = self.urlopen("http://www.python.org/")
         for attr in ("read", "readline", "readlines", "fileno", "close",
                      "info", "geturl"):
             self.assert_(hasattr(open_url, attr), "object returned from "
@@ -52,7 +69,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_readlines(self):
         # Test both readline and readlines.
-        open_url = urllib.urlopen("http://www.python.org/")
+        open_url = self.urlopen("http://www.python.org/")
         try:
             self.assert_(isinstance(open_url.readline(), bytes),
                          "readline did not return bytes")
@@ -63,7 +80,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_info(self):
         # Test 'info'.
-        open_url = urllib.urlopen("http://www.python.org/")
+        open_url = self.urlopen("http://www.python.org/")
         try:
             info_obj = open_url.info()
         finally:
@@ -76,7 +93,7 @@ class urlopenNetworkTests(unittest.TestCase):
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
         URL = "http://www.python.org/"
-        open_url = urllib.urlopen(URL)
+        open_url = self.urlopen(URL)
         try:
             gotten_url = open_url.geturl()
         finally:
@@ -100,7 +117,7 @@ class urlopenNetworkTests(unittest.TestCase):
             # test can't pass on Windows.
             return
         # Make sure fd returned by fileno is valid.
-        open_url = urllib.urlopen("http://www.python.org/")
+        open_url = self.urlopen("http://www.python.org/")
         fd = open_url.fileno()
         FILE = os.fdopen(fd)
         try:
@@ -125,9 +142,12 @@ class urlopenNetworkTests(unittest.TestCase):
 class urlretrieveNetworkTests(unittest.TestCase):
     """Tests urllib.urlretrieve using the network."""
 
+    def urlretrieve(self, *args):
+        return _open_with_retry(urllib.urlretrieve, *args)
+
     def test_basic(self):
         # Test basic functionality.
-        file_location,info = urllib.urlretrieve("http://www.python.org/")
+        file_location,info = self.urlretrieve("http://www.python.org/")
         self.assert_(os.path.exists(file_location), "file location returned by"
                         " urlretrieve is not a valid path")
         FILE = open(file_location)
@@ -140,8 +160,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_specified_path(self):
         # Make sure that specifying the location of the file to write to works.
-        file_location,info = urllib.urlretrieve("http://www.python.org/",
-                                                test_support.TESTFN)
+        file_location,info = self.urlretrieve("http://www.python.org/",
+                                              test_support.TESTFN)
         self.assertEqual(file_location, test_support.TESTFN)
         self.assert_(os.path.exists(file_location))
         FILE = open(file_location)
@@ -153,7 +173,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_header(self):
         # Make sure header returned as 2nd value from urlretrieve is good.
-        file_location, header = urllib.urlretrieve("http://www.python.org/")
+        file_location, header = self.urlretrieve("http://www.python.org/")
         os.unlink(file_location)
         self.assert_(isinstance(header, mimetools.Message),
                      "header is not an instance of mimetools.Message")

@@ -261,6 +261,9 @@ class BinaryTestCase(unittest.TestCase):
 
 PORT = None
 
+# The evt is set twice.  First when the server is ready to serve.
+# Second when the server has been shutdown.  The user must clear
+# the event after it has been set the first time to catch the second set.
 def http_server(evt, numrequests):
     class TestInstanceClass:
         def div(self, x, y):
@@ -287,6 +290,7 @@ def http_server(evt, numrequests):
         serv.register_function(lambda x,y: x+y, 'add')
         serv.register_function(my_function)
         serv.register_instance(TestInstanceClass())
+        evt.set()
 
         # handle up to 'numrequests' requests
         while numrequests > 0:
@@ -300,14 +304,16 @@ def http_server(evt, numrequests):
         PORT = None
         evt.set()
 
-def stop_serving():
-    global PORT
-    if PORT is None:
-        return
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('localhost', int(PORT)))
-    sock.send(b"")
-    sock.close()
+# This function prevents errors like:
+#    <ProtocolError for localhost:57527/RPC2: 500 Internal Server Error>
+def is_unavailable_exception(e):
+    '''Returns True if the given ProtocolError is the product of a server-side
+       exception caused by the 'temporarily unavailable' response sometimes
+       given by operations on non-blocking sockets.'''
+
+    # sometimes we get a -1 error code and/or empty headers
+    if e.errcode == -1 or e.headers is None:
+        return True
 
 
 class SimpleServerTestCase(unittest.TestCase):
@@ -320,13 +326,9 @@ class SimpleServerTestCase(unittest.TestCase):
         serv_args = (self.evt, 1)
         threading.Thread(target=http_server, args=serv_args).start()
 
-        # wait for port to be assigned to server
-        n = 1000
-        while n > 0 and PORT is None:
-            time.sleep(0.001)
-            n -= 1
-
-        time.sleep(0.5)
+        # wait for the server to be ready
+        self.evt.wait()
+        self.evt.clear()
 
     def tearDown(self):
         # wait on the server thread to terminate
@@ -457,13 +459,9 @@ class FailingServerTestCase(unittest.TestCase):
         serv_args = (self.evt, 1)
         threading.Thread(target=http_server, args=serv_args).start()
 
-        # wait for port to be assigned to server
-        n = 1000
-        while n > 0 and PORT is None:
-            time.sleep(0.001)
-            n -= 1
-
-        time.sleep(0.5)
+        # wait for the server to be ready
+        self.evt.wait()
+        self.evt.clear()
 
     def tearDown(self):
         # wait on the server thread to terminate
