@@ -399,6 +399,7 @@ PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
 					       PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
+PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
 
 /* Generic operations on objects */
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
