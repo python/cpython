@@ -263,7 +263,7 @@ mmap_gfind(mmap_object *self,
 		return NULL;
 	} else {
 		const char *p, *start_p, *end_p;
-		char sign = reverse ? -1 : 1;
+		int sign = reverse ? -1 : 1;
 
                 if (start < 0)
 			start += self->size;
