@@ -377,6 +377,9 @@ Py_Finalize(void)
 	Py_XDECREF(warnings_module);
 	warnings_module = NULL;
 
+	/* Clear type lookup cache */
+	PyType_ClearCache();
+
 	/* Collect garbage.  This may call finalizers; it's nice to call these
 	 * before all modules are destroyed.
 	 * XXX If a __del__ or weakref callback is triggered here, and tries to
