@@ -1,8 +1,9 @@
 import unittest
 from test import test_support
 
-
-import os, resource
+import os
+import resource
+import time
 
 # This test is checking a few specific problem spots with the resource module.
 
@@ -59,6 +60,8 @@ class ResourceTest(unittest.TestCase):
                         # an attempt to ensure the file is really synced and
                         # the exception raised.
                         for i in range(5):
+                            time.sleep(.1)
+                            f.flush()
                             f.close()
                     except IOError:
                         if not limit_set:

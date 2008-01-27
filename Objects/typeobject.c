@@ -59,7 +59,7 @@ type_modified(PyTypeObject *type)
 	PyObject *raw, *ref;
 	Py_ssize_t i, n;
 
-	if(!PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
+	if (!PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
 		return;
 
 	raw = type->tp_subclasses;
@@ -95,7 +95,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 	Py_ssize_t i, n;
 	int clear = 0;
 
-	if(!PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
+	if (!PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
 		return;
 
 	n = PyTuple_GET_SIZE(bases);
@@ -1342,8 +1342,8 @@ mro_implementation(PyTypeObject *type)
 	PyObject *bases, *result;
 	PyObject *to_merge, *bases_aslist;
 
-	if(type->tp_dict == NULL) {
-		if(PyType_Ready(type) < 0)
+	if (type->tp_dict == NULL) {
+		if (PyType_Ready(type) < 0)
 			return NULL;
 	}
 
@@ -2204,7 +2204,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 	unsigned int h;
 
 	if (MCACHE_CACHEABLE_NAME(name) &&
-	    PyType_HasFeature(type,Py_TPFLAGS_VALID_VERSION_TAG)) {
+	    PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
 		/* fast path */
 		h = MCACHE_HASH_METHOD(type, name);
 		if (method_cache[h].version == type->tp_version_tag &&

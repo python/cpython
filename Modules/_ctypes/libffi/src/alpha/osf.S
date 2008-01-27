@@ -1,9 +1,7 @@
 /* -----------------------------------------------------------------------
-   osf.S - Copyright (c) 1998, 2001 Red Hat
+   osf.S - Copyright (c) 1998, 2001, 2007 Red Hat
    
    Alpha/OSF Foreign Function Interface 
-
-   $Id: osf.S,v 1.2 2006/03/03 20:24:26 theller Exp $
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -42,6 +40,8 @@
 	.align	3
 	.globl	ffi_call_osf
 	.ent	ffi_call_osf
+	FFI_HIDDEN(ffi_call_osf)
+
 ffi_call_osf:
 	.frame	$15, 32, $26, 0
 	.mask   0x4008000, -32
@@ -129,6 +129,8 @@ $LFE1:
 	.align	3
 	.globl	ffi_closure_osf
 	.ent	ffi_closure_osf
+	FFI_HIDDEN(ffi_closure_osf)
+
 ffi_closure_osf:
 	.frame	$30, 16*8, $26, 0
 	.mask	0x4000000, -16*8
@@ -265,7 +267,7 @@ $load_table:
 	.gprel32 $load_32	# FFI_TYPE_INT
 	.gprel32 $load_float	# FFI_TYPE_FLOAT
 	.gprel32 $load_double	# FFI_TYPE_DOUBLE
-	.gprel32 $load_double	# FFI_TYPE_LONGDOUBLE
+	.gprel32 $load_none	# FFI_TYPE_LONGDOUBLE
 	.gprel32 $load_u8	# FFI_TYPE_UINT8
 	.gprel32 $load_s8	# FFI_TYPE_SINT8
 	.gprel32 $load_u16	# FFI_TYPE_UINT16

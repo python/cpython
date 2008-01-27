@@ -657,6 +657,7 @@ decode_str(const char *str, struct tok_state *tok)
 	for (s = str;; s++) {
 		if (*s == '\0') break;
 		else if (*s == '\n') {
+			assert(lineno < 2);
 			newl[lineno] = s;
 			lineno++;
 			if (lineno == 2) break;
