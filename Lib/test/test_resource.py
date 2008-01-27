@@ -56,13 +56,12 @@ class ResourceTest(unittest.TestCase):
                         f.flush()
                         # On some systems (e.g., Ubuntu on hppa) the flush()
                         # doesn't always cause the exception, but the close()
-                        # does eventually.  Try closing several times in
+                        # does eventually.  Try flushing several times in
                         # an attempt to ensure the file is really synced and
                         # the exception raised.
                         for i in range(5):
                             time.sleep(.1)
                             f.flush()
-                            f.close()
                     except IOError:
                         if not limit_set:
                             raise

@@ -5,7 +5,7 @@ from test.test_support import fcmp, TESTFN, unlink,  run_unittest, \
                               run_with_locale
 from operator import neg
 
-import sys, warnings, random, UserDict, io
+import sys, warnings, random, UserDict, io, rational
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
@@ -591,6 +591,25 @@ class BuiltinTest(unittest.TestCase):
 
         # make sure we can take a subclass of str as a format spec
         self.assertEqual(format(0, C('10')), '         0')
+
+    def test_floatasratio(self):
+        R = rational.Rational
+        self.assertEqual(R(0, 1),
+                         R(*float(0.0).as_integer_ratio()))
+        self.assertEqual(R(5, 2),
+                         R(*float(2.5).as_integer_ratio()))
+        self.assertEqual(R(1, 2),
+                         R(*float(0.5).as_integer_ratio()))
+        self.assertEqual(R(4728779608739021, 2251799813685248),
+                         R(*float(2.1).as_integer_ratio()))
+        self.assertEqual(R(-4728779608739021, 2251799813685248),
+                         R(*float(-2.1).as_integer_ratio()))
+        self.assertEqual(R(-2100, 1),
+                         R(*float(-2100.0).as_integer_ratio()))
+
+        self.assertRaises(OverflowError, float('inf').as_integer_ratio)
+        self.assertRaises(OverflowError, float('-inf').as_integer_ratio)
+        self.assertRaises(ValueError, float('nan').as_integer_ratio)
 
     def test_getattr(self):
         import sys

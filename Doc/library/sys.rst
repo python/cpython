@@ -54,6 +54,13 @@ always available.
    A string containing the copyright pertaining to the Python interpreter.
 
 
+.. function:: _cleartypecache()
+
+   Clear the internal type lookup cache.
+
+   .. versionadded:: 2.6
+
+
 .. function:: _current_frames()
 
    Return a dictionary mapping each thread's identifier to the topmost stack frame

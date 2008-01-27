@@ -752,6 +752,9 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     sys.path_importer_cache.clear()
     sys.path_importer_cache.update(pic)
 
+    # clear type cache
+    sys._cleartypecache()
+
     # Clear ABC registries, restoring previously saved ABC registries.
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
         if not issubclass(abc, _Abstract):
