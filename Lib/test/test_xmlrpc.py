@@ -348,10 +348,14 @@ def is_unavailable_exception(e):
        given by operations on non-blocking sockets.'''
 
     # sometimes we get a -1 error code and/or empty headers
-    if e.errcode == -1 or e.headers is None:
-        return True
+    try:
+        if e.errcode == -1 or e.headers is None:
+            return True
+        exc_mess = e.headers.get('X-exception')
+    except AttributeError:
+        # Ignore socket.errors here.
+        exc_mess = str(e)
 
-    exc_mess = e.headers.get('X-exception')
     if exc_mess and 'temporarily unavailable' in exc_mess.lower():
         return True
 
