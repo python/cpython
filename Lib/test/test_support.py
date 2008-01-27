@@ -95,10 +95,20 @@ def bind_port(sock, host='', preferred_port=54321):
     makes the test more robust."""
 
     import socket, errno
-    # some random ports that hopefully no one is listening on.
-    for port in [preferred_port, 9907, 10243, 32999]:
+
+    # Find some random ports that hopefully no one is listening on.
+    # Ideally each test would clean up after itself and not continue listening
+    # on any ports.  However, this isn't the case.  The last port (0) is
+    # a stop-gap that asks the O/S to assign a port.  Whenever the warning
+    # message below is printed, the test that is listening on the port should
+    # be fixed to close the socket at the end of the test.
+    # Another reason why we can't use a port is another process (possibly
+    # another instance of the test suite) is using the same port.
+    for port in [preferred_port, 9907, 10243, 32999, 0]:
         try:
             sock.bind((host, port))
+            if port == 0:
+                port = sock.getsockname()[1]
             return port
         except socket.error, (err, msg):
             if err != errno.EADDRINUSE:
