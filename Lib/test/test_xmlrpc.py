@@ -389,7 +389,7 @@ class SimpleServerTestCase(unittest.TestCase):
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             self.assertEqual(p.pow(6,8), 6**8)
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
@@ -415,7 +415,7 @@ class SimpleServerTestCase(unittest.TestCase):
                                     'system.listMethods', 'system.methodHelp',
                                     'system.methodSignature', 'system.multicall'])
             self.assertEqual(set(meth), expected_methods)
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
@@ -427,7 +427,7 @@ class SimpleServerTestCase(unittest.TestCase):
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             divhelp = p.system.methodHelp('div')
             self.assertEqual(divhelp, 'This is the div function')
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
@@ -439,7 +439,7 @@ class SimpleServerTestCase(unittest.TestCase):
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             myfunction = p.system.methodHelp('my_function')
             self.assertEqual(myfunction, 'This is my function')
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
@@ -452,7 +452,7 @@ class SimpleServerTestCase(unittest.TestCase):
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             divsig = p.system.methodSignature('div')
             self.assertEqual(divsig, 'signatures not supported')
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
@@ -469,7 +469,7 @@ class SimpleServerTestCase(unittest.TestCase):
             self.assertEqual(add_result, 2+3)
             self.assertEqual(pow_result, 6**8)
             self.assertEqual(div_result, 127//42)
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
@@ -490,7 +490,7 @@ class SimpleServerTestCase(unittest.TestCase):
             self.assertEqual(result.results[0]['faultString'],
                 '<type \'exceptions.Exception\'>:method "this_is_not_exists" '
                 'is not supported')
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
@@ -545,7 +545,7 @@ class FailingServerTestCase(unittest.TestCase):
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             self.assertEqual(p.pow(6,8), 6**8)
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
@@ -558,7 +558,7 @@ class FailingServerTestCase(unittest.TestCase):
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             p.pow(6,8)
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # The two server-side error headers shouldn't be sent back in this case
@@ -578,7 +578,7 @@ class FailingServerTestCase(unittest.TestCase):
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             p.pow(6,8)
-        except xmlrpclib.ProtocolError, e:
+        except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):
                 # We should get error info in the response
