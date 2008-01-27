@@ -33,6 +33,24 @@ struct method_cache_entry {
 
 static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
 static unsigned int next_version_tag = 0;
+static void type_modified(PyTypeObject *);
+
+unsigned int
+PyType_ClearCache(void)
+{
+	Py_ssize_t i;
+	unsigned int cur_version_tag = next_version_tag - 1;
+	
+	for (i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
+		method_cache[i].version = 0;
+		Py_CLEAR(method_cache[i].name);
+		method_cache[i].value = NULL;
+	}
+	next_version_tag = 0;
+	/* mark all version tags as invalid */
+	type_modified(&PyBaseObject_Type);
+	return cur_version_tag;
+}
 
 static void
 type_modified(PyTypeObject *type)

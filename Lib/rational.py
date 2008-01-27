@@ -24,60 +24,6 @@ def gcd(a, b):
     return a
 
 
-def _binary_float_to_ratio(x):
-    """x -> (top, bot), a pair of ints s.t. x = top/bot.
-
-    The conversion is done exactly, without rounding.
-    bot > 0 guaranteed.
-    Some form of binary fp is assumed.
-    Pass NaNs or infinities at your own risk.
-
-    >>> _binary_float_to_ratio(10.0)
-    (10, 1)
-    >>> _binary_float_to_ratio(0.0)
-    (0, 1)
-    >>> _binary_float_to_ratio(-.25)
-    (-1, 4)
-    """
-    # XXX Move this to floatobject.c with a name like
-    # float.as_integer_ratio()
-
-    if x == 0:
-        return 0, 1
-    f, e = math.frexp(x)
-    signbit = 1
-    if f < 0:
-        f = -f
-        signbit = -1
-    assert 0.5 <= f < 1.0
-    # x = signbit * f * 2**e exactly
-
-    # Suck up CHUNK bits at a time; 28 is enough so that we suck
-    # up all bits in 2 iterations for all known binary double-
-    # precision formats, and small enough to fit in an int.
-    CHUNK = 28
-    top = 0
-    # invariant: x = signbit * (top + f) * 2**e exactly
-    while f:
-        f = math.ldexp(f, CHUNK)
-        digit = trunc(f)
-        assert digit >> CHUNK == 0
-        top = (top << CHUNK) | digit
-        f = f - digit
-        assert 0.0 <= f < 1.0
-        e = e - CHUNK
-    assert top
-
-    # Add in the sign bit.
-    top = signbit * top
-
-    # now x = top * 2**e exactly; fold in 2**e
-    if e>0:
-        return (top * 2**e, 1)
-    else:
-        return (top, 2 ** -e)
-
-
 _RATIONAL_FORMAT = re.compile(
     r'^\s*(?P<sign>[-+]?)(?P<num>\d+)'
     r'(?:/(?P<denom>\d+)|\.(?P<decimal>\d+))?\s*$')
@@ -162,7 +108,7 @@ class Rational(RationalAbc):
                             (cls.__name__, f, type(f).__name__))
         if math.isnan(f) or math.isinf(f):
             raise TypeError("Cannot convert %r to %s." % (f, cls.__name__))
-        return cls(*_binary_float_to_ratio(f))
+        return cls(*f.as_integer_ratio())
 
     @classmethod
     def from_decimal(cls, dec):
