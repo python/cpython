@@ -14,7 +14,21 @@ import urllib
 # Optionally test SSL support, if we have it in the tested platform
 skip_expected = not hasattr(socket, "ssl")
 
+
 class ConnectedTests(unittest.TestCase):
+
+    def urlopen(self, host, *args, **kwargs):
+        # Connecting to remote hosts is flaky.  Make it more robust
+        # by retrying the connection several times.
+        for i in range(3):
+            try:
+                return urllib.urlopen(host, *args, **kwargs)
+            except IOError, e:
+                last_exc = e
+                continue
+            except:
+                raise
+        raise last_exc
 
     def testBasic(self):
         socket.RAND_status()
@@ -27,7 +41,7 @@ class ConnectedTests(unittest.TestCase):
         socket.RAND_add("this is a random string", 75.0)
 
         with test_support.transient_internet():
-            f = urllib.urlopen('https://sf.net')
+            f = self.urlopen('https://sf.net')
         buf = f.read()
         f.close()
 
@@ -36,7 +50,7 @@ class ConnectedTests(unittest.TestCase):
             print >> sys.stderr, """\
         WARNING:  an attempt to connect to %r %s, in
         test_timeout.  That may be legitimate, but is not the outcome we
-        hoped for.  If this message is seen often, test_timeout should be
+        hoped for.  If this message is seen often, testTimeout should be
         changed to use a more reliable address.""" % (ADDR, extra_msg)
 
         # A service which issues a welcome banner (without need to write
@@ -103,6 +117,19 @@ class BasicTests(unittest.TestCase):
         connector()
         t.join()
 
+    def connect(self, s, host_port):
+        # Connecting to remote hosts is flaky.  Make it more robust
+        # by retrying the connection several times.
+        for i in range(3):
+            try:
+                return s.connect(host_port)
+            except IOError, e:
+                last_exc = e
+                continue
+            except:
+                raise
+        raise last_exc
+
     def test_978833(self):
         if test_support.verbose:
             print "test_978833 ..."
@@ -110,7 +137,7 @@ class BasicTests(unittest.TestCase):
         import os, httplib, ssl
         with test_support.transient_internet():
             s = socket.socket(socket.AF_INET)
-            s.connect(("svn.python.org", 443))
+            self.connect(s, ("svn.python.org", 443))
             fd = s._sock.fileno()
             sock = ssl.wrap_socket(s)
             s = None
