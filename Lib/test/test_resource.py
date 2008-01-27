@@ -54,8 +54,12 @@ class ResourceTest(unittest.TestCase):
                         f.write("Y")
                         f.flush()
                         # On some systems (e.g., Ubuntu on hppa) the flush()
-                        # doesn't cause the exception, but the close() does.
-                        f.close()
+                        # doesn't always cause the exception, but the close()
+                        # does eventually.  Try closing several times in
+                        # an attempt to ensure the file is really synced and
+                        # the exception raised.
+                        for i in range(5):
+                            f.close()
                     except IOError:
                         if not limit_set:
                             raise
