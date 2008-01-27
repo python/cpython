@@ -2492,7 +2492,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		else {
 			/* This check is expensive! */
 			if (PyErr_Occurred()) {
-				char buf[1024];
+				char buf[128];
 				sprintf(buf, "Stack unwind with exception "
 					"set and why=%d", why);
 				Py_FatalError(buf);
