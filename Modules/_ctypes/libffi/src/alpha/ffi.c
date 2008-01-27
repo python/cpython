@@ -25,11 +25,22 @@
 
 #include <ffi.h>
 #include <ffi_common.h>
-
 #include <stdlib.h>
 
-extern void ffi_call_osf(void *, unsigned long, unsigned, void *, void (*)(void));
-extern void ffi_closure_osf(void);
+/* Force FFI_TYPE_LONGDOUBLE to be different than FFI_TYPE_DOUBLE;
+   all further uses in this file will refer to the 128-bit type.  */
+#if defined(__LONG_DOUBLE_128__)
+# if FFI_TYPE_LONGDOUBLE != 4
+#  error FFI_TYPE_LONGDOUBLE out of date
+# endif
+#else
+# undef FFI_TYPE_LONGDOUBLE
+# define FFI_TYPE_LONGDOUBLE 4
+#endif
+
+extern void ffi_call_osf(void *, unsigned long, unsigned, void *, void (*)(void))
+  FFI_HIDDEN;
+extern void ffi_closure_osf(void) FFI_HIDDEN;
 
 
 ffi_status
@@ -49,6 +60,11 @@ ffi_prep_cif_machdep(ffi_cif *cif)
       cif->flags = cif->rtype->type;
       break;
 
+    case FFI_TYPE_LONGDOUBLE:
+      /* 128-bit long double is returned in memory, like a struct.  */
+      cif->flags = FFI_TYPE_STRUCT;
+      break;
+
     default:
       cif->flags = FFI_TYPE_INT;
       break;
@@ -57,6 +73,7 @@ ffi_prep_cif_machdep(ffi_cif *cif)
   return FFI_OK;
 }
 
+
 void
 ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
@@ -64,8 +81,6 @@ ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
   long i, avn;
   ffi_type **arg_types;
   
-  FFI_ASSERT (cif->abi == FFI_OSF);
-
   /* If the return value is a struct and we don't have a return
      value address then we need to make one.  */
   if (rvalue == NULL && cif->flags == FFI_TYPE_STRUCT)
@@ -84,6 +99,8 @@ ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 
   while (i < avn)
     {
+      size_t size = (*arg_types)->size;
+
       switch ((*arg_types)->type)
 	{
 	case FFI_TYPE_SINT8:
@@ -129,6 +146,12 @@ ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 	  *(double *) argp = *(double *)(* avalue);
 	  break;
 
+	case FFI_TYPE_LONGDOUBLE:
+	  /* 128-bit long double is passed by reference.  */
+	  *(long double **) argp = (long double *)(* avalue);
+	  size = sizeof (long double *);
+	  break;
+
 	case FFI_TYPE_STRUCT:
 	  memcpy(argp, *avalue, (*arg_types)->size);
 	  break;
@@ -137,7 +160,7 @@ ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 	  FFI_ASSERT(0);
 	}
 
-      argp += ALIGN((*arg_types)->size, FFI_SIZEOF_ARG) / FFI_SIZEOF_ARG;
+      argp += ALIGN(size, FFI_SIZEOF_ARG) / FFI_SIZEOF_ARG;
       i++, arg_types++, avalue++;
     }
 
@@ -152,8 +175,6 @@ ffi_prep_closure (ffi_closure* closure,
 		  void *user_data)
 {
   unsigned int *tramp;
-
-  FFI_ASSERT (cif->abi == FFI_OSF);
 
   tramp = (unsigned int *) &closure->tramp[0];
   tramp[0] = 0x47fb0401;	/* mov $27,$1		*/
@@ -177,7 +198,8 @@ ffi_prep_closure (ffi_closure* closure,
   return FFI_OK;
 }
 
-int
+
+long FFI_HIDDEN
 ffi_closure_osf_inner(ffi_closure *closure, void *rvalue, unsigned long *argp)
 {
   ffi_cif *cif;
@@ -205,6 +227,8 @@ ffi_closure_osf_inner(ffi_closure *closure, void *rvalue, unsigned long *argp)
   /* Grab the addresses of the arguments from the stack frame.  */
   while (i < avn)
     {
+      size_t size = arg_types[i]->size;
+
       switch (arg_types[i]->type)
 	{
 	case FFI_TYPE_SINT8:
@@ -236,16 +260,22 @@ ffi_closure_osf_inner(ffi_closure *closure, void *rvalue, unsigned long *argp)
 	  avalue[i] = &argp[argn - (argn < 6 ? 6 : 0)];
 	  break;
 
+	case FFI_TYPE_LONGDOUBLE:
+	  /* 128-bit long double is passed by reference.  */
+	  avalue[i] = (long double *) argp[argn];
+	  size = sizeof (long double *);
+	  break;
+
 	default:
-	  FFI_ASSERT(0);
+	  abort ();
 	}
 
-      argn += ALIGN(arg_types[i]->size, FFI_SIZEOF_ARG) / FFI_SIZEOF_ARG;
+      argn += ALIGN(size, FFI_SIZEOF_ARG) / FFI_SIZEOF_ARG;
       i++;
     }
 
   /* Invoke the closure.  */
-  (closure->fun) (cif, rvalue, avalue, closure->user_data);
+  closure->fun (cif, rvalue, avalue, closure->user_data);
 
   /* Tell ffi_closure_osf how to perform return type promotions.  */
   return cif->rtype->type;
