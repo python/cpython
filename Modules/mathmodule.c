@@ -291,9 +291,9 @@ loghelper(PyObject* arg, double (*func)(double), char *funcname)
 					"math domain error");
 			return NULL;
 		}
-		/* Value is ~= x * 2**(e*SHIFT), so the log ~=
-		   log(x) + log(2) * e * SHIFT.
-		   CAUTION:  e*SHIFT may overflow using int arithmetic,
+		/* Value is ~= x * 2**(e*PyLong_SHIFT), so the log ~=
+		   log(x) + log(2) * e * PyLong_SHIFT.
+		   CAUTION:  e*PyLong_SHIFT may overflow using int arithmetic,
 		   so force use of double. */
 		x = func(x) + (e * (double)PyLong_SHIFT) * func(2.0);
 		return PyFloat_FromDouble(x);

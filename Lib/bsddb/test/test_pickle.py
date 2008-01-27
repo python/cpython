@@ -4,6 +4,7 @@ import sys, os
 import pickle
 import tempfile
 import unittest
+import tempfile
 import glob
 
 try:
@@ -21,7 +22,10 @@ class pickleTestCase(unittest.TestCase):
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        self.homeDir = tempfile.mkdtemp()
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        self.homeDir = homeDir
+        try: os.mkdir(homeDir)
+        except os.error: pass
 
     def tearDown(self):
         if hasattr(self, 'db'):

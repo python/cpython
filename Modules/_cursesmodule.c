@@ -1711,9 +1711,18 @@ NoArgTrueFalseFunction(has_colors)
 NoArgTrueFalseFunction(has_ic)
 NoArgTrueFalseFunction(has_il)
 NoArgTrueFalseFunction(isendwin)
-NoArgNoReturnVoidFunction(filter)
 NoArgNoReturnVoidFunction(flushinp)
 NoArgNoReturnVoidFunction(noqiflush)
+
+static PyObject *
+PyCurses_filter(PyObject *self)
+{
+  /* not checking for PyCursesInitialised here since filter() must
+     be called before initscr() */
+  filter();
+  Py_INCREF(Py_None);
+  return Py_None;
+}
 
 static PyObject *
 PyCurses_Color_Content(PyObject *self, PyObject *args)

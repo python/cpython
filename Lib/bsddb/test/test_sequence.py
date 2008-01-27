@@ -17,8 +17,11 @@ from bsddb.test.test_all import verbose
 class DBSequenceTest(unittest.TestCase):
     def setUp(self):
         self.int_32_max = 0x100000000
-        self.homeDir = tempfile.mkdtemp()
-        old_tempfile_tempdir = tempfile.tempdir
+        self.homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        try:
+            os.mkdir(self.homeDir)
+        except os.error:
+            pass
         tempfile.tempdir = self.homeDir
         self.filename = os.path.split(tempfile.mktemp())[1]
         tempfile.tempdir = old_tempfile_tempdir

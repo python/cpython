@@ -1,6 +1,8 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
 
+#include <stdarg.h>
+
 /*
 
 Unicode implementation based on original code by Fredrik Lundh,

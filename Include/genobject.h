@@ -18,6 +18,9 @@ typedef struct {
 
 	/* True if generator is being executed. */
 	int gi_running;
+    
+	/* The code object backing the generator */
+	PyObject *gi_code;
 
 	/* List of weak reference. */
 	PyObject *gi_weakreflist;

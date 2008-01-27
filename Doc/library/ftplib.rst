@@ -176,11 +176,12 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.retrlines(command[, callback])
 
-   Retrieve a file or directory listing in ASCII transfer mode. *command* should be
-   an appropriate ``RETR`` command (see :meth:`retrbinary`) or a ``LIST`` command
-   (usually just the string ``'LIST'``).  The *callback* function is called for
-   each line, with the trailing CRLF stripped.  The default *callback* prints the
-   line to ``sys.stdout``.
+   Retrieve a file or directory listing in ASCII transfer mode.  *command*
+   should be an appropriate ``RETR`` command (see :meth:`retrbinary`) or a
+   command such as ``LIST``, ``NLST`` or ``MLSD`` (usually just the string
+   ``'LIST'``).  The *callback* function is called for each line, with the
+   trailing CRLF stripped.  The default *callback* prints the line to
+   ``sys.stdout``.
 
 
 .. method:: FTP.set_pasv(boolean)
@@ -190,20 +191,23 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    it is on by default.)
 
 
-.. method:: FTP.storbinary(command, file[, blocksize])
+.. method:: FTP.storbinary(command, file[, blocksize, callback])
 
    Store a file in binary transfer mode.  *command* should be an appropriate
    ``STOR`` command: ``"STOR filename"``. *file* is an open file object which is
    read until EOF using its :meth:`read` method in blocks of size *blocksize* to
    provide the data to be stored.  The *blocksize* argument defaults to 8192.
+   *callback* is an optional single parameter callable that is called
+   on each block of data after it is sent.
 
 
-.. method:: FTP.storlines(command, file)
+.. method:: FTP.storlines(command, file[, callback])
 
    Store a file in ASCII transfer mode.  *command* should be an appropriate
    ``STOR`` command (see :meth:`storbinary`).  Lines are read until EOF from the
    open file object *file* using its :meth:`readline` method to provide the data to
-   be stored.
+   be stored.  *callback* is an optional single parameter callable
+   that is called on each line after it is sent.
 
 
 .. method:: FTP.transfercmd(cmd[, rest])
