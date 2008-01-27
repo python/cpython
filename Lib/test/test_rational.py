@@ -9,9 +9,27 @@ import unittest
 from copy import copy, deepcopy
 from cPickle import dumps, loads
 R = rational.Rational
+gcd = rational.gcd
+
+
+class GcdTest(unittest.TestCase):
+
+    def testMisc(self):
+        self.assertEquals(0, gcd(0, 0))
+        self.assertEquals(1, gcd(1, 0))
+        self.assertEquals(-1, gcd(-1, 0))
+        self.assertEquals(1, gcd(0, 1))
+        self.assertEquals(-1, gcd(0, -1))
+        self.assertEquals(1, gcd(7, 1))
+        self.assertEquals(-1, gcd(7, -1))
+        self.assertEquals(1, gcd(-23, 15))
+        self.assertEquals(12, gcd(120, 84))
+        self.assertEquals(-12, gcd(84, -120))
+
 
 def _components(r):
     return (r.numerator, r.denominator)
+
 
 class RationalTest(unittest.TestCase):
 
@@ -55,8 +73,12 @@ class RationalTest(unittest.TestCase):
         self.assertEquals((3, 2), _components(R("3/2")))
         self.assertEquals((3, 2), _components(R(" \n  +3/2")))
         self.assertEquals((-3, 2), _components(R("-3/2  ")))
-        self.assertEquals((3, 2), _components(R("    03/02 \n  ")))
-        self.assertEquals((3, 2), _components(R(u"    03/02 \n  ")))
+        self.assertEquals((13, 2), _components(R("    013/02 \n  ")))
+        self.assertEquals((13, 2), _components(R(u"    013/02 \n  ")))
+
+        self.assertEquals((16, 5), _components(R(" 3.2 ")))
+        self.assertEquals((-16, 5), _components(R(u" -3.2 ")))
+
 
         self.assertRaisesMessage(
             ZeroDivisionError, "Rational(3, 0)",
@@ -76,9 +98,21 @@ class RationalTest(unittest.TestCase):
             ValueError, "Invalid literal for Rational: + 3/2",
             R, "+ 3/2")
         self.assertRaisesMessage(
-            # Only parse fractions, not decimals.
-            ValueError, "Invalid literal for Rational: 3.2",
-            R, "3.2")
+            # Avoid treating '.' as a regex special character.
+            ValueError, "Invalid literal for Rational: 3a2",
+            R, "3a2")
+        self.assertRaisesMessage(
+            # Only parse ordinary decimals, not scientific form.
+            ValueError, "Invalid literal for Rational: 3.2e4",
+            R, "3.2e4")
+        self.assertRaisesMessage(
+            # Don't accept combinations of decimals and rationals.
+            ValueError, "Invalid literal for Rational: 3/7.2",
+            R, "3/7.2")
+        self.assertRaisesMessage(
+            # Don't accept combinations of decimals and rationals.
+            ValueError, "Invalid literal for Rational: 3.2/7",
+            R, "3.2/7")
 
     def testImmutable(self):
         r = R(7, 3)
@@ -368,7 +402,7 @@ class RationalTest(unittest.TestCase):
         self.assertEqual(id(r), id(deepcopy(r)))
 
 def test_main():
-    run_unittest(RationalTest)
+    run_unittest(RationalTest, GcdTest)
 
 if __name__ == '__main__':
     test_main()

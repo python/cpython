@@ -14,8 +14,8 @@ __all__ = ["Rational"]
 RationalAbc = numbers.Rational
 
 
-def _gcd(a, b):                     # XXX This is a useful function. Consider making it public.
-    """Calculate the Greatest Common Divisor.
+def gcd(a, b):
+    """Calculate the Greatest Common Divisor of a and b.
 
     Unless b==0, the result will have the same sign as b (so that when
     b is divided by it, the result comes out positive).
@@ -40,8 +40,8 @@ def _binary_float_to_ratio(x):
     >>> _binary_float_to_ratio(-.25)
     (-1, 4)
     """
-    # XXX Consider moving this to to floatobject.c
-    # with a name like float.as_intger_ratio()
+    # XXX Move this to floatobject.c with a name like
+    # float.as_integer_ratio()
 
     if x == 0:
         return 0, 1
@@ -80,12 +80,9 @@ def _binary_float_to_ratio(x):
 
 
 _RATIONAL_FORMAT = re.compile(
-    r'^\s*(?P<sign>[-+]?)(?P<num>\d+)(?:/(?P<denom>\d+))?\s*$')
+    r'^\s*(?P<sign>[-+]?)(?P<num>\d+)'
+    r'(?:/(?P<denom>\d+)|\.(?P<decimal>\d+))?\s*$')
 
-# XXX Consider accepting decimal strings as input since they are exact.
-# Rational("2.01") --> s="2.01" ; Rational.from_decimal(Decimal(s)) --> Rational(201, 100)"
-# If you want to avoid going through the decimal module, just parse the string directly:
-# s.partition('.') --> ('2', '.', '01') --> Rational(int('2'+'01'), 10**len('01')) --> Rational(201, 100)
 
 class Rational(RationalAbc):
     """This class implements rational numbers.
@@ -96,7 +93,7 @@ class Rational(RationalAbc):
     Rational() == 0.
 
     Rationals can also be constructed from strings of the form
-    '[-+]?[0-9]+(/[0-9]+)?', optionally surrounded by spaces.
+    '[-+]?[0-9]+((/|.)[0-9]+)?', optionally surrounded by spaces.
 
     """
 
@@ -106,7 +103,8 @@ class Rational(RationalAbc):
     def __new__(cls, numerator=0, denominator=1):
         """Constructs a Rational.
 
-        Takes a string, another Rational, or a numerator/denominator pair.
+        Takes a string like '3/2' or '3.2', another Rational, or a
+        numerator/denominator pair.
 
         """
         self = super(Rational, cls).__new__(cls)
@@ -118,9 +116,18 @@ class Rational(RationalAbc):
                 m = _RATIONAL_FORMAT.match(input)
                 if m is None:
                     raise ValueError('Invalid literal for Rational: ' + input)
-                numerator = int(m.group('num'))
-                # Default denominator to 1. That's the only optional group.
-                denominator = int(m.group('denom') or 1)
+                numerator = m.group('num')
+                decimal = m.group('decimal')
+                if decimal:
+                    # The literal is a decimal number.
+                    numerator = int(numerator + decimal)
+                    denominator = 10**len(decimal)
+                else:
+                    # The literal is an integer or fraction.
+                    numerator = int(numerator)
+                    # Default denominator to 1.
+                    denominator = int(m.group('denom') or 1)
+
                 if m.group('sign') == '-':
                     numerator = -numerator
 
@@ -139,7 +146,7 @@ class Rational(RationalAbc):
         if denominator == 0:
             raise ZeroDivisionError('Rational(%s, 0)' % numerator)
 
-        g = _gcd(numerator, denominator)
+        g = gcd(numerator, denominator)
         self.numerator = int(numerator // g)
         self.denominator = int(denominator // g)
         return self
