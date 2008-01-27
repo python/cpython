@@ -36,6 +36,9 @@ try:
     try:
         f.write("Y")
         f.flush()
+        # On some systems (e.g., Ubuntu on hppa) the flush()
+        # doesn't cause the exception, but the close() does.
+        f.close()
     except IOError:
         if not limit_set:
             raise
