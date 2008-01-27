@@ -532,23 +532,21 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 	if ((size_t)(offset + size) > self->size) {
 		PyErr_SetString(PyExc_ValueError, "flush values out of range");
 		return NULL;
-	} else {
-#ifdef MS_WINDOWS
-		return PyInt_FromLong((long)
-                                      FlushViewOfFile(self->data+offset, size));
-#endif /* MS_WINDOWS */
-#ifdef UNIX
-		/* XXX semantics of return value? */
-		/* XXX flags for msync? */
-		if (-1 == msync(self->data + offset, size,
-				MS_SYNC))
-		{
-			PyErr_SetFromErrno(mmap_module_error);
-			return NULL;
-		}
-		return PyInt_FromLong(0);
-#endif /* UNIX */
 	}
+#ifdef MS_WINDOWS
+	return PyInt_FromLong((long) FlushViewOfFile(self->data+offset, size));
+#elif defined(UNIX)
+	/* XXX semantics of return value? */
+	/* XXX flags for msync? */
+	if (-1 == msync(self->data + offset, size, MS_SYNC)) {
+		PyErr_SetFromErrno(mmap_module_error);
+		return NULL;
+	}
+	return PyInt_FromLong(0);
+#else
+	PyErr_SetString(PyExc_ValueError, "flush not supported on this system");
+	return NULL;
+#endif
 }
 
 static PyObject *
