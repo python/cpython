@@ -13,6 +13,8 @@ sys.path.append('tools/sphinxext')
 # General configuration
 # ---------------------
 
+extensions = ['sphinx.addons.refcounting']
+
 # General substitutions.
 project = 'Python'
 copyright = '1990-%s, Python Software Foundation' % time.strftime('%Y')
