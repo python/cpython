@@ -17,7 +17,7 @@
 #ifdef WITH_THREAD
 #include "pythread.h"
 #define PySSL_BEGIN_ALLOW_THREADS { \
-			PyThreadState *_save;  \
+			PyThreadState *_save = NULL;  \
 			if (_ssl_locks_count>0) {_save = PyEval_SaveThread();}
 #define PySSL_BLOCK_THREADS	if (_ssl_locks_count>0){PyEval_RestoreThread(_save)};
 #define PySSL_UNBLOCK_THREADS	if (_ssl_locks_count>0){_save = PyEval_SaveThread()};
@@ -687,7 +687,7 @@ _get_peer_alt_names (X509 *certificate) {
 		}
 
 		p = ext->value->data;
-		if(method->it)
+		if (method->it)
 			names = (GENERAL_NAMES*) (ASN1_item_d2i(NULL,
 								&p,
 								ext->value->length,
