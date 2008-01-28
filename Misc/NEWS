@@ -217,8 +217,6 @@ Extension Modules
 
 - Fix a potential 'SystemError: NULL result without error' in _ctypes.
 
-- Prevent a segfault when a ctypes NULL function pointer is called.
-
 - Bug #1301: Bad assert in _tkinter fixed.
 
 - Patch #1114: fix curses module compilation on 64-bit AIX, & possibly
