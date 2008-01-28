@@ -1530,9 +1530,9 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
 	if (suffix == NULL)
 #ifdef WORDS_BIGENDIAN
-		suffix = PyUnicode_FromString("_le");
+		suffix = PyUnicode_InternFromString("_le");
 #else
-		suffix = PyUnicode_FromString("_be");
+		suffix = PyUnicode_InternFromString("_be");
 #endif
 
 	newname = PyUnicode_Concat(name, suffix);
@@ -4276,7 +4276,7 @@ Simple_repr(CDataObject *self)
 	}
 
 	if (format == NULL) {
-		format = PyUnicode_FromString("%s(%r)");
+		format = PyUnicode_InternFromString("%s(%r)");
 		if (format == NULL)
 			return NULL;
 	}

@@ -1133,7 +1133,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 	int addNone = 1;
 	static PyObject *module;
 	if (!module) {
-		module = PyUnicode_FromString("<module>");
+		module = PyUnicode_InternFromString("<module>");
 		if (!module)
 			return NULL;
 	}
@@ -1477,7 +1477,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
 	/* initialize statics */
 	if (locals == NULL) {
-		locals = PyUnicode_FromString("__locals__");
+		locals = PyUnicode_InternFromString("__locals__");
 		if (locals == NULL)
 			return 0;
 	}
@@ -2177,7 +2177,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
 	if (Py_OptimizeFlag)
 		return 1;
 	if (assertion_error == NULL) {
-		assertion_error = PyUnicode_FromString("AssertionError");
+		assertion_error = PyUnicode_InternFromString("AssertionError");
 		if (assertion_error == NULL)
 			return 0;
 	}

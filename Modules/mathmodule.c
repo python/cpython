@@ -131,7 +131,7 @@ static PyObject * math_ceil(PyObject *self, PyObject *number) {
 	PyObject *method;
 
 	if (ceil_str == NULL) {
-		ceil_str = PyUnicode_FromString("__ceil__");
+		ceil_str = PyUnicode_InternFromString("__ceil__");
 		if (ceil_str == NULL)
 			return NULL;
 	}
@@ -171,7 +171,7 @@ static PyObject * math_floor(PyObject *self, PyObject *number) {
 	PyObject *method;
 
 	if (floor_str == NULL) {
-		floor_str = PyUnicode_FromString("__floor__");
+		floor_str = PyUnicode_InternFromString("__floor__");
 		if (floor_str == NULL)
 			return NULL;
 	}
