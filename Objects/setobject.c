@@ -2142,17 +2142,7 @@ PySet_New(PyObject *iterable)
 PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
-	PyObject *args, *result;
-
-	if (iterable == NULL)
-		args = PyTuple_New(0);
-	else
-		args = PyTuple_Pack(1, iterable);
-	if (args == NULL)
-		return NULL;
-	result = frozenset_new(&PyFrozenSet_Type, args, NULL);
-	Py_DECREF(args);
-	return result;
+	return make_new_set(&PyFrozenSet_Type, iterable);
 }
 
 Py_ssize_t
@@ -2196,13 +2186,13 @@ PySet_Discard(PyObject *set, PyObject *key)
 }
 
 int
-PySet_Add(PyObject *set, PyObject *key)
+PySet_Add(PyObject *anyset, PyObject *key)
 {
-	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
+	if (!PyAnySet_Check(anyset)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	return set_add_key((PySetObject *)set, key);
+	return set_add_key((PySetObject *)anyset, key);
 }
 
 int
@@ -2345,7 +2335,6 @@ test_c_api(PySetObject *so)
 	f = PyFrozenSet_New(dup);
 	assert(PySet_Size(f) == 3);
 	assert(PyFrozenSet_CheckExact(f));
-	assertRaises(PySet_Add(f, elem) == -1, PyExc_SystemError);
 	assertRaises(PySet_Discard(f, elem) == -1, PyExc_SystemError);
 	assertRaises(PySet_Pop(f) == NULL, PyExc_SystemError);
 	Py_DECREF(f);
