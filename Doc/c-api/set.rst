@@ -52,6 +52,12 @@ The following type check macros work on pointers to any Python object. Likewise,
 the constructor functions work with any iterable Python object.
 
 
+.. cfunction:: int PySet_Check(PyObject *p)
+
+   Return true if *p* is a :class:`set` object or an instance of a subtype.
+
+   .. versionadded:: 2.6
+
 .. cfunction:: int PyAnySet_Check(PyObject *p)
 
    Return true if *p* is a :class:`set` object, a :class:`frozenset` object, or an
