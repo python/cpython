@@ -2158,7 +2158,7 @@ PySet_Size(PyObject *anyset)
 int
 PySet_Clear(PyObject *set)
 {
-	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
+	if (!PySet_Check(set)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2178,7 +2178,7 @@ PySet_Contains(PyObject *anyset, PyObject *key)
 int
 PySet_Discard(PyObject *set, PyObject *key)
 {
-	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
+	if (!PySet_Check(set)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2229,7 +2229,7 @@ _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, long *hash)
 PyObject *
 PySet_Pop(PyObject *set)
 {
-	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
+	if (!PySet_Check(set)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
@@ -2239,7 +2239,7 @@ PySet_Pop(PyObject *set)
 int
 _PySet_Update(PyObject *set, PyObject *iterable)
 {
-	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
+	if (!PySet_Check(set)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
