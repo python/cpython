@@ -764,7 +764,6 @@ PyObject *
 FORMAT_STRING(PyObject* value, PyObject* args)
 {
     PyObject *format_spec;
-    PyObject *tmp = NULL;
     PyObject *result = NULL;
     InternalFormatSpec format;
 
@@ -796,7 +795,6 @@ FORMAT_STRING(PyObject* value, PyObject* args)
     }
 
 done:
-    Py_XDECREF(tmp);
     return result;
 }
 
@@ -834,6 +832,21 @@ FORMAT_LONG(PyObject* value, PyObject* args)
         result = format_long_internal(value, &format);
         break;
 
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G':
+    case 'n':
+    case '%':
+        /* convert to float */
+        tmp = PyNumber_Float(value);
+        if (tmp == NULL)
+            goto done;
+        result = format_float_internal(value, &format);
+        break;
+
     default:
         /* unknown */
         PyErr_Format(PyExc_ValueError, "Unknown conversion type %c",
@@ -851,7 +864,6 @@ FORMAT_FLOAT(PyObject *value, PyObject *args)
 {
     PyObject *format_spec;
     PyObject *result = NULL;
-    PyObject *tmp = NULL;
     InternalFormatSpec format;
 
     if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__", &format_spec))
@@ -890,6 +902,5 @@ FORMAT_FLOAT(PyObject *value, PyObject *args)
     }
 
 done:
-    Py_XDECREF(tmp);
     return result;
 }

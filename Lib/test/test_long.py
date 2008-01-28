@@ -530,17 +530,23 @@ class LongTest(unittest.TestCase):
         self.assertRaises(ValueError, format, 3, "1.3")  # precision disallowed
         self.assertRaises(ValueError, format, 3, "+c")   # sign not allowed
                                                          # with 'c'
-        # other format specifiers shouldn't work on ints,
-        #  in particular float and string specifiers
+
+        # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
                             [chr(x) for x in range(ord('A'), ord('Z')+1)]):
-            if not format_spec in 'bcdoxX':
+            if not format_spec in 'bcdoxXeEfFgGn%':
                 self.assertRaises(ValueError, format, 0, format_spec)
                 self.assertRaises(ValueError, format, 1, format_spec)
                 self.assertRaises(ValueError, format, -1, format_spec)
                 self.assertRaises(ValueError, format, 2**100, format_spec)
                 self.assertRaises(ValueError, format, -(2**100), format_spec)
 
+        # ensure that float type specifiers work; format converts
+        #  the int to a float
+        for format_spec in 'eEfFgGn%':
+            for value in [0, 1, -1, 100, -100, 1234567890, -1234567890]:
+                self.assertEqual(format(value, format_spec),
+                                 format(float(value), format_spec))
 
     def test_nan_inf(self):
         self.assertRaises(OverflowError, int, float('inf'))
