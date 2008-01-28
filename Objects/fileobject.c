@@ -1965,7 +1965,7 @@ file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	assert(type != NULL && type->tp_alloc != NULL);
 
 	if (not_yet_string == NULL) {
-		not_yet_string = PyString_FromString("<uninitialized file>");
+		not_yet_string = PyString_InternFromString("<uninitialized file>");
 		if (not_yet_string == NULL)
 			return NULL;
 	}

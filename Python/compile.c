@@ -1153,7 +1153,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 	int addNone = 1;
 	static PyObject *module;
 	if (!module) {
-		module = PyString_FromString("<module>");
+		module = PyString_InternFromString("<module>");
 		if (!module)
 			return NULL;
 	}
@@ -2001,7 +2001,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
 	if (Py_OptimizeFlag)
 		return 1;
 	if (assertion_error == NULL) {
-		assertion_error = PyString_FromString("AssertionError");
+		assertion_error = PyString_InternFromString("AssertionError");
 		if (assertion_error == NULL)
 			return 0;
 	}

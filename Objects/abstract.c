@@ -2142,7 +2142,7 @@ abstract_get_bases(PyObject *cls)
 	PyObject *bases;
 
 	if (__bases__ == NULL) {
-		__bases__ = PyString_FromString("__bases__");
+		__bases__ = PyString_InternFromString("__bases__");
 		if (__bases__ == NULL)
 			return NULL;
 	}
@@ -2220,7 +2220,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 	int retval = 0;
 
 	if (__class__ == NULL) {
-		__class__ = PyString_FromString("__class__");
+		__class__ = PyString_InternFromString("__class__");
 		if (__class__ == NULL)
 			return -1;
 	}
