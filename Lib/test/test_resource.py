@@ -33,6 +33,7 @@ try:
         limit_set = 0
     f = open(TESTFN, "wb")
     f.write("X" * 1024)
+    f.flush()
     try:
         f.write("Y")
         f.flush()
@@ -43,6 +44,7 @@ try:
         for i in range(5):
             time.sleep(.1)
             f.flush()
+        f.close()
     except IOError:
         if not limit_set:
             raise
