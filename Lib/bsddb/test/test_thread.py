@@ -51,7 +51,7 @@ class BaseThreadedTestCase(unittest.TestCase):
         self.homeDir = homeDir
         try:
             os.mkdir(homeDir)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST: raise
         self.env = db.DBEnv()
         self.setEnvOpts()
@@ -68,7 +68,7 @@ class BaseThreadedTestCase(unittest.TestCase):
         self.env.close()
         try:
             shutil.rmtree(self.homeDir)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST: raise
 
     def setEnvOpts(self):
