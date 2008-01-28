@@ -24,7 +24,7 @@ class DBSequenceTest(unittest.TestCase):
             pass
         tempfile.tempdir = self.homeDir
         self.filename = os.path.split(tempfile.mktemp())[1]
-        tempfile.tempdir = old_tempfile_tempdir
+        tempfile.tempdir = None
 
         self.dbenv = db.DBEnv()
         self.dbenv.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL, 0o666)
