@@ -261,14 +261,19 @@ PyComplex_AsCComplex(PyObject *op)
 		return ((PyComplexObject *)op)->cval;
 	}
 	/* If not, use op's __complex__  method, if it exists */
-	
+
 	/* return -1 on failure */
 	cv.real = -1.;
 	cv.imag = 0.;
+
+	if (complex_str == NULL) {
+		if (!(complex_str = PyString_InternFromString("__complex__")))
+			return cv;
+	}
 	
 	if (PyInstance_Check(op)) {
 		/* this can go away in python 3000 */
-		if (PyObject_HasAttrString(op, "__complex__")) {
+		if (PyObject_HasAttr(op, complex_str)) {
 			newop = PyObject_CallMethod(op, "__complex__", NULL);
 			if (!newop)
 				return cv;
@@ -276,10 +281,6 @@ PyComplex_AsCComplex(PyObject *op)
 		/* else try __float__ */
 	} else {
 		PyObject *complexfunc;
-		if (!complex_str) {
-			if (!(complex_str = PyString_FromString("__complex__")))
-				return cv;
-		}
 		complexfunc = _PyType_Lookup(op->ob_type, complex_str);
 		/* complexfunc is a borrowed reference */
 		if (complexfunc) {

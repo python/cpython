@@ -1529,9 +1529,9 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
 	if (suffix == NULL)
 #ifdef WORDS_BIGENDIAN
-		suffix = PyString_FromString("_le");
+		suffix = PyString_InternFromString("_le");
 #else
-		suffix = PyString_FromString("_be");
+		suffix = PyString_InternFromString("_be");
 #endif
 
 	Py_INCREF(name);
@@ -4416,7 +4416,7 @@ Simple_repr(CDataObject *self)
 	}
 
 	if (format == NULL) {
-		format = PyString_FromString("%s(%r)");
+		format = PyString_InternFromString("%s(%r)");
 		if (format == NULL)
 			return NULL;
 	}
