@@ -882,7 +882,7 @@ r_object(RFILE *p)
                                 break;
                         }
 		}
-		retval = (v == NULL) ? NULL : v;
+		retval = v;
 		break;
 
 	case TYPE_CODE:
