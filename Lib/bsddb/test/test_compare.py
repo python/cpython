@@ -6,7 +6,7 @@ import shutil
 import sys, os, re
 from io import StringIO
 import tempfile
-import test_all
+from . import test_all
 
 import unittest
 try:
