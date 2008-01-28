@@ -1463,7 +1463,7 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 	}
 
 	if (round_str == NULL) {
-		round_str = PyUnicode_FromString("__round__");
+		round_str = PyUnicode_InternFromString("__round__");
 		if (round_str == NULL)
 			return NULL;
 	}
@@ -1582,7 +1582,7 @@ builtin_trunc(PyObject *self, PyObject *number)
 	}
 
 	if (trunc_str == NULL) {
-		trunc_str = PyUnicode_FromString("__trunc__");
+		trunc_str = PyUnicode_InternFromString("__trunc__");
 		if (trunc_str == NULL)
 			return NULL;
 	}

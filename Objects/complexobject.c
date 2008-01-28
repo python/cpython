@@ -265,13 +265,14 @@ PyComplex_AsCComplex(PyObject *op)
 	/* return -1 on failure */
 	cv.real = -1.;
 	cv.imag = 0.;
-	
+		
+	if (complex_str == NULL) {
+		if (!(complex_str = PyUnicode_FromString("__complex__")))
+			return cv;
+	}
+
         {
 		PyObject *complexfunc;
-		if (!complex_str) {
-			if (!(complex_str = PyUnicode_FromString("__complex__")))
-				return cv;
-		}
 		complexfunc = _PyType_Lookup(op->ob_type, complex_str);
 		/* complexfunc is a borrowed reference */
 		if (complexfunc) {

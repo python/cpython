@@ -365,7 +365,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 	static PyObject *context;
 
 	if (context == NULL)
-		context = PyUnicode_FromString("_ctypes.DllGetClassObject");
+		context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
 	mod = PyImport_ImportModuleNoBlock("ctypes");
 	if (!mod) {
@@ -444,7 +444,7 @@ long Call_CanUnloadNow(void)
 	static PyObject *context;
 
 	if (context == NULL)
-		context = PyUnicode_FromString("_ctypes.DllCanUnloadNow");
+		context = PyUnicode_InternFromString("_ctypes.DllCanUnloadNow");
 
 	mod = PyImport_ImportModuleNoBlock("ctypes");
 	if (!mod) {
