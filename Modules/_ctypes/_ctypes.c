@@ -3414,11 +3414,6 @@ CFuncPtr_call(CFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 
 
 	pProc = *(void **)self->b_ptr;
-	if (pProc == NULL) {
-		PyErr_SetString(PyExc_ValueError,
-				"attempt to call NULL function pointer");
-		return NULL;
-	}
 #ifdef MS_WIN32
 	if (self->index) {
 		/* It's a COM method */

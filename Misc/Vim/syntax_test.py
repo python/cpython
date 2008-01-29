@@ -4,9 +4,8 @@ Meant to cover a wide range of different types of statements and expressions.
 Not necessarily sensical or comprehensive (assume that if one exception is
 highlighted that all are, for instance).
 
-Highlighting extraneous whitespace at the end of the line is not represented
-here as all trailing whitespace is automatically removed from .py files in the
-repository.
+Extraneous trailing whitespace can't be tested because of svn pre-commit hook
+checks for such things.
 
 """
 # Comment
