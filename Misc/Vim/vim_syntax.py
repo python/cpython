@@ -4,8 +4,9 @@ import keyword
 import exceptions
 import __builtin__
 from string import Template
+from sys import subversion
 
-comment_header = '''" Auto-generated Vim syntax file for Python.
+comment_header = '''" Auto-generated Vim syntax file for Python (%s: r%s).
 "
 " To use: copy or symlink to ~/.vim/syntax/python.vim'''
 
@@ -160,7 +161,7 @@ FILL = 80
 def main(file_path):
     with open(file_path, 'w') as FILE:
         # Comment for file
-        print>>FILE, comment_header
+        print>>FILE, comment_header % subversion[1:]
         print>>FILE, ''
         # Statements at start of file
         print>>FILE, statement_header
