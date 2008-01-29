@@ -1,4 +1,4 @@
-" Auto-generated Vim syntax file for Python
+" Auto-generated Vim syntax file for Python (trunk: r60376M).
 "
 " To use: copy or symlink to ~/.vim/syntax/python.vim
 
@@ -64,7 +64,7 @@ endif
 if exists("python_highlight_builtins")
   syn keyword pythonBuiltin    Ellipsis False None NotImplemented True __debug__
   syn keyword pythonBuiltin    __import__ abs all any apply basestring bool
-  syn keyword pythonBuiltin    buffer callable chr classmethod cmp coerce
+  syn keyword pythonBuiltin    buffer bytes callable chr classmethod cmp coerce
   syn keyword pythonBuiltin    compile complex copyright credits delattr dict
   syn keyword pythonBuiltin    dir divmod enumerate eval execfile exit file
   syn keyword pythonBuiltin    filter float frozenset getattr globals hasattr
@@ -73,7 +73,8 @@ if exists("python_highlight_builtins")
   syn keyword pythonBuiltin    max min object oct open ord pow property quit
   syn keyword pythonBuiltin    range raw_input reduce reload repr reversed round
   syn keyword pythonBuiltin    set setattr slice sorted staticmethod str sum
-  syn keyword pythonBuiltin    super tuple type unichr unicode vars xrange zip
+  syn keyword pythonBuiltin    super trunc tuple type unichr unicode vars xrange
+  syn keyword pythonBuiltin    zip
 
 endif
 
