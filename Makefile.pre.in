@@ -1025,7 +1025,7 @@ config.status:	$(srcdir)/configure
 
 # Run reindent on the library
 reindent:
-	./python$(EXEEXT) $(srcdir)/Tools/scripts/reindent.py -r $(srcdir)/Lib
+	./$(BUILDPYTHON) $(srcdir)/Tools/scripts/reindent.py -r $(srcdir)/Lib
 
 # Rerun configure with the same options as it was run last time,
 # provided the config.status script exists
