@@ -1993,6 +1993,9 @@ if test "$posix_threads" = "yes"; then
       SunOS/5.8) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
 		       Define if the Posix semaphores do not work on your system)
 		       ;;
+      AIX/5) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
+		       Define if the Posix semaphores do not work on your system)
+		       ;;
       esac
 
       AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
