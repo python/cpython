@@ -94,6 +94,10 @@
 /* Define if you have the 'resize_term' function. */
 #undef HAVE_CURSES_RESIZE_TERM
 
+/* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
+   */
+#undef HAVE_DECL_TZNAME
+
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
@@ -793,22 +797,22 @@
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
 
-/* The size of a `double', as computed by sizeof. */
+/* The size of `double', as computed by sizeof. */
 #undef SIZEOF_DOUBLE
 
-/* The size of a `float', as computed by sizeof. */
+/* The size of `float', as computed by sizeof. */
 #undef SIZEOF_FLOAT
 
-/* The size of a `fpos_t', as computed by sizeof. */
+/* The size of `fpos_t', as computed by sizeof. */
 #undef SIZEOF_FPOS_T
 
-/* The size of a `int', as computed by sizeof. */
+/* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* The size of a `long', as computed by sizeof. */
+/* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of a `long long', as computed by sizeof. */
+/* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
 /* The number of bytes in an off_t. */
@@ -817,22 +821,22 @@
 /* The number of bytes in a pthread_t. */
 #undef SIZEOF_PTHREAD_T
 
-/* The size of a `short', as computed by sizeof. */
+/* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
-/* The size of a `size_t', as computed by sizeof. */
+/* The size of `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
 
 /* The number of bytes in a time_t. */
 #undef SIZEOF_TIME_T
 
-/* The size of a `uintptr_t', as computed by sizeof. */
+/* The size of `uintptr_t', as computed by sizeof. */
 #undef SIZEOF_UINTPTR_T
 
-/* The size of a `void *', as computed by sizeof. */
+/* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
-/* The size of a `wchar_t', as computed by sizeof. */
+/* The size of `wchar_t', as computed by sizeof. */
 #undef SIZEOF_WCHAR_T
 
 /* Define to 1 if you have the ANSI C header files. */
@@ -971,7 +975,7 @@
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
-/* Define to `long' if <sys/types.h> does not define. */
+/* Define to `long int' if <sys/types.h> does not define. */
 #undef off_t
 
 /* Define to `int' if <sys/types.h> does not define. */
@@ -980,7 +984,7 @@
 /* Define to empty if the keyword does not work. */
 #undef signed
 
-/* Define to `unsigned' if <sys/types.h> does not define. */
+/* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
 /* Define to `int' if <sys/socket.h> does not define. */
