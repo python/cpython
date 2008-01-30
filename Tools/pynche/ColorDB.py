@@ -122,10 +122,7 @@ class ColorDB:
             self.__allnames = []
             for name, aliases in self.__byrgb.values():
                 self.__allnames.append(name)
-            # sort irregardless of case
-            def nocase_cmp(n1, n2):
-                return cmp(n1.lower(), n2.lower())
-            self.__allnames.sort(nocase_cmp)
+            self.__allnames.sort(key=unicode.lower)
         return self.__allnames
 
     def aliases_of(self, red, green, blue):

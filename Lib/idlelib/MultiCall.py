@@ -125,7 +125,7 @@ def expand_substates(states):
     statelist = []
     for state in states:
         substates = list(set(state & x for x in states))
-        substates.sort(lambda a,b: nbits(b) - nbits(a))
+        substates.sort(key=nbits, reverse=True)
         statelist.append(substates)
     return statelist
 

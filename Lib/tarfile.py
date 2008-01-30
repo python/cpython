@@ -2016,7 +2016,7 @@ class TarFile(object):
                 self.extract(tarinfo, path)
 
         # Reverse sort directories.
-        directories.sort(lambda a, b: cmp(a.name, b.name))
+        directories.sort(key=lambda a: a.name)
         directories.reverse()
 
         # Set correct owner, mtime and filemode on directories.
