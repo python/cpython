@@ -88,6 +88,15 @@ class LikeCond(Cond):
     def __call__(self, s):
         return self.re.match(s.decode(self.encoding))
 
+def CmpToKey(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K(object):
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) == -1
+    return K
+
 #
 # keys used to store database metadata
 #
@@ -587,7 +596,7 @@ class bsdTableDB :
             return 0
 
         conditionlist = list(conditions.items())
-        conditionlist.sort(cmp_conditions)
+        conditionlist.sort(key=CmpToKey(cmp_conditions))
 
         # Apply conditions to column data to find what we want
         cur = self.db.cursor()

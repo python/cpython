@@ -797,10 +797,7 @@ class HTMLDoc(Doc):
             tag += ':<br>\n'
 
             # Sort attrs by name.
-            try:
-                attrs.sort(key=lambda t: t[0])
-            except TypeError:
-                attrs.sort(lambda t1, t2: cmp(t1[0], t2[0]))    # 2.3 compat
+            attrs.sort(key=lambda t: t[0])
 
             # Pump out the attrs, segregated by kind.
             attrs = spill('Methods %s' % tag, attrs,

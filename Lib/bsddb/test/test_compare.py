@@ -32,10 +32,20 @@ _expected_lexical_test_data = [s.encode('ascii') for s in
 _expected_lowercase_test_data = [s.encode('ascii') for s in
         ('', 'a', 'aaa', 'b', 'c', 'CC', 'cccce', 'ccccf', 'CCCP')]
 
+
+def CmpToKey(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K(object):
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) == -1
+    return K
+
 class ComparatorTests (unittest.TestCase):
     def comparator_test_helper (self, comparator, expected_data):
         data = expected_data[:]
-        data.sort (comparator)
+        data.sort (key=CmpToKey(comparator))
         self.failUnless (data == expected_data,
                          "comparator `%s' is not right: %s vs. %s"
                          % (comparator, expected_data, data))

@@ -504,6 +504,15 @@ class FunctionTestCase(TestCase):
 # Locating and loading tests
 ##############################################################################
 
+def CmpToKey(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K(object):
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) == -1
+    return K
+
 class TestLoader:
     """This class is responsible for loading tests according to various
     criteria and returning them wrapped in a TestSuite
@@ -598,7 +607,7 @@ class TestLoader:
                    and hasattr(getattr(testCaseClass, attrname), '__call__')
         testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
         if self.sortTestMethodsUsing:
-            testFnNames.sort(self.sortTestMethodsUsing)
+            testFnNames.sort(key=CmpToKey(self.sortTestMethodsUsing))
         return testFnNames
 
 

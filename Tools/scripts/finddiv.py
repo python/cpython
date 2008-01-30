@@ -78,7 +78,7 @@ def processdir(dir, listnames):
         fn = os.path.join(dir, name)
         if os.path.normcase(fn).endswith(".py") or os.path.isdir(fn):
             files.append(fn)
-    files.sort(lambda a, b: cmp(os.path.normcase(a), os.path.normcase(b)))
+    files.sort(key=os.path.normcase)
     exit = None
     for fn in files:
         x = process(fn, listnames)

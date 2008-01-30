@@ -123,7 +123,7 @@ elif os.name == "posix":
             res = re.findall(expr, data)
             if not res:
                 return _get_soname(_findLib_gcc(name))
-            res.sort(cmp= lambda x,y: cmp(_num_version(x), _num_version(y)))
+            res.sort(key=_num_version)
             return res[-1]
 
     else:

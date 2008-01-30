@@ -324,8 +324,7 @@ def _main():
         path = []
     dict = readmodule_ex(mod, path)
     objs = dict.values()
-    objs.sort(lambda a, b: cmp(getattr(a, 'lineno', 0),
-                               getattr(b, 'lineno', 0)))
+    objs.sort(key=lambda a: getattr(a, 'lineno', 0))
     for obj in objs:
         if isinstance(obj, Class):
             print("class", obj.name, obj.super, obj.lineno)
