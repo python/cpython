@@ -12,6 +12,8 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Issue #1973: bytes.fromhex('') raises SystemError
+
 - Issue #1969: split and rsplit in bytearray are inconsistent
 
 - map() and itertools.imap() no longer accept None for the first argument.
