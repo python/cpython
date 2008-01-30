@@ -177,6 +177,12 @@ class Set:
             return NotImplemented
         return self._from_iterable(value for value in other if value in self)
 
+    def isdisjoint(self, other):
+        for value in other:
+            if value in self:
+                return False
+        return True
+
     def __or__(self, other):
         if not isinstance(other, Iterable):
             return NotImplemented
