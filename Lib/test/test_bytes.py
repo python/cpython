@@ -706,7 +706,7 @@ class BytesTest(unittest.TestCase):
             self.assertEqual(b.rsplit(None, 2), [b'arf', b'barf'])
         self.assertEqual(b'  a  bb  c  '.rsplit(None, 0), [b'  a  bb  c'])
         self.assertEqual(b'  a  bb  c  '.rsplit(None, 1), [b'  a  bb', b'c'])
-        self.assertEqual(b'  a  bb  c  '.rsplit(None,2), [b'  a', b'bb', b'c'])
+        self.assertEqual(b'  a  bb  c  '.rsplit(None, 2), [b'  a', b'bb', b'c'])
         self.assertEqual(b'  a  bb  c  '.rsplit(None, 3), [b'a', b'bb', b'c'])
 
     def test_rsplit_bytearray(self):
@@ -714,6 +714,15 @@ class BytesTest(unittest.TestCase):
 
     def test_rsplit_string_error(self):
         self.assertRaises(TypeError, b'a b'.rsplit, ' ')
+
+    def test_rsplit_unicodewhitespace(self):
+        b = b"\x09\x0A\x0B\x0C\x0D\x1C\x1D\x1E\x1F"
+        self.assertEqual(b.split(), [b'\x1c\x1d\x1e\x1f'])
+        self.assertEqual(b.rsplit(), [b'\x1c\x1d\x1e\x1f'])
+        ba = bytearray(b)
+        self.assertEqual(ba.split(), [bytearray(b'\x1c\x1d\x1e\x1f')])
+        self.assertEqual(ba.rsplit(), [bytearray(b'\x1c\x1d\x1e\x1f')])
+
 
     def test_partition(self):
         b = b'mississippi'
