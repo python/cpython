@@ -1494,14 +1494,14 @@ Precision may be negative.");
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *newlist, *v, *seq, *compare=NULL, *keyfunc=NULL, *newargs;
+	PyObject *newlist, *v, *seq, *keyfunc=NULL, *newargs;
 	PyObject *callable;
-	static char *kwlist[] = {"iterable", "cmp", "key", "reverse", 0};
+	static char *kwlist[] = {"iterable", "key", "reverse", 0};
 	int reverse;
 
-	/* args 1-4 should match listsort in Objects/listobject.c */
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOi:sorted",
-		kwlist, &seq, &compare, &keyfunc, &reverse))
+	/* args 1-3 should match listsort in Objects/listobject.c */
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oi:sorted",
+		kwlist, &seq, &keyfunc, &reverse))
 		return NULL;
 
 	newlist = PySequence_List(seq);
@@ -1533,7 +1533,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(sorted_doc,
-"sorted(iterable, cmp=None, key=None, reverse=False) --> new sorted list");
+"sorted(iterable, key=None, reverse=False) --> new sorted list");
 
 static PyObject *
 builtin_vars(PyObject *self, PyObject *args)

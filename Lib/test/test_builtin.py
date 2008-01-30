@@ -1764,9 +1764,6 @@ class TestSorted(unittest.TestCase):
 
         data.reverse()
         random.shuffle(copy)
-        self.assertEqual(data, sorted(copy, cmp=lambda x, y: (x < y) - (x > y)))
-        self.assertNotEqual(data, copy)
-        random.shuffle(copy)
         self.assertEqual(data, sorted(copy, key=lambda x: -x))
         self.assertNotEqual(data, copy)
         random.shuffle(copy)

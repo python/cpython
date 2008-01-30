@@ -888,64 +888,17 @@ reverse_slice(PyObject **lo, PyObject **hi)
  * pieces to this algorithm; read listsort.txt for overviews and details.
  */
 
-/* Comparison function.  Takes care of calling a user-supplied
- * comparison function (any callable Python object), which must not be
- * NULL (use the ISLT macro if you don't know, or call PyObject_RichCompareBool
- * with Py_LT if you know it's NULL).
+/* Comparison function: PyObject_RichCompareBool with Py_LT.
  * Returns -1 on error, 1 if x < y, 0 if x >= y.
  */
-static int
-islt(PyObject *x, PyObject *y, PyObject *compare)
-{
-	PyObject *res;
-	PyObject *args;
-	Py_ssize_t i;
 
-	assert(compare != NULL);
-	/* Call the user's comparison function and translate the 3-way
-	 * result into true or false (or error).
-	 */
-	args = PyTuple_New(2);
-	if (args == NULL)
-		return -1;
-	Py_INCREF(x);
-	Py_INCREF(y);
-	PyTuple_SET_ITEM(args, 0, x);
-	PyTuple_SET_ITEM(args, 1, y);
-	res = PyObject_Call(compare, args, NULL);
-	Py_DECREF(args);
-	if (res == NULL)
-		return -1;
-	if (!PyLong_CheckExact(res)) {
-		PyErr_Format(PyExc_TypeError,
-			     "comparison function must return int, not %.200s",
-			     res->ob_type->tp_name);
-		Py_DECREF(res);
-		return -1;
-	}
-	i = PyLong_AsLong(res);
-	Py_DECREF(res);
-	if (i == -1 && PyErr_Occurred()) {
-		/* Overflow in long conversion. */
-		return -1;
-	}
-	return i < 0;
-}
-
-/* If COMPARE is NULL, calls PyObject_RichCompareBool with Py_LT, else calls
- * islt.  This avoids a layer of function call in the usual case, and
- * sorting does many comparisons.
- * Returns -1 on error, 1 if x < y, 0 if x >= y.
- */
-#define ISLT(X, Y, COMPARE) ((COMPARE) == NULL ?			\
-			     PyObject_RichCompareBool(X, Y, Py_LT) :	\
-			     islt(X, Y, COMPARE))
+#define ISLT(X, Y) (PyObject_RichCompareBool(X, Y, Py_LT))
 
 /* Compare X to Y via "<".  Goto "fail" if the comparison raises an
    error.  Else "k" is set to true iff X<Y, and an "if (k)" block is
    started.  It makes more sense in context <wink>.  X and Y are PyObject*s.
 */
-#define IFLT(X, Y) if ((k = ISLT(X, Y, compare)) < 0) goto fail;  \
+#define IFLT(X, Y) if ((k = ISLT(X, Y)) < 0) goto fail;  \
 		   if (k)
 
 /* binarysort is the best method for sorting small arrays: it does
@@ -960,8 +913,7 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
    the input (nothing is lost or duplicated).
 */
 static int
-binarysort(PyObject **lo, PyObject **hi, PyObject **start, PyObject *compare)
-     /* compare -- comparison function object, or NULL for default */
+binarysort(PyObject **lo, PyObject **hi, PyObject **start)
 {
 	register Py_ssize_t k;
 	register PyObject **l, **p, **r;
@@ -1026,7 +978,7 @@ elements to get out of order).
 Returns -1 in case of error.
 */
 static Py_ssize_t
-count_run(PyObject **lo, PyObject **hi, PyObject *compare, int *descending)
+count_run(PyObject **lo, PyObject **hi, int *descending)
 {
 	Py_ssize_t k;
 	Py_ssize_t n;
@@ -1081,7 +1033,7 @@ key, and the last n-k should follow key.
 Returns -1 on error.  See listsort.txt for info on the method.
 */
 static Py_ssize_t
-gallop_left(PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint, PyObject *compare)
+gallop_left(PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint)
 {
 	Py_ssize_t ofs;
 	Py_ssize_t lastofs;
@@ -1172,7 +1124,7 @@ we're sticking to "<" comparisons that it's much harder to follow if
 written as one routine with yet another "left or right?" flag.
 */
 static Py_ssize_t
-gallop_right(PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint, PyObject *compare)
+gallop_right(PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint)
 {
 	Py_ssize_t ofs;
 	Py_ssize_t lastofs;
@@ -1273,9 +1225,6 @@ struct s_slice {
 };
 
 typedef struct s_MergeState {
-	/* The user-supplied comparison function. or NULL if none given. */
-	PyObject *compare;
-
 	/* This controls when we get *into* galloping mode.  It's initialized
 	 * to MIN_GALLOP.  merge_lo and merge_hi tend to nudge it higher for
 	 * random data, and lower for highly structured data.
@@ -1306,10 +1255,9 @@ typedef struct s_MergeState {
 
 /* Conceptually a MergeState's constructor. */
 static void
-merge_init(MergeState *ms, PyObject *compare)
+merge_init(MergeState *ms)
 {
 	assert(ms != NULL);
-	ms->compare = compare;
 	ms->a = ms->temparray;
 	ms->alloced = MERGESTATE_TEMP_SIZE;
 	ms->n = 0;
@@ -1366,7 +1314,6 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
                          PyObject **pb, Py_ssize_t nb)
 {
 	Py_ssize_t k;
-	PyObject *compare;
 	PyObject **dest;
 	int result = -1;	/* guilty until proved innocent */
 	Py_ssize_t min_gallop;
@@ -1386,7 +1333,6 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
 		goto CopyB;
 
 	min_gallop = ms->min_gallop;
-	compare = ms->compare;
 	for (;;) {
 		Py_ssize_t acount = 0;	/* # of times A won in a row */
 		Py_ssize_t bcount = 0;	/* # of times B won in a row */
@@ -1396,7 +1342,7 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
 		 */
  		for (;;) {
  			assert(na > 1 && nb > 0);
-	 		k = ISLT(*pb, *pa, compare);
+	 		k = ISLT(*pb, *pa);
 			if (k) {
 				if (k < 0)
 					goto Fail;
@@ -1431,7 +1377,7 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
  			assert(na > 1 && nb > 0);
 			min_gallop -= min_gallop > 1;
 	 		ms->min_gallop = min_gallop;
-			k = gallop_right(*pb, pa, na, 0, compare);
+			k = gallop_right(*pb, pa, na, 0);
 			acount = k;
 			if (k) {
 				if (k < 0)
@@ -1454,7 +1400,7 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
 			if (nb == 0)
 				goto Succeed;
 
- 			k = gallop_left(*pa, pb, nb, 0, compare);
+ 			k = gallop_left(*pa, pb, nb, 0);
  			bcount = k;
 			if (k) {
 				if (k < 0)
@@ -1498,7 +1444,6 @@ static Py_ssize_t
 merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t nb)
 {
 	Py_ssize_t k;
-	PyObject *compare;
 	PyObject **dest;
 	int result = -1;	/* guilty until proved innocent */
 	PyObject **basea;
@@ -1523,7 +1468,6 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
 		goto CopyA;
 
 	min_gallop = ms->min_gallop;
-	compare = ms->compare;
 	for (;;) {
 		Py_ssize_t acount = 0;	/* # of times A won in a row */
 		Py_ssize_t bcount = 0;	/* # of times B won in a row */
@@ -1533,7 +1477,7 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
 		 */
  		for (;;) {
  			assert(na > 0 && nb > 1);
-	 		k = ISLT(*pb, *pa, compare);
+	 		k = ISLT(*pb, *pa);
 			if (k) {
 				if (k < 0)
 					goto Fail;
@@ -1568,7 +1512,7 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
  			assert(na > 0 && nb > 1);
 			min_gallop -= min_gallop > 1;
 	 		ms->min_gallop = min_gallop;
-			k = gallop_right(*pb, basea, na, na-1, compare);
+			k = gallop_right(*pb, basea, na, na-1);
 			if (k < 0)
 				goto Fail;
 			k = na - k;
@@ -1586,7 +1530,7 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
 			if (nb == 1)
 				goto CopyA;
 
- 			k = gallop_left(*pa, baseb, nb, nb-1, compare);
+ 			k = gallop_left(*pa, baseb, nb, nb-1);
 			if (k < 0)
 				goto Fail;
 			k = nb - k;
@@ -1638,7 +1582,6 @@ merge_at(MergeState *ms, Py_ssize_t i)
 	PyObject **pa, **pb;
 	Py_ssize_t na, nb;
 	Py_ssize_t k;
-	PyObject *compare;
 
 	assert(ms != NULL);
 	assert(ms->n >= 2);
@@ -1664,8 +1607,7 @@ merge_at(MergeState *ms, Py_ssize_t i)
 	/* Where does b start in a?  Elements in a before that can be
 	 * ignored (already in place).
 	 */
-	compare = ms->compare;
-	k = gallop_right(*pb, pa, na, 0, compare);
+	k = gallop_right(*pb, pa, na, 0);
 	if (k < 0)
 		return -1;
 	pa += k;
@@ -1676,7 +1618,7 @@ merge_at(MergeState *ms, Py_ssize_t i)
 	/* Where does a end in b?  Elements in b after that can be
 	 * ignored (already in place).
 	 */
-	nb = gallop_left(pa[na-1], pb, nb, nb-1, compare);
+	nb = gallop_left(pa[na-1], pb, nb, nb-1);
 	if (nb <= 0)
 		return nb;
 
@@ -1771,8 +1713,8 @@ merge_compute_minrun(Py_ssize_t n)
    pattern.  Holds a key which is used for comparisons and the original record
    which is returned during the undecorate phase.  By exposing only the key
    during comparisons, the underlying sort stability characteristics are left
-   unchanged.  Also, if a custom comparison function is used, it will only see
-   the key instead of a full record. */
+   unchanged.  Also, the comparison function will only see the key instead of
+   a full record. */
 
 typedef struct {
 	PyObject_HEAD
@@ -1866,104 +1808,6 @@ sortwrapper_getvalue(PyObject *so)
 	return value;
 }
 
-/* Wrapper for user specified cmp functions in combination with a
-   specified key function.  Makes sure the cmp function is presented
-   with the actual key instead of the sortwrapper */
-
-typedef struct {
-	PyObject_HEAD
-	PyObject *func;
-} cmpwrapperobject;
-
-static void
-cmpwrapper_dealloc(cmpwrapperobject *co)
-{
-	Py_XDECREF(co->func);
-	PyObject_Del(co);
-}
-
-static PyObject *
-cmpwrapper_call(cmpwrapperobject *co, PyObject *args, PyObject *kwds)
-{
-	PyObject *x, *y, *xx, *yy;
-
-	if (!PyArg_UnpackTuple(args, "", 2, 2, &x, &y))
-		return NULL;
-	if (!PyObject_TypeCheck(x, &PySortWrapper_Type) ||
-	    !PyObject_TypeCheck(y, &PySortWrapper_Type)) {
-		PyErr_SetString(PyExc_TypeError,
-			"expected a sortwrapperobject");
-		return NULL;
-	}
-	xx = ((sortwrapperobject *)x)->key;
-	yy = ((sortwrapperobject *)y)->key;
-	return PyObject_CallFunctionObjArgs(co->func, xx, yy, NULL);
-}
-
-PyDoc_STRVAR(cmpwrapper_doc, "cmp() wrapper for sort with custom keys.");
-
-PyTypeObject PyCmpWrapper_Type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"cmpwrapper",				/* tp_name */
-	sizeof(cmpwrapperobject),		/* tp_basicsize */
-	0,					/* tp_itemsize */
-	/* methods */
-	(destructor)cmpwrapper_dealloc,		/* tp_dealloc */
-	0,					/* tp_print */
-	0,					/* tp_getattr */
-	0,					/* tp_setattr */
-	0,					/* tp_compare */
-	0,					/* tp_repr */
-	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
-	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
-	(ternaryfunc)cmpwrapper_call,		/* tp_call */
-	0,					/* tp_str */
-	PyObject_GenericGetAttr,		/* tp_getattro */
-	0,					/* tp_setattro */
-	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
-	cmpwrapper_doc,				/* tp_doc */
-};
-
-static PyObject *
-build_cmpwrapper(PyObject *cmpfunc)
-{
-	cmpwrapperobject *co;
-
-	co = PyObject_New(cmpwrapperobject, &PyCmpWrapper_Type);
-	if (co == NULL)
-		return NULL;
-	Py_INCREF(cmpfunc);
-	co->func = cmpfunc;
-	return (PyObject *)co;
-}
-
-static int
-is_default_cmp(PyObject *cmpfunc)
-{
-	PyCFunctionObject *f;
-	const char *module;
-	if (cmpfunc == NULL || cmpfunc == Py_None)
-		return 1;
-	if (!PyCFunction_Check(cmpfunc))
-		return 0;
-	f = (PyCFunctionObject *)cmpfunc;
-	if (f->m_self != NULL)
-		return 0;
-	if (!PyUnicode_Check(f->m_module))
-		return 0;
-	module = PyUnicode_AsString(f->m_module);
-	if (module == NULL)
-		return 0;
-	if (strcmp(module, "builtins") != 0)
-		return 0;
-	if (strcmp(f->m_ml->ml_name, "cmp") != 0)
-		return 0;
-	return 1;
-}
-
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
  * Returns Py_None on success, NULL on error.  Even in case of error, the
  * list will be some permutation of its input state (nothing is lost or
@@ -1979,31 +1823,27 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	Py_ssize_t saved_ob_size, saved_allocated;
 	PyObject **saved_ob_item;
 	PyObject **final_ob_item;
-	PyObject *compare = NULL;
 	PyObject *result = NULL;	/* guilty until proved innocent */
 	int reverse = 0;
 	PyObject *keyfunc = NULL;
 	Py_ssize_t i;
 	PyObject *key, *value, *kvpair;
-	static char *kwlist[] = {"cmp", "key", "reverse", 0};
+	static char *kwlist[] = {"key", "reverse", 0};
 
 	assert(self != NULL);
 	assert (PyList_Check(self));
 	if (args != NULL) {
-		if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOi:sort",
-			kwlist, &compare, &keyfunc, &reverse))
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:sort",
+			kwlist, &keyfunc, &reverse))
 			return NULL;
+		if (Py_SIZE(args) > 0) {
+			PyErr_SetString(PyExc_TypeError,
+				"must use keyword argument for key function");
+			return NULL;
+		}
 	}
-	if (is_default_cmp(compare))
-		compare = NULL;
 	if (keyfunc == Py_None)
 		keyfunc = NULL;
-	if (compare != NULL && keyfunc != NULL) {
-		compare = build_cmpwrapper(compare);
-		if (compare == NULL)
-			return NULL;
-	} else
-		Py_XINCREF(compare);
 
 	/* The list is temporarily made empty, so that mutations performed
 	 * by comparison functions can't affect the slice of memory we're
@@ -2043,7 +1883,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	if (reverse && saved_ob_size > 1)
 		reverse_slice(saved_ob_item, saved_ob_item + saved_ob_size);
 
-	merge_init(&ms, compare);
+	merge_init(&ms);
 
 	nremaining = saved_ob_size;
 	if (nremaining < 2)
@@ -2060,7 +1900,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 		Py_ssize_t n;
 
 		/* Identify next run. */
-		n = count_run(lo, hi, compare, &descending);
+		n = count_run(lo, hi, &descending);
 		if (n < 0)
 			goto fail;
 		if (descending)
@@ -2069,7 +1909,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 		if (n < minrun) {
 			const Py_ssize_t force = nremaining <= minrun ?
 	 			  	  nremaining : minrun;
-			if (binarysort(lo, lo + force, lo + n, compare) < 0)
+			if (binarysort(lo, lo + force, lo + n) < 0)
 				goto fail;
 			n = force;
 		}
@@ -2131,7 +1971,6 @@ dsu_fail:
 		}
 		PyMem_FREE(final_ob_item);
 	}
-	Py_XDECREF(compare);
 	Py_XINCREF(result);
 	return result;
 }

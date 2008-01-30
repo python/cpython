@@ -6,6 +6,15 @@ import unittest
 verbose = test_support.verbose
 nerrors = 0
 
+def CmpToKey(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K(object):
+        def __init__(self, obj):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) == -1
+    return K
+
 def check(tag, expected, raw, compare=None):
     global nerrors
 
@@ -14,7 +23,7 @@ def check(tag, expected, raw, compare=None):
 
     orig = raw[:]   # save input in case of error
     if compare:
-        raw.sort(compare)
+        raw.sort(key=CmpToKey(compare))
     else:
         raw.sort()
 
@@ -99,7 +108,7 @@ class TestBase(unittest.TestCase):
                 print("    Checking against an insane comparison function.")
                 print("        If the implementation isn't careful, this may segfault.")
             s = x[:]
-            s.sort(lambda a, b:  int(random.random() * 3) - 1)
+            s.sort(key=CmpToKey(lambda a, b:  int(random.random() * 3) - 1))
             check("an insane function left some permutation", x, s)
 
             x = [Complains(i) for i in x]
@@ -141,14 +150,6 @@ class TestBugs(unittest.TestCase):
         L = [C() for i in range(50)]
         self.assertRaises(ValueError, L.sort)
 
-    def test_cmpNone(self):
-        # Testing None as a comparison function.
-
-        L = list(range(50))
-        random.shuffle(L)
-        L.sort(None)
-        self.assertEqual(L, list(range(50)))
-
     def test_undetected_mutation(self):
         # Python 2.4a1 did not always detect mutation
         memorywaster = []
@@ -158,12 +159,12 @@ class TestBugs(unittest.TestCase):
                 L.pop()
                 return cmp(x, y)
             L = [1,2]
-            self.assertRaises(ValueError, L.sort, mutating_cmp)
+            self.assertRaises(ValueError, L.sort, key=CmpToKey(mutating_cmp))
             def mutating_cmp(x, y):
                 L.append(3)
                 del L[:]
                 return cmp(x, y)
-            self.assertRaises(ValueError, L.sort, mutating_cmp)
+            self.assertRaises(ValueError, L.sort, key=CmpToKey(mutating_cmp))
             memorywaster = [memorywaster]
 
 #==============================================================================
@@ -175,11 +176,11 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         copy = data[:]
         random.shuffle(data)
         data.sort(key=str.lower)
-        copy.sort(cmp=lambda x,y: cmp(x.lower(), y.lower()))
+        copy.sort(key=CmpToKey(lambda x,y: cmp(x.lower(), y.lower())))
 
     def test_baddecorator(self):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
-        self.assertRaises(TypeError, data.sort, None, lambda x,y: 0)
+        self.assertRaises(TypeError, data.sort, key=lambda x,y: 0)
 
     def test_stability(self):
         data = [(random.randrange(100), i) for i in range(200)]
@@ -188,25 +189,11 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         copy.sort()                     # sort using both fields
         self.assertEqual(data, copy)    # should get the same result
 
-    def test_cmp_and_key_combination(self):
-        # Verify that the wrapper has been removed
-        def compare(x, y):
-            self.assertEqual(type(x), str)
-            self.assertEqual(type(x), str)
-            return cmp(x, y)
-        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
-        data.sort(cmp=compare, key=str.lower)
-
-    def test_badcmp_with_key(self):
-        # Verify that the wrapper has been removed
-        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
-        self.assertRaises(TypeError, data.sort, "bad", str.lower)
-
     def test_key_with_exception(self):
         # Verify that the wrapper has been removed
         data = list(range(-2, 2))
         dup = data[:]
-        self.assertRaises(ZeroDivisionError, data.sort, None, lambda x: 1/x)
+        self.assertRaises(ZeroDivisionError, data.sort, key=lambda x: 1/x)
         self.assertEqual(data, dup)
 
     def test_key_with_mutation(self):
@@ -254,14 +241,13 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         random.shuffle(data)
         data.sort(reverse=True)
         self.assertEqual(data, list(range(99,-1,-1)))
-        self.assertRaises(TypeError, data.sort, "wrong type")
 
     def test_reverse_stability(self):
         data = [(random.randrange(100), i) for i in range(200)]
         copy1 = data[:]
         copy2 = data[:]
-        data.sort(cmp=lambda x,y: cmp(x[0],y[0]), reverse=True)
-        copy1.sort(cmp=lambda x,y: cmp(y[0],x[0]))
+        data.sort(key=CmpToKey(lambda x,y: cmp(x[0],y[0])), reverse=True)
+        copy1.sort(key=CmpToKey(lambda x,y: cmp(y[0],x[0])))
         self.assertEqual(data, copy1)
         copy2.sort(key=lambda x: x[0], reverse=True)
         self.assertEqual(data, copy2)
