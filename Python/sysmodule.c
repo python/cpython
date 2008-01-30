@@ -1181,7 +1181,6 @@ make_flags(void)
 		return NULL;
 	}
 
-	Py_INCREF(seq);
 	return seq;
 }
 
@@ -1199,6 +1198,11 @@ _PySys_Init(void)
 	if (m == NULL)
 		return NULL;
 	sysdict = PyModule_GetDict(m);
+#define SET_SYS_FROM_STRING(key, value)			\
+	v = value;					\
+	if (v != NULL)					\
+		PyDict_SetItemString(sysdict, key, v);	\
+	Py_XDECREF(v)
 
 	{
 		/* XXX: does this work on Win/Win64? (see posix_fstat) */
@@ -1258,19 +1262,17 @@ _PySys_Init(void)
 	Py_XDECREF(sysin);
 	Py_XDECREF(sysout);
 	Py_XDECREF(syserr);
-	PyDict_SetItemString(sysdict, "version",
-			     v = PyString_FromString(Py_GetVersion()));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "hexversion",
-			     v = PyInt_FromLong(PY_VERSION_HEX));
-	Py_XDECREF(v);
+
+	SET_SYS_FROM_STRING("version",
+			     PyString_FromString(Py_GetVersion()));
+	SET_SYS_FROM_STRING("hexversion",
+			     PyInt_FromLong(PY_VERSION_HEX));
 	svnversion_init();
-	v = Py_BuildValue("(ssz)", "CPython", branch, svn_revision);
-	PyDict_SetItemString(sysdict, "subversion", v);
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "dont_write_bytecode",
-			     v = PyBool_FromLong(Py_DontWriteBytecodeFlag));
-	Py_XDECREF(v);
+	SET_SYS_FROM_STRING("subversion",
+			    Py_BuildValue("(ssz)", "CPython", branch,
+					  svn_revision));
+	SET_SYS_FROM_STRING("dont_write_bytecode",
+			    PyBool_FromLong(Py_DontWriteBytecodeFlag));
 	/*
 	 * These release level checks are mutually exclusive and cover
 	 * the field, so don't get too fancy with the pre-processor!
@@ -1284,12 +1286,6 @@ _PySys_Init(void)
 #elif PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
 	s = "final";
 #endif
-
-#define SET_SYS_FROM_STRING(key, value)			\
-	v = value;					\
-	if (v != NULL)					\
-		PyDict_SetItemString(sysdict, key, v);	\
-	Py_XDECREF(v)
 
 	SET_SYS_FROM_STRING("version_info",
 			    Py_BuildValue("iiisi", PY_MAJOR_VERSION,
@@ -1340,7 +1336,6 @@ _PySys_Init(void)
 	SET_SYS_FROM_STRING("winver",
 			    PyString_FromString(PyWin_DLLVersionString));
 #endif
-#undef SET_SYS_FROM_STRING
 	if (warnoptions == NULL) {
 		warnoptions = PyList_New(0);
 	}
@@ -1352,11 +1347,12 @@ _PySys_Init(void)
 	}
 
 	PyStructSequence_InitType(&FlagsType, &flags_desc);
-	PyDict_SetItemString(sysdict, "flags", make_flags());
+	SET_SYS_FROM_STRING("flags", make_flags());
 	/* prevent user from creating new instances */
 	FlagsType.tp_init = NULL;
 	FlagsType.tp_new = NULL;
 
+#undef SET_SYS_FROM_STRING
 	if (PyErr_Occurred())
 		return NULL;
 	return m;

@@ -143,7 +143,6 @@ PyFloat_GetInfo(void)
 		return NULL;
 	}
 
-	Py_INCREF(floatinfo);
 	return floatinfo;
 }
 

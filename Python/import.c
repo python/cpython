@@ -370,6 +370,8 @@ static char* sys_deletes[] = {
 	"exc_type", "exc_value", "exc_traceback",
 	"last_type", "last_value", "last_traceback",
 	"path_hooks", "path_importer_cache", "meta_path",
+	/* misc stuff */
+	"flags", "float_info",
 	NULL
 };
 
