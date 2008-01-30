@@ -242,9 +242,7 @@ class BaseBytesTest(unittest.TestCase):
     def test_fromhex(self):
         self.assertRaises(TypeError, self.type2test.fromhex)
         self.assertRaises(TypeError, self.type2test.fromhex, 1)
-        # To be fixed
-        if self.type2test != bytes:
-            self.assertEquals(self.type2test.fromhex(''), self.type2test())
+        self.assertEquals(self.type2test.fromhex(''), self.type2test())
         b = bytearray([0x1a, 0x2b, 0x30])
         self.assertEquals(self.type2test.fromhex('1a2B30'), b)
         self.assertEquals(self.type2test.fromhex('  1A 2B  30   '), b)
