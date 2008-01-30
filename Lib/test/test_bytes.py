@@ -13,7 +13,6 @@ import pickle
 import tempfile
 import unittest
 import warnings
-import functools
 import test.test_support
 import test.string_tests
 import test.buffer_tests
