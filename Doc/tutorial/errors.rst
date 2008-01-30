@@ -131,7 +131,7 @@ the exception (allowing a caller to handle the exception as well)::
        f = open('myfile.txt')
        s = f.readline()
        i = int(s.strip())
-   except IOError, (errno, strerror):
+   except IOError as (errno, strerror):
        print "I/O error(%s): %s" % (errno, strerror)
    except ValueError:
        print "Could not convert data to an integer."
@@ -176,7 +176,7 @@ desired. ::
 
    >>> try:
    ...    raise Exception('spam', 'eggs')
-   ... except Exception, inst:
+   ... except Exception as inst:
    ...    print type(inst)     # the exception instance
    ...    print inst.args      # arguments stored in .args
    ...    print inst           # __str__ allows args to printed directly
@@ -202,7 +202,7 @@ indirectly) in the try clause. For example::
    ... 
    >>> try:
    ...     this_fails()
-   ... except ZeroDivisionError, detail:
+   ... except ZeroDivisionError as detail:
    ...     print 'Handling run-time error:', detail
    ... 
    Handling run-time error: integer division or modulo by zero
@@ -259,7 +259,7 @@ directly or indirectly.  For example::
    ... 
    >>> try:
    ...     raise MyError(2*2)
-   ... except MyError, e:
+   ... except MyError as e:
    ...     print 'My exception occurred, value:', e.value
    ... 
    My exception occurred, value: 4
