@@ -250,6 +250,12 @@ class MutableSet(Set):
         """Return True if it was deleted, False if not there."""
         raise NotImplementedError
 
+    def remove(self, value):
+        """Remove an element. If not a member, raise a KeyError."""
+        if value not in self:
+            raise KeyError(value)
+        self.discard(value)
+
     def pop(self):
         """Return the popped value.  Raise KeyError if empty."""
         it = iter(self)
