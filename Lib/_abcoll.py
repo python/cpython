@@ -211,6 +211,12 @@ class Set(metaclass=ABCMeta):
             return NotImplemented
         return self._from_iterable(value for value in other if value in self)
 
+    def isdisjoint(self, other):
+        for value in other:
+            if value in self:
+                return False
+        return True
+
     def __or__(self, other):
         if not isinstance(other, Iterable):
             return NotImplemented
@@ -277,6 +283,12 @@ class MutableSet(Set):
     def discard(self, value):
         """Return True if it was deleted, False if not there."""
         raise NotImplementedError
+
+    def remove(self, value):
+        """Remove an element. If not a member, raise a KeyError."""
+        if value not in self:
+            raise KeyError(value)
+        self.discard(value)
 
     def pop(self):
         """Return the popped value.  Raise KeyError if empty."""

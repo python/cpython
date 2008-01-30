@@ -131,8 +131,8 @@ the exception (allowing a caller to handle the exception as well)::
        f = open('myfile.txt')
        s = f.readline()
        i = int(s.strip())
-   except IOError as e:
-       print("I/O error(%s): %s" % (e.errno, e.strerror))
+   except IOError as (errno, strerror):
+       print "I/O error(%s): %s" % (errno, strerror)
    except ValueError:
        print("Could not convert data to an integer.")
    except:
