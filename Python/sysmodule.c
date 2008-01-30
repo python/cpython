@@ -1107,7 +1107,7 @@ PyDoc_STRVAR(flags__doc__,
 \n\
 Flags provided through command line arguments or environment vars.");
 
-static PyTypeObject FlagsType;
+static PyTypeObject FlagsType = {0, 0, 0, 0, 0, 0};
 
 static PyStructSequence_Field flags_fields[] = {
 	{"debug",		"-d"},
@@ -1180,7 +1180,6 @@ make_flags(void)
 	if (PyErr_Occurred()) {
 		return NULL;
 	}
-
 	return seq;
 }
 
@@ -1346,7 +1345,8 @@ _PySys_Init(void)
 		PyDict_SetItemString(sysdict, "warnoptions", warnoptions);
 	}
 
-	PyStructSequence_InitType(&FlagsType, &flags_desc);
+	if (FlagsType.tp_name == 0)
+		PyStructSequence_InitType(&FlagsType, &flags_desc);
 	SET_SYS_FROM_STRING("flags", make_flags());
 	/* prevent user from creating new instances */
 	FlagsType.tp_init = NULL;
