@@ -348,7 +348,14 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 #else
 
-#define Py_UNICODE_ISSPACE(ch) _PyUnicode_IsWhitespace(ch)
+/* Since splitting on whitespace is an important use case, and whitespace
+   in most situations is solely ASCII whitespace, we optimize for the common
+   case by using a quick look-up table with an inlined check.
+ */
+extern const unsigned char _Py_ascii_whitespace[];
+
+#define Py_UNICODE_ISSPACE(ch) \
+	((ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
 
 #define Py_UNICODE_ISLOWER(ch) _PyUnicode_IsLowercase(ch)
 #define Py_UNICODE_ISUPPER(ch) _PyUnicode_IsUppercase(ch)

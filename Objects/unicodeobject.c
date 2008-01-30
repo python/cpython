@@ -112,6 +112,64 @@ static PyUnicodeObject *unicode_latin1[256];
 */
 static char unicode_default_encoding[100];
 
+/* Fast detection of the most frequent whitespace characters */
+const unsigned char _Py_ascii_whitespace[] = {
+	0, 0, 0, 0, 0, 0, 0, 0,
+//     case 0x0009: /* HORIZONTAL TABULATION */
+//     case 0x000A: /* LINE FEED */
+//     case 0x000B: /* VERTICAL TABULATION */
+//     case 0x000C: /* FORM FEED */
+//     case 0x000D: /* CARRIAGE RETURN */
+	0, 1, 1, 1, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+//     case 0x001C: /* FILE SEPARATOR */
+//     case 0x001D: /* GROUP SEPARATOR */
+//     case 0x001E: /* RECORD SEPARATOR */
+//     case 0x001F: /* UNIT SEPARATOR */
+	0, 0, 0, 0, 1, 1, 1, 1,
+//     case 0x0020: /* SPACE */
+	1, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+/* Same for linebreaks */
+static unsigned char ascii_linebreak[] = {
+	0, 0, 0, 0, 0, 0, 0, 0,
+//         0x000A, /* LINE FEED */
+//         0x000D, /* CARRIAGE RETURN */
+	0, 0, 1, 0, 0, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+//         0x001C, /* FILE SEPARATOR */
+//         0x001D, /* GROUP SEPARATOR */
+//         0x001E, /* RECORD SEPARATOR */
+	0, 0, 0, 0, 1, 1, 1, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+
 Py_UNICODE
 PyUnicode_GetMax(void)
 {
@@ -138,8 +196,9 @@ static BLOOM_MASK bloom_linebreak;
 
 #define BLOOM(mask, ch) ((mask & (1 << ((ch) & 0x1F))))
 
-#define BLOOM_LINEBREAK(ch)\
-    (BLOOM(bloom_linebreak, (ch)) && Py_UNICODE_ISLINEBREAK((ch)))
+#define BLOOM_LINEBREAK(ch) \
+    ((ch) < 128U ? ascii_linebreak[(ch)] : \
+    (BLOOM(bloom_linebreak, (ch)) && Py_UNICODE_ISLINEBREAK(ch)))
 
 Py_LOCAL_INLINE(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
 {
@@ -5505,25 +5564,26 @@ PyObject *split_whitespace(PyUnicodeObject *self,
     register Py_ssize_t j;
     Py_ssize_t len = self->length;
     PyObject *str;
+    register const Py_UNICODE *buf = self->str;
 
     for (i = j = 0; i < len; ) {
 	/* find a token */
-	while (i < len && Py_UNICODE_ISSPACE(self->str[i]))
+	while (i < len && Py_UNICODE_ISSPACE(buf[i]))
 	    i++;
 	j = i;
-	while (i < len && !Py_UNICODE_ISSPACE(self->str[i]))
+	while (i < len && !Py_UNICODE_ISSPACE(buf[i]))
 	    i++;
 	if (j < i) {
 	    if (maxcount-- <= 0)
 		break;
-	    SPLIT_APPEND(self->str, j, i);
-	    while (i < len && Py_UNICODE_ISSPACE(self->str[i]))
+	    SPLIT_APPEND(buf, j, i);
+	    while (i < len && Py_UNICODE_ISSPACE(buf[i]))
 		i++;
 	    j = i;
 	}
     }
     if (j < len) {
-	SPLIT_APPEND(self->str, j, len);
+	SPLIT_APPEND(buf, j, len);
     }
     return list;
 
@@ -5596,18 +5656,19 @@ PyObject *split_char(PyUnicodeObject *self,
     register Py_ssize_t j;
     Py_ssize_t len = self->length;
     PyObject *str;
+    register const Py_UNICODE *buf = self->str;
 
     for (i = j = 0; i < len; ) {
-	if (self->str[i] == ch) {
+	if (buf[i] == ch) {
 	    if (maxcount-- <= 0)
 		break;
-	    SPLIT_APPEND(self->str, j, i);
+	    SPLIT_APPEND(buf, j, i);
 	    i = j = i + 1;
 	} else
 	    i++;
     }
     if (j <= len) {
-	SPLIT_APPEND(self->str, j, len);
+	SPLIT_APPEND(buf, j, len);
     }
     return list;
 
@@ -5656,25 +5717,26 @@ PyObject *rsplit_whitespace(PyUnicodeObject *self,
     register Py_ssize_t j;
     Py_ssize_t len = self->length;
     PyObject *str;
+    register const Py_UNICODE *buf = self->str;
 
     for (i = j = len - 1; i >= 0; ) {
 	/* find a token */
-	while (i >= 0 && Py_UNICODE_ISSPACE(self->str[i]))
+	while (i >= 0 && Py_UNICODE_ISSPACE(buf[i]))
 	    i--;
 	j = i;
-	while (i >= 0 && !Py_UNICODE_ISSPACE(self->str[i]))
+	while (i >= 0 && !Py_UNICODE_ISSPACE(buf[i]))
 	    i--;
 	if (j > i) {
 	    if (maxcount-- <= 0)
 		break;
-	    SPLIT_APPEND(self->str, i + 1, j + 1);
-	    while (i >= 0 && Py_UNICODE_ISSPACE(self->str[i]))
+	    SPLIT_APPEND(buf, i + 1, j + 1);
+	    while (i >= 0 && Py_UNICODE_ISSPACE(buf[i]))
 		i--;
 	    j = i;
 	}
     }
     if (j >= 0) {
-	SPLIT_APPEND(self->str, 0, j + 1);
+	SPLIT_APPEND(buf, 0, j + 1);
     }
     if (PyList_Reverse(list) < 0)
         goto onError;
@@ -5695,18 +5757,19 @@ PyObject *rsplit_char(PyUnicodeObject *self,
     register Py_ssize_t j;
     Py_ssize_t len = self->length;
     PyObject *str;
+    register const Py_UNICODE *buf = self->str;
 
     for (i = j = len - 1; i >= 0; ) {
-	if (self->str[i] == ch) {
+	if (buf[i] == ch) {
 	    if (maxcount-- <= 0)
 		break;
-	    SPLIT_APPEND(self->str, i + 1, j + 1);
+	    SPLIT_APPEND(buf, i + 1, j + 1);
 	    j = i = i - 1;
 	} else
 	    i--;
     }
     if (j >= -1) {
-	SPLIT_APPEND(self->str, 0, j + 1);
+	SPLIT_APPEND(buf, 0, j + 1);
     }
     if (PyList_Reverse(list) < 0)
         goto onError;
