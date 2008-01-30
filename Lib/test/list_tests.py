@@ -8,6 +8,15 @@ import os
 import unittest
 from test import test_support, seq_tests
 
+def CmpToKey(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K(object):
+        def __init__(self, obj):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) == -1
+    return K
+
 class CommonTest(seq_tests.CommonTest):
 
     def test_init(self):
@@ -430,23 +439,21 @@ class CommonTest(seq_tests.CommonTest):
 
         def revcmp(a, b):
             return cmp(b, a)
-        u.sort(revcmp)
+        u.sort(key=CmpToKey(revcmp))
         self.assertEqual(u, self.type2test([2,1,0,-1,-2]))
 
         # The following dumps core in unpatched Python 1.5:
         def myComparison(x,y):
             return cmp(x%3, y%7)
         z = self.type2test(range(12))
-        z.sort(myComparison)
+        z.sort(key=CmpToKey(myComparison))
 
         self.assertRaises(TypeError, z.sort, 2)
 
         def selfmodifyingComparison(x,y):
             z.append(1)
             return cmp(x, y)
-        self.assertRaises(ValueError, z.sort, selfmodifyingComparison)
-
-        self.assertRaises(TypeError, z.sort, lambda x, y: 's')
+        self.assertRaises(ValueError, z.sort, key=CmpToKey(selfmodifyingComparison))
 
         self.assertRaises(TypeError, z.sort, 42, 42, 42, 42)
 

@@ -1266,8 +1266,7 @@ Note that while lists allow their items to be of any type, bytearray object
 | ``s.reverse()``              | reverses the items of *s* in   | \(6)                |
 |                              | place                          |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.sort([cmp[, key[,        | sort the items of *s* in place | (6), (7)            |
-| reverse]]])``                |                                |                     |
+| ``s.sort([key[, reverse]])`` | sort the items of *s* in place | (6), (7)            |
 +------------------------------+--------------------------------+---------------------+
 
 .. index::
@@ -1321,22 +1320,11 @@ Notes:
    The :meth:`sort` method takes optional arguments for controlling the
    comparisons.
 
-   *cmp* specifies a custom comparison function of two arguments (list items) which
-   should return a negative, zero or positive number depending on whether the first
-   argument is considered smaller than, equal to, or larger than the second
-   argument: ``cmp=lambda x,y: cmp(x.lower(), y.lower())``.  The default value
-   is ``None``.
-
    *key* specifies a function of one argument that is used to extract a comparison
    key from each list element: ``key=str.lower``.  The default value is ``None``.
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
-
-   In general, the *key* and *reverse* conversion processes are much faster than
-   specifying an equivalent *cmp* function.  This is because *cmp* is called
-   multiple times for each list element while *key* and *reverse* touch each
-   element only once.
 
    Starting with Python 2.3, the :meth:`sort` method is guaranteed to be stable.  A
    sort is stable if it guarantees not to change the relative order of elements
