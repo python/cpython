@@ -1383,6 +1383,8 @@ Tools/Demos
 Build
 -----
 
+- Bug #1234: Fixed semaphore errors on AIX 5.2
+
 - Issue #1726: Remove Python/atof.c from PCBuild/pythoncore.vcproj
 
 - Removed PCbuild8/ directory and added a new build directory for VS 2005
