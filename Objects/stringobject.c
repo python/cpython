@@ -2772,7 +2772,7 @@ string_fromhex(PyObject *cls, PyObject *args)
 		}
 		buf[j++] = (top << 4) + bot;
 	}
-	if (_PyString_Resize(&newstring, j) < 0)
+	if (j != byteslen && _PyString_Resize(&newstring, j) < 0)
 		goto error;
 	return newstring;
 
@@ -2788,7 +2788,7 @@ string_getnewargs(PyStringObject *v)
 	return Py_BuildValue("(s#)", v->ob_sval, Py_SIZE(v));
 }
 
-
+
 static PyMethodDef
 string_methods[] = {
 	{"__getnewargs__",	(PyCFunction)string_getnewargs,	METH_NOARGS},
