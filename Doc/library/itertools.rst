@@ -401,17 +401,6 @@ can be combined. ::
    27
    64
 
-   >>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura',
-   ...                '', 'martin', '', 'walter', '', 'mark']
-   >>> for name in islice(reportlines, 3, None, 2):
-   ...    print name.title()
-   ...
-   Alex
-   Laura
-   Martin
-   Walter
-   Mark
-
    # Show a dictionary sorted and grouped by value
    >>> from operator import itemgetter
    >>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
@@ -534,5 +523,16 @@ which incur interpreter overhead. ::
        "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
        return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
 
-
+   def roundrobin(*iterables):
+       "roundrobin('abc', 'd', 'ef') --> 'a', 'd', 'e', 'b', 'f', 'c'"
+       # Recipe contributed by George Sakkis
+       pending = len(iterables)
+       nexts = cycle(iter(it).next for it in iterables)
+       while pending:
+           try:
+               for next in nexts:
+                   yield next()
+           except StopIteration:
+               pending -= 1
+               nexts = cycle(islice(nexts, pending))
 
