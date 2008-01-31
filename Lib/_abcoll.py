@@ -293,6 +293,7 @@ class MutableSet(Set):
                 self.discard(value)
             else:
                 self.add(value)
+        return self
 
     def __isub__(self, it):
         for value in it:
