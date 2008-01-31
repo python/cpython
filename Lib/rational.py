@@ -193,20 +193,20 @@ class Rational(RationalAbc):
         Rational, that means that we define __add__ and __radd__ as:
 
             def __add__(self, other):
+                # Both types have numerators/denominator attributes,
+                # so do the operation directly
                 if isinstance(other, (int, long, Rational)):
-                    # Do the real operation.
                     return Rational(self.numerator * other.denominator +
                                     other.numerator * self.denominator,
                                     self.denominator * other.denominator)
-                # float and complex don't follow this protocol, and
-                # Rational knows about them, so special case them.
+                # float and complex don't have those operations, but we
+                # know about those types, so special case them.
                 elif isinstance(other, float):
                     return float(self) + other
                 elif isinstance(other, complex):
                     return complex(self) + other
-                else:
-                    # Let the other type take over.
-                    return NotImplemented
+                # Let the other type take over.
+                return NotImplemented
 
             def __radd__(self, other):
                 # radd handles more types than add because there's
@@ -219,8 +219,7 @@ class Rational(RationalAbc):
                     return float(other) + float(self)
                 elif isinstance(other, Complex):
                     return complex(other) + complex(self)
-                else:
-                    return NotImplemented
+                return NotImplemented
 
 
         There are 5 different cases for a mixed-type addition on
