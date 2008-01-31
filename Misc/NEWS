@@ -12,6 +12,9 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Fixed multiple reinitialization of the Python interpreter. The small int
+  list in longobject.c has caused a seg fault during the third finalization.
+
 - Issue #1973: bytes.fromhex('') raises SystemError
 
 - Issue #1771: remove cmp parameter from sorted() and list.sort()
