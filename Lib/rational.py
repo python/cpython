@@ -179,16 +179,6 @@ class Rational(RationalAbc):
         else:
             return '%s/%s' % (self.numerator, self.denominator)
 
-    """ XXX This section needs a lot more commentary
-
-    * Explain the typical sequence of checks, calls, and fallbacks.
-    * Explain the subtle reasons why this logic was needed.
-    * It is not clear how common cases are handled (for example, how
-      does the ratio of two huge integers get converted to a float
-      without overflowing the long-->float conversion.
-
-    """
-
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
         operator and a function from the operator module.
@@ -196,10 +186,82 @@ class Rational(RationalAbc):
         Use this like:
         __op__, __rop__ = _operator_fallbacks(just_rational_op, operator.op)
 
+        In general, we want to implement the arithmetic operations so
+        that mixed-mode operations either call an implementation whose
+        author knew about the types of both arguments, or convert both
+        to the nearest built in type and do the operation there. In
+        Rational, that means that we define __add__ and __radd__ as:
+
+            def __add__(self, other):
+                if isinstance(other, (int, long, Rational)):
+                    # Do the real operation.
+                    return Rational(self.numerator * other.denominator +
+                                    other.numerator * self.denominator,
+                                    self.denominator * other.denominator)
+                # float and complex don't follow this protocol, and
+                # Rational knows about them, so special case them.
+                elif isinstance(other, float):
+                    return float(self) + other
+                elif isinstance(other, complex):
+                    return complex(self) + other
+                else:
+                    # Let the other type take over.
+                    return NotImplemented
+
+            def __radd__(self, other):
+                # radd handles more types than add because there's
+                # nothing left to fall back to.
+                if isinstance(other, RationalAbc):
+                    return Rational(self.numerator * other.denominator +
+                                    other.numerator * self.denominator,
+                                    self.denominator * other.denominator)
+                elif isinstance(other, Real):
+                    return float(other) + float(self)
+                elif isinstance(other, Complex):
+                    return complex(other) + complex(self)
+                else:
+                    return NotImplemented
+
+
+        There are 5 different cases for a mixed-type addition on
+        Rational. I'll refer to all of the above code that doesn't
+        refer to Rational, float, or complex as "boilerplate". 'r'
+        will be an instance of Rational, which is a subtype of
+        RationalAbc (r : Rational <: RationalAbc), and b : B <:
+        Complex. The first three involve 'r + b':
+
+            1. If B <: Rational, int, float, or complex, we handle
+               that specially, and all is well.
+            2. If Rational falls back to the boilerplate code, and it
+               were to return a value from __add__, we'd miss the
+               possibility that B defines a more intelligent __radd__,
+               so the boilerplate should return NotImplemented from
+               __add__. In particular, we don't handle RationalAbc
+               here, even though we could get an exact answer, in case
+               the other type wants to do something special.
+            3. If B <: Rational, Python tries B.__radd__ before
+               Rational.__add__. This is ok, because it was
+               implemented with knowledge of Rational, so it can
+               handle those instances before delegating to Real or
+               Complex.
+
+        The next two situations describe 'b + r'. We assume that b
+        didn't know about Rational in its implementation, and that it
+        uses similar boilerplate code:
+
+            4. If B <: RationalAbc, then __radd_ converts both to the
+               builtin rational type (hey look, that's us) and
+               proceeds.
+            5. Otherwise, __radd__ tries to find the nearest common
+               base ABC, and fall back to its builtin type. Since this
+               class doesn't subclass a concrete type, there's no
+               implementation to fall back to, so we need to try as
+               hard as possible to return an actual value, or the user
+               will get a TypeError.
+
         """
         def forward(a, b):
-            if isinstance(b, RationalAbc):
-                # Includes ints.
+            if isinstance(b, (int, long, Rational)):
                 return monomorphic_operator(a, b)
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
