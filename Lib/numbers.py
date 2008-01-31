@@ -292,7 +292,13 @@ class Rational(Real, Exact):
 
     # Concrete implementation of Real's conversion to float.
     def __float__(self):
-        """float(self) = self.numerator / self.denominator"""
+        """float(self) = self.numerator / self.denominator
+
+        It's important that this conversion use the integer's "true"
+        division rather than casting one side to float before dividing
+        so that ratios of huge integers convert without overflowing.
+
+        """
         return self.numerator / self.denominator
 
 
