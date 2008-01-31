@@ -410,40 +410,6 @@ class Rational(RationalAbc):
 
     __int__ = __trunc__
 
-    def __floor__(a):
-        """Will be math.floor(a) in 3.0."""
-        return a.numerator // a.denominator
-
-    def __ceil__(a):
-        """Will be math.ceil(a) in 3.0."""
-        # The negations cleverly convince floordiv to return the ceiling.
-        return -(-a.numerator // a.denominator)
-
-    def __round__(self, ndigits=None):
-        """Will be round(self, ndigits) in 3.0.
-
-        Rounds half toward even.
-        """
-        if ndigits is None:
-            floor, remainder = divmod(self.numerator, self.denominator)
-            if remainder * 2 < self.denominator:
-                return floor
-            elif remainder * 2 > self.denominator:
-                return floor + 1
-            # Deal with the half case:
-            elif floor % 2 == 0:
-                return floor
-            else:
-                return floor + 1
-        shift = 10**abs(ndigits)
-        # See _operator_fallbacks.forward to check that the results of
-        # these operations will always be Rational and therefore have
-        # __round__().
-        if ndigits > 0:
-            return Rational((self * shift).__round__(), shift)
-        else:
-            return Rational((self / shift).__round__() * shift)
-
     def __hash__(self):
         """hash(self)
 

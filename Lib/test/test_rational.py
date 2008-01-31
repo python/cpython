@@ -197,14 +197,6 @@ class RationalTest(unittest.TestCase):
     def testConversions(self):
         self.assertTypedEquals(-1, trunc(R(-11, 10)))
         self.assertTypedEquals(-1, int(R(-11, 10)))
-        self.assertTypedEquals(-2, R(-11, 10).__floor__())
-        self.assertTypedEquals(-1, R(-11, 10).__ceil__())
-        self.assertTypedEquals(-1, R(-10, 10).__ceil__())
-
-        self.assertTypedEquals(0, R(-1, 10).__round__())
-        self.assertTypedEquals(0, R(-5, 10).__round__())
-        self.assertTypedEquals(-2, R(-15, 10).__round__())
-        self.assertTypedEquals(-1, R(-7, 10).__round__())
 
         self.assertEquals(False, bool(R(0, 1)))
         self.assertEquals(True, bool(R(3, 2)))
@@ -217,13 +209,6 @@ class RationalTest(unittest.TestCase):
                                 float(R(long('2'*400+'7'), long('3'*400+'1'))))
 
         self.assertTypedEquals(0.1+0j, complex(R(1,10)))
-
-    def testRound(self):
-        self.assertTypedEquals(R(-200), R(-150).__round__(-2))
-        self.assertTypedEquals(R(-200), R(-250).__round__(-2))
-        self.assertTypedEquals(R(30), R(26).__round__(-1))
-        self.assertTypedEquals(R(-2, 10), R(-15, 100).__round__(1))
-        self.assertTypedEquals(R(-2, 10), R(-25, 100).__round__(1))
 
 
     def testArithmetic(self):
