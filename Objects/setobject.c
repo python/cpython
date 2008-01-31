@@ -2236,6 +2236,7 @@ test_c_api(PySetObject *so)
 	Py_ssize_t i;
 	PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x;
 	PyObject *ob = (PyObject *)so;
+	long hash;
 
 	/* Verify preconditions and exercise type/size checks */
 	assert(PyAnySet_Check(ob));
@@ -2280,7 +2281,7 @@ test_c_api(PySetObject *so)
 
 	/* Exercise direct iteration */
 	i = 0, count = 0;
-	while (_PySet_Next((PyObject *)dup, &i, &x)) {
+	while (_PySet_NextEntry((PyObject *)dup, &i, &x, &hash)) {
 		s = PyUnicode_AsString(x);
 		assert(s && (s[0] == 'a' || s[0] == 'b' || s[0] == 'c'));
 		count++;
