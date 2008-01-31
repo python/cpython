@@ -3575,11 +3575,11 @@ Return 0 to child process and PID of child to parent process.");
 static PyObject *
 posix_fork1(PyObject *self, PyObject *noargs)
 {
-	int pid = fork1();
+	pid_t pid = fork1();
 	if (pid == -1)
 		return posix_error();
 	PyOS_AfterFork();
-	return PyInt_FromLong((long)pid);
+	return PyInt_FromLong(pid);
 }
 #endif
 
@@ -3593,12 +3593,12 @@ Return 0 to child process and PID of child to parent process.");
 static PyObject *
 posix_fork(PyObject *self, PyObject *noargs)
 {
-	int pid = fork();
+	pid_t pid = fork();
 	if (pid == -1)
 		return posix_error();
 	if (pid == 0)
 		PyOS_AfterFork();
-	return PyInt_FromLong((long)pid);
+	return PyInt_FromLong(pid);
 }
 #endif
 
@@ -3700,14 +3700,15 @@ To both, return fd of newly opened pseudo-terminal.\n");
 static PyObject *
 posix_forkpty(PyObject *self, PyObject *noargs)
 {
-	int master_fd = -1, pid;
+	int master_fd = -1;
+	pid_t pid;
 
 	pid = forkpty(&master_fd, NULL, NULL, NULL);
 	if (pid == -1)
 		return posix_error();
 	if (pid == 0)
 		PyOS_AfterFork();
-	return Py_BuildValue("(ii)", pid, master_fd);
+	return Py_BuildValue("(li)", pid, master_fd);
 }
 #endif
 

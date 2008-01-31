@@ -122,6 +122,10 @@ typedef Py_intptr_t	Py_ssize_t;
 /* Smallest negative value of type Py_ssize_t. */
 #define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
+#if SIZEOF_PID_T > SIZEOF_LONG
+#   error "Python doesn't support sizeof(pid_t) > sizeof(long)"
+#endif
+
 /* PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
  * format to convert an argument with the width of a size_t or Py_ssize_t.
  * C99 introduced "z" for this purpose, but not all platforms support that;
@@ -573,7 +577,7 @@ extern char * _getpty(int *, int, mode_t, int);
    functions, even though they are included in libutil. */
 #include <termios.h>
 extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
-extern int forkpty(int *, char *, struct termios *, struct winsize *);
+extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #endif /* !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H) */
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
 
