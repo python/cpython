@@ -175,13 +175,12 @@ class PrettyPrinter:
                     write('{')
                     endchar = '}'
                     object = sorted(object)
-                    indent += 4
                 elif issubclass(typ, frozenset):
                     if not length:
                         write('frozenset()')
                         return
-                    write('frozenset([')
-                    endchar = '])'
+                    write('frozenset({')
+                    endchar = '})'
                     object = sorted(object)
                     indent += 10
                 else:
