@@ -482,7 +482,7 @@ r_object(RFILE *p)
 {
 	/* NULL is a valid return value, it does not necessarily means that
 	   an exception is set. */
-	PyObject *v, *v2, *v3;
+	PyObject *v, *v2;
 	long i, n;
 	int type = r_byte(p);
 	PyObject *retval;
