@@ -300,16 +300,6 @@ class MutableSet(Set):
         self.discard(value)
         return value
 
-    def toggle(self, value):
-        """Return True if it was added, False if deleted."""
-        # XXX This implementation is not thread-safe
-        if value in self:
-            self.discard(value)
-            return False
-        else:
-            self.add(value)
-            return True
-
     def clear(self):
         """This is slow (creates N new iterators!) but effective."""
         try:
@@ -330,9 +320,13 @@ class MutableSet(Set):
         return self
 
     def __ixor__(self, it: Iterable):
-        # This calls toggle(), so if that is overridded, we call the override
+        if not isinstance(it, Set):
+            it = self._from_iterable(it)
         for value in it:
-            self.toggle(it)
+            if value in self:
+                self.discard(value)
+            else:
+                self.add(value)
         return self
 
     def __isub__(self, it: Iterable):

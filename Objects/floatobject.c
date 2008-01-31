@@ -106,15 +106,9 @@ static PyStructSequence_Desc floatinfo_desc = {
 PyObject *
 PyFloat_GetInfo(void)
 {
-	static PyObject* floatinfo;
+	PyObject* floatinfo;
 	int pos = 0;
 
-	if (floatinfo != NULL) {
-		Py_INCREF(floatinfo);
-		return floatinfo;
-	}
-	PyStructSequence_InitType(&FloatInfoType, &floatinfo_desc);
-	
 	floatinfo = PyStructSequence_New(&FloatInfoType);
 	if (floatinfo == NULL) {
 		return NULL;
@@ -143,8 +137,6 @@ PyFloat_GetInfo(void)
 		Py_CLEAR(floatinfo);
 		return NULL;
 	}
-
-	Py_INCREF(floatinfo);
 	return floatinfo;
 }
 
@@ -1601,6 +1593,9 @@ _PyFloat_Init(void)
 	/* Initialize floating point repr */
 	_PyFloat_DigitsInit();
 #endif
+	/* Init float info */
+	if (FloatInfoType.tp_name == 0)
+		PyStructSequence_InitType(&FloatInfoType, &floatinfo_desc);
 }
 
 void

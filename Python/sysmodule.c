@@ -1131,8 +1131,6 @@ make_flags(void)
 	if (PyErr_Occurred()) {
 		return NULL;
 	}
-
-	Py_INCREF(seq);
 	return seq;
 }
 
@@ -1146,6 +1144,11 @@ _PySys_Init(void)
 	if (m == NULL)
 		return NULL;
 	sysdict = PyModule_GetDict(m);
+#define SET_SYS_FROM_STRING(key, value)			\
+	v = value;					\
+	if (v != NULL)					\
+		PyDict_SetItemString(sysdict, key, v);	\
+	Py_XDECREF(v)
 
 	{
 		/* XXX: does this work on Win/Win64? (see posix_fstat) */
@@ -1165,19 +1168,16 @@ _PySys_Init(void)
                              PyDict_GetItemString(sysdict, "displayhook"));
 	PyDict_SetItemString(sysdict, "__excepthook__",
                              PyDict_GetItemString(sysdict, "excepthook"));
-	PyDict_SetItemString(sysdict, "version",
-			     v = PyUnicode_FromString(Py_GetVersion()));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "hexversion",
-			     v = PyLong_FromLong(PY_VERSION_HEX));
-	Py_XDECREF(v);
+	SET_SYS_FROM_STRING("version",
+			     PyUnicode_FromString(Py_GetVersion()));
+	SET_SYS_FROM_STRING("hexversion",
+			     PyLong_FromLong(PY_VERSION_HEX));
 	svnversion_init();
-	v = Py_BuildValue("(UUU)", "CPython", branch, svn_revision);
-	PyDict_SetItemString(sysdict, "subversion", v);
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "dont_write_bytecode",
-			     v = PyBool_FromLong(Py_DontWriteBytecodeFlag));
-	Py_XDECREF(v);
+	SET_SYS_FROM_STRING("subversion",
+			    Py_BuildValue("(UUU)", "CPython", branch,
+					  svn_revision));
+	SET_SYS_FROM_STRING("dont_write_bytecode",
+			    PyBool_FromLong(Py_DontWriteBytecodeFlag));
 	/*
 	 * These release level checks are mutually exclusive and cover
 	 * the field, so don't get too fancy with the pre-processor!
@@ -1191,12 +1191,6 @@ _PySys_Init(void)
 #elif PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
 	s = "final";
 #endif
-
-#define SET_SYS_FROM_STRING(key, value)			\
-	v = value;					\
-	if (v != NULL)					\
-		PyDict_SetItemString(sysdict, key, v);	\
-	Py_XDECREF(v)
 
 	SET_SYS_FROM_STRING("version_info",
 			    Py_BuildValue("iiiUi", PY_MAJOR_VERSION,
@@ -1244,7 +1238,6 @@ _PySys_Init(void)
 	SET_SYS_FROM_STRING("winver",
 			    PyUnicode_FromString(PyWin_DLLVersionString));
 #endif
-#undef SET_SYS_FROM_STRING
 	if (warnoptions == NULL) {
 		warnoptions = PyList_New(0);
 	}
@@ -1255,12 +1248,14 @@ _PySys_Init(void)
 		PyDict_SetItemString(sysdict, "warnoptions", warnoptions);
 	}
 
-	PyStructSequence_InitType(&FlagsType, &flags_desc);
-	PyDict_SetItemString(sysdict, "flags", make_flags());
+	if (FlagsType.tp_name == 0)
+		PyStructSequence_InitType(&FlagsType, &flags_desc);
+	SET_SYS_FROM_STRING("flags", make_flags());
 	/* prevent user from creating new instances */
 	FlagsType.tp_init = NULL;
 	FlagsType.tp_new = NULL;
 
+#undef SET_SYS_FROM_STRING
 	if (PyErr_Occurred())
 		return NULL;
 	return m;
