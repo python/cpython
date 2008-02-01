@@ -1201,8 +1201,8 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 	if (numerator == NULL) goto error;
 
 	/* now self = numerator * 2**exponent exactly; fold in 2**exponent */
-	denominator = PyInt_FromLong(1);
-	py_exponent = PyInt_FromLong(labs(exponent));
+	denominator = PyLong_FromLong(1);
+	py_exponent = PyLong_FromLong(labs(exponent));
 	if (py_exponent == NULL) goto error;
 	INPLACE_UPDATE(py_exponent,
 		       long_methods->nb_lshift(denominator, py_exponent));
@@ -1218,6 +1218,12 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 		denominator = py_exponent;
 		py_exponent = NULL;
 	}
+
+	/* Returns ints instead of longs where possible */
+	INPLACE_UPDATE(numerator, PyNumber_Int(numerator));
+	if (numerator == NULL) goto error;
+	INPLACE_UPDATE(denominator, PyNumber_Int(denominator));
+	if (denominator == NULL) goto error;
 
 	result_pair = PyTuple_Pack(2, numerator, denominator);
 
