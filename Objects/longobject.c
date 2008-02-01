@@ -3714,17 +3714,15 @@ _PyLong_Init(void)
 			/* The element is already initialized, most likely
 			 * the Python interpreter was initialized before.
 			 */
-			/* _Py_NewReference((PyObject*)v);
-			 *  XXX: It sets the ref count to 1 but it may be
-			 * larger. Emulate new reference w/o setting refcnt
-			 * to 1.
-			 */
+			Py_ssize_t refcnt;
 			PyObject* op = (PyObject*)v;
-			_Py_INC_REFTOTAL;
-			op->ob_refcnt = (op->ob_refcnt < 1) ? 1 : op->ob_refcnt;
-			_Py_AddToAllObjects(op, 1);
-			_Py_INC_TPALLOCS(op);
 
+			refcnt = Py_REFCNT(op) < 0 ? 0 : Py_REFCNT(op);
+			_Py_NewReference(op);
+			/* _Py_NewReference sets the ref count to 1 but
+			 * the ref count might be larger. Set the refcnt
+			 * to the original refcnt + 1 */	 
+			Py_REFCNT(op) = refcnt + 1;
 			assert(Py_SIZE(op) == size);
 			assert(v->ob_digit[0] == abs(ival));
 		}
