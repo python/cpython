@@ -3411,7 +3411,7 @@ class Context(object):
     traps - If traps[exception] = 1, then the exception is
                     raised when it is caused.  Otherwise, a value is
                     substituted in.
-    flags  - When an exception is caused, flags[exception] is incremented.
+    flags  - When an exception is caused, flags[exception] is set.
              (Whether or not the trap_enabler is set)
              Should be reset by user of Decimal instance.
     Emin -   Minimum exponent
@@ -3477,16 +3477,16 @@ class Context(object):
         """Handles an error
 
         If the flag is in _ignored_flags, returns the default response.
-        Otherwise, it increments the flag, then, if the corresponding
+        Otherwise, it sets the flag, then, if the corresponding
         trap_enabler is set, it reaises the exception.  Otherwise, it returns
-        the default value after incrementing the flag.
+        the default value after setting the flag.
         """
         error = _condition_map.get(condition, condition)
         if error in self._ignored_flags:
             # Don't touch the flag
             return error().handle(self, *args)
 
-        self.flags[error] += 1
+        self.flags[error] = 1
         if not self.traps[error]:
             # The errors define how to handle themselves.
             return condition().handle(self, *args)
