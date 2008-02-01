@@ -74,8 +74,8 @@ changes: build
 
 linkcheck: BUILDER = linkcheck
 linkcheck: build
-	@echo "Link check complete; look for any errors in the above or in" \
-	      "build/$(BUILDER)/output.txt"
+	@echo "Link check complete; look for any errors in the above output "\
+	      "or in build/$(BUILDER)/output.txt"
 
 clean:
 	-rm -rf build/*
