@@ -689,6 +689,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, float, Foo4(42))
 
     def test_floatasratio(self):
+        for f, ratio in [
+                (0.875, (7, 8)),
+                (-0.875, (-7, 8)),
+                (0.0, (0, 1)),
+                (11.5, (23, 2)),
+            ]:
+            self.assertEqual(f.as_integer_ratio(), ratio)
+
         R = rational.Rational
         self.assertEqual(R(0, 1),
                          R(*float(0.0).as_integer_ratio()))

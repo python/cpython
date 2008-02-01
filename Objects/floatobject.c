@@ -1154,20 +1154,18 @@ float_float(PyObject *v)
 }
 
 static PyObject *
-float_as_integer_ratio(PyObject *v)
+float_as_integer_ratio(PyObject *v, PyObject *unused)
 {
 	double self;
 	double float_part;
 	int exponent;
-	int is_negative;
-	const int chunk_size = 28;
+
 	PyObject *prev;
-	PyObject *py_chunk = NULL;
 	PyObject *py_exponent = NULL;
 	PyObject *numerator = NULL;
 	PyObject *denominator = NULL;
 	PyObject *result_pair = NULL;
-	PyNumberMethods *long_methods;
+	PyNumberMethods *long_methods = PyLong_Type.tp_as_number;
 
 #define INPLACE_UPDATE(obj, call) \
 	prev = obj; \
@@ -1189,85 +1187,22 @@ float_as_integer_ratio(PyObject *v)
 	}
 #endif
 
-	if (self == 0) {
-		numerator = PyInt_FromLong(0);
-		if (numerator == NULL) goto error;
-		denominator = PyInt_FromLong(1);
-		if (denominator == NULL) goto error;
-		result_pair = PyTuple_Pack(2, numerator, denominator);
-		/* Hand ownership over to the tuple. If the tuple
-		   wasn't created successfully, we want to delete the
-		   ints anyway. */
-		Py_DECREF(numerator);
-		Py_DECREF(denominator);
-		return result_pair;
-	}
-
-	/* XXX: Could perhaps handle FLT_RADIX!=2 by using ilogb and
-	   scalbn, but those may not be in C89. */
 	PyFPE_START_PROTECT("as_integer_ratio", goto error);
-	float_part = frexp(self, &exponent);
-	is_negative = 0;
-	if (float_part < 0) {
-		float_part = -float_part;
-		is_negative = 1;
-		/* 0.5 <= float_part < 1.0 */
-	}
+	float_part = frexp(self, &exponent);  	/* self == float_part * 2**exponent exactly */
 	PyFPE_END_PROTECT(float_part);
-	/* abs(self) == float_part * 2**exponent exactly */
+	
+	while (float_part != floor(float_part)) {
+		float_part *= 2.0;
+		exponent--;
+	}
+	/* Now, self == float_part * 2**exponent exactly and float_part is integral */
 
-	/* Suck up chunk_size bits at a time; 28 is enough so that we
-	   suck up all bits in 2 iterations for all known binary
-	   double-precision formats, and small enough to fit in a
-	   long. */
-	numerator = PyLong_FromLong(0);
+	numerator = PyLong_FromDouble(float_part);
 	if (numerator == NULL) goto error;
 
-	long_methods = PyLong_Type.tp_as_number;
-
-	py_chunk = PyLong_FromLong(chunk_size);
-	if (py_chunk == NULL) goto error;
-
-	while (float_part != 0) {
-		/* invariant: abs(self) ==
-		   (numerator + float_part) * 2**exponent exactly */
-		long digit;
-		PyObject *py_digit;
-
-		PyFPE_START_PROTECT("as_integer_ratio", goto error);
-		/* Pull chunk_size bits out of float_part, into digits. */
-		float_part = ldexp(float_part, chunk_size);
-		digit = (long)float_part;
-		float_part -= digit;
-                /* 0 <= float_part < 1 */
-		exponent -= chunk_size;
-		PyFPE_END_PROTECT(float_part);
-
-		/* Shift digits into numerator. */
-		// numerator <<= chunk_size
-		INPLACE_UPDATE(numerator,
-			       long_methods->nb_lshift(numerator, py_chunk));
-		if (numerator == NULL) goto error;
-
-		// numerator |= digit
-		py_digit = PyLong_FromLong(digit);
-		if (py_digit == NULL) goto error;
-		INPLACE_UPDATE(numerator,
-			       long_methods->nb_or(numerator, py_digit));
-		Py_DECREF(py_digit);
-		if (numerator == NULL) goto error;
-	}
-
-	/* Add in the sign bit. */
-	if (is_negative) {
-		INPLACE_UPDATE(numerator,
-			       long_methods->nb_negative(numerator));
-		if (numerator == NULL) goto error;
-	}
-
 	/* now self = numerator * 2**exponent exactly; fold in 2**exponent */
-	denominator = PyLong_FromLong(1);
-	py_exponent = PyLong_FromLong(labs(exponent));
+	denominator = PyInt_FromLong(1);
+	py_exponent = PyInt_FromLong(labs(exponent));
 	if (py_exponent == NULL) goto error;
 	INPLACE_UPDATE(py_exponent,
 		       long_methods->nb_lshift(denominator, py_exponent));
@@ -1289,7 +1224,6 @@ float_as_integer_ratio(PyObject *v)
 #undef INPLACE_UPDATE
 error:
 	Py_XDECREF(py_exponent);
-	Py_XDECREF(py_chunk);
 	Py_XDECREF(denominator);
 	Py_XDECREF(numerator);
 	return result_pair;
@@ -1298,17 +1232,16 @@ error:
 PyDoc_STRVAR(float_as_integer_ratio_doc,
 "float.as_integer_ratio() -> (int, int)\n"
 "\n"
-"Returns a pair of integers, not necessarily in lowest terms, whose\n"
-"ratio is exactly equal to the original float. This method raises an\n"
-"OverflowError on infinities and a ValueError on nans. The resulting\n"
-"denominator will be positive.\n"
+"Returns a pair of integers, whose ratio is exactly equal to the original\n"
+"float and with a positive denominator.\n"
+"Raises OverflowError on infinities and a ValueError on nans.\n"
 "\n"
 ">>> (10.0).as_integer_ratio()\n"
-"(167772160L, 16777216L)\n"
+"(10, 1)\n"
 ">>> (0.0).as_integer_ratio()\n"
 "(0, 1)\n"
 ">>> (-.25).as_integer_ratio()\n"
-"(-134217728L, 536870912L)");
+"(-1, 4)");
 
 
 static PyObject *
