@@ -16,11 +16,12 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  html     to make standalone HTML files"
-	@echo "  web      to make file usable by Sphinx.web"
-	@echo "  htmlhelp to make HTML files and a HTML help project"
-	@echo "  latex    to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
-	@echo "  changes  to make an overview over all changed/added/deprecated items"
+	@echo "  html      to make standalone HTML files"
+	@echo "  web       to make file usable by Sphinx.web"
+	@echo "  htmlhelp  to make HTML files and a HTML help project"
+	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  changes   to make an overview over all changed/added/deprecated items"
+	@echo "  linkcheck to check all external links for integrity"
 
 checkout:
 	@if [ ! -d tools/sphinx ]; then \
@@ -70,6 +71,11 @@ latex: build
 changes: BUILDER = changes
 changes: build
 	@echo "The overview file is in build/changes."
+
+linkcheck: BUILDER = linkcheck
+linkcheck: build
+	@echo "Link check complete; look for any errors in the above or in" \
+	      "build/$(BUILDER)/output.txt"
 
 clean:
 	-rm -rf build/*
