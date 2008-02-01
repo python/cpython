@@ -61,18 +61,6 @@ Undocumented Mac OS modules
    :synopsis: Rudimentary decoder for AppleSingle format files.
 
 
-
-:mod:`buildtools` --- Helper module for BuildApplet and Friends
----------------------------------------------------------------
-
-.. module:: buildtools
-   :platform: Mac
-   :synopsis: Helper module for BuildApplet, BuildApplication and macfreeze.
-
-
-.. deprecated:: 2.4
-
-
 :mod:`icopen` --- Internet Config replacement for :meth:`open`
 --------------------------------------------------------------
 

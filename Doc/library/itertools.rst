@@ -177,7 +177,8 @@ loops that truncate the stream.
 
    Make an iterator that filters elements from iterable returning only those for
    which the predicate is ``True``. If *predicate* is ``None``, return the items
-   that are true. Equivalent to::
+   that are true.  This function is the same as the built-in :func:`filter`
+   function.  Equivalent to::
 
       def ifilter(predicate, iterable):
           if predicate is None:
@@ -204,7 +205,8 @@ loops that truncate the stream.
 .. function:: imap(function, *iterables)
 
    Make an iterator that computes the function using arguments from each of the
-   iterables.  Equivalent to::
+   iterables.  This function is the same as the built-in :func:`map` function.
+   Equivalent to::
 
       def imap(function, *iterables):
           iterables = [iter(it) for it in iterables)
@@ -230,7 +232,7 @@ loops that truncate the stream.
 
       def islice(iterable, *args):
           s = slice(*args)
-          it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
+          it = range(s.start or 0, s.stop or sys.maxsize, s.step or 1)
           nexti = next(it)
           for i, element in enumerate(iterable):
               if i == nexti:

@@ -136,9 +136,9 @@ The class-based API of the :mod:`gettext` module gives you more flexibility and
 greater convenience than the GNU :program:`gettext` API.  It is the recommended
 way of localizing your Python applications and modules.  :mod:`gettext` defines
 a "translations" class which implements the parsing of GNU :file:`.mo` format
-files, and has methods for returning either standard 8-bit strings or Unicode
-strings. Instances of this "translations" class can also install themselves  in
-the built-in namespace as the function :func:`_`.
+files, and has methods for returning strings. Instances of this "translations"
+class can also install themselves in the built-in namespace as the function
+:func:`_`.
 
 
 .. function:: find(domain[, localedir[,  languages[, all]]])
@@ -257,8 +257,7 @@ are the methods of :class:`NullTranslations`:
 .. method:: NullTranslations.ugettext(message)
 
    If a fallback has been set, forward :meth:`ugettext` to the fallback. Otherwise,
-   return the translated message as a Unicode string. Overridden in derived
-   classes.
+   return the translated message as a string. Overridden in derived classes.
 
 
 .. method:: NullTranslations.ngettext(singular, plural, n)
@@ -276,7 +275,7 @@ are the methods of :class:`NullTranslations`:
 .. method:: NullTranslations.ungettext(singular, plural, n)
 
    If a fallback has been set, forward :meth:`ungettext` to the fallback.
-   Otherwise, return the translated message as a Unicode string. Overridden in
+   Otherwise, return the translated message as a  string. Overridden in
    derived classes.
 
 
@@ -347,8 +346,8 @@ initialize the "protected" :attr:`_charset` instance variable, defaulting to
 ``None`` if not found.  If the charset encoding is specified, then all message
 ids and message strings read from the catalog are converted to Unicode using
 this encoding.  The :meth:`ugettext` method always returns a Unicode, while the
-:meth:`gettext` returns an encoded 8-bit string.  For the message id arguments
-of both methods, either Unicode strings or 8-bit strings containing only
+:meth:`gettext` returns an encoded bytestring.  For the message id arguments
+of both methods, either Unicode strings or bytestrings containing only
 US-ASCII characters are acceptable.  Note that the Unicode version of the
 methods (i.e. :meth:`ugettext` and :meth:`ungettext`) are the recommended
 interface to use for internationalized Python programs.
@@ -366,7 +365,7 @@ The following methods are overridden from the base class implementation:
 .. method:: GNUTranslations.gettext(message)
 
    Look up the *message* id in the catalog and return the corresponding message
-   string, as an 8-bit string encoded with the catalog's charset encoding, if
+   string, as a bytestring encoded with the catalog's charset encoding, if
    known.  If there is no entry in the catalog for the *message* id, and a fallback
    has been set, the look up is forwarded to the fallback's :meth:`gettext` method.
    Otherwise, the *message* id is returned.
@@ -382,7 +381,7 @@ The following methods are overridden from the base class implementation:
 .. method:: GNUTranslations.ugettext(message)
 
    Look up the *message* id in the catalog and return the corresponding message
-   string, as a Unicode string.  If there is no entry in the catalog for the
+   string, as a string.  If there is no entry in the catalog for the
    *message* id, and a fallback has been set, the look up is forwarded to the
    fallback's :meth:`ugettext` method.  Otherwise, the *message* id is returned.
 
@@ -391,7 +390,7 @@ The following methods are overridden from the base class implementation:
 
    Do a plural-forms lookup of a message id.  *singular* is used as the message id
    for purposes of lookup in the catalog, while *n* is used to determine which
-   plural form to use.  The returned message string is an 8-bit string encoded with
+   plural form to use.  The returned message string is a bytestring encoded with
    the catalog's charset encoding, if known.
 
    If the message id is not found in the catalog, and a fallback is specified, the
@@ -410,7 +409,7 @@ The following methods are overridden from the base class implementation:
 
    Do a plural-forms lookup of a message id.  *singular* is used as the message id
    for purposes of lookup in the catalog, while *n* is used to determine which
-   plural form to use.  The returned message string is a Unicode string.
+   plural form to use.  The returned message string is a string.
 
    If the message id is not found in the catalog, and a fallback is specified, the
    request is forwarded to the fallback's :meth:`ungettext` method.  Otherwise,

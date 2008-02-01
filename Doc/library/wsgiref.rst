@@ -169,7 +169,7 @@ also provides these miscellaneous utilities:
       wrapper = FileWrapper(filelike, blksize=5)
 
       for chunk in wrapper: 
-          print chunk
+          print(chunk)
 
 
 
@@ -428,7 +428,7 @@ Paste" library.
       validator_app = validator(simple_app)
 
       httpd = make_server('', 8000, validator_app)
-      print "Listening on port 8000...."
+      print("Listening on port 8000....")
       httpd.serve_forever()
 
 
@@ -720,7 +720,7 @@ This is a working "Hello World" WSGI application::
        return ["Hello World"]
 
    httpd = make_server('', 8000, hello_world_app)
-   print "Serving on port 8000..."
+   print("Serving on port 8000...")
 
    # Serve until process is killed
    httpd.serve_forever()

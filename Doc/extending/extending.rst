@@ -826,10 +826,9 @@ to run the detector (the :func:`collect` function), as well as configuration
 interfaces and the ability to disable the detector at runtime.  The cycle
 detector is considered an optional component; though it is included by default,
 it can be disabled at build time using the :option:`--without-cycle-gc` option
-to the :program:`configure` script on Unix platforms (including Mac OS X) or by
-removing the definition of ``WITH_CYCLE_GC`` in the :file:`pyconfig.h` header on
-other platforms.  If the cycle detector is disabled in this way, the :mod:`gc`
-module will not be available.
+to the :program:`configure` script on Unix platforms (including Mac OS X).  If
+the cycle detector is disabled in this way, the :mod:`gc` module will not be
+available.
 
 
 .. _refcountsinpython:

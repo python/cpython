@@ -1643,7 +1643,7 @@ due to malformed messages in the mailbox::
 
    list_names = ('python-list', 'python-dev', 'python-bugs')
 
-   boxes = dict((name, mailbox.mbox('~/email/%s' % name)) for name in list_names)
+   boxes = {name: mailbox.mbox('~/email/%s' % name) for name in list_names}
    inbox = mailbox.Maildir('~/Maildir', factory=None)
 
    for key in inbox.iterkeys():

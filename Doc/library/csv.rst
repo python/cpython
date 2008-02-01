@@ -86,7 +86,7 @@ The :mod:`csv` module defines the following functions:
       >>> import csv
       >>> spamReader = csv.reader(open('eggs.csv'), delimiter=' ', quotechar='|')
       >>> for row in spamReader:
-      ...     print ', '.join(row)
+      ...     print(', '.join(row))
       Spam, Spam, Spam, Spam, Spam, Baked Beans
       Spam, Lovely Spam, Wonderful Spam
 
@@ -121,7 +121,7 @@ The :mod:`csv` module defines the following functions:
 
 .. function:: register_dialect(name[, dialect][, fmtparam])
 
-   Associate *dialect* with *name*.  *name* must be a string or Unicode object. The
+   Associate *dialect* with *name*.  *name* must be a string. The
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
    by *fmtparam* keyword arguments, or both, with keyword arguments overriding
    parameters of the dialect. For full details about the dialect and formatting

@@ -985,7 +985,7 @@ according to the following table.
 +------------------+-------------------------------------------+
 
 Additionally, the :class:`DOMString` defined in the recommendation is mapped to
-a Python string or Unicode string.  Applications should be able to handle
+a bytes or string object.  Applications should be able to handle
 Unicode whenever a string is returned from the DOM.
 
 The IDL ``null`` value is mapped to ``None``, which may be accepted or

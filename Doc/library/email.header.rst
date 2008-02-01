@@ -53,8 +53,8 @@ Here is the :class:`Header` class description:
 
    Optional *s* is the initial header value.  If ``None`` (the default), the
    initial header value is not set.  You can later append to the header with
-   :meth:`append` method calls.  *s* may be a byte string or a Unicode string, but
-   see the :meth:`append` documentation for semantics.
+   :meth:`append` method calls.  *s* may be an instance of :class:`bytes` or
+   :class:`str`, but see the :meth:`append` documentation for semantics.
 
    Optional *charset* serves two purposes: it has the same meaning as the *charset*
    argument to the :meth:`append` method.  It also sets the default character set
@@ -86,19 +86,19 @@ Optional *errors* is passed straight through to the :meth:`append` method.
    a :class:`Charset` instance.  A value of ``None`` (the default) means that the
    *charset* given in the constructor is used.
 
-   *s* may be a byte string or a Unicode string.  If it is a byte string (i.e.
-   ``isinstance(s, str)`` is true), then *charset* is the encoding of that byte
-   string, and a :exc:`UnicodeError` will be raised if the string cannot be decoded
-   with that character set.
+   *s* may be an instance of :class:`bytes` or :class:`str`.  If it is an instance
+   of :class:`bytes`, then *charset* is the encoding of that byte string, and a 
+   :exc:`UnicodeError` will be raised if the string cannot be decoded with that
+   character set.
 
-   If *s* is a Unicode string, then *charset* is a hint specifying the character
-   set of the characters in the string.  In this case, when producing an
+   If *s* is an instance of :class:`str`, then *charset* is a hint specifying the
+   character set of the characters in the string.  In this case, when producing an
    :rfc:`2822`\ -compliant header using :rfc:`2047` rules, the Unicode string will
    be encoded using the following charsets in order: ``us-ascii``, the *charset*
    hint, ``utf-8``.  The first character set to not provoke a :exc:`UnicodeError`
    is used.
 
-   Optional *errors* is passed through to any :func:`unicode` or
+   Optional *errors* is passed through to any :func:`encode` or
    :func:`ustr.encode` call, and defaults to "strict".
 
 
@@ -121,7 +121,7 @@ operators and built-in functions.
 
 .. method:: Header.__unicode__()
 
-   A helper for the built-in :func:`unicode` function.  Returns the header as a
+   A helper for :class:`str`'s :func:`encode` method.  Returns the header as a
    Unicode string.
 
 

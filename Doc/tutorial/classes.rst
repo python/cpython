@@ -811,7 +811,7 @@ Examples::
    260
 
    >>> from math import pi, sin
-   >>> sine_table = dict((x, sin(x*pi/180)) for x in range(0, 91))
+   >>> sine_table = {x: sin(x*pi/180) for x in range(0, 91)}
 
    >>> unique_words = set(word  for line in page  for word in line.split())
 

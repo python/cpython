@@ -1,3 +1,4 @@
+.. XXX this whole file is outdated
 
 :mod:`StringIO` --- Read and write strings as files
 ===================================================
@@ -9,7 +10,7 @@
 This module implements a file-like class, :class:`StringIO`, that reads and
 writes a string buffer (also known as *memory files*).  See the description of
 file objects for operations (section :ref:`bltin-file-objects`). (For
-standard strings, see :class:`str` and :class:`unicode`.)
+standard strings, see :class:`str`.)
 
 
 .. class:: StringIO([buffer])
@@ -19,20 +20,13 @@ standard strings, see :class:`str` and :class:`unicode`.)
    :class:`StringIO` will start empty. In both cases, the initial file position
    starts at zero.
 
-   The :class:`StringIO` object can accept either Unicode or 8-bit strings, but
-   mixing the two may take some care.  If both are used, 8-bit strings that cannot
-   be interpreted as 7-bit ASCII (that use the 8th bit) will cause a
-   :exc:`UnicodeError` to be raised when :meth:`getvalue` is called.
-
 The following methods of :class:`StringIO` objects require special mention:
 
 
 .. method:: StringIO.getvalue()
 
    Retrieve the entire contents of the "file" at any time before the
-   :class:`StringIO` object's :meth:`close` method is called.  See the note above
-   for information about mixing Unicode and 8-bit strings; such mixing can cause
-   this method to raise :exc:`UnicodeError`.
+   :class:`StringIO` object's :meth:`close` method is called.
 
 
 .. method:: StringIO.close()
@@ -75,11 +69,11 @@ types, there's no way to build your own version using subclassing.  Use the
 original :mod:`StringIO` module in that case.
 
 Unlike the memory files implemented by the :mod:`StringIO` module, those
-provided by this module are not able to accept Unicode strings that cannot be
-encoded as plain ASCII strings.
+provided by this module are not able to accept strings that cannot be
+encoded in plain ASCII.
 
-Calling :func:`StringIO` with a Unicode string parameter populates
-the object with the buffer representation of the Unicode string, instead of
+Calling :func:`StringIO` with a string parameter populates
+the object with the buffer representation of the string, instead of
 encoding the string. 
 
 Another difference from the :mod:`StringIO` module is that calling

@@ -107,7 +107,7 @@ The :mod:`EasyDialogs` module defines the following functions:
    *actionButtonLabel* is a string to show instead of "Open" in the OK button,
    *cancelButtonLabel* is a string to show instead of "Cancel" in the cancel
    button, *wanted* is the type of value wanted as a return: :class:`str`,
-   :class:`unicode`, :class:`FSSpec`, :class:`FSRef` and subtypes thereof are
+   :class:`FSSpec`, :class:`FSRef` and subtypes thereof are
    acceptable.
 
    .. index:: single: Navigation Services

@@ -147,10 +147,10 @@ module documentation.  This section lists the differences between the API and
    document. Encoding this string in an encoding other than UTF-8 is likely
    incorrect, since UTF-8 is the default encoding of XML.
 
-   With an explicit *encoding* argument, the result is a byte string in the
-   specified encoding. It is recommended that this argument is always specified. To
-   avoid :exc:`UnicodeError` exceptions in case of unrepresentable text data, the
-   encoding argument should be specified as "utf-8".
+   With an explicit *encoding* argument, the result is a :class:`bytes` object
+   in the specified encoding. It is recommended that this argument is always
+   specified. To avoid :exc:`UnicodeError` exceptions in case of unrepresentable
+   text data, the encoding argument should be specified as "utf-8".
 
 
 .. method:: Node.toprettyxml([indent[, newl[, encoding]]])
@@ -212,7 +212,7 @@ rules apply:
   ``boolean`` all map to Python integer objects.
 
 * The type ``DOMString`` maps to Python strings. :mod:`xml.dom.minidom` supports
-  either byte or Unicode strings, but will normally produce Unicode strings.
+  either bytes or strings, but will normally produce strings.
   Values of type ``DOMString`` may also be ``None`` where allowed to have the IDL
   ``null`` value by the DOM specification from the W3C.
 

@@ -403,7 +403,7 @@ they add the ability to access fields by name instead of position index.
    Any valid Python identifier may be used for a fieldname except for names
    starting with an underscore.  Valid identifiers consist of letters, digits,
    and underscores but do not start with a digit or underscore and cannot be
-   a :mod:`keyword` such as *class*, *for*, *return*, *global*, *pass*, *print*,
+   a :mod:`keyword` such as *class*, *for*, *return*, *global*, *pass*,
    or *raise*.
 
    If *verbose* is true, the class definition is printed just before being built.

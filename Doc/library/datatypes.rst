@@ -11,8 +11,8 @@ queues, and sets.
 
 Python also provides some built-in data types, in particular,
 :class:`dict`, :class:`list`, :class:`set` and :class:`frozenset`, and
-:class:`tuple`.  The :class:`str` class can be used to handle binary data
-and 8-bit text, and the :class:`unicode` class to handle Unicode text.
+:class:`tuple`.  The :class:`str` class can be used to strings, including
+Unicode strings, and the :class:`bytes` class to handle binary data.
 
 The following modules are documented in this chapter:
 

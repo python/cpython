@@ -327,7 +327,7 @@ The following types can be pickled:
 
 * integers, floating point numbers, complex numbers
 
-* normal and Unicode strings
+* strings, bytes, bytearrays
 
 * tuples, lists, sets, and dictionaries containing only picklable objects
 
@@ -659,7 +659,7 @@ that a self-referencing list is pickled and restored correctly. ::
    import pickle
 
    data1 = {'a': [1, 2.0, 3, 4+6j],
-            'b': ('string', u'Unicode string'),
+            'b': ("string", "string using Unicode features \u0394"),
             'c': None}
 
    selfref_list = [1, 2, 3]
