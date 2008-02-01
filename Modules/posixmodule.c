@@ -3868,7 +3868,7 @@ Return the parent's process id.");
 static PyObject *
 posix_getppid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong((long)getppid());
+	return PyInt_FromLong(getppid());
 }
 #endif
 
@@ -3923,7 +3923,8 @@ Kill a process with a signal.");
 static PyObject *
 posix_kill(PyObject *self, PyObject *args)
 {
-	int pid, sig;
+	pid_t pid;
+	int sig;
 	if (!PyArg_ParseTuple(args, "ii:kill", &pid, &sig))
 		return NULL;
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
@@ -4267,7 +4268,8 @@ _PyPopen(char *cmdstring, int mode, int n, int bufsize)
 	struct file_ref stdio[3];
 	struct pipe_ref p_fd[3];
 	FILE *p_s[3];
-	int file_count, i, pipe_err, pipe_pid;
+	int file_count, i, pipe_err;
+	pid_t pipe_pid;
 	char *shell, *sh_name, *opt, *rd_mode, *wr_mode;
 	PyObject *f, *p_f[3];
 
@@ -4595,7 +4597,7 @@ static int _PyPclose(FILE *file)
 {
 	int result;
 	int exit_code;
-	int pipe_pid;
+	pid_t pipe_pid;
 	PyObject *procObj, *pidObj, *intObj, *fileObj;
 	int file_count;
 #ifdef WITH_THREAD
@@ -5643,7 +5645,7 @@ posix_setgroups(PyObject *self, PyObject *groups)
 
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
 static PyObject *
-wait_helper(int pid, int status, struct rusage *ru)
+wait_helper(pid_t pid, int status, struct rusage *ru)
 {
 	PyObject *result;
    	static PyObject *struct_rusage;
@@ -5709,7 +5711,8 @@ Wait for completion of a child process.");
 static PyObject *
 posix_wait3(PyObject *self, PyObject *args)
 {
-	int pid, options;
+	pid_t pid;
+	int options;
 	struct rusage ru;
 	WAIT_TYPE status;
 	WAIT_STATUS_INT(status) = 0;
@@ -5733,7 +5736,8 @@ Wait for completion of a given child process.");
 static PyObject *
 posix_wait4(PyObject *self, PyObject *args)
 {
-	int pid, options;
+	pid_t pid;
+	int options;
 	struct rusage ru;
 	WAIT_TYPE status;
 	WAIT_STATUS_INT(status) = 0;
@@ -5757,7 +5761,8 @@ Wait for completion of a given child process.");
 static PyObject *
 posix_waitpid(PyObject *self, PyObject *args)
 {
-	int pid, options;
+	pid_t pid;
+	int options;
 	WAIT_TYPE status;
 	WAIT_STATUS_INT(status) = 0;
 
@@ -5806,7 +5811,7 @@ Wait for completion of a child process.");
 static PyObject *
 posix_wait(PyObject *self, PyObject *noargs)
 {
-	int pid;
+	pid_t pid;
 	WAIT_TYPE status;
 	WAIT_STATUS_INT(status) = 0;
 
@@ -6007,7 +6012,8 @@ Call the system call getsid().");
 static PyObject *
 posix_getsid(PyObject *self, PyObject *args)
 {
-	int pid, sid;
+	pid_t pid;
+	int sid;
 	if (!PyArg_ParseTuple(args, "i:getsid", &pid))
 		return NULL;
 	sid = getsid(pid);
@@ -6041,7 +6047,8 @@ Call the system call setpgid().");
 static PyObject *
 posix_setpgid(PyObject *self, PyObject *args)
 {
-	int pid, pgrp;
+	pid_t pid;
+	int pgrp;
 	if (!PyArg_ParseTuple(args, "ii:setpgid", &pid, &pgrp))
 		return NULL;
 	if (setpgid(pid, pgrp) < 0)
