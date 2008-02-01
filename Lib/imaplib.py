@@ -1145,55 +1145,10 @@ else:
             """
             self.host = host
             self.port = port
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((host, port))
-            self.sslobj = ssl.wrap_socket(self.sock, self.keyfile, self.certfile)
-
-
-        def read(self, size):
-            """Read 'size' bytes from remote."""
-            # sslobj.read() sometimes returns < size bytes
-            chunks = []
-            read = 0
-            while read < size:
-                data = self.sslobj.read(size-read)
-                read += len(data)
-                chunks.append(data)
-
-            return ''.join(chunks)
-
-
-        def readline(self):
-            """Read line from remote."""
-            line = []
-            while 1:
-                char = self.sslobj.read(1)
-                line.append(char)
-                if char == "\n": return ''.join(line)
-
-
-        def send(self, data):
-            """Send data to remote."""
-            bytes = len(data)
-            while bytes > 0:
-                sent = self.sslobj.write(data)
-                if sent == bytes:
-                    break    # avoid copy
-                data = data[sent:]
-                bytes = bytes - sent
-
-
-        def shutdown(self):
-            """Close I/O established in "open"."""
-            self.sock.close()
-
-
-        def socket(self):
-            """Return socket instance used to connect to IMAP4 server.
-
-            socket = <instance>.socket()
-            """
-            return self.sock
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((host, port))
+            self.sock = ssl.wrap_socket(sock, self.keyfile, self.certfile)
+            self.file = self.sock.makefile('rb')
 
 
         def ssl(self):
@@ -1201,7 +1156,7 @@ else:
 
             ssl = ssl.wrap_socket(<instance>.socket)
             """
-            return self.sslobj
+            return self.sock
 
     __all__.append("IMAP4_SSL")
 
