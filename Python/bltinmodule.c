@@ -2044,20 +2044,6 @@ PyDoc_STRVAR(vars_doc,
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
-static PyObject *
-builtin_trunc(PyObject *self, PyObject *number)
-{
-        /* XXX: The py3k branch gets better errors for this by using
-           _PyType_Lookup(), but since float's mro isn't set in py2.6,
-           we just use PyObject_CallMethod here. */
-	return PyObject_CallMethod(number, "__trunc__", NULL);
-}
-
-PyDoc_STRVAR(trunc_doc,
-"trunc(Real) -> Integral\n\
-\n\
-returns the integral closest to x between 0 and x.");
-
 
 static PyObject*
 builtin_sum(PyObject *self, PyObject *args)
@@ -2406,7 +2392,6 @@ static PyMethodDef builtin_methods[] = {
  	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
 #endif
  	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
- 	{"trunc",	builtin_trunc,      METH_O, trunc_doc},
   	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
 	{NULL,		NULL},
 };

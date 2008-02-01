@@ -1145,14 +1145,6 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.2
 
 
-.. function:: trunc(x)
-
-   Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
-   a long integer). Delegates to ``x.__trunc__()``.
-
-   .. versionadded:: 2.6
-
-
 .. function:: tuple([iterable])
 
    Return a tuple whose items are the same and in the same order as *iterable*'s

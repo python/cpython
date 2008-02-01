@@ -1766,38 +1766,6 @@ class BuiltinTest(unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, sum, BadSeq())
 
-    def test_trunc(self):
-
-        self.assertEqual(trunc(1), 1)
-        self.assertEqual(trunc(-1), -1)
-        self.assertEqual(type(trunc(1)), int)
-        self.assertEqual(type(trunc(1.5)), int)
-        self.assertEqual(trunc(1.5), 1)
-        self.assertEqual(trunc(-1.5), -1)
-        self.assertEqual(trunc(1.999999), 1)
-        self.assertEqual(trunc(-1.999999), -1)
-        self.assertEqual(trunc(-0.999999), -0)
-        self.assertEqual(trunc(-100.999), -100)
-
-        class TestTrunc(object):
-            def __trunc__(self):
-                return 23
-
-        class TestNoTrunc(object):
-            pass
-
-        self.assertEqual(trunc(TestTrunc()), 23)
-
-        self.assertRaises(TypeError, trunc)
-        self.assertRaises(TypeError, trunc, 1, 2)
-        # XXX: This is not ideal, but see the comment in builtin_trunc().
-        self.assertRaises(AttributeError, trunc, TestNoTrunc())
-
-        t = TestNoTrunc()
-        t.__trunc__ = lambda *args: args
-        self.assertEquals((), trunc(t))
-        self.assertRaises(TypeError, trunc, t, 0)
-
     def test_tuple(self):
         self.assertEqual(tuple(()), ())
         t0_3 = (0, 1, 2, 3)
