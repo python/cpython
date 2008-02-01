@@ -538,7 +538,7 @@ rule:
 String functions
 ----------------
 
-The following functions are available to operate on string and Unicode objects.
+The following functions are available to operate on string objects.
 They are not available as string methods.
 
 

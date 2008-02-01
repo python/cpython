@@ -43,10 +43,11 @@ Functions
 
 .. function:: Comment([text])
 
-   Comment element factory.  This factory function creates a special element that
-   will be serialized as an XML comment. The comment string can be either an 8-bit
-   ASCII string or a Unicode string. *text* is a string containing the comment
-   string. Returns an element instance representing a comment.
+   Comment element factory.  This factory function creates a special element
+   that will be serialized as an XML comment. The comment string can be either
+   an ASCII-only :class:`bytes` object or a :class:`str` object. *text* is a
+   string containing the comment string. Returns an element instance
+   representing a comment.
 
 
 .. function:: dump(elem)
@@ -67,10 +68,11 @@ Functions
    dependent, but it will always be compatible with the _ElementInterface class in
    this module.
 
-   The element name, attribute names, and attribute values can be either 8-bit
-   ASCII strings or Unicode strings. *tag* is the element name. *attrib* is an
-   optional dictionary, containing element attributes. *extra* contains additional
-   attributes, given as keyword arguments. Returns an element instance.
+   The element name, attribute names, and attribute values can be either an
+   ASCII-only :class:`bytes` object or a :class:`str` object. *tag* is the
+   element name. *attrib* is an optional dictionary, containing element
+   attributes. *extra* contains additional attributes, given as keyword
+   arguments. Returns an element instance.
 
 
 .. function:: fromstring(text)
@@ -114,11 +116,11 @@ Functions
    Subelement factory.  This function creates an element instance, and appends it
    to an existing element.
 
-   The element name, attribute names, and attribute values can be either 8-bit
-   ASCII strings or Unicode strings. *parent* is the parent element. *tag* is the
-   subelement name. *attrib* is an optional dictionary, containing element
-   attributes. *extra* contains additional attributes, given as keyword arguments.
-   Returns an element instance.
+   The element name, attribute names, and attribute values can be an ASCII-only
+   :class:`bytes` object or a :class:`str` object. *parent* is the parent
+   element. *tag* is the subelement name. *attrib* is an optional dictionary,
+   containing element attributes. *extra* contains additional attributes, given
+   as keyword arguments. Returns an element instance.
 
 
 .. function:: tostring(element[, encoding])
@@ -275,7 +277,7 @@ Element objects also support the following sequence type methods for working
 with subelements: :meth:`__delitem__`, :meth:`__getitem__`, :meth:`__setitem__`,
 :meth:`__len__`.
 
-Caution: Because Element objects do not define a :meth:`__nonzero__` method,
+Caution: Because Element objects do not define a :meth:`__bool__` method,
 elements with no subelements will test as ``False``. ::
 
    element = root.find('foo')
@@ -426,7 +428,7 @@ TreeBuilder Objects
 .. method:: TreeBuilder.data(data)
 
    Adds text to the current element. *data* is a string.  This should be either an
-   8-bit string containing ASCII text, or a Unicode string.
+   ASCII-only :class:`bytes` object or a :class:`str` object.
 
 
 .. method:: TreeBuilder.end(tag)

@@ -901,7 +901,6 @@ Internal types
          pair: exception; handler
          pair: execution; stack
          single: exc_info (in module sys)
-         single: exc_traceback (in module sys)
          single: last_traceback (in module sys)
          single: sys.exc_info
          single: sys.last_traceback

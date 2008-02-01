@@ -121,7 +121,7 @@ The :mod:`math` module gives access to the underlying C library functions for
 floating point math::
 
    >>> import math
-   >>> math.cos(math.pi / 4.0)
+   >>> math.cos(math.pi / 4)
    0.70710678118654757
    >>> math.log(1024, 2)
    10.0
@@ -264,7 +264,7 @@ documentation::
        >>> print(average([20, 30, 70]))
        40.0
        """
-       return sum(values, 0.0) / len(values)
+       return sum(values) / len(values)
 
    import doctest
    doctest.testmod()   # automatically validate the embedded tests

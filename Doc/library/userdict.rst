@@ -146,7 +146,7 @@ them and override existing methods or add new ones.  In this way one can add new
 behaviors to strings.
 
 It should be noted that these classes are highly inefficient compared to real
-string or Unicode objects; this is especially the case for
+string or bytes objects; this is especially the case for
 :class:`MutableString`.
 
 The :mod:`UserString` module defines the following classes:
@@ -158,9 +158,9 @@ The :mod:`UserString` module defines the following classes:
    content is kept in a regular string or Unicode string object, which is
    accessible via the :attr:`data` attribute of :class:`UserString` instances.  The
    instance's contents are initially set to a copy of *sequence*.  *sequence* can
-   be either a regular Python string or Unicode string, an instance of
-   :class:`UserString` (or a subclass) or an arbitrary sequence which can be
-   converted into a string using the built-in :func:`str` function.
+   be an instance of :class:`bytes`, :class:`str`, :class:`UserString` (or a
+   subclass) or an arbitrary sequence which can be converted into a string using
+   the built-in :func:`str` function.
 
 
 .. class:: MutableString([sequence])
@@ -173,13 +173,13 @@ The :mod:`UserString` module defines the following classes:
    mutable object as dictionary key, which would be otherwise very error prone and
    hard to track down.
 
-In addition to supporting the methods and operations of string and Unicode
+In addition to supporting the methods and operations of bytes and string
 objects (see section :ref:`string-methods`), :class:`UserString` instances
 provide the following attribute:
 
 
 .. attribute:: MutableString.data
 
-   A real Python string or Unicode object used to store the content of the
+   A real Python string or bytes object used to store the content of the
    :class:`UserString` class.
 

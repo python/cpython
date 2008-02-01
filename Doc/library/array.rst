@@ -183,18 +183,6 @@ The following data items and methods are also supported:
    returned.
 
 
-.. method:: array.read(f, n)
-
-   .. deprecated:: 1.5.1
-      Use the :meth:`fromfile` method.
-
-   Read *n* items (as machine values) from the file object *f* and append them to
-   the end of the array.  If less than *n* items are available, :exc:`EOFError` is
-   raised, but the items that were available are still inserted into the array.
-   *f* must be a real built-in file object; something else with a :meth:`read`
-   method won't do.
-
-
 .. method:: array.remove(x)
 
    Remove the first occurrence of *x* from the array.
@@ -228,13 +216,6 @@ The following data items and methods are also supported:
    otherwise a :exc:`ValueError` is raised. Use ``array.tostring().decode(enc)`` to
    obtain a unicode string from an array of some other type.
 
-
-.. method:: array.write(f)
-
-   .. deprecated:: 1.5.1
-      Use the :meth:`tofile` method.
-
-   Write all items (as machine values) to the file object *f*.
 
 When an array object is printed or converted to a string, it is represented as
 ``array(typecode, initializer)``.  The *initializer* is omitted if the array is

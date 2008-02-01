@@ -497,7 +497,7 @@ more convenient.  If a program contains a lot of regular expressions, or re-uses
 the same ones in several locations, then it might be worthwhile to collect all
 the definitions in one place, in a section of code that compiles all the REs
 ahead of time.  To take an example from the standard library, here's an extract
-from :file:`xmllib.py`::
+from the now deprecated :file:`xmllib.py`::
 
    ref = re.compile( ... )
    entityref = re.compile( ... )

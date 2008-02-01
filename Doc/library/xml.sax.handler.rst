@@ -281,8 +281,8 @@ events in the input document:
    must come from the same external entity so that the Locator provides useful
    information.
 
-   *content* may be a Unicode string or a byte string; the ``expat`` reader module
-   produces always Unicode strings.
+   *content* may be a string or bytes instance; the ``expat`` reader module
+   always produces strings.
 
    .. note::
 

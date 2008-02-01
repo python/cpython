@@ -242,6 +242,6 @@ new entries to the global character set, alias, and codec registries:
    Add a codec that map characters in the given character set to and from Unicode.
 
    *charset* is the canonical name of a character set. *codecname* is the name of a
-   Python codec, as appropriate for the second argument to the :func:`unicode`
-   built-in, or to the :meth:`encode` method of a Unicode string.
+   Python codec, as appropriate for the second argument to the :class:`str`'s
+   :func:`decode` method
 

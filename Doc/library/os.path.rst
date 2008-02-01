@@ -288,5 +288,5 @@ write files see :func:`open`, and for accessing the filesystem see the
 .. data:: supports_unicode_filenames
 
    True if arbitrary Unicode strings can be used as file names (within limitations
-   imposed by the file system), and if :func:`os.listdir` returns Unicode strings
-   for a Unicode argument.
+   imposed by the file system), and if :func:`os.listdir` returns strings that
+   contain characters that cannot be represented by ASCII.

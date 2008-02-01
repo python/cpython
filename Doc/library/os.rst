@@ -701,13 +701,13 @@ Files and Directories
 
 .. function:: getcwd()
 
-   Return a string representing the current working directory. Availability:
-   Macintosh, Unix, Windows.
+   Return a bytestring representing the current working directory.
+   Availability: Macintosh, Unix, Windows.
 
 
 .. function:: getcwdu()
 
-   Return a Unicode object representing the current working directory.
+   Return a string representing the current working directory.
    Availability: Macintosh, Unix, Windows.
 
 

@@ -237,129 +237,83 @@ Python's Unicode Support
 Now that you've learned the rudiments of Unicode, we can look at Python's
 Unicode features.
 
+The String Type
+---------------
 
-The Unicode Type
-----------------
+Since Python 3.0, the language features a ``str`` type that contain Unicode
+characters, meaning any string created using ``"unicode rocks!"``, ``'unicode
+rocks!``, or the triple-quoted string syntax is stored as Unicode.
 
-Unicode strings are expressed as instances of the :class:`unicode` type, one of
-Python's repertoire of built-in types.  It derives from an abstract type called
-:class:`basestring`, which is also an ancestor of the :class:`str` type; you can
-therefore check if a value is a string type with ``isinstance(value,
-basestring)``.  Under the hood, Python represents Unicode strings as either 16-
-or 32-bit integers, depending on how the Python interpreter was compiled.
+To insert a Unicode character that is not part ASCII, e.g., any letters with
+accents, one can use escape sequences in their string literals as such::
 
-The :func:`unicode` constructor has the signature ``unicode(string[, encoding,
-errors])``.  All of its arguments should be 8-bit strings.  The first argument
-is converted to Unicode using the specified encoding; if you leave off the
-``encoding`` argument, the ASCII encoding is used for the conversion, so
-characters greater than 127 will be treated as errors::
+   >>> "\N{GREEK CAPITAL LETTER DELTA}"  # Using the character name
+   '\u0394'
+   >>> "\u0394"                          # Using a 16-bit hex value
+   '\u0394'
+   >>> "\U00000394"                      # Using a 32-bit hex value
+   '\u0394'
 
-    >>> unicode('abcdef')
-    u'abcdef'
-    >>> s = unicode('abcdef')
-    >>> type(s)
-    <type 'unicode'>
-    >>> unicode('abcdef' + chr(255))
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0xff in position 6:
-                        ordinal not in range(128)
+In addition, one can create a string using the :func:`decode` method of
+:class:`bytes`.  This method takes an encoding, such as UTF-8, and, optionally,
+an *errors* argument.
 
-The ``errors`` argument specifies the response when the input string can't be
+The *errors* argument specifies the response when the input string can't be
 converted according to the encoding's rules.  Legal values for this argument are
-'strict' (raise a ``UnicodeDecodeError`` exception), 'replace' (add U+FFFD,
+'strict' (raise a :exc:`UnicodeDecodeError` exception), 'replace' (add U+FFFD,
 'REPLACEMENT CHARACTER'), or 'ignore' (just leave the character out of the
 Unicode result).  The following examples show the differences::
 
-    >>> unicode('\x80abc', errors='strict')
+    >>> b'\x80abc'.decode("utf-8", "strict")
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     UnicodeDecodeError: 'ascii' codec can't decode byte 0x80 in position 0:
                         ordinal not in range(128)
-    >>> unicode('\x80abc', errors='replace')
-    u'\ufffdabc'
-    >>> unicode('\x80abc', errors='ignore')
-    u'abc'
+    >>> b'\x80abc'.decode("utf-8", "replace")
+    '\ufffdabc'
+    >>> b'\x80abc'.decode("utf-8", "ignore")
+    'abc'
 
-Encodings are specified as strings containing the encoding's name.  Python 2.4
+Encodings are specified as strings containing the encoding's name.  Python
 comes with roughly 100 different encodings; see the Python Library Reference at
 <http://docs.python.org/lib/standard-encodings.html> for a list.  Some encodings
 have multiple names; for example, 'latin-1', 'iso_8859_1' and '8859' are all
 synonyms for the same encoding.
 
-One-character Unicode strings can also be created with the :func:`unichr`
+One-character Unicode strings can also be created with the :func:`chr`
 built-in function, which takes integers and returns a Unicode string of length 1
 that contains the corresponding code point.  The reverse operation is the
 built-in :func:`ord` function that takes a one-character Unicode string and
 returns the code point value::
 
-    >>> unichr(40960)
-    u'\ua000'
-    >>> ord(u'\ua000')
+    >>> chr(40960)
+    '\ua000'
+    >>> ord('\ua000')
     40960
 
-Instances of the :class:`unicode` type have many of the same methods as the
-8-bit string type for operations such as searching and formatting::
+Converting to Bytes
+-------------------
 
-    >>> s = u'Was ever feather so lightly blown to and fro as this multitude?'
-    >>> s.count('e')
-    5
-    >>> s.find('feather')
-    9
-    >>> s.find('bird')
-    -1
-    >>> s.replace('feather', 'sand')
-    u'Was ever sand so lightly blown to and fro as this multitude?'
-    >>> s.upper()
-    u'WAS EVER FEATHER SO LIGHTLY BLOWN TO AND FRO AS THIS MULTITUDE?'
-
-Note that the arguments to these methods can be Unicode strings or 8-bit
-strings.  8-bit strings will be converted to Unicode before carrying out the
-operation; Python's default ASCII encoding will be used, so characters greater
-than 127 will cause an exception::
-
-    >>> s.find('Was\x9f')
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0x9f in position 3: ordinal not in range(128)
-    >>> s.find(u'Was\x9f')
-    -1
-
-Much Python code that operates on strings will therefore work with Unicode
-strings without requiring any changes to the code.  (Input and output code needs
-more updating for Unicode; more on this later.)
-
-Another important method is ``.encode([encoding], [errors='strict'])``, which
-returns an 8-bit string version of the Unicode string, encoded in the requested
-encoding.  The ``errors`` parameter is the same as the parameter of the
-``unicode()`` constructor, with one additional possibility; as well as 'strict',
+Another important str method is ``.encode([encoding], [errors='strict'])``,
+which returns a ``bytes`` representation of the Unicode string, encoded in the
+requested encoding.  The ``errors`` parameter is the same as the parameter of
+the :meth:`decode` method, with one additional possibility; as well as 'strict',
 'ignore', and 'replace', you can also pass 'xmlcharrefreplace' which uses XML's
 character references.  The following example shows the different results::
 
-    >>> u = unichr(40960) + u'abcd' + unichr(1972)
+    >>> u = chr(40960) + 'abcd' + chr(1972)
     >>> u.encode('utf-8')
-    '\xea\x80\x80abcd\xde\xb4'
+    b'\xea\x80\x80abcd\xde\xb4'
     >>> u.encode('ascii')
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     UnicodeEncodeError: 'ascii' codec can't encode character '\ua000' in position 0: ordinal not in range(128)
     >>> u.encode('ascii', 'ignore')
-    'abcd'
+    b'abcd'
     >>> u.encode('ascii', 'replace')
-    '?abcd?'
+    b'?abcd?'
     >>> u.encode('ascii', 'xmlcharrefreplace')
-    '&#40960;abcd&#1972;'
-
-Python's 8-bit strings have a ``.decode([encoding], [errors])`` method that
-interprets the string using the given encoding::
-
-    >>> u = unichr(40960) + u'abcd' + unichr(1972)   # Assemble a string
-    >>> utf8_version = u.encode('utf-8')             # Encode as UTF-8
-    >>> type(utf8_version), utf8_version
-    (<type 'str'>, '\xea\x80\x80abcd\xde\xb4')
-    >>> u2 = utf8_version.decode('utf-8')            # Decode using UTF-8
-    >>> u == u2                                      # The two strings match
-    True
+    b'&#40960;abcd&#1972;'
 
 The low-level routines for registering and accessing the available encodings are
 found in the :mod:`codecs` module.  However, the encoding and decoding functions
@@ -377,22 +331,14 @@ output.
 Unicode Literals in Python Source Code
 --------------------------------------
 
-In Python source code, Unicode literals are written as strings prefixed with the
-'u' or 'U' character: ``u'abcdefghijk'``.  Specific code points can be written
-using the ``\u`` escape sequence, which is followed by four hex digits giving
-the code point.  The ``\U`` escape sequence is similar, but expects 8 hex
-digits, not 4.
+In Python source code, specific Unicode code points can be written using the
+``\u`` escape sequence, which is followed by four hex digits giving the code
+point.  The ``\U`` escape sequence is similar, but expects 8 hex digits, not 4::
 
-Unicode literals can also use the same escape sequences as 8-bit strings,
-including ``\x``, but ``\x`` only takes two hex digits so it can't express an
-arbitrary code point.  Octal escapes can go up to U+01ff, which is octal 777.
-
-::
-
-    >>> s = u"a\xac\u1234\u20ac\U00008000"
-               ^^^^ two-digit hex escape
-                   ^^^^^^ four-digit Unicode escape
-                               ^^^^^^^^^^ eight-digit Unicode escape
+    >>> s = "a\xac\u1234\u20ac\U00008000"
+              ^^^^ two-digit hex escape
+                   ^^^^^ four-digit Unicode escape
+                              ^^^^^^^^^^ eight-digit Unicode escape
     >>> for c in s:  print(ord(c), end=" ")
     ...
     97 172 4660 8364 32768
@@ -400,7 +346,7 @@ arbitrary code point.  Octal escapes can go up to U+01ff, which is octal 777.
 Using escape sequences for code points greater than 127 is fine in small doses,
 but becomes an annoyance if you're using many accented characters, as you would
 in a program with messages in French or some other accent-using language.  You
-can also assemble strings using the :func:`unichr` built-in function, but this is
+can also assemble strings using the :func:`chr` built-in function, but this is
 even more tedious.
 
 Ideally, you'd want to be able to write literals in your language's natural
@@ -408,14 +354,15 @@ encoding.  You could then edit Python source code with your favorite editor
 which would display the accented characters naturally, and have the right
 characters used at runtime.
 
-Python supports writing Unicode literals in any encoding, but you have to
-declare the encoding being used.  This is done by including a special comment as
-either the first or second line of the source file::
+Python supports writing Unicode literals in UTF-8 by default, but you can use
+(almost) any encoding if you declare the encoding being used.  This is done by
+including a special comment as either the first or second line of the source
+file::
 
     #!/usr/bin/env python
     # -*- coding: latin-1 -*-
 
-    u = u'abcdé'
+    u = 'abcdé'
     print(ord(u[-1]))
 
 The syntax is inspired by Emacs's notation for specifying variables local to a
@@ -424,22 +371,8 @@ file.  Emacs supports many different variables, but Python only supports
 them, you must supply the name ``coding`` and the name of your chosen encoding,
 separated by ``':'``.
 
-If you don't include such a comment, the default encoding used will be ASCII.
-Versions of Python before 2.4 were Euro-centric and assumed Latin-1 as a default
-encoding for string literals; in Python 2.4, characters greater than 127 still
-work but result in a warning.  For example, the following program has no
-encoding declaration::
-
-    #!/usr/bin/env python
-    u = u'abcdé'
-    print(ord(u[-1]))
-
-When you run it with Python 2.4, it will output the following warning::
-
-    amk:~$ python p263.py
-    sys:1: DeprecationWarning: Non-ASCII character '\xe9'
-         in file p263.py on line 2, but no encoding declared;
-         see http://www.python.org/peps/pep-0263.html for details
+If you don't include such a comment, the default encoding used will be UTF-8 as
+already mentioned.
 
 
 Unicode Properties
@@ -457,7 +390,7 @@ prints the numeric value of one particular character::
 
     import unicodedata
 
-    u = unichr(233) + unichr(0x0bf2) + unichr(3972) + unichr(6000) + unichr(13231)
+    u = chr(233) + chr(0x0bf2) + chr(3972) + chr(6000) + chr(13231)
 
     for i, c in enumerate(u):
         print(i, '%04x' % ord(c), unicodedata.category(c), end=" ")
@@ -487,8 +420,8 @@ list of category codes.
 References
 ----------
 
-The Unicode and 8-bit string types are described in the Python library reference
-at :ref:`typesseq`.
+The ``str`` type is described in the Python library reference at
+:ref:`typesseq`.
 
 The documentation for the :mod:`unicodedata` module.
 
@@ -557,7 +490,7 @@ It's also possible to open files in update mode, allowing both reading and
 writing::
 
     f = codecs.open('test', encoding='utf-8', mode='w+')
-    f.write(u'\u4500 blah blah blah\n')
+    f.write('\u4500 blah blah blah\n')
     f.seek(0)
     print(repr(f.readline()[:1]))
     f.close()
@@ -590,7 +523,7 @@ not much reason to bother.  When opening a file for reading or writing, you can
 usually just provide the Unicode string as the filename, and it will be
 automatically converted to the right encoding for you::
 
-    filename = u'filename\u4500abc'
+    filename = 'filename\u4500abc'
     f = open(filename, 'w')
     f.write('blah\n')
     f.close()
@@ -607,7 +540,7 @@ encoding and a list of Unicode strings will be returned, while passing an 8-bit
 path will return the 8-bit versions of the filenames.  For example, assuming the
 default filesystem encoding is UTF-8, running the following program::
 
-	fn = u'filename\u4500abc'
+	fn = 'filename\u4500abc'
 	f = open(fn, 'w')
 	f.close()
 
@@ -619,7 +552,7 @@ will produce the following output::
 
 	amk:~$ python t.py
 	['.svn', 'filename\xe4\x94\x80abc', ...]
-	[u'.svn', u'filename\u4500abc', ...]
+	['.svn', 'filename\u4500abc', ...]
 
 The first list contains UTF-8-encoded filenames, and the second list contains
 the Unicode versions.

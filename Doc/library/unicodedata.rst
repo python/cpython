@@ -27,72 +27,72 @@ the following functions:
 .. function:: lookup(name)
 
    Look up character by name.  If a character with the given name is found, return
-   the corresponding Unicode character.  If not found, :exc:`KeyError` is raised.
+   the corresponding character.  If not found, :exc:`KeyError` is raised.
 
 
-.. function:: name(unichr[, default])
+.. function:: name(chr[, default])
 
-   Returns the name assigned to the Unicode character *unichr* as a string. If no
+   Returns the name assigned to the character *chr* as a string. If no
    name is defined, *default* is returned, or, if not given, :exc:`ValueError` is
    raised.
 
 
-.. function:: decimal(unichr[, default])
+.. function:: decimal(chr[, default])
 
-   Returns the decimal value assigned to the Unicode character *unichr* as integer.
+   Returns the decimal value assigned to the character *chr* as integer.
    If no such value is defined, *default* is returned, or, if not given,
    :exc:`ValueError` is raised.
 
 
-.. function:: digit(unichr[, default])
+.. function:: digit(chr[, default])
 
-   Returns the digit value assigned to the Unicode character *unichr* as integer.
+   Returns the digit value assigned to the character *chr* as integer.
    If no such value is defined, *default* is returned, or, if not given,
    :exc:`ValueError` is raised.
 
 
-.. function:: numeric(unichr[, default])
+.. function:: numeric(chr[, default])
 
-   Returns the numeric value assigned to the Unicode character *unichr* as float.
+   Returns the numeric value assigned to the character *chr* as float.
    If no such value is defined, *default* is returned, or, if not given,
    :exc:`ValueError` is raised.
 
 
-.. function:: category(unichr)
+.. function:: category(chr)
 
-   Returns the general category assigned to the Unicode character *unichr* as
+   Returns the general category assigned to the character *chr* as
    string.
 
 
-.. function:: bidirectional(unichr)
+.. function:: bidirectional(chr)
 
-   Returns the bidirectional category assigned to the Unicode character *unichr* as
+   Returns the bidirectional category assigned to the character *chr* as
    string. If no such value is defined, an empty string is returned.
 
 
-.. function:: combining(unichr)
+.. function:: combining(chr)
 
-   Returns the canonical combining class assigned to the Unicode character *unichr*
+   Returns the canonical combining class assigned to the character *chr*
    as integer. Returns ``0`` if no combining class is defined.
 
 
-.. function:: east_asian_width(unichr)
+.. function:: east_asian_width(chr)
 
-   Returns the east asian width assigned to the Unicode character *unichr* as
+   Returns the east asian width assigned to the character *chr* as
    string.
 
 
-.. function:: mirrored(unichr)
+.. function:: mirrored(chr)
 
-   Returns the mirrored property assigned to the Unicode character *unichr* as
+   Returns the mirrored property assigned to the character *chr* as
    integer. Returns ``1`` if the character has been identified as a "mirrored"
    character in bidirectional text, ``0`` otherwise.
 
 
-.. function:: decomposition(unichr)
+.. function:: decomposition(chr)
 
-   Returns the character decomposition mapping assigned to the Unicode character
-   *unichr* as string. An empty string is returned in case no such mapping is
+   Returns the character decomposition mapping assigned to the character
+   *chr* as string. An empty string is returned in case no such mapping is
    defined.
 
 
@@ -146,16 +146,16 @@ Examples::
 
    >>> unicodedata.lookup('LEFT CURLY BRACKET')
    u'{'
-   >>> unicodedata.name(u'/')
+   >>> unicodedata.name('/')
    'SOLIDUS'
-   >>> unicodedata.decimal(u'9')
+   >>> unicodedata.decimal('9')
    9
-   >>> unicodedata.decimal(u'a')
+   >>> unicodedata.decimal('a')
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    ValueError: not a decimal
-   >>> unicodedata.category(u'A')  # 'L'etter, 'u'ppercase
+   >>> unicodedata.category('A')  # 'L'etter, 'u'ppercase
    'Lu'   
-   >>> unicodedata.bidirectional(u'\u0660') # 'A'rabic, 'N'umber
+   >>> unicodedata.bidirectional('\u0660') # 'A'rabic, 'N'umber
    'AN'
 

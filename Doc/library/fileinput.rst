@@ -168,9 +168,3 @@ The two following opening hooks are provided by this module:
 
    Usage example: ``fi =
    fileinput.FileInput(openhook=fileinput.hook_encoded("iso-8859-1"))``
-
-   .. note::
-
-      With this hook, :class:`FileInput` might return Unicode strings depending on the
-      specified *encoding*.
-

@@ -95,7 +95,7 @@ yourself, though, it is simpler to use a :class:`RotatingFileHandler`::
    logfiles = glob.glob('%s*' % LOG_FILENAME)
 
    for filename in logfiles:
-       print filename
+       print(filename)
 
 The result should be 6 separate files, each with part of the log history for the
 application::
@@ -2428,13 +2428,13 @@ configuration::
     HOST = 'localhost'
     PORT = 9999
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print "connecting..."
+    print("connecting...")
     s.connect((HOST, PORT))
-    print "sending config..."
+    print("sending config...")
     s.send(struct.pack(">L", len(data_to_send)))
     s.send(data_to_send)
     s.close()
-    print "complete"
+    print("complete")
 
 
 More examples

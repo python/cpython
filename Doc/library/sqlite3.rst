@@ -184,7 +184,7 @@ Module functions and constants
    Registers a callable to convert the custom Python type *type* into one of
    SQLite's supported types. The callable *callable* accepts as single parameter
    the Python value, and must return a value of the following types: int,
-   float, str (UTF-8 encoded), unicode or buffer.
+   float, str, bytes (UTF-8 encoded) or buffer.
 
 
 .. function:: complete_statement(sql)
@@ -258,7 +258,7 @@ A :class:`Connection` instance has the following attributes and methods:
    parameters the function accepts, and *func* is a Python callable that is called
    as the SQL function.
 
-   The function can return any of the types supported by SQLite: unicode, str, int,
+   The function can return any of the types supported by SQLite: bytes, str, int,
    float, buffer and None.
 
    Example:
@@ -275,7 +275,7 @@ A :class:`Connection` instance has the following attributes and methods:
    final result of the aggregate.
 
    The ``finalize`` method can return any of the types supported by SQLite:
-   unicode, str, int, float, buffer and None.
+   bytes, str, int, float, buffer and None.
 
    Example:
 
@@ -354,13 +354,13 @@ A :class:`Connection` instance has the following attributes and methods:
 .. attribute:: Connection.text_factory
 
    Using this attribute you can control what objects are returned for the TEXT data
-   type. By default, this attribute is set to :class:`unicode` and the
-   :mod:`sqlite3` module will return Unicode objects for TEXT. If you want to
-   return bytestrings instead, you can set it to :class:`str`.
+   type. By default, this attribute is set to :class:`str` and the
+   :mod:`sqlite3` module will return strings for TEXT. If you want to
+   return bytestrings instead, you can set it to :class:`bytes`.
 
-   For efficiency reasons, there's also a way to return Unicode objects only for
-   non-ASCII data, and bytestrings otherwise. To activate it, set this attribute to
-   :const:`sqlite3.OptimizedUnicode`.
+   For efficiency reasons, there's also a way to return :class:`str` objects
+   only for non-ASCII data, and :class:`bytes` otherwise. To activate it, set
+   this attribute to :const:`sqlite3.OptimizedUnicode`.
 
    You can also set it to any other callable that accepts a single bytestring
    parameter and returns the resulting object.
@@ -424,7 +424,7 @@ A :class:`Cursor` instance has the following attributes and methods:
    at once. It issues a COMMIT statement first, then executes the SQL script it
    gets as a parameter.
 
-   *sql_script* can be a bytestring or a Unicode string.
+   *sql_script* can be an instance of :class:`str` or :class:`bytes`.
 
    Example:
 
@@ -493,21 +493,21 @@ SQLite natively supports the following types: NULL, INTEGER, REAL, TEXT, BLOB.
 
 The following Python types can thus be sent to SQLite without any problem:
 
-+------------------------+-------------+
-| Python type            | SQLite type |
-+========================+=============+
-| ``None``               | NULL        |
-+------------------------+-------------+
-| ``int``                | INTEGER     |
-+------------------------+-------------+
-| ``float``              | REAL        |
-+------------------------+-------------+
-| ``str (UTF8-encoded)`` | TEXT        |
-+------------------------+-------------+
-| ``unicode``            | TEXT        |
-+------------------------+-------------+
-| ``buffer``             | BLOB        |
-+------------------------+-------------+
++-------------------------------+-------------+
+| Python type                   | SQLite type |
++===============================+=============+
+| ``None``                      | NULL        |
++-------------------------------+-------------+
+| :class:`int`                  | INTEGER     |
++-------------------------------+-------------+
+| :class:`float`                | REAL        |
++-------------------------------+-------------+
+| :class:`bytes` (UTF8-encoded) | TEXT        |
++-------------------------------+-------------+
+| :class:`str`                  | TEXT        |
++-------------------------------+-------------+
+| :class:`buffer`               | BLOB        |
++-------------------------------+-------------+
 
 This is how SQLite types are converted to Python types by default:
 
@@ -520,7 +520,7 @@ This is how SQLite types are converted to Python types by default:
 +-------------+---------------------------------------------+
 | ``REAL``    | float                                       |
 +-------------+---------------------------------------------+
-| ``TEXT``    | depends on text_factory, unicode by default |
+| ``TEXT``    | depends on text_factory, str by default     |
 +-------------+---------------------------------------------+
 | ``BLOB``    | buffer                                      |
 +-------------+---------------------------------------------+
@@ -537,7 +537,7 @@ Using adapters to store additional Python types in SQLite databases
 As described before, SQLite supports only a limited set of types natively. To
 use other Python types with SQLite, you must **adapt** them to one of the
 sqlite3 module's supported types for SQLite: one of NoneType, int, float,
-str, unicode, buffer.
+str, bytes, buffer.
 
 The :mod:`sqlite3` module uses Python object adaptation, as described in
 :pep:`246` for this.  The protocol to use is :class:`PrepareProtocol`.

@@ -129,7 +129,7 @@ available.  They are listed here in alphabetical order.
    different ways:
 
    * If it is a *string*, you must also give the *encoding* (and optionally,
-     *errors*) parameters; :func:`bytearray` then converts the Unicode string to
+     *errors*) parameters; :func:`bytearray` then converts the string to
      bytes using :meth:`str.encode`.
 
    * If it is an *integer*, the array will have that size and will be
@@ -415,10 +415,9 @@ available.  They are listed here in alphabetical order.
    .. warning::
 
       The default *locals* act as described for function :func:`locals` below:
-      modifications to the default *locals* dictionary should not be attempted.  Pass
-      an explicit *locals* dictionary if you need to see effects of the code on
-      *locals* after function :func:`execfile` returns.  :func:`exec` cannot be
-      used reliably to modify a function's locals.
+      modifications to the default *locals* dictionary should not be attempted.
+      Pass an explicit *locals* dictionary if you need to see effects of the
+      code on *locals* after function :func:`exec` returns.
 
 
 .. function:: filter(function, iterable)
@@ -805,16 +804,17 @@ available.  They are listed here in alphabetical order.
    :mod:`fileinput`, :mod:`os`, :mod:`os.path`, :mod:`tempfile`, and
    :mod:`shutil`.
 
+
+.. XXX works for bytes too, but should it?
 .. function:: ord(c)
 
    Given a string of length one, return an integer representing the Unicode code
-   point of the character when the argument is a unicode object, or the value of
-   the byte when the argument is an 8-bit string. For example, ``ord('a')`` returns
-   the integer ``97``, ``ord(u'\u2020')`` returns ``8224``.  This is the inverse of
-   :func:`chr` for 8-bit strings and of :func:`unichr` for unicode objects.  If a
-   unicode argument is given and Python was built with UCS2 Unicode, then the
-   character's code point must be in the range [0..65535] inclusive; otherwise the
-   string length is two, and a :exc:`TypeError` will be raised.
+   point of the character.  For example, ``ord('a')`` returns the integer ``97``
+   and ``ord('\u2020')`` returns ``8224``.  This is the inverse of :func:`chr`.
+
+   If the argument length is not one, a :exc:`TypeError` will be raised.  (If
+   Python was built with UCS2 Unicode, then the character's code point must be
+   in the range [0..65535] inclusive; otherwise the string length is two!)
 
 
 .. function:: pow(x, y[, z])
@@ -836,6 +836,22 @@ available.  They are listed here in alphabetical order.
    added in Python 2.2.  In Python 2.1 and before, floating 3-argument ``pow()``
    returned platform-dependent results depending on floating-point rounding
    accidents.)
+
+
+.. function:: print([object, ...][, sep=' '][, end='\n'][, file=sys.stdout])
+
+   Print *object*\(s) to the stream *file*, separated by *sep* and followed by
+   *end*.  *sep*, *end* and *file*, if present, must be given as keyword
+   arguments.
+
+   All non-keyword arguments are converted to strings like :func:`str` does and
+   written to the stream, separated by *sep* and followed by *end*.  Both *sep*
+   and *end* must be strings; they can also be ``None``, which means to use the
+   default values.  If no *object* is given, :func:`print` will just write
+   *end*.
+
+   The *file* argument must be an object with a ``write(string)`` method; if it
+   is not present or ``None``, :data:`sys.stdout` will be used.
 
 
 .. function:: property([fget[, fset[, fdel[, doc]]]])

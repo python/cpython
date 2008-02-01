@@ -130,10 +130,10 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    When a header parameter is encoded in :rfc:`2231` format,
    :meth:`Message.get_param` may return a 3-tuple containing the character set,
    language, and value.  :func:`collapse_rfc2231_value` turns this into a unicode
-   string.  Optional *errors* is passed to the *errors* argument of the built-in
-   :func:`unicode` function; it defaults to ``replace``.  Optional
+   string.  Optional *errors* is passed to the *errors* argument of :class:`str`'s
+   :func:`encode` method; it defaults to ``'replace'``.  Optional
    *fallback_charset* specifies the character set to use if the one in the
-   :rfc:`2231` header is not known by Python; it defaults to ``us-ascii``.
+   :rfc:`2231` header is not known by Python; it defaults to ``'us-ascii'``.
 
    For convenience, if the *value* passed to :func:`collapse_rfc2231_value` is not
    a tuple, it should be a string and it is returned unquoted.

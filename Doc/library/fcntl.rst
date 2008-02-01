@@ -47,7 +47,6 @@ The module defines the following functions:
 .. function:: ioctl(fd, op[, arg[, mutate_flag]])
 
    This function is identical to the :func:`fcntl` function, except that the
-   operations are typically defined in the library module :mod:`termios` and the
    argument handling is even more complicated.
 
    The parameter *arg* can be one of an integer, absent (treated identically to the

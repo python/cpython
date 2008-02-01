@@ -314,7 +314,7 @@ this::
 Sets can take their contents from an iterable and let you iterate over the set's
 elements::
 
-    S = set((2, 3, 5, 7, 11, 13))
+    S = {2, 3, 5, 7, 11, 13}
     for i in S:
         print(i)
 
@@ -616,29 +616,26 @@ Built-in functions
 
 Let's look in more detail at built-in functions often used with iterators.
 
-Two of Python's built-in functions, :func:`map` and :func:`filter`, are somewhat
-obsolete; they duplicate the features of list comprehensions but return actual
-lists instead of iterators.
+Two of Python's built-in functions, :func:`map` and :func:`filter` duplicate the
+features of generator expressions:
 
-``map(f, iterA, iterB, ...)`` returns a list containing ``f(iterA[0], iterB[0]),
-f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...``.
+``map(f, iterA, iterB, ...)`` returns an iterator over the sequence 
+ ``f(iterA[0], iterB[0]), f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...``.
 
 ::
 
     def upper(s):
         return s.upper()
-    map(upper, ['sentence', 'fragment']) =>
+    list(map(upper, ['sentence', 'fragment'])) =>
       ['SENTENCE', 'FRAGMENT']
 
-    [upper(s) for s in ['sentence', 'fragment']] =>
+    list(upper(s) for s in ['sentence', 'fragment']) =>
       ['SENTENCE', 'FRAGMENT']
 
-As shown above, you can achieve the same effect with a list comprehension.  The
-:func:`itertools.imap` function does the same thing but can handle infinite
-iterators; it'll be discussed later, in the section on the :mod:`itertools` module.
+You can of course achieve the same effect with a list comprehension. 
 
-``filter(predicate, iter)`` returns a list that contains all the sequence
-elements that meet a certain condition, and is similarly duplicated by list
+``filter(predicate, iter)`` returns an iterator over all the sequence elements
+that meet a certain condition, and is similarly duplicated by list
 comprehensions.  A **predicate** is a function that returns the truth value of
 some condition; for use with :func:`filter`, the predicate must take a single
 value.
@@ -648,69 +645,61 @@ value.
     def is_even(x):
         return (x % 2) == 0
 
-    filter(is_even, range(10)) =>
+    list(filter(is_even, range(10))) =>
       [0, 2, 4, 6, 8]
 
-This can also be written as a list comprehension::
+This can also be written as a generator expression::
 
-    >>> [x for x in range(10) if is_even(x)]
+    >>> list(x for x in range(10) if is_even(x))
     [0, 2, 4, 6, 8]
 
-:func:`filter` also has a counterpart in the :mod:`itertools` module,
-:func:`itertools.ifilter`, that returns an iterator and can therefore handle
-infinite sequences just as :func:`itertools.imap` can.
+``functools.reduce(func, iter, [initial_value])`` cumulatively performs an
+operation on all the iterable's elements and, therefore, can't be applied to
+infinite iterables.  ``func`` must be a function that takes two elements and
+returns a single value.  :func:`functools.reduce` takes the first two elements A
+and B returned by the iterator and calculates ``func(A, B)``.  It then requests
+the third element, C, calculates ``func(func(A, B), C)``, combines this result
+with the fourth element returned, and continues until the iterable is exhausted.
+If the iterable returns no values at all, a :exc:`TypeError` exception is
+raised.  If the initial value is supplied, it's used as a starting point and
+``func(initial_value, A)`` is the first calculation. ::
 
-``reduce(func, iter, [initial_value])`` doesn't have a counterpart in the
-:mod:`itertools` module because it cumulatively performs an operation on all the
-iterable's elements and therefore can't be applied to infinite iterables.
-``func`` must be a function that takes two elements and returns a single value.
-:func:`reduce` takes the first two elements A and B returned by the iterator and
-calculates ``func(A, B)``.  It then requests the third element, C, calculates
-``func(func(A, B), C)``, combines this result with the fourth element returned,
-and continues until the iterable is exhausted.  If the iterable returns no
-values at all, a :exc:`TypeError` exception is raised.  If the initial value is
-supplied, it's used as a starting point and ``func(initial_value, A)`` is the
-first calculation.
-
-::
-
-    import operator
-    reduce(operator.concat, ['A', 'BB', 'C']) =>
-      'ABBC'
-    reduce(operator.concat, []) =>
-      TypeError: reduce() of empty sequence with no initial value
-    reduce(operator.mul, [1,2,3], 1) =>
-      6
-    reduce(operator.mul, [], 1) =>
-      1
-
-If you use :func:`operator.add` with :func:`reduce`, you'll add up all the
-elements of the iterable.  This case is so common that there's a special
+   import operator
+   import functools
+   functools.reduce(operator.concat, ['A', 'BB', 'C']) =>
+     'ABBC'
+   functools.reduce(operator.concat, []) =>
+     TypeError: reduce() of empty sequence with no initial value
+   functools.reduce(operator.mul, [1,2,3], 1) =>
+     6
+   functools.reduce(operator.mul, [], 1) =>
+     1
+ 
+If you use :func:`operator.add` with :func:`functools.reduce`, you'll add up all
+the elements of the iterable.  This case is so common that there's a special
 built-in called :func:`sum` to compute it::
 
-    reduce(operator.add, [1,2,3,4], 0) =>
-      10
-    sum([1,2,3,4]) =>
-      10
-    sum([]) =>
-      0
+   functools.reduce(operator.add, [1,2,3,4], 0) =>
+     10
+   sum([1,2,3,4]) =>
+     10
+   sum([]) =>
+     0
 
 For many uses of :func:`reduce`, though, it can be clearer to just write the
 obvious :keyword:`for` loop::
 
-    # Instead of:
-    product = reduce(operator.mul, [1,2,3], 1)
+   # Instead of:
+   product = functools.reduce(operator.mul, [1,2,3], 1)
 
-    # You can write:
-    product = 1
-    for i in [1,2,3]:
-        product *= i
+   # You can write:
+   product = 1
+   for i in [1,2,3]:
+       product *= i
 
 
 ``enumerate(iter)`` counts off the elements in the iterable, returning 2-tuples
-containing the count and each element.
-
-::
+containing the count and each element. ::
 
     enumerate(['subject', 'verb', 'object']) =>
       (0, 'subject'), (1, 'verb'), (2, 'object')
@@ -723,12 +712,10 @@ indexes at which certain conditions are met::
         if line.strip() == '':
             print('Blank line at line #%i' % i)
 
-``sorted(iterable, [cmp=None], [key=None], [reverse=False)`` collects all the
-elements of the iterable into a list, sorts the list, and returns the sorted
-result.  The ``cmp``, ``key``, and ``reverse`` arguments are passed through to
-the constructed list's ``.sort()`` method.
-
-::
+``sorted(iterable, [key=None], [reverse=False)`` collects all the elements of
+the iterable into a list, sorts the list, and returns the sorted result.  The
+``key``, and ``reverse`` arguments are passed through to the constructed list's
+``sort()`` method. ::
 
     import random
     # Generate 8 random numbers between [0, 10000)
@@ -962,14 +949,7 @@ consumed more than the others.
 Calling functions on elements
 -----------------------------
 
-Two functions are used for calling other functions on the contents of an
-iterable.
-
-``itertools.imap(f, iterA, iterB, ...)`` returns a stream containing
-``f(iterA[0], iterB[0]), f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...``::
-
-    itertools.imap(operator.add, [5, 6, 5], [1, 2, 3]) =>
-      6, 8, 8
+``itertools.imap(func, iter)`` is the same as built-in :func:`map`.
 
 The ``operator`` module contains a set of functions corresponding to Python's
 operators.  Some examples are ``operator.add(a, b)`` (adds two values),
@@ -992,14 +972,7 @@ Selecting elements
 Another group of functions chooses a subset of an iterator's elements based on a
 predicate.
 
-``itertools.ifilter(predicate, iter)`` returns all the elements for which the
-predicate returns true::
-
-    def is_even(x):
-        return (x % 2) == 0
-
-    itertools.ifilter(is_even, itertools.count()) =>
-      0, 2, 4, 6, 8, 10, 12, 14, ...
+``itertools.ifilter(predicate, iter)`` is the same as built-in :func:`filter`.
 
 ``itertools.ifilterfalse(predicate, iter)`` is the opposite, returning all
 elements for which the predicate returns false::
@@ -1117,8 +1090,7 @@ that perform a single operation.
 
 Some of the functions in this module are:
 
-* Math operations: ``add()``, ``sub()``, ``mul()``, ``div()``, ``floordiv()``,
-  ``abs()``, ...
+* Math operations: ``add()``, ``sub()``, ``mul()``, ``floordiv()``, ``abs()``, ...
 * Logical operations: ``not_()``, ``truth()``.
 * Bitwise operations: ``and_()``, ``or_()``, ``invert()``.
 * Comparisons: ``eq()``, ``ne()``, ``lt()``, ``le()``, ``gt()``, and ``ge()``.
@@ -1190,7 +1162,7 @@ is equivalent to::
         f(*g(5, 6))
 
 Even though ``compose()`` only accepts two functions, it's trivial to build up a
-version that will compose any number of functions. We'll use ``reduce()``,
+version that will compose any number of functions. We'll use ``functools.reduce()``,
 ``compose()`` and ``partial()`` (the last of which is provided by both
 ``functional`` and ``functools``).
 
@@ -1198,7 +1170,7 @@ version that will compose any number of functions. We'll use ``reduce()``,
 
         from functional import compose, partial
         
-        multi_compose = partial(reduce, compose)
+        multi_compose = partial(functools.reduce, compose)
         
     
 We can also use ``map()``, ``compose()`` and ``partial()`` to craft a version of
