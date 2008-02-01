@@ -25,10 +25,11 @@ with the corresponding argument.
 """
 from __future__ import with_statement
 
-import unittest
 import glob
+import math
 import os, sys
 import pickle, copy
+import unittest
 from decimal import *
 from test.test_support import (TestSkipped, run_unittest, run_doctest,
                                is_resource_enabled)
@@ -1225,7 +1226,7 @@ class DecimalPythonAPItests(unittest.TestCase):
             # should work the same as to_integral in the ROUND_DOWN mode
             d = Decimal(s)
             r = d.to_integral(ROUND_DOWN)
-            self.assertEqual(Decimal(trunc(d)), r)
+            self.assertEqual(Decimal(math.trunc(d)), r)
 
 class ContextAPItests(unittest.TestCase):
 

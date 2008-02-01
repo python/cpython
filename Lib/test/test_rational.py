@@ -195,7 +195,7 @@ class RationalTest(unittest.TestCase):
         self.assertEqual(R.from_float(0.0).approximate(10000), R(0))
 
     def testConversions(self):
-        self.assertTypedEquals(-1, trunc(R(-11, 10)))
+        self.assertTypedEquals(-1, math.trunc(R(-11, 10)))
         self.assertTypedEquals(-1, int(R(-11, 10)))
 
         self.assertEquals(False, bool(R(0, 1)))
@@ -322,11 +322,11 @@ class RationalTest(unittest.TestCase):
         # Because 10**23 can't be represented exactly as a float:
         self.assertFalse(R(10**23) == float(10**23))
         # The first test demonstrates why these are important.
-        self.assertFalse(1e23 < float(R(trunc(1e23) + 1)))
-        self.assertTrue(1e23 < R(trunc(1e23) + 1))
-        self.assertFalse(1e23 <= R(trunc(1e23) - 1))
-        self.assertTrue(1e23 > R(trunc(1e23) - 1))
-        self.assertFalse(1e23 >= R(trunc(1e23) + 1))
+        self.assertFalse(1e23 < float(R(math.trunc(1e23) + 1)))
+        self.assertTrue(1e23 < R(math.trunc(1e23) + 1))
+        self.assertFalse(1e23 <= R(math.trunc(1e23) - 1))
+        self.assertTrue(1e23 > R(math.trunc(1e23) - 1))
+        self.assertFalse(1e23 >= R(math.trunc(1e23) + 1))
 
     def testBigComplexComparisons(self):
         self.assertFalse(R(10**23) == complex(10**23))
