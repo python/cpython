@@ -119,6 +119,17 @@ class RationalTest(unittest.TestCase):
         r.__init__(2, 15)
         self.assertEquals((7, 3), _components(r))
 
+        self.assertRaises(AttributeError, setattr, r, 'numerator', 12)
+        self.assertRaises(AttributeError, setattr, r, 'denominator', 6)
+        self.assertEquals((7, 3), _components(r))
+
+        # But if you _really_ need to:
+        r._numerator = 4
+        r._denominator = 2
+        self.assertEquals((4, 2), _components(r))
+        # Which breaks some important operations:
+        self.assertNotEquals(R(4, 2), r)
+
     def testFromFloat(self):
         self.assertRaisesMessage(
             TypeError, "Rational.from_float() only takes floats, not 3 (int)",
