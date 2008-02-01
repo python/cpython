@@ -1158,7 +1158,7 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 {
 	double self;
 	double float_part;
-	int exponent;
+	long exponent;
 
 	PyObject *prev;
 	PyObject *py_exponent = NULL;
