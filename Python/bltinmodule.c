@@ -1267,7 +1267,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(print_doc,
-"print(value, ..., file=None, sep=' ', end='\\n')\n\
+"print(value, ..., sep=' ', end='\\n', file=sys.stdout)\n\
 \n\
 Prints the values to a stream, or to sys.stdout by default.\n\
 Optional keyword arguments:\n\
