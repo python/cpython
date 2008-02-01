@@ -96,6 +96,14 @@ Number-theoretic and representation functions:
    Return the fractional and integer parts of *x*.  Both results carry the sign of
    *x*, and both are floats.
 
+
+.. function:: trunc(x)
+
+   Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
+   a long integer). Delegates to ``x.__trunc__()``.
+
+   .. versionadded:: 2.6
+
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
 than their C equivalents: they take a single argument and return a pair of
 values, rather than returning their second return value through an 'output

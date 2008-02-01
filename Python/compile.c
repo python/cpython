@@ -885,24 +885,59 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 {
 	PyObject *t, *v;
 	Py_ssize_t arg;
+	unsigned char *p, *q;
+	Py_complex z;
+	double d;
+	int real_part_zero, imag_part_zero;
 
 	/* necessary to make sure types aren't coerced (e.g., int and long) */
         /* _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms */
         if (PyFloat_Check(o)) {
-            double d = PyFloat_AS_DOUBLE(o);
-            unsigned char* p = (unsigned char*) &d;
-            /* all we need is to make the tuple different in either the 0.0
-             * or -0.0 case from all others, just to avoid the "coercion".
-             */
-            if (*p==0 && p[sizeof(double)-1]==0)
-                t = PyTuple_Pack(3, o, o->ob_type, Py_None);
-            else
-	        t = PyTuple_Pack(2, o, o->ob_type);
-        } else {
-	    t = PyTuple_Pack(2, o, o->ob_type);
+		d = PyFloat_AS_DOUBLE(o);
+		p = (unsigned char*) &d;
+		/* all we need is to make the tuple different in either the 0.0
+		 * or -0.0 case from all others, just to avoid the "coercion".
+		 */
+		if (*p==0 && p[sizeof(double)-1]==0)
+			t = PyTuple_Pack(3, o, o->ob_type, Py_None);
+		else
+			t = PyTuple_Pack(2, o, o->ob_type);
+	}
+	else if (PyComplex_Check(o)) {
+		/* complex case is even messier: we need to make complex(x,
+		   0.) different from complex(x, -0.) and complex(0., y)
+		   different from complex(-0., y), for any x and y.  In
+		   particular, all four complex zeros should be
+		   distinguished.*/
+		z = PyComplex_AsCComplex(o);
+		p = (unsigned char*) &(z.real);
+		q = (unsigned char*) &(z.imag);
+		/* all that matters here is that on IEEE platforms
+		   real_part_zero will be true if z.real == 0., and false if
+		   z.real == -0.  In fact, real_part_zero will also be true
+		   for some other rarely occurring nonzero floats, but this
+		   doesn't matter. Similar comments apply to
+		   imag_part_zero. */
+		real_part_zero = *p==0 && p[sizeof(double)-1]==0;
+		imag_part_zero = *q==0 && q[sizeof(double)-1]==0;
+		if (real_part_zero && imag_part_zero) {
+			t = PyTuple_Pack(4, o, o->ob_type, Py_True, Py_True);
+		}
+		else if (real_part_zero && !imag_part_zero) {
+			t = PyTuple_Pack(4, o, o->ob_type, Py_True, Py_False);
+		}
+		else if (!real_part_zero && imag_part_zero) {
+			t = PyTuple_Pack(4, o, o->ob_type, Py_False, Py_True);
+		}
+		else {
+			t = PyTuple_Pack(2, o, o->ob_type);
+		}
+        }
+	else {
+		t = PyTuple_Pack(2, o, o->ob_type);
         }
 	if (t == NULL)
-	    return -1;
+		return -1;
 
 	v = PyDict_GetItem(dict, t);
 	if (!v) {

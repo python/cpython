@@ -833,6 +833,7 @@ r_object(RFILE *p)
                                 v = NULL;
                                 break;
                         }
+                        Py_DECREF(v2);
 		}
 		retval = v;
 		break;

@@ -1,11 +1,12 @@
 """Unit tests for numbers.py."""
 
-import unittest
-from test import test_support
-from numbers import Number
-from numbers import Exact, Inexact
-from numbers import Complex, Real, Rational, Integral
+import math
 import operator
+import unittest
+from numbers import Complex, Real, Rational, Integral
+from numbers import Exact, Inexact
+from numbers import Number
+from test import test_support
 
 class TestNumbers(unittest.TestCase):
     def test_int(self):
@@ -37,7 +38,8 @@ class TestNumbers(unittest.TestCase):
         self.failUnless(issubclass(complex, Inexact))
 
         c1, c2 = complex(3, 2), complex(4,1)
-        self.assertRaises(TypeError, trunc, c1)
+        # XXX: This is not ideal, but see the comment in math_trunc().
+        self.assertRaises(TypeError, math.trunc, c1)
         self.assertRaises(TypeError, operator.mod, c1, c2)
         self.assertRaises(TypeError, divmod, c1, c2)
         self.assertRaises(TypeError, operator.floordiv, c1, c2)
