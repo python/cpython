@@ -42,7 +42,7 @@ class Rational(RationalAbc):
 
     """
 
-    __slots__ = ('numerator', 'denominator')
+    __slots__ = ('_numerator', '_denominator')
 
     # We're immutable, so use __new__ not __init__
     def __new__(cls, numerator=0, denominator=1):
@@ -92,8 +92,8 @@ class Rational(RationalAbc):
             raise ZeroDivisionError('Rational(%s, 0)' % numerator)
 
         g = gcd(numerator, denominator)
-        self.numerator = int(numerator // g)
-        self.denominator = int(denominator // g)
+        self._numerator = int(numerator // g)
+        self._denominator = int(denominator // g)
         return self
 
     @classmethod
@@ -167,6 +167,14 @@ class Rational(RationalAbc):
             result = new
         return result
 
+    @property
+    def numerator(a):
+        return a._numerator
+
+    @property
+    def denominator(a):
+        return a._denominator
+
     def __repr__(self):
         """repr(self)"""
         return ('Rational(%r,%r)' % (self.numerator, self.denominator))
@@ -192,20 +200,20 @@ class Rational(RationalAbc):
         Rational, that means that we define __add__ and __radd__ as:
 
             def __add__(self, other):
+                # Both types have numerators/denominator attributes,
+                # so do the operation directly
                 if isinstance(other, (int, Rational)):
-                    # Do the real operation.
                     return Rational(self.numerator * other.denominator +
                                     other.numerator * self.denominator,
                                     self.denominator * other.denominator)
-                # float and complex don't follow this protocol, and
-                # Rational knows about them, so special case them.
+                # float and complex don't have those operations, but we
+                # know about those types, so special case them.
                 elif isinstance(other, float):
                     return float(self) + other
                 elif isinstance(other, complex):
                     return complex(self) + other
-                else:
-                    # Let the other type take over.
-                    return NotImplemented
+                # Let the other type take over.
+                return NotImplemented
 
             def __radd__(self, other):
                 # radd handles more types than add because there's
@@ -218,8 +226,7 @@ class Rational(RationalAbc):
                     return float(other) + float(self)
                 elif isinstance(other, Complex):
                     return complex(other) + complex(self)
-                else:
-                    return NotImplemented
+                return NotImplemented
 
 
         There are 5 different cases for a mixed-type addition on

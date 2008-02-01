@@ -872,6 +872,9 @@
 /* The number of bytes in an off_t. */
 #undef SIZEOF_OFF_T
 
+/* The size of `pid_t', as computed by sizeof. */
+#undef SIZEOF_PID_T
+
 /* The number of bytes in a pthread_t. */
 #undef SIZEOF_PTHREAD_T
 

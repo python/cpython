@@ -206,6 +206,39 @@ FUNC1(tanh, tanh,
       "tanh(x)\n\nReturn the hyperbolic tangent of x.")
 
 static PyObject *
+math_trunc(PyObject *self, PyObject *number)
+{
+	static PyObject *trunc_str = NULL;
+	PyObject *trunc;
+
+	if (Py_TYPE(number)->tp_dict == NULL) {
+		if (PyType_Ready(Py_TYPE(number)) < 0)
+			return NULL;
+	}
+
+	if (trunc_str == NULL) {
+		trunc_str = PyUnicode_InternFromString("__trunc__");
+		if (trunc_str == NULL)
+			return NULL;
+	}
+
+	trunc = _PyType_Lookup(Py_TYPE(number), trunc_str);
+	if (trunc == NULL) {
+		PyErr_Format(PyExc_TypeError,
+			     "type %.100s doesn't define __trunc__ method",
+			     Py_TYPE(number)->tp_name);
+		return NULL;
+	}
+	return PyObject_CallFunctionObjArgs(trunc, number, NULL);
+}
+
+PyDoc_STRVAR(math_trunc_doc,
+"trunc(x:Real) -> Integral\n"
+"\n"
+"Truncates x to the nearest Integral toward 0. Uses the __trunc__ magic"
+"method.");
+
+static PyObject *
 math_frexp(PyObject *self, PyObject *arg)
 {
 	int i;
@@ -428,6 +461,7 @@ static PyMethodDef math_methods[] = {
 	{"sqrt",	math_sqrt,	METH_O,		math_sqrt_doc},
 	{"tan",		math_tan,	METH_O,		math_tan_doc},
 	{"tanh",	math_tanh,	METH_O,		math_tanh_doc},
+ 	{"trunc",	math_trunc,	METH_O,		math_trunc_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 

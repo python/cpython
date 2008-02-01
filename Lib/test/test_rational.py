@@ -117,6 +117,17 @@ class RationalTest(unittest.TestCase):
         r.__init__(2, 15)
         self.assertEquals((7, 3), _components(r))
 
+        self.assertRaises(AttributeError, setattr, r, 'numerator', 12)
+        self.assertRaises(AttributeError, setattr, r, 'denominator', 6)
+        self.assertEquals((7, 3), _components(r))
+
+        # But if you _really_ need to:
+        r._numerator = 4
+        r._denominator = 2
+        self.assertEquals((4, 2), _components(r))
+        # Which breaks some important operations:
+        self.assertNotEquals(R(4, 2), r)
+
     def testFromFloat(self):
         self.assertRaisesMessage(
             TypeError, "Rational.from_float() only takes floats, not 3 (int)",
@@ -193,7 +204,7 @@ class RationalTest(unittest.TestCase):
         self.assertEqual(R.from_float(0.0).approximate(10000), R(0))
 
     def testConversions(self):
-        self.assertTypedEquals(-1, trunc(R(-11, 10)))
+        self.assertTypedEquals(-1, math.trunc(R(-11, 10)))
         self.assertTypedEquals(-2, math.floor(R(-11, 10)))
         self.assertTypedEquals(-1, math.ceil(R(-11, 10)))
         self.assertTypedEquals(-1, math.ceil(R(-10, 10)))
@@ -337,11 +348,11 @@ class RationalTest(unittest.TestCase):
         # Because 10**23 can't be represented exactly as a float:
         self.assertFalse(R(10**23) == float(10**23))
         # The first test demonstrates why these are important.
-        self.assertFalse(1e23 < float(R(trunc(1e23) + 1)))
-        self.assertTrue(1e23 < R(trunc(1e23) + 1))
-        self.assertFalse(1e23 <= R(trunc(1e23) - 1))
-        self.assertTrue(1e23 > R(trunc(1e23) - 1))
-        self.assertFalse(1e23 >= R(trunc(1e23) + 1))
+        self.assertFalse(1e23 < float(R(math.trunc(1e23) + 1)))
+        self.assertTrue(1e23 < R(math.trunc(1e23) + 1))
+        self.assertFalse(1e23 <= R(math.trunc(1e23) - 1))
+        self.assertTrue(1e23 > R(math.trunc(1e23) - 1))
+        self.assertFalse(1e23 >= R(math.trunc(1e23) + 1))
 
     def testBigComplexComparisons(self):
         self.assertFalse(R(10**23) == complex(10**23))

@@ -1570,40 +1570,6 @@ PyDoc_STRVAR(vars_doc,
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
-static PyObject *
-builtin_trunc(PyObject *self, PyObject *number)
-{
-	static PyObject *trunc_str = NULL;
-	PyObject *trunc;
-
-	if (Py_TYPE(number)->tp_dict == NULL) {
-		if (PyType_Ready(Py_TYPE(number)) < 0)
-			return NULL;
-	}
-
-	if (trunc_str == NULL) {
-		trunc_str = PyUnicode_InternFromString("__trunc__");
-		if (trunc_str == NULL)
-			return NULL;
-	}
-
-	trunc = _PyType_Lookup(Py_TYPE(number), trunc_str);
-	if (trunc == NULL) {
-		PyErr_Format(PyExc_TypeError,
-			     "type %.100s doesn't define __trunc__ method",
-			     Py_TYPE(number)->tp_name);
-		return NULL;
-	}
-	return PyObject_CallFunction(trunc, "O", number);
-}
-
-PyDoc_STRVAR(trunc_doc,
-"trunc(Real) -> Integral\n\
-\n\
-returns the integral closest to x between 0 and x.");
-
-
-
 static PyObject*
 builtin_sum(PyObject *self, PyObject *args)
 {
@@ -1870,7 +1836,6 @@ static PyMethodDef builtin_methods[] = {
  	{"sorted",	(PyCFunction)builtin_sorted,     METH_VARARGS | METH_KEYWORDS, sorted_doc},
  	{"sum",		builtin_sum,        METH_VARARGS, sum_doc},
  	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
- 	{"trunc",	builtin_trunc,      METH_O, trunc_doc},
   	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
 	{NULL,		NULL},
 };
