@@ -1241,7 +1241,7 @@ PyDoc_STRVAR(fromfile_doc,
 "fromfile(f, n)\n\
 \n\
 Read n objects from the file object f and append them to the end of the\n\
-array.  Also called as read.");
+array.");
 
 
 static PyObject *
@@ -1281,8 +1281,7 @@ array_tofile(arrayobject *self, PyObject *f)
 PyDoc_STRVAR(tofile_doc,
 "tofile(f)\n\
 \n\
-Write all items (as machine values) to the file object f.  Also called as\n\
-write.");
+Write all items (as machine values) to the file object f.");
 
 
 static PyObject *
@@ -1523,8 +1522,6 @@ PyMethodDef array_methods[] = {
 	 insert_doc},
 	{"pop",		(PyCFunction)array_pop,		METH_VARARGS,
 	 pop_doc},
-	{"read",	(PyCFunction)array_fromfile,	METH_VARARGS,
-	 fromfile_doc},
 	{"__reduce__",	(PyCFunction)array_reduce,	METH_NOARGS,
 	 array_doc},
 	{"remove",	(PyCFunction)array_remove,	METH_O,
@@ -1541,8 +1538,6 @@ PyMethodDef array_methods[] = {
 	 tostring_doc},
 	{"tounicode",   (PyCFunction)array_tounicode,	METH_NOARGS,
 	 tounicode_doc},
-	{"write",	(PyCFunction)array_tofile,	METH_O,
-	 tofile_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -2010,13 +2005,11 @@ fromstring() -- append items from the string\n\
 index() -- return index of first occurence of an object\n\
 insert() -- insert a new item into the array at a provided position\n\
 pop() -- remove and return item (default last)\n\
-read() -- DEPRECATED, use fromfile()\n\
 remove() -- remove first occurence of an object\n\
 reverse() -- reverse the order of the items in the array\n\
 tofile() -- write all items to a file object\n\
 tolist() -- return the array converted to an ordinary list\n\
 tostring() -- return the array converted to a string\n\
-write() -- DEPRECATED, use tofile()\n\
 \n\
 Attributes:\n\
 \n\
