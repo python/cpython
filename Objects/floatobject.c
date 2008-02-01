@@ -1158,7 +1158,7 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 {
 	double self;
 	double float_part;
-	long exponent;
+	int exponent;
 
 	PyObject *prev;
 	PyObject *py_exponent = NULL;
@@ -1172,6 +1172,13 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 	obj = call; \
 	Py_DECREF(prev); \
 
+#ifdef FLT_RADIX
+	if (FLT_RADIX != 2) {
+		/* This routine depends on base-2 floating_point. */
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+#endif
 	CONVERT_TO_DOUBLE(v, self);
 
 	if (Py_IS_INFINITY(self)) {
@@ -1202,7 +1209,7 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 
 	/* now self = numerator * 2**exponent exactly; fold in 2**exponent */
 	denominator = PyLong_FromLong(1);
-	py_exponent = PyLong_FromLong(labs(exponent));
+	py_exponent = PyLong_FromLong(labs((long)exponent));
 	if (py_exponent == NULL) goto error;
 	INPLACE_UPDATE(py_exponent,
 		       long_methods->nb_lshift(denominator, py_exponent));
