@@ -1159,6 +1159,7 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 	double self;
 	double float_part;
 	int exponent;
+	int i;
 
 	PyObject *prev;
 	PyObject *py_exponent = NULL;
@@ -1198,16 +1199,21 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 	float_part = frexp(self, &exponent);  	/* self == float_part * 2**exponent exactly */
 	PyFPE_END_PROTECT(float_part);
 	
-	while (float_part != floor(float_part)) {
+	for (i=0; i<300 && float_part != floor(float_part) ; i++) {
 		float_part *= 2.0;
 		exponent--;
 	}
-	/* Now, self == float_part * 2**exponent exactly and float_part is integral */
+	if (i == 300) {
+		/* Could not convert mantissa to an integer */
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}	
+	/* self == float_part * 2**exponent exactly and float_part is integral */
 
 	numerator = PyLong_FromDouble(float_part);
 	if (numerator == NULL) goto error;
 
-	/* now self = numerator * 2**exponent exactly; fold in 2**exponent */
+	/* fold in 2**exponent */
 	denominator = PyLong_FromLong(1);
 	py_exponent = PyLong_FromLong(labs((long)exponent));
 	if (py_exponent == NULL) goto error;
@@ -1216,8 +1222,7 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 	if (py_exponent == NULL) goto error;
 	if (exponent > 0) {
 		INPLACE_UPDATE(numerator,
-			       long_methods->nb_multiply(numerator,
-							 py_exponent));
+			       long_methods->nb_multiply(numerator, py_exponent));
 		if (numerator == NULL) goto error;
 	}
 	else {
