@@ -23,7 +23,7 @@ PS1:7 and PS1:8).  The platform-specific reference material for the various
 socket-related system calls are also a valuable source of information on the
 details of socket semantics.  For Unix, refer to the manual pages; for Windows,
 see the WinSock (or Winsock 2) specification. For IPv6-ready APIs, readers may
-want to refer to :rfc:`2553` titled Basic Socket Interface Extensions for IPv6.
+want to refer to :rfc:`3493` titled Basic Socket Interface Extensions for IPv6.
 
 .. index:: object: socket
 
