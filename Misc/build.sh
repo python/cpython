@@ -97,7 +97,17 @@ mail_on_failure() {
         if [ "$FAILURE_CC" != "" ]; then
             dest="$dest -c $FAILURE_CC"
         fi
-        mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $dest < $2
+	if [ "x$3" != "x" ] ; then
+	    (echo "More important issues:"
+	     echo "----------------------"
+	     egrep -v "$3" < $2
+	     echo ""
+	     echo "Less important issues:"
+	     echo "----------------------"
+	     egrep "$3" < $2)
+        else
+	    cat $2
+	fi | mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $dest
     fi
 }
 
@@ -192,9 +202,10 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## ensure that the reflog exists so the grep doesn't fail
             touch $REFLOG
             $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
-            NUM_FAILURES=`egrep -vc "($LEAKY_TESTS|sum=0)" $REFLOG`
+	    LEAK_PAT="($LEAKY_TESTS|sum=0)"
+            NUM_FAILURES=`egrep -vc "$LEAK_PAT" $REFLOG`
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
-            mail_on_failure "refleak" $REFLOG
+            mail_on_failure "refleak" $REFLOG "$LEAK_PAT"
 
             ## now try to run all the tests
             F=make-testall.out
