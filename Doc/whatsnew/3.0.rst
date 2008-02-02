@@ -182,19 +182,31 @@ Strings and Bytes
 PEP 3101: A New Approach to String Formatting
 =============================================
 
-XXX
+.. XXX expand this
+
+* A new system for built-in string formatting operations replaces
+  the ``%`` string formatting operator.
 
 
-PEP 3106: Revamping ``.keys()``, ``.items()`` and ``.values()``
-===============================================================
+PEP 3106: Revamping dict ``.keys()``, ``.items()`` and ``.values()``
+====================================================================
 
-XXX
+.. XXX expand this
+
+* The ``.iterkeys()``, ``.itervalues()`` and ``.iteritems()`` methods
+  have been removed.
+
+* ``.keys()``, ``.values()`` and ``.items()`` return objects with set
+  behavior that reference the underlying dict.
 
 
 PEP 3107: Function Annotations
 ==============================
 
-XXX
+.. XXX expand this
+
+* A standardized way of annotating a function's parameters and return
+  values.
 
 
 Exception Stuff
@@ -215,6 +227,11 @@ Exception Stuff
 
 * PEP 3134: Exception chaining.  (The ``__context__`` feature from the
   PEP hasn't been implemented yet in 3.0a1.)
+
+* A few exception messages are improved when Windows fails to load an 
+  extension module.  For example, ``error code 193`` is now ``%1 is not
+  a valid Win32 application``.  Strings now deal with non-English
+  locales.
 
 
 New Class and Metaclass Stuff
@@ -242,7 +259,12 @@ language and built-in functions.
 
 * Removed ``<>`` (use ``!=`` instead).
 
+* ``!=`` now returns the opposite of ``==``, unless ``==`` returns
+  ``NotImplemented``.
+
 * ``as`` and ``with`` are keywords.
+
+* ``True``, ``False``, and ``None`` are keywords.
 
 * PEP 237: ``long`` renamed to ``int``.  That is, there is only one
   built-in integral type, named ``int``; but it behaves like the old
@@ -312,6 +334,23 @@ language and built-in functions.
 
 * ``exec`` is now a function.
 
+* There is a new free format floating point representation, which is
+  based on "Floating-Point Printer Sample Code", by Robert G. Burger.
+  ``repr(11./5)`` now returns ``2.2`` instead of ``2.2000000000000002``.
+
+* The ``__oct__()`` and ``__hex__()`` special methods are removed --
+  ``oct()`` and ``hex()`` use ``__index__()`` now to convert the
+  argument to an integer.
+
+* There is now a ``bin()`` builtin function.
+
+* Support is removed for ``__members__`` and ``__methods__``.
+
+* ``nb_nonzero`` is now ``nb_bool`` and ``__nonzero__`` is now
+  ``__bool__``.
+
+* Removed ``sys.maxint``. Use ``sys.maxsize``.
+
 
 .. ======================================================================
 
@@ -341,6 +380,18 @@ through the Subversion logs for all the details.
 * The ``cPickle`` module is gone.  Use ``pickle`` instead.  Eventually
   we'll have a transparent accelerator module.
 
+* The ``imageop`` module is gone.
+
+* The ``audiodev``, ``Bastion``, ``bsddb185``, ``exceptions``,
+  ``linuxaudiodev``, ``md5``, ``MimeWriter``, ``mimify``, ``popen2``,
+  ``rexec``, ``sets``, ``sha``, ``stringold``, ``strop``, ``sunaudiodev``,
+  ``timing``, and  ``xmllib`` modules are gone.
+
+* The ``new`` module is gone.
+
+* The methods ``os.tmpnam()``, ``os.tempnam()`` and ``os.tmpfile()`` have
+  been removed in favor of the ``tempfile`` module.
+
 .. ======================================================================
 .. whole new modules get described in subsections here
 
@@ -358,6 +409,15 @@ Changes to Python's build process and to the C API include:
 
 * PEP 3123: Making ``PyObject_HEAD`` conform to standard C.
 
+* No more C API support for restricted execution.
+
+* ``PyNumber_Coerce()``, ``PyNumber_CoerceEx()``, ``PyMember_Get``,
+  and ``PyMember_Set`` C APIs are removed.
+
+* New C API ``PyImport_ImportModuleNoBlock()``, works like
+  ``PyImport_ImportModule()`` but won't block on the import lock (returning
+  an error instead).
+
 .. ======================================================================
 
 
@@ -365,6 +425,7 @@ Port-Specific Changes
 ---------------------
 
 Platform-specific changes go here.
+
 
 .. ======================================================================
 
