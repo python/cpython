@@ -1173,13 +1173,6 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 	obj = call; \
 	Py_DECREF(prev); \
 
-#ifdef FLT_RADIX
-	if (FLT_RADIX != 2) {
-		/* This routine depends on base-2 floating_point. */
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
-#endif
 	CONVERT_TO_DOUBLE(v, self);
 
 	if (Py_IS_INFINITY(self)) {
@@ -1202,13 +1195,10 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 	for (i=0; i<300 && float_part != floor(float_part) ; i++) {
 		float_part *= 2.0;
 		exponent--;
-	}
-	if (i == 300) {
-		/* Could not convert mantissa to an integer */
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
 	}	
-	/* self == float_part * 2**exponent exactly and float_part is integral */
+	/* self == float_part * 2**exponent exactly and float_part is integral.
+           If FLT_RADIX != 2, the 300 steps may leave a tiny fractional part
+           to be truncated by PyLong_FromDouble(). */
 
 	numerator = PyLong_FromDouble(float_part);
 	if (numerator == NULL) goto error;
