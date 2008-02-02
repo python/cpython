@@ -138,13 +138,13 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
 
     def worker(self, q):
         while True:
-            self.x = q.get()
-            if self.x is None:
+            x = q.get()
+            if x is None:
                 q.task_done()
                 return
             self.cumlock.acquire()
             try:
-                self.cum += self.x
+                self.cum += x
             finally:
                 self.cumlock.release()
             q.task_done()
@@ -157,7 +157,7 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
             q.put(i)
         q.join()
         self.assertEquals(self.cum, sum(range(100)),
-                        "q.join() did not block until all tasks were done")
+                          "q.join() did not block until all tasks were done")
         for i in (0,1):
             q.put(None)         # instruct the threads to close
         q.join()                # verify that you can join twice
