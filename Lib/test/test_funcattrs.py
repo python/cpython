@@ -1,414 +1,281 @@
-from test.test_support import verbose, TestFailed, verify
+from test import test_support
 import types
-
-class F:
-    def a(self):
-        pass
-
-def b():
-    'my docstring'
-    pass
-
-# __module__ is a special attribute
-verify(b.__module__ == __name__)
-verify(verify.__module__ == "test.test_support")
-
-# setting attributes on functions
-try:
-    b.publish
-except AttributeError: pass
-else: raise TestFailed, 'expected AttributeError'
-
-if b.__dict__ <> {}:
-    raise TestFailed, 'expected unassigned func.__dict__ to be {}'
-
-b.publish = 1
-if b.publish <> 1:
-    raise TestFailed, 'function attribute not set to expected value'
-
-docstring = 'its docstring'
-b.__doc__ = docstring
-if b.__doc__ <> docstring:
-    raise TestFailed, 'problem with setting __doc__ attribute'
-
-if 'publish' not in dir(b):
-    raise TestFailed, 'attribute not in dir()'
-
-try:
-    del b.__dict__
-except TypeError: pass
-else: raise TestFailed, 'del func.__dict__ expected TypeError'
-
-b.publish = 1
-try:
-    b.__dict__ = None
-except TypeError: pass
-else: raise TestFailed, 'func.__dict__ = None expected TypeError'
-
-d = {'hello': 'world'}
-b.__dict__ = d
-if b.func_dict is not d:
-    raise TestFailed, 'func.__dict__ assignment to dictionary failed'
-if b.hello <> 'world':
-    raise TestFailed, 'attribute after func.__dict__ assignment failed'
-
-f1 = F()
-f2 = F()
-
-try:
-    F.a.publish
-except AttributeError: pass
-else: raise TestFailed, 'expected AttributeError'
-
-try:
-    f1.a.publish
-except AttributeError: pass
-else: raise TestFailed, 'expected AttributeError'
-
-# In Python 2.1 beta 1, we disallowed setting attributes on unbound methods
-# (it was already disallowed on bound methods).  See the PEP for details.
-try:
-    F.a.publish = 1
-except (AttributeError, TypeError): pass
-else: raise TestFailed, 'expected AttributeError or TypeError'
-
-# But setting it explicitly on the underlying function object is okay.
-F.a.im_func.publish = 1
-
-if F.a.publish <> 1:
-    raise TestFailed, 'unbound method attribute not set to expected value'
-
-if f1.a.publish <> 1:
-    raise TestFailed, 'bound method attribute access did not work'
-
-if f2.a.publish <> 1:
-    raise TestFailed, 'bound method attribute access did not work'
-
-if 'publish' not in dir(F.a):
-    raise TestFailed, 'attribute not in dir()'
-
-try:
-    f1.a.publish = 0
-except (AttributeError, TypeError): pass
-else: raise TestFailed, 'expected AttributeError or TypeError'
-
-# See the comment above about the change in semantics for Python 2.1b1
-try:
-    F.a.myclass = F
-except (AttributeError, TypeError): pass
-else: raise TestFailed, 'expected AttributeError or TypeError'
-
-F.a.im_func.myclass = F
-
-f1.a.myclass
-f2.a.myclass
-f1.a.myclass
-F.a.myclass
-
-if f1.a.myclass is not f2.a.myclass or \
-       f1.a.myclass is not F.a.myclass:
-    raise TestFailed, 'attributes were not the same'
-
-# try setting __dict__
-try:
-    F.a.__dict__ = (1, 2, 3)
-except (AttributeError, TypeError): pass
-else: raise TestFailed, 'expected TypeError or AttributeError'
-
-F.a.im_func.__dict__ = {'one': 11, 'two': 22, 'three': 33}
-
-if f1.a.two <> 22:
-    raise TestFailed, 'setting __dict__'
-
-from UserDict import UserDict
-d = UserDict({'four': 44, 'five': 55})
-
-try:
-    F.a.__dict__ = d
-except (AttributeError, TypeError): pass
-else: raise TestFailed
-
-if f2.a.one <> f1.a.one <> F.a.one <> 11:
-    raise TestFailed
-
-# im_func may not be a Python method!
-import types
-F.id = types.MethodType(id, None, F)
-
-eff = F()
-if eff.id() <> id(eff):
-    raise TestFailed
-
-try:
-    F.id.foo
-except AttributeError: pass
-else: raise TestFailed
-
-try:
-    F.id.foo = 12
-except (AttributeError, TypeError): pass
-else: raise TestFailed
-
-try:
-    F.id.foo
-except AttributeError: pass
-else: raise TestFailed
-
-try:
-    eff.id.foo
-except AttributeError: pass
-else: raise TestFailed
-
-try:
-    eff.id.foo = 12
-except (AttributeError, TypeError): pass
-else: raise TestFailed
-
-try:
-    eff.id.foo
-except AttributeError: pass
-else: raise TestFailed
-
-# Regression test for a crash in pre-2.1a1
-def another():
-    pass
-
-try:
-    del another.__dict__
-except TypeError: pass
-else: raise TestFailed
-
-try:
-    del another.func_dict
-except TypeError: pass
-else: raise TestFailed
-
-try:
-    another.func_dict = None
-except TypeError: pass
-else: raise TestFailed
-
-try:
-    del another.bar
-except AttributeError: pass
-else: raise TestFailed
-
-# This isn't specifically related to function attributes, but it does test a
-# core dump regression in funcobject.c
-del another.func_defaults
-
-def foo():
-    pass
-
-def bar():
-    pass
-
-def temp():
-    print 1
-
-if foo==bar:
-    raise TestFailed
-
-d={}
-d[foo] = 1
-
-foo.func_code = temp.func_code
-
-d[foo]
-
-# Test all predefined function attributes systematically
-
-def cantset(obj, name, value, exception=(AttributeError, TypeError)):
-    verify(hasattr(obj, name)) # Otherwise it's probably a typo
-    try:
-        setattr(obj, name, value)
-    except exception:
-        pass
-    else:
-        raise TestFailed, "shouldn't be able to set %s to %r" % (name, value)
-    try:
-        delattr(obj, name)
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be able to del %s" % name
-
-def test_func_closure():
-    a = 12
-    def f(): print a
-    c = f.func_closure
-    verify(isinstance(c, tuple))
-    verify(len(c) == 1)
-    verify(c[0].__class__.__name__ == "cell") # don't have a type object handy
-    cantset(f, "func_closure", c)
-
-def test_empty_cell():
-    def f(): print a
-    try:
-        f.func_closure[0].cell_contents
-    except ValueError:
-        pass
-    else:
-        raise TestFailed, "shouldn't be able to read an empty cell"
-
-    a = 12
-
-def test_func_doc():
-    def f(): pass
-    verify(f.__doc__ is None)
-    verify(f.func_doc is None)
-    f.__doc__ = "hello"
-    verify(f.__doc__ == "hello")
-    verify(f.func_doc == "hello")
-    del f.__doc__
-    verify(f.__doc__ is None)
-    verify(f.func_doc is None)
-    f.func_doc = "world"
-    verify(f.__doc__ == "world")
-    verify(f.func_doc == "world")
-    del f.func_doc
-    verify(f.func_doc is None)
-    verify(f.__doc__ is None)
-
-def test_func_globals():
-    def f(): pass
-    verify(f.func_globals is globals())
-    cantset(f, "func_globals", globals())
-
-def test_func_name():
-    def f(): pass
-    verify(f.__name__ == "f")
-    verify(f.func_name == "f")
-    f.__name__ = "g"
-    verify(f.__name__ == "g")
-    verify(f.func_name == "g")
-    f.func_name = "h"
-    verify(f.__name__ == "h")
-    verify(f.func_name == "h")
-    cantset(f, "func_globals", 1)
-    cantset(f, "__name__", 1)
-    # test that you can access func.__name__ in restricted mode
-    s = """def f(): pass\nf.__name__"""
-    exec s in {'__builtins__':{}}
-
-
-def test_func_code():
-    a = b = 24
-    def f(): pass
-    def g(): print 12
-    def f1(): print a
-    def g1(): print b
-    def f2(): print a, b
-    verify(type(f.func_code) is types.CodeType)
-    f.func_code = g.func_code
-    cantset(f, "func_code", None)
-    # can't change the number of free vars
-    cantset(f,  "func_code", f1.func_code, exception=ValueError)
-    cantset(f1, "func_code",  f.func_code, exception=ValueError)
-    cantset(f1, "func_code", f2.func_code, exception=ValueError)
-    f1.func_code = g1.func_code
-
-def test_func_defaults():
-    def f(a, b): return (a, b)
-    verify(f.func_defaults is None)
-    f.func_defaults = (1, 2)
-    verify(f.func_defaults == (1, 2))
-    verify(f(10) == (10, 2))
-    def g(a=1, b=2): return (a, b)
-    verify(g.func_defaults == (1, 2))
-    del g.func_defaults
-    verify(g.func_defaults is None)
-    try:
-        g()
-    except TypeError:
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to call g() w/o defaults"
-
-def test_func_dict():
-    def f(): pass
-    a = f.__dict__
-    b = f.func_dict
-    verify(a == {})
-    verify(a is b)
-    f.hello = 'world'
-    verify(a == {'hello': 'world'})
-    verify(f.func_dict is a is f.__dict__)
-    f.func_dict = {}
-    verify(not hasattr(f, "hello"))
-    f.__dict__ = {'world': 'hello'}
-    verify(f.world == "hello")
-    verify(f.__dict__ is f.func_dict == {'world': 'hello'})
-    cantset(f, "func_dict", None)
-    cantset(f, "__dict__", None)
-
-def test_im_class():
-    class C:
-        def foo(self): pass
-    verify(C.foo.im_class is C)
-    verify(C().foo.im_class is C)
-    cantset(C.foo, "im_class", C)
-    cantset(C().foo, "im_class", C)
-
-def test_im_func():
-    def foo(self): pass
-    class C:
-        pass
-    C.foo = foo
-    verify(C.foo.im_func is foo)
-    verify(C().foo.im_func is foo)
-    cantset(C.foo, "im_func", foo)
-    cantset(C().foo, "im_func", foo)
-
-def test_im_self():
-    class C:
-        def foo(self): pass
-    verify(C.foo.im_self is None)
-    c = C()
-    verify(c.foo.im_self is c)
-    cantset(C.foo, "im_self", None)
-    cantset(c.foo, "im_self", c)
-
-def test_im_dict():
-    class C:
-        def foo(self): pass
-        foo.bar = 42
-    verify(C.foo.__dict__ == {'bar': 42})
-    verify(C().foo.__dict__ == {'bar': 42})
-    cantset(C.foo, "__dict__", C.foo.__dict__)
-    cantset(C().foo, "__dict__", C.foo.__dict__)
-
-def test_im_doc():
-    class C:
-        def foo(self): "hello"
-    verify(C.foo.__doc__ == "hello")
-    verify(C().foo.__doc__ == "hello")
-    cantset(C.foo, "__doc__", "hello")
-    cantset(C().foo, "__doc__", "hello")
-
-def test_im_name():
-    class C:
-        def foo(self): pass
-    verify(C.foo.__name__ == "foo")
-    verify(C().foo.__name__ == "foo")
-    cantset(C.foo, "__name__", "foo")
-    cantset(C().foo, "__name__", "foo")
-
-def testmore():
-    test_func_closure()
-    test_empty_cell()
-    test_func_doc()
-    test_func_globals()
-    test_func_name()
-    test_func_code()
-    test_func_defaults()
-    test_func_dict()
-    # Tests for instance method attributes
-    test_im_class()
-    test_im_func()
-    test_im_self()
-    test_im_dict()
-    test_im_doc()
-    test_im_name()
-
-testmore()
+import unittest
+
+def cannot_set_attr(obj, name, value, exceptions):
+    # This method is not called as a test (name doesn't start with 'test'),
+    # but may be used by other tests.
+    try: setattr(obj, name, value)
+    except exceptions: pass
+    else: self.fail("shouldn't be able to set %s to %r" % (name, value))
+    try: delattr(obj, name)
+    except exceptions: pass
+    else: self.fail("shouldn't be able to del %s" % name)
+
+class FuncAttrsTest(unittest.TestCase):
+    def setUp(self):
+        class F:
+            def a(self):
+                pass
+        def b():
+            return 3
+        self.f = F
+        self.fi = F()
+        self.b = b
+
+class FunctionPropertiesTest(FuncAttrsTest):
+    # Include the external setUp method that is common to all tests
+    def test_module(self):
+        self.assertEqual(self.b.__module__, __name__)
+
+    def test_dir_includes_correct_attrs(self):
+        self.b.known_attr = 7
+        self.assert_('known_attr' in dir(self.b),
+            "set attributes not in dir listing of method")
+        # Test on underlying function object of method
+        self.f.a.im_func.known_attr = 7
+        self.assert_('known_attr' in dir(self.f.a),
+            "set attribute on unbound method implementation in class not in "
+                     "dir")
+        self.assert_('known_attr' in dir(self.fi.a),
+            "set attribute on unbound method implementations, should show up"
+                     " in next dir")
+
+    def test_duplicate_function_equality(self):
+        # Body of `duplicate' is the exact same as self.b
+        def duplicate():
+            'my docstring'
+            return 3
+        self.assertNotEqual(self.b, duplicate)
+
+    def test_copying_func_code(self):
+        def test(): pass
+        self.assertEqual(test(), None)
+        test.func_code = self.b.func_code
+        self.assertEqual(test(), 3) # self.b always returns 3, arbitrarily
+
+    def test_func_globals(self):
+        self.assertEqual(self.b.func_globals, globals())
+        cannot_set_attr(self.b, 'func_globals', 2, TypeError)
+
+    def test_func_name(self):
+        self.assertEqual(self.b.__name__, 'b')
+        self.assertEqual(self.b.func_name, 'b')
+        self.b.__name__ = 'c'
+        self.assertEqual(self.b.__name__, 'c')
+        self.assertEqual(self.b.func_name, 'c')
+        self.b.func_name = 'd'
+        self.assertEqual(self.b.__name__, 'd')
+        self.assertEqual(self.b.func_name, 'd')
+        # __name__ and func_name must be a string
+        cannot_set_attr(self.b, '__name__', 7, TypeError)
+        cannot_set_attr(self.b, 'func_name', 7, TypeError)
+        # __name__ must be available when in restricted mode. Exec will raise
+        # AttributeError if __name__ is not available on f.
+        s = """def f(): pass\nf.__name__"""
+        exec s in {'__builtins__': {}}
+        # Test on methods, too
+        self.assertEqual(self.f.a.__name__, 'a')
+        self.assertEqual(self.fi.a.__name__, 'a')
+        cannot_set_attr(self.f.a, "__name__", 'a', AttributeError)
+        cannot_set_attr(self.fi.a, "__name__", 'a', AttributeError)
+
+    def test_func_code(self):
+        num_one, num_two = 7, 8
+        def a(): pass
+        def b(): return 12
+        def c(): return num_one
+        def d(): return num_two
+        def e(): return num_one, num_two
+        for func in [a, b, c, d, e]:
+            self.assertEqual(type(func.func_code), types.CodeType)
+        self.assertEqual(c(), 7)
+        self.assertEqual(d(), 8)
+        d.func_code = c.func_code
+        self.assertEqual(c.func_code, d.func_code)
+        self.assertEqual(c(), 7)
+        # self.assertEqual(d(), 7)
+        try: b.func_code = c.func_code
+        except ValueError: pass
+        else: self.fail(
+            "func_code with different numbers of free vars should not be "
+            "possible")
+        try: e.func_code = d.func_code
+        except ValueError: pass
+        else: self.fail(
+            "func_code with different numbers of free vars should not be "
+            "possible")
+
+    def test_blank_func_defaults(self):
+        self.assertEqual(self.b.func_defaults, None)
+        del self.b.func_defaults
+        self.assertEqual(self.b.func_defaults, None)
+
+    def test_func_default_args(self):
+        def first_func(a, b):
+            return a+b
+        def second_func(a=1, b=2):
+            return a+b
+        self.assertEqual(first_func.func_defaults, None)
+        self.assertEqual(second_func.func_defaults, (1, 2))
+        first_func.func_defaults = (1, 2)
+        self.assertEqual(first_func.func_defaults, (1, 2))
+        self.assertEqual(first_func(), 3)
+        self.assertEqual(first_func(3), 5)
+        self.assertEqual(first_func(3, 5), 8)
+        del second_func.func_defaults
+        self.assertEqual(second_func.func_defaults, None)
+        try: second_func()
+        except TypeError: pass
+        else: self.fail(
+            "func_defaults does not update; deleting it does not remove "
+            "requirement")
+
+class ImplicitReferencesTest(FuncAttrsTest):
+    def test_im_class(self):
+        self.assertEqual(self.f.a.im_class, self.f)
+        self.assertEqual(self.fi.a.im_class, self.f)
+        cannot_set_attr(self.f.a, "im_class", self.f, TypeError)
+        cannot_set_attr(self.fi.a, "im_class", self.f, TypeError)
+
+    def test_im_func(self):
+        self.f.b = self.b
+        self.assertEqual(self.f.b.im_func, self.b)
+        self.assertEqual(self.fi.b.im_func, self.b)
+        cannot_set_attr(self.f.b, "im_func", self.b, TypeError)
+        cannot_set_attr(self.fi.b, "im_func", self.b, TypeError)
+
+    def test_im_self(self):
+        self.assertEqual(self.f.a.im_self, None)
+        self.assertEqual(self.fi.a.im_self, self.fi)
+        cannot_set_attr(self.f.a, "im_self", None, TypeError)
+        cannot_set_attr(self.fi.a, "im_self", self.fi, TypeError)
+
+    def test_im_func_non_method(self):
+        # Behavior should be the same when a method is added via an attr
+        # assignment
+        self.f.id = types.MethodType(id, None, self.f)
+        self.assertEqual(self.fi.id(), id(self.fi))
+        self.assertNotEqual(self.fi.id(), id(self.f))
+        # Test usage
+        try: self.f.id.unknown_attr
+        except AttributeError: pass
+        else: self.fail("using unknown attributes should raise AttributeError")
+        # Test assignment and deletion
+        cannot_set_attr(self.f.id, 'unknown_attr', 2, AttributeError)
+        cannot_set_attr(self.fi.id, 'unknown_attr', 2, AttributeError)
+
+    def test_implicit_method_properties(self):
+        self.f.a.im_func.known_attr = 7
+        self.assertEqual(self.f.a.known_attr, 7)
+        self.assertEqual(self.fi.a.known_attr, 7)
+
+class ArbitraryFunctionAttrTest(FuncAttrsTest):
+    def test_set_attr(self):
+        self.b.known_attr = 7
+        self.assertEqual(self.b.known_attr, 7)
+        for func in [self.f.a, self.fi.a]:
+            try: func.known_attr = 7
+            except AttributeError: pass
+            else: self.fail("setting attributes on methods should raise error")
+
+    def test_delete_unknown_attr(self):
+        try: del self.b.unknown_attr
+        except AttributeError: pass
+        else: self.fail("deleting unknown attribute should raise TypeError")
+
+    def test_setting_attrs_duplicates(self):
+        try: self.f.a.klass = self.f
+        except AttributeError: pass
+        else: self.fail("setting arbitrary attribute in unbound function "
+                        " should raise AttributeError")
+        self.f.a.im_func.klass = self.f
+        for method in [self.f.a, self.fi.a, self.fi.a.im_func]:
+            self.assertEqual(method.klass, self.f)
+
+    def test_unset_attr(self):
+        for func in [self.b, self.f.a, self.fi.a]:
+            try:  func.non_existant_attr
+            except AttributeError: pass
+            else: self.fail("using unknown attributes should raise "
+                            "AttributeError")
+
+class FunctionDictsTest(FuncAttrsTest):
+    def test_setting_dict_to_invalid(self):
+        cannot_set_attr(self.b, '__dict__', None, TypeError)
+        cannot_set_attr(self.b, 'func_dict', None, TypeError)
+        from UserDict import UserDict
+        d = UserDict({'known_attr': 7})
+        cannot_set_attr(self.f.a.im_func, '__dict__', d, TypeError)
+        cannot_set_attr(self.fi.a.im_func, '__dict__', d, TypeError)
+
+    def test_setting_dict_to_valid(self):
+        d = {'known_attr': 7}
+        self.b.__dict__ = d
+        # Setting dict is only possible on the underlying function objects
+        self.f.a.im_func.__dict__ = d
+        # Test assignment
+        self.assertEqual(d, self.b.__dict__)
+        self.assertEqual(d, self.b.func_dict)
+        # ... and on all the different ways of referencing the method's func
+        self.assertEqual(d, self.f.a.im_func.__dict__)
+        self.assertEqual(d, self.f.a.__dict__)
+        self.assertEqual(d, self.fi.a.im_func.__dict__)
+        self.assertEqual(d, self.fi.a.__dict__)
+        # Test value
+        self.assertEqual(self.b.known_attr, 7)
+        self.assertEqual(self.b.__dict__['known_attr'], 7)
+        self.assertEqual(self.b.func_dict['known_attr'], 7)
+        # ... and again, on all the different method's names
+        self.assertEqual(self.f.a.im_func.known_attr, 7)
+        self.assertEqual(self.f.a.known_attr, 7)
+        self.assertEqual(self.fi.a.im_func.known_attr, 7)
+        self.assertEqual(self.fi.a.known_attr, 7)
+
+    def test_delete_func_dict(self):
+        try: del self.b.__dict__
+        except TypeError: pass
+        else: self.fail("deleting function dictionary should raise TypeError")
+        try: del self.b.func_dict
+        except TypeError: pass
+        else: self.fail("deleting function dictionary should raise TypeError")
+
+    def test_unassigned_dict(self):
+        self.assertEqual(self.b.__dict__, {})
+
+    def test_func_as_dict_key(self):
+        value = "Some string"
+        d = {}
+        d[self.b] = value
+        self.assertEqual(d[self.b], value)
+
+class FunctionDocstringTest(FuncAttrsTest):
+    def test_set_docstring_attr(self):
+        self.assertEqual(self.b.__doc__, None)
+        self.assertEqual(self.b.func_doc, None)
+        docstr = "A test method that does nothing"
+        self.b.__doc__ = self.f.a.im_func.__doc__ = docstr
+        self.assertEqual(self.b.__doc__, docstr)
+        self.assertEqual(self.b.func_doc, docstr)
+        self.assertEqual(self.f.a.__doc__, docstr)
+        self.assertEqual(self.fi.a.__doc__, docstr)
+        cannot_set_attr(self.f.a, "__doc__", docstr, AttributeError)
+        cannot_set_attr(self.fi.a, "__doc__", docstr, AttributeError)
+
+    def test_delete_docstring(self):
+        self.b.__doc__ = "The docstring"
+        del self.b.__doc__
+        self.assertEqual(self.b.__doc__, None)
+        self.assertEqual(self.b.func_doc, None)
+        self.b.func_doc = "The docstring"
+        del self.b.func_doc
+        self.assertEqual(self.b.__doc__, None)
+        self.assertEqual(self.b.func_doc, None)
+
+def test_main():
+    test_support.run_unittest(FunctionPropertiesTest, ImplicitReferencesTest,
+                              ArbitraryFunctionAttrTest, FunctionDictsTest,
+                              FunctionDocstringTest)
+
+if __name__ == "__main__":
+    test_main()
