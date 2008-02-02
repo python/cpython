@@ -33,10 +33,12 @@ The :mod:`urllib2` module defines the following functions:
 
    This function returns a file-like object with two additional methods:
 
-   * :meth:`geturl` --- return the URL of the resource retrieved
+   * :meth:`geturl` --- return the URL of the resource retrieved, commonly used to
+     determine if a redirect was followed
 
-   * :meth:`info` --- return the meta-information of the page, as a dictionary-like
-     object
+   * :meth:`info` --- return the meta-information of the page, such as headers, in
+     the form of an ``httplib.HTTPMessage`` instance
+     (see `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
 
    Raises :exc:`URLError` on errors.
 
@@ -84,18 +86,32 @@ The following exceptions are raised as appropriate:
    The handlers raise this exception (or derived exceptions) when they run into a
    problem.  It is a subclass of :exc:`IOError`.
 
+   .. attribute:: reason
+
+      The reason for this error.  It can be a message string or another exception
+      instance (:exc:`socket.error` for remote URLs, :exc:`OSError` for local
+      URLs).
+
 
 .. exception:: HTTPError
 
-   A subclass of :exc:`URLError`, it can also function as a non-exceptional
-   file-like return value (the same thing that :func:`urlopen` returns).  This
-   is useful when handling exotic HTTP errors, such as requests for
-   authentication.
+   Though being an exception (a subclass of :exc:`URLError`), an :exc:`HTTPError`
+   can also function as a non-exceptional file-like return value (the same thing
+   that :func:`urlopen` returns).  This is useful when handling exotic HTTP
+   errors, such as requests for authentication.
+
+   .. attribute:: code
+
+      An HTTP status code as defined in `RFC 2616 <http://www.faqs.org/rfcs/rfc2616.html>`_. 
+      This numeric value corresponds to a value found in the dictionary of
+      codes as found in :attr:`BaseHTTPServer.BaseHTTPRequestHandler.responses`.
+
+
 
 The following classes are provided:
 
 
-.. class:: Request(url[, data][, headers] [, origin_req_host][, unverifiable])
+.. class:: Request(url[, data][, headers][, origin_req_host][, unverifiable])
 
    This class is an abstraction of a URL request.
 
@@ -110,7 +126,12 @@ The following classes are provided:
    returns a string in this format.
 
    *headers* should be a dictionary, and will be treated as if :meth:`add_header`
-   was called with each key and value as arguments.
+   was called with each key and value as arguments.  This is often used to "spoof"
+   the ``User-Agent`` header, which is used by a browser to identify itself --
+   some HTTP servers only allow requests coming from common browsers as opposed
+   to scripts.  For example, Mozilla Firefox may identify itself as ``"Mozilla/5.0
+   (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while :mod:`urllib2`'s
+   default user agent string is ``"Python-urllib/2.6"`` (on Python 2.6).
 
    The final two arguments are only of interest for correct handling of third-party
    HTTP cookies:
