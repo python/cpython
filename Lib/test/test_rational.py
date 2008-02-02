@@ -78,6 +78,8 @@ class RationalTest(unittest.TestCase):
 
         self.assertEquals((16, 5), _components(R(" 3.2 ")))
         self.assertEquals((-16, 5), _components(R(u" -3.2 ")))
+        self.assertEquals((-3, 1), _components(R(u" -3. ")))
+        self.assertEquals((3, 5), _components(R(u" .6 ")))
 
 
         self.assertRaisesMessage(
@@ -113,6 +115,10 @@ class RationalTest(unittest.TestCase):
             # Don't accept combinations of decimals and rationals.
             ValueError, "Invalid literal for Rational: 3.2/7",
             R, "3.2/7")
+        self.assertRaisesMessage(
+            # Allow 3. and .3, but not .
+            ValueError, "Invalid literal for Rational: .",
+            R, ".")
 
     def testImmutable(self):
         r = R(7, 3)
