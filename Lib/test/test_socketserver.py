@@ -190,28 +190,28 @@ class SocketServerTest(unittest.TestCase):
         for svrcls in servers:
             addr = self.pickaddr(proto)
             if verbose:
-                print "ADDR =", addr
-                print "CLASS =", svrcls
+                print("ADDR =", addr)
+                print("CLASS =", svrcls)
             t = ServerThread(addr, svrcls, hdlrcls)
-            if verbose: print "server created"
+            if verbose: print("server created")
             t.start()
-            if verbose: print "server running"
+            if verbose: print("server running")
             for i in range(NREQ):
                 t.ready.wait(10*DELAY)
                 self.assert_(t.ready.isSet(),
                     "Server not ready within a reasonable time")
-                if verbose: print "test client", i
+                if verbose: print("test client", i)
                 testfunc(proto, addr)
-            if verbose: print "waiting for server"
+            if verbose: print("waiting for server")
             t.join()
-            if verbose: print "done"
+            if verbose: print("done")
 
     def stream_examine(self, proto, addr):
         s = socket.socket(proto, socket.SOCK_STREAM)
         s.connect(addr)
         s.sendall(TEST_STR)
         buf = data = receive(s, 100)
-        while data and '\n' not in buf:
+        while data and b'\n' not in buf:
             data = receive(s, 100)
             buf += data
         self.assertEquals(buf, TEST_STR)
@@ -221,7 +221,7 @@ class SocketServerTest(unittest.TestCase):
         s = socket.socket(proto, socket.SOCK_DGRAM)
         s.sendto(TEST_STR, addr)
         buf = data = receive(s, 100)
-        while data and '\n' not in buf:
+        while data and b'\n' not in buf:
             data = receive(s, 100)
             buf += data
         self.assertEquals(buf, TEST_STR)
