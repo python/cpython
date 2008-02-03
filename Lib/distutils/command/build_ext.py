@@ -182,13 +182,13 @@ class build_ext (Command):
             self.include_dirs.append(os.path.join(sys.exec_prefix, 'PC'))
             if MSVC_VERSION == 9:
                 self.library_dirs.append(os.path.join(sys.exec_prefix,
-                                         'PCBuild9'))
+                                         'PCbuild'))
             elif MSVC_VERSION == 8:
                 self.library_dirs.append(os.path.join(sys.exec_prefix,
-                                         'PCBuild8', 'win32release'))
+                                         'PC', 'VS8.0', 'win32release'))
             else:
                 self.library_dirs.append(os.path.join(sys.exec_prefix,
-                                         'PCBuild'))
+                                         'PC', 'VS7.1'))
 
         # OS/2 (EMX) doesn't support Debug vs Release builds, but has the
         # import libraries in its "Config" subdirectory

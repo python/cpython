@@ -23,7 +23,6 @@ Solution" or F6 takes care of dependencies except for x64 builds. To make
 cross compiling x64 builds on a 32bit OS possible the x64 builds require a 
 32bit version of Python.
 
-
 NOTE:
    You probably don't want to build most of the other subprojects, unless
    you're building an entire Python distribution from scratch, or
@@ -192,10 +191,11 @@ _bsddb
       svn export http://svn.python.org/projects/external/db-4.4.20
 
     Next open the solution file db-4.4.20\build_win32\Berkeley_DB.sln with
-    Visual Studio and convert the projects to the new format. The standard
-    and professional version of VS 2008 builds the necessary libraries
-    in a pre-link step of _bsddb. However the express edition is missing
-    some pieces and you have to build the libs yourself.
+    Visual Studio and convert the projects to the new format. VS 2008 
+    builds the necessary libraries in a pre-link step of _bsddb. You
+    have to add "$(VCInstallDir)vcpackages" to the search path first
+    (Tools -> Options -> Projects and Solutions -> VC++ Directories,
+     Platform: Win32, Show directories for: Executable files).
     
     The _bsddb subprojects depends only on the db_static project of 
     Berkeley DB. You have to choose either "Release", "Release AMD64", "Debug"
