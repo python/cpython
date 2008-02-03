@@ -1471,6 +1471,12 @@ Build
 C API
 -----
 
+- ``PySet_Add()`` can now modify a newly created frozenset.  Similarly to
+  ``PyTuple_SetItem``, it can be used to populate a brand new frozenset; but 
+  it does not steal a reference to the added item.
+
+- Added ``PySet_Check()`` and ``PyFrozenSet_Check()`` to the set API. 
+
 - Backport of PyUnicode_FromString(), _FromStringAndSize(), _Format and
   _FormatV from Python 3.0. Made PyLong_AsSsize_t and PyLong_FromSsize_t
   public functions.
