@@ -58,6 +58,13 @@ the constructor functions work with any iterable Python object.
 
    .. versionadded:: 2.6
 
+.. cfunction:: int PyFrozenSet_Check(PyObject *p)
+
+   Return true if *p* is a :class:`frozenset` object or an instance of a
+   subtype.
+
+   .. versionadded:: 2.6
+
 .. cfunction:: int PyAnySet_Check(PyObject *p)
 
    Return true if *p* is a :class:`set` object, a :class:`frozenset` object, or an
