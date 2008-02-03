@@ -1,4 +1,4 @@
-This is a port of Python 2.5 to OS/2 using the EMX development tools
+This is a port of Python 2.6 to OS/2 using the EMX development tools
 =========================================================================
 
 What's new since the previous release
@@ -10,11 +10,11 @@ Another day, another version...
 Licenses and info about Python and EMX
 --------------------------------------
 
-Please read the file README.Python-2.5 included in this package for 
-information about Python 2.5.  This file is the README file from the 
-Python 2.5 source distribution available via http://www.python.org/ 
-and its mirrors.  The file LICENCE.Python-2.5 is the text of the Licence 
-from the Python 2.5 source distribution.
+Please read the file README.Python-2.6 included in this package for 
+information about Python 2.6.  This file is the README file from the 
+Python 2.6 source distribution available via http://www.python.org/ 
+and its mirrors.  The file LICENCE.Python-2.6 is the text of the Licence 
+from the Python 2.6 source distribution.
 
 Note that the EMX package that this package depends on is released under 
 the GNU General Public Licence.  Please refer to the documentation 
@@ -46,7 +46,7 @@ There have been ports of previous versions of Python to OS/2.
 
 The best known would be that by Jeff Rush, most recently of version 
 1.5.2.  Jeff used IBM's Visual Age C++ (v3) for his ports, and his 
-patches have been included in the Python 2.5 source distribution.
+patches have been included in the Python 2.6 source distribution.
 
 Andy Zabolotny implemented a port of Python v1.5.2 using the EMX 
 development tools.  His patches against the Python v1.5.2 source 
@@ -92,7 +92,7 @@ Python.exe is linked as an a.out executable, ie using EMX method E1
 to compile & link the executable.  This is so that fork() works (see 
 "YOU HAVE BEEN WARNED" item 1).
 
-Python25.dll is created as a normal OMF DLL, with an OMF import 
+Python26.dll is created as a normal OMF DLL, with an OMF import 
 library and module definition file.  There is also an a.out (.a) import 
 library to support linking the DLL to a.out executables.  The DLL 
 requires the EMX runtime DLLs.
@@ -148,7 +148,7 @@ WARNED" item 13.
 
 Upstream source patches:
 
-No updates to the Python 2.5 release have become available.
+No updates to the Python 2.6 release have become available.
 
 Eberhard Mattes' EMXFIX04 update to his EMX 0.9d tools suite includes 
 bug fixes for the BSD DB library.  The bsddb module included in this 
@@ -157,7 +157,7 @@ port incorporates these fixes.
 Library and other distributed Python code:
 
 The Python standard library lives in the Lib directory.  All the standard 
-library code included with the Python 2.5 source distribution is included 
+library code included with the Python 2.6 source distribution is included 
 in the binary archive, with the exception of the dos-8x3 and tkinter 
 subdirectories which have been omitted to reduce the size of the binary 
 archive - the dos-8x3 components are unnecessary duplicates and Tkinter 
@@ -172,7 +172,7 @@ omitted as not being supported by this port.  The Misc directory has
 also been omitted.
 
 All subdirectories omitted from the binary archive can be reconstituted 
-from the Python 2.5 source distribution, if desired.
+from the Python 2.6 source distribution, if desired.
 
 Support for building Python extensions:
 
@@ -190,15 +190,15 @@ Packaging
 ---------
 
 This port is packaged as follows:
-- python-2.5-os2emx-bin-03????.zip  (binaries, library modules)
-- python-2.5-os2emx-src-03????      (patches+makefiles for non-Python code)
+- python-2.6-os2emx-bin-03????.zip  (binaries, library modules)
+- python-2.6-os2emx-src-03????      (patches+makefiles for non-Python code)
 
 As all the Python specific patches for the port are now part of the 
 Python release tarball, only the patches and makefiles involved in 
 building external libraries for optional extensions are included in 
 the source archive.
 
-Documentation for the Python language, as well as the Python 2.5 
+Documentation for the Python language, as well as the Python 2.6 
 source distibution, can be obtained from the Python website 
 (http://www.python.org/) or the Python project pages at Sourceforge 
 (http://sf.net/projects/python/).
@@ -213,7 +213,7 @@ package.
 Unpack this archive, preserving the subdirectories, in the root directory 
 of the drive where you want Python to live.
 
-Add the Python directory (eg C:\Python25) to the PATH and LIBPATH 
+Add the Python directory (eg C:\Python26) to the PATH and LIBPATH 
 variables in CONFIG.SYS.
 
 You should then set the PYTHONHOME and PYTHONPATH environment variables 
@@ -223,9 +223,9 @@ PYTHONHOME should be set to Python's top level directory.  PYTHONPATH
 should be set to the semicolon separated list of principal Python library 
 directories.
 I use:
-  SET PYTHONHOME=F:/Python25
-  SET PYTHONPATH=F:/Python25/Lib;F:/Python25/Lib/plat-os2emx;
-                 F:/Python25/Lib/lib-dynload;F:/Python25/Lib/site-packages
+  SET PYTHONHOME=F:/Python26
+  SET PYTHONPATH=F:/Python26/Lib;F:/Python26/Lib/plat-os2emx;
+                 F:/Python26/Lib/lib-dynload;F:/Python26/Lib/site-packages
 
 NOTE!:  the PYTHONPATH setting above is linewrapped for this document - it 
 should all be on one line in CONFIG.SYS!
@@ -238,7 +238,7 @@ EMX subset of the Terminfo database included with the ncurses-5.2 source
 distribution.  This can be used by setting the TERMINFO environment variable 
 to the path of the Terminfo subdirectory below the Python home directory.
 On my system this looks like:
-  SET TERMINFO=F:/Python25/Terminfo
+  SET TERMINFO=F:/Python26/Terminfo
 
 For the TERM environment variable, I would try one of the following:
   SET TERM=ansi
@@ -252,8 +252,8 @@ If you wish to compile all the included Python library modules to bytecode,
 you can change into the Python home directory and run the COMPILEALL.CMD 
 batch file.
 
-You can execute the regression tests included with the Python 2.5 source 
-distribution by changing to the Python 2.5 home directory and executing the 
+You can execute the regression tests included with the Python 2.6 source 
+distribution by changing to the Python 2.6 home directory and executing the 
 REGRTEST.CMD batch file.  The following tests are known to fail at this 
 time:
 - test_mhlib (I don't know of any port of MH to OS/2);
@@ -299,7 +299,7 @@ Procedure
 1. decide if you need to change the location of the Python installation.
    If you wish to do this, set the value of the Makefile variable LIB_DIR 
    to the directory you wish to use for PYTHONHOME 
-   (eg /usr/local/lib/python2.5).
+   (eg /usr/local/lib/python2.6).
 
    If you want Python to find its library without the PYTHONHOME 
    environment variable set, set the value of the Makefile variable 
@@ -309,7 +309,7 @@ Procedure
    to be installed in a directory other than the PYTHONHOME directory, set 
    the value of the Makefile variable EXE_DIR to the appropriate directory.
 
-3. If you wish the Python core DLL (python25.dll) to be installed in a 
+3. If you wish the Python core DLL (python26.dll) to be installed in a 
    directory other than the directory in which the Python executables are 
    installed (by default, the PYTHONHOME directory), set the value of the 
    Makefile variable DLL_DIR to the appropriate directory.  This DLL must 
@@ -698,4 +698,4 @@ Andrew MacIntyre
 E-mail: andymac@bullseye.apana.org.au, or andymac@pcug.org.au
 Web:    http://www.andymac.org/
 
-23 July, 2006.
+28 January, 2008.
