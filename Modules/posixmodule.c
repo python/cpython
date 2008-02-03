@@ -6067,7 +6067,8 @@ Return the process group associated with the terminal given by a fd.");
 static PyObject *
 posix_tcgetpgrp(PyObject *self, PyObject *args)
 {
-	int fd, pgid;
+	int fd;
+	pid_t pgid;
 	if (!PyArg_ParseTuple(args, "i:tcgetpgrp", &fd))
 		return NULL;
 	pgid = tcgetpgrp(fd);
