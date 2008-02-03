@@ -77,7 +77,7 @@ PyAPI_DATA(PyTypeObject) PyFrozenSet_Type;
 	(Py_TYPE(ob) == &PySet_Type || \
 	PyType_IsSubtype(Py_TYPE(ob), &PySet_Type))
 #define   PyFrozenSet_Check(ob) \
-	(Py_TYPE(ob) == &PyFrozenSet_Type || \\
+	(Py_TYPE(ob) == &PyFrozenSet_Type || \
 	  PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type))
 
 PyAPI_FUNC(PyObject *) PySet_New(PyObject *);
