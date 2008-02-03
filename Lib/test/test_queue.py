@@ -142,11 +142,8 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
             if x is None:
                 q.task_done()
                 return
-            self.cumlock.acquire()
-            try:
+            with self.cumlock:
                 self.cum += x
-            finally:
-                self.cumlock.release()
             q.task_done()
 
     def queue_join_test(self, q):
