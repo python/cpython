@@ -260,6 +260,9 @@ Documentation
 Build
 -----
 
+- Have the search path for building extensions follow the declared order in
+  $CPPFLAGS and $LDFLAGS.
+
 - Bug #1234: Fixed semaphore errors on AIX 5.2
 
 - Bug #1699: Define _BSD_SOURCE only on OpenBSD.
