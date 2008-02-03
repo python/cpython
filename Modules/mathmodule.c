@@ -235,8 +235,7 @@ math_trunc(PyObject *self, PyObject *number)
 PyDoc_STRVAR(math_trunc_doc,
 "trunc(x:Real) -> Integral\n"
 "\n"
-"Truncates x to the nearest Integral toward 0. Uses the __trunc__ magic"
-"method.");
+"Truncates x to the nearest Integral toward 0. Uses the __trunc__ magic method.");
 
 static PyObject *
 math_frexp(PyObject *self, PyObject *arg)

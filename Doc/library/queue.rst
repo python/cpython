@@ -71,7 +71,7 @@ The :mod:`Queue` module defines the following classes and exceptions:
 Queue Objects
 -------------
 
-Queue objects (:class:``Queue``, :class:``LifoQueue``, or :class:``PriorityQueue``
+Queue objects (:class:`Queue`, :class:`LifoQueue`, or :class:`PriorityQueue`)
 provide the public methods described below.  
 
 

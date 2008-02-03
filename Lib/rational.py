@@ -24,9 +24,18 @@ def gcd(a, b):
     return a
 
 
-_RATIONAL_FORMAT = re.compile(
-    r'^\s*(?P<sign>[-+]?)(?P<num>\d+)'
-    r'(?:/(?P<denom>\d+)|\.(?P<decimal>\d+))?\s*$')
+_RATIONAL_FORMAT = re.compile(r"""
+    \A\s*                      # optional whitespace at the start, then
+    (?P<sign>[-+]?)            # an optional sign, then
+    (?=\d|\.\d)                # lookahead for digit or .digit
+    (?P<num>\d*)               # numerator (possibly empty)
+    (?:                        # followed by an optional
+       /(?P<denom>\d+)         # / and denominator
+    |                          # or
+       \.(?P<decimal>\d*)      # decimal point and fractional part
+    )?
+    \s*\Z                      # and optional whitespace to finish
+""", re.VERBOSE)
 
 
 class Rational(RationalAbc):
