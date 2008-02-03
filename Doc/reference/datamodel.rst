@@ -1078,7 +1078,7 @@ that all old-style instances, independently of their class, are implemented with
 a single built-in type, called ``instance``.
 
 New-style classes were introduced in Python 2.2 to unify classes and types.  A
-new-style class neither more nor less than a user-defined type.  If *x* is an
+new-style class is neither more nor less than a user-defined type.  If *x* is an
 instance of a new-style class, then ``type(x)`` is the same as ``x.__class__``.
 
 The major motivation for introducing new-style classes is to provide a unified
