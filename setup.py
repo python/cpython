@@ -277,7 +277,7 @@ class PyBuildExt(build_ext):
                 parser.add_option(arg_name, dest="dirs", action="append")
                 options = parser.parse_args(env_val.split())[0]
                 if options.dirs:
-                    for directory in options.dirs:
+                    for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
 
         if os.path.normpath(sys.prefix) != '/usr':
