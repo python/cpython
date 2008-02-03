@@ -244,6 +244,9 @@ Extension Modules
 
 - Bug #1372: zlibmodule.c: int overflow in PyZlib_decompress
 
+- bsddb module: Fix memory leak when using database cursors on
+  databases without a DBEnv.
+
 
 Documentation
 -------------
