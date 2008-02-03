@@ -1,54 +1,54 @@
-LIBRARY python25 INITINSTANCE TERMINSTANCE 
-DESCRIPTION "Python 2.5 Core DLL" 
+LIBRARY python26 INITINSTANCE TERMINSTANCE 
+DESCRIPTION "Python 2.6 Core DLL" 
 PROTMODE 
 DATA MULTIPLE NONSHARED 
 EXPORTS 
 
-; From python25_s.lib(config)
+; From python26_s.lib(config)
   "_PyImport_Inittab"
 
-; From python25_s.lib(dlfcn)
+; From python26_s.lib(dlfcn)
 ;  "dlopen"
 ;  "dlsym"
 ;  "dlclose"
 ;  "dlerror"
 
-; From python25_s.lib(getpathp)
+; From python26_s.lib(getpathp)
   "Py_GetProgramFullPath"
   "Py_GetPrefix"
   "Py_GetExecPrefix"
   "Py_GetPath"
 
-; From python25_s.lib(getbuildinfo)
+; From python26_s.lib(getbuildinfo)
   "Py_GetBuildInfo"
   "_Py_svnversion"
 
-; From python25_s.lib(main)
+; From python26_s.lib(main)
   "Py_Main"
   "Py_GetArgcArgv"
 
-; From python25_s.lib(acceler)
+; From python26_s.lib(acceler)
   "PyGrammar_AddAccelerators"
   "PyGrammar_RemoveAccelerators"
 
-; From python25_s.lib(grammar1)
+; From python26_s.lib(grammar1)
   "PyGrammar_FindDFA"
   "PyGrammar_LabelRepr"
 
-; From python25_s.lib(listnode)
+; From python26_s.lib(listnode)
   "PyNode_ListTree"
 
-; From python25_s.lib(node)
+; From python26_s.lib(node)
   "PyNode_New"
   "PyNode_AddChild"
   "PyNode_Free"
 
-; From python25_s.lib(parser)
+; From python26_s.lib(parser)
   "PyParser_AddToken"
   "PyParser_New"
   "PyParser_Delete"
 
-; From python25_s.lib(parsetok)
+; From python26_s.lib(parsetok)
   "Py_TabcheckFlag"
   "PyParser_ParseString"
   "PyParser_ParseStringFlagsFilename"
@@ -56,18 +56,18 @@ EXPORTS
   "PyParser_ParseFileFlags"
   "PyParser_ParseStringFlags"
 
-; From python25_s.lib(bitset)
+; From python26_s.lib(bitset)
   "_Py_newbitset"
   "_Py_delbitset"
   "_Py_addbit"
   "_Py_samebitset"
   "_Py_mergebitset"
 
-; From python25_s.lib(metagrammar)
+; From python26_s.lib(metagrammar)
   "_Py_meta_grammar"
   "Py_meta_grammar"
 
-; From python25_s.lib(tokenizer)
+; From python26_s.lib(tokenizer)
   "PyToken_OneChar"
   "PyToken_TwoChars"
   "PyToken_ThreeChars"
@@ -77,14 +77,14 @@ EXPORTS
   "PyTokenizer_Get"
   "_PyParser_TokenNames"
 
-; From python25_s.lib(myreadline)
+; From python26_s.lib(myreadline)
   "_PyOS_ReadlineTState"
   "PyOS_ReadlineFunctionPointer"
   "PyOS_StdioReadline"
   "PyOS_Readline"
   "PyOS_InputHook"
 
-; From python25_s.lib(abstract)
+; From python26_s.lib(abstract)
   "_PyObject_LengthHint"
   "PyMapping_Size"
   "PyObject_CallMethod"
@@ -175,13 +175,13 @@ EXPORTS
   "PyObject_IsInstance"
   "PyObject_IsSubclass"
 
-; From python25_s.lib(boolobject)
+; From python26_s.lib(boolobject)
   "PyBool_FromLong"
   "PyBool_Type"
   "_Py_ZeroStruct"
   "_Py_TrueStruct"
 
-; From python25_s.lib(bufferobject)
+; From python26_s.lib(bufferobject)
   "PyBuffer_FromObject"
   "PyBuffer_FromReadWriteObject"
   "PyBuffer_FromMemory"
@@ -189,13 +189,13 @@ EXPORTS
   "PyBuffer_New"
   "PyBuffer_Type"
 
-; From python25_s.lib(cellobject)
+; From python26_s.lib(cellobject)
   "PyCell_New"
   "PyCell_Get"
   "PyCell_Set"
   "PyCell_Type"
 
-; From python25_s.lib(classobject)
+; From python26_s.lib(classobject)
   "PyClass_New"
   "PyClass_IsSubclass"
   "PyInstance_New"
@@ -210,7 +210,7 @@ EXPORTS
   "PyInstance_Type"
   "PyMethod_Type"
 
-; From python25_s.lib(cobject)
+; From python26_s.lib(cobject)
   "PyCObject_FromVoidPtr"
   "PyCObject_FromVoidPtrAndDesc"
   "PyCObject_AsVoidPtr"
@@ -219,13 +219,13 @@ EXPORTS
   "PyCObject_SetVoidPtr"
   "PyCObject_Type"
 
-; From python25_s.lib(codeobject)
+; From python26_s.lib(codeobject)
   "PyCode_New"
   "PyCode_Addr2Line"
   "PyCode_CheckLineNumber"
   "PyCode_Type"
 
-; From python25_s.lib(complexobject)
+; From python26_s.lib(complexobject)
   "_Py_c_pow"
   "_Py_c_sum"
   "_Py_c_diff"
@@ -239,7 +239,7 @@ EXPORTS
   "PyComplex_AsCComplex"
   "PyComplex_Type"
 
-; From python25_s.lib(descrobject)
+; From python26_s.lib(descrobject)
   "PyWrapper_New"
   "PyDescr_NewMethod"
   "PyDescr_NewClassMethod"
@@ -250,7 +250,7 @@ EXPORTS
   "PyWrapperDescr_Type"
   "PyProperty_Type"
 
-; From python25_s.lib(dictobject)
+; From python26_s.lib(dictobject)
   "PyDict_New"
   "PyDict_GetItem"
   "PyDict_SetItem"
@@ -274,11 +274,11 @@ EXPORTS
   "PyDictIterValue_Type"
   "PyDictIterItem_Type"
 
-; From python25_s.lib(enumobject)
+; From python26_s.lib(enumobject)
   "PyEnum_Type"
   "PyReversed_Type"
 
-; From python25_s.lib(fileobject)
+; From python26_s.lib(fileobject)
   "PyFile_FromString"
   "Py_UniversalNewlineFread"
   "PyFile_GetLine"
@@ -294,7 +294,7 @@ EXPORTS
   "PyFile_Name"
   "PyFile_Type"
 
-; From python25_s.lib(floatobject)
+; From python26_s.lib(floatobject)
   "PyFloat_FromString"
   "PyFloat_AsDouble"
   "PyFloat_Fini"
@@ -309,7 +309,7 @@ EXPORTS
   "PyFloat_AsStringEx"
   "PyFloat_Type"
 
-; From python25_s.lib(frameobject)
+; From python26_s.lib(frameobject)
   "PyFrame_New"
   "PyFrame_FastToLocals"
   "PyFrame_LocalsToFast"
@@ -319,7 +319,7 @@ EXPORTS
   "PyFrame_BlockPop"
   "PyFrame_Type"
 
-; From python25_s.lib(funcobject)
+; From python26_s.lib(funcobject)
   "PyFunction_New"
   "PyFunction_GetCode"
   "PyFunction_GetGlobals"
@@ -334,12 +334,12 @@ EXPORTS
   "PyClassMethod_Type"
   "PyStaticMethod_Type"
 
-; From python25_s.lib(genobject)
+; From python26_s.lib(genobject)
   "PyGen_New"
   "PyGen_NeedsFinalizing"
   "PyGen_Type"
 
-; From python25_s.lib(intobject)
+; From python26_s.lib(intobject)
   "PyInt_AsLong"
   "PyInt_AsUnsignedLongMask"
   "PyInt_AsUnsignedLongLongMask"
@@ -354,13 +354,13 @@ EXPORTS
   "_PyInt_Init"
   "PyInt_Type"
 
-; From python25_s.lib(iterobject)
+; From python26_s.lib(iterobject)
   "PySeqIter_New"
   "PyCallIter_New"
   "PySeqIter_Type"
   "PyCallIter_Type"
 
-; From python25_s.lib(listobject)
+; From python26_s.lib(listobject)
   "PyList_New"
   "PyList_Append"
   "PyList_Size"
@@ -378,7 +378,7 @@ EXPORTS
   "PyListIter_Type"
   "PyListRevIter_Type"
 
-; From python25_s.lib(longobject)
+; From python26_s.lib(longobject)
   "PyLong_FromDouble"
   "PyLong_AsLong"
   "_PyLong_AsSsize_t"
@@ -408,7 +408,7 @@ EXPORTS
   "PyLong_Type"
   "_PyLong_DigitValue"
 
-; From python25_s.lib(methodobject)
+; From python26_s.lib(methodobject)
   "PyCFunction_Call"
   "Py_FindMethodInChain"
   "PyCFunction_GetFunction"
@@ -420,7 +420,7 @@ EXPORTS
   "PyCFunction_New"
   "PyCFunction_Type"
 
-; From python25_s.lib(moduleobject)
+; From python26_s.lib(moduleobject)
   "PyModule_New"
   "_PyModule_Clear"
   "PyModule_GetDict"
@@ -428,7 +428,7 @@ EXPORTS
   "PyModule_GetFilename"
   "PyModule_Type"
 
-; From python25_s.lib(object)
+; From python26_s.lib(object)
   "Py_DivisionWarningFlag"
   "PyObject_Str"
   "PyObject_Repr"
@@ -481,15 +481,15 @@ EXPORTS
   "_PyTrash_delete_nesting"
   "_PyTrash_delete_later"
 
-; From python25_s.lib(obmalloc)
+; From python26_s.lib(obmalloc)
   "PyObject_Malloc"
   "PyObject_Free"
   "PyObject_Realloc"
 
-; From python25_s.lib(rangeobject)
+; From python26_s.lib(rangeobject)
   "PyRange_Type"
 
-; From python25_s.lib(setobject)
+; From python26_s.lib(setobject)
   "PySet_Pop"
   "PySet_New"
   "PyFrozenSet_New"
@@ -504,7 +504,7 @@ EXPORTS
   "PySet_Type"
   "PyFrozenSet_Type"
 
-; From python25_s.lib(sliceobject)
+; From python26_s.lib(sliceobject)
   "_PySlice_FromIndices"
   "PySlice_GetIndices"
   "PySlice_GetIndicesEx"
@@ -512,7 +512,7 @@ EXPORTS
   "_Py_EllipsisObject"
   "PySlice_Type"
 
-; From python25_s.lib(stringobject)
+; From python26_s.lib(stringobject)
   "PyString_FromStringAndSize"
   "PyString_InternInPlace"
   "PyString_FromString"
@@ -543,12 +543,12 @@ EXPORTS
   "PyString_Type"
   "PyBaseString_Type"
 
-; From python25_s.lib(structseq)
+; From python26_s.lib(structseq)
   "PyStructSequence_InitType"
   "PyStructSequence_New"
   "PyStructSequence_UnnamedField"
 
-; From python25_s.lib(tupleobject)
+; From python26_s.lib(tupleobject)
   "PyTuple_New"
   "PyTuple_Pack"
   "_PyTuple_Resize"
@@ -560,7 +560,7 @@ EXPORTS
   "PyTuple_Type"
   "PyTupleIter_Type"
 
-; From python25_s.lib(typeobject)
+; From python26_s.lib(typeobject)
   "PyType_IsSubtype"
   "_PyType_Lookup"
   "PyType_Ready"
@@ -571,7 +571,7 @@ EXPORTS
   "PyBaseObject_Type"
   "PySuper_Type"
 
-; From python25_s.lib(unicodeobject)
+; From python26_s.lib(unicodeobject)
   "PyUnicodeUCS2_Resize"
   "PyUnicodeUCS2_FromOrdinal"
   "PyUnicodeUCS2_FromObject"
@@ -637,7 +637,7 @@ EXPORTS
   "PyUnicode_AsDecodedObject"
   "PyUnicode_Type"
 
-; From python25_s.lib(unicodectype)
+; From python26_s.lib(unicodectype)
   "_PyUnicode_TypeRecords"
   "_PyUnicodeUCS2_ToNumeric"
   "_PyUnicodeUCS2_IsLowercase"
@@ -655,7 +655,7 @@ EXPORTS
   "_PyUnicodeUCS2_IsNumeric"
   "_PyUnicodeUCS2_IsAlpha"
 
-; From python25_s.lib(weakrefobject)
+; From python26_s.lib(weakrefobject)
   "PyWeakref_NewRef"
   "PyWeakref_NewProxy"
   "PyObject_ClearWeakRefs"
@@ -666,7 +666,7 @@ EXPORTS
   "_PyWeakref_ProxyType"
   "_PyWeakref_CallableProxyType"
 
-; From python25_s.lib(Python-ast)
+; From python26_s.lib(Python-ast)
 ;  "init_ast"
   "Module"
   "Interactive"
@@ -725,18 +725,18 @@ EXPORTS
   "alias"
   "PyAST_mod2obj"
 
-; From python25_s.lib(asdl)
+; From python26_s.lib(asdl)
   "asdl_seq_new"
   "asdl_int_seq_new"
 
-; From python25_s.lib(ast)
+; From python26_s.lib(ast)
   "PyAST_FromNode"
 
-; From python25_s.lib(bltinmodule)
+; From python26_s.lib(bltinmodule)
   "_PyBuiltin_Init"
   "Py_FileSystemDefaultEncoding"
 
-; From python25_s.lib(exceptions)
+; From python26_s.lib(exceptions)
   "PyUnicodeEncodeError_GetStart"
   "PyUnicodeDecodeError_GetStart"
   "PyUnicodeEncodeError_GetEnd"
@@ -812,7 +812,7 @@ EXPORTS
   "PyExc_ImportWarning"
   "PyExc_MemoryErrorInst"
 
-; From python25_s.lib(ceval)
+; From python26_s.lib(ceval)
   "PyEval_EvalFrameEx"
   "PyEval_CallObjectWithKeywords"
   "PyEval_EvalCodeEx"
@@ -851,13 +851,13 @@ EXPORTS
   "_Py_CheckInterval"
   "_Py_Ticker"
 
-; From python25_s.lib(compile)
+; From python26_s.lib(compile)
   "_Py_Mangle"
   "PyAST_Compile"
   "PyNode_Compile"
   "Py_OptimizeFlag"
 
-; From python25_s.lib(codecs)
+; From python26_s.lib(codecs)
   "_PyCodec_Lookup"
   "PyCodec_Encode"
   "PyCodec_Decode"
@@ -876,7 +876,7 @@ EXPORTS
   "PyCodec_LookupError"
   "PyCodec_StrictErrors"
 
-; From python25_s.lib(errors)
+; From python26_s.lib(errors)
   "PyErr_SetNone"
   "PyErr_SetString"
   "PyErr_GivenExceptionMatches"
@@ -902,16 +902,16 @@ EXPORTS
   "PyErr_Warn"
   "PyErr_WarnExplicit"
 
-; From python25_s.lib(frozen)
+; From python26_s.lib(frozen)
   "PyImport_FrozenModules"
 
-; From python25_s.lib(frozenmain)
+; From python26_s.lib(frozenmain)
   "Py_FrozenMain"
 
-; From python25_s.lib(future)
+; From python26_s.lib(future)
   "PyFuture_FromAST"
 
-; From python25_s.lib(getargs)
+; From python26_s.lib(getargs)
   "PyArg_Parse"
   "_PyArg_Parse_SizeT"
   "PyArg_ParseTuple"
@@ -925,25 +925,25 @@ EXPORTS
   "_PyArg_VaParse_SizeT"
   "_PyArg_VaParseTupleAndKeywords_SizeT"
 
-; From python25_s.lib(getcompiler)
+; From python26_s.lib(getcompiler)
   "Py_GetCompiler"
 
-; From python25_s.lib(getcopyright)
+; From python26_s.lib(getcopyright)
   "Py_GetCopyright"
 
-; From python25_s.lib(getmtime)
+; From python26_s.lib(getmtime)
   "PyOS_GetLastModificationTime"
 
-; From python25_s.lib(getplatform)
+; From python26_s.lib(getplatform)
   "Py_GetPlatform"
 
-; From python25_s.lib(getversion)
+; From python26_s.lib(getversion)
   "Py_GetVersion"
 
-; From python25_s.lib(graminit)
+; From python26_s.lib(graminit)
   "_PyParser_Grammar"
 
-; From python25_s.lib(import)
+; From python26_s.lib(import)
   "_PyImport_Init"
   "_PyImportHooks_Init"
   "PyImport_ImportModule"
@@ -970,10 +970,10 @@ EXPORTS
   "PyImport_Inittab"
   "_PyImport_Filetab"
 
-; From python25_s.lib(importdl)
+; From python26_s.lib(importdl)
   "_PyImport_LoadDynamicModule"
 
-; From python25_s.lib(marshal)
+; From python26_s.lib(marshal)
   "PyMarshal_ReadLongFromFile"
   "PyMarshal_WriteObjectToString"
   "PyMarshal_WriteLongToFile"
@@ -984,7 +984,7 @@ EXPORTS
   "PyMarshal_ReadObjectFromString"
   "PyMarshal_Init"
 
-; From python25_s.lib(modsupport)
+; From python26_s.lib(modsupport)
   "Py_InitModule4"
   "Py_BuildValue"
   "_Py_BuildValue_SizeT"
@@ -997,24 +997,24 @@ EXPORTS
   "PyModule_AddStringConstant"
   "_Py_PackageContext"
 
-; From python25_s.lib(mysnprintf)
+; From python26_s.lib(mysnprintf)
   "PyOS_snprintf"
   "PyOS_vsnprintf"
 
-; From python25_s.lib(mystrtoul)
+; From python26_s.lib(mystrtoul)
   "PyOS_strtoul"
   "PyOS_strtol"
 
-; From python25_s.lib(pyarena)
+; From python26_s.lib(pyarena)
   "PyArena_New"
   "PyArena_Free"
   "PyArena_Malloc"
   "PyArena_AddPyObject"
 
-; From python25_s.lib(pyfpe)
+; From python26_s.lib(pyfpe)
   "PyFPE_dummy"
 
-; From python25_s.lib(pystate)
+; From python26_s.lib(pystate)
   "PyInterpreterState_Clear"
   "PyThreadState_Clear"
   "_PyThread_CurrentFrames"
@@ -1039,12 +1039,12 @@ EXPORTS
   "_PyThreadState_Current"
   "_PyThreadState_GetFrame"
 
-; From python25_s.lib(pystrtod)
+; From python26_s.lib(pystrtod)
   "PyOS_ascii_strtod"
   "PyOS_ascii_formatd"
   "PyOS_ascii_atof"
 
-; From python25_s.lib(pythonrun)
+; From python26_s.lib(pythonrun)
   "Py_IgnoreEnvironmentFlag"
   "Py_DebugFlag"
   "Py_VerboseFlag"
@@ -1106,20 +1106,20 @@ EXPORTS
   "Py_UnicodeFlag"
   "_Py_QnewFlag"
 
-; From python25_s.lib(structmember)
+; From python26_s.lib(structmember)
   "PyMember_Get"
   "PyMember_GetOne"
   "PyMember_SetOne"
   "PyMember_Set"
 
-; From python25_s.lib(symtable)
+; From python26_s.lib(symtable)
   "PySymtable_Build"
   "PySymtable_Free"
   "PyST_GetScope"
   "PySymtable_Lookup"
   "PySTEntry_Type"
 
-; From python25_s.lib(sysmodule)
+; From python26_s.lib(sysmodule)
   "_PySys_Init"
   "PySys_WriteStderr"
   "PySys_SetPath"
@@ -1133,22 +1133,22 @@ EXPORTS
   "PySys_ResetWarnOptions"
   "PySys_AddWarnOption"
 
-; From python25_s.lib(traceback)
+; From python26_s.lib(traceback)
   "PyTraceBack_Here"
   "PyTraceBack_Print"
   "PyTraceBack_Type"
 
-; From python25_s.lib(getopt)
+; From python26_s.lib(getopt)
   "_PyOS_GetOpt"
   "_PyOS_opterr"
   "_PyOS_optind"
   "_PyOS_optarg"
 
-; From python25_s.lib(dynload_shlib)
+; From python26_s.lib(dynload_shlib)
   "_PyImport_DynLoadFiletab"
   "_PyImport_GetDynLoadFunc"
 
-; From python25_s.lib(thread)
+; From python26_s.lib(thread)
   "PyThread_delete_key_value"
   "PyThread_init_thread"
   "PyThread_start_new_thread"
@@ -1166,7 +1166,7 @@ EXPORTS
   "PyThread_get_key_value"
   "PyThread__exit_thread"
 
-; From python25_s.lib(gcmodule)
+; From python26_s.lib(gcmodule)
 ;  "initgc"
   "_PyObject_GC_New"
   "_PyObject_GC_NewVar"
@@ -1182,7 +1182,7 @@ EXPORTS
   "_PyObject_GC_Del"
   "_PyGC_generation0"
 
-; From python25_s.lib(signalmodule)
+; From python26_s.lib(signalmodule)
 ;  "initsignal"
   "PyErr_CheckSignals"
   "PyErr_SetInterrupt"
@@ -1191,124 +1191,124 @@ EXPORTS
   "PyOS_InitInterrupts"
   "PyOS_AfterFork"
 
-; From python25_s.lib(posixmodule)
+; From python26_s.lib(posixmodule)
 ;  "initos2"
 
-; From python25_s.lib(threadmodule)
+; From python26_s.lib(threadmodule)
 ;  "initthread"
 
-; From python25_s.lib(arraymodule)
+; From python26_s.lib(arraymodule)
 ;  "initarray"
 ;  "array_methods"
 
-; From python25_s.lib(binascii)
+; From python26_s.lib(binascii)
 ;  "initbinascii"
 
-; From python25_s.lib(cmathmodule)
+; From python26_s.lib(cmathmodule)
 ;  "initcmath"
 
-; From python25_s.lib(_codecsmodule)
+; From python26_s.lib(_codecsmodule)
 ;  "init_codecs"
 
-; From python25_s.lib(collectionsmodule)
+; From python26_s.lib(collectionsmodule)
 ;  "initcollections"
   "dequeiter_type"
   "dequereviter_type"
 
-; From python25_s.lib(cPickle)
+; From python26_s.lib(cPickle)
 ;  "initcPickle"
 ;  "fast_save_leave"
 
-; From python25_s.lib(cStringIO)
+; From python26_s.lib(cStringIO)
 ;  "initcStringIO"
 
-; From python25_s.lib(_csv)
+; From python26_s.lib(_csv)
 ;  "init_csv"
 
-; From python25_s.lib(datetimemodule)
+; From python26_s.lib(datetimemodule)
 ;  "initdatetime"
 
-; From python25_s.lib(dlmodule)
+; From python26_s.lib(dlmodule)
 ;  "initdl"
 
-; From python25_s.lib(errnomodule)
+; From python26_s.lib(errnomodule)
 ;  "initerrno"
 
-; From python25_s.lib(fcntlmodule)
+; From python26_s.lib(fcntlmodule)
 ;  "initfcntl"
 
-; From python25_s.lib(_functoolsmodule)
+; From python26_s.lib(_functoolsmodule)
 ;  "init_functools"
 
-; From python25_s.lib(_heapqmodule)
+; From python26_s.lib(_heapqmodule)
 ;  "init_heapq"
 
-; From python25_s.lib(imageop)
+; From python26_s.lib(imageop)
 ;  "initimageop"
 
-; From python25_s.lib(itertoolsmodule)
+; From python26_s.lib(itertoolsmodule)
 ;  "inititertools"
 
-; From python25_s.lib(_localemodule)
+; From python26_s.lib(_localemodule)
 ;  "init_locale"
 
-; From python25_s.lib(mathmodule)
+; From python26_s.lib(mathmodule)
 ;  "initmath"
 
-; From python25_s.lib(md5)
+; From python26_s.lib(md5)
   "md5_finish"
   "md5_init"
   "md5_append"
 
-; From python25_s.lib(md5module)
+; From python26_s.lib(md5module)
 ;  "init_md5"
 
-; From python25_s.lib(operator)
+; From python26_s.lib(operator)
 ;  "initoperator"
 
-; From python25_s.lib(_randommodule)
+; From python26_s.lib(_randommodule)
 ;  "init_random"
 
-; From python25_s.lib(rgbimgmodule)
+; From python26_s.lib(rgbimgmodule)
 ;  "initrgbimg"
 
-; From python25_s.lib(shamodule)
+; From python26_s.lib(shamodule)
 ;  "init_sha"
 
-; From python25_s.lib(sha256module)
+; From python26_s.lib(sha256module)
 ;  "init_sha256"
 
-; From python25_s.lib(sha512module)
+; From python26_s.lib(sha512module)
 ;  "init_sha512"
 
-; From python25_s.lib(_sre)
+; From python26_s.lib(_sre)
 ;  "init_sre"
 
-; From python25_s.lib(stropmodule)
+; From python26_s.lib(stropmodule)
 ;  "initstrop"
 
-; From python25_s.lib(_struct)
+; From python26_s.lib(_struct)
 ;  "init_struct"
 
-; From python25_s.lib(symtablemodule)
+; From python26_s.lib(symtablemodule)
 ;  "init_symtable"
 
-; From python25_s.lib(termios)
+; From python26_s.lib(termios)
 ;  "inittermios"
 
-; From python25_s.lib(timemodule)
+; From python26_s.lib(timemodule)
 ;  "inittime"
   "_PyTime_DoubleToTimet"
 ;  "inittimezone"
 
-; From python25_s.lib(timingmodule)
+; From python26_s.lib(timingmodule)
 ;  "inittiming"
 
-; From python25_s.lib(_weakref)
+; From python26_s.lib(_weakref)
 ;  "init_weakref"
 
-; From python25_s.lib(xxsubtype)
+; From python26_s.lib(xxsubtype)
 ;  "initxxsubtype"
 
-; From python25_s.lib(zipimport)
+; From python26_s.lib(zipimport)
 ;  "initzipimport"
