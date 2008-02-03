@@ -520,6 +520,7 @@ class TestMaildir(TestMailbox):
         class FakeMessage(mailbox.MaildirMessage):
             pass
         box = mailbox.Maildir(self._path, factory=FakeMessage)
+        box.colon = self._box.colon
         msg2 = box.get_message(key)
         self.assert_(isinstance(msg2, FakeMessage))
 
