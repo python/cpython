@@ -727,10 +727,10 @@ class PyBuildExt(build_ext):
         for dn in inc_dirs:
             std_variants.append(os.path.join(dn, 'db3'))
             std_variants.append(os.path.join(dn, 'db4'))
-            for x in (0,1,2,3,4,5,6):
+            for x in range(max_db_ver[1]+1):
                 std_variants.append(os.path.join(dn, "db4%d"%x))
                 std_variants.append(os.path.join(dn, "db4.%d"%x))
-            for x in (2,3):
+            for x in (3,):
                 std_variants.append(os.path.join(dn, "db3%d"%x))
                 std_variants.append(os.path.join(dn, "db3.%d"%x))
 
