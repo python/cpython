@@ -904,7 +904,6 @@ DBCursor_dealloc(DBCursorObject* self)
     }
 
     if (self->dbc != NULL) {
-        MYDB_BEGIN_ALLOW_THREADS;
 	/* If the underlying database has been closed, we don't
 	   need to do anything. If the environment has been closed
 	   we need to leak, as BerkeleyDB will crash trying to access
@@ -913,9 +912,14 @@ DBCursor_dealloc(DBCursorObject* self)
 	   a database open. */
 	if (self->mydb->db && self->mydb->myenvobj &&
 	    !self->mydb->myenvobj->closed)
+        /* test for: open db + no environment or non-closed environment */
+	if (self->mydb->db && (!self->mydb->myenvobj || (self->mydb->myenvobj &&
+	    !self->mydb->myenvobj->closed))) {
+            MYDB_BEGIN_ALLOW_THREADS;
             err = self->dbc->c_close(self->dbc);
+            MYDB_END_ALLOW_THREADS;
+        }
         self->dbc = NULL;
-        MYDB_END_ALLOW_THREADS;
     }
     Py_XDECREF( self->mydb );
     PyObject_Del(self);

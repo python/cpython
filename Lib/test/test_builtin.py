@@ -593,6 +593,20 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(format(0, C('10')), '         0')
 
     def test_floatasratio(self):
+        for f, ratio in [
+                (0.875, (7, 8)),
+                (-0.875, (-7, 8)),
+                (0.0, (0, 1)),
+                (11.5, (23, 2)),
+            ]:
+            self.assertEqual(f.as_integer_ratio(), ratio)
+
+        for i in range(10000):
+            f = random.random()
+            f *= 10 ** random.randint(-100, 100)
+            n, d = f.as_integer_ratio()
+            self.assertEqual(float(n).__truediv__(d), f)
+
         R = rational.Rational
         self.assertEqual(R(0, 1),
                          R(*float(0.0).as_integer_ratio()))

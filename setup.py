@@ -327,7 +327,7 @@ class PyBuildExt(build_ext):
                 parser.add_option(arg_name, dest="dirs", action="append")
                 options = parser.parse_args(env_val.split())[0]
                 if options.dirs:
-                    for directory in options.dirs:
+                    for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
 
         if os.path.normpath(sys.prefix) != '/usr':
@@ -698,10 +698,10 @@ class PyBuildExt(build_ext):
         for dn in inc_dirs:
             std_variants.append(os.path.join(dn, 'db3'))
             std_variants.append(os.path.join(dn, 'db4'))
-            for x in (0,1,2,3,4,5,6):
+            for x in range(max_db_ver[1]+1):
                 std_variants.append(os.path.join(dn, "db4%d"%x))
                 std_variants.append(os.path.join(dn, "db4.%d"%x))
-            for x in (2,3):
+            for x in (3,):
                 std_variants.append(os.path.join(dn, "db3%d"%x))
                 std_variants.append(os.path.join(dn, "db3.%d"%x))
 

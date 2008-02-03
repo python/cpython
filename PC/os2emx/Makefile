@@ -1,16 +1,16 @@
 #####################==================----------------
 #
-# Top-Level Makefile for Building Python 2.4 for OS/2 using GCC/EMX
+# Top-Level Makefile for Building Python 2.6 for OS/2 using GCC/EMX
 # Originally written by Andrew Zabolotny, <bit@eltech.ru> for Python 1.5.2
-# Modified by Andrew MacIntyre, <andymac@pcug.org.au> for Python 2.5
+# Modified by Andrew MacIntyre, <andymac@pcug.org.au> for Python 2.6
 #
 # This makefile was developed for use with [P]GCC/EMX compiler any
 # version and GNU Make.
 #
-# The output of the build is a largish Python25.DLL containing the
+# The output of the build is a largish Python26.DLL containing the
 # essential modules of Python and a small Python.exe program to start
 # the interpreter. When embedding Python within another program, only
-# Python25.DLL is needed. We also build python_s.a static library (which
+# Python26.DLL is needed. We also build python_s.a static library (which
 # can be converted into OMF (.lib) format using emxomf tool) and both
 # python.a and python.lib import libraries.  Then the optional 
 # extension modules, which are OS/2 DLLs renamed with a PYD file extension.
@@ -64,7 +64,7 @@ HAVE_OPENSSL=	no
 
 # === install locations ===
 # default value of PYTHONHOME
-LIB_DIR=C:/Python25
+LIB_DIR=C:/Python26
 # default is to have everything in or under PYTHONHOME
 EXE_DIR=$(LIB_DIR)
 DLL_DIR=$(EXE_DIR)
@@ -236,8 +236,8 @@ $(OUT)%$O: %.c
 	@echo STACKSIZE 2097152 >>$@
 
 # Output file names
-PYTHON_VER=	2.5
-PYTHON_LIB=	python25
+PYTHON_VER=	2.6
+PYTHON_LIB=	python26
 PYTHON.LIB=	$(PYTHON_LIB)_s$A
 PYTHON.IMPLIB=	$(PYTHON_LIB)$A
 ifeq ($(EXEOMF),yes)
