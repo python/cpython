@@ -3538,9 +3538,9 @@ posix_spawnvpe(PyObject *self, PyObject *args)
 
 	Py_BEGIN_ALLOW_THREADS
 #if defined(PYCC_GCC)
-	spawnval = spawnve(mode, path, argvlist, envlist);
+	spawnval = spawnvpe(mode, path, argvlist, envlist);
 #else
-	spawnval = _spawnve(mode, path, argvlist, envlist);
+	spawnval = _spawnvpe(mode, path, argvlist, envlist);
 #endif
 	Py_END_ALLOW_THREADS
 
