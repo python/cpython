@@ -125,6 +125,7 @@ class SocketServerTest(unittest.TestCase):
         self.test_files = []
 
     def tearDown(self):
+        time.sleep(DELAY)
         reap_children()
 
         for fn in self.test_files:
@@ -209,7 +210,7 @@ class SocketServerTest(unittest.TestCase):
                          MyStreamHandler, self.stream_examine)
 
     def test_UDPServers(self):
-        # Test SocketServer.UPDServer
+        # Test SocketServer.UDPServer
         servers = [SocketServer.UDPServer,
                    SocketServer.ThreadingUDPServer]
         if HAVE_FORKING:
