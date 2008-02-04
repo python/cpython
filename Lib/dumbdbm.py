@@ -23,13 +23,13 @@ is read when the database is opened, and some updates rewrite the whole index)
 
 import io as _io
 import os as _os
-import UserDict
+import collections
 
 _BLOCKSIZE = 512
 
 error = IOError                         # For anydbm
 
-class _Database(UserDict.DictMixin):
+class _Database(collections.MutableMapping):
 
     # The on-disk directory and data files can remain in mutually
     # inconsistent states for an arbitrarily long time (see comments

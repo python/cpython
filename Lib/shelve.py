@@ -59,12 +59,12 @@ the persistent dictionary on disk, if feasible).
 from pickle import Pickler, Unpickler
 from io import BytesIO
 
-import UserDict
+import collections
 import warnings
 
 __all__ = ["Shelf","BsdDbShelf","DbfilenameShelf","open"]
 
-class Shelf(UserDict.DictMixin):
+class Shelf(collections.MutableMapping):
     """Base class for shelf implementations.
 
     This is initialized with a dictionary-like object.
@@ -81,7 +81,7 @@ class Shelf(UserDict.DictMixin):
         self.cache = {}
         self.keyencoding = "utf-8"
 
-    def keys(self):
+    def __iter__(self):
         for k in self.dict.keys():
             yield k.decode(self.keyencoding)
 
