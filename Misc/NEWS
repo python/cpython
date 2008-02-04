@@ -212,6 +212,8 @@ Library
 Extension Modules
 -----------------
 
+- Backport r59862 (issue #712900): make long regexp matches interruptable.
+
 - #1940: make it possible to use curses.filter() before curses.initscr()
   as the documentation says.
 
