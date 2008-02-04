@@ -373,17 +373,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(r[0][2], 0)
         self.assertEqual(r[1][2], 0)
         # fill freelists
-        ints = list(range(12000))
+        ints = list(range(10000))
         floats = [float(i) for i in ints]
         del ints
         del floats
         # should free more than 200 blocks each
         r = sys._compact_freelists()
-        self.assert_(r[0][1] > 200, r[0][1])
-        self.assert_(r[1][2] > 200, r[1][1])
+        self.assert_(r[0][1] > 100, r[0][1])
+        self.assert_(r[1][2] > 100, r[1][1])
 
-        self.assert_(r[0][2] > 200, r[0][2])
-        self.assert_(r[1][2] > 200, r[1][2])
+        self.assert_(r[0][2] > 100, r[0][2])
+        self.assert_(r[1][2] > 100, r[1][2])
 
 def test_main():
     test.test_support.run_unittest(SysModuleTest)
