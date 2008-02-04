@@ -40,7 +40,7 @@ import os
 import urllib
 import mimetools
 import rfc822
-import UserDict
+import collections
 from io import StringIO
 
 __all__ = ["MiniFieldStorage", "FieldStorage", "FormContentDict",
@@ -781,7 +781,7 @@ class FieldStorage:
 # Backwards Compatibility Classes
 # ===============================
 
-class FormContentDict(UserDict.UserDict):
+class FormContentDict(collections.Mapping):
     """Form content as dictionary with a list of values per field.
 
     form = FormContentDict()
@@ -799,6 +799,15 @@ class FormContentDict(UserDict.UserDict):
                                       keep_blank_values=keep_blank_values,
                                       strict_parsing=strict_parsing)
         self.query_string = environ['QUERY_STRING']
+
+    def __len__(self):
+        return len(self.dict)
+
+    def __iter__(self):
+        return iter(self.dict)
+
+    def __getitem__(self, key):
+        return self.dict[key]
 
 
 class SvFormContentDict(FormContentDict):
