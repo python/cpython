@@ -379,6 +379,9 @@ class SysModuleTest(unittest.TestCase):
         del floats
         # should free more than 200 blocks each
         r = sys._compact_freelists()
+        self.assert_(r[0][1] > 200, r[0][1])
+        self.assert_(r[1][2] > 200, r[1][1])
+
         self.assert_(r[0][2] > 200, r[0][2])
         self.assert_(r[1][2] > 200, r[1][2])
 
