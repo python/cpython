@@ -32,8 +32,7 @@ storage.
 import pickle
 import sys
 
-#At version 2.3 cPickle switched to using protocol instead of bin and
-#DictMixin was added
+#At version 2.3 cPickle switched to using protocol instead of bin
 if sys.version_info[:3] >= (2, 3, 0):
     HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
     def _dumps(object, protocol):
