@@ -12,8 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
-- Patch #1953: Added ´´sys._compact_freelists()´´ and the C API functions
-  ´´PyInt_CompactFreeList´´ and ´´PyFloat_CompactFreeList´´
+- Patch #1953: Added ``sys._compact_freelists()`` and the C API functions
+  ``PyInt_CompactFreeList`` and ``PyFloat_CompactFreeList``
   to compact the internal free lists of pre-allocted ints and floats.
 
 - Bug #1983: Fixed return type of fork(), fork1() and forkpty() calls.
