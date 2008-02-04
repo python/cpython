@@ -388,6 +388,10 @@ Core and builtins
 Library
 -------
 
+- #175006: The debugger used to skip the condition of a "while" statement
+  after the first iteration. Now it correctly steps on the expression, and
+  breakpoints on the "while" statement are honored on each loop.
+
 - #1765140: add an optional delay argument to FileHandler and its
   subclasses. Defaults to false (existing behaviour), but if true,
   defers opening the file until the first call to emit().
