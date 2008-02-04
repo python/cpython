@@ -24,10 +24,9 @@
 from . import db
 
 try:
-    from UserDict import DictMixin
+    from collections import MutableMapping
 except ImportError:
-    # DictMixin is new in Python 2.3
-    class DictMixin: pass
+    class MutableMapping: pass
 
 class DBEnv:
     def __init__(self, *args, **kwargs):
@@ -113,7 +112,7 @@ class DBEnv:
             return self._cobj.lsn_reset(*args, **kwargs)
 
 
-class DB(DictMixin):
+class DB(MutableMapping):
     def __init__(self, dbenv, *args, **kwargs):
         # give it the proper DBEnv C object that its expecting
         self._cobj = db.DB(dbenv._cobj, *args, **kwargs)
@@ -127,6 +126,8 @@ class DB(DictMixin):
         self._cobj[key] = value
     def __delitem__(self, arg):
         del self._cobj[arg]
+    def __iter__(self):
+        return iter(self.keys())
 
     def append(self, *args, **kwargs):
         return self._cobj.append(*args, **kwargs)
