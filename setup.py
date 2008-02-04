@@ -755,7 +755,7 @@ class PyBuildExt(build_ext):
             dblib_dir = None
 
         # The sqlite interface
-        sqlite_setup_debug = True   # verbose debug prints from this script?
+        sqlite_setup_debug = False # verbose debug prints from this script?
 
         # We hunt for #define SQLITE_VERSION "n.n.n"
         # We need to find >= sqlite version 3.0.8
