@@ -51,13 +51,14 @@ class MyDatagramHandler(MyMixinHandler,
     SocketServer.DatagramRequestHandler):
     pass
 
-class ForkingUnixStreamServer(SocketServer.ForkingMixIn,
-                              SocketServer.UnixStreamServer):
-    pass
+if HAVE_UNIX_SOCKETS:
+    class ForkingUnixStreamServer(SocketServer.ForkingMixIn,
+                                  SocketServer.UnixStreamServer):
+        pass
 
-class ForkingUnixDatagramServer(SocketServer.ForkingMixIn,
-                                SocketServer.UnixDatagramServer):
-    pass
+    class ForkingUnixDatagramServer(SocketServer.ForkingMixIn,
+                                    SocketServer.UnixDatagramServer):
+        pass
 
 
 class MyMixinServer:

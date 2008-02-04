@@ -54,9 +54,28 @@ always available.
    A string containing the copyright pertaining to the Python interpreter.
 
 
-.. function:: _cleartypecache()
+.. function:: _compact_freelists()
 
-   Clear the internal type lookup cache.
+   Compact the free list of floats by deallocating unused blocks.
+   It can reduce the memory usage of the Python process several tenth of
+   thousands of integers or floats have been allocated at once.
+
+   The return value is a tuple of tuples each containing three elements,
+   amount of used objects, total block count before the blocks are deallocated
+   and amount of freed blocks. 
+
+   This function should be used for specialized purposes only.
+
+   .. versionadded:: 2.6
+
+
+.. function:: _clear_type_cache()
+
+   Clear the internal type cache. The type cache is used to speed up attribute
+   and method lookups. Use the function *only* to drop unnecessary references
+   during reference leak debugging.
+
+   This function should be used for internal and specialized purposes only.
 
    .. versionadded:: 2.6
 

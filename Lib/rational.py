@@ -406,8 +406,6 @@ class Rational(RationalAbc):
         else:
             return a.numerator // a.denominator
 
-    __int__ = __trunc__
-
     def __floor__(a):
         """Will be math.floor(a) in 3.0."""
         return a.numerator // a.denominator
