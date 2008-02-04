@@ -1609,17 +1609,15 @@ _PyFloat_Init(void)
 }
 
 void
-PyFloat_Fini(void)
+PyFloat_CompactFreeList(size_t *pbc, size_t *pbf, size_t *bsum)
 {
 	PyFloatObject *p;
 	PyFloatBlock *list, *next;
 	unsigned i;
-	int bc, bf;	/* block count, number of freed blocks */
-	int frem, fsum;	/* remaining unfreed floats per block, total */
+	size_t bc = 0, bf = 0;	/* block count, number of freed blocks */
+	size_t fsum = 0;	/* total unfreed ints */
+	int frem;		/* remaining unfreed ints per block */
 
-	bc = 0;
-	bf = 0;
-	fsum = 0;
 	list = block_list;
 	block_list = NULL;
 	free_list = NULL;
@@ -1654,6 +1652,22 @@ PyFloat_Fini(void)
 		fsum += frem;
 		list = next;
 	}
+	*pbc = bc;
+	*pbf = bf;
+	*bsum = fsum;
+}
+
+void
+PyFloat_Fini(void)
+{
+	PyFloatObject *p;
+	PyFloatBlock *list;
+	unsigned i;
+	size_t bc, bf;	/* block count, number of freed blocks */
+	size_t fsum;	/* total unfreed floats per block */
+
+	PyFloat_CompactFreeList(&bc, &bf, &fsum);
+
 	if (!Py_VerboseFlag)
 		return;
 	fprintf(stderr, "# cleanup floats");
@@ -1662,7 +1676,9 @@ PyFloat_Fini(void)
 	}
 	else {
 		fprintf(stderr,
-			": %d unfreed float%s in %d out of %d block%s\n",
+			": %" PY_FORMAT_SIZE_T "d unfreed floats%s in %"
+			PY_FORMAT_SIZE_T "d out of %"
+			PY_FORMAT_SIZE_T "d block%s\n",
 			fsum, fsum == 1 ? "" : "s",
 			bc - bf, bc, bc == 1 ? "" : "s");
 	}

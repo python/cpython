@@ -59,6 +59,9 @@ PyAPI_FUNC(long) PyInt_GetMax(void);
 PyAPI_FUNC(unsigned long) PyOS_strtoul(char *, char **, int);
 PyAPI_FUNC(long) PyOS_strtol(char *, char **, int);
 
+/* free list api */
+PyAPI_FUNC(void) PyInt_CompactFreeList(size_t *, size_t *, size_t *);
+
 #ifdef __cplusplus
 }
 #endif

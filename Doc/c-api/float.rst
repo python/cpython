@@ -84,3 +84,12 @@ Floating Point Objects
    Return the minimum normalized positive float *DBL_MIN* as C :ctype:`double`.
 
    .. versionadded:: 2.6
+
+
+.. cfunction:: void PyFloat_CompactFreeList(size_t *bc, size_t *bf, size_t *sum)
+
+   Compact the float free list. *bc* is the number of allocated blocks before
+   blocks are freed, *bf* is the number of freed blocks and *sum* is the number
+   of remaining objects in the blocks.
+
+   .. versionadded:: 2.6

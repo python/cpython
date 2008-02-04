@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1953: Added ´´sys._compact_freelists()´´ and the C API functions
+  ´´PyInt_CompactFreeList´´ and ´´PyFloat_CompactFreeList´´
+  to compact the internal free lists of pre-allocted ints and floats.
+
 - Bug #1983: Fixed return type of fork(), fork1() and forkpty() calls.
   Python expected the return type int but the fork familie returns pi_t.
 
@@ -21,7 +25,7 @@ Core and builtins
 - Patch #1970 by Antoine Pitrou: Speedup unicode whitespace and linebreak
   detection
 
-- Added ``PyType_ClearCache()`` and ``sys._cleartypecache`` to clear the
+- Added ``PyType_ClearCache()`` and ``sys._clear_type_cache`` to clear the
   internal lookup cache for ref leak tests.
 
 - Patch #1473257: generator objects gain a gi_code attribute. This is the
