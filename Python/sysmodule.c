@@ -754,17 +754,6 @@ a 11-tuple where the entries in the tuple are counts of:\n\
 10. Number of stack pops performed by call_function()"
 );
 
-static PyObject *
-sys_cleartypecache(PyObject* self, PyObject* args)
-{
-	PyType_ClearCache();
-	Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(cleartypecache_doc,
-"_cleartypecache() -> None\n\
-Clear the internal type lookup cache.");
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -783,12 +772,44 @@ extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 }
 #endif
 
+static PyObject *
+sys_clear_type_cache(PyObject* self, PyObject* args)
+{
+	PyType_ClearCache();
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(sys_clear_type_cache__doc__,
+"_clear_type_cache() -> None\n\
+Clear the internal type lookup cache.");
+
+
+static PyObject *
+sys_compact_freelists(PyObject* self, PyObject* args)
+{
+	size_t isum, ibc, ibf;
+	size_t fsum, fbc, fbf;
+
+	PyInt_CompactFreeList(&ibc, &ibf, &isum);
+	PyFloat_CompactFreeList(&fbc, &fbf, &fsum);
+
+	return Py_BuildValue("(kkk)(kkk)", isum, ibc, ibf,
+					   fsum, fbc, fbf);
+
+}
+
+PyDoc_STRVAR(sys_compact_freelists__doc__,
+"_compact_freelists() -> ((remaing_objects, total_blocks, freed_blocks), ...)\n\
+Compact the free lists of ints and floats.");
+
 static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
 	{"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS,
 	 callstats_doc},
-	{"_cleartypecache", sys_cleartypecache, METH_NOARGS,
-	 cleartypecache_doc},
+	{"_clear_type_cache",	sys_clear_type_cache,	  METH_NOARGS,
+	 sys_clear_type_cache__doc__},
+	{"_compact_freelists",	sys_compact_freelists,	  METH_NOARGS,
+	 sys_compact_freelists__doc__},
 	{"_current_frames", sys_current_frames, METH_NOARGS,
 	 current_frames_doc},
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},

@@ -1202,28 +1202,15 @@ _PyInt_Init(void)
 }
 
 void
-PyInt_Fini(void)
+PyInt_CompactFreeList(size_t *pbc, size_t *pbf, size_t *bsum)
 {
 	PyIntObject *p;
 	PyIntBlock *list, *next;
-	int i;
 	unsigned int ctr;
-	int bc, bf;	/* block count, number of freed blocks */
-	int irem, isum;	/* remaining unfreed ints per block, total */
+	size_t bc = 0, bf = 0;	/* block count, number of freed blocks */
+	size_t isum = 0;	/* total unfreed ints */
+	int irem;		/* remaining unfreed ints per block */
 
-#if NSMALLNEGINTS + NSMALLPOSINTS > 0
-        PyIntObject **q;
-
-        i = NSMALLNEGINTS + NSMALLPOSINTS;
-        q = small_ints;
-        while (--i >= 0) {
-                Py_XDECREF(*q);
-                *q++ = NULL;
-        }
-#endif
-	bc = 0;
-	bf = 0;
-	isum = 0;
 	list = block_list;
 	block_list = NULL;
 	free_list = NULL;
@@ -1268,6 +1255,33 @@ PyInt_Fini(void)
 		isum += irem;
 		list = next;
 	}
+
+	*pbc = bc;
+	*pbf = bf;
+	*bsum = isum;
+}
+
+void
+PyInt_Fini(void)
+{
+	PyIntObject *p;
+	PyIntBlock *list;
+	unsigned int ctr;
+	size_t bc, bf;	/* block count, number of freed blocks */
+	size_t isum;	/* total unfreed ints per block */
+
+#if NSMALLNEGINTS + NSMALLPOSINTS > 0
+	int i;
+	PyIntObject **q;
+
+	i = NSMALLNEGINTS + NSMALLPOSINTS;
+	q = small_ints;
+	while (--i >= 0) {
+		Py_XDECREF(*q);
+		*q++ = NULL;
+	}
+#endif
+	PyInt_CompactFreeList(&bc, &bf, &isum);
 	if (!Py_VerboseFlag)
 		return;
 	fprintf(stderr, "# cleanup ints");
@@ -1276,7 +1290,9 @@ PyInt_Fini(void)
 	}
 	else {
 		fprintf(stderr,
-			": %d unfreed int%s in %d out of %d block%s\n",
+			": %" PY_FORMAT_SIZE_T "d unfreed ints%s in %"
+			PY_FORMAT_SIZE_T "d out of %"
+			PY_FORMAT_SIZE_T "d block%s\n",
 			isum, isum == 1 ? "" : "s",
 			bc - bf, bc, bc == 1 ? "" : "s");
 	}

@@ -363,6 +363,24 @@ class SysModuleTest(unittest.TestCase):
             self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
         self.assert_(repr(sys.flags))
 
+    def test_clear_type_cache(self):
+        sys._clear_type_cache()
+
+    def test_compact_freelists(self):
+        sys._compact_freelists()
+        r = sys._compact_freelists()
+        # freed blocks shouldn't change
+        self.assertEqual(r[0][2], 0)
+        self.assertEqual(r[1][2], 0)
+        # fill freelists
+        ints = list(range(12000))
+        floats = [float(i) for i in ints]
+        del ints
+        del floats
+        # should free more than 200 blocks each
+        r = sys._compact_freelists()
+        self.assert_(r[0][2] > 200, r[0][2])
+        self.assert_(r[1][2] > 200, r[1][2])
 
 def test_main():
     test.test_support.run_unittest(SysModuleTest)
