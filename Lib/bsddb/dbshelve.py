@@ -38,12 +38,12 @@ if sys.version_info[:3] >= (2, 3, 0):
     HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
     def _dumps(object, protocol):
         return pickle.dumps(object, protocol=protocol)
-    from collections import MutableMapping
+    from UserDict import DictMixin
 else:
     HIGHEST_PROTOCOL = None
     def _dumps(object, protocol):
         return pickle.dumps(object, bin=protocol)
-    class MutableMapping: pass
+    class DictMixin: pass
 
 from . import db
 
