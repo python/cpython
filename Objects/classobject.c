@@ -1798,7 +1798,29 @@ instance_index(PyInstanceObject *self)
 
 
 UNARY(instance_invert, "__invert__")
-UNARY(instance_int, "__int__")
+UNARY(_instance_trunc, "__trunc__")
+
+static PyObject *
+instance_int(PyInstanceObject *self)
+{
+	PyObject *truncated;
+	static PyObject *int_name;
+	if (int_name == NULL) {
+		int_name = PyString_InternFromString("__int__");
+		if (int_name == NULL)
+			return NULL;
+	}
+	if (PyObject_HasAttr((PyObject*)self, int_name))
+		return generic_unary_op(self, int_name);
+
+	truncated = _instance_trunc(self);
+	/* __trunc__ is specified to return an Integral type, but
+	   int() needs to return an int. */
+	return _PyNumber_ConvertIntegralToInt(
+		truncated,
+		"__trunc__ returned non-Integral (type %.200s)");
+}
+
 UNARY_FB(instance_long, "__long__", instance_int)
 UNARY(instance_float, "__float__")
 UNARY(instance_oct, "__oct__")

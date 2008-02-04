@@ -934,6 +934,14 @@ class BuiltinTest(unittest.TestCase):
 
     def test_intconversion(self):
         # Test __int__()
+        class ClassicMissingMethods:
+            pass
+        self.assertRaises(AttributeError, int, ClassicMissingMethods())
+
+        class MissingMethods(object):
+            pass
+        self.assertRaises(TypeError, int, MissingMethods())
+
         class Foo0:
             def __int__(self):
                 return 42
@@ -964,6 +972,49 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(int(Foo3()), 0)
         self.assertEqual(int(Foo4()), 42L)
         self.assertRaises(TypeError, int, Foo5())
+
+        class Classic:
+            pass
+        for base in (object, Classic):
+            class IntOverridesTrunc(base):
+                def __int__(self):
+                    return 42
+                def __trunc__(self):
+                    return -12
+            self.assertEqual(int(IntOverridesTrunc()), 42)
+
+            class JustTrunc(base):
+                def __trunc__(self):
+                    return 42
+            self.assertEqual(int(JustTrunc()), 42)
+
+            for trunc_result_base in (object, Classic):
+                class Integral(trunc_result_base):
+                    def __int__(self):
+                        return 42
+
+                class TruncReturnsNonInt(base):
+                    def __trunc__(self):
+                        return Integral()
+                self.assertEqual(int(TruncReturnsNonInt()), 42)
+
+                class NonIntegral(trunc_result_base):
+                    def __trunc__(self):
+                        # Check that we avoid infinite recursion.
+                        return NonIntegral()
+
+                class TruncReturnsNonIntegral(base):
+                    def __trunc__(self):
+                        return NonIntegral()
+                try:
+                    int(TruncReturnsNonIntegral())
+                except TypeError as e:
+                    self.assertEquals(str(e),
+                                      "__trunc__ returned non-Integral"
+                                      " (type NonIntegral)")
+                else:
+                    self.fail("Failed to raise TypeError with %s" %
+                              ((base, trunc_result_base),))
 
     def test_intern(self):
         self.assertRaises(TypeError, intern)
@@ -1207,6 +1258,14 @@ class BuiltinTest(unittest.TestCase):
 
     def test_longconversion(self):
         # Test __long__()
+        class ClassicMissingMethods:
+            pass
+        self.assertRaises(AttributeError, long, ClassicMissingMethods())
+
+        class MissingMethods(object):
+            pass
+        self.assertRaises(TypeError, long, MissingMethods())
+
         class Foo0:
             def __long__(self):
                 return 42L
@@ -1237,6 +1296,49 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(long(Foo3()), 0)
         self.assertEqual(long(Foo4()), 42)
         self.assertRaises(TypeError, long, Foo5())
+
+        class Classic:
+            pass
+        for base in (object, Classic):
+            class LongOverridesTrunc(base):
+                def __long__(self):
+                    return 42
+                def __trunc__(self):
+                    return -12
+            self.assertEqual(long(LongOverridesTrunc()), 42)
+
+            class JustTrunc(base):
+                def __trunc__(self):
+                    return 42
+            self.assertEqual(long(JustTrunc()), 42)
+
+            for trunc_result_base in (object, Classic):
+                class Integral(trunc_result_base):
+                    def __int__(self):
+                        return 42
+
+                class TruncReturnsNonLong(base):
+                    def __trunc__(self):
+                        return Integral()
+                self.assertEqual(long(TruncReturnsNonLong()), 42)
+
+                class NonIntegral(trunc_result_base):
+                    def __trunc__(self):
+                        # Check that we avoid infinite recursion.
+                        return NonIntegral()
+
+                class TruncReturnsNonIntegral(base):
+                    def __trunc__(self):
+                        return NonIntegral()
+                try:
+                    long(TruncReturnsNonIntegral())
+                except TypeError as e:
+                    self.assertEquals(str(e),
+                                      "__trunc__ returned non-Integral"
+                                      " (type NonIntegral)")
+                else:
+                    self.fail("Failed to raise TypeError with %s" %
+                              ((base, trunc_result_base),))
 
     def test_map(self):
         self.assertEqual(
