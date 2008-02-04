@@ -38,12 +38,12 @@ if sys.version_info[:3] >= (2, 3, 0):
     HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
     def _dumps(object, protocol):
         return pickle.dumps(object, protocol=protocol)
-    from UserDict import DictMixin
+    from collections import MutableMapping
 else:
     HIGHEST_PROTOCOL = None
     def _dumps(object, protocol):
         return pickle.dumps(object, bin=protocol)
-    class DictMixin: pass
+    class MutableMapping: pass
 
 from . import db
 
@@ -90,7 +90,7 @@ def open(filename, flags=db.DB_CREATE, mode=0o660, filetype=db.DB_HASH,
 class DBShelveError(db.DBError): pass
 
 
-class DBShelf(DictMixin):
+class DBShelf(MutableMapping):
     """A shelf to hold pickled objects, built upon a bsddb DB object.  It
     automatically pickles/unpickles data objects going to/from the DB.
     """
@@ -141,6 +141,8 @@ class DBShelf(DictMixin):
         else:
             return self.db.keys()
 
+    def __iter__(self):
+        return iter(self.keys())
 
     def open(self, *args, **kwargs):
         self.db.open(*args, **kwargs)
