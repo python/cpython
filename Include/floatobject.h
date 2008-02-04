@@ -91,6 +91,9 @@ PyAPI_FUNC(void) _PyFloat_DigitsInit(void);
 PyAPI_FUNC(double) _PyFloat_Unpack4(const unsigned char *p, int le);
 PyAPI_FUNC(double) _PyFloat_Unpack8(const unsigned char *p, int le);
 
+/* free list api */
+PyAPI_FUNC(void) PyFloat_CompactFreeList(size_t *, size_t *, size_t *);
+
 #ifdef __cplusplus
 }
 #endif

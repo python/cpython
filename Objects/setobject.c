@@ -2173,7 +2173,8 @@ PySet_Discard(PyObject *set, PyObject *key)
 int
 PySet_Add(PyObject *anyset, PyObject *key)
 {
-	if (!PyAnySet_Check(anyset)) {
+	if (!PySet_Check(anyset) && 
+	    (!PyFrozenSet_Check(anyset) || Py_REFCNT(anyset) != 1)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2277,6 +2278,10 @@ test_c_api(PySetObject *so)
 	f = PyFrozenSet_New(dup);
 	assertRaises(PySet_Clear(f) == -1, PyExc_SystemError);
 	assertRaises(_PySet_Update(f, dup) == -1, PyExc_SystemError);
+	assert(PySet_Add(f, elem) == 0);
+	Py_INCREF(f);
+	assertRaises(PySet_Add(f, elem) == -1, PyExc_SystemError);
+	Py_DECREF(f);
 	Py_DECREF(f);
 
 	/* Exercise direct iteration */

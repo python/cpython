@@ -753,7 +753,7 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     sys.path_importer_cache.update(pic)
 
     # clear type cache
-    sys._cleartypecache()
+    sys._clear_type_cache()
 
     # Clear ABC registries, restoring previously saved ABC registries.
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
