@@ -382,7 +382,7 @@ class Mapping(metaclass=ABCMeta):
         return set(self) == set(other)
 
     def __ne__(self, other):
-        return set(self) == set(other)
+        return set(self) != set(other)
 
 class MappingView(metaclass=ABCMeta):
 
