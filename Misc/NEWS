@@ -70,6 +70,8 @@ Extension Modules
 Library
 -------
 
+- Removed UserDict.DictMixin.  Replaced all its uses with collections.MutableMapping.
+
 - Issue #1703: getpass() should flush after writing prompt.
 
 - Issue #1585: IDLE uses non-existent xrange() function.

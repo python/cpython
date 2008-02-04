@@ -52,24 +52,6 @@ provide the following attribute:
    A real dictionary used to store the contents of the :class:`UserDict` class.
 
 
-.. class:: DictMixin()
-
-   Mixin defining all dictionary methods for classes that already have a minimum
-   dictionary interface including :meth:`__getitem__`, :meth:`__setitem__`,
-   :meth:`__delitem__`, and :meth:`keys`.
-
-   This mixin should be used as a superclass.  Adding each of the above methods
-   adds progressively more functionality.  For instance, defining all but
-   :meth:`__delitem__` will preclude only :meth:`pop` and :meth:`popitem` from the
-   full interface.
-
-   In addition to the four base methods, progressively more efficiency comes
-   with defining :meth:`__contains__` and :meth:`__iter__`.
-
-   Since the mixin has no knowledge of the subclass constructor, it does not define
-   :meth:`__init__` or :meth:`copy`.
-
-
 :mod:`UserList` --- Class wrapper for list objects
 ==================================================
 

@@ -2,13 +2,13 @@ import unittest
 import shelve
 import glob
 from test import test_support
-from UserDict import DictMixin
+from collections import MutableMapping
 from test.test_anydbm import dbm_iterator
 
 def L1(s):
     return s.decode("latin-1")
 
-class byteskeydict(DictMixin):
+class byteskeydict(MutableMapping):
     "Mapping that supports bytes keys"
 
     def __init__(self):
@@ -23,9 +23,14 @@ class byteskeydict(DictMixin):
     def __delitem__(self, key):
         del self.d[L1(key)]
 
+    def __len__(self):
+        return len(self.d)
+
     def iterkeys(self):
         for k in self.d.keys():
             yield k.encode("latin-1")
+
+    __iter__ = iterkeys
 
     def keys(self):
         return list(self.iterkeys())
