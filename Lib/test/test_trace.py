@@ -252,14 +252,16 @@ class TraceTestCase(unittest.TestCase):
                 "\n".join(difflib.ndiff([str(x) for x in expected_events],
                                         [str(x) for x in events])))
 
-
-    def run_test(self, func):
+    def run_and_compare(self, func, events):
         tracer = Tracer()
         sys.settrace(tracer.trace)
         func()
         sys.settrace(None)
         self.compare_events(func.func_code.co_firstlineno,
-                            tracer.events, func.events)
+                            tracer.events, events)
+
+    def run_test(self, func):
+        self.run_and_compare(func, func.events)
 
     def run_test2(self, func):
         tracer = Tracer()
@@ -320,6 +322,49 @@ class TraceTestCase(unittest.TestCase):
         sys.settrace(None)
         self.compare_events(generator_example.__code__.co_firstlineno,
                             tracer.events, generator_example.events)
+
+    def test_14_onliner_if(self):
+        def onliners():
+            if True: False
+            else: True
+            return 0
+        self.run_and_compare(
+            onliners,
+            [(0, 'call'),
+             (1, 'line'),
+             (3, 'line'),
+             (3, 'return')])
+
+    def test_15_loops(self):
+        # issue1750076: "while" expression is skipped by debugger
+        def for_example():
+            for x in range(2):
+                pass
+        self.run_and_compare(
+            for_example,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (1, 'line'),
+             (2, 'line'),
+             (1, 'line'),
+             (1, 'return')])
+
+        def while_example():
+            # While expression should be traced on every loop
+            x = 2
+            while x > 0:
+                x -= 1
+        self.run_and_compare(
+            while_example,
+            [(0, 'call'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (3, 'line'),
+             (3, 'return')])
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def trace(self, frame, event, arg):
