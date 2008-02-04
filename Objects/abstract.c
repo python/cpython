@@ -1035,11 +1035,63 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 
 
 PyObject *
+_PyNumber_ConvertIntegralToInt(PyObject *integral, const char* error_format)
+{
+	const char *type_name;
+	static PyObject *int_name = NULL;
+	if (int_name == NULL) {
+		int_name = PyString_InternFromString("__int__");
+		if (int_name == NULL)
+			return NULL;
+	}
+
+	if (integral && (!PyInt_Check(integral) &&
+			 !PyLong_Check(integral))) {
+		/* Don't go through tp_as_number->nb_int to avoid
+		   hitting the classic class fallback to __trunc__. */
+		PyObject *int_func = PyObject_GetAttr(integral, int_name);
+		if (int_func == NULL) {
+			PyErr_Clear(); /* Raise a different error. */
+			goto non_integral_error;
+		}
+		Py_DECREF(integral);
+		integral = PyEval_CallObject(int_func, NULL);
+		Py_DECREF(int_func);
+		if (integral && (!PyInt_Check(integral) &&
+				  !PyLong_Check(integral))) {
+			goto non_integral_error;
+		}
+	}
+	return integral;
+
+non_integral_error:
+	if (PyInstance_Check(integral)) {
+		type_name = PyString_AS_STRING(((PyInstanceObject *)integral)
+					       ->in_class->cl_name);
+	}
+	else {
+		type_name = integral->ob_type->tp_name;
+	}
+	PyErr_Format(PyExc_TypeError, error_format, type_name);
+	Py_DECREF(integral);
+	return NULL;
+}
+
+
+PyObject *
 PyNumber_Int(PyObject *o)
 {
 	PyNumberMethods *m;
+	static PyObject *trunc_name = NULL;
+	PyObject *trunc_func;
 	const char *buffer;
 	Py_ssize_t buffer_len;
+
+	if (trunc_name == NULL) {
+		trunc_name = PyString_InternFromString("__trunc__");
+		if (trunc_name == NULL)
+			return NULL;
+	}
 
 	if (o == NULL)
 		return null_error();
@@ -1049,6 +1101,7 @@ PyNumber_Int(PyObject *o)
 	}
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_int) { /* This should include subclasses of int */
+		/* Classic classes always take this branch. */
 		PyObject *res = m->nb_int(o);
 		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
 			PyErr_Format(PyExc_TypeError,
@@ -1063,6 +1116,18 @@ PyNumber_Int(PyObject *o)
 		PyIntObject *io = (PyIntObject*)o;
 		return PyInt_FromLong(io->ob_ival);
 	}
+	trunc_func = PyObject_GetAttr(o, trunc_name);
+	if (trunc_func) {
+		PyObject *truncated = PyEval_CallObject(trunc_func, NULL);
+		Py_DECREF(trunc_func);
+		/* __trunc__ is specified to return an Integral type, but
+		   int() needs to return an int. */
+		return _PyNumber_ConvertIntegralToInt(
+			truncated,
+			"__trunc__ returned non-Integral (type %.200s)");
+	}
+	PyErr_Clear();  /* It's not an error if  o.__trunc__ doesn't exist. */
+
 	if (PyString_Check(o))
 		return int_from_string(PyString_AS_STRING(o),
 				       PyString_GET_SIZE(o));
@@ -1102,13 +1167,22 @@ PyObject *
 PyNumber_Long(PyObject *o)
 {
 	PyNumberMethods *m;
+	static PyObject *trunc_name = NULL;
+	PyObject *trunc_func;
 	const char *buffer;
 	Py_ssize_t buffer_len;
+
+	if (trunc_name == NULL) {
+		trunc_name = PyString_InternFromString("__trunc__");
+		if (trunc_name == NULL)
+			return NULL;
+	}
 
 	if (o == NULL)
 		return null_error();
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_long) { /* This should include subclasses of long */
+		/* Classic classes always take this branch. */
 		PyObject *res = m->nb_long(o);
 		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
 			PyErr_Format(PyExc_TypeError,
@@ -1121,6 +1195,26 @@ PyNumber_Long(PyObject *o)
 	}
 	if (PyLong_Check(o)) /* A long subclass without nb_long */
 		return _PyLong_Copy((PyLongObject *)o);
+	trunc_func = PyObject_GetAttr(o, trunc_name);
+	if (trunc_func) {
+		PyObject *truncated = PyEval_CallObject(trunc_func, NULL);
+		PyObject *int_instance;
+		Py_DECREF(trunc_func);
+		/* __trunc__ is specified to return an Integral type,
+		   but long() needs to return a long. */
+		int_instance = _PyNumber_ConvertIntegralToInt(
+			truncated,
+			"__trunc__ returned non-Integral (type %.200s)");
+		if (int_instance && PyInt_Check(int_instance)) {
+			/* Make sure that long() returns a long instance. */
+			long value = PyInt_AS_LONG(int_instance);
+			Py_DECREF(int_instance);
+			return PyLong_FromLong(value);
+		}
+		return int_instance;
+	}
+	PyErr_Clear();  /* It's not an error if  o.__trunc__ doesn't exist. */
+
 	if (PyString_Check(o))
 		/* need to do extra error checking that PyLong_FromString()
 		 * doesn't do.  In particular long('9.5') must raise an

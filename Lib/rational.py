@@ -424,8 +424,6 @@ class Rational(RationalAbc):
         else:
             return a.numerator // a.denominator
 
-    __int__ = __trunc__
-
     def __hash__(self):
         """hash(self)
 
