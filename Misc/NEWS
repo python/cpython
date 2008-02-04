@@ -80,6 +80,10 @@ Core and builtins
 Library
 -------
 
+- #175006: The debugger used to skip the condition of a "while" statement
+  after the first iteration. Now it correctly steps on the expression, and
+  breakpoints on the "while" statement are honored on each loop.
+
 - The ctypes int types did not accept objects implementing
   __int__() in the constructor.
 
