@@ -1,4 +1,4 @@
-__all__ = ['deque', 'defaultdict', 'namedtuple']
+__all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict']
 # For bootstrapping reasons, the collection ABCs are defined in _abcoll.py.
 # They should however be considered an integral part of collections.py.
 from _abcoll import *
@@ -9,6 +9,10 @@ from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
 from keyword import iskeyword as _iskeyword
 import sys as _sys
+
+################################################################################
+### namedtuple
+################################################################################
 
 def namedtuple(typename, field_names, verbose=False):
     """Returns a new subclass of tuple with named fields.
@@ -106,7 +110,60 @@ def namedtuple(typename, field_names, verbose=False):
 
 
 
+################################################################################
+### UserDict
+################################################################################
 
+class UserDict(MutableMapping):
+
+    # Start by filling-out the abstract methods
+    def __init__(self, dict=None, **kwargs):
+        self.data = {}
+        if dict is not None:
+            self.update(dict)
+        if len(kwargs):
+            self.update(kwargs)
+    def __len__(self): return len(self.data)
+    def __getitem__(self, key):
+        if key in self.data:
+            return self.data[key]
+        if hasattr(self.__class__, "__missing__"):
+            return self.__class__.__missing__(self, key)
+        raise KeyError(key)
+    def __setitem__(self, key, item): self.data[key] = item
+    def __delitem__(self, key): del self.data[key]
+    def __iter__(self):
+        return iter(self.data)
+
+
+    # Now, add the methods in dicts but not in MutableMapping
+    def __repr__(self): return repr(self.data)
+    def copy(self):
+        if self.__class__ is UserDict:
+            return UserDict(self.data.copy())
+        import copy
+        data = self.data
+        try:
+            self.data = {}
+            c = copy.copy(self)
+        finally:
+            self.data = data
+        c.update(self)
+        return c
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        d = cls()
+        for key in iterable:
+            d[key] = value
+        return d
+
+MutableMapping.register(UserDict)
+
+
+
+################################################################################
+### Simple tests
+################################################################################
 
 if __name__ == '__main__':
     # verify that instances can be pickled
