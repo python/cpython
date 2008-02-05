@@ -70,6 +70,13 @@ Extension Modules
 Library
 -------
 
+- Weakref dictionaries now inherit from MutableMapping.
+  XXX their API still needs to be modernized (i.e. eliminate the iter methods).
+
+- Created new UserDict class in collections module.  This one inherits from and
+  complies with the MutableMapping ABC.  
+  XXX still need to covert old UserDict based tests and eliminate the old UserDict module.
+
 - Removed UserDict.DictMixin.  Replaced all its uses with collections.MutableMapping.
 
 - Issue #1703: getpass() should flush after writing prompt.
