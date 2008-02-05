@@ -1866,7 +1866,7 @@ types should support too):
 .. method:: dict.values()
 
    Return a copy of the dictionary's list of values.  See the note for
-   :meth:`mapping.items`.
+   :meth:`dict.items`.
 
 
 .. _bltin-file-objects:
