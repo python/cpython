@@ -2,16 +2,6 @@ from test import test_support
 import types
 import unittest
 
-def cannot_set_attr(obj, name, value, exceptions):
-    # This method is not called as a test (name doesn't start with 'test'),
-    # but may be used by other tests.
-    try: setattr(obj, name, value)
-    except exceptions: pass
-    else: self.fail("shouldn't be able to set %s to %r" % (name, value))
-    try: delattr(obj, name)
-    except exceptions: pass
-    else: self.fail("shouldn't be able to del %s" % name)
-
 class FuncAttrsTest(unittest.TestCase):
     def setUp(self):
         class F:
@@ -22,6 +12,17 @@ class FuncAttrsTest(unittest.TestCase):
         self.f = F
         self.fi = F()
         self.b = b
+
+    def cannot_set_attr(self,obj, name, value, exceptions):
+        # This method is not called as a test (name doesn't start with 'test'),
+        # but may be used by other tests.
+        try: setattr(obj, name, value)
+        except exceptions: pass
+        else: self.fail("shouldn't be able to set %s to %r" % (name, value))
+        try: delattr(obj, name)
+        except exceptions: pass
+        else: self.fail("shouldn't be able to del %s" % name)
+
 
 class FunctionPropertiesTest(FuncAttrsTest):
     # Include the external setUp method that is common to all tests
@@ -56,7 +57,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
 
     def test_func_globals(self):
         self.assertEqual(self.b.func_globals, globals())
-        cannot_set_attr(self.b, 'func_globals', 2, TypeError)
+        self.cannot_set_attr(self.b, 'func_globals', 2, TypeError)
 
     def test_func_name(self):
         self.assertEqual(self.b.__name__, 'b')
@@ -68,8 +69,8 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(self.b.__name__, 'd')
         self.assertEqual(self.b.func_name, 'd')
         # __name__ and func_name must be a string
-        cannot_set_attr(self.b, '__name__', 7, TypeError)
-        cannot_set_attr(self.b, 'func_name', 7, TypeError)
+        self.cannot_set_attr(self.b, '__name__', 7, TypeError)
+        self.cannot_set_attr(self.b, 'func_name', 7, TypeError)
         # __name__ must be available when in restricted mode. Exec will raise
         # AttributeError if __name__ is not available on f.
         s = """def f(): pass\nf.__name__"""
@@ -77,8 +78,8 @@ class FunctionPropertiesTest(FuncAttrsTest):
         # Test on methods, too
         self.assertEqual(self.f.a.__name__, 'a')
         self.assertEqual(self.fi.a.__name__, 'a')
-        cannot_set_attr(self.f.a, "__name__", 'a', AttributeError)
-        cannot_set_attr(self.fi.a, "__name__", 'a', AttributeError)
+        self.cannot_set_attr(self.f.a, "__name__", 'a', AttributeError)
+        self.cannot_set_attr(self.fi.a, "__name__", 'a', AttributeError)
 
     def test_func_code(self):
         num_one, num_two = 7, 8
@@ -135,21 +136,21 @@ class ImplicitReferencesTest(FuncAttrsTest):
     def test_im_class(self):
         self.assertEqual(self.f.a.im_class, self.f)
         self.assertEqual(self.fi.a.im_class, self.f)
-        cannot_set_attr(self.f.a, "im_class", self.f, TypeError)
-        cannot_set_attr(self.fi.a, "im_class", self.f, TypeError)
+        self.cannot_set_attr(self.f.a, "im_class", self.f, TypeError)
+        self.cannot_set_attr(self.fi.a, "im_class", self.f, TypeError)
 
     def test_im_func(self):
         self.f.b = self.b
         self.assertEqual(self.f.b.im_func, self.b)
         self.assertEqual(self.fi.b.im_func, self.b)
-        cannot_set_attr(self.f.b, "im_func", self.b, TypeError)
-        cannot_set_attr(self.fi.b, "im_func", self.b, TypeError)
+        self.cannot_set_attr(self.f.b, "im_func", self.b, TypeError)
+        self.cannot_set_attr(self.fi.b, "im_func", self.b, TypeError)
 
     def test_im_self(self):
         self.assertEqual(self.f.a.im_self, None)
         self.assertEqual(self.fi.a.im_self, self.fi)
-        cannot_set_attr(self.f.a, "im_self", None, TypeError)
-        cannot_set_attr(self.fi.a, "im_self", self.fi, TypeError)
+        self.cannot_set_attr(self.f.a, "im_self", None, TypeError)
+        self.cannot_set_attr(self.fi.a, "im_self", self.fi, TypeError)
 
     def test_im_func_non_method(self):
         # Behavior should be the same when a method is added via an attr
@@ -162,8 +163,8 @@ class ImplicitReferencesTest(FuncAttrsTest):
         except AttributeError: pass
         else: self.fail("using unknown attributes should raise AttributeError")
         # Test assignment and deletion
-        cannot_set_attr(self.f.id, 'unknown_attr', 2, AttributeError)
-        cannot_set_attr(self.fi.id, 'unknown_attr', 2, AttributeError)
+        self.cannot_set_attr(self.f.id, 'unknown_attr', 2, AttributeError)
+        self.cannot_set_attr(self.fi.id, 'unknown_attr', 2, AttributeError)
 
     def test_implicit_method_properties(self):
         self.f.a.im_func.known_attr = 7
@@ -202,12 +203,12 @@ class ArbitraryFunctionAttrTest(FuncAttrsTest):
 
 class FunctionDictsTest(FuncAttrsTest):
     def test_setting_dict_to_invalid(self):
-        cannot_set_attr(self.b, '__dict__', None, TypeError)
-        cannot_set_attr(self.b, 'func_dict', None, TypeError)
+        self.cannot_set_attr(self.b, '__dict__', None, TypeError)
+        self.cannot_set_attr(self.b, 'func_dict', None, TypeError)
         from UserDict import UserDict
         d = UserDict({'known_attr': 7})
-        cannot_set_attr(self.f.a.im_func, '__dict__', d, TypeError)
-        cannot_set_attr(self.fi.a.im_func, '__dict__', d, TypeError)
+        self.cannot_set_attr(self.f.a.im_func, '__dict__', d, TypeError)
+        self.cannot_set_attr(self.fi.a.im_func, '__dict__', d, TypeError)
 
     def test_setting_dict_to_valid(self):
         d = {'known_attr': 7}
@@ -259,8 +260,8 @@ class FunctionDocstringTest(FuncAttrsTest):
         self.assertEqual(self.b.func_doc, docstr)
         self.assertEqual(self.f.a.__doc__, docstr)
         self.assertEqual(self.fi.a.__doc__, docstr)
-        cannot_set_attr(self.f.a, "__doc__", docstr, AttributeError)
-        cannot_set_attr(self.fi.a, "__doc__", docstr, AttributeError)
+        self.cannot_set_attr(self.f.a, "__doc__", docstr, AttributeError)
+        self.cannot_set_attr(self.fi.a, "__doc__", docstr, AttributeError)
 
     def test_delete_docstring(self):
         self.b.__doc__ = "The docstring"
