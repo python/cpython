@@ -1509,15 +1509,11 @@ class TarFile(object):
 
         for tarinfo in members:
             if tarinfo.isdir():
-                # Extract directory with a safe mode, so that
-                # all files below can be extracted as well.
-                try:
-                    os.makedirs(os.path.join(path, tarinfo.name), 0777)
-                except EnvironmentError:
-                    pass
+                # Extract directories with a safe mode.
                 directories.append(tarinfo)
-            else:
-                self.extract(tarinfo, path)
+                tarinfo = copy.copy(tarinfo)
+                tarinfo.mode = 0700
+            self.extract(tarinfo, path)
 
         # Reverse sort directories.
         directories.sort(lambda a, b: cmp(a.name, b.name))
@@ -1622,19 +1618,9 @@ class TarFile(object):
         # Create all upper directories.
         upperdirs = os.path.dirname(targetpath)
         if upperdirs and not os.path.exists(upperdirs):
-            ti = TarInfo()
-            ti.name  = upperdirs
-            ti.type  = DIRTYPE
-            ti.mode  = 0777
-            ti.mtime = tarinfo.mtime
-            ti.uid   = tarinfo.uid
-            ti.gid   = tarinfo.gid
-            ti.uname = tarinfo.uname
-            ti.gname = tarinfo.gname
-            try:
-                self._extract_member(ti, ti.name)
-            except:
-                pass
+            # Create directories that are not part of the archive with
+            # default permissions.
+            os.makedirs(upperdirs)
 
         if tarinfo.islnk() or tarinfo.issym():
             self._dbg(1, "%s -> %s" % (tarinfo.name, tarinfo.linkname))
@@ -1670,7 +1656,9 @@ class TarFile(object):
         """Make a directory called targetpath.
         """
         try:
-            os.mkdir(targetpath)
+            # Use a safe mode for the directory, the real mode is set
+            # later in _extract_member().
+            os.mkdir(targetpath, 0700)
         except EnvironmentError, e:
             if e.errno != errno.EEXIST:
                 raise
