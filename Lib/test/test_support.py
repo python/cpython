@@ -118,7 +118,8 @@ def bind_port(sock, host='', preferred_port=54321):
             (err, msg) = e.args
             if err != errno.EADDRINUSE:
                 raise
-            print('  WARNING: failed to listen on port %d, trying another' % port, file=sys.__stderr__)
+            print('  WARNING: failed to listen on port %d, trying another' %
+                  (port, file=sys.__stderr__))
     raise TestFailed('unable to find port to listen on')
 
 FUZZ = 1e-6
@@ -179,9 +180,9 @@ else:
         except UnicodeEncodeError:
             pass
         else:
-            print('WARNING: The filename %r CAN be encoded by the filesystem.  ' \
-            'Unicode filename tests may not be effective' \
-            % TESTFN_UNICODE_UNENCODEABLE)
+            print('WARNING: The filename %r CAN be encoded by the filesystem.  '
+                  'Unicode filename tests may not be effective'
+                  % TESTFN_UNICODE_UNENCODEABLE)
 
 # Make sure we can write to TESTFN, try in /tmp if we can't
 fp = None
@@ -424,7 +425,8 @@ def run_with_locale(catstr, *locales):
     return decorator
 
 #=======================================================================
-# Big-memory-test support. Separate from 'resources' because memory use should be configurable.
+# Big-memory-test support. Separate from 'resources' because memory use
+# should be configurable.
 
 # Some handy shorthands. Note that these are used for byte-limits as well
 # as size-limits, in the various bigmem tests
@@ -578,7 +580,8 @@ def run_doctest(module, verbosity=None):
     finally:
         sys.stdout = save_stdout
     if verbose:
-        print('doctest (%s) ... %d tests with zero failures' % (module.__name__, t))
+        print('doctest (%s) ... %d tests with zero failures' %
+              (module.__name__, t))
     return f, t
 
 #=======================================================================
