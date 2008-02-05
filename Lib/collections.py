@@ -135,6 +135,9 @@ class UserDict(MutableMapping):
     def __iter__(self):
         return iter(self.data)
 
+    # Modify __contains__ to work correctly when __missing__ is present
+    def __contains__(self, key):
+        return key in self.data
 
     # Now, add the methods in dicts but not in MutableMapping
     def __repr__(self): return repr(self.data)
