@@ -1,3 +1,5 @@
+.. _curses-howto:
+
 **********************************
   Curses Programming with Python
 **********************************
