@@ -38,8 +38,8 @@ class TestWave(unittest.TestCase):
         self.assertEqual(nframes, self.f.getnframes())
         self.assertEqual(self.f.readframes(nframes), output)
 
-def main():
+def test_main():
     run_unittest(TestWave)
 
 if __name__ == '__main__':
-    main()
+    test_main()
