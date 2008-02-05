@@ -3,7 +3,7 @@
 
 """Abstract Base Classes (ABCs) according to PEP 3119."""
 
-from weakref import WeakSet
+from _weakrefset import WeakSet
 
 def abstractmethod(funcobj):
     """A decorator indicating abstract methods.
