@@ -118,8 +118,8 @@ def bind_port(sock, host='', preferred_port=54321):
             (err, msg) = e.args
             if err != errno.EADDRINUSE:
                 raise
-            print('  WARNING: failed to listen on port %d, trying another' %
-                  (port, file=sys.__stderr__))
+            print('  WARNING: failed to listen on port %d, ' % port +
+                  'trying another', file=sys.__stderr__)
     raise TestFailed('unable to find port to listen on')
 
 FUZZ = 1e-6
