@@ -379,10 +379,10 @@ class Mapping(metaclass=ABCMeta):
         return ValuesView(self)
 
     def __eq__(self, other):
-        return set(self) == set(other)
+        return dict(self.items()) == dict(other.items())
 
     def __ne__(self, other):
-        return set(self) != set(other)
+        return dict(self.items()) != dict(other.items())
 
 class MappingView(metaclass=ABCMeta):
 
