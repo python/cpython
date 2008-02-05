@@ -366,6 +366,15 @@ class TraceTestCase(unittest.TestCase):
              (3, 'line'),
              (3, 'return')])
 
+    def test_16_blank_lines(self):
+        exec("def f():\n" + "\n" * 256 + "    pass")
+        self.run_and_compare(
+            f,
+            [(0, 'call'),
+             (257, 'line'),
+             (257, 'return')])
+
+
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def trace(self, frame, event, arg):
         """A trace function that raises an exception in response to a
