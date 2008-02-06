@@ -83,22 +83,22 @@ it's the base calendar for all computations.
    Weeks are lists of seven day numbers.
 
 
-.. method:: Calendar.yeardatescalendar(year, month[, width])
+.. method:: Calendar.yeardatescalendar(year[, width])
 
-   Return the data for the specified year ready for formatting. The return value is
-   a list of month rows. Each month row contains up to *width* months (defaulting
-   to 3). Each month contains between 4 and 6 weeks and each week contains 1--7
-   days. Days are :class:`datetime.date` objects.
+   Return the data for the specified year ready for formatting. The return value
+   is a list of month rows. Each month row contains up to *width* months
+   (defaulting to 3). Each month contains between 4 and 6 weeks and each week
+   contains 1--7 days. Days are :class:`datetime.date` objects.
 
 
-.. method:: Calendar.yeardays2calendar(year, month[, width])
+.. method:: Calendar.yeardays2calendar(year[, width])
 
    Return the data for the specified year ready for formatting (similar to
-   :meth:`yeardatescalendar`). Entries in the week lists are tuples of day numbers
-   and weekday numbers. Day numbers outside this month are zero.
+   :meth:`yeardatescalendar`). Entries in the week lists are tuples of day
+   numbers and weekday numbers. Day numbers outside this month are zero.
 
 
-.. method:: Calendar.yeardayscalendar(year, month[, width])
+.. method:: Calendar.yeardayscalendar(year[, width])
 
    Return the data for the specified year ready for formatting (similar to
    :meth:`yeardatescalendar`). Entries in the week lists are day numbers. Day
