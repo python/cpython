@@ -10,19 +10,25 @@
 
 This module implements high-performance container datatypes.  Currently,
 there are two datatypes, :class:`deque` and :class:`defaultdict`, and
-one datatype factory function, :func:`namedtuple`. Python already
-includes built-in containers, :class:`dict`, :class:`list`,
-:class:`set`, and :class:`tuple`. In addition, the optional :mod:`bsddb`
-module has a :meth:`bsddb.btopen` method that can be used to create in-memory
-or file based ordered dictionaries with string keys.
+one datatype factory function, :func:`namedtuple`. 
 
-Future editions of the standard library may include balanced trees and
-ordered dictionaries.
+The specialized containers provided in this module provide alternatives
+to Python's general purpose built-in containers, :class:`dict`, 
+:class:`list`, :class:`set`, and :class:`tuple`.
+
+Besides the containers provided here, the optional :mod:`bsddb`
+module offers the ability to create in-memory or file based ordered 
+dictionaries with string keys using the :meth:`bsddb.btopen` method.
 
 In addition to containers, the collections module provides some ABCs
-(abstract base classes) that can be used to test whether
-a class provides a particular interface, for example, is it hashable or
-a mapping. The ABCs provided include those in the following table:
+(abstract base classes) that can be used to test whether a class 
+provides a particular interface, for example, is it hashable or
+a mapping. 
+
+ABCs - abstract base classes
+----------------------------
+
+The collections module offers the following ABCs:
 
 =====================================  ================================================================================
 ABC                                    Notes
@@ -62,17 +68,35 @@ ABC                                    Notes
                                        ``__isub__()``
 =====================================  ================================================================================
 
-.. XXX Have not included them all and the notes are incomplete
-.. long = lines improves the layout
-
 These ABCs allow us to ask classes or instances if they provide
 particular functionality, for example::
 
-    from collections import Sized
-
     size = None
-    if isinstance(myvar, Sized):
+    if isinstance(myvar, collections.Sized):
 	size = len(myvar)
+
+Several of the ABCs are also useful as mixins that make it easier to develop
+classes supporting container APIs.  For example, to write a class supporting
+the full :class:`Set` API, it only necessary to supply the three underlying
+abstract methods: :meth:`__contains__`, :meth:`__iter__`, and :meth:`__len__`.
+The ABC supplies the remaining methods such as :meth:`__and__` and
+:meth:`isdisjoint` ::
+
+    class ListBasedSet(collections.Set):
+         'Alternate set implementation favoring space over speed'
+         def __init__(self, iterable):
+	     self.elements = list(set(iterable))
+         def __iter__(self):
+             return iter(self.elements)
+         def __contains__(self, value):
+             return value in self.elements
+         def __len__(self):
+             return len(self.elements)
+
+    s1 = ListBasedSet('abcdef')
+    s2 = ListBasedSet('defghi')
+    overlap = s1 & s2            # The __and__() method is supported automatically
+
 
 (For more about ABCs, see the :mod:`abc` module and :pep:`3119`.)
 
@@ -607,8 +631,7 @@ attribute.
    be kept, allowing it be used for other purposes.
 
 In addition to supporting the methods and operations of mappings, 
-:class:`UserDict` and :class:`IterableUserDict` instances
-provide the following attribute:
+:class:`UserDict` instances provide the following attribute:
 
 .. attribute:: UserDict.data
 
