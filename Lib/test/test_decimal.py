@@ -838,6 +838,19 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(-Decimal(45), Decimal(-45))           #  -
         self.assertEqual(abs(Decimal(45)), abs(Decimal(-45)))  # abs
 
+    def test_nan_comparisons(self):
+        n = Decimal('NaN')
+        s = Decimal('sNaN')
+        i = Decimal('Inf')
+        f = Decimal('2')
+        for x, y in [(n, n), (n, i), (i, n), (n, f), (f, n),
+                     (s, n), (n, s), (s, i), (i, s), (s, f), (f, s), (s, s)]:
+            self.assert_(x != y)
+            self.assert_(not (x == y))
+            self.assert_(not (x < y))
+            self.assert_(not (x <= y))
+            self.assert_(not (x > y))
+            self.assert_(not (x >= y))
 
 # The following are two functions used to test threading in the next class
 
@@ -1147,7 +1160,12 @@ class DecimalUsabilityTest(unittest.TestCase):
         checkSameDec("__add__", True)
         checkSameDec("__div__", True)
         checkSameDec("__divmod__", True)
-        checkSameDec("__cmp__", True)
+        checkSameDec("__eq__", True)
+        checkSameDec("__ne__", True)
+        checkSameDec("__le__", True)
+        checkSameDec("__lt__", True)
+        checkSameDec("__ge__", True)
+        checkSameDec("__gt__", True)
         checkSameDec("__float__")
         checkSameDec("__floordiv__", True)
         checkSameDec("__hash__")
