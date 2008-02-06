@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Limit free list of method and builtin function objects to 256 entries
+  each.
+
 - Patch #1953: Added ``sys._compact_freelists()`` and the C API functions
   ``PyInt_CompactFreeList`` and ``PyFloat_CompactFreeList``
   to compact the internal free lists of pre-allocted ints and floats.
