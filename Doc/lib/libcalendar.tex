@@ -81,20 +81,20 @@ the \var{year} as full weeks. Weeks are lists of seven
 day numbers.
 \end{methoddesc}
 
-\begin{methoddesc}{yeardatescalendar}{year, month\optional{, width}}
+\begin{methoddesc}{yeardatescalendar}{year\optional{, width}}
 Return the data for the specified year ready for formatting. The return
 value is a list of month rows. Each month row contains up to \var{width}
 months (defaulting to 3). Each month contains between 4 and 6 weeks and
 each week contains 1--7 days. Days are \class{datetime.date} objects.
 \end{methoddesc}
 
-\begin{methoddesc}{yeardays2calendar}{year, month\optional{, width}}
+\begin{methoddesc}{yeardays2calendar}{year\optional{, width}}
 Return the data for the specified year ready for formatting (similar to
 \method{yeardatescalendar()}). Entries in the week lists are tuples of
 day numbers and weekday numbers. Day numbers outside this month are zero.
 \end{methoddesc}
 
-\begin{methoddesc}{yeardayscalendar}{year, month\optional{, width}}
+\begin{methoddesc}{yeardayscalendar}{year\optional{, width}}
 Return the data for the specified year ready for formatting (similar to
 \method{yeardatescalendar()}). Entries in the week lists are day numbers.
 Day numbers outside this month are zero.
