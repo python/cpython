@@ -232,6 +232,8 @@ class MutableString(UserString, collections.MutableSequence):
     def __imul__(self, n):
         self.data *= n
         return self
+    def insert(self, index, value):
+        self[index:index] = value
 
 collections.MutableSequence.register(MutableString)
 
