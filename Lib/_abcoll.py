@@ -345,6 +345,12 @@ class Mapping:
     def values(self):
         return ValuesView(self)
 
+    def __eq__(self, other):
+        return isinstance(other, Mapping) and \
+               dict(self.items()) == dict(other.items())
+
+    def __ne__(self, other):
+        return not (self == other)
 
 class MappingView:
     __metaclass__ = ABCMeta
@@ -452,6 +458,13 @@ class MutableMapping(Mapping):
                 self[key] = value
         for key, value in kwds.items():
             self[key] = value
+
+    def setdefault(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+        return default
 
 MutableMapping.register(dict)
 
