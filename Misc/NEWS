@@ -75,7 +75,7 @@ Library
 
 - Created new UserDict class in collections module.  This one inherits from and
   complies with the MutableMapping ABC.  
-  XXX still need to covert old UserDict based tests and eliminate the old UserDict module.
+  XXX still need to move docs
 
 - Removed UserDict.DictMixin.  Replaced all its uses with collections.MutableMapping.
 
