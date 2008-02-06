@@ -32,25 +32,32 @@ ABC                                    Notes
 :class:`collections.Iterable`          Defines ``__iter__()``
 :class:`collections.Iterator`          Derived from :class:`Iterable` and in
                                        addition defines ``__next__()``
+:class:`collections.Sized`             Defines ``__len__()``
 :class:`collections.Mapping`           Derived from :class:`Container`,
                                        :class:`Iterable`,
                                        and :class:`Sized`, and in addition
                                        defines ``__getitem__()``, ``get()``,
                                        ``__contains__()``, ``__len__()``,
+                                       ``__eq__()``, ``__ne__()``,
                                        ``__iter__()``, ``keys()``,
                                        ``items()``, and ``values()``
 :class:`collections.MutableMapping`    Derived from :class:`Mapping`
-:class:`collections.MutableSequence`   Derived from :class:`Sequence`
-:class:`collections.MutableSet`        Derived from :class:`Set` and in
-                                       addition defines ``add()``,
-                                       ``clear()``, ``discard()``, ``pop()``,
-                                       and ``toggle()``
 :class:`collections.Sequence`          Derived from :class:`Container`,
                                        :class:`Iterable`, and :class:`Sized`,
                                        and in addition defines
-                                       ``__getitem__()``
-:class:`collections.Set`               Derived from :class:`Container`, :class:`Iterable`, and :class:`Sized`
-:class:`collections.Sized`             Defines ``__len__()``
+                                       ``__getitem__()`
+:class:`collections.MutableSequence`   Derived from :class:`Sequence`
+:class:`collections.Set`               Derived from :class:`Container`, :class:`Iterable`, :class:`Sized`.
+                                       add in addition defines
+				       ``__le__()``, ``__lt__()``, ``__eq__()``,
+                                       ``__and__()``, ``__or__()``, ``__sub__()``,
+                                       ``__xor__()``, and ``isdisjoint()``,
+:class:`collections.MutableSet`        Derived from :class:`Set` and in
+                                       addition defines ``add()``,
+                                       ``clear()``, ``discard()``, ``pop()``,
+                                       ``remove()``, ``__ior__()``, ``__iand__()``,
+                                       ``__ixor__()``, and ``__isub__()``
+
 =====================================  ========================================
 
 .. XXX Have not included them all and the notes are incomplete
@@ -577,3 +584,30 @@ customize a prototype instance::
 
 .. [#] For information on the double-star-operator see
    :ref:`tut-unpacking-arguments` and :ref:`calls`.
+
+
+
+:class:`UserDict` objects
+----------------------
+
+The class, :class:`UserDict` acts as a wrapper around dictionary objects.  
+The need for this class has been partially supplanted by the ability to 
+subclass directly from :class:`dict`; however, this class can be easier
+to work with because the underlying dictionary is accessible as an
+attribute.
+
+.. class:: UserDict([initialdata])
+
+   Class that simulates a dictionary.  The instance's contents are kept in a
+   regular dictionary, which is accessible via the :attr:`data` attribute of
+   :class:`UserDict` instances.  If *initialdata* is provided, :attr:`data` is
+   initialized with its contents; note that a reference to *initialdata* will not
+   be kept, allowing it be used for other purposes.
+
+In addition to supporting the methods and operations of mappings, 
+:class:`UserDict` and :class:`IterableUserDict` instances
+provide the following attribute:
+
+.. attribute:: UserDict.data
+
+   A real dictionary used to store the contents of the :class:`UserDict` class.
