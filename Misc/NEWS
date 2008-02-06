@@ -80,6 +80,10 @@ Core and builtins
 Library
 -------
 
+- Fixed _ctypes.COMError so that it must be called with exactly three
+  arguments, instances now have the hresult, text, and details
+  instance variables.
+
 - #1507247, #2004: tarfile.py: Use mode 0700 for temporary directories and
   default permissions for missing directories.
 
