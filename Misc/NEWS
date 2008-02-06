@@ -391,6 +391,9 @@ Core and builtins
 Library
 -------
 
+- #1979: Add rich comparisons to Decimal, and make Decimal comparisons
+  involving a NaN follow the IEEE 754 standard.
+
 - #2004: tarfile.py: Use mode 0700 for temporary directories and default
   permissions for missing directories.
 
