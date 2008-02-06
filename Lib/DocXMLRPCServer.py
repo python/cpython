@@ -30,7 +30,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         results = []
         here = 0
 
-        # XXX Note that this regular expressions does not allow for the
+        # XXX Note that this regular expression does not allow for the
         # hyperlinking of arbitrary strings being used as method
         # names. Only methods with names consisting of word characters
         # and '.'s are hyperlinked.
@@ -52,7 +52,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
                 url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif pep:
-                url = 'http://www.python.org/peps/pep-%04d.html' % int(pep)
+                url = 'http://www.python.org/dev/peps/pep-%04d/' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif text[end:end+1] == '(':
                 results.append(self.namelink(name, methods, funcs, classes))

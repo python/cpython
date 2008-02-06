@@ -1,32 +1,45 @@
-from test.test_support import TestFailed, TESTFN
+from test.test_support import TESTFN, run_unittest
 import os
 import wave
-
-def check(t, msg=None):
-    if not t:
-        raise TestFailed(msg)
+import unittest
 
 nchannels = 2
 sampwidth = 2
 framerate = 8000
 nframes = 100
 
-f = wave.open(TESTFN, 'wb')
-f.setnchannels(nchannels)
-f.setsampwidth(sampwidth)
-f.setframerate(framerate)
-f.setnframes(nframes)
-output = b'\0' * nframes * nchannels * sampwidth
-f.writeframes(output)
-f.close()
+class TestWave(unittest.TestCase):
 
-f = wave.open(TESTFN, 'rb')
-check(nchannels == f.getnchannels(), "nchannels")
-check(sampwidth == f.getsampwidth(), "sampwidth")
-check(framerate == f.getframerate(), "framerate")
-check(nframes == f.getnframes(), "nframes")
-input = f.readframes(nframes)
-check(input == output, "data")
-f.close()
+    def setUp(self):
+        self.f = None
 
-os.remove(TESTFN)
+    def tearDown(self):
+        if self.f is not None:
+            self.f.close()
+        try:
+            os.remove(TESTFN)
+        except OSError:
+            pass
+
+    def test_it(self):
+        self.f = wave.open(TESTFN, 'wb')
+        self.f.setnchannels(nchannels)
+        self.f.setsampwidth(sampwidth)
+        self.f.setframerate(framerate)
+        self.f.setnframes(nframes)
+        output = b'\0' * nframes * nchannels * sampwidth
+        self.f.writeframes(output)
+        self.f.close()
+
+        self.f = wave.open(TESTFN, 'rb')
+        self.assertEqual(nchannels, self.f.getnchannels())
+        self.assertEqual(sampwidth, self.f.getsampwidth())
+        self.assertEqual(framerate, self.f.getframerate())
+        self.assertEqual(nframes, self.f.getnframes())
+        self.assertEqual(self.f.readframes(nframes), output)
+
+def test_main():
+    run_unittest(TestWave)
+
+if __name__ == '__main__':
+    test_main()

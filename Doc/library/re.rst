@@ -65,8 +65,7 @@ and implementation of regular expressions, consult the Friedl book referenced
 above, or almost any textbook about compiler construction.
 
 A brief explanation of the format of regular expressions follows.  For further
-information and a gentler presentation, consult the Regular Expression HOWTO,
-accessible from http://www.python.org/doc/howto/.
+information and a gentler presentation, consult the :ref:`regex-howto`.
 
 Regular expressions can contain both special and ordinary characters. Most
 ordinary characters, like ``'A'``, ``'a'``, or ``'0'``, are the simplest regular

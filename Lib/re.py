@@ -294,8 +294,8 @@ class Scanner:
             p.append(sre_parse.SubPattern(s, [
                 (SUBPATTERN, (len(p)+1, sre_parse.parse(phrase, flags))),
                 ]))
+        s.groups = len(p)+1
         p = sre_parse.SubPattern(s, [(BRANCH, (None, p))])
-        s.groups = len(p)
         self.scanner = sre_compile.compile(p)
     def scan(self, string):
         result = []

@@ -4,7 +4,14 @@
 #include "Python.h"
 #include "structmember.h"
 
+/* Free list for method objects to safe malloc/free overhead
+ * The m_self element is used to chain the objects.
+ */
 static PyCFunctionObject *free_list = NULL;
+static int numfree = 0;
+#ifndef PyCFunction_MAXFREELIST
+#define PyCFunction_MAXFREELIST 256
+#endif
 
 PyObject *
 PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
@@ -14,6 +21,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 	if (op != NULL) {
 		free_list = (PyCFunctionObject *)(op->m_self);
 		PyObject_INIT(op, &PyCFunction_Type);
+		numfree--;
 	}
 	else {
 		op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
@@ -116,8 +124,14 @@ meth_dealloc(PyCFunctionObject *m)
 	_PyObject_GC_UNTRACK(m);
 	Py_XDECREF(m->m_self);
 	Py_XDECREF(m->m_module);
-	m->m_self = (PyObject *)free_list;
-	free_list = m;
+	if (numfree < PyCFunction_MAXFREELIST) {
+		m->m_self = (PyObject *)free_list;
+		free_list = m;
+		numfree++;
+	}
+	else {
+		PyObject_GC_Del(m);
+	}
 }
 
 static PyObject *
@@ -312,14 +326,16 @@ PyCFunction_Fini(void)
 		PyCFunctionObject *v = free_list;
 		free_list = (PyCFunctionObject *)(v->m_self);
 		PyObject_GC_Del(v);
+		numfree--;
 	}
+	assert(numfree == 0);
 }
 
 /* PyCFunction_New() is now just a macro that calls PyCFunction_NewEx(),
    but it's part of the API so we need to keep a function around that
    existing C extensions can call.
 */
-   
+
 #undef PyCFunction_New
 PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 

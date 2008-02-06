@@ -45,9 +45,9 @@ Linux and the BSD variants of Unix.
       Convenience function to ensure proper terminal setup and resetting on
       application entry and exit.
 
-   `Curses Programming with Python <http://www.python.org/doc/howto/curses/curses.html>`_
+   :ref:`curses-howto`
       Tutorial material on using curses with Python, by Andrew Kuchling and Eric
-      Raymond, is available on the Python Web site.
+      Raymond.
 
    The :file:`Demo/curses/` directory in the Python source distribution contains
    some example programs using the curses bindings provided by this module.
