@@ -6,10 +6,11 @@ Note: string objects have grown methods in Python 1.6
 This module requires Python 1.6 or later.
 """
 import sys
+import collections
 
 __all__ = ["UserString","MutableString"]
 
-class UserString:
+class UserString(collections.Sequence):
     def __init__(self, seq):
         if isinstance(seq, str):
             self.data = seq
@@ -161,7 +162,9 @@ class UserString:
     def upper(self): return self.__class__(self.data.upper())
     def zfill(self, width): return self.__class__(self.data.zfill(width))
 
-class MutableString(UserString):
+collections.Sequence.register(UserString)
+
+class MutableString(UserString, collections.MutableSequence):
     """mutable string objects
 
     Python strings are immutable objects.  This has the advantage, that
@@ -229,6 +232,8 @@ class MutableString(UserString):
     def __imul__(self, n):
         self.data *= n
         return self
+
+collections.MutableSequence.register(MutableString)
 
 if __name__ == "__main__":
     # execute the regression test to stdout, if called as a script:
