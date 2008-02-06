@@ -4956,16 +4956,19 @@ create_comerror(void)
 	PyObject *s;
 	int status;
 
+	if (dict == NULL)
+		return -1;
+
 	while (methods->ml_name) {
 		/* get a wrapper for the built-in function */
 		PyObject *func = PyCFunction_New(methods, NULL);
 		PyObject *meth;
 		if (func == NULL)
-			return -1;
+			goto error;
 		meth = PyMethod_New(func, NULL, ComError);
 		Py_DECREF(func);
 		if (meth == NULL)
-			return -1;
+			goto error;
 		PyDict_SetItemString(dict, methods->ml_name, meth);
 		Py_DECREF(meth);
 		++methods;
@@ -4973,21 +4976,22 @@ create_comerror(void)
 
 	s = PyString_FromString(comerror_doc);
 	if (s == NULL)
-		return -1;
+		goto error;
 	status = PyDict_SetItemString(dict, "__doc__", s);
 	Py_DECREF(s);
-	if (status == -1) {
-		Py_DECREF(dict);
-		return -1;
-	}
+	if (status == -1)
+		goto error;
 
 	ComError = PyErr_NewException("_ctypes.COMError",
 				      NULL,
 				      dict);
 	if (ComError == NULL)
-		return -1;
+		goto error;
 
 	return 0;
+  error:
+	Py_DECREF(dict);
+	return -1;
 }
 
 #endif
