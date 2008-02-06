@@ -24,9 +24,9 @@ In addition to containers, the collections module provides some ABCs
 a class provides a particular interface, for example, is it hashable or
 a mapping. The ABCs provided include those in the following table:
 
-=====================================  ========================================
+=====================================  ================================================================================
 ABC                                    Notes
-=====================================  ========================================
+=====================================  ================================================================================
 :class:`collections.Container`         Defines ``__contains__()``
 :class:`collections.Hashable`          Defines ``__hash__()``
 :class:`collections.Iterable`          Defines ``__iter__()``
@@ -45,23 +45,25 @@ ABC                                    Notes
 :class:`collections.Sequence`          Derived from :class:`Container`,
                                        :class:`Iterable`, and :class:`Sized`,
                                        and in addition defines
-                                       ``__getitem__()`
+                                       ``__getitem__()``
 :class:`collections.MutableSequence`   Derived from :class:`Sequence`
-:class:`collections.Set`               Derived from :class:`Container`, :class:`Iterable`, :class:`Sized`.
+:class:`collections.Set`               Derived from :class:`Container`,
+                                       :class:`Iterable`, and :class:`Sized`,
                                        add in addition defines
-				       ``__le__()``, ``__lt__()``, ``__eq__()``,
-                                       ``__and__()``, ``__or__()``, ``__sub__()``,
+				       ``__le__()``, ``__lt__()``,
+                                       ``__eq__()``, ``__and__()``,
+                                       ``__or__()``, ``__sub__()``,
                                        ``__xor__()``, and ``isdisjoint()``,
 :class:`collections.MutableSet`        Derived from :class:`Set` and in
                                        addition defines ``add()``,
                                        ``clear()``, ``discard()``, ``pop()``,
-                                       ``remove()``, ``__ior__()``, ``__iand__()``,
-                                       ``__ixor__()``, and ``__isub__()``
-
-=====================================  ========================================
+                                       ``remove()``, ``__ior__()``,
+                                       ``__iand__()``, ``__ixor__()``, and
+                                       ``__isub__()``
+=====================================  ================================================================================
 
 .. XXX Have not included them all and the notes are incomplete
-.. Deliberately did one row wide to get a neater output
+.. long = lines improves the layout
 
 These ABCs allow us to ask classes or instances if they provide
 particular functionality, for example::
@@ -588,7 +590,7 @@ customize a prototype instance::
 
 
 :class:`UserDict` objects
-----------------------
+-------------------------
 
 The class, :class:`UserDict` acts as a wrapper around dictionary objects.  
 The need for this class has been partially supplanted by the ability to 
