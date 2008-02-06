@@ -204,7 +204,12 @@ class Set(metaclass=ABCMeta):
 
     @classmethod
     def _from_iterable(cls, it):
-        return frozenset(it)
+        '''Construct an instance of the class from any iterable input.
+
+        Must override this method if the class constructor signature
+        will not accept a frozenset for an input.
+        '''
+        return cls(frozenset(it))
 
     def __and__(self, other):
         if not isinstance(other, Iterable):
