@@ -9,7 +9,9 @@
  */
 static PyCFunctionObject *free_list = NULL;
 static int numfree = 0;
-#define MAXFREELIST 256
+#ifndef PyCFunction_MAXFREELIST
+#define PyCFunction_MAXFREELIST 256
+#endif
 
 PyObject *
 PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
@@ -131,7 +133,7 @@ meth_dealloc(PyCFunctionObject *m)
 	_PyObject_GC_UNTRACK(m);
 	Py_XDECREF(m->m_self);
 	Py_XDECREF(m->m_module);
-	if (numfree < MAXFREELIST) {
+	if (numfree < PyCFunction_MAXFREELIST) {
 		m->m_self = (PyObject *)free_list;
 		free_list = m;
 		numfree++;

@@ -9,7 +9,9 @@
  */
 static PyMethodObject *free_list;
 static int numfree = 0;
-#define MAXFREELIST 256
+#ifndef PyMethod_MAXFREELIST
+#define PyMethod_MAXFREELIST 256
+#endif
 
 #define TP_DESCR_GET(t) \
     (PyType_HasFeature(t, Py_TPFLAGS_HAVE_CLASS) ? (t)->tp_descr_get : NULL)
@@ -2337,7 +2339,7 @@ instancemethod_dealloc(register PyMethodObject *im)
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
 	Py_XDECREF(im->im_class);
-	if (numfree < MAXFREELIST) {
+	if (numfree < PyMethod_MAXFREELIST) {
 		im->im_self = (PyObject *)free_list;
 		free_list = im;
 		numfree++;

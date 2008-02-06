@@ -51,7 +51,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Limit for the Unicode object free list */
 
-#define MAX_UNICODE_FREELIST_SIZE       1024
+#define PyUnicode_MAXFREELIST       1024
 
 /* Limit for the Unicode object free list stay alive optimization.
 
@@ -59,7 +59,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    all objects on the free list having a size less than this
    limit. This reduces malloc() overhead for small Unicode objects.
 
-   At worst this will result in MAX_UNICODE_FREELIST_SIZE *
+   At worst this will result in PyUnicode_MAXFREELIST *
    (sizeof(PyUnicodeObject) + KEEPALIVE_SIZE_LIMIT +
    malloc()-overhead) bytes of unused garbage.
 
@@ -93,8 +93,8 @@ extern "C" {
 #endif
 
 /* Free list for Unicode objects */
-static PyUnicodeObject *unicode_freelist;
-static int unicode_freelist_size;
+static PyUnicodeObject *free_list;
+static int numfree;
 
 /* The empty Unicode object is shared to improve performance. */
 static PyUnicodeObject *unicode_empty;
@@ -299,10 +299,10 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
     }
 
     /* Unicode freelist & memory allocation */
-    if (unicode_freelist) {
-        unicode = unicode_freelist;
-        unicode_freelist = *(PyUnicodeObject **)unicode;
-        unicode_freelist_size--;
+    if (free_list) {
+        unicode = free_list;
+        free_list = *(PyUnicodeObject **)unicode;
+        numfree--;
 	if (unicode->str) {
 	    /* Keep-Alive optimization: we only upsize the buffer,
 	       never downsize it. */
@@ -352,7 +352,7 @@ static
 void unicode_dealloc(register PyUnicodeObject *unicode)
 {
     if (PyUnicode_CheckExact(unicode) &&
-	unicode_freelist_size < MAX_UNICODE_FREELIST_SIZE) {
+	numfree < PyUnicode_MAXFREELIST) {
         /* Keep-Alive optimization */
 	if (unicode->length >= KEEPALIVE_SIZE_LIMIT) {
 	    PyMem_DEL(unicode->str);
@@ -364,9 +364,9 @@ void unicode_dealloc(register PyUnicodeObject *unicode)
 	    unicode->defenc = NULL;
 	}
 	/* Add to free list */
-        *(PyUnicodeObject **)unicode = unicode_freelist;
-        unicode_freelist = unicode;
-        unicode_freelist_size++;
+        *(PyUnicodeObject **)unicode = free_list;
+        free_list = unicode;
+        numfree++;
     }
     else {
 	PyMem_DEL(unicode->str);
@@ -7704,9 +7704,9 @@ unicode_zfill(PyUnicodeObject *self, PyObject *args)
 
 #if 0
 static PyObject*
-unicode_freelistsize(PyUnicodeObject *self)
+free_listsize(PyUnicodeObject *self)
 {
-    return PyInt_FromLong(unicode_freelist_size);
+    return PyInt_FromLong(numfree);
 }
 #endif
 
@@ -7861,7 +7861,7 @@ static PyMethodDef unicode_methods[] = {
 
 #if 0
     /* This one is just used for debugging the implementation. */
-    {"freelistsize", (PyCFunction) unicode_freelistsize, METH_NOARGS},
+    {"freelistsize", (PyCFunction) free_listsize, METH_NOARGS},
 #endif
 
     {"__getnewargs__",	(PyCFunction)unicode_getnewargs, METH_NOARGS},
@@ -8831,8 +8831,8 @@ void _PyUnicode_Init(void)
     };
 
     /* Init the implementation */
-    unicode_freelist = NULL;
-    unicode_freelist_size = 0;
+    free_list = NULL;
+    numfree = 0;
     unicode_empty = _PyUnicode_New(0);
     if (!unicode_empty)
 	return;
@@ -8869,7 +8869,7 @@ _PyUnicode_Fini(void)
 	}
     }
 
-    for (u = unicode_freelist; u != NULL;) {
+    for (u = free_list; u != NULL;) {
 	PyUnicodeObject *v = u;
 	u = *(PyUnicodeObject **)u;
 	if (v->str)
@@ -8877,8 +8877,8 @@ _PyUnicode_Fini(void)
 	Py_XDECREF(v->defenc);
 	PyObject_Del(v);
     }
-    unicode_freelist = NULL;
-    unicode_freelist_size = 0;
+    free_list = NULL;
+    numfree = 0;
 }
 
 #ifdef __cplusplus
