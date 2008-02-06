@@ -37,8 +37,12 @@ if os.name == "nt" and "\\pc\\v" in project_base[-10:].lower():
 # different (hard-wired) directories.
 # Setup.local is available for Makefile builds including VPATH builds,
 # Setup.dist is available on Windows
-python_build = any(os.path.isfile(os.path.join(project_base, "Modules", fn))
-                   for fn in ("Setup.dist", "Setup.local"))
+def _python_build():
+    for fn in ("Setup.dist", "Setup.local"):
+        if os.path.isfile(os.path.join(project_base, "Modules", fn)):
+            return True
+    return False
+python_build = _python_build()
 
 def get_python_version():
     """Return a string containing the major and minor Python version,

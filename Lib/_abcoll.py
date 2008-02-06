@@ -385,6 +385,7 @@ class Mapping(metaclass=ABCMeta):
     def __ne__(self, other):
         return not (self == other)
 
+
 class MappingView(metaclass=ABCMeta):
 
     def __init__(self, mapping):

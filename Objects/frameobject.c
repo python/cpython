@@ -401,14 +401,15 @@ static PyGetSetDef frame_getsetlist[] = {
    call depth of more than 20 or 30 is probably already exceptional
    unless the program contains run-away recursion.  I hope.
 
-   Later, MAXFREELIST was added to bound the # of frames saved on
+   Later, PyFrame_MAXFREELIST was added to bound the # of frames saved on
    free_list.  Else programs creating lots of cyclic trash involving
    frames could provoke free_list into growing without bound.
 */
 
 static PyFrameObject *free_list = NULL;
 static int numfree = 0;		/* number of frames currently in free_list */
-#define MAXFREELIST 200		/* max value for numfree */
+/* max value for numfree */
+#define PyFrame_MAXFREELIST 200	
 
 static void
 frame_dealloc(PyFrameObject *f)
@@ -441,7 +442,7 @@ frame_dealloc(PyFrameObject *f)
 	co = f->f_code;
 	if (co->co_zombieframe == NULL)
 		co->co_zombieframe = f;
-	else if (numfree < MAXFREELIST) {
+	else if (numfree < PyFrame_MAXFREELIST) {
 		++numfree;
 		f->f_back = free_list;
 		free_list = f;

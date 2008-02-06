@@ -276,7 +276,7 @@ Unicode result).  The following examples show the differences::
 
 Encodings are specified as strings containing the encoding's name.  Python
 comes with roughly 100 different encodings; see the Python Library Reference at
-<http://docs.python.org/lib/standard-encodings.html> for a list.  Some encodings
+:ref:`standard-encodings` for a list.  Some encodings
 have multiple names; for example, 'latin-1', 'iso_8859_1' and '8859' are all
 synonyms for the same encoding.
 

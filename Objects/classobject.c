@@ -5,6 +5,15 @@
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
+/* Free list for method objects to safe malloc/free overhead
+ * The im_self element is used to chain the elements.
+ */
+static PyMethodObject *free_list;
+static int numfree = 0;
+#ifndef PyMethod_MAXFREELIST
+#define PyMethod_MAXFREELIST 256
+#endif
+
 PyObject *
 PyMethod_Function(PyObject *im)
 {
@@ -30,8 +39,6 @@ PyMethod_Self(PyObject *im)
    function.
 */
 
-static PyMethodObject *free_list;
-
 PyObject *
 PyMethod_New(PyObject *func, PyObject *self)
 {
@@ -48,6 +55,7 @@ PyMethod_New(PyObject *func, PyObject *self)
 	if (im != NULL) {
 		free_list = (PyMethodObject *)(im->im_self);
 		PyObject_INIT(im, &PyMethod_Type);
+		numfree--;
 	}
 	else {
 		im = PyObject_GC_New(PyMethodObject, &PyMethod_Type);
@@ -165,8 +173,14 @@ method_dealloc(register PyMethodObject *im)
 		PyObject_ClearWeakRefs((PyObject *)im);
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
-	im->im_self = (PyObject *)free_list;
-	free_list = im;
+	if (numfree < PyMethod_MAXFREELIST) {
+		im->im_self = (PyObject *)free_list;
+		free_list = im;
+		numfree++;
+	}
+	else {
+		PyObject_GC_Del(im);
+	}
 }
 
 static PyObject *
@@ -375,7 +389,9 @@ PyMethod_Fini(void)
 		PyMethodObject *im = free_list;
 		free_list = (PyMethodObject *)(im->im_self);
 		PyObject_GC_Del(im);
+		numfree--;
 	}
+	assert(numfree == 0);
 }
 
 /* ------------------------------------------------------------------------
