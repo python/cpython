@@ -37,6 +37,19 @@ if sys.platform == "win32":
                 # are trapped and raise an exception.
                 self.assertRaises(WindowsError, windll.kernel32.GetModuleHandleA, 32)
 
+    class TestWintypes(unittest.TestCase):
+
+        def test_COMError(self):
+            from _ctypes import COMError
+            self.assertEqual(COMError.__doc__, "Raised when a COM method call failed.")
+
+            ex = COMError(-1, "text", ("details",))
+            self.assertEqual(ex.hresult, -1)
+            self.assertEqual(ex.text, "text")
+            self.assertEqual(ex.details, ("details",))
+            self.assertEqual((ex.hresult, ex.text, ex.details),
+                             ex[:])
+
 class Structures(unittest.TestCase):
 
     def test_struct_by_value(self):
