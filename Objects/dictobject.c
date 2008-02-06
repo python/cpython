@@ -183,9 +183,11 @@ show_counts(void)
     } while(0)
 
 /* Dictionary reuse scheme to save calls to malloc, free, and memset */
-#define MAXFREEDICTS 80
-static PyDictObject *free_dicts[MAXFREEDICTS];
-static int num_free_dicts = 0;
+#ifndef PyDict_MAXFREELIST
+#define PyDict_MAXFREELIST 80
+#endif
+static PyDictObject *free_list[PyDict_MAXFREELIST];
+static int numfree = 0;
 
 PyObject *
 PyDict_New(void)
@@ -199,8 +201,8 @@ PyDict_New(void)
 		Py_AtExit(show_counts);
 #endif
 	}
-	if (num_free_dicts) {
-		mp = free_dicts[--num_free_dicts];
+	if (numfree) {
+		mp = free_list[--numfree];
 		assert (mp != NULL);
 		assert (Py_TYPE(mp) == &PyDict_Type);
 		_Py_NewReference((PyObject *)mp);
@@ -868,8 +870,8 @@ dict_dealloc(register PyDictObject *mp)
 	}
 	if (mp->ma_table != mp->ma_smalltable)
 		PyMem_DEL(mp->ma_table);
-	if (num_free_dicts < MAXFREEDICTS && Py_TYPE(mp) == &PyDict_Type)
-		free_dicts[num_free_dicts++] = mp;
+	if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
+		free_list[numfree++] = mp;
 	else
 		Py_TYPE(mp)->tp_free((PyObject *)mp);
 	Py_TRASHCAN_SAFE_END(mp)

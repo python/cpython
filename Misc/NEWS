@@ -1487,6 +1487,10 @@ Build
 C API
 -----
 
+- Unified naming convention for free lists and their limits. All free lists
+  in Object/ are named ``free_list``, the counter ``numfree`` and the upper
+  limit is a macro ``PyName_MAXFREELIST`` inside an #ifndef block.
+
 - ``PySet_Add()`` can now modify a newly created frozenset.  Similarly to
   ``PyTuple_SetItem``, it can be used to populate a brand new frozenset; but 
   it does not steal a reference to the added item.

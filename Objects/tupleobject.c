@@ -4,19 +4,19 @@
 #include "Python.h"
 
 /* Speed optimization to avoid frequent malloc/free of small tuples */
-#ifndef MAXSAVESIZE
-#define MAXSAVESIZE	20  /* Largest tuple to save on free list */
+#ifndef PyTuple_MAXSAVESIZE
+#define PyTuple_MAXSAVESIZE	20  /* Largest tuple to save on free list */
 #endif
-#ifndef MAXSAVEDTUPLES 
-#define MAXSAVEDTUPLES  2000  /* Maximum number of tuples of each size to save */
+#ifndef PyTuple_MAXFREELIST 
+#define PyTuple_MAXFREELIST  2000  /* Maximum number of tuples of each size to save */
 #endif
 
-#if MAXSAVESIZE > 0
-/* Entries 1 up to MAXSAVESIZE are free lists, entry 0 is the empty
+#if PyTuple_MAXSAVESIZE > 0
+/* Entries 1 up to PyTuple_MAXSAVESIZE are free lists, entry 0 is the empty
    tuple () of which at most one instance will be allocated.
 */
-static PyTupleObject *free_tuples[MAXSAVESIZE];
-static int num_free_tuples[MAXSAVESIZE];
+static PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
+static int numfree[PyTuple_MAXSAVESIZE];
 #endif
 #ifdef COUNT_ALLOCS
 int fast_tuple_allocs;
@@ -32,18 +32,18 @@ PyTuple_New(register Py_ssize_t size)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-#if MAXSAVESIZE > 0
-	if (size == 0 && free_tuples[0]) {
-		op = free_tuples[0];
+#if PyTuple_MAXSAVESIZE > 0
+	if (size == 0 && free_list[0]) {
+		op = free_list[0];
 		Py_INCREF(op);
 #ifdef COUNT_ALLOCS
 		tuple_zero_allocs++;
 #endif
 		return (PyObject *) op;
 	}
-	if (size < MAXSAVESIZE && (op = free_tuples[size]) != NULL) {
-		free_tuples[size] = (PyTupleObject *) op->ob_item[0];
-		num_free_tuples[size]--;
+	if (size < PyTuple_MAXSAVESIZE && (op = free_list[size]) != NULL) {
+		free_list[size] = (PyTupleObject *) op->ob_item[0];
+		numfree[size]--;
 #ifdef COUNT_ALLOCS
 		fast_tuple_allocs++;
 #endif
@@ -71,10 +71,10 @@ PyTuple_New(register Py_ssize_t size)
 	}
 	for (i=0; i < size; i++)
 		op->ob_item[i] = NULL;
-#if MAXSAVESIZE > 0
+#if PyTuple_MAXSAVESIZE > 0
 	if (size == 0) {
-		free_tuples[0] = op;
-		++num_free_tuples[0];
+		free_list[0] = op;
+		++numfree[0];
 		Py_INCREF(op);	/* extra INCREF so that this is never freed */
 	}
 #endif
@@ -167,14 +167,14 @@ tupledealloc(register PyTupleObject *op)
 		i = len;
 		while (--i >= 0)
 			Py_XDECREF(op->ob_item[i]);
-#if MAXSAVESIZE > 0
-		if (len < MAXSAVESIZE &&
-		    num_free_tuples[len] < MAXSAVEDTUPLES &&
+#if PyTuple_MAXSAVESIZE > 0
+		if (len < PyTuple_MAXSAVESIZE &&
+		    numfree[len] < PyTuple_MAXFREELIST &&
 		    Py_TYPE(op) == &PyTuple_Type)
 		{
-			op->ob_item[0] = (PyObject *) free_tuples[len];
-			num_free_tuples[len]++;
-			free_tuples[len] = op;
+			op->ob_item[0] = (PyObject *) free_list[len];
+			numfree[len]++;
+			free_list[len] = op;
 			goto done; /* return */
 		}
 #endif
@@ -781,16 +781,16 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 void
 PyTuple_Fini(void)
 {
-#if MAXSAVESIZE > 0
+#if PyTuple_MAXSAVESIZE > 0
 	int i;
 
-	Py_XDECREF(free_tuples[0]);
-	free_tuples[0] = NULL;
+	Py_XDECREF(free_list[0]);
+	free_list[0] = NULL;
 
-	for (i = 1; i < MAXSAVESIZE; i++) {
+	for (i = 1; i < PyTuple_MAXSAVESIZE; i++) {
 		PyTupleObject *p, *q;
-		p = free_tuples[i];
-		free_tuples[i] = NULL;
+		p = free_list[i];
+		free_list[i] = NULL;
 		while (p) {
 			q = p;
 			p = (PyTupleObject *)(p->ob_item[0]);

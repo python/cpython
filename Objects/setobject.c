@@ -51,9 +51,11 @@ _PySet_Dummy(void)
     } while(0)
 
 /* Reuse scheme to save calls to malloc, free, and memset */
-#define MAXFREESETS 80
-static PySetObject *free_sets[MAXFREESETS];
-static int num_free_sets = 0;
+#ifndef PySet_MAXFREELIST
+#define PySet_MAXFREELIST 80
+#endif
+static PySetObject *free_list[PySet_MAXFREELIST];
+static int numfree = 0;
 
 /*
 The basic lookup function used by all operations.
@@ -558,8 +560,8 @@ set_dealloc(PySetObject *so)
 	}
 	if (so->table != so->smalltable)
 		PyMem_DEL(so->table);
-	if (num_free_sets < MAXFREESETS && PyAnySet_CheckExact(so))
-		free_sets[num_free_sets++] = so;
+	if (numfree < PySet_MAXFREELIST && PyAnySet_CheckExact(so))
+		free_list[numfree++] = so;
 	else 
 		Py_TYPE(so)->tp_free(so);
 	Py_TRASHCAN_SAFE_END(so)
@@ -983,9 +985,9 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	}
 
 	/* create PySetObject structure */
-	if (num_free_sets && 
+	if (numfree &&
 	    (type == &PySet_Type  ||  type == &PyFrozenSet_Type)) {
-		so = free_sets[--num_free_sets];
+		so = free_list[--numfree];
 		assert (so != NULL && PyAnySet_CheckExact(so));
 		Py_TYPE(so) = type;
 		_Py_NewReference((PyObject *)so);
@@ -1053,9 +1055,9 @@ PySet_Fini(void)
 {
 	PySetObject *so;
 
-	while (num_free_sets) {
-		num_free_sets--;
-		so = free_sets[num_free_sets];
+	while (numfree) {
+		numfree--;
+		so = free_list[numfree];
 		PyObject_GC_Del(so);
 	}
 	Py_CLEAR(dummy);
