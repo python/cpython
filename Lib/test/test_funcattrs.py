@@ -175,7 +175,7 @@ class ArbitraryFunctionAttrTest(FuncAttrsTest):
 class FunctionDictsTest(FuncAttrsTest):
     def test_setting_dict_to_invalid(self):
         self.cannot_set_attr(self.b, '__dict__', None, TypeError)
-        from UserDict import UserDict
+        from collections import UserDict
         d = UserDict({'known_attr': 7})
         self.cannot_set_attr(self.fi.a.__func__, '__dict__', d, TypeError)
 

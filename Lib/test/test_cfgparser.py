@@ -1,11 +1,11 @@
 import ConfigParser
 import io
 import unittest
-import UserDict
+import collections
 
 from test import test_support
 
-class SortedDict(UserDict.UserDict):
+class SortedDict(collections.UserDict):
     def items(self):
         return sorted(self.data.items())
 

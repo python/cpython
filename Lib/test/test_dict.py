@@ -1,7 +1,7 @@
 import unittest
 from test import test_support
 
-import sys, UserDict, random, string
+import sys, collections, random, string
 
 
 class DictTest(unittest.TestCase):
@@ -209,10 +209,10 @@ class DictTest(unittest.TestCase):
         self.assert_(type(dictlike().fromkeys('a')) is dictlike)
         class mydict(dict):
             def __new__(cls):
-                return UserDict.UserDict()
+                return collections.UserDict()
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
-        self.assert_(isinstance(ud, UserDict.UserDict))
+        self.assert_(isinstance(ud, collections.UserDict))
         self.assertRaises(TypeError, dict.fromkeys)
 
         class Exc(Exception): pass
