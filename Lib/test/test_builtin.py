@@ -5,7 +5,7 @@ from test.test_support import fcmp, TESTFN, unlink,  run_unittest, \
                               run_with_locale
 from operator import neg
 
-import sys, warnings, random, UserDict, io, rational
+import sys, warnings, random, collections, io, rational
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
@@ -400,7 +400,7 @@ class BuiltinTest(unittest.TestCase):
 
         # Verify locals stores (used by list comps)
         eval('[locals() for i in (2,3)]', g, d)
-        eval('[locals() for i in (2,3)]', g, UserDict.UserDict())
+        eval('[locals() for i in (2,3)]', g, collections.UserDict())
 
         class SpreadSheet:
             "Sample application showing nested, calculated lookups."

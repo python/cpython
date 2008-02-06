@@ -1,6 +1,6 @@
 # tests common to dict and UserDict
 import unittest
-import UserDict
+import collections
 
 
 class BasicTestMappingProtocol(unittest.TestCase):
@@ -438,11 +438,11 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         # self.assert_(type(dictlike.fromkeys('a')) is dictlike)
         class mydict(self.type2test):
             def __new__(cls):
-                return UserDict.UserDict()
+                return collections.UserDict()
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
         # FIXME: the following won't work with UserDict, because it's an old style class
-        # self.assert_(isinstance(ud, UserDict.UserDict))
+        # self.assert_(isinstance(ud, collections.UserDict))
         self.assertRaises(TypeError, dict.fromkeys)
 
         class Exc(Exception): pass
@@ -574,10 +574,10 @@ class TestHashMappingProtocol(TestMappingProtocol):
         TestMappingProtocol.test_fromkeys(self)
         class mydict(self.type2test):
             def __new__(cls):
-                return UserDict.UserDict()
+                return collections.UserDict()
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
-        self.assert_(isinstance(ud, UserDict.UserDict))
+        self.assert_(isinstance(ud, collections.UserDict))
 
     def test_pop(self):
         TestMappingProtocol.test_pop(self)
