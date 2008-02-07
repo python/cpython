@@ -478,7 +478,7 @@ tupleindex(PyTupleObject *self, PyObject *args)
 	for (i = start; i < stop && i < Py_SIZE(self); i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0)
-			return PyLong_FromSsize_t(i);
+			return PyInt_FromSsize_t(i);
 		else if (cmp < 0)
 			return NULL;
 	}
@@ -499,7 +499,7 @@ tuplecount(PyTupleObject *self, PyObject *v)
 		else if (cmp < 0)
 			return NULL;
 	}
-	return PyLong_FromSsize_t(count);
+	return PyInt_FromSsize_t(count);
 }
 
 static int
