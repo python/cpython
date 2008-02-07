@@ -91,7 +91,7 @@ reset them before monitoring a calculation.
      Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`_.
 
    * IEEE standard 854-1987, `Unofficial IEEE 854 Text
-     <http://www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html>`_.
+     <http://754r.ucbtest.org/standards/854.pdf>`_.
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
