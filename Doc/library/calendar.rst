@@ -39,9 +39,9 @@ it's the base calendar for all computations.
 
 .. method:: Calendar.iterweekdays(weekday)
 
-   Return an iterator for the week day numbers that will be used for one week. The
-   first number from the iterator will be the same as the number returned by
-   :meth:`firstweekday`.
+   Return an iterator for the week day numbers that will be used for one week.
+   The first value from the iterator will be the same as the value of the
+   :attr:`firstweekday` property.
 
 
 .. method:: Calendar.itermonthdates(year, month)
