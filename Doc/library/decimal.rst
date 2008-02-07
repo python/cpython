@@ -1597,13 +1597,13 @@ suggest, so we trap :const:`Inexact` to signal a need for more precision::
     >>> float_to_decimal(math.pi)
     Decimal("3.141592653589793115997963468544185161590576171875")
 
-Q. Why isn't the :func:`floatToDecimal` routine included in the module?
+Q. Why isn't the :func:`float_to_decimal` routine included in the module?
 
 A. There is some question about whether it is advisable to mix binary and
 decimal floating point.  Also, its use requires some care to avoid the
 representation issues associated with binary floating point::
 
-   >>> floatToDecimal(1.1)
+   >>> float_to_decimal(1.1)
    Decimal("1.100000000000000088817841970012523233890533447265625")
 
 Q. Within a complex calculation, how can I make sure that I haven't gotten a
