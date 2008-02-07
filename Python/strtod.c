@@ -44,11 +44,11 @@
     I do know about <values.h>, but the whole point of this file is that
     we can't always trust that stuff to be there or to be correct.
 */
-static	int	MDMINEXPT	= {-323};
+static	int	MDMINEXPT	= -323;
 static	char	MDMINFRAC[]	= "494065645841246544";
 static	double	ZERO		= 0.0;
 
-static	int	MDMAXEXPT	= { 309};
+static	int	MDMAXEXPT	= 309;
 static	char	MDMAXFRAC[]	= "17976931348623157";
 static	double	HUGE		= 1.7976931348623157e308;
 
