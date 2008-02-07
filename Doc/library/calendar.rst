@@ -117,9 +117,10 @@ it's the base calendar for all computations.
 .. method:: TextCalendar.formatmonth(theyear, themonth[, w[, l]])
 
    Return a month's calendar in a multi-line string. If *w* is provided, it
-   specifies the width of the date columns, which are centered. If *l* is given, it
-   specifies the number of lines that each week will use. Depends on the first
-   weekday as set by :func:`setfirstweekday`.
+   specifies the width of the date columns, which are centered. If *l* is given,
+   it specifies the number of lines that each week will use. Depends on the
+   first weekday as specified in the constructor or set by the
+   :meth:`setfirstweekday` method.
 
 
 .. method:: TextCalendar.prmonth(theyear, themonth[, w[, l]])
@@ -129,11 +130,12 @@ it's the base calendar for all computations.
 
 .. method:: TextCalendar.formatyear(theyear, themonth[, w[, l[, c[, m]]]])
 
-   Return a *m*-column calendar for an entire year as a multi-line string. Optional
-   parameters *w*, *l*, and *c* are for date column width, lines per week, and
-   number of spaces between month columns, respectively. Depends on the first
-   weekday as set by :meth:`setfirstweekday`.  The earliest year for which a
-   calendar can be generated is platform-dependent.
+   Return a *m*-column calendar for an entire year as a multi-line string.
+   Optional parameters *w*, *l*, and *c* are for date column width, lines per
+   week, and number of spaces between month columns, respectively. Depends on
+   the first weekday as specified in the constructor or set by the
+   :meth:`setfirstweekday` method.  The earliest year for which a calendar can
+   be generated is platform-dependent.
 
 
 .. method:: TextCalendar.pryear(theyear[, w[, l[, c[, m]]]])
