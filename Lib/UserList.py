@@ -1,6 +1,8 @@
 """A more or less complete user-defined wrapper around list objects."""
 
-class UserList:
+import collections
+
+class UserList(collections.MutableSequence):
     def __init__(self, initlist=None):
         self.data = []
         if initlist is not None:
@@ -83,3 +85,5 @@ class UserList:
             self.data.extend(other.data)
         else:
             self.data.extend(other)
+
+collections.MutableSequence.register(UserList)
