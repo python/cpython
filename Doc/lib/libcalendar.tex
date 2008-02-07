@@ -113,8 +113,8 @@ This class can be used to generate plain text calendars.
 Return a month's calendar in a multi-line string. If \var{w} is
 provided, it specifies the width of the date columns, which are
 centered. If \var{l} is given, it specifies the number of lines that
-each week will use. Depends on the first weekday as set by
-\function{setfirstweekday()}.
+each week will use. Depends on the first weekday as specified in the constructor
+or set by the \method{setfirstweekday()} method.
 \end{methoddesc}
 
 \begin{methoddesc}{prmonth}{theyear, themonth\optional{, w\optional{, l}}}
@@ -126,9 +126,9 @@ Print a month's calendar as returned by \method{formatmonth()}.
 Return a \var{m}-column calendar for an entire year as a multi-line string.
 Optional parameters \var{w}, \var{l}, and \var{c} are for date column
 width, lines per week, and number of spaces between month columns,
-respectively. Depends on the first weekday as set by
-\method{setfirstweekday()}.  The earliest year for which a calendar can
-be generated is platform-dependent.
+respectively. Depends on the first weekday as specified in the constructor or
+set by the \method{setfirstweekday()} method.  The earliest year for which a
+calendar can be generated is platform-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}{pryear}{theyear\optional{, w\optional{, l\optional{,
