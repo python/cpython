@@ -392,9 +392,9 @@ compiler_unit_check(struct compiler_unit *u)
 {
 	basicblock *block;
 	for (block = u->u_blocks; block != NULL; block = block->b_list) {
-		assert(block != (void *)0xcbcbcbcb);
-		assert(block != (void *)0xfbfbfbfb);
-		assert(block != (void *)0xdbdbdbdb);
+		assert((void *)block != (void *)0xcbcbcbcb);
+		assert((void *)block != (void *)0xfbfbfbfb);
+		assert((void *)block != (void *)0xdbdbdbdb);
 		if (block->b_instr != NULL) {
 			assert(block->b_ialloc > 0);
 			assert(block->b_iused > 0);
