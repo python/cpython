@@ -455,6 +455,53 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 	return (PyObject *) np;
 }
 
+static PyObject *
+tupleindex(PyTupleObject *self, PyObject *args)
+{
+	Py_ssize_t i, start=0, stop=Py_SIZE(self);
+	PyObject *v;
+
+	if (!PyArg_ParseTuple(args, "O|O&O&:index", &v,
+	                            _PyEval_SliceIndex, &start,
+	                            _PyEval_SliceIndex, &stop))
+		return NULL;
+	if (start < 0) {
+		start += Py_SIZE(self);
+		if (start < 0)
+			start = 0;
+	}
+	if (stop < 0) {
+		stop += Py_SIZE(self);
+		if (stop < 0)
+			stop = 0;
+	}
+	for (i = start; i < stop && i < Py_SIZE(self); i++) {
+		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
+		if (cmp > 0)
+			return PyLong_FromSsize_t(i);
+		else if (cmp < 0)
+			return NULL;
+	}
+	PyErr_SetString(PyExc_ValueError, "tuple.index(x): x not in list");
+	return NULL;
+}
+
+static PyObject *
+tuplecount(PyTupleObject *self, PyObject *v)
+{
+	Py_ssize_t count = 0;
+	Py_ssize_t i;
+
+	for (i = 0; i < Py_SIZE(self); i++) {
+		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
+		if (cmp > 0)
+			count++;
+		else if (cmp < 0)
+			return NULL;
+	}
+	return PyLong_FromSsize_t(count);
+}
+
 static int
 tupletraverse(PyTupleObject *o, visitproc visit, void *arg)
 {
@@ -661,8 +708,15 @@ tuple_getnewargs(PyTupleObject *v)
 	
 }
 
+PyDoc_STRVAR(index_doc,
+"T.index(value, [start, [stop]]) -> integer -- return first index of value");
+PyDoc_STRVAR(count_doc,
+"T.count(value) -> integer -- return number of occurrences of value");
+
 static PyMethodDef tuple_methods[] = {
 	{"__getnewargs__",	(PyCFunction)tuple_getnewargs,	METH_NOARGS},
+	{"index",	(PyCFunction)tupleindex,  METH_VARARGS, index_doc},
+	{"count",	(PyCFunction)tuplecount,  METH_O, count_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
