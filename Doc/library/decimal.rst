@@ -1581,31 +1581,21 @@ Q. Is there a way to convert a regular float to a :class:`Decimal`?
 
 A. Yes, all binary floating point numbers can be exactly expressed as a
 Decimal.  An exact conversion may take more precision than intuition would
-suggest, so trapping :const:`Inexact` will signal a need for more precision::
+suggest, so we trap :const:`Inexact` to signal a need for more precision::
 
-   def floatToDecimal(f):
-       "Convert a floating point number to a Decimal with no loss of information"
-       # Transform (exactly) a float to a mantissa (0.5 <= abs(m) < 1.0) and an
-       # exponent.  Double the mantissa until it is an integer.  Use the integer
-       # mantissa and exponent to compute an equivalent Decimal.  If this cannot
-       # be done exactly, then retry with more precision.
+    def float_to_decimal(f):
+        "Convert a floating point number to a Decimal with no loss of information"
+        n, d = f.as_integer_ratio()
+        with localcontext() as ctx:
+            ctx.traps[Inexact] = True
+            while True:
+                try:
+                   return Decimal(n) / Decimal(d)
+                except Inexact:
+                    ctx.prec += 1
 
-       mantissa, exponent = math.frexp(f)
-       while mantissa != int(mantissa):
-           mantissa *= 2.0
-           exponent -= 1
-       mantissa = int(mantissa)
-
-       oldcontext = getcontext()
-       setcontext(Context(traps=[Inexact]))
-       try:
-           while True:
-               try:
-                  return mantissa * Decimal(2) ** exponent
-               except Inexact:
-                   getcontext().prec += 1
-       finally:
-           setcontext(oldcontext)
+    >>> float_to_decimal(math.pi)
+    Decimal("3.141592653589793115997963468544185161590576171875")
 
 Q. Why isn't the :func:`floatToDecimal` routine included in the module?
 
