@@ -12,6 +12,9 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Issue #2025 :  Add tuple.count() and tuple.index() methods to comply with
+  the collections.Sequence API.
+
 - Fixed multiple reinitialization of the Python interpreter. The small int
   list in longobject.c has caused a seg fault during the third finalization.
 
