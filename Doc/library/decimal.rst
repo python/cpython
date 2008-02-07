@@ -1295,12 +1295,12 @@ The behavior of Python's comparison operators can be a little surprising where a
 quiet or signaling :const:`NaN` always returns :const:`False` (even when doing
 ``Decimal('NaN')==Decimal('NaN')``), while a test for inequality always returns
 :const:`True`.  An attempt to compare two Decimals using any of the ``<``,
-``<=``, ``>`` or ``>=`` operators will raise the
-:exc:`InvalidOperation` signal if either operand is a :const:`NaN`, and return
-:const:`False` if this signal is trapped.  Note that the General Decimal
-Arithmetic specification does not specify the behavior of direct comparisons;
-these rules for comparisons involving a :const:`NaN` were taken from the IEEE
-754 standard.  To ensure strict standards-compliance, use the :meth:`compare`
+``<=``, ``>`` or ``>=`` operators will raise the :exc:`InvalidOperation` signal
+if either operand is a :const:`NaN`, and return :const:`False` if this signal is
+trapped.  Note that the General Decimal Arithmetic specification does not
+specify the behavior of direct comparisons; these rules for comparisons
+involving a :const:`NaN` were taken from the IEEE 854 standard (see Table 3 in
+section 5.7).  To ensure strict standards-compliance, use the :meth:`compare`
 and :meth:`compare-signal` methods instead.
 
 The signed zeros can result from calculations that underflow. They keep the sign
