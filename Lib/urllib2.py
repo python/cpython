@@ -534,8 +534,11 @@ class HTTPRedirectHandler(BaseHandler):
             # do the same.
             # be conciliant with URIs containing a space
             newurl = newurl.replace(' ', '%20')
+            newheaders = dict((k,v) for k,v in req.headers.items()
+                              if k.lower() not in ("content-length", "content-type")
+                             )
             return Request(newurl,
-                           headers=req.headers,
+                           headers=newheaders,
                            origin_req_host=req.get_origin_req_host(),
                            unverifiable=True)
         else:
