@@ -162,6 +162,22 @@ show_counts(void)
 }
 #endif
 
+/* Debug statistic to compare allocations with reuse through the free list */
+#undef SHOW_ALLOC_COUNT
+#ifdef SHOW_ALLOC_COUNT
+static size_t count_alloc = 0;
+static size_t count_reuse = 0;
+
+static void
+show_alloc(void)
+{
+	fprintf(stderr, "Dict allocations: %zd\n", count_alloc);
+	fprintf(stderr, "Dict reuse through freelist: %zd\n", count_reuse);
+	fprintf(stderr, "%.2f%% reuse rate\n\n",
+		(100.0*count_reuse/(count_alloc+count_reuse)));
+}
+#endif
+
 /* Initialization macros.
    There are two ways to create a dict:  PyDict_New() is the main C API
    function, and the tp_new slot maps to dict_new().  In the latter case we
@@ -200,6 +216,9 @@ PyDict_New(void)
 #ifdef SHOW_CONVERSION_COUNTS
 		Py_AtExit(show_counts);
 #endif
+#ifdef SHOW_ALLOC_COUNT
+		Py_AtExit(show_alloc);
+#endif
 	}
 	if (numfree) {
 		mp = free_list[--numfree];
@@ -212,11 +231,17 @@ PyDict_New(void)
 		assert (mp->ma_used == 0);
 		assert (mp->ma_table == mp->ma_smalltable);
 		assert (mp->ma_mask == PyDict_MINSIZE - 1);
+#ifdef SHOW_ALLOC_COUNT
+		count_reuse++;
+#endif
 	} else {
 		mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
 		if (mp == NULL)
 			return NULL;
 		EMPTY_TO_MINSIZE(mp);
+#ifdef SHOW_ALLOC_COUNT
+		count_alloc++;
+#endif
 	}
 	mp->ma_lookup = lookdict_string;
 #ifdef SHOW_CONVERSION_COUNTS
