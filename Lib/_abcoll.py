@@ -163,10 +163,23 @@ class Set:
             return NotImplemented
         return len(self) < len(other) and self.__le__(other)
 
+    def __gt__(self, other):
+        if not isinstance(other, Set):
+            return NotImplemented
+        return other < self
+
+    def __ge__(self, other):
+        if not isinstance(other, Set):
+            return NotImplemented
+        return other <= self
+
     def __eq__(self, other):
         if not isinstance(other, Set):
             return NotImplemented
         return len(self) == len(other) and self.__le__(other)
+
+    def __ne__(self, other):
+        return not (self == other)
 
     @classmethod
     def _from_iterable(cls, it):
