@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Issue #2045: Fix an infinite recursion triggered when printing a subclass of
+  collections.defaultdict, if its default_factory is set to a bound method.
+
 - Issue #1920: "while 0" statements were completely removed by the compiler,
   even in the presence of an "else" clause, which is supposed to be run when 
   the condition is false. Now the compiler correctly emits bytecode for the
