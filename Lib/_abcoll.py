@@ -496,13 +496,13 @@ class Sequence:
 
     def __iter__(self):
         i = 0
-        while True:
-            try:
+        try:
+            while True:
                 v = self[i]
-            except IndexError:
-                break
-            yield v
-            i += 1
+                yield v
+                i += 1
+        except IndexError:
+            return
 
     def __contains__(self, value):
         for v in self:
