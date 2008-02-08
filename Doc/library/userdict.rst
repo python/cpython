@@ -68,6 +68,8 @@ provide the following attribute:
    Since the mixin has no knowledge of the subclass constructor, it does not define
    :meth:`__init__` or :meth:`copy`.
 
+   Starting with Python version 2.6, it is recommended to use
+   :class:`collections.MutableMapping` instead of :class:`DictMixin`.
 
 :mod:`UserList` --- Class wrapper for list objects
 ==================================================
