@@ -98,7 +98,7 @@ range_item(rangeobject *r, Py_ssize_t i)
 				"xrange object index out of range");
 		return NULL;
 	}
-	return PyInt_FromSsize_t(r->start + (i % r->len) * r->step);
+	return PyInt_FromSsize_t(r->start + i * r->step);
 }
 
 static Py_ssize_t
