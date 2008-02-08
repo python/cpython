@@ -1300,7 +1300,17 @@ defdict_repr(defdictobject *dd)
 	if (dd->default_factory == NULL)
 		defrepr = PyString_FromString("None");
 	else
-		defrepr = PyObject_Repr(dd->default_factory);
+	{
+		int status = Py_ReprEnter(dd->default_factory);
+		if (status != 0) {
+			if (status < 0)
+				return NULL;
+			defrepr = PyString_FromString("...");
+		}
+		else
+			defrepr = PyObject_Repr(dd->default_factory);
+		Py_ReprLeave(dd->default_factory);
+	}
 	if (defrepr == NULL) {
 		Py_DECREF(baserepr);
 		return NULL;

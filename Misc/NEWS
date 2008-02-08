@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #2045: Fix an infinite recursion triggered when printing a subclass of
+  collections.defaultdict, if its default_factory is set to a bound method.
+
 - Fixed a minor memory leak in dictobject.c. The content of the free
   list was not freed on interpreter shutdown.
 
