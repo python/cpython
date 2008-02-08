@@ -205,6 +205,18 @@ show_alloc(void)
 static PyDictObject *free_list[PyDict_MAXFREELIST];
 static int numfree = 0;
 
+void
+PyDict_Fini(void)
+{
+	PyListObject *op;
+
+	while (numfree) {
+		op = free_list[numfree--];
+		assert(PyDict_CheckExact(op));
+		PyObject_GC_Del(op);
+	}
+}
+
 PyObject *
 PyDict_New(void)
 {
