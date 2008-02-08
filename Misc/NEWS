@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Fixed a minor memory leak in dictobject.c. The content of the free
+  list was not freed on interpreter shutdown.
+
 - Limit free list of method and builtin function objects to 256 entries
   each.
 
