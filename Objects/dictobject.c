@@ -208,10 +208,10 @@ static int numfree = 0;
 void
 PyDict_Fini(void)
 {
-	PyListObject *op;
+	PyDictObject *op;
 
 	while (numfree) {
-		op = free_list[numfree--];
+		op = free_list[--numfree];
 		assert(PyDict_CheckExact(op));
 		PyObject_GC_Del(op);
 	}

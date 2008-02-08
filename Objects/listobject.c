@@ -92,8 +92,7 @@ PyList_Fini(void)
 	PyListObject *op;
 
 	while (numfree) {
-		numfree--;
-		op = free_list[numfree];
+		op = free_list[--numfree];
 		assert(PyList_CheckExact(op));
 		PyObject_GC_Del(op);
 	}
