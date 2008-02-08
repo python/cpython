@@ -174,7 +174,10 @@ class Complex(Number):
         """self == other"""
         raise NotImplementedError
 
-    # __ne__ is inherited from object and negates whatever __eq__ does.
+    def __ne__(self, other):
+        """self != other"""
+        # The default __ne__ doesn't negate __eq__ until 3.0.
+        return not (self == other)
 
 Complex.register(complex)
 

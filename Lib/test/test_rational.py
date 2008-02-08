@@ -313,6 +313,8 @@ class RationalTest(unittest.TestCase):
         self.assertFalse(R(2, 3) <= R(1, 2))
         self.assertTrue(R(1, 2) == R(1, 2))
         self.assertFalse(R(1, 2) == R(1, 3))
+        self.assertFalse(R(1, 2) != R(1, 2))
+        self.assertTrue(R(1, 2) != R(1, 3))
 
     def testMixedLess(self):
         self.assertTrue(2 < R(5, 2))
