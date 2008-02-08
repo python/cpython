@@ -43,10 +43,8 @@ ABC                                    Notes
                                        :class:`Iterable`,
                                        and :class:`Sized`, and in addition
                                        defines ``__getitem__()``, ``get()``,
-                                       ``__contains__()``, ``__len__()``,
                                        ``__eq__()``, ``__ne__()``,
-                                       ``__iter__()``, ``keys()``,
-                                       ``items()``, and ``values()``
+                                       ``keys()``, ``items()``, and ``values()``
 :class:`collections.MutableMapping`    Derived from :class:`Mapping`
 :class:`collections.Sequence`          Derived from :class:`Container`,
                                        :class:`Iterable`, and :class:`Sized`,
@@ -83,9 +81,13 @@ The ABC supplies the remaining methods such as :meth:`__and__` and
 :meth:`isdisjoint` ::
 
     class ListBasedSet(collections.Set):
-         'Alternate set implementation favoring space over speed'
+         ''' Alternate set implementation favoring space over speed
+             and not requiring the set elements to be hashable. '''
          def __init__(self, iterable):
-	     self.elements = list(set(iterable))
+             self.elements = lst = []
+             for value in iterable:
+                 if value not in lst:
+                     lst.append(value)
          def __iter__(self):
              return iter(self.elements)
          def __contains__(self, value):
