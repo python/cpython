@@ -1118,6 +1118,8 @@ Library
 Extension Modules
 -----------------
 
+- Updated ``big5hkscs`` codec to the HKSCS revision of 2004.
+
 - #1940: make it possible to use curses.filter() before curses.initscr()
   as the documentation says.
 
