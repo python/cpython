@@ -1,5 +1,3 @@
-
-
 :mod:`UserList` --- Class wrapper for list objects
 ==================================================
 

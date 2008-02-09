@@ -37,9 +37,9 @@ it's the base calendar for all computations.
 
 .. method:: Calendar.iterweekdays(weekday)
 
-   Return an iterator for the week day numbers that will be used for one week. The
-   first number from the iterator will be the same as the number returned by
-   :meth:`firstweekday`.
+   Return an iterator for the week day numbers that will be used for one week.
+   The first value from the iterator will be the same as the value of the
+   :attr:`firstweekday` property.
 
 
 .. method:: Calendar.itermonthdates(year, month)
@@ -81,22 +81,22 @@ it's the base calendar for all computations.
    Weeks are lists of seven day numbers.
 
 
-.. method:: Calendar.yeardatescalendar(year, month[, width])
+.. method:: Calendar.yeardatescalendar(year[, width])
 
-   Return the data for the specified year ready for formatting. The return value is
-   a list of month rows. Each month row contains up to *width* months (defaulting
-   to 3). Each month contains between 4 and 6 weeks and each week contains 1--7
-   days. Days are :class:`datetime.date` objects.
+   Return the data for the specified year ready for formatting. The return value
+   is a list of month rows. Each month row contains up to *width* months
+   (defaulting to 3). Each month contains between 4 and 6 weeks and each week
+   contains 1--7 days. Days are :class:`datetime.date` objects.
 
 
-.. method:: Calendar.yeardays2calendar(year, month[, width])
+.. method:: Calendar.yeardays2calendar(year[, width])
 
    Return the data for the specified year ready for formatting (similar to
-   :meth:`yeardatescalendar`). Entries in the week lists are tuples of day numbers
-   and weekday numbers. Day numbers outside this month are zero.
+   :meth:`yeardatescalendar`). Entries in the week lists are tuples of day
+   numbers and weekday numbers. Day numbers outside this month are zero.
 
 
-.. method:: Calendar.yeardayscalendar(year, month[, width])
+.. method:: Calendar.yeardayscalendar(year[, width])
 
    Return the data for the specified year ready for formatting (similar to
    :meth:`yeardatescalendar`). Entries in the week lists are day numbers. Day
@@ -113,9 +113,10 @@ it's the base calendar for all computations.
 .. method:: TextCalendar.formatmonth(theyear, themonth[, w[, l]])
 
    Return a month's calendar in a multi-line string. If *w* is provided, it
-   specifies the width of the date columns, which are centered. If *l* is given, it
-   specifies the number of lines that each week will use. Depends on the first
-   weekday as set by :func:`setfirstweekday`.
+   specifies the width of the date columns, which are centered. If *l* is given,
+   it specifies the number of lines that each week will use. Depends on the
+   first weekday as specified in the constructor or set by the
+   :meth:`setfirstweekday` method.
 
 
 .. method:: TextCalendar.prmonth(theyear, themonth[, w[, l]])
@@ -125,11 +126,12 @@ it's the base calendar for all computations.
 
 .. method:: TextCalendar.formatyear(theyear, themonth[, w[, l[, c[, m]]]])
 
-   Return a *m*-column calendar for an entire year as a multi-line string. Optional
-   parameters *w*, *l*, and *c* are for date column width, lines per week, and
-   number of spaces between month columns, respectively. Depends on the first
-   weekday as set by :meth:`setfirstweekday`.  The earliest year for which a
-   calendar can be generated is platform-dependent.
+   Return a *m*-column calendar for an entire year as a multi-line string.
+   Optional parameters *w*, *l*, and *c* are for date column width, lines per
+   week, and number of spaces between month columns, respectively. Depends on
+   the first weekday as specified in the constructor or set by the
+   :meth:`setfirstweekday` method.  The earliest year for which a calendar can
+   be generated is platform-dependent.
 
 
 .. method:: TextCalendar.pryear(theyear[, w[, l[, c[, m]]]])

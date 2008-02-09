@@ -86,7 +86,7 @@ reset them before monitoring a calculation.
      Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`_.
 
    * IEEE standard 854-1987, `Unofficial IEEE 854 Text
-     <http://www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html>`_.
+     <http://754r.ucbtest.org/standards/854.pdf>`_.
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1237,6 +1237,19 @@ calculation to proceed while flagging specific results as invalid.
 A variant is :const:`sNaN` which signals rather than remaining quiet after every
 operation.  This is a useful return value when an invalid result needs to
 interrupt a calculation for special handling.
+
+The behavior of Python's comparison operators can be a little surprising where a
+:const:`NaN` is involved.  A test for equality where one of the operands is a
+quiet or signaling :const:`NaN` always returns :const:`False` (even when doing
+``Decimal('NaN')==Decimal('NaN')``), while a test for inequality always returns
+:const:`True`.  An attempt to compare two Decimals using any of the ``<``,
+``<=``, ``>`` or ``>=`` operators will raise the :exc:`InvalidOperation` signal
+if either operand is a :const:`NaN`, and return :const:`False` if this signal is
+trapped.  Note that the General Decimal Arithmetic specification does not
+specify the behavior of direct comparisons; these rules for comparisons
+involving a :const:`NaN` were taken from the IEEE 854 standard (see Table 3 in
+section 5.7).  To ensure strict standards-compliance, use the :meth:`compare`
+and :meth:`compare-signal` methods instead.
 
 The signed zeros can result from calculations that underflow. They keep the sign
 that would have resulted if the calculation had been carried out to greater
