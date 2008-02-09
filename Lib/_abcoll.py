@@ -382,7 +382,7 @@ class Mapping(Sized, Iterable, Container):
         return not (self == other)
 
 
-class MappingView(metaclass=ABCMeta):
+class MappingView(Sized):
 
     def __init__(self, mapping):
         self._mapping = mapping
