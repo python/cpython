@@ -57,7 +57,6 @@ Iterable.register(str)
 
 
 class Iterator(Iterable):
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def __next__(self):
@@ -123,8 +122,6 @@ class Callable:
 
 
 class Set(Sized, Iterable, Container):
-    __metaclass__ = ABCMeta
-
     """A set is a finite, iterable container.
 
     This class provides concrete generic implementations of all
@@ -312,7 +309,6 @@ MutableSet.register(set)
 
 
 class Mapping(Sized, Iterable, Container):
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def __getitem__(self, key):
@@ -349,7 +345,6 @@ class Mapping(Sized, Iterable, Container):
         return not (self == other)
 
 class MappingView(Sized):
-    __metaclass__ = ABCMeta
 
     def __init__(self, mapping):
         self._mapping = mapping
@@ -469,8 +464,6 @@ MutableMapping.register(dict)
 
 
 class Sequence(Sized, Iterable, Container):
-    __metaclass__ = ABCMeta
-
     """All the operations on a read-only sequence.
 
     Concrete subclasses must override __new__ or __init__,
