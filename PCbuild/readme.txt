@@ -19,7 +19,7 @@ folders or profile guided optimization (PGO). The missing bits and pieces
 won't stop you from building Python.
 
 The solution is configured to build the projects in the correct order. "Build
-Solution" or F6 takes care of dependencies except for x64 builds. To make
+Solution" or F7 takes care of dependencies except for x64 builds. To make
 cross compiling x64 builds on a 32bit OS possible the x64 builds require a 
 32bit version of Python.
 
@@ -30,7 +30,8 @@ NOTE:
    running a Python core buildbot test slave; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python30_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name:  python30_d.dll, python_d.exe, parser_d.pyd, and so on. Both
+the build and rt batch files accept a -d option for debug builds.
 
 The 32bit builds end up in the solution folder PCbuild while the x64 builds
 land in the amd64 subfolder. The PGI and PGO builds for profile guided
@@ -121,6 +122,8 @@ _tkinter
       python build_tkinter.py Win32
 
     Use x64 instead of Win32 for the x64 platform.
+    
+    NOTE: Tcl/Tk 8.4 doesn't compile for x64.
     
     Build Tcl first 
     ---------------
@@ -285,7 +288,7 @@ Building for Itanium
 
 NOTE:
 Official support for Itanium builds have been dropped from the build. Please
-contact as and provide patches if you are interested in Itanium builds.
+contact us and provide patches if you are interested in Itanium builds.
 
 The project files support a ReleaseItanium configuration which creates
 Win64/Itanium binaries. For this to work, you need to install the Platform

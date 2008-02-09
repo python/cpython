@@ -1,11 +1,6 @@
 Welcome to the "PC" subdirectory of the Python distribution
 ***********************************************************
 
-*** Note: the project files for MS VC++ 7.1 are now in the
-*** PCbuild directory.  See the file readme.txt there for build
-*** instructions.  There is some information below that might
-*** still be relevant.
-
 This "PC" subdirectory contains complete project files to make
 several older PC ports of Python, as well as all the PC-specific
 Python source files.  It should be located in the root of the
@@ -79,18 +74,23 @@ dllbase_nt.txt A (manually maintained) list of base addresses for
 example_nt     A subdirectory showing how to build an extension as a
                DLL.
 
-Visual Studio 6.0
-=================
-The subdirectory VC6 contains Visual Studio 6 project files. These
-were originally located in the PCBuild directory, but are no longer
-maintained.
+Legacy support for older versions of Visual Studio
+==================================================
+The subdirectories VC6, VS7.1 and VS8.0 contain legacy support older
+versions of Microsoft Visual Studio. See PCbuild/readme.txt.
 
+EMX development tools for OS/2
+==============================
+
+See os2emx/readme.txt. This platform is maintained by Andrew MacIntyre.
 
 IBM VisualAge C/C++ for OS/2
 ============================
 
 See os2vacpp/readme.txt.  This platform is supported by Jeff Rush.
 
+NOTE: Support for os2vacpp may be dropped in the near future. Please move
+      to EMX.
 
 Note for Windows 3.x and DOS users
 ==================================

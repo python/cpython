@@ -1562,6 +1562,10 @@ C API
 Windows
 -------
 
+- Patch #1706: Drop support for Win9x, WinME and NT4. Python now requires 
+  Windows 2000 or greater. The _WINVER and NTDDI_VERSION macros are set to
+  Win2k for x86/32bit builds and WinXP for AMD64 builds.
+
 - Conditionalize definition of _CRT_SECURE_NO_DEPRECATE
   and _CRT_NONSTDC_NO_DEPRECATE.
 
