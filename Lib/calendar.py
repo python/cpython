@@ -179,8 +179,8 @@ class Calendar(object):
 
     def itermonthdays(self, year, month):
         """
-        Like itermonthdates(), but will yield day numbers tuples. For days
-        outside the specified month the day number is 0.
+        Like itermonthdates(), but will yield day numbers. For days outside
+        the specified month the day number is 0.
         """
         for date in self.itermonthdates(year, month):
             if date.month != month:

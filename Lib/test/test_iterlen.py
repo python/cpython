@@ -196,7 +196,6 @@ class TestListReversed(TestInvariantWithoutMutations):
         self.assertEqual(len(it), 0)
 
 
-
 def test_main():
     unittests = [
         TestRepeat,
