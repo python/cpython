@@ -58,7 +58,7 @@ ABC                        Inherits              Abstract Methods        Mixin M
                                                  ``insert``,             ``remove``, and ``__iadd__``
                                                  and ``__len__``
 
-:class:`Set` \(1) \(2)     :class:`Sized`,       ``__len__``,            ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
+:class:`Set`               :class:`Sized`,       ``__len__``,            ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                            :class:`Iterable`,    ``__iter__``, and       ``__gt__``, ``__ge__``, ``__and__``, ``__or__``
                            :class:`Container`    ``__contains__``        ``__sub__``, ``__xor__``, and ``isdisjoint``
 
@@ -117,6 +117,13 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    To override the comparisons (presumably for speed, as the
    semantics are fixed), redefine :meth:`__le__` and
    then the other operations will automatically follow suit.
+
+(3)
+   The :class:`Set` mixin provides a :meth:`_hash` method to compute a hash value
+   for the set; however, :meth:`__hash__` is not defined because not all sets
+   are hashable or immutable.  To add set hashabilty using mixins,
+   inherit from both :meth:`Set` and :meth:`Hashable`, then define
+   ``__hash__ = Set._hash``.
 
 (For more about ABCs, see the :mod:`abc` module and :pep:`3119`.)
 
