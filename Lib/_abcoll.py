@@ -197,10 +197,23 @@ class Set(metaclass=ABCMeta):
             return NotImplemented
         return len(self) < len(other) and self.__le__(other)
 
+    def __gt__(self, other):
+        if not isinstance(other, Set):
+            return NotImplemented
+        return other < self
+
+    def __ge__(self, other):
+        if not isinstance(other, Set):
+            return NotImplemented
+        return other <= self
+
     def __eq__(self, other):
         if not isinstance(other, Set):
             return NotImplemented
         return len(self) == len(other) and self.__le__(other)
+
+    def __ne__(self, other):
+        return not (self == other)
 
     @classmethod
     def _from_iterable(cls, it):
@@ -528,13 +541,13 @@ class Sequence(metaclass=ABCMeta):
 
     def __iter__(self):
         i = 0
-        while True:
-            try:
+        try:
+            while True:
                 v = self[i]
-            except IndexError:
-                break
-            yield v
-            i += 1
+                yield v
+                i += 1
+        except IndexError:
+            return
 
     def __contains__(self, value):
         for v in self:
