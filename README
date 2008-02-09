@@ -1245,7 +1245,7 @@ Most subdirectories have their own README files.  Most files have
 comments.
 
 Demo/           Demonstration scripts, modules and programs
-Doc/            Documentation sources (LaTeX)
+Doc/            Documentation sources (reStructuredText)
 Grammar/        Input for the parser generator
 Include/        Public header files
 LICENSE         Licensing information
