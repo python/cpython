@@ -158,10 +158,12 @@ WIN32 is still required for the locale module.
 /* set the version macros for the windows headers */
 #ifdef MS_WINX64
 /* 64 bit only runs on XP or greater */
-#define Py_WINVER 0x0501
+#define Py_WINVER _WIN32_WINNT_WINXP
+#define Py_NTDDI NTDDI_WINXP
 #else
-/* NT 4.0 or greater required otherwise */
-#define Py_WINVER 0x0400
+/* Python 2.6+ requires Windows 2000 or greater */
+#define Py_WINVER _WIN32_WINNT_WIN2K
+#define Py_NTDDI NTDDI_WIN2KSP4
 #endif
 
 /* We only set these values when building Python - we don't want to force
@@ -171,7 +173,10 @@ WIN32 is still required for the locale module.
    structures etc so it can optionally use new Windows features if it
    determines at runtime they are available.
 */
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
+#ifndef NTDDI_VERSION
+#define NTDDI_VERSION Py_NTDDI
+#endif
 #ifndef WINVER
 #define WINVER Py_WINVER
 #endif
