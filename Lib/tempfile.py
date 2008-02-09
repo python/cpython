@@ -363,6 +363,7 @@ def mktemp(suffix="", prefix=template, dir=None):
 
     raise IOError(_errno.EEXIST, "No usable temporary filename found")
 
+
 class _TemporaryFileWrapper:
     """Temporary file wrapper
 
@@ -378,17 +379,25 @@ class _TemporaryFileWrapper:
         self.delete = delete
 
     def __getattr__(self, name):
+        # Attribute lookups are delegated to the underlying file
+        # and cached for non-numeric results
+        # (i.e. methods are cached, closed and friends are not)
         file = self.__dict__['file']
         a = getattr(file, name)
-        if type(a) != type(0):
+        if not isinstance(a, int):
             setattr(self, name, a)
         return a
+
+    # The underlying __enter__ method returns the wrong object
+    # (self.file) so override it to return the wrapper
+    def __enter__(self):
+        self.file.__enter__()
+        return self
 
     # NT provides delete-on-close as a primitive, so we don't need
     # the wrapper to do anything special.  We still use it so that
     # file.name is useful (i.e. not "(fdopen)") with NamedTemporaryFile.
     if _os.name != 'nt':
-
         # Cache the unlinker so we don't get spurious errors at
         # shutdown when the module-level "os" is None'd out.  Note
         # that this must be referenced as self.unlink, because the
@@ -405,6 +414,14 @@ class _TemporaryFileWrapper:
 
         def __del__(self):
             self.close()
+
+        # Need to trap __exit__ as well to ensure the file gets
+        # deleted when used in a with statement
+        def __exit__(self, exc, value, tb):
+            result = self.file.__exit__(exc, value, tb)
+            self.close()
+            return result
+
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix="", prefix=template,
@@ -522,6 +539,20 @@ class SpooledTemporaryFile:
         newfile.seek(file.tell(), 0)
 
         self._rolled = True
+
+    # The method caching trick from NamedTemporaryFile
+    # won't work here, because _file may change from a
+    # _StringIO instance to a real file. So we list
+    # all the methods directly.
+
+    # Context management protocol
+    def __enter__(self):
+        if self._file.closed:
+            raise ValueError("Cannot enter context with closed file")
+        return self
+
+    def __exit__(self, exc, value, tb):
+        self._file.close()
 
     # file protocol
     def __iter__(self):

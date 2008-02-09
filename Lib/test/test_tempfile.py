@@ -1,5 +1,4 @@
 # tempfile.py unit tests.
-
 import tempfile
 import os
 import sys
@@ -619,7 +618,6 @@ class test_NamedTemporaryFile(TC):
 
     def test_multiple_close(self):
         # A NamedTemporaryFile can be closed many times without error
-
         f = tempfile.NamedTemporaryFile()
         f.write(b'abc\n')
         f.close()
@@ -628,6 +626,16 @@ class test_NamedTemporaryFile(TC):
             f.close()
         except:
             self.failOnException("close")
+
+    def test_context_manager(self):
+        # A NamedTemporaryFile can be used as a context manager
+        with tempfile.NamedTemporaryFile() as f:
+            self.failUnless(os.path.exists(f.name))
+        self.failIf(os.path.exists(f.name))
+        def use_closed():
+            with f:
+                pass
+        self.failUnlessRaises(ValueError, use_closed)
 
     # How to test the mode and bufsize parameters?
 
@@ -707,10 +715,23 @@ class test_SpooledTemporaryFile(TC):
         self.failUnless(f.fileno() > 0)
         self.failUnless(f._rolled)
 
-    def test_multiple_close(self):
+    def test_multiple_close_before_rollover(self):
         # A SpooledTemporaryFile can be closed many times without error
         f = tempfile.SpooledTemporaryFile()
         f.write(b'abc\n')
+        self.failIf(f._rolled)
+        f.close()
+        try:
+            f.close()
+            f.close()
+        except:
+            self.failOnException("close")
+
+    def test_multiple_close_after_rollover(self):
+        # A SpooledTemporaryFile can be closed many times without error
+        f = tempfile.SpooledTemporaryFile(max_size=1)
+        f.write(b'abc\n')
+        self.failUnless(f._rolled)
         f.close()
         try:
             f.close()
@@ -758,6 +779,46 @@ class test_SpooledTemporaryFile(TC):
         f.seek(0)
         self.assertEqual(f.read(), "\u039B\r\n" + ("\u039B" * 20) + "\r\n")
         self.failUnless(f._rolled)
+
+    def test_context_manager_before_rollover(self):
+        # A SpooledTemporaryFile can be used as a context manager
+        with tempfile.SpooledTemporaryFile(max_size=1) as f:
+            self.failIf(f._rolled)
+            self.failIf(f.closed)
+        self.failUnless(f.closed)
+        def use_closed():
+            with f:
+                pass
+        self.failUnlessRaises(ValueError, use_closed)
+
+    def test_context_manager_during_rollover(self):
+        # A SpooledTemporaryFile can be used as a context manager
+        with tempfile.SpooledTemporaryFile(max_size=1) as f:
+            self.failIf(f._rolled)
+            f.write(b'abc\n')
+            f.flush()
+            self.failUnless(f._rolled)
+            self.failIf(f.closed)
+        self.failUnless(f.closed)
+        def use_closed():
+            with f:
+                pass
+        self.failUnlessRaises(ValueError, use_closed)
+
+    def test_context_manager_after_rollover(self):
+        # A SpooledTemporaryFile can be used as a context manager
+        f = tempfile.SpooledTemporaryFile(max_size=1)
+        f.write(b'abc\n')
+        f.flush()
+        self.failUnless(f._rolled)
+        with f:
+            self.failIf(f.closed)
+        self.failUnless(f.closed)
+        def use_closed():
+            with f:
+                pass
+        self.failUnlessRaises(ValueError, use_closed)
+
 
 test_classes.append(test_SpooledTemporaryFile)
 
