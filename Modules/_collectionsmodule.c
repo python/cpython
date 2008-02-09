@@ -1186,10 +1186,20 @@ defdict_copy(defdictobject *dd)
 {
 	/* This calls the object's class.  That only works for subclasses
 	   whose class constructor has the same signature.  Subclasses that
-	   define a different constructor signature must override copy().
+	   define a different constructor signature must override __copy__().
 	*/
 	return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
 					    dd->default_factory, dd, NULL);
+}
+
+static PyObject *
+defdict_copy_method(defdictobject *dd)
+{
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "defaultdict.copy() not supported in 3.x") < 0)
+		return NULL;
+	return defdict_copy(dd);
 }
 
 static PyObject *
@@ -1241,7 +1251,7 @@ defdict_reduce(defdictobject *dd)
 static PyMethodDef defdict_methods[] = {
 	{"__missing__", (PyCFunction)defdict_missing, METH_O,
 	 defdict_missing_doc},
-	{"copy", (PyCFunction)defdict_copy, METH_NOARGS,
+	{"copy", (PyCFunction)defdict_copy_method, METH_NOARGS,
 	 defdict_copy_doc},
 	{"__copy__", (PyCFunction)defdict_copy, METH_NOARGS,
 	 defdict_copy_doc},

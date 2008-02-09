@@ -1528,6 +1528,10 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 static PyObject *
 dict_copy(register PyDictObject *mp)
 {
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "dict.copy() not supported in 3.x") < 0)
+		return NULL;
 	return PyDict_Copy((PyObject*)mp);
 }
 
