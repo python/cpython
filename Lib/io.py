@@ -365,6 +365,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
     def __enter__(self) -> "IOBase":  # That's a forward reference
         """Context management protocol.  Returns self."""
+        self._checkClosed()
         return self
 
     def __exit__(self, *args) -> None:
