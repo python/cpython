@@ -56,7 +56,7 @@ class Iterable:
 Iterable.register(str)
 
 
-class Iterator:
+class Iterator(Iterable):
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -122,7 +122,7 @@ class Callable:
 ### SETS ###
 
 
-class Set:
+class Set(Sized, Iterable, Container):
     __metaclass__ = ABCMeta
 
     """A set is a finite, iterable container.
@@ -134,19 +134,6 @@ class Set:
     semantics are fixed), all you have to do is redefine __le__ and
     then the other operations will automatically follow suit.
     """
-
-    @abstractmethod
-    def __contains__(self, value):
-        return False
-
-    @abstractmethod
-    def __iter__(self):
-        while False:
-            yield None
-
-    @abstractmethod
-    def __len__(self):
-        return 0
 
     def __le__(self, other):
         if not isinstance(other, Set):
@@ -324,7 +311,7 @@ MutableSet.register(set)
 ### MAPPINGS ###
 
 
-class Mapping:
+class Mapping(Sized, Iterable, Container):
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -345,15 +332,6 @@ class Mapping:
         else:
             return True
 
-    @abstractmethod
-    def __len__(self):
-        return 0
-
-    @abstractmethod
-    def __iter__(self):
-        while False:
-            yield None
-
     def keys(self):
         return KeysView(self)
 
@@ -370,7 +348,7 @@ class Mapping:
     def __ne__(self, other):
         return not (self == other)
 
-class MappingView:
+class MappingView(Sized):
     __metaclass__ = ABCMeta
 
     def __init__(self, mapping):
@@ -490,7 +468,7 @@ MutableMapping.register(dict)
 ### SEQUENCES ###
 
 
-class Sequence:
+class Sequence(Sized, Iterable, Container):
     __metaclass__ = ABCMeta
 
     """All the operations on a read-only sequence.
@@ -502,10 +480,6 @@ class Sequence:
     @abstractmethod
     def __getitem__(self, index):
         raise IndexError
-
-    @abstractmethod
-    def __len__(self):
-        return 0
 
     def __iter__(self):
         i = 0
