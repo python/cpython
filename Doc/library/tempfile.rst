@@ -51,7 +51,8 @@ The module defines the following user-callable functions:
 
    The returned object is a true file object on POSIX platforms.  On other
    platforms, it is a file-like object whose :attr:`file` attribute is the
-   underlying true file object.
+   underlying true file object. This file-like object can be used in a :keyword:`with`
+   statement, just like a normal file.
 
 
 .. function:: NamedTemporaryFile([mode='w+b'[, bufsize=-1[, suffix[, prefix[, dir[, delete]]]]]])
@@ -65,7 +66,8 @@ The module defines the following user-callable functions:
    If *delete* is true (the default), the file is deleted as soon as it is closed.
 
    The returned object is always a file-like object whose :attr:`file` attribute
-   is the underlying true file object.
+   is the underlying true file object. This file-like object can be used in a :keyword:`with`
+   statement, just like a normal file.
 
    .. versionadded:: 2.3
 
@@ -85,7 +87,8 @@ The module defines the following user-callable functions:
 
    The returned object is a file-like object whose :attr:`_file` attribute
    is either a :class:`StringIO` object or a true file object, depending on
-   whether :func:`rollover` has been called.
+   whether :func:`rollover` has been called. This file-like object can be used in a
+   :keyword:`with` statement, just like a normal file.
 
    .. versionadded:: 2.6
 
