@@ -58,7 +58,7 @@ ABC                        Inherits              Abstract Methods        Mixin M
                                                  ``insert``,             ``remove``, and ``__iadd__``
                                                  and ``__len__``
 
-:class:`Set`               :class:`Sized`,       ``__len__``,            ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
+:class:`Set` \(1) \(2)     :class:`Sized`,       ``__len__``,            ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                            :class:`Iterable`,    ``__iter__``, and       ``__gt__``, ``__ge__``, ``__and__``, ``__or__``
                            :class:`Container`    ``__contains__``        ``__sub__``, ``__xor__``, and ``isdisjoint``
 
@@ -100,6 +100,23 @@ The ABC supplies the remaining methods such as :meth:`__and__` and
     s2 = ListBasedSet('defghi')
     overlap = s1 & s2            # The __and__() method is supported automatically
 
+Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
+
+(1) 
+   Since some set operations create new sets, the default mixin methods need
+   a way to create new instances from an iterable. The class constructor is 
+   assumed to have a signature in the form ``ClassName(iterable)``.  
+   That assumption is factored-out to a singleinternal classmethod called
+   :meth:`_from_iterable` which calls ``cls(iterable)`` to produce a new set.
+   If the :class:`Set` mixin is being used in a class with a different
+   constructor signature, you will need to override :meth:`from_iterable` 
+   with a classmethod that can construct new instances from 
+   an iterable argument.
+
+(2)
+   To override the comparisons (presumably for speed, as the
+   semantics are fixed), redefine :meth:`__le__` and
+   then the other operations will automatically follow suit.
 
 (For more about ABCs, see the :mod:`abc` module and :pep:`3119`.)
 
