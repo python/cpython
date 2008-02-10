@@ -400,6 +400,10 @@ Core and builtins
 Library
 -------
 
+- #2021: Allow tempfile.NamedTemporaryFile and SpooledTemporaryFile
+  to be used in with statements by correctly supporting the context
+  management protocol.
+
 - #1979: Add rich comparisons to Decimal, and make Decimal comparisons
   involving a NaN follow the IEEE 754 standard.
 
