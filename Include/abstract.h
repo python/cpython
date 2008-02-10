@@ -932,6 +932,15 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
+     PyAPI_FUNC(PyObject *) PyNumber_ToBase(PyObject *n, int base);
+
+       /*
+	 Returns the integer n converted to a string with a base, with a base
+	 marker of 0b, 0o or 0x prefixed if applicable.
+	 If n is not an int object, it is converted with PyNumber_Index first.
+       */
+
+
 /*  Sequence protocol:*/
 
      PyAPI_FUNC(int) PySequence_Check(PyObject *o);
