@@ -1262,6 +1262,25 @@ PyNumber_Float(PyObject *o)
 	return PyFloat_FromString(o, NULL);
 }
 
+PyObject *
+PyNumber_ToBase(PyObject *n, int base)
+{
+	PyObject *res = NULL;
+	PyObject *index = PyNumber_Index(n);
+
+	if (!index)
+		return NULL;
+	if (PyLong_Check(index))
+		res = _PyLong_Format(index, base, 0, 1);
+	else if (PyInt_Check(index))
+	  	res = _PyInt_Format((PyIntObject*)index, base, 1);
+	else
+		assert("PyNumber_ToBase: not long or int");
+	Py_DECREF(index);
+	return res;
+}
+
+
 /* Operations on sequences */
 
 int
