@@ -437,9 +437,7 @@ int_print(PyIntObject *v, FILE *fp, int flags)
 static PyObject *
 int_repr(PyIntObject *v)
 {
-	char buf[64];
-	PyOS_snprintf(buf, sizeof(buf), "%ld", v->ob_ival);
-	return PyString_FromString(buf);
+	return _PyInt_Format(v, 10, 0);
 }
 
 static int
@@ -938,27 +936,13 @@ int_float(PyIntObject *v)
 static PyObject *
 int_oct(PyIntObject *v)
 {
-	char buf[100];
-	long x = v -> ob_ival;
-	if (x < 0)
-		PyOS_snprintf(buf, sizeof(buf), "-0%lo", -x);
-	else if (x == 0)
-		strcpy(buf, "0");
-	else
-		PyOS_snprintf(buf, sizeof(buf), "0%lo", x);
-	return PyString_FromString(buf);
+	return _PyInt_Format(v, 8, 0);
 }
 
 static PyObject *
 int_hex(PyIntObject *v)
 {
-	char buf[100];
-	long x = v -> ob_ival;
-	if (x < 0)
-		PyOS_snprintf(buf, sizeof(buf), "-0x%lx", -x);
-	else
-		PyOS_snprintf(buf, sizeof(buf), "0x%lx", x);
-	return PyString_FromString(buf);
+	return _PyInt_Format(v, 16, 0);
 }
 
 static PyObject *
@@ -1054,6 +1038,74 @@ int_getnewargs(PyIntObject *v)
 static PyObject *
 int_getN(PyIntObject *v, void *context) {
 	return PyInt_FromLong((intptr_t)context);
+}
+
+/* Convert an integer to the given base.  Returns a string.
+   If base is 2, 8 or 16, add the proper prefix '0b', '0o' or '0x'.
+   If newstyle is zero, then use the pre-2.6 behavior of octal having
+   a leading "0" */
+PyAPI_FUNC(PyObject*)
+_PyInt_Format(PyIntObject *v, int base, int newstyle)
+{
+	/* There are no doubt many, many ways to optimize this, using code
+	   similar to _PyLong_Format */
+	long n = v->ob_ival;
+	int  negative = n < 0;
+	int is_zero = n == 0;
+
+	/* For the reasoning behind this size, see
+	   http://c-faq.com/misc/hexio.html. Then, add a few bytes for
+	   the possible sign and prefix "0[box]" */
+	char buf[sizeof(n)*CHAR_BIT+6];
+
+	/* Start by pointing to the end of the buffer.  We fill in from
+	   the back forward. */
+	char* p = &buf[sizeof(buf)];
+
+	assert(base >= 2 && base <= 36);
+
+	do {
+		/* I'd use i_divmod, except it doesn't produce the results
+		   I want when n is negative.  So just duplicate the salient
+		   part here. */
+		long div = n / base;
+		long mod = n - div * base;
+
+		/* convert abs(mod) to the right character in [0-9, a-z] */
+		char cdigit = (char)(mod < 0 ? -mod : mod);
+		cdigit += (cdigit < 10) ? '0' : 'a'-10;
+		*--p = cdigit;
+
+		n = div;
+	} while(n);
+
+	if (base == 2) {
+		*--p = 'b';
+		*--p = '0';
+	}
+	else if (base == 8) {
+		if (newstyle) {
+			*--p = 'o';
+			*--p = '0';
+		}
+		else
+			if (!is_zero)
+				*--p = '0';
+	}
+	else if (base == 16) {
+		*--p = 'x';
+		*--p = '0';
+	}
+	else if (base != 10) {
+		*--p = '#';
+		*--p = '0' + base%10;
+		if (base > 10)
+			*--p = '0' + base/10;
+	}
+	if (negative)
+		*--p = '-';
+
+	return PyString_FromStringAndSize(p, &buf[sizeof(buf)] - p);
 }
 
 static PyMethodDef int_methods[] = {

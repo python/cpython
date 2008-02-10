@@ -112,6 +112,13 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
 	unsigned char* bytes, size_t n,
 	int little_endian, int is_signed);
 
+/* _PyLong_Format: Convert the long to a string object with given base,
+   appending a base prefix of 0[box] if base is 2, 8 or 16.
+   Add a trailing "L" if addL is non-zero.
+   If newstyle is zero, then use the pre-2.6 behavior of octal having
+   a leading "0", instead of the prefix "0o" */
+PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *aa, int base, int addL, int newstyle);
+
 #ifdef __cplusplus
 }
 #endif
