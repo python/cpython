@@ -801,7 +801,7 @@ class Decimal(object):
     #   != comparisons involving a NaN always return True
     #   <, >, <= and >= comparisons involving a (quiet or signaling)
     #      NaN signal InvalidOperation, and return False if the
-    #      InvalidOperation is trapped.
+    #      InvalidOperation is not trapped.
     #
     # This behavior is designed to conform as closely as possible to
     # that specified by IEEE 754.

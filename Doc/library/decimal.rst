@@ -890,7 +890,7 @@ described below. In addition, the module provides three pre-made contexts:
    :const:`ROUND_HALF_EVEN`.  All flags are cleared.  No traps are enabled (so that
    exceptions are not raised during computations).
 
-   Because the trapped are disabled, this context is useful for applications that
+   Because the traps are disabled, this context is useful for applications that
    prefer to have result value of :const:`NaN` or :const:`Infinity` instead of
    raising exceptions.  This allows an application to complete a run in the
    presence of conditions that would otherwise halt the program.
@@ -1309,7 +1309,7 @@ quiet or signaling :const:`NaN` always returns :const:`False` (even when doing
 :const:`True`.  An attempt to compare two Decimals using any of the ``<``,
 ``<=``, ``>`` or ``>=`` operators will raise the :exc:`InvalidOperation` signal
 if either operand is a :const:`NaN`, and return :const:`False` if this signal is
-trapped.  Note that the General Decimal Arithmetic specification does not
+not trapped.  Note that the General Decimal Arithmetic specification does not
 specify the behavior of direct comparisons; these rules for comparisons
 involving a :const:`NaN` were taken from the IEEE 854 standard (see Table 3 in
 section 5.7).  To ensure strict standards-compliance, use the :meth:`compare`
