@@ -1,6 +1,6 @@
 
-:mod:`decimal` --- Decimal floating point arithmetic
-====================================================
+:mod:`decimal` --- Decimal fixed point and floating point arithmetic
+====================================================================
 
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic  Specification.
@@ -21,6 +21,11 @@
 The :mod:`decimal` module provides support for decimal floating point
 arithmetic.  It offers several advantages over the :class:`float` datatype:
 
+* Decimal "is based on a floating-point model which was designed with people
+  in mind, and necessarily has a paramount guiding principle -- computers must
+  provide an arithmetic that works in the same way as the arithmetic that
+  people learn at school." -- excerpt from the decimal arithmetic specification.
+
 * Decimal numbers can be represented exactly.  In contrast, numbers like
   :const:`1.1` do not have an exact representation in binary floating point. End
   users typically would not expect :const:`1.1` to display as
@@ -30,7 +35,7 @@ arithmetic.  It offers several advantages over the :class:`float` datatype:
   + 0.1 + 0.1 - 0.3`` is exactly equal to zero.  In binary floating point, the result
   is :const:`5.5511151231257827e-017`.  While near to zero, the differences
   prevent reliable equality testing and differences can accumulate. For this
-  reason, decimal would be preferred in accounting applications which have strict
+  reason, decimal is preferred in accounting applications which have strict
   equality invariants.
 
 * The decimal module incorporates a notion of significant places so that ``1.30
@@ -55,6 +60,13 @@ arithmetic.  It offers several advantages over the :class:`float` datatype:
   standards.  While the built-in float type exposes only a modest portion of its
   capabilities, the decimal module exposes all required parts of the standard.
   When needed, the programmer has full control over rounding and signal handling.
+  This includes an option to enforce exact arithmetic by using exceptions
+  to block any inexact operations.
+
+* The decimal module was designed to support "without prejudice, both exact
+  unrounded decimal arithmetic (sometimes called fixed-point arithmetic)
+  and rounded floating-point arithmetic."  -- excerpt from the decimal
+  arithmetic specification.
 
 The module design is centered around three concepts:  the decimal number, the
 context for arithmetic, and signals.
