@@ -400,6 +400,9 @@ Core and builtins
 Library
 -------
 
+- The pickletools module now provides an optimize() function
+  that eliminates unused PUT opcodes from a pickle string.
+
 - #2021: Allow tempfile.NamedTemporaryFile and SpooledTemporaryFile
   to be used in with statements by correctly supporting the context
   management protocol.
