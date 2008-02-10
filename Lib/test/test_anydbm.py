@@ -27,7 +27,7 @@ class AnyDBMTestCase(unittest.TestCase):
              'c': 'the',
              'd': 'way',
              'f': 'Guido',
-             'g': 'indented'
+             'g': 'intended'
              }
 
     def __init__(self, *args):
