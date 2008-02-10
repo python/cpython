@@ -106,48 +106,48 @@ class Rational(RationalAbc):
         self._denominator = int(denominator // g)
         return self
 
-    @classmethod
-    def from_float(cls, f):
+    @staticmethod
+    def from_float(f):
         """Converts a finite float to a rational number, exactly.
 
         Beware that Rational.from_float(0.3) != Rational(3, 10).
 
         """
         if not isinstance(f, float):
-            raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
-                            (cls.__name__, f, type(f).__name__))
+            raise TypeError("Rational.from_float() only takes floats, "
+                            "not %r (%s)" % (f, type(f).__name__))
         if math.isnan(f) or math.isinf(f):
-            raise TypeError("Cannot convert %r to %s." % (f, cls.__name__))
-        return cls(*f.as_integer_ratio())
+            raise TypeError("Cannot convert %r to Rational." % f)
+        return Rational(*f.as_integer_ratio())
 
-    @classmethod
-    def from_decimal(cls, dec):
+    @staticmethod
+    def from_decimal(dec):
         """Converts a finite Decimal instance to a rational number, exactly."""
         from decimal import Decimal
         if not isinstance(dec, Decimal):
             raise TypeError(
-                "%s.from_decimal() only takes Decimals, not %r (%s)" %
-                (cls.__name__, dec, type(dec).__name__))
+                "Rational.from_decimal() only takes Decimals, not %r (%s)" %
+                (dec, type(dec).__name__))
         if not dec.is_finite():
             # Catches infinities and nans.
-            raise TypeError("Cannot convert %s to %s." % (dec, cls.__name__))
+            raise TypeError("Cannot convert %s to Rational." % dec)
         sign, digits, exp = dec.as_tuple()
         digits = int(''.join(map(str, digits)))
         if sign:
             digits = -digits
         if exp >= 0:
-            return cls(digits * 10 ** exp)
+            return Rational(digits * 10 ** exp)
         else:
-            return cls(digits, 10 ** -exp)
+            return Rational(digits, 10 ** -exp)
 
-    @classmethod
-    def from_continued_fraction(cls, seq):
+    @staticmethod
+    def from_continued_fraction(seq):
         'Build a Rational from a continued fraction expessed as a sequence'
         n, d = 1, 0
         for e in reversed(seq):
             n, d = d, n
             n += e * d
-        return cls(n, d) if seq else cls(0)
+        return Rational(n, d) if seq else Rational(0)
 
     def as_continued_fraction(self):
         'Return continued fraction expressed as a list'
