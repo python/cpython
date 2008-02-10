@@ -400,6 +400,10 @@ Core and builtins
 Library
 -------
 
+- Rename rational.py to fractions.py and the rational.Rational class
+  to fractions.Fraction, to avoid the name clash with the abstract
+  base class numbers.Rational.  See discussion in issue #1682.
+
 - The pickletools module now provides an optimize() function
   that eliminates unused PUT opcodes from a pickle string.
 
