@@ -1858,7 +1858,7 @@ def optimize(p):
         s.append(p[i:j])
         i = stop
     s.append(p[i:])
-    return ''.join(s)
+    return b''.join(s)
 
 ##############################################################################
 # A symbolic pickle disassembler.
