@@ -83,6 +83,9 @@ Core and builtins
 Library
 -------
 
+- #2021: Allow tempfile.NamedTemporaryFile to be used in with statements
+  by correctly supporting the context management protocol.
+
 - Fixed _ctypes.COMError so that it must be called with exactly three
   arguments, instances now have the hresult, text, and details
   instance variables.
