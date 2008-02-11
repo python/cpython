@@ -83,6 +83,8 @@ Core and builtins
 Library
 -------
 
+- tarfile.py: Fix reading of xstar archives.
+
 - #2021: Allow tempfile.NamedTemporaryFile to be used in with statements
   by correctly supporting the context management protocol.
 
