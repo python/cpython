@@ -482,7 +482,7 @@ class LongTest(unittest.TestCase):
                 eq(x > y, Rcmp > 0, Frm("%r > %r %d", x, y, Rcmp))
                 eq(x >= y, Rcmp >= 0, Frm("%r >= %r %d", x, y, Rcmp))
 
-    def test_format(self):
+    def test__format__(self):
         self.assertEqual(format(123456789, 'd'), '123456789')
         self.assertEqual(format(123456789, 'd'), '123456789')
 
