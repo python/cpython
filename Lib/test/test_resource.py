@@ -32,23 +32,28 @@ try:
     except ValueError:
         limit_set = 0
     f = open(TESTFN, "wb")
-    f.write("X" * 1024)
-    f.flush()
     try:
-        f.write("Y")
-        f.flush()
-        # On some systems (e.g., Ubuntu on hppa) the flush()
-        # doesn't always cause the exception, but the close()
-        # does eventually.  Try flushing several times in an attempt
-        # to ensure the file is really synced and the exception raised.
-        for i in range(5):
-            time.sleep(.1)
+        f.write("X" * 1024)
+        try:
+            f.write("Y")
             f.flush()
+            # On some systems (e.g., Ubuntu on hppa) the flush()
+            # doesn't always cause the exception, but the close()
+            # does eventually.  Try flushing several times in
+            # an attempt to ensure the file is really synced and
+            # the exception raised.
+            for i in range(5):
+                time.sleep(.1)
+                f.flush()
+        except IOError:
+            if not limit_set:
+                raise
+        if limit_set:
+            # Close will attempt to flush the byte we wrote
+            # Restore limit first to avoid getting a spurious error
+            resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
+    finally:
         f.close()
-    except IOError:
-        if not limit_set:
-            raise
-    f.close()
 finally:
     if limit_set:
         resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
