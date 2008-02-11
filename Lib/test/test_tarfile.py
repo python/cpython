@@ -208,6 +208,15 @@ class MiscReadTest(ReadTest):
         self.assert_(tarinfo.type == tarfile.DIRTYPE,
                 "v7 dirtype failed")
 
+    def test_xstar_type(self):
+        # The xstar format stores extra atime and ctime fields inside the
+        # space reserved for the prefix field. The prefix field must be
+        # ignored in this case, otherwise it will mess up the name.
+        try:
+            self.tar.getmember("misc/regtype-xstar")
+        except KeyError:
+            self.fail("failed to find misc/regtype-xstar (mangled prefix?)")
+
     def test_check_members(self):
         for tarinfo in self.tar:
             self.assert_(int(tarinfo.mtime) == 07606136617,
