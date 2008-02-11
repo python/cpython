@@ -26,7 +26,7 @@ def path(path):
 testtar = path("testtar.tar")
 tempdir = os.path.join(tempfile.gettempdir(), "testtar" + os.extsep + "dir")
 tempname = test_support.TESTFN
-membercount = 12
+membercount = 13
 
 def tarname(comp=""):
     if not comp:
@@ -224,6 +224,12 @@ class ReadTest(BaseTest):
             self.assertEqual(tarinfo.mode, os.stat(path).st_mode & 0777)
             self.assertEqual(tarinfo.mtime, os.path.getmtime(path))
         tar.close()
+
+    def test_star(self):
+        try:
+            self.tar.getmember("7-STAR")
+        except KeyError:
+            self.fail("finding 7-STAR member failed (mangled prefix?)")
 
 
 class ReadStreamTest(ReadTest):

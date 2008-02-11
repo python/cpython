@@ -139,13 +139,22 @@ def stn(s, length):
     """
     return s[:length] + (length - len(s)) * NUL
 
+def nts(s):
+    """Convert a null-terminated string field to a python string.
+    """
+    # Use the string up to the first null char.
+    p = s.find("\0")
+    if p == -1:
+        return s
+    return s[:p]
+
 def nti(s):
     """Convert a number field to a python number.
     """
     # There are two possible encodings for a number field, see
     # itn() below.
     if s[0] != chr(0200):
-        n = int(s.rstrip(NUL + " ") or "0", 8)
+        n = int(nts(s) or "0", 8)
     else:
         n = 0L
         for i in xrange(len(s) - 1):
@@ -872,7 +881,7 @@ class TarInfo(object):
 
         tarinfo = cls()
         tarinfo.buf = buf
-        tarinfo.name = buf[0:100].rstrip(NUL)
+        tarinfo.name = nts(buf[0:100])
         tarinfo.mode = nti(buf[100:108])
         tarinfo.uid = nti(buf[108:116])
         tarinfo.gid = nti(buf[116:124])
@@ -880,12 +889,12 @@ class TarInfo(object):
         tarinfo.mtime = nti(buf[136:148])
         tarinfo.chksum = nti(buf[148:156])
         tarinfo.type = buf[156:157]
-        tarinfo.linkname = buf[157:257].rstrip(NUL)
-        tarinfo.uname = buf[265:297].rstrip(NUL)
-        tarinfo.gname = buf[297:329].rstrip(NUL)
+        tarinfo.linkname = nts(buf[157:257])
+        tarinfo.uname = nts(buf[265:297])
+        tarinfo.gname = nts(buf[297:329])
         tarinfo.devmajor = nti(buf[329:337])
         tarinfo.devminor = nti(buf[337:345])
-        prefix = buf[345:500].rstrip(NUL)
+        prefix = nts(buf[345:500])
 
         if prefix and not tarinfo.issparse():
             tarinfo.name = prefix + "/" + tarinfo.name
@@ -1892,9 +1901,9 @@ class TarFile(object):
         # the longname information.
         next.offset = tarinfo.offset
         if tarinfo.type == GNUTYPE_LONGNAME:
-            next.name = buf.rstrip(NUL)
+            next.name = nts(buf)
         elif tarinfo.type == GNUTYPE_LONGLINK:
-            next.linkname = buf.rstrip(NUL)
+            next.linkname = nts(buf)
 
         return next
 
