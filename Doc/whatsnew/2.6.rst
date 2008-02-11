@@ -578,8 +578,8 @@ and comparisons.
 
 :class:`Rational` numbers derive from :class:`Real`, have
 :attr:`numerator` and :attr:`denominator` properties, and can be
-converted to floats.  Python 2.6 adds a simple rational-number class
-in the :mod:`rational` module.
+converted to floats.  Python 2.6 adds a simple rational-number class,
+:class:`Fraction`, in the :mod:`fractions` module.
 
 :class:`Integral` numbers derive from :class:`Rational`, and
 can be shifted left and right with ``<<`` and ``>>``, 
@@ -598,29 +598,29 @@ one, :func:`trunc`, that's been backported to Python 2.6.
 
   
 
-The Rational Module
+The Fraction Module
 --------------------------------------------------
 
 To fill out the hierarchy of numeric types, a rational-number class
-has been added as the :mod:`rational` module.  Rational numbers are
+has been added as the :mod:`fractions` module.  Rational numbers are
 represented as a fraction; rational numbers can exactly represent
 numbers such as two-thirds that floating-point numbers can only
 approximate.
 
-The :class:`Rational` constructor takes two :class:`Integral` values
+The :class:`Fraction` constructor takes two :class:`Integral` values
 that will be the numerator and denominator of the resulting fraction. ::
 
-    >>> from rational import Rational
-    >>> a = Rational(2, 3)
-    >>> b = Rational(2, 5)
+    >>> from fractions import Fraction
+    >>> a = Fraction(2, 3)
+    >>> b = Fraction(2, 5)
     >>> float(a), float(b)
     (0.66666666666666663, 0.40000000000000002)
     >>> a+b
-    rational.Rational(16,15)
+    Fraction(16, 15)
     >>> a/b
-    rational.Rational(5,3)
+    Fraction(5, 3)
 
-The :mod:`rational` module is based upon an implementation by Sjoerd
+The :mod:`fractions` module is based upon an implementation by Sjoerd
 Mullender that was in Python's :file:`Demo/classes/` directory for a
 long time.  This implementation was significantly updated by Jeffrey
 Yaskin.

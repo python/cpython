@@ -38,17 +38,17 @@ today = ''
 today_fmt = '%B %d, %Y'
 
 # List of files that shouldn't be included in the build.
-unused_files = [
-    'whatsnew/2.0.rst',
-    'whatsnew/2.1.rst',
-    'whatsnew/2.2.rst',
-    'whatsnew/2.3.rst',
-    'whatsnew/2.4.rst',
-    'whatsnew/2.5.rst',
-    'whatsnew/2.6.rst',
-    'maclib/scrap.rst',
-    'library/xmllib.rst',
-    'library/xml.etree.rst',
+unused_docs = [
+    'whatsnew/2.0',
+    'whatsnew/2.1',
+    'whatsnew/2.2',
+    'whatsnew/2.3',
+    'whatsnew/2.4',
+    'whatsnew/2.5',
+    'whatsnew/2.6',
+    'maclib/scrap',
+    'library/xmllib',
+    'library/xml.etree',
 ]
 
 # Relative filename of the reference count data file.

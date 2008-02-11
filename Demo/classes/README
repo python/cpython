@@ -4,7 +4,6 @@ Complex.py	Complex numbers
 Dates.py	Date manipulation package by Tim Peters
 Dbm.py		Wrapper around built-in dbm, supporting	arbitrary values
 Range.py	Example of a generator: re-implement built-in range()
-Rat.py		Rational numbers
 Rev.py		Yield the reverse of a sequence
 Vec.py		A simple vector class
 bitvec.py	A bit-vector class by Jan-Hein B\"uhrman

@@ -104,7 +104,7 @@ Notes for type implementors
 
 Implementors should be careful to make equal numbers equal and hash
 them to the same values. This may be subtle if there are two different
-extensions of the real numbers. For example, :class:`rational.Rational`
+extensions of the real numbers. For example, :class:`fractions.Fraction`
 implements :func:`hash` as follows::
 
     def __hash__(self):
@@ -199,11 +199,11 @@ in :class:`complex`, and both :meth:`__radd__` s land there, so ``a+b
 Because most of the operations on any given type will be very similar,
 it can be useful to define a helper function which generates the
 forward and reverse instances of any given operator. For example,
-:class:`rational.Rational` uses::
+:class:`fractions.Fraction` uses::
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         def forward(a, b):
-            if isinstance(b, (int, long, Rational)):
+            if isinstance(b, (int, long, Fraction)):
                 return monomorphic_operator(a, b)
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
@@ -215,7 +215,7 @@ forward and reverse instances of any given operator. For example,
         forward.__doc__ = monomorphic_operator.__doc__
 
         def reverse(b, a):
-            if isinstance(a, RationalAbc):
+            if isinstance(a, Rational):
                 # Includes ints.
                 return monomorphic_operator(a, b)
             elif isinstance(a, numbers.Real):
@@ -231,7 +231,7 @@ forward and reverse instances of any given operator. For example,
 
     def _add(a, b):
         """a + b"""
-        return Rational(a.numerator * b.denominator +
+        return Fraction(a.numerator * b.denominator +
                         b.numerator * a.denominator,
                         a.denominator * b.denominator)
 

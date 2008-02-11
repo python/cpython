@@ -5,7 +5,7 @@ from test.test_support import fcmp, TESTFN, unlink,  run_unittest, \
                               run_with_locale
 from operator import neg
 
-import sys, warnings, random, collections, io, rational
+import sys, warnings, random, collections, io, rational, fractions
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
@@ -607,7 +607,7 @@ class BuiltinTest(unittest.TestCase):
             n, d = f.as_integer_ratio()
             self.assertEqual(float(n).__truediv__(d), f)
 
-        R = rational.Rational
+        R = fractions.Fraction
         self.assertEqual(R(0, 1),
                          R(*float(0.0).as_integer_ratio()))
         self.assertEqual(R(5, 2),
