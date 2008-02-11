@@ -194,7 +194,6 @@ class WeakValueDictionary(collections.MutableMapping):
                 L.append(o)
         return L
 
-collections.MutableMapping.register(WeakValueDictionary)
 
 class KeyedRef(ref):
     """Specialized reference that includes a key corresponding to the value.
@@ -350,5 +349,3 @@ class WeakKeyDictionary(collections.MutableMapping):
                 d[ref(key, self._remove)] = value
         if len(kwargs):
             self.update(kwargs)
-
-collections.MutableMapping.register(WeakKeyDictionary)

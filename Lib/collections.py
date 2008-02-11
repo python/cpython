@@ -160,8 +160,6 @@ class UserDict(MutableMapping):
             d[key] = value
         return d
 
-MutableMapping.register(UserDict)
-
 
 
 ################################################################################
