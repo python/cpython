@@ -363,7 +363,7 @@ class FractionTest(unittest.TestCase):
         self.assertFalse(R(5, 2) == 2)
 
     def testStringification(self):
-        self.assertEquals("Fraction(7,3)", repr(R(7, 3)))
+        self.assertEquals("Fraction(7, 3)", repr(R(7, 3)))
         self.assertEquals("7/3", str(R(7, 3)))
         self.assertEquals("7", str(R(7, 1)))
 

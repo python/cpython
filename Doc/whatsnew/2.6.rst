@@ -616,9 +616,9 @@ that will be the numerator and denominator of the resulting fraction. ::
     >>> float(a), float(b)
     (0.66666666666666663, 0.40000000000000002)
     >>> a+b
-    Fraction(16,15)
+    Fraction(16, 15)
     >>> a/b
-    Fraction(5,3)
+    Fraction(5, 3)
 
 The :mod:`fractions` module is based upon an implementation by Sjoerd
 Mullender that was in Python's :file:`Demo/classes/` directory for a
