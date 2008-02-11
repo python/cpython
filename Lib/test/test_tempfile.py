@@ -1,5 +1,5 @@
 # tempfile.py unit tests.
-
+from __future__ import with_statement
 import tempfile
 import os
 import sys
@@ -298,7 +298,7 @@ class test__mkstemp_inner(TC):
         # On Windows a spawn* /path/ with embedded spaces shouldn't be quoted,
         # but an arg with embedded spaces should be decorated with double
         # quotes on each end
-        if sys.platform in ('win32'):
+        if sys.platform in ('win32',):
             decorated = '"%s"' % sys.executable
             tester = '"%s"' % tester
         else:
@@ -601,7 +601,6 @@ class test_NamedTemporaryFile(TC):
 
     def test_multiple_close(self):
         # A NamedTemporaryFile can be closed many times without error
-
         f = tempfile.NamedTemporaryFile()
         f.write('abc\n')
         f.close()
@@ -610,6 +609,16 @@ class test_NamedTemporaryFile(TC):
             f.close()
         except:
             self.failOnException("close")
+
+    def test_context_manager(self):
+        # A NamedTemporaryFile can be used as a context manager
+        with tempfile.NamedTemporaryFile() as f:
+            self.failUnless(os.path.exists(f.name))
+        self.failIf(os.path.exists(f.name))
+        def use_closed():
+            with f:
+                pass
+        self.failUnlessRaises(ValueError, use_closed)
 
     # How to test the mode and bufsize parameters?
 
