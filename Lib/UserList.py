@@ -85,5 +85,3 @@ class UserList(collections.MutableSequence):
             self.data.extend(other.data)
         else:
             self.data.extend(other)
-
-collections.MutableSequence.register(UserList)
