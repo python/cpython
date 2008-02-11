@@ -131,6 +131,8 @@ class BasicTests(unittest.TestCase):
         raise last_exc
 
     def test_978833(self):
+        if not test_support.is_resource_enabled("network"):
+            return
         if test_support.verbose:
             print "test_978833 ..."
 
