@@ -1182,6 +1182,8 @@ defdict_reduce(defdictobject *dd)
 static PyMethodDef defdict_methods[] = {
 	{"__missing__", (PyCFunction)defdict_missing, METH_O,
 	 defdict_missing_doc},
+	{"copy", (PyCFunction)defdict_copy, METH_NOARGS,
+         defdict_copy_doc},
 	{"__copy__", (PyCFunction)defdict_copy, METH_NOARGS,
 	 defdict_copy_doc},
 	{"__reduce__", (PyCFunction)defdict_reduce, METH_NOARGS,
