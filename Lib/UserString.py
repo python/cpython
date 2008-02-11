@@ -214,8 +214,6 @@ class MutableString(UserString, collections.MutableSequence):
     def insert(self, index, value):
         self[index:index] = value
 
-collections.MutableSequence.register(MutableString)
-
 if __name__ == "__main__":
     # execute the regression test to stdout, if called as a script:
     import os
