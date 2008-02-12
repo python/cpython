@@ -1129,6 +1129,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1736: Fix file name handling of _msi.FCICreate.
+
 - Updated ``big5hkscs`` codec to the HKSCS revision of 2004.
 
 - #1940: make it possible to use curses.filter() before curses.initscr()
