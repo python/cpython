@@ -1,6 +1,5 @@
 from test.test_support import verify, verbose, TestFailed, sortdict
-from UserList import UserList
-from collections import UserDict
+from collections import UserDict, UserList
 
 def e(a, b):
     print(a, b)

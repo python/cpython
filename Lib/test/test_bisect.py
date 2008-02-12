@@ -1,7 +1,7 @@
 import unittest
 from test import test_support
 from bisect import bisect_right, bisect_left, insort_left, insort_right, insort, bisect
-from UserList import UserList
+from collections import UserList
 
 class TestBisect(unittest.TestCase):
 

@@ -4,7 +4,7 @@ Common tests shared by test_str, test_unicode, test_userstring and test_string.
 
 import unittest, string, sys, struct
 from test import test_support
-from UserList import UserList
+from collections import UserList
 
 class Sequence:
     def __init__(self, seq='wxyz'): self.seq = seq

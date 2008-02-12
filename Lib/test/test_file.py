@@ -5,7 +5,7 @@ from array import array
 from weakref import proxy
 
 from test.test_support import TESTFN, findfile, run_unittest
-from UserList import UserList
+from collections import UserList
 
 class AutoFileTests(unittest.TestCase):
     # file tests for which a test file is automatically set up
