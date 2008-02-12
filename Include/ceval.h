@@ -51,7 +51,7 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 	     _Py_CheckRecursiveCall(where))
 #define Py_LeaveRecursiveCall()				\
     do{ if((--PyThreadState_GET()->recursion_depth) <   \
-	   _Py_CheckRecursionLimit - 50);               \
+	   _Py_CheckRecursionLimit - 50)                \
 	  PyThreadState_GET()->overflowed = 0;          \
     } while(0)
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(char *where);
