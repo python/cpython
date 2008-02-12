@@ -1131,22 +1131,8 @@ set_copy(PySetObject *so)
 }
 
 static PyObject *
-set_copy_method(PySetObject *so)
-{
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "set.copy() not supported in 3.x") < 0)
-		return NULL;
-	return make_new_set(Py_TYPE(so), (PyObject *)so);
-}
-
-static PyObject *
 frozenset_copy(PySetObject *so)
 {
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "frozenset.copy() not supported in 3.x") < 0)
-		return NULL;
 	if (PyFrozenSet_CheckExact(so)) {
 		Py_INCREF(so);
 		return (PyObject *)so;
@@ -1925,7 +1911,7 @@ static PyMethodDef set_methods[] = {
 	 clear_doc},
 	{"__contains__",(PyCFunction)set_direct_contains,	METH_O | METH_COEXIST,
 	 contains_doc},
-	{"copy",	(PyCFunction)set_copy_method,	METH_NOARGS,
+	{"copy",	(PyCFunction)set_copy,		METH_NOARGS,
 	 copy_doc},
 	{"discard",	(PyCFunction)set_discard,	METH_O,
 	 discard_doc},
