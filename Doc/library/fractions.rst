@@ -1,6 +1,6 @@
 
 :mod:`fractions` --- Rational numbers
-====================================
+=====================================
 
 .. module:: fractions
    :synopsis: Rational numbers.
