@@ -83,6 +83,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1966: Break infinite loop in httplib when the servers
+  implements the chunked encoding incorrectly.
+
 - tarfile.py: Fix reading of xstar archives.
 
 - #2021: Allow tempfile.NamedTemporaryFile to be used in with statements
