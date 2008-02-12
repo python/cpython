@@ -4814,48 +4814,11 @@ static PyTypeObject PyComError_Type = {
 static int
 create_comerror(void)
 {
-	PyObject *dict = PyDict_New();
-	PyMethodDef *methods = comerror_methods;
-	PyObject *s;
-	int status;
-
-	if (dict == NULL)
+	PyComError_Type.tp_base = (PyTypeObject*)PyExc_Exception;
+	if (PyType_Ready(&PyComError_Type) < 0)
 		return -1;
-
-	while (methods->ml_name) {
-		/* get a wrapper for the built-in function */
-		PyObject *func = PyCFunction_New(methods, NULL);
-		PyObject *meth;
-		if (func == NULL)
-			goto error;
-		meth = PyMethod_New(func, NULL, ComError);
-		Py_DECREF(func);
-		if (meth == NULL)
-			goto error;
-		PyDict_SetItemString(dict, methods->ml_name, meth);
-		Py_DECREF(meth);
-		++methods;
-	}
-
-	s = PyString_FromString(comerror_doc);
-	if (s == NULL)
-		goto error;
 	ComError = (PyObject*)&PyComError_Type;
-	status = PyDict_SetItemString(dict, "__doc__", s);
-	Py_DECREF(s);
-	if (status == -1)
-		goto error;
-
-	ComError = PyErr_NewException("_ctypes.COMError",
-				      NULL,
-				      dict);
-	if (ComError == NULL)
-		goto error;
-
 	return 0;
-  error:
-	Py_DECREF(dict);
-	return -1;
 }
 
 #endif
