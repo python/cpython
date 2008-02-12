@@ -1127,7 +1127,7 @@ defdict_copy(defdictobject *dd)
 {
 	/* This calls the object's class.  That only works for subclasses
 	   whose class constructor has the same signature.  Subclasses that
-	   define a different constructor signature must override __copy__().
+	   define a different constructor signature must override copy().
 	*/
 	return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
 					    dd->default_factory, dd, NULL);

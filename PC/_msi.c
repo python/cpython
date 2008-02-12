@@ -180,12 +180,12 @@ static FNFCIGETOPENINFO(cb_getopeninfo)
 
 static PyObject* fcicreate(PyObject* obj, PyObject* args)
 {
-    char *cabname;
+    char *cabname, *p;
     PyObject *files;
     CCAB ccab;
     HFCI hfci;
     ERF erf;
-    int i;
+    Py_ssize_t i;
 
 
     if (!PyArg_ParseTuple(args, "sO:FCICreate", &cabname, &files))
@@ -208,22 +208,22 @@ static PyObject* fcicreate(PyObject* obj, PyObject* args)
     ccab.setID = 0;
     ccab.szDisk[0] = '\0';
 
-    for (i=0; cabname[i]; i++)
-	if (cabname[i] == '\\' || cabname[i] == '/')
-	    break;
+    for (i = 0, p = cabname; *p; p = CharNext(p))
+	if (*p == '\\' || *p == '/')
+	    i = p - cabname + 1;
 
-    if (i > sizeof(ccab.szCabPath) ||
-	strlen(cabname+i) > sizeof(ccab.szCab)) {
+    if (i >= sizeof(ccab.szCabPath) ||
+	strlen(cabname+i) >= sizeof(ccab.szCab)) {
 	PyErr_SetString(PyExc_ValueError, "path name too long");
 	return 0;
     }
 
-    if (cabname[i]) {
+    if (i > 0) {
 	memcpy(ccab.szCabPath, cabname, i);
 	ccab.szCabPath[i] = '\0';
 	strcpy(ccab.szCab, cabname+i);
     } else {
-	strcpy(ccab.szCabPath, ".");
+	strcpy(ccab.szCabPath, ".\\");
 	strcpy(ccab.szCab, cabname);
     }
 

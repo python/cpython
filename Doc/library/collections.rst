@@ -12,10 +12,18 @@ This module implements high-performance container datatypes.  Currently,
 there are two datatypes, :class:`deque` and :class:`defaultdict`, and
 one datatype factory function, :func:`namedtuple`. 
 
+Besides the containers provided here, the optional :mod:`bsddb`
+module offers the ability to create in-memory or file based ordered 
+dictionaries with string keys using the :meth:`bsddb.btopen` method.
+
+In addition to containers, the collections module provides some ABCs
+(abstract base classes) that can be used to test whether a class 
+provides a particular interface, for example, is it hashable or
+a mapping. 
+
 The specialized containers provided in this module provide alternatives
 to Python's general purpose built-in containers, :class:`dict`, 
 :class:`list`, :class:`set`, and :class:`tuple`.
-
 Besides the containers provided here, the optional :mod:`bsddb`
 module offers the ability to create in-memory or file based ordered 
 dictionaries with string keys using the :meth:`bsddb.btopen` method.
@@ -126,7 +134,6 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    ``__hash__ = Set._hash``.
 
 (For more about ABCs, see the :mod:`abc` module and :pep:`3119`.)
-
 
 
 .. _deque-objects:

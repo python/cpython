@@ -1518,6 +1518,20 @@ class Decimal(_numbers.Real, _numbers.Inexact):
 
     __trunc__ = __int__
 
+    @property
+    def real(self):
+        return self
+
+    @property
+    def imag(self):
+        return Decimal(0)
+
+    def conjugate(self):
+        return self
+
+    def __complex__(self):
+        return complex(float(self))
+
     def _fix_nan(self, context):
         """Decapitate the payload of a NaN to fit the context"""
         payload = self._int
