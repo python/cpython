@@ -980,15 +980,10 @@ class ConfigDialog(Toplevel):
         self.SetThemeType()
         ##load theme element option menu
         themeNames = list(self.themeElements.keys())
-        themeNames.sort(self.__ThemeNameIndexCompare)
+        themeNames.sort(key=lambda x: self.themeElements[x][1])
         self.optMenuHighlightTarget.SetMenu(themeNames,themeNames[0])
         self.PaintThemeSample()
         self.SetHighlightTarget()
-
-    def __ThemeNameIndexCompare(self,a,b):
-        if self.themeElements[a][1]<self.themeElements[b][1]: return -1
-        elif self.themeElements[a][1]==self.themeElements[b][1]: return 0
-        else: return 1
 
     def LoadKeyCfg(self):
         ##current keys type radiobutton
