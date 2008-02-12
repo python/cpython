@@ -140,42 +140,60 @@ class Fraction(Rational):
         else:
             return Fraction(digits, 10 ** -exp)
 
-    @staticmethod
-    def from_continued_fraction(seq):
-        'Build a Fraction from a continued fraction expessed as a sequence'
-        n, d = 1, 0
-        for e in reversed(seq):
-            n, d = d, n
-            n += e * d
-        return Fraction(n, d) if seq else Fraction(0)
+    def limit_denominator(self, max_denominator=1000000):
+        """Closest Fraction to self with denominator at most max_denominator.
 
-    def as_continued_fraction(self):
-        'Return continued fraction expressed as a list'
-        n = self.numerator
-        d = self.denominator
-        cf = []
-        while d:
-            e = int(n // d)
-            cf.append(e)
-            n -= e * d
-            n, d = d, n
-        return cf
+        >>> Fraction('3.141592653589793').limit_denominator(10)
+        Fraction(22, 7)
+        >>> Fraction('3.141592653589793').limit_denominator(100)
+        Fraction(311, 99)
+        >>> Fraction(1234, 5678).limit_denominator(10000)
+        Fraction(1234, 5678)
 
-    def approximate(self, max_denominator):
-        'Best rational approximation with a denominator <= max_denominator'
-        # XXX First cut at algorithm
-        # Still needs rounding rules as specified at
-        #       http://en.wikipedia.org/wiki/Continued_fraction
+        """
+        # Algorithm notes: For any real number x, define a *best upper
+        # approximation* to x to be a rational number p/q such that:
+        #
+        #   (1) p/q >= x, and
+        #   (2) if p/q > r/s >= x then s > q, for any rational r/s.
+        #
+        # Define *best lower approximation* similarly.  Then it can be
+        # proved that a rational number is a best upper or lower
+        # approximation to x if, and only if, it is a convergent or
+        # semiconvergent of the (unique shortest) continued fraction
+        # associated to x.
+        #
+        # To find a best rational approximation with denominator <= M,
+        # we find the best upper and lower approximations with
+        # denominator <= M and take whichever of these is closer to x.
+        # In the event of a tie, the bound with smaller denominator is
+        # chosen.  If both denominators are equal (which can happen
+        # only when max_denominator == 1 and self is midway between
+        # two integers) the lower bound---i.e., the floor of self, is
+        # taken.
+
+        if max_denominator < 1:
+            raise ValueError("max_denominator should be at least 1")
         if self.denominator <= max_denominator:
-            return self
-        cf = self.as_continued_fraction()
-        result = Fraction(0)
-        for i in range(1, len(cf)):
-            new = self.from_continued_fraction(cf[:i])
-            if new.denominator > max_denominator:
+            return Fraction(self)
+
+        p0, q0, p1, q1 = 0, 1, 1, 0
+        n, d = self.numerator, self.denominator
+        while True:
+            a = n//d
+            q2 = q0+a*q1
+            if q2 > max_denominator:
                 break
-            result = new
-        return result
+            p0, q0, p1, q1 = p1, q1, p0+a*p1, q2
+            n, d = d, n-a*d
+
+        k = (max_denominator-q0)//q1
+        bound1 = Fraction(p0+k*p1, q0+k*q1)
+        bound2 = Fraction(p1, q1)
+        if abs(bound2 - self) <= abs(bound1-self):
+            return bound2
+        else:
+            return bound1
 
     @property
     def numerator(a):
