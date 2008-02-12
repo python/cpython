@@ -254,7 +254,7 @@ class MiscTest(unittest.TestCase):
 
     def test_recursion(self):
         # Check that comparison for recursive objects fails gracefully
-        from UserList import UserList
+        from collections import UserList
         a = UserList()
         b = UserList()
         a.append(b)

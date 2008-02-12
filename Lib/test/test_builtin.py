@@ -5,7 +5,7 @@ from test.test_support import fcmp, TESTFN, unlink,  run_unittest, \
                               run_with_locale
 from operator import neg
 
-import sys, warnings, random, collections, io, rational, fractions
+import sys, warnings, random, collections, io, fractions
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
@@ -210,7 +210,7 @@ class BuiltinTest(unittest.TestCase):
         # verify that circular objects are not handled
         a = []; a.append(a)
         b = []; b.append(b)
-        from UserList import UserList
+        from collections import UserList
         c = UserList(); c.append(c)
         self.assertRaises(RuntimeError, cmp, a, b)
         self.assertRaises(RuntimeError, cmp, b, c)

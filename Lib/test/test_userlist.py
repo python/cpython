@@ -1,6 +1,6 @@
 # Check every path through every method of UserList
 
-from UserList import UserList
+from collections import UserList
 import unittest
 from test import test_support, list_tests
 
