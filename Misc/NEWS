@@ -400,6 +400,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1966: Break infinite loop in httplib when the servers
+  implements the chunked encoding incorrectly.
+
 - Rename rational.py to fractions.py and the rational.Rational class
   to fractions.Fraction, to avoid the name clash with the abstract
   base class numbers.Rational.  See discussion in issue #1682.
