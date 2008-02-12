@@ -143,7 +143,7 @@ class IdleUserConfParser(IdleConfParser):
             try:
                 cfgFile = open(fname, 'w')
             except IOError:
-                fname.unlink()
+                os.unlink(fname)
                 cfgFile = open(fname, 'w')
             self.write(cfgFile)
         else:
