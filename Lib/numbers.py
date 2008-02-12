@@ -51,10 +51,7 @@ Inexact.register(float)
 
 ## Notes on Decimal and it how relates to the numeric tower
 ## --------------------------------------------------------
-## Decimal is Real except that it does not support the real and imag properties
-## or the conjugate() and complex() methods.  If those get defined at some
-## point, they cannot use the default implementation which would be sensitive
-## to decimal.Context and could produce different answers at different times.
+## Decimal is Real except that it does not support rich comparisons.
 ##
 ## Decimal has some of the characteristics of Integrals.  It provides
 ## logical operations but not as operators.  The logical operations only apply

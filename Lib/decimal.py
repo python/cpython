@@ -1519,6 +1519,20 @@ class Decimal(object):
 
     __trunc__ = __int__
 
+    @property
+    def real(self):
+        return self
+
+    @property
+    def imag(self):
+        return Decimal(0)
+
+    def conjugate(self):
+        return self
+
+    def __complex__(self):
+        return complex(float(self))
+
     def __long__(self):
         """Converts to a long.
 
