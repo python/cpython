@@ -49,8 +49,8 @@ Inexact.register(float)
 # Inexact.register(decimal.Decimal)
 
 
-## Notes on Decimal and how relates to the numeric tower
-## -----------------------------------------------------
+## Notes on Decimal and it how relates to the numeric tower
+## --------------------------------------------------------
 ## Decimal is Real except that it does not support the real and imag properties
 ## or the conjugate() and complex() methods.  If those get defined at some
 ## point, they cannot use the default implementation which would be sensitive
