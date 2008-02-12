@@ -231,6 +231,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1736: Fix file name handling of _msi.FCICreate.
+
 - Backport r59862 (issue #712900): make long regexp matches interruptable.
 
 - #1940: make it possible to use curses.filter() before curses.initscr()
