@@ -28,8 +28,8 @@ class PickleTest(unittest.TestCase):
             ]:
             dst = self.loads(self.dumps(src))
             self.failUnlessEqual(src.__dict__, dst.__dict__)
-            self.failUnlessEqual(buffer(src),
-                                 buffer(dst))
+            self.failUnlessEqual(buffer(src)[:],
+                                 buffer(dst)[:])
 
     def test_struct(self):
         X.init_called = 0
@@ -46,8 +46,8 @@ class PickleTest(unittest.TestCase):
         # ctypes instances are identical when the instance __dict__
         # and the memory buffer are identical
         self.failUnlessEqual(y.__dict__, x.__dict__)
-        self.failUnlessEqual(buffer(y),
-                             buffer(x))
+        self.failUnlessEqual(buffer(y)[:],
+                             buffer(x)[:])
 
     def test_unpickable(self):
         # ctypes objects that are pointers or contain pointers are
