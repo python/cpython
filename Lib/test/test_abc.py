@@ -83,6 +83,16 @@ class TestABC(unittest.TestCase):
         self.assertEqual(issubclass(C, A), True)
         self.assertEqual(isinstance(c, A), True)
 
+    def test_isinstance_invalidation(self):
+        class A:
+            __metaclass__ = abc.ABCMeta
+        class B(object):
+            pass
+        b = B()
+        self.assertEqual(isinstance(b, A), False)
+        A.register(B)
+        self.assertEqual(isinstance(b, A), True)
+
     def test_registration_builtins(self):
         class A:
             __metaclass__ = abc.ABCMeta
