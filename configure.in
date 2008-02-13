@@ -61,7 +61,7 @@ AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
 
 AC_ARG_ENABLE(universalsdk,
-	AC_HELP_STRING(--enable-universalsdk@<:@SDKDIR@:>@, Build against Mac OS X 10.4u SDK (ppc/i386)),
+	AC_HELP_STRING(--enable-universalsdk@<:@=SDKDIR@:>@, Build against Mac OS X 10.4u SDK (ppc/i386)),
 [
 	case $enableval in
 	yes)
