@@ -269,6 +269,9 @@ PyObject *_CallProc(PPROC pProc,
 #define FUNCFLAG_HRESULT 0x2
 #define FUNCFLAG_PYTHONAPI 0x4
 
+#define TYPEFLAG_ISPOINTER 0x100
+#define TYPEFLAG_HASPOINTER 0x200
+
 #define DICTFLAG_FINAL 0x1000
 
 struct tagPyCArgObject {

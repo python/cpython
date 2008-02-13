@@ -2009,6 +2009,11 @@ Fundamental data types
    ctypes data types.  ``_SimpleCData`` is a subclass of ``_CData``, so it inherits
    their methods and attributes.
 
+   .. versionchanged:: 2.6
+
+      ctypes data types that are not and do not contain pointers can
+      now be pickled.
+
 Instances have a single attribute:
 
 

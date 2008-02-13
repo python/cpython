@@ -123,6 +123,9 @@ bytes(cdata)
 PyObject *PyExc_ArgError;
 static PyTypeObject Simple_Type;
 
+/* a callable object used for unpickling */
+static PyObject *_unpickle;
+
 char *conversion_mode_encoding = NULL;
 char *conversion_mode_errors = NULL;
 
@@ -710,6 +713,7 @@ PointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	stgdict->length = 1;
 	stgdict->ffi_type_pointer = ffi_type_pointer;
 	stgdict->paramfunc = PointerType_paramfunc;
+	stgdict->flags |= TYPEFLAG_ISPOINTER;
 
 	proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
 	if (proto && -1 == PointerType_SetProto(stgdict, proto)) {
@@ -1138,6 +1142,9 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 
 	itemalign = itemdict->align;
+
+	if (itemdict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
+		stgdict->flags |= TYPEFLAG_HASPOINTER;
 
 	stgdict->size = itemsize * length;
 	stgdict->align = itemalign;
@@ -1706,12 +1713,21 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		switch (*proto_str) {
 		case 'z': /* c_char_p */
 			ml = &c_char_p_method;
+			stgdict->flags |= TYPEFLAG_ISPOINTER;
 			break;
 		case 'Z': /* c_wchar_p */
 			ml = &c_wchar_p_method;
+			stgdict->flags |= TYPEFLAG_ISPOINTER;
 			break;
 		case 'P': /* c_void_p */
 			ml = &c_void_p_method;
+			stgdict->flags |= TYPEFLAG_ISPOINTER;
+			break;
+		case 'u':
+		case 'X':
+		case 'O':
+			ml = NULL;
+			stgdict->flags |= TYPEFLAG_ISPOINTER;
 			break;
 		default:
 			ml = NULL;
@@ -1928,7 +1944,7 @@ make_funcptrtype_dict(StgDictObject *stgdict)
 		    "class must define _flags_ which must be an integer");
 		return -1;
 	}
-	stgdict->flags = PyLong_AS_LONG(ob);
+	stgdict->flags = PyLong_AS_LONG(ob) | TYPEFLAG_ISPOINTER;
 
 	/* _argtypes_ is optional... */
 	ob = PyDict_GetItemString((PyObject *)stgdict, "_argtypes_");
@@ -2003,6 +2019,7 @@ CFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	stgdict->paramfunc = CFuncPtrType_paramfunc;
+	stgdict->flags |= TYPEFLAG_ISPOINTER;
 
 	/* create the new instance (which is a class,
 	   since we are a metatype!) */
@@ -2235,6 +2252,45 @@ CData_nohash(PyObject *self)
 	return -1;
 }
 
+static PyObject *
+CData_reduce(PyObject *_self, PyObject *args)
+{
+	CDataObject *self = (CDataObject *)_self;
+
+	if (PyObject_stgdict(_self)->flags & (TYPEFLAG_ISPOINTER|TYPEFLAG_HASPOINTER)) {
+		PyErr_SetString(PyExc_ValueError,
+				"ctypes objects containing pointers cannot be pickled");
+		return NULL;
+	}
+	return Py_BuildValue("O(O(NN))",
+			     _unpickle,
+			     Py_TYPE(_self),
+			     PyObject_GetAttrString(_self, "__dict__"),
+			     PyString_FromStringAndSize(self->b_ptr, self->b_size));
+}
+
+static PyObject *
+CData_setstate(PyObject *_self, PyObject *args)
+{
+	void *data;
+	int len;
+	int res;
+	PyObject *dict, *mydict;
+	CDataObject *self = (CDataObject *)_self;
+	if (!PyArg_ParseTuple(args, "Os#", &dict, &data, &len))
+		return NULL;
+	if (len > self->b_size)
+		len = self->b_size;
+	memmove(self->b_ptr, data, len);
+	mydict = PyObject_GetAttrString(_self, "__dict__");
+	res = PyDict_Update(mydict, dict);
+	Py_DECREF(mydict);
+	if (res == -1)
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 /*
  * default __ctypes_from_outparam__ method returns self.
  */
@@ -2247,6 +2303,8 @@ CData_from_outparam(PyObject *self, PyObject *args)
 
 static PyMethodDef CData_methods[] = {
 	{ "__ctypes_from_outparam__", CData_from_outparam, METH_NOARGS, },
+	{ "__reduce__", CData_reduce, METH_NOARGS, },
+	{ "__setstate__", CData_setstate, METH_VARARGS, },
 	{ NULL, NULL },
 };
 
@@ -4932,6 +4990,10 @@ init_ctypes(void)
 #endif
 	m = Py_InitModule3("_ctypes", module_methods, module_docs);
 	if (!m)
+		return;
+
+	_unpickle = PyObject_GetAttrString(m, "_unpickle");
+	if (_unpickle == NULL)
 		return;
 
 	if (PyType_Ready(&PyCArg_Type) < 0)
