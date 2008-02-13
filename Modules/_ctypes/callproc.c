@@ -1543,7 +1543,30 @@ resize(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject *
+unpickle(PyObject *self, PyObject *args)
+{
+	PyObject *typ;
+	PyObject *state;
+	PyObject *result;
+	PyObject *tmp;
+
+	if (!PyArg_ParseTuple(args, "OO", &typ, &state))
+		return NULL;
+	result = PyObject_CallMethod(typ, "__new__", "O", typ);
+	if (result == NULL)
+		return NULL;
+	tmp = PyObject_CallMethod(result, "__setstate__", "O", state);
+	if (tmp == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
+	Py_DECREF(tmp);
+	return result;
+}
+
 PyMethodDef module_methods[] = {
+	{"_unpickle", unpickle, METH_VARARGS },
 	{"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},
 #ifdef CTYPES_UNICODE
 	{"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},
