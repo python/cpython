@@ -1132,6 +1132,8 @@ Library
 Extension Modules
 -----------------
 
+- #2063: correct order of utime and stime in os.times() result on Windows.
+
 - Patch #1736: Fix file name handling of _msi.FCICreate.
 
 - Updated ``big5hkscs`` codec to the HKSCS revision of 2004.
