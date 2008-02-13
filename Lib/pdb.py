@@ -641,7 +641,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         sys.settrace(None)
         globals = self.curframe.f_globals
         locals = self.curframe.f_locals
-        p = Pdb()
+        p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         print >>self.stdout, "ENTERING RECURSIVE DEBUGGER"
         sys.call_tracing(p.run, (arg, globals, locals))
