@@ -3,6 +3,12 @@ What's New in IDLE 1.2.2c1?
 
 *Release date: XX-FEB-2008*
 
+- Corrected some bugs in AutoComplete.  Also, Page Up/Down in ACW implemented;                                                                               
+  mouse and cursor selection in ACWindow implemented; double Tab inserts      
+  current selection and closes ACW (similar to double-click and Return); scroll                                                                              
+  wheel now works in ACW.  Added AutoComplete instructions to IDLE Help.
+  (backport r53679)
+
 - Avoid hang when encountering a duplicate in a completion list. Bug 1571112.
   (backport r53042)
 
