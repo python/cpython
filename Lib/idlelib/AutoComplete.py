@@ -27,7 +27,7 @@ class AutoComplete:
 
     menudefs = [
         ('edit', [
-            ("Show completions", "<<force-open-completions>>"),
+            ("Show Completions", "<<force-open-completions>>"),
         ])
     ]
 
