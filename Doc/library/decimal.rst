@@ -1580,17 +1580,16 @@ be followed-up with a :meth:`quantize` step.
     Decimal('4314.24')
     >>> (a * b).quantize(TWOPLACES)     # Must quantize non-integer multiplication
     Decimal('325.62')
-    >>> (b / a).quantize(TWOPLACES)     # And quantize divisions
+    >>> (b / a).quantize(TWOPLACES)     # And quantize division
     Decimal('0.03')
 
 In developing fixed-point applications, it is convenient to define functions
 to handle the :meth:`quantize` step::
 
-    def mul(x, y, fp=TWOPLACES):
-        return (x * y).quantize(fp)
-    def div(x, y, fp=TWOPLACES):
-        return (x / y).quantize(fp)
-
+    >>> def mul(x, y, fp=TWOPLACES):
+    ...     return (x * y).quantize(fp)
+    >>> def div(x, y, fp=TWOPLACES):
+    ...     return (x / y).quantize(fp)
     >>> mul(a, b)                       # Automatically preserve fixed-point
     Decimal('325.62')
     >>> div(b, a)
