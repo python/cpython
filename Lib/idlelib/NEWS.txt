@@ -3,6 +3,10 @@ What's New in IDLE 1.2.2c1?
 
 *Release date: XX-FEB-2008*
 
+- Some syntax errors were being caught by tokenize during the tabnanny        
+  check, resulting in obscure error messages.  Do the syntax check            
+  first.  Bug 1562716, 1562719  (backport r52083)
+
 - Patch 1693258: Fix for duplicate "preferences" menu-OS X. Backport of r56204.
 
 - OSX: Avoid crash for those versions of Tcl/Tk which don't have a console
