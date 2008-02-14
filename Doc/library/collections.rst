@@ -10,16 +10,10 @@
 
 This module implements high-performance container datatypes.  Currently,
 there are two datatypes, :class:`deque` and :class:`defaultdict`, and
-one datatype factory function, :func:`namedtuple`. 
-
-Besides the containers provided here, the optional :mod:`bsddb`
-module offers the ability to create in-memory or file based ordered 
-dictionaries with string keys using the :meth:`bsddb.btopen` method.
-
-In addition to containers, the collections module provides some ABCs
-(abstract base classes) that can be used to test whether a class 
-provides a particular interface, for example, is it hashable or
-a mapping. 
+one datatype factory function, :func:`namedtuple`. This module also
+provides the :class:`UserDict` and :class:`UserList` classes which may
+be useful when inheriting directly from :class:`dict` or
+:class:`list` isn't convenient.
 
 The specialized containers provided in this module provide alternatives
 to Python's general purpose built-in containers, :class:`dict`, 
@@ -29,9 +23,9 @@ module offers the ability to create in-memory or file based ordered
 dictionaries with string keys using the :meth:`bsddb.btopen` method.
 
 In addition to containers, the collections module provides some ABCs
-(abstract base classes) that can be used to test whether a class 
+(abstract base classes). These can be used to test whether a class 
 provides a particular interface, for example, is it hashable or
-a mapping. 
+a mapping, and some of them can also be used as mixin classes.
 
 ABCs - abstract base classes
 ----------------------------
@@ -114,7 +108,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    Since some set operations create new sets, the default mixin methods need
    a way to create new instances from an iterable. The class constructor is 
    assumed to have a signature in the form ``ClassName(iterable)``.  
-   That assumption is factored-out to a singleinternal classmethod called
+   That assumption is factored-out to a single internal classmethod called
    :meth:`_from_iterable` which calls ``cls(iterable)`` to produce a new set.
    If the :class:`Set` mixin is being used in a class with a different
    constructor signature, you will need to override :meth:`from_iterable` 
