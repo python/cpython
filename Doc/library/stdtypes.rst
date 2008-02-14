@@ -1326,13 +1326,13 @@ Notes:
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
 
-   Starting with Python 2.3, the :meth:`sort` method is guaranteed to be stable.  A
+   The :meth:`sort` method is guaranteed to be stable.  A
    sort is stable if it guarantees not to change the relative order of elements
    that compare equal --- this is helpful for sorting in multiple passes (for
    example, sort by department, then by salary grade).
 
    While a list is being sorted, the effect of attempting to mutate, or even
-   inspect, the list is undefined.  The C implementation of Python 2.3 and newer
+   inspect, the list is undefined.  The C implementation 
    makes the list appear empty for the duration, and raises :exc:`ValueError` if it
    can detect that the list has been mutated during a sort.
 
