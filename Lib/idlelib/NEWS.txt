@@ -1,7 +1,7 @@
 What's New in IDLE 1.2.2c1?
 =========================
 
-*Release date: XX-FEB-2008*
+*Release date: 14-FEB-2008*
 
 - There was an error on exit if no sys.exitfunc was defined. Issue 1647.
   (backport r60227)
