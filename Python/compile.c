@@ -225,6 +225,10 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
 		return ident; /* Don't mangle if class is just underscores */
 	}
 	plen = strlen(p);
+
+	assert(1 <= PY_SSIZE_T_MAX - nlen);
+	assert(1 + nlen <= PY_SSIZE_T_MAX - plen);
+
 	ident = PyString_FromStringAndSize(NULL, 1 + nlen + plen);
 	if (!ident)
 		return 0;
@@ -619,6 +623,8 @@ markblocks(unsigned char *code, int len)
 {
 	unsigned int *blocks = (unsigned int *)PyMem_Malloc(len*sizeof(int));
 	int i,j, opcode, blockcnt = 0;
+
+	assert(len <= PY_SIZE_MAX / sizeof(int));
 
 	if (blocks == NULL) {
 		PyErr_NoMemory();
@@ -1281,6 +1287,12 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 		size_t oldsize, newsize;
 		oldsize = b->b_ialloc * sizeof(struct instr);
 		newsize = oldsize << 1;
+
+		if (oldsize > (PY_SIZE_MAX >> 1)) {
+			PyErr_NoMemory();
+			return -1;
+		}
+
 		if (newsize == 0) {
 			PyErr_NoMemory();
 			return -1;
@@ -4091,6 +4103,10 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
 	a->a_lnotab = PyString_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
 	if (!a->a_lnotab)
 		return 0;
+	if (nblocks > PY_SIZE_MAX / sizeof(basicblock *)) {
+		PyErr_NoMemory();
+		return 0;
+	}
 	a->a_postorder = (basicblock **)PyObject_Malloc(
 					    sizeof(basicblock *) * nblocks);
 	if (!a->a_postorder) {
@@ -4199,10 +4215,14 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 		nbytes = a->a_lnotab_off + 2 * ncodes;
 		len = PyString_GET_SIZE(a->a_lnotab);
 		if (nbytes >= len) {
-			if (len * 2 < nbytes)
+			if ((len <= INT_MAX / 2) && (len * 2 < nbytes))
 				len = nbytes;
-			else
+			else if (len <= INT_MAX / 2)
 				len *= 2;
+			else {
+				PyErr_NoMemory();
+				return 0;
+			}
 			if (_PyString_Resize(&a->a_lnotab, len) < 0)
 				return 0;
 		}
@@ -4221,10 +4241,14 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 		nbytes = a->a_lnotab_off + 2 * ncodes;
 		len = PyString_GET_SIZE(a->a_lnotab);
 		if (nbytes >= len) {
-			if (len * 2 < nbytes)
+			if ((len <= INT_MAX / 2) && len * 2 < nbytes)
 				len = nbytes;
-			else
+			else if (len <= INT_MAX / 2)
 				len *= 2;
+			else {
+				PyErr_NoMemory();
+				return 0;
+			}
 			if (_PyString_Resize(&a->a_lnotab, len) < 0)
 				return 0;
 		}
@@ -4283,6 +4307,8 @@ assemble_emit(struct assembler *a, struct instr *i)
 	if (i->i_lineno && !assemble_lnotab(a, i))
 		return 0;
 	if (a->a_offset + size >= len) {
+		if (len > PY_SSIZE_T_MAX / 2)
+			return 0;
 		if (_PyString_Resize(&a->a_bytecode, len * 2) < 0)
 		    return 0;
 	}

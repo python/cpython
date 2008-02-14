@@ -83,14 +83,18 @@ PyAPI_FUNC(void) PyMem_Free(void *);
  */
 
 #define PyMem_New(type, n) \
-	( (type *) PyMem_Malloc((n) * sizeof(type)) )
+  ( assert((n) <= PY_SIZE_MAX / sizeof(type)) , \
+	( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
 #define PyMem_NEW(type, n) \
-	( (type *) PyMem_MALLOC((n) * sizeof(type)) )
+  ( assert((n) <= PY_SIZE_MAX / sizeof(type)) , \
+	( (type *) PyMem_MALLOC((n) * sizeof(type)) ) )
 
 #define PyMem_Resize(p, type, n) \
-	( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
+  ( assert((n) <= PY_SIZE_MAX / sizeof(type)) , \
+	( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) ) )
 #define PyMem_RESIZE(p, type, n) \
-	( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
+  ( assert((n) <= PY_SIZE_MAX / sizeof(type)) , \
+	( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) ) )
 
 /* PyMem{Del,DEL} are left over from ancient days, and shouldn't be used
  * anymore.  They're just confusing aliases for PyMem_{Free,FREE} now.

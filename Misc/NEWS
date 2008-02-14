@@ -12,6 +12,10 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Added checks for integer overflows, contributed by Google. Some are
+  only available if asserts are left in the code, in cases where they
+  can't be triggered from Python code.
+
 - Issue #2045: Fix an infinite recursion triggered when printing a subclass of
   collections.defaultdict, if its default_factory is set to a bound method.
 

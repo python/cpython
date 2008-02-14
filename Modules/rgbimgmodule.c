@@ -269,7 +269,7 @@ longimagedata(PyObject *self, PyObject *args)
 	Py_Int32 *starttab = NULL, *lengthtab = NULL;
 	FILE *inf = NULL;
 	IMAGE image;
-	int y, z, tablen;
+	int y, z, tablen, new_size;
 	int xsize, ysize, zsize;
 	int bpp, rle, cur, badorder;
 	int rlebuflen;
@@ -301,9 +301,15 @@ longimagedata(PyObject *self, PyObject *args)
 	zsize = image.zsize;
 	if (rle) {
 		tablen = ysize * zsize * sizeof(Py_Int32);
+		rlebuflen = (int) (1.05 * xsize +10);
+		if ((tablen / sizeof(Py_Int32)) != (ysize * zsize) ||
+		    rlebuflen < 0) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
 		starttab = (Py_Int32 *)malloc(tablen);
 		lengthtab = (Py_Int32 *)malloc(tablen);
-		rlebuflen = (int) (1.05 * xsize +10);
 		rledat = (unsigned char *)malloc(rlebuflen);
 		if (!starttab || !lengthtab || !rledat) {
 			PyErr_NoMemory();
@@ -331,8 +337,14 @@ longimagedata(PyObject *self, PyObject *args)
 
 		fseek(inf, 512 + 2 * tablen, SEEK_SET);
 		cur = 512 + 2 * tablen;
+		new_size = xsize * ysize + TAGLEN;
+		if (new_size < 0 || (new_size * sizeof(Py_Int32)) < 0) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
 		rv = PyString_FromStringAndSize((char *)NULL,
-				      (xsize * ysize + TAGLEN) * sizeof(Py_Int32));
+				      new_size * sizeof(Py_Int32));
 		if (rv == NULL)
 			goto finally;
 
@@ -400,8 +412,14 @@ longimagedata(PyObject *self, PyObject *args)
 			copybw((Py_Int32 *) base, xsize * ysize);
 	}
 	else {
+		new_size = xsize * ysize + TAGLEN;
+		if (new_size < 0 || (new_size * sizeof(Py_Int32)) < 0) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
 		rv = PyString_FromStringAndSize((char *) 0,
-					   (xsize*ysize+TAGLEN)*sizeof(Py_Int32));
+						new_size*sizeof(Py_Int32));
 		if (rv == NULL)
 			goto finally;
 
@@ -591,10 +609,16 @@ longstoimage(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	tablen = ysize * zsize * sizeof(Py_Int32);
+	rlebuflen = (int) (1.05 * xsize + 10);
+
+	if ((tablen / sizeof(Py_Int32)) != (ysize * zsize) ||
+	    rlebuflen < 0 || (xsize * sizeof(Py_Int32)) < 0) {
+		PyErr_NoMemory();
+		goto finally;
+	}
 
 	starttab = (Py_Int32 *)malloc(tablen);
 	lengthtab = (Py_Int32 *)malloc(tablen);
-	rlebuflen = (int) (1.05 * xsize + 10);
 	rlebuf = (unsigned char *)malloc(rlebuflen);
 	lumbuf = (unsigned char *)malloc(xsize * sizeof(Py_Int32));
 	if (!starttab || !lengthtab || !rlebuf || !lumbuf) {

@@ -3130,6 +3130,9 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
 	     	buf = (char *)s;
 		u = NULL;
 	} else {
+		/* check for integer overflow */
+		if (len > PY_SIZE_MAX / 4)
+			return NULL;
 		/* "\XX" may become "\u005c\uHHLL" (12 bytes) */
 		u = PyString_FromStringAndSize((char *)NULL, len * 4);
 		if (u == NULL)

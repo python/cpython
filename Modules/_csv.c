@@ -560,6 +560,10 @@ parse_grow_buff(ReaderObj *self)
 		self->field = PyMem_Malloc(self->field_size);
 	}
 	else {
+		if (self->field_size > INT_MAX / 2) {
+			PyErr_NoMemory();
+			return 0;
+		} 
 		self->field_size *= 2;
 		self->field = PyMem_Realloc(self->field, self->field_size);
 	}
@@ -1055,6 +1059,12 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
 static int
 join_check_rec_size(WriterObj *self, int rec_len)
 {
+
+	if (rec_len < 0 || rec_len > INT_MAX - MEM_INCR) {
+		PyErr_NoMemory();
+		return 0;
+	}
+
 	if (rec_len > self->rec_size) {
 		if (self->rec_size == 0) {
 			self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
