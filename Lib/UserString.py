@@ -130,8 +130,6 @@ class UserString(collections.Sequence):
     def upper(self): return self.__class__(self.data.upper())
     def zfill(self, width): return self.__class__(self.data.zfill(width))
 
-collections.Sequence.register(UserString)
-
 class MutableString(UserString, collections.MutableSequence):
     """mutable string objects
 
