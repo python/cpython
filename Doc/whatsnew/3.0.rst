@@ -142,7 +142,7 @@ changes to rarely used features.)
   longer works: ``k = d.keys(); k.sort()``.  Use ``k = sorted(d)`` instead.
 
 * :meth:`builtin.sorted` and :meth:`list.sort` no longer accept the *cmp*
-  argument providing a comparision function.  Use the *key* argument
+  argument providing a comparison function.  Use the *key* argument
   instead. N.B. the *key* and *reverse* arguments are now "keyword-only".
 
 * ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
