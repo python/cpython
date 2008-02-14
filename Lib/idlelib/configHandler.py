@@ -142,7 +142,12 @@ class IdleUserConfParser(IdleConfParser):
 
         """
         if not self.IsEmpty():
-            cfgFile=open(self.file,'w')
+            fname = self.file
+            try:
+                cfgFile = open(fname, 'w')
+            except IOError:
+                os.unlink(fname)
+                cfgFile = open(fname, 'w')
             self.write(cfgFile)
         else:
             self.RemoveFile()
