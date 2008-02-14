@@ -1534,7 +1534,7 @@ Decimal FAQ
 Q. It is cumbersome to type ``decimal.Decimal('1234.5')``.  Is there a way to
 minimize typing when using the interactive interpreter?
 
-\A. Some users abbreviate the constructor to just a single letter::
+A. Some users abbreviate the constructor to just a single letter::
 
    >>> D = decimal.Decimal
    >>> D('1.23') + D('3.45')
