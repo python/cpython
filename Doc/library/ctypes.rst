@@ -2012,7 +2012,6 @@ Fundamental data types
    their methods and attributes.
 
    .. versionchanged:: 2.6
-
       ctypes data types that are not and do not contain pointers can
       now be pickled.
 
