@@ -1404,19 +1404,15 @@ to work with the :class:`Decimal` class::
        '<.02>'
 
        """
-       q = Decimal((0, (1,), -places))    # 2 places --> '0.01'
-       sign, digits, exp = value.quantize(q).as_tuple()
-       assert exp == -places    
+       q = Decimal(10) ** -places      # 2 places --> '0.01'
+       sign, digits, exp = value.quantize(q).as_tuple()  
        result = []
        digits = map(str, digits)
        build, next = result.append, digits.pop
        if sign:
            build(trailneg)
        for i in range(places):
-           if digits:
-               build(next())
-           else:
-               build('0')
+           build(next() if digits else '0')
        build(dp)
        i = 0
        while digits:
@@ -1426,12 +1422,8 @@ to work with the :class:`Decimal` class::
                i = 0
                build(sep)
        build(curr)
-       if sign:
-           build(neg)
-       else:
-           build(pos)
-       result.reverse()
-       return ''.join(result)
+       build(neg if sign else pos)
+       return ''.join(reversed(result))
 
    def pi():
        """Compute Pi to the current precision.
