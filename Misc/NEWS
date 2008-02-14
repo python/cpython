@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Clear all free list during a gc.collect() of the highest generation in order
+  to allow pymalloc to free more arenas. Python may give back memory to the
+  OS earlier.
+
 - Issue #2045: Fix an infinite recursion triggered when printing a subclass of
   collections.defaultdict, if its default_factory is set to a bound method.
 

@@ -115,3 +115,10 @@ Tuple Objects
 
    .. versionchanged:: 2.2
       Removed unused third parameter, *last_is_sticky*.
+
+
+.. cfunction:: int PyMethod_ClearFreeList(void)
+
+   Clear the free list. Return the total number of freed items.
+
+   .. versionadded:: 2.6

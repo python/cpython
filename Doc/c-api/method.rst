@@ -63,3 +63,10 @@ There are some useful functions that are useful for working with method objects.
 .. cfunction:: PyObject* PyMethod_GET_SELF(PyObject *meth)
 
    Macro version of :cfunc:`PyMethod_Self` which avoids error checking.
+
+
+.. cfunction:: int PyMethod_ClearFreeList(void)
+
+   Clear the free list. Return the total number of freed items.
+
+   .. versionadded:: 2.6

@@ -75,6 +75,8 @@ PyAPI_FUNC(PyObject **) PyFrame_ExtendStack(PyFrameObject *, int, int);
 PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
+PyAPI_FUNC(int) PyFrame_ClearFreeList(void);
+
 #ifdef __cplusplus
 }
 #endif

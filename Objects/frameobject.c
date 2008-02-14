@@ -889,10 +889,11 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 }
 
 /* Clear out the free list */
-
-void
-PyFrame_Fini(void)
+int
+PyFrame_ClearFreeList(void)
 {
+	int freelist_size = numfree;
+	
 	while (free_list != NULL) {
 		PyFrameObject *f = free_list;
 		free_list = free_list->f_back;
@@ -900,6 +901,13 @@ PyFrame_Fini(void)
 		--numfree;
 	}
 	assert(numfree == 0);
+	return freelist_size;
+}
+
+void
+PyFrame_Fini(void)
+{
+	(void)PyFrame_ClearFreeList();
 	Py_XDECREF(builtin_object);
 	builtin_object = NULL;
 }
