@@ -1565,9 +1565,36 @@ the :const:`Inexact` trap is set, it is also useful for validation::
 Q. Once I have valid two place inputs, how do I maintain that invariant
 throughout an application?
 
-A. Some operations like addition and subtraction automatically preserve fixed
-point.  Others, like multiplication and division, change the number of decimal
-places and need to be followed-up with a :meth:`quantize` step.
+A. Some operations like addition, subtraction, and multiplication by an integer
+will automatically preserve fixed point.  Others operations, like division and
+non-integer multiplication, will change the number of decimal places and need to
+be followed-up with a :meth:`quantize` step.
+
+    >>> a = Decimal('102.72')           # Initial fixed-point values
+    >>> b = Decimal('3.17')
+    >>> a + b                           # Addition preserves fixed-point
+    Decimal('105.89')
+    >>> a - b
+    Decimal('99.55')
+    >>> a * 42                          # So does integer multiplication
+    Decimal('4314.24')
+    >>> (a * b).quantize(TWOPLACES)     # Must quantize non-integer multiplication
+    Decimal('325.62')
+    >>> (b / a).quantize(TWOPLACES)     # And quantize divisions
+    Decimal('0.03')
+
+In developing fixed-point applications, it is convenient to define functions
+to handle the :meth:`quantize` step::
+
+    def mul(x, y, fp=TWOPLACES):
+        return (x * y).quantize(fp)
+    def div(x, y, fp=TWOPLACES):
+        return (x / y).quantize(fp)
+
+    >>> mul(a, b)                       # Automatically preserve fixed-point
+    Decimal('325.62')
+    >>> div(b, a)
+    Decimal('0.03')
 
 Q. There are many ways to express the same value.  The numbers :const:`200`,
 :const:`200.000`, :const:`2E2`, and :const:`.02E+4` all have the same value at
