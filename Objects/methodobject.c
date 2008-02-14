@@ -353,9 +353,11 @@ Py_FindMethod(PyMethodDef *methods, PyObject *self, const char *name)
 
 /* Clear out the free list */
 
-void
-PyCFunction_Fini(void)
+int
+PyCFunction_ClearFreeList(void)
 {
+	int freelist_size = numfree;
+	
 	while (free_list) {
 		PyCFunctionObject *v = free_list;
 		free_list = (PyCFunctionObject *)(v->m_self);
@@ -363,6 +365,13 @@ PyCFunction_Fini(void)
 		numfree--;
 	}
 	assert(numfree == 0);
+	return freelist_size;
+}
+
+void
+PyCFunction_Fini(void)
+{
+	(void)PyCFunction_ClearFreeList();
 }
 
 /* PyCFunction_New() is now just a macro that calls PyCFunction_NewEx(),

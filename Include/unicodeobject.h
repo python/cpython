@@ -209,6 +209,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_AsDefaultEncodedString _PyUnicodeUCS2_AsDefaultEncodedString
 # define _PyUnicode_Fini _PyUnicodeUCS2_Fini
 # define _PyUnicode_Init _PyUnicodeUCS2_Init
+# define PyUnicode_ClearFreeList PyUnicodeUCS2_ClearFreelist
 # define _PyUnicode_IsAlpha _PyUnicodeUCS2_IsAlpha
 # define _PyUnicode_IsDecimalDigit _PyUnicodeUCS2_IsDecimalDigit
 # define _PyUnicode_IsDigit _PyUnicodeUCS2_IsDigit
@@ -295,6 +296,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_AsDefaultEncodedString _PyUnicodeUCS4_AsDefaultEncodedString
 # define _PyUnicode_Fini _PyUnicodeUCS4_Fini
 # define _PyUnicode_Init _PyUnicodeUCS4_Init
+# define PyUnicode_ClearFreeList PyUnicodeUCS2_ClearFreelist
 # define _PyUnicode_IsAlpha _PyUnicodeUCS4_IsAlpha
 # define _PyUnicode_IsDecimalDigit _PyUnicodeUCS4_IsDecimalDigit
 # define _PyUnicode_IsDigit _PyUnicodeUCS4_IsDigit
@@ -402,6 +404,8 @@ extern const unsigned char _Py_ascii_whitespace[];
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 
 /* --- Unicode Type ------------------------------------------------------- */
 

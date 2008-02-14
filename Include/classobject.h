@@ -74,6 +74,7 @@ PyAPI_FUNC(PyObject *) _PyInstance_Lookup(PyObject *pinst, PyObject *name);
 
 PyAPI_FUNC(int) PyClass_IsSubclass(PyObject *, PyObject *);
 
+PyAPI_FUNC(int) PyMethod_ClearFreeList(void);
 
 #ifdef __cplusplus
 }

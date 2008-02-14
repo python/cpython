@@ -2626,9 +2626,11 @@ PyTypeObject PyMethod_Type = {
 
 /* Clear out the free list */
 
-void
-PyMethod_Fini(void)
+int
+PyMethod_ClearFreeList(void)
 {
+	int freelist_size = numfree;
+	
 	while (free_list) {
 		PyMethodObject *im = free_list;
 		free_list = (PyMethodObject *)(im->im_self);
@@ -2636,4 +2638,11 @@ PyMethod_Fini(void)
 		numfree--;
 	}
 	assert(numfree == 0);
+	return freelist_size;
+}
+
+void
+PyMethod_Fini(void)
+{
+	(void)PyMethod_ClearFreeList();
 }
