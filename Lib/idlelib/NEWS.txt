@@ -1,3 +1,12 @@
+What's New in IDLE 1.2.2c1?
+=========================
+
+*Release date: XX-FEB-2008*
+
+- Patch 1693258: Fix for duplicate "preferences" menu-OS X. Backport of r56204.
+
+- OSX: Avoid crash for those versions of Tcl/Tk which don't have a console
+
 What's New in IDLE 1.2.1?
 =========================
 
@@ -7,6 +16,15 @@ What's New in IDLE 1.2.1c1?
 ===========================
 
 *Release date: 05-APR-2007*
+
+- Bug in idlelib.MultiCall: Options dialog was crashing IDLE if there was an
+  option in config-extensions w/o a value. Patch #1672481, Tal Einat
+  (backport from rev. 54156)
+
+- Honor the "Cancel" action in the save dialog (Debian bug #299092).
+
+- Bug #813342: Start the IDLE subprocess with -Qnew if the parent
+  is started with that option. (backport from rev. 52295)
 
 What's New in IDLE 1.2?
 =======================
