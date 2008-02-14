@@ -2401,10 +2401,17 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 int
 PyObject_IsInstance(PyObject *inst, PyObject *cls)
 {
+	static PyObject *name = NULL;
 	PyObject *t, *v, *tb;
 	PyObject *checker;
 	PyErr_Fetch(&t, &v, &tb);
-	checker = PyObject_GetAttrString(cls, "__instancecheck__");
+
+	if (name == NULL) {
+		name = PyString_InternFromString("__instancecheck__");
+		if (name == NULL)
+			return -1;
+	}
+	checker = PyObject_GetAttr(cls, name);
 	PyErr_Restore(t, v, tb);
 	if (checker != NULL) {
 		PyObject *res;
@@ -2477,10 +2484,17 @@ recursive_issubclass(PyObject *derived, PyObject *cls, int recursion_depth)
 int
 PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 {
+	static PyObject *name = NULL;
 	PyObject *t, *v, *tb;
 	PyObject *checker;
 	PyErr_Fetch(&t, &v, &tb);
-	checker = PyObject_GetAttrString(cls, "__subclasscheck__");
+	
+	if (name == NULL) {
+		name = PyString_InternFromString("__subclasscheck__");
+		if (name == NULL)
+			return -1;
+	}
+	checker = PyObject_GetAttr(cls, name);
 	PyErr_Restore(t, v, tb);
 	if (checker != NULL) {
 		PyObject *res;
