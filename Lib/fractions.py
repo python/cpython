@@ -64,7 +64,7 @@ class Fraction(Rational):
         """
         self = super(Fraction, cls).__new__(cls)
 
-        if denominator == 1:
+        if type(numerator) not in (int, long) and denominator == 1:
             if isinstance(numerator, basestring):
                 # Handle construction from strings.
                 input = numerator
@@ -86,24 +86,22 @@ class Fraction(Rational):
                 if m.group('sign') == '-':
                     numerator = -numerator
 
-            elif (not isinstance(numerator, numbers.Integral) and
-                  isinstance(numerator, Rational)):
-                # Handle copies from other rationals.
+            elif isinstance(numerator, Rational):
+                # Handle copies from other rationals. Integrals get
+                # caught here too, but it doesn't matter because
+                # denominator is already 1.
                 other_rational = numerator
                 numerator = other_rational.numerator
                 denominator = other_rational.denominator
 
-        if (not isinstance(numerator, numbers.Integral) or
-            not isinstance(denominator, numbers.Integral)):
-            raise TypeError("Fraction(%(numerator)s, %(denominator)s):"
-                            " Both arguments must be integral." % locals())
-
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
 
+        numerator = numerator.__index__()
+        denominator = denominator.__index__()
         g = gcd(numerator, denominator)
-        self._numerator = int(numerator // g)
-        self._denominator = int(denominator // g)
+        self._numerator = numerator // g
+        self._denominator = denominator // g
         return self
 
     @classmethod
