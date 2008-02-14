@@ -1590,6 +1590,7 @@ to handle the :meth:`quantize` step::
     ...     return (x * y).quantize(fp)
     >>> def div(x, y, fp=TWOPLACES):
     ...     return (x / y).quantize(fp)
+
     >>> mul(a, b)                       # Automatically preserve fixed-point
     Decimal('325.62')
     >>> div(b, a)
@@ -1614,6 +1615,16 @@ A. For some values, exponential notation is the only way to express the number
 of significant places in the coefficient.  For example, expressing
 :const:`5.0E+3` as :const:`5000` keeps the value constant but cannot show the
 original's two-place significance.
+
+If an application does not care about tracking significance, it is easy to
+remove the exponent and trailing zeroes, losing signficance, but keeping the
+value unchanged::
+
+    >>> def remove_exponent(d):
+    ...     return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()
+
+    >>> remove_exponent(Decimal('5E+3'))
+    Decimal('5000')
 
 Q. Is there a way to convert a regular float to a :class:`Decimal`?
 
