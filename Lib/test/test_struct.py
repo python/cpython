@@ -618,8 +618,12 @@ def test_unpack_with_buffer():
     value, = struct.unpack('>I', data)
     vereq(value, 0x12345678)
 
+def test_crasher():
+    assertRaises(MemoryError, struct.pack, "357913941c", "a")
+
 # Test methods to pack and unpack from buffers rather than strings.
 test_unpack_from()
 test_pack_into()
 test_pack_into_fn()
 test_unpack_with_buffer()
+test_crasher()

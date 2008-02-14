@@ -207,7 +207,10 @@ PyBuffer_New(Py_ssize_t size)
 				"size must be zero or positive");
 		return NULL;
 	}
-	/* XXX: check for overflow in multiply */
+	if (sizeof(*b) > PY_SSIZE_T_MAX - size) {
+		/* unlikely */
+		return PyErr_NoMemory();
+	}
 	/* Inline PyObject_New */
 	o = (PyObject *)PyObject_MALLOC(sizeof(*b) + size);
 	if ( o == NULL )
@@ -396,6 +399,8 @@ buffer_concat(PyBufferObject *self, PyObject *other)
 
 	if ( (count = (*pb->bf_getreadbuffer)(other, 0, &ptr2)) < 0 )
 		return NULL;
+
+	assert(count <= PY_SIZE_MAX - size);
 
  	ob = PyString_FromStringAndSize(NULL, size + count);
 	if ( ob == NULL )

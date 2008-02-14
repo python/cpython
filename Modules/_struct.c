@@ -1336,6 +1336,12 @@ prepare_s(PyStructObject *self)
 		}
 	}
 
+	/* check for overflow */
+	if ((len + 1) > (PY_SSIZE_T_MAX / sizeof(formatcode))) {
+		PyErr_NoMemory();
+		return -1;
+	}
+
 	self->s_size = size;
 	self->s_len = len;
 	codes = PyMem_MALLOC((len + 1) * sizeof(formatcode));
