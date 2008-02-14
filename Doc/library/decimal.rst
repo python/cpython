@@ -1560,7 +1560,7 @@ throughout an application?
 A. Some operations like addition, subtraction, and multiplication by an integer
 will automatically preserve fixed point.  Others operations, like division and
 non-integer multiplication, will change the number of decimal places and need to
-be followed-up with a :meth:`quantize` step.
+be followed-up with a :meth:`quantize` step::
 
     >>> a = Decimal('102.72')           # Initial fixed-point values
     >>> b = Decimal('3.17')
