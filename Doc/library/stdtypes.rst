@@ -1266,7 +1266,7 @@ Note that while lists allow their items to be of any type, bytearray object
 | ``s.reverse()``              | reverses the items of *s* in   | \(6)                |
 |                              | place                          |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.sort([key[, reverse]])`` | sort the items of *s* in place | (6), (7)            |
+| ``s.sort([key[, reverse]])`` | sort the items of *s* in place | (6), (7), (8)       |
 +------------------------------+--------------------------------+---------------------+
 
 .. index::
@@ -1315,10 +1315,8 @@ Notes:
    sequence.
 
 (7)
-   :meth:`sort` is not supported by :class:`bytearray` objects.
-
    The :meth:`sort` method takes optional arguments for controlling the
-   comparisons.
+   comparisons.  Each must be specified as a keyword argument.
 
    *key* specifies a function of one argument that is used to extract a comparison
    key from each list element: ``key=str.lower``.  The default value is ``None``.
@@ -1336,6 +1334,8 @@ Notes:
    makes the list appear empty for the duration, and raises :exc:`ValueError` if it
    can detect that the list has been mutated during a sort.
 
+(8)
+   :meth:`sort` is not supported by :class:`bytearray` objects.
 
 .. _bytes-methods:
 
