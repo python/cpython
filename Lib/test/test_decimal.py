@@ -1049,7 +1049,7 @@ class DecimalUsabilityTest(unittest.TestCase):
 
         d = Decimal('15.32')
         self.assertEqual(str(d), '15.32')               # str
-        self.assertEqual(repr(d), 'Decimal("15.32")')   # repr
+        self.assertEqual(repr(d), "Decimal('15.32')")   # repr
 
     def test_tonum_methods(self):
         #Test float, int and long methods.
