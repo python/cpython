@@ -92,14 +92,6 @@ available.  They are listed here in alphabetical order.
           return False
 
 
-.. function:: basestring()
-
-   This abstract type is the superclass for :class:`str`.  It
-   cannot be called or instantiated, but it can be used to test whether an object
-   is an instance of :class:`str` (or a user-defined type inherited from
-   :class:`basestring`).
-
-
 .. function:: bin(x)
 
    Convert an integer number to a binary string. The result is a valid Python
@@ -296,20 +288,7 @@ available.  They are listed here in alphabetical order.
      class's attributes, and recursively of the attributes of its class's base
      classes.
 
-   The resulting list is sorted alphabetically.  For example::
-
-      >>> import struct
-      >>> dir()
-      ['__builtins__', '__doc__', '__name__', 'struct']
-      >>> dir(struct)
-      ['__doc__', '__name__', 'calcsize', 'error', 'pack', 'unpack']
-      >>> class Foo(object):
-      ...     def __dir__(self):
-      ...         return ["kan", "ga", "roo"]
-      ...
-      >>> f = Foo()
-      >>> dir(f)
-      ['ga', 'kan', 'roo']
+   The resulting list is sorted alphabetically. 
 
    .. note::
 
@@ -623,10 +602,7 @@ available.  They are listed here in alphabetical order.
    returns ``['a', 'b', 'c']`` and ``list( (1, 2, 3) )`` returns ``[1, 2, 3]``.  If
    no argument is given, returns a new empty list, ``[]``.
 
-   :class:`list` is a mutable sequence type, as documented in
-   :ref:`typesseq`. For other containers see the built in :class:`dict`,
-   :class:`set`, and :class:`tuple` classes, and the :mod:`collections` module.
-
+   :class:`list` is a mutable sequence type, as documented in :ref:`typesseq`. 
 
 .. function:: locals()
 
@@ -948,9 +924,6 @@ available.  They are listed here in alphabetical order.
    Return a new set, optionally with elements are taken from *iterable*.
    The set type is described in :ref:`types-set`.
 
-   For other containers see the built in :class:`dict`, :class:`list`, and
-   :class:`tuple` classes, and the :mod:`collections` module.
-
 
 .. function:: setattr(object, name, value)
 
@@ -1082,9 +1055,7 @@ available.  They are listed here in alphabetical order.
    3])`` returns ``(1, 2, 3)``.  If no argument is given, returns a new empty
    tuple, ``()``.
 
-   :class:`tuple` is an immutable sequence type, as documented in
-   :ref:`typesseq`. For other containers see the built in :class:`dict`,
-   :class:`list`, and :class:`set` classes, and the :mod:`collections` module.
+   :class:`tuple` is an immutable sequence type, as documented in :ref:`typesseq`. 
 
 
 .. function:: type(object)
