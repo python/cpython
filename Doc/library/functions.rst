@@ -979,9 +979,7 @@ available.  They are listed here in alphabetical order.
 
    Return a new sorted list from the items in *iterable*.
 
-   The optional arguments *key* and *reverse* have the same meaning as
-   those for the :meth:`list.sort` method (described in section
-   :ref:`typesseq-mutable`).
+   Has two optional arguments which must be specified as keyword arguments.
 
    *key* specifies a function of one argument that is used to extract a comparison
    key from each list element: ``key=str.lower``.  The default value is ``None``.
