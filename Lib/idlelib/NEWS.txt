@@ -3,11 +3,14 @@ What's New in IDLE 1.2.2c1?
 
 *Release date: XX-FEB-2008*
 
+- Avoid hang when encountering a duplicate in a completion list. Bug 1571112.
+  (backport r53042)
+
 - Some syntax errors were being caught by tokenize during the tabnanny        
   check, resulting in obscure error messages.  Do the syntax check            
   first.  Bug 1562716, 1562719  (backport r52083)
 
-- Patch 1693258: Fix for duplicate "preferences" menu-OS X. Backport of r56204.
+- Patch 1693258: Fix for duplicate "preferences" menu-OS X. (backport r56204)
 
 - OSX: Avoid crash for those versions of Tcl/Tk which don't have a console
 
@@ -70,6 +73,13 @@ What's New in IDLE 1.2b3?
 
 *Release date: 03-AUG-2006*
 
+- Bug #1525817: Don't truncate short lines in IDLE's tool tips.
+
+- Bug #1517990: IDLE keybindings on MacOS X now work correctly
+
+- Bug #1517996: IDLE no longer shows the default Tk menu when a
+  path browser, class browser or debugger is the frontmost window on MacOS X
+
 - EditorWindow.test() was failing.  Bug 1417598
 
 - EditorWindow failed when used stand-alone if sys.ps1 not set.
@@ -105,6 +115,8 @@ What's New in IDLE 1.2a1?
 =========================
 
 *Release date: 05-APR-2006*
+
+- Patch #1162825: Support non-ASCII characters in IDLE window titles.
 
 - Source file f.flush() after writing; trying to avoid lossage if user
   kills GUI.
