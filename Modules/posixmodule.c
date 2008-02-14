@@ -4546,10 +4546,10 @@ posix_times(PyObject *self, PyObject *noargs)
 	*/
 	return Py_BuildValue(
 		"ddddd",
-		(double)(kernel.dwHighDateTime*429.4967296 +
-		         kernel.dwLowDateTime*1e-7),
 		(double)(user.dwHighDateTime*429.4967296 +
 		         user.dwLowDateTime*1e-7),
+		(double)(kernel.dwHighDateTime*429.4967296 +
+		         kernel.dwLowDateTime*1e-7),
 		(double)0,
 		(double)0,
 		(double)0);
