@@ -3,6 +3,8 @@ What's New in IDLE 1.2.2c1?
 
 *Release date: XX-FEB-2008*
 
+- format_paragraph_event wasn't returning a 'break' (backport r59453)
+
 - Corrected some bugs in AutoComplete.  Also, Page Up/Down in ACW implemented;                                                                               
   mouse and cursor selection in ACWindow implemented; double Tab inserts      
   current selection and closes ACW (similar to double-click and Return); scroll                                                                              
