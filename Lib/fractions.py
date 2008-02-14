@@ -172,11 +172,11 @@ class Fraction(Rational):
 
         if max_denominator < 1:
             raise ValueError("max_denominator should be at least 1")
-        if self.denominator <= max_denominator:
+        if self._denominator <= max_denominator:
             return Fraction(self)
 
         p0, q0, p1, q1 = 0, 1, 1, 0
-        n, d = self.numerator, self.denominator
+        n, d = self._numerator, self._denominator
         while True:
             a = n//d
             q2 = q0+a*q1
@@ -203,14 +203,14 @@ class Fraction(Rational):
 
     def __repr__(self):
         """repr(self)"""
-        return ('Fraction(%r, %r)' % (self.numerator, self.denominator))
+        return ('Fraction(%r, %r)' % (self._numerator, self._denominator))
 
     def __str__(self):
         """str(self)"""
-        if self.denominator == 1:
-            return str(self.numerator)
+        if self._denominator == 1:
+            return str(self._numerator)
         else:
-            return '%s/%s' % (self.numerator, self.denominator)
+            return '%s/%s' % (self._numerator, self._denominator)
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
@@ -395,11 +395,11 @@ class Fraction(Rational):
             if b.denominator == 1:
                 power = b.numerator
                 if power >= 0:
-                    return Fraction(a.numerator ** power,
-                                    a.denominator ** power)
+                    return Fraction(a._numerator ** power,
+                                    a._denominator ** power)
                 else:
-                    return Fraction(a.denominator ** -power,
-                                    a.numerator ** -power)
+                    return Fraction(a._denominator ** -power,
+                                    a._numerator ** -power)
             else:
                 # A fractional power will generally produce an
                 # irrational number.
@@ -409,36 +409,36 @@ class Fraction(Rational):
 
     def __rpow__(b, a):
         """a ** b"""
-        if b.denominator == 1 and b.numerator >= 0:
+        if b._denominator == 1 and b._numerator >= 0:
             # If a is an int, keep it that way if possible.
-            return a ** b.numerator
+            return a ** b._numerator
 
         if isinstance(a, Rational):
             return Fraction(a.numerator, a.denominator) ** b
 
-        if b.denominator == 1:
-            return a ** b.numerator
+        if b._denominator == 1:
+            return a ** b._numerator
 
         return a ** float(b)
 
     def __pos__(a):
         """+a: Coerces a subclass instance to Fraction"""
-        return Fraction(a.numerator, a.denominator)
+        return Fraction(a._numerator, a._denominator)
 
     def __neg__(a):
         """-a"""
-        return Fraction(-a.numerator, a.denominator)
+        return Fraction(-a._numerator, a._denominator)
 
     def __abs__(a):
         """abs(a)"""
-        return Fraction(abs(a.numerator), a.denominator)
+        return Fraction(abs(a._numerator), a._denominator)
 
     def __trunc__(a):
         """trunc(a)"""
-        if a.numerator < 0:
-            return -(-a.numerator // a.denominator)
+        if a._numerator < 0:
+            return -(-a._numerator // a._denominator)
         else:
-            return a.numerator // a.denominator
+            return a._numerator // a._denominator
 
     def __hash__(self):
         """hash(self)
@@ -448,22 +448,22 @@ class Fraction(Rational):
 
         """
         # XXX since this method is expensive, consider caching the result
-        if self.denominator == 1:
+        if self._denominator == 1:
             # Get integers right.
-            return hash(self.numerator)
+            return hash(self._numerator)
         # Expensive check, but definitely correct.
         if self == float(self):
             return hash(float(self))
         else:
             # Use tuple's hash to avoid a high collision rate on
             # simple fractions.
-            return hash((self.numerator, self.denominator))
+            return hash((self._numerator, self._denominator))
 
     def __eq__(a, b):
         """a == b"""
         if isinstance(b, Rational):
-            return (a.numerator == b.numerator and
-                    a.denominator == b.denominator)
+            return (a._numerator == b.numerator and
+                    a._denominator == b.denominator)
         if isinstance(b, numbers.Complex) and b.imag == 0:
             b = b.real
         if isinstance(b, float):
@@ -518,7 +518,7 @@ class Fraction(Rational):
 
     def __nonzero__(a):
         """a != 0"""
-        return a.numerator != 0
+        return a._numerator != 0
 
     # support for pickling, copy, and deepcopy
 
@@ -528,9 +528,9 @@ class Fraction(Rational):
     def __copy__(self):
         if type(self) == Fraction:
             return self     # I'm immutable; therefore I am my own clone
-        return self.__class__(self.numerator, self.denominator)
+        return self.__class__(self._numerator, self._denominator)
 
     def __deepcopy__(self, memo):
         if type(self) == Fraction:
             return self     # My components are also immutable
-        return self.__class__(self.numerator, self.denominator)
+        return self.__class__(self._numerator, self._denominator)
