@@ -49,9 +49,11 @@ Inexact.register(float)
 # Inexact.register(decimal.Decimal)
 
 
-## Notes on Decimal and it how relates to the numeric tower
-## --------------------------------------------------------
-## Decimal is Real except that it does not support rich comparisons.
+## Notes on Decimal
+## ----------------
+## Decimal has all of the methods specified by the Real abc, but it should
+## not be registered as a Real because decimals do not interoperate with
+## binary floats.
 ##
 ## Decimal has some of the characteristics of Integrals.  It provides
 ## logical operations but not as operators.  The logical operations only apply
@@ -305,7 +307,6 @@ class Real(Complex):
         return +self
 
 Real.register(float)
-# Real.register(decimal.Decimal)
 
 
 class Rational(Real, Exact):
