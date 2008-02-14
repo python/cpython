@@ -3,6 +3,9 @@ What's New in IDLE 1.2.2c1?
 
 *Release date: XX-FEB-2008*
 
+- Could not open files in .idlerc directory if latter was hidden on Windows.  
+  Issue 1743, Issue 1862. (backport r60225, r60745)
+
 - format_paragraph_event wasn't returning a 'break' (backport r59453)
 
 - Corrected some bugs in AutoComplete.  Also, Page Up/Down in ACW implemented;                                                                               
