@@ -1584,7 +1584,7 @@ written in Python, such as a mail server's external command delivery program.
    user time, children's system time, and elapsed real time since a fixed point in
    the past, in that order.  See the Unix manual page :manpage:`times(2)` or the
    corresponding Windows Platform API documentation. Availability: Macintosh, Unix,
-   Windows.
+   Windows.  On Windows, only the first two items are filled, the others are zero.
 
 
 .. function:: wait()

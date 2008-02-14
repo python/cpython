@@ -70,6 +70,13 @@ What's New in IDLE 2.6a1?
 
 - Clean up EditorWindow close.
 
+- Patch 1693258: Fix for duplicate "preferences" menu-OS X. Backport of r56204.
+
+- OSX: Avoid crash for those versions of Tcl/Tk which don't have a console
+
+- Bug in idlelib.MultiCall: Options dialog was crashing IDLE if there was an
+  option in config-extensions w/o a value. Patch #1672481, Tal Einat
+
 - Corrected some bugs in AutoComplete.  Also, Page Up/Down in ACW implemented;
   mouse and cursor selection in ACWindow implemented; double Tab inserts
   current selection and closes ACW (similar to double-click and Return); scroll
