@@ -1142,6 +1142,8 @@ Library
 Extension Modules
 -----------------
 
+- Bug #2111: mmap segfaults when trying to write a block opened with PROT_READ
+
 - #2063: correct order of utime and stime in os.times() result on Windows.
 
 - Patch #1736: Fix file name handling of _msi.FCICreate.
