@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #2115: Important speedup in setting __slot__ attributes.  Also 
+  prevent a possible crash: an Abstract Base Class would try to access a slot 
+  on a registered virtual subclass.
+
 - Fixed repr() and str() of complex numbers with infinity or nan as real or
   imaginary part.
 
