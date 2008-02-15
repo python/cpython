@@ -1275,7 +1275,11 @@ PyNumber_ToBase(PyObject *n, int base)
 	else if (PyInt_Check(index))
 	  	res = _PyInt_Format((PyIntObject*)index, base, 1);
 	else
-		assert("PyNumber_ToBase: not long or int");
+		/* It should not be possible to get here, as
+		   PyNumber_Index already has a check for the same
+		   condition */
+		PyErr_SetString(PyExc_ValueError, "PyNumber_ToBase: index not "
+				"int or long");
 	Py_DECREF(index);
 	return res;
 }
