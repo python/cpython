@@ -1119,15 +1119,12 @@ class ConfigDialog(Toplevel):
     def ActivateConfigChanges(self):
         "Dynamically apply configuration changes"
         winInstances=self.parent.instance_dict.keys()
-        theme = idleConf.CurrentTheme()
-        cursor_color = idleConf.GetHighlight(theme, 'cursor', fgBg='fg')
         for instance in winInstances:
             instance.ResetColorizer()
             instance.ResetFont()
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
-            instance.text.configure(insertbackground=cursor_color)
 
     def Cancel(self):
         self.destroy()
