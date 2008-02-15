@@ -322,16 +322,49 @@ complex_to_buf(char *buf, int bufsz, PyComplexObject *v, int precision)
 {
 	char format[32];
 	if (v->cval.real == 0.) {
-		PyOS_snprintf(format, sizeof(format), "%%.%ig", precision);
-		PyOS_ascii_formatd(buf, bufsz - 1, format, v->cval.imag);
-		strncat(buf, "j", 1);
+		if (!Py_IS_FINITE(v->cval.imag)) {
+			if (Py_IS_NAN(v->cval.imag))
+				strncpy(buf, "nan*j", 6);
+			/* else if (copysign(1, v->cval.imag) == 1) */
+			else if (v->cval.imag > 0)
+				strncpy(buf, "inf*j", 6);
+			else
+				strncpy(buf, "-inf*j", 7);
+		}
+		else {
+			PyOS_snprintf(format, sizeof(format), "%%.%ig", precision);
+			PyOS_ascii_formatd(buf, bufsz - 1, format, v->cval.imag);
+			strncat(buf, "j", 1);
+		}
 	} else {
 		char re[64], im[64];
 		/* Format imaginary part with sign, real part without */
-		PyOS_snprintf(format, sizeof(format), "%%.%ig", precision);
-		PyOS_ascii_formatd(re, sizeof(re), format, v->cval.real);
-		PyOS_snprintf(format, sizeof(format), "%%+.%ig", precision);
-		PyOS_ascii_formatd(im, sizeof(im), format, v->cval.imag);
+		if (!Py_IS_FINITE(v->cval.real)) {
+			if (Py_IS_NAN(v->cval.real))
+				strncpy(re, "nan", 4);
+			/* else if (copysign(1, v->cval.real) == 1) */
+			else if (v->cval.real > 0)
+				strncpy(re, "inf", 4);
+			else
+				strncpy(re, "-inf", 5);
+		}
+		else {
+			PyOS_snprintf(format, sizeof(format), "%%.%ig", precision);
+			PyOS_ascii_formatd(re, sizeof(re), format, v->cval.real);
+		}
+		if (!Py_IS_FINITE(v->cval.imag)) {
+			if (Py_IS_NAN(v->cval.imag))
+				strncpy(im, "+nan*", 6);
+			/* else if (copysign(1, v->cval.imag) == 1) */
+			else if (v->cval.imag > 0)
+				strncpy(im, "+inf*", 6);
+			else
+				strncpy(im, "-inf*", 6);
+		}
+		else {
+			PyOS_snprintf(format, sizeof(format), "%%+.%ig", precision);
+			PyOS_ascii_formatd(im, sizeof(im), format, v->cval.imag);
+		}
 		PyOS_snprintf(buf, bufsz, "(%s%sj)", re, im);
 	}
 }
