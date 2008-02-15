@@ -439,6 +439,7 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, struct arraydescr *descr)
 	else {
 		op->ob_item = PyMem_NEW(char, nbytes);
 		if (op->ob_item == NULL) {
+			_Py_ForgetReference(op);
 			PyObject_Del(op);
 			return PyErr_NoMemory();
 		}

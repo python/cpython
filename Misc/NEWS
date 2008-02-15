@@ -4,6 +4,17 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5.2?
+=============================
+
+*Release date: XX-Feb-2008*
+
+Extension Modules
+-----------------
+
+- Fix deallocation of array objects when allocation ran out of memory.
+
+
 What's New in Python 2.5.2c1?
 =============================
 
