@@ -11,6 +11,8 @@ warnings.filterwarnings(
 from random import random
 from math import atan2
 
+INF = float("inf")
+NAN = float("nan")
 # These tests ensure that complex math does the right thing
 
 class ComplexTest(unittest.TestCase):
@@ -336,6 +338,18 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(1+6j,complex(repr(1+6j)))
         self.assertEqual(-6j,complex(repr(-6j)))
         self.assertEqual(6j,complex(repr(6j)))
+
+        self.assertEqual(repr(complex(1., INF)), "(1+inf*j)")
+        self.assertEqual(repr(complex(1., -INF)), "(1-inf*j)")
+        self.assertEqual(repr(complex(INF, 1)), "(inf+1j)")
+        self.assertEqual(repr(complex(-INF, INF)), "(-inf+inf*j)")
+        self.assertEqual(repr(complex(NAN, 1)), "(nan+1j)")
+        self.assertEqual(repr(complex(1, NAN)), "(1+nan*j)")
+        self.assertEqual(repr(complex(NAN, NAN)), "(nan+nan*j)")
+
+        self.assertEqual(repr(complex(0, INF)), "inf*j")
+        self.assertEqual(repr(complex(0, -INF)), "-inf*j")
+        self.assertEqual(repr(complex(0, NAN)), "nan*j")
 
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
