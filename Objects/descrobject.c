@@ -166,7 +166,7 @@ descr_setcheck(PyDescrObject *descr, PyObject *obj, PyObject *value,
 	       int *pres)
 {
 	assert(obj != NULL);
-	if (!PyObject_IsInstance(obj, (PyObject *)(descr->d_type))) {
+	if (!PyObject_TypeCheck(obj, descr->d_type)) {
 		PyErr_Format(PyExc_TypeError,
 			     "descriptor '%.200s' for '%.100s' objects "
 			     "doesn't apply to '%.100s' object",
