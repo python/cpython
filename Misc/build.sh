@@ -92,6 +92,24 @@ update_status() {
     echo "<li><a href=\"$2\">$1</a> <font size=\"-1\">($time seconds)</font></li>" >> $RESULT_FILE
 }
 
+place_summary_first() {
+    testf=$1
+    sed -n '/^[0-9][0-9]* tests OK\./,$p' < $testf \
+	| egrep -v '\[[0-9]+ refs\]' > $testf.tmp
+    echo "" >> $testf.tmp
+    cat $testf >> $testf.tmp
+    mv $testf.tmp $testf
+}
+
+count_failures () {
+    testf=$1
+    n=`grep -ic " failed:" $testf`
+    if [ $n -eq 1 ] ; then
+	n=`grep " failed:" $testf | sed -e 's/ .*//'`
+    fi
+    echo $n
+}
+
 mail_on_failure() {
     if [ "$NUM_FAILURES" != "0" ]; then
         dest=$FAILURE_MAILTO
@@ -187,14 +205,16 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             F=make-test.out
             start=`current_time`
             $PYTHON $REGRTEST_ARGS $ALWAYS_SKIP >& build/$F
-            NUM_FAILURES=`grep -ic " failed:" build/$F`
+            NUM_FAILURES=`count_failures build/$F`
+            place_summary_first build/$F
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "basics" build/$F
 
             F=make-test-opt.out
             start=`current_time`
             $PYTHON -O $REGRTEST_ARGS $ALWAYS_SKIP >& build/$F
-            NUM_FAILURES=`grep -ic " failed:" build/$F`
+            NUM_FAILURES=`count_failures build/$F`
+            place_summary_first build/$F
             update_status "Testing opt ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "opt" build/$F
 
@@ -206,6 +226,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
 	    LEAK_PAT="($LEAKY_TESTS|sum=0)"
             NUM_FAILURES=`egrep -vc "$LEAK_PAT" $REFLOG`
+            place_summary_first build/$F
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "refleak" $REFLOG "$LEAK_PAT"
 
@@ -215,7 +236,8 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## skip curses when running from cron since there's no terminal
             ## skip sound since it's not setup on the PSF box (/dev/dsp)
             $PYTHON $REGRTEST_ARGS -uall -x test_curses test_linuxaudiodev test_ossaudiodev $_ALWAYS_SKIP >& build/$F
-            NUM_FAILURES=`grep -ic " failed:" build/$F`
+            NUM_FAILURES=`count_failures build/$F`
+            place_summary_first build/$F
             update_status "Testing all except curses and sound ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "all" build/$F
         fi

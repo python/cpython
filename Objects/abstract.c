@@ -1405,13 +1405,19 @@ PyNumber_Float(PyObject *o)
 PyObject *
 PyNumber_ToBase(PyObject *n, int base)
 {
-	PyObject *res;
+	PyObject *res = NULL;
 	PyObject *index = PyNumber_Index(n);
 
 	if (!index)
 		return NULL;
-	assert(PyLong_Check(index));
-	res = _PyLong_Format(index, base);
+	if (PyLong_Check(index))
+		res = _PyLong_Format(index, base);
+	else
+		/* It should not be possible to get here, as
+		   PyNumber_Index already has a check for the same
+		   condition */
+		PyErr_SetString(PyExc_ValueError, "PyNumber_ToBase: index not "
+				"int or long");
 	Py_DECREF(index);
 	return res;
 }
@@ -2540,10 +2546,17 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 int
 PyObject_IsInstance(PyObject *inst, PyObject *cls)
 {
+	static PyObject *name = NULL;
 	PyObject *t, *v, *tb;
 	PyObject *checker;
 	PyErr_Fetch(&t, &v, &tb);
-	checker = PyObject_GetAttrString(cls, "__instancecheck__");
+
+	if (name == NULL) {
+		name = PyUnicode_InternFromString("__instancecheck__");
+		if (name == NULL)
+			return -1;
+	}
+	checker = PyObject_GetAttr(cls, name);
 	PyErr_Restore(t, v, tb);
 	if (checker != NULL) {
 		PyObject *res;
@@ -2611,10 +2624,17 @@ recursive_issubclass(PyObject *derived, PyObject *cls, int recursion_depth)
 int
 PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 {
+	static PyObject *name = NULL;
 	PyObject *t, *v, *tb;
 	PyObject *checker;
 	PyErr_Fetch(&t, &v, &tb);
-	checker = PyObject_GetAttrString(cls, "__subclasscheck__");
+	
+	if (name == NULL) {
+		name = PyUnicode_InternFromString("__subclasscheck__");
+		if (name == NULL)
+			return -1;
+	}
+	checker = PyObject_GetAttr(cls, name);
 	PyErr_Restore(t, v, tb);
 	if (checker != NULL) {
 		PyObject *res;

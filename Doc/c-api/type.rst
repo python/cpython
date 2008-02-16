@@ -37,8 +37,6 @@ Type Objects
 
    Clears the internal lookup cache. Return the current version tag.
 
-   .. versionadded:: 2.6
-
 
 .. cfunction:: int PyType_HasFeature(PyObject *o, int feature)
 

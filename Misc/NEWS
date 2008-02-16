@@ -12,6 +12,39 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+<<<<<<< .working
+=======
+- Issue #2115: Important speedup in setting __slot__ attributes.  Also 
+  prevent a possible crash: an Abstract Base Class would try to access a slot 
+  on a registered virtual subclass.
+
+- Fixed repr() and str() of complex numbers with infinity or nan as real or
+  imaginary part.
+
+- Clear all free list during a gc.collect() of the highest generation in order
+  to allow pymalloc to free more arenas. Python may give back memory to the
+  OS earlier.
+
+- Issue #2045: Fix an infinite recursion triggered when printing a subclass of
+  collections.defaultdict, if its default_factory is set to a bound method.
+
+- Fixed a minor memory leak in dictobject.c. The content of the free
+  list was not freed on interpreter shutdown.
+
+- Limit free list of method and builtin function objects to 256 entries
+  each.
+
+- Patch #1953: Added ``sys._compact_freelists()`` and the C API functions
+  ``PyInt_CompactFreeList`` and ``PyFloat_CompactFreeList``
+  to compact the internal free lists of pre-allocted ints and floats.
+
+- Bug #1983: Fixed return type of fork(), fork1() and forkpty() calls.
+  Python expected the return type int but the fork familie returns pi_t.
+
+- Issue #1678380: Fix a bug that identifies 0j and -0j when they appear
+  in the same code unit.
+
+>>>>>>> .merge-right.r60845
 - Issue #2025 :  Add tuple.count() and tuple.index() methods to comply with
   the collections.Sequence API.
 
@@ -67,7 +100,13 @@ Core and Builtins
 Extension Modules
 -----------------
 
+<<<<<<< .working
 - Issue #1762972: Readded the reload() function as imp.reload()
+=======
+- Bug #2111: mmap segfaults when trying to write a block opened with PROT_READ
+
+- #2063: correct order of utime and stime in os.times() result on Windows.
+>>>>>>> .merge-right.r60845
 
 
 Library

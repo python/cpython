@@ -83,6 +83,11 @@ access internal read-only data of Unicode objects:
    Return a pointer to the internal buffer of the object. *o* has to be a
    :ctype:`PyUnicodeObject` (not checked).
 
+
+.. cfunction:: int PyUnicode_ClearFreeList(void)
+
+   Clear the free list. Return the total number of freed items.
+
 Unicode provides many different character properties. The most often needed ones
 are available through these macros which are mapped to C functions depending on
 the Python configuration.

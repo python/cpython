@@ -109,16 +109,6 @@ class EditorWindow(object):
         self.width = idleConf.GetOption('main','EditorWindow','width')
         self.text = text = MultiCallCreator(Text)(
                 text_frame, name='text', padx=5, wrap='none',
-                foreground=idleConf.GetHighlight(currentTheme,
-                        'normal',fgBg='fg'),
-                background=idleConf.GetHighlight(currentTheme,
-                        'normal',fgBg='bg'),
-                highlightcolor=idleConf.GetHighlight(currentTheme,
-                        'hilite',fgBg='fg'),
-                highlightbackground=idleConf.GetHighlight(currentTheme,
-                        'hilite',fgBg='bg'),
-                insertbackground=idleConf.GetHighlight(currentTheme,
-                        'cursor',fgBg='fg'),
                 width=self.width,
                 height=idleConf.GetOption('main','EditorWindow','height') )
         self.top.focused_widget = self.text
@@ -225,7 +215,6 @@ class EditorWindow(object):
         # Making the initial values larger slows things down more often.
         self.num_context_lines = 50, 500, 5000000
         self.per = per = self.Percolator(text)
-        self.color = None
         self.undo = undo = self.UndoDelegator()
         per.insertfilter(undo)
         text.undo_block_start = undo.undo_block_start
@@ -236,6 +225,7 @@ class EditorWindow(object):
         io.set_filename_change_hook(self.filename_change_hook)
         self.good_load = False
         self.set_indentation_params(False)
+        self.color = None # initialized below in self.ResetColorizer
         if filename:
             if os.path.exists(filename) and not os.path.isdir(filename):
                 if io.loadfile(filename):
@@ -247,6 +237,7 @@ class EditorWindow(object):
                         per.insertfilter(color)
             else:
                 io.set_filename(filename)
+        self.ResetColorizer()
         self.saved_change_hook()
         self.update_recent_files_list()
         self.load_extensions()
@@ -561,36 +552,42 @@ class EditorWindow(object):
             self.flist.filename_changed_edit(self)
         self.saved_change_hook()
         self.top.update_windowlist_registry(self)
-        if self.ispythonsource(self.io.filename):
-            self.addcolorizer()
-        else:
-            self.rmcolorizer()
+        self.ResetColorizer()
 
-    def addcolorizer(self):
+    def _addcolorizer(self):
         if self.color:
             return
-        self.per.removefilter(self.undo)
-        self.color = self.ColorDelegator()
-        self.per.insertfilter(self.color)
-        self.per.insertfilter(self.undo)
+        if self.ispythonsource(self.io.filename):
+            self.color = self.ColorDelegator()
+        # can add more colorizers here...
+        if self.color:
+            self.per.removefilter(self.undo)
+            self.per.insertfilter(self.color)
+            self.per.insertfilter(self.undo)
 
-    def rmcolorizer(self):
+    def _rmcolorizer(self):
         if not self.color:
             return
         self.color.removecolors()
-        self.per.removefilter(self.undo)
         self.per.removefilter(self.color)
         self.color = None
-        self.per.insertfilter(self.undo)
 
     def ResetColorizer(self):
-        "Update the colour theme if it is changed"
-        # Called from configDialog.py
-        if self.color:
-            self.color = self.ColorDelegator()
-            self.per.insertfilter(self.color)
+        "Update the colour theme"
+        # Called from self.filename_change_hook and from configDialog.py
+        self._rmcolorizer()
+        self._addcolorizer()
         theme = idleConf.GetOption('main','Theme','name')
-        self.text.config(idleConf.GetHighlight(theme, "normal"))
+        normal_colors = idleConf.GetHighlight(theme, 'normal')
+        cursor_color = idleConf.GetHighlight(theme, 'cursor', fgBg='fg')
+        select_colors = idleConf.GetHighlight(theme, 'hilite')
+        self.text.config(
+            foreground=normal_colors['foreground'],
+            background=normal_colors['background'],
+            insertbackground=cursor_color,
+            selectforeground=select_colors['foreground'],
+            selectbackground=select_colors['background'],
+            )
 
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 

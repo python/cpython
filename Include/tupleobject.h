@@ -53,6 +53,8 @@ PyAPI_FUNC(PyObject *) PyTuple_Pack(Py_ssize_t, ...);
 /* Macro, *only* to be used to fill in brand new tuples */
 #define PyTuple_SET_ITEM(op, i, v) (((PyTupleObject *)(op))->ob_item[i] = v)
 
+PyAPI_FUNC(int) PyTuple_ClearFreeList(void);
+
 #ifdef __cplusplus
 }
 #endif

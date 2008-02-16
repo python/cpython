@@ -425,6 +425,13 @@ class MmapTests(unittest.TestCase):
                 return mmap.mmap.__new__(klass, -1, *args, **kwargs)
         anon_mmap(PAGESIZE)
 
+    def test_prot_readonly(self):
+        mapsize = 10
+        open(TESTFN, "wb").write(b"a"*mapsize)
+        f = open(TESTFN, "rb")
+        m = mmap.mmap(f.fileno(), mapsize, prot=mmap.PROT_READ)
+        self.assertRaises(TypeError, m.write, "foo")
+
 
 def test_main():
     run_unittest(MmapTests)
