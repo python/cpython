@@ -1471,7 +1471,7 @@ s_init(PyObject *self, PyObject *args, PyObject *kwds)
 		return -1;
 
 	Py_INCREF(o_format);
-	Py_XDECREF(soself->s_format);
+	Py_CLEAR(soself->s_format);
 	soself->s_format = o_format;
 
 	ret = prepare_s(soself);
