@@ -26,6 +26,11 @@ Copyright (C) 2001-2008 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
+__all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
+           'FATAL', 'FileHandler', 'Filter', 'Filterer', 'Formatter', 'Handler',
+           'INFO', 'LogRecord', 'Logger', 'Manager', 'NOTSET', 'PlaceHolder',
+           'RootLogger', 'StreamHandler', 'WARN', 'WARNING']
+
 import sys, os, types, time, string, cStringIO, traceback
 
 try:
