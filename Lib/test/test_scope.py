@@ -597,6 +597,24 @@ self.assert_(X.passed)
 
         f(4)()
 
+    def testFreeingCell(self):
+        # Test what happens when a finalizer accesses
+        # the cell where the object was stored.
+        class Special:
+            def __del__(self):
+                nestedcell_get()
+
+        def f():
+            global nestedcell_get
+            def nestedcell_get():
+                return c
+
+            c = (Special(),)
+            c = 2
+
+        f() # used to crash the interpreter...
+
+
 
 def test_main():
     run_unittest(ScopeTests)
