@@ -19,6 +19,7 @@
 */
 
 #include "Python.h"
+#include "frameobject.h"	/* for PyFrame_ClearFreeList */
 
 /* Get an object's GC head */
 #define AS_GC(o) ((PyGC_Head *)(o)-1)
@@ -687,6 +688,21 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
 	}
 }
 
+/* Clear all free lists
+ * All free lists are cleared during the collection of the highest generation.
+ * Allocated items in the free list may keep a pymalloc arena occupied.
+ * Clearing the free lists may give back memory to the OS earlier.
+ */
+static void
+clear_freelists(void)
+{
+	(void)PyMethod_ClearFreeList();
+	(void)PyFrame_ClearFreeList();
+	(void)PyCFunction_ClearFreeList();
+	(void)PyTuple_ClearFreeList();
+	(void)PyUnicode_ClearFreeList();
+}
+
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
@@ -838,6 +854,12 @@ collect(int generation)
 	 * this if they insist on creating this type of structure.
 	 */
 	(void)handle_finalizers(&finalizers, old);
+
+	/* Clear free list only during the collection of the higest
+	 * generation */
+	if (generation == NUM_GENERATIONS-1) {
+		clear_freelists();
+	}
 
 	if (PyErr_Occurred()) {
 		if (gc_str == NULL)

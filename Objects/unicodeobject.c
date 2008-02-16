@@ -9111,10 +9111,29 @@ void _PyUnicode_Init(void)
 
 /* Finalize the Unicode implementation */
 
+int
+PyUnicode_ClearFreeList(void)
+{
+    int freelist_size = numfree;
+    PyUnicodeObject *u;
+
+    for (u = free_list; u != NULL;) {
+	PyUnicodeObject *v = u;
+	u = *(PyUnicodeObject **)u;
+	if (v->str)
+	    PyMem_DEL(v->str);
+	Py_XDECREF(v->defenc);
+	PyObject_Del(v);
+	numfree--;
+    }
+    free_list = NULL;
+    assert(numfree == 0);
+    return freelist_size;
+}
+
 void
 _PyUnicode_Fini(void)
 {
-    PyUnicodeObject *u;
     int i;
 
     Py_XDECREF(unicode_empty);
@@ -9126,17 +9145,7 @@ _PyUnicode_Fini(void)
 	    unicode_latin1[i] = NULL;
 	}
     }
-
-    for (u = free_list; u != NULL;) {
-	PyUnicodeObject *v = u;
-	u = *(PyUnicodeObject **)u;
-	if (v->str)
-	    PyMem_DEL(v->str);
-	Py_XDECREF(v->defenc);
-	PyObject_Del(v);
-    }
-    free_list = NULL;
-    numfree = 0;
+    (void)PyUnicode_ClearFreeList();
 }
 
 void

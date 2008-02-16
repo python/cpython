@@ -1067,6 +1067,23 @@ order (MRO) for bases """
         a.foo = 42
         self.assertEqual(a.__dict__, {"foo": 42})
 
+    def test_slots_descriptor(self):
+        # Issue2115: slot descriptors did not correctly check
+        # the type of the given object
+        import abc
+        class MyABC(metaclass=abc.ABCMeta):
+            __slots__ = "a"
+
+        class Unrelated(object):
+            pass
+        MyABC.register(Unrelated)
+
+        u = Unrelated()
+        self.assert_(isinstance(u, MyABC))
+
+        # This used to crash
+        self.assertRaises(TypeError, MyABC.a.__set__, u, 3)
+
     def test_dynamics(self):
         # Testing class attribute propagation...
         class D(object):

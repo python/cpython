@@ -236,21 +236,33 @@ class GCTests(unittest.TestCase):
         gc.disable()
         gc.set_threshold(*thresholds)
 
+    # The following two tests are fragile:
+    # They precisely count the number of allocations,
+    # which is highly implementation-dependent.
+    # For example:
+    # - disposed tuples are not freed, but reused
+    # - the call to assertEqual somehow avoids building its args tuple
     def test_get_count(self):
+        # Avoid future allocation of method object
+        assertEqual = self.assertEqual
         gc.collect()
-        self.assertEqual(gc.get_count(), (0, 0, 0))
+        assertEqual(gc.get_count(), (0, 0, 0))
         a = dict()
-        self.assertEqual(gc.get_count(), (1, 0, 0))
+        # since gc.collect(), we created two objects:
+        # the dict, and the tuple returned by get_count()
+        assertEqual(gc.get_count(), (2, 0, 0))
 
     def test_collect_generations(self):
+        # Avoid future allocation of method object
+        assertEqual = self.assertEqual
         gc.collect()
         a = dict()
         gc.collect(0)
-        self.assertEqual(gc.get_count(), (0, 1, 0))
+        assertEqual(gc.get_count(), (0, 1, 0))
         gc.collect(1)
-        self.assertEqual(gc.get_count(), (0, 0, 1))
+        assertEqual(gc.get_count(), (0, 0, 1))
         gc.collect(2)
-        self.assertEqual(gc.get_count(), (0, 0, 0))
+        assertEqual(gc.get_count(), (0, 0, 0))
 
     def test_trashcan(self):
         class Ouch:

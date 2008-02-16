@@ -452,7 +452,11 @@ class ForkingMixIn:
             except os.error:
                 pid = None
             if not pid: break
-            self.active_children.remove(pid)
+            try:
+                self.active_children.remove(pid)
+            except ValueError as e:
+                raise ValueError('%s. x=%d and list=%r' % (e.message, pid,
+                                                           self.active_children))
 
     def handle_timeout(self):
         """Wait for zombies after self.timeout seconds of inactivity.

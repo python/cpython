@@ -105,3 +105,7 @@ Tuple Objects
    this function. If the object referenced by ``*p`` is replaced, the original
    ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to *NULL*, and
    raises :exc:`MemoryError` or :exc:`SystemError`.
+
+.. cfunction:: int PyMethod_ClearFreeList(void)
+
+   Clear the free list. Return the total number of freed items.

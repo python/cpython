@@ -1352,19 +1352,15 @@ to work with the :class:`Decimal` class::
        '<.02>'
 
        """
-       q = Decimal((0, (1,), -places))    # 2 places --> '0.01'
-       sign, digits, exp = value.quantize(q).as_tuple()
-       assert exp == -places    
+       q = Decimal(10) ** -places      # 2 places --> '0.01'
+       sign, digits, exp = value.quantize(q).as_tuple()  
        result = []
        digits = map(str, digits)
        build, next = result.append, digits.pop
        if sign:
            build(trailneg)
        for i in range(places):
-           if digits:
-               build(next())
-           else:
-               build('0')
+           build(next() if digits else '0')
        build(dp)
        i = 0
        while digits:
@@ -1374,12 +1370,8 @@ to work with the :class:`Decimal` class::
                i = 0
                build(sep)
        build(curr)
-       if sign:
-           build(neg)
-       else:
-           build(pos)
-       result.reverse()
-       return ''.join(result)
+       build(neg if sign else pos)
+       return ''.join(reversed(result))
 
    def pi():
        """Compute Pi to the current precision.
@@ -1482,7 +1474,7 @@ Decimal FAQ
 Q. It is cumbersome to type ``decimal.Decimal('1234.5')``.  Is there a way to
 minimize typing when using the interactive interpreter?
 
-\A. Some users abbreviate the constructor to just a single letter::
+A. Some users abbreviate the constructor to just a single letter::
 
    >>> D = decimal.Decimal
    >>> D('1.23') + D('3.45')
@@ -1513,9 +1505,36 @@ the :const:`Inexact` trap is set, it is also useful for validation::
 Q. Once I have valid two place inputs, how do I maintain that invariant
 throughout an application?
 
-A. Some operations like addition and subtraction automatically preserve fixed
-point.  Others, like multiplication and division, change the number of decimal
-places and need to be followed-up with a :meth:`quantize` step.
+A. Some operations like addition, subtraction, and multiplication by an integer
+will automatically preserve fixed point.  Others operations, like division and
+non-integer multiplication, will change the number of decimal places and need to
+be followed-up with a :meth:`quantize` step::
+
+    >>> a = Decimal('102.72')           # Initial fixed-point values
+    >>> b = Decimal('3.17')
+    >>> a + b                           # Addition preserves fixed-point
+    Decimal('105.89')
+    >>> a - b
+    Decimal('99.55')
+    >>> a * 42                          # So does integer multiplication
+    Decimal('4314.24')
+    >>> (a * b).quantize(TWOPLACES)     # Must quantize non-integer multiplication
+    Decimal('325.62')
+    >>> (b / a).quantize(TWOPLACES)     # And quantize division
+    Decimal('0.03')
+
+In developing fixed-point applications, it is convenient to define functions
+to handle the :meth:`quantize` step::
+
+    >>> def mul(x, y, fp=TWOPLACES):
+    ...     return (x * y).quantize(fp)
+    >>> def div(x, y, fp=TWOPLACES):
+    ...     return (x / y).quantize(fp)
+
+    >>> mul(a, b)                       # Automatically preserve fixed-point
+    Decimal('325.62')
+    >>> div(b, a)
+    Decimal('0.03')
 
 Q. There are many ways to express the same value.  The numbers :const:`200`,
 :const:`200.000`, :const:`2E2`, and :const:`.02E+4` all have the same value at
@@ -1536,6 +1555,16 @@ A. For some values, exponential notation is the only way to express the number
 of significant places in the coefficient.  For example, expressing
 :const:`5.0E+3` as :const:`5000` keeps the value constant but cannot show the
 original's two-place significance.
+
+If an application does not care about tracking significance, it is easy to
+remove the exponent and trailing zeroes, losing signficance, but keeping the
+value unchanged::
+
+    >>> def remove_exponent(d):
+    ...     return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()
+
+    >>> remove_exponent(Decimal('5E+3'))
+    Decimal('5000')
 
 Q. Is there a way to convert a regular float to a :class:`Decimal`?
 

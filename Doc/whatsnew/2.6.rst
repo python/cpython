@@ -825,7 +825,7 @@ complete list of changes, or look through the CVS logs for all the details.
      int int
      >>> var._asdict()
      {'size': 4, 'type': 'int', 'id': 1, 'name': 'frequency'}
-     >>> v2 = var._replace('name', 'amplitude')
+     >>> v2 = var._replace(name='amplitude')
      >>> v2
      variable(id=1, name='amplitude', type='int', size=4)
 
