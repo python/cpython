@@ -1378,6 +1378,11 @@ Tests
 Tools
 -----
 
+- Tools/scripts/reindent.py now creates the backup file using shutil.copy
+  to preserve user/group and permissions. Added also a --nobackup option
+  to not create the backup if the user is concerned regarding this.  Check
+  issue 1050828 for more details.
+
 - Tools/scripts/win_add2path.py was added. The simple script modifes the
   PATH environment var of the HKCU tree and adds the python bin and script
   directory.
