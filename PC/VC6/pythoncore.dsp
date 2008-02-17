@@ -125,6 +125,10 @@ SOURCE=..\..\Modules\_codecsmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_collectionsmodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_csv.c
 # End Source File
 # Begin Source File
@@ -253,10 +257,6 @@ SOURCE=..\..\Objects\codeobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\collectionsmodule.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Python\compile.c
 # End Source File
 # Begin Source File
@@ -330,6 +330,14 @@ SOURCE=..\..\Objects\fileobject.c
 # Begin Source File
 
 SOURCE=..\..\Objects\floatobject.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Python\formatter_string.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Python\formatter_unicode.c
 # End Source File
 # Begin Source File
 
@@ -580,10 +588,6 @@ SOURCE=..\..\Python\pythonrun.c
 # Begin Source File
 
 SOURCE=..\..\Objects\rangeobject.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\rgbimgmodule.c
 # End Source File
 # Begin Source File
 

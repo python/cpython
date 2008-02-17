@@ -1627,6 +1627,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Python\formatter_string.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Python\formatter_unicode.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Python\frozen.c"
 				>
 			</File>
