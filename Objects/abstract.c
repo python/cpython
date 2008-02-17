@@ -704,6 +704,57 @@ PyBuffer_FillInfo(Py_buffer *view, void *buf, Py_ssize_t len,
 	return 0;
 }
 
+PyObject *
+PyObject_Format(PyObject *obj, PyObject *format_spec)
+{
+    static PyObject * str__format__ = NULL;
+    PyObject *meth;
+    PyObject *empty = NULL;
+    PyObject *result = NULL;
+
+    /* Initialize cached value */
+    if (str__format__ == NULL) {
+        /* Initialize static variable needed by _PyType_Lookup */
+        str__format__ = PyUnicode_FromString("__format__");
+        if (str__format__ == NULL)
+            goto done;
+    }
+
+    /* If no format_spec is provided, use an empty string */
+    if (format_spec == NULL) {
+        empty = PyUnicode_FromUnicode(NULL, 0);
+        format_spec = empty;
+    }
+
+    /* Make sure the type is initialized.  float gets initialized late */
+    if (Py_TYPE(obj)->tp_dict == NULL)
+        if (PyType_Ready(Py_TYPE(obj)) < 0)
+            goto done;
+
+    /* Find the (unbound!) __format__ method (a borrowed reference) */
+    meth = _PyType_Lookup(Py_TYPE(obj), str__format__);
+    if (meth == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                "Type %.100s doesn't define __format__",
+                Py_TYPE(obj)->tp_name);
+            goto done;
+    }
+
+    /* And call it, binding it to the value */
+    result = PyObject_CallFunctionObjArgs(meth, obj, format_spec, NULL);
+
+    if (result && !PyUnicode_Check(result)) {
+        PyErr_SetString(PyExc_TypeError,
+            "__format__ method did not return string");
+        Py_DECREF(result);
+        result = NULL;
+        goto done;
+    }
+
+done:
+    Py_XDECREF(empty);
+    return result;
+}
 /* Operations on numbers */
 
 int

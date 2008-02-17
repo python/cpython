@@ -611,6 +611,13 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
          */
 
 
+     PyAPI_FUNC(PyObject *) PyObject_Format(PyObject* obj,
+					    PyObject *format_spec);
+       /*
+	 Takes an arbitrary object and returns the result of
+	 calling obj.__format__(format_spec).
+       */
+
 /* Iterators */
 
      PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);

@@ -3210,21 +3210,6 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	return result;
 }
 
-static PyObject *
-time_format(PyDateTime_Time *self, PyObject *args)
-{
-	PyObject *format;
-
-	if (!PyArg_ParseTuple(args, "U:__format__", &format))
-		return NULL;
-
-	/* if the format is zero length, return str(self) */
-	if (PyUnicode_GetSize(format) == 0)
-                return PyObject_Str((PyObject *)self);
-
-        return PyObject_CallMethod((PyObject *)self, "strftime", "O", format);
-}
-
 /*
  * Miscellaneous methods.
  */
@@ -3412,7 +3397,7 @@ static PyMethodDef time_methods[] = {
 	{"strftime",   	(PyCFunction)time_strftime,	METH_VARARGS | METH_KEYWORDS,
 	 PyDoc_STR("format -> strftime() style string.")},
 
-	{"__format__", 	(PyCFunction)time_format,	METH_VARARGS,
+	{"__format__", 	(PyCFunction)date_format,	METH_VARARGS,
 	 PyDoc_STR("Formats self with strftime.")},
 
 	{"utcoffset",	(PyCFunction)time_utcoffset,	METH_NOARGS,
