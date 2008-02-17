@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <float.h>
 
+#include "formatter_string.h"
 
 #if !defined(__STDC__)
 extern double fmod(double, double);
@@ -1434,6 +1435,46 @@ float_getzero(PyObject *v, void *closure)
 	return PyFloat_FromDouble(0.0);
 }
 
+static PyObject *
+float__format__(PyObject *self, PyObject *args)
+{
+	PyObject *format_spec;
+
+	if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+		return NULL;
+	if (PyString_Check(format_spec))
+		return string_float__format__(self, args);
+	if (PyUnicode_Check(format_spec)) {
+		/* Convert format_spec to a str */
+		PyObject *result = NULL;
+		PyObject *newargs = NULL;
+		PyObject *string_format_spec = NULL;
+
+		string_format_spec = PyObject_Str(format_spec);
+		if (string_format_spec == NULL)
+			goto done;
+
+		newargs = Py_BuildValue("(O)", string_format_spec);
+		if (newargs == NULL)
+			goto done;
+
+		result = string_float__format__(self, newargs);
+
+		done:
+		Py_XDECREF(string_format_spec);
+		Py_XDECREF(newargs);
+		return result;
+	}
+	PyErr_SetString(PyExc_TypeError, "__format__ requires str or unicode");
+	return NULL;
+}
+
+PyDoc_STRVAR(float__format__doc,
+"float.__format__(format_spec) -> string\n"
+"\n"
+"Formats the float according to format_spec.");
+
+
 static PyMethodDef float_methods[] = {
   	{"conjugate",	(PyCFunction)float_float,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any float."},
@@ -1446,6 +1487,8 @@ static PyMethodDef float_methods[] = {
 	 METH_O|METH_CLASS,		float_getformat_doc},
 	{"__setformat__",	(PyCFunction)float_setformat,	
 	 METH_VARARGS|METH_CLASS,	float_setformat_doc},
+        {"__format__",          (PyCFunction)float__format__,
+         METH_VARARGS,                  float__format__doc},
 	{NULL,		NULL}		/* sentinel */
 };
 

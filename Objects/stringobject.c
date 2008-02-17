@@ -4,6 +4,8 @@
 
 #include "Python.h"
 
+#include "formatter_string.h"
+
 #include <ctype.h>
 
 #ifdef COUNT_ALLOCS
@@ -771,15 +773,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 /* -------------------------------------------------------------------- */
 /* Methods */
 
-#define STRINGLIB_CHAR char
-
-#define STRINGLIB_CMP memcmp
-#define STRINGLIB_LEN PyString_GET_SIZE
-#define STRINGLIB_NEW PyString_FromStringAndSize
-#define STRINGLIB_STR PyString_AS_STRING
-
-#define STRINGLIB_EMPTY nullstring
-
+#include "stringlib/stringdefs.h"
 #include "stringlib/fastsearch.h"
 
 #include "stringlib/count.h"
@@ -3910,6 +3904,19 @@ string_getnewargs(PyStringObject *v)
 	return Py_BuildValue("(s#)", v->ob_sval, Py_SIZE(v));
 }
 
+
+#include "stringlib/string_format.h"
+
+PyDoc_STRVAR(format__doc__,
+"S.format(*args, **kwargs) -> unicode\n\
+\n\
+");
+
+PyDoc_STRVAR(p_format__doc__,
+"S.__format__(format_spec) -> unicode\n\
+\n\
+");
+
 
 static PyMethodDef
 string_methods[] = {
@@ -3954,6 +3961,10 @@ string_methods[] = {
 	{"rjust", (PyCFunction)string_rjust, METH_VARARGS, rjust__doc__},
 	{"center", (PyCFunction)string_center, METH_VARARGS, center__doc__},
 	{"zfill", (PyCFunction)string_zfill, METH_VARARGS, zfill__doc__},
+	{"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
+	{"__format__", (PyCFunction) string__format__, METH_VARARGS, p_format__doc__},
+	{"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
+	{"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
 	{"encode", (PyCFunction)string_encode, METH_VARARGS, encode__doc__},
 	{"decode", (PyCFunction)string_decode, METH_VARARGS, decode__doc__},
 	{"expandtabs", (PyCFunction)string_expandtabs, METH_VARARGS,

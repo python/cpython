@@ -339,6 +339,24 @@ PyDoc_STRVAR(filter_doc,
 "or string, return the same type, else return a list.");
 
 static PyObject *
+builtin_format(PyObject *self, PyObject *args)
+{
+	PyObject *value;
+	PyObject *format_spec = NULL;
+
+	if (!PyArg_ParseTuple(args, "O|O:format", &value, &format_spec))
+		return NULL;
+
+	return PyObject_Format(value, format_spec);
+}
+
+PyDoc_STRVAR(format_doc,
+"format(value[, format_spec]) -> string\n\
+\n\
+Returns value.__format__(format_spec)\n\
+format_spec defaults to \"\"");
+
+static PyObject *
 builtin_chr(PyObject *self, PyObject *args)
 {
 	long x;
@@ -2359,6 +2377,7 @@ static PyMethodDef builtin_methods[] = {
  	{"eval",	builtin_eval,       METH_VARARGS, eval_doc},
  	{"execfile",	builtin_execfile,   METH_VARARGS, execfile_doc},
  	{"filter",	builtin_filter,     METH_VARARGS, filter_doc},
+ 	{"format",	builtin_format,     METH_VARARGS, format_doc},
  	{"getattr",	builtin_getattr,    METH_VARARGS, getattr_doc},
  	{"globals",	(PyCFunction)builtin_globals,    METH_NOARGS, globals_doc},
  	{"hasattr",	builtin_hasattr,    METH_VARARGS, hasattr_doc},

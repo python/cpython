@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include <ctype.h>
+#include "formatter_string.h"
 
 static PyObject *int_int(PyIntObject *v);
 
@@ -1108,12 +1109,47 @@ _PyInt_Format(PyIntObject *v, int base, int newstyle)
 	return PyString_FromStringAndSize(p, &buf[sizeof(buf)] - p);
 }
 
+static PyObject *
+int__format__(PyObject *self, PyObject *args)
+{
+	PyObject *format_spec;
+
+	if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+		return NULL;
+	if (PyString_Check(format_spec))
+		return string_int__format__(self, args);
+	if (PyUnicode_Check(format_spec)) {
+		/* Convert format_spec to a str */
+		PyObject *result = NULL;
+		PyObject *newargs = NULL;
+		PyObject *string_format_spec = NULL;
+
+		string_format_spec = PyObject_Str(format_spec);
+		if (string_format_spec == NULL)
+			goto done;
+
+		newargs = Py_BuildValue("(O)", string_format_spec);
+		if (newargs == NULL)
+			goto done;
+
+		result = string_int__format__(self, newargs);
+
+		done:
+		Py_XDECREF(string_format_spec);
+		Py_XDECREF(newargs);
+		return result;
+	}
+	PyErr_SetString(PyExc_TypeError, "__format__ requires str or unicode");
+	return NULL;
+}
+
 static PyMethodDef int_methods[] = {
 	{"conjugate",	(PyCFunction)int_int,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any int."},
 	{"__trunc__",	(PyCFunction)int_int,	METH_NOARGS,
          "Truncating an Integral returns itself."},
 	{"__getnewargs__",	(PyCFunction)int_getnewargs,	METH_NOARGS},
+        {"__format__", (PyCFunction)int__format__, METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
