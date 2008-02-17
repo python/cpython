@@ -436,6 +436,11 @@ class MmapTests(unittest.TestCase):
         self.assertRaises(TypeError, m.write, "foo")
 
 
+    def test_error(self):
+        self.assert_(issubclass(mmap.error, EnvironmentError))
+        self.assert_("mmap.error" in str(mmap.error))
+
+
 def test_main():
     run_unittest(MmapTests)
 

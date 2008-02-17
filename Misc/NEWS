@@ -1149,6 +1149,9 @@ Library
 Extension Modules
 -----------------
 
+- #2112: mmap.error is now a subclass of EnvironmentError and not a
+  direct EnvironmentError
+
 - Bug #2111: mmap segfaults when trying to write a block opened with PROT_READ
 
 - #2063: correct order of utime and stime in os.times() result on Windows.
