@@ -117,7 +117,7 @@ Tuple Objects
       Removed unused third parameter, *last_is_sticky*.
 
 
-.. cfunction:: int PyMethod_ClearFreeList(void)
+.. cfunction:: int PyTuple_ClearFreeList(void)
 
    Clear the free list. Return the total number of freed items.
 
