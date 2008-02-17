@@ -1341,6 +1341,8 @@ Extension Modules
 Tests
 -----
 
+- Refactor test_logging to use doctest.
+
 - Refactor test_profile and test_cprofile to use the same code to profile.
 
 - Make test_runpy reentrant by fixing _check_module to clear out any module
