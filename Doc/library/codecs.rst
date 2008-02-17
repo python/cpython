@@ -206,13 +206,21 @@ utility functions:
 .. function:: open(filename, mode[, encoding[, errors[, buffering]]])
 
    Open an encoded file using the given *mode* and return a wrapped version
-   providing transparent encoding/decoding.
+   providing transparent encoding/decoding.  The default file mode is ``'r'``
+   meaning to open the file in read mode.
 
    .. note::
 
       The wrapped version will only accept the object format defined by the codecs,
       i.e. Unicode objects for most built-in codecs.  Output is also codec-dependent
       and will usually be Unicode as well.
+
+   .. note::
+
+      Files are always opened in binary mode, even if no binary mode was
+      specified.  This is done to avoid data loss due to encodings using 8-bit
+      values.  This means that no automatic conversion of ``'\n'`` is done
+      on reading and writing.
 
    *encoding* specifies the encoding which is to be used for the file.
 
