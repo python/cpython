@@ -1402,7 +1402,10 @@ initmmap(void)
 	dict = PyModule_GetDict(module);
 	if (!dict)
 		return;
-	mmap_module_error = PyExc_EnvironmentError;
+	mmap_module_error = PyErr_NewException("mmap.error",
+		PyExc_EnvironmentError , NULL);
+	if (mmap_module_error == NULL)
+		return;
 	PyDict_SetItemString(dict, "error", mmap_module_error);
 	PyDict_SetItemString(dict, "mmap", (PyObject*) &mmap_object_type);
 #ifdef PROT_EXEC
