@@ -664,7 +664,7 @@ class HTMLDoc(Doc):
             contents = self.multicolumn(
                 modules, lambda (key, value), s=self: s.modulelink(value))
             result = result + self.bigsection(
-                'Modules', '#fffff', '#aa55cc', contents)
+                'Modules', '#ffffff', '#aa55cc', contents)
 
         if classes:
             classlist = map(lambda (key, value): value, classes)
