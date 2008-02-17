@@ -426,6 +426,8 @@ class MmapTests(unittest.TestCase):
         anon_mmap(PAGESIZE)
 
     def test_prot_readonly(self):
+        if not hasattr(mmap, 'PROT_READ'):
+            return
         mapsize = 10
         open(TESTFN, "wb").write(b"a"*mapsize)
         f = open(TESTFN, "rb")

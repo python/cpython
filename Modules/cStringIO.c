@@ -566,8 +566,7 @@ newOobject(int  size) {
 
 static PyObject *
 I_close(Iobject *self, PyObject *unused) {
-        Py_XDECREF(self->pbuf);
-        self->pbuf = NULL;
+        Py_CLEAR(self->pbuf);
         self->buf = NULL;
 
         self->pos = self->string_size = 0;
