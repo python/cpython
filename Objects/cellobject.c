@@ -31,13 +31,15 @@ PyCell_Get(PyObject *op)
 int
 PyCell_Set(PyObject *op, PyObject *obj)
 {
+	PyObject* oldobj;
 	if (!PyCell_Check(op)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	Py_XDECREF(((PyCellObject*)op)->ob_ref);
+	oldobj = PyCell_GET(op);
 	Py_XINCREF(obj);
 	PyCell_SET(op, obj);
+	Py_XDECREF(oldobj);
 	return 0;
 }
 

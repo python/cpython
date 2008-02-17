@@ -24,6 +24,10 @@ To use, simply 'import logging' and log away!
 """
 
 import sys, os, time, io, traceback
+__all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
+           'FATAL', 'FileHandler', 'Filter', 'Filterer', 'Formatter', 'Handler',
+           'INFO', 'LogRecord', 'Logger', 'Manager', 'NOTSET', 'PlaceHolder',
+           'RootLogger', 'StreamHandler', 'WARN', 'WARNING']
 
 try:
     import codecs
