@@ -6,6 +6,7 @@
    compiled as unicode. */
 #define STRINGLIB_IS_UNICODE     1
 
+#define STRINGLIB_OBJECT         PyUnicodeObject
 #define STRINGLIB_CHAR           Py_UNICODE
 #define STRINGLIB_TYPE_NAME      "unicode"
 #define STRINGLIB_PARSE_CODE     "U"
@@ -20,7 +21,12 @@
 #define STRINGLIB_NEW            PyUnicode_FromUnicode
 #define STRINGLIB_RESIZE         PyUnicode_Resize
 #define STRINGLIB_CHECK          PyUnicode_Check
+
+#if PY_VERSION_HEX < 0x03000000
+#define STRINGLIB_TOSTR          PyObject_Unicode
+#else
 #define STRINGLIB_TOSTR          PyObject_Str
+#endif
 
 #define STRINGLIB_WANT_CONTAINS_OBJ 1
 

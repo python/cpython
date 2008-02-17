@@ -6,12 +6,15 @@
    compiled as unicode. */
 #define STRINGLIB_IS_UNICODE     0
 
+#define STRINGLIB_OBJECT         PyStringObject
 #define STRINGLIB_CHAR           char
 #define STRINGLIB_TYPE_NAME      "string"
 #define STRINGLIB_PARSE_CODE     "S"
-#define STRINGLIB_EMPTY          string_empty
+#define STRINGLIB_EMPTY          nullstring
 #define STRINGLIB_ISDECIMAL(x)   ((x >= '0') && (x <= '9'))
 #define STRINGLIB_TODECIMAL(x)   (STRINGLIB_ISDECIMAL(x) ? (x - '0') : -1)
+#define STRINGLIB_TOUPPER        toupper
+#define STRINGLIB_TOLOWER        tolower
 #define STRINGLIB_FILL           memset
 #define STRINGLIB_STR            PyString_AS_STRING
 #define STRINGLIB_LEN            PyString_GET_SIZE

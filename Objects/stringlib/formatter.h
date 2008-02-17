@@ -195,7 +195,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
     return 1;
 }
 
-
+#if defined FORMAT_FLOAT || defined FORMAT_LONG
 /************************************************************************/
 /*********** common routines for numeric formatting *********************/
 /************************************************************************/
@@ -288,7 +288,8 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
         else {
             /* determine which of left, space, or right padding is
                needed */
-            Py_ssize_t padding = format->width - (r->n_lsign + n_digits + r->n_rsign);
+            Py_ssize_t padding = format->width -
+		                    (r->n_lsign + n_digits + r->n_rsign);
             if (format->align == '<')
                 r->n_rpadding = padding;
             else if (format->align == '>')
@@ -338,6 +339,7 @@ fill_number(STRINGLIB_CHAR *p_buf, const NumberFieldWidths *spec,
     }
     return p_digits;
 }
+#endif /* FORMAT_FLOAT || FORMAT_LONG */
 
 /************************************************************************/
 /*********** string formatting ******************************************/
@@ -434,18 +436,23 @@ done:
 /*********** long formatting ********************************************/
 /************************************************************************/
 
+#if defined FORMAT_LONG || defined FORMAT_INT
+typedef PyObject*
+(*IntOrLongToString)(PyObject *value, int base);
+
 static PyObject *
-format_long_internal(PyObject *value, const InternalFormatSpec *format)
+format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
+			    IntOrLongToString tostring)
 {
     PyObject *result = NULL;
-    int total_leading_chars_to_skip = 0; /* also includes sign, if
-                                            present */
+    PyObject *tmp = NULL;
+    STRINGLIB_CHAR *pnumeric_chars;
+    STRINGLIB_CHAR numeric_char;
     STRINGLIB_CHAR sign = '\0';
     STRINGLIB_CHAR *p;
     Py_ssize_t n_digits;       /* count of digits need from the computed
                                   string */
-    Py_ssize_t len;
-    Py_ssize_t tmp;
+    Py_ssize_t n_leading_chars;
     NumberFieldWidths spec;
     long x;
 
@@ -469,6 +476,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format)
 
         /* taken from unicodeobject.c formatchar() */
         /* Integer input truncated to a character */
+/* XXX: won't work for int */
         x = PyLong_AsLong(value);
         if (x == -1 && PyErr_Occurred())
             goto done;
@@ -487,115 +495,101 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format)
             goto done;
         }
 #endif
-        result = STRINGLIB_NEW(NULL, 1);
-        if (result == NULL)
-            goto done;
-        p = STRINGLIB_STR(result);
-        p[0] = (Py_UNICODE) x;
-        n_digits = len = 1;
+	numeric_char = (STRINGLIB_CHAR)x;
+	pnumeric_chars = &numeric_char;
+        n_digits = 1;
     }
     else {
         int base;
-        int format_leading_chars_to_skip;  /* characters added by
-                                              PyNumber_ToBase that we
-                                              want to skip over.
-                                              instead of using them,
-                                              we'll compute our
-                                              own. */
-        /* compute the base and how many characters will be added by
+	int leading_chars_to_skip;  /* Number of characters added by
+				       PyNumber_ToBase that we want to
+				       skip over. */
+
+        /* Compute the base and how many characters will be added by
            PyNumber_ToBase */
         switch (format->type) {
         case 'b':
             base = 2;
-            format_leading_chars_to_skip = 2; /* 0b */
+            leading_chars_to_skip = 2; /* 0b */
             break;
         case 'o':
             base = 8;
-            format_leading_chars_to_skip = 2; /* 0o */
+            leading_chars_to_skip = 2; /* 0o */
             break;
         case 'x':
         case 'X':
             base = 16;
-            format_leading_chars_to_skip = 2; /* 0x */
+            leading_chars_to_skip = 2; /* 0x */
             break;
         default:  /* shouldn't be needed, but stops a compiler warning */
         case 'd':
             base = 10;
-            format_leading_chars_to_skip = 0;
+            leading_chars_to_skip = 0;
             break;
         }
 
-        /* do the hard part, converting to a string in a given base */
-        result = PyNumber_ToBase(value, base);
-        if (result == NULL)
+        /* Do the hard part, converting to a string in a given base */
+	tmp = tostring(value, base);
+        if (tmp == NULL)
             goto done;
 
-        n_digits = STRINGLIB_LEN(result);
-        len = n_digits;
-        p = STRINGLIB_STR(result);
+	pnumeric_chars = STRINGLIB_STR(tmp);
+        n_digits = STRINGLIB_LEN(tmp);
 
-        /* if X, convert to uppercase */
-        if (format->type == 'X')
-            for (tmp = 0; tmp < len; tmp++)
-                p[tmp] = STRINGLIB_TOUPPER(p[tmp]);
+	/* Remember not to modify what pnumeric_chars points to.  it
+	   might be interned.  Only modify it after we copy it into a
+	   newly allocated output buffer. */
 
-        /* is a sign character present in the output?  if so, remember it
+        /* Is a sign character present in the output?  If so, remember it
            and skip it */
-        sign = p[0];
+        sign = pnumeric_chars[0];
         if (sign == '-') {
-            total_leading_chars_to_skip += 1;
-            n_digits--;
+	    ++leading_chars_to_skip;
         }
 
-        /* skip over the leading digits (0x, 0b, etc.) */
-        assert(n_digits >= format_leading_chars_to_skip + 1);
-        n_digits -= format_leading_chars_to_skip;
-        total_leading_chars_to_skip += format_leading_chars_to_skip;
+	/* Skip over the leading chars (0x, 0b, etc.) */
+	n_digits -= leading_chars_to_skip;
+	pnumeric_chars += leading_chars_to_skip;
     }
 
+    /* Calculate the widths of the various leading and trailing parts */
     calc_number_widths(&spec, sign, n_digits, format);
 
-    /* if the buffer is getting bigger, realloc it.  if it's getting
-       smaller, don't realloc because we need to move the results
-       around first.  realloc after we've done that */
+    /* Allocate a new string to hold the result */
+    result = STRINGLIB_NEW(NULL, spec.n_total);
+    if (!result)
+	goto done;
+    p = STRINGLIB_STR(result);
 
-    if (spec.n_total > len) {
-        if (STRINGLIB_RESIZE(&result, spec.n_total) < 0)
-            goto done;
-        /* recalc, because string might have moved */
-        p = STRINGLIB_STR(result);
+    /* Fill in the digit parts */
+    n_leading_chars = spec.n_lpadding + spec.n_lsign + spec.n_spadding;
+    memmove(p + n_leading_chars,
+	    pnumeric_chars,
+	    n_digits * sizeof(STRINGLIB_CHAR));
+
+    /* if X, convert to uppercase */
+    if (format->type == 'X') {
+	Py_ssize_t t;
+	for (t = 0; t < n_digits; t++)
+	    p[t + n_leading_chars] = STRINGLIB_TOUPPER(p[t + n_leading_chars]);
     }
 
-    /* copy the characters into position first, since we're going to
-       overwrite some of that space */
-    /* we need to move if the number of left padding in the output is
-       different from the number of characters we need to skip */
-    if ((spec.n_lpadding + spec.n_lsign + spec.n_spadding) !=
-          total_leading_chars_to_skip) {
-        memmove(p + (spec.n_lpadding + spec.n_lsign + spec.n_spadding),
-                p + total_leading_chars_to_skip,
-                n_digits * sizeof(STRINGLIB_CHAR));
-    }
-
-    /* now fill in the non-digit parts */
+    /* Fill in the non-digit parts */
     fill_number(p, &spec, n_digits,
                 format->fill_char == '\0' ? ' ' : format->fill_char);
 
-    /* if we're getting smaller, realloc now */
-    if (spec.n_total < len) {
-        if (STRINGLIB_RESIZE(&result, spec.n_total) < 0)
-            goto done;
-    }
-
 done:
+    Py_XDECREF(tmp);
     return result;
 }
-
+#endif /* defined FORMAT_LONG || defined FORMAT_INT */
 
 /************************************************************************/
 /*********** float formatting *******************************************/
 /************************************************************************/
 
+#ifdef FORMAT_FLOAT
+#if STRINGLIB_IS_UNICODE
 /* taken from unicodeobject.c */
 static Py_ssize_t
 strtounicode(Py_UNICODE *buffer, const char *charbuffer)
@@ -607,6 +601,7 @@ strtounicode(Py_UNICODE *buffer, const char *charbuffer)
 
     return len;
 }
+#endif
 
 /* the callback function to call to do the actual float formatting.
    it matches the definition of PyOS_ascii_formatd */
@@ -694,7 +689,8 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
     /* cast "type", because if we're in unicode we need to pass a
        8-bit char.  this is safe, because we've restricted what "type"
        can be */
-    PyOS_snprintf(fmt, sizeof(fmt), "%%.%" PY_FORMAT_SIZE_T "d%c", precision, (char)type);
+    PyOS_snprintf(fmt, sizeof(fmt), "%%.%" PY_FORMAT_SIZE_T "d%c", precision,
+		  (char)type);
 
     /* call the passed in function to do the actual formatting */
     snprintf(charbuf, sizeof(charbuf), fmt, x);
@@ -739,7 +735,8 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
                 format->fill_char == '\0' ? ' ' : format->fill_char);
 
     /* fill in the digit parts */
-    memmove(STRINGLIB_STR(result) + (spec.n_lpadding + spec.n_lsign + spec.n_spadding),
+    memmove(STRINGLIB_STR(result) +
+	       (spec.n_lpadding + spec.n_lsign + spec.n_spadding),
             p,
             n_digits * sizeof(STRINGLIB_CHAR));
 
@@ -755,20 +752,43 @@ format_float_internal(PyObject *value, const InternalFormatSpec *format)
     else
         return _format_float(format->type, value, format, PyOS_ascii_formatd);
 }
+#endif /* FORMAT_FLOAT */
 
 /************************************************************************/
 /*********** built in formatters ****************************************/
 /************************************************************************/
-
+#ifdef FORMAT_STRING
 PyObject *
 FORMAT_STRING(PyObject* value, PyObject* args)
 {
     PyObject *format_spec;
     PyObject *result = NULL;
+#if PY_VERSION_HEX < 0x03000000
+    PyObject *tmp = NULL;
+#endif
     InternalFormatSpec format;
 
-    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__", &format_spec))
+    /* If 2.x, we accept either str or unicode, and try to convert it
+       to the right type.  In 3.x, we insist on only unicode */
+#if PY_VERSION_HEX >= 0x03000000
+    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__",
+			  &format_spec))
         goto done;
+#else
+    /* If 2.x, convert format_spec to the same type as value */
+    /* This is to allow things like u''.format('') */
+    if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+        goto done;
+    if (!(PyString_Check(format_spec) || PyUnicode_Check(format_spec))) {
+        PyErr_Format(PyExc_TypeError, "__format__ arg must be str "
+		     "or unicode, not %s", Py_TYPE(format_spec)->tp_name);
+	goto done;
+    }
+    tmp = STRINGLIB_TOSTR(format_spec);
+    if (tmp == NULL)
+        goto done;
+    format_spec = tmp;
+#endif
 
     /* check for the special case of zero length format spec, make
        it equivalent to str(value) */
@@ -776,6 +796,7 @@ FORMAT_STRING(PyObject* value, PyObject* args)
         result = STRINGLIB_TOSTR(value);
         goto done;
     }
+
 
     /* parse the format_spec */
     if (!parse_internal_render_format_spec(format_spec, &format, 's'))
@@ -795,18 +816,24 @@ FORMAT_STRING(PyObject* value, PyObject* args)
     }
 
 done:
+#if PY_VERSION_HEX < 0x03000000
+    Py_XDECREF(tmp);
+#endif
     return result;
 }
+#endif /* FORMAT_STRING */
 
-PyObject *
-FORMAT_LONG(PyObject* value, PyObject* args)
+#if defined FORMAT_LONG || defined FORMAT_INT
+static PyObject*
+format_int_or_long(PyObject* value, PyObject* args, IntOrLongToString tostring)
 {
     PyObject *format_spec;
     PyObject *result = NULL;
     PyObject *tmp = NULL;
     InternalFormatSpec format;
 
-    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__", &format_spec))
+    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__",
+			  &format_spec))
         goto done;
 
     /* check for the special case of zero length format spec, make
@@ -828,8 +855,9 @@ FORMAT_LONG(PyObject* value, PyObject* args)
     case 'o':
     case 'x':
     case 'X':
-        /* no type conversion needed, already an int.  do the formatting */
-        result = format_long_internal(value, &format);
+        /* no type conversion needed, already an int (or long).  do
+	   the formatting */
+	    result = format_int_or_long_internal(value, &format, tostring);
         break;
 
     case 'e':
@@ -858,7 +886,52 @@ done:
     Py_XDECREF(tmp);
     return result;
 }
+#endif /* FORMAT_LONG || defined FORMAT_INT */
 
+#ifdef FORMAT_LONG
+/* Need to define long_format as a function that will convert a long
+   to a string.  In 3.0, _PyLong_Format has the correct signature.  In
+   2.x, we need to fudge a few parameters */
+#if PY_VERSION_HEX >= 0x03000000
+#define long_format _PyLong_Format
+#else
+static PyObject*
+long_format(PyObject* value, int base)
+{
+    /* Convert to base, don't add trailing 'L', and use the new octal
+       format. We already know this is a long object */
+    assert(PyLong_Check(value));
+    /* convert to base, don't add 'L', and use the new octal format */
+    return _PyLong_Format(value, base, 0, 1);
+}
+#endif
+
+PyObject *
+FORMAT_LONG(PyObject* value, PyObject* args)
+{
+    return format_int_or_long(value, args, long_format);
+}
+#endif /* FORMAT_LONG */
+
+#ifdef FORMAT_INT
+/* this is only used for 2.x, not 3.0 */
+static PyObject*
+int_format(PyObject* value, int base)
+{
+    /* Convert to base, and use the new octal format. We already
+       know this is an int object */
+    assert(PyInt_Check(value));
+    return _PyInt_Format((PyIntObject*)value, base, 1);
+}
+
+PyObject *
+FORMAT_INT(PyObject* value, PyObject* args)
+{
+    return format_int_or_long(value, args, int_format);
+}
+#endif /* FORMAT_INT */
+
+#ifdef FORMAT_FLOAT
 PyObject *
 FORMAT_FLOAT(PyObject *value, PyObject *args)
 {
@@ -904,3 +977,4 @@ FORMAT_FLOAT(PyObject *value, PyObject *args)
 done:
     return result;
 }
+#endif /* FORMAT_FLOAT */
