@@ -2469,6 +2469,32 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	return result;
 }
 
+static PyObject *
+date_format(PyDateTime_Date *self, PyObject *args)
+{
+	PyObject *format;
+
+	if (!PyArg_ParseTuple(args, "O:__format__", &format))
+		return NULL;
+
+	/* Check for str or unicode */
+	if (PyString_Check(format)) {
+                /* If format is zero length, return str(self) */
+		if (PyString_GET_SIZE(format) == 0)
+			return PyObject_Str((PyObject *)self);
+	} else if (PyUnicode_Check(format)) {
+                /* If format is zero length, return str(self) */
+		if (PyUnicode_GET_SIZE(format) == 0)
+			return PyObject_Unicode((PyObject *)self);
+	} else {
+		PyErr_Format(PyExc_ValueError,
+			     "__format__ expects str or unicode, not %.200s",
+			     Py_TYPE(format)->tp_name);
+		return NULL;
+	}
+	return PyObject_CallMethod((PyObject *)self, "strftime", "O", format);
+}
+
 /* ISO methods. */
 
 static PyObject *
@@ -2632,6 +2658,9 @@ static PyMethodDef date_methods[] = {
 
 	{"strftime",   	(PyCFunction)date_strftime,	METH_VARARGS | METH_KEYWORDS,
 	 PyDoc_STR("format -> strftime() style string.")},
+
+	{"__format__", 	(PyCFunction)date_format,	METH_VARARGS,
+	 PyDoc_STR("Formats self with strftime.")},
 
 	{"timetuple",   (PyCFunction)date_timetuple,    METH_NOARGS,
          PyDoc_STR("Return time tuple, compatible with time.localtime().")},
@@ -3417,6 +3446,9 @@ static PyMethodDef time_methods[] = {
 
 	{"strftime",   	(PyCFunction)time_strftime,	METH_VARARGS | METH_KEYWORDS,
 	 PyDoc_STR("format -> strftime() style string.")},
+
+	{"__format__", 	(PyCFunction)date_format,	METH_VARARGS,
+	 PyDoc_STR("Formats self with strftime.")},
 
 	{"utcoffset",	(PyCFunction)time_utcoffset,	METH_NOARGS,
 	 PyDoc_STR("Return self.tzinfo.utcoffset(self).")},

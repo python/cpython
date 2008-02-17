@@ -3210,11 +3210,57 @@ object_reduce_ex(PyObject *self, PyObject *args)
 	return _common_reduce(self, proto);
 }
 
+/*
+   from PEP 3101, this code implements:
+
+   class object:
+       def __format__(self, format_spec):
+           if isinstance(format_spec, str):
+               return format(str(self), format_spec)
+           elif isinstance(format_spec, unicode):
+               return format(unicode(self), format_spec)
+*/
+static PyObject *
+object_format(PyObject *self, PyObject *args)
+{
+        PyObject *format_spec;
+        PyObject *self_as_str = NULL;
+        PyObject *result = NULL;
+        PyObject *format_meth = NULL;
+
+        if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+                return NULL;
+	if (PyUnicode_Check(format_spec)) {
+	        self_as_str = PyObject_Unicode(self);
+	} else if (PyString_Check(format_spec)) {
+	        self_as_str = PyObject_Str(self);
+	} else {
+	        PyErr_SetString(PyExc_TypeError, "argument to __format__ must be unicode or str");
+	        return NULL;
+	}
+
+        if (self_as_str != NULL) {
+                /* find the format function */
+                format_meth = PyObject_GetAttrString(self_as_str, "__format__");
+                if (format_meth != NULL) {
+                       /* and call it */
+                        result = PyObject_CallFunctionObjArgs(format_meth, format_spec, NULL);
+                }
+        }
+
+        Py_XDECREF(self_as_str);
+        Py_XDECREF(format_meth);
+
+        return result;
+}
+
 static PyMethodDef object_methods[] = {
 	{"__reduce_ex__", object_reduce_ex, METH_VARARGS,
 	 PyDoc_STR("helper for pickle")},
 	{"__reduce__", object_reduce, METH_VARARGS,
 	 PyDoc_STR("helper for pickle")},
+        {"__format__", object_format, METH_VARARGS,
+         PyDoc_STR("default object formatter")},
 	{0}
 };
 

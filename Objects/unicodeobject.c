@@ -42,6 +42,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+#include "formatter_unicode.h"
+
 #include "unicodeobject.h"
 #include "ucnhash.h"
 
@@ -5059,21 +5061,8 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 
 /* --- Helpers ------------------------------------------------------------ */
 
-#define STRINGLIB_CHAR Py_UNICODE
+#include "stringlib/unicodedefs.h"
 
-#define STRINGLIB_LEN PyUnicode_GET_SIZE
-#define STRINGLIB_NEW PyUnicode_FromUnicode
-#define STRINGLIB_STR PyUnicode_AS_UNICODE
-
-Py_LOCAL_INLINE(int)
-STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
-{
-    if (str[0] != other[0])
-        return 1;
-    return memcmp((void*) str, (void*) other, len * sizeof(Py_UNICODE));
-}
-
-#define STRINGLIB_EMPTY unicode_empty
 #define FROM_UNICODE
 
 #include "stringlib/fastsearch.h"
@@ -7802,6 +7791,19 @@ unicode_endswith(PyUnicodeObject *self,
 }
 
 
+/* Implements do_string_format, which is unicode because of stringlib */
+#include "stringlib/string_format.h"
+
+PyDoc_STRVAR(format__doc__,
+"S.format(*args, **kwargs) -> unicode\n\
+\n\
+");
+
+PyDoc_STRVAR(p_format__doc__,
+"S.__format__(format_spec) -> unicode\n\
+\n\
+");
+
 
 static PyObject *
 unicode_getnewargs(PyUnicodeObject *v)
@@ -7855,6 +7857,10 @@ static PyMethodDef unicode_methods[] = {
     {"isalpha", (PyCFunction) unicode_isalpha, METH_NOARGS, isalpha__doc__},
     {"isalnum", (PyCFunction) unicode_isalnum, METH_NOARGS, isalnum__doc__},
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
+    {"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
+    {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
+    {"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
+    {"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
 #if 0
     {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},
 #endif

@@ -183,6 +183,7 @@ Instead, you can get the same information from the list type:
      '__delslice__',
      '__doc__',
      '__eq__',
+     '__format__',
      '__ge__',
      '__getattribute__',
      '__getitem__',
