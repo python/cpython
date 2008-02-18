@@ -493,6 +493,22 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
     if (result == NULL)
         goto done;
 
+#if PY_VERSION_HEX >= 0x03000000
+    assert(PyString_Check(result));
+#else
+    assert(PyString_Check(result) || PyUnicode_Check(result));
+
+    /* Convert result to our type.  We could be str, and result could
+       be unicode */
+    {
+	PyObject *tmp = STRINGLIB_TOSTR(result);
+	if (tmp == NULL)
+	    goto done;
+	Py_DECREF(result);
+	result = tmp;
+    }
+#endif
+
     ok = output_data(output,
                      STRINGLIB_STR(result), STRINGLIB_LEN(result));
 done:

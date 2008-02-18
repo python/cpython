@@ -1088,6 +1088,15 @@ class UnicodeTest(
         self.assertRaises(ValueError, format, "", "-")
         self.assertRaises(ValueError, "{0:=s}".format, '')
 
+        # test combining string and unicode
+        self.assertEqual(u"foo{0}".format('bar'), u'foobar')
+        # This will try to convert the argument from unicode to str, which
+        #  will succeed
+        self.assertEqual("foo{0}".format(u'bar'), 'foobar')
+        # This will try to convert the argument from unicode to str, which
+        #  will fail
+        self.assertRaises(UnicodeEncodeError, "foo{0}".format, u'\u1000bar')
+
 def test_main():
     test_support.run_unittest(__name__)
 
