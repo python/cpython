@@ -414,6 +414,8 @@ Core and builtins
 Library
 -------
 
+- Issue #1916. Added isgenerator() and isgeneratorfunction() to inspect.py.
+
 - ctypes instances that are not or do not contain pointers can now be
   pickled.
 
