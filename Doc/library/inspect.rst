@@ -28,7 +28,7 @@ Types and members
 -----------------
 
 The :func:`getmembers` function retrieves the members of an object such as a
-class or module. The eleven functions whose names begin with "is" are mainly
+class or module. The fifteen functions whose names begin with "is" are mainly
 provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
 attributes:
@@ -80,6 +80,35 @@ attributes:
 |           |                 | this function was defined |       |
 +-----------+-----------------+---------------------------+-------+
 |           | func_name       | (same as __name__)        |       |
++-----------+-----------------+---------------------------+-------+
+| generator | __iter__        | defined to support        |       |
+|           |                 | iteration over container  |       |
++-----------+-----------------+---------------------------+-------+
+|           | close           | raises new GeneratorExit  |       |
+|           |                 | exception inside the      |       |
+|           |                 | generator to terminate    |       |
+|           |                 | the iteration             |       |
++-----------+-----------------+---------------------------+-------+
+|           | gi_code         | code object               |       |
++-----------+-----------------+---------------------------+-------+
+|           | gi_frame        | frame object or possibly  |       |
+|           |                 | None once the generator   |       |
+|           |                 | has been exhausted        |       |
++-----------+-----------------+---------------------------+-------+
+|           | gi_running      | set to 1 when generator   |       |
+|           |                 | is executing, 0 otherwise |       |
++-----------+-----------------+---------------------------+-------+
+|           | next            | return the next item from |       |
+|           |                 | the container             |       |
++-----------+-----------------+---------------------------+-------+
+|           | send            | resumes the generator and |       |
+|           |                 | "sends" a value that      |       |
+|           |                 | becomes the result of the |       |
+|           |                 | current yield-expression  |       |
++-----------+-----------------+---------------------------+-------+
+|           | throw           | used to raise an          |       |
+|           |                 | exception inside the      |       |
+|           |                 | generator                 |       |
 +-----------+-----------------+---------------------------+-------+
 | traceback | tb_frame        | frame object at this      |       |
 |           |                 | level                     |       |
@@ -246,6 +275,13 @@ Note:
 
    Return true if the object is a Python function or unnamed (:term:`lambda`) function.
 
+.. function:: isgeneratorfunction(object)
+
+   Return true if the object is a Python generator function.
+
+.. function:: isgenerator(object)
+
+   Return true if the object is a generator.
 
 .. function:: istraceback(object)
 
