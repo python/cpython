@@ -416,6 +416,8 @@ Library
 
 - Issue #1916. Added isgenerator() and isgeneratorfunction() to inspect.py.
 
+- #1224: Fixed bad url parsing when path begins with double slash.
+
 - ctypes instances that are not or do not contain pointers can now be
   pickled.
 
