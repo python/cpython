@@ -1701,8 +1701,14 @@ PyOS_CheckStack(void)
 		   not enough space left on the stack */
 		alloca(PYOS_STACK_MARGIN * sizeof(void*));
 		return 0;
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		/* just ignore all errors */
+	} __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ?
+		        EXCEPTION_EXECUTE_HANDLER : 
+		        EXCEPTION_CONTINUE_SEARCH) {
+		int errcode = _resetstkoflw();
+		if (errcode)
+		{
+			Py_FatalError("Could not reset the stack!");
+		}
 	}
 	return 1;
 }
