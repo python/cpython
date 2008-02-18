@@ -331,7 +331,7 @@ language and built-in functions.
 * Removed: :func:`apply`, :func:`callable`, :func:`coerce`, :func:`execfile`,
   :func:`file`, :func:`reduce`, :func:`reload`.
 
-* Removed: :meth:`dict.has_key`.
+* Removed: :meth:`dict.has_key` -- use the ``in`` operator instead.
 
 * :func:`exec` is now a function.
 
