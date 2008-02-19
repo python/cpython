@@ -525,6 +525,14 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 	                        $(srcdir)/Objects/stringlib/find.h \
 	                        $(srcdir)/Objects/stringlib/partition.h
 
+Objects/stringobject.o: $(srcdir)/Objects/stringobject.c \
+				$(srcdir)/Objects/stringlib/string_format.h \
+	                        $(srcdir)/Objects/stringlib/stringdefs.h \
+	                        $(srcdir)/Objects/stringlib/fastsearch.h \
+	                        $(srcdir)/Objects/stringlib/count.h \
+	                        $(srcdir)/Objects/stringlib/find.h \
+	                        $(srcdir)/Objects/stringlib/partition.h
+
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
 	                        $(srcdir)/Objects/stringlib/formatter.h
 
