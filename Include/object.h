@@ -277,7 +277,6 @@ typedef struct {
 typedef struct {
      getbufferproc bf_getbuffer;
      releasebufferproc bf_releasebuffer;
-     inquiry bf_multisegment;
 } PyBufferProcs;
 
 typedef void (*freefunc)(void *);
