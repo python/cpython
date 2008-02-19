@@ -733,6 +733,16 @@ def buildPython():
         os.symlink(os.path.join(to_framework, fn),
                    os.path.join(usr_local_bin, fn))
 
+    # A quick fix that removes a spurious unittest failure when users
+    # upgrade their python2.5 install and then run Python's test suite.
+    # This is needed because one of the test files for the decimal module
+    # changed it name (see issue 2114).
+    test_dir = os.path.join(rootDir, 'Library', 'Frameworks',
+            'Python.framework', 'Versions', version, 'lib',
+            'python%s'%(version,), 'test', 'decimaltestdata')
+    data = open(os.path.join(test_dir, 'reduce.decTest'), 'r').read()
+    open(os.path.join(test_dir, 'normalize.decTest'), 'w').write(data)
+
     os.chdir(curdir)
 
 
