@@ -63,15 +63,15 @@ class TypesTests(unittest.TestCase):
 
         try: 5 / 0
         except ZeroDivisionError: pass
-        else: self.fail("5 / 0L didn't raise ZeroDivisionError")
+        else: self.fail("5 / 0 didn't raise ZeroDivisionError")
 
         try: 5 // 0
         except ZeroDivisionError: pass
-        else: self.fail("5 // 0L didn't raise ZeroDivisionError")
+        else: self.fail("5 // 0 didn't raise ZeroDivisionError")
 
         try: 5 % 0
         except ZeroDivisionError: pass
-        else: self.fail("5 % 0L didn't raise ZeroDivisionError")
+        else: self.fail("5 % 0 didn't raise ZeroDivisionError")
 
     def test_numeric_types(self):
         if 0 != 0 or 0 != 0.0 or 0 != 0.0: self.fail('mixed comparisons')
@@ -80,7 +80,7 @@ class TypesTests(unittest.TestCase):
             self.fail('int/long/float value not equal')
         # calling built-in types without argument must return 0
         if int() != 0: self.fail('int() does not return 0')
-        if int() != 0: self.fail('long() does not return 0L')
+        if int() != 0: self.fail('long() does not return 0')
         if float() != 0.0: self.fail('float() does not return 0.0')
         if int(1.9) == 1 == int(1.1) and int(-1.1) == -1 == int(-1.9): pass
         else: self.fail('int() does not round properly')
@@ -202,6 +202,251 @@ class TypesTests(unittest.TestCase):
     def test_type_function(self):
         self.assertRaises(TypeError, type, 1, 2)
         self.assertRaises(TypeError, type, 1, 2, 3, 4)
+
+    def test_int__format__(self):
+        def test(i, format_spec, result):
+            # just make sure I'm not accidentally checking longs
+            assert type(i) == int
+            assert type(format_spec) == str
+            self.assertEqual(i.__format__(format_spec), result)
+
+        test(123456789, 'd', '123456789')
+        test(123456789, 'd', '123456789')
+
+        test(1, 'c', '\01')
+
+        # sign and aligning are interdependent
+        test(1, "-", '1')
+        test(-1, "-", '-1')
+        test(1, "-3", '  1')
+        test(-1, "-3", ' -1')
+        test(1, "+3", ' +1')
+        test(-1, "+3", ' -1')
+        test(1, " 3", '  1')
+        test(-1, " 3", ' -1')
+        test(1, " ", ' 1')
+        test(-1, " ", '-1')
+
+        # hex
+        test(3, "x", "3")
+        test(3, "X", "3")
+        test(1234, "x", "4d2")
+        test(-1234, "x", "-4d2")
+        test(1234, "8x", "     4d2")
+        test(-1234, "8x", "    -4d2")
+        test(1234, "x", "4d2")
+        test(-1234, "x", "-4d2")
+        test(-3, "x", "-3")
+        test(-3, "X", "-3")
+        test(int('be', 16), "x", "be")
+        test(int('be', 16), "X", "BE")
+        test(-int('be', 16), "x", "-be")
+        test(-int('be', 16), "X", "-BE")
+
+        # octal
+        test(3, "o", "3")
+        test(-3, "o", "-3")
+        test(65, "o", "101")
+        test(-65, "o", "-101")
+        test(1234, "o", "2322")
+        test(-1234, "o", "-2322")
+        test(1234, "-o", "2322")
+        test(-1234, "-o", "-2322")
+        test(1234, " o", " 2322")
+        test(-1234, " o", "-2322")
+        test(1234, "+o", "+2322")
+        test(-1234, "+o", "-2322")
+
+        # binary
+        test(3, "b", "11")
+        test(-3, "b", "-11")
+        test(1234, "b", "10011010010")
+        test(-1234, "b", "-10011010010")
+        test(1234, "-b", "10011010010")
+        test(-1234, "-b", "-10011010010")
+        test(1234, " b", " 10011010010")
+        test(-1234, " b", "-10011010010")
+        test(1234, "+b", "+10011010010")
+        test(-1234, "+b", "-10011010010")
+
+        # make sure these are errors
+
+        # precision disallowed
+        self.assertRaises(ValueError, 3 .__format__, "1.3")
+        # sign not allowed with 'c'
+        self.assertRaises(ValueError, 3 .__format__, "+c")
+        # format spec must be string
+        self.assertRaises(TypeError, 3 .__format__, None)
+        self.assertRaises(TypeError, 3 .__format__, 0)
+
+        # ensure that only int and float type specifiers work
+        for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
+                            [chr(x) for x in range(ord('A'), ord('Z')+1)]):
+            if not format_spec in 'bcdoxXeEfFgGn%':
+                self.assertRaises(ValueError, 0 .__format__, format_spec)
+                self.assertRaises(ValueError, 1 .__format__, format_spec)
+                self.assertRaises(ValueError, (-1) .__format__, format_spec)
+
+        # ensure that float type specifiers work; format converts
+        #  the int to a float
+        for format_spec in 'eEfFgGn%':
+            for value in [0, 1, -1, 100, -100, 1234567890, -1234567890]:
+                self.assertEqual(value.__format__(format_spec),
+                                 float(value).__format__(format_spec))
+
+    def test_long__format__(self):
+        def test(i, format_spec, result):
+            # make sure we're not accidentally checking ints
+            assert type(i) == int
+            assert type(format_spec) == str
+            self.assertEqual(i.__format__(format_spec), result)
+
+        test(10**100, 'd', '1' + '0' * 100)
+        test(10**100+100, 'd', '1' + '0' * 97 + '100')
+
+        test(123456789, 'd', '123456789')
+        test(123456789, 'd', '123456789')
+
+        # sign and aligning are interdependent
+        test(1, "-", '1')
+        test(-1, "-", '-1')
+        test(1, "-3", '  1')
+        test(-1, "-3", ' -1')
+        test(1, "+3", ' +1')
+        test(-1, "+3", ' -1')
+        test(1, " 3", '  1')
+        test(-1, " 3", ' -1')
+        test(1, " ", ' 1')
+        test(-1, " ", '-1')
+
+        test(1, 'c', '\01')
+
+        # hex
+        test(3, "x", "3")
+        test(3, "X", "3")
+        test(1234, "x", "4d2")
+        test(-1234, "x", "-4d2")
+        test(1234, "8x", "     4d2")
+        test(-1234, "8x", "    -4d2")
+        test(1234, "x", "4d2")
+        test(-1234, "x", "-4d2")
+        test(-3, "x", "-3")
+        test(-3, "X", "-3")
+
+        # octal
+        test(3, "o", "3")
+        test(-3, "o", "-3")
+        test(65, "o", "101")
+        test(-65, "o", "-101")
+        test(1234, "o", "2322")
+        test(-1234, "o", "-2322")
+        test(1234, "-o", "2322")
+        test(-1234, "-o", "-2322")
+        test(1234, " o", " 2322")
+        test(-1234, " o", "-2322")
+        test(1234, "+o", "+2322")
+        test(-1234, "+o", "-2322")
+
+        # binary
+        test(3, "b", "11")
+        test(-3, "b", "-11")
+        test(1234, "b", "10011010010")
+        test(-1234, "b", "-10011010010")
+        test(1234, "-b", "10011010010")
+        test(-1234, "-b", "-10011010010")
+        test(1234, " b", " 10011010010")
+        test(-1234, " b", "-10011010010")
+        test(1234, "+b", "+10011010010")
+        test(-1234, "+b", "-10011010010")
+
+        # make sure these are errors
+
+        # precision disallowed
+        self.assertRaises(ValueError, 3 .__format__, "1.3")
+        # sign not allowed with 'c'
+        self.assertRaises(ValueError, 3 .__format__, "+c")
+        # format spec must be string
+        self.assertRaises(TypeError, 3 .__format__, None)
+        self.assertRaises(TypeError, 3 .__format__, 0)
+
+        # ensure that only int and float type specifiers work
+        for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
+                            [chr(x) for x in range(ord('A'), ord('Z')+1)]):
+            if not format_spec in 'bcdoxXeEfFgGn%':
+                self.assertRaises(ValueError, 0 .__format__, format_spec)
+                self.assertRaises(ValueError, 1 .__format__, format_spec)
+                self.assertRaises(ValueError, (-1) .__format__, format_spec)
+
+        # ensure that float type specifiers work; format converts
+        #  the long to a float
+        for format_spec in 'eEfFgGn%':
+            for value in [0, 1, -1, 100, -100, 1234567890, -1234567890]:
+                self.assertEqual(value.__format__(format_spec),
+                                 float(value).__format__(format_spec))
+
+    def test_float__format__(self):
+        # these should be rewritten to use both format(x, spec) and
+        # x.__format__(spec)
+
+        def test(f, format_spec, result):
+            assert type(f) == float
+            assert type(format_spec) == str
+            self.assertEqual(f.__format__(format_spec), result)
+
+        test(0.0, 'f', '0.000000')
+
+        # the default is 'g', except for empty format spec
+        test(0.0, '', '0.0')
+        test(0.01, '', '0.01')
+        test(0.01, 'g', '0.01')
+
+        test( 1.0, ' g', ' 1')
+        test(-1.0, ' g', '-1')
+        test( 1.0, '+g', '+1')
+        test(-1.0, '+g', '-1')
+        test(1.1234e200, 'g', '1.1234e+200')
+        test(1.1234e200, 'G', '1.1234E+200')
+
+
+        test(1.0, 'f', '1.000000')
+
+        test(-1.0, 'f', '-1.000000')
+
+        test( 1.0, ' f', ' 1.000000')
+        test(-1.0, ' f', '-1.000000')
+        test( 1.0, '+f', '+1.000000')
+        test(-1.0, '+f', '-1.000000')
+        test(1.1234e200, 'f', '1.1234e+200')
+        test(1.1234e200, 'F', '1.1234e+200')
+
+        # temporarily removed.  see issue 1600
+ #       test( 1.0, 'e', '1.000000e+00')
+ #       test(-1.0, 'e', '-1.000000e+00')
+ #       test( 1.0, 'E', '1.000000E+00')
+ #       test(-1.0, 'E', '-1.000000E+00')
+ #       test(1.1234e20, 'e', '1.123400e+20')
+ #       test(1.1234e20, 'E', '1.123400E+20')
+
+        # % formatting
+        test(-1.0, '%', '-100.000000%')
+
+        # format spec must be string
+        self.assertRaises(TypeError, 3.0.__format__, None)
+        self.assertRaises(TypeError, 3.0.__format__, 0)
+
+        # other format specifiers shouldn't work on floats,
+        #  in particular int specifiers
+        for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
+                            [chr(x) for x in range(ord('A'), ord('Z')+1)]):
+            if not format_spec in 'eEfFgGn%':
+                self.assertRaises(ValueError, format, 0.0, format_spec)
+                self.assertRaises(ValueError, format, 1.0, format_spec)
+                self.assertRaises(ValueError, format, -1.0, format_spec)
+                self.assertRaises(ValueError, format, 1e100, format_spec)
+                self.assertRaises(ValueError, format, -1e100, format_spec)
+                self.assertRaises(ValueError, format, 1e-100, format_spec)
+                self.assertRaises(ValueError, format, -1e-100, format_spec)
+
 
 def test_main():
     run_unittest(TypesTests)

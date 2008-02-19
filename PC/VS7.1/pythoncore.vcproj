@@ -515,6 +515,9 @@
 			RelativePath="..\..\Objects\floatobject.c">
 		</File>
 		<File
+			RelativePath="..\..\Python\formatter_unicode.c">
+		</File>
+		<File
 			RelativePath="..\..\Objects\frameobject.c">
 		</File>
 		<File
