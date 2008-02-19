@@ -26,7 +26,7 @@ Types and members
 -----------------
 
 The :func:`getmembers` function retrieves the members of an object such as a
-class or module. The eleven functions whose names begin with "is" are mainly
+class or module. The fifteen functions whose names begin with "is" are mainly
 provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
 attributes:
@@ -227,6 +227,16 @@ attributes:
 .. function:: isfunction(object)
 
    Return true if the object is a Python function or unnamed (:term:`lambda`) function.
+
+
+.. function:: isgeneratorfunction(object)
+
+   Return true if the object is a Python generator function.
+
+
+.. function:: isgenerator(object)
+
+   Return true if the object is a generator.
 
 
 .. function:: istraceback(object)

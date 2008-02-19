@@ -13,10 +13,10 @@ from test import inspect_fodder2 as mod2
 
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
-# isbuiltin, isroutine, getmembers, getdoc, getfile, getmodule,
-# getsourcefile, getcomments, getsource, getclasstree, getargspec,
-# getargvalues, formatargspec, formatargvalues, currentframe, stack, trace
-# isdatadescriptor
+# isbuiltin, isroutine, isgenerator, isgeneratorfunction, getmembers,
+# getdoc, getfile, getmodule, getsourcefile, getcomments, getsource,
+# getclasstree, getargspec, getargvalues, formatargspec, formatargvalues,
+# currentframe, stack, trace, isdatadescriptor
 
 modfile = mod.__file__
 if modfile.endswith(('c', 'o')):
@@ -41,22 +41,32 @@ git = mod.StupidGit()
 class IsTestBase(unittest.TestCase):
     predicates = set([inspect.isbuiltin, inspect.isclass, inspect.iscode,
                       inspect.isframe, inspect.isfunction, inspect.ismethod,
-                      inspect.ismodule, inspect.istraceback])
+                      inspect.ismodule, inspect.istraceback,
+                      inspect.isgenerator, inspect.isgeneratorfunction])
 
     def istest(self, predicate, exp):
         obj = eval(exp)
         self.failUnless(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
 
         for other in self.predicates - set([predicate]):
+            if predicate == inspect.isgeneratorfunction and\
+               other == inspect.isfunction:
+                continue
             self.failIf(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
+def generator_function_example(self):
+    for i in range(2):
+        yield i
+
 class TestPredicates(IsTestBase):
-    def test_thirteen(self):
+    def test_fifteen(self):
         count = len([x for x in dir(inspect) if x.startswith('is')])
-        # Doc/lib/libinspect.tex claims there are 13 such functions
-        expected = 13
+        # This test is here for remember you to update Doc/library/inspect.rst
+        # which claims there are 15 such functions
+        expected = 15
         err_msg = "There are %d (not %d) is* functions" % (count, expected)
         self.assertEqual(count, expected, err_msg)
+
 
     def test_excluding_predicates(self):
         self.istest(inspect.isbuiltin, 'sys.exit')
@@ -70,6 +80,8 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.ismodule, 'mod')
         self.istest(inspect.istraceback, 'tb')
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
+        self.istest(inspect.isgenerator, '(x for x in range(2))')
+        self.istest(inspect.isgeneratorfunction, 'generator_function_example')
         if hasattr(types, 'GetSetDescriptorType'):
             self.istest(inspect.isgetsetdescriptor,
                         'type(tb.tb_frame).f_locals')

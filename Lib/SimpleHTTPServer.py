@@ -143,7 +143,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         """
         # abandon query parameters
-        path = urlparse.urlparse(path)[2]
+        path = path.split('?',1)[0]
+        path = path.split('#',1)[0]
         path = posixpath.normpath(urllib.unquote(path))
         words = path.split('/')
         words = filter(None, words)
