@@ -130,16 +130,16 @@ parse_internal_render_format_spec(PyObject *format_spec,
     }
     else if (end-ptr >= 1 && is_alignment_token(ptr[0])) {
         format->align = ptr[0];
-        ptr++;
+        ++ptr;
     }
 
     /* Parse the various sign options */
     if (end-ptr >= 1 && is_sign_element(ptr[0])) {
         format->sign = ptr[0];
-        ptr++;
+        ++ptr;
 #if ALLOW_PARENS_FOR_SIGN
         if (end-ptr >= 1 && ptr[0] == ')') {
-            ptr++;
+            ++ptr;
         }
 #endif
     }
@@ -150,7 +150,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
         if (format->align == '\0') {
             format->align = '=';
         }
-        ptr++;
+        ++ptr;
     }
 
     /* XXX add error checking */
@@ -165,7 +165,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
 
     /* Parse field precision */
     if (end-ptr && ptr[0] == '.') {
-        ptr++;
+        ++ptr;
 
         /* XXX add error checking */
         specified_width = get_integer(&ptr, end, &format->precision);
@@ -189,7 +189,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
 
     if (end-ptr == 1) {
         format->type = ptr[0];
-        ptr++;
+        ++ptr;
     }
 
     return 1;
@@ -570,7 +570,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     /* if X, convert to uppercase */
     if (format->type == 'X') {
 	Py_ssize_t t;
-	for (t = 0; t < n_digits; t++)
+	for (t = 0; t < n_digits; ++t)
 	    p[t + n_leading_chars] = STRINGLIB_TOUPPER(p[t + n_leading_chars]);
     }
 
@@ -596,37 +596,20 @@ strtounicode(Py_UNICODE *buffer, const char *charbuffer)
 {
     register Py_ssize_t i;
     Py_ssize_t len = strlen(charbuffer);
-    for (i = len - 1; i >= 0; i--)
+    for (i = len - 1; i >= 0; --i)
         buffer[i] = (Py_UNICODE) charbuffer[i];
 
     return len;
 }
 #endif
 
-/* the callback function to call to do the actual float formatting.
-   it matches the definition of PyOS_ascii_formatd */
-typedef char*
-(*DoubleSnprintfFunction)(char *buffer, size_t buf_len,
-                          const char *format, double d);
-
-/* just a wrapper to make PyOS_snprintf look like DoubleSnprintfFunction */
-static char*
-snprintf_double(char *buffer, size_t buf_len, const char *format, double d)
-{
-    PyOS_snprintf(buffer, buf_len, format, d);
-    return NULL;
-}
-
 /* see FORMATBUFLEN in unicodeobject.c */
 #define FLOAT_FORMATBUFLEN 120
 
 /* much of this is taken from unicodeobject.c */
-/* use type instead of format->type, so that it can be overridden by
-   format_number() */
 static PyObject *
-_format_float(STRINGLIB_CHAR type, PyObject *value,
-              const InternalFormatSpec *format,
-              DoubleSnprintfFunction snprintf)
+format_float_internal(PyObject *value,
+		      const InternalFormatSpec *format)
 {
     /* fmt = '%.' + `prec` + `type` + '%%'
        worst case length = 2 + 10 (len of INT_MAX) + 1 + 2 = 15 (use 20)*/
@@ -658,6 +641,7 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
     char* trailing = "";
     STRINGLIB_CHAR *p;
     NumberFieldWidths spec;
+    STRINGLIB_CHAR type = format->type;
 
 #if STRINGLIB_IS_UNICODE
     Py_UNICODE unicodebuf[FLOAT_FORMATBUFLEN];
@@ -692,8 +676,8 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
     PyOS_snprintf(fmt, sizeof(fmt), "%%.%" PY_FORMAT_SIZE_T "d%c", precision,
 		  (char)type);
 
-    /* call the passed in function to do the actual formatting */
-    snprintf(charbuf, sizeof(charbuf), fmt, x);
+    /* do the actual formatting */
+    PyOS_ascii_formatd(charbuf, sizeof(charbuf), fmt, x);
 
     /* adding trailing to fmt with PyOS_snprintf doesn't work, not
        sure why.  we'll just concatentate it here, no harm done.  we
@@ -719,8 +703,8 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
        and skip it */
     sign = p[0];
     if (sign == '-') {
-        p++;
-        n_digits--;
+        ++p;
+        --n_digits;
     }
 
     calc_number_widths(&spec, sign, n_digits, format);
@@ -742,15 +726,6 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
 
 done:
     return result;
-}
-
-static PyObject *
-format_float_internal(PyObject *value, const InternalFormatSpec *format)
-{
-    if (format->type == 'n')
-        return _format_float('f', value, format, snprintf_double);
-    else
-        return _format_float(format->type, value, format, PyOS_ascii_formatd);
 }
 #endif /* FORMAT_FLOAT */
 
