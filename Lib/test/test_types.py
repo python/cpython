@@ -89,6 +89,29 @@ class TypesTests(unittest.TestCase):
         if float(1) == 1.0 and float(-1) == -1.0 and float(0) == 0.0: pass
         else: self.fail('float() does not work properly')
 
+    def test_float_to_string(self):
+        def test(f, result):
+            self.assertEqual(f.__format__('e'), result)
+            self.assertEqual('%e' % f, result)
+
+        # test all 2 digit exponents, both with __format__ and with
+        #  '%' formatting
+        for i in range(-99, 100):
+            test(float('1.5e'+str(i)), '1.500000e{0:+03d}'.format(i))
+
+        # test some 3 digit exponents
+        self.assertEqual(1.5e100.__format__('e'), '1.500000e+100')
+        self.assertEqual('%e' % 1.5e100, '1.500000e+100')
+
+        self.assertEqual(1.5e101.__format__('e'), '1.500000e+101')
+        self.assertEqual('%e' % 1.5e101, '1.500000e+101')
+
+        self.assertEqual(1.5e-100.__format__('e'), '1.500000e-100')
+        self.assertEqual('%e' % 1.5e-100, '1.500000e-100')
+
+        self.assertEqual(1.5e-101.__format__('e'), '1.500000e-101')
+        self.assertEqual('%e' % 1.5e-101, '1.500000e-101')
+
     def test_normal_integers(self):
         # Ensure the first 256 integers are shared
         a = 256
@@ -486,16 +509,17 @@ class TypesTests(unittest.TestCase):
         test(-1.0, ' f', '-1.000000')
         test( 1.0, '+f', '+1.000000')
         test(-1.0, '+f', '-1.000000')
+        test(1.1234e90, 'f', '1.1234e+90')
+        test(1.1234e90, 'F', '1.1234e+90')
         test(1.1234e200, 'f', '1.1234e+200')
         test(1.1234e200, 'F', '1.1234e+200')
 
-        # temporarily removed.  see issue 1600
- #       test( 1.0, 'e', '1.000000e+00')
- #       test(-1.0, 'e', '-1.000000e+00')
- #       test( 1.0, 'E', '1.000000E+00')
- #       test(-1.0, 'E', '-1.000000E+00')
- #       test(1.1234e20, 'e', '1.123400e+20')
- #       test(1.1234e20, 'E', '1.123400E+20')
+        test( 1.0, 'e', '1.000000e+00')
+        test(-1.0, 'e', '-1.000000e+00')
+        test( 1.0, 'E', '1.000000E+00')
+        test(-1.0, 'E', '-1.000000E+00')
+        test(1.1234e20, 'e', '1.123400e+20')
+        test(1.1234e20, 'E', '1.123400E+20')
 
         # % formatting
         test(-1.0, '%', '-100.000000%')

@@ -12,6 +12,13 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1600: Modifed PyOS_ascii_formatd to use at most 2 digit
+  exponents for exponents with absolute value < 100.  Follows C99
+  standard.  This is a change on Windows, which would use 3 digits.
+  Also, added 'n' to the formats that PyOS_ascii_formatd understands,
+  so that any alterations it does to the resulting string will be
+  available in stringlib/formatter.h (for float.__format__).
+
 - Implemented PEP 3101, Advanced String Formatting.  This adds a new
   builtin format(); a format() method for str and unicode; a
   __format__() method to object, str, unicode, int, long, float, and
