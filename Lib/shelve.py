@@ -95,13 +95,13 @@ class Shelf(UserDict.DictMixin):
         return len(self.dict)
 
     def has_key(self, key):
-        return self.dict.has_key(key)
+        return key in self.dict
 
     def __contains__(self, key):
-        return self.dict.has_key(key)
+        return key in self.dict
 
     def get(self, key, default=None):
-        if self.dict.has_key(key):
+        if key in self.dict:
             return self[key]
         return default
 
