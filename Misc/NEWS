@@ -12,8 +12,6 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
-<<<<<<< .working
-=======
 - Issue #2115: Important speedup in setting __slot__ attributes.  Also 
   prevent a possible crash: an Abstract Base Class would try to access a slot 
   on a registered virtual subclass.
@@ -44,7 +42,6 @@ Core and Builtins
 - Issue #1678380: Fix a bug that identifies 0j and -0j when they appear
   in the same code unit.
 
->>>>>>> .merge-right.r60845
 - Issue #2025 :  Add tuple.count() and tuple.index() methods to comply with
   the collections.Sequence API.
 
@@ -87,18 +84,11 @@ Core and Builtins
   gc module; gc.DEBUG_COLLECTABLE or gc.DEBUG_UNCOLLECTABLE are now enough to
   print the corresponding list of objects considered by the garbage collector.
 
-- Issue #1580: New free format floating point representation based on 
-  "Floating-Point Printer Sample Code", by Robert G. Burger. For example
-  repr(11./5) now returns '2.2' instead of '2.2000000000000002'.
-
 - Issue #1573: Improper use of the keyword-only syntax makes the parser crash.
 
 - Issue #1564: The set implementation should special-case PyUnicode instead
   of PyString.
 
-
-<<<<<<< .working
-=======
 - Issue #1402: Fix a crash on exit, when another thread is still running, and
   if the deallocation of its frames somehow calls the PyGILState_Ensure() /
   PyGILState_Release() functions.
@@ -152,8 +142,8 @@ Core and Builtins
   instance in case normalizing an exception put the recursion check value past
   its limit.  Fixes crashers infinite_rec_(1|2|4|5).py.
 
-- Patch #1031213: Decode source line in SyntaxErrors back to its original source
-  encoding.
+- Patch #1031213: Decode source line in SyntaxErrors back to its
+  original source encoding.
 
 - Patch #1673759: add a missing overflow check when formatting floats
   with %G.
@@ -523,7 +513,8 @@ Library
 - Issue #1735: TarFile.extractall() now correctly sets directory permissions
   and times.
 
-- Bug #1713: posixpath.ismount() claims symlink to a mountpoint is a mountpoint.
+- Bug #1713: posixpath.ismount() claims symlink to a mountpoint is a
+  mountpoint.
 
 - Bug #1687: Fxed plistlib.py restricts <integer> to Python int when writing
 
@@ -1093,7 +1084,8 @@ Library
 - idle: Honor the "Cancel" action in the save dialog (Debian bug #299092).
 
 - Fix utf-8-sig incremental decoder, which didn't recognise a BOM when the
-  first chunk fed to the decoder started with a BOM, but was longer than 3 bytes.
+  first chunk fed to the decoder started with a BOM, but was longer than 3
+  bytes.
 
 - The implementation of UnicodeError objects has been simplified (start and end
   attributes are now stored directly as Py_ssize_t members).
@@ -1109,27 +1101,18 @@ Library
   method.  Patch contributed by Bill Fenner.
 
 
->>>>>>> .merge-right.r60891
 Extension Modules
 -----------------
 
-<<<<<<< .working
-<<<<<<< .working
 - Issue #1762972: Readded the reload() function as imp.reload()
-=======
-=======
+
 - #2112: mmap.error is now a subclass of EnvironmentError and not a
   direct EnvironmentError
 
->>>>>>> .merge-right.r60878
 - Bug #2111: mmap segfaults when trying to write a block opened with PROT_READ
 
 - #2063: correct order of utime and stime in os.times() result on Windows.
->>>>>>> .merge-right.r60845
 
-
-<<<<<<< .working
-=======
 - Updated ``big5hkscs`` codec to the HKSCS revision of 2004.
 
 - #1940: make it possible to use curses.filter() before curses.initscr()
@@ -1660,7 +1643,6 @@ Core and builtins
 - Fixed a reference-counting problem in property().
 
 
->>>>>>> .merge-right.r60878
 Library
 -------
 
@@ -1670,7 +1652,8 @@ Library
 - Created new UserDict class in collections module.  This one inherits from and
   complies with the MutableMapping ABC.  
 
-- Removed UserDict.DictMixin.  Replaced all its uses with collections.MutableMapping.
+- Removed UserDict.DictMixin.  Replaced all its uses with
+  collections.MutableMapping.
 
 - Issue #1703: getpass() should flush after writing prompt.
 
