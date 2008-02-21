@@ -1650,7 +1650,8 @@ Library
   XXX their API still needs to be modernized (i.e. eliminate the iter methods).
 
 - Created new UserDict class in collections module.  This one inherits from and
-  complies with the MutableMapping ABC.  
+  complies with the MutableMapping ABC.  Also, moved UserString and UserList
+  to the collections module.  The MutableUserString class was removed.
 
 - Removed UserDict.DictMixin.  Replaced all its uses with
   collections.MutableMapping.
