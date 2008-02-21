@@ -1973,45 +1973,6 @@ class BuiltinTest(unittest.TestCase):
                     return i
         self.assertRaises(ValueError, zip, BadSeq(), BadSeq())
 
-class TestSorted(unittest.TestCase):
-
-    def test_basic(self):
-        data = range(100)
-        copy = data[:]
-        random.shuffle(copy)
-        self.assertEqual(data, sorted(copy))
-        self.assertNotEqual(data, copy)
-
-        data.reverse()
-        random.shuffle(copy)
-        self.assertEqual(data, sorted(copy, cmp=lambda x, y: cmp(y,x)))
-        self.assertNotEqual(data, copy)
-        random.shuffle(copy)
-        self.assertEqual(data, sorted(copy, key=lambda x: -x))
-        self.assertNotEqual(data, copy)
-        random.shuffle(copy)
-        self.assertEqual(data, sorted(copy, reverse=1))
-        self.assertNotEqual(data, copy)
-
-    def test_inputtypes(self):
-        s = 'abracadabra'
-        types = [list, tuple]
-        if have_unicode:
-            types.insert(0, unicode)
-        for T in types:
-            self.assertEqual(sorted(s), sorted(T(s)))
-
-        s = ''.join(dict.fromkeys(s).keys())  # unique letters only
-        types = [set, frozenset, list, tuple, dict.fromkeys]
-        if have_unicode:
-            types.insert(0, unicode)
-        for T in types:
-            self.assertEqual(sorted(s), sorted(T(s)))
-
-    def test_baddecorator(self):
-        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
-        self.assertRaises(TypeError, sorted, data, None, lambda x,y: 0)
-
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
         #  the specifics of the various formatters
@@ -2106,6 +2067,45 @@ class TestSorted(unittest.TestCase):
         # make sure we can take a subclass of str as a format spec
         class DerivedFromStr(str): pass
         self.assertEqual(format(0, DerivedFromStr('10')), '         0')
+
+class TestSorted(unittest.TestCase):
+
+    def test_basic(self):
+        data = range(100)
+        copy = data[:]
+        random.shuffle(copy)
+        self.assertEqual(data, sorted(copy))
+        self.assertNotEqual(data, copy)
+
+        data.reverse()
+        random.shuffle(copy)
+        self.assertEqual(data, sorted(copy, cmp=lambda x, y: cmp(y,x)))
+        self.assertNotEqual(data, copy)
+        random.shuffle(copy)
+        self.assertEqual(data, sorted(copy, key=lambda x: -x))
+        self.assertNotEqual(data, copy)
+        random.shuffle(copy)
+        self.assertEqual(data, sorted(copy, reverse=1))
+        self.assertNotEqual(data, copy)
+
+    def test_inputtypes(self):
+        s = 'abracadabra'
+        types = [list, tuple]
+        if have_unicode:
+            types.insert(0, unicode)
+        for T in types:
+            self.assertEqual(sorted(s), sorted(T(s)))
+
+        s = ''.join(dict.fromkeys(s).keys())  # unique letters only
+        types = [set, frozenset, list, tuple, dict.fromkeys]
+        if have_unicode:
+            types.insert(0, unicode)
+        for T in types:
+            self.assertEqual(sorted(s), sorted(T(s)))
+
+    def test_baddecorator(self):
+        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
+        self.assertRaises(TypeError, sorted, data, None, lambda x,y: 0)
 
 def test_main(verbose=None):
     test_classes = (BuiltinTest, TestSorted)
