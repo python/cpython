@@ -383,6 +383,7 @@ class sdist (Command):
             if line[-1] == '\n':
                 line = line[0:-1]
             self.filelist.append(line)
+        manifest.close()
 
     # read_manifest ()
 
