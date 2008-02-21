@@ -29,7 +29,6 @@ The following modules are documented in this chapter:
    mutex.rst
    queue.rst
    weakref.rst
-   userdict.rst
    types.rst
    copy.rst
    pprint.rst

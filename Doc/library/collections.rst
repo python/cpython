@@ -706,3 +706,22 @@ If a derived class does not wish to comply with this requirement, all of the
 special methods supported by this class will need to be overridden; please
 consult the sources for information about the methods which need to be provided
 in that case.
+
+:class:`UserString` objects
+-------------------------
+
+The class, :class:`UserString` acts as a wrapper around string objects.  
+The need for this class has been partially supplanted by the ability to 
+subclass directly from :class:`str`; however, this class can be easier
+to work with because the underlying string is accessible as an
+attribute.
+
+.. class:: UserString([sequence])
+
+   Class that simulates a string or a Unicode string object.  The instance's
+   content is kept in a regular string object, which is accessible via the 
+   :attr:`data` attribute of :class:`UserString` instances.  The instance's 
+   contents are initially set to a copy of *sequence*.  The *sequence* can
+   be an instance of :class:`bytes`, :class:`str`, :class:`UserString` (or a
+   subclass) or an arbitrary sequence which can be converted into a string using
+   the built-in :func:`str` function.
