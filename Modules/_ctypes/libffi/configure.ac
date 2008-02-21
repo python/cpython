@@ -106,17 +106,6 @@ if test $ac_cv_sizeof_double != $ac_cv_sizeof_long_double; then
 fi
 AC_SUBST(HAVE_LONG_DOUBLE)
 
-AC_MSG_CHECKING(for _Bool support)
-have_c99_bool=no
-AC_TRY_COMPILE([], [_Bool x; x = (_Bool)0;], [
-  AC_DEFINE(HAVE_C99_BOOL, 1, [Define this if you have the type _Bool.]) 
-  have_c99_bool=yes
-])
-AC_MSG_RESULT($have_c99_bool)
-if test "$have_c99_bool" = yes ; then
-AC_CHECK_SIZEOF(_Bool, 1)
-fi
-
 AC_C_BIGENDIAN
 AH_VERBATIM([WORDS_BIGENDIAN],
 [
