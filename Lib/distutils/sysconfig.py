@@ -161,22 +161,22 @@ def customize_compiler(compiler):
             get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
                             'CCSHARED', 'LDSHARED', 'SO')
 
-        if os.environ.has_key('CC'):
+        if 'CC' in os.environ:
             cc = os.environ['CC']
-        if os.environ.has_key('CXX'):
+        if 'CXX' in os.environ:
             cxx = os.environ['CXX']
-        if os.environ.has_key('LDSHARED'):
+        if 'LDSHARED' in os.environ:
             ldshared = os.environ['LDSHARED']
-        if os.environ.has_key('CPP'):
+        if 'CPP' in os.environ:
             cpp = os.environ['CPP']
         else:
             cpp = cc + " -E"           # not always
-        if os.environ.has_key('LDFLAGS'):
+        if 'LDFLAGS' in os.environ:
             ldshared = ldshared + ' ' + os.environ['LDFLAGS']
-        if os.environ.has_key('CFLAGS'):
+        if 'CFLAGS' in os.environ:
             cflags = opt + ' ' + os.environ['CFLAGS']
             ldshared = ldshared + ' ' + os.environ['CFLAGS']
-        if os.environ.has_key('CPPFLAGS'):
+        if 'CPPFLAGS' in os.environ:
             cpp = cpp + ' ' + os.environ['CPPFLAGS']
             cflags = cflags + ' ' + os.environ['CPPFLAGS']
             ldshared = ldshared + ' ' + os.environ['CPPFLAGS']
@@ -291,12 +291,12 @@ def parse_makefile(fn, g=None):
             if m:
                 n = m.group(1)
                 found = True
-                if done.has_key(n):
+                if n in done:
                     item = str(done[n])
-                elif notdone.has_key(n):
+                elif n in notdone:
                     # get it on a subsequent round
                     found = False
-                elif os.environ.has_key(n):
+                elif n in os.environ:
                     # do it like make: fall back to environment
                     item = os.environ[n]
                 else:
@@ -380,7 +380,7 @@ def _init_posix():
     # MACOSX_DEPLOYMENT_TARGET: configure bases some choices on it so
     # it needs to be compatible.
     # If it isn't set we set it to the configure-time value
-    if sys.platform == 'darwin' and g.has_key('MACOSX_DEPLOYMENT_TARGET'):
+    if sys.platform == 'darwin' and 'MACOSX_DEPLOYMENT_TARGET' in g:
         cfg_target = g['MACOSX_DEPLOYMENT_TARGET']
         cur_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
         if cur_target == '':

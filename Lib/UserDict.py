@@ -55,7 +55,7 @@ class UserDict:
         if len(kwargs):
             self.data.update(kwargs)
     def get(self, key, failobj=None):
-        if not self.has_key(key):
+        if key not in self:
             return failobj
         return self[key]
     def setdefault(self, key, failobj=None):
