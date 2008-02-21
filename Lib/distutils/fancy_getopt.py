@@ -97,7 +97,7 @@ class FancyGetopt:
         self._build_index()
 
     def add_option (self, long_option, short_option=None, help_string=None):
-        if self.option_index.has_key(long_option):
+        if long_option in self.option_index:
             raise DistutilsGetoptError, \
                   "option conflict: already an option '%s'" % long_option
         else:
@@ -109,7 +109,7 @@ class FancyGetopt:
     def has_option (self, long_option):
         """Return true if the option table for this parser has an
         option with long name 'long_option'."""
-        return self.option_index.has_key(long_option)
+        return long_option in self.option_index
 
     def get_attr_name (self, long_option):
         """Translate long option name 'long_option' to the form it
@@ -121,11 +121,11 @@ class FancyGetopt:
     def _check_alias_dict (self, aliases, what):
         assert type(aliases) is DictionaryType
         for (alias, opt) in aliases.items():
-            if not self.option_index.has_key(alias):
+            if alias not in self.option_index:
                 raise DistutilsGetoptError, \
                       ("invalid %s '%s': "
                        "option '%s' not defined") % (what, alias, alias)
-            if not self.option_index.has_key(opt):
+            if opt not in self.option_index:
                 raise DistutilsGetoptError, \
                       ("invalid %s '%s': "
                        "aliased option '%s' not defined") % (what, alias, opt)

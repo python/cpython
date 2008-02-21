@@ -219,11 +219,11 @@ def check_environ ():
     if _environ_checked:
         return
 
-    if os.name == 'posix' and not os.environ.has_key('HOME'):
+    if os.name == 'posix' and 'HOME' not in os.environ:
         import pwd
         os.environ['HOME'] = pwd.getpwuid(os.getuid())[5]
 
-    if not os.environ.has_key('PLAT'):
+    if 'PLAT' not in os.environ:
         os.environ['PLAT'] = get_platform()
 
     _environ_checked = 1
@@ -241,7 +241,7 @@ def subst_vars (s, local_vars):
     check_environ()
     def _subst (match, local_vars=local_vars):
         var_name = match.group(1)
-        if local_vars.has_key(var_name):
+        if var_name in local_vars:
             return str(local_vars[var_name])
         else:
             return os.environ[var_name]

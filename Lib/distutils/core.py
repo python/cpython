@@ -101,9 +101,9 @@ def setup (**attrs):
     else:
         klass = Distribution
 
-    if not attrs.has_key('script_name'):
+    if 'script_name' not in attrs:
         attrs['script_name'] = os.path.basename(sys.argv[0])
-    if not attrs.has_key('script_args'):
+    if 'script_args' not in attrs:
         attrs['script_args'] = sys.argv[1:]
 
     # Create the Distribution instance, using the remaining arguments
@@ -111,7 +111,7 @@ def setup (**attrs):
     try:
         _setup_distribution = dist = klass(attrs)
     except DistutilsSetupError, msg:
-        if attrs.has_key('name'):
+        if 'name' in attrs:
             raise SystemExit, "error in %s setup command: %s" % \
                   (attrs['name'], msg)
         else:

@@ -423,6 +423,11 @@ Core and builtins
 Library
 -------
 
+- Removed uses of dict.has_key() from distutils, and uses of
+  callable() from copy_reg.py, so the interpreter now starts up
+  without warnings when '-3' is given.  More work like this needs to
+  be done in the rest of the stdlib.
+
 - Issue #1916. Added isgenerator() and isgeneratorfunction() to inspect.py.
 
 - #1224: Fixed bad url parsing when path begins with double slash.

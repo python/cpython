@@ -362,7 +362,7 @@ class build_ext (Command):
 
             # Medium-easy stuff: same syntax/semantics, different names.
             ext.runtime_library_dirs = build_info.get('rpath')
-            if build_info.has_key('def_file'):
+            if 'def_file' in build_info:
                 log.warn("'def_file' element of build info dict "
                          "no longer supported")
 
