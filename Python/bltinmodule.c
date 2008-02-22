@@ -209,6 +209,18 @@ Deprecated since release 2.3. Instead, use the extended call syntax:\n\
 
 
 static PyObject *
+builtin_bin(PyObject *self, PyObject *v)
+{
+        return PyNumber_ToBase(v, 2);
+}
+
+PyDoc_STRVAR(bin_doc,
+"bin(number) -> string\n\
+\n\
+Return the binary representation of an integer or long integer.");
+
+
+static PyObject *
 builtin_callable(PyObject *self, PyObject *v)
 {
 	if (Py_Py3kWarningFlag &&
@@ -2366,6 +2378,7 @@ static PyMethodDef builtin_methods[] = {
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
  	{"apply",	builtin_apply,      METH_VARARGS, apply_doc},
+	{"bin",		builtin_bin,	    METH_O, bin_doc},
  	{"callable",	builtin_callable,   METH_O, callable_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
