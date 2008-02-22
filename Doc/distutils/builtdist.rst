@@ -195,7 +195,7 @@ Distutils configuration files.  Various options and sections in the
 |                                          | or  --- & :option:`maintainer` and           |
 |                                          | :option:`maintainer_email`                   |
 +------------------------------------------+----------------------------------------------+
-| Copyright                                | :option:`licence`                            |
+| Copyright                                | :option:`license`                            |
 +------------------------------------------+----------------------------------------------+
 | Url                                      | :option:`url`                                |
 +------------------------------------------+----------------------------------------------+

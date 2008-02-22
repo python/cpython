@@ -380,7 +380,7 @@ generator function:
    generator, or raises :exc:`StopIteration` if the generator exits without
    yielding another value.  When :meth:`send` is called to start the generator,
    it must be called with :const:`None` as the argument, because there is no
-   :keyword:`yield` expression that could receieve the value.
+   :keyword:`yield` expression that could receive the value.
 
 
 .. method:: generator.throw(type[, value[, traceback]])
@@ -652,7 +652,7 @@ there were no excess keyword arguments.
 
 If the syntax ``*expression`` appears in the function call, ``expression`` must
 evaluate to a sequence.  Elements from this sequence are treated as if they were
-additional positional arguments; if there are postional arguments *x1*,...,*xN*
+additional positional arguments; if there are positional arguments *x1*,...,*xN*
 , and ``expression`` evaluates to a sequence *y1*,...,*yM*, this is equivalent
 to a call with M+N positional arguments *x1*,...,*xN*,*y1*,...,*yM*.
 

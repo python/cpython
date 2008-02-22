@@ -1089,7 +1089,7 @@ into a list with each nonempty line having its own entry::
    'Heather Albrecht 548.326.4584 919 Park Place']
 
 Finally, split each entry into a list with first name, last name, telephone
-number, and address.  We use the ``maxsplit`` paramater of :func:`split`
+number, and address.  We use the ``maxsplit`` parameter of :func:`split`
 because the address has spaces, our splitting pattern, in it::
 
    >>> [re.split(":? ", entry, 3) for entry in entries]
@@ -1099,7 +1099,7 @@ because the address has spaces, our splitting pattern, in it::
    ['Heather', 'Albrecht', '548.326.4584', '919 Park Place']]
 
 The ``:?`` pattern matches the colon after the last name, so that it does not
-occur in the result list.  With a ``maxsplit`` of ``4``, we could seperate the
+occur in the result list.  With a ``maxsplit`` of ``4``, we could separate the
 house number from the street name::
 
    >>> [re.split(":? ", entry, 4) for entry in entries]
@@ -1131,7 +1131,7 @@ in each word of a sentence except for the first and last characters::
 Finding all Adverbs
 ^^^^^^^^^^^^^^^^^^^
 
-:func:`findall` matches *all* occurences of a pattern, not just the first
+:func:`findall` matches *all* occurrences of a pattern, not just the first
 one as :func:`search` does.  For example, if one was a writer and wanted to
 find all of the adverbs in some text, he or she might use :func:`findall` in
 the following manner::

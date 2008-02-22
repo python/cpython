@@ -421,7 +421,7 @@ TreeBuilder Objects
 
 .. method:: TreeBuilder.close()
 
-   Flushes the parser buffers, and returns the toplevel documen element. Returns an
+   Flushes the parser buffers, and returns the toplevel document element. Returns an
    Element instance.
 
 

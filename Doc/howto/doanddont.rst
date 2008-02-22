@@ -81,7 +81,7 @@ from module import name1, name2
 This is a "don't" which is much weaker then the previous "don't"s but is still
 something you should not do if you don't have good reasons to do that. The
 reason it is usually bad idea is because you suddenly have an object which lives
-in two seperate namespaces. When the binding in one namespace changes, the
+in two separate namespaces. When the binding in one namespace changes, the
 binding in the other will not, so there will be a discrepancy between them. This
 happens when, for example, one module is reloaded, or changes the definition of
 a function at runtime.

@@ -5,6 +5,7 @@ from weakref import proxy
 import sys
 import operator
 import random
+from functools import reduce
 maxsize = test_support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -260,6 +261,28 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(min(ids), max(ids))
         ids = list(map(id, list(izip_longest('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
+
+    def test_product(self):
+        for args, result in [
+            ([], []),                       # zero iterables   ??? is this correct
+            (['ab'], [('a',), ('b',)]),     # one iterable
+            ([range(2), range(3)], [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2)]),     # two iterables
+            ([range(0), range(2), range(3)], []),           # first iterable with zero length
+            ([range(2), range(0), range(3)], []),           # middle iterable with zero length
+            ([range(2), range(3), range(0)], []),           # last iterable with zero length
+            ]:
+            self.assertEqual(list(product(*args)), result)
+        self.assertEqual(len(list(product(*[range(7)]*6))), 7**6)
+        self.assertRaises(TypeError, product, range(6), None)
+        argtypes = ['', 'abc', '', range(0), range(4), dict(a=1, b=2, c=3),
+                    set('abcdefg'), range(11), tuple(range(13))]
+        for i in range(100):
+            args = [random.choice(argtypes) for j in range(random.randrange(5))]
+            n = reduce(operator.mul, map(len, args), 1) if args else 0
+            self.assertEqual(len(list(product(*args))), n)
+            args = map(iter, args)
+            self.assertEqual(len(list(product(*args))), n)
+
 
     def test_repeat(self):
         self.assertEqual(lzip(range(3),repeat('a')),
@@ -635,6 +658,12 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, chain, X(s))
             self.assertRaises(TypeError, chain, N(s))
             self.assertRaises(ZeroDivisionError, list, chain(E(s)))
+
+    def test_product(self):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
+            self.assertRaises(TypeError, product, X(s))
+            self.assertRaises(TypeError, product, N(s))
+            self.assertRaises(ZeroDivisionError, product, E(s))
 
     def test_cycle(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):

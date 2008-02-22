@@ -276,7 +276,7 @@ language, but it boils down to three conditions:
   product in any way.
 
 * If something goes wrong, you can't sue for damages.  Practically all software
-  licences contain this condition.
+  licenses contain this condition.
 
 Notice that you don't have to provide source code for anything that contains
 Python or is built with it.  Also, the Python interpreter and accompanying

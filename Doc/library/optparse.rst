@@ -1629,7 +1629,7 @@ arguments::
                value.append(arg)
                del rargs[0]
 
-        setattr(parser.values, option.dest, value)
+       setattr(parser.values, option.dest, value)
 
    [...]
    parser.add_option("-c", "--callback",

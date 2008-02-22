@@ -41,7 +41,7 @@ can include messages from third-party modules.
 It is, of course, possible to log messages with different verbosity levels or to
 different destinations.  Support for writing log messages to files, HTTP
 GET/POST locations, email via SMTP, generic sockets, or OS-specific logging
-mechnisms are all supported by the standard module.  You can also create your
+mechanisms are all supported by the standard module.  You can also create your
 own log destination class if you have special requirements not met by any of the
 built-in classes.
 
@@ -265,7 +265,7 @@ destination.  Logger objects can add zero or more handler objects to themselves
 with an :func:`addHandler` method.  As an example scenario, an application may
 want to send all log messages to a log file, all log messages of error or higher
 to stdout, and all messages of critical to an email address.  This scenario
-requires three individual handlers where each hander is responsible for sending
+requires three individual handlers where each handler is responsible for sending
 messages of a specific severity to a specific location.
 
 The standard library includes quite a few handler types; this tutorial uses only

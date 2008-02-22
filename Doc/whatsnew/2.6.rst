@@ -560,7 +560,7 @@ doing ``isinstance(obj, Number)``.
 Numbers are further divided into :class:`Exact` and :class:`Inexact`.
 Exact numbers can represent values precisely and operations never
 round off the results or introduce tiny errors that may break the
-communtativity and associativity properties; inexact numbers may
+commutativity and associativity properties; inexact numbers may
 perform such rounding or introduce small errors.  Integers, long
 integers, and rational numbers are exact, while floating-point 
 and complex numbers are inexact.
@@ -707,8 +707,10 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   Other functions in the :mod:`math` module, :func:`isinf` and
   :func:`isnan`, return true if their floating-point argument is
-  infinite or Not A Number.  
+  infinite or Not A Number.
+
   .. Patch 1640
+
   The ``math.copysign(x, y)`` function
   copies the sign bit of an IEEE 754 number, returning the absolute
   value of *x* combined with the sign bit of *y*.  For example,
@@ -1078,7 +1080,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * Integrating signal handling with GUI handling event loops 
   like those used by Tkinter or GTk+ has long been a problem; most
-  software ends up polling, waking up every fraction of a second.  Thi
+  software ends up polling, waking up every fraction of a second.
   The :mod:`signal` module can now make this more efficient.
   Calling ``signal.set_wakeup_fd(fd)`` sets a file descriptor
   to be used; when a signal is received, a byte is written to that 
@@ -1293,7 +1295,8 @@ complete list of changes, or look through the CVS logs for all the details.
     z.extractall()
 
   (Contributed by Alan McIntyre.)
-  .. % Patch 467924
+
+  .. Patch 467924
 
 .. ======================================================================
 .. whole new modules get described in subsections here
@@ -1392,7 +1395,7 @@ Changes to Python's build process and to the C API include:
   .. Issue 1534
 
 * Python's C API now includes two functions for case-insensitive string
-  comparisions, ``PyOS_stricmp(char*, char*)``
+  comparisons, ``PyOS_stricmp(char*, char*)``
   and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
   (Contributed by Christian Heimes.)
 
