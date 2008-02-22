@@ -357,7 +357,7 @@ thing to do - give it a nice long timeout (say a minute) unless you have good
 reason to do otherwise.
 
 In return, you will get three lists. They have the sockets that are actually
-readable, writable and in error. Each of these lists is a subset (possbily
+readable, writable and in error. Each of these lists is a subset (possibly
 empty) of the corresponding list you passed in. And if you put a socket in more
 than one input list, it will only be (at most) in one output list.
 
@@ -371,7 +371,7 @@ just means outbound network buffer space is available.)
 If you have a "server" socket, put it in the potential_readers list. If it comes
 out in the readable list, your ``accept`` will (almost certainly) work. If you
 have created a new socket to ``connect`` to someone else, put it in the
-ptoential_writers list. If it shows up in the writable list, you have a decent
+potential_writers list. If it shows up in the writable list, you have a decent
 chance that it has connected.
 
 One very nasty problem with ``select``: if somewhere in those input lists of

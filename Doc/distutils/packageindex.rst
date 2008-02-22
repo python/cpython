@@ -53,13 +53,13 @@ the web interface.
 The .pypirc file
 ================
 
-The format of the :file:`.pypirc` file is formated as follows::
+The format of the :file:`.pypirc` file is as follows::
 
    [server-login]
    repository: <repository-url>
    username: <username>
    password: <password>
 
-*repository* can be ommitted and defaults to ``http://www.python.org/pypi``.
+*repository* can be omitted and defaults to ``http://www.python.org/pypi``.
 
 

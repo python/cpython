@@ -905,7 +905,7 @@ returns them in a tuple::
     itertools.izip(['a', 'b', 'c'], (1, 2, 3)) =>
       ('a', 1), ('b', 2), ('c', 3)
 
-It's similiar to the built-in :func:`zip` function, but doesn't construct an
+It's similar to the built-in :func:`zip` function, but doesn't construct an
 in-memory list and exhaust all the input iterators before returning; instead
 tuples are constructed and returned only if they're requested.  (The technical
 term for this behaviour is `lazy evaluation

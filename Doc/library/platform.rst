@@ -245,7 +245,7 @@ Unix Platforms
    version)`` which default to the given parameters in case the lookup fails.
 
    Note that this function has intimate knowledge of how different libc versions
-   add symbols to the executable is probably only useable for executables compiled
+   add symbols to the executable is probably only usable for executables compiled
    using :program:`gcc`.
 
    The file is read and scanned in chunks of *chunksize* bytes.

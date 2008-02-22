@@ -8,7 +8,7 @@ Buffer Protocol
 
 .. cfunction:: int PyObject_AsCharBuffer(PyObject *obj, const char **buffer, Py_ssize_t *buffer_len)
 
-   Returns a pointer to a read-only memory location useable as character- based
+   Returns a pointer to a read-only memory location usable as character-based
    input.  The *obj* argument must support the single-segment character buffer
    interface.  On success, returns ``0``, sets *buffer* to the memory location and
    *buffer_len* to the buffer length.  Returns ``-1`` and sets a :exc:`TypeError`

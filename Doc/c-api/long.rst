@@ -174,6 +174,6 @@ Long Integer Objects
    .. versionadded:: 1.5.2
 
    .. versionchanged:: 2.5
-      For values outside 0..LONG_MAX, both signed and unsigned integers are acccepted.
+      For values outside 0..LONG_MAX, both signed and unsigned integers are accepted.
 
 

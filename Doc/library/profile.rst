@@ -531,7 +531,7 @@ The :class:`Stats` Class
      non-parenthesized number repeats the cumulative time spent in the function
      at the right.
 
-   * With :mod:`cProfile`, each caller is preceeded by three numbers: the number of
+   * With :mod:`cProfile`, each caller is preceded by three numbers: the number of
      times this specific call was made, and the total and cumulative times spent in
      the current function while it was invoked by this specific caller.
 

@@ -531,7 +531,7 @@ implementation details.
 
 .. rubric:: Footnotes
 
-.. [#] The exception is propogated to the invocation stack only if there is no
+.. [#] The exception is propagated to the invocation stack only if there is no
    :keyword:`finally` clause that negates the exception.
 
 .. [#] Currently, control "flows off the end" except in the case of an exception or the
