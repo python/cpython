@@ -51,8 +51,12 @@ blog at artima.com:
 
     http://www.artima.com/weblogs/index.jsp?blogger=guido
 
-We'll eventually have a comprehensive overview of the changes in a
-"What's New in Python 3.0" document.  Please help write it!
+We try to eventually have a comprehensive overview of the changes in
+the "What's New in Python 3.0" document, found at
+
+    http://docs.python.org/dev/3.0/whatsnew/3.0
+
+Please help write it!
 
 
 What's New Since 3.0a1
