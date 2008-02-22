@@ -61,7 +61,7 @@ support weak references but can add support through subclassing::
    class Dict(dict):
        pass
 
-   obj = Dict(red=1, green=2, blue=3)   # this object is weak referencable
+   obj = Dict(red=1, green=2, blue=3)   # this object is weak referenceable
 
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.

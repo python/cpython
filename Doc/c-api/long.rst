@@ -190,7 +190,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
 
 .. cfunction:: void* PyLong_AsVoidPtr(PyObject *pylong)
 
-   Convert a Python integer *pylong* to a C :ctype:`void` pointer.  If *pylong*
-   cannot be converted, an :exc:`OverflowError` will be raised.  This is only
-   assured to produce a usable :ctype:`void` pointer for values created with
-   :cfunc:`PyLong_FromVoidPtr`.
+   Convert a Python integer *pylong* to a C :ctype:`void` pointer.
+   If *pylong* cannot be converted, an :exc:`OverflowError` will be raised.  This
+   is only assured to produce a usable :ctype:`void` pointer for values created
+   with :cfunc:`PyLong_FromVoidPtr`.

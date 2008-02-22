@@ -357,6 +357,7 @@ class sdist (Command):
             if line[-1] == '\n':
                 line = line[0:-1]
             self.filelist.append(line)
+        manifest.close()
 
     def make_release_tree(self, base_dir, files):
         """Create the directory tree that will become the source

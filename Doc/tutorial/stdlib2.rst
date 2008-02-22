@@ -269,7 +269,7 @@ applications include caching objects that are expensive to create::
    0
    >>> d['primary']                # entry was automatically removed
    Traceback (most recent call last):
-     File "<pyshell#108>", line 1, in -toplevel-
+     File "<stdin>", line 1, in <module>
        d['primary']                # entry was automatically removed
      File "C:/python30/lib/weakref.py", line 46, in __getitem__
        o = self.data[key]()

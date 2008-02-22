@@ -147,11 +147,11 @@ class CCompiler:
         # discovered at run-time, since there are many different ways to do
         # basically the same things with Unix C compilers.
 
-        for key, value in kwargs.items():
+        for key in kwargs:
             if key not in self.executables:
-                raise ValueError("unknown executable '%s' for class %s" % \
+                raise ValueError("unknown executable '%s' for class %s" %
                       (key, self.__class__.__name__))
-            self.set_executable(key, value)
+            self.set_executable(key, kwargs[key])
 
     def set_executable(self, key, value):
         if isinstance(value, str):

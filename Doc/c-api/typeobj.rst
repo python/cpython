@@ -560,7 +560,7 @@ The following three fields only exist if the
    The :attr:`tp_traverse` pointer is used by the garbage collector to detect
    reference cycles. A typical implementation of a :attr:`tp_traverse` function
    simply calls :cfunc:`Py_VISIT` on each of the instance's members that are Python
-   objects.  For exampe, this is function :cfunc:`local_traverse` from the
+   objects.  For example, this is function :cfunc:`local_traverse` from the
    :mod:`thread` extension module::
 
       static int
