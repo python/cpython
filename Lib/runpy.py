@@ -89,6 +89,9 @@ def _get_module_details(mod_name):
 
 
 # XXX ncoghlan: Should this be documented and made public?
+# (Current thoughts: don't repeat the mistake that lead to its
+# creation when run_module() no longer met the needs of
+# mainmodule.c, but couldn't be changed because it was public)
 def _run_module_as_main(mod_name, set_argv0=True):
     """Runs the designated module in the __main__ namespace
 
@@ -96,7 +99,20 @@ def _run_module_as_main(mod_name, set_argv0=True):
            __file__
            __loader__
     """
-    loader, code, fname = _get_module_details(mod_name)
+    try:
+        loader, code, fname = _get_module_details(mod_name)
+    except ImportError as exc:
+        # Try to provide a good error message
+        # for directories, zip files and the -m switch
+        if set_argv0:
+            # For -m switch, just disply the exception
+            info = str(exc)
+        else:
+            # For directories/zipfiles, let the user
+            # know what the code was looking for
+            info = "can't find '__main__.py' in %r" % sys.argv[0]
+        msg = "%s: %s" % (sys.executable, info)
+        sys.exit(msg)
     pkg_name = mod_name.rpartition('.')[0]
     main_globals = sys.modules["__main__"].__dict__
     if set_argv0:
