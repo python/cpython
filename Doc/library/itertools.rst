@@ -302,6 +302,29 @@ loops that truncate the stream.
 
    .. versionadded:: 2.6
 
+.. function:: product(*iterables)
+
+   Cartesian product of input iterables.
+
+   Equivalent to nested for-loops in a generator expression. For example,
+   ``product(A, B)`` returns the same as ``((x,y) for x in A for y in B)``.
+
+   The leftmost iterators are in the outermost for-loop, so the output tuples
+   cycle in a manner similar to an odometer (with the rightmost element
+   changing on every iteration).
+
+   Equivalent to (but without building the entire result in memory)::
+
+       def product(*args):
+           pools = map(tuple, args)
+           if pools:            
+               result = [[]]
+               for pool in pools:
+                   result = [x+[y] for x in result for y in pool]
+               for prod in result:
+                   yield tuple(prod)
+
+   .. versionadded:: 2.6
 
 .. function:: repeat(object[, times])
 
