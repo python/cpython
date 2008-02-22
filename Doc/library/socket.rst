@@ -929,5 +929,5 @@ the interface::
    # receive a package
    print s.recvfrom(65565)
    
-   # disabled promiscous mode
+   # disabled promiscuous mode
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)

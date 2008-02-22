@@ -470,7 +470,7 @@ they add the ability to access fields by name instead of position index.
 .. function:: namedtuple(typename, fieldnames, [verbose])
 
    Returns a new tuple subclass named *typename*.  The new subclass is used to
-   create tuple-like objects that have fields accessable by attribute lookup as
+   create tuple-like objects that have fields accessible by attribute lookup as
    well as being indexable and iterable.  Instances of the subclass also have a
    helpful docstring (with typename and fieldnames) and a helpful :meth:`__repr__`
    method which lists the tuple contents in a ``name=value`` format.
@@ -536,7 +536,7 @@ Example::
    >>> x, y = p                # unpack like a regular tuple
    >>> x, y
    (11, 22)
-   >>> p.x + p.y               # fields also accessable by name
+   >>> p.x + p.y               # fields also accessible by name
    33
    >>> p                       # readable __repr__ with a name=value style
    Point(x=11, y=22)

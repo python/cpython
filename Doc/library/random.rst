@@ -98,7 +98,7 @@ Bookkeeping functions:
    Change the internal state to one different from and likely far away from the
    current state.  *n* is a non-negative integer which is used to scramble the
    current state vector.  This is most useful in multi-threaded programs, in
-   conjuction with multiple instances of the :class:`Random` class:
+   conjunction with multiple instances of the :class:`Random` class:
    :meth:`setstate` or :meth:`seed` can be used to force all instances into the
    same internal state, and then :meth:`jumpahead` can be used to force the
    instances' states far apart.

@@ -1609,7 +1609,7 @@ of significant places in the coefficient.  For example, expressing
 original's two-place significance.
 
 If an application does not care about tracking significance, it is easy to
-remove the exponent and trailing zeroes, losing signficance, but keeping the
+remove the exponent and trailing zeroes, losing significance, but keeping the
 value unchanged::
 
     >>> def remove_exponent(d):

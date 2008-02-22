@@ -17,7 +17,7 @@ write a Python extension module, and the :ref:`c-api-index` describes the
 interfaces available to C/C++ programmers in detail.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    introduction.rst
    lexical_analysis.rst

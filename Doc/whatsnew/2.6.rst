@@ -560,7 +560,7 @@ doing ``isinstance(obj, Number)``.
 Numbers are further divided into :class:`Exact` and :class:`Inexact`.
 Exact numbers can represent values precisely and operations never
 round off the results or introduce tiny errors that may break the
-communtativity and associativity properties; inexact numbers may
+commutativity and associativity properties; inexact numbers may
 perform such rounding or introduce small errors.  Integers, long
 integers, and rational numbers are exact, while floating-point 
 and complex numbers are inexact.
@@ -1395,7 +1395,7 @@ Changes to Python's build process and to the C API include:
   .. Issue 1534
 
 * Python's C API now includes two functions for case-insensitive string
-  comparisions, ``PyOS_stricmp(char*, char*)``
+  comparisons, ``PyOS_stricmp(char*, char*)``
   and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
   (Contributed by Christian Heimes.)
 

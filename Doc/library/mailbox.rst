@@ -433,7 +433,7 @@ the original. In the interest of compatibility, :class:`mbox` implements the
 original format, which is sometimes referred to as :dfn:`mboxo`. This means that
 the :mailheader:`Content-Length` header, if present, is ignored and that any
 occurrences of "From " at the beginning of a line in a message body are
-transformed to ">From " when storing the message, although occurences of ">From
+transformed to ">From " when storing the message, although occurrences of ">From
 " are not transformed to "From " when reading the message.
 
 Some :class:`Mailbox` methods implemented by :class:`mbox` deserve special
@@ -581,7 +581,7 @@ remarks:
 
 .. method:: MH.close()
 
-   :class:`MH` instances do not keep any open files, so this method is equivelant
+   :class:`MH` instances do not keep any open files, so this method is equivalent
    to :meth:`unlock`.
 
 
