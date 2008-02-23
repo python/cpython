@@ -82,11 +82,7 @@ class Popen3:
     def _run_child(self, cmd):
         if isinstance(cmd, basestring):
             cmd = ['/bin/sh', '-c', cmd]
-        for i in xrange(3, MAXFD):
-            try:
-                os.close(i)
-            except OSError:
-                pass
+        os.closerange(3, MAXFD)
         try:
             os.execvp(cmd[0], cmd)
         finally:
