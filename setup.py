@@ -417,6 +417,9 @@ class PyBuildExt(build_ext):
                                libraries=math_libs) )
         exts.append( Extension('datetime', ['datetimemodule.c', 'timemodule.c'],
                                libraries=math_libs) )
+        # code that will be builtins in the future, but conflict with the
+        #  current builtins
+        exts.append( Extension('future_builtins', ['future_builtins.c']) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # fast iterator tools implemented in C

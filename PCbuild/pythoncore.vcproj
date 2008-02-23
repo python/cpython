@@ -1051,6 +1051,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Modules\future_builtins.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Modules\gcmodule.c"
 				>
 			</File>

@@ -12,6 +12,14 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Added the future_builtins module, which contains hex() and oct().
+  These are the PEP 3127 version of these functions, designed to be
+  compatible with the hex() and oct() builtins from Python 3.0.  They
+  differ slightly in their output formats from the existing, unchanged
+  Python 2.6 builtins.  The expected usage of the future_builtins
+  module is:
+    from future_builtins import hex, oct
+
 - Issue #1600: Modifed PyOS_ascii_formatd to use at most 2 digit
   exponents for exponents with absolute value < 100.  Follows C99
   standard.  This is a change on Windows, which would use 3 digits.
