@@ -305,7 +305,7 @@ class _fileobject(object):
             self._rbuf = ""
             while True:
                 left = size - buf_len
-                recv_size = max(self._rbufsize, left)
+                recv_size = min(self._rbufsize, left)
                 data = self._sock.recv(recv_size)
                 if not data:
                     break
