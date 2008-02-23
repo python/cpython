@@ -1,6 +1,7 @@
 # xml.etree test for cElementTree
 
-import doctest, sys
+import doctest
+import sys
 
 from test import test_support
 

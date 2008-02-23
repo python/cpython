@@ -2,7 +2,6 @@
 
 from distutils import sysconfig
 import os
-import sys
 import unittest
 
 from test.test_support import TESTFN

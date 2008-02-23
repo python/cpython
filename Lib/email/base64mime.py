@@ -35,7 +35,6 @@ __all__ = [
     'header_length',
     ]
 
-import re
 
 from base64 import b64encode
 from binascii import b2a_base64, a2b_base64

@@ -7,9 +7,7 @@ copy(src, dst) - Full copy of 'src' to 'dst'
 from Carbon import Res
 from Carbon import File, Files
 import os
-import sys
 import MacOS
-import time
 try:
     openrf = MacOS.openrf
 except AttributeError:

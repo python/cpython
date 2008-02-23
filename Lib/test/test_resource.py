@@ -1,7 +1,6 @@
 import unittest
 from test import test_support
 
-import os
 import resource
 import time
 

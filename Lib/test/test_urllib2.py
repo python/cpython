@@ -1,7 +1,7 @@
 import unittest
 from test import test_support
 
-import os, socket
+import os
 import io
 
 import urllib2
@@ -584,7 +584,7 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):
-        import time, rfc822, socket
+        import rfc822, socket
         h = urllib2.FileHandler()
         o = h.parent = MockOpener()
 
@@ -988,7 +988,7 @@ class HandlerTests(unittest.TestCase):
     def _test_basic_auth(self, opener, auth_handler, auth_header,
                          realm, http_handler, password_manager,
                          request_url, protected_url):
-        import base64, httplib
+        import base64
         user, password = "wile", "coyote"
 
         # .add_password() fed through to password manager

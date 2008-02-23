@@ -9,7 +9,6 @@ except ImportError:
 
 import time
 import os
-import sys
 import unittest
 import warnings
 warnings.filterwarnings('ignore', '.* potential security risk .*',

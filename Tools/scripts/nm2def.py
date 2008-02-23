@@ -34,7 +34,7 @@ Even if this isn't the default output of your nm, there is generally an
 option to produce this format (since it is the original v7 Unix format).
 
 """
-import os,re,sys
+import os, sys
 
 PYTHONLIB = 'libpython'+sys.version[:3]+'.a'
 PC_PYTHONLIB = 'Python'+sys.version[0]+sys.version[2]+'.dll'

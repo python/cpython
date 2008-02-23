@@ -24,8 +24,7 @@ Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, socket, os, struct, time, glob
-import pickle
+import logging, socket, os, pickle, struct, time, glob
 from stat import ST_DEV, ST_INO
 
 try:

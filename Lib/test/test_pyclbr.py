@@ -3,7 +3,7 @@
    Nick Mathewson
 '''
 from test.test_support import run_unittest
-import unittest, sys
+import sys
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase

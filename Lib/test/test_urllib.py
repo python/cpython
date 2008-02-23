@@ -8,10 +8,6 @@ from test import test_support
 import os
 import mimetools
 import tempfile
-import ftplib
-import threading
-import socket
-import time
 
 def hexescape(char):
     """Escape char as RFC 2396 specifies"""

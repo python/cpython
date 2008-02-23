@@ -6,7 +6,7 @@ Nick Mathewson
 import unittest
 from test.test_support import verbose, TESTFN, run_unittest
 from test.test_support import unlink as safe_unlink
-import sys, os, re
+import sys, re
 from io import StringIO
 from fileinput import FileInput, hook_encoded
 

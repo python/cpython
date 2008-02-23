@@ -4,7 +4,7 @@
 #   Common Unittest Routines for CJK codecs
 #
 
-import sys, codecs, os.path
+import sys, codecs
 import unittest, re
 from test import test_support
 from io import BytesIO

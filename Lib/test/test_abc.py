@@ -3,7 +3,6 @@
 
 """Unit tests for abc.py."""
 
-import sys
 import unittest
 from test import test_support
 

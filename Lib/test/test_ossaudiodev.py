@@ -1,14 +1,11 @@
 from test import test_support
 test_support.requires('audio')
 
-from test.test_support import verbose, findfile, TestSkipped
+from test.test_support import findfile, TestSkipped
 
 import errno
-import fcntl
 import ossaudiodev
-import os
 import sys
-import select
 import sunaudio
 import time
 import audioop

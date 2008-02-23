@@ -20,7 +20,6 @@ barrier, in particular frame and traceback objects.
 
 """
 
-import sys
 import types
 from idlelib import rpc
 from idlelib import Debugger

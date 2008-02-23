@@ -218,7 +218,6 @@ def _go():
                   0, 'Save', 'Save as text'))
 
 def _test():
-    import sys
     global mainWidget
     mainWidget = Frame()
     Pack.config(mainWidget)

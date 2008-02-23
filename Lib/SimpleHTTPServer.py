@@ -14,7 +14,6 @@ import os
 import posixpath
 import BaseHTTPServer
 import urllib
-import urlparse
 import cgi
 import shutil
 import mimetypes

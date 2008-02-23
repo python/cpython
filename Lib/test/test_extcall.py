@@ -1,4 +1,4 @@
-from test.test_support import verify, verbose, TestFailed, sortdict
+from test.test_support import verify, TestFailed, sortdict
 from collections import UserDict, UserList
 
 def e(a, b):

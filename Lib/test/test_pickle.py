@@ -1,5 +1,4 @@
 import pickle
-import unittest
 import io
 
 from test import test_support

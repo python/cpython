@@ -1511,6 +1511,15 @@ code:
 
   .. Issue 1706815
 
+* The :mod:`xmlrpclib` module no longer automatically converts
+  :class:`datetime.date` and :class:`datetime.time` to the 
+  :class:`xmlrpclib.DateTime` type; the conversion semantics were
+  not necessarily correct for all applications.  Code using
+  :mod:`xmlrpclib` should convert :class:`date` and :class:`time` 
+  instances.
+
+  .. Issue 1330538
+
 .. ======================================================================
 
 

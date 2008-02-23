@@ -100,9 +100,10 @@ syslog_syslog(PyObject * self, PyObject * args)
 	message = PyUnicode_AsString(message_object);
 	if (message == NULL)
 		return NULL;
+	Py_BEGIN_ALLOW_THREADS;
 	syslog(priority, "%s", message);
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_END_ALLOW_THREADS;
+	Py_RETURN_NONE;
 }
 
 static PyObject * 

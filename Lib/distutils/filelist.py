@@ -8,7 +8,6 @@ __revision__ = "$Id$"
 
 import os, re
 import fnmatch
-from glob import glob
 from distutils.util import convert_path
 from distutils.errors import DistutilsTemplateError, DistutilsInternalError
 from distutils import log
