@@ -10,8 +10,8 @@ module Python version "$Revision$"
 	    | Suite(stmt* body)
 
 	stmt = FunctionDef(identifier name, arguments args, 
-                           stmt* body, expr* decorators)
-	      | ClassDef(identifier name, expr* bases, stmt* body)
+                            stmt* body, expr* decorator_list)
+	      | ClassDef(identifier name, expr* bases, stmt* body, expr *decorator_list)
 	      | Return(expr? value)
 
 	      | Delete(expr* targets)

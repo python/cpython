@@ -1362,7 +1362,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 	PyCodeObject *co;
 	PyObject *first_const = Py_None;
 	arguments_ty args = s->v.FunctionDef.args;
-	asdl_seq* decos = s->v.FunctionDef.decorators;
+	asdl_seq* decos = s->v.FunctionDef.decorator_list;
 	stmt_ty st;
 	int i, n, docstring;
 
@@ -1413,9 +1413,14 @@ compiler_function(struct compiler *c, stmt_ty s)
 static int
 compiler_class(struct compiler *c, stmt_ty s)
 {
-	int n;
+	int n, i;
 	PyCodeObject *co;
 	PyObject *str;
+	asdl_seq* decos = s->v.ClassDef.decorator_list;
+	
+	if (!compiler_decorators(c, decos))
+		return 0;
+
 	/* push class name on stack, needed by BUILD_CLASS */
 	ADDOP_O(c, LOAD_CONST, s->v.ClassDef.name, consts);
 	/* push the tuple of base classes on the stack */
@@ -1461,6 +1466,10 @@ compiler_class(struct compiler *c, stmt_ty s)
 
 	ADDOP_I(c, CALL_FUNCTION, 0);
 	ADDOP(c, BUILD_CLASS);
+	/* apply decorators */
+	for (i = 0; i < asdl_seq_LEN(decos); i++) {
+		ADDOP_I(c, CALL_FUNCTION, 1);
+	}
 	if (!compiler_nameop(c, s->v.ClassDef.name, Store))
 		return 0;
 	return 1;

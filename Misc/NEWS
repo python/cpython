@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1759: Backport of PEP 3129 class decorators
+
 - Issue #1881: An internal parser limit has been increased. Also see 
   issue 215555 for a discussion.
 
