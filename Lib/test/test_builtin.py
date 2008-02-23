@@ -1829,6 +1829,15 @@ class BuiltinTest(unittest.TestCase):
                     return i
         self.assertRaises(ValueError, list, zip(BadSeq(), BadSeq()))
 
+    def test_bin(self):
+        self.assertEqual(bin(0), '0b0')
+        self.assertEqual(bin(1), '0b1')
+        self.assertEqual(bin(-1), '-0b1')
+        self.assertEqual(bin(2**65), '0b1' + '0' * 65)
+        self.assertEqual(bin(2**65-1), '0b' + '1' * 65)
+        self.assertEqual(bin(-(2**65)), '-0b1' + '0' * 65)
+        self.assertEqual(bin(-(2**65-1)), '-0b' + '1' * 65)
+
 class TestSorted(unittest.TestCase):
 
     def test_basic(self):
