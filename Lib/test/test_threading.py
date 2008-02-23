@@ -8,6 +8,7 @@ import threading
 import thread
 import time
 import unittest
+import weakref
 
 # A trivial mutable counter.
 class Counter(object):
@@ -252,6 +253,25 @@ class ThreadTests(unittest.TestCase):
                     "#1703448 triggered after %d trials: %s" % (i, l))
         finally:
             sys.setcheckinterval(old_interval)
+
+    def test_no_refcycle_through_target(self):
+        class RunSelfFunction(object):
+            def __init__(self):
+                # The links in this refcycle from Thread back to self
+                # should be cleaned up when the thread completes.
+                self.thread = threading.Thread(target=self._run,
+                                               args=(self,),
+                                               kwargs={'yet_another':self})
+                self.thread.start()
+
+            def _run(self, other_ref, yet_another):
+                pass
+
+        cyclic_object = RunSelfFunction()
+        weak_cyclic_object = weakref.ref(cyclic_object)
+        cyclic_object.thread.join()
+        del cyclic_object
+        self.assertEquals(None, weak_cyclic_object())
 
 
 class ThreadingExceptionTests(unittest.TestCase):
