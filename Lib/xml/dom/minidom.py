@@ -203,6 +203,8 @@ class Node(xml.dom.Node):
                 L.append(child)
                 if child.nodeType == Node.ELEMENT_NODE:
                     child.normalize()
+        if L:
+            L[-1].nextSibling = None
         self.childNodes[:] = L
 
     def cloneNode(self, deep):
