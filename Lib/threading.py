@@ -442,11 +442,13 @@ class Thread(_Verbose):
         _sleep(0.000001)    # 1 usec, to let the thread run (Solaris hack)
 
     def run(self):
-        if self.__target:
-            self.__target(*self.__args, **self.__kwargs)
-        # Avoid a refcycle if the thread is running a function with an
-        # argument that has a member that points to the thread.
-        del self.__target, self.__args, self.__kwargs
+        try:
+            if self.__target:
+                self.__target(*self.__args, **self.__kwargs)
+        finally:
+            # Avoid a refcycle if the thread is running a function with
+            # an argument that has a member that points to the thread.
+            del self.__target, self.__args, self.__kwargs
 
     def __bootstrap(self):
         # Wrapper around the real bootstrap code that ignores
