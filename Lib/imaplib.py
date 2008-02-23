@@ -1156,7 +1156,7 @@ else:
             chunks = []
             read = 0
             while read < size:
-                data = self.sslobj.read(size-read)
+                data = self.sslobj.read(min(size-read, 16384))
                 read += len(data)
                 chunks.append(data)
 
