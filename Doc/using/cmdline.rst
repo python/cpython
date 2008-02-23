@@ -326,6 +326,8 @@ Miscellaneous options
    * :func:`reduce`
    * :func:`reload`
 
+   Using these will emit a :exc:`DeprecationWarning`.
+
    .. versionadded:: 2.6
 
 
