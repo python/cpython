@@ -652,8 +652,8 @@ of that class.
 
 .. method:: Element.removeAttribute(name)
 
-   Remove an attribute by name.  No exception is raised if there is no matching
-   attribute.
+   Remove an attribute by name.  If there is no matching attribute, a
+   :exc:`NotFoundErr` is raised.
 
 
 .. method:: Element.removeAttributeNode(oldAttr)
