@@ -436,6 +436,9 @@ Core and builtins
 Library
 -------
 
+- #1492: The content type of BaseHTTPServer error messages can now be
+  overridden.
+
 - Issue 1781: ConfigParser now does not let you add the "default" section
   (ignore-case)
 

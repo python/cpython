@@ -122,6 +122,15 @@ to a handler.  Code to create and run the server looks like this::
    class variable.
 
 
+.. attribute:: BaseHTTPRequestHandler.error_content_type
+
+   Specifies the Content-Type HTTP header of error responses sent to the client.
+   The default value is ``'text/html'``.
+
+   .. versionadded:: 2.6
+      Previously, the content type was always ``'text/html'``.
+
+
 .. attribute:: BaseHTTPRequestHandler.protocol_version
 
    This specifies the HTTP protocol version used in responses.  If set to
