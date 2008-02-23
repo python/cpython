@@ -102,6 +102,9 @@ Core and builtins
 Library
 -------
 
+- curses.textpad: Fix off-by-one error that resulted in characters
+  being missed from the contents of a Textbox.
+
 - Patch #1966: Break infinite loop in httplib when the servers
   implements the chunked encoding incorrectly.
 
