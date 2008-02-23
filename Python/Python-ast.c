@@ -42,13 +42,14 @@ static char *FunctionDef_fields[]={
         "name",
         "args",
         "body",
-        "decorators",
+        "decorator_list",
 };
 static PyTypeObject *ClassDef_type;
 static char *ClassDef_fields[]={
         "name",
         "bases",
         "body",
+        "decorator_list",
 };
 static PyTypeObject *Return_type;
 static char *Return_fields[]={
@@ -469,7 +470,7 @@ static int init_types(void)
         FunctionDef_type = make_type("FunctionDef", stmt_type,
                                      FunctionDef_fields, 4);
         if (!FunctionDef_type) return 0;
-        ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 3);
+        ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 4);
         if (!ClassDef_type) return 0;
         Return_type = make_type("Return", stmt_type, Return_fields, 1);
         if (!Return_type) return 0;
@@ -790,7 +791,7 @@ Suite(asdl_seq * body, PyArena *arena)
 
 stmt_ty
 FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
-            decorators, int lineno, int col_offset, PyArena *arena)
+            decorator_list, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -810,15 +811,15 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
         p->v.FunctionDef.name = name;
         p->v.FunctionDef.args = args;
         p->v.FunctionDef.body = body;
-        p->v.FunctionDef.decorators = decorators;
+        p->v.FunctionDef.decorator_list = decorator_list;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno, int
-         col_offset, PyArena *arena)
+ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, asdl_seq *
+         decorator_list, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -833,6 +834,7 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno, int
         p->v.ClassDef.name = name;
         p->v.ClassDef.bases = bases;
         p->v.ClassDef.body = body;
+        p->v.ClassDef.decorator_list = decorator_list;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -1906,9 +1908,11 @@ ast2obj_stmt(void* _o)
                 if (PyObject_SetAttrString(result, "body", value) == -1)
                         goto failed;
                 Py_DECREF(value);
-                value = ast2obj_list(o->v.FunctionDef.decorators, ast2obj_expr);
+                value = ast2obj_list(o->v.FunctionDef.decorator_list,
+                                     ast2obj_expr);
                 if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "decorators", value) == -1)
+                if (PyObject_SetAttrString(result, "decorator_list", value) ==
+                    -1)
                         goto failed;
                 Py_DECREF(value);
                 break;
@@ -1928,6 +1932,13 @@ ast2obj_stmt(void* _o)
                 value = ast2obj_list(o->v.ClassDef.body, ast2obj_stmt);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.ClassDef.decorator_list,
+                                     ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "decorator_list", value) ==
+                    -1)
                         goto failed;
                 Py_DECREF(value);
                 break;

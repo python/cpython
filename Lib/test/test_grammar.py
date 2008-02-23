@@ -779,6 +779,16 @@ hello world
             def meth1(self): pass
             def meth2(self, arg): pass
             def meth3(self, a1, a2): pass
+        # decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
+        # decorators: decorator+
+        # decorated: decorators (classdef | funcdef)
+        def class_decorator(x):
+            x.decorated = True
+            return x
+        @class_decorator
+        class G:
+            pass
+        self.assertEqual(G.decorated, True)
 
     def testListcomps(self):
         # list comprehension tests
