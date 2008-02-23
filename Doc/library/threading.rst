@@ -562,6 +562,13 @@ the :meth:`setDaemon` method and retrieved with the :meth:`isDaemon` method.
 There is a "main thread" object; this corresponds to the initial thread of
 control in the Python program.  It is not a daemon thread.
 
+.. warning::
+   
+   The import machinery is not thread safe.  In general, an import may not
+   have the side effect of importing a module, and only the main thread
+   should import modules.  Imports within or caused by a thread other than
+   the main thread isn't safe.
+
 There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
