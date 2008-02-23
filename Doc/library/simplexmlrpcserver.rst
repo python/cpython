@@ -101,7 +101,7 @@ alone XML-RPC servers.
    Registers the XML-RPC multicall function system.multicall.
 
 
-.. attribute:: SimpleXMLRPCServer.rpc_paths
+.. attribute:: SimpleXMLRPCRequestHandler.rpc_paths
 
    An attribute value that must be a tuple listing valid path portions of the URL
    for receiving XML-RPC requests.  Requests posted to other paths will result in a
@@ -116,9 +116,15 @@ SimpleXMLRPCServer Example
 Server code::
 
    from SimpleXMLRPCServer import SimpleXMLRPCServer
+   from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+
+   # Restrict to a particular path.
+   class RequestHandler(SimpleXMLRPCRequestHandler):
+       rpc_paths = ('/RPC2',)
 
    # Create server
-   server = SimpleXMLRPCServer(("localhost", 8000))
+   server = SimpleXMLRPCServer(("localhost", 8000),
+                               requestHandler=RequestHandler)
    server.register_introspection_functions()
 
    # Register pow() function; this will use the value of 
