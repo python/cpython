@@ -1746,10 +1746,10 @@ static PyTypeObject chain_type = {
 typedef struct {
 	PyObject_HEAD
 	PyObject *pools;		/* tuple of pool tuples */
-	Py_ssize_t *maxvec;
-	Py_ssize_t *indices;
-	PyObject *result;
-	int stopped;
+	Py_ssize_t *maxvec;             /* size of each pool */
+	Py_ssize_t *indices;            /* one index per pool */
+	PyObject *result;               /* most recently returned result tuple */
+	int stopped;                    /* set to 1 when the product iterator is exhausted */
 } productobject;
 
 static PyTypeObject product_type;
