@@ -235,8 +235,12 @@ class RawConfigParser:
         """Create a new section in the configuration.
 
         Raise DuplicateSectionError if a section by the specified name
-        already exists.
+        already exists. Raise ValueError if name is DEFAULT or any of it's
+        case-insensitive variants.
         """
+        if section.lower() == "default":
+            raise ValueError, 'Invalid section name: %s' % section
+
         if section in self._sections:
             raise DuplicateSectionError(section)
         self._sections[section] = self._dict()
