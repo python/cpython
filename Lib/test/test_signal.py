@@ -1,7 +1,7 @@
 import unittest
 from test import test_support
 import signal
-import os, sys, time
+import os, sys, time, errno
 
 class HandlerBCalled(Exception):
     pass
@@ -210,6 +210,50 @@ class WakeupSignalTests(unittest.TestCase):
         os.close(self.write)
         signal.signal(signal.SIGALRM, self.alrm)
 
+class SiginterruptTest(unittest.TestCase):
+    signum = signal.SIGUSR1
+    def readpipe_interrupted(self, cb):
+        r, w = os.pipe()
+        ppid = os.getpid()
+        pid = os.fork()
+
+        oldhandler = signal.signal(self.signum, lambda x,y: None)
+        cb()
+        if pid==0:
+            # child code: sleep, kill, sleep. and then exit,
+            # which closes the pipe from which the parent process reads
+            try:
+                time.sleep(0.2)
+                os.kill(ppid, self.signum)
+                time.sleep(0.2)
+            finally:
+                os._exit(0)
+
+        try:
+            os.close(w)
+
+            try:
+                d=os.read(r, 1)
+                return False
+            except OSError, err:
+                if err.errno != errno.EINTR:
+                    raise
+                return True
+        finally:
+            signal.signal(self.signum, oldhandler)
+            os.waitpid(pid, 0)
+
+    def test_without_siginterrupt(self):
+        i=self.readpipe_interrupted(lambda: None)
+        self.assertEquals(i, True)
+
+    def test_siginterrupt_on(self):
+        i=self.readpipe_interrupted(lambda: signal.siginterrupt(self.signum, 1))
+        self.assertEquals(i, True)
+
+    def test_siginterrupt_off(self):
+        i=self.readpipe_interrupted(lambda: signal.siginterrupt(self.signum, 0))
+        self.assertEquals(i, False)
 
 def test_main():
     if sys.platform[:3] in ('win', 'os2') or sys.platform == 'riscos':
@@ -217,7 +261,7 @@ def test_main():
                                        sys.platform)
 
     test_support.run_unittest(BasicSignalTests, InterProcessSignalTests,
-        WakeupSignalTests)
+        WakeupSignalTests, SiginterruptTest)
 
 
 if __name__ == "__main__":
