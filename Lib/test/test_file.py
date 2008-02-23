@@ -322,12 +322,28 @@ class OtherFileTests(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
+class FileSubclassTests(unittest.TestCase):
+
+    def testExit(self):
+        # test that exiting with context calls subclass' close
+        class C(file):
+            def __init__(self, *args):
+                self.subclass_closed = False
+                file.__init__(self, *args)
+            def close(self):
+                self.subclass_closed = True
+                file.close(self)
+
+        with C(TESTFN, 'w') as f:
+            pass
+        self.failUnless(f.subclass_closed)
+
 
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
     try:
-        run_unittest(AutoFileTests, OtherFileTests)
+        run_unittest(AutoFileTests, OtherFileTests, FileSubclassTests)
     finally:
         if os.path.exists(TESTFN):
             os.unlink(TESTFN)

@@ -1660,9 +1660,9 @@ file_self(PyFileObject *f)
 }
 
 static PyObject *
-file_exit(PyFileObject *f, PyObject *args)
+file_exit(PyObject *f, PyObject *args)
 {
-	PyObject *ret = file_close(f);
+	PyObject *ret = PyObject_CallMethod(f, "close", NULL);
 	if (!ret)
 		/* If error occurred, pass through */
 		return NULL;
