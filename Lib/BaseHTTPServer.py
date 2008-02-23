@@ -76,7 +76,7 @@ import socket # For gethostbyaddr()
 import mimetools
 import SocketServer
 
-# Default error message
+# Default error message template
 DEFAULT_ERROR_MESSAGE = """\
 <head>
 <title>Error response</title>
@@ -88,6 +88,8 @@ DEFAULT_ERROR_MESSAGE = """\
 <p>Error code explanation: %(code)s = %(explain)s.
 </body>
 """
+
+DEFAULT_ERROR_CONTENT_TYPE = "text/html"
 
 def _quote_html(html):
     return html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -342,13 +344,14 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         content = (self.error_message_format %
                    {'code': code, 'message': _quote_html(message), 'explain': explain})
         self.send_response(code, message)
-        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Type", self.error_content_type)
         self.send_header('Connection', 'close')
         self.end_headers()
         if self.command != 'HEAD' and code >= 200 and code not in (204, 304):
             self.wfile.write(content)
 
     error_message_format = DEFAULT_ERROR_MESSAGE
+    error_content_type = DEFAULT_ERROR_CONTENT_TYPE
 
     def send_response(self, code, message=None):
         """Send the response header and log the response code.
