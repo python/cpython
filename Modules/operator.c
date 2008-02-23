@@ -496,6 +496,49 @@ attrgetter_traverse(attrgetterobject *ag, visitproc visit, void *arg)
 }
 
 static PyObject *
+dotted_getattr(PyObject *obj, PyObject *attr)
+{
+	char *s, *p;
+
+#ifdef Py_USING_UNICODE
+	if (PyUnicode_Check(attr)) {
+		attr = _PyUnicode_AsDefaultEncodedString(attr, NULL);
+		if (attr == NULL)
+			return NULL;
+	}
+#endif
+	
+	if (!PyString_Check(attr)) {
+		PyErr_SetString(PyExc_TypeError,
+				"attribute name must be a string");
+		return NULL;
+	}
+
+	s = PyString_AS_STRING(attr);
+	Py_INCREF(obj);
+	for (;;) {
+		PyObject *newobj, *str;
+		p = strchr(s, '.');
+		str = p ? PyString_FromStringAndSize(s, (p-s)) : 
+			  PyString_FromString(s);
+		if (str == NULL) {
+			Py_DECREF(obj);
+			return NULL;
+		}
+		newobj = PyObject_GetAttr(obj, str);
+		Py_DECREF(str);
+		Py_DECREF(obj);
+		if (newobj == NULL)
+			return NULL;
+		obj = newobj;
+		if (p == NULL) break;
+		s = p+1;
+	}
+
+	return obj;
+}
+
+static PyObject *
 attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 {
 	PyObject *obj, *result;
@@ -504,7 +547,7 @@ attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 	if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &obj))
 		return NULL;
 	if (ag->nattrs == 1)
-		return PyObject_GetAttr(obj, ag->attr);
+		return dotted_getattr(obj, ag->attr);
 
 	assert(PyTuple_Check(ag->attr));
 	assert(PyTuple_GET_SIZE(ag->attr) == nattrs);
@@ -516,7 +559,7 @@ attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 	for (i=0 ; i < nattrs ; i++) {
 		PyObject *attr, *val;
 		attr = PyTuple_GET_ITEM(ag->attr, i);
-		val = PyObject_GetAttr(obj, attr);
+		val = dotted_getattr(obj, attr);
 		if (val == NULL) {
 			Py_DECREF(result);
 			return NULL;
@@ -531,7 +574,9 @@ PyDoc_STRVAR(attrgetter_doc,
 \n\
 Return a callable object that fetches the given attribute(s) from its operand.\n\
 After, f=attrgetter('name'), the call f(r) returns r.name.\n\
-After, g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).");
+After, g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).\n\
+After, h=attrgetter('name.first', 'name.last'), the call h(r) returns\n\
+(r.name.first, r.name.last).");
 
 static PyTypeObject attrgetter_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)

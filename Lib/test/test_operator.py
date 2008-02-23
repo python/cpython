@@ -386,6 +386,26 @@ class OperatorTestCase(unittest.TestCase):
                 raise SyntaxError
         self.failUnlessRaises(SyntaxError, operator.attrgetter('foo'), C())
 
+        # recursive gets
+        a = A()
+        a.name = 'arthur'
+        a.child = A()
+        a.child.name = 'thomas'
+        f = operator.attrgetter('child.name')
+        self.assertEqual(f(a), 'thomas')
+        self.assertRaises(AttributeError, f, a.child)
+        f = operator.attrgetter('name', 'child.name')
+        self.assertEqual(f(a), ('arthur', 'thomas'))
+        f = operator.attrgetter('name', 'child.name', 'child.child.name')
+        self.assertRaises(AttributeError, f, a)
+
+        a.child.child = A()
+        a.child.child.name = 'johnson'
+        f = operator.attrgetter('child.child.name')
+        self.assertEqual(f(a), 'johnson')
+        f = operator.attrgetter('name', 'child.name', 'child.child.name')
+        self.assertEqual(f(a), ('arthur', 'thomas', 'johnson'))
+
     def test_itemgetter(self):
         a = 'ABCDE'
         f = operator.itemgetter(2)

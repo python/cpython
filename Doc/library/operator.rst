@@ -499,14 +499,20 @@ expect a function argument.
 
    Return a callable object that fetches *attr* from its operand. If more than one
    attribute is requested, returns a tuple of attributes. After,
-   ``f=attrgetter('name')``, the call ``f(b)`` returns ``b.name``.  After,
-   ``f=attrgetter('name', 'date')``, the call ``f(b)`` returns ``(b.name,
+   ``f = attrgetter('name')``, the call ``f(b)`` returns ``b.name``.  After,
+   ``f = attrgetter('name', 'date')``, the call ``f(b)`` returns ``(b.name,
    b.date)``.
+
+   The attribute names can also contain dots; after ``f = attrgetter('date.month')``,
+   the call ``f(b)`` returns ``b.date.month``.
 
    .. versionadded:: 2.4
 
    .. versionchanged:: 2.5
       Added support for multiple attributes.
+
+   .. versionchanged:: 2.6
+      Added support for dotted attributes.
 
 
 .. function:: itemgetter(item[, args...])
