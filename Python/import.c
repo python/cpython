@@ -829,7 +829,7 @@ parse_source_module(const char *pathname, FILE *fp)
 /* Helper to open a bytecode file for writing in exclusive mode */
 
 static FILE *
-open_exclusive(char *filename)
+open_exclusive(char *filename, mode_t mode)
 {
 #if defined(O_EXCL)&&defined(O_CREAT)&&defined(O_WRONLY)&&defined(O_TRUNC)
 	/* Use O_EXCL to avoid a race condition when another process tries to
@@ -845,9 +845,9 @@ open_exclusive(char *filename)
 				|O_BINARY   /* necessary for Windows */
 #endif
 #ifdef __VMS
-                        , 0666, "ctxt=bin", "shr=nil"
+                        , mode, "ctxt=bin", "shr=nil"
 #else
-                        , 0666
+                        , mode
 #endif
 		  );
 	if (fd < 0)
@@ -866,11 +866,13 @@ open_exclusive(char *filename)
    remove the file. */
 
 static void
-write_compiled_module(PyCodeObject *co, char *cpathname, time_t mtime)
+write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
 {
 	FILE *fp;
+	time_t mtime = srcstat->st_mtime;
+	mode_t mode = srcstat->st_mode;
 
-	fp = open_exclusive(cpathname);
+	fp = open_exclusive(cpathname, mode);
 	if (fp == NULL) {
 		if (Py_VerboseFlag)
 			PySys_WriteStderr(
@@ -907,17 +909,16 @@ write_compiled_module(PyCodeObject *co, char *cpathname, time_t mtime)
 static PyObject *
 load_source_module(char *name, char *pathname, FILE *fp)
 {
-	time_t mtime;
+	struct stat st;
 	FILE *fpc;
 	char buf[MAXPATHLEN+1];
 	char *cpathname;
 	PyCodeObject *co;
 	PyObject *m;
-
-	mtime = PyOS_GetLastModificationTime(pathname, fp);
-	if (mtime == (time_t)(-1)) {
+	
+	if (fstat(fileno(fp), &st) != 0) {
 		PyErr_Format(PyExc_RuntimeError,
-			     "unable to get modification time from '%s'",
+			     "unable to get file status from '%s'",
 			     pathname);
 		return NULL;
 	}
@@ -926,7 +927,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
 	   in 4 bytes. This will be fine until sometime in the year 2038,
 	   when a 4-byte signed time_t will overflow.
 	 */
-	if (mtime >> 32) {
+	if (st.st_mtime >> 32) {
 		PyErr_SetString(PyExc_OverflowError,
 			"modification time overflows a 4 byte field");
 		return NULL;
@@ -935,7 +936,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
 	cpathname = make_compiled_pathname(pathname, buf,
 					   (size_t)MAXPATHLEN + 1);
 	if (cpathname != NULL &&
-	    (fpc = check_compiled_module(pathname, mtime, cpathname))) {
+	    (fpc = check_compiled_module(pathname, st.st_mtime, cpathname))) {
 		co = read_compiled_module(cpathname, fpc);
 		fclose(fpc);
 		if (co == NULL)
@@ -955,7 +956,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
 		if (cpathname) {
 			PyObject *ro = PySys_GetObject("dont_write_bytecode");
 			if (ro == NULL || !PyObject_IsTrue(ro))
-				write_compiled_module(co, cpathname, mtime);
+				write_compiled_module(co, cpathname, &st);
 		}
 	}
 	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, pathname);
