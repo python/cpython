@@ -13,7 +13,7 @@ sys.path.append('tools/sphinxext')
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.addons.refcounting']
+extensions = ['sphinx.addons.refcounting', 'sphinx.addons.coverage']
 
 # General substitutions.
 project = 'Python'
@@ -139,3 +139,39 @@ latex_preamble = r'''
 
 # Documents to append as an appendix to all manuals.
 latex_appendices = ['glossary', 'about', 'license', 'copyright']
+
+# Options for the coverage checker
+# --------------------------------
+
+# The coverage checker will ignore all modules/functions/classes whose names
+# match any of the following regexes (using re.match).
+coverage_ignore_modules = [
+    r'[T|t][k|K]',
+    r'Tix',
+    r'distutils.*',
+]
+
+coverage_ignore_functions = [
+    'test($|_)',
+]
+
+coverage_ignore_classes = [
+]
+
+# Glob patterns for C source files for C API coverage, relative to this directory.
+coverage_c_path = [
+    '../Include/*.h',
+]
+
+# Regexes to find C items in the source files.
+coverage_c_regexes = {
+    'cfunction': (r'^PyAPI_FUNC\(.*\)\s+([^_][\w_]+)'),
+    'data': (r'^PyAPI_DATA\(.*\)\s+([^_][\w_]+)'),
+    'macro': (r'^#define ([^_][\w_]+)\(.*\)[\s|\\]'),
+}
+
+# The coverage checker will ignore all C items whose names match these regexes
+# (using re.match) -- the keys must be the same as in coverage_c_regexes.
+coverage_ignore_c_items = {
+#    'cfunction': [...]
+}
