@@ -121,11 +121,7 @@ def spawn(prog, args):
             sys.stderr.write('popen2: bad write dup\n')
         if os.dup(c2pwrite) <> 2:
             sys.stderr.write('popen2: bad write dup\n')
-        for i in range(3, MAXFD):
-            try:
-                os.close(i)
-            except:
-                pass
+        os.closerange(3, MAXFD)
         try:
             os.execvp(prog, args)
         finally:
