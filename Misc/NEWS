@@ -18,6 +18,9 @@ Library
 - Bug #1389051: imaplib causes excessive memory fragmentation when reading
   large messages.
 
+- Bug #1389051, 1092502: fix excessively large memory allocations when
+  calling .read() on a socket object wrapped with makefile(). 
+
 - Bug #1433694: minidom's .normalize() failed to set .nextSibling for
   last child element.
 
