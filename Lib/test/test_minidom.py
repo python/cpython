@@ -806,6 +806,14 @@ def testNormalize():
             "testNormalize -- single empty node removed")
     doc.unlink()
 
+def testBug1433694():
+    doc = parseString("<o><i/>t</o>")
+    node = doc.documentElement
+    node.childNodes[1].nodeValue = ""
+    node.normalize()
+    confirm(node.childNodes[-1].nextSibling == None,
+            "Final child's .nextSibling should be None")
+
 def testSiblings():
     doc = parseString("<doc><?pi?>text?<elm/></doc>")
     root = doc.documentElement
