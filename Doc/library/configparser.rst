@@ -187,8 +187,9 @@ RawConfigParser Objects
 .. method:: RawConfigParser.add_section(section)
 
    Add a section named *section* to the instance.  If a section by the given name
-   already exists, :exc:`DuplicateSectionError` is raised.
-
+   already exists, :exc:`DuplicateSectionError` is raised. If the name
+   ``DEFAULT`` (or any of it's case-insensitive variants) is passed,
+   :exc:`ValueError` is raised.
 
 .. method:: RawConfigParser.has_section(section)
 

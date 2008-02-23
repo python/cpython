@@ -434,6 +434,9 @@ Core and builtins
 Library
 -------
 
+- Issue 1781: ConfigParser now does not let you add the "default" section
+  (ignore-case)
+
 - Removed uses of dict.has_key() from distutils, and uses of
   callable() from copy_reg.py, so the interpreter now starts up
   without warnings when '-3' is given.  More work like this needs to
