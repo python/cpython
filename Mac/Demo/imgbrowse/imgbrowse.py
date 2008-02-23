@@ -7,11 +7,9 @@ from Carbon import Qd
 from Carbon import QuickDraw
 from Carbon import Win
 #ifrom Carbon mport List
-import sys
 import struct
 import img
 import imgformat
-import struct
 import mac_image
 
 

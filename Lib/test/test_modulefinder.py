@@ -1,5 +1,5 @@
 import __future__
-import sys, os
+import os
 import unittest
 import distutils.dir_util
 import tempfile

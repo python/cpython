@@ -6,7 +6,6 @@ from Carbon import Res
 from Carbon import Qd
 from Carbon import Win
 from Carbon import List
-import sys
 import struct
 import macresource
 

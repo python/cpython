@@ -22,7 +22,6 @@
 __version__ = 'SPARK-0.7 (pre-alpha-5)'
 
 import re
-import sys
 import string
 
 def _namelist(instance):

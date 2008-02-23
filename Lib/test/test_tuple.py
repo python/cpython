@@ -1,4 +1,3 @@
-import unittest
 from test import test_support, seq_tests
 
 class TupleTest(seq_tests.CommonTest):

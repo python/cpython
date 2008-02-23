@@ -122,7 +122,6 @@ error)
 __test__ = {'doctests' : doctests}
 
 def test_main(verbose=False):
-    import sys
     from test import test_support
     from test import test_unpack
     test_support.run_doctest(test_unpack, verbose)

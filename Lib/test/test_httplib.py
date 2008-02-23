@@ -1,6 +1,5 @@
 import httplib
 import StringIO
-import sys
 import socket
 
 from unittest import TestCase

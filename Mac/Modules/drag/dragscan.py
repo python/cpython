@@ -1,6 +1,5 @@
 # Scan <Drag.h>, generating draggen.py.
 import sys
-import os
 from bgenlocations import TOOLBOXDIR, BGENDIR, INCLUDEDIR
 sys.path.append(BGENDIR)
 

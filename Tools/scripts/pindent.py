@@ -81,7 +81,6 @@ STEPSIZE = 8
 TABSIZE = 8
 EXPANDTABS = 0
 
-import os
 import re
 import sys
 

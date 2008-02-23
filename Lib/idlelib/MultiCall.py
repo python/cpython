@@ -30,7 +30,6 @@ Each function will be called at most once for each event.
 """
 
 import sys
-import os
 import string
 import re
 import Tkinter

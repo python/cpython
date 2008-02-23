@@ -20,7 +20,6 @@ import zipfile, os, unittest
 import time
 import sys
 
-from StringIO import StringIO
 from tempfile import TemporaryFile
 
 from test.test_support import TESTFN, run_unittest

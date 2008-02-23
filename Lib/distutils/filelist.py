@@ -11,7 +11,6 @@ __revision__ = "$Id$"
 import os, string, re
 import fnmatch
 from types import *
-from glob import glob
 from distutils.util import convert_path
 from distutils.errors import DistutilsTemplateError, DistutilsInternalError
 from distutils import log

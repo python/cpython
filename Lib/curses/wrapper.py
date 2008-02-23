@@ -7,7 +7,7 @@ to a sane state so you can read the resulting traceback.
 
 """
 
-import sys, curses
+import curses
 
 def wrapper(func, *args, **kwds):
     """Wrapper function that initializes curses and calls another function,

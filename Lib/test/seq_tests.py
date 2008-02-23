@@ -3,7 +3,6 @@ Tests common to tuple, list and UserList.UserList
 """
 
 import unittest
-from test import test_support
 import sys
 
 # Various iterables

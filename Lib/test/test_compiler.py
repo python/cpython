@@ -52,7 +52,8 @@ class CompilerTest(unittest.TestCase):
                         compiler.compile(buf, basename, "exec")
                     except Exception, e:
                         args = list(e.args)
-                        args[0] += "[in file %s]" % basename
+                        args.append("in file %s]" % basename)
+                        #args[0] += "[in file %s]" % basename
                         e.args = tuple(args)
                         raise
 

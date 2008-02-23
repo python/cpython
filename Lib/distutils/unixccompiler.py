@@ -17,7 +17,6 @@ __revision__ = "$Id$"
 
 import os, sys
 from types import StringType, NoneType
-from copy import copy
 
 from distutils import sysconfig
 from distutils.dep_util import newer

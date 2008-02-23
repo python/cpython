@@ -1,4 +1,3 @@
-import htmlentitydefs
 import pprint
 import re
 import sgmllib
@@ -116,7 +115,7 @@ class SGMLParserTestCase(unittest.TestCase):
         try:
             events = self.get_events(source)
         except:
-            import sys
+            #import sys
             #print >>sys.stderr, pprint.pformat(self.events)
             raise
         if events != expected_events:

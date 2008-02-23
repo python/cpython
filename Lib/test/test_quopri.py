@@ -1,7 +1,7 @@
 from test import test_support
 import unittest
 
-import sys, os, cStringIO, subprocess
+import sys, cStringIO, subprocess
 import quopri
 
 

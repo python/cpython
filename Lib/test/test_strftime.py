@@ -2,7 +2,7 @@
 
 # Sanity checker for time.strftime
 
-import time, calendar, sys, os, re
+import time, calendar, sys, re
 from test.test_support import verbose
 
 def main():

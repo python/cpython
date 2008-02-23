@@ -3,7 +3,7 @@ Dialog for building Tkinter accelerator key bindings
 """
 from Tkinter import *
 import tkMessageBox
-import string, os
+import string
 
 class GetKeysDialog(Toplevel):
     def __init__(self,parent,title,action,currentKeySequences):

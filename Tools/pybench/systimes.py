@@ -31,7 +31,7 @@
     the author. All Rights Reserved.
 
 """
-import time, sys, struct
+import time, sys
 
 #
 # Note: Please keep this module compatible to Python 1.5.2.

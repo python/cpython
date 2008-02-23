@@ -1,10 +1,8 @@
 """TestCases for using the DB.join and DBCursor.join_item methods.
 """
 
-import sys, os, string
+import os
 import tempfile
-import time
-from pprint import pprint
 
 try:
     from threading import Thread, currentThread

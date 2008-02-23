@@ -1,6 +1,5 @@
 # Scan <Controls.h>, generating ctlgen.py.
 import sys
-import os
 from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 

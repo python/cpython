@@ -1,6 +1,5 @@
 """Unit tests for the copy module."""
 
-import sys
 import copy
 import copy_reg
 

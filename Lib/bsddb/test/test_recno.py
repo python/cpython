@@ -2,7 +2,6 @@
 """
 
 import os
-import sys
 import errno
 import tempfile
 from pprint import pprint

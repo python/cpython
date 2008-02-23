@@ -1,7 +1,6 @@
 import unittest
 from test import test_support
 import operator
-import sys
 from sys import maxint
 maxsize = test_support.MAX_Py_ssize_t
 minsize = -maxsize-1

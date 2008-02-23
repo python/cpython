@@ -1,7 +1,7 @@
 """Tests for Lib/fractions.py."""
 
 from decimal import Decimal
-from test.test_support import run_unittest, verbose
+from test.test_support import run_unittest
 import math
 import operator
 import fractions

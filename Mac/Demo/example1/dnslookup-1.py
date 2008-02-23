@@ -4,7 +4,6 @@ Res and Dlg in the process"""
 import EasyDialogs
 from Carbon import Res
 from Carbon import Dlg
-import sys
 import socket
 import string
 import macresource

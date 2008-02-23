@@ -1,4 +1,4 @@
-from test.test_support import verify, verbose, TestFailed, sortdict
+from test.test_support import verify, TestFailed, sortdict
 from UserList import UserList
 from UserDict import UserDict
 

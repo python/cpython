@@ -8,7 +8,6 @@ distributions)."""
 __revision__ = "$Id$"
 
 import sys, os, string
-import glob
 from types import *
 from distutils.core import Command
 from distutils.debug import DEBUG

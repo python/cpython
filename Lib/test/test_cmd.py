@@ -5,7 +5,6 @@ Original by Michael Schneider
 """
 
 
-from test import test_support
 import cmd
 import sys
 
@@ -170,7 +169,7 @@ def test_main(verbose=None):
     from test import test_support, test_cmd
     test_support.run_doctest(test_cmd, verbose)
 
-import trace, sys,re,StringIO
+import trace, sys
 def test_coverage(coverdir):
     tracer=trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
                         trace=0, count=1)

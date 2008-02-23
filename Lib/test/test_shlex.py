@@ -1,6 +1,5 @@
 # -*- coding: iso-8859-1 -*-
 import unittest
-import os, sys
 import shlex
 
 from test import test_support

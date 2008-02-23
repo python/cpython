@@ -16,7 +16,6 @@ import types
 import unittest
 
 from StringIO import StringIO
-from pprint import pprint
 from test import test_support
 
 

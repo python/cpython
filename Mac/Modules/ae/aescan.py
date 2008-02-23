@@ -3,8 +3,6 @@
 # (Should learn how to tell the compiler to compile it as well.)
 
 import sys
-import os
-import string
 import MacOS
 
 from bgenlocations import TOOLBOXDIR, BGENDIR

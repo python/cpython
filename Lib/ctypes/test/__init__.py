@@ -1,4 +1,4 @@
-import glob, os, sys, unittest, getopt, time
+import os, sys, unittest, getopt, time
 
 use_resources = []
 

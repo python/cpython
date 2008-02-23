@@ -2,7 +2,6 @@
 
 import HTMLParser
 import pprint
-import sys
 import unittest
 from test import test_support
 

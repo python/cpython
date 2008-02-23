@@ -1,6 +1,6 @@
 import unittest
 import tempfile
-import sys, os, glob
+import os, glob
 
 try:
     # For Pythons w/distutils pybsddb

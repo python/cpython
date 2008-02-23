@@ -1,5 +1,5 @@
 
-import sys, os, string
+import os, string
 import unittest
 import glob
 import tempfile

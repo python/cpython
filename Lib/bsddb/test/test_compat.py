@@ -3,7 +3,7 @@ Test cases adapted from the test_bsddb.py module in Python's
 regression test suite.
 """
 
-import sys, os, string
+import os, string
 import unittest
 import tempfile
 

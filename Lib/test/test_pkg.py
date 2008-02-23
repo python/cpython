@@ -4,7 +4,6 @@ import sys
 import os
 import tempfile
 import textwrap
-import traceback
 import unittest
 from test import test_support
 

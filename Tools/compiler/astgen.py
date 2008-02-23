@@ -8,7 +8,6 @@ the Node interface has changed more often than the grammar.
 """
 
 import fileinput
-import getopt
 import re
 import sys
 from StringIO import StringIO

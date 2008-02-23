@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 import marshal
-import os
 import dis
 import types
 
