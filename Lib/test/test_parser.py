@@ -480,11 +480,28 @@ class CompileTestCase(unittest.TestCase):
         st = parser.suite('a = u"\u1"')
         self.assertRaises(SyntaxError, parser.compilest, st)
 
+class ParserStackLimitTestCase(unittest.TestCase):
+    """try to push the parser to/over it's limits.
+    see http://bugs.python.org/issue1881 for a discussion
+    """
+    def _nested_expression(self, level):
+        return "["*level+"]"*level
+
+    def test_deeply_nested_list(self):
+        e = self._nested_expression(99)
+        st = parser.expr(e)
+        st.compile()
+
+    def test_trigger_memory_error(self):
+        e = self._nested_expression(100)
+        self.assertRaises(MemoryError, parser.expr, e)
+
 def test_main():
     test_support.run_unittest(
         RoundtripLegalSyntaxTestCase,
         IllegalSyntaxTestCase,
         CompileTestCase,
+        ParserStackLimitTestCase,
     )
 
 
