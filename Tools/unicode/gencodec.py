@@ -26,7 +26,7 @@ Table generation:
 
 """#"
 
-import re, os, time, marshal, codecs
+import re, os, marshal, codecs
 
 # Maximum allowed size of charmap tables
 MAX_TABLE_SIZE = 8192

@@ -6,7 +6,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-import unittest, sys, struct, codecs, new
+import sys, struct, codecs
 from test import test_support, string_tests
 
 # Error handling (bad decoder return)

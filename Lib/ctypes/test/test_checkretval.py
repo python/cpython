@@ -1,5 +1,4 @@
 import unittest
-import sys
 
 from ctypes import *
 

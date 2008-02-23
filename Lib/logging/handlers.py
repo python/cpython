@@ -27,7 +27,7 @@ Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, socket, types, os, string, cPickle, struct, time, glob
+import logging, socket, types, os, string, cPickle, struct, time, glob
 from stat import ST_DEV, ST_INO
 
 try:

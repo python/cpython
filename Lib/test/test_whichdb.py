@@ -8,7 +8,6 @@ import test.test_support
 import unittest
 import whichdb
 import anydbm
-import tempfile
 import glob
 
 _fname = test.test_support.TESTFN

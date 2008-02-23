@@ -20,7 +20,7 @@
 #
 # $Id$
 
-import sys, os, re
+import os, re
 import tempfile
 import shutil
 try:

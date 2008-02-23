@@ -4,7 +4,6 @@ various DB flags, etc.
 """
 
 import os
-import sys
 import errno
 import shutil
 import string

@@ -7,8 +7,6 @@ from Carbon import Qd
 from Carbon import Win
 from Carbon import Controls
 from Carbon import List
-import sys
-import struct
 from Carbon import Icn
 import macresource
 

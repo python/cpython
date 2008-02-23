@@ -1858,8 +1858,8 @@ INF -> INFO: Finish up, it's closing time. Messages should bear numbers 0 throug
 <BLANKLINE>
 """
 import select
-import os, sys, string, struct, types, cPickle, cStringIO
-import socket, tempfile, threading, time
+import os, sys, string, struct, cPickle, cStringIO
+import socket, threading
 import logging, logging.handlers, logging.config, test.test_support
 
 

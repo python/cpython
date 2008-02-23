@@ -27,7 +27,6 @@ import random
 import socket
 import urllib
 import warnings
-from cStringIO import StringIO
 
 from email._parseaddr import quote
 from email._parseaddr import AddressList as _AddressList

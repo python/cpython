@@ -17,7 +17,6 @@ from distutils.errors import DistutilsPlatformError
 from distutils.file_util import write_file
 from distutils.util import convert_path, subst_vars, change_root
 from distutils.errors import DistutilsOptionError
-from glob import glob
 
 if sys.version < "2.2":
     WINDOWS_SCHEME = {

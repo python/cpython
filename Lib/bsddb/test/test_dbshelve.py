@@ -2,9 +2,8 @@
 TestCases for checking dbShelve objects.
 """
 
-import sys, os, string
+import os, string
 import tempfile, random
-from pprint import pprint
 from types import *
 import unittest
 

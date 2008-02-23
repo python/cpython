@@ -3,7 +3,6 @@
    Roger E. Masse
 """
 import os
-import random
 import dbm
 from dbm import error
 from test.test_support import verbose, verify, TestSkipped, TESTFN

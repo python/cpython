@@ -1,6 +1,6 @@
 # Test case for the os.poll() function
 
-import sys, os, select, random, unittest
+import os, select, random, unittest
 from test.test_support import TestSkipped, TESTFN, run_unittest
 
 try:

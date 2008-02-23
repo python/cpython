@@ -2,7 +2,7 @@
 
 __revision__ = "$Id$"
 
-import sys, os, string
+import os
 from types import IntType
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError

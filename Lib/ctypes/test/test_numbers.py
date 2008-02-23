@@ -1,6 +1,6 @@
 from ctypes import *
 import unittest
-import sys, struct
+import struct
 
 def valid_ranges(*types):
     # given a sequence of numeric types, collect their _type_

@@ -1,6 +1,5 @@
 import unittest
 import os
-import sys
 import tempfile
 import glob
 
@@ -9,8 +8,6 @@ try:
     from bsddb3 import db
 except ImportError:
     from bsddb import db
-
-from test_all import verbose
 
 
 class DBSequenceTest(unittest.TestCase):

@@ -6,7 +6,7 @@
 
 from test.test_support import verbose, unlink, findfile
 
-import imgfile, uu, os
+import imgfile, uu
 
 
 def main():

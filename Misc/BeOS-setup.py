@@ -4,7 +4,7 @@
 
 __version__ = "special BeOS after 1.37"
 
-import sys, os, getopt
+import sys, os
 from distutils import sysconfig
 from distutils import text_file
 from distutils.errors import *

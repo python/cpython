@@ -1,8 +1,7 @@
 import unittest
 from test import test_support
-import sys
 
-import warnings, re
+import warnings
 warnings.filterwarnings("ignore",
                         category=DeprecationWarning,
                         message=".*integer argument expected, got float",

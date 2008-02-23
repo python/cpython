@@ -3,10 +3,8 @@
 import distutils.cmd
 import distutils.dist
 import os
-import shutil
 import StringIO
 import sys
-import tempfile
 import unittest
 
 from test.test_support import TESTFN

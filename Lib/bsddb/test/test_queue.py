@@ -2,7 +2,7 @@
 TestCases for exercising a Queue DB.
 """
 
-import sys, os, string
+import os, string
 import tempfile
 from pprint import pprint
 import unittest

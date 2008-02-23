@@ -6,7 +6,7 @@
 #
 # By Bill Janssen.
 
-import sys, os
+import sys
 
 def fetch_server_certificate (host, port):
 

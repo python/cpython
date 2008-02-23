@@ -1,9 +1,6 @@
 # Copyright (C) 2003 Python Software Foundation
 
 import unittest
-import os
-import sys
-import tempfile
 from test import test_support
 import aetools
 

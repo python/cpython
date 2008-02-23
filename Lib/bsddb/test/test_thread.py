@@ -7,7 +7,6 @@ import time
 import errno
 import shutil
 import tempfile
-from pprint import pprint
 from random import random
 
 try:

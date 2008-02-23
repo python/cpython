@@ -11,7 +11,7 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
-import string, copy
+import string
 
 from configHandler import idleConf
 from dynOptionMenuWidget import DynOptionMenu

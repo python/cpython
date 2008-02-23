@@ -29,7 +29,6 @@ from compiler.ast import *
 import parser
 import symbol
 import token
-import sys
 
 class WalkerError(StandardError):
     pass

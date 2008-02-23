@@ -6,8 +6,8 @@ module as os.path.
 """
 
 import os
-import stat
 import sys
+import stat
 import genericpath
 from genericpath import *
 

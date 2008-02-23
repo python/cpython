@@ -1,5 +1,4 @@
 
-import unittest
 import struct
 import sys
 from test import test_support, string_tests

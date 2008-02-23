@@ -4,13 +4,9 @@ test_support.requires('audio')
 from test.test_support import findfile, TestSkipped, run_unittest
 
 import errno
-import fcntl
 import linuxaudiodev
-import os
 import sys
-import select
 import sunaudio
-import time
 import audioop
 import unittest
 

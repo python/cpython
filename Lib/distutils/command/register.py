@@ -7,7 +7,7 @@ Implements the Distutils 'register' command (register with the repository).
 
 __revision__ = "$Id$"
 
-import sys, os, string, urllib2, getpass, urlparse
+import os, string, urllib2, getpass, urlparse
 import StringIO, ConfigParser
 
 from distutils.core import Command

@@ -1,5 +1,4 @@
 import imp
-import thread
 import unittest
 from test import test_support
 

@@ -4,7 +4,7 @@ The file 185test.db found in Lib/test/ is for testing purposes with this
 testing suite.
 
 """
-from test.test_support import verbose, run_unittest, findfile
+from test.test_support import run_unittest, findfile
 import unittest
 import bsddb185
 import anydbm

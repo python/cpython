@@ -5,12 +5,11 @@ executing have not been removed.
 
 """
 import unittest
-from test.test_support import TestSkipped, TestFailed, run_unittest, TESTFN
+from test.test_support import TestSkipped, run_unittest, TESTFN
 import __builtin__
 import os
 import sys
 import encodings
-import tempfile
 # Need to make sure to not import 'site' if someone specified ``-S`` at the
 # command-line.  Detect this by just making sure 'site' has not been imported
 # already.

@@ -8,7 +8,6 @@ from test import test_support
 
 import sys, os, uu, cStringIO
 import uu
-from StringIO import StringIO
 
 plaintext = "The smooth-scaled python crept over the sleeping dog\n"
 

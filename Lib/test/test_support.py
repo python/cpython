@@ -10,7 +10,6 @@ import sys
 import os
 import os.path
 import warnings
-import types
 import unittest
 
 class Error(Exception):

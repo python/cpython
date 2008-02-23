@@ -1,7 +1,6 @@
 # Scan an Apple header file, generating a Python file of generator calls.
 
 import sys
-import os
 from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 

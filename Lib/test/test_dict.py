@@ -1,7 +1,7 @@
 import unittest
 from test import test_support
 
-import sys, UserDict, cStringIO, random, string
+import UserDict, random, string
 
 
 class DictTest(unittest.TestCase):
