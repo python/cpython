@@ -67,7 +67,7 @@ structures.
 
 .. function:: init_database(name, schema, ProductName, ProductCode, ProductVersion, Manufacturer)
 
-   Create and return a new database *name*, initialize it  with *schema*,  and set
+   Create and return a new database *name*, initialize it with *schema*, and set
    the properties *ProductName*, *ProductCode*, *ProductVersion*, and
    *Manufacturer*.
 
@@ -79,11 +79,17 @@ structures.
    function returns.
 
 
-.. function:: add_data(database, records)
+.. function:: add_data(database, table, records)
 
-   Add all *records* to *database*.  *records* should be a list of tuples, each one
-   containing all fields of a record according to the schema of the table.  For
-   optional fields, ``None`` can be passed.
+   Add all *records* to the table named *table* in *database*.
+
+   The *table* argument must be one of the predefined tables in the MSI schema,
+   e.g. ``'Feature'``, ``'File'``, ``'Component'``, ``'Dialog'``, ``'Control'``,
+   etc.
+
+   *records* should be a list of tuples, each one containing all fields of a
+   record according to the schema of the table.  For optional fields,
+   ``None`` can be passed.
 
    Field values can be int or long numbers, strings, or instances of the Binary
    class.
