@@ -538,6 +538,17 @@ Examples::
    [('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)]
 
 
+.. function:: methodcaller(name[, args...])
+
+   Return a callable object that calls the method *name* on its operand.  If
+   additional arguments and/or keyword arguments are given, they will be given
+   to the method as well.  After ``f = methodcaller('name')``, the call ``f(b)``
+   returns ``b.name()``.  After ``f = methodcaller('name', 'foo', bar=1)``, the
+   call ``f(b)`` returns ``b.name('foo', bar=1)``.
+
+   .. versionadded:: 2.6
+
+
 .. _operator-map:
 
 Mapping Operators to Functions

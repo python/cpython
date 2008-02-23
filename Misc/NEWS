@@ -1196,6 +1196,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1506171: added operator.methodcaller().
+
 - Patch #1826: operator.attrgetter() now supports dotted attribute paths.
 
 - Patch #1957: syslogmodule: Release GIL when calling syslog(3)
