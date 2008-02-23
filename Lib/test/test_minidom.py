@@ -791,6 +791,14 @@ class MinidomTest(unittest.TestCase):
                 "testNormalize -- single empty node removed")
         doc.unlink()
 
+    def testBug1433694(self):
+        doc = parseString("<o><i/>t</o>")
+        node = doc.documentElement
+        node.childNodes[1].nodeValue = ""
+        node.normalize()
+        self.confirm(node.childNodes[-1].nextSibling == None,
+                     "Final child's .nextSibling should be None")
+
     def testSiblings(self):
         doc = parseString("<doc><?pi?>text?<elm/></doc>")
         root = doc.documentElement
