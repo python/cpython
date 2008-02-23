@@ -239,7 +239,7 @@ class TestDecorators(GetSourceBase):
     fodderFile = mod2
 
     def test_wrapped_decorator(self):
-        self.assertSourceEqual(mod2.wrapped, 16, 17)
+        self.assertSourceEqual(mod2.wrapped, 14, 17)
 
     def test_replacing_decorator(self):
         self.assertSourceEqual(mod2.gone, 9, 10)

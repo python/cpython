@@ -363,6 +363,8 @@ Core and Builtins
 Library
 -------
 
+- inspect.getsource() includes the decorators again.
+
 - Issue #1916. Added isgenerator() and isgeneratorfunction() to inspect.py.
 
 - #1224: Fixed bad url parsing when path begins with double slash.
