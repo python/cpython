@@ -444,6 +444,9 @@ class Thread(_Verbose):
     def run(self):
         if self.__target:
             self.__target(*self.__args, **self.__kwargs)
+        # Avoid a refcycle if the thread is running a function with an
+        # argument that has a member that points to the thread.
+        del self.__target, self.__args, self.__kwargs
 
     def __bootstrap(self):
         # Wrapper around the real bootstrap code that ignores
