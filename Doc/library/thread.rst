@@ -150,6 +150,11 @@ In addition to these methods, lock objects can also be used via the
   exception will be received by an arbitrary thread.  (When the :mod:`signal`
   module is available, interrupts always go to the main thread.)
 
+* The import machinery is not thread safe.  In general, an import may not
+  have the side effect of importing a module, and only the main thread
+  should import modules.  Imports within or caused by a thread other than
+  the main thread isn't safe.
+
 * Calling :func:`sys.exit` or raising the :exc:`SystemExit` exception is
   equivalent to calling :func:`exit`.
 
@@ -170,4 +175,3 @@ In addition to these methods, lock objects can also be used via the
 * When the main thread exits, it does not do any of its usual cleanup (except
   that :keyword:`try` ... :keyword:`finally` clauses are honored), and the
   standard I/O files are not flushed.
-
