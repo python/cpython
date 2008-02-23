@@ -15,6 +15,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1389051: imaplib causes excessive memory fragmentation when reading
+  large messages.
+
 - Bug #1433694: minidom's .normalize() failed to set .nextSibling for
   last child element.
 
