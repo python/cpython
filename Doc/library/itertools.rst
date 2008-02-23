@@ -289,6 +289,29 @@ loops that truncate the stream.
    example :func:`islice` or :func:`takewhile`).
 
 
+.. function:: product(*iterables)
+
+   Cartesian product of input iterables.
+
+   Equivalent to nested for-loops in a generator expression. For example,
+   ``product(A, B)`` returns the same as ``((x,y) for x in A for y in B)``.
+
+   The leftmost iterators are in the outermost for-loop, so the output tuples
+   cycle in a manner similar to an odometer (with the rightmost element
+   changing on every iteration).
+
+   Equivalent to (but without building the entire result in memory)::
+
+       def product(*args):
+           pools = map(tuple, args)
+           if pools:            
+               result = [[]]
+               for pool in pools:
+                   result = [x+[y] for x in result for y in pool]
+               for prod in result:
+                   yield tuple(prod)
+
+
 .. function:: repeat(object[, times])
 
    Make an iterator that returns *object* over and over again. Runs indefinitely
@@ -525,4 +548,10 @@ which incur interpreter overhead. ::
            except StopIteration:
                pending -= 1
                nexts = cycle(islice(nexts, pending))
+
+   def powerset(iterable):
+       "powerset('ab') --> set([]), set(['b']), set(['a']), set(['a', 'b'])"
+       skip = object()
+       for t in product(*izip(repeat(skip), iterable)):
+           yield set(e for e in t if e is not skip)
 

@@ -298,7 +298,7 @@ class SMTP:
     def send(self, s):
         """Send `s' to the server."""
         if self.debuglevel > 0: print('send:', repr(s), file=stderr)
-        if self.sock:
+        if hasattr(self, 'sock') and self.sock:
             if isinstance(s, str):
                 s = s.encode("ascii")
             try:
@@ -489,7 +489,7 @@ class SMTP:
     vrfy=verify
 
     def expn(self, address):
-        """SMTP 'verify' command -- checks for address validity."""
+        """SMTP 'expn' command -- expands a mailing list."""
         self.putcmd("expn", quoteaddr(address))
         return self.getreply()
 

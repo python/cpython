@@ -7,7 +7,7 @@ extern "C" {
 
 /* Parser interface */
 
-#define MAXSTACK 500
+#define MAXSTACK 1500
 
 typedef struct {
 	int		 s_state;	/* State in current DFA */

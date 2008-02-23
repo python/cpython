@@ -82,8 +82,9 @@ class GeneralTests(TestCase):
         # to reference the nonexistent 'sock' attribute of the SMTP object
         # causes an AttributeError)
         smtp = smtplib.SMTP()
-        self.assertRaises(AttributeError, smtp.ehlo)
-        self.assertRaises(AttributeError, smtp.send, 'test msg')
+        self.assertRaises(smtplib.SMTPServerDisconnected, smtp.ehlo)
+        self.assertRaises(smtplib.SMTPServerDisconnected,
+                          smtp.send, 'test msg')
 
     def testLocalHostName(self):
         # check that supplied local_hostname is used
