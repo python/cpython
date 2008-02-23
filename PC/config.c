@@ -12,6 +12,7 @@ extern void initaudioop(void);
 extern void initbinascii(void);
 extern void initcmath(void);
 extern void initerrno(void);
+extern void initfuture_builtins(void);
 extern void initgc(void);
 #ifndef MS_WINI64
 extern void initimageop(void);
@@ -84,6 +85,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"binascii", initbinascii},
         {"cmath", initcmath},
         {"errno", initerrno},
+        {"future_builtins", initfuture_builtins},
         {"gc", initgc},
 #ifndef MS_WINI64
         {"imageop", initimageop},
