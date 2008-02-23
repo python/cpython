@@ -1,6 +1,5 @@
 # Scan <Menus.h>, generating menugen.py.
 import sys
-import os
 from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 

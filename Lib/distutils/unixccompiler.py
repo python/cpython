@@ -16,7 +16,6 @@ the "typical" Unix-style command-line C compiler:
 __revision__ = "$Id$"
 
 import os, sys
-from copy import copy
 
 from distutils import sysconfig
 from distutils.dep_util import newer

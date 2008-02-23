@@ -6,7 +6,6 @@ distributions)."""
 __revision__ = "$Id$"
 
 import sys, os
-import glob
 from distutils.core import Command
 from distutils.debug import DEBUG
 from distutils.util import get_platform

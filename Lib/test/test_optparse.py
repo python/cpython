@@ -15,7 +15,6 @@ import copy
 import unittest
 
 from io import StringIO
-from pprint import pprint
 from test import test_support
 
 

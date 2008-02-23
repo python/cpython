@@ -2,7 +2,6 @@
 # UserString is a wrapper around the native builtin string type.
 # UserString instances should behave similar to builtin string objects.
 
-import unittest
 import string
 from test import test_support, string_tests
 

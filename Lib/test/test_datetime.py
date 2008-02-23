@@ -4,7 +4,6 @@ See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
 
 import os
-import sys
 import pickle
 import unittest
 

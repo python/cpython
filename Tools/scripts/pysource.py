@@ -20,7 +20,7 @@ __author__ = "Oleg Broytmann, Georg Brandl"
 __all__ = ["has_python_ext", "looks_like_python", "can_be_compiled", "walk_python_files"]
 
 
-import sys, os, re
+import os, re
 
 binary_re = re.compile('[\x00-\x08\x0E-\x1F\x7F]')
 

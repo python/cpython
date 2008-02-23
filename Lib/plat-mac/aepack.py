@@ -20,7 +20,6 @@ import Carbon.File
 import io
 import aetypes
 from aetypes import mkenum, ObjectSpecifier
-import os
 
 # These ones seem to be missing from AppleEvents
 # (they're in AERegistry.h)

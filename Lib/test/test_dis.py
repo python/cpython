@@ -1,6 +1,6 @@
 # Minimal tests for dis module
 
-from test.test_support import verbose, run_unittest
+from test.test_support import run_unittest
 import unittest
 import sys
 import dis

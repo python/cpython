@@ -32,10 +32,7 @@ between conformable Python objects and XML on the wire.
    all clients and servers; see http://ontosys.com/xml-rpc/extensions.php for a
    description.  The *use_datetime* flag can be used to cause date/time values to
    be presented as :class:`datetime.datetime` objects; this is false by default.
-   :class:`datetime.datetime`, :class:`datetime.date` and :class:`datetime.time`
-   objects may be passed to calls.  :class:`datetime.date` objects are converted
-   with a time of "00:00:00". :class:`datetime.time` objects are converted using
-   today's date.
+   :class:`datetime.datetime` objects may be passed to calls.
 
    Both the HTTP and HTTPS transports support the URL syntax extension for HTTP
    Basic Authentication: ``http://user:pass@host:port/path``.  The  ``user:pass``
@@ -79,9 +76,7 @@ between conformable Python objects and XML on the wire.
    +---------------------------------+---------------------------------------------+
    | :const:`dates`                  | in seconds since the epoch (pass in an      |
    |                                 | instance of the :class:`DateTime` class) or |
-   |                                 | a :class:`datetime.datetime`,               |
-   |                                 | :class:`datetime.date` or                   |
-   |                                 | :class:`datetime.time` instance             |
+   |                                 | a :class:`datetime.datetime` instance.      |
    +---------------------------------+---------------------------------------------+
    | :const:`binary data`            | pass in an instance of the :class:`Binary`  |
    |                                 | wrapper class                               |
@@ -211,10 +206,10 @@ The client code for the preceding server::
 DateTime Objects
 ----------------
 
-This class may be initialized with seconds since the epoch, a time tuple, an ISO
-8601 time/date string, or a :class:`datetime.datetime`, :class:`datetime.date`
-or :class:`datetime.time` instance.  It has the following methods, supported
-mainly for internal use by the marshalling/unmarshalling code:
+This class may be initialized with seconds since the epoch, a time
+tuple, an ISO 8601 time/date string, or a :class:`datetime.datetime`
+instance.  It has the following methods, supported mainly for internal
+use by the marshalling/unmarshalling code:
 
 
 .. method:: DateTime.decode(string)
@@ -495,10 +490,7 @@ Convenience Functions
    ``None`` if no method name is present in the packet. If the XML-RPC packet
    represents a fault condition, this function will raise a :exc:`Fault` exception.
    The *use_datetime* flag can be used to cause date/time values to be presented as
-   :class:`datetime.datetime` objects; this is false by default. Note that even if
-   you call an XML-RPC method with :class:`datetime.date` or :class:`datetime.time`
-   objects, they are converted to :class:`DateTime` objects internally, so only
-   :class:`datetime.datetime` objects will be returned.
+   :class:`datetime.datetime` objects; this is false by default.
 
 
 .. _xmlrpc-client-example:

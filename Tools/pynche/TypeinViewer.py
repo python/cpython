@@ -12,8 +12,6 @@ color selection will be made on every change to the text field.  Otherwise,
 you must hit Return or Tab to select the color.
 """
 
-import sys
-import re
 from Tkinter import *
 
 

@@ -1,5 +1,5 @@
 import unittest
-import os, sys
+import sys
 from ctypes import *
 from ctypes.util import find_library
 from ctypes.test import is_resource_enabled

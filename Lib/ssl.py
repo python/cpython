@@ -54,7 +54,7 @@ PROTOCOL_SSLv23
 PROTOCOL_TLSv1
 """
 
-import os, sys, textwrap
+import textwrap
 
 import _ssl             # if we can't import it, let the error propagate
 

@@ -7,7 +7,6 @@
 import sys
 import os
 from stat import *
-import commands
 import fnmatch
 
 EXECMAGIC = '\001\140\000\010'

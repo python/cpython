@@ -5,7 +5,6 @@ Tests common to list and UserList.UserList
 import sys
 import os
 
-import unittest
 from test import test_support, seq_tests
 
 def CmpToKey(mycmp):

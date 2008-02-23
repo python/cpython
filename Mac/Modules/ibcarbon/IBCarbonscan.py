@@ -1,8 +1,6 @@
 # IBCarbonscan.py
 
 import sys
-import os
-import string
 
 from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)

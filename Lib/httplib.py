@@ -66,7 +66,6 @@ Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
-import errno
 import io
 import mimetools
 import socket

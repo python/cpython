@@ -26,10 +26,6 @@ alist = [{'astring': 'foo@bar.baz.spam',
                         (2005, 2, 10, 11, 41, 23, 0, 1, -1)),
           'datetime3': xmlrpclib.DateTime(
                         datetime.datetime(2005, 2, 10, 11, 41, 23)),
-          'datetime4': xmlrpclib.DateTime(
-                        datetime.date(2005, 2, 10)),
-          'datetime5': xmlrpclib.DateTime(
-                        datetime.time(11, 41, 23)),
           }]
 
 class XMLRPCTestCase(unittest.TestCase):
@@ -53,34 +49,14 @@ class XMLRPCTestCase(unittest.TestCase):
         (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
         self.assertEquals(newdt, xmlrpclib.DateTime('20050210T11:41:23'))
 
-    def test_dump_bare_date(self):
-        # This checks that an unwrapped datetime.date object can be handled
-        # by the marshalling code.  This can't be done via test_dump_load()
-        # since the unmarshaller produces a datetime object
-        d = datetime.datetime(2005, 2, 10, 11, 41, 23).date()
-        s = xmlrpclib.dumps((d,))
-        (newd,), m = xmlrpclib.loads(s, use_datetime=1)
-        self.assertEquals(newd.date(), d)
-        self.assertEquals(newd.time(), datetime.time(0, 0, 0))
-        self.assertEquals(m, None)
-
-        (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
-        self.assertEquals(newdt, xmlrpclib.DateTime('20050210T00:00:00'))
-
-    def test_dump_bare_time(self):
-        # This checks that an unwrapped datetime.time object can be handled
-        # by the marshalling code.  This can't be done via test_dump_load()
-        # since the unmarshaller produces a datetime object
-        t = datetime.datetime(2005, 2, 10, 11, 41, 23).time()
-        s = xmlrpclib.dumps((t,))
-        (newt,), m = xmlrpclib.loads(s, use_datetime=1)
-        today = datetime.datetime.now().date().strftime("%Y%m%d")
-        self.assertEquals(newt.time(), t)
-        self.assertEquals(newt.date(), datetime.datetime.now().date())
-        self.assertEquals(m, None)
-
-        (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
-        self.assertEquals(newdt, xmlrpclib.DateTime('%sT11:41:23'%today))
+    def test_cmp_datetime_DateTime(self):
+        now = datetime.datetime.now()
+        dt = xmlrpclib.DateTime(now.timetuple())
+        self.assert_(dt == now)
+        self.assert_(now == dt)
+        then = now + datetime.timedelta(seconds=4)
+        self.assert_(then >= dt)
+        self.assert_(dt < then)
 
     def test_bug_1164912 (self):
         d = xmlrpclib.DateTime()
@@ -200,21 +176,6 @@ class DateTimeTestCase(unittest.TestCase):
         d = datetime.datetime(2007,1,2,3,4,5)
         t = xmlrpclib.DateTime(d)
         self.assertEqual(str(t), '20070102T03:04:05')
-
-    def test_datetime_date(self):
-        d = datetime.date(2007,9,8)
-        t = xmlrpclib.DateTime(d)
-        self.assertEqual(str(t), '20070908T00:00:00')
-
-    def test_datetime_time(self):
-        d = datetime.time(13,17,19)
-        # allow for date rollover by checking today's or tomorrow's dates
-        dd1 = datetime.datetime.now().date()
-        dd2 = dd1 + datetime.timedelta(days=1)
-        vals = (dd1.strftime('%Y%m%dT13:17:19'),
-                dd2.strftime('%Y%m%dT13:17:19'))
-        t = xmlrpclib.DateTime(d)
-        self.assertEqual(str(t) in vals, True)
 
     def test_repr(self):
         d = datetime.datetime(2007,1,2,3,4,5)

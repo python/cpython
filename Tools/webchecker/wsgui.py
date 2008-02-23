@@ -7,9 +7,7 @@ their respective text boxes, click GO or hit return, and presto.
 """
 
 from Tkinter import *
-import Tkinter
 import websucker
-import sys
 import os
 import threading
 import Queue

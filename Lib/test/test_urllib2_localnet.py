@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 import threading
 import urlparse
 import urllib2

@@ -10,7 +10,6 @@ active threads survive in the child after a fork(); this is an error.
 """
 
 import os, sys, time, thread, unittest
-from test.test_support import TestSkipped
 
 LONGSLEEP = 2
 SHORTSLEEP = 0.5

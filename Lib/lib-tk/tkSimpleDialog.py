@@ -26,7 +26,6 @@ askstring -- get a string from the user
 '''
 
 from Tkinter import *
-import os
 
 class Dialog(Toplevel):
 

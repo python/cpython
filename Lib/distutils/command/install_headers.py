@@ -5,7 +5,6 @@ files to the Python include directory."""
 
 __revision__ = "$Id$"
 
-import os
 from distutils.core import Command
 
 

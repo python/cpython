@@ -5,7 +5,6 @@ Original by Michael Schneider
 """
 
 
-from test import test_support
 import cmd
 import sys
 import trace

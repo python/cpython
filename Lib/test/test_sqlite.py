@@ -1,5 +1,4 @@
 from test.test_support import run_unittest, TestSkipped
-import unittest
 
 try:
     import _sqlite3

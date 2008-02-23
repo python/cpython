@@ -3,7 +3,6 @@
 import os
 import sys
 import pickle
-import traceback
 from io import StringIO
 from test.test_support import verbose, run_unittest, TestSkipped
 import unittest
@@ -790,6 +789,14 @@ class MinidomTest(unittest.TestCase):
                 and root.childNodes.length == 0,
                 "testNormalize -- single empty node removed")
         doc.unlink()
+
+    def testBug1433694(self):
+        doc = parseString("<o><i/>t</o>")
+        node = doc.documentElement
+        node.childNodes[1].nodeValue = ""
+        node.normalize()
+        self.confirm(node.childNodes[-1].nextSibling == None,
+                     "Final child's .nextSibling should be None")
 
     def testSiblings(self):
         doc = parseString("<doc><?pi?>text?<elm/></doc>")
