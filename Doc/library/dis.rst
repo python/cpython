@@ -437,7 +437,7 @@ the more significant byte last.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = TOS``. *namei* is the index of *name* in the attribute
-   :attr:`co_names` of the code object. The compiler tries to use ``STORE_LOCAL``
+   :attr:`co_names` of the code object. The compiler tries to use ``STORE_FAST``
    or ``STORE_GLOBAL`` if possible.
 
 

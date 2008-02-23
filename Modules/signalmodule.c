@@ -272,6 +272,36 @@ SIG_DFL -- if the default action for the signal is in effect\n\
 None -- if an unknown handler is in effect\n\
 anything else -- the callable Python object used as a handler");
 
+#ifdef HAVE_SIGINTERRUPT
+PyDoc_STRVAR(siginterrupt_doc,
+"siginterrupt(sig, flag) -> None\n\
+change system call restart behaviour: if flag is False, system calls\n\
+will be restarted when interrupted by signal sig, else system calls\n\
+will be interrupted.");
+
+static PyObject *
+signal_siginterrupt(PyObject *self, PyObject *args)
+{
+	int sig_num;
+	int flag;
+
+	if (!PyArg_ParseTuple(args, "ii:siginterrupt", &sig_num, &flag))
+		return NULL;
+	if (sig_num < 1 || sig_num >= NSIG) {
+		PyErr_SetString(PyExc_ValueError,
+				"signal number out of range");
+		return NULL;
+	}
+	if (siginterrupt(sig_num, flag)<0) {
+		PyErr_SetFromErrno(PyExc_RuntimeError);
+		return NULL;
+	}
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+#endif
 
 static PyObject *
 signal_set_wakeup_fd(PyObject *self, PyObject *args)
@@ -325,6 +355,9 @@ static PyMethodDef signal_methods[] = {
 	{"signal",	        signal_signal, METH_VARARGS, signal_doc},
 	{"getsignal",	        signal_getsignal, METH_VARARGS, getsignal_doc},
 	{"set_wakeup_fd",	signal_set_wakeup_fd, METH_VARARGS, set_wakeup_fd_doc},
+#ifdef HAVE_SIGINTERRUPT
+ 	{"siginterrupt",	signal_siginterrupt, METH_VARARGS, siginterrupt_doc},
+#endif
 #ifdef HAVE_PAUSE
 	{"pause",	        (PyCFunction)signal_pause,
 	 METH_NOARGS,pause_doc},
