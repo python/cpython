@@ -440,6 +440,24 @@ class OperatorTestCase(unittest.TestCase):
         self.assertEqual(operator.itemgetter(2,10,5)(data), ('2', '10', '5'))
         self.assertRaises(TypeError, operator.itemgetter(2, 'x', 5), data)
 
+    def test_methodcaller(self):
+        self.assertRaises(TypeError, operator.methodcaller)
+        class A:
+            def foo(self, *args, **kwds):
+                return args[0] + args[1]
+            def bar(self, f=42):
+                return f
+        a = A()
+        f = operator.methodcaller('foo')
+        self.assertRaises(IndexError, f, a)
+        f = operator.methodcaller('foo', 1, 2)
+        self.assertEquals(f(a), 3)
+        f = operator.methodcaller('bar')
+        self.assertEquals(f(a), 42)
+        self.assertRaises(TypeError, f, a, a)
+        f = operator.methodcaller('bar', f=5)
+        self.assertEquals(f(a), 5)
+
     def test_inplace(self):
         class C(object):
             def __iadd__     (self, other): return "iadd"
