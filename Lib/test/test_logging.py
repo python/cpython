@@ -2009,7 +2009,7 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
                              port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                      handler=LogRecordStreamHandler):
         ThreadingTCPServer.__init__(self, (host, port), handler)
-        self.abort = 0
+        self.abort = False
         self.timeout = 1
 
     def serve_until_stopped(self):
@@ -2018,11 +2018,11 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
                                        self.timeout)
             if rd:
                 self.handle_request()
+            socketDataProcessed.set()
         # close the listen socket
         self.server_close()
 
     def process_request(self, request, client_address):
-        #import threading
         t = threading.Thread(target = self.finish_request,
                              args = (request, client_address))
         t.start()
@@ -2107,28 +2107,18 @@ def test_main_inner():
     rootLogger = logging.getLogger("")
     rootLogger.setLevel(logging.DEBUG)
 
-    # Find an unused port number
-    port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
-    while port < logging.handlers.DEFAULT_TCP_LOGGING_PORT+100:
-        try:
-            tcpserver = LogRecordSocketReceiver(port=port)
-        except socket.error:
-            port += 1
-        else:
-            break
-    else:
-        raise ImportError, "Could not find unused port"
+    tcpserver = LogRecordSocketReceiver(port=0)
+    port = tcpserver.socket.getsockname()[1]
 
-
-    #Set up a handler such that all events are sent via a socket to the log
-    #receiver (logrecv).
-    #The handler will only be added to the rootLogger for some of the tests
+    # Set up a handler such that all events are sent via a socket to the log
+    # receiver (logrecv).
+    # The handler will only be added to the rootLogger for some of the tests
     shdlr = logging.handlers.SocketHandler('localhost', port)
     rootLogger.addHandler(shdlr)
 
-    #Configure the logger for logrecv so events do not propagate beyond it.
-    #The sockLogger output is buffered in memory until the end of the test,
-    #and printed at the end.
+    # Configure the logger for logrecv so events do not propagate beyond it.
+    # The sockLogger output is buffered in memory until the end of the test,
+    # and printed at the end.
     sockOut = cStringIO.StringIO()
     sockLogger = logging.getLogger("logrecv")
     sockLogger.setLevel(logging.DEBUG)
@@ -2157,9 +2147,9 @@ def test_main_inner():
 
     finally:
         #wait for TCP receiver to terminate
-#        socketDataProcessed.wait()
+        socketDataProcessed.wait()
         # ensure the server dies
-        tcpserver.abort = 1
+        tcpserver.abort = True
         for thread in threads:
             thread.join(2.0)
         print(sockOut.getvalue())
