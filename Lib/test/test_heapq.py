@@ -1,21 +1,32 @@
 """Unittests for heapq."""
 
-from heapq import heappush, heappop, heapify, heapreplace, merge, nlargest, nsmallest
 import random
 import unittest
 from test import test_support
 import sys
 
+# We do a bit of trickery here to be able to test both the C implementation
+# and the Python implementation of the module.
 
-def heapiter(heap):
-    # An iterator returning a heap's elements, smallest-first.
-    try:
-        while 1:
-            yield heappop(heap)
-    except IndexError:
-        pass
+# Make it impossible to import the C implementation anymore.
+sys.modules['_heapq'] = 0
+# We must also handle the case that heapq was imported before.
+if 'heapq' in sys.modules:
+    del sys.modules['heapq']
+
+# Now we can import the module and get the pure Python implementation.
+import heapq as py_heapq
+
+# Restore everything to normal.
+del sys.modules['_heapq']
+del sys.modules['heapq']
+
+# This is now the module with the C implementation.
+import heapq as c_heapq
+
 
 class TestHeap(unittest.TestCase):
+    module = None
 
     def test_push_pop(self):
         # 1) Push 256 random numbers and pop them off, verifying all's OK.
@@ -25,11 +36,11 @@ class TestHeap(unittest.TestCase):
         for i in range(256):
             item = random.random()
             data.append(item)
-            heappush(heap, item)
+            self.module.heappush(heap, item)
             self.check_invariant(heap)
         results = []
         while heap:
-            item = heappop(heap)
+            item = self.module.heappop(heap)
             self.check_invariant(heap)
             results.append(item)
         data_sorted = data[:]
@@ -38,10 +49,10 @@ class TestHeap(unittest.TestCase):
         # 2) Check that the invariant holds for a sorted array
         self.check_invariant(results)
 
-        self.assertRaises(TypeError, heappush, [])
+        self.assertRaises(TypeError, self.module.heappush, [])
         try:
-            self.assertRaises(TypeError, heappush, None, None)
-            self.assertRaises(TypeError, heappop, None)
+            self.assertRaises(TypeError, self.module.heappush, None, None)
+            self.assertRaises(TypeError, self.module.heappop, None)
         except AttributeError:
             pass
 
@@ -55,20 +66,28 @@ class TestHeap(unittest.TestCase):
     def test_heapify(self):
         for size in range(30):
             heap = [random.random() for dummy in range(size)]
-            heapify(heap)
+            self.module.heapify(heap)
             self.check_invariant(heap)
 
-        self.assertRaises(TypeError, heapify, None)
+        self.assertRaises(TypeError, self.module.heapify, None)
 
     def test_naive_nbest(self):
         data = [random.randrange(2000) for i in range(1000)]
         heap = []
         for item in data:
-            heappush(heap, item)
+            self.module.heappush(heap, item)
             if len(heap) > 10:
-                heappop(heap)
+                self.module.heappop(heap)
         heap.sort()
         self.assertEqual(heap, sorted(data)[-10:])
+
+    def heapiter(self, heap):
+        # An iterator returning a heap's elements, smallest-first.
+        try:
+            while 1:
+                yield self.module.heappop(heap)
+        except IndexError:
+            pass
 
     def test_nbest(self):
         # Less-naive "N-best" algorithm, much faster (if len(data) is big
@@ -78,15 +97,15 @@ class TestHeap(unittest.TestCase):
         # (10 log-time steps).
         data = [random.randrange(2000) for i in range(1000)]
         heap = data[:10]
-        heapify(heap)
+        self.module.heapify(heap)
         for item in data[10:]:
             if item > heap[0]:  # this gets rarer the longer we run
-                heapreplace(heap, item)
-        self.assertEqual(list(heapiter(heap)), sorted(data)[-10:])
+                self.module.heapreplace(heap, item)
+        self.assertEqual(list(self.heapiter(heap)), sorted(data)[-10:])
 
-        self.assertRaises(TypeError, heapreplace, None)
-        self.assertRaises(TypeError, heapreplace, None, None)
-        self.assertRaises(IndexError, heapreplace, [], None)
+        self.assertRaises(TypeError, self.module.heapreplace, None)
+        self.assertRaises(TypeError, self.module.heapreplace, None, None)
+        self.assertRaises(IndexError, self.module.heapreplace, [], None)
 
     def test_heapsort(self):
         # Exercise everything with repeated heapsort checks
@@ -95,12 +114,12 @@ class TestHeap(unittest.TestCase):
             data = [random.randrange(25) for i in range(size)]
             if trial & 1:     # Half of the time, use heapify
                 heap = data[:]
-                heapify(heap)
+                self.module.heapify(heap)
             else:             # The rest of the time, use heappush
                 heap = []
                 for item in data:
-                    heappush(heap, item)
-            heap_sorted = [heappop(heap) for i in range(size)]
+                    self.module.heappush(heap, item)
+            heap_sorted = [self.module.heappop(heap) for i in range(size)]
             self.assertEqual(heap_sorted, sorted(data))
 
     def test_merge(self):
@@ -108,8 +127,8 @@ class TestHeap(unittest.TestCase):
         for i in xrange(random.randrange(5)):
             row = sorted(random.randrange(1000) for j in range(random.randrange(10)))
             inputs.append(row)
-        self.assertEqual(sorted(chain(*inputs)), list(merge(*inputs)))
-        self.assertEqual(list(merge()), [])
+        self.assertEqual(sorted(chain(*inputs)), list(self.module.merge(*inputs)))
+        self.assertEqual(list(self.module.merge()), [])
 
     def test_merge_stability(self):
         class Int(int):
@@ -123,24 +142,31 @@ class TestHeap(unittest.TestCase):
             inputs[stream].append(obj)
         for stream in inputs:
             stream.sort()
-        result = [i.pair for i in merge(*inputs)]
+        result = [i.pair for i in self.module.merge(*inputs)]
         self.assertEqual(result, sorted(result))
 
     def test_nsmallest(self):
         data = [(random.randrange(2000), i) for i in range(1000)]
         for f in (None, lambda x:  x[0] * 547 % 2000):
             for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
-                self.assertEqual(nsmallest(n, data), sorted(data)[:n])
-                self.assertEqual(nsmallest(n, data, key=f),
+                self.assertEqual(self.module.nsmallest(n, data), sorted(data)[:n])
+                self.assertEqual(self.module.nsmallest(n, data, key=f),
                                  sorted(data, key=f)[:n])
 
     def test_nlargest(self):
         data = [(random.randrange(2000), i) for i in range(1000)]
         for f in (None, lambda x:  x[0] * 547 % 2000):
             for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
-                self.assertEqual(nlargest(n, data), sorted(data, reverse=True)[:n])
-                self.assertEqual(nlargest(n, data, key=f),
+                self.assertEqual(self.module.nlargest(n, data),
+                                 sorted(data, reverse=True)[:n])
+                self.assertEqual(self.module.nlargest(n, data, key=f),
                                  sorted(data, key=f, reverse=True)[:n])
+
+class TestHeapPython(TestHeap):
+    module = py_heapq
+
+class TestHeapC(TestHeap):
+    module = c_heapq
 
 
 #==============================================================================
@@ -238,44 +264,49 @@ def L(seqn):
     return chain(imap(lambda x:x, R(Ig(G(seqn)))))
 
 class TestErrorHandling(unittest.TestCase):
+    # only for C implementation
+    module = c_heapq
 
     def test_non_sequence(self):
-        for f in (heapify, heappop):
+        for f in (self.module.heapify, self.module.heappop):
             self.assertRaises(TypeError, f, 10)
-        for f in (heappush, heapreplace, nlargest, nsmallest):
+        for f in (self.module.heappush, self.module.heapreplace,
+                  self.module.nlargest, self.module.nsmallest):
             self.assertRaises(TypeError, f, 10, 10)
 
     def test_len_only(self):
-        for f in (heapify, heappop):
+        for f in (self.module.heapify, self.module.heappop):
             self.assertRaises(TypeError, f, LenOnly())
-        for f in (heappush, heapreplace):
+        for f in (self.module.heappush, self.module.heapreplace):
             self.assertRaises(TypeError, f, LenOnly(), 10)
-        for f in (nlargest, nsmallest):
+        for f in (self.module.nlargest, self.module.nsmallest):
             self.assertRaises(TypeError, f, 2, LenOnly())
 
     def test_get_only(self):
-        for f in (heapify, heappop):
+        for f in (self.module.heapify, self.module.heappop):
             self.assertRaises(TypeError, f, GetOnly())
-        for f in (heappush, heapreplace):
+        for f in (self.module.heappush, self.module.heapreplace):
             self.assertRaises(TypeError, f, GetOnly(), 10)
-        for f in (nlargest, nsmallest):
+        for f in (self.module.nlargest, self.module.nsmallest):
             self.assertRaises(TypeError, f, 2, GetOnly())
 
     def test_get_only(self):
         seq = [CmpErr(), CmpErr(), CmpErr()]
-        for f in (heapify, heappop):
+        for f in (self.module.heapify, self.module.heappop):
             self.assertRaises(ZeroDivisionError, f, seq)
-        for f in (heappush, heapreplace):
+        for f in (self.module.heappush, self.module.heapreplace):
             self.assertRaises(ZeroDivisionError, f, seq, 10)
-        for f in (nlargest, nsmallest):
+        for f in (self.module.nlargest, self.module.nsmallest):
             self.assertRaises(ZeroDivisionError, f, 2, seq)
 
     def test_arg_parsing(self):
-        for f in (heapify, heappop, heappush, heapreplace, nlargest, nsmallest):
+        for f in (self.module.heapify, self.module.heappop,
+                  self.module.heappush, self.module.heapreplace,
+                  self.module.nlargest, self.module.nsmallest):
             self.assertRaises(TypeError, f, 10)
 
     def test_iterable_args(self):
-        for f in  (nlargest, nsmallest):
+        for f in (self.module.nlargest, self.module.nsmallest):
             for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
                 for g in (G, I, Ig, L, R):
                     self.assertEqual(f(2, g(s)), f(2,s))
@@ -284,15 +315,14 @@ class TestErrorHandling(unittest.TestCase):
                 self.assertRaises(TypeError, f, 2, N(s))
                 self.assertRaises(ZeroDivisionError, f, 2, E(s))
 
+
 #==============================================================================
 
 
 def test_main(verbose=None):
     from types import BuiltinFunctionType
 
-    test_classes = [TestHeap]
-    if isinstance(heapify, BuiltinFunctionType):
-        test_classes.append(TestErrorHandling)
+    test_classes = [TestHeapPython, TestHeapC, TestErrorHandling]
     test_support.run_unittest(*test_classes)
 
     # verify reference counting
