@@ -463,6 +463,11 @@ can do what they want. [#]_
 Pickling and unpickling extension types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. index::
+   single: __reduce__() (pickle protocol)
+   single: __reduce_ex__() (pickle protocol)
+   single: __safe_for_unpickling__ (pickle protocol)
+
 When the :class:`Pickler` encounters an object of a type it knows nothing about
 --- such as an extension type --- it looks in two places for a hint of how to
 pickle it.  One alternative is for the object to implement a :meth:`__reduce__`
@@ -540,6 +545,10 @@ unpickling as described above.
 
 Pickling and unpickling external objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: persistent_id (pickle protocol)
+   single: persistent_load (pickle protocol)
 
 For the benefit of object persistence, the :mod:`pickle` module supports the
 notion of a reference to an object outside the pickled data stream.  Such
@@ -629,6 +638,10 @@ with the :meth:`noload` method on the Unpickler.
 
 Subclassing Unpicklers
 ----------------------
+
+.. index::
+   single: load_global() (pickle protocol)
+   single: find_global() (pickle protocol)
 
 By default, unpickling will import any class that it finds in the pickle data.
 You can control exactly what gets unpickled and what gets called by customizing
