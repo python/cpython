@@ -1196,6 +1196,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1826: operator.attrgetter() now supports dotted attribute paths.
+
 - Patch #1957: syslogmodule: Release GIL when calling syslog(3)
 
 - #2112: mmap.error is now a subclass of EnvironmentError and not a
