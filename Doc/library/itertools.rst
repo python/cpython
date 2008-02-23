@@ -559,3 +559,9 @@ which incur interpreter overhead. ::
                pending -= 1
                nexts = cycle(islice(nexts, pending))
 
+   def powerset(iterable):
+       "powerset('ab') --> set([]), set(['b']), set(['a']), set(['a', 'b'])"
+       skip = object()
+       for t in product(*izip(repeat(skip), iterable)):
+           yield set(e for e in t if e is not skip)
+
