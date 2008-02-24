@@ -419,10 +419,12 @@ expect a function argument.
 
    Return a callable object that fetches *attr* from its operand. If more than one
    attribute is requested, returns a tuple of attributes. After,
-   ``f=attrgetter('name')``, the call ``f(b)`` returns ``b.name``.  After,
-   ``f=attrgetter('name', 'date')``, the call ``f(b)`` returns ``(b.name,
+   ``f = attrgetter('name')``, the call ``f(b)`` returns ``b.name``.  After,
+   ``f = attrgetter('name', 'date')``, the call ``f(b)`` returns ``(b.name,
    b.date)``.
 
+   The attribute names can also contain dots; after ``f = attrgetter('date.month')``,
+   the call ``f(b)`` returns ``b.date.month``.
 
 .. function:: itemgetter(item[, args...])
 
@@ -441,6 +443,15 @@ Examples::
    [3, 2, 5, 1]
    >>> sorted(inventory, key=getcount)
    [('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)]
+
+
+.. function:: methodcaller(name[, args...])
+
+   Return a callable object that calls the method *name* on its operand.  If
+   additional arguments and/or keyword arguments are given, they will be given
+   to the method as well.  After ``f = methodcaller('name')``, the call ``f(b)``
+   returns ``b.name()``.  After ``f = methodcaller('name', 'foo', bar=1)``, the
+   call ``f(b)`` returns ``b.name('foo', bar=1)``.
 
 
 .. _operator-map:

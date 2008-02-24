@@ -368,6 +368,26 @@ class OperatorTestCase(unittest.TestCase):
                 raise SyntaxError
         self.failUnlessRaises(SyntaxError, operator.attrgetter('foo'), C())
 
+        # recursive gets
+        a = A()
+        a.name = 'arthur'
+        a.child = A()
+        a.child.name = 'thomas'
+        f = operator.attrgetter('child.name')
+        self.assertEqual(f(a), 'thomas')
+        self.assertRaises(AttributeError, f, a.child)
+        f = operator.attrgetter('name', 'child.name')
+        self.assertEqual(f(a), ('arthur', 'thomas'))
+        f = operator.attrgetter('name', 'child.name', 'child.child.name')
+        self.assertRaises(AttributeError, f, a)
+
+        a.child.child = A()
+        a.child.child.name = 'johnson'
+        f = operator.attrgetter('child.child.name')
+        self.assertEqual(f(a), 'johnson')
+        f = operator.attrgetter('name', 'child.name', 'child.child.name')
+        self.assertEqual(f(a), ('arthur', 'thomas', 'johnson'))
+
     def test_itemgetter(self):
         a = 'ABCDE'
         f = operator.itemgetter(2)
@@ -401,6 +421,24 @@ class OperatorTestCase(unittest.TestCase):
         data = list(map(str, range(20)))
         self.assertEqual(operator.itemgetter(2,10,5)(data), ('2', '10', '5'))
         self.assertRaises(TypeError, operator.itemgetter(2, 'x', 5), data)
+
+    def test_methodcaller(self):
+        self.assertRaises(TypeError, operator.methodcaller)
+        class A:
+            def foo(self, *args, **kwds):
+                return args[0] + args[1]
+            def bar(self, f=42):
+                return f
+        a = A()
+        f = operator.methodcaller('foo')
+        self.assertRaises(IndexError, f, a)
+        f = operator.methodcaller('foo', 1, 2)
+        self.assertEquals(f(a), 3)
+        f = operator.methodcaller('bar')
+        self.assertEquals(f(a), 42)
+        self.assertRaises(TypeError, f, a, a)
+        f = operator.methodcaller('bar', f=5)
+        self.assertEquals(f(a), 5)
 
     def test_inplace(self):
         class C(object):

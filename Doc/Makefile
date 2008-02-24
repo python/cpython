@@ -12,7 +12,7 @@ PAPER        =
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER)
 
-.PHONY: help checkout update build html web htmlhelp clean
+.PHONY: help checkout update build html web htmlhelp clean coverage
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -22,6 +22,7 @@ help:
 	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
+	@echo "  coverage  to check documentation coverage for library and C API"
 
 checkout:
 	@if [ ! -d tools/sphinx ]; then \
@@ -74,8 +75,12 @@ changes: build
 
 linkcheck: BUILDER = linkcheck
 linkcheck: build
-	@echo "Link check complete; look for any errors in the above output "\
+	@echo "Link check complete; look for any errors in the above output " \
 	      "or in build/$(BUILDER)/output.txt"
+
+coverage: BUILDER = coverage
+coverage: build
+	@echo "Coverage finished; see c.txt and python.txt in build/coverage"
 
 clean:
 	-rm -rf build/*

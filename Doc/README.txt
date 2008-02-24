@@ -64,6 +64,9 @@ Available make targets are:
    deprecated items in the current version. This is meant as a help for the
    writer of the "What's New" document.
 
+ * "coverage", which builds a coverage overview for standard library modules
+   and C API.
+
 A "make update" updates the Subversion checkouts in `tools/`.
 
 

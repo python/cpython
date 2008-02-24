@@ -48,3 +48,65 @@ report of the imported modules will be printed.
 
    Analyze the contents of the *pathname* file, which must contain  Python code.
 
+.. attribute:: ModuleFinder.modules
+
+   A dictionary mapping module names to modules. See :ref:`modulefinder-example`
+
+
+.. _modulefinder-example:
+
+Example usage of :class:`ModuleFinder`
+--------------------------------------
+
+The script that is going to get analyzed later on (bacon.py)::
+
+   import re, itertools
+
+   try:
+       import baconhameggs
+   except ImportError:
+       pass
+
+   try:
+       import guido.python.ham
+   except ImportError:
+       pass
+
+
+The script that will output the report of bacon.py::
+
+   from modulefinder import ModuleFinder
+
+   finder = ModuleFinder()
+   finder.run_script('bacon.py')
+
+   print 'Loaded modules:'
+   for name, mod in finder.modules.iteritems():
+       print '%s: ' % name,
+       print ','.join(mod.globalnames.keys()[:3])
+
+   print '-'*50
+   print 'Modules not imported:'
+   print '\n'.join(finder.badmodules.iterkeys())
+
+Sample output (may vary depending on the architecture)::
+
+    Loaded modules:
+    _types:
+    copy_reg:  _inverted_registry,_slotnames,__all__
+    sre_compile:  isstring,_sre,_optimize_unicode
+    _sre:
+    sre_constants:  REPEAT_ONE,makedict,AT_END_LINE
+    sys:
+    re:  __module__,finditer,_expand
+    itertools:
+    __main__:  re,itertools,baconhameggs
+    sre_parse:  __getslice__,_PATTERNENDERS,SRE_FLAG_UNICODE
+    array:
+    types:  __module__,IntType,TypeType
+    ---------------------------------------------------
+    Modules not imported:
+    guido.python.ham
+    baconhameggs
+
+

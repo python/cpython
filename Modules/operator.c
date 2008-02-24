@@ -486,6 +486,41 @@ attrgetter_traverse(attrgetterobject *ag, visitproc visit, void *arg)
 }
 
 static PyObject *
+dotted_getattr(PyObject *obj, PyObject *attr)
+{
+	char *s, *p;
+
+	if (!PyUnicode_Check(attr)) {
+		PyErr_SetString(PyExc_TypeError,
+				"attribute name must be a string");
+		return NULL;
+	}
+
+	s = PyUnicode_AsString(attr);
+	Py_INCREF(obj);
+	for (;;) {
+		PyObject *newobj, *str;
+		p = strchr(s, '.');
+		str = p ? PyUnicode_FromStringAndSize(s, (p-s)) : 
+			  PyUnicode_FromString(s);
+		if (str == NULL) {
+			Py_DECREF(obj);
+			return NULL;
+		}
+		newobj = PyObject_GetAttr(obj, str);
+		Py_DECREF(str);
+		Py_DECREF(obj);
+		if (newobj == NULL)
+			return NULL;
+		obj = newobj;
+		if (p == NULL) break;
+		s = p+1;
+	}
+
+	return obj;
+}
+
+static PyObject *
 attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 {
 	PyObject *obj, *result;
@@ -494,7 +529,7 @@ attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 	if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &obj))
 		return NULL;
 	if (ag->nattrs == 1)
-		return PyObject_GetAttr(obj, ag->attr);
+		return dotted_getattr(obj, ag->attr);
 
 	assert(PyTuple_Check(ag->attr));
 	assert(PyTuple_GET_SIZE(ag->attr) == nattrs);
@@ -506,7 +541,7 @@ attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 	for (i=0 ; i < nattrs ; i++) {
 		PyObject *attr, *val;
 		attr = PyTuple_GET_ITEM(ag->attr, i);
-		val = PyObject_GetAttr(obj, attr);
+		val = dotted_getattr(obj, attr);
 		if (val == NULL) {
 			Py_DECREF(result);
 			return NULL;
@@ -521,7 +556,9 @@ PyDoc_STRVAR(attrgetter_doc,
 \n\
 Return a callable object that fetches the given attribute(s) from its operand.\n\
 After, f=attrgetter('name'), the call f(r) returns r.name.\n\
-After, g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).");
+After, g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).\n\
+After, h=attrgetter('name.first', 'name.last'), the call h(r) returns\n\
+(r.name.first, r.name.last).");
 
 static PyTypeObject attrgetter_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
@@ -565,6 +602,139 @@ static PyTypeObject attrgetter_type = {
 	attrgetter_new,			/* tp_new */
 	0,				/* tp_free */
 };
+
+
+/* methodcaller object **********************************************************/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *name;
+	PyObject *args;
+	PyObject *kwds;
+} methodcallerobject;
+
+static PyTypeObject methodcaller_type;
+
+static PyObject *
+methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	methodcallerobject *mc;
+	PyObject *name, *newargs;
+
+	if (PyTuple_GET_SIZE(args) < 1) {
+		PyErr_SetString(PyExc_TypeError, "methodcaller needs at least "
+				"one argument, the method name");
+		return NULL;
+	}
+
+	/* create methodcallerobject structure */
+	mc = PyObject_GC_New(methodcallerobject, &methodcaller_type);
+	if (mc == NULL) 
+		return NULL;	
+
+	newargs = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+	if (newargs == NULL) {
+		Py_DECREF(mc);
+		return NULL;
+	}
+	mc->args = newargs;
+
+	name = PyTuple_GET_ITEM(args, 0);
+	Py_INCREF(name);
+	mc->name = name;
+
+	Py_XINCREF(kwds);
+	mc->kwds = kwds;
+
+	PyObject_GC_Track(mc);
+	return (PyObject *)mc;
+}
+
+static void
+methodcaller_dealloc(methodcallerobject *mc)
+{
+	PyObject_GC_UnTrack(mc);
+	Py_XDECREF(mc->name);
+	Py_XDECREF(mc->args);
+	Py_XDECREF(mc->kwds);
+	PyObject_GC_Del(mc);
+}
+
+static int
+methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
+{
+	Py_VISIT(mc->args);
+	Py_VISIT(mc->kwds);
+	return 0;
+}
+
+static PyObject *
+methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
+{
+	PyObject *method, *obj, *result;
+
+	if (!PyArg_UnpackTuple(args, "methodcaller", 1, 1, &obj))
+		return NULL;
+	method = PyObject_GetAttr(obj, mc->name);
+	if (method == NULL)
+		return NULL;
+	result = PyObject_Call(method, mc->args, mc->kwds);
+	Py_DECREF(method);
+	return result;
+}
+
+PyDoc_STRVAR(methodcaller_doc,
+"methodcaller(name, ...) --> methodcaller object\n\
+\n\
+Return a callable object that calls the given method on its operand.\n\
+After, f = methodcaller('name'), the call f(r) returns r.name().\n\
+After, g = methodcaller('name', 'date', foo=1), the call g(r) returns\n\
+r.name('date', foo=1).");
+
+static PyTypeObject methodcaller_type = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"operator.methodcaller",	/* tp_name */
+	sizeof(methodcallerobject),	/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)methodcaller_dealloc, /* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	(ternaryfunc)methodcaller_call,	/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	methodcaller_doc,			/* tp_doc */
+	(traverseproc)methodcaller_traverse,	/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	0,				/* tp_iter */
+	0,				/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	0,				/* tp_alloc */
+	methodcaller_new,		/* tp_new */
+	0,				/* tp_free */
+};
+
+
 /* Initialization function for the module (*must* be called initoperator) */
 
 PyMODINIT_FUNC
@@ -587,4 +757,9 @@ initoperator(void)
 		return;
 	Py_INCREF(&attrgetter_type);
 	PyModule_AddObject(m, "attrgetter", (PyObject *)&attrgetter_type);
+
+	if (PyType_Ready(&methodcaller_type) < 0)
+		return;
+	Py_INCREF(&methodcaller_type);
+	PyModule_AddObject(m, "methodcaller", (PyObject *)&methodcaller_type);
 }
