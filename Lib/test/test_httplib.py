@@ -184,6 +184,13 @@ class BasicTest(TestCase):
             finally:
                 resp.close()
 
+    def test_negative_content_length(self):
+        sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\nHello\r\n')
+        resp = httplib.HTTPResponse(sock, method="GET")
+        resp.begin()
+        self.assertEquals(resp.read(), 'Hello\r\n')
+        resp.close()
+
 
 class OfflineTest(TestCase):
     def test_responses(self):

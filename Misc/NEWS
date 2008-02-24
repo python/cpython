@@ -441,6 +441,8 @@ Core and builtins
 Library
 -------
 
+- #1627: httplib now ignores negative Content-Length headers.
+
 - #900744: If an invalid chunked-encoding header is sent by a server,
   httplib will now raise IncompleteRead and close the connection instead
   of raising ValueError.

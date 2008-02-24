@@ -438,6 +438,9 @@ class HTTPResponse:
                 self.length = int(length)
             except ValueError:
                 self.length = None
+            else:
+                if self.length < 0:  # ignore nonsensical negative lengths
+                    self.length = None
         else:
             self.length = None
 
