@@ -494,7 +494,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
         goto done;
 
 #if PY_VERSION_HEX >= 0x03000000
-    assert(PyString_Check(result));
+    assert(PyUnicode_Check(result));
 #else
     assert(PyString_Check(result) || PyUnicode_Check(result));
 
