@@ -4,7 +4,6 @@ is closed before its DB objects.
 
 import os
 import tempfile
-import glob
 import unittest
 
 try:
@@ -32,7 +31,7 @@ else:
 
 class DBEnvClosedEarlyCrash(unittest.TestCase):
     def setUp(self):
-        self.homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        self.homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
         try: os.mkdir(self.homeDir)
         except os.error: pass
         tempfile.tempdir = self.homeDir
@@ -40,10 +39,8 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
         tempfile.tempdir = None
 
     def tearDown(self):
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
-
+        from test import test_support
+        test_support.rmtree(self.homeDir)
 
     def test01_close_dbenv_before_db(self):
         dbenv = db.DBEnv()

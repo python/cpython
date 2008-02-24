@@ -47,7 +47,7 @@ class JoinTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
         self.homeDir = homeDir
         try: os.mkdir(homeDir)
         except os.error: pass
@@ -56,10 +56,8 @@ class JoinTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.env.close()
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        from test import test_support
+        test_support.rmtree(self.homeDir)
 
     def test01_join(self):
         if verbose:

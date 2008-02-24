@@ -9,6 +9,7 @@ import socket
 import sys
 import os
 import os.path
+import shutil
 import warnings
 import unittest
 
@@ -63,6 +64,14 @@ def unlink(filename):
         os.unlink(filename)
     except OSError:
         pass
+
+def rmtree(path):
+    try:
+        shutil.rmtree(path)
+    except OSError, e:
+        # Unix returns ENOENT, Windows returns ESRCH.
+        if e.errno not in (errno.ENOENT, errno.ESRCH):
+            raise
 
 def forget(modname):
     '''"Forget" a module was ever imported by removing it from sys.modules and
