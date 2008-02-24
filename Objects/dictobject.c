@@ -171,8 +171,10 @@ static size_t count_reuse = 0;
 static void
 show_alloc(void)
 {
-	fprintf(stderr, "Dict allocations: %zd\n", count_alloc);
-	fprintf(stderr, "Dict reuse through freelist: %zd\n", count_reuse);
+	fprintf(stderr, "Dict allocations: %" PY_FORMAT_SIZE_T "d\n",
+		count_alloc);
+	fprintf(stderr, "Dict reuse through freelist: %" PY_FORMAT_SIZE_T
+		"d\n", count_reuse);
 	fprintf(stderr, "%.2f%% reuse rate\n\n",
 		(100.0*count_reuse/(count_alloc+count_reuse)));
 }
