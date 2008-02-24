@@ -11,7 +11,7 @@ maxsize = MAX_Py_ssize_t
 overflowok = 1
 overflowrequired = 0
 
-def testformat(formatstr, args, output=None):
+def testformat(formatstr, args, output=None, limit=None):
     if verbose:
         if output:
             print("%r %% %r =? %r ..." %\
@@ -30,11 +30,22 @@ def testformat(formatstr, args, output=None):
             if verbose:
                 print('no')
             print("overflow expected on %r %% %r" % (formatstr, args))
-        elif output and result != output:
+        elif output and limit is None and result != output:
             if verbose:
                 print('no')
             print("%r %% %r == %r != %r" %\
                 (formatstr, args, result, output))
+        # when 'limit' is specified, it determines how many characters
+        # must match exactly; lengths must always match.
+        # ex: limit=5, '12345678' matches '12345___'
+        # (mainly for floating point format tests for which an exact match
+        # can't be guaranteed due to rounding and representation errors)
+        elif output and limit is not None and (
+                len(result)!=len(output) or result[:limit]!=output[:limit]):
+            if verbose:
+                print('no')
+            print("%s %% %s == %s != %s" % \
+                  (repr(formatstr), repr(args), repr(result), repr(output)))
         else:
             if verbose:
                 print('yes')
@@ -91,6 +102,7 @@ testformat("%.2d", big, "123456789012345678901234567890")
 testformat("%.30d", big, "123456789012345678901234567890")
 testformat("%.31d", big, "0123456789012345678901234567890")
 testformat("%32.31d", big, " 0123456789012345678901234567890")
+testformat("%d", float(big), "123456________________________", 6)
 
 big = 0x1234567890abcdef12345  # 21 hex digits
 testformat("%x", big, "1234567890abcdef12345")
@@ -128,6 +140,7 @@ testformat("%#+27.23X", big, " +0X001234567890ABCDEF12345")
 testformat("%#+027.23X", big, "+0X0001234567890ABCDEF12345")
 # same, except no 0 flag
 testformat("%#+27.23X", big, " +0X001234567890ABCDEF12345")
+testformat("%x", float(big), "123456_______________", 6)
 
 big = 0o12345670123456701234567012345670  # 32 octal digits
 testformat("%o", big, "12345670123456701234567012345670")
@@ -169,6 +182,7 @@ testformat("%034.33o", big, "0012345670123456701234567012345670")
 testformat("%0#38.33o", big, "0o000012345670123456701234567012345670")
 # padding spaces come before marker
 testformat("%#36.33o", big, " 0o012345670123456701234567012345670")
+testformat("%o", float(big), "123456__________________________", 6)
 
 # Some small ints, in both Python int and long flavors).
 testformat("%d", 42, "42")
@@ -186,11 +200,13 @@ testformat("%#X", 0, "0X0")
 
 testformat("%x", 0x42, "42")
 testformat("%x", -0x42, "-42")
+testformat("%x", float(0x42), "42")
 
 testformat("%o", 0o42, "42")
 testformat("%o", -0o42, "-42")
 testformat("%o", 0o42, "42")
 testformat("%o", -0o42, "-42")
+testformat("%o", float(0o42), "42")
 
 # Test exception for unknown format characters
 if verbose:

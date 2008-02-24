@@ -448,7 +448,12 @@ class HTTPResponse:
             try:
                 self.length = int(length)
             except ValueError:
-                pass
+                self.length = None
+            else:
+                if self.length < 0:  # ignore nonsensical negative lengths
+                    self.length = None
+        else:
+            self.length = None
 
         # does the body have a fixed length? (of zero)
         if (status == NO_CONTENT or status == NOT_MODIFIED or
@@ -569,7 +574,13 @@ class HTTPResponse:
                 i = line.find(b";")
                 if i >= 0:
                     line = line[:i] # strip chunk-extensions
-                chunk_left = int(line, 16)
+                try:
+                    chunk_left = int(line, 16)
+                except ValueError:
+                    # close the connection as protocol synchronisation is
+                    # probably lost
+                    self.close()
+                    raise IncompleteRead(value)
                 if chunk_left == 0:
                     break
             if amt is None:

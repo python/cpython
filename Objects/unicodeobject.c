@@ -8600,6 +8600,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    int prec = -1;
 	    Py_UNICODE c = '\0';
 	    Py_UNICODE fill;
+	    int isnumok;
 	    PyObject *v = NULL;
 	    PyObject *temp = NULL;
 	    Py_UNICODE *pbuf;
@@ -8804,21 +8805,38 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    case 'X':
 		if (c == 'i')
 		    c = 'd';
-		if (PyLong_Check(v)) {
-		    temp = formatlong(v, flags, prec, c);
-		    if (!temp)
-			goto onError;
-		    pbuf = PyUnicode_AS_UNICODE(temp);
-		    len = PyUnicode_GET_SIZE(temp);
-		    sign = 1;
+		isnumok = 0;
+		if (PyNumber_Check(v)) {
+			PyObject *iobj=NULL;
+
+			if (PyLong_Check(v)) {
+				iobj = v;
+				Py_INCREF(iobj);
+			}
+			else {
+				iobj = PyNumber_Long(v);
+			}
+			if (iobj!=NULL) {
+				if (PyLong_Check(iobj)) {
+					isnumok = 1;
+					temp = formatlong(iobj, flags, prec, c);
+					Py_DECREF(iobj);
+					if (!temp)
+					    goto onError;
+					pbuf = PyUnicode_AS_UNICODE(temp);
+					len = PyUnicode_GET_SIZE(temp);
+					sign = 1;
+				}
+				else {
+					Py_DECREF(iobj);
+				}
+			}
 		}
-		else {
-		    pbuf = formatbuf;
-		    len = formatint(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
-				    flags, prec, c, v);
-		    if (len < 0)
+		if (!isnumok) {
+			PyErr_Format(PyExc_TypeError, 
+			    "%%%c format: a number is required, "
+			    "not %.200s", c, Py_TYPE(v)->tp_name);
 			goto onError;
-		    sign = 1;
 		}
 		if (flags & F_ZERO)
 		    fill = '0';
