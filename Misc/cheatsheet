@@ -565,8 +565,8 @@ d          Signed integer decimal.
 i          Signed integer decimal.
 o          Unsigned octal.
 u          Unsigned decimal.
-x          Unsigned hexidecimal (lowercase).
-X          Unsigned hexidecimal (uppercase).
+x          Unsigned hexadecimal (lowercase).
+X          Unsigned hexadecimal (uppercase).
 e          Floating point exponential format (lowercase).
 E          Floating point exponential format (uppercase).
 f          Floating point decimal format.

@@ -14,7 +14,7 @@ but that conflict with builtins that already exist in Python 2.x.\n\
 \n\
 Functions:\n\
 \n\
-hex(arg) -- Returns the hexidecimal representation of an integer\n\
+hex(arg) -- Returns the hexadecimal representation of an integer\n\
 oct(arg) -- Returns the octal representation of an integer\n\
 \n\
 The typical usage of this module is to replace existing builtins in a\n\
