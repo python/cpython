@@ -546,7 +546,13 @@ class HTTPResponse:
                 i = line.find(';')
                 if i >= 0:
                     line = line[:i] # strip chunk-extensions
-                chunk_left = int(line, 16)
+                try:
+                    chunk_left = int(line, 16)
+                except ValueError:
+                    # close the connection as protocol synchronisation is
+                    # probably lost
+                    self.close()
+                    raise IncompleteRead(value)
                 if chunk_left == 0:
                     break
             if amt is None:
