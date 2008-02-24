@@ -11,7 +11,7 @@ maxsize = MAX_Py_ssize_t
 overflowok = 1
 overflowrequired = 0
 
-def testformat(formatstr, args, output=None):
+def testformat(formatstr, args, output=None, limit=None):
     if verbose:
         if output:
             print "%s %% %s =? %s ..." %\
@@ -31,7 +31,18 @@ def testformat(formatstr, args, output=None):
                 print 'no'
             print "overflow expected on %s %% %s" % \
                   (repr(formatstr), repr(args))
-        elif output and result != output:
+        elif output and limit is None and result != output:
+            if verbose:
+                print 'no'
+            print "%s %% %s == %s != %s" % \
+                  (repr(formatstr), repr(args), repr(result), repr(output))
+        # when 'limit' is specified, it determines how many characters
+        # must match exactly; lengths must always match.
+        # ex: limit=5, '12345678' matches '12345___'
+        # (mainly for floating point format tests for which an exact match
+        # can't be guaranteed due to rounding and representation errors)
+        elif output and limit is not None and (
+                len(result)!=len(output) or result[:limit]!=output[:limit]):
             if verbose:
                 print 'no'
             print "%s %% %s == %s != %s" % \
@@ -98,6 +109,7 @@ testboth("%.2d", big, "123456789012345678901234567890")
 testboth("%.30d", big, "123456789012345678901234567890")
 testboth("%.31d", big, "0123456789012345678901234567890")
 testboth("%32.31d", big, " 0123456789012345678901234567890")
+testboth("%d", float(big), "123456________________________", 6)
 
 big = 0x1234567890abcdef12345L  # 21 hex digits
 testboth("%x", big, "1234567890abcdef12345")
@@ -135,6 +147,7 @@ testboth("%#+27.23X", big, " +0X001234567890ABCDEF12345")
 testboth("%#+027.23X", big, "+0X0001234567890ABCDEF12345")
 # same, except no 0 flag
 testboth("%#+27.23X", big, " +0X001234567890ABCDEF12345")
+testboth("%x", float(big), "123456_______________", 6)
 
 big = 012345670123456701234567012345670L  # 32 octal digits
 testboth("%o", big, "12345670123456701234567012345670")
@@ -175,16 +188,19 @@ testboth("%#.32o", big, "012345670123456701234567012345670")
 testboth("%034.33o", big, "0012345670123456701234567012345670")
 # base marker shouldn't change that
 testboth("%0#34.33o", big, "0012345670123456701234567012345670")
+testboth("%o", float(big), "123456__________________________", 6)
 
 # Some small ints, in both Python int and long flavors).
 testboth("%d", 42, "42")
 testboth("%d", -42, "-42")
 testboth("%d", 42L, "42")
 testboth("%d", -42L, "-42")
+testboth("%d", 42.0, "42")
 testboth("%#x", 1, "0x1")
 testboth("%#x", 1L, "0x1")
 testboth("%#X", 1, "0X1")
 testboth("%#X", 1L, "0X1")
+testboth("%#x", 1.0, "0x1")
 testboth("%#o", 1, "01")
 testboth("%#o", 1L, "01")
 testboth("%#o", 0, "0")
@@ -202,11 +218,13 @@ testboth("%x", 0x42, "42")
 testboth("%x", -0x42, "-42")
 testboth("%x", 0x42L, "42")
 testboth("%x", -0x42L, "-42")
+testboth("%x", float(0x42), "42")
 
 testboth("%o", 042, "42")
 testboth("%o", -042, "-42")
 testboth("%o", 042L, "42")
 testboth("%o", -042L, "-42")
+testboth("%o", float(042), "42")
 
 # Test exception for unknown format characters
 if verbose:
@@ -235,7 +253,7 @@ if have_unicode:
     test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
              "unsupported format character '?' (0x3000) at index 5")
 
-test_exc('%d', '1', TypeError, "int argument required, not str")
+test_exc('%d', '1', TypeError, "%d format: a number is required, not str")
 test_exc('%g', '1', TypeError, "float argument required, not str")
 test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
