@@ -909,9 +909,15 @@ builtin_map(PyObject *self, PyObject *args)
 	func = PyTuple_GetItem(args, 0);
 	n--;
 
-	if (func == Py_None && n == 1) {
-		/* map(None, S) is the same as list(S). */
-		return PySequence_List(PyTuple_GetItem(args, 1));
+	if (func == Py_None) {
+		if (Py_Py3kWarningFlag &&
+		    PyErr_Warn(PyExc_DeprecationWarning, 
+			       "map(None, ...) not supported in 3.x") < 0)
+			return NULL;
+		if (n == 1) {
+			/* map(None, S) is the same as list(S). */
+			return PySequence_List(PyTuple_GetItem(args, 1));
+		}
 	}
 
 	/* Get space for sequence descriptors.  Must NULL out the iterator
