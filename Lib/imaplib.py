@@ -1151,6 +1151,52 @@ else:
             self.file = self.sock.makefile('rb')
 
 
+        def read(self, size):
+            """Read 'size' bytes from remote."""
+            # sslobj.read() sometimes returns < size bytes
+            chunks = []
+            read = 0
+            while read < size:
+                data = self.sslobj.read(min(size-read, 16384))
+                read += len(data)
+                chunks.append(data)
+
+            return b''.join(chunks)
+
+
+        def readline(self):
+            """Read line from remote."""
+            line = []
+            while 1:
+                char = self.sslobj.read(1)
+                line.append(char)
+                if char == b"\n": return b''.join(line)
+
+
+        def send(self, data):
+            """Send data to remote."""
+            bytes = len(data)
+            while bytes > 0:
+                sent = self.sslobj.write(data)
+                if sent == bytes:
+                    break    # avoid copy
+                data = data[sent:]
+                bytes = bytes - sent
+
+
+        def shutdown(self):
+            """Close I/O established in "open"."""
+            self.sock.close()
+
+
+        def socket(self):
+            """Return socket instance used to connect to IMAP4 server.
+
+            socket = <instance>.socket()
+            """
+            return self.sock
+
+
         def ssl(self):
             """Return SSLObject instance used to communicate with the IMAP4 server.
 

@@ -22,6 +22,11 @@
 extern "C" { 
 #endif
 
+#ifdef MS_WINDOWS
+/* for stat.st_mode */
+typedef unsigned short mode_t;
+#endif
+
 extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 						/* In getmtime.c */
 
