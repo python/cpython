@@ -2,7 +2,6 @@
 TestCases for testing the locking sub-system.
 """
 
-import shutil
 import tempfile
 import time
 
@@ -37,7 +36,8 @@ class LockingTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.env.close()
-        shutil.rmtree(self.homeDir)
+        from test import test_support
+        test_support.rmtree(self.homeDir)
 
 
     def test01_simple(self):

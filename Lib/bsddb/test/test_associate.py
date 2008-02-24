@@ -91,7 +91,7 @@ musicdata = {
 class AssociateErrorTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
         self.homeDir = homeDir
         try:
             os.mkdir(homeDir)
@@ -106,11 +106,8 @@ class AssociateErrorTestCase(unittest.TestCase):
     def tearDown(self):
         self.env.close()
         self.env = None
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
-
+        from test import test_support
+        test_support.rmtree(self.homeDir)
 
     def test00_associateDBError(self):
         if verbose:
@@ -151,7 +148,7 @@ class AssociateTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
         self.homeDir = homeDir
         try:
             os.mkdir(homeDir)

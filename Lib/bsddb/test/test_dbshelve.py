@@ -245,7 +245,7 @@ class ThreadHashShelveTestCase(BasicShelveTestCase):
 class BasicEnvShelveTestCase(DBShelveTestCase):
     def do_open(self):
         self.homeDir = homeDir = os.path.join(
-            tempfile.gettempdir(), 'db_home')
+            tempfile.gettempdir(), 'db_home%d'%os.getpid())
         try: os.mkdir(homeDir)
         except os.error: pass
         self.env = db.DBEnv()
@@ -262,12 +262,9 @@ class BasicEnvShelveTestCase(DBShelveTestCase):
 
 
     def tearDown(self):
+        from test import test_support
+        test_support.rmtree(self.homeDir)
         self.do_close()
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
-
 
 
 class EnvBTreeShelveTestCase(BasicEnvShelveTestCase):

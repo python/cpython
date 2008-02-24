@@ -24,12 +24,13 @@ letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 class SimpleRecnoTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()
+        self.homeDir = None
 
     def tearDown(self):
-        try:
-            os.remove(self.filename)
-        except OSError, e:
-            if e.errno <> errno.EEXIST: raise
+        from test import test_support
+        test_support.unlink(self.filename)
+        if self.homeDir:
+            test_support.rmtree(self.homeDir)
 
     def test01_basic(self):
         d = db.DB()
@@ -202,7 +203,8 @@ class SimpleRecnoTestCase(unittest.TestCase):
         just a line in the file, but you can set a different record delimiter
         if needed.
         """
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
+        self.homeDir = homeDir
         source = os.path.join(homeDir, 'test_recno.txt')
         if not os.path.isdir(homeDir):
             os.mkdir(homeDir)

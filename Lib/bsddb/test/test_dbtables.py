@@ -22,7 +22,6 @@
 
 import os, re
 import tempfile
-import shutil
 try:
     import cPickle
     pickle = cPickle
@@ -58,7 +57,8 @@ class TableDBTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.tdb.close()
-        shutil.rmtree(self.testHomeDir)
+        from test import test_support
+        test_support.rmtree(self.testHomeDir)
 
     def test01(self):
         tabname = "test01"
