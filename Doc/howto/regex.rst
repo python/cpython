@@ -203,7 +203,7 @@ this RE against the string ``abcbd``.
 |      |           | ``bc``.                         |
 +------+-----------+---------------------------------+
 | 6    | ``abcb``  | Try ``b`` again.  This time     |
-|      |           | but the character at the        |
+|      |           | the character at the            |
 |      |           | current position is ``'b'``, so |
 |      |           | it succeeds.                    |
 +------+-----------+---------------------------------+

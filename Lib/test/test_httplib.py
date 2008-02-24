@@ -159,6 +159,42 @@ class BasicTest(TestCase):
         self.assertTrue(sock.data.startswith(expected), '%r != %r' %
                 (sock.data[:len(expected)], expected))
 
+    def test_chunked(self):
+        chunked_start = (
+            'HTTP/1.1 200 OK\r\n'
+            'Transfer-Encoding: chunked\r\n\r\n'
+            'a\r\n'
+            'hello worl\r\n'
+            '1\r\n'
+            'd\r\n'
+        )
+        sock = FakeSocket(chunked_start + '0\r\n')
+        resp = httplib.HTTPResponse(sock, method="GET")
+        resp.begin()
+        self.assertEquals(resp.read(), b'hello world')
+        resp.close()
+
+        for x in ('', 'foo\r\n'):
+            sock = FakeSocket(chunked_start + x)
+            resp = httplib.HTTPResponse(sock, method="GET")
+            resp.begin()
+            try:
+                resp.read()
+            except httplib.IncompleteRead as i:
+                self.assertEquals(i.partial, b'hello world')
+            else:
+                self.fail('IncompleteRead expected')
+            finally:
+                resp.close()
+
+    def test_negative_content_length(self):
+        sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\nHello\r\n')
+        resp = httplib.HTTPResponse(sock, method="GET")
+        resp.begin()
+        self.assertEquals(resp.read(), b'Hello\r\n')
+        resp.close()
+
+
 class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEquals(httplib.responses[httplib.NOT_FOUND], "Not Found")
