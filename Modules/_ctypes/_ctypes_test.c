@@ -411,7 +411,7 @@ DL_EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
 	return 0;
 }
 
-PyMethodDef module_methods[] = {
+static PyMethodDef module_methods[] = {
 /*	{"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
 	{"get_last_tf_arg_u", get_last_tf_arg_u, METH_NOARGS},
 */
