@@ -166,7 +166,7 @@ builtin_apply(PyObject *self, PyObject *args)
 
 	if (Py_Py3kWarningFlag &&
 	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "apply() not supported in 3.x") < 0)
+		       "apply() not supported in 3.x. Use func(*args, **kwargs).") < 0)
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "apply", 1, 3, &func, &alist, &kwdict))
@@ -225,7 +225,7 @@ builtin_callable(PyObject *self, PyObject *v)
 {
 	if (Py_Py3kWarningFlag &&
 	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "callable() not supported in 3.x") < 0)
+		       "callable() not supported in 3.x. Use hasattr(o, '__call__').") < 0)
 		return NULL;
 	return PyBool_FromLong((long)PyCallable_Check(v));
 }
@@ -684,7 +684,7 @@ builtin_execfile(PyObject *self, PyObject *args)
 
 	if (Py_Py3kWarningFlag &&
 	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "execfile() not supported in 3.x") < 0)
+		       "execfile() not supported in 3.x.  Use exec().") < 0)
 		return NULL;
 
 	if (!PyArg_ParseTuple(args, "s|O!O:execfile",
@@ -912,7 +912,7 @@ builtin_map(PyObject *self, PyObject *args)
 	if (func == Py_None) {
 		if (Py_Py3kWarningFlag &&
 		    PyErr_Warn(PyExc_DeprecationWarning, 
-			       "map(None, ...) not supported in 3.x") < 0)
+			       "map(None, ...) not supported in 3.x. Use list(...).") < 0)
 			return NULL;
 		if (n == 1) {
 			/* map(None, S) is the same as list(S). */
