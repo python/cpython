@@ -161,6 +161,37 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 	return 0;
 }
 
+static int
+dbm_contains(register dbmobject *dp, PyObject *v)
+{
+    datum key, val;
+
+    if (PyString_AsStringAndSize(v, &key.dptr, &key.dsize)) {
+        return -1;
+    }
+
+    /* Expand check_dbmobject_open to return -1 */
+    if (dp->di_dbm == NULL) {
+        PyErr_SetString(DbmError, "DBM object has already been closed");
+        return -1;
+    }
+	val = dbm_fetch(dp->di_dbm, key);
+	return val.dptr != NULL;
+}
+
+static PySequenceMethods dbm_as_sequence = {
+    (lenfunc)dbm_length,        /*_length*/
+    0,                          /*sq_concat*/
+    0,                          /*sq_repeat*/
+    0,                          /*sq_item*/
+    0,                          /*sq_slice*/
+    0,                          /*sq_ass_item*/
+    0,                          /*sq_ass_slice*/
+    (objobjproc)dbm_contains,   /*sq_contains*/
+    0,                          /*sq_inplace_concat*/
+    0                           /*sq_inplace_repeat*/
+};
+
 static PyMappingMethods dbm_as_mapping = {
 	(lenfunc)dbm_length,		/*mp_length*/
 	(binaryfunc)dbm_subscript,	/*mp_subscript*/
@@ -313,8 +344,15 @@ static PyTypeObject Dbmtype = {
 	0,			  /*tp_compare*/
 	0,			  /*tp_repr*/
 	0,			  /*tp_as_number*/
-	0,			  /*tp_as_sequence*/
+    &dbm_as_sequence,     /*tp_as_sequence*/
 	&dbm_as_mapping,	  /*tp_as_mapping*/
+    0,                    /*tp_hash*/
+    0,                    /*tp_call*/
+    0,                    /*tp_str*/
+    0,                    /*tp_getattro*/
+    0,                    /*tp_setattro*/
+    0,                    /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,   /*tp_xxx4*/
 };
 
 /* ----------------------------------------------------------------- */
