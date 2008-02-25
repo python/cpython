@@ -5,7 +5,6 @@ import pickle
 import tempfile
 import unittest
 import tempfile
-import glob
 
 try:
     # For Pythons w/distutils pybsddb
@@ -22,7 +21,7 @@ class pickleTestCase(unittest.TestCase):
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
         self.homeDir = homeDir
         try: os.mkdir(homeDir)
         except os.error: pass
@@ -32,7 +31,8 @@ class pickleTestCase(unittest.TestCase):
             del self.db
         if hasattr(self, 'env'):
             del self.env
-        shutil.rmtree(self.homeDir)
+        from test import test_support
+        test_support.rmtree(self.homeDir)
 
     def _base_test_pickle_DBError(self, pickle):
         self.env = db.DBEnv()

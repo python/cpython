@@ -518,28 +518,26 @@ Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
 
 BYTESTR_DEPS = Include/bytes_methods.h \
-               $(srcdir)/Objects/stringlib/fastsearch.h \
                $(srcdir)/Objects/stringlib/count.h \
+               $(srcdir)/Objects/stringlib/ctype.h \
+               $(srcdir)/Objects/stringlib/eq.h \
+               $(srcdir)/Objects/stringlib/fastsearch.h \
                $(srcdir)/Objects/stringlib/find.h \
                $(srcdir)/Objects/stringlib/partition.h \
-               $(srcdir)/Objects/stringlib/ctype.h \
-               $(srcdir)/Objects/stringlib/transmogrify.h
+               $(srcdir)/Objects/stringlib/stringdefs.h \
+               $(srcdir)/Objects/stringlib/string_format.h \
+               $(srcdir)/Objects/stringlib/transmogrify.h \
+               $(srcdir)/Objects/stringlib/unicodedefs.h \
 
 Objects/stringobject.o: $(srcdir)/Objects/stringobject.c $(BYTESTR_DEPS)
 
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS) 
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
-				$(srcdir)/Objects/stringlib/string_format.h \
-	                        $(srcdir)/Objects/stringlib/unicodedefs.h \
-	                        $(srcdir)/Objects/stringlib/fastsearch.h \
-	                        $(srcdir)/Objects/stringlib/count.h \
-	                        $(srcdir)/Objects/stringlib/find.h \
-	                        $(srcdir)/Objects/stringlib/partition.h
+                                             $(BYTESTR_DEPS)
 
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
-	                        $(srcdir)/Objects/stringlib/formatter.h
-
+                                             $(BYTESTR_DEPS)
 
 
 ############################################################################

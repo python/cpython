@@ -5202,8 +5202,7 @@ ExtendedContext = Context(
 
 
 ##### crud for parsing strings #############################################
-import re
-
+#
 # Regular expression used for parsing numeric strings.  Additional
 # comments:
 #

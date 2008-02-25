@@ -5,7 +5,6 @@ import os
 import sys
 import time
 import errno
-import shutil
 import tempfile
 from pprint import pprint
 from random import random
@@ -47,7 +46,7 @@ class BaseThreadedTestCase(unittest.TestCase):
         if verbose:
             dbutils._deadlock_VerboseFile = sys.stdout
 
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
         self.homeDir = homeDir
         try:
             os.mkdir(homeDir)
@@ -64,12 +63,10 @@ class BaseThreadedTestCase(unittest.TestCase):
         self.d.open(self.filename, self.dbtype, self.dbopenflags|db.DB_CREATE)
 
     def tearDown(self):
+        from test import test_support
+        test_support.rmtree(self.homeDir)
         self.d.close()
         self.env.close()
-        try:
-            shutil.rmtree(self.homeDir)
-        except OSError as e:
-            if e.errno != errno.EEXIST: raise
 
     def setEnvOpts(self):
         pass

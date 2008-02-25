@@ -19,14 +19,17 @@ except ImportError:
 class MiscTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        self.homeDir = tempfile.mkdtemp()
-
-    def tearDown(self):
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
+        self.homeDir = homeDir
         try:
-            os.remove(self.filename)
+            os.mkdir(homeDir)
         except OSError:
             pass
-        shutil.rmtree(self.homeDir)
+
+    def tearDown(self):
+        from test import test_support
+        test_support.unlink(self.filename)
+        test_support.rmtree(self.homeDir)
 
     def test01_badpointer(self):
         dbs = dbshelve.open(self.filename)

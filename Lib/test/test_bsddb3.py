@@ -2,11 +2,12 @@
 """
 Run all test cases.
 """
+import os
 import sys
+import tempfile
 import time
 import unittest
-import test.test_support
-from test.test_support import requires, run_unittest, unlink
+from test.test_support import requires, verbose, run_unittest, unlink, rmtree
 
 # When running as a script instead of within the regrtest framework, skip the
 # requires test, since it's obvious we want to run them.
@@ -88,6 +89,15 @@ def suite():
 # For invocation through regrtest
 def test_main():
     run_unittest(suite())
+    db_home = os.path.join(tempfile.gettempdir(), 'db_home')
+    # The only reason to remove db_home is in case if there is an old
+    # one lying around.  This might be by a different user, so just
+    # ignore errors.  We should always make a unique name now.
+    try:
+        rmtree(db_home)
+    except:
+        pass
+    rmtree('db_home%d' % os.getpid())
 
 # For invocation as a script
 if __name__ == '__main__':

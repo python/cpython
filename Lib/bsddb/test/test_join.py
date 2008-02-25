@@ -48,13 +48,17 @@ class JoinTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        self.homeDir = tempfile.mkdtemp()
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
+        self.homeDir = homeDir
+        try: os.mkdir(homeDir)
+        except os.error: pass
         self.env = db.DBEnv()
         self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL | db.DB_INIT_LOCK )
 
     def tearDown(self):
         self.env.close()
-        shutil.rmtree(self.homeDir)
+        from test import test_support
+        test_support.rmtree(self.homeDir)
 
     def test01_join(self):
         if verbose:

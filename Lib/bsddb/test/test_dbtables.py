@@ -20,7 +20,6 @@
 #
 # $Id$
 
-import shutil
 import sys, os, re
 import pickle
 import tempfile
@@ -43,13 +42,18 @@ class TableDBTestCase(unittest.TestCase):
     db_name = 'test-table.db'
 
     def setUp(self):
-        self.homeDir = tempfile.mkdtemp()
+        homeDir = tempfile.mkdtemp()
+        self.testHomeDir = homeDir
+        try: os.mkdir(homeDir)
+        except os.error: pass
+
         self.tdb = dbtables.bsdTableDB(
-            filename='tabletest.db', dbhome=self.homeDir, create=1)
+            filename='tabletest.db', dbhome=homeDir, create=1)
 
     def tearDown(self):
         self.tdb.close()
-        shutil.rmtree(self.homeDir)
+        from test import test_support
+        test_support.rmtree(self.testHomeDir)
 
     def test01(self):
         tabname = "test01"

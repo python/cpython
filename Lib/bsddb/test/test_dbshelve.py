@@ -262,6 +262,10 @@ class BasicEnvShelveTestCase(DBShelveTestCase):
         self.do_open()
 
     def do_open(self):
+        self.homeDir = homeDir = os.path.join(
+            tempfile.gettempdir(), 'db_home%d'%os.getpid())
+        try: os.mkdir(homeDir)
+        except os.error: pass
         self.env = db.DBEnv()
         self.env.open(self.homeDir, self.envflags | db.DB_INIT_MPOOL | db.DB_CREATE)
 
@@ -275,9 +279,9 @@ class BasicEnvShelveTestCase(DBShelveTestCase):
 
 
     def tearDown(self):
+        from test import test_support
+        test_support.rmtree(self.homeDir)
         self.do_close()
-        shutil.rmtree(self.homeDir)
-
 
 
 class EnvBTreeShelveTestCase(BasicEnvShelveTestCase):
