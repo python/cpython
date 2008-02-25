@@ -71,6 +71,7 @@ tok_name = {}
 for _name, _value in globals().items():
     if type(_value) is type(0):
         tok_name[_value] = _name
+del _name, _value
 
 
 def ISTERMINAL(x):

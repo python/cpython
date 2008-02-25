@@ -308,11 +308,12 @@ class CallFunc(Node):
         return "CallFunc(%s, %s, %s, %s)" % (repr(self.node), repr(self.args), repr(self.star_args), repr(self.dstar_args))
 
 class Class(Node):
-    def __init__(self, name, bases, doc, code, lineno=None):
+    def __init__(self, name, bases, doc, code, decorators = None, lineno=None):
         self.name = name
         self.bases = bases
         self.doc = doc
         self.code = code
+        self.decorators = decorators
         self.lineno = lineno
 
     def getChildren(self):
@@ -321,16 +322,19 @@ class Class(Node):
         children.extend(flatten(self.bases))
         children.append(self.doc)
         children.append(self.code)
+        children.append(self.decorators)
         return tuple(children)
 
     def getChildNodes(self):
         nodelist = []
         nodelist.extend(flatten_nodes(self.bases))
         nodelist.append(self.code)
+        if self.decorators is not None:
+            nodelist.append(self.decorators)
         return tuple(nodelist)
 
     def __repr__(self):
-        return "Class(%s, %s, %s, %s)" % (repr(self.name), repr(self.bases), repr(self.doc), repr(self.code))
+        return "Class(%s, %s, %s, %s, %s)" % (repr(self.name), repr(self.bases), repr(self.doc), repr(self.code), repr(self.decorators))
 
 class Compare(Node):
     def __init__(self, expr, ops, lineno=None):

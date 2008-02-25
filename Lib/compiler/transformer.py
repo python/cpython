@@ -232,6 +232,18 @@ class Transformer:
             items.append(self.decorator(dec_nodelist[1:]))
         return Decorators(items)
 
+    def decorated(self, nodelist):
+        assert nodelist[0][0] == symbol.decorators
+        if nodelist[1][0] == symbol.funcdef:
+            n = [nodelist[0]] + list(nodelist[1][1:])
+            return self.funcdef(n)
+        elif nodelist[1][0] == symbol.classdef:
+            decorators = self.decorators(nodelist[0][1:])
+            cls = self.classdef(nodelist[1][1:])
+            cls.decorators = decorators
+            return cls
+        raise WalkerError()
+
     def funcdef(self, nodelist):
         #                    -6   -5    -4         -3  -2    -1
         # funcdef: [decorators] 'def' NAME parameters ':' suite
