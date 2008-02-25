@@ -245,8 +245,8 @@ With the logger object configured, the following methods create log messages:
   little more verbose for logging messages than using the log level convenience
   methods listed above, but this is how to log at custom log levels.
 
-:func:`getLogger` returns a reference to a logger instance with a name of name
-if a name is provided, or root if not.  The names are period-separated
+:func:`getLogger` returns a reference to a logger instance with the specified
+if it it is provided, or ``root`` if not.  The names are period-separated
 hierarchical structures.  Multiple calls to :func:`getLogger` with the same name
 will return a reference to the same logger object.  Loggers that are further
 down in the hierarchical list are children of loggers higher up in the list.
@@ -298,7 +298,7 @@ Formatters
 ^^^^^^^^^^
 
 Formatter objects configure the final order, structure, and contents of the log
-message.  Unlike the base logging.Handler class, application code may
+message.  Unlike the base :class:`logging.Handler` class, application code may
 instantiate formatter classes, although you could likely subclass the formatter
 if your application needs special behavior.  The constructor takes two optional
 arguments: a message format string and a date format string.  If there is no
