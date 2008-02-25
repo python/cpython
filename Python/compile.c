@@ -2323,7 +2323,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		return compiler_error(c, "can not assign to __debug__");
 	}
 
-mangled = _Py_Mangle(c->u->u_private, name);
+	mangled = _Py_Mangle(c->u->u_private, name);
 	if (!mangled)
 		return 0;
 
