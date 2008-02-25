@@ -28,8 +28,13 @@ typedef BASE_TWODIGITS_TYPE stwodigits; /* signed variant of twodigits */
 #define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
 #define PyLong_MASK     ((int)(PyLong_BASE - 1))
 
+/* b/w compatibility with Python 2.5 */
+#define SHIFT	PyLong_SHIFT
+#define BASE	PyLong_BASE
+#define MASK	PyLong_MASK
+
 #if PyLong_SHIFT % 5 != 0
-#error "longobject.c requires that SHIFT be divisible by 5"
+#error "longobject.c requires that PyLong_SHIFT be divisible by 5"
 #endif
 
 /* Long integer representation.
