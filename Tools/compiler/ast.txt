@@ -14,7 +14,7 @@ Stmt: nodes!
 Decorators: nodes!
 Function: decorators&, name*, argnames*, defaults!, flags*, doc*, code
 Lambda: argnames*, defaults!, flags*, code
-Class: name*, bases!, doc*, code
+Class: name*, bases!, doc*, code, decorators& = None
 Pass: 
 Break: 
 Continue: 
@@ -97,7 +97,7 @@ init(Lambda):
         self.kwargs = 1
 
 init(GenExpr):
-    self.argnames = ['[outmost-iterable]']
+    self.argnames = ['.0']
     self.varargs = self.kwargs = None
 
 init(GenExprFor):
