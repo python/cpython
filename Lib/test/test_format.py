@@ -234,7 +234,8 @@ test_exc('abc %a', 1, ValueError,
 test_exc(str(b'abc %\u3000', 'raw-unicode-escape'), 1, ValueError,
          "unsupported format character '?' (0x3000) at index 5")
 
-test_exc('%d', '1', TypeError, "an integer is required")
+#test_exc('%d', '1', TypeError, "an integer is required")
+test_exc('%d', '1', TypeError, '%d format: a number is required, not str')
 test_exc('%g', '1', TypeError, "a float is required")
 test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
