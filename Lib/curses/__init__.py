@@ -15,6 +15,7 @@ __revision__ = "$Id$"
 from _curses import *
 from curses.wrapper import wrapper
 import os as _os
+import sys as _sys
 
 # Some constants, most notably the ACS_* ones, are only added to the C
 # _curses module's dictionary after initscr() is called.  (Some
@@ -28,7 +29,8 @@ def initscr():
     import _curses, curses
     # we call setupterm() here because it raises an error
     # instead of calling exit() in error cases.
-    setupterm(term=_os.environ.get("TERM", "unknown"))
+    setupterm(term=_os.environ.get("TERM", "unknown"),
+              fd=_sys.__stdout__.fileno())
     stdscr = _curses.initscr()
     for key, value in _curses.__dict__.items():
         if key[0:4] == 'ACS_' or key in ('LINES', 'COLS'):
