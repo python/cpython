@@ -2055,7 +2055,7 @@ ifilter_next(ifilterobject *lz)
 		if (item == NULL)
 			return NULL;
 
-		if (lz->func == Py_None) {
+		if (lz->func == Py_None || lz->func == PyBool_Type) {
 			ok = PyObject_IsTrue(item);
 		} else {
 			PyObject *good;
@@ -2199,7 +2199,7 @@ ifilterfalse_next(ifilterfalseobject *lz)
 		if (item == NULL)
 			return NULL;
 
-		if (lz->func == Py_None) {
+		if (lz->func == Py_None || lz->func == PyBool_Type) {
 			ok = PyObject_IsTrue(item);
 		} else {
 			PyObject *good;
