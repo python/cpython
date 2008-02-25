@@ -105,7 +105,7 @@ def requires(resource, msg=None):
 
 def bind_port(sock, host='', preferred_port=54321):
     """Try to bind the sock to a port.  If we are running multiple
-    tests and we don't try multiple ports, the test can fails.  This
+    tests and we don't try multiple ports, the test can fail.  This
     makes the test more robust."""
 
     # Find some random ports that hopefully no one is listening on.
