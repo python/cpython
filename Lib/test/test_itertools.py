@@ -171,6 +171,7 @@ class TestBasicOps(unittest.TestCase):
     def test_ifilter(self):
         self.assertEqual(list(ifilter(isEven, range(6))), [0,2,4])
         self.assertEqual(list(ifilter(None, [0,1,0,2,0])), [1,2])
+        self.assertEqual(list(ifilter(bool, [0,1,0,2,0])), [1,2])
         self.assertEqual(take(4, ifilter(isEven, count())), [0,2,4,6])
         self.assertRaises(TypeError, ifilter)
         self.assertRaises(TypeError, ifilter, lambda x:x)
@@ -181,6 +182,7 @@ class TestBasicOps(unittest.TestCase):
     def test_ifilterfalse(self):
         self.assertEqual(list(ifilterfalse(isEven, range(6))), [1,3,5])
         self.assertEqual(list(ifilterfalse(None, [0,1,0,2,0])), [0,0,0])
+        self.assertEqual(list(ifilterfalse(bool, [0,1,0,2,0])), [0,0,0])
         self.assertEqual(take(4, ifilterfalse(isEven, count())), [1,3,5,7])
         self.assertRaises(TypeError, ifilterfalse)
         self.assertRaises(TypeError, ifilterfalse, lambda x:x)
