@@ -164,17 +164,17 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 static int
 dbm_contains(register dbmobject *dp, PyObject *v)
 {
-    datum key, val;
+	datum key, val;
 
-    if (PyString_AsStringAndSize(v, &key.dptr, &key.dsize)) {
-        return -1;
-    }
+	if (PyString_AsStringAndSize(v, &key.dptr, &key.dsize)) {
+		return -1;
+	}
 
-    /* Expand check_dbmobject_open to return -1 */
-    if (dp->di_dbm == NULL) {
-        PyErr_SetString(DbmError, "DBM object has already been closed");
-        return -1;
-    }
+	/* Expand check_dbmobject_open to return -1 */
+	if (dp->di_dbm == NULL) {
+		PyErr_SetString(DbmError, "DBM object has already been closed");
+		return -1;
+	}
 	val = dbm_fetch(dp->di_dbm, key);
 	return val.dptr != NULL;
 }
