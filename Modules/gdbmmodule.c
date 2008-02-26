@@ -407,7 +407,7 @@ static PyTypeObject Dbmtype = {
     0,                                  /*tp_getattro*/
     0,                                  /*tp_setattro*/
     0,                                  /*tp_as_buffer*/
-    0,                                  /*tp_xxx4*/
+    Py_TPFLAGS_DEFAULT,                 /*tp_xxx4*/
     gdbm_object__doc__,                 /*tp_doc*/
 };
 

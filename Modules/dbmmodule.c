@@ -344,6 +344,13 @@ static PyTypeObject Dbmtype = {
 	0,			  /*tp_as_number*/
 	&dbm_as_sequence,	  /*tp_as_sequence*/
 	&dbm_as_mapping,	  /*tp_as_mapping*/
+	0,                    /*tp_hash*/
+	0,                    /*tp_call*/
+	0,                    /*tp_str*/
+	0,                    /*tp_getattro*/
+	0,                    /*tp_setattro*/
+	0,                    /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,   /*tp_xxx4*/
 };
 
 /* ----------------------------------------------------------------- */
