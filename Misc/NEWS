@@ -670,6 +670,8 @@ Library
 - Added itertools.product() which forms the Cartesian product of
   the input iterables.
 
+- Added itertools.combinations().
+
 - Patch #1541463: optimize performance of cgi.FieldStorage operations.
 
 - Decimal is fully updated to the latest Decimal Specification (v1.66).

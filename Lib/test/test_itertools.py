@@ -40,6 +40,10 @@ def take(n, seq):
     'Convenience function for partially consuming a long of infinite iterable'
     return list(islice(seq, n))
 
+def fact(n):
+    'Factorial'
+    return reduce(operator.mul, range(1, n+1), 1)
+
 class TestBasicOps(unittest.TestCase):
     def test_chain(self):
         self.assertEqual(list(chain('abc', 'def')), list('abcdef'))
@@ -47,6 +51,26 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(chain('')), [])
         self.assertEqual(take(4, chain('abc', 'def')), list('abcd'))
         self.assertRaises(TypeError, chain, 2, 3)
+
+    def test_combinations(self):
+        self.assertRaises(TypeError, combinations, 'abc')   # missing r argument
+        self.assertRaises(TypeError, combinations, 'abc', 2, 1) # too many arguments
+        self.assertRaises(ValueError, combinations, 'abc', -2)  # r is negative
+        self.assertRaises(ValueError, combinations, 'abc', 32)  # r is too big
+        self.assertEqual(list(combinations(range(4), 3)),
+                                           [(0,1,2), (0,1,3), (0,2,3), (1,2,3)])
+        for n in range(6):
+            values = [5*x-12 for x in range(n)]
+            for r in range(n+1):
+                result = list(combinations(values, r))
+                self.assertEqual(len(result), fact(n) / fact(r) / fact(n-r)) # right number of combs
+                self.assertEqual(len(result), len(set(result)))         # no repeats
+                self.assertEqual(result, sorted(result))                # lexicographic order
+                for c in result:
+                    self.assertEqual(len(c), r)                         # r-length combinations
+                    self.assertEqual(len(set(c)), r)                    # no duplicate elements
+                    self.assertEqual(list(c), sorted(c))                # keep original ordering
+                    self.assert_(all(e in values for e in c))           # elements taken from input iterable
 
     def test_count(self):
         self.assertEqual(zip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
