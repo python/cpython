@@ -76,6 +76,45 @@ loops that truncate the stream.
                   yield element
 
 
+.. function:: combinations(iterable, r)
+
+   Return successive *r* length combinations of elements in the *iterable*.
+
+   Combinations are emitted in a lexicographic sort order.  So, if the 
+   input *iterable* is sorted, the combination tuples will be produced
+   in sorted order.  
+
+   Elements are treated as unique based on their position, not on their
+   value.  So if the input elements are unique, there will be no repeat
+   values within a single combination.
+
+   Each result tuple is ordered to match the input order.  So, every
+   combination is a subsequence of the input *iterable*.
+
+   Example:  ``combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)``
+
+   Equivalent to::
+
+        def combinations(iterable, r):
+            pool = tuple(iterable)
+	    if pool:
+                n = len(pool)
+                vec = range(r)
+                yield tuple(pool[i] for i in vec)
+                while 1:
+                    for i in reversed(range(r)):
+                        if vec[i] == i + n-r:
+                            continue
+                        vec[i] += 1
+                        for j in range(i+1, r):
+                            vec[j] = vec[j-1] + 1
+                        yield tuple(pool[i] for i in vec)
+                        break
+                    else:
+                        return
+
+   .. versionadded:: 2.6
+
 .. function:: count([n])
 
    Make an iterator that returns consecutive integers starting with *n*. If not
@@ -311,9 +350,12 @@ loops that truncate the stream.
 
    The leftmost iterators are in the outermost for-loop, so the output tuples
    cycle in a manner similar to an odometer (with the rightmost element
-   changing on every iteration).
+   changing on every iteration).  This results in a lexicographic ordering
+   so that if the inputs iterables are sorted, the product tuples are emitted
+   in sorted order.
 
-   Equivalent to (but without building the entire result in memory)::
+   Equivalent to the following except that the actual implementation does not
+   build-up intermediate results in memory::
 
        def product(*args):
            pools = map(tuple, args)
