@@ -22,7 +22,7 @@ guru or system administrator.  (E.g., :file:`/usr/local/python` is a popular
 alternative location.)
 
 On Windows machines, the Python installation is usually placed in
-:file:`C:\Python26`, though you can change this when you're running the
+:file:`C:\\Python26`, though you can change this when you're running the
 installer.  To add this directory to your path,  you can type the following
 command into the command prompt in a DOS box::
 
