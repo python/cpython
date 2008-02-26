@@ -179,16 +179,23 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 }
 
 static int
-dbm_contains(register dbmobject *dp, PyObject *v)
+dbm_contains(register dbmobject *dp, PyObject *arg)
 {
     datum key;
 
-    if (PyString_AsStringAndSize(v, &key.dptr, &key.dsize)) {
+    if ((dp)->di_dbm == NULL) {
+        PyErr_SetString(DbmError,
+                        "GDBM object has already been closed");
         return -1;
     }
-
-    check_dbmobject_open(dp);
-    
+    if (!PyString_Check(arg)) {
+        PyErr_Format(PyExc_TypeError,
+                     "gdbm key must be string, not %.100s",
+                     arg->ob_type->tp_name);
+        return -1;
+    }
+    key.dptr = PyString_AS_STRING(arg);
+    key.dsize = PyString_GET_SIZE(arg);
     return gdbm_exists(dp->di_dbm, key);
 }
 
