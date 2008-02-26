@@ -13,7 +13,7 @@ sys.path.append('tools/sphinxext')
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.addons.refcounting', 'sphinx.addons.coverage']
+extensions = ['sphinx.ext.refcounting', 'sphinx.ext.coverage']
 
 # General substitutions.
 project = 'Python'

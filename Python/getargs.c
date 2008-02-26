@@ -154,7 +154,7 @@ addcleanup(void *ptr, PyObject **freelist)
 		PyMem_FREE(ptr);
 		return -1;
 	}
-	if(PyList_Append(*freelist, cobj)) {
+	if (PyList_Append(*freelist, cobj)) {
                 PyMem_FREE(ptr);
 		Py_DECREF(cobj);
 		return -1;
@@ -166,8 +166,8 @@ addcleanup(void *ptr, PyObject **freelist)
 static int
 cleanreturn(int retval, PyObject *freelist)
 {
-	if(freelist) {
-		if((retval) == 0) {
+	if (freelist) {
+		if (retval == 0) {
 			Py_ssize_t len = PyList_GET_SIZE(freelist), i;
 			for (i = 0; i < len; i++)
                                 PyMem_FREE(PyCObject_AsVoidPtr(
@@ -708,7 +708,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	case 'L': {/* PY_LONG_LONG */
 		PY_LONG_LONG *p = va_arg( *p_va, PY_LONG_LONG * );
 		PY_LONG_LONG ival = PyLong_AsLongLong( arg );
-		if( ival == (PY_LONG_LONG)-1 && PyErr_Occurred() ) {
+		if (ival == (PY_LONG_LONG)-1 && PyErr_Occurred() ) {
 			return converterr("long<L>", arg, msgbuf, bufsize);
 		} else {
 			*p = ival;
@@ -1045,7 +1045,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 						"(memory error)",
 						arg, msgbuf, bufsize);
 				}
-				if(addcleanup(*buffer, freelist)) {
+				if (addcleanup(*buffer, freelist)) {
 					Py_DECREF(s);
 					return converterr(
 						"(cleanup problem)",
@@ -1087,7 +1087,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				return converterr("(memory error)",
 						  arg, msgbuf, bufsize);
 			}
-			if(addcleanup(*buffer, freelist)) {
+			if (addcleanup(*buffer, freelist)) {
 				Py_DECREF(s);
 				return converterr("(cleanup problem)",
 						arg, msgbuf, bufsize);
