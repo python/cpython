@@ -80,7 +80,7 @@ Programming Interface
 ---------------------
 
 
-.. class:: Trace([count=1[, trace=1[, countfuncs=0[, countcallers=0[, ignoremods=()[, ignoredirs=()[, infile=None[, outfile=None]]]]]]]])
+.. class:: Trace([count=1[, trace=1[, countfuncs=0[, countcallers=0[, ignoremods=()[, ignoredirs=()[, infile=None[, outfile=None[, timing=False]]]]]]]]])
 
    Create an object to trace execution of a single statement or expression. All
    parameters are optional.  *count* enables counting of line numbers. *trace*
@@ -89,7 +89,8 @@ Programming Interface
    *ignoremods* is a list of modules or packages to ignore.  *ignoredirs* is a list
    of directories whose modules or packages should be ignored.  *infile* is the
    file from which to read stored count information.  *outfile* is a file in which
-   to write updated count information.
+   to write updated count information. *timing* enables a timestamp relative
+   to when tracing was started to be displayed.
 
 
 .. method:: Trace.run(cmd)

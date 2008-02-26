@@ -441,6 +441,8 @@ Core and builtins
 Library
 -------
 
+- Add a timing parameter when using trace.Trace to print out timestamps.
+
 - #1627: httplib now ignores negative Content-Length headers.
 
 - #900744: If an invalid chunked-encoding header is sent by a server,

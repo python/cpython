@@ -53,6 +53,7 @@ import os
 import re
 import sys
 import threading
+import time
 import token
 import tokenize
 import types
@@ -98,6 +99,8 @@ Modifiers:
                       with '>>>>>> '.
 -s, --summary         Write a brief summary on stdout for each file.
                       (Can only be used with --count or --report.)
+-g, --timing          Prefix each line with the time since the program started.
+                      Only used while tracing.
 
 Filters, may be repeated multiple times:
 --ignore-module=<mod> Ignore the given module(s) and its submodules
@@ -435,7 +438,8 @@ def find_executable_linenos(filename):
 
 class Trace:
     def __init__(self, count=1, trace=1, countfuncs=0, countcallers=0,
-                 ignoremods=(), ignoredirs=(), infile=None, outfile=None):
+                 ignoremods=(), ignoredirs=(), infile=None, outfile=None,
+                 timing=False):
         """
         @param count true iff it should count number of times each
                      line is executed
@@ -451,6 +455,7 @@ class Trace:
         @param infile file from which to read stored counts to be
                      added into the results
         @param outfile file in which to write the results
+        @param timing true iff timing information be displayed
         """
         self.infile = infile
         self.outfile = outfile
@@ -463,6 +468,9 @@ class Trace:
         self._calledfuncs = {}
         self._callers = {}
         self._caller_cache = {}
+        self.start_time = None
+        if timing:
+            self.start_time = time.time()
         if countcallers:
             self.globaltrace = self.globaltrace_trackcallers
         elif countfuncs:
@@ -613,6 +621,8 @@ class Trace:
             key = filename, lineno
             self.counts[key] = self.counts.get(key, 0) + 1
 
+            if self.start_time:
+                print '%.2f' % (time.time() - self.start_time),
             bname = os.path.basename(filename)
             print "%s(%d): %s" % (bname, lineno,
                                   linecache.getline(filename, lineno)),
@@ -624,6 +634,8 @@ class Trace:
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
 
+            if self.start_time:
+                print '%.2f' % (time.time() - self.start_time),
             bname = os.path.basename(filename)
             print "%s(%d): %s" % (bname, lineno,
                                   linecache.getline(filename, lineno)),
@@ -653,13 +665,13 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
     try:
-        opts, prog_argv = getopt.getopt(argv[1:], "tcrRf:d:msC:lT",
+        opts, prog_argv = getopt.getopt(argv[1:], "tcrRf:d:msC:lTg",
                                         ["help", "version", "trace", "count",
                                          "report", "no-report", "summary",
                                          "file=", "missing",
                                          "ignore-module=", "ignore-dir=",
                                          "coverdir=", "listfuncs",
-                                         "trackcalls"])
+                                         "trackcalls", "timing"])
 
     except getopt.error, msg:
         sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
@@ -679,6 +691,7 @@ def main(argv=None):
     summary = 0
     listfuncs = False
     countcallers = False
+    timing = False
 
     for opt, val in opts:
         if opt == "--help":
@@ -695,6 +708,10 @@ def main(argv=None):
 
         if opt == "-l" or opt == "--listfuncs":
             listfuncs = True
+            continue
+
+        if opt == "-g" or opt == "--timing":
+            timing = True
             continue
 
         if opt == "-t" or opt == "--trace":
@@ -779,7 +796,7 @@ def main(argv=None):
         t = Trace(count, trace, countfuncs=listfuncs,
                   countcallers=countcallers, ignoremods=ignore_modules,
                   ignoredirs=ignore_dirs, infile=counts_file,
-                  outfile=counts_file)
+                  outfile=counts_file, timing=timing)
         try:
             t.run('execfile(%r)' % (progname,))
         except IOError, err:
