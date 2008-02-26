@@ -20,7 +20,7 @@ package on all others.  However there are certain features you might want to use
 that are not available on your distro's package.  You can easily compile the
 latest version of Python from source.
 	
-In the event Python doesn't come preinstalled and isn't in the repositories as
+In the event that Python doesn't come preinstalled and isn't in the repositories as
 well, you can easily make packages for your own distro.  Have a look at the
 following links:
 
