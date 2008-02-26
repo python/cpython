@@ -97,21 +97,21 @@ loops that truncate the stream.
 
         def combinations(iterable, r):
             pool = tuple(iterable)
-            if pool:
-                n = len(pool)
-                vec = range(r)
-                yield tuple(pool[i] for i in vec)
-                while 1:
-                    for i in reversed(range(r)):
-                        if vec[i] == i + n-r:
-                            continue
-                        vec[i] += 1
-                        for j in range(i+1, r):
-                            vec[j] = vec[j-1] + 1
-                        yield tuple(pool[i] for i in vec)
-                        break
-                    else:
-                        return
+            n = len(pool)
+            assert 0 <= r <= n
+            vec = range(r)
+            yield tuple(pool[i] for i in vec)
+            while 1:
+                for i in reversed(range(r)):
+                    if vec[i] == i + n-r:
+                        continue
+                    vec[i] += 1
+                    for j in range(i+1, r):
+                        vec[j] = vec[j-1] + 1
+                    yield tuple(pool[i] for i in vec)
+                    break
+                else:
+                    return
 
    .. versionadded:: 2.6
 
