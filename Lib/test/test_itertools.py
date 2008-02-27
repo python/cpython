@@ -59,7 +59,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ValueError, combinations, 'abc', 32)  # r is too big
         self.assertEqual(list(combinations(range(4), 3)),
                                            [(0,1,2), (0,1,3), (0,2,3), (1,2,3)])
-        for n in range(6):
+        for n in range(8):
             values = [5*x-12 for x in range(n)]
             for r in range(n+1):
                 result = list(combinations(values, r))
