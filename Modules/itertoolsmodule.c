@@ -1794,10 +1794,8 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	/* create productobject structure */
 	lz = (productobject *)type->tp_alloc(type, 0);
-	if (lz == NULL) {
-		Py_DECREF(pools);
+	if (lz == NULL)
 		goto error;
-	}
 
 	lz->pools = pools;
 	lz->maxvec = maxvec;
