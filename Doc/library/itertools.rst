@@ -103,15 +103,14 @@ loops that truncate the stream.
             yield tuple(pool[i] for i in vec)
             while 1:
                 for i in reversed(range(r)):
-                    if vec[i] == i + n-r:
-                        continue
-                    vec[i] += 1
-                    for j in range(i+1, r):
-                        vec[j] = vec[j-1] + 1
-                    yield tuple(pool[i] for i in vec)
-                    break
+                    if vec[i] != i + n - r:
+                        break
                 else:
                     return
+                vec[i] += 1
+                for j in range(i+1, r):
+                    vec[j] = vec[j-1] + 1
+                yield tuple(pool[i] for i in vec)
 
    .. versionadded:: 2.6
 
