@@ -196,6 +196,7 @@ You can get the information from the list type:
      '__setattr__',
      '__setitem__',
      '__str__',
+     '__subclasshook__',
      'append',
      'count',
      'extend',

@@ -327,7 +327,7 @@ loops that truncate the stream.
    example :func:`islice` or :func:`takewhile`).
 
 
-.. function:: product(*iterables)
+.. function:: product(*iterables[, repeat])
 
    Cartesian product of input iterables.
 
@@ -340,11 +340,15 @@ loops that truncate the stream.
    so that if the inputs iterables are sorted, the product tuples are emitted
    in sorted order.
 
+   To compute the product of an iterable with itself, specify the number of
+   repetitions with the optional *repeat* keyword argument.  For example,
+   ``product(A, repeat=4)`` means the same as ``product(A, A, A, A)``.
+
    Equivalent to the following except that the actual implementation does not
    build-up intermediate results in memory::
 
-       def product(*args):
-           pools = map(tuple, args)
+       def product(*args, **kwds):
+           pools = map(tuple, args) * kwds.get('repeat', 1)
            if pools:            
                result = [[]]
                for pool in pools:

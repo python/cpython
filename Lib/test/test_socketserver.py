@@ -2,13 +2,15 @@
 Test suite for SocketServer.py.
 """
 
-import os
-import socket
 import errno
 import imp
+import os
 import select
-import time
+import signal
+import socket
+import tempfile
 import threading
+import time
 import unittest
 import SocketServer
 
@@ -19,20 +21,11 @@ from test.test_support import TESTFN as TEST_FILE
 test.test_support.requires("network")
 
 NREQ = 3
-DELAY = 0.5
 TEST_STR = b"hello world\n"
 HOST = "localhost"
 
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 HAVE_FORKING = hasattr(os, "fork") and os.name != "os2"
-
-
-class MyMixinHandler:
-    def handle(self):
-        time.sleep(DELAY)
-        line = self.rfile.readline()
-        time.sleep(DELAY)
-        self.wfile.write(line)
 
 
 def receive(sock, n, timeout=20):
@@ -41,14 +34,6 @@ def receive(sock, n, timeout=20):
         return sock.recv(n)
     else:
         raise RuntimeError("timed out on %r" % (sock,))
-
-
-class MyStreamHandler(MyMixinHandler, SocketServer.StreamRequestHandler):
-    pass
-
-class MyDatagramHandler(MyMixinHandler,
-    SocketServer.DatagramRequestHandler):
-    pass
 
 if HAVE_UNIX_SOCKETS:
     class ForkingUnixStreamServer(SocketServer.ForkingMixIn,
@@ -111,47 +96,28 @@ class ServerThread(threading.Thread):
             pass
         if verbose: print("thread: creating server")
         svr = svrcls(self.__addr, self.__hdlrcls)
-        # pull the address out of the server in case it changed
-        # this can happen if another process is using the port
-        addr = svr.server_address
-        if addr:
-            self.__addr = addr
-            if self.__addr != svr.socket.getsockname():
-                raise RuntimeError('server_address was %s, expected %s' %
-                                       (self.__addr, svr.socket.getsockname()))
+        # We had the OS pick a port, so pull the real address out of
+        # the server.
+        self.addr = svr.server_address
+        self.port = self.addr[1]
+        if self.addr != svr.socket.getsockname():
+            raise RuntimeError('server_address was %s, expected %s' %
+                               (self.addr, svr.socket.getsockname()))
         self.ready.set()
         if verbose: print("thread: serving three times")
         svr.serve_a_few()
         if verbose: print("thread: done")
 
 
-class ForgivingTCPServer(SocketServer.TCPServer):
-    # prevent errors if another process is using the port we want
-    def server_bind(self):
-        host, default_port = self.server_address
-        # this code shamelessly stolen from test.test_support
-        # the ports were changed to protect the innocent
-        import sys
-        for port in [default_port, 3434, 8798, 23833]:
-            try:
-                self.server_address = host, port
-                SocketServer.TCPServer.server_bind(self)
-                break
-            except socket.error as e:
-                (err, msg) = e
-                if err != errno.EADDRINUSE:
-                    raise
-                print('  WARNING: failed to listen on port %d, trying another' % port, file=sys.__stderr__)
-
 class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
+        signal.alarm(20)  # Kill deadlocks after 20 seconds.
         self.port_seed = 0
         self.test_files = []
 
     def tearDown(self):
-        time.sleep(DELAY)
         reap_children()
 
         for fn in self.test_files:
@@ -160,16 +126,18 @@ class SocketServerTest(unittest.TestCase):
             except os.error:
                 pass
         self.test_files[:] = []
-
-    def pickport(self):
-        self.port_seed += 1
-        return 10000 + (os.getpid() % 1000)*10 + self.port_seed
+        signal.alarm(0)  # Didn't deadlock.
 
     def pickaddr(self, proto):
         if proto == socket.AF_INET:
-            return (HOST, self.pickport())
+            return (HOST, 0)
         else:
-            fn = TEST_FILE + str(self.pickport())
+            # XXX: We need a way to tell AF_UNIX to pick its own name
+            # like AF_INET provides port==0.
+            dir = None
+            if os.name == 'os2':
+                dir = '\socket'
+            fn = tempfile.mktemp(prefix='unix_socket.', dir=dir)
             if os.name == 'os2':
                 # AF_UNIX socket names on OS/2 require a specific prefix
                 # which can't include a drive letter and must also use
@@ -178,7 +146,6 @@ class SocketServerTest(unittest.TestCase):
                     fn = fn[2:]
                 if fn[0] in (os.sep, os.altsep):
                     fn = fn[1:]
-                fn = os.path.join('\socket', fn)
                 if os.sep == '/':
                     fn = fn.replace(os.sep, os.altsep)
                 else:
@@ -186,25 +153,31 @@ class SocketServerTest(unittest.TestCase):
             self.test_files.append(fn)
             return fn
 
-    def run_servers(self, proto, servers, hdlrcls, testfunc):
-        for svrcls in servers:
-            addr = self.pickaddr(proto)
-            if verbose:
-                print("ADDR =", addr)
-                print("CLASS =", svrcls)
-            t = ServerThread(addr, svrcls, hdlrcls)
-            if verbose: print("server created")
-            t.start()
-            if verbose: print("server running")
-            for i in range(NREQ):
-                t.ready.wait(10*DELAY)
-                self.assert_(t.ready.isSet(),
-                    "Server not ready within a reasonable time")
-                if verbose: print("test client", i)
-                testfunc(proto, addr)
-            if verbose: print("waiting for server")
-            t.join()
-            if verbose: print("done")
+
+    def run_server(self, svrcls, hdlrbase, testfunc):
+        class MyHandler(hdlrbase):
+            def handle(self):
+                line = self.rfile.readline()
+                self.wfile.write(line)
+
+        addr = self.pickaddr(svrcls.address_family)
+        if verbose:
+            print("ADDR =", addr)
+            print("CLASS =", svrcls)
+        t = ServerThread(addr, svrcls, MyHandler)
+        if verbose: print("server created")
+        t.start()
+        if verbose: print("server running")
+        t.ready.wait(10)
+        self.assert_(t.ready.isSet(),
+                     "%s not ready within a reasonable time" % svrcls)
+        addr = t.addr
+        for i in range(NREQ):
+            if verbose: print("test client", i)
+            testfunc(svrcls.address_family, addr)
+        if verbose: print("waiting for server")
+        t.join()
+        if verbose: print("done")
 
     def stream_examine(self, proto, addr):
         s = socket.socket(proto, socket.SOCK_STREAM)
@@ -227,47 +200,74 @@ class SocketServerTest(unittest.TestCase):
         self.assertEquals(buf, TEST_STR)
         s.close()
 
-    def test_TCPServers(self):
-        # Test SocketServer.TCPServer
-        servers = [ForgivingTCPServer, SocketServer.ThreadingTCPServer]
-        if HAVE_FORKING:
-            servers.append(SocketServer.ForkingTCPServer)
-        self.run_servers(socket.AF_INET, servers,
-                         MyStreamHandler, self.stream_examine)
+    def test_TCPServer(self):
+        self.run_server(SocketServer.TCPServer,
+                        SocketServer.StreamRequestHandler,
+                        self.stream_examine)
 
-    def test_UDPServers(self):
-        # Test SocketServer.UDPServer
-        servers = [SocketServer.UDPServer,
-                   SocketServer.ThreadingUDPServer]
-        if HAVE_FORKING:
-            servers.append(SocketServer.ForkingUDPServer)
-        self.run_servers(socket.AF_INET, servers, MyDatagramHandler,
-                         self.dgram_examine)
+    def test_ThreadingTCPServer(self):
+        self.run_server(SocketServer.ThreadingTCPServer,
+                        SocketServer.StreamRequestHandler,
+                        self.stream_examine)
 
-    def test_stream_servers(self):
-        # Test SocketServer's stream servers
-        if not HAVE_UNIX_SOCKETS:
-            return
-        servers = [SocketServer.UnixStreamServer,
-                   SocketServer.ThreadingUnixStreamServer]
+    if HAVE_FORKING:
+        def test_ThreadingTCPServer(self):
+            self.run_server(SocketServer.ForkingTCPServer,
+                            SocketServer.StreamRequestHandler,
+                            self.stream_examine)
+
+    if HAVE_UNIX_SOCKETS:
+        def test_UnixStreamServer(self):
+            self.run_server(SocketServer.UnixStreamServer,
+                            SocketServer.StreamRequestHandler,
+                            self.stream_examine)
+
+        def test_ThreadingUnixStreamServer(self):
+            self.run_server(SocketServer.ThreadingUnixStreamServer,
+                            SocketServer.StreamRequestHandler,
+                            self.stream_examine)
+
         if HAVE_FORKING:
-            servers.append(ForkingUnixStreamServer)
-        self.run_servers(socket.AF_UNIX, servers, MyStreamHandler,
-                         self.stream_examine)
+            def test_ForkingUnixStreamServer(self):
+                self.run_server(ForkingUnixStreamServer,
+                                SocketServer.StreamRequestHandler,
+                                self.stream_examine)
+
+    def test_UDPServer(self):
+        self.run_server(SocketServer.UDPServer,
+                        SocketServer.DatagramRequestHandler,
+                        self.dgram_examine)
+
+    def test_ThreadingUDPServer(self):
+        self.run_server(SocketServer.ThreadingUDPServer,
+                        SocketServer.DatagramRequestHandler,
+                        self.dgram_examine)
+
+    if HAVE_FORKING:
+        def test_ForkingUDPServer(self):
+            self.run_server(SocketServer.ForkingUDPServer,
+                            SocketServer.DatagramRequestHandler,
+                            self.dgram_examine)
 
     # Alas, on Linux (at least) recvfrom() doesn't return a meaningful
     # client address so this cannot work:
 
-    # def test_dgram_servers(self):
-    #     # Test SocketServer.UnixDatagramServer
-    #     if not HAVE_UNIX_SOCKETS:
-    #         return
-    #     servers = [SocketServer.UnixDatagramServer,
-    #                SocketServer.ThreadingUnixDatagramServer]
+    # if HAVE_UNIX_SOCKETS:
+    #     def test_UnixDatagramServer(self):
+    #         self.run_server(SocketServer.UnixDatagramServer,
+    #                         SocketServer.DatagramRequestHandler,
+    #                         self.dgram_examine)
+    #
+    #     def test_ThreadingUnixDatagramServer(self):
+    #         self.run_server(SocketServer.ThreadingUnixDatagramServer,
+    #                         SocketServer.DatagramRequestHandler,
+    #                         self.dgram_examine)
+    #
     #     if HAVE_FORKING:
-    #         servers.append(ForkingUnixDatagramServer)
-    #     self.run_servers(socket.AF_UNIX, servers, MyDatagramHandler,
-    #                      self.dgram_examine)
+    #         def test_ForkingUnixDatagramServer(self):
+    #             self.run_server(SocketServer.ForkingUnixDatagramServer,
+    #                             SocketServer.DatagramRequestHandler,
+    #                             self.dgram_examine)
 
 
 def test_main():
@@ -279,3 +279,4 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
+    signal.alarm(3)  # Shutdown shouldn't take more than 3 seconds.
