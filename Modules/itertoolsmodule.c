@@ -1638,6 +1638,18 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return chain_new_internal(type, source);
 }
 
+static PyObject *
+chain_new_from_iterable(PyTypeObject *type, PyObject *arg)
+{
+	PyObject *source;
+	
+	source = PyObject_GetIter(arg);
+	if (source == NULL)
+		return NULL;
+
+	return chain_new_internal(type, source);
+}
+
 static void
 chain_dealloc(chainobject *lz)
 {
@@ -1696,6 +1708,18 @@ Return a chain object whose .next() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
 
+PyDoc_STRVAR(chain_from_iterable_doc,
+"chain.from_iterable(iterable) --> chain object\n\
+\n\
+Alternate chain() contructor taking a single iterable argument\n\
+that evaluates lazily.");
+
+static PyMethodDef chain_methods[] = {
+	{"from_iterable", (PyCFunction) chain_new_from_iterable,	METH_O | METH_CLASS,
+		chain_from_iterable_doc},
+	{NULL,		NULL}	/* sentinel */
+};
+
 static PyTypeObject chain_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.chain",		/* tp_name */
@@ -1726,7 +1750,7 @@ static PyTypeObject chain_type = {
 	0,				/* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)chain_next,	/* tp_iternext */
-	0,				/* tp_methods */
+	chain_methods,			/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
 	0,				/* tp_base */
