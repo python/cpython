@@ -21,7 +21,7 @@ has compiled Windows installers (MSI packages) with every `release
 <http://www.python.org/download/releases/>`_ for many years.
 
 With ongoing development of Python, some platforms that used to be supported
-earlier are not longer supported (due to the lack of users or developers).
+earlier are no longer supported (due to the lack of users or developers).
 Check :pep:`11` for details on all unsupported platforms.
 
 * DOS and Windows 3.x are deprecated since Python 2.0 and code specific to these

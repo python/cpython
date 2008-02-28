@@ -308,6 +308,22 @@ getargs_tuple(PyObject *self, PyObject *args)
 	return Py_BuildValue("iii", a, b, c);
 }
 
+/* test PyArg_ParseTupleAndKeywords */
+static PyObject *getargs_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+	static char *keywords[] = {"arg1","arg2","arg3","arg4","arg5", NULL};
+	static char *fmt="(ii)i|(i(ii))(iii)i";
+	int int_args[10]={-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
+		&int_args[0], &int_args[1], &int_args[2], &int_args[3], &int_args[4],
+		&int_args[5], &int_args[6], &int_args[7], &int_args[8], &int_args[9]))
+		return NULL;
+	return Py_BuildValue("iiiiiiiiii",
+		int_args[0], int_args[1], int_args[2], int_args[3], int_args[4],
+		int_args[5], int_args[6], int_args[7], int_args[8], int_args[9]);
+}
+
 /* Functions to call PyArg_ParseTuple with integer format codes,
    and return the result.
 */
@@ -898,6 +914,8 @@ static PyMethodDef TestMethods[] = {
 	 PyDoc_STR("This is a pretty normal docstring.")},
 
 	{"getargs_tuple",	getargs_tuple,			 METH_VARARGS},
+	{"getargs_keywords", (PyCFunction)getargs_keywords, 
+	  METH_VARARGS|METH_KEYWORDS},
 	{"getargs_b",		getargs_b,			 METH_VARARGS},
 	{"getargs_B",		getargs_B,			 METH_VARARGS},
 	{"getargs_H",		getargs_H,			 METH_VARARGS},
