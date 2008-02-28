@@ -2111,8 +2111,11 @@ combinations_next(combinationsobject *co)
 			}
 			Py_DECREF(old_result);
 		}
-		/* Now, we've got the only copy so we can update it in-place */
-		assert (Py_REFCNT(result) == 1);
+		/* Now, we've got the only copy so we can update it in-place 
+		 * CPython's empty tuple is a singleton and cached in 
+		 * PyTuple's freelist. 
+		 */
+		assert(r == 0 || Py_REFCNT(result) == 1);
 
                 /* Scan indices right-to-left until finding one that is not
                    at its maximum (i + n - r). */
