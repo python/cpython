@@ -404,7 +404,7 @@ class Thread(_Verbose):
         self.__args = args
         self.__kwargs = kwargs
         self.__daemonic = self._set_daemon()
-        self.__started = False
+        self.__started = Event()
         self.__stopped = False
         self.__block = Condition(Lock())
         self.__initialized = True
@@ -419,7 +419,7 @@ class Thread(_Verbose):
     def __repr__(self):
         assert self.__initialized, "Thread.__init__() was not called"
         status = "initial"
-        if self.__started:
+        if self.__started.isSet():
             status = "started"
         if self.__stopped:
             status = "stopped"
@@ -430,7 +430,7 @@ class Thread(_Verbose):
     def start(self):
         if not self.__initialized:
             raise RuntimeError("thread.__init__() not called")
-        if self.__started:
+        if self.__started.isSet():
             raise RuntimeError("thread already started")
         if __debug__:
             self._note("%s.start(): starting thread", self)
@@ -438,8 +438,7 @@ class Thread(_Verbose):
         _limbo[self] = self
         _active_limbo_lock.release()
         _start_new_thread(self.__bootstrap, ())
-        self.__started = True
-        _sleep(0.000001)    # 1 usec, to let the thread run (Solaris hack)
+        self.__started.wait()
 
     def run(self):
         try:
@@ -472,7 +471,7 @@ class Thread(_Verbose):
 
     def __bootstrap_inner(self):
         try:
-            self.__started = True
+            self.__started.set()
             _active_limbo_lock.acquire()
             _active[_get_ident()] = self
             del _limbo[self]
@@ -581,7 +580,7 @@ class Thread(_Verbose):
     def join(self, timeout=None):
         if not self.__initialized:
             raise RuntimeError("Thread.__init__() not called")
-        if not self.__started:
+        if not self.__started.isSet():
             raise RuntimeError("cannot join thread before it is started")
         if self is currentThread():
             raise RuntimeError("cannot join current thread")
@@ -621,7 +620,7 @@ class Thread(_Verbose):
 
     def isAlive(self):
         assert self.__initialized, "Thread.__init__() not called"
-        return self.__started and not self.__stopped
+        return self.__started.isSet() and not self.__stopped
 
     def isDaemon(self):
         assert self.__initialized, "Thread.__init__() not called"
@@ -630,7 +629,7 @@ class Thread(_Verbose):
     def setDaemon(self, daemonic):
         if not self.__initialized:
             raise RuntimeError("Thread.__init__() not called")
-        if self.__started:
+        if self.__started.isSet():
             raise RuntimeError("cannot set daemon status of active thread");
         self.__daemonic = daemonic
 
@@ -672,7 +671,7 @@ class _MainThread(Thread):
 
     def __init__(self):
         Thread.__init__(self, name="MainThread")
-        self._Thread__started = True
+        self._Thread__started.set()
         _active_limbo_lock.acquire()
         _active[_get_ident()] = self
         _active_limbo_lock.release()
@@ -718,7 +717,7 @@ class _DummyThread(Thread):
         # instance is immortal, that's bad, so release this resource.
         del self._Thread__block
 
-        self._Thread__started = True
+        self._Thread__started.set()
         _active_limbo_lock.acquire()
         _active[_get_ident()] = self
         _active_limbo_lock.release()
