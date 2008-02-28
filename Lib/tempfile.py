@@ -394,6 +394,10 @@ class _TemporaryFileWrapper:
         self.file.__enter__()
         return self
 
+    # XXX iter() doesn't use __getattr__ to find the __iter__ method
+    def __iter__(self):
+        return self.__getattr__('__iter__')()
+
     # NT provides delete-on-close as a primitive, so we don't need
     # the wrapper to do anything special.  We still use it so that
     # file.name is useful (i.e. not "(fdopen)") with NamedTemporaryFile.
