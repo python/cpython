@@ -209,6 +209,7 @@ Instead, you can get the same information from the list type:
      '__setitem__',
      '__setslice__',
      '__str__',
+     '__subclasshook__',
      'append',
      'count',
      'extend',
