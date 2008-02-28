@@ -76,17 +76,30 @@ loops that truncate the stream.
                   yield element
 
 
+.. function:: itertools.chain.from_iterable(iterable)
+
+   Alternate constructor for :func:`chain`.  Gets chained inputs from a 
+   single iterable argument that is evaluated lazily.  Equivalent to::
+
+      @classmethod
+      def from_iterable(iterables):
+          for it in iterables:
+              for element in it:
+                  yield element
+
+   .. versionadded:: 2.6
+
 .. function:: combinations(iterable, r)
 
    Return successive *r* length combinations of elements in the *iterable*.
 
-   Combinations are emitted in a lexicographic sort order.  So, if the 
+   Combinations are emitted in lexicographic sort order.  So, if the 
    input *iterable* is sorted, the combination tuples will be produced
    in sorted order.  
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, there will be no repeat
-   values within a single combination.
+   values in each combination.
 
    Each result tuple is ordered to match the input order.  So, every
    combination is a subsequence of the input *iterable*.
@@ -340,6 +353,26 @@ loops that truncate the stream.
 
    .. versionadded:: 2.6
 
+.. function:: permutations(iterable[, r])
+
+   Return successive *r* length permutations of elements in the *iterable*.
+
+   If *r* is not specified or is ``None``, then *r* defaults to the length
+   of the *iterable* and all possible full-length permutations 
+   are generated.
+
+   Permutations are emitted in lexicographic sort order.  So, if the 
+   input *iterable* is sorted, the permutation tuples will be produced
+   in sorted order.  
+
+   Elements are treated as unique based on their position, not on their
+   value.  So if the input elements are unique, there will be no repeat
+   values in each permutation.
+
+   Example:  ``permutations(range(3),2) --> (1,2) (1,3) (2,1) (2,3) (3,1) (3,2)``
+
+   .. versionadded:: 2.6
+
 .. function:: product(*iterables[, repeat])
 
    Cartesian product of input iterables.
@@ -560,13 +593,13 @@ which incur interpreter overhead. ::
 
    def ncycles(seq, n):
        "Returns the sequence elements n times"
-       return chain(*repeat(seq, n))
+       return chain.from_iterable(repeat(seq, n))
 
    def dotproduct(vec1, vec2):
        return sum(imap(operator.mul, vec1, vec2))
 
    def flatten(listOfLists):
-       return list(chain(*listOfLists))
+       return list(chain.from_iterable(listOfLists))
 
    def repeatfunc(func, times=None, *args):
        """Repeat calls to func with specified arguments.
@@ -575,8 +608,7 @@ which incur interpreter overhead. ::
        """
        if times is None:
            return starmap(func, repeat(args))
-       else:
-           return starmap(func, repeat(args, times))
+       return starmap(func, repeat(args, times))
 
    def pairwise(iterable):
        "s -> (s0,s1), (s1,s2), (s2, s3), ..."
@@ -593,7 +625,7 @@ which incur interpreter overhead. ::
 
    def roundrobin(*iterables):
        "roundrobin('abc', 'd', 'ef') --> 'a', 'd', 'e', 'b', 'f', 'c'"
-       # Recipe contributed by George Sakkis
+       # Recipe credited to George Sakkis
        pending = len(iterables)
        nexts = cycle(iter(it).next for it in iterables)
        while pending:
@@ -605,8 +637,9 @@ which incur interpreter overhead. ::
                nexts = cycle(islice(nexts, pending))
 
    def powerset(iterable):
-       "powerset('ab') --> set([]), set(['b']), set(['a']), set(['a', 'b'])"
-       skip = object()
-       for t in product(*izip(repeat(skip), iterable)):
-           yield set(e for e in t if e is not skip)
+       "powerset('ab') --> set([]), set(['a']), set(['b']), set(['a', 'b'])"
+       # Recipe credited to Eric Raymond
+       pairs = [(2**i, x) for i, x in enumerate(iterable)]
+       for n in xrange(2**len(pairs)):
+           yield set(x for m, x in pairs if m&n)
 
