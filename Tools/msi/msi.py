@@ -837,17 +837,11 @@ def extract_msvcr71():
            installer.FileVersion("msvcr71.dll", 1)
 
 def extract_msvcr90():
-    import _winreg
-    # Find the location of the merge modules
-    k = _winreg.OpenKey(
-        _winreg.HKEY_LOCAL_MACHINE,
-        r"Software\Microsoft\VisualStudio\9.0\Setup\VS")
-    prod_dir = _winreg.QueryValueEx(k, "ProductDir")[0]
-    _winreg.CloseKey(k)
+    # Find the redistributable files
+    dir = os.path.join(os.environ['VS90COMNTOOLS'], r"..\..\VC\redist\x86\Microsoft.VC90.CRT")
 
     result = []
     installer = msilib.MakeInstaller()
-    dir = os.path.join(prod_dir, r'VC\redist\x86\Microsoft.VC90.CRT')
     # omit msvcm90 and msvcp90, as they aren't really needed
     files = ["Microsoft.VC90.CRT.manifest", "msvcr90.dll"]
     for f in files:
