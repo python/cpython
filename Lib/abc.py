@@ -51,52 +51,6 @@ class abstractproperty(property):
     __isabstractmethod__ = True
 
 
-class _Abstract(object):
-
-    """Helper class inserted into the bases by ABCMeta (using _fix_bases()).
-
-    You should never need to explicitly subclass this class.
-
-    There should never be a base class between _Abstract and object.
-    """
-
-    def __new__(cls, *args, **kwds):
-        am = cls.__dict__.get("__abstractmethods__")
-        if am:
-            raise TypeError("Can't instantiate abstract class %s "
-                            "with abstract methods %s" %
-                            (cls.__name__, ", ".join(sorted(am))))
-        if (args or kwds) and cls.__init__ is object.__init__:
-            raise TypeError("Can't pass arguments to __new__ "
-                            "without overriding __init__")
-        return super(_Abstract, cls).__new__(cls)
-
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        """Abstract classes can override this to customize issubclass().
-
-        This is invoked early on by __subclasscheck__() below.  It
-        should return True, False or NotImplemented.  If it returns
-        NotImplemented, the normal algorithm is used.  Otherwise, it
-        overrides the normal algorithm (and the outcome is cached).
-        """
-        return NotImplemented
-
-
-def _fix_bases(bases):
-    """Helper method that inserts _Abstract in the bases if needed."""
-    for base in bases:
-        if issubclass(base, _Abstract):
-            # _Abstract is already a base (maybe indirectly)
-            return bases
-    if object in bases:
-        # Replace object with _Abstract
-        return tuple([_Abstract if base is object else base
-                      for base in bases])
-    # Append _Abstract to the end
-    return bases + (_Abstract,)
-
-
 class ABCMeta(type):
 
     """Metaclass for defining Abstract Base Classes (ABCs).
@@ -119,7 +73,6 @@ class ABCMeta(type):
     _abc_invalidation_counter = 0
 
     def __new__(mcls, name, bases, namespace):
-        bases = _fix_bases(bases)
         cls = super(ABCMeta, mcls).__new__(mcls, name, bases, namespace)
         # Compute set of abstract method names
         abstracts = set(name
@@ -130,7 +83,7 @@ class ABCMeta(type):
                 value = getattr(cls, name, None)
                 if getattr(value, "__isabstractmethod__", False):
                     abstracts.add(name)
-        cls.__abstractmethods__ = abstracts
+        cls.__abstractmethods__ = frozenset(abstracts)
         # Set up inheritance registry
         cls._abc_registry = set()
         cls._abc_cache = set()
