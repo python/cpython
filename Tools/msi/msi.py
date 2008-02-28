@@ -844,21 +844,19 @@ def extract_msvcr90():
     prod_dir = _winreg.QueryValueEx(k, "ProductDir")[0]
     _winreg.CloseKey(k)
 
-    # Copy msvcr90*
-    dir = os.path.join(prod_dir, r'VC\redist\x86\Microsoft.VC90.CRT')
-    files = glob.glob1(dir, "*CRT*.dll") + glob.glob1(dir, "*VCR*.dll")
-    for file in files:
-        shutil.copy(os.path.join(dir, file), '.')
-
-    dir = os.path.join(prod_dir, r'VC\redist\Debug_NonRedist\x86\Microsoft.VC90.DebugCRT')
-    files = glob.glob1(dir, "*CRT*.dll") + glob.glob1(dir, "*VCR*.dll")
-    for file in files:
-        shutil.copy(os.path.join(dir, file), '.')
-
-    # Find the version/language of msvcr90.dll
+    result = []
     installer = msilib.MakeInstaller()
-    return installer.FileVersion("msvcr90.dll", 0), \
-           installer.FileVersion("msvcr90.dll", 1)
+    dir = os.path.join(prod_dir, r'VC\redist\x86\Microsoft.VC90.CRT')
+    # omit msvcm90 and msvcp90, as they aren't really needed
+    files = ["Microsoft.VC90.CRT.manifest", "msvcr90.dll"]
+    for f in files:
+        path = os.path.join(dir, f)
+        kw = {'src':path}
+        if f.endswith('.dll'):
+            kw['version'] = installer.FileVersion(path, 0)
+            kw['language'] = installer.FileVersion(path, 1)
+        result.append((f, kw))
+    return result
 
 class PyDirectory(Directory):
     """By default, all components in the Python installer
@@ -887,7 +885,10 @@ def add_files(db):
     root.add_file("%s/pythonw.exe" % PCBUILD)
 
     # msidbComponentAttributesSharedDllRefCount = 8, see "Component Table"
-    dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
+    #dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
+    #install python30.dll into root dir for now
+    dlldir = root
+
     pydll = "python%s%s.dll" % (major, minor)
     pydllsrc = os.path.join(srcdir, PCBUILD, pydll)
     dlldir.start_component("DLLDIR", flags = 8, keyfile = pydll, uuid = pythondll_uuid)
@@ -900,17 +901,14 @@ def add_files(db):
     dlldir.add_file("%s/python%s%s.dll" % (PCBUILD, major, minor),
                     version=pyversion,
                     language=installer.FileVersion(pydllsrc, 1))
+    DLLs = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
     # XXX determine dependencies
     if MSVCR == "90":
-        # XXX don't package the CRT for the moment;
-        # this should probably use the merge module in the long run.
-        pass
-        #version, lang = extract_msvcr90()
-        #dlldir.start_component("msvcr90", flags=8, keyfile="msvcr90.dll",
-        #                       uuid=msvcr90_uuid)
-        #dlldir.add_file("msvcr90.dll", src=os.path.abspath("msvcr90.dll"),
-        #                version=version, language=lang)
-        #tmpfiles.append("msvcr90.dll")
+        root.start_component("msvcr90")
+        for file, kw in extract_msvcr90():
+            root.add_file(file, **kw)
+            if file.endswith("manifest"):
+                DLLs.add_file(file, **kw)
     else:
         version, lang = extract_msvcr71()
         dlldir.start_component("msvcr71", flags=8, keyfile="msvcr71.dll",
@@ -1011,7 +1009,7 @@ def add_files(db):
                 pydirs.append((lib, f))
     # Add DLLs
     default_feature.set_current()
-    lib = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
+    lib = DLLs
     lib.add_file("py.ico", src=srcdir+"/PC/py.ico")
     lib.add_file("pyc.ico", src=srcdir+"/PC/pyc.ico")
     dlls = []
