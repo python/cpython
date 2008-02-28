@@ -52,6 +52,13 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(4, chain('abc', 'def')), list('abcd'))
         self.assertRaises(TypeError, list,chain(2, 3))
 
+    def test_chain_from_iterable(self):
+        self.assertEqual(list(chain.from_iterable(['abc', 'def'])), list('abcdef'))
+        self.assertEqual(list(chain.from_iterable(['abc'])), list('abc'))
+        self.assertEqual(list(chain.from_iterable([''])), [])
+        self.assertEqual(take(4, chain.from_iterable(['abc', 'def'])), list('abcd'))
+        self.assertRaises(TypeError, list, chain.from_iterable([2, 3]))
+
     def test_combinations(self):
         self.assertRaises(TypeError, combinations, 'abc')   # missing r argument
         self.assertRaises(TypeError, combinations, 'abc', 2, 1) # too many arguments
