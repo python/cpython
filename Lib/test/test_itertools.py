@@ -50,7 +50,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(chain('abc')), list('abc'))
         self.assertEqual(list(chain('')), [])
         self.assertEqual(take(4, chain('abc', 'def')), list('abcd'))
-        self.assertRaises(TypeError, chain, 2, 3)
+        self.assertRaises(TypeError, list,chain(2, 3))
 
     def test_combinations(self):
         self.assertRaises(TypeError, combinations, 'abc')   # missing r argument
@@ -670,7 +670,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(chain(g(s))), list(g(s)))
                 self.assertEqual(list(chain(g(s), g(s))), list(g(s))+list(g(s)))
-            self.assertRaises(TypeError, chain, X(s))
+            self.assertRaises(TypeError, list, chain(X(s)))
             self.assertRaises(TypeError, list, chain(N(s)))
             self.assertRaises(ZeroDivisionError, list, chain(E(s)))
 
