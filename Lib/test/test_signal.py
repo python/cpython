@@ -1,7 +1,12 @@
 import unittest
 from test import test_support
 import signal
-import os, sys, time, errno
+import sys, os, time, errno
+
+if sys.platform[:3] in ('win', 'os2') or sys.platform == 'riscos':
+    raise test_support.TestSkipped("Can't test signal on %s" % \
+                                   sys.platform)
+
 
 class HandlerBCalled(Exception):
     pass
@@ -256,10 +261,6 @@ class SiginterruptTest(unittest.TestCase):
         self.assertEquals(i, False)
 
 def test_main():
-    if sys.platform[:3] in ('win', 'os2') or sys.platform == 'riscos':
-        raise test_support.TestSkipped("Can't test signal on %s" % \
-                                       sys.platform)
-
     test_support.run_unittest(BasicSignalTests, InterProcessSignalTests,
         WakeupSignalTests, SiginterruptTest)
 
