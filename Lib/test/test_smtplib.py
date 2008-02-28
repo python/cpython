@@ -18,14 +18,15 @@ HOST = "localhost"
 PORT = None
 
 def server(evt, buf):
+    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serv.settimeout(1)
+    serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    serv.bind(("", 0))
+    global PORT
+    PORT = serv.getsockname()[1]
+    serv.listen(5)
+    evt.set()
     try:
-        serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        serv.settimeout(3)
-        serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        serv.bind(("", 0))
-        global PORT
-        PORT = serv.getsockname()[1]
-        serv.listen(5)
         conn, addr = serv.accept()
     except socket.timeout:
         pass
@@ -38,7 +39,6 @@ def server(evt, buf):
                 buf = buf[sent:]
 
             n -= 1
-            time.sleep(0.01)
 
         conn.close()
     finally:
@@ -52,16 +52,8 @@ class GeneralTests(TestCase):
         self.evt = threading.Event()
         servargs = (self.evt, b"220 Hola mundo\n")
         threading.Thread(target=server, args=servargs).start()
-
-        # wait until server thread has assigned a port number
-        n = 500
-        while PORT is None and n > 0:
-            time.sleep(0.01)
-            n -= 1
-
-        # wait a little longer (sometimes connections are refused
-        # on slow machines without this additional wait)
-        time.sleep(0.5)
+        self.evt.wait()
+        self.evt.clear()
 
     def tearDown(self):
         self.evt.wait()
@@ -76,28 +68,11 @@ class GeneralTests(TestCase):
         smtp = smtplib.SMTP("%s:%s" % (HOST, PORT))
         smtp.sock.close()
 
-    def testNotConnected(self):
-        # Test various operations on an unconnected SMTP object that
-        # should raise exceptions (at present the attempt in SMTP.send
-        # to reference the nonexistent 'sock' attribute of the SMTP object
-        # causes an AttributeError)
-        smtp = smtplib.SMTP()
-        self.assertRaises(smtplib.SMTPServerDisconnected, smtp.ehlo)
-        self.assertRaises(smtplib.SMTPServerDisconnected,
-                          smtp.send, 'test msg')
-
     def testLocalHostName(self):
         # check that supplied local_hostname is used
         smtp = smtplib.SMTP(HOST, PORT, local_hostname="testhost")
         self.assertEqual(smtp.local_hostname, "testhost")
         smtp.sock.close()
-
-    def testNonnumericPort(self):
-        # check that non-numeric port raises socket.error
-        self.assertRaises(socket.error, smtplib.SMTP,
-                          "localhost", "bogus")
-        self.assertRaises(socket.error, smtplib.SMTP,
-                          "localhost:bogus")
 
     def testTimeoutDefault(self):
         # default
@@ -128,6 +103,7 @@ def debugging_server(server_class, serv_evt, client_evt):
     serv = server_class(("", 0), ('nowhere', -1))
     global PORT
     PORT = serv.getsockname()[1]
+    serv_evt.set()
 
     try:
         if hasattr(select, 'poll'):
@@ -150,12 +126,12 @@ def debugging_server(server_class, serv_evt, client_evt):
     except socket.timeout:
         pass
     finally:
-        # allow some time for the client to read the result
-        time.sleep(0.5)
-        serv.close()
+        if not client_evt.isSet():
+            # allow some time for the client to read the result
+            time.sleep(0.5)
+            serv.close()
         asyncore.close_all()
         PORT = None
-        time.sleep(0.5)
         serv_evt.set()
 
 MSG_BEGIN = '---------- MESSAGE FOLLOWS ----------\n'
@@ -181,14 +157,8 @@ class DebuggingServerTests(TestCase):
         threading.Thread(target=debugging_server, args=serv_args).start()
 
         # wait until server thread has assigned a port number
-        n = 500
-        while PORT is None and n > 0:
-            time.sleep(0.01)
-            n -= 1
-
-        # wait a little longer (sometimes connections are refused
-        # on slow machines without this additional wait)
-        time.sleep(0.5)
+        self.serv_evt.wait()
+        self.serv_evt.clear()
 
     def tearDown(self):
         # indicate that the client is finished
@@ -258,6 +228,26 @@ class DebuggingServerTests(TestCase):
         self.assertEqual(self.output.getvalue(), mexpect)
 
 
+class NonConnectingTests(TestCase):
+
+    def testNotConnected(self):
+        # Test various operations on an unconnected SMTP object that
+        # should raise exceptions (at present the attempt in SMTP.send
+        # to reference the nonexistent 'sock' attribute of the SMTP object
+        # causes an AttributeError)
+        smtp = smtplib.SMTP()
+        self.assertRaises(smtplib.SMTPServerDisconnected, smtp.ehlo)
+        self.assertRaises(smtplib.SMTPServerDisconnected,
+                          smtp.send, 'test msg')
+
+    def testNonnumericPort(self):
+        # check that non-numeric port raises socket.error
+        self.assertRaises(socket.error, smtplib.SMTP,
+                          "localhost", "bogus")
+        self.assertRaises(socket.error, smtplib.SMTP,
+                          "localhost:bogus")
+
+
 # test response of client to a non-successful HELO message
 class BadHELOServerTests(TestCase):
 
@@ -269,16 +259,8 @@ class BadHELOServerTests(TestCase):
         self.evt = threading.Event()
         servargs = (self.evt, b"199 no hello for you!\n")
         threading.Thread(target=server, args=servargs).start()
-
-        # wait until server thread has assigned a port number
-        n = 500
-        while PORT is None and n > 0:
-            time.sleep(0.01)
-            n -= 1
-
-        # wait a little longer (sometimes connections are refused
-        # on slow machines without this additional wait)
-        time.sleep(0.5)
+        self.evt.wait()
+        self.evt.clear()
 
     def tearDown(self):
         self.evt.wait()
@@ -355,14 +337,8 @@ class SMTPSimTests(TestCase):
         threading.Thread(target=debugging_server, args=serv_args).start()
 
         # wait until server thread has assigned a port number
-        n = 500
-        while PORT is None and n > 0:
-            time.sleep(0.01)
-            n -= 1
-
-        # wait a little longer (sometimes connections are refused
-        # on slow machines without this additional wait)
-        time.sleep(0.5)
+        self.serv_evt.wait()
+        self.serv_evt.clear()
 
     def tearDown(self):
         # indicate that the client is finished
@@ -430,6 +406,7 @@ class SMTPSimTests(TestCase):
 
 def test_main(verbose=None):
     test_support.run_unittest(GeneralTests, DebuggingServerTests,
+                              NonConnectingTests,
                               BadHELOServerTests, SMTPSimTests)
 
 if __name__ == '__main__':
