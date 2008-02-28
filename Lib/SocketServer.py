@@ -440,18 +440,30 @@ class ForkingMixIn:
 
     def collect_children(self):
         """Internal routine to wait for children that have exited."""
-        while self.active_children:
-            if len(self.active_children) < self.max_children:
-                options = os.WNOHANG
-            else:
-                # If the maximum number of children are already
-                # running, block while waiting for a child to exit
-                options = 0
+        if self.active_children is None: return
+        while len(self.active_children) >= self.max_children:
+            # XXX: This will wait for any child process, not just ones
+            # spawned by this library. This could confuse other
+            # libraries that expect to be able to wait for their own
+            # children.
             try:
-                pid, status = os.waitpid(0, options)
+                pid, status = os.waitpid(0, options=0)
             except os.error:
                 pid = None
-            if not pid: break
+            if pid not in self.active_children: continue
+            self.active_children.remove(pid)
+
+        # XXX: This loop runs more system calls than it ought
+        # to. There should be a way to put the active_children into a
+        # process group and then use os.waitpid(-pgid) to wait for any
+        # of that set, but I couldn't find a way to allocate pgids
+        # that couldn't collide.
+        for child in self.active_children:
+            try:
+                pid, status = os.waitpid(child, os.WNOHANG)
+            except os.error:
+                pid = None
+            if not pid: continue
             try:
                 self.active_children.remove(pid)
             except ValueError, e:

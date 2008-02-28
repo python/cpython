@@ -2,6 +2,7 @@
 Test suite for SocketServer.py.
 """
 
+import contextlib
 import errno
 import imp
 import os
@@ -80,6 +81,18 @@ class ServerThread(threading.Thread):
         if verbose: print "thread: serving three times"
         svr.serve_a_few()
         if verbose: print "thread: done"
+
+
+@contextlib.contextmanager
+def simple_subprocess(testcase):
+    pid = os.fork()
+    if pid == 0:
+        # Don't throw an exception; it would be caught by the test harness.
+        os._exit(72)
+    yield None
+    pid2, status = os.waitpid(pid, 0)
+    testcase.assertEquals(pid2, pid)
+    testcase.assertEquals(72 << 8, status)
 
 
 class SocketServerTest(unittest.TestCase):
@@ -183,10 +196,11 @@ class SocketServerTest(unittest.TestCase):
                         self.stream_examine)
 
     if HAVE_FORKING:
-        def test_ThreadingTCPServer(self):
-            self.run_server(SocketServer.ForkingTCPServer,
-                            SocketServer.StreamRequestHandler,
-                            self.stream_examine)
+        def test_ForkingTCPServer(self):
+            with simple_subprocess(self):
+                self.run_server(SocketServer.ForkingTCPServer,
+                                SocketServer.StreamRequestHandler,
+                                self.stream_examine)
 
     if HAVE_UNIX_SOCKETS:
         def test_UnixStreamServer(self):
@@ -201,9 +215,10 @@ class SocketServerTest(unittest.TestCase):
 
         if HAVE_FORKING:
             def test_ForkingUnixStreamServer(self):
-                self.run_server(ForkingUnixStreamServer,
-                                SocketServer.StreamRequestHandler,
-                                self.stream_examine)
+                with simple_subprocess(self):
+                    self.run_server(ForkingUnixStreamServer,
+                                    SocketServer.StreamRequestHandler,
+                                    self.stream_examine)
 
     def test_UDPServer(self):
         self.run_server(SocketServer.UDPServer,
@@ -217,9 +232,10 @@ class SocketServerTest(unittest.TestCase):
 
     if HAVE_FORKING:
         def test_ForkingUDPServer(self):
-            self.run_server(SocketServer.ForkingUDPServer,
-                            SocketServer.DatagramRequestHandler,
-                            self.dgram_examine)
+            with simple_subprocess(self):
+                self.run_server(SocketServer.ForkingUDPServer,
+                                SocketServer.DatagramRequestHandler,
+                                self.dgram_examine)
 
     # Alas, on Linux (at least) recvfrom() doesn't return a meaningful
     # client address so this cannot work:
