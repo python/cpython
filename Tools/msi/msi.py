@@ -1071,7 +1071,7 @@ def add_files(db):
     # Add tools
     tools.set_current()
     tooldir = PyDirectory(db, cab, root, "Tools", "Tools", "TOOLS|Tools")
-    for f in ['i18n', 'pynche', 'Scripts', 'versioncheck', 'webchecker']:
+    for f in ['i18n', 'pynche', 'Scripts', 'versioncheck', 'webchecker', '2to3']:
         lib = PyDirectory(db, cab, tooldir, f, f, "%s|%s" % (tooldir.make_short(f), f))
         lib.glob("*.py")
         lib.glob("*.pyw", exclude=['pydocgui.pyw'])
