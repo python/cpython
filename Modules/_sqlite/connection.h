@@ -1,6 +1,6 @@
 /* connection.h - definitions for the connection type
  *
- * Copyright (C) 2004-2006 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2007 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -94,6 +94,11 @@ typedef struct
 
     /* a dictionary of registered collation name => collation callable mappings */
     PyObject* collations;
+
+    /* if our connection was created from a APSW connection, we keep a
+     * reference to the APSW connection around and get rid of it in our
+     * destructor */
+    PyObject* apsw_connection;
 
     /* Exception objects */
     PyObject* Warning;

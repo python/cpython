@@ -1,7 +1,7 @@
 #-*- coding: ISO-8859-1 -*-
 # pysqlite2/test/transactions.py: tests transactions
 #
-# Copyright (C) 2005 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -21,6 +21,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import sys
 import os, unittest
 import sqlite3 as sqlite
 
@@ -118,6 +119,23 @@ class TransactionTests(unittest.TestCase):
             pass
         except:
             self.fail("should have raised an OperationalError")
+
+    def CheckLocking(self):
+        """
+        This tests the improved concurrency with pysqlite 2.3.4. You needed
+        to roll back con2 before you could commit con1.
+        """
+        self.cur1.execute("create table test(i)")
+        self.cur1.execute("insert into test(i) values (5)")
+        try:
+            self.cur2.execute("insert into test(i) values (5)")
+            self.fail("should have raised an OperationalError")
+        except sqlite.OperationalError:
+            pass
+        except:
+            self.fail("should have raised an OperationalError")
+        # NO self.con2.rollback() HERE!!!
+        self.con1.commit()
 
 class SpecialCommandTests(unittest.TestCase):
     def setUp(self):
