@@ -2380,6 +2380,29 @@ class Decimal(object):
             coeff = str(int(coeff)+1)
         return _dec_from_triple(self._sign, coeff, exp)
 
+    def _round(self, places, rounding):
+        """Round a nonzero, nonspecial Decimal to a fixed number of
+        significant figures, using the given rounding mode.
+
+        Infinities, NaNs and zeros are returned unaltered.
+
+        This operation is quiet: it raises no flags, and uses no
+        information from the context.
+
+        """
+        if places <= 0:
+            raise ValueError("argument should be at least 1 in _round")
+        if self._is_special or not self:
+            return Decimal(self)
+        ans = self._rescale(self.adjusted()+1-places, rounding)
+        # it can happen that the rescale alters the adjusted exponent;
+        # for example when rounding 99.97 to 3 significant figures.
+        # When this happens we end up with an extra 0 at the end of
+        # the number; a second rescale fixes this.
+        if ans.adjusted() != self.adjusted():
+            ans = ans._rescale(ans.adjusted()+1-places, rounding)
+        return ans
+
     def to_integral_exact(self, rounding=None, context=None):
         """Rounds to a nearby integer.
 
@@ -3430,6 +3453,95 @@ class Decimal(object):
         if type(self) == Decimal:
             return self     # My components are also immutable
         return self.__class__(str(self))
+
+    # PEP 3101 support.  See also _parse_format_specifier and _format_align
+    def __format__(self, specifier, context=None):
+        """Format a Decimal class according to the given specifier.
+
+        The specifier should be a standard format specifier, with the
+        form described in PEP 3101.  Formatting types 'e', 'E', 'f',
+        'F', 'g', 'G', and '%' are supported.  If the formatting type
+        is omitted it defaults to 'g' or 'G', depending on the value
+        of context.capitals.
+
+        At this time the 'n' format specifier type (which is supposed
+        to use the current locale) is not supported.
+        """
+
+        # Note: PEP 3101 says that if the type is not present then
+        # there should be at least one digit after the decimal point.
+        # We take the liberty of ignoring this requirement for
+        # Decimal---it's presumably there to make sure that
+        # format(float, '') behaves similarly to str(float).
+        if context is None:
+            context = getcontext()
+
+        spec = _parse_format_specifier(specifier)
+
+        # special values don't care about the type or precision...
+        if self._is_special:
+            return _format_align(str(self), spec)
+
+        # a type of None defaults to 'g' or 'G', depending on context
+        # if type is '%', adjust exponent of self accordingly
+        if spec['type'] is None:
+            spec['type'] = ['g', 'G'][context.capitals]
+        elif spec['type'] == '%':
+            self = _dec_from_triple(self._sign, self._int, self._exp+2)
+
+        # round if necessary, taking rounding mode from the context
+        rounding = context.rounding
+        precision = spec['precision']
+        if precision is not None:
+            if spec['type'] in 'eE':
+                self = self._round(precision+1, rounding)
+            elif spec['type'] in 'gG':
+                if len(self._int) > precision:
+                    self = self._round(precision, rounding)
+            elif spec['type'] in 'fF%':
+                self = self._rescale(-precision, rounding)
+        # special case: zeros with a positive exponent can't be
+        # represented in fixed point; rescale them to 0e0.
+        elif not self and self._exp > 0 and spec['type'] in 'fF%':
+            self = self._rescale(0, rounding)
+
+        # figure out placement of the decimal point
+        leftdigits = self._exp + len(self._int)
+        if spec['type'] in 'fF%':
+            dotplace = leftdigits
+        elif spec['type'] in 'eE':
+            if not self and precision is not None:
+                dotplace = 1 - precision
+            else:
+                dotplace = 1
+        elif spec['type'] in 'gG':
+            if self._exp <= 0 and leftdigits > -6:
+                dotplace = leftdigits
+            else:
+                dotplace = 1
+
+        # figure out main part of numeric string...
+        if dotplace <= 0:
+            num = '0.' + '0'*(-dotplace) + self._int
+        elif dotplace >= len(self._int):
+            # make sure we're not padding a '0' with extra zeros on the right
+            assert dotplace==len(self._int) or self._int != '0'
+            num = self._int + '0'*(dotplace-len(self._int))
+        else:
+            num = self._int[:dotplace] + '.' + self._int[dotplace:]
+
+        # ...then the trailing exponent, or trailing '%'
+        if leftdigits != dotplace or spec['type'] in 'eE':
+            echar = {'E': 'E', 'e': 'e', 'G': 'E', 'g': 'e'}[spec['type']]
+            num = num + "{0}{1:+}".format(echar, leftdigits-dotplace)
+        elif spec['type'] == '%':
+            num = num + '%'
+
+        # add sign
+        if self._sign == 1:
+            num = '-' + num
+        return _format_align(num, spec)
+
 
 def _dec_from_triple(sign, coefficient, exponent, special=False):
     """Create a decimal instance directly, without any validation,
@@ -5250,8 +5362,136 @@ _parser = re.compile(r"""     # A numeric string consists of:
 
 _all_zeros = re.compile('0*$').match
 _exact_half = re.compile('50*$').match
+
+##### PEP3101 support functions ##############################################
+# The functions parse_format_specifier and format_align have little to do
+# with the Decimal class, and could potentially be reused for other pure
+# Python numeric classes that want to implement __format__
+#
+# A format specifier for Decimal looks like:
+#
+#   [[fill]align][sign][0][minimumwidth][.precision][type]
+#
+
+_parse_format_specifier_regex = re.compile(r"""\A
+(?:
+   (?P<fill>.)?
+   (?P<align>[<>=^])
+)?
+(?P<sign>[-+ ])?
+(?P<zeropad>0)?
+(?P<minimumwidth>(?!0)\d+)?
+(?:\.(?P<precision>0|(?!0)\d+))?
+(?P<type>[eEfFgG%])?
+\Z
+""", re.VERBOSE)
+
 del re
 
+def _parse_format_specifier(format_spec):
+    """Parse and validate a format specifier.
+
+    Turns a standard numeric format specifier into a dict, with the
+    following entries:
+
+      fill: fill character to pad field to minimum width
+      align: alignment type, either '<', '>', '=' or '^'
+      sign: either '+', '-' or ' '
+      minimumwidth: nonnegative integer giving minimum width
+      precision: nonnegative integer giving precision, or None
+      type: one of the characters 'eEfFgG%', or None
+      unicode: either True or False (always True for Python 3.x)
+
+    """
+    m = _parse_format_specifier_regex.match(format_spec)
+    if m is None:
+        raise ValueError("Invalid format specifier: " + format_spec)
+
+    # get the dictionary
+    format_dict = m.groupdict()
+
+    # defaults for fill and alignment
+    fill = format_dict['fill']
+    align = format_dict['align']
+    if format_dict.pop('zeropad') is not None:
+        # in the face of conflict, refuse the temptation to guess
+        if fill is not None and fill != '0':
+            raise ValueError("Fill character conflicts with '0'"
+                             " in format specifier: " + format_spec)
+        if align is not None and align != '=':
+            raise ValueError("Alignment conflicts with '0' in "
+                             "format specifier: " + format_spec)
+        fill = '0'
+        align = '='
+    format_dict['fill'] = fill or ' '
+    format_dict['align'] = align or '<'
+
+    if format_dict['sign'] is None:
+        format_dict['sign'] = '-'
+
+    # turn minimumwidth and precision entries into integers.
+    # minimumwidth defaults to 0; precision remains None if not given
+    format_dict['minimumwidth'] = int(format_dict['minimumwidth'] or '0')
+    if format_dict['precision'] is not None:
+        format_dict['precision'] = int(format_dict['precision'])
+
+    # if format type is 'g' or 'G' then a precision of 0 makes little
+    # sense; convert it to 1.  Same if format type is unspecified.
+    if format_dict['precision'] == 0:
+        if format_dict['type'] in 'gG' or format_dict['type'] is None:
+            format_dict['precision'] = 1
+
+    # record whether return type should be str or unicode
+    format_dict['unicode'] = isinstance(format_spec, unicode)
+
+    return format_dict
+
+def _format_align(body, spec_dict):
+    """Given an unpadded, non-aligned numeric string, add padding and
+    aligment to conform with the given format specifier dictionary (as
+    output from parse_format_specifier).
+
+    It's assumed that if body is negative then it starts with '-'.
+    Any leading sign ('-' or '+') is stripped from the body before
+    applying the alignment and padding rules, and replaced in the
+    appropriate position.
+
+    """
+    # figure out the sign; we only examine the first character, so if
+    # body has leading whitespace the results may be surprising.
+    if len(body) > 0 and body[0] in '-+':
+        sign = body[0]
+        body = body[1:]
+    else:
+        sign = ''
+
+    if sign != '-':
+        if spec_dict['sign'] in ' +':
+            sign = spec_dict['sign']
+        else:
+            sign = ''
+
+    # how much extra space do we have to play with?
+    minimumwidth = spec_dict['minimumwidth']
+    fill = spec_dict['fill']
+    padding = fill*(max(minimumwidth - (len(sign+body)), 0))
+
+    align = spec_dict['align']
+    if align == '<':
+        result = padding + sign + body
+    elif align == '>':
+        result = sign + body + padding
+    elif align == '=':
+        result = sign + padding + body
+    else: #align == '^'
+        half = len(padding)//2
+        result = padding[:half] + sign + body + padding[half:]
+
+    # make sure that result is unicode if necessary
+    if spec_dict['unicode']:
+        result = unicode(result)
+
+    return result
 
 ##### Useful Constants (internal use only) ################################
 
