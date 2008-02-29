@@ -296,6 +296,9 @@ class TestBasicOps(unittest.TestCase):
             ([range(2), range(3), range(0)], []),           # last iterable with zero length
             ]:
             self.assertEqual(list(product(*args)), result)
+            for r in range(4):
+                self.assertEqual(list(product(*(args*r))),
+                                 list(product(*args, **dict(repeat=r))))
         self.assertEqual(len(list(product(*[range(7)]*6))), 7**6)
         self.assertRaises(TypeError, product, range(6), None)
         argtypes = ['', 'abc', '', xrange(0), xrange(4), dict(a=1, b=2, c=3),
