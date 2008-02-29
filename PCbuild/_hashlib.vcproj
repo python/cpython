@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="_ssl"
-	ProjectGUID="{C6E20F84-3247-4AD6-B051-B073268F73BA}"
-	RootNamespace="_ssl"
+	Name="_hashlib"
+	ProjectGUID="{447F05A8-F581-4CAC-A466-5AC7936E207E}"
+	RootNamespace="_hashlib"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -535,7 +535,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_ssl.c"
+				RelativePath="..\Modules\_hashopenssl.c"
 				>
 			</File>
 		</Filter>
