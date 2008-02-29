@@ -441,6 +441,8 @@ Core and builtins
 Library
 -------
 
+- Add a __format__ method to Decimal, to support PEP 3101.
+
 - Add a timing parameter when using trace.Trace to print out timestamps.
 
 - #1627: httplib now ignores negative Content-Length headers.
