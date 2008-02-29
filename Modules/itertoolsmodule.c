@@ -1571,92 +1571,104 @@ static PyTypeObject imap_type = {
 
 typedef struct {
 	PyObject_HEAD
-	Py_ssize_t tuplesize;
-	Py_ssize_t iternum;		/* which iterator is active */
-	PyObject *ittuple;		/* tuple of iterators */
+	PyObject *source;		/* Iterator over input iterables */
+	PyObject *active;		/* Currently running input iterator */
 } chainobject;
 
 static PyTypeObject chain_type;
 
+static PyObject * 
+chain_new_internal(PyTypeObject *type, PyObject *source)
+{
+	chainobject *lz;
+
+	lz = (chainobject *)type->tp_alloc(type, 0);
+	if (lz == NULL) {
+		Py_DECREF(source);
+		return NULL;
+	}
+	
+	lz->source = source;
+	lz->active = NULL;
+	return (PyObject *)lz;
+}
+
 static PyObject *
 chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	chainobject *lz;
-	Py_ssize_t tuplesize = PySequence_Length(args);
-	Py_ssize_t i;
-	PyObject *ittuple;
+	PyObject *source;
 
 	if (type == &chain_type && !_PyArg_NoKeywords("chain()", kwds))
 		return NULL;
-
-	/* obtain iterators */
-	assert(PyTuple_Check(args));
-	ittuple = PyTuple_New(tuplesize);
-	if (ittuple == NULL)
+	
+	source = PyObject_GetIter(args);
+	if (source == NULL)
 		return NULL;
-	for (i=0; i < tuplesize; ++i) {
-		PyObject *item = PyTuple_GET_ITEM(args, i);
-		PyObject *it = PyObject_GetIter(item);
-		if (it == NULL) {
-			if (PyErr_ExceptionMatches(PyExc_TypeError))
-				PyErr_Format(PyExc_TypeError,
-				    "chain argument #%zd must support iteration",
-				    i+1);
-			Py_DECREF(ittuple);
-			return NULL;
-		}
-		PyTuple_SET_ITEM(ittuple, i, it);
-	}
 
-	/* create chainobject structure */
-	lz = (chainobject *)type->tp_alloc(type, 0);
-	if (lz == NULL) {
-		Py_DECREF(ittuple);
+	return chain_new_internal(type, source);
+}
+
+static PyObject *
+chain_new_from_iterable(PyTypeObject *type, PyObject *arg)
+{
+	PyObject *source;
+	
+	source = PyObject_GetIter(arg);
+	if (source == NULL)
 		return NULL;
-	}
 
-	lz->ittuple = ittuple;
-	lz->iternum = 0;
-	lz->tuplesize = tuplesize;
-
-	return (PyObject *)lz;
+	return chain_new_internal(type, source);
 }
 
 static void
 chain_dealloc(chainobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
-	Py_XDECREF(lz->ittuple);
+	Py_XDECREF(lz->active);
+	Py_XDECREF(lz->source);
 	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
 chain_traverse(chainobject *lz, visitproc visit, void *arg)
 {
-	Py_VISIT(lz->ittuple);
+	Py_VISIT(lz->source);
+	Py_VISIT(lz->active);
 	return 0;
 }
 
 static PyObject *
 chain_next(chainobject *lz)
 {
-	PyObject *it;
 	PyObject *item;
 
-	while (lz->iternum < lz->tuplesize) {
-		it = PyTuple_GET_ITEM(lz->ittuple, lz->iternum);
-		item = PyIter_Next(it);
-		if (item != NULL)
-			return item;
-		if (PyErr_Occurred()) {
-			if (PyErr_ExceptionMatches(PyExc_StopIteration))
-				PyErr_Clear();
-			else
-				return NULL;
+	if (lz->source == NULL)
+		return NULL;				/* already stopped */
+
+	if (lz->active == NULL) {
+		PyObject *iterable = PyIter_Next(lz->source);
+		if (iterable == NULL) {
+			Py_CLEAR(lz->source);
+			return NULL;			/* no more input sources */
 		}
-		lz->iternum++;
+		lz->active = PyObject_GetIter(iterable);
+		if (lz->active == NULL) {
+			Py_DECREF(iterable);
+			Py_CLEAR(lz->source);
+			return NULL;			/* input not iterable */
+		}
 	}
-	return NULL;
+	item = PyIter_Next(lz->active);
+	if (item != NULL)
+		return item;
+	if (PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_StopIteration))
+			PyErr_Clear();
+		else
+			return NULL; 			/* input raised an exception */
+	}
+	Py_CLEAR(lz->active);
+	return chain_next(lz);			/* recurse and use next active */
 }
 
 PyDoc_STRVAR(chain_doc,
@@ -1665,6 +1677,18 @@ PyDoc_STRVAR(chain_doc,
 Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
+
+PyDoc_STRVAR(chain_from_iterable_doc,
+"chain.from_iterable(iterable) --> chain object\n\
+\n\
+Alternate chain() contructor taking a single iterable argument\n\
+that evaluates lazily.");
+
+static PyMethodDef chain_methods[] = {
+	{"from_iterable", (PyCFunction) chain_new_from_iterable,	METH_O | METH_CLASS,
+		chain_from_iterable_doc},
+	{NULL,		NULL}	/* sentinel */
+};
 
 static PyTypeObject chain_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
@@ -1696,7 +1720,7 @@ static PyTypeObject chain_type = {
 	0,				/* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)chain_next,	/* tp_iternext */
-	0,				/* tp_methods */
+	chain_methods,			/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
 	0,				/* tp_base */
@@ -1728,17 +1752,32 @@ static PyObject *
 product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	productobject *lz;
-	Py_ssize_t npools;
+	Py_ssize_t nargs, npools, repeat=1;
 	PyObject *pools = NULL;
 	Py_ssize_t *maxvec = NULL;
 	Py_ssize_t *indices = NULL;
 	Py_ssize_t i;
 
-	if (type == &product_type && !_PyArg_NoKeywords("product()", kwds))
-		return NULL;
+	if (kwds != NULL) {
+		char *kwlist[] = {"repeat", 0};
+		PyObject *tmpargs = PyTuple_New(0);
+		if (tmpargs == NULL)
+			return NULL;
+		if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product", kwlist, &repeat)) {
+			Py_DECREF(tmpargs);
+			return NULL;
+		}
+		Py_DECREF(tmpargs);
+		if (repeat < 0) {
+			PyErr_SetString(PyExc_ValueError, 
+					"repeat argument cannot be negative");
+			return NULL;
+		}
+	}
 
 	assert(PyTuple_Check(args));
-	npools = PyTuple_GET_SIZE(args);
+	nargs = (repeat == 0) ? 0 : PyTuple_GET_SIZE(args);
+	npools = nargs * repeat;
 
 	maxvec = PyMem_Malloc(npools * sizeof(Py_ssize_t));
 	indices = PyMem_Malloc(npools * sizeof(Py_ssize_t));
@@ -1751,7 +1790,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (pools == NULL)
 		goto error;
 
-	for (i=0; i < npools; ++i) {
+	for (i=0; i < nargs ; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
 		PyObject *pool = PySequence_Tuple(item);
 		if (pool == NULL)
@@ -1759,6 +1798,13 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 		PyTuple_SET_ITEM(pools, i, pool);
 		maxvec[i] = PyTuple_GET_SIZE(pool);
+		indices[i] = 0;
+	}
+	for ( ; i < npools; ++i) {
+		PyObject *pool = PyTuple_GET_ITEM(pools, i - nargs);
+		Py_INCREF(pool);
+		PyTuple_SET_ITEM(pools, i, pool);
+		maxvec[i] = maxvec[i - nargs];
 		indices[i] = 0;
 	}
 

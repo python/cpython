@@ -54,7 +54,14 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(chain('abc')), list('abc'))
         self.assertEqual(list(chain('')), [])
         self.assertEqual(take(4, chain('abc', 'def')), list('abcd'))
-        self.assertRaises(TypeError, chain, 2, 3)
+        self.assertRaises(TypeError, list,chain(2, 3))
+
+    def test_chain_from_iterable(self):
+        self.assertEqual(list(chain.from_iterable(['abc', 'def'])), list('abcdef'))
+        self.assertEqual(list(chain.from_iterable(['abc'])), list('abc'))
+        self.assertEqual(list(chain.from_iterable([''])), [])
+        self.assertEqual(take(4, chain.from_iterable(['abc', 'def'])), list('abcd'))
+        self.assertRaises(TypeError, list, chain.from_iterable([2, 3]))
 
     def test_combinations(self):
         self.assertRaises(TypeError, combinations, 'abc')   # missing r argument
@@ -298,6 +305,9 @@ class TestBasicOps(unittest.TestCase):
             ([range(2), range(3), range(0)], []),           # last iterable with zero length
             ]:
             self.assertEqual(list(product(*args)), result)
+            for r in range(4):
+                self.assertEqual(list(product(*(args*r))),
+                                 list(product(*args, **dict(repeat=r))))
         self.assertEqual(len(list(product(*[range(7)]*6))), 7**6)
         self.assertRaises(TypeError, product, range(6), None)
         argtypes = ['', 'abc', '', range(0), range(4), dict(a=1, b=2, c=3),
@@ -684,7 +694,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(chain(g(s))), list(g(s)))
                 self.assertEqual(list(chain(g(s), g(s))), list(g(s))+list(g(s)))
-            self.assertRaises(TypeError, chain, X(s))
+            self.assertRaises(TypeError, list, chain(X(s)))
             self.assertRaises(TypeError, chain, N(s))
             self.assertRaises(ZeroDivisionError, list, chain(E(s)))
 
