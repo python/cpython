@@ -5441,7 +5441,7 @@ def _parse_format_specifier(format_spec):
             format_dict['precision'] = 1
 
     # record whether return type should be str or unicode
-    format_dict['unicode'] = isinstance(format_spec, unicode)
+    format_dict['unicode'] = True
 
     return format_dict
 
@@ -5485,10 +5485,6 @@ def _format_align(body, spec_dict):
     else: #align == '^'
         half = len(padding)//2
         result = padding[:half] + sign + body + padding[half:]
-
-    # make sure that result is unicode if necessary
-    if spec_dict['unicode']:
-        result = unicode(result)
 
     return result
 
