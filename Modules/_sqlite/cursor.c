@@ -295,6 +295,8 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
     const char* val_str;
     char buf[200];
     const char* colname;
+    PyObject* buf_bytes;
+    PyObject* error_obj;
 
     Py_BEGIN_ALLOW_THREADS
     numcols = sqlite3_data_count(self->statement->st);
@@ -363,7 +365,19 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                         }
                         PyOS_snprintf(buf, sizeof(buf) - 1, "Could not decode to UTF-8 column '%s' with text '%s'",
                                      colname , val_str);
-                        PyErr_SetString(pysqlite_OperationalError, buf);
+                        buf_bytes = PyBytes_FromStringAndSize(buf, strlen(buf)); 
+                        if (!buf_bytes) {
+                            PyErr_SetString(pysqlite_OperationalError, "Could not decode to UTF-8");
+                        } else {
+                            error_obj = PyUnicode_FromEncodedObject(buf_bytes, "ascii", "replace");
+                            if (!error_obj) {
+                                PyErr_SetString(pysqlite_OperationalError, "Could not decode to UTF-8");
+                                Py_DECREF(error_obj);
+                            } else {
+                                PyErr_SetObject(pysqlite_OperationalError, error_obj);
+                            }
+                            Py_DECREF(buf_bytes);
+                        }
                     }
                 } else if (self->connection->text_factory == (PyObject*)&PyString_Type) {
                     converted = PyString_FromString(val_str);
