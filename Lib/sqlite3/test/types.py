@@ -1,7 +1,7 @@
 #-*- coding: ISO-8859-1 -*-
 # pysqlite2/test/types.py: tests for type conversion and detection
 #
-# Copyright (C) 2005 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -21,7 +21,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import bz2, datetime
+import zlib, datetime
 import unittest
 import sqlite3 as sqlite
 
@@ -287,7 +287,7 @@ class ObjectAdaptationTests(unittest.TestCase):
 
 class BinaryConverterTests(unittest.TestCase):
     def convert(s):
-        return bz2.decompress(s)
+        return zlib.decompress(s)
     convert = staticmethod(convert)
 
     def setUp(self):
@@ -299,7 +299,7 @@ class BinaryConverterTests(unittest.TestCase):
 
     def CheckBinaryInputForConverter(self):
         testdata = "abcdefg" * 10
-        result = self.con.execute('select ? as "x [bin]"', (buffer(bz2.compress(testdata)),)).fetchone()[0]
+        result = self.con.execute('select ? as "x [bin]"', (buffer(zlib.compress(testdata)),)).fetchone()[0]
         self.failUnlessEqual(testdata, result)
 
 class DateTimeTests(unittest.TestCase):
@@ -331,7 +331,8 @@ class DateTimeTests(unittest.TestCase):
         if sqlite.sqlite_version_info < (3, 1):
             return
 
-        now = datetime.datetime.utcnow()
+        # SQLite's current_timestamp uses UTC time, while datetime.datetime.now() uses local time.
+        now = datetime.datetime.now()
         self.cur.execute("insert into test(ts) values (current_timestamp)")
         self.cur.execute("select ts from test")
         ts = self.cur.fetchone()[0]

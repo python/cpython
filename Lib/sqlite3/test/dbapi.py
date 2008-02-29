@@ -1,7 +1,7 @@
 #-*- coding: ISO-8859-1 -*-
 # pysqlite2/test/dbapi.py: tests for DB-API compliance
 #
-# Copyright (C) 2004-2005 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2004-2007 Gerhard Häring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -22,6 +22,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import unittest
+import sys
 import threading
 import sqlite3 as sqlite
 
@@ -223,9 +224,42 @@ class CursorTests(unittest.TestCase):
         except sqlite.ProgrammingError:
             pass
 
+    def CheckExecuteParamList(self):
+        self.cu.execute("insert into test(name) values ('foo')")
+        self.cu.execute("select name from test where name=?", ["foo"])
+        row = self.cu.fetchone()
+        self.failUnlessEqual(row[0], "foo")
+
+    def CheckExecuteParamSequence(self):
+        class L(object):
+            def __len__(self):
+                return 1
+            def __getitem__(self, x):
+                assert x == 0
+                return "foo"
+
+        self.cu.execute("insert into test(name) values ('foo')")
+        self.cu.execute("select name from test where name=?", L())
+        row = self.cu.fetchone()
+        self.failUnlessEqual(row[0], "foo")
+
     def CheckExecuteDictMapping(self):
         self.cu.execute("insert into test(name) values ('foo')")
         self.cu.execute("select name from test where name=:name", {"name": "foo"})
+        row = self.cu.fetchone()
+        self.failUnlessEqual(row[0], "foo")
+
+    def CheckExecuteDictMapping_Mapping(self):
+        # Test only works with Python 2.5 or later
+        if sys.version_info < (2, 5, 0):
+            return
+
+        class D(dict):
+            def __missing__(self, key):
+                return "foo"
+
+        self.cu.execute("insert into test(name) values ('foo')")
+        self.cu.execute("select name from test where name=:name", D())
         row = self.cu.fetchone()
         self.failUnlessEqual(row[0], "foo")
 
@@ -377,6 +411,12 @@ class CursorTests(unittest.TestCase):
         self.failUnlessEqual(len(res), 1)
         res = self.cu.fetchmany(100)
         self.failUnlessEqual(res, [])
+
+    def CheckFetchmanyKwArg(self):
+        """Checks if fetchmany works with keyword arguments"""
+        self.cu.execute("select name from test")
+        res = self.cu.fetchmany(size=100)
+        self.failUnlessEqual(len(res), 1)
 
     def CheckFetchall(self):
         self.cu.execute("select name from test")
