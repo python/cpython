@@ -1021,8 +1021,10 @@ def add_files(db):
         sqlite_arch = "/ia64"
     elif msilib.msi_type=="x64;1033":
         sqlite_arch = "/amd64"
+        tclsuffix = "64"
     else:
         sqlite_arch = ""
+        tclsuffix = ""
     lib.add_file(srcdir+"/"+sqlite_dir+sqlite_arch+"/sqlite3.dll")
     if have_tcl:
         if not os.path.exists("%s/%s/_tkinter.pyd" % (srcdir, PCBUILD)):
@@ -1031,7 +1033,7 @@ def add_files(db):
             lib.start_component("TkDLLs", tcltk)
             lib.add_file("_tkinter.pyd")
             dlls.append("_tkinter.pyd")
-            tcldir = os.path.normpath(srcdir+"/../tcltk/bin")
+            tcldir = os.path.normpath(srcdir+("/../tcltk%s/bin" % tclsuffix))
             for f in glob.glob1(tcldir, "*.dll"):
                 lib.add_file(f, src=os.path.join(tcldir, f))
     # check whether there are any unknown extensions
@@ -1055,7 +1057,7 @@ def add_files(db):
         lib.add_file('libpython%s%s.a' % (major, minor))
     if have_tcl:
         # Add Tcl/Tk
-        tcldirs = [(root, '../tcltk/lib', 'tcl')]
+        tcldirs = [(root, '../tcltk%s/lib' % tclsuffix, 'tcl')]
         tcltk.set_current()
         while tcldirs:
             parent, phys, dir = tcldirs.pop()
