@@ -303,7 +303,8 @@ Building for AMD64
 ------------------
 
 The build process for AMD64 / x64 is very similar to standard builds. You just
-have to set x64 as platform. 
+have to set x64 as platform. In addition, the HOST_PYTHON environment variable
+must point to a Python interpreter (at least 2.4), to support cross-compilation.
 
 Building Python Using the free MS Toolkit Compiler
 --------------------------------------------------
