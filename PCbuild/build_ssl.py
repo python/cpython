@@ -102,8 +102,11 @@ def create_makefile64(makefile, m32):
     """
     if not os.path.isfile(m32):
         return
-    with open(m32) as fin:
-        with open(makefile, 'w') as fout:
+    # 2.4 compatibility
+    fin = open(m32)
+    if 1: # with open(m32) as fin:
+        fout = open(makefile, 'w')
+        if 1: # with open(makefile, 'w') as fout:
             for line in fin:
                 line = line.replace("=tmp32", "=tmp64")
                 line = line.replace("=out32", "=out64")
@@ -121,9 +124,13 @@ def fix_makefile(makefile):
     """
     if not os.path.isfile(makefile):
         return
-    with open(makefile) as fin:
+    # 2.4 compatibility
+    fin = open(makefile)
+    if 1: # with open(makefile) as fin:
         lines = fin.readlines()
-    with open(makefile, 'w') as fout:
+        fin.close()
+    fout = open(makefile, 'w')
+    if 1: # with open(makefile, 'w') as fout:
         for line in lines:
             if line.startswith("PERL="):
                 continue
@@ -139,6 +146,7 @@ def fix_makefile(makefile):
                         line = line + noalgo
                 line = line + '\n'
             fout.write(line)
+    fout.close()
 
 def run_configure(configure, do_script):
     print("perl Configure "+configure)
