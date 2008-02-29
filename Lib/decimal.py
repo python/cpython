@@ -3456,7 +3456,7 @@ class Decimal(object):
 
     # PEP 3101 support.  See also _parse_format_specifier and _format_align
     def __format__(self, specifier, context=None):
-        """Format a Decimal class according to the given specifier.
+        """Format a Decimal instance according to the given specifier.
 
         The specifier should be a standard format specifier, with the
         form described in PEP 3101.  Formatting types 'e', 'E', 'f',
