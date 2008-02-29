@@ -1782,17 +1782,32 @@ static PyObject *
 product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	productobject *lz;
-	Py_ssize_t npools;
+	Py_ssize_t nargs, npools, repeat=1;
 	PyObject *pools = NULL;
 	Py_ssize_t *maxvec = NULL;
 	Py_ssize_t *indices = NULL;
 	Py_ssize_t i;
 
-	if (type == &product_type && !_PyArg_NoKeywords("product()", kwds))
-		return NULL;
+	if (kwds != NULL) {
+		char *kwlist[] = {"repeat", 0};
+		PyObject *tmpargs = PyTuple_New(0);
+		if (tmpargs == NULL)
+			return NULL;
+		if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product", kwlist, &repeat)) {
+			Py_DECREF(tmpargs);
+			return NULL;
+		}
+		Py_DECREF(tmpargs);
+		if (repeat < 0) {
+			PyErr_SetString(PyExc_ValueError, 
+					"repeat argument cannot be negative");
+			return NULL;
+		}
+	}
 
 	assert(PyTuple_Check(args));
-	npools = PyTuple_GET_SIZE(args);
+	nargs = (repeat == 0) ? 0 : PyTuple_GET_SIZE(args);
+	npools = nargs * repeat;
 
 	maxvec = PyMem_Malloc(npools * sizeof(Py_ssize_t));
 	indices = PyMem_Malloc(npools * sizeof(Py_ssize_t));
@@ -1805,7 +1820,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (pools == NULL)
 		goto error;
 
-	for (i=0; i < npools; ++i) {
+	for (i=0; i < nargs ; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
 		PyObject *pool = PySequence_Tuple(item);
 		if (pool == NULL)
@@ -1813,6 +1828,13 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 		PyTuple_SET_ITEM(pools, i, pool);
 		maxvec[i] = PyTuple_GET_SIZE(pool);
+		indices[i] = 0;
+	}
+	for ( ; i < npools; ++i) {
+		PyObject *pool = PyTuple_GET_ITEM(pools, i - nargs);
+		Py_INCREF(pool);
+		PyTuple_SET_ITEM(pools, i, pool);
+		maxvec[i] = maxvec[i - nargs];
 		indices[i] = 0;
 	}
 
