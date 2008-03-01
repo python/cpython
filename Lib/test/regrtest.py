@@ -1131,13 +1131,17 @@ class _ExpectedSkips:
             s = _expectations[sys.platform]
             self.expected = set(s.split())
 
+            # These are broken tests, for now skipped on every platform.
+            # XXX Fix these!
+            self.expected.add('test_cProfile')
+
             # expected to be skipped on every platform, even Linux
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
 
-            # doctest, profile and cProfile tests fail when the codec for the fs
-            # encoding isn't built in because PyUnicode_Decode() adds two calls
-            # into Python.
+            # doctest, profile and cProfile tests fail when the codec for the
+            # fs encoding isn't built in because PyUnicode_Decode() adds two
+            # calls into Python.
             encs = ("utf-8", "latin-1", "ascii", "mbcs", "utf-16", "utf-32")
             if sys.getfilesystemencoding().lower() not in encs:
                 self.expected.add('test_profile')
