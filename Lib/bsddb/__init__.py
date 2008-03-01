@@ -170,6 +170,9 @@ class _DBWithCursor(_iter_mixin):
     def __del__(self):
         self.close()
 
+    def __repr__(self):
+        return repr(dict(self.iteritems()))
+
     def _checkCursor(self):
         if self.dbc is None:
             self.dbc = _DeadlockWrap(self.db.cursor)
