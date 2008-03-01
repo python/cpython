@@ -12,8 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
-- Issue #2051: pyc and pyo files are not longer created with permission 644. The
-  mode is now inherited from the py file.
+- Issue #2051: pyc and pyo files are not longer created with permission
+  644. The mode is now inherited from the py file.
 
 - Issue #2067: file.__exit__() now calls subclasses' close() method.
 
