@@ -1,7 +1,7 @@
 What's New in IDLE 3.0a3?
 =========================
 
-*Release date: XX-XXX-2008*
+*Release date: 29-Feb-2008*
 
 - help() was not paging to the shell.  Issue1650.
 
