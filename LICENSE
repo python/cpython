@@ -55,6 +55,7 @@ the various releases.
     2.4.4           2.4.3       2006        PSF         yes
     2.5             2.4         2006        PSF         yes
     2.5.1           2.5         2007        PSF         yes
+    2.6             2.5         2008        PSF         yes
 
 Footnotes:
 
@@ -90,7 +91,7 @@ license to reproduce, analyze, test, perform and/or display publicly,
 prepare derivative works, distribute, and otherwise use Python
 alone or in any derivative version, provided, however, that PSF's
 License Agreement and PSF's notice of copyright, i.e., "Copyright (c)
-2001, 2002, 2003, 2004, 2005, 2006, 2007 Python Software Foundation; 
+2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008 Python Software Foundation; 
 All Rights Reserved" are retained in Python alone or in any derivative 
 version prepared by Licensee.
 
