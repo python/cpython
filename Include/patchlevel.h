@@ -26,7 +26,7 @@
 #define PY_RELEASE_SERIAL	1
 
 /* Version as a string */
-#define PY_VERSION		"2.6a1"
+#define PY_VERSION		"2.6a1+"
 
 /* Subversion Revision number of this file (not of the repository) */
 #define PY_PATCHLEVEL_REVISION  "$Revision$"
