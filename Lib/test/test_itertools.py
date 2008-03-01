@@ -695,7 +695,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
                 self.assertEqual(list(chain(g(s))), list(g(s)))
                 self.assertEqual(list(chain(g(s), g(s))), list(g(s))+list(g(s)))
             self.assertRaises(TypeError, list, chain(X(s)))
-            self.assertRaises(TypeError, chain, N(s))
+            self.assertRaises(TypeError, list, chain(N(s)))
             self.assertRaises(ZeroDivisionError, list, chain(E(s)))
 
     def test_product(self):
