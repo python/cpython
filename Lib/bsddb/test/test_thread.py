@@ -38,6 +38,11 @@ except ImportError:
     # For Python 2.3
     from bsddb import db, dbutils
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 
 #----------------------------------------------------------------------
 
@@ -68,7 +73,6 @@ class BaseThreadedTestCase(unittest.TestCase):
         self.d.open(self.filename, self.dbtype, self.dbopenflags|db.DB_CREATE)
 
     def tearDown(self):
-        from test import test_support
         test_support.rmtree(self.homeDir)
         self.d.close()
         self.env.close()

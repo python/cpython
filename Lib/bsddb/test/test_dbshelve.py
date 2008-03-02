@@ -14,6 +14,11 @@ except ImportError:
     # For Python 2.3
     from bsddb import db, dbshelve
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 from test_all import verbose
 
 
@@ -262,7 +267,6 @@ class BasicEnvShelveTestCase(DBShelveTestCase):
 
 
     def tearDown(self):
-        from test import test_support
         test_support.rmtree(self.homeDir)
         self.do_close()
 

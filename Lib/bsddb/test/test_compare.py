@@ -15,6 +15,11 @@ except ImportError:
     # For Python 2.3
     from bsddb import db, dbshelve
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 lexical_cmp = cmp
 
 def lowercase_cmp(left, right):
@@ -70,7 +75,6 @@ class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
         if self.env is not None:
             self.env.close ()
             self.env = None
-        from test import test_support
         test_support.rmtree(self.homeDir)
 
     def addDataToDB (self, data):
