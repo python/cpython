@@ -100,12 +100,16 @@ get_errorcallback(const char *errors)
 static int
 expand_encodebuffer(MultibyteEncodeBuffer *buf, int esize)
 {
-	int orgpos, orgsize;
+	int orgpos, orgsize, incsize;
 
 	orgpos = (int)((char*)buf->outbuf - PyString_AS_STRING(buf->outobj));
 	orgsize = PyString_GET_SIZE(buf->outobj);
-	if (_PyString_Resize(&buf->outobj, orgsize + (
-	    esize < (orgsize >> 1) ? (orgsize >> 1) | 1 : esize)) == -1)
+	incsize = (esize < (orgsize >> 1) ? (orgsize >> 1) | 1 : esize);
+
+	if (orgsize > INT_MAX - incsize)
+		return -1;
+
+	if (_PyString_Resize(&buf->outobj, orgsize + incsize) == -1)
 		return -1;
 
 	buf->outbuf = (unsigned char *)PyString_AS_STRING(buf->outobj) +orgpos;
@@ -416,6 +420,12 @@ multibytecodec_encode(MultibyteCodec *codec,
 	buf.excobj = NULL;
 	buf.inbuf = buf.inbuf_top = *data;
 	buf.inbuf_end = buf.inbuf_top + datalen;
+
+	if (datalen > (INT_MAX - 16) / 2) {
+		PyErr_NoMemory();
+		goto errorexit;
+	}
+
 	buf.outobj = PyString_FromStringAndSize(NULL, datalen * 2 + 16);
 	if (buf.outobj == NULL)
 		goto errorexit;
@@ -725,6 +735,10 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 			PyObject *ctr;
 			char *ctrdata;
 
+			if (PyString_GET_SIZE(cres) > INT_MAX - self->pendingsize) {
+				PyErr_NoMemory();
+				goto errorexit;
+            }
 			rsize = PyString_GET_SIZE(cres) + self->pendingsize;
 			ctr = PyString_FromStringAndSize(NULL, rsize);
 			if (ctr == NULL)

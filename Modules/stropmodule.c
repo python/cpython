@@ -576,7 +576,7 @@ strop_expandtabs(PyObject *self, PyObject *args)
 	char* e;
 	char* p;
 	char* q;
-	int i, j;
+	int i, j, old_j;
 	PyObject* out;
 	char* string;
 	int stringlen;
@@ -593,18 +593,29 @@ strop_expandtabs(PyObject *self, PyObject *args)
 	}
 
 	/* First pass: determine size of output string */
-	i = j = 0; /* j: current column; i: total of previous lines */
+	i = j = old_j = 0; /* j: current column; i: total of previous lines */
 	e = string + stringlen;
 	for (p = string; p < e; p++) {
-		if (*p == '\t')
+		if (*p == '\t') {
 			j += tabsize - (j%tabsize);
-		else {
+			if (old_j > j) {
+				PyErr_SetString(PyExc_OverflowError,
+						"new string is too long");
+				return NULL;
+			}
+			old_j = j;
+		} else {
 			j++;
 			if (*p == '\n') {
 				i += j;
 				j = 0;
 			}
 		}
+	}
+
+	if ((i + j) < 0) {
+		PyErr_SetString(PyExc_OverflowError, "new string is too long");
+		return NULL;
 	}
 
 	/* Second pass: create output string and fill it */

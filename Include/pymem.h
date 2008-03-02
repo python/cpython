@@ -86,14 +86,18 @@ PyAPI_FUNC(void) PyMem_Free(void *);
  */
 
 #define PyMem_New(type, n) \
-	( (type *) PyMem_Malloc((n) * sizeof(type)) )
+  ( assert((n) <= PY_SIZE_MAX / sizeof(type)) , \
+	( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
 #define PyMem_NEW(type, n) \
-	( (type *) PyMem_MALLOC((n) * sizeof(type)) )
+  ( assert((n) <= PY_SIZE_MAX / sizeof(type)) , \
+	( (type *) PyMem_MALLOC((n) * sizeof(type)) ) )
 
 #define PyMem_Resize(p, type, n) \
-	( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
+  ( assert((n) <= PY_SIZE_MAX / sizeof(type)) , \
+	( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) ) )
 #define PyMem_RESIZE(p, type, n) \
-	( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
+  ( assert((n) <= PY_SIZE_MAX / sizeof(type)) , \
+	( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) ) )
 
 /* In order to avoid breaking old code mixing PyObject_{New, NEW} with
    PyMem_{Del, DEL} and PyMem_{Free, FREE}, the PyMem "release memory"

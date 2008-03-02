@@ -167,6 +167,10 @@ PyBuffer_New(int size)
 				"size must be zero or positive");
 		return NULL;
 	}
+	if (sizeof(*b) > INT_MAX - size) {
+		/* unlikely */
+		return PyErr_NoMemory();
+	}
 	/* Inline PyObject_New */
 	o = PyObject_MALLOC(sizeof(*b) + size);
 	if ( o == NULL )
@@ -354,6 +358,8 @@ buffer_concat(PyBufferObject *self, PyObject *other)
 
 	if ( (count = (*pb->bf_getreadbuffer)(other, 0, &ptr2)) < 0 )
 		return NULL;
+
+	assert(count <= PY_SIZE_MAX - size);
 
  	ob = PyString_FromStringAndSize(NULL, size + count);
  	p = PyString_AS_STRING(ob);
