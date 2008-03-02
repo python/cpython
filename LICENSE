@@ -53,6 +53,7 @@ the various releases.
     2.4.2           2.4.1       2005        PSF         yes
     2.4.3           2.4.2       2006        PSF         yes
     2.4.4           2.4.3       2006        PSF         yes
+    2.4.5           2.4.4       2008        PSF         yes
     2.5             2.4         2006        PSF         yes
 
 Footnotes:
@@ -86,12 +87,12 @@ its associated documentation.
 2. Subject to the terms and conditions of this License Agreement, PSF
 hereby grants Licensee a nonexclusive, royalty-free, world-wide
 license to reproduce, analyze, test, perform and/or display publicly,
-prepare derivative works, distribute, and otherwise use Python
-alone or in any derivative version, provided, however, that PSF's
-License Agreement and PSF's notice of copyright, i.e., "Copyright (c)
-2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation; All Rights
-Reserved" are retained in Python alone or in any derivative version
-prepared by Licensee.
+prepare derivative works, distribute, and otherwise use Python alone
+or in any derivative version, provided, however, that PSF's License
+Agreement and PSF's notice of copyright, i.e., "Copyright (c) 2001,
+2002, 2003, 2004, 2005, 2006, 2007, 2008 Python Software Foundation;
+All Rights Reserved" are retained in Python alone or in any derivative
+version prepared by Licensee.
 
 3. In the event Licensee prepares a derivative work that is based on
 or incorporates Python or any part thereof, and wants to make
