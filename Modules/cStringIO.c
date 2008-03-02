@@ -121,6 +121,7 @@ PyDoc_STRVAR(IO_getval__doc__,
 static PyObject *
 IO_cgetval(PyObject *self) {
         UNLESS (IO__opencheck(IOOOBJECT(self))) return NULL;
+	assert(IOOOBJECT(self)->pos >= 0);
         return PyString_FromStringAndSize(((IOobject*)self)->buf,
                                           ((IOobject*)self)->pos);
 }
@@ -139,6 +140,7 @@ IO_getval(IOobject *self, PyObject *args) {
         }
         else
                   s=self->string_size;
+        assert(self->pos >= 0);
         return PyString_FromStringAndSize(self->buf, s);
 }
 
@@ -158,6 +160,8 @@ IO_cread(PyObject *self, char **output, int  n) {
         int l;
 
         UNLESS (IO__opencheck(IOOOBJECT(self))) return -1;
+        assert(IOOOBJECT(self)->pos >= 0);
+        assert(IOOOBJECT(self)->string_size >= 0);
         l = ((IOobject*)self)->string_size - ((IOobject*)self)->pos;  
         if (n < 0 || n > l) {
                 n = l;
@@ -197,6 +201,11 @@ IO_creadline(PyObject *self, char **output) {
 
         *output=((IOobject*)self)->buf + ((IOobject*)self)->pos;
         l = n - ((IOobject*)self)->buf - ((IOobject*)self)->pos;
+
+        assert(IOOOBJECT(self)->pos <= INT_MAX - l);
+        assert(IOOOBJECT(self)->pos >= 0);
+        assert(IOOOBJECT(self)->string_size >= 0);
+
         ((IOobject*)self)->pos += l;
         return l;
 }
@@ -215,6 +224,7 @@ IO_readline(IOobject *self, PyObject *args) {
                 n -= m;
                 self->pos -= m;
         }
+        assert(IOOOBJECT(self)->pos >= 0);
         return PyString_FromStringAndSize(output, n);
 }
 
@@ -274,6 +284,7 @@ IO_tell(IOobject *self, PyObject *unused) {
 
         UNLESS (IO__opencheck(self)) return NULL;
 
+        assert(self->pos >= 0);
         return PyInt_FromLong(self->pos);
 }
 

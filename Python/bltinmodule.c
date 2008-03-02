@@ -2278,11 +2278,43 @@ filterstring(PyObject *func, PyObject *strobj)
 					PyString_AS_STRING(item)[0];
 			} else {
 				/* do we need more space? */
-				int need = j + reslen + len-i-1;
+				int need = j;
+
+				/* calculate space requirements while checking for overflow */
+				if (need > INT_MAX - reslen) {
+					Py_DECREF(item);
+					goto Fail_1;
+				}
+
+				need += reslen;
+
+				if (need > INT_MAX - len) {
+					Py_DECREF(item);
+					goto Fail_1;
+				}
+
+				need += len;
+
+				if (need <= i) {
+					Py_DECREF(item);
+					goto Fail_1;
+				}
+
+				need = need - i - 1;
+
+				assert(need >= 0);
+				assert(outlen >= 0);
+
 				if (need > outlen) {
 					/* overallocate, to avoid reallocations */
-					if (need<2*outlen)
+					if (outlen > INT_MAX / 2) {
+						Py_DECREF(item);
+						return NULL;
+					}
+
+					if (need<2*outlen) {
 						need = 2*outlen;
+          }
 					if (_PyString_Resize(&result, need)) {
 						Py_DECREF(item);
 						return NULL;
@@ -2373,10 +2405,30 @@ filterunicode(PyObject *func, PyObject *strobj)
 			} else {
 				/* do we need more space? */
 				int need = j + reslen + len-i-1;
+        
+				/* check that didnt overflow */
+				if ((j > INT_MAX - reslen) ||
+					((j + reslen) > INT_MAX - len) ||
+						((j + reslen + len) < i) ||
+							((j + reslen + len - i) <= 0)) {
+					Py_DECREF(item);
+					return NULL;
+				}
+
+				assert(need >= 0);
+				assert(outlen >= 0);
+				
 				if (need > outlen) {
 					/* overallocate, to avoid reallocations */
-					if (need<2*outlen)
-						need = 2*outlen;
+					if (need < 2 * outlen) {
+						if (outlen > INT_MAX / 2) {
+							Py_DECREF(item);
+							return NULL;
+						} else {
+							need = 2 * outlen;
+						}
+					}
+
 					if (PyUnicode_Resize(&result, need)) {
 						Py_DECREF(item);
 						goto Fail_1;

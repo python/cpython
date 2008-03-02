@@ -632,6 +632,9 @@ array_concat(arrayobject *a, PyObject *bb)
 		PyErr_BadArgument();
 		return NULL;
 	}
+	if (a->ob_size > INT_MAX - b->ob_size) {
+		return PyErr_NoMemory();
+	}
 	size = a->ob_size + b->ob_size;
 	np = (arrayobject *) newarrayobject(&Arraytype, size, a->ob_descr);
 	if (np == NULL) {
@@ -654,6 +657,9 @@ array_repeat(arrayobject *a, int n)
 	int nbytes;
 	if (n < 0)
 		n = 0;
+	if ((a->ob_size != 0) && (n > INT_MAX / a->ob_size)) {
+		return PyErr_NoMemory();
+	}
 	size = a->ob_size * n;
 	np = (arrayobject *) newarrayobject(&Arraytype, size, a->ob_descr);
 	if (np == NULL)
@@ -775,6 +781,11 @@ array_do_extend(arrayobject *self, PyObject *bb)
 			     "can only extend with array of same kind");
 		return -1;
 	}
+	if ((self->ob_size > INT_MAX - b->ob_size) ||
+		((self->ob_size + b->ob_size) > INT_MAX / self->ob_descr->itemsize)) {
+			PyErr_NoMemory();
+			return -1;
+	}
 	size = self->ob_size + b->ob_size;
         PyMem_RESIZE(self->ob_item, char, size*self->ob_descr->itemsize);
         if (self->ob_item == NULL) {
@@ -809,6 +820,10 @@ array_inplace_repeat(arrayobject *self, int n)
 		if (n < 0)
 			n = 0;
 		items = self->ob_item;
+		if ((self->ob_descr->itemsize != 0) && 
+			(self->ob_size > INT_MAX / self->ob_descr->itemsize)) {
+			return PyErr_NoMemory();
+		}
 		size = self->ob_size * self->ob_descr->itemsize;
 		if (n == 0) {
 			PyMem_FREE(items);
@@ -816,6 +831,9 @@ array_inplace_repeat(arrayobject *self, int n)
 			self->ob_size = 0;
 		}
 		else {
+			if (size > INT_MAX / n) {
+				return PyErr_NoMemory();
+			}
 			PyMem_Resize(items, char, n * size);
 			if (items == NULL)
 				return PyErr_NoMemory();
@@ -1224,6 +1242,9 @@ array_fromlist(arrayobject *self, PyObject *list)
 			if ((*self->ob_descr->setitem)(self,
 					self->ob_size - n + i, v) != 0) {
 				self->ob_size -= n;
+				if (itemsize && (self->ob_size > INT_MAX / itemsize)) {
+					return PyErr_NoMemory();
+				}
 				PyMem_RESIZE(item, char,
 					          self->ob_size * itemsize);
 				self->ob_item = item;
@@ -1282,6 +1303,10 @@ array_fromstring(arrayobject *self, PyObject *args)
 	n = n / itemsize;
 	if (n > 0) {
 		char *item = self->ob_item;
+		if ((n > INT_MAX - self->ob_size) ||
+			((self->ob_size + n) > INT_MAX / itemsize)) {
+				return PyErr_NoMemory();
+		}
 		PyMem_RESIZE(item, char, (self->ob_size + n) * itemsize);
 		if (item == NULL) {
 			PyErr_NoMemory();
@@ -1306,8 +1331,12 @@ values,as if it had been read from a file using the fromfile() method).");
 static PyObject *
 array_tostring(arrayobject *self, PyObject *unused)
 {
-	return PyString_FromStringAndSize(self->ob_item,
+	if (self->ob_size <= INT_MAX / self->ob_descr->itemsize) {
+		return PyString_FromStringAndSize(self->ob_item,
 				    self->ob_size * self->ob_descr->itemsize);
+	} else {
+		return PyErr_NoMemory();
+	}
 }
 
 PyDoc_STRVAR(tostring_doc,
@@ -1335,6 +1364,9 @@ array_fromunicode(arrayobject *self, PyObject *args)
 	}
 	if (n > 0) {
 		Py_UNICODE *item = (Py_UNICODE *) self->ob_item;
+		if (self->ob_size > INT_MAX - n) {
+			return PyErr_NoMemory();
+		}
 		PyMem_RESIZE(item, Py_UNICODE, self->ob_size + n);
 		if (item == NULL) {
 			PyErr_NoMemory();

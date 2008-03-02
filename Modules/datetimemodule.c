@@ -1098,6 +1098,8 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 	char sign;
 	int none;
 
+	assert(buflen >= 1);
+
 	offset = call_utcoffset(tzinfo, tzinfoarg, &none);
 	if (offset == -1 && PyErr_Occurred())
 		return -1;
@@ -1175,6 +1177,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	 * a new format.  Since computing the replacements for those codes
 	 * is expensive, don't unless they're actually used.
 	 */
+	if (PyString_Size(format) > INT_MAX - 1) {
+		PyErr_NoMemory();
+		goto Done;
+	}
+
 	totalnew = PyString_Size(format) + 1;	/* realistic if no %z/%Z */
 	newfmt = PyString_FromStringAndSize(NULL, totalnew);
 	if (newfmt == NULL) goto Done;

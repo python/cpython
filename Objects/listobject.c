@@ -62,8 +62,9 @@ PyList_New(int size)
 		return NULL;
 	}
 	nbytes = size * sizeof(PyObject *);
-	/* Check for overflow */
-	if (nbytes / sizeof(PyObject *) != (size_t)size) {
+	/* Check for overflow without an actual overflow,
+	 *  which can cause compiler to optimise out */
+	if (size > PY_SIZE_MAX / sizeof(PyObject *)) {
 		return PyErr_NoMemory();
 	}
 	op = PyObject_GC_New(PyListObject, &PyList_Type);
@@ -1235,6 +1236,10 @@ merge_getmem(MergeState *ms, int need)
 	 * we don't care what's in the block.
 	 */
 	merge_freemem(ms);
+	if (need > INT_MAX / sizeof(PyObject*)) {
+		PyErr_NoMemory();
+		return -1;
+	}
 	ms->a = (PyObject **)PyMem_Malloc(need * sizeof(PyObject*));
 	if (ms->a) {
 		ms->alloced = need;
@@ -2311,6 +2316,8 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 				Py_DECREF(seq);
 				return 0;
 			}
+
+			assert(slicelength <= PY_SIZE_MAX / sizeof(PyObject*));
 
 			garbage = (PyObject**)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
