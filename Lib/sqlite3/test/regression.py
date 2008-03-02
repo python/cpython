@@ -115,8 +115,9 @@ class RegressionTests(unittest.TestCase):
         pysqlite would crash with older SQLite versions unless
         a workaround is implemented.
         """
-        self.con.execute("create table if not exists foo(bar)")
-        self.con.execute("create table if not exists foo(bar)")
+        self.con.execute("create table foo(bar)")
+        self.con.execute("drop table foo")
+        self.con.execute("create table foo(bar)")
 
     def CheckEmptyStatement(self):
         """
