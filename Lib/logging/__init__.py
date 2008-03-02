@@ -1,4 +1,4 @@
-# Copyright 2001-2007 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2005 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -21,7 +21,7 @@ comp.lang.python, and influenced by Apache's log4j system.
 Should work under Python versions >= 1.5.2, except that source line
 information is not available unless 'sys._getframe()' is.
 
-Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -68,7 +68,7 @@ def currentframe():
     except:
         return sys.exc_traceback.tb_frame.f_back
 
-if hasattr(sys, '_getframe'): currentframe = lambda: sys._getframe(3)
+if hasattr(sys, '_getframe'): currentframe = sys._getframe
 # done filching
 
 # _srcfile is only used in conjunction with sys._getframe().
@@ -1318,14 +1318,14 @@ def disable(level):
     """
     root.manager.disable = level
 
-def shutdown(handlerList=_handlerList):
+def shutdown():
     """
     Perform any cleanup actions in the logging system (e.g. flushing
     buffers).
 
     Should be called at application exit.
     """
-    for h in handlerList[:]:
+    for h in _handlerList[:]: # was _handlers.keys():
         #errors might occur, for example, if files are locked
         #we just ignore them if raiseExceptions is not set
         try:

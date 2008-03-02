@@ -703,7 +703,7 @@ class EditorWindow:
 
     def close(self):
         reply = self.maybesave()
-        if str(reply) != "cancel":
+        if reply != "cancel":
             self._close()
         return reply
 

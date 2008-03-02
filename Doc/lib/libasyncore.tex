@@ -199,11 +199,9 @@ Most of these are nearly identical to their socket partners.
 \end{methoddesc}
 
 \begin{methoddesc}{bind}{address}
-  Bind the socket to \var{address}.  The socket must not already be
-  bound.  (The format of \var{address} depends on the address family
-  --- see above.)  To mark the socket as re-usable (setting the
-  \constant{SO_REUSEADDR} option), call the \class{dispatcher}
-  object's \method{set_reuse_addr()} method.
+  Bind the socket to \var{address}.  The socket must not already
+  be bound.  (The format of \var{address} depends on the address
+  family --- see above.)
 \end{methoddesc}
 
 \begin{methoddesc}{accept}{}

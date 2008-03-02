@@ -10,7 +10,7 @@ bootstrap issues (/usr/bin/python is Python 2.3 on OSX 10.4)
 Usage: see USAGE variable in the script.
 """
 import platform, os, sys, getopt, textwrap, shutil, urllib2, stat, time, pwd
-import grp, md5
+import grp
 
 INCLUDE_TIMESTAMP=1
 VERBOSE=1
@@ -33,7 +33,7 @@ except ImportError:
 
 def shellQuote(value):
     """
-    Return the string value in a form that can safely be inserted into
+    Return the string value in a form that can savely be inserted into
     a shell command.
     """
     return "'%s'"%(value.replace("'", "'\"'\"'"))
@@ -56,13 +56,13 @@ def getFullVersion():
 
     raise RuntimeError, "Cannot find full version??"
 
-# The directory we'll use to create the build (will be erased and recreated)
+# The directory we'll use to create the build, will be erased and recreated
 WORKDIR="/tmp/_py24"
 
-# The directory we'll use to store third-party sources. Set this to something
+# The directory we'll use to store third-party sources, set this to something
 # else if you don't want to re-fetch required libraries every time.
 DEPSRC=os.path.join(WORKDIR, 'third-party')
-DEPSRC=os.path.expanduser('/tmp/other-sources')
+DEPSRC=os.path.expanduser('~/Universal/other-sources')
 
 # Location of the preferred SDK
 SDKPATH="/Developer/SDKs/MacOSX10.4u.sdk"
@@ -94,9 +94,8 @@ USAGE=textwrap.dedent("""\
 # batteries included python.
 LIBRARY_RECIPES=[
     dict(
-        name="Bzip2 1.0.4",
-        url="http://www.bzip.org/1.0.4/bzip2-1.0.4.tar.gz",
-        checksum="fc310b254f6ba5fbb5da018f04533688",
+        name="Bzip2 1.0.3",
+        url="http://www.bzip.org/1.0.3/bzip2-1.0.3.tar.gz",
         configure=None,
         install='make install PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
             shellQuote(os.path.join(WORKDIR, 'libraries')),
@@ -107,7 +106,6 @@ LIBRARY_RECIPES=[
     dict(
         name="ZLib 1.2.3",
         url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
-        checksum="debc62758716a169df9f62e6ab2bc634",
         configure=None,
         install='make install prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
             shellQuote(os.path.join(WORKDIR, 'libraries')),
@@ -119,7 +117,6 @@ LIBRARY_RECIPES=[
         # Note that GNU readline is GPL'd software
         name="GNU Readline 5.1.4",
         url="http://ftp.gnu.org/pub/gnu/readline/readline-5.1.tar.gz" ,
-        checksum="7ee5a692db88b30ca48927a13fd60e46",
         patchlevel='0',
         patches=[
             # The readline maintainers don't do actual micro releases, but
@@ -134,7 +131,6 @@ LIBRARY_RECIPES=[
     dict(
         name="NCurses 5.5",
         url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.5.tar.gz",
-        checksum='e73c1ac10b4bfc46db43b2ddfd6244ef',
         configure_pre=[
             "--without-cxx",
             "--without-ada",
@@ -163,7 +159,6 @@ LIBRARY_RECIPES=[
     dict(
         name="Sleepycat DB 4.4",
         url="http://downloads.sleepycat.com/db-4.4.20.tar.gz",
-        checksum='d84dff288a19186b136b0daf7067ade3',
         #name="Sleepycat DB 4.3.29",
         #url="http://downloads.sleepycat.com/db-4.3.29.tar.gz",
         buildDir="build_unix",
@@ -193,7 +188,7 @@ PKG_RECIPES=[
         long_name="GUI Applications",
         source="/Applications/MacPython %(VER)s",
         readme="""\
-            This package installs IDLE (an interactive Python IDE),
+            This package installs IDLE (an interactive Python IDLE),
             Python Launcher and Build Applet (create application bundles
             from python scripts).
 
@@ -249,7 +244,8 @@ PKG_RECIPES=[
         readme="""\
             This package updates the system python installation on
             Mac OS X 10.3 to ensure that you can build new python extensions
-            using that copy of python after installing this version.
+            using that copy of python after installing this version of
+            python.
             """,
         postflight="../OSX/fixapplepython23.py",
         topdir="/Library/Frameworks/Python.framework",
@@ -312,19 +308,6 @@ def checkEnvironment():
     if not os.path.exists(SDKPATH):
         fatal("Please install the latest version of Xcode and the %s SDK"%(
             os.path.basename(SDKPATH[:-4])))
-
-    if os.path.exists('/sw'):
-        fatal("Detected Fink, please remove before building Python")
-
-    if os.path.exists('/opt/local'):
-        fatal("Detected MacPorts, please remove before building Python")
-
-    if not os.path.exists('/Library/Frameworks/Tcl.framework') or \
-            not os.path.exists('/Library/Frameworks/Tk.framework'):
-
-        fatal("Please install a Universal Tcl/Tk framework in /Library from\n\thttp://tcltkaqua.sourceforge.net/")
-
-
 
 
 
@@ -462,17 +445,6 @@ def downloadURL(url, fname):
         except:
             pass
 
-def verifyChecksum(path, checksum):
-    summer = md5.md5()
-    fp = open(path, 'rb')
-    block = fp.read(10240)
-    while block:
-        summer.update(block)
-        block = fp.read(10240)
-
-    return summer.hexdigest() == checksum
-
-
 def buildRecipe(recipe, basedir, archList):
     """
     Build software using a recipe. This function does the
@@ -494,16 +466,13 @@ def buildRecipe(recipe, basedir, archList):
         os.mkdir(DEPSRC)
 
 
-    if os.path.exists(sourceArchive) and verifyChecksum(sourceArchive, recipe['checksum']):
+    if os.path.exists(sourceArchive):
         print "Using local copy of %s"%(name,)
 
     else:
         print "Downloading %s"%(name,)
         downloadURL(url, sourceArchive)
         print "Archive for %s stored as %s"%(name, sourceArchive)
-        if not verifyChecksum(sourceArchive, recipe['checksum']):
-            fatal("Download for %s failed: bad checksum"%(url,))
-
 
     print "Extracting archive for %s"%(name,)
     buildDir=os.path.join(WORKDIR, '_bld')
@@ -655,15 +624,15 @@ def buildPython():
     print "Running make"
     runCommand("make")
 
-    print "Running make frameworkinstall"
+    print "Runing make frameworkinstall"
     runCommand("make frameworkinstall DESTDIR=%s"%(
         shellQuote(rootDir)))
 
-    print "Running make frameworkinstallextras"
+    print "Runing make frameworkinstallextras"
     runCommand("make frameworkinstallextras DESTDIR=%s"%(
         shellQuote(rootDir)))
 
-    print "Copying required shared libraries"
+    print "Copy required shared libraries"
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
         runCommand("mv %s/* %s"%(
             shellQuote(os.path.join(
@@ -751,8 +720,8 @@ def patchScript(inPath, outPath):
 def packageFromRecipe(targetDir, recipe):
     curdir = os.getcwd()
     try:
-        # The major version (such as 2.5) is included in the package name
-        # because having two version of python installed at the same time is
+        # The major version (such as 2.5) is included in the pacakge name
+        # because haveing two version of python installed at the same time is
         # common.
         pkgname = '%s-%s'%(recipe['name'], getVersion())
         srcdir  = recipe.get('source')
@@ -926,7 +895,7 @@ def installSize(clear=False, _saved=[]):
 
 def buildDMG():
     """
-    Create DMG containing the rootDir.
+    Create DMG containing the rootDir
     """
     outdir = os.path.join(WORKDIR, 'diskimage')
     if os.path.exists(outdir):
@@ -940,7 +909,7 @@ def buildDMG():
 
     os.mkdir(outdir)
     time.sleep(1)
-    runCommand("hdiutil create -volname 'Universal MacPython %s' -srcfolder %s %s"%(
+    runCommand("hdiutil create -volname 'Univeral MacPython %s' -srcfolder %s %s"%(
             getFullVersion(),
             shellQuote(os.path.join(WORKDIR, 'installer')),
             shellQuote(imagepath)))

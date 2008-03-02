@@ -2730,10 +2730,10 @@ rather than explicitly calling \cfunction{PyGen_New}.
 Various date and time objects are supplied by the \module{datetime}
 module.  Before using any of these functions, the header file
 \file{datetime.h} must be included in your source (note that this is
-not included by \file{Python.h}), and the macro
-\cfunction{PyDateTime_IMPORT} must be invoked.  The macro puts a
-pointer to a C structure into a static variable, 
-\code{PyDateTimeAPI}, that is used by the following macros.
+not include by \file{Python.h}), and macro \cfunction{PyDateTime_IMPORT()}
+must be invoked.  The macro arranges to put a pointer to a C structure
+in a static variable \code{PyDateTimeAPI}, which is used by the following
+macros.
 
 Type-check macros:
 

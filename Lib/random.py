@@ -205,7 +205,7 @@ class Random(_random.Random):
             raise ValueError, "empty range for randrange()"
 
         if n >= maxwidth:
-            return istart + istep*self._randbelow(n)
+            return istart + self._randbelow(n)
         return istart + istep*int(self.random() * n)
 
     def randint(self, a, b):

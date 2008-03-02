@@ -357,10 +357,6 @@ object, except that when the exit status is zero (termination without
 errors), \code{None} is returned.
 Availability: Macintosh, \UNIX, Windows.
 
-The \module{subprocess} module provides more powerful facilities for
-spawning new processes and retrieving their results; using that module
-is preferable to using this function.
-
 \versionchanged[This function worked unreliably under Windows in
   earlier versions of Python.  This was due to the use of the
   \cfunction{_popen()} function from the libraries provided with
@@ -375,13 +371,8 @@ deleted once there are no file descriptors for the file.
 Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
-There are a number of different \function{popen*()} functions that
-provide slightly different ways to create subprocesses.  Note that the
-\module{subprocess} module is easier to use and more powerful;
-consider using that module before writing code using the
-lower-level \function{popen*()} functions.
 
-For each of the \function{popen*()} variants, if \var{bufsize} is
+For each of the following \function{popen()} variants, if \var{bufsize} is
 specified, it specifies the buffer size for the I/O pipes.
 \var{mode}, if provided, should be the string \code{'b'} or
 \code{'t'}; on Windows this is needed to determine whether the file
@@ -1513,13 +1504,7 @@ functions are described in section \ref{os-newstreams}.
 \funcline{spawnve}{mode, path, args, env}
 \funcline{spawnvp}{mode, file, args}
 \funcline{spawnvpe}{mode, file, args, env}
-Execute the program \var{path} in a new process.  
-
-(Note that the \module{subprocess} module provides more powerful
-facilities for spawning new processes and retrieving their results;
-using that module is preferable to using these functions.)
-
-If \var{mode} is
+Execute the program \var{path} in a new process.  If \var{mode} is
 \constant{P_NOWAIT}, this function returns the process ID of the new
 process; if \var{mode} is \constant{P_WAIT}, returns the process's
 exit code if it exits normally, or \code{-\var{signal}}, where
@@ -1647,10 +1632,6 @@ and XP) this is the exit status of the command run; on systems using
 a non-native shell, consult your shell documentation.
 
 Availability: Macintosh, \UNIX, Windows.
-
-The \module{subprocess} module provides more powerful facilities for
-spawning new processes and retrieving their results; using that module
-is preferable to using this function.
 \end{funcdesc}
 
 \begin{funcdesc}{times}{}

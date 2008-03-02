@@ -179,10 +179,10 @@ static int pcall[PCALL_NUM];
 PyObject *
 PyEval_GetCallStats(PyObject *self)
 {
-	return Py_BuildValue("iiiiiiiiiii",
+	return Py_BuildValue("iiiiiiiiii",
 			     pcall[0], pcall[1], pcall[2], pcall[3],
 			     pcall[4], pcall[5], pcall[6], pcall[7],
-			     pcall[8], pcall[9], pcall[10]);
+			     pcall[8], pcall[9]);
 }
 #else
 #define PCALL(O)
@@ -4073,10 +4073,8 @@ import_all_from(PyObject *locals, PyObject *v)
 		value = PyObject_GetAttr(v, name);
 		if (value == NULL)
 			err = -1;
-		else if (PyDict_CheckExact(locals))
-			err = PyDict_SetItem(locals, name, value);
 		else
-			err = PyObject_SetItem(locals, name, value);
+			err = PyDict_SetItem(locals, name, value);
 		Py_DECREF(name);
 		Py_XDECREF(value);
 		if (err != 0)

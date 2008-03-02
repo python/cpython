@@ -7,19 +7,7 @@
 
 from test import test_support
 from test import test_multibytecodec_support
-from test.test_support import TESTFN
-import unittest, StringIO, codecs, sys, os
-
-class Test_StreamReader(unittest.TestCase):
-    def test_bug1728403(self):
-        try:
-            open(TESTFN, 'w').write('\xa1')
-            f = codecs.open(TESTFN, encoding='cp949')
-            self.assertRaises(UnicodeDecodeError, f.read, 2)
-        finally:
-            try: f.close()
-            except: pass
-            os.unlink(TESTFN)
+import unittest, StringIO, codecs, sys
 
 class Test_StreamWriter(unittest.TestCase):
     if len(u'\U00012345') == 2: # UCS2
@@ -111,7 +99,6 @@ class Test_ISO2022(unittest.TestCase):
 
 def test_main():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(Test_StreamReader))
     suite.addTest(unittest.makeSuite(Test_StreamWriter))
     suite.addTest(unittest.makeSuite(Test_ISO2022))
     test_support.run_suite(suite)

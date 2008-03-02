@@ -15,30 +15,15 @@ Core and builtins
 
 - patch #1630975: Fix crash when replacing sys.stdout in sitecustomize.py
 
-- Bug #1590891: random.randrange don't return correct value for big number
-
-- Bug #1542016: make sys.callstats() match its docstring and return an
-  11-tuple (only relevant when Python is compiled with -DCALL_PROFILE).
-
 Extension Modules
 -----------------
 
 Library
 -------
 
-- Issue #1336: fix a race condition in subprocess.Popen if the garbage
-  collector kicked in at the wrong time that would cause the process
-  to hang when the child wrote to stderr.
-
-- Bug #1728403: Fix a bug that CJKCodecs StreamReader hangs when it
-  reads a file that ends with incomplete sequence and sizehint argument
-  for .read() is specified.
-
 - HTML-escape the plain traceback in cgitb's HTML output, to prevent
   the traceback inadvertently or maliciously closing the comment and
   injecting HTML into the error page.
-
-- idle: Honor the "Cancel" action in the save dialog (Debian bug #299092).
 
 Tests
 -----
@@ -203,9 +188,6 @@ Extension Modules
 
 Library
 -------
-
-- Patch 1571379: Make trace's --ignore-dir facility work in the face of
-  relative directory names.
 
 - Bug #1545341: The 'classifier' keyword argument to the Distutils setup()
   function now accepts tuples as well as lists.

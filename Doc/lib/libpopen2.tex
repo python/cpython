@@ -11,10 +11,10 @@ This module allows you to spawn processes and connect to their
 input/output/error pipes and obtain their return codes under
 \UNIX{} and Windows.
 
-The \module{subprocess} module provides more powerful facilities for
-spawning new processes and retrieving their results.  Using the
-\module{subprocess} module is preferable to using the \module{popen2}
-module.
+Note that starting with Python 2.0, this functionality is available
+using functions from the \refmodule{os} module which have the same
+names as the factory functions here, but the order of the return
+values is more intuitive in the \refmodule{os} module variants.
 
 The primary interface offered by this module is a trio of factory
 functions.  For each of these, if \var{bufsize} is specified, 
@@ -184,7 +184,3 @@ integrate I/O over pipes with their \function{select()} loops, or use
 separate threads to read each of the individual files provided by
 whichever \function{popen*()} function or \class{Popen*} class was
 used.
-
-\begin{seealso}
-  \seemodule{subprocess}{Module for spawning and managing subprocesses.}
-\end{seealso}
