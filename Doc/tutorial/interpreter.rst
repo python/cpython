@@ -102,7 +102,7 @@ prints a welcome message stating its version number and a copyright notice
 before printing the first prompt::
 
    python
-   Python 2.5 (#1, Feb 28 2007, 00:02:06)
+   Python 2.6 (#1, Feb 28 2007, 00:02:06)
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
 
