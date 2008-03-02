@@ -104,26 +104,24 @@ loops that truncate the stream.
    Each result tuple is ordered to match the input order.  So, every
    combination is a subsequence of the input *iterable*.
 
-   Example:  ``combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)``
-
    Equivalent to::
 
         def combinations(iterable, r):
+            'combinations(range(4), 3) --> (0,1,2) (0,1,3) (0,2,3) (1,2,3)'
             pool = tuple(iterable)
             n = len(pool)
-            assert 0 <= r <= n
-            vec = range(r)
-            yield tuple(pool[i] for i in vec)
+            indices = range(r)
+            yield tuple(pool[i] for i in indices)
             while 1:
                 for i in reversed(range(r)):
-                    if vec[i] != i + n - r:
+                    if indices[i] != i + n - r:
                         break
                 else:
                     return
-                vec[i] += 1
+                indices[i] += 1
                 for j in range(i+1, r):
-                    vec[j] = vec[j-1] + 1
-                yield tuple(pool[i] for i in vec)
+                    indices[j] = indices[j-1] + 1
+                yield tuple(pool[i] for i in indices)
 
    .. versionadded:: 2.6
 
@@ -369,7 +367,29 @@ loops that truncate the stream.
    value.  So if the input elements are unique, there will be no repeat
    values in each permutation.
 
-   Example:  ``permutations(range(3),2) --> (1,2) (1,3) (2,1) (2,3) (3,1) (3,2)``
+   Equivalent to::
+
+        def permutations(iterable, r=None):
+            'permutations(range(3), 2) --> (0,1) (0,2) (1,0) (1,2) (2,0) (2,1)'
+            pool = tuple(iterable)
+            n = len(pool)
+            r = n if r is None else r
+            indices = range(n)
+            cycles = range(n-r+1, n+1)[::-1]
+            yield tuple(pool[i] for i in indices[:r])
+            while n:
+                for i in reversed(range(r)):
+                    cycles[i] -= 1
+                    if cycles[i] == 0:
+                        indices[:] = indices[:i] + indices[i+1:] + indices[i:i+1]
+                        cycles[i] = n - i
+                    else:
+                        j = cycles[i]
+                        indices[i], indices[-j] = indices[-j], indices[i]
+                        yield tuple(pool[i] for i in indices[:r])
+                        break
+                else:
+                    return
 
    .. versionadded:: 2.6
 
