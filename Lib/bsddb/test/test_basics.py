@@ -8,7 +8,6 @@ import errno
 import string
 import tempfile
 from pprint import pprint
-from test import test_support
 import unittest
 import time
 
@@ -18,6 +17,11 @@ try:
 except ImportError:
     # For Python 2.3
     from bsddb import db
+
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
 
 from test_all import verbose
 

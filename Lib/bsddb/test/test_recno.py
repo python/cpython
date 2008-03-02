@@ -16,6 +16,11 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 
@@ -27,7 +32,6 @@ class SimpleRecnoTestCase(unittest.TestCase):
         self.homeDir = None
 
     def tearDown(self):
-        from test import test_support
         test_support.unlink(self.filename)
         if self.homeDir:
             test_support.rmtree(self.homeDir)
