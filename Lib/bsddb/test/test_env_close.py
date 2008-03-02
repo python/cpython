@@ -15,6 +15,11 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 from bsddb.test.test_all import verbose
 
 # We're going to get warnings in this module about trying to close the db when
@@ -41,7 +46,6 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
         tempfile.tempdir = None
 
     def tearDown(self):
-        from test import test_support
         test_support.rmtree(self.homeDir)
 
     def test01_close_dbenv_before_db(self):

@@ -14,6 +14,11 @@ except ImportError:
     # For the bundled bsddb
     from bsddb import db, dbshelve, hashopen
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 #----------------------------------------------------------------------
 
 class MiscTestCase(unittest.TestCase):
@@ -27,7 +32,6 @@ class MiscTestCase(unittest.TestCase):
             pass
 
     def tearDown(self):
-        from test import test_support
         test_support.unlink(self.filename)
         test_support.rmtree(self.homeDir)
 

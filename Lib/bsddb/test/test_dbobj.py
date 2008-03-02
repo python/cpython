@@ -11,6 +11,11 @@ except ImportError:
     # For Python 2.3
     from bsddb import db, dbobj
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 
 #----------------------------------------------------------------------
 
@@ -29,7 +34,6 @@ class dbobjTestCase(unittest.TestCase):
             del self.db
         if hasattr(self, 'env'):
             del self.env
-        from test import test_support
         test_support.rmtree(self.homeDir)
 
     def test01_both(self):
