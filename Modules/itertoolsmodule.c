@@ -1770,7 +1770,6 @@ static PyTypeObject chain_type = {
 typedef struct {
 	PyObject_HEAD
 	PyObject *pools;		/* tuple of pool tuples */
-	Py_ssize_t *maxvec;             /* size of each pool */
 	Py_ssize_t *indices;            /* one index per pool */
 	PyObject *result;               /* most recently returned result tuple */
 	int stopped;                    /* set to 1 when the product iterator is exhausted */
@@ -1784,7 +1783,6 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	productobject *lz;
 	Py_ssize_t nargs, npools, repeat=1;
 	PyObject *pools = NULL;
-	Py_ssize_t *maxvec = NULL;
 	Py_ssize_t *indices = NULL;
 	Py_ssize_t i;
 
@@ -1809,9 +1807,8 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	nargs = (repeat == 0) ? 0 : PyTuple_GET_SIZE(args);
 	npools = nargs * repeat;
 
-	maxvec = PyMem_Malloc(npools * sizeof(Py_ssize_t));
 	indices = PyMem_Malloc(npools * sizeof(Py_ssize_t));
-	if (maxvec == NULL || indices == NULL) {
+	if (indices == NULL) {
     		PyErr_NoMemory();
 		goto error;
 	}
@@ -1825,16 +1822,13 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		PyObject *pool = PySequence_Tuple(item);
 		if (pool == NULL)
 			goto error;
-
 		PyTuple_SET_ITEM(pools, i, pool);
-		maxvec[i] = PyTuple_GET_SIZE(pool);
 		indices[i] = 0;
 	}
 	for ( ; i < npools; ++i) {
 		PyObject *pool = PyTuple_GET_ITEM(pools, i - nargs);
 		Py_INCREF(pool);
 		PyTuple_SET_ITEM(pools, i, pool);
-		maxvec[i] = maxvec[i - nargs];
 		indices[i] = 0;
 	}
 
@@ -1844,7 +1838,6 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		goto error;
 
 	lz->pools = pools;
-	lz->maxvec = maxvec;
 	lz->indices = indices;
 	lz->result = NULL;
 	lz->stopped = 0;
@@ -1852,8 +1845,6 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return (PyObject *)lz;
 
 error:
-	if (maxvec != NULL)
-		PyMem_Free(maxvec);
 	if (indices != NULL)
 		PyMem_Free(indices);
 	Py_XDECREF(pools);
@@ -1866,7 +1857,6 @@ product_dealloc(productobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->pools);
 	Py_XDECREF(lz->result);
-	PyMem_Free(lz->maxvec);
 	PyMem_Free(lz->indices);
 	Py_TYPE(lz)->tp_free(lz);
 }
@@ -1913,7 +1903,6 @@ product_next(productobject *lz)
 		}
 	} else {
 		Py_ssize_t *indices = lz->indices;
-		Py_ssize_t *maxvec = lz->maxvec;
 
 		/* Copy the previous result tuple or re-use it if available */
 		if (Py_REFCNT(result) > 1) {
@@ -1937,7 +1926,7 @@ product_next(productobject *lz)
 		for (i=npools-1 ; i >= 0 ; i--) {
 			pool = PyTuple_GET_ITEM(pools, i);
 			indices[i]++;
-			if (indices[i] == maxvec[i]) {
+			if (indices[i] == PyTuple_GET_SIZE(pool)) {
 				/* Roll-over and advance to next pool */
 				indices[i] = 0;
 				elem = PyTuple_GET_ITEM(pool, 0);
