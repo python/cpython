@@ -1651,21 +1651,21 @@ timed intervals.
    You can use the *when* to specify the type of *interval*. The list of possible
    values is, note that they are not case sensitive:
 
-   +----------+-----------------------+
-   | Value    | Type of interval      |
-   +==========+=======================+
-   | S        | Seconds               |
-   +----------+-----------------------+
-   | M        | Minutes               |
-   +----------+-----------------------+
-   | H        | Hours                 |
-   +----------+-----------------------+
-   | D        | Days                  |
-   +----------+-----------------------+
-   | W        | Week day (0=Monday)   |
-   +----------+-----------------------+
-   | midnight | Roll over at midnight |
-   +----------+-----------------------+
+   +----------------+-----------------------+
+   | Value          | Type of interval      |
+   +================+=======================+
+   | ``'S'``        | Seconds               |
+   +----------------+-----------------------+
+   | ``'M'``        | Minutes               |
+   +----------------+-----------------------+
+   | ``'H'``        | Hours                 |
+   +----------------+-----------------------+
+   | ``'D'``        | Days                  |
+   +----------------+-----------------------+
+   | ``'W'``        | Week day (0=Monday)   |
+   +----------------+-----------------------+
+   | ``'midnight'`` | Roll over at midnight |
+   +----------------+-----------------------+
 
    If *backupCount* is non-zero, the system will save old log files by appending
    extensions to the filename. The extensions are date-and-time based, using the
