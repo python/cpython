@@ -6,6 +6,11 @@ import tempfile
 
 from bsddb import db
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 
 #----------------------------------------------------------------------
 
@@ -39,7 +44,6 @@ class pget_bugTestCase(unittest.TestCase):
         del self.secondary_db
         del self.primary_db
         del self.env
-        from test import test_support
         test_support.rmtree(self.homeDir)
 
     def test_pget(self):

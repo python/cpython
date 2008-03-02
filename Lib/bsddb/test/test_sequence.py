@@ -11,6 +11,10 @@ except ImportError:
     from bsddb import db
 
 from bsddb.test.test_all import verbose
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
 
 
 class DBSequenceTest(unittest.TestCase):
@@ -41,7 +45,6 @@ class DBSequenceTest(unittest.TestCase):
             self.dbenv.close()
             del self.dbenv
 
-        from test import test_support
         test_support.rmtree(self.homeDir)
 
     def test_get(self):

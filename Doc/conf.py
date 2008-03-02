@@ -87,7 +87,7 @@ html_additional_pages = {
 }
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pydoc'
+htmlhelp_basename = 'python' + release.replace('.', '')
 
 
 # Options for LaTeX output

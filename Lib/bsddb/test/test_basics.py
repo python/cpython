@@ -9,7 +9,6 @@ import errno
 import string
 import tempfile
 from pprint import pprint
-from test import test_support
 import unittest
 import time
 
@@ -21,6 +20,10 @@ except ImportError:
     from bsddb import db
 
 from bsddb.test.test_all import verbose
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
 
 DASH = b'-'
 letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'

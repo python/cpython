@@ -18,6 +18,10 @@ from bsddb.test.test_all import verbose
 
 from bsddb import db, dbshelve, StringKeys
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
 
 #----------------------------------------------------------------------
 
@@ -57,7 +61,6 @@ class JoinTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.env.close()
-        from test import test_support
         test_support.rmtree(self.homeDir)
 
     def test01_join(self):

@@ -2,6 +2,9 @@ This is Python version 3.0 alpha 3
 ==================================
 
 For notes specific to this release, see RELNOTES in this directory.
+Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
+Python Software Foundation.
+All rights reserved.
 
 Python 3000 (a.k.a. "Py3k", and released as Python 3.0) is a new
 version of the language, which is incompatible with the 2.x line of
