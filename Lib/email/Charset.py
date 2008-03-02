@@ -1,5 +1,5 @@
-# Copyright (C) 2001-2007 Python Software Foundation
-# Author: email-sig@python.org
+# Copyright (C) 2001-2006 Python Software Foundation
+# Author: che@debian.org (Ben Gertzfield), barry@python.org (Barry Warsaw)
 
 from types import UnicodeType
 from email.Encoders import encode_7or8bit
@@ -99,7 +99,7 @@ ALIASES = {
 # of stability and useability.
 
 CODEC_MAP = {
-    'gb2312':   'eucgb2312_cn',
+    'gb2132':   'eucgb2312_cn',
     'big5':     'big5_tw',
     'utf-8':    'utf-8',
     # Hack: We don't want *any* conversion for stuff marked us-ascii, as all
