@@ -1414,6 +1414,8 @@ Extension Modules
 - bsddb module: Fix memory leak when using database cursors on
   databases without a DBEnv.
 
+- The sqlite3 module was updated to pysqlite 2.4.1.
+
 Tests
 -----
 
