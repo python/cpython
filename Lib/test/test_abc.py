@@ -7,6 +7,7 @@ import unittest
 from test import test_support
 
 import abc
+from inspect import isabstract
 
 
 class TestABC(unittest.TestCase):
@@ -41,19 +42,23 @@ class TestABC(unittest.TestCase):
                 def bar(self): pass  # concrete
             self.assertEqual(C.__abstractmethods__, {"foo"})
             self.assertRaises(TypeError, C)  # because foo is abstract
+            self.assert_(isabstract(C))
             class D(C):
                 def bar(self): pass  # concrete override of concrete
             self.assertEqual(D.__abstractmethods__, {"foo"})
             self.assertRaises(TypeError, D)  # because foo is still abstract
+            self.assert_(isabstract(D))
             class E(D):
                 def foo(self): pass
             self.assertEqual(E.__abstractmethods__, set())
             E()  # now foo is concrete, too
+            self.failIf(isabstract(E))
             class F(E):
                 @abstractthing
                 def bar(self): pass  # abstract override of concrete
             self.assertEqual(F.__abstractmethods__, {"bar"})
             self.assertRaises(TypeError, F)  # because bar is abstract now
+            self.assert_(isabstract(F))
 
     def test_subclass_oldstyle_class(self):
         class A:

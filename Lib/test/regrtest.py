@@ -135,6 +135,7 @@ import warnings
 import re
 import io
 import traceback
+from inspect import isabstract
 
 # I see no other way to suppress these warnings;
 # putting them in test_grammar.py has no effect:
@@ -689,7 +690,6 @@ def cleanup_test_droppings(testname, verbose):
 def dash_R(the_module, test, indirect_test, huntrleaks):
     # This code is hackish and inelegant, but it seems to do the job.
     import copy_reg, _abcoll
-    from abc import _Abstract
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -701,7 +701,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     pic = sys.path_importer_cache.copy()
     abcs = {}
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
-        if not issubclass(abc, _Abstract):
+        if not isabstract(abc):
             continue
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = obj._abc_registry.copy()
@@ -741,7 +741,6 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     import _strptime, linecache, dircache
     import urlparse, urllib, urllib2, mimetypes, doctest
     import struct, filecmp, _abcoll
-    from abc import _Abstract
     from distutils.dir_util import _path_created
     from weakref import WeakSet
 
@@ -757,7 +756,7 @@ def dash_R_cleanup(fs, ps, pic, abcs):
 
     # Clear ABC registries, restoring previously saved ABC registries.
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
-        if not issubclass(abc, _Abstract):
+        if not isabstract(abc):
             continue
         for obj in abc.__subclasses__() + [abc]:
             obj._abc_registry = abcs.get(obj, WeakSet()).copy()
