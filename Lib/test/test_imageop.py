@@ -11,7 +11,7 @@ import imageop, uu, os, imgfile
 
 import warnings
 
-def main():
+def test_main():
 
     # Create binary test files
     uu.decode(get_qualified_path('testrgb'+os.extsep+'uue'), 'test'+os.extsep+'rgb')
@@ -145,4 +145,5 @@ def get_qualified_path(name):
             return fullname
     return name
 
-main()
+if __name__ == '__main__':
+    test_main()

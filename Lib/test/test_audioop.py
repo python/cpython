@@ -269,7 +269,7 @@ def testone(name, data):
     if not rv:
         print 'Test FAILED for audioop.'+name+'()'
 
-def testall():
+def test_main():
     data = [gendata1(), gendata2(), gendata4()]
     names = dir(audioop)
     # We know there is a routine 'add'
@@ -279,4 +279,8 @@ def testall():
             routines.append(n)
     for n in routines:
         testone(n, data)
-testall()
+
+
+
+if __name__ == '__main__':
+    test_main()
