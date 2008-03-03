@@ -44,12 +44,18 @@ def test_modes():
     d = dbm.open(filename, 'n')
     d.close()
 
-cleanup()
-try:
-    test_keys()
-    test_modes()
-except:
+def test_main():
     cleanup()
-    raise
+    try:
+        test_keys()
+        test_modes()
+    except:
+        cleanup()
+        raise
 
-cleanup()
+    cleanup()
+
+
+
+if __name__ == '__main__':
+    test_main()
