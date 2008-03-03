@@ -50,11 +50,11 @@ def generator_function_example(self):
         yield i
 
 class TestPredicates(IsTestBase):
-    def test_fifteen(self):
+    def test_sixteen(self):
         count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
         # This test is here for remember you to update Doc/library/inspect.rst
         # which claims there are 15 such functions
-        expected = 15
+        expected = 16
         err_msg = "There are %d (not %d) is* functions" % (count, expected)
         self.assertEqual(count, expected, err_msg)
 
