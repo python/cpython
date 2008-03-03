@@ -9,7 +9,6 @@ bootstrapping issues.  Unit tests are in test_collections.
 """
 
 from abc import ABCMeta, abstractmethod
-import itertools
 
 __all__ = ["Hashable", "Iterable", "Iterator",
            "Sized", "Container", "Callable",
@@ -189,7 +188,8 @@ class Set(Sized, Iterable, Container):
     def __or__(self, other):
         if not isinstance(other, Iterable):
             return NotImplemented
-        return self._from_iterable(itertools.chain(self, other))
+        chain = (e for s in (self, other) for e in s)
+        return self._from_iterable(chain)
 
     def __sub__(self, other):
         if not isinstance(other, Set):
