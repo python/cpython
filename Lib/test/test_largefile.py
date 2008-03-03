@@ -31,10 +31,10 @@ class TestCase(unittest.TestCase):
             print('create large file via seek (may be sparse file) ...')
         f = open(TESTFN, 'wb')
         try:
-            f.write('z')
+            f.write(b'z')
             f.seek(0)
             f.seek(size)
-            f.write('a')
+            f.write(b'a')
             f.flush()
             if verbose:
                 print('check file size with os.fstat')
@@ -53,7 +53,7 @@ class TestCase(unittest.TestCase):
         f = open(TESTFN, 'rb')
         try:
             self.assertEqual(f.tell(), 0)
-            self.assertEqual(f.read(1), 'z')
+            self.assertEqual(f.read(1), b'z')
             self.assertEqual(f.tell(), 1)
             f.seek(0)
             self.assertEqual(f.tell(), 0)
@@ -76,9 +76,9 @@ class TestCase(unittest.TestCase):
             f.seek(size)
             self.assertEqual(f.tell(), size)
             # the 'a' that was written at the end of file above
-            self.assertEqual(f.read(1), 'a')
+            self.assertEqual(f.read(1), b'a')
             f.seek(-size-1, 1)
-            self.assertEqual(f.read(1), 'z')
+            self.assertEqual(f.read(1), b'z')
             self.assertEqual(f.tell(), 1)
         finally:
             f.close()
@@ -97,7 +97,7 @@ class TestCase(unittest.TestCase):
             self.assertEqual(os.lseek(f.fileno(), -size-1, 2), 0)
             self.assertEqual(os.lseek(f.fileno(), size, 0), size)
             # the 'a' that was written at the end of file above
-            self.assertEqual(f.read(1), 'a')
+            self.assertEqual(f.read(1), b'a')
         finally:
             f.close()
 
@@ -155,7 +155,7 @@ def main_test():
             f.seek(2147483649)
             # Seeking is not enough of a test: you must write and
             # flush, too!
-            f.write("x")
+            f.write(b'x')
             f.flush()
         except (IOError, OverflowError):
             f.close()

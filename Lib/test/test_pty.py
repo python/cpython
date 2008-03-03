@@ -157,7 +157,8 @@ class PtyTest(unittest.TestCase):
                     break
                 if not data:
                     break
-                sys.stdout.write(data.replace('\r\n', '\n').decode('ascii'))
+                sys.stdout.write(str(data.replace(b'\r\n', b'\n'),
+                                     encoding='ascii'))
 
             ##line = os.read(master_fd, 80)
             ##lines = line.replace('\r\n', '\n').split('\n')

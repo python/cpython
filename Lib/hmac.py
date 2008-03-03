@@ -39,7 +39,8 @@ class HMAC:
         if key is _secret_backdoor_key: # cheap
             return
 
-        assert isinstance(key, bytes), repr(key)
+        if not isinstance(key, bytes):
+            raise TypeError("expected bytes, but got %r" % type(key).__name__)
 
         if digestmod is None:
             import hashlib
@@ -84,7 +85,8 @@ class HMAC:
     def update(self, msg):
         """Update this hashing object with the string msg.
         """
-        assert isinstance(msg, bytes), repr(msg)
+        if not isinstance(msg, bytes):
+            raise TypeError("expected bytes, but got %r" % type(msg).__name__)
         self.inner.update(msg)
 
     def copy(self):
