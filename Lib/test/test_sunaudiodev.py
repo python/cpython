@@ -22,7 +22,11 @@ def play_sound_file(path):
         a.write(data)
         a.close()
 
-def test():
+
+def test_main():
     play_sound_file(findfile('audiotest.au'))
 
-test()
+
+
+if __name__ == '__main__':
+    test_main()

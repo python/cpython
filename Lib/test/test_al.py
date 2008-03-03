@@ -11,7 +11,7 @@ alattrs = ['__doc__', '__name__', 'getdefault', 'getminmax', 'getname', 'getpara
 # This is a very unobtrusive test for the existence of the al module and all its
 # attributes.  More comprehensive examples can be found in Demo/al
 
-def main():
+def test_main():
     # touch all the attributes of al without doing anything
     if verbose:
         print 'Touching al module attributes...'
@@ -20,4 +20,6 @@ def main():
             print 'touching: ', attr
         getattr(al, attr)
 
-main()
+
+if __name__ == '__main__':
+    test_main()
