@@ -849,9 +849,9 @@ static int _progress_handler(void* user_arg)
         rc = 1; 
     } else {
         rc = (int)PyObject_IsTrue(ret);
+        Py_DECREF(ret);
     }
 
-    Py_DECREF(ret);
     PyGILState_Release(gilstate);
     return rc;
 }
