@@ -25,6 +25,10 @@ class TestCase(unittest.TestCase):
     """Test that each file function works as expected for a large
     (i.e. > 2GB, do  we have to check > 4GB) files.
 
+    NOTE: the order of execution of the test methods is important! test_seek
+    must run first to create the test file. File cleanup must also be handled
+    outside the test instances because of this.
+
     """
 
     def test_seek(self):
