@@ -24,13 +24,13 @@ size = 2500000000L
 class TestCase(unittest.TestCase):
     """Test that each file function works as expected for a large
     (i.e. > 2GB, do  we have to check > 4GB) files.
+
     """
 
     def test_seek(self):
         if verbose:
             print 'create large file via seek (may be sparse file) ...'
-        f = open(TESTFN, 'wb')
-        try:
+        with open(TESTFN, 'wb') as f:
             f.write('z')
             f.seek(0)
             f.seek(size)
@@ -39,8 +39,6 @@ class TestCase(unittest.TestCase):
             if verbose:
                 print 'check file size with os.fstat'
             self.assertEqual(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
-        finally:
-            f.close()
 
     def test_osstat(self):
         if verbose:
@@ -50,8 +48,7 @@ class TestCase(unittest.TestCase):
     def test_seek_read(self):
         if verbose:
             print 'play around with seek() and read() with the built largefile'
-        f = open(TESTFN, 'rb')
-        try:
+        with open(TESTFN, 'rb') as f:
             self.assertEqual(f.tell(), 0)
             self.assertEqual(f.read(1), 'z')
             self.assertEqual(f.tell(), 1)
@@ -80,14 +77,11 @@ class TestCase(unittest.TestCase):
             f.seek(-size-1, 1)
             self.assertEqual(f.read(1), 'z')
             self.assertEqual(f.tell(), 1)
-        finally:
-            f.close()
 
     def test_lseek(self):
         if verbose:
             print 'play around with os.lseek() with the built largefile'
-        f = open(TESTFN, 'rb')
-        try:
+        with open(TESTFN, 'rb') as f:
             self.assertEqual(os.lseek(f.fileno(), 0, 0), 0)
             self.assertEqual(os.lseek(f.fileno(), 42, 0), 42)
             self.assertEqual(os.lseek(f.fileno(), 42, 1), 84)
@@ -98,18 +92,15 @@ class TestCase(unittest.TestCase):
             self.assertEqual(os.lseek(f.fileno(), size, 0), size)
             # the 'a' that was written at the end of file above
             self.assertEqual(f.read(1), 'a')
-        finally:
-            f.close()
 
     def test_truncate(self):
         if verbose:
             print 'try truncate'
-        f = open(TESTFN, 'r+b')
-        # this is already decided before start running the test suite
-        # but we do it anyway for extra protection
-        if not hasattr(f, 'truncate'):
-            raise TestSkipped, "open().truncate() not available on this system"
-        try:
+        with open(TESTFN, 'r+b') as f:
+            # this is already decided before start running the test suite
+            # but we do it anyway for extra protection
+            if not hasattr(f, 'truncate'):
+                raise TestSkipped, "open().truncate() not available on this system"
             f.seek(0, 2)
             # else we've lost track of the true size
             self.assertEqual(f.tell(), size+1)
@@ -135,11 +126,9 @@ class TestCase(unittest.TestCase):
             f.truncate(1)
             self.assertEqual(f.tell(), 0)       # else pointer moved
             self.assertEqual(len(f.read()), 1)  # else wasn't truncated
-        finally:
-            f.close()
 
 
-def main_test():
+def test_main():
     # On Windows and Mac OSX this test comsumes large resources; It
     # takes a long time to build the >2GB file and takes >2GB of disk
     # space therefore the resource must be enabled to run this test.
@@ -170,14 +159,15 @@ def main_test():
     suite.addTest(TestCase('test_osstat'))
     suite.addTest(TestCase('test_seek_read'))
     suite.addTest(TestCase('test_lseek'))
-    f = open(TESTFN, 'w')
-    if hasattr(f, 'truncate'):
-        suite.addTest(TestCase('test_truncate'))
-    f.close()
+    with open(TESTFN, 'w') as f:
+        if hasattr(f, 'truncate'):
+            suite.addTest(TestCase('test_truncate'))
     unlink(TESTFN)
-    run_unittest(suite)
-    unlink(TESTFN)
+    try:
+        run_unittest(suite)
+    finally:
+        unlink(TESTFN)
 
 
 if __name__ == '__main__':
-    main_test()
+    test_main()
