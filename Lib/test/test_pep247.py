@@ -10,6 +10,8 @@ warnings.filterwarnings("ignore", "the sha module is deprecated.*",
                         DeprecationWarning)
 
 import md5, sha, hmac
+from test.test_support import verbose
+
 
 def check_hash_module(module, key=None):
     assert hasattr(module, 'digest_size'), "Must have digest_size"
@@ -47,10 +49,15 @@ def check_hash_module(module, key=None):
         hd2 += "%02x" % ord(byte)
     assert hd2 == hexdigest, "hexdigest doesn't appear correct"
 
-    print 'Module', module.__name__, 'seems to comply with PEP 247'
+    if verbose:
+        print 'Module', module.__name__, 'seems to comply with PEP 247'
 
 
-if __name__ == '__main__':
+def test_main():
     check_hash_module(md5)
     check_hash_module(sha)
     check_hash_module(hmac, key='abc')
+
+
+if __name__ == '__main__':
+    test_main()
