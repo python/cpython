@@ -171,6 +171,10 @@ def main_test():
     f = open(TESTFN, 'w')
     if hasattr(f, 'truncate'):
         suite.addTest(TestCase('test_truncate'))
+    f.close()
+    unlink(TESTFN)
+    run_unittest(suite)
+    unlink(TESTFN)
 
 if __name__ == '__main__':
     main_test()
