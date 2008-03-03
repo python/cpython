@@ -1694,6 +1694,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			}
 			continue;
 
+		PREDICTED(END_FINALLY);
 		case END_FINALLY:
 			v = POP();
 			if (PyInt_Check(v)) {
@@ -2302,6 +2303,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				x = POP();
 				Py_DECREF(x);
 			}
+			PREDICT(END_FINALLY);
 			break;
 		}
 
