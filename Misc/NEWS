@@ -1419,7 +1419,7 @@ Extension Modules
 Tests
 -----
 
-- Refactor test_logging to use doctest.
+- Refactor test_logging to use unittest.
 
 - Refactor test_profile and test_cprofile to use the same code to profile.
 
