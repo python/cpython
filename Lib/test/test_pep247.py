@@ -5,6 +5,9 @@
 
 import hmac
 
+import hmac
+from test.test_support import verbose
+
 def check_hash_module(module, key=None):
     assert hasattr(module, 'digest_size'), "Must have digest_size"
     assert (module.digest_size is None or
@@ -41,8 +44,13 @@ def check_hash_module(module, key=None):
         hd2 += "%02x" % byte
     assert hd2 == hexdigest, "hexdigest doesn't appear correct"
 
-    print('Module', module.__name__, 'seems to comply with PEP 247')
+    if verbose:
+        print('Module', module.__name__, 'seems to comply with PEP 247')
+
+
+def test_main():
+    check_hash_module(hmac, key=b'abc')
 
 
 if __name__ == '__main__':
-    check_hash_module(hmac, key=b'abc')
+    test_main()
