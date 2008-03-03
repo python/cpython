@@ -39,11 +39,15 @@ import dis
 import imp
 import tokenize
 import linecache
+from abc import ABCMeta
 from operator import attrgetter
 from collections import namedtuple
 # These constants are from Include/code.h.
 CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS = 0x1, 0x2, 0x4, 0x8
 CO_NESTED, CO_GENERATOR, CO_NOFREE = 0x10, 0x20, 0x40
+
+# See Include/object.h
+TPFLAGS_IS_ABSTRACT = 1 << 20
 
 # ----------------------------------------------------------- type-checking
 def ismodule(object):
@@ -240,6 +244,10 @@ def isroutine(object):
 def isgenerator(object):
     """Return true if the object is a generator object."""
     return isinstance(object, types.GeneratorType)
+
+def isabstract(object):
+    """Return true if the object is an abstract base class (ABC)."""
+    return object.__flags__ & TPFLAGS_IS_ABSTRACT
 
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.
