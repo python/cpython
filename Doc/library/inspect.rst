@@ -307,6 +307,12 @@ Note:
 
    Return true if the object is a user-defined or built-in function or method.
 
+.. function:: isabstract(object)
+
+   Return true if the object is an abstract base class.
+
+   .. versionadded:: 2.6
+
 
 .. function:: ismethoddescriptor(object)
 
