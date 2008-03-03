@@ -447,6 +447,8 @@ Core and builtins
 Library
 -------
 
+- Add inspect.isabstract(object) to fix bug #2223
+
 - Add a __format__ method to Decimal, to support PEP 3101.
 
 - Add a timing parameter when using trace.Trace to print out timestamps.
