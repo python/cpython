@@ -107,7 +107,7 @@ class Callable:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def __contains__(self, x):
+    def __call__(self, *args, **kwds):
         return False
 
     @classmethod
