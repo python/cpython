@@ -1652,8 +1652,8 @@ chain_next(chainobject *lz)
 			return NULL;			/* no more input sources */
 		}
 		lz->active = PyObject_GetIter(iterable);
+		Py_DECREF(iterable);
 		if (lz->active == NULL) {
-			Py_DECREF(iterable);
 			Py_CLEAR(lz->source);
 			return NULL;			/* input not iterable */
 		}
@@ -1855,10 +1855,7 @@ product_next(productobject *lz)
 
 	if (result == NULL) {
                 /* On the first pass, return an initial tuple filled with the 
-                   first element from each pool.  If any pool is empty, then 
-                   whole product is empty and we're already done */
-		if (npools == 0)
-			goto empty;
+                   first element from each pool. */
 		result = PyTuple_New(npools);
 		if (result == NULL)
             		goto empty;

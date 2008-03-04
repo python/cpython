@@ -62,7 +62,7 @@ class TestPredicates(IsTestBase):
     def test_sixteen(self):
         count = len([x for x in dir(inspect) if x.startswith('is')])
         # This test is here for remember you to update Doc/library/inspect.rst
-        # which claims there are 15 such functions
+        # which claims there are 16 such functions
         expected = 16
         err_msg = "There are %d (not %d) is* functions" % (count, expected)
         self.assertEqual(count, expected, err_msg)

@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 2002, 2003, 2004, 2005 Kaz Kojima
+   ffi.c - Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007 Kaz Kojima
+           Copyright (c) 2008 Red Hat, Inc.
    
    SuperH Foreign Function Interface 
 
@@ -14,13 +15,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
 #include <ffi.h>
@@ -106,9 +108,7 @@ return_type (ffi_type *arg)
 /* ffi_prep_args is called by the assembly routine once stack space
    has been allocated for the function's arguments */
 
-/*@-exportheader@*/
 void ffi_prep_args(char *stack, extended_cif *ecif)
-/*@=exportheader@*/
 {
   register unsigned int i;
   register int tmp;
@@ -406,20 +406,10 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
   return FFI_OK;
 }
 
-/*@-declundef@*/
-/*@-exportheader@*/
-extern void ffi_call_SYSV(void (*)(char *, extended_cif *), 
-			  /*@out@*/ extended_cif *, 
-			  unsigned, unsigned, 
-			  /*@out@*/ unsigned *, 
-			  void (*fn)());
-/*@=declundef@*/
-/*@=exportheader@*/
+extern void ffi_call_SYSV(void (*)(char *, extended_cif *), extended_cif *,
+			  unsigned, unsigned, unsigned *, void (*fn)(void));
 
-void ffi_call(/*@dependent@*/ ffi_cif *cif, 
-	      void (*fn)(), 
-	      /*@out@*/ void *rvalue, 
-	      /*@dependent@*/ void **avalue)
+void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   extended_cif ecif;
   UINT64 trvalue;
@@ -436,9 +426,7 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
   else if ((rvalue == NULL) && 
       (cif->rtype->type == FFI_TYPE_STRUCT))
     {
-      /*@-sysunrecog@*/
       ecif.rvalue = alloca(cif->rtype->size);
-      /*@=sysunrecog@*/
     }
   else
     ecif.rvalue = rvalue;
@@ -446,10 +434,8 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
   switch (cif->abi) 
     {
     case FFI_SYSV:
-      /*@-usedef@*/
-      ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, 
-		    cif->flags, ecif.rvalue, fn);
-      /*@=usedef@*/
+      ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, cif->flags, ecif.rvalue,
+		    fn);
       break;
     default:
       FFI_ASSERT(0);
@@ -468,10 +454,11 @@ extern void __ic_invalidate (void *line);
 #endif
 
 ffi_status
-ffi_prep_closure (ffi_closure* closure,
-		  ffi_cif* cif,
-		  void (*fun)(ffi_cif*, void*, void**, void*),
-		  void *user_data)
+ffi_prep_closure_loc (ffi_closure* closure,
+		      ffi_cif* cif,
+		      void (*fun)(ffi_cif*, void*, void**, void*),
+		      void *user_data,
+		      void *codeloc)
 {
   unsigned int *tramp;
   unsigned short insn;
@@ -491,7 +478,7 @@ ffi_prep_closure (ffi_closure* closure,
   tramp[0] = 0xd102d301;
   tramp[1] = 0x412b0000 | insn;
 #endif
-  *(void **) &tramp[2] = (void *)closure;          /* ctx */
+  *(void **) &tramp[2] = (void *)codeloc;          /* ctx */
   *(void **) &tramp[3] = (void *)ffi_closure_SYSV; /* funaddr */
 
   closure->cif = cif;
@@ -500,7 +487,7 @@ ffi_prep_closure (ffi_closure* closure,
 
 #if defined(__SH4__)
   /* Flush the icache.  */
-  __ic_invalidate(&closure->tramp[0]);
+  __ic_invalidate(codeloc);
 #endif
 
   return FFI_OK;
@@ -535,7 +522,6 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
   int freg = 0;
 #endif
   ffi_cif *cif; 
-  double temp; 
 
   cif = closure->cif;
   avalue = alloca(cif->nargs * sizeof(void *));
@@ -544,7 +530,7 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
      returns the data directly to the caller.  */
   if (cif->rtype->type == FFI_TYPE_STRUCT && STRUCT_VALUE_ADDRESS_WITH_ARG)
     {
-      rvalue = *pgr++;
+      rvalue = (void *) *pgr++;
       ireg = 1;
     }
   else
@@ -611,6 +597,8 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 	{
 	  if (freg + 1 >= NFREGARG)
 	    continue;
+	  if (freg & 1)
+	    pfr++;
 	  freg = (freg + 1) & ~1;
 	  freg += 2;
 	  avalue[i] = pfr;

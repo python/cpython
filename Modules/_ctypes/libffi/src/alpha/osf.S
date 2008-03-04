@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   osf.S - Copyright (c) 1998, 2001, 2007 Red Hat
+   osf.S - Copyright (c) 1998, 2001, 2007, 2008 Red Hat
    
    Alpha/OSF Foreign Function Interface 
 
@@ -14,13 +14,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
 #define LIBFFI_ASM	
@@ -31,7 +32,7 @@
 	.text
 
 /* ffi_call_osf (void *args, unsigned long bytes, unsigned flags,
-		 void *raddr, void (*fnaddr)());
+		 void *raddr, void (*fnaddr)(void));
 
    Bit o trickiness here -- ARGS+BYTES is the base of the stack frame
    for this function.  This has been allocated by ffi_call.  We also
@@ -358,4 +359,8 @@ $LASFDE3:
 	.byte	16		# uleb128 offset 16*-8
 	.align 3
 $LEFDE3:
+
+#ifdef __linux__
+	.section	.note.GNU-stack,"",@progbits
+#endif
 #endif

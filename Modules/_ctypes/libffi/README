@@ -1,78 +1,67 @@
-This directory contains the libffi package, which is not part of GCC but
-shipped with GCC as convenience.
-
 Status
 ======
 
-libffi-2.00 has not been released yet! This is a development snapshot!
-
-libffi-1.20 was released on October 5, 1998. Check the libffi web
-page for updates: <URL:http://sources.redhat.com/libffi/>.
+libffi-3.0.4 was released on February 24, 2008. Check the libffi web
+page for updates: <URL:http://sourceware.org/libffi/>.
 
 
 What is libffi?
 ===============
 
 Compilers for high level languages generate code that follow certain
-conventions. These conventions are necessary, in part, for separate
-compilation to work. One such convention is the "calling
-convention". The "calling convention" is essentially a set of
-assumptions made by the compiler about where function arguments will
-be found on entry to a function. A "calling convention" also specifies
-where the return value for a function is found.
+conventions.  These conventions are necessary, in part, for separate
+compilation to work.  One such convention is the "calling convention".
+The "calling convention" is a set of assumptions made by the compiler
+about where function arguments will be found on entry to a function.
+A "calling convention" also specifies where the return value for a
+function is found.
 
 Some programs may not know at the time of compilation what arguments
-are to be passed to a function. For instance, an interpreter may be
+are to be passed to a function.  For instance, an interpreter may be
 told at run-time about the number and types of arguments used to call
-a given function. Libffi can be used in such programs to provide a
+a given function.  Libffi can be used in such programs to provide a
 bridge from the interpreter program to compiled code.
 
 The libffi library provides a portable, high level programming
-interface to various calling conventions. This allows a programmer to
+interface to various calling conventions.  This allows a programmer to
 call any function specified by a call interface description at run
-time.  
+time.
 
-Ffi stands for Foreign Function Interface. A foreign function
+FFI stands for Foreign Function Interface.  A foreign function
 interface is the popular name for the interface that allows code
-written in one language to call code written in another language. The
+written in one language to call code written in another language.  The
 libffi library really only provides the lowest, machine dependent
 layer of a fully featured foreign function interface. A layer must
 exist above libffi that handles type conversions for values passed
 between the two languages.
 
 
-Supported Platforms and Prerequisites
-=====================================
+Supported Platforms
+===================
 
-Libffi has been ported to:
+Libffi has been ported to many different platforms, although this
+release was only tested on:
 
-	SunOS 4.1.3 & Solaris 2.x (SPARC-V8, SPARC-V9)
-
-	Irix 5.3 & 6.2 (System V/o32 & n32)
-
-	Intel x86 - Linux (System V ABI)
-
-	Alpha - Linux and OSF/1
-
-	m68k - Linux (System V ABI)
-
-	PowerPC - Linux (System V ABI, Darwin, AIX)
-
-	ARM - Linux (System V ABI)
-
-Libffi has been tested with the egcs 1.0.2 gcc compiler. Chances are
-that other versions will work.  Libffi has also been built and tested
-with the SGI compiler tools.
-
-On PowerPC, the tests failed (see the note below).
-
-You must use GNU make to build libffi. SGI's make will not work.
-Sun's probably won't either.
-	
-If you port libffi to another platform, please let me know! I assume
-that some will be easy (x86 NetBSD), and others will be more difficult
-(HP).
-
+     arm oabi linux
+     arm eabi linux
+     hppa linux
+     mips o32 linux (little endian)
+     powerpc darwin
+     powerpc64 linux
+     sparc solaris
+     sparc64 solaris
+     x86 cygwin
+     x86 darwin
+     x86 freebsd
+     x86 linux
+     x86 openbsd
+     x86-64 darwin
+     x86-64 linux
+     x86-64 OS X
+     x86-64 freebsd
+     
+Please send additional platform test results to
+libffi-discuss@sourceware.org.
 
 Installing libffi
 =================
@@ -101,215 +90,16 @@ Purify, as it will slow down the library.
 Configure has many other options. Use "configure --help" to see them all.
 
 Once configure has finished, type "make". Note that you must be using
-GNU make. SGI's make will not work.  Sun's probably won't either.
-You can ftp GNU make from prep.ai.mit.edu:/pub/gnu.
+GNU make.  You can ftp GNU make from prep.ai.mit.edu:/pub/gnu.
 
-To ensure that libffi is working as advertised, type "make test".
+To ensure that libffi is working as advertised, type "make check".
+This will require that you have DejaGNU installed.
 
 To install the library and header files, type "make install".
 
 
-Using libffi
-============
-
-	The Basics
-	----------
-
-Libffi assumes that you have a pointer to the function you wish to
-call and that you know the number and types of arguments to pass it,
-as well as the return type of the function.
-
-The first thing you must do is create an ffi_cif object that matches
-the signature of the function you wish to call. The cif in ffi_cif
-stands for Call InterFace. To prepare a call interface object, use the
-following function:
-
-ffi_status ffi_prep_cif(ffi_cif *cif, ffi_abi abi,
-			unsigned int nargs, 
-			ffi_type *rtype, ffi_type **atypes);
-
-	CIF is a pointer to the call interface object you wish
-		to initialize.
-
-	ABI is an enum that specifies the calling convention 
-		to use for the call. FFI_DEFAULT_ABI defaults
-		to the system's native calling convention. Other
-		ABI's may be used with care. They are system
-		specific.
-
-	NARGS is the number of arguments this function accepts.	
-		libffi does not yet support vararg functions.
-
-	RTYPE is a pointer to an ffi_type structure that represents
-		the return type of the function. Ffi_type objects
-		describe the types of values. libffi provides
-		ffi_type objects for many of the native C types:
-		signed int, unsigned int, signed char, unsigned char,
-		etc. There is also a pointer ffi_type object and
-		a void ffi_type. Use &ffi_type_void for functions that 
-		don't return values.
-
-	ATYPES is a vector of ffi_type pointers. ARGS must be NARGS long.
-		If NARGS is 0, this is ignored.
-
-
-ffi_prep_cif will return a status code that you are responsible 
-for checking. It will be one of the following:
-
-	FFI_OK - All is good.
-
-	FFI_BAD_TYPEDEF - One of the ffi_type objects that ffi_prep_cif
-		came across is bad.
-
-
-Before making the call, the VALUES vector should be initialized 
-with pointers to the appropriate argument values.
-
-To call the the function using the initialized ffi_cif, use the
-ffi_call function:
-
-void ffi_call(ffi_cif *cif, void *fn, void *rvalue, void **avalues);
-
-	CIF is a pointer to the ffi_cif initialized specifically
-		for this function.
-
-	FN is a pointer to the function you want to call.
-
-	RVALUE is a pointer to a chunk of memory that is to hold the
-		result of the function call. Currently, it must be
-		at least one word in size (except for the n32 version
-		under Irix 6.x, which must be a pointer to an 8 byte 
-		aligned value (a long long). It must also be at least 
-		word aligned (depending on the return type, and the
-		system's alignment requirements). If RTYPE is 
-		&ffi_type_void, this is ignored. If RVALUE is NULL, 
-		the return value is discarded.
-
-	AVALUES is a vector of void* that point to the memory locations
-		holding the argument values for a call.
-		If NARGS is 0, this is ignored.
-
-
-If you are expecting a return value from FN it will have been stored
-at RVALUE.
-
-
-
-	An Example
-	----------
-
-Here is a trivial example that calls puts() a few times.
-
-    #include <stdio.h>
-    #include <ffi.h>
-    
-    int main()
-    {
-      ffi_cif cif;
-      ffi_type *args[1];
-      void *values[1];
-      char *s;
-      int rc;
-      
-      /* Initialize the argument info vectors */    
-      args[0] = &ffi_type_uint;
-      values[0] = &s;
-      
-      /* Initialize the cif */
-      if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, 
-    		       &ffi_type_uint, args) == FFI_OK)
-        {
-          s = "Hello World!";
-          ffi_call(&cif, puts, &rc, values);
-          /* rc now holds the result of the call to puts */
-          
-          /* values holds a pointer to the function's arg, so to 
-	     call puts() again all we need to do is change the 
-             value of s */
-          s = "This is cool!";
-          ffi_call(&cif, puts, &rc, values);
-        }
-      
-      return 0;
-    }
-
-
-
-	Aggregate Types
-	---------------
-
-Although libffi has no special support for unions or bit-fields, it is
-perfectly happy passing structures back and forth. You must first
-describe the structure to libffi by creating a new ffi_type object
-for it. Here is the definition of ffi_type:
-
-    typedef struct _ffi_type
-    {
-      unsigned size;
-      short alignment;
-      short type;
-      struct _ffi_type **elements;
-    } ffi_type;
-    
-All structures must have type set to FFI_TYPE_STRUCT.  You may set
-size and alignment to 0. These will be calculated and reset to the
-appropriate values by ffi_prep_cif().
-
-elements is a NULL terminated array of pointers to ffi_type objects
-that describe the type of the structure elements. These may, in turn,
-be structure elements.
-
-The following example initializes a ffi_type object representing the
-tm struct from Linux's time.h:
-
-				    struct tm {
-					int tm_sec;
-					int tm_min;
-					int tm_hour;
-					int tm_mday;
-					int tm_mon;
-					int tm_year;
-					int tm_wday;
-					int tm_yday;
-					int tm_isdst;
-					/* Those are for future use. */
-					long int __tm_gmtoff__;
-					__const char *__tm_zone__;
-				    };
-
-    {
-      ffi_type tm_type;
-      ffi_type *tm_type_elements[12];
-      int i;
-
-      tm_type.size = tm_type.alignment = 0;
-      tm_type.elements = &tm_type_elements;
-    
-      for (i = 0; i < 9; i++)
-          tm_type_elements[i] = &ffi_type_sint;
-
-      tm_type_elements[9] = &ffi_type_slong;
-      tm_type_elements[10] = &ffi_type_pointer;
-      tm_type_elements[11] = NULL;
-
-      /* tm_type can now be used to represent tm argument types and
-	 return types for ffi_prep_cif() */
-    }
-
-
-
 Platform Specific Notes
 =======================
-
-	Intel x86
-	---------
-
-There are no known problems with the x86 port.
-
-	Sun SPARC - SunOS 4.1.3 & Solaris 2.x
-	-------------------------------------
-
-You must use GNU Make to build libffi on Sun platforms.
 
 	MIPS - Irix 5.3 & 6.x
 	---------------------
@@ -339,13 +129,6 @@ If you don't do this you are liable to get spurious bus errors.
 
 You must use GNU Make to build libffi on SGI platforms.
 
-	ARM - System V ABI
-	------------------
-
-The ARM port was performed on a NetWinder running ARM Linux ELF
-(2.0.31) and gcc 2.8.1.
-
-
 
 	PowerPC System V ABI
 	--------------------
@@ -372,17 +155,30 @@ single-precision anyway.  This causes one test to fail (the `many
 arguments' test).
 
 
-What's With The Crazy Comments?
-===============================
-
-You might notice a number of cryptic comments in the code, delimited
-by /*@ and @*/. These are annotations read by the program LCLint, a
-tool for statically checking C programs. You can read all about it at
-<http://larch-www.lcs.mit.edu:8001/larch/lclint/index.html>.
-
-
 History
 =======
+
+3.0.4 Feb-24-08
+        Fix x86 OpenBSD configury.
+
+3.0.3 Feb-22-08
+        Enable x86 OpenBSD thanks to Thomas Heller, and
+	x86-64 FreeBSD thanks to Björn König and Andreas Tobler.
+	Clean up test instruction in README.
+
+3.0.2 Feb-21-08
+        Improved x86 FreeBSD support.
+	Thanks to Björn König.
+
+3.0.1 Feb-15-08
+        Fix instruction cache flushing bug on MIPS.
+	Thanks to David Daney.
+
+3.0.0 Feb-15-08
+        Many changes, mostly thanks to the GCC project.
+	Cygnus Solutions is now Red Hat.
+
+  [10 years go by...]
 
 1.20 Oct-5-98
 	Raffaele Sena produces ARM port.
@@ -467,34 +263,56 @@ History
 Authors & Credits
 =================
 
-libffi was written by Anthony Green <green@cygnus.com>.
+libffi was originally written by Anthony Green <green@redhat.com>.
 
-Portions of libffi were derived from Gianni Mariani's free gencall
-library for Silicon Graphics machines.
+The developers of the GNU Compiler Collection project have made
+innumerable valuable contributions.  See the ChangeLog file for
+details.
+
+Some of the ideas behind libffi were inspired by Gianni Mariani's free
+gencall library for Silicon Graphics machines.
 
 The closure mechanism was designed and implemented by Kresten Krab
 Thorup.
 
-The Sparc port was derived from code contributed by the fine folks at
-Visible Decisions Inc <http://www.vdi.com>. Further enhancements were
-made by Gordon Irlam at Cygnus Solutions <http://www.cygnus.com>.
+Major processor architecture ports were contributed by the following
+developers:
 
-The Alpha port was written by Richard Henderson at Cygnus Solutions.
-
-Andreas Schwab ported libffi to m68k Linux and provided a number of
-bug fixes.
-
-Geoffrey Keating ported libffi to the PowerPC.
-
-Raffaele Sena ported libffi to the ARM.
+alpha		Richard Henderson
+arm		Raffaele Sena
+cris		Simon Posnjak, Hans-Peter Nilsson
+frv		Anthony Green
+ia64		Hans Boehm
+m32r		Kazuhiro Inaoka
+m68k		Andreas Schwab
+mips		Anthony Green, Casey Marshall
+mips64		David Daney
+pa		Randolph Chung, Dave Anglin, Andreas Tobler
+powerpc		Geoffrey Keating, Andreas Tobler, 
+			 David Edelsohn, John Hornkvist
+powerpc64	Jakub Jelinek
+s390		Gerhard Tonn, Ulrich Weigand
+sh		Kaz Kojima
+sh64		Kaz Kojima
+sparc		Anthony Green, Gordon Irlam
+x86		Anthony Green, Jon Beniston
+x86-64		Bo Thorsen
 
 Jesper Skov and Andrew Haley both did more than their fair share of
 stepping through the code and tracking down bugs.
 
-Thanks also to Tom Tromey for bug fixes and configuration help.
+Thanks also to Tom Tromey for bug fixes, documentation and
+configuration help.
 
 Thanks to Jim Blandy, who provided some useful feedback on the libffi
 interface.
 
+Andreas Tobler has done a tremendous amount of work on the testsuite.
+
+Alex Oliva solved the executable page problem for SElinux.
+
+The list above is almost certainly incomplete and inaccurate.  I'm
+happy to make corrections or additions upon request.
+
 If you have a problem, or have found a bug, please send a note to
-green@cygnus.com.
+green@redhat.com.

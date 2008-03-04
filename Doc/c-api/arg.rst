@@ -212,7 +212,7 @@ variable(s) whose address should be passed.
    :ctype:`void\*` argument that was passed to the :cfunc:`PyArg_Parse\*` function.
    The returned *status* should be ``1`` for a successful conversion and ``0`` if
    the conversion has failed.  When the conversion fails, the *converter* function
-   should raise an exception.
+   should raise an exception and leave the content of *address* unmodified.
 
 ``S`` (string) [PyStringObject \*]
    Like ``O`` but requires that the Python object is a string object.  Raises
@@ -284,9 +284,13 @@ from the input tuple.  There are a few cases, as described in the list of format
 units above, where these parameters are used as input values; they should match
 what is specified for the corresponding format unit in that case.
 
-For the conversion to succeed, the *arg* object must match the format and the
-format must be exhausted.  On success, the :cfunc:`PyArg_Parse\*` functions
-return true, otherwise they return false and raise an appropriate exception.
+For the conversion to succeed, the *arg* object must match the format
+and the format must be exhausted.  On success, the
+:cfunc:`PyArg_Parse\*` functions return true, otherwise they return
+false and raise an appropriate exception. When the
+:cfunc:`PyArg_Parse\*` functions fail due to conversion failure in one
+of the format units, the variables at the addresses corresponding to that
+and the following format units are left untouched.
 
 
 .. cfunction:: int PyArg_ParseTuple(PyObject *args, const char *format, ...)

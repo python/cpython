@@ -1377,8 +1377,37 @@ class PyBuildExt(build_ext):
         # *** Uncomment these for TOGL extension only:
         #       -lGL -lGLU -lXext -lXmu \
 
+    def configure_ctypes_darwin(self, ext):
+        # Darwin (OS X) uses preconfigured files, in
+        # the Modules/_ctypes/libffi_osx directory.
+        (srcdir,) = sysconfig.get_config_vars('srcdir')
+        ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
+                                                  '_ctypes', 'libffi_osx'))
+        sources = [os.path.join(ffi_srcdir, p)
+                   for p in ['ffi.c',
+                             'x86/x86-darwin.S',
+                             'x86/x86-ffi_darwin.c',
+                             'x86/x86-ffi64.c',
+                             'powerpc/ppc-darwin.S',
+                             'powerpc/ppc-darwin_closure.S',
+                             'powerpc/ppc-ffi_darwin.c',
+                             'powerpc/ppc64-darwin_closure.S',
+                             ]]
+
+        # Add .S (preprocessed assembly) to C compiler source extensions.
+        self.compiler.src_extensions.append('.S')
+
+        include_dirs = [os.path.join(ffi_srcdir, 'include'),
+                        os.path.join(ffi_srcdir, 'powerpc')]
+        ext.include_dirs.extend(include_dirs)
+        ext.sources.extend(sources)
+        return True
+
     def configure_ctypes(self, ext):
         if not self.use_system_libffi:
+            if sys.platform == 'darwin':
+                return self.configure_ctypes_darwin(ext)
+
             (srcdir,) = sysconfig.get_config_vars('srcdir')
             ffi_builddir = os.path.join(self.build_temp, 'libffi')
             ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
@@ -1442,6 +1471,7 @@ class PyBuildExt(build_ext):
 
         if sys.platform == 'darwin':
             sources.append('_ctypes/darwin/dlfcn_simple.c')
+            extra_compile_args.append('-DMACOSX')
             include_dirs.append('_ctypes/darwin')
 # XXX Is this still needed?
 ##            extra_link_args.extend(['-read_only_relocs', 'warning'])
@@ -1470,6 +1500,11 @@ class PyBuildExt(build_ext):
 
         if not '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS"):
             return
+
+        if sys.platform == 'darwin':
+            # OS X 10.5 comes with libffi.dylib; the include files are
+            # in /usr/include/ffi
+            inc_dirs.append('/usr/include/ffi')
 
         ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
