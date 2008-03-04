@@ -128,12 +128,12 @@ The :mod:`signal` module defines the following functions:
 .. function:: siginterrupt(signalnum, flag)
 
    Change system call restart behaviour: if *flag* is :const:`False`, system calls
-   will be restarted when interrupted by signal *signalnum*, else system calls will
+   will be restarted when interrupted by signal *signalnum*, otherwise system calls will
    be interrupted. Returns nothing. Availability: Unix, Mac (see the man page
    :manpage:`siginterrupt(3)` for further information).
    
    Note that installing a signal handler with :func:`signal` will reset the restart
-   behaviour to interruptible by implicitly calling siginterrupt with a true *flag*
+   behaviour to interruptible by implicitly calling :cfunc:`siginterrupt` with a true *flag*
    value for the given signal.
 
    .. versionadded:: 2.6
