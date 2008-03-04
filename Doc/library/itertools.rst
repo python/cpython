@@ -89,6 +89,7 @@ loops that truncate the stream.
 
    .. versionadded:: 2.6
 
+
 .. function:: combinations(iterable, r)
 
    Return successive *r* length combinations of elements in the *iterable*.
@@ -122,6 +123,17 @@ loops that truncate the stream.
                 for j in range(i+1, r):
                     indices[j] = indices[j-1] + 1
                 yield tuple(pool[i] for i in indices)
+
+   The code for :func:`combinations` can be also expressed as a subsequence
+   of :func:`permutations` after filtering entries where the elements are not
+   in sorted order (according to their position in the input pool)::
+
+        def combinations(iterable, r):
+            pool = tuple(iterable)
+            n = len(pool)
+            for indices in permutations(range(n), r):
+                if sorted(indices) == list(indices):
+                    yield tuple(pool[i] for i in indices)
 
    .. versionadded:: 2.6
 
@@ -391,6 +403,18 @@ loops that truncate the stream.
                 else:
                     return
 
+   The code for :func:`permutations` can be also expressed as a subsequence of 
+   :func:`product`, filtered to exclude entries with repeated elements (those
+   from the same position in the input pool)::
+
+        def permutations(iterable, r=None):
+            pool = tuple(iterable)
+            n = len(pool)
+            r = n if r is None else r
+            for indices in product(range(n), repeat=r):
+                if len(set(indices)) == r:
+                    yield tuple(pool[i] for i in indices)
+
    .. versionadded:: 2.6
 
 .. function:: product(*iterables[, repeat])
@@ -401,9 +425,9 @@ loops that truncate the stream.
    ``product(A, B)`` returns the same as ``((x,y) for x in A for y in B)``.
 
    The leftmost iterators are in the outermost for-loop, so the output tuples
-   cycle in a manner similar to an odometer (with the rightmost element
-   changing on every iteration).  This results in a lexicographic ordering
-   so that if the inputs iterables are sorted, the product tuples are emitted
+   cycle like an odometer (with the rightmost element changing on every 
+   iteration).  This results in a lexicographic ordering so that if the 
+   inputs iterables are sorted, the product tuples are emitted
    in sorted order.
 
    To compute the product of an iterable with itself, specify the number of
@@ -415,12 +439,11 @@ loops that truncate the stream.
 
        def product(*args, **kwds):
            pools = map(tuple, args) * kwds.get('repeat', 1)
-           if pools:            
-               result = [[]]
-               for pool in pools:
-                   result = [x+[y] for x in result for y in pool]
-               for prod in result:
-                   yield tuple(prod)
+           result = [[]]
+           for pool in pools:
+               result = [x+[y] for x in result for y in pool]
+           for prod in result:
+               yield tuple(prod)
 
    .. versionadded:: 2.6
 

@@ -1885,10 +1885,7 @@ product_next(productobject *lz)
 
 	if (result == NULL) {
                 /* On the first pass, return an initial tuple filled with the 
-                   first element from each pool.  If any pool is empty, then 
-                   whole product is empty and we're already done */
-		if (npools == 0)
-			goto empty;
+                   first element from each pool. */
 		result = PyTuple_New(npools);
 		if (result == NULL)
             		goto empty;
