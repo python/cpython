@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
    unix64.S - Copyright (c) 2002  Bo Thorsen <bo@suse.de>
+	      Copyright (c) 2008  Red Hat, Inc
 
    x86-64 Foreign Function Interface 
 
@@ -14,13 +15,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
 #ifdef __x86_64__
@@ -31,7 +33,7 @@
 .text
 
 /* ffi_call_unix64 (void *args, unsigned long bytes, unsigned flags,
-	            void *raddr, void (*fnaddr)());
+	            void *raddr, void (*fnaddr)(void));
 
    Bit o trickiness here -- ARGS+BYTES is the base of the stack frame
    for this function.  This has been allocated by ffi_call.  We also
@@ -410,3 +412,7 @@ ffi_closure_unix64:
 .LEFDE3:
 
 #endif /* __x86_64__ */
+
+#if defined __ELF__ && defined __linux__
+	.section	.note.GNU-stack,"",@progbits
+#endif

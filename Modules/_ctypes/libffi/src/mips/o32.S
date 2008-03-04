@@ -17,7 +17,8 @@
    THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+	ANY CLAIM, DAMAGES OR
    OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
    OTHER DEALINGS IN THE SOFTWARE.
@@ -183,27 +184,30 @@ $LFE0:
 
 
 /* ffi_closure_O32. Expects address of the passed-in ffi_closure
-	in t0. Stores any arguments passed in registers onto the
+	in t4 ($12). Stores any arguments passed in registers onto the
 	stack, then calls ffi_closure_mips_inner_O32, which
 	then decodes them.
 	
 	Stack layout:
 
-	14 - Start of parameters, original sp
-	13 - ra save
-	12 - fp save
-	11 - $16 (s0) save
-	10 - cprestore
-	 9 - return value high (v1)
-	 8 - return value low (v0)
-	 7 - f14 (le high, be low)
-	 6 - f14 (le low, be high)
-	 5 - f12 (le high, be low)
-	 4 - f12 (le low, be high)
-	 3 - Called function a3 save
-	 2 - Called function a2 save
-	 1 - Called function a1 save
-	 0 - Called function a0 save our sp, fp point here
+	 3 - a3 save
+	 2 - a2 save
+	 1 - a1 save
+	 0 - a0 save, original sp
+	-1 - ra save
+	-2 - fp save
+	-3 - $16 (s0) save
+	-4 - cprestore
+	-5 - return value high (v1)
+	-6 - return value low (v0)
+	-7 - f14 (le high, be low)
+	-8 - f14 (le low, be high)
+	-9 - f12 (le high, be low)
+       -10 - f12 (le low, be high)
+       -11 - Called function a3 save
+       -12 - Called function a2 save
+       -13 - Called function a1 save
+       -14 - Called function a0 save, our sp and fp point here
 	 */
 	
 #define SIZEOF_FRAME2	(14 * FFI_SIZEOF_ARG)
@@ -251,7 +255,7 @@ $LCFI7:
 	REG_S	a3, A3_OFF2($fp)
 
 	# Load ABI enum to s0
-	REG_L	$16, 20($8)	# cif pointer follows tramp.
+	REG_L	$16, 20($12)	# cif pointer follows tramp.
 	REG_L	$16, 0($16)	# abi is first member.
 
 	li	$13, 1		# FFI_O32
@@ -263,7 +267,7 @@ $LCFI7:
 1:	
 	# Call ffi_closure_mips_inner_O32 to do the work.
 	la	t9, ffi_closure_mips_inner_O32
-	move	a0, $8	 # Pointer to the ffi_closure
+	move	a0, $12	 # Pointer to the ffi_closure
 	addu	a1, $fp, V0_OFF2
 	addu	a2, $fp, A0_OFF2
 	addu	a3, $fp, FA_0_0_OFF2

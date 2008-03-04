@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   sysv.h - Copyright (c) 1998 Geoffrey Keating
+   sysv.S - Copyright (c) 1998 Geoffrey Keating
+   Copyright (C) 2007 Free Software Foundation, Inc
 
    PowerPC Assembly glue.
 
@@ -14,13 +15,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
 #define LIBFFI_ASM
@@ -98,13 +100,17 @@ ENTRY(ffi_call_SYSV)
 	bctrl
 
 	/* Now, deal with the return value.  */
-	mtcrf	0x01,%r31
+	mtcrf	0x01,%r31 /* cr7  */
 	bt-	31,L(small_struct_return_value)
 	bt-	30,L(done_return_value)
 	bt-	29,L(fp_return_value)
 	stw	%r3,0(%r30)
 	bf+	28,L(done_return_value)
 	stw	%r4,4(%r30)
+	mtcrf	0x02,%r31 /* cr6  */
+	bf	27,L(done_return_value)
+	stw     %r5,8(%r30)
+	stw	%r6,12(%r30)
 	/* Fall through...  */
 
 L(done_return_value):
@@ -121,6 +127,9 @@ L(done_return_value):
 L(fp_return_value):
 	bf	28,L(float_return_value)
 	stfd	%f1,0(%r30)
+	mtcrf   0x02,%r31 /* cr6  */
+	bf	27,L(done_return_value)
+	stfd	%f2,8(%r30)
 	b	L(done_return_value)
 L(float_return_value):
 	stfs	%f1,0(%r30)
@@ -214,4 +223,8 @@ END(ffi_call_SYSV)
       .uleb128  0x1c
       .align 2
 .LEFDE1:
+#endif
+
+#if defined __ELF__ && defined __linux__
+	.section	.note.GNU-stack,"",@progbits
 #endif

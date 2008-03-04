@@ -1,4 +1,3 @@
-#ifdef __ppc__
 /* -----------------------------------------------------------------------
    darwin_closure.S - Copyright (c) 2002, 2003, 2004, Free Software Foundation,
    Inc. based on ppc_closure.S
@@ -247,7 +246,7 @@ Lfinish:
 /* END(ffi_closure_ASM)  */
 
 .data
-.section __TEXT,__eh_frame,coalesced,no_toc+strip_static_syms
+.section __TEXT,__eh_frame,coalesced,no_toc+strip_static_syms+live_support
 EH_frame1:
 	.set	L$set$0,LECIE1-LSCIE1
 	.long	L$set$0	; Length of Common Information Entry
@@ -316,4 +315,3 @@ L_ffi_closure_helper_DARWIN$lazy_ptr:
 	.align LOG2_GPR_BYTES
 LLFB1$non_lazy_ptr:
 	.g_long LFB1
-#endif

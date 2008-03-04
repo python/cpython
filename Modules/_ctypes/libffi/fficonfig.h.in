@@ -11,8 +11,14 @@
 /* Define to the flags needed for the .section .eh_frame directive. */
 #undef EH_FRAME_FLAGS
 
+/* Define this if you want extra debugging. */
+#undef FFI_DEBUG
+
 /* Define this is you do not want support for the raw API. */
 #undef FFI_NO_RAW_API
+
+/* Define this is you do not want support for aggregate types. */
+#undef FFI_NO_STRUCTS
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #undef HAVE_ALLOCA
@@ -21,12 +27,18 @@
    */
 #undef HAVE_ALLOCA_H
 
+/* Define if your assembler supports .cfi_* directives. */
+#undef HAVE_AS_CFI_PSEUDO_OP
+
 /* Define if your assembler supports .register. */
 #undef HAVE_AS_REGISTER_PSEUDO_OP
 
 /* Define if your assembler and linker support unaligned PC relative relocs.
    */
 #undef HAVE_AS_SPARC_UA_PCREL
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
 
 /* Define if __attribute__((visibility("hidden"))) is supported. */
 #undef HAVE_HIDDEN_VISIBILITY_ATTRIBUTE
@@ -82,6 +94,12 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
+
+/* Name of package */
+#undef PACKAGE
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -114,22 +132,16 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Define this if you are using Purify and want to suppress spurious messages.
+   */
+#undef USING_PURIFY
+
+/* Version number of package */
+#undef VERSION
 
 /* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). 
-
-   The block below does compile-time checking for endianness on platforms
-   that use GCC and therefore allows compiling fat binaries on OSX by using
-   '-arch ppc -arch i386' as the compile flags. The phrasing was choosen
-   such that the configure-result is used on systems that don't use GCC.
-*/
-#ifdef __BIG_ENDIAN__
-#define WORDS_BIGENDIAN 1
-#else
-#ifndef __LITTLE_ENDIAN__
+   first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
-#endif
-#endif
 
 
 #ifdef HAVE_HIDDEN_VISIBILITY_ATTRIBUTE

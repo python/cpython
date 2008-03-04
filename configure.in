@@ -1754,20 +1754,10 @@ LIBS="$withval $LIBS"
 [AC_MSG_RESULT(no)])
 
 # Check for use of the system libffi library
-AC_CHECK_HEADER(ffi.h)
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
             AC_HELP_STRING(--with-system-ffi, build _ctypes module using an installed ffi library))
 
-if test -z "$with_system_ffi" && test "$ac_cv_header_ffi_h" = yes; then
-	case "$ac_sys_system/`uname -m`" in
-	Linux/alpha*)  with_system_ffi="yes"; CONFIG_ARGS="$CONFIG_ARGS --with-system-ffi";;
-	Linux/arm*)  with_system_ffi="yes"; CONFIG_ARGS="$CONFIG_ARGS --with-system-ffi";;
-	Linux/ppc*)  with_system_ffi="yes"; CONFIG_ARGS="$CONFIG_ARGS --with-system-ffi";;
-	Linux/s390*)  with_system_ffi="yes"; CONFIG_ARGS="$CONFIG_ARGS --with-system-ffi";;
-	*) with_system_ffi="no"
-	esac
-fi
 AC_MSG_RESULT($with_system_ffi)
 
 # Determine if signalmodule should be used.
