@@ -410,8 +410,8 @@ loops that truncate the stream.
    repetitions with the optional *repeat* keyword argument.  For example,
    ``product(A, repeat=4)`` means the same as ``product(A, A, A, A)``.
 
-   Equivalent to the following except that the actual implementation does not
-   build-up intermediate results in memory::
+   This function is equivalent to the following code, except that the
+   actual implementation does not build up intermediate results in memory::
 
        def product(*args, **kwds):
            pools = map(tuple, args) * kwds.get('repeat', 1)
