@@ -1257,7 +1257,7 @@ Extension Modules
 - itertools.starmap() now accepts any iterable input. Previously, it required
   the function inputs to be tuples.
 
-- itertools.chain() now has an alterate constructor, chain.from_iterable().
+- itertools.chain() now has an alternate constructor, chain.from_iterable().
 
 - Issue #1646: Make socket support TIPC. The socket module now has support
   for TIPC under Linux, see http://tipc.sf.net/ for more information.
