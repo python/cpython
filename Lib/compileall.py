@@ -119,7 +119,7 @@ def main():
         print "-d destdir: purported directory name for error messages"
         print "   if no directory arguments, -l sys.path is assumed"
         print "-x regexp: skip files matching the regular expression regexp"
-        print "   the regexp is search for in the full path of the file"
+        print "   the regexp is searched for in the full path of the file"
         sys.exit(2)
     maxlevels = 10
     ddir = None
