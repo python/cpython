@@ -450,6 +450,15 @@ can now be used in scripts running from inside a package.
   
 .. ======================================================================
 
+.. _pep-3101:
+
+PEP 3101: Advanced String Formatting
+=====================================================
+
+XXX write this
+
+.. ======================================================================
+
 .. _pep-3110:
 
 PEP 3110: Exception-Handling Changes
@@ -544,6 +553,32 @@ an abstract method.
 
 .. ======================================================================
 
+.. _pep-3127:
+
+PEP 3127: Integer Literal Support and Syntax
+=====================================================
+
+XXX write this
+
+Python 3.0 changes the syntax for octal integer literals, and 
+adds supports for binary integers: 0o instad of 0,
+and 0b for binary.  Python 2.6 doesn't support this, but a bin()
+builtin was added, and 
+
+
+New bin() built-in returns the binary form of a number.
+
+.. ======================================================================
+
+.. _pep-3129:
+
+PEP 3129: Class Decorators
+=====================================================
+
+XXX write this.
+
+.. ======================================================================
+
 .. _pep-3141:
 
 PEP 3141: A Type Hierarchy for Numbers
@@ -579,7 +614,9 @@ and comparisons.
 :class:`Rational` numbers derive from :class:`Real`, have
 :attr:`numerator` and :attr:`denominator` properties, and can be
 converted to floats.  Python 2.6 adds a simple rational-number class,
-:class:`Fraction`, in the :mod:`fractions` module.
+:class:`Fraction`, in the :mod:`fractions` module.  (It's called 
+:class:`Fraction` instead of :class:`Rational` to avoid 
+a name clash with :class:`numbers.Rational`.)
 
 :class:`Integral` numbers derive from :class:`Rational`, and
 can be shifted left and right with ``<<`` and ``>>``, 
@@ -587,9 +624,9 @@ combined using bitwise operations such as ``&`` and ``|``,
 and can be used as array indexes and slice boundaries.
 
 In Python 3.0, the PEP slightly redefines the existing built-ins
-:func:`math.floor`, :func:`math.ceil`, :func:`round`, and adds a new
-one, :func:`trunc`, that's been backported to Python 2.6. 
-:func:`trunc` rounds toward zero, returning the closest 
+:func:`round`, :func:`math.floor`, :func:`math.ceil`, and adds a new
+one, :func:`math.trunc`, that's been backported to Python 2.6. 
+:func:`math.trunc` rounds toward zero, returning the closest 
 :class:`Integral` that's between the function's argument and zero.
 
 .. seealso::
@@ -603,7 +640,7 @@ The Fraction Module
 
 To fill out the hierarchy of numeric types, a rational-number class
 has been added as the :mod:`fractions` module.  Rational numbers are
-represented as a fraction; rational numbers can exactly represent
+represented as a fraction, and can exactly represent
 numbers such as two-thirds that floating-point numbers can only
 approximate.
 
@@ -692,7 +729,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   A numerical nicety: when creating a complex number from two floats
   on systems that support signed zeros (-0 and +0), the 
-  :func:`complex()` constructor will now preserve the sign 
+  :func:`complex` constructor will now preserve the sign 
   of the zero.
 
   .. Patch 1507
@@ -788,6 +825,15 @@ Optimizations
 * Internally, a bit is now set in type objects to indicate some of the standard
   built-in types.  This speeds up checking if an object is a subclass of one of
   these types.  (Contributed by Neal Norwitz.)
+
+* Unicode strings now uses faster code for detecting
+  whitespace and line breaks; this speeds up the :meth:`split` method 
+  by about 25% and :meth:`splitlines` by 35%.
+  (Contributed by Antoine Pitrou.)
+
+* To reduce memory usage, the garbage collector will now clear internal
+  free lists when garbage-collecting the highest generation of objects.
+  This may return memory to the OS sooner.
 
 The net result of the 2.6 optimizations is that Python 2.6 runs the pystone
 benchmark around XX% faster than Python 2.5.
@@ -956,15 +1002,69 @@ complete list of changes, or look through the CVS logs for all the details.
   can also be accessed as attributes.
   (Contributed by Raymond Hettinger.)
 
-* A new function in the :mod:`itertools` module: ``izip_longest(iter1, iter2,
-  ...[, fillvalue])`` makes tuples from each of the elements; if some of the
-  iterables are shorter than others, the missing values  are set to *fillvalue*.
-  For example::
+  Some new functions in the module include 
+  :func:`isgenerator`, :func:`isgeneratorfunction`, 
+  and :func:`isabstract`.
+
+* The :mod:`itertools` module gained several new functions.
+
+  ``izip_longest(iter1, iter2, ...[, fillvalue])`` makes tuples from
+  each of the elements; if some of the iterables are shorter than
+  others, the missing values are set to *fillvalue*.  For example::
 
      itertools.izip_longest([1,2,3], [1,2,3,4,5]) ->
        [(1, 1), (2, 2), (3, 3), (None, 4), (None, 5)]
 
-  (Contributed by Raymond Hettinger.)
+  ``product(iter1, iter2, ..., [repeat=N])`` returns the Cartesian product
+  of the supplied iterables, a set of tuples containing
+  every possible combination of the elements returned from each iterable. ::
+
+     itertools.product([1,2,3], [4,5,6]) ->
+       [(1, 4), (1, 5), (1, 6), 
+	(2, 4), (2, 5), (2, 6), 
+	(3, 4), (3, 5), (3, 6)]
+
+  The optional *repeat* keyword argument is used for taking the
+  product of an iterable or a set of iterables with themselves, 
+  repeated *N* times.  With a single iterable argument, *N*-tuples
+  are returned::
+
+     itertools.product([1,2], repeat=3)) ->
+       [(1, 1, 1), (1, 1, 2), (1, 2, 1), (1, 2, 2), 
+        (2, 1, 1), (2, 1, 2), (2, 2, 1), (2, 2, 2)]
+
+  With two iterables, *2N*-tuples are returned. ::
+
+     itertools(product([1,2], [3,4], repeat=2) ->
+       [(1, 3, 1, 3), (1, 3, 1, 4), (1, 3, 2, 3), (1, 3, 2, 4), 
+        (1, 4, 1, 3), (1, 4, 1, 4), (1, 4, 2, 3), (1, 4, 2, 4), 
+        (2, 3, 1, 3), (2, 3, 1, 4), (2, 3, 2, 3), (2, 3, 2, 4), 
+        (2, 4, 1, 3), (2, 4, 1, 4), (2, 4, 2, 3), (2, 4, 2, 4)]
+
+  ``combinations(iter, r)`` returns combinations of length *r* from
+  the elements of *iterable*. ::
+
+    itertools.combinations('123', 2) ->
+      [('1', '2'), ('1', '3'), ('2', '3')]
+
+    itertools.combinations('123', 3) ->
+      [('1', '2', '3')]
+
+    itertools.combinations('1234', 3) ->
+      [('1', '2', '3'), ('1', '2', '4'), ('1', '3', '4'), 
+       ('2', '3', '4')]
+
+  ``itertools.chain(*iterables)` is an existing function in
+  :mod:`itertools` that gained a new constructor.
+  ``itertools.chain.from_iterable(iterable)`` takes a single 
+  iterable that should return other iterables.  :func:`chain` will
+  then return all the elements of the first iterable, then
+  all the elements of the second, and so on. ::
+
+    chain.from_iterable([[1,2,3], [4,5,6]]) ->
+       [1, 2, 3, 4, 5, 6]
+  
+  (All contributed by Raymond Hettinger.)
 
 * The :mod:`macfs` module has been removed.  This in turn required the
   :func:`macostools.touched` function to be removed because it depended on the
@@ -975,7 +1075,7 @@ complete list of changes, or look through the CVS logs for all the details.
 * :class:`mmap` objects now have a :meth:`rfind` method that finds
   a substring, beginning at the end of the string and searching
   backwards.  The :meth:`find` method
-  also gained a *end* parameter containing the index at which to stop
+  also gained an *end* parameter containing the index at which to stop
   the forward search.
   (Contributed by John Lenton.)
 
@@ -983,6 +1083,29 @@ complete list of changes, or look through the CVS logs for all the details.
   Importing it therefore
   triggers a warning message when Python is running in 3.0-warning
   mode.
+
+* The :mod:`operator` module gained a 
+  :func:`methodcaller` function that takes a name and an optional 
+  set of arguments, returning a callable that will call 
+  the named function on any arguments passed to it.  For example::
+
+    >>> # Equivalent to lambda s: s.replace('old', 'new')
+    >>> replacer = operator.methodcaller('replace', 'old', 'new')
+    >>> replacer('old wine in old bottles')
+    'new wine in new bottles'
+   
+  (Contributed by Gregory Petrosyan.)
+
+  The :func:`attrgetter` function now accepts dotted names and performs
+  the corresponding attribute lookups::
+
+    >>> inst_name = operator.attrgetter('__class__.__name__')
+    >>> inst_name('')
+    'str'
+    >>> inst_name(help)
+    '_Helper'
+
+  (Contributed by Scott Dial, after a suggestion by Barry Warsaw.)
 
 * New functions in the :mod:`os` module include 
   ``fchmod(fd, mode)``,   ``fchown(fd, uid, gid)``,  
@@ -1035,6 +1158,11 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Rocky Bernstein.)
 
   .. Patch #1393667
+
+* The :mod:`pickletools` module now has an :func:`optimize` function 
+  that takes a string containing a pickle and removes some unused 
+  opcodes, returning a shorter pickle that contains the same data structure.
+  (Contributed by Raymond Hettinger.)
 
 * New functions in the :mod:`posix` module: :func:`chflags` and :func:`lchflags`
   are wrappers for the corresponding system calls (where they're available).
@@ -1098,6 +1226,10 @@ complete list of changes, or look through the CVS logs for all the details.
   Contributed by Adam Olsen.
 
   .. % Patch 1583
+
+  The :func:`siginterrupt` function is now available from Python code,
+  and allows changing whether signals can interrupt system calls or not.
+  (Contributed by Ralf Schmitt.)
 
 * The :mod:`smtplib` module now supports SMTP over SSL thanks to the
   addition of the :class:`SMTP_SSL` class. This class supports an
@@ -1200,6 +1332,18 @@ complete list of changes, or look through the CVS logs for all the details.
   constructor.  (Contributed by Damien Miller.)
 
   .. Patch #1537850
+
+  A new class, :class:`SpooledTemporaryFile`, behaves like 
+  a temporary file but stores its data in memory until a maximum size is 
+  exceeded.  On reaching that limit, the contents will be written to 
+  an on-disk temporary file.  (Contributed by Dustin J. Mitchell.)
+
+  The :class:`NamedTemporaryFile` and :class:`SpooledTemporaryFile` classes
+  both work as context managers, so you can write 
+  ``with tempfile.NamedTemporaryFile() as tmp: ...``.
+  (Contributed by Alexander Belopolsky.)
+
+  .. Issue #2021
 
 * The :mod:`test.test_support` module now contains a
   :func:`EnvironmentVarGuard`
@@ -1415,6 +1559,12 @@ Changes to Python's build process and to the C API include:
 
   .. Patch 1530959
 
+* Several basic data types, such as integers and strings, maintain
+  internal free lists of objects that can be re-used.  The data
+  structures for these free lists now follow a naming convention: the
+  variable is always named ``free_list``, the counter is always named
+  ``numfree``, and a macro :cmacro:`Py<typename>_MAXFREELIST` is
+  always defined.
 
 .. ======================================================================
 
