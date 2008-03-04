@@ -1094,7 +1094,7 @@ complete list of changes, or look through the CVS logs for all the details.
     >>> replacer('old wine in old bottles')
     'new wine in new bottles'
    
-  (Contributed by Gregory Petrosyan.)
+  (Contributed by Georg Brandl, after a suggestion by Gregory Petrosyan.)
 
   The :func:`attrgetter` function now accepts dotted names and performs
   the corresponding attribute lookups::
@@ -1105,7 +1105,7 @@ complete list of changes, or look through the CVS logs for all the details.
     >>> inst_name(help)
     '_Helper'
 
-  (Contributed by Scott Dial, after a suggestion by Barry Warsaw.)
+  (Contributed by Georg Brandl, after a suggestion by Barry Warsaw.)
 
 * New functions in the :mod:`os` module include 
   ``fchmod(fd, mode)``,   ``fchown(fd, uid, gid)``,  
@@ -1379,6 +1379,8 @@ complete list of changes, or look through the CVS logs for all the details.
        of    extra
        whitespace.
     >>> 
+
+  (Contributed by Dwayne Bailey.)
 
   .. Patch #1581073
 
