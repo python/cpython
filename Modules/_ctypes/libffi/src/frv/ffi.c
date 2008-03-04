@@ -1,5 +1,7 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 2004  Anthony Green
+   ffi.c - Copyright (C) 2004  Anthony Green
+           Copyright (C) 2007  Free Software Foundation, Inc.
+	   Copyright (C) 2008  Red Hat, Inc.
    
    FR-V Foreign Function Interface 
 
@@ -14,13 +16,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
 #include <ffi.h>
@@ -124,10 +127,10 @@ extern void ffi_call_EABI(void *(*)(char *, extended_cif *),
 			  extended_cif *, 
 			  unsigned, unsigned, 
 			  unsigned *, 
-			  void (*fn)());
+			  void (*fn)(void));
 
 void ffi_call(ffi_cif *cif, 
-	      void (*fn)(), 
+	      void (*fn)(void), 
 	      void *rvalue, 
 	      void **avalue)
 {
@@ -243,14 +246,15 @@ void ffi_closure_eabi (unsigned arg1, unsigned arg2, unsigned arg3,
 }
 
 ffi_status
-ffi_prep_closure (ffi_closure* closure,
-		  ffi_cif* cif,
-		  void (*fun)(ffi_cif*, void*, void**, void*),
-		  void *user_data)
+ffi_prep_closure_loc (ffi_closure* closure,
+		      ffi_cif* cif,
+		      void (*fun)(ffi_cif*, void*, void**, void*),
+		      void *user_data,
+		      void *codeloc)
 {
   unsigned int *tramp = (unsigned int *) &closure->tramp[0];
   unsigned long fn = (long) ffi_closure_eabi;
-  unsigned long cls = (long) closure;
+  unsigned long cls = (long) codeloc;
 #ifdef __FRV_FDPIC__
   register void *got __asm__("gr15");
 #endif
@@ -259,7 +263,7 @@ ffi_prep_closure (ffi_closure* closure,
   fn = (unsigned long) ffi_closure_eabi;
 
 #ifdef __FRV_FDPIC__
-  tramp[0] = &tramp[2];
+  tramp[0] = &((unsigned int *)codeloc)[2];
   tramp[1] = got;
   tramp[2] = 0x8cfc0000 + (fn  & 0xffff); /* setlos lo(fn), gr6    */
   tramp[3] = 0x8efc0000 + (cls & 0xffff); /* setlos lo(cls), gr7   */
@@ -281,7 +285,8 @@ ffi_prep_closure (ffi_closure* closure,
 
   /* Cache flushing.  */
   for (i = 0; i < FFI_TRAMPOLINE_SIZE; i++)
-    __asm__ volatile ("dcf @(%0,%1)\n\tici @(%0,%1)" :: "r" (tramp), "r" (i));
+    __asm__ volatile ("dcf @(%0,%1)\n\tici @(%2,%1)" :: "r" (tramp), "r" (i),
+		      "r" (codeloc));
 
   return FFI_OK;
 }

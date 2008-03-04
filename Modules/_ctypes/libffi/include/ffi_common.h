@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
    ffi_common.h - Copyright (c) 1996  Red Hat, Inc.
+   Copyright (C) 2007 Free Software Foundation, Inc
 
    Common internal definitions and macros. Only necessary for building
    libffi.
@@ -18,7 +19,9 @@ extern "C" {
    this is positioned. */
 #ifdef __GNUC__
 # define alloca __builtin_alloca
+# define MAYBE_UNUSED __attribute__((__unused__))
 #else
+# define MAYBE_UNUSED
 # if HAVE_ALLOCA_H
 #  include <alloca.h>
 # else
@@ -41,20 +44,20 @@ char *alloca ();
 # endif
 #endif
 
-#if defined(FFI_DEBUG) 
+#if defined(FFI_DEBUG)
 #include <stdio.h>
 #endif
 
 #ifdef FFI_DEBUG
-/*@exits@*/ void ffi_assert(/*@temp@*/ char *expr, /*@temp@*/ char *file, int line);
+void ffi_assert(char *expr, char *file, int line);
 void ffi_stop_here(void);
-void ffi_type_test(/*@temp@*/ /*@out@*/ ffi_type *a, /*@temp@*/ char *file, int line);
+void ffi_type_test(ffi_type *a, char *file, int line);
 
 #define FFI_ASSERT(x) ((x) ? (void)0 : ffi_assert(#x, __FILE__,__LINE__))
 #define FFI_ASSERT_AT(x, f, l) ((x) ? 0 : ffi_assert(#x, (f), (l)))
 #define FFI_ASSERT_VALID_TYPE(x) ffi_type_test (x, __FILE__, __LINE__)
 #else
-#define FFI_ASSERT(x) 
+#define FFI_ASSERT(x)
 #define FFI_ASSERT_AT(x, f, l)
 #define FFI_ASSERT_VALID_TYPE(x)
 #endif
@@ -68,9 +71,9 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif);
 /* Extended cif, used in callback from assembly routine */
 typedef struct
 {
-  /*@dependent@*/ ffi_cif *cif;
-  /*@dependent@*/ void *rvalue;
-  /*@dependent@*/ void **avalue;
+  ffi_cif *cif;
+  void *rvalue;
+  void **avalue;
 } extended_cif;
 
 /* Terse sized type definitions.  */

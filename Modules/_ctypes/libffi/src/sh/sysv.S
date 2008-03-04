@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   sysv.S - Copyright (c) 2002, 2003, 2004 Kaz Kojima
+   sysv.S - Copyright (c) 2002, 2003, 2004, 2006 Kaz Kojima
    
    SuperH Foreign Function Interface 
 
@@ -17,7 +17,8 @@
    THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+	ANY CLAIM, DAMAGES OR
    OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
    OTHER DEALINGS IN THE SOFTWARE.
@@ -829,13 +830,13 @@ __FRAME_BEGIN__:
 	.byte	0x6	/* uleb128 0x6 */
 	.byte	0x8e	/* DW_CFA_offset, column 0xe */
 	.byte	0x5	/* uleb128 0x5 */
-	.byte	0x8b	/* DW_CFA_offset, column 0xb */
+	.byte	0x84	/* DW_CFA_offset, column 0x4 */
 	.byte	0x4	/* uleb128 0x4 */
-	.byte	0x8a	/* DW_CFA_offset, column 0xa */
+	.byte	0x85	/* DW_CFA_offset, column 0x5 */
 	.byte	0x3	/* uleb128 0x3 */
-	.byte	0x89	/* DW_CFA_offset, column 0x9 */
+	.byte	0x86	/* DW_CFA_offset, column 0x6 */
 	.byte	0x2	/* uleb128 0x2 */
-	.byte	0x88	/* DW_CFA_offset, column 0x8 */
+	.byte	0x87	/* DW_CFA_offset, column 0x7 */
 	.byte	0x1	/* uleb128 0x1 */
 	.byte	0x4	/* DW_CFA_advance_loc4 */
 	.4byte	.LCFIE-.LCFID

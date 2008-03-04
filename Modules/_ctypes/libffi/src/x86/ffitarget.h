@@ -1,5 +1,7 @@
 /* -----------------------------------------------------------------*-C-*-
    ffitarget.h - Copyright (c) 1996-2003  Red Hat, Inc.
+   Copyright (C) 2008  Free Software Foundation, Inc.
+
    Target configuration macros for x86 and x86-64.
 
    Permission is hereby granted, free of charge, to any person obtaining
@@ -13,13 +15,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 
    ----------------------------------------------------------------------- */
 
@@ -51,7 +54,7 @@ typedef enum ffi_abi {
 #endif
 
   /* ---- Intel x86 and AMD x86-64 - */
-#if !defined(X86_WIN32) && (defined(__i386__) || defined(__x86_64__)) 
+#if !defined(X86_WIN32) && (defined(__i386__) || defined(__x86_64__))
   FFI_SYSV,
   FFI_UNIX64,   /* Unix variants all use the same ABI for x86-64  */
 #ifdef __i386__
@@ -68,12 +71,18 @@ typedef enum ffi_abi {
 /* ---- Definitions for closures ----------------------------------------- */
 
 #define FFI_CLOSURES 1
+#define FFI_TYPE_SMALL_STRUCT_1B (FFI_TYPE_LAST + 1)
+#define FFI_TYPE_SMALL_STRUCT_2B (FFI_TYPE_LAST + 2)
 
-#ifdef X86_64
+#if defined (X86_64) || (defined (__x86_64__) && defined (X86_DARWIN))
 #define FFI_TRAMPOLINE_SIZE 24
 #define FFI_NATIVE_RAW_API 0
 #else
+#ifdef X86_WIN32
+#define FFI_TRAMPOLINE_SIZE 13
+#else
 #define FFI_TRAMPOLINE_SIZE 10
+#endif
 #define FFI_NATIVE_RAW_API 1	/* x86 has native raw api support */
 #endif
 

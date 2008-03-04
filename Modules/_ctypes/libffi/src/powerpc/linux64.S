@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
    sysv.h - Copyright (c) 2003 Jakub Jelinek <jakub@redhat.com>
+	    Copyright (c) 2008 Red Hat, Inc.
 
    PowerPC64 Assembly glue.
 
@@ -14,13 +15,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
 #define LIBFFI_ASM
@@ -47,8 +49,8 @@ ffi_call_LINUX64:
 	std	%r0, 16(%r1)
 
 	mr	%r28, %r1	/* our AP.  */
-	stdux	%r1, %r1, %r4
 .LCFI0:
+	stdux	%r1, %r1, %r4
 	mr	%r31, %r5	/* flags, */
 	mr	%r30, %r6	/* rvalue, */
 	mr	%r29, %r7	/* function address.  */
@@ -100,6 +102,10 @@ ffi_call_LINUX64:
 	/* Make the call.  */
 	bctrl
 
+	/* This must follow the call immediately, the unwinder
+	   uses this to find out if r2 has been saved or not.  */
+	ld	%r2, 40(%r1)
+
 	/* Now, deal with the return value.  */
 	mtcrf	0x01, %r31
 	bt-	30, .Ldone_return_value
@@ -109,7 +115,6 @@ ffi_call_LINUX64:
 
 .Ldone_return_value:
 	/* Restore the registers we used and return.  */
-	ld	%r2, 40(%r1)
 	mr	%r1, %r28
 	ld	%r0, 16(%r28)
 	ld	%r28, -32(%r1)
@@ -120,12 +125,10 @@ ffi_call_LINUX64:
 	blr
 
 .Lfp_return_value:
-	bt	27, .Lfd_return_value
 	bf	28, .Lfloat_return_value
 	stfd	%f1, 0(%r30)
-	b	.Ldone_return_value
-.Lfd_return_value:
-	stfd	%f1, 0(%r30)
+	mtcrf	0x02, %r31 /* cr6  */
+	bf	27, .Ldone_return_value
 	stfd	%f2, 8(%r30)
 	b	.Ldone_return_value
 .Lfloat_return_value:
@@ -177,4 +180,8 @@ ffi_call_LINUX64:
 	.uleb128 0x4
 	.align 3
 .LEFDE1:
+#endif
+
+#if defined __ELF__ && defined __linux__
+	.section	.note.GNU-stack,"",@progbits
 #endif

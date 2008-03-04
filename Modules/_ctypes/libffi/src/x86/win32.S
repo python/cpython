@@ -20,7 +20,8 @@
    THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+	ANY CLAIM, DAMAGES OR
    OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
    OTHER DEALINGS IN THE SOFTWARE.
@@ -258,6 +259,22 @@ sc_epilogue:
 
 .ffi_call_STDCALL_end:
 
+	.globl _ffi_closure_STDCALL
+_ffi_closure_STDCALL:
+	pushl	%ebp
+	movl	%esp, %ebp
+	subl	$40, %esp
+	leal	-24(%ebp), %edx
+	movl	%edx, -12(%ebp)	/* resp */
+	leal	12(%ebp), %edx  /* account for stub return address on stack */
+	movl	%edx, 4(%esp)	/* args */
+	leal	-12(%ebp), %edx
+	movl	%edx, (%esp)	/* &resp */
+	call	_ffi_closure_SYSV_inner
+	movl	-12(%ebp), %ecx
+	jmp     .Lcls_return_result
+.ffi_closure_STDCALL_end:
+
 	.globl _ffi_closure_SYSV
 _ffi_closure_SYSV:
 	pushl	%ebp
@@ -271,6 +288,7 @@ _ffi_closure_SYSV:
 	movl	%edx, (%esp)	/* &resp */
 	call	_ffi_closure_SYSV_inner
 	movl	-12(%ebp), %ecx
+.Lcls_return_result:
 	cmpl	$FFI_TYPE_INT, %eax
 	je	.Lcls_retint
 	cmpl	$FFI_TYPE_FLOAT, %eax
