@@ -3,8 +3,6 @@
    
    FR-V Assembly glue.
 
-   $Id: eabi.S,v 1.2 2006/03/03 20:24:46 theller Exp $
-
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
    ``Software''), to deal in the Software without restriction, including

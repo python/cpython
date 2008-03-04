@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 2000 Software AG
+   ffi.c - Copyright (c) 2000, 2007 Software AG
+           Copyright (c) 2008 Red Hat, Inc
  
    S390 Foreign Function Interface
  
@@ -207,6 +208,12 @@ ffi_prep_args (unsigned char *stack, extended_cif *ecif)
       void *arg = *p_argv;
       int type = (*ptr)->type;
 
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+      /* 16-byte long double is passed like a struct.  */
+      if (type == FFI_TYPE_LONGDOUBLE)
+	type = FFI_TYPE_STRUCT;
+#endif
+
       /* Check how a structure type is passed.  */
       if (type == FFI_TYPE_STRUCT)
 	{
@@ -364,6 +371,12 @@ ffi_prep_cif_machdep(ffi_cif *cif)
 	cif->flags = FFI390_RET_DOUBLE;
 	break;
 
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+      case FFI_TYPE_LONGDOUBLE:
+	cif->flags = FFI390_RET_STRUCT;
+	n_gpr++;
+	break;
+#endif
       /* Integer values are returned in gpr 2 (and gpr 3
 	 for 64-bit values on 31-bit machines).  */
       case FFI_TYPE_UINT64:
@@ -399,6 +412,12 @@ ffi_prep_cif_machdep(ffi_cif *cif)
        i--, ptr++)
     {
       int type = (*ptr)->type;
+
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+      /* 16-byte long double is passed like a struct.  */
+      if (type == FFI_TYPE_LONGDOUBLE)
+	type = FFI_TYPE_STRUCT;
+#endif
 
       /* Check how a structure type is passed.  */
       if (type == FFI_TYPE_STRUCT)
@@ -562,6 +581,12 @@ ffi_closure_helper_SYSV (ffi_closure *closure,
       int deref_struct_pointer = 0;
       int type = (*ptr)->type;
 
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+      /* 16-byte long double is passed like a struct.  */
+      if (type == FFI_TYPE_LONGDOUBLE)
+	type = FFI_TYPE_STRUCT;
+#endif
+
       /* Check how a structure type is passed.  */
       if (type == FFI_TYPE_STRUCT)
 	{
@@ -662,6 +687,9 @@ ffi_closure_helper_SYSV (ffi_closure *closure,
       /* Void is easy, and so is struct.  */
       case FFI_TYPE_VOID:
       case FFI_TYPE_STRUCT:
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+      case FFI_TYPE_LONGDOUBLE:
+#endif
 	break;
 
       /* Floating point values are returned in fpr 0.  */
@@ -709,17 +737,18 @@ ffi_closure_helper_SYSV (ffi_closure *closure,
 
 /*====================================================================*/
 /*                                                                    */
-/* Name     - ffi_prep_closure.                                       */
+/* Name     - ffi_prep_closure_loc.                                   */
 /*                                                                    */
 /* Function - Prepare a FFI closure.                                  */
 /*                                                                    */
 /*====================================================================*/
  
 ffi_status
-ffi_prep_closure (ffi_closure *closure,
-                  ffi_cif *cif,
-                  void (*fun) (ffi_cif *, void *, void **, void *),
-                  void *user_data)
+ffi_prep_closure_loc (ffi_closure *closure,
+		      ffi_cif *cif,
+		      void (*fun) (ffi_cif *, void *, void **, void *),
+		      void *user_data,
+		      void *codeloc)
 {
   FFI_ASSERT (cif->abi == FFI_SYSV);
 
@@ -728,7 +757,7 @@ ffi_prep_closure (ffi_closure *closure,
   *(short *)&closure->tramp [2] = 0x9801;   /* lm %r0,%r1,6(%r1) */
   *(short *)&closure->tramp [4] = 0x1006;
   *(short *)&closure->tramp [6] = 0x07f1;   /* br %r1 */
-  *(long  *)&closure->tramp [8] = (long)closure;
+  *(long  *)&closure->tramp [8] = (long)codeloc;
   *(long  *)&closure->tramp[12] = (long)&ffi_closure_SYSV;
 #else
   *(short *)&closure->tramp [0] = 0x0d10;   /* basr %r1,0 */
@@ -736,7 +765,7 @@ ffi_prep_closure (ffi_closure *closure,
   *(short *)&closure->tramp [4] = 0x100e;
   *(short *)&closure->tramp [6] = 0x0004;
   *(short *)&closure->tramp [8] = 0x07f1;   /* br %r1 */
-  *(long  *)&closure->tramp[16] = (long)closure;
+  *(long  *)&closure->tramp[16] = (long)codeloc;
   *(long  *)&closure->tramp[24] = (long)&ffi_closure_SYSV;
 #endif 
  

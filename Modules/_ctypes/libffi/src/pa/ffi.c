@@ -1,7 +1,9 @@
 /* -----------------------------------------------------------------------
    ffi.c - (c) 2003-2004 Randolph Chung <tausq@debian.org>
+           (c) 2008 Red Hat, Inc.
 
    HPPA Foreign Function Interface
+   HP-UX PA ABI support (c) 2006 Free Software Foundation, Inc.
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -14,13 +16,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
 #include <ffi.h>
@@ -30,15 +33,19 @@
 #include <stdio.h>
 
 #define ROUND_UP(v, a)  (((size_t)(v) + (a) - 1) & ~((a) - 1))
-#define ROUND_DOWN(v, a)  (((size_t)(v) - (a) + 1) & ~((a) - 1))
+
 #define MIN_STACK_SIZE  64
 #define FIRST_ARG_SLOT  9
 #define DEBUG_LEVEL   0
 
-#define fldw(addr, fpreg) asm volatile ("fldw 0(%0), %%" #fpreg "L" : : "r"(addr) : #fpreg)
-#define fstw(fpreg, addr) asm volatile ("fstw %%" #fpreg "L, 0(%0)" : : "r"(addr))
-#define fldd(addr, fpreg) asm volatile ("fldd 0(%0), %%" #fpreg : : "r"(addr) : #fpreg)
-#define fstd(fpreg, addr) asm volatile ("fstd %%" #fpreg "L, 0(%0)" : : "r"(addr))
+#define fldw(addr, fpreg) \
+  __asm__ volatile ("fldw 0(%0), %%" #fpreg "L" : : "r"(addr) : #fpreg)
+#define fstw(fpreg, addr) \
+  __asm__ volatile ("fstw %%" #fpreg "L, 0(%0)" : : "r"(addr))
+#define fldd(addr, fpreg) \
+  __asm__ volatile ("fldd 0(%0), %%" #fpreg : : "r"(addr) : #fpreg)
+#define fstd(fpreg, addr) \
+  __asm__ volatile ("fstd %%" #fpreg "L, 0(%0)" : : "r"(addr))
 
 #define debug(lvl, x...) do { if (lvl <= DEBUG_LEVEL) { printf(x); } } while (0)
 
@@ -47,16 +54,19 @@ static inline int ffi_struct_type(ffi_type *t)
   size_t sz = t->size;
 
   /* Small structure results are passed in registers,
-     larger ones are passed by pointer.  */
+     larger ones are passed by pointer.  Note that
+     small structures of size 2, 4 and 8 differ from
+     the corresponding integer types in that they have
+     different alignment requirements.  */
 
   if (sz <= 1)
     return FFI_TYPE_UINT8;
   else if (sz == 2)
-    return FFI_TYPE_UINT16;
+    return FFI_TYPE_SMALL_STRUCT2;
   else if (sz == 3)
     return FFI_TYPE_SMALL_STRUCT3;
   else if (sz == 4)
-    return FFI_TYPE_UINT32;
+    return FFI_TYPE_SMALL_STRUCT4;
   else if (sz == 5)
     return FFI_TYPE_SMALL_STRUCT5;
   else if (sz == 6)
@@ -64,61 +74,80 @@ static inline int ffi_struct_type(ffi_type *t)
   else if (sz == 7)
     return FFI_TYPE_SMALL_STRUCT7;
   else if (sz <= 8)
-    return FFI_TYPE_UINT64;
+    return FFI_TYPE_SMALL_STRUCT8;
   else
     return FFI_TYPE_STRUCT; /* else, we pass it by pointer.  */
 }
 
 /* PA has a downward growing stack, which looks like this:
-  
+
    Offset
-        [ Variable args ]
+	[ Variable args ]
    SP = (4*(n+9))       arg word N
    ...
    SP-52                arg word 4
-        [ Fixed args ]
+	[ Fixed args ]
    SP-48                arg word 3
    SP-44                arg word 2
    SP-40                arg word 1
    SP-36                arg word 0
-        [ Frame marker ]
+	[ Frame marker ]
    ...
    SP-20                RP
    SP-4                 previous SP
-  
-   First 4 non-FP 32-bit args are passed in gr26, gr25, gr24 and gr23
-   First 2 non-FP 64-bit args are passed in register pairs, starting
-     on an even numbered register (i.e. r26/r25 and r24+r23)
-   First 4 FP 32-bit arguments are passed in fr4L, fr5L, fr6L and fr7L
-   First 2 FP 64-bit arguments are passed in fr5 and fr7
-   The rest are passed on the stack starting at SP-52, but 64-bit
-     arguments need to be aligned to an 8-byte boundary
-  
+
+   The first four argument words on the stack are reserved for use by
+   the callee.  Instead, the general and floating registers replace
+   the first four argument slots.  Non FP arguments are passed solely
+   in the general registers.  FP arguments are passed in both general
+   and floating registers when using libffi.
+
+   Non-FP 32-bit args are passed in gr26, gr25, gr24 and gr23.
+   Non-FP 64-bit args are passed in register pairs, starting
+   on an odd numbered register (i.e. r25+r26 and r23+r24).
+   FP 32-bit arguments are passed in fr4L, fr5L, fr6L and fr7L.
+   FP 64-bit arguments are passed in fr5 and fr7.
+
+   The registers are allocated in the same manner as stack slots.
+   This allows the callee to save its arguments on the stack if
+   necessary:
+
+   arg word 3 -> gr23 or fr7L
+   arg word 2 -> gr24 or fr6L or fr7R
+   arg word 1 -> gr25 or fr5L
+   arg word 0 -> gr26 or fr4L or fr5R
+
+   Note that fr4R and fr6R are never used for arguments (i.e.,
+   doubles are not passed in fr4 or fr6).
+
+   The rest of the arguments are passed on the stack starting at SP-52,
+   but 64-bit arguments need to be aligned to an 8-byte boundary
+
    This means we can have holes either in the register allocation,
    or in the stack.  */
 
 /* ffi_prep_args is called by the assembly routine once stack space
    has been allocated for the function's arguments
-  
+
    The following code will put everything into the stack frame
    (which was allocated by the asm routine), and on return
    the asm routine will load the arguments that should be
    passed by register into the appropriate registers
-  
+
    NOTE: We load floating point args in this function... that means we
    assume gcc will not mess with fp regs in here.  */
 
-/*@-exportheader@*/
-void ffi_prep_args_LINUX(UINT32 *stack, extended_cif *ecif, unsigned bytes)
-/*@=exportheader@*/
+void ffi_prep_args_pa32(UINT32 *stack, extended_cif *ecif, unsigned bytes)
 {
   register unsigned int i;
   register ffi_type **p_arg;
   register void **p_argv;
-  unsigned int slot = FIRST_ARG_SLOT - 1;
+  unsigned int slot = FIRST_ARG_SLOT;
   char *dest_cpy;
+  size_t len;
 
-  debug(1, "%s: stack = %p, ecif = %p, bytes = %u\n", __FUNCTION__, stack, ecif, bytes);
+  debug(1, "%s: stack = %p, ecif = %p, bytes = %u\n", __FUNCTION__, stack,
+	ecif, bytes);
 
   p_arg = ecif->cif->arg_types;
   p_argv = ecif->avalue;
@@ -130,75 +159,70 @@ void ffi_prep_args_LINUX(UINT32 *stack, extended_cif *ecif, unsigned bytes)
       switch (type)
 	{
 	case FFI_TYPE_SINT8:
-	  slot++;
 	  *(SINT32 *)(stack - slot) = *(SINT8 *)(*p_argv);
 	  break;
 
 	case FFI_TYPE_UINT8:
-	  slot++;
 	  *(UINT32 *)(stack - slot) = *(UINT8 *)(*p_argv);
 	  break;
 
 	case FFI_TYPE_SINT16:
-	  slot++;
 	  *(SINT32 *)(stack - slot) = *(SINT16 *)(*p_argv);
 	  break;
 
 	case FFI_TYPE_UINT16:
-	  slot++;
 	  *(UINT32 *)(stack - slot) = *(UINT16 *)(*p_argv);
 	  break;
 
 	case FFI_TYPE_UINT32:
 	case FFI_TYPE_SINT32:
 	case FFI_TYPE_POINTER:
-	  slot++;
-	  debug(3, "Storing UINT32 %u in slot %u\n", *(UINT32 *)(*p_argv), slot);
+	  debug(3, "Storing UINT32 %u in slot %u\n", *(UINT32 *)(*p_argv),
+		slot);
 	  *(UINT32 *)(stack - slot) = *(UINT32 *)(*p_argv);
 	  break;
 
 	case FFI_TYPE_UINT64:
 	case FFI_TYPE_SINT64:
-	  slot += 2;
-	  if (slot & 1)
-	    slot++;
-
-	  *(UINT32 *)(stack - slot) = (*(UINT64 *)(*p_argv)) >> 32;
-	  *(UINT32 *)(stack - slot + 1) = (*(UINT64 *)(*p_argv)) & 0xffffffffUL;
+	  /* Align slot for 64-bit type.  */
+	  slot += (slot & 1) ? 1 : 2;
+	  *(UINT64 *)(stack - slot) = *(UINT64 *)(*p_argv);
 	  break;
 
 	case FFI_TYPE_FLOAT:
-	  /* First 4 args go in fr4L - fr7L */
-	  slot++;
+	  /* First 4 args go in fr4L - fr7L.  */
+	  debug(3, "Storing UINT32(float) in slot %u\n", slot);
+	  *(UINT32 *)(stack - slot) = *(UINT32 *)(*p_argv);
 	  switch (slot - FIRST_ARG_SLOT)
 	    {
-	    case 0: fldw(*p_argv, fr4); break;
-	    case 1: fldw(*p_argv, fr5); break;
-	    case 2: fldw(*p_argv, fr6); break;
-	    case 3: fldw(*p_argv, fr7); break;
-	    default:
-	      /* Other ones are just passed on the stack.  */
-	      debug(3, "Storing UINT32(float) in slot %u\n", slot);
-	      *(UINT32 *)(stack - slot) = *(UINT32 *)(*p_argv);
-	      break;
-	    }
-	    break;
-
-	case FFI_TYPE_DOUBLE:
-	  slot += 2;
-	  if (slot & 1)
-	    slot++;
-	  switch (slot - FIRST_ARG_SLOT + 1)
-	    {
-	      /* First 2 args go in fr5, fr7 */
-	      case 2: fldd(*p_argv, fr5); break;
-	      case 4: fldd(*p_argv, fr7); break;
-	      default:
-	        debug(3, "Storing UINT64(double) at slot %u\n", slot);
-	        *(UINT64 *)(stack - slot) = *(UINT64 *)(*p_argv);
-	        break;
+	    /* First 4 args go in fr4L - fr7L.  */
+	    case 0: fldw(stack - slot, fr4); break;
+	    case 1: fldw(stack - slot, fr5); break;
+	    case 2: fldw(stack - slot, fr6); break;
+	    case 3: fldw(stack - slot, fr7); break;
 	    }
 	  break;
+
+	case FFI_TYPE_DOUBLE:
+	  /* Align slot for 64-bit type.  */
+	  slot += (slot & 1) ? 1 : 2;
+	  debug(3, "Storing UINT64(double) at slot %u\n", slot);
+	  *(UINT64 *)(stack - slot) = *(UINT64 *)(*p_argv);
+	  switch (slot - FIRST_ARG_SLOT)
+	    {
+	      /* First 2 args go in fr5, fr7.  */
+	      case 1: fldd(stack - slot, fr5); break;
+	      case 3: fldd(stack - slot, fr7); break;
+	    }
+	  break;
+
+#ifdef PA_HPUX
+	case FFI_TYPE_LONGDOUBLE:
+	  /* Long doubles are passed in the same manner as structures
+	     larger than 8 bytes.  */
+	  *(UINT32 *)(stack - slot) = (UINT32)(*p_argv);
+	  break;
+#endif
 
 	case FFI_TYPE_STRUCT:
 
@@ -206,40 +230,34 @@ void ffi_prep_args_LINUX(UINT32 *stack, extended_cif *ecif, unsigned bytes)
 	     register. Structs smaller or equal 8 bytes are passed in two
 	     registers. Larger structures are passed by pointer.  */
 
-	  if((*p_arg)->size <= 4) 
+	  len = (*p_arg)->size;
+	  if (len <= 4)
 	    {
-	      slot++;
-	      dest_cpy = (char *)(stack - slot);
-	      dest_cpy += 4 - (*p_arg)->size;
-	      memcpy((char *)dest_cpy, (char *)*p_argv, (*p_arg)->size);
+	      dest_cpy = (char *)(stack - slot) + 4 - len;
+	      memcpy(dest_cpy, (char *)*p_argv, len);
 	    }
-	  else if ((*p_arg)->size <= 8) 
+	  else if (len <= 8)
 	    {
-	      slot += 2;
-	      if (slot & 1)
-	        slot++;
-	      dest_cpy = (char *)(stack - slot);
-	      dest_cpy += 8 - (*p_arg)->size;
-	      memcpy((char *)dest_cpy, (char *)*p_argv, (*p_arg)->size);
-	    } 
-	  else 
-	    {
-	      slot++;
-	      *(UINT32 *)(stack - slot) = (UINT32)(*p_argv);
+	      slot += (slot & 1) ? 1 : 2;
+	      dest_cpy = (char *)(stack - slot) + 8 - len;
+	      memcpy(dest_cpy, (char *)*p_argv, len);
 	    }
+	  else
+	    *(UINT32 *)(stack - slot) = (UINT32)(*p_argv);
 	  break;
 
 	default:
 	  FFI_ASSERT(0);
 	}
 
+      slot++;
       p_arg++;
       p_argv++;
     }
 
   /* Make sure we didn't mess up and scribble on the stack.  */
   {
-    int n;
+    unsigned int n;
 
     debug(5, "Stack setup:\n");
     for (n = 0; n < (bytes + 3) / 4; n++)
@@ -255,7 +273,7 @@ void ffi_prep_args_LINUX(UINT32 *stack, extended_cif *ecif, unsigned bytes)
   return;
 }
 
-static void ffi_size_stack_LINUX(ffi_cif *cif)
+static void ffi_size_stack_pa32(ffi_cif *cif)
 {
   ffi_type **ptr;
   int i;
@@ -273,6 +291,9 @@ static void ffi_size_stack_LINUX(ffi_cif *cif)
 	  z += 2 + (z & 1); /* must start on even regs, so we may waste one */
 	  break;
 
+#ifdef PA_HPUX
+	case FFI_TYPE_LONGDOUBLE:
+#endif
 	case FFI_TYPE_STRUCT:
 	  z += 1; /* pass by ptr, callee will copy */
 	  break;
@@ -304,6 +325,13 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
       cif->flags = (unsigned) cif->rtype->type;
       break;
 
+#ifdef PA_HPUX
+    case FFI_TYPE_LONGDOUBLE:
+      /* Long doubles are treated like a structure.  */
+      cif->flags = FFI_TYPE_STRUCT;
+      break;
+#endif
+
     case FFI_TYPE_STRUCT:
       /* For the return type we have to check the size of the structures.
 	 If the size is smaller or equal 4 bytes, the result is given back
@@ -327,8 +355,8 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
      own stack sizing.  */
   switch (cif->abi)
     {
-    case FFI_LINUX:
-      ffi_size_stack_LINUX(cif);
+    case FFI_PA32:
+      ffi_size_stack_pa32(cif);
       break;
 
     default:
@@ -339,20 +367,11 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
   return FFI_OK;
 }
 
-/*@-declundef@*/
-/*@-exportheader@*/
-extern void ffi_call_LINUX(void (*)(UINT32 *, extended_cif *, unsigned),
-			   /*@out@*/ extended_cif *,
-			   unsigned, unsigned,
-			   /*@out@*/ unsigned *,
-			   void (*fn)(void));
-/*@=declundef@*/
-/*@=exportheader@*/
+extern void ffi_call_pa32(void (*)(UINT32 *, extended_cif *, unsigned),
+			  extended_cif *, unsigned, unsigned, unsigned *,
+			  void (*fn)(void));
 
-void ffi_call(/*@dependent@*/ ffi_cif *cif,
-	      void (*fn)(void),
-	      /*@out@*/ void *rvalue,
-	      /*@dependent@*/ void **avalue)
+void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   extended_cif ecif;
 
@@ -362,12 +381,15 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
   /* If the return value is a struct and we don't have a return
      value address then we need to make one.  */
 
-  if ((rvalue == NULL) &&
-      (cif->rtype->type == FFI_TYPE_STRUCT))
+  if (rvalue == NULL
+#ifdef PA_HPUX
+      && (cif->rtype->type == FFI_TYPE_STRUCT
+	  || cif->rtype->type == FFI_TYPE_LONGDOUBLE))
+#else
+      && cif->rtype->type == FFI_TYPE_STRUCT)
+#endif
     {
-      /*@-sysunrecog@*/
       ecif.rvalue = alloca(cif->rtype->size);
-      /*@=sysunrecog@*/
     }
   else
     ecif.rvalue = rvalue;
@@ -375,12 +397,10 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
 
   switch (cif->abi)
     {
-    case FFI_LINUX:
-      /*@-usedef@*/
-      debug(2, "Calling ffi_call_LINUX: ecif=%p, bytes=%u, flags=%u, rvalue=%p, fn=%p\n", &ecif, cif->bytes, cif->flags, ecif.rvalue, (void *)fn);
-      ffi_call_LINUX(ffi_prep_args_LINUX, &ecif, cif->bytes,
+    case FFI_PA32:
+      debug(3, "Calling ffi_call_pa32: ecif=%p, bytes=%u, flags=%u, rvalue=%p, fn=%p\n", &ecif, cif->bytes, cif->flags, ecif.rvalue, (void *)fn);
+      ffi_call_pa32(ffi_prep_args_pa32, &ecif, cif->bytes,
 		     cif->flags, ecif.rvalue, fn);
-      /*@=usedef@*/
       break;
 
     default:
@@ -394,7 +414,7 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
    the stack, and we need to fill them into a cif structure and invoke
    the user function. This really ought to be in asm to make sure
    the compiler doesn't do things we don't expect.  */
-UINT32 ffi_closure_inner_LINUX(ffi_closure *closure, UINT32 *stack)
+ffi_status ffi_closure_inner_pa32(ffi_closure *closure, UINT32 *stack)
 {
   ffi_cif *cif;
   void **avalue;
@@ -402,7 +422,8 @@ UINT32 ffi_closure_inner_LINUX(ffi_closure *closure, UINT32 *stack)
   UINT32 ret[2]; /* function can return up to 64-bits in registers */
   ffi_type **p_arg;
   char *tmp;
-  int i, avn, slot = FIRST_ARG_SLOT - 1;
+  int i, avn;
+  unsigned int slot = FIRST_ARG_SLOT;
   register UINT32 r28 asm("r28");
 
   cif = closure->cif;
@@ -430,20 +451,23 @@ UINT32 ffi_closure_inner_LINUX(ffi_closure *closure, UINT32 *stack)
 	case FFI_TYPE_SINT32:
 	case FFI_TYPE_UINT32:
 	case FFI_TYPE_POINTER:
-	  slot++;
 	  avalue[i] = (char *)(stack - slot) + sizeof(UINT32) - (*p_arg)->size;
 	  break;
 
 	case FFI_TYPE_SINT64:
 	case FFI_TYPE_UINT64:
-	  slot += 2;
-	  if (slot & 1)
-	    slot++;
+	  slot += (slot & 1) ? 1 : 2;
 	  avalue[i] = (void *)(stack - slot);
 	  break;
 
 	case FFI_TYPE_FLOAT:
-	  slot++;
+#ifdef PA_LINUX
+	  /* The closure call is indirect.  In Linux, floating point
+	     arguments in indirect calls with a prototype are passed
+	     in the floating point registers instead of the general
+	     registers.  So, we need to replace what was previously
+	     stored in the current slot with the value in the
+	     corresponding floating point register.  */
 	  switch (slot - FIRST_ARG_SLOT)
 	    {
 	    case 0: fstw(fr4, (void *)(stack - slot)); break;
@@ -451,18 +475,20 @@ UINT32 ffi_closure_inner_LINUX(ffi_closure *closure, UINT32 *stack)
 	    case 2: fstw(fr6, (void *)(stack - slot)); break;
 	    case 3: fstw(fr7, (void *)(stack - slot)); break;
 	    }
+#endif
 	  avalue[i] = (void *)(stack - slot);
 	  break;
 
 	case FFI_TYPE_DOUBLE:
-	  slot += 2;
-	  if (slot & 1)
-	    slot++;
-	  switch (slot - FIRST_ARG_SLOT + 1)
+	  slot += (slot & 1) ? 1 : 2;
+#ifdef PA_LINUX
+	  /* See previous comment for FFI_TYPE_FLOAT.  */
+	  switch (slot - FIRST_ARG_SLOT)
 	    {
-	    case 2: fstd(fr5, (void *)(stack - slot)); break;
-	    case 4: fstd(fr7, (void *)(stack - slot)); break;
+	    case 1: fstd(fr5, (void *)(stack - slot)); break;
+	    case 3: fstd(fr7, (void *)(stack - slot)); break;
 	    }
+#endif
 	  avalue[i] = (void *)(stack - slot);
 	  break;
 
@@ -470,35 +496,36 @@ UINT32 ffi_closure_inner_LINUX(ffi_closure *closure, UINT32 *stack)
 	  /* Structs smaller or equal than 4 bytes are passed in one
 	     register. Structs smaller or equal 8 bytes are passed in two
 	     registers. Larger structures are passed by pointer.  */
-	  if((*p_arg)->size <= 4) {
-	    slot++;
-	    avalue[i] = (void *)(stack - slot) + sizeof(UINT32) -
-	      (*p_arg)->size;
-	  } else if ((*p_arg)->size <= 8) {
-	    slot += 2;
-	    if (slot & 1)
-	      slot++;
-	    avalue[i] = (void *)(stack - slot) + sizeof(UINT64) -
-	      (*p_arg)->size;
-	  } else {
-	    slot++;
+	  if((*p_arg)->size <= 4)
+	    {
+	      avalue[i] = (void *)(stack - slot) + sizeof(UINT32) -
+		(*p_arg)->size;
+	    }
+	  else if ((*p_arg)->size <= 8)
+	    {
+	      slot += (slot & 1) ? 1 : 2;
+	      avalue[i] = (void *)(stack - slot) + sizeof(UINT64) -
+		(*p_arg)->size;
+	    }
+	  else
 	    avalue[i] = (void *) *(stack - slot);
-	  }
 	  break;
 
 	default:
 	  FFI_ASSERT(0);
 	}
 
+      slot++;
       p_arg++;
     }
 
   /* Invoke the closure.  */
   (closure->fun) (cif, rvalue, avalue, closure->user_data);
 
-  debug(3, "after calling function, ret[0] = %08x, ret[1] = %08x\n", ret[0], ret[1]);
+  debug(3, "after calling function, ret[0] = %08x, ret[1] = %08x\n", ret[0],
+	ret[1]);
 
-  /* Store the result */
+  /* Store the result using the lower 2 bytes of the flags.  */
   switch (cif->flags)
     {
     case FFI_TYPE_UINT8:
@@ -536,7 +563,9 @@ UINT32 ffi_closure_inner_LINUX(ffi_closure *closure, UINT32 *stack)
       /* Don't need a return value, done by caller.  */
       break;
 
+    case FFI_TYPE_SMALL_STRUCT2:
     case FFI_TYPE_SMALL_STRUCT3:
+    case FFI_TYPE_SMALL_STRUCT4:
       tmp = (void*)(stack -  FIRST_ARG_SLOT);
       tmp += 4 - cif->rtype->size;
       memcpy((void*)tmp, &ret[0], cif->rtype->size);
@@ -545,6 +574,7 @@ UINT32 ffi_closure_inner_LINUX(ffi_closure *closure, UINT32 *stack)
     case FFI_TYPE_SMALL_STRUCT5:
     case FFI_TYPE_SMALL_STRUCT6:
     case FFI_TYPE_SMALL_STRUCT7:
+    case FFI_TYPE_SMALL_STRUCT8:
       {
 	unsigned int ret2[2];
 	int off;
@@ -582,39 +612,93 @@ UINT32 ffi_closure_inner_LINUX(ffi_closure *closure, UINT32 *stack)
    cif specifies the argument and result types for fun.
    The cif must already be prep'ed.  */
 
-void ffi_closure_LINUX(void);
+extern void ffi_closure_pa32(void);
 
 ffi_status
-ffi_prep_closure (ffi_closure* closure,
-		  ffi_cif* cif,
-		  void (*fun)(ffi_cif*,void*,void**,void*),
-		  void *user_data)
+ffi_prep_closure_loc (ffi_closure* closure,
+		      ffi_cif* cif,
+		      void (*fun)(ffi_cif*,void*,void**,void*),
+		      void *user_data,
+		      void *codeloc)
 {
   UINT32 *tramp = (UINT32 *)(closure->tramp);
+#ifdef PA_HPUX
+  UINT32 *tmp;
+#endif
 
-  FFI_ASSERT (cif->abi == FFI_LINUX);
+  FFI_ASSERT (cif->abi == FFI_PA32);
 
   /* Make a small trampoline that will branch to our
      handler function. Use PC-relative addressing.  */
 
-  tramp[0] = 0xeaa00000; /* b,l  .+8, %r21      ; %r21 <- pc+8 */
-  tramp[1] = 0xd6a01c1e; /* depi 0,31,2, %r21   ; mask priv bits */
-  tramp[2] = 0x4aa10028; /* ldw  20(%r21), %r1  ; load plabel */
-  tramp[3] = 0x36b53ff1; /* ldo  -8(%r21), %r21 ; get closure addr */
-  tramp[4] = 0x0c201096; /* ldw  0(%r1), %r22   ; address of handler */
-  tramp[5] = 0xeac0c000; /* bv	 %r0(%r22)      ; branch to handler */
-  tramp[6] = 0x0c281093; /* ldw  4(%r1), %r19   ; GP of handler */
-  tramp[7] = ((UINT32)(ffi_closure_LINUX) & ~2);
+#ifdef PA_LINUX
+  tramp[0] = 0xeaa00000; /* b,l .+8,%r21        ; %r21 <- pc+8 */
+  tramp[1] = 0xd6a01c1e; /* depi 0,31,2,%r21    ; mask priv bits */
+  tramp[2] = 0x4aa10028; /* ldw 20(%r21),%r1    ; load plabel */
+  tramp[3] = 0x36b53ff1; /* ldo -8(%r21),%r21   ; get closure addr */
+  tramp[4] = 0x0c201096; /* ldw 0(%r1),%r22     ; address of handler */
+  tramp[5] = 0xeac0c000; /* bv%r0(%r22)         ; branch to handler */
+  tramp[6] = 0x0c281093; /* ldw 4(%r1),%r19     ; GP of handler */
+  tramp[7] = ((UINT32)(ffi_closure_pa32) & ~2);
 
   /* Flush d/icache -- have to flush up 2 two lines because of
      alignment.  */
-  asm volatile (
-		"fdc 0(%0)\n"
-		"fdc %1(%0)\n"
-		"fic 0(%%sr4, %0)\n"
-		"fic %1(%%sr4, %0)\n"
-		"sync\n"
-		: : "r"((unsigned long)tramp & ~31), "r"(32 /* stride */));
+  __asm__ volatile(
+		   "fdc 0(%0)\n\t"
+		   "fdc %1(%0)\n\t"
+		   "fic 0(%%sr4, %0)\n\t"
+		   "fic %1(%%sr4, %0)\n\t"
+		   "sync\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n"
+		   :
+		   : "r"((unsigned long)tramp & ~31),
+		     "r"(32 /* stride */)
+		   : "memory");
+#endif
+
+#ifdef PA_HPUX
+  tramp[0] = 0xeaa00000; /* b,l .+8,%r21        ; %r21 <- pc+8  */
+  tramp[1] = 0xd6a01c1e; /* depi 0,31,2,%r21    ; mask priv bits  */
+  tramp[2] = 0x4aa10038; /* ldw 28(%r21),%r1    ; load plabel  */
+  tramp[3] = 0x36b53ff1; /* ldo -8(%r21),%r21   ; get closure addr  */
+  tramp[4] = 0x0c201096; /* ldw 0(%r1),%r22     ; address of handler  */
+  tramp[5] = 0x02c010b4; /* ldsid (%r22),%r20   ; load space id  */
+  tramp[6] = 0x00141820; /* mtsp %r20,%sr0      ; into %sr0  */
+  tramp[7] = 0xe2c00000; /* be 0(%sr0,%r22)     ; branch to handler  */
+  tramp[8] = 0x0c281093; /* ldw 4(%r1),%r19     ; GP of handler  */
+  tramp[9] = ((UINT32)(ffi_closure_pa32) & ~2);
+
+  /* Flush d/icache -- have to flush three lines because of alignment.  */
+  __asm__ volatile(
+		   "copy %1,%0\n\t"
+		   "fdc,m %2(%0)\n\t"
+		   "fdc,m %2(%0)\n\t"
+		   "fdc,m %2(%0)\n\t"
+		   "ldsid (%1),%0\n\t"
+		   "mtsp %0,%%sr0\n\t"
+		   "copy %1,%0\n\t"
+		   "fic,m %2(%%sr0,%0)\n\t"
+		   "fic,m %2(%%sr0,%0)\n\t"
+		   "fic,m %2(%%sr0,%0)\n\t"
+		   "sync\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n\t"
+		   "nop\n"
+		   : "=&r" ((unsigned long)tmp)
+		   : "r" ((unsigned long)tramp & ~31),
+		     "r" (32/* stride */)
+		   : "memory");
+#endif
 
   closure->cif  = cif;
   closure->user_data = user_data;

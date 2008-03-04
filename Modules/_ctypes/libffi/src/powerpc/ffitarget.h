@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------*-C-*-
    ffitarget.h - Copyright (c) 1996-2003  Red Hat, Inc.
+   Copyright (C) 2007 Free Software Foundation, Inc
    Target configuration macros for PowerPC.
 
    Permission is hereby granted, free of charge, to any person obtaining
@@ -13,13 +14,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 
    ----------------------------------------------------------------------- */
 
@@ -43,10 +45,20 @@ typedef enum ffi_abi {
   FFI_SYSV,
   FFI_GCC_SYSV,
   FFI_LINUX64,
+  FFI_LINUX,
+  FFI_LINUX_SOFT_FLOAT,
 # ifdef POWERPC64
   FFI_DEFAULT_ABI = FFI_LINUX64,
 # else
+#  if (!defined(__NO_FPRS__) && (__LDBL_MANT_DIG__ == 106))
+  FFI_DEFAULT_ABI = FFI_LINUX,
+#  else
+#   ifdef __NO_FPRS__
+  FFI_DEFAULT_ABI = FFI_LINUX_SOFT_FLOAT,
+#   else
   FFI_DEFAULT_ABI = FFI_GCC_SYSV,
+#   endif
+#  endif
 # endif
 #endif
 
@@ -69,7 +81,7 @@ typedef enum ffi_abi {
   FFI_DEFAULT_ABI = FFI_SYSV,
 #endif
 
-  FFI_LAST_ABI = FFI_DEFAULT_ABI + 1
+  FFI_LAST_ABI
 } ffi_abi;
 #endif
 
@@ -78,8 +90,14 @@ typedef enum ffi_abi {
 #define FFI_CLOSURES 1
 #define FFI_NATIVE_RAW_API 0
 
+/* For additional types like the below, take care about the order in
+   ppc_closures.S. They must follow after the FFI_TYPE_LAST.  */
+
+/* Needed for soft-float long-double-128 support.  */
+#define FFI_TYPE_UINT128 (FFI_TYPE_LAST + 1)
+
 /* Needed for FFI_SYSV small structure returns.  */
-#define FFI_SYSV_TYPE_SMALL_STRUCT  (FFI_TYPE_LAST)
+#define FFI_SYSV_TYPE_SMALL_STRUCT (FFI_TYPE_LAST + 2)
 
 #if defined(POWERPC64) || defined(POWERPC_AIX)
 #define FFI_TRAMPOLINE_SIZE 24

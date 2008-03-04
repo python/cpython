@@ -1,5 +1,7 @@
 /* -----------------------------------------------------------------------
    ffi.c - Copyright (c) 1998 Geoffrey Keating
+   Copyright (C) 2007 Free Software Foundation, Inc
+   Copyright (C) 2008 Red Hat, Inc
 
    PowerPC Foreign Function Interface
 
@@ -39,7 +41,8 @@ enum {
   FLAG_RETURNS_NOTHING  = 1 << (31-30), /* These go in cr7 */
   FLAG_RETURNS_FP       = 1 << (31-29),
   FLAG_RETURNS_64BITS   = 1 << (31-28),
-  FLAG_RETURNS_128BITS  = 1 << (31-27),
+
+  FLAG_RETURNS_128BITS  = 1 << (31-27), /* cr6  */
 
   FLAG_ARG_NEEDS_COPY   = 1 << (31- 7),
   FLAG_FP_ARGUMENTS     = 1 << (31- 6), /* cr1.eq; specified by ABI */
@@ -48,10 +51,13 @@ enum {
 };
 
 /* About the SYSV ABI.  */
-enum {
-  NUM_GPR_ARG_REGISTERS = 8,
-  NUM_FPR_ARG_REGISTERS = 8
-};
+unsigned int NUM_GPR_ARG_REGISTERS = 8;
+#ifndef __NO_FPRS__
+unsigned int NUM_FPR_ARG_REGISTERS = 8;
+#else
+unsigned int NUM_FPR_ARG_REGISTERS = 0;
+#endif
+
 enum { ASM_NEEDS_REGISTERS = 4 };
 
 /* ffi_prep_args_SYSV is called by the assembly routine once stack space
@@ -80,10 +86,8 @@ enum { ASM_NEEDS_REGISTERS = 4 };
 
 */
 
-/*@-exportheader@*/
 void
 ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
-/*@=exportheader@*/
 {
   const unsigned bytes = ecif->cif->bytes;
   const unsigned flags = ecif->cif->flags;
@@ -116,7 +120,7 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
   /* 'next_arg' grows up as we put parameters in it.  */
   valp next_arg;
 
-  int i;
+  int i, ii MAYBE_UNUSED;
   ffi_type **ptr;
   double double_tmp;
   union {
@@ -133,6 +137,9 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
   } p_argv;
   size_t struct_copy_size;
   unsigned gprvalue;
+
+  if (ecif->cif->abi == FFI_LINUX_SOFT_FLOAT)
+    NUM_FPR_ARG_REGISTERS = 0;
 
   stacktop.c = (char *) stack + bytes;
   gpr_base.u = stacktop.u - ASM_NEEDS_REGISTERS - NUM_GPR_ARG_REGISTERS;
@@ -165,6 +172,9 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
       switch ((*ptr)->type)
 	{
 	case FFI_TYPE_FLOAT:
+	  /* With FFI_LINUX_SOFT_FLOAT floats are handled like UINT32.  */
+	  if (ecif->cif->abi == FFI_LINUX_SOFT_FLOAT)
+	    goto soft_float_prep;
 	  double_tmp = **p_argv.f;
 	  if (fparg_count >= NUM_FPR_ARG_REGISTERS)
 	    {
@@ -178,6 +188,9 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	  break;
 
 	case FFI_TYPE_DOUBLE:
+	  /* With FFI_LINUX_SOFT_FLOAT doubles are handled like UINT64.  */
+	  if (ecif->cif->abi == FFI_LINUX_SOFT_FLOAT)
+	    goto soft_double_prep;
 	  double_tmp = **p_argv.d;
 
 	  if (fparg_count >= NUM_FPR_ARG_REGISTERS)
@@ -197,8 +210,77 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	  FFI_ASSERT (flags & FLAG_FP_ARGUMENTS);
 	  break;
 
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+	case FFI_TYPE_LONGDOUBLE:
+	  if ((ecif->cif->abi != FFI_LINUX)
+		&& (ecif->cif->abi != FFI_LINUX_SOFT_FLOAT))
+	    goto do_struct;
+	  /* The soft float ABI for long doubles works like this,
+	     a long double is passed in four consecutive gprs if available.
+	     A maximum of 2 long doubles can be passed in gprs.
+	     If we do not have 4 gprs left, the long double is passed on the
+	     stack, 4-byte aligned.  */
+	  if (ecif->cif->abi == FFI_LINUX_SOFT_FLOAT)
+	    {
+	      unsigned int int_tmp = (*p_argv.ui)[0];
+	      if (intarg_count >= NUM_GPR_ARG_REGISTERS - 3)
+		{
+		  if (intarg_count < NUM_GPR_ARG_REGISTERS)
+		    intarg_count += NUM_GPR_ARG_REGISTERS - intarg_count;
+		  *next_arg.u = int_tmp;
+		  next_arg.u++;
+		  for (ii = 1; ii < 4; ii++)
+		    {
+		      int_tmp = (*p_argv.ui)[ii];
+		      *next_arg.u = int_tmp;
+		      next_arg.u++;
+		    }
+		}
+	      else
+		{
+		  *gpr_base.u++ = int_tmp;
+		  for (ii = 1; ii < 4; ii++)
+		    {
+		      int_tmp = (*p_argv.ui)[ii];
+		      *gpr_base.u++ = int_tmp;
+		    }
+		}
+	      intarg_count +=4;
+	    }
+	  else
+	    {
+	      double_tmp = (*p_argv.d)[0];
+
+	      if (fparg_count >= NUM_FPR_ARG_REGISTERS - 1)
+		{
+		  if (intarg_count >= NUM_GPR_ARG_REGISTERS
+		      && intarg_count % 2 != 0)
+		    {
+		      intarg_count++;
+		      next_arg.u++;
+		    }
+		  *next_arg.d = double_tmp;
+		  next_arg.u += 2;
+		  double_tmp = (*p_argv.d)[1];
+		  *next_arg.d = double_tmp;
+		  next_arg.u += 2;
+		}
+	      else
+		{
+		  *fpr_base.d++ = double_tmp;
+		  double_tmp = (*p_argv.d)[1];
+		  *fpr_base.d++ = double_tmp;
+		}
+
+	      fparg_count += 2;
+	      FFI_ASSERT (flags & FLAG_FP_ARGUMENTS);
+	    }
+	  break;
+#endif
+
 	case FFI_TYPE_UINT64:
 	case FFI_TYPE_SINT64:
+	soft_double_prep:
 	  if (intarg_count == NUM_GPR_ARG_REGISTERS-1)
 	    intarg_count++;
 	  if (intarg_count >= NUM_GPR_ARG_REGISTERS)
@@ -232,7 +314,7 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 
 	case FFI_TYPE_STRUCT:
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
-	case FFI_TYPE_LONGDOUBLE:
+	do_struct:
 #endif
 	  struct_copy_size = ((*ptr)->size + 15) & ~0xF;
 	  copy_space.c -= struct_copy_size;
@@ -261,6 +343,8 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	case FFI_TYPE_UINT32:
 	case FFI_TYPE_SINT32:
 	case FFI_TYPE_POINTER:
+	soft_float_prep:
+
 	  gprvalue = **p_argv.ui;
 
 	putgpr:
@@ -322,10 +406,8 @@ enum { ASM_NEEDS_REGISTERS64 = 4 };
 
 */
 
-/*@-exportheader@*/
 void FFI_HIDDEN
 ffi_prep_args64 (extended_cif *ecif, unsigned long *const stack)
-/*@=exportheader@*/
 {
   const unsigned long bytes = ecif->cif->bytes;
   const unsigned long flags = ecif->cif->flags;
@@ -433,6 +515,7 @@ ffi_prep_args64 (extended_cif *ecif, unsigned long *const stack)
 	  if (fparg_count < NUM_FPR_ARG_REGISTERS64)
 	    *fpr_base.d++ = double_tmp;
 	  fparg_count++;
+	  FFI_ASSERT (__LDBL_MANT_DIG__ == 106);
 	  FFI_ASSERT (flags & FLAG_FP_ARGUMENTS);
 	  break;
 #endif
@@ -515,6 +598,9 @@ ffi_prep_cif_machdep (ffi_cif *cif)
   unsigned type = cif->rtype->type;
   unsigned size = cif->rtype->size;
 
+  if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+    NUM_FPR_ARG_REGISTERS = 0;
+
   if (cif->abi != FFI_LINUX64)
     {
       /* All the machine-independent calculation of cif->bytes will be wrong.
@@ -536,11 +622,6 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 
       /* Space for the mandatory parm save area and general registers.  */
       bytes += 2 * NUM_GPR_ARG_REGISTERS64 * sizeof (long);
-
-#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
-      if (type == FFI_TYPE_LONGDOUBLE)
-	type = FFI_TYPE_DOUBLE;
-#endif
     }
 
   /* Return value handling.  The rules for SYSV are as follows:
@@ -549,19 +630,33 @@ ffi_prep_cif_machdep (ffi_cif *cif)
      - 64-bit integer values and structures between 5 and 8 bytes are returned
      in gpr3 and gpr4;
      - Single/double FP values are returned in fpr1;
-     - Larger structures and long double (if not equivalent to double) values
-     are allocated space and a pointer is passed as the first argument.
+     - Larger structures are allocated space and a pointer is passed as
+     the first argument.
+     - long doubles (if not equivalent to double) are returned in
+     fpr1,fpr2 for Linux and as for large structs for SysV.
      For LINUX64:
      - integer values in gpr3;
      - Structures/Unions by reference;
-     - Single/double FP values in fpr1, long double in fpr1,fpr2.  */
+     - Single/double FP values in fpr1, long double in fpr1,fpr2.
+     - soft-float float/doubles are treated as UINT32/UINT64 respectivley.
+     - soft-float long doubles are returned in gpr3-gpr6.  */
   switch (type)
     {
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+    case FFI_TYPE_LONGDOUBLE:
+      if (cif->abi != FFI_LINUX && cif->abi != FFI_LINUX64
+	&& cif->abi != FFI_LINUX_SOFT_FLOAT)
+	goto byref;
+      flags |= FLAG_RETURNS_128BITS;
+      /* Fall through.  */
+#endif
     case FFI_TYPE_DOUBLE:
       flags |= FLAG_RETURNS_64BITS;
       /* Fall through.  */
     case FFI_TYPE_FLOAT:
-      flags |= FLAG_RETURNS_FP;
+      /* With FFI_LINUX_SOFT_FLOAT no fp registers are used.  */
+      if (cif->abi != FFI_LINUX_SOFT_FLOAT)
+	flags |= FLAG_RETURNS_FP;
       break;
 
     case FFI_TYPE_UINT64:
@@ -598,15 +693,8 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 		}
 	    }
 	}
-      /* else fall through.  */
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
-    case FFI_TYPE_LONGDOUBLE:
-      if (type == FFI_TYPE_LONGDOUBLE && cif->abi == FFI_LINUX64)
-	{
-	  flags |= FLAG_RETURNS_128BITS;
-	  flags |= FLAG_RETURNS_FP;
-	  break;
-	}
+    byref:
 #endif
       intarg_count++;
       flags |= FLAG_RETVAL_REFERENCE;
@@ -631,11 +719,36 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 	switch ((*ptr)->type)
 	  {
 	  case FFI_TYPE_FLOAT:
+	    /* With FFI_LINUX_SOFT_FLOAT floats are handled like UINT32.  */
+	    if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+	      goto soft_float_cif;
 	    fparg_count++;
 	    /* floating singles are not 8-aligned on stack */
 	    break;
 
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+	  case FFI_TYPE_LONGDOUBLE:
+	    if (cif->abi != FFI_LINUX && cif->abi != FFI_LINUX_SOFT_FLOAT)
+	      goto do_struct;
+	    if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+	      {
+		if (intarg_count >= NUM_GPR_ARG_REGISTERS - 3
+		  || intarg_count < NUM_GPR_ARG_REGISTERS)
+		  /* A long double in FFI_LINUX_SOFT_FLOAT can use only
+		     a set of four consecutive gprs. If we have not enough,
+		     we have to adjust the intarg_count value.  */
+		  intarg_count += NUM_GPR_ARG_REGISTERS - intarg_count;
+		intarg_count += 4;
+		break;
+	      }
+	    else
+	      fparg_count++;
+	    /* Fall thru */
+#endif
 	  case FFI_TYPE_DOUBLE:
+	    /* With FFI_LINUX_SOFT_FLOAT doubles are handled like UINT64.  */
+	    if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+	      goto soft_double_cif;
 	    fparg_count++;
 	    /* If this FP arg is going on the stack, it must be
 	       8-byte-aligned.  */
@@ -647,6 +760,7 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 
 	  case FFI_TYPE_UINT64:
 	  case FFI_TYPE_SINT64:
+	  soft_double_cif:
 	    /* 'long long' arguments are passed as two words, but
 	       either both words must fit in registers or both go
 	       on the stack.  If they go on the stack, they must
@@ -664,7 +778,7 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 
 	  case FFI_TYPE_STRUCT:
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
-	  case FFI_TYPE_LONGDOUBLE:
+	  do_struct:
 #endif
 	    /* We must allocate space for a copy of these to enforce
 	       pass-by-value.  Pad the space up to a multiple of 16
@@ -674,6 +788,7 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 	    /* Fall through (allocate space for the pointer).  */
 
 	  default:
+	  soft_float_cif:
 	    /* Everything else is passed as a 4-byte word in a GPR, either
 	       the object itself or a pointer to it.  */
 	    intarg_count++;
@@ -687,8 +802,13 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 	  {
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
 	  case FFI_TYPE_LONGDOUBLE:
-	    fparg_count += 2;
-	    intarg_count += 2;
+	    if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+	      intarg_count += 4;
+	    else
+	      {
+		fparg_count += 2;
+		intarg_count += 2;
+	      }
 	    break;
 #endif
 	  case FFI_TYPE_FLOAT:
@@ -751,24 +871,14 @@ ffi_prep_cif_machdep (ffi_cif *cif)
   return FFI_OK;
 }
 
-/*@-declundef@*/
-/*@-exportheader@*/
-extern void ffi_call_SYSV(/*@out@*/ extended_cif *,
-			  unsigned, unsigned,
-			  /*@out@*/ unsigned *,
+extern void ffi_call_SYSV(extended_cif *, unsigned, unsigned, unsigned *,
 			  void (*fn)(void));
-extern void FFI_HIDDEN ffi_call_LINUX64(/*@out@*/ extended_cif *,
-					unsigned long, unsigned long,
-					/*@out@*/ unsigned long *,
+extern void FFI_HIDDEN ffi_call_LINUX64(extended_cif *, unsigned long,
+					unsigned long, unsigned long *,
 					void (*fn)(void));
-/*@=declundef@*/
-/*@=exportheader@*/
 
 void
-ffi_call(/*@dependent@*/ ffi_cif *cif,
-	 void (*fn)(void),
-	 /*@out@*/ void *rvalue,
-	 /*@dependent@*/ void **avalue)
+ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   extended_cif ecif;
 
@@ -780,9 +890,7 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
 
   if ((rvalue == NULL) && (cif->rtype->type == FFI_TYPE_STRUCT))
     {
-      /*@-sysunrecog@*/
       ecif.rvalue = alloca(cif->rtype->size);
-      /*@=sysunrecog@*/
     }
   else
     ecif.rvalue = rvalue;
@@ -793,15 +901,13 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
 #ifndef POWERPC64
     case FFI_SYSV:
     case FFI_GCC_SYSV:
-      /*@-usedef@*/
+    case FFI_LINUX:
+    case FFI_LINUX_SOFT_FLOAT:
       ffi_call_SYSV (&ecif, -cif->bytes, cif->flags, ecif.rvalue, fn);
-      /*@=usedef@*/
       break;
 #else
     case FFI_LINUX64:
-      /*@-usedef@*/
       ffi_call_LINUX64 (&ecif, -(long) cif->bytes, cif->flags, ecif.rvalue, fn);
-      /*@=usedef@*/
       break;
 #endif
     default:
@@ -815,27 +921,24 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
 #define MIN_CACHE_LINE_SIZE 8
 
 static void
-flush_icache (char *addr1, int size)
+flush_icache (char *wraddr, char *xaddr, int size)
 {
   int i;
-  char * addr;
   for (i = 0; i < size; i += MIN_CACHE_LINE_SIZE)
-    {
-      addr = addr1 + i;
-      __asm__ volatile ("icbi 0,%0;" "dcbf 0,%0;"
-			: : "r" (addr) : "memory");
-    }
-  addr = addr1 + size - 1;
-  __asm__ volatile ("icbi 0,%0;" "dcbf 0,%0;" "sync;" "isync;"
-		    : : "r"(addr) : "memory");
+    __asm__ volatile ("icbi 0,%0;" "dcbf 0,%1;"
+		      : : "r" (xaddr + i), "r" (wraddr + i) : "memory");
+  __asm__ volatile ("icbi 0,%0;" "dcbf 0,%1;" "sync;" "isync;"
+		    : : "r"(xaddr + size - 1), "r"(wraddr + size - 1)
+		    : "memory");
 }
 #endif
 
 ffi_status
-ffi_prep_closure (ffi_closure *closure,
-		  ffi_cif *cif,
-		  void (*fun) (ffi_cif *, void *, void **, void *),
-		  void *user_data)
+ffi_prep_closure_loc (ffi_closure *closure,
+		      ffi_cif *cif,
+		      void (*fun) (ffi_cif *, void *, void **, void *),
+		      void *user_data,
+		      void *codeloc)
 {
 #ifdef POWERPC64
   void **tramp = (void **) &closure->tramp[0];
@@ -843,7 +946,7 @@ ffi_prep_closure (ffi_closure *closure,
   FFI_ASSERT (cif->abi == FFI_LINUX64);
   /* Copy function address and TOC from ffi_closure_LINUX64.  */
   memcpy (tramp, (char *) ffi_closure_LINUX64, 16);
-  tramp[2] = (void *) closure;
+  tramp[2] = codeloc;
 #else
   unsigned int *tramp;
 
@@ -859,10 +962,10 @@ ffi_prep_closure (ffi_closure *closure,
   tramp[8] = 0x7c0903a6;  /*   mtctr   r0 */
   tramp[9] = 0x4e800420;  /*   bctr */
   *(void **) &tramp[2] = (void *) ffi_closure_SYSV; /* function */
-  *(void **) &tramp[3] = (void *) closure;          /* context */
+  *(void **) &tramp[3] = codeloc;                   /* context */
 
   /* Flush the icache.  */
-  flush_icache (&closure->tramp[0],FFI_TRAMPOLINE_SIZE);
+  flush_icache ((char *)tramp, (char *)codeloc, FFI_TRAMPOLINE_SIZE);
 #endif
 
   closure->cif = cif;
@@ -920,14 +1023,17 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
      For FFI_SYSV the result is passed in r3/r4 if the struct size is less
      or equal 8 bytes.  */
 
-  if (cif->rtype->type == FFI_TYPE_STRUCT)
+  if ((cif->rtype->type == FFI_TYPE_STRUCT
+       && !((cif->abi == FFI_SYSV) && (size <= 8)))
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+      || (cif->rtype->type == FFI_TYPE_LONGDOUBLE
+	  && cif->abi != FFI_LINUX && cif->abi != FFI_LINUX_SOFT_FLOAT)
+#endif
+      )
     {
-      if (!((cif->abi == FFI_SYSV) && (size <= 8)))
-	{
-	  rvalue = (void *) *pgr;
-	  ng++;
-	  pgr++;
-	}
+      rvalue = (void *) *pgr;
+      ng++;
+      pgr++;
     }
 
   i = 0;
@@ -974,6 +1080,7 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 	case FFI_TYPE_SINT32:
 	case FFI_TYPE_UINT32:
 	case FFI_TYPE_POINTER:
+	soft_float_closure:
 	  /* there are 8 gpr registers used to pass values */
 	  if (ng < 8)
 	    {
@@ -989,6 +1096,9 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 	  break;
 
 	case FFI_TYPE_STRUCT:
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+	do_struct:
+#endif
 	  /* Structs are passed by reference. The address will appear in a
 	     gpr if it is one of the first 8 arguments.  */
 	  if (ng < 8)
@@ -1006,6 +1116,7 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 
 	case FFI_TYPE_SINT64:
 	case FFI_TYPE_UINT64:
+	soft_double_closure:
 	  /* passing long long ints are complex, they must
 	   * be passed in suitable register pairs such as
 	   * (r3,r4) or (r5,r6) or (r6,r7), or (r7,r8) or (r9,r10)
@@ -1037,6 +1148,9 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 	  break;
 
 	case FFI_TYPE_FLOAT:
+	  /* With FFI_LINUX_SOFT_FLOAT floats are handled like UINT32.  */
+	  if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+	    goto soft_float_closure;
 	  /* unfortunately float values are stored as doubles
 	   * in the ffi_closure_SYSV code (since we don't check
 	   * the type in that routine).
@@ -1060,12 +1174,14 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 	       * naughty thing to do but...
 	       */
 	      avalue[i] = pst;
-	      nf++;
 	      pst += 1;
 	    }
 	  break;
 
 	case FFI_TYPE_DOUBLE:
+	  /* With FFI_LINUX_SOFT_FLOAT doubles are handled like UINT64.  */
+	  if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+	    goto soft_double_closure;
 	  /* On the outgoing stack all values are aligned to 8 */
 	  /* there are 8 64bit floating point registers */
 
@@ -1080,10 +1196,46 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 	      if (((long) pst) & 4)
 		pst++;
 	      avalue[i] = pst;
-	      nf++;
 	      pst += 2;
 	    }
 	  break;
+
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+	case FFI_TYPE_LONGDOUBLE:
+	  if (cif->abi != FFI_LINUX && cif->abi != FFI_LINUX_SOFT_FLOAT)
+	    goto do_struct;
+	  if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+	    { /* Test if for the whole long double, 4 gprs are available.
+		 otherwise the stuff ends up on the stack.  */
+	      if (ng < 5)
+		{
+		  avalue[i] = pgr;
+		  pgr += 4;
+		  ng += 4;
+		}
+	      else
+		{
+		  avalue[i] = pst;
+		  pst += 4;
+		}
+	      break;
+	    }
+	  if (nf < 7)
+	    {
+	      avalue[i] = pfr;
+	      pfr += 2;
+	      nf += 2;
+	    }
+	  else
+	    {
+	      if (((long) pst) & 4)
+		pst++;
+	      avalue[i] = pst;
+	      pst += 4;
+	      nf = 8;
+	    }
+	  break;
+#endif
 
 	default:
 	  FFI_ASSERT (0);
@@ -1101,8 +1253,36 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
   if (cif->abi == FFI_SYSV && cif->rtype->type == FFI_TYPE_STRUCT
       && size <= 8)
     return FFI_SYSV_TYPE_SMALL_STRUCT + size;
-  return cif->rtype->type;
-
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+  else if (cif->rtype->type == FFI_TYPE_LONGDOUBLE
+	   && cif->abi != FFI_LINUX && cif->abi != FFI_LINUX_SOFT_FLOAT)
+    return FFI_TYPE_STRUCT;
+#endif
+  /* With FFI_LINUX_SOFT_FLOAT floats and doubles are handled like UINT32
+     respectivley UINT64.  */
+  if (cif->abi == FFI_LINUX_SOFT_FLOAT)
+    {
+      switch (cif->rtype->type)
+	{
+	case FFI_TYPE_FLOAT:
+	  return FFI_TYPE_UINT32;
+	  break;
+	case FFI_TYPE_DOUBLE:
+	  return FFI_TYPE_UINT64;
+	  break;
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+	case FFI_TYPE_LONGDOUBLE:
+	  return FFI_TYPE_UINT128;
+	  break;
+#endif
+	default:
+	  return cif->rtype->type;
+	}
+    }
+  else
+    {
+      return cif->rtype->type;
+    }
 }
 
 int FFI_HIDDEN ffi_closure_helper_LINUX64 (ffi_closure *, void *,
