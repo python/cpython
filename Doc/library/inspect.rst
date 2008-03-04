@@ -279,9 +279,13 @@ Note:
 
    Return true if the object is a Python generator function.
 
+   .. versionadded:: 2.6
+
 .. function:: isgenerator(object)
 
    Return true if the object is a generator.
+
+   .. versionadded:: 2.6
 
 .. function:: istraceback(object)
 
