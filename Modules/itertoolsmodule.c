@@ -1682,8 +1682,8 @@ chain_next(chainobject *lz)
 			return NULL;			/* no more input sources */
 		}
 		lz->active = PyObject_GetIter(iterable);
+		Py_DECREF(iterable);
 		if (lz->active == NULL) {
-			Py_DECREF(iterable);
 			Py_CLEAR(lz->source);
 			return NULL;			/* input not iterable */
 		}
