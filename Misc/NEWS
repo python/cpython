@@ -59,7 +59,7 @@ Core and builtins
 - Fixed repr() and str() of complex numbers with infinity or nan as real or
   imaginary part.
 
-- Clear all free list during a gc.collect() of the highest generation in order
+- Clear all free lists during a gc.collect() of the highest generation in order
   to allow pymalloc to free more arenas. Python may give back memory to the
   OS earlier.
 
