@@ -850,7 +850,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   positive or negative infinity.  This works on any platform with 
   IEEE 754 semantics.  (Contributed by Christian Heimes.)
 
-  .. Patch 1635.
+  .. Patch 1635
 
   Other functions in the :mod:`math` module, :func:`isinf` and
   :func:`isnan`, return true if their floating-point argument is
@@ -932,7 +932,7 @@ Optimizations
   (Original optimization implemented by Armin Rigo, updated for 
   Python 2.6 by Kevin Jacobs.) 
 
-  .. % Patch 1700288
+  .. Patch 1700288
 
 * All of the functions in the :mod:`struct` module have been rewritten in
   C, thanks to work at the Need For Speed sprint.
@@ -1335,17 +1335,17 @@ complete list of changes, or look through the CVS logs for all the details.
   long searches can now be interrupted.
   (Contributed by Josh Hoyt and Ralf Schmitt.)
 
-  .. % Patch 846388
+  .. Patch 846388
 
 * The :mod:`rgbimg` module has been removed.
 
 * The :mod:`sched` module's :class:`scheduler` instances now 
   have a read-only :attr:`queue` attribute that returns the 
   contents of the scheduler's queue, represented as a list of
-  named tuples with the fields 
-  ``(*time*, *priority*, *action*, *argument*)``.
+  named tuples with the fields ``(time, priority, action, argument)``.
   (Contributed by Raymond Hettinger XXX check.)
-  .. % Patch 1861
+
+  .. Patch 1861
 
 * The :mod:`sets` module has been deprecated; it's better to 
   use the built-in :class:`set` and :class:`frozenset` types.
@@ -1369,7 +1369,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
   (Contributed by Adam Olsen.)
 
-  .. % Patch 1583
+  .. Patch 1583
 
   The :func:`siginterrupt` function is now available from Python code,
   and allows changing whether signals can interrupt system calls or not.
