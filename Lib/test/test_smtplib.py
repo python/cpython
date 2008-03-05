@@ -19,7 +19,7 @@ PORT = None
 
 def server(evt, buf):
     serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serv.settimeout(1)
+    serv.settimeout(15)
     serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     serv.bind(("", 0))
     global PORT
