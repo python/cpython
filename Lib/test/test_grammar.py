@@ -282,6 +282,10 @@ class GrammarTests(unittest.TestCase):
         def d32v((x,)): pass
         d32v((1,))
 
+        # Check ast errors in *args and *kwargs
+        check_syntax_error(self, "f(*g(1=2))")
+        check_syntax_error(self, "f(**g(1=2))")
+
     def testLambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
         l1 = lambda : 0
