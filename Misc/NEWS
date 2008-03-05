@@ -15,6 +15,16 @@ Core and builtins
 - Issue #2238: Some syntax errors in *args and **kwargs expressions could give
   bogus error messages.
 
+Library
+-------
+
+- The bundled libffi copy is now in sync with the recently released
+  libffi3.0.4 version, apart from some small changes to
+  Modules/_ctypes/libffi/configure.ac.
+  On OS X, preconfigured libffi files are used.
+  On all linux systems the --with-system-ffi configure option defaults
+  to "yes".
+
 
 What's New in Python 2.6 alpha 1?
 =================================
