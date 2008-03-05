@@ -93,7 +93,7 @@ update_status() {
 place_summary_first() {
     testf=$1
     sed -n '/^[0-9][0-9]* tests OK\./,$p' < $testf \
-	| egrep -v '\[[0-9]+ refs\]' > $testf.tmp
+        | egrep -v '\[[0-9]+ refs\]' > $testf.tmp
     echo "" >> $testf.tmp
     cat $testf >> $testf.tmp
     mv $testf.tmp $testf
@@ -103,7 +103,7 @@ count_failures () {
     testf=$1
     n=`grep -ic " failed:" $testf`
     if [ $n -eq 1 ] ; then
-	n=`grep " failed:" $testf | sed -e 's/ .*//'`
+        n=`grep " failed:" $testf | sed -e 's/ .*//'`
     fi
     echo $n
 }
@@ -115,17 +115,17 @@ mail_on_failure() {
         if [ "$FAILURE_CC" != "" ]; then
             dest="$dest -c $FAILURE_CC"
         fi
-	if [ "x$3" != "x" ] ; then
-	    (echo "More important issues:"
-	     echo "----------------------"
-	     egrep -v "$3" < $2
-	     echo ""
-	     echo "Less important issues:"
-	     echo "----------------------"
-	     egrep "$3" < $2)
+        if [ "x$3" != "x" ] ; then
+            (echo "More important issues:"
+             echo "----------------------"
+             egrep -v "$3" < $2
+             echo ""
+             echo "Less important issues:"
+             echo "----------------------"
+             egrep "$3" < $2)
         else
-	    cat $2
-	fi | mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $dest
+            cat $2
+        fi | mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $dest
     fi
 }
 
@@ -222,7 +222,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## ensure that the reflog exists so the grep doesn't fail
             touch $REFLOG
             $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
-	    LEAK_PAT="($LEAKY_TESTS|sum=0)"
+            LEAK_PAT="($LEAKY_TESTS|sum=0)"
             NUM_FAILURES=`egrep -vc "$LEAK_PAT" $REFLOG`
             place_summary_first build/$F
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
