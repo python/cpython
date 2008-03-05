@@ -28,6 +28,10 @@ HOST = "localhost"
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 HAVE_FORKING = hasattr(os, "fork") and os.name != "os2"
 
+def signal_alarm(n):
+    """Call signal.alarm when it exists (i.e. not on Windows)."""
+    if hasattr(signal, 'alarm'):
+        signal.alarm(n)
 
 def receive(sock, n, timeout=20):
     r, w, x = select.select([sock], [], [], timeout)
@@ -99,7 +103,7 @@ class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
-        signal.alarm(20)  # Kill deadlocks after 20 seconds.
+        signal_alarm(20)  # Kill deadlocks after 20 seconds.
         self.port_seed = 0
         self.test_files = []
 
@@ -112,7 +116,7 @@ class SocketServerTest(unittest.TestCase):
             except os.error:
                 pass
         self.test_files[:] = []
-        signal.alarm(0)  # Didn't deadlock.
+        signal_alarm(0)  # Didn't deadlock.
 
     def pickaddr(self, proto):
         if proto == socket.AF_INET:
@@ -267,4 +271,4 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
-    signal.alarm(3)  # Shutdown shouldn't take more than 3 seconds.
+    signal_alarm(3)  # Shutdown shouldn't take more than 3 seconds.
