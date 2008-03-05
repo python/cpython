@@ -2362,10 +2362,8 @@ permutations_dealloc(permutationsobject *po)
 static int
 permutations_traverse(permutationsobject *po, visitproc visit, void *arg)
 {
-	if (po->pool != NULL)
-		Py_VISIT(po->pool);
-	if (po->result != NULL)
-		Py_VISIT(po->result);
+	Py_VISIT(po->pool);
+	Py_VISIT(po->result);
 	return 0;
 }
 
