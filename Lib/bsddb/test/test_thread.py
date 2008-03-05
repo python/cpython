@@ -73,9 +73,9 @@ class BaseThreadedTestCase(unittest.TestCase):
         self.d.open(self.filename, self.dbtype, self.dbopenflags|db.DB_CREATE)
 
     def tearDown(self):
-        test_support.rmtree(self.homeDir)
         self.d.close()
         self.env.close()
+        test_support.rmtree(self.homeDir)
 
     def setEnvOpts(self):
         pass

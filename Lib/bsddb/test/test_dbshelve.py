@@ -40,10 +40,7 @@ class DBShelveTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.do_close()
-        try:
-            os.remove(self.filename)
-        except os.error:
-            pass
+        test_support.unlink(self.filename)
 
     def mk(self, key):
         """Turn key into an appropriate key type for this db"""
@@ -267,8 +264,8 @@ class BasicEnvShelveTestCase(DBShelveTestCase):
 
 
     def tearDown(self):
-        test_support.rmtree(self.homeDir)
         self.do_close()
+        test_support.rmtree(self.homeDir)
 
 
 class EnvBTreeShelveTestCase(BasicEnvShelveTestCase):
