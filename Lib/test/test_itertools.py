@@ -47,15 +47,6 @@ def fact(n):
     'Factorial'
     return prod(range(1, n+1))
 
-def permutations(iterable, r=None):
-    # XXX use this until real permutations code is added
-    pool = tuple(iterable)
-    n = len(pool)
-    r = n if r is None else r
-    for indices in product(range(n), repeat=r):
-        if len(set(indices)) == r:
-            yield tuple(pool[i] for i in indices)
-
 class TestBasicOps(unittest.TestCase):
     def test_chain(self):
         self.assertEqual(list(chain('abc', 'def')), list('abcdef'))
@@ -117,6 +108,8 @@ class TestBasicOps(unittest.TestCase):
                     self.assertEqual(len(set(c)), r)                    # no duplicate elements
                     self.assertEqual(list(c), sorted(c))                # keep original ordering
                     self.assert_(all(e in values for e in c))           # elements taken from input iterable
+                    self.assertEqual(list(c),
+                                     [e for e in values if e in c])      # comb is a subsequence of the input iterable
                 self.assertEqual(result, list(combinations1(values, r))) # matches first pure python version
                 self.assertEqual(result, list(combinations2(values, r))) # matches first pure python version
 
@@ -127,9 +120,10 @@ class TestBasicOps(unittest.TestCase):
     def test_permutations(self):
         self.assertRaises(TypeError, permutations)              # too few arguments
         self.assertRaises(TypeError, permutations, 'abc', 2, 1) # too many arguments
-##        self.assertRaises(TypeError, permutations, None)        # pool is not iterable
-##        self.assertRaises(ValueError, permutations, 'abc', -2)  # r is negative
-##        self.assertRaises(ValueError, permutations, 'abc', 32)  # r is too big
+        self.assertRaises(TypeError, permutations, None)        # pool is not iterable
+        self.assertRaises(ValueError, permutations, 'abc', -2)  # r is negative
+        self.assertRaises(ValueError, permutations, 'abc', 32)  # r is too big
+        self.assertRaises(TypeError, permutations, 'abc', 's')  # r is not an int or None
         self.assertEqual(list(permutations(range(3), 2)),
                                            [(0,1), (0,2), (1,0), (1,2), (2,0), (2,1)])
 
@@ -182,7 +176,7 @@ class TestBasicOps(unittest.TestCase):
                     self.assertEqual(result, list(permutations(values)))       # test default r
 
         # Test implementation detail:  tuple re-use
-##        self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
+        self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(permutations('abcde', 3))))), 1)
 
     def test_count(self):
@@ -407,12 +401,23 @@ class TestBasicOps(unittest.TestCase):
                                  list(product(*args, **dict(repeat=r))))
         self.assertEqual(len(list(product(*[range(7)]*6))), 7**6)
         self.assertRaises(TypeError, product, range(6), None)
+
+        def product2(*args, **kwds):
+            'Pure python version used in docs'
+            pools = map(tuple, args) * kwds.get('repeat', 1)
+            result = [[]]
+            for pool in pools:
+                result = [x+[y] for x in result for y in pool]
+            for prod in result:
+                yield tuple(prod)
+
         argtypes = ['', 'abc', '', xrange(0), xrange(4), dict(a=1, b=2, c=3),
                     set('abcdefg'), range(11), tuple(range(13))]
         for i in range(100):
             args = [random.choice(argtypes) for j in range(random.randrange(5))]
             expected_len = prod(map(len, args))
             self.assertEqual(len(list(product(*args))), expected_len)
+            self.assertEqual(list(product(*args)), list(product2(*args)))
             args = map(iter, args)
             self.assertEqual(len(list(product(*args))), expected_len)
 

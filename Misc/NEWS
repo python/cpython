@@ -699,7 +699,7 @@ Library
 - Added itertools.product() which forms the Cartesian product of
   the input iterables.
 
-- Added itertools.combinations().
+- Added itertools.combinations() and itertools.permutations().
 
 - Patch #1541463: optimize performance of cgi.FieldStorage operations.
 
