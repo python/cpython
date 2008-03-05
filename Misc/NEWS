@@ -18,6 +18,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1872: The struct module typecode for _Bool has been changed
+  from 't' to '?'.
+
 - The bundled libffi copy is now in sync with the recently released
   libffi3.0.4 version, apart from some small changes to
   Modules/_ctypes/libffi/configure.ac.

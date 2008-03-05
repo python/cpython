@@ -1242,7 +1242,7 @@ _type_ attribute.
 
 */
 
-static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOvtg";
+static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOv?g";
 
 static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)

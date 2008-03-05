@@ -77,7 +77,7 @@ Python values should be obvious given their types:
 +--------+-------------------------+--------------------+-------+
 | ``B``  | :ctype:`unsigned char`  | integer            |       |
 +--------+-------------------------+--------------------+-------+
-| ``t``  | :ctype:`_Bool`          | bool               | \(1)  |
+| ``?``  | :ctype:`_Bool`          | bool               | \(1)  |
 +--------+-------------------------+--------------------+-------+
 | ``h``  | :ctype:`short`          | integer            |       |
 +--------+-------------------------+--------------------+-------+
@@ -110,7 +110,7 @@ Python values should be obvious given their types:
 Notes:
 
 (1)
-   The ``'t'`` conversion code corresponds to the :ctype:`_Bool` type defined by
+   The ``'?'`` conversion code corresponds to the :ctype:`_Bool` type defined by
    C99. If this type is not available, it is simulated using a :ctype:`char`. In
    standard mode, it is always represented by one byte.
 
@@ -158,7 +158,7 @@ may be used.  For example, the Alpha and Merced processors use 64-bit pointer
 values, meaning a Python long integer will be used to hold the pointer; other
 platforms use 32-bit pointers and will use a Python integer.
 
-For the ``'t'`` format character, the return value is either :const:`True` or
+For the ``'?'`` format character, the return value is either :const:`True` or
 :const:`False`. When packing, the truth value of the argument object is used.
 Either 0 or 1 in the native or standard bool representation will be packed, and
 any non-zero value will be True when unpacking.

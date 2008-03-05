@@ -726,7 +726,7 @@ vBOOL_get(void *ptr, Py_ssize_t size)
 #endif
 
 static PyObject *
-t_set(void *ptr, PyObject *value, Py_ssize_t size)
+bool_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
 	switch (PyObject_IsTrue(value)) {
 	case -1:
@@ -741,7 +741,7 @@ t_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-t_get(void *ptr, Py_ssize_t size)
+bool_get(void *ptr, Py_ssize_t size)
 {
 	return PyBool_FromLong((long)*(BOOL_TYPE *)ptr);
 }
@@ -1645,15 +1645,15 @@ static struct fielddesc formattable[] = {
 	{ 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #endif
 #if SIZEOF__BOOL == 1
-	{ 't', t_set, t_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
+	{ '?', bool_set, bool_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
 #elif SIZEOF__BOOL == SIZEOF_SHORT
-	{ 't', t_set, t_get, &ffi_type_ushort},
+	{ '?', bool_set, bool_get, &ffi_type_ushort},
 #elif SIZEOF__BOOL == SIZEOF_INT
-	{ 't', t_set, t_get, &ffi_type_uint, I_set_sw, I_get_sw},
+	{ '?', bool_set, bool_get, &ffi_type_uint, I_set_sw, I_get_sw},
 #elif SIZEOF__BOOL == SIZEOF_LONG
-	{ 't', t_set, t_get, &ffi_type_ulong, L_set_sw, L_get_sw},
+	{ '?', bool_set, bool_get, &ffi_type_ulong, L_set_sw, L_get_sw},
 #elif SIZEOF__BOOL == SIZEOF_LONG_LONG
-	{ 't', t_set, t_get, &ffi_type_ulong, Q_set_sw, Q_get_sw},
+	{ '?', bool_set, bool_get, &ffi_type_ulong, Q_set_sw, Q_get_sw},
 #endif /* SIZEOF__BOOL */
 	{ 'O', O_set, O_get, &ffi_type_pointer},
 	{ 0, NULL, NULL, NULL},
