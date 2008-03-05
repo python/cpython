@@ -968,14 +968,8 @@ created.  The only file not installed with a version number in its
 name is the manual page, installed as "/usr/local/man/man1/python.1"
 by default.
 
-If you have a previous installation of Python that you don't
-want to replace yet, use
-
-        make altinstall
-
-This installs the same set of files as "make install" except it
-doesn't create the hard link to "python<version>" named "python" and
-it doesn't install the manual page at all.
+If you want to install multiple versions of Python see the section below
+entitled "Installing multiple versions".
 
 The only thing you may have to install manually is the Python mode for
 Emacs found in Misc/python-mode.el.  (But then again, more recent
@@ -986,6 +980,25 @@ On Mac OS X, if you have configured Python with --enable-framework, you
 should use "make frameworkinstall" to do the installation. Note that this
 installs the Python executable in a place that is not normally on your
 PATH, you may want to set up a symlink in /usr/local/bin.
+
+
+Installing multiple versions
+----------------------------
+
+On Unix and Mac systems if you intend to install multiple versions of Python
+using the same installation prefix (--prefix argument to the configure
+script) you must take care that your primary python executable is not
+overwritten by the installation of a different versio.  All files and
+directories installed using "make altinstall" contain the major and minor
+version and can thus live side-by-side.  "make install" also creates
+${prefix}/bin/python which refers to ${prefix}/bin/pythonX.Y.  If you intend
+to install multiple versions using the same prefix you must decide which
+version (if any) is your "primary" version.  Install that version using
+"make install".  Install all other versions using "make altinstall".
+
+For example, if you want to install Python 2.5, 2.6 and 3.0 with 2.6 being
+the primary version, you would execute "make install" in your 2.6 build
+directory and "make altinstall" in the others.
 
 
 Configuration options and variables
