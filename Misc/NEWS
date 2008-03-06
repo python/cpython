@@ -18,6 +18,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1725737: In distutil's sdist, exclude RCS, CVS etc. also in the
+  root directory, and also exclude .hg, .git, .bzr, and _darcs.
+
 - Issue #1872: The struct module typecode for _Bool has been changed
   from 't' to '?'.
 
