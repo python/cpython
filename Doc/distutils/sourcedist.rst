@@ -122,7 +122,8 @@ distribution:
 
 * all files in the Distutils "build" tree (default :file:`build/`)
 
-* all files in directories named :file:`RCS`, :file:`CVS` or :file:`.svn`
+* all files in directories named :file:`RCS`, :file:`CVS`, :file:`.svn`,
+  :file:`.hg`, :file:`.git`, :file:`.bzr` or :file:`_darcs`
 
 Now we have our complete list of files, which is written to the manifest for
 future reference, and then used to build the source distribution archive(s).
@@ -156,8 +157,9 @@ source distribution:
    previous two steps, so it's important that the ``prune`` command in the manifest
    template comes after the ``recursive-include`` command
 
-#. exclude the entire :file:`build` tree, and any :file:`RCS`, :file:`CVS` and
-   :file:`.svn` directories
+#. exclude the entire :file:`build` tree, and any :file:`RCS`, :file:`CVS`,
+   :file:`.svn`, :file:`.hg`, :file:`.git`, :file:`.bzr` and :file:`_darcs`
+   directories
 
 Just like in the setup script, file and directory names in the manifest template
 should always be slash-separated; the Distutils will take care of converting
