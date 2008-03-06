@@ -59,6 +59,44 @@ class TemporaryFileTests(unittest.TestCase):
     def test_tmpfile(self):
         if not hasattr(os, "tmpfile"):
             return
+        # As with test_tmpnam() below, the Windows implementation of tmpfile()
+        # attempts to create a file in the root directory of the current drive.
+        # On Vista and Server 2008, this test will always fail for normal users
+        # as writing to the root directory requires elevated privileges.  With
+        # XP and below, the semantics of tmpfile() are the same, but the user
+        # running the test is more likely to have administrative privileges on
+        # their account already.  If that's the case, then os.tmpfile() should
+        # work.  In order to make this test as useful as possible, rather than
+        # trying to detect Windows versions or whether or not the user has the
+        # right permissions, just try and create a file in the root directory
+        # and see if it raises a 'Permission denied' OSError.  If it does, then
+        # test that a subsequent call to os.tmpfile() raises the same error. If
+        # it doesn't, assume we're on XP or below and the user running the test
+        # has administrative privileges, and proceed with the test as normal.
+        if sys.platform == 'win32':
+            name = '\\python_test_os_test_tmpfile.txt'
+            if os.path.exists(name):
+                os.remove(name)
+            try:
+                fp = open(name, 'w')
+            except IOError, first:
+                # open() failed, assert tmpfile() fails in the same way.
+                # Although open() raises an IOError and os.tmpfile() raises an
+                # OSError(), 'args' will be (13, 'Permission denied') in both
+                # cases.
+                try:
+                    fp = os.tmpfile()
+                except OSError, second:
+                    self.assertEqual(first.args, second.args)
+                else:
+                    self.fail("expected os.tmpfile() to raise OSError")
+                return
+            else:
+                # open() worked, therefore, tmpfile() should work.  Close our
+                # dummy file and proceed with the test as normal.
+                fp.close()
+                os.remove(name)
+
         fp = os.tmpfile()
         fp.write("foobar")
         fp.seek(0,0)
