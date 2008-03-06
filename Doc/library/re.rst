@@ -530,8 +530,7 @@ form.
    used in *pattern*, then the text of all groups in the pattern are also returned
    as part of the resulting list. If *maxsplit* is nonzero, at most *maxsplit*
    splits occur, and the remainder of the string is returned as the final element
-   of the list.  (Incompatibility note: in the original Python 1.5 release,
-   *maxsplit* was ignored.  This has been fixed in later releases.) ::
+   of the list. ::
 
       >>> re.split('\W+', 'Words, words, words.')
       ['Words', 'words', 'words', '']
@@ -798,10 +797,7 @@ support the following methods and attributes:
 
    Return a tuple containing all the subgroups of the match, from 1 up to however
    many groups are in the pattern.  The *default* argument is used for groups that
-   did not participate in the match; it defaults to ``None``.  (Incompatibility
-   note: in the original Python 1.5 release, if the tuple was one element long, a
-   string would be returned instead.  In later versions (from 1.5.1 on), a
-   singleton tuple is returned in such cases.)
+   did not participate in the match; it defaults to ``None``.
 
    For example::
 
