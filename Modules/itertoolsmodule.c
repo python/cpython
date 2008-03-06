@@ -198,7 +198,7 @@ _grouper_create(groupbyobject *parent, PyObject *tgtkey)
 {
 	_grouperobject *igo;
 
-	igo = PyObject_New(_grouperobject, &_grouper_type);
+	igo = PyObject_GC_New(_grouperobject, &_grouper_type);
 	if (igo == NULL)
 		return NULL;
 	igo->parent = (PyObject *)parent;
@@ -206,15 +206,25 @@ _grouper_create(groupbyobject *parent, PyObject *tgtkey)
 	igo->tgtkey = tgtkey;
 	Py_INCREF(tgtkey);
 
+	PyObject_GC_Track(igo);
 	return (PyObject *)igo;
 }
 
 static void
 _grouper_dealloc(_grouperobject *igo)
 {
+	PyObject_GC_UnTrack(igo);
 	Py_DECREF(igo->parent);
 	Py_DECREF(igo->tgtkey);
-	PyObject_Del(igo);
+	PyObject_GC_Del(igo);
+}
+
+static int
+_grouper_traverse(_grouperobject *igo, visitproc visit, void *arg)
+{
+	Py_VISIT(igo->parent);
+	Py_VISIT(igo->tgtkey);
+	return 0;
 }
 
 static PyObject *
@@ -280,9 +290,9 @@ static PyTypeObject _grouper_type = {
 	PyObject_GenericGetAttr,	/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,		/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,	/* tp_flags */
 	0,				/* tp_doc */
-	0, 				/* tp_traverse */
+	(traverseproc)_grouper_traverse,/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
@@ -299,7 +309,7 @@ static PyTypeObject _grouper_type = {
 	0,				/* tp_init */
 	0,				/* tp_alloc */
 	0,				/* tp_new */
-	PyObject_Del,			/* tp_free */
+	PyObject_GC_Del,		/* tp_free */
 };
 
  
