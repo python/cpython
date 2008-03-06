@@ -18,6 +18,8 @@ Core and builtins
 Library
 -------
 
+- Bug #2220: handle rlcompleter attribute match failure more gracefully.
+
 - Issue #2225: py_compile, when executed as a script, now returns a non-
   zero status code if not all files could be compiled successfully.
 
