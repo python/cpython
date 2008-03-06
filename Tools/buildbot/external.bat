@@ -25,6 +25,9 @@ if not exist openssl-0.9.8g (
 )
 
 @rem tcltk
+rd /s/q tcltk
+rd /s/q tcl8.4.16
+rd /s/q tk8.4.16
 if not exist tcl8.4.16 (
    if exist tcltk rd /s/q tcltk
    if exist tcl8.4.12 rd /s/q tcl8.4.12
