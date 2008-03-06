@@ -49,11 +49,19 @@ def fact(n):
 
 class TestBasicOps(unittest.TestCase):
     def test_chain(self):
-        self.assertEqual(list(chain('abc', 'def')), list('abcdef'))
-        self.assertEqual(list(chain('abc')), list('abc'))
-        self.assertEqual(list(chain('')), [])
-        self.assertEqual(take(4, chain('abc', 'def')), list('abcd'))
-        self.assertRaises(TypeError, list,chain(2, 3))
+
+        def chain2(*iterables):
+            'Pure python version in the docs'
+            for it in iterables:
+                for element in it:
+                    yield element
+
+        for c in (chain, chain2):
+            self.assertEqual(list(c('abc', 'def')), list('abcdef'))
+            self.assertEqual(list(c('abc')), list('abc'))
+            self.assertEqual(list(c('')), [])
+            self.assertEqual(take(4, c('abc', 'def')), list('abcd'))
+            self.assertRaises(TypeError, list,c(2, 3))
 
     def test_chain_from_iterable(self):
         self.assertEqual(list(chain.from_iterable(['abc', 'def'])), list('abcdef'))
@@ -652,6 +660,81 @@ class TestBasicOps(unittest.TestCase):
             self.assertRaises(StopIteration, f(lambda x:x, []).next)
             self.assertRaises(StopIteration, f(lambda x:x, StopNow()).next)
 
+class TestExamples(unittest.TestCase):
+
+    def test_chain(self):
+        self.assertEqual(''.join(chain('ABC', 'DEF')), 'ABCDEF')
+
+    def test_chain_from_iterable(self):
+        self.assertEqual(''.join(chain.from_iterable(['ABC', 'DEF'])), 'ABCDEF')
+
+    def test_combinations(self):
+        self.assertEqual(list(combinations('ABCD', 2)),
+                         [('A','B'), ('A','C'), ('A','D'), ('B','C'), ('B','D'), ('C','D')])
+        self.assertEqual(list(combinations(range(4), 3)),
+                         [(0,1,2), (0,1,3), (0,2,3), (1,2,3)])
+
+    def test_count(self):
+        self.assertEqual(list(islice(count(10), 5)), [10, 11, 12, 13, 14])
+
+    def test_cycle(self):
+        self.assertEqual(list(islice(cycle('ABCD'), 12)), list('ABCDABCDABCD'))
+
+    def test_dropwhile(self):
+        self.assertEqual(list(dropwhile(lambda x: x<5, [1,4,6,4,1])), [6,4,1])
+
+    def test_groupby(self):
+        self.assertEqual([k for k, g in groupby('AAAABBBCCDAABBB')],
+                         list('ABCDAB'))
+        self.assertEqual([(list(g)) for k, g in groupby('AAAABBBCCD')],
+                         [list('AAAA'), list('BBB'), list('CC'), list('D')])
+
+    def test_ifilter(self):
+        self.assertEqual(list(ifilter(lambda x: x%2, range(10))), [1,3,5,7,9])
+
+    def test_ifilterfalse(self):
+        self.assertEqual(list(ifilterfalse(lambda x: x%2, range(10))), [0,2,4,6,8])
+
+    def test_imap(self):
+        self.assertEqual(list(imap(pow, (2,3,10), (5,2,3))), [32, 9, 1000])
+
+    def test_islice(self):
+        self.assertEqual(list(islice('ABCDEFG', 2)), list('AB'))
+        self.assertEqual(list(islice('ABCDEFG', 2, 4)), list('CD'))
+        self.assertEqual(list(islice('ABCDEFG', 2, None)), list('CDEFG'))
+        self.assertEqual(list(islice('ABCDEFG', 0, None, 2)), list('ACEG'))
+
+    def test_izip(self):
+        self.assertEqual(list(izip('ABCD', 'xy')), [('A', 'x'), ('B', 'y')])
+
+    def test_izip_longest(self):
+        self.assertEqual(list(izip_longest('ABCD', 'xy', fillvalue='-')),
+                         [('A', 'x'), ('B', 'y'), ('C', '-'), ('D', '-')])
+
+    def test_permutations(self):
+        self.assertEqual(list(permutations('ABCD', 2)),
+                         map(tuple, 'AB AC AD BA BC BD CA CB CD DA DB DC'.split()))
+        self.assertEqual(list(permutations(range(3))),
+                         [(0,1,2), (0,2,1), (1,0,2), (1,2,0), (2,0,1), (2,1,0)])
+
+    def test_product(self):
+        self.assertEqual(list(product('ABCD', 'xy')),
+                         map(tuple, 'Ax Ay Bx By Cx Cy Dx Dy'.split()))
+        self.assertEqual(list(product(range(2), repeat=3)),
+                        [(0,0,0), (0,0,1), (0,1,0), (0,1,1),
+                         (1,0,0), (1,0,1), (1,1,0), (1,1,1)])
+
+    def test_repeat(self):
+        self.assertEqual(list(repeat(10, 3)), [10, 10, 10])
+
+    def test_stapmap(self):
+        self.assertEqual(list(starmap(pow, [(2,5), (3,2), (10,3)])),
+                         [32, 9, 1000])
+
+    def test_takewhile(self):
+        self.assertEqual(list(takewhile(lambda x: x<5, [1,4,6,4,1])), [1,4])
+
+
 class TestGC(unittest.TestCase):
 
     def makecycle(self, iterator, container):
@@ -662,6 +745,14 @@ class TestGC(unittest.TestCase):
     def test_chain(self):
         a = []
         self.makecycle(chain(a), a)
+
+    def test_chain_from_iterable(self):
+        a = []
+        self.makecycle(chain.from_iterable([a]), a)
+
+    def test_combinations(self):
+        a = []
+        self.makecycle(combinations([1,2,a,3], 3), a)
 
     def test_cycle(self):
         a = []
@@ -687,6 +778,12 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(izip([a]*2, [a]*3), a)
 
+    def test_izip_longest(self):
+        a = []
+        self.makecycle(izip_longest([a]*2, [a]*3), a)
+        b = [a, None]
+        self.makecycle(izip_longest([a]*2, [a]*3, fillvalue=b), a)
+
     def test_imap(self):
         a = []
         self.makecycle(imap(lambda x:x, [a]*2), a)
@@ -694,6 +791,14 @@ class TestGC(unittest.TestCase):
     def test_islice(self):
         a = []
         self.makecycle(islice([a]*2, None), a)
+
+    def test_permutations(self):
+        a = []
+        self.makecycle(permutations([1,2,a,3], 3), a)
+
+    def test_product(self):
+        a = []
+        self.makecycle(product([1,2,a,3], repeat=3), a)
 
     def test_repeat(self):
         a = []
@@ -1120,6 +1225,30 @@ Samuele
 ...         pass
 ...     return izip(a, b)
 
+>>> def grouper(n, iterable, padvalue=None):
+...     "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
+...     return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
+
+>>> def roundrobin(*iterables):
+...     "roundrobin('abc', 'd', 'ef') --> 'a', 'd', 'e', 'b', 'f', 'c'"
+...     # Recipe credited to George Sakkis
+...     pending = len(iterables)
+...     nexts = cycle(iter(it).next for it in iterables)
+...     while pending:
+...         try:
+...             for next in nexts:
+...                 yield next()
+...         except StopIteration:
+...             pending -= 1
+...             nexts = cycle(islice(nexts, pending))
+
+>>> def powerset(iterable):
+...     "powerset('ab') --> set([]), set(['a']), set(['b']), set(['a', 'b'])"
+...     # Recipe credited to Eric Raymond
+...     pairs = [(2**i, x) for i, x in enumerate(iterable)]
+...     for n in xrange(2**len(pairs)):
+...         yield set(x for m, x in pairs if m&n)
+
 This is not part of the examples but it tests to make sure the definitions
 perform as purported.
 
@@ -1185,6 +1314,15 @@ False
 >>> dotproduct([1,2,3], [4,5,6])
 32
 
+>>> list(grouper(3, 'abcdefg', 'x'))
+[('a', 'b', 'c'), ('d', 'e', 'f'), ('g', 'x', 'x')]
+
+>>> list(roundrobin('abc', 'd', 'ef'))
+['a', 'd', 'e', 'b', 'f', 'c']
+
+>>> map(sorted, powerset('ab'))
+[[], ['a'], ['b'], ['a', 'b']]
+
 """
 
 __test__ = {'libreftest' : libreftest}
@@ -1192,7 +1330,7 @@ __test__ = {'libreftest' : libreftest}
 def test_main(verbose=None):
     test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
                     RegressionTests, LengthTransparency,
-                    SubclassWithKwargsTest)
+                    SubclassWithKwargsTest, TestExamples)
     test_support.run_unittest(*test_classes)
 
     # verify reference counting
