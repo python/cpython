@@ -202,7 +202,9 @@ _bsddb
     
     The _bsddb subprojects depends only on the db_static project of 
     Berkeley DB. You have to choose either "Release", "Release AMD64", "Debug"
-    or "Debug AMD64" as configuration.
+    or "Debug AMD64" as configuration. For the AND64 builds, you need to
+    create the "x64" platform first (in Solution Platforms\Configuration
+    Manager...)
 
     Alternatively, if you want to start with the original sources,
     go to Sleepycat's download page:
