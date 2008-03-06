@@ -420,6 +420,9 @@ classes defined in it.  Usually, the class containing the method is itself
 defined in this global scope, and in the next section we'll find some good
 reasons why a method would want to reference its own class!
 
+Each value is an object, and therefore has a *class* (also called its *type*).
+It is stored as ``object.__class__``.
+
 
 .. _tut-inheritance:
 
@@ -468,6 +471,19 @@ call the base class method directly: just call ``BaseClassName.methodname(self,
 arguments)``.  This is occasionally useful to clients as well.  (Note that this
 only works if the base class is defined or imported directly in the global
 scope.)
+
+Python has two builtin functions that work with inheritance:
+
+* Use :func:`isinstance` to check an object's type: ``isinstance(obj, int)``
+  will be ``True`` only if ``obj.__class__`` is :class:`int` or some class
+  derived from :class:`int`.
+
+* Use :func:`issubclass` to check class inheritance: ``issubclass(bool, int)``
+  is ``True`` since :class:`bool` is a subclass of :class:`int`.  However,
+  ``issubclass(unicode, str)`` is ``False`` since :class:`unicode` is not a
+  subclass of :class:`str` (they only share a common ancestor,
+  :class:`basestring`).
+  
 
 
 .. _tut-multiple:
