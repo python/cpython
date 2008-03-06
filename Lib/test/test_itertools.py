@@ -449,6 +449,13 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(groupby([a]*2, lambda x:x), a)
 
+    def test_issue2246(self):
+        # Issue 2246 -- the _grouper iterator was not included in GC
+        n = 10
+        keyfunc = lambda x: x
+        for i, j in groupby(xrange(n), key=keyfunc):
+            keyfunc.__dict__.setdefault('x',[]).append(j)
+
     def test_ifilter(self):
         a = []
         self.makecycle(ifilter(lambda x:True, [a]*2), a)
