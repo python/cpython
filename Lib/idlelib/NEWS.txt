@@ -1,3 +1,9 @@
+What's New in IDLE 1.2.3c1?
+=========================
+
+*Release date: XX-XXX-2008*
+
+
 What's New in IDLE 1.2.2?
 =========================
 
