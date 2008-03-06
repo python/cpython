@@ -123,6 +123,8 @@ found outside of the innermost scope are read-only (an attempt to write to such
 a variable will simply create a *new* local variable in the innermost scope,
 leaving the identically named outer variable unchanged).
 
+.. XXX mention nonlocal
+
 Usually, the local scope references the local names of the (textually) current
 function.  Outside functions, the local scope references the same namespace as
 the global scope: the module's namespace. Class definitions place yet another
@@ -136,14 +138,15 @@ language definition is evolving towards static name resolution, at "compile"
 time, so don't rely on dynamic name resolution!  (In fact, local variables are
 already determined statically.)
 
-A special quirk of Python is that assignments always go into the innermost
-scope.  Assignments do not copy data --- they just bind names to objects.  The
-same is true for deletions: the statement ``del x`` removes the binding of ``x``
-from the namespace referenced by the local scope.  In fact, all operations that
-introduce new names use the local scope: in particular, import statements and
-function definitions bind the module or function name in the local scope.  (The
-:keyword:`global` statement can be used to indicate that particular variables
-live in the global scope.)
+A special quirk of Python is that -- if no :keyword:`global` or
+:keyword:`nonlocal` statement is in effect -- assignments to names always go
+into the innermost scope.  Assignments do not copy data --- they just bind names
+to objects.  The same is true for deletions: the statement ``del x`` removes the
+binding of ``x`` from the namespace referenced by the local scope.  In fact, all
+operations that introduce new names use the local scope: in particular, import
+statements and function definitions bind the module or function name in the
+local scope.  (The :keyword:`global` statement can be used to indicate that
+particular variables live in the global scope.)
 
 
 .. _tut-firstclasses:
