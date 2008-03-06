@@ -125,7 +125,7 @@ class Completer:
         import re
         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
         if not m:
-            return
+            return []
         expr, attr = m.group(1, 3)
         object = eval(expr, self.namespace)
         words = dir(object)
