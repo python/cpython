@@ -28,6 +28,13 @@ Library
 Extension Modules
 -----------------
 
+Tests
+-----
+
+- Patch #2232: os.tmpfile might fail on Windows if the user has no
+  permission to create files in the root directory.
+
+
 Documentation
 -------------
 
