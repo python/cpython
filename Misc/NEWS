@@ -18,6 +18,9 @@ Core and builtins
 Library
 -------
 
+- Issue #2225: py_compile, when executed as a script, now returns a non-
+  zero status code if not all files could be compiled successfully.
+
 - Bug #1725737: In distutil's sdist, exclude RCS, CVS etc. also in the
   root directory, and also exclude .hg, .git, .bzr, and _darcs.
 
