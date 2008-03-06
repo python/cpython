@@ -543,13 +543,25 @@ form.
       >>> re.split('\W+', 'Words, words, words.', 1)
       ['Words', 'words, words.']
 
+   If there are capturing groups in the separator and it matches at the start of
+   the string, the result will start with an empty string.  The same holds for
+   the end of the string::
+
+      >>> re.split('(\W+)', '...words, words...')
+      ['', '...', 'words', ', ', 'words', '...', '']
+
+   That way, separator components are always found at the same relative
+   indices within the result list (e.g., if there's one capturing group
+   in the separator, the 0th, the 2nd and so forth).
+
    Note that *split* will never split a string on an empty pattern match.
-   For example ::
+   For example::
 
       >>> re.split('x*', 'foo')
       ['foo']
       >>> re.split("(?m)^$", "foo\n\nbar\n")
       ['foo\n\nbar\n']
+
 
 .. function:: findall(pattern, string[, flags])
 
