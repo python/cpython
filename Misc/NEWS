@@ -15,6 +15,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1725737: In distutil's sdist, exclude RCS, CVS etc. also in the
+  root directory, and also exclude .hg, .git, .bzr, and _darcs.
+
 - Bug #1389051: imaplib causes excessive memory fragmentation when reading
   large messages.
 

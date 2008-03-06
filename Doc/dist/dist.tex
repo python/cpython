@@ -1213,7 +1213,8 @@ fully processed the manifest template, we remove files that should not
 be included in the source distribution:
 \begin{itemize}
 \item all files in the Distutils ``build'' tree (default \file{build/})
-\item all files in directories named \file{RCS}, \file{CVS} or \file{.svn}
+\item all files in directories named \file{RCS}, \file{CVS}, \file{.svn},
+      \file{.hg}, \file{.git}, \file{.bzr}, or \file{\_darcs}
 \end{itemize}
 Now we have our complete list of files, which is written to the manifest
 for future reference, and then used to build the source distribution
@@ -1246,7 +1247,8 @@ Distutils source distribution:
   \code{prune} command in the manifest template comes after the
   \code{recursive-include} command
 \item exclude the entire \file{build} tree, and any \file{RCS},
-  \file{CVS} and \file{.svn} directories
+  \file{CVS}, \file{.svn}, \file{.hg}, \file{.git}, \file{.bzr}, or
+  \file{\_darcs} directories
 \end{enumerate}
 Just like in the setup script, file and directory names in the manifest
 template should always be slash-separated; the Distutils will take care
