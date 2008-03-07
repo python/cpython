@@ -21,7 +21,6 @@ from test.test_support import TESTFN as TEST_FILE
 
 test.test_support.requires("network")
 
-NREQ = 3
 TEST_STR = "hello world\n"
 HOST = "localhost"
 
@@ -48,43 +47,6 @@ if HAVE_UNIX_SOCKETS:
     class ForkingUnixDatagramServer(SocketServer.ForkingMixIn,
                                     SocketServer.UnixDatagramServer):
         pass
-
-
-class MyMixinServer:
-    def serve_a_few(self):
-        for i in range(NREQ):
-            self.handle_request()
-
-    def handle_error(self, request, client_address):
-        self.close_request(request)
-        self.server_close()
-        raise
-
-
-class ServerThread(threading.Thread):
-    def __init__(self, addr, svrcls, hdlrcls):
-        threading.Thread.__init__(self)
-        self.__addr = addr
-        self.__svrcls = svrcls
-        self.__hdlrcls = hdlrcls
-        self.ready = threading.Event()
-
-    def run(self):
-        class svrcls(MyMixinServer, self.__svrcls):
-            pass
-        if verbose: print "thread: creating server"
-        svr = svrcls(self.__addr, self.__hdlrcls)
-        # We had the OS pick a port, so pull the real address out of
-        # the server.
-        self.addr = svr.server_address
-        self.port = self.addr[1]
-        if self.addr != svr.socket.getsockname():
-            raise RuntimeError('server_address was %s, expected %s' %
-                               (self.addr, svr.socket.getsockname()))
-        self.ready.set()
-        if verbose: print "thread: serving three times"
-        svr.serve_a_few()
-        if verbose: print "thread: done"
 
 
 @contextlib.contextmanager
@@ -143,28 +105,48 @@ class SocketServerTest(unittest.TestCase):
             self.test_files.append(fn)
             return fn
 
-    def run_server(self, svrcls, hdlrbase, testfunc):
+    def make_server(self, addr, svrcls, hdlrbase):
+        class MyServer(svrcls):
+            def handle_error(self, request, client_address):
+                self.close_request(request)
+                self.server_close()
+                raise
+
         class MyHandler(hdlrbase):
             def handle(self):
                 line = self.rfile.readline()
                 self.wfile.write(line)
 
-        addr = self.pickaddr(svrcls.address_family)
+        if verbose: print "creating server"
+        server = MyServer(addr, MyHandler)
+        self.assertEquals(server.server_address, server.socket.getsockname())
+        return server
+
+    def run_server(self, svrcls, hdlrbase, testfunc):
+        server = self.make_server(self.pickaddr(svrcls.address_family),
+                                  svrcls, hdlrbase)
+        # We had the OS pick a port, so pull the real address out of
+        # the server.
+        addr = server.server_address
         if verbose:
+            print "server created"
             print "ADDR =", addr
             print "CLASS =", svrcls
-        t = ServerThread(addr, svrcls, MyHandler)
-        if verbose: print "server created"
+        t = threading.Thread(
+            name='%s serving' % svrcls,
+            target=server.serve_forever,
+            # Short poll interval to make the test finish quickly.
+            # Time between requests is short enough that we won't wake
+            # up spuriously too many times.
+            kwargs={'poll_interval':0.01})
+        t.setDaemon(True)  # In case this function raises.
         t.start()
         if verbose: print "server running"
-        t.ready.wait(10)
-        self.assert_(t.ready.isSet(),
-                     "%s not ready within a reasonable time" % svrcls)
-        addr = t.addr
-        for i in range(NREQ):
+        for i in range(3):
             if verbose: print "test client", i
             testfunc(svrcls.address_family, addr)
         if verbose: print "waiting for server"
+        server.shutdown()
         t.join()
         if verbose: print "done"
 

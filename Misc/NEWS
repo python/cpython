@@ -18,6 +18,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1193577: A .shutdown() method has been added to SocketServers
+  which terminates the .serve_forever() loop.
+
 - Bug #2220: handle rlcompleter attribute match failure more gracefully.
 
 - Issue #2225: py_compile, when executed as a script, now returns a non-
