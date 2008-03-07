@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
+- Issue #2179: speed up with statement execution by storing the exit method
+  on the stack instead of in a temporary variable (patch by Jeffrey Yaskin)
+
 - Issue #2238: Some syntax errors in *args and **kwargs expressions could give
   bogus error messages.
 

@@ -822,14 +822,13 @@ class CodeGenerator:
     def visitWith(self, node):
         body = self.newBlock()
         final = self.newBlock()
-        exitvar = "$exit%d" % self.__with_count
         valuevar = "$value%d" % self.__with_count
         self.__with_count += 1
         self.set_lineno(node)
         self.visit(node.expr)
         self.emit('DUP_TOP')
         self.emit('LOAD_ATTR', '__exit__')
-        self._implicitNameOp('STORE', exitvar)
+        self.emit('ROT_TWO')
         self.emit('LOAD_ATTR', '__enter__')
         self.emit('CALL_FUNCTION', 0)
         if node.vars is None:
@@ -849,8 +848,6 @@ class CodeGenerator:
         self.emit('LOAD_CONST', None)
         self.nextBlock(final)
         self.setups.push((END_FINALLY, final))
-        self._implicitNameOp('LOAD', exitvar)
-        self._implicitNameOp('DELETE', exitvar)
         self.emit('WITH_CLEANUP')
         self.emit('END_FINALLY')
         self.setups.pop()
