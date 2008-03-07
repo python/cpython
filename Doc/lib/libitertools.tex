@@ -68,6 +68,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def chain(*iterables):
+         # chain('ABC', 'DEF') --> A B C D E F
          for it in iterables:
              for element in it:
                  yield element
@@ -83,6 +84,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def count(n=0):
+         # count(10) --> 10 11 12 13 14 ...
          while True:
              yield n
              n += 1
@@ -100,6 +102,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def cycle(iterable):
+         # cycle('ABCD') --> A B C D A B C D A B C D ...
          saved = []
          for element in iterable:
              yield element
@@ -121,6 +124,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def dropwhile(predicate, iterable):
+         # dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1
          iterable = iter(iterable)
          for x in iterable:
              if not predicate(x):
@@ -156,6 +160,8 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
     class groupby(object):
+        # [k for k, g in groupby('AAAABBBCCDAABBB')] --> A B C D A B
+        # [(list(g)) for k, g in groupby('AAAABBBCCD')] --> AAAA BBB CC D
         def __init__(self, iterable, key=None):
             if key is None:
                 key = lambda x: x
@@ -187,6 +193,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def ifilter(predicate, iterable):
+         # ifilter(lambda x: x%2, range(10)) --> 1 3 5 7 9
          if predicate is None:
              predicate = bool
          for x in iterable:
@@ -203,6 +210,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def ifilterfalse(predicate, iterable):
+         # ifilterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8
          if predicate is None:
              predicate = bool
          for x in iterable:
@@ -225,6 +233,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def imap(function, *iterables):
+         # imap(pow, (2,3,10), (5,2,3)) --> 32 9 1000
          iterables = map(iter, iterables)
          while True:
              args = [i.next() for i in iterables]
@@ -251,6 +260,10 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def islice(iterable, *args):
+         # islice('ABCDEFG', 2) --> A B
+         # islice('ABCDEFG', 2, 4) --> C D
+         # islice('ABCDEFG', 2, None) --> C D E F G
+         # islice('ABCDEFG', 0, None, 2) --> A C E G
          s = slice(*args)
          it = iter(xrange(s.start or 0, s.stop or sys.maxint, s.step or 1))
          nexti = it.next()
@@ -274,6 +287,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def izip(*iterables):
+         # izip('ABCD', 'xy') --> Ax By
          iterables = map(iter, iterables)
          while iterables:
              result = [it.next() for it in iterables]
@@ -311,6 +325,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def repeat(object, times=None):
+         # repeat(10, 3) --> 10 10 10
          if times is None:
              while True:
                  yield object
@@ -331,6 +346,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def starmap(function, iterable):
+         # starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000
          iterable = iter(iterable)
          while True:
              yield function(*iterable.next())
@@ -343,6 +359,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def takewhile(predicate, iterable):
+         # takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4
          for x in iterable:
              if predicate(x):
                  yield x
@@ -388,34 +405,6 @@ The following examples show common uses for each tool and
 demonstrate ways they can be combined.
 
 \begin{verbatim}
-
->>> amounts = [120.15, 764.05, 823.14]
->>> for checknum, amount in izip(count(1200), amounts):
-...     print 'Check %d is for $%.2f' % (checknum, amount)
-...
-Check 1200 is for $120.15
-Check 1201 is for $764.05
-Check 1202 is for $823.14
-
->>> import operator
->>> for cube in imap(operator.pow, xrange(1,5), repeat(3)):
-...    print cube
-...
-1
-8
-27
-64
-
->>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura',
-                  '', 'martin', '', 'walter', '', 'mark']
->>> for name in islice(reportlines, 3, None, 2):
-...    print name.title()
-...
-Alex
-Laura
-Martin
-Walter
-Mark
 
 # Show a dictionary sorted and grouped by value
 >>> from operator import itemgetter
@@ -529,10 +518,8 @@ def repeatfunc(func, times=None, *args):
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
-    try:
-        b.next()
-    except StopIteration:
-        pass
+    for elem in b:
+        break
     return izip(a, b)
 
 def grouper(n, iterable, padvalue=None):
@@ -542,5 +529,25 @@ def grouper(n, iterable, padvalue=None):
 def reverse_map(d):
     "Return a new dict with swapped keys and values"
     return dict(izip(d.itervalues(), d))
+
+def roundrobin(*iterables):
+    "roundrobin('abc', 'd', 'ef') --> 'a', 'd', 'e', 'b', 'f', 'c'"
+    # Recipe credited to George Sakkis
+    pending = len(iterables)
+    nexts = cycle(iter(it).next for it in iterables)
+    while pending:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            pending -= 1
+            nexts = cycle(islice(nexts, pending))
+
+def powerset(iterable):
+    "powerset('ab') --> set([]), set(['a']), set(['b']), set(['a', 'b'])"
+    # Recipe credited to Eric Raymond
+    pairs = [(2**i, x) for i, x in enumerate(iterable)]
+    for n in xrange(2**len(pairs)):
+        yield set(x for m, x in pairs if m&n)
 
 \end{verbatim}
