@@ -72,9 +72,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        			    storing constants that should have been removed)
        Python 2.5c2: 62131 (fix wrong code: for x, in ... in listcomp/genexp)
        Python 2.6a0: 62151 (peephole optimizations and STORE_MAP opcode)
+       Python 2.6a1: 62161 (WITH_CLEANUP optimization)
 .
 */
-#define MAGIC (62151 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62161 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
