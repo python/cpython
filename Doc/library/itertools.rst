@@ -662,15 +662,15 @@ which incur interpreter overhead. ::
    def pairwise(iterable):
        "s -> (s0,s1), (s1,s2), (s2, s3), ..."
        a, b = tee(iterable)
-       try:
-           b.next()
-       except StopIteration:
-           pass
+       for elem in b:
+           break
        return izip(a, b)
 
-   def grouper(n, iterable, padvalue=None):
+   def grouper(n, iterable, fillvalue=None):
        "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
-       return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
+       args = [iter(iterable)] * n
+       kwds = dict(fillvalue=fillvalue)
+       return izip_longest(*args, **kwds)
 
    def roundrobin(*iterables):
        "roundrobin('abc', 'd', 'ef') --> 'a', 'd', 'e', 'b', 'f', 'c'"
