@@ -9,6 +9,10 @@ What's New in Python 3.0a4?
 
 *Release date: XX-XXX-2008*
 
+Extension Modules
+-----------------
+
+- Use wchar_t functions in _locale module.
 
 
 What's New in Python 3.0a3?
