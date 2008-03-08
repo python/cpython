@@ -61,7 +61,7 @@ str2uni(const char* s)
     if (needed < sizeof(smallbuf))
         dest = smallbuf;
     else {
-        dest = PyMem_Malloc(needed+1);
+        dest = PyMem_Malloc((needed+1)*sizeof(wchar_t));
         if (!dest)
             return PyErr_NoMemory();
     }
@@ -282,7 +282,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
 #ifdef HAVE_USABLE_WCHAR_T
     s = s0;
 #else
-    s = PyMem_Malloc(n0+1);
+    s = PyMem_Malloc((n0+1)*sizeof(wchar_t));
     if (!s)
         return PyErr_NoMemory();
     for (i=0; i<=n0; i++)
@@ -291,7 +291,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
 
     /* assume no change in size, first */
     n1 = wcslen(s) + 1;
-    buf = PyMem_Malloc(n1);
+    buf = PyMem_Malloc(n1*sizeof(wchar_t));
     if (!buf) {
         PyErr_NoMemory();
         goto exit;
@@ -299,7 +299,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     n2 = wcsxfrm(buf, s, n1);
     if (n2 >= n1) {
         /* more space needed */
-        buf = PyMem_Realloc(buf, n2+1);
+        buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
         if (!buf) {
             PyErr_NoMemory();
             goto exit;
