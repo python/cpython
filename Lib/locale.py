@@ -505,7 +505,11 @@ else:
         def getpreferredencoding(do_setlocale = True):
             """Return the charset that the user is likely using,
             by looking at environment variables."""
-            return getdefaultlocale()[1]
+            res = getdefaultlocale()[1]
+            if res is None:
+                # LANG not set, default conservatively to ASCII
+                res = 'ascii'
+            return res
     else:
         def getpreferredencoding(do_setlocale = True):
             """Return the charset that the user is likely using,

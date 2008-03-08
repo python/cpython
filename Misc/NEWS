@@ -14,6 +14,13 @@ Extension Modules
 
 - Use wchar_t functions in _locale module.
 
+Library
+-------
+
+- Default to ASCII as the locale.getpreferredencoding, if the POSIX
+  system doesn't support CODESET and LANG isn't set or doesn't
+  allow deduction of an encoding.
+
 
 What's New in Python 3.0a3?
 ===========================
