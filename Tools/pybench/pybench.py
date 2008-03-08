@@ -121,7 +121,7 @@ def get_machine_details():
         'platform': platform.platform(),
         'processor': platform.processor(),
         'executable': sys.executable,
-        'implementation': platform.python_implementation(),
+        'implementation': getattr(platform, 'python_implementation', 'n/a'),
         'python': platform.python_version(),
         'compiler': platform.python_compiler(),
         'buildno': buildno,
@@ -837,7 +837,7 @@ python pybench.py -s p25.pybench -c p21.pybench
         print 'PYBENCH %s' % __version__
         print '-' * LINE
         print '* using %s %s' % (
-            platform.python_implementation(),
+            getattr(platform, 'python_implementation', 'Python'),
             string.join(string.split(sys.version), ' '))
 
         # Switch off garbage collection
