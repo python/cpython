@@ -107,9 +107,12 @@ slightly different way:
    being debugged (e.g. when an assertion fails).
 
 
-.. function:: post_mortem(traceback)
+.. function:: post_mortem([traceback])
 
-   Enter post-mortem debugging of the given *traceback* object.
+   Enter post-mortem debugging of the given *traceback* object.  If no 
+   *traceback* is given, it uses the one of the exception that is currently
+   being handled (an exception must be being handled if the default is to be
+   used).
 
 
 .. function:: pm()

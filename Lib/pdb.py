@@ -1198,7 +1198,16 @@ def set_trace():
 
 # Post-Mortem interface
 
-def post_mortem(t):
+def post_mortem(t=None):
+    # handling the default
+    if t is None:
+        # sys.exc_info() returns (type, value, traceback) if an exception is
+        # being handled, otherwise it returns None
+        t = sys.exc_info()[2]
+        if t is None:
+            raise ValueError("A valid traceback must be passed if no "
+                                               "exception is being handled")
+
     p = Pdb()
     p.reset()
     while t.tb_next is not None:
