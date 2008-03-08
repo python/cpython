@@ -58,7 +58,7 @@ str2uni(const char* s)
         PyErr_SetString(PyExc_ValueError, "Cannot convert byte to string");
         return NULL;
     }
-    if (needed < sizeof(smallbuf))
+    if (needed*sizeof(wchar_t) < sizeof(smallbuf))
         dest = smallbuf;
     else {
         dest = PyMem_Malloc((needed+1)*sizeof(wchar_t));
