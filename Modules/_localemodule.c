@@ -67,7 +67,7 @@ str2uni(const char* s)
     }
     /* This shouldn't fail now */
     res1 = mbstowcs(dest, s, needed+1);
-    assert(res == needed);
+    assert(res1 == needed);
     res2 = PyUnicode_FromWideChar(dest, res1);
     if (dest != smallbuf)
         PyMem_Free(dest);
