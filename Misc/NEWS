@@ -21,6 +21,11 @@ Core and builtins
 Library
 -------
 
+- Issue #1106316: pdb.post_mortem()'s parameter, "traceback", is now
+  optional: it defaults to the traceback of the exception that is currently
+  being handled (is mandatory to be in the middle of an exception, otherwise
+  it raises ValueError).
+
 - Issue #1193577: A .shutdown() method has been added to SocketServers
   which terminates the .serve_forever() loop.
 
