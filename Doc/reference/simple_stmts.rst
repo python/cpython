@@ -619,8 +619,12 @@ The :keyword:`continue` statement
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
 :keyword:`while` loop, but not nested in a function or class definition or
-:keyword:`finally` statement within that loop. [#]_ It continues with the next
+:keyword:`finally` clause within that loop.  It continues with the next
 cycle of the nearest enclosing loop.
+
+When :keyword:`continue` passes control out of a :keyword:`try` statement with a
+:keyword:`finally` clause, that :keyword:`finally` clause is executed before
+really starting the next loop cycle.
 
 
 .. _import:
@@ -920,9 +924,4 @@ built-in function :func:`eval`.  The built-in functions :func:`globals` and
 :func:`locals` return the current global and local dictionary, respectively,
 which may be useful to pass around for use by :keyword:`exec`.
 
-.. rubric:: Footnotes
-
-.. [#] It may occur within an :keyword:`except` or :keyword:`else` clause.  The
-   restriction on occurring in the :keyword:`try` clause is implementor's laziness
-   and will eventually be lifted.
 
