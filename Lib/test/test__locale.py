@@ -1,5 +1,5 @@
 from test.test_support import verbose, TestSkipped, run_unittest
-from _locale import (setlocale, LC_NUMERIC, RADIXCHAR, THOUSEP, nl_langinfo,
+from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, RADIXCHAR, THOUSEP, nl_langinfo,
                     localeconv, Error)
 import unittest
 from platform import uname
@@ -28,10 +28,10 @@ known_numerics = {'fr_FR' : (',', ''), 'en_US':('.', ',')}
 class _LocaleTests(unittest.TestCase):
 
     def setUp(self):
-        self.oldlocale = setlocale(LC_NUMERIC)
+        self.oldlocale = setlocale(LC_ALL)
 
     def tearDown(self):
-        setlocale(LC_NUMERIC, self.oldlocale)
+        setlocale(LC_ALL, self.oldlocale)
 
     # Want to know what value was calculated, what it was compared against,
     # what function was used for the calculation, what type of data was used,
@@ -58,6 +58,7 @@ class _LocaleTests(unittest.TestCase):
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
+                setlocale(LC_CTYPE, loc)
             except Error:
                 continue
             for li, lc in ((RADIXCHAR, "decimal_point"),
@@ -69,6 +70,7 @@ class _LocaleTests(unittest.TestCase):
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
+                setlocale(LC_CTYPE, loc)
             except Error:
                 continue
             for li, lc in ((RADIXCHAR, "decimal_point"),
@@ -80,6 +82,7 @@ class _LocaleTests(unittest.TestCase):
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
+                setlocale(LC_CTYPE, loc)
             except Error:
                 continue
             for li, lc in ((RADIXCHAR, "decimal_point"),
@@ -102,6 +105,7 @@ class _LocaleTests(unittest.TestCase):
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
+                setlocale(LC_CTYPE, loc)
             except Error:
                 continue
 
