@@ -26,6 +26,18 @@ __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
            "LC_NUMERIC", "LC_ALL", "CHAR_MAX"]
 
+def _strcoll(a,b):
+    """ strcoll(string,string) -> int.
+        Compares two strings according to the locale.
+    """
+    return cmp(a,b)
+
+def _strxfrm(s):
+    """ strxfrm(string) -> string.
+        Returns a string that behaves for cmp locale-aware.
+    """
+    return s
+
 try:
 
     from _locale import *
@@ -76,17 +88,11 @@ except ImportError:
             raise Error('_locale emulation only supports "C" locale')
         return 'C'
 
-    def strcoll(a,b):
-        """ strcoll(string,string) -> int.
-            Compares two strings according to the locale.
-        """
-        return cmp(a,b)
-
-    def strxfrm(s):
-        """ strxfrm(string) -> string.
-            Returns a string that behaves for cmp locale-aware.
-        """
-        return s
+# These may or may not exist in _locale, so be sure to set them.
+if 'strxfrm' not in globals():
+    strxfrm = _strxfrm
+if 'strcoll' not in globals():
+    strcoll = _strcoll
 
 ### Number formatting APIs
 
