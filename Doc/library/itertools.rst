@@ -692,3 +692,8 @@ which incur interpreter overhead. ::
        for n in xrange(2**len(pairs)):
            yield set(x for m, x in pairs if m&n)
 
+   def compress(data, selectors):
+       "compress('abcdef', [1,0,1,0,1,1]) --> a c e f"
+       for d, s in izip(data, selectors):
+           if s:
+               yield d
