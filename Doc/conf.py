@@ -14,6 +14,7 @@ sys.path.append('tools/sphinxext')
 # ---------------------
 
 extensions = ['sphinx.ext.refcounting', 'sphinx.ext.coverage']
+templates_path = ['tools/sphinxext']
 
 # General substitutions.
 project = 'Python'
@@ -74,16 +75,16 @@ html_last_updated_fmt = '%b %d, %Y'
 html_use_smartypants = True
 
 # Content template for the index page, filename relative to this file.
-html_index = 'tools/sphinxext/indexcontent.html'
+html_index = 'indexcontent.html'
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
-    'index': 'tools/sphinxext/indexsidebar.html',
+    'index': 'indexsidebar.html',
 }
 
 # Additional templates that should be rendered to pages.
 html_additional_pages = {
-    'download': 'tools/sphinxext/download.html',
+    'download': 'download.html',
 }
 
 # Output file base name for HTML help builder.
