@@ -1967,23 +1967,187 @@ When using a tuple as the second argument issubclass(X, (A, B, ...)),\n\
 is a shortcut for issubclass(X, A) or issubclass(X, B) or ... (etc.).");
 
 
-static PyObject*
-builtin_zip(PyObject *self, PyObject *args)
+typedef struct {
+	PyObject_HEAD
+	Py_ssize_t	tuplesize;
+	PyObject *ittuple;		/* tuple of iterators */
+	PyObject *result;
+} zipobject;
+
+PyTypeObject PyZip_Type;
+
+static PyObject *
+zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+	zipobject *lz;
+	Py_ssize_t i;
+	PyObject *ittuple;  /* tuple of iterators */
+	PyObject *result;
+	Py_ssize_t tuplesize = PySequence_Length(args);
+
+	if (type == &PyZip_Type && !_PyArg_NoKeywords("zip()", kwds))
+		return NULL;
+
 	/* args must be a tuple */
 	assert(PyTuple_Check(args));
 
-	return _PyZip_CreateIter(args);
+	/* obtain iterators */
+	ittuple = PyTuple_New(tuplesize);
+	if (ittuple == NULL)
+		return NULL;
+	for (i=0; i < tuplesize; ++i) {
+		PyObject *item = PyTuple_GET_ITEM(args, i);
+		PyObject *it = PyObject_GetIter(item);
+		if (it == NULL) {
+			if (PyErr_ExceptionMatches(PyExc_TypeError))
+				PyErr_Format(PyExc_TypeError,
+				    "zip argument #%zd must support iteration",
+				    i+1);
+			Py_DECREF(ittuple);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(ittuple, i, it);
+	}
+
+	/* create a result holder */
+	result = PyTuple_New(tuplesize);
+	if (result == NULL) {
+		Py_DECREF(ittuple);
+		return NULL;
+	}
+	for (i=0 ; i < tuplesize ; i++) {
+		Py_INCREF(Py_None);
+		PyTuple_SET_ITEM(result, i, Py_None);
+	}
+
+	/* create zipobject structure */
+	lz = (zipobject *)type->tp_alloc(type, 0);
+	if (lz == NULL) {
+		Py_DECREF(ittuple);
+		Py_DECREF(result);
+		return NULL;
+	}
+	lz->ittuple = ittuple;
+	lz->tuplesize = tuplesize;
+	lz->result = result;
+
+	return (PyObject *)lz;
 }
 
+static void
+zip_dealloc(zipobject *lz)
+{
+	PyObject_GC_UnTrack(lz);
+	Py_XDECREF(lz->ittuple);
+	Py_XDECREF(lz->result);
+	Py_TYPE(lz)->tp_free(lz);
+}
+
+static int
+zip_traverse(zipobject *lz, visitproc visit, void *arg)
+{
+	Py_VISIT(lz->ittuple);
+	Py_VISIT(lz->result);
+	return 0;
+}
+
+static PyObject *
+zip_next(zipobject *lz)
+{
+	Py_ssize_t i;
+	Py_ssize_t tuplesize = lz->tuplesize;
+	PyObject *result = lz->result;
+	PyObject *it;
+	PyObject *item;
+	PyObject *olditem;
+
+	if (tuplesize == 0)
+		return NULL;
+	if (Py_REFCNT(result) == 1) {
+		Py_INCREF(result);
+		for (i=0 ; i < tuplesize ; i++) {
+			it = PyTuple_GET_ITEM(lz->ittuple, i);
+			assert(PyIter_Check(it));
+			item = (*Py_TYPE(it)->tp_iternext)(it);
+			if (item == NULL) {
+				Py_DECREF(result);
+				return NULL;
+			}
+			olditem = PyTuple_GET_ITEM(result, i);
+			PyTuple_SET_ITEM(result, i, item);
+			Py_DECREF(olditem);
+		}
+	} else {
+		result = PyTuple_New(tuplesize);
+		if (result == NULL)
+			return NULL;
+		for (i=0 ; i < tuplesize ; i++) {
+			it = PyTuple_GET_ITEM(lz->ittuple, i);
+			assert(PyIter_Check(it));
+			item = (*Py_TYPE(it)->tp_iternext)(it);
+			if (item == NULL) {
+				Py_DECREF(result);
+				return NULL;
+			}
+			PyTuple_SET_ITEM(result, i, item);
+		}
+	}
+	return result;
+}
 
 PyDoc_STRVAR(zip_doc,
-"zip(it1 [, it2 [...]]) -> iter([(it1[0], it2[0] ...), ...])\n\
+"zip(iter1 [,iter2 [...]]) --> zip object\n\
 \n\
-Return an iterator yielding tuples, where each tuple contains the\n\
-corresponding element from each of the argument iterables.\n\
-The returned iterator ends when the shortest argument iterable is exhausted.\n\
-(This is identical to itertools.izip().)");
+Return a zip object whose .__next__() method returns a tuple where\n\
+the i-th element comes from the i-th iterable argument.  The .__next__()\n\
+method continues until the shortest iterable in the argument sequence\n\
+is exhausted and then it raises StopIteration.  Works like the zip()\n\
+function but consumes less memory by returning an iterator instead of\n\
+a list.");
+
+PyTypeObject PyZip_Type = {
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	"zip",				/* tp_name */
+	sizeof(zipobject),		/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)zip_dealloc,	/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	zip_doc,			/* tp_doc */
+	(traverseproc)zip_traverse,    /* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	PyObject_SelfIter,		/* tp_iter */
+	(iternextfunc)zip_next,	/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	PyType_GenericAlloc,		/* tp_alloc */
+	zip_new,			/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
+};
 
 
 static PyMethodDef builtin_methods[] = {
@@ -2028,7 +2192,6 @@ static PyMethodDef builtin_methods[] = {
  	{"sorted",	(PyCFunction)builtin_sorted,     METH_VARARGS | METH_KEYWORDS, sorted_doc},
  	{"sum",		builtin_sum,        METH_VARARGS, sum_doc},
  	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
-  	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
 	{NULL,		NULL},
 };
 
@@ -2097,6 +2260,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("super",		&PySuper_Type);
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);
+	SETBUILTIN("zip",		&PyZip_Type);
 	debug = PyBool_FromLong(Py_OptimizeFlag == 0);
 	if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
 		Py_XDECREF(debug);

@@ -72,7 +72,7 @@ Core and Builtins
 
 - Issue #1969: split and rsplit in bytearray are inconsistent
 
-- map() and itertools.imap() no longer accept None for the first argument.
+- map() and no longer accepts None for the first argument.
   Use zip() instead.
 
 - Issue #1769: Now int("- 1") is not allowed any more.
@@ -122,6 +122,10 @@ Core and Builtins
 
 Extension Modules
 -----------------
+
+- Code for itertools ifilter(), imap(), and izip() moved to bultins and
+  renamed to filter(), map(), and zip().  Also, renamed izip_longest()
+  to zip_longest() and ifilterfalse() to filterfalse().
 
 - Issue #1762972: Readded the reload() function as imp.reload()
 

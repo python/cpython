@@ -260,7 +260,7 @@ class S:
     def __next__(self):
         raise StopIteration
 
-from itertools import chain, map
+from itertools import chain
 def L(seqn):
     'Test multiple tiers of iterators'
     return chain(map(lambda x:x, R(Ig(G(seqn)))))
