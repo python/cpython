@@ -50,6 +50,8 @@ Library
 Tests
 -----
 
+- Issue #2055: Convert test_fcntl to unittest.
+
 - Issue 1960: Convert test_gdbm to unittest.
 
 - GHOP 294: Convert test_contains, test_crypt, and test_select to unittest.
