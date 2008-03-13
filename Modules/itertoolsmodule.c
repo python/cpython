@@ -2208,149 +2208,6 @@ static PyTypeObject combinations_type = {
 };
 
 
-/* ifilter object ************************************************************/
-
-typedef struct {
-	PyObject_HEAD
-	PyObject *func;
-	PyObject *it;
-} ifilterobject;
-
-static PyTypeObject ifilter_type;
-
-static PyObject *
-ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-	PyObject *func, *seq;
-	PyObject *it;
-	ifilterobject *lz;
-
-	if (type == &ifilter_type && !_PyArg_NoKeywords("ifilter()", kwds))
-		return NULL;
-
-	if (!PyArg_UnpackTuple(args, "ifilter", 2, 2, &func, &seq))
-		return NULL;
-
-	/* Get iterator. */
-	it = PyObject_GetIter(seq);
-	if (it == NULL)
-		return NULL;
-
-	/* create ifilterobject structure */
-	lz = (ifilterobject *)type->tp_alloc(type, 0);
-	if (lz == NULL) {
-		Py_DECREF(it);
-		return NULL;
-	}
-	Py_INCREF(func);
-	lz->func = func;
-	lz->it = it;
-
-	return (PyObject *)lz;
-}
-
-static void
-ifilter_dealloc(ifilterobject *lz)
-{
-	PyObject_GC_UnTrack(lz);
-	Py_XDECREF(lz->func);
-	Py_XDECREF(lz->it);
-	Py_TYPE(lz)->tp_free(lz);
-}
-
-static int
-ifilter_traverse(ifilterobject *lz, visitproc visit, void *arg)
-{
-	Py_VISIT(lz->it);
-	Py_VISIT(lz->func);
-	return 0;
-}
-
-static PyObject *
-ifilter_next(ifilterobject *lz)
-{
-	PyObject *item;
-	PyObject *it = lz->it;
-	long ok;
-	PyObject *(*iternext)(PyObject *);
-
-	assert(PyIter_Check(it));
-	iternext = *Py_TYPE(it)->tp_iternext;
-	for (;;) {
-		item = iternext(it);
-		if (item == NULL)
-			return NULL;
-
-		if (lz->func == Py_None || lz->func == (PyObject *)&PyBool_Type) {
-			ok = PyObject_IsTrue(item);
-		} else {
-			PyObject *good;
-			good = PyObject_CallFunctionObjArgs(lz->func,
-							    item, NULL);
-			if (good == NULL) {
-				Py_DECREF(item);
-				return NULL;
-			}
-			ok = PyObject_IsTrue(good);
-			Py_DECREF(good);
-		}
-		if (ok)
-			return item;
-		Py_DECREF(item);
-	}
-}
-
-PyDoc_STRVAR(ifilter_doc,
-"ifilter(function or None, sequence) --> ifilter object\n\
-\n\
-Return those items of sequence for which function(item) is true.\n\
-If function is None, return the items that are true.");
-
-static PyTypeObject ifilter_type = {
-	PyVarObject_HEAD_INIT(NULL, 0)
-	"itertools.ifilter",		/* tp_name */
-	sizeof(ifilterobject),		/* tp_basicsize */
-	0,				/* tp_itemsize */
-	/* methods */
-	(destructor)ifilter_dealloc,	/* tp_dealloc */
-	0,				/* tp_print */
-	0,				/* tp_getattr */
-	0,				/* tp_setattr */
-	0,				/* tp_compare */
-	0,				/* tp_repr */
-	0,				/* tp_as_number */
-	0,				/* tp_as_sequence */
-	0,				/* tp_as_mapping */
-	0,				/* tp_hash */
-	0,				/* tp_call */
-	0,				/* tp_str */
-	PyObject_GenericGetAttr,	/* tp_getattro */
-	0,				/* tp_setattro */
-	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	ifilter_doc,			/* tp_doc */
-	(traverseproc)ifilter_traverse,	/* tp_traverse */
-	0,				/* tp_clear */
-	0,				/* tp_richcompare */
-	0,				/* tp_weaklistoffset */
-	PyObject_SelfIter,		/* tp_iter */
-	(iternextfunc)ifilter_next,	/* tp_iternext */
-	0,				/* tp_methods */
-	0,				/* tp_members */
-	0,				/* tp_getset */
-	0,				/* tp_base */
-	0,				/* tp_dict */
-	0,				/* tp_descr_get */
-	0,				/* tp_descr_set */
-	0,				/* tp_dictoffset */
-	0,				/* tp_init */
-	0,				/* tp_alloc */
-	ifilter_new,			/* tp_new */
-	PyObject_GC_Del,		/* tp_free */
-};
-
-
 /* ifilterfalse object ************************************************************/
 
 typedef struct {
@@ -3208,7 +3065,6 @@ repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 Iterators terminating on the shortest input sequence:\n\
 izip(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
 izip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
-ifilter(pred, seq) --> elements of seq where pred(elem) is True\n\
 ifilterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
@@ -3242,7 +3098,6 @@ inititertools(void)
 		&starmap_type,
 		&imap_type,
 		&chain_type,
-		&ifilter_type,
 		&ifilterfalse_type,
 		&count_type,
 		&izip_type,
