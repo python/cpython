@@ -233,13 +233,13 @@ loops that truncate the stream.
                   self.currkey = self.keyfunc(self.currvalue)
 
 
-.. function:: ifilterfalse(predicate, iterable)
+.. function:: filterfalse(predicate, iterable)
 
    Make an iterator that filters elements from iterable returning only those for
    which the predicate is ``False``. If *predicate* is ``None``, return the items
    that are false. Equivalent to::
 
-      def ifilterfalse(predicate, iterable):
+      def filterfalse(predicate, iterable):
           if predicate is None:
               predicate = bool
           for x in iterable:
@@ -292,16 +292,16 @@ loops that truncate the stream.
 
    :func:`izip` should only be used with unequal length inputs when you don't
    care about trailing, unmatched values from the longer iterables.  If those
-   values are important, use :func:`izip_longest` instead.
+   values are important, use :func:`zip_longest` instead.
 
 
-.. function:: izip_longest(*iterables[, fillvalue])
+.. function:: zip_longest(*iterables[, fillvalue])
 
    Make an iterator that aggregates elements from each of the iterables. If the
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Equivalent to::
 
-      def izip_longest(*args, **kwds):
+      def zip_longest(*args, **kwds):
           fillvalue = kwds.get('fillvalue')
           def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
               yield counter()         # yields the fillvalue, or raises IndexError
@@ -313,7 +313,7 @@ loops that truncate the stream.
           except IndexError:
               pass
 
-   If one of the iterables is potentially infinite, then the :func:`izip_longest`
+   If one of the iterables is potentially infinite, then the :func:`zip_longest`
    function should be wrapped with something that limits the number of calls (for
    example :func:`islice` or :func:`takewhile`).
 
@@ -568,7 +568,7 @@ which incur interpreter overhead. ::
 
    def all(seq, pred=None):
        "Returns True if pred(x) is true for every element in the iterable"
-       for elem in ifilterfalse(pred, seq):
+       for elem in filterfalse(pred, seq):
            return False
        return True
 

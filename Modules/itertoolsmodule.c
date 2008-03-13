@@ -2059,28 +2059,28 @@ static PyTypeObject combinations_type = {
 };
 
 
-/* ifilterfalse object ************************************************************/
+/* filterfalse object ************************************************************/
 
 typedef struct {
 	PyObject_HEAD
 	PyObject *func;
 	PyObject *it;
-} ifilterfalseobject;
+} filterfalseobject;
 
-static PyTypeObject ifilterfalse_type;
+static PyTypeObject filterfalse_type;
 
 static PyObject *
-ifilterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+filterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *func, *seq;
 	PyObject *it;
-	ifilterfalseobject *lz;
+	filterfalseobject *lz;
 
-	if (type == &ifilterfalse_type &&
-	    !_PyArg_NoKeywords("ifilterfalse()", kwds))
+	if (type == &filterfalse_type &&
+	    !_PyArg_NoKeywords("filterfalse()", kwds))
 		return NULL;
 
-	if (!PyArg_UnpackTuple(args, "ifilterfalse", 2, 2, &func, &seq))
+	if (!PyArg_UnpackTuple(args, "filterfalse", 2, 2, &func, &seq))
 		return NULL;
 
 	/* Get iterator. */
@@ -2088,8 +2088,8 @@ ifilterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (it == NULL)
 		return NULL;
 
-	/* create ifilterfalseobject structure */
-	lz = (ifilterfalseobject *)type->tp_alloc(type, 0);
+	/* create filterfalseobject structure */
+	lz = (filterfalseobject *)type->tp_alloc(type, 0);
 	if (lz == NULL) {
 		Py_DECREF(it);
 		return NULL;
@@ -2102,7 +2102,7 @@ ifilterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-ifilterfalse_dealloc(ifilterfalseobject *lz)
+filterfalse_dealloc(filterfalseobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
@@ -2111,7 +2111,7 @@ ifilterfalse_dealloc(ifilterfalseobject *lz)
 }
 
 static int
-ifilterfalse_traverse(ifilterfalseobject *lz, visitproc visit, void *arg)
+filterfalse_traverse(filterfalseobject *lz, visitproc visit, void *arg)
 {
 	Py_VISIT(lz->it);
 	Py_VISIT(lz->func);
@@ -2119,7 +2119,7 @@ ifilterfalse_traverse(ifilterfalseobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-ifilterfalse_next(ifilterfalseobject *lz)
+filterfalse_next(filterfalseobject *lz)
 {
 	PyObject *item;
 	PyObject *it = lz->it;
@@ -2152,19 +2152,19 @@ ifilterfalse_next(ifilterfalseobject *lz)
 	}
 }
 
-PyDoc_STRVAR(ifilterfalse_doc,
-"ifilterfalse(function or None, sequence) --> ifilterfalse object\n\
+PyDoc_STRVAR(filterfalse_doc,
+"filterfalse(function or None, sequence) --> filterfalse object\n\
 \n\
 Return those items of sequence for which function(item) is false.\n\
 If function is None, return the items that are false.");
 
-static PyTypeObject ifilterfalse_type = {
+static PyTypeObject filterfalse_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"itertools.ifilterfalse",	/* tp_name */
-	sizeof(ifilterfalseobject),	/* tp_basicsize */
+	"itertools.filterfalse",	/* tp_name */
+	sizeof(filterfalseobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)ifilterfalse_dealloc,	/* tp_dealloc */
+	(destructor)filterfalse_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -2181,13 +2181,13 @@ static PyTypeObject ifilterfalse_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	ifilterfalse_doc,		/* tp_doc */
-	(traverseproc)ifilterfalse_traverse,	/* tp_traverse */
+	filterfalse_doc,		/* tp_doc */
+	(traverseproc)filterfalse_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
-	(iternextfunc)ifilterfalse_next,	/* tp_iternext */
+	(iternextfunc)filterfalse_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -2198,7 +2198,7 @@ static PyTypeObject ifilterfalse_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	0,				/* tp_alloc */
-	ifilterfalse_new,		/* tp_new */
+	filterfalse_new,		/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -2691,7 +2691,7 @@ typedef struct {
 static PyTypeObject iziplongest_type;
 
 static PyObject *
-izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	iziplongestobject *lz;
 	Py_ssize_t i;
@@ -2704,7 +2704,7 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 fillvalue = PyDict_GetItemString(kwds, "fillvalue");
                 if (fillvalue == NULL  ||  PyDict_Size(kwds) > 1) {
                         PyErr_SetString(PyExc_TypeError,
-				"izip_longest() got an unexpected keyword argument");
+				"zip_longest() got an unexpected keyword argument");
                         return NULL;                      
                 }
         }
@@ -2722,7 +2722,7 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (it == NULL) {
 			if (PyErr_ExceptionMatches(PyExc_TypeError))
 				PyErr_Format(PyExc_TypeError,
-				    "izip_longest argument #%zd must support iteration",
+				    "zip_longest argument #%zd must support iteration",
 				    i+1);
 			Py_DECREF(ittuple);
 			return NULL;
@@ -2758,7 +2758,7 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-izip_longest_dealloc(iziplongestobject *lz)
+zip_longest_dealloc(iziplongestobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->ittuple);
@@ -2768,7 +2768,7 @@ izip_longest_dealloc(iziplongestobject *lz)
 }
 
 static int
-izip_longest_traverse(iziplongestobject *lz, visitproc visit, void *arg)
+zip_longest_traverse(iziplongestobject *lz, visitproc visit, void *arg)
 {
 	Py_VISIT(lz->ittuple);
 	Py_VISIT(lz->result);
@@ -2777,7 +2777,7 @@ izip_longest_traverse(iziplongestobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-izip_longest_next(iziplongestobject *lz)
+zip_longest_next(iziplongestobject *lz)
 {
 	Py_ssize_t i;
 	Py_ssize_t tuplesize = lz->tuplesize;
@@ -2848,10 +2848,10 @@ izip_longest_next(iziplongestobject *lz)
 	return result;
 }
 
-PyDoc_STRVAR(izip_longest_doc,
-"izip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> izip_longest object\n\
+PyDoc_STRVAR(zip_longest_doc,
+"zip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> zip_longest object\n\
 \n\
-Return an izip_longest object whose .__next__() method returns a tuple where\n\
+Return an zip_longest object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
 method continues until the longest iterable in the argument sequence\n\
 is exhausted and then it raises StopIteration.  When the shorter iterables\n\
@@ -2861,11 +2861,11 @@ defaults to None or can be specified by a keyword argument.\n\
 
 static PyTypeObject iziplongest_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"itertools.izip_longest",	/* tp_name */
+	"itertools.zip_longest",	/* tp_name */
 	sizeof(iziplongestobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)izip_longest_dealloc,	/* tp_dealloc */
+	(destructor)zip_longest_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -2882,13 +2882,13 @@ static PyTypeObject iziplongest_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	izip_longest_doc,			/* tp_doc */
-	(traverseproc)izip_longest_traverse,    /* tp_traverse */
+	zip_longest_doc,			/* tp_doc */
+	(traverseproc)zip_longest_traverse,    /* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
-	(iternextfunc)izip_longest_next,	/* tp_iternext */
+	(iternextfunc)zip_longest_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -2899,7 +2899,7 @@ static PyTypeObject iziplongest_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	0,				/* tp_alloc */
-	izip_longest_new,			/* tp_new */
+	zip_longest_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -2915,8 +2915,8 @@ repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
 izip(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
-izip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
-ifilterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
+zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
+filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
@@ -2947,7 +2947,7 @@ inititertools(void)
 		&islice_type,
 		&starmap_type,
 		&chain_type,
-		&ifilterfalse_type,
+		&filterfalse_type,
 		&count_type,
 		&izip_type,
 		&iziplongest_type,

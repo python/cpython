@@ -12,7 +12,7 @@ Functions:
 import os
 import stat
 import warnings
-from itertools import ifilterfalse, izip
+from itertools import filterfalse, izip
 
 __all__ = ["cmp","dircmp","cmpfiles"]
 
@@ -133,8 +133,8 @@ class dircmp:
         a = dict(izip(map(os.path.normcase, self.left_list), self.left_list))
         b = dict(izip(map(os.path.normcase, self.right_list), self.right_list))
         self.common = list(map(a.__getitem__, filter(b.__contains__, a)))
-        self.left_only = list(map(a.__getitem__, ifilterfalse(b.__contains__, a)))
-        self.right_only = list(map(b.__getitem__, ifilterfalse(a.__contains__, b)))
+        self.left_only = list(map(a.__getitem__, filterfalse(b.__contains__, a)))
+        self.right_only = list(map(b.__getitem__, filterfalse(a.__contains__, b)))
 
     def phase2(self): # Distinguish files, directories, funnies
         self.common_dirs = []
@@ -276,7 +276,7 @@ def _cmp(a, b, sh, abs=abs, cmp=cmp):
 # Return a copy with items that occur in skip removed.
 #
 def _filter(flist, skip):
-    return list(ifilterfalse(skip.__contains__, flist))
+    return list(filterfalse(skip.__contains__, flist))
 
 
 # Demonstration and testing.
