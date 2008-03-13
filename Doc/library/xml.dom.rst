@@ -517,7 +517,7 @@ Document Objects
 ^^^^^^^^^^^^^^^^
 
 A :class:`Document` represents an entire XML document, including its constituent
-elements, attributes, processing instructions, comments etc.  Remeber that it
+elements, attributes, processing instructions, comments etc.  Remember that it
 inherits properties from :class:`Node`.
 
 
