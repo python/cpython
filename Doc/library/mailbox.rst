@@ -1630,7 +1630,7 @@ format-specific information that can be converted::
    destination = mailbox.MH('~/Mail')
    destination.lock()
    for message in mailbox.Babyl('~/RMAIL'):
-       destination.add(MHMessage(message))
+       destination.add(mailbox.MHMessage(message))
    destination.flush()
    destination.unlock()
 
