@@ -193,13 +193,9 @@ def nlargest(n, iterable):
     if not result:
         return result
     heapify(result)
-    _heapreplace = heapreplace
-    sol = result[0]         # sol --> smallest of the nlargest
+    _heappushpop = heappushpop
     for elem in it:
-        if elem <= sol:
-            continue
-        _heapreplace(result, elem)
-        sol = result[0]
+        heappushpop(result, elem)
     result.sort(reverse=True)
     return result
 
