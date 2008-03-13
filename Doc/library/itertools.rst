@@ -22,9 +22,8 @@ The tools are designed to combine readily with one another.  This makes it easy
 to construct more specialized tools succinctly and efficiently in pure Python.
 
 For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
-sequence ``f(0), f(1), ...``.  This toolbox provides :func:`imap` and
-:func:`count` which can be combined to form ``imap(f, count())`` and produce an
-equivalent result.
+sequence ``f(0), f(1), ...``.  But, this effect can be achieved in Python
+by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 
 Likewise, the functional tools are designed to work well with the high-speed
 functions provided by the :mod:`operator` module.
@@ -138,7 +137,7 @@ loops that truncate the stream.
 .. function:: count([n])
 
    Make an iterator that returns consecutive integers starting with *n*. If not
-   specified *n* defaults to zero.   Often used as an argument to :func:`imap` to
+   specified *n* defaults to zero.   Often used as an argument to :func:`map` to
    generate consecutive data points. Also, used with :func:`izip` to add sequence
    numbers.  Equivalent to::
 
@@ -246,22 +245,6 @@ loops that truncate the stream.
           for x in iterable:
               if not predicate(x):
                   yield x
-
-
-.. function:: imap(function, *iterables)
-
-   Make an iterator that computes the function using arguments from each of the
-   iterables.  This function is the same as the built-in :func:`map` function.
-   Equivalent to::
-
-      def imap(function, *iterables):
-          iterables = [iter(it) for it in iterables)
-          while True:
-              args = [next(it) for it in iterables]
-              if function is None:
-                  yield tuple(args)
-              else:
-                  yield function(*args)
 
 
 .. function:: islice(iterable, [start,] stop [, step])
@@ -421,7 +404,7 @@ loops that truncate the stream.
 .. function:: repeat(object[, times])
 
    Make an iterator that returns *object* over and over again. Runs indefinitely
-   unless the *times* argument is specified. Used as argument to :func:`imap` for
+   unless the *times* argument is specified. Used as argument to :func:`map` for
    invariant parameters to the called function.  Also used with :func:`izip` to
    create an invariant part of a tuple record.  Equivalent to::
 
@@ -437,9 +420,9 @@ loops that truncate the stream.
 .. function:: starmap(function, iterable)
 
    Make an iterator that computes the function using arguments obtained from
-   the iterable.  Used instead of :func:`imap` when argument parameters are already
+   the iterable.  Used instead of :func:`map` when argument parameters are already
    grouped in tuples from a single iterable (the data has been "pre-zipped").  The
-   difference between :func:`imap` and :func:`starmap` parallels the distinction
+   difference between :func:`map` and :func:`starmap` parallels the distinction
    between ``function(a,b)`` and ``function(*c)``. Equivalent to::
 
       def starmap(function, iterable):
@@ -507,7 +490,7 @@ can be combined. ::
    Check 1202 is for $823.14
 
    >>> import operator
-   >>> for cube in imap(operator.pow, range(1,5), repeat(3)):
+   >>> for cube in map(operator.pow, range(1,5), repeat(3)):
    ...    print(cube)
    ...
    1
@@ -577,7 +560,7 @@ which incur interpreter overhead. ::
 
    def tabulate(function):
        "Return function(0), function(1), ..."
-       return imap(function, count())
+       return map(function, count())
 
    def nth(iterable, n):
        "Returns the nth item or raise StopIteration"
@@ -603,7 +586,7 @@ which incur interpreter overhead. ::
 
    def quantify(seq, pred=None):
        "Count how many times the predicate is true in the sequence"
-       return sum(imap(pred, seq))
+       return sum(map(pred, seq))
 
    def padnone(seq):
        """Returns the sequence elements and then returns None indefinitely.
@@ -617,7 +600,7 @@ which incur interpreter overhead. ::
        return chain.from_iterable(repeat(seq, n))
 
    def dotproduct(vec1, vec2):
-       return sum(imap(operator.mul, vec1, vec2))
+       return sum(map(operator.mul, vec1, vec2))
 
    def flatten(listOfLists):
        return list(chain.from_iterable(listOfLists))

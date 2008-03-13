@@ -1560,10 +1560,10 @@ class S:
     def __next__(self):
         raise StopIteration
 
-from itertools import chain, imap
+from itertools import chain
 def L(seqn):
     'Test multiple tiers of iterators'
-    return chain(imap(lambda x:x, R(Ig(G(seqn)))))
+    return chain(map(lambda x:x, R(Ig(G(seqn)))))
 
 class TestVariousIteratorArgs(unittest.TestCase):
 

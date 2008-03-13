@@ -864,31 +864,153 @@ Return the identity of an object.  This is guaranteed to be unique among\n\
 simultaneously existing objects.  (Hint: it's the object's memory address.)");
 
 
+/* map object ************************************************************/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *iters;
+	PyObject *func;
+} mapobject;
+
+PyTypeObject PyMap_Type;
+
 static PyObject *
-builtin_map(PyObject *self, PyObject *args)
+map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *itertools, *imap, *result;
-	itertools = PyImport_ImportModuleNoBlock("itertools");
-	if (itertools == NULL)
+	PyObject *it, *iters, *func;
+	mapobject *lz;
+	Py_ssize_t numargs, i;
+
+	if (type == &PyMap_Type && !_PyArg_NoKeywords("map()", kwds))
 		return NULL;
-	imap = PyObject_GetAttrString(itertools, "imap");
-	Py_DECREF(itertools);
-	if (imap == NULL)
+
+	numargs = PyTuple_Size(args);
+	if (numargs < 2) {
+		PyErr_SetString(PyExc_TypeError,
+		   "map() must have at least two arguments.");
 		return NULL;
-	result = PyObject_Call(imap, args, NULL);
-	Py_DECREF(imap);
+	}
+
+	iters = PyTuple_New(numargs-1);
+	if (iters == NULL)
+		return NULL;
+
+	for (i=1 ; i<numargs ; i++) {
+		/* Get iterator. */
+		it = PyObject_GetIter(PyTuple_GET_ITEM(args, i));
+		if (it == NULL) {
+			Py_DECREF(iters);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(iters, i-1, it);
+	}
+
+	/* create mapobject structure */
+	lz = (mapobject *)type->tp_alloc(type, 0);
+	if (lz == NULL) {
+		Py_DECREF(iters);
+		return NULL;
+	}
+	lz->iters = iters;
+	func = PyTuple_GET_ITEM(args, 0);
+	Py_INCREF(func);
+	lz->func = func;
+
+	return (PyObject *)lz;
+}
+
+static void
+map_dealloc(mapobject *lz)
+{
+	PyObject_GC_UnTrack(lz);
+	Py_XDECREF(lz->iters);
+	Py_XDECREF(lz->func);
+	Py_TYPE(lz)->tp_free(lz);
+}
+
+static int
+map_traverse(mapobject *lz, visitproc visit, void *arg)
+{
+	Py_VISIT(lz->iters);
+	Py_VISIT(lz->func);
+	return 0;
+}
+
+static PyObject *
+map_next(mapobject *lz)
+{
+	PyObject *val;
+	PyObject *argtuple;
+	PyObject *result;
+	Py_ssize_t numargs, i;
+
+	numargs = PyTuple_Size(lz->iters);
+	argtuple = PyTuple_New(numargs);
+	if (argtuple == NULL)
+		return NULL;
+
+	for (i=0 ; i<numargs ; i++) {
+		val = PyIter_Next(PyTuple_GET_ITEM(lz->iters, i));
+		if (val == NULL) {
+			Py_DECREF(argtuple);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(argtuple, i, val);
+	}
+	result = PyObject_Call(lz->func, argtuple, NULL);
+	Py_DECREF(argtuple);
 	return result;
 }
 
 PyDoc_STRVAR(map_doc,
-"map(function, iterable[, iterable, ...]) -> iterator\n\
+"map(func, *iterables) --> map object\n\
 \n\
-Return an iterator yielding the results of applying the function to the\n\
-items of the argument iterables(s).  If more than one iterable is given,\n\
-the function is called with an argument list consisting of the\n\
-corresponding item of each iterable, until an iterable is exhausted.\n\
-(This is identical to itertools.imap().)");
+Make an iterator that computes the function using arguments from\n\
+each of the iterables.	Stops when the shortest iterable is exhausted.");
 
+PyTypeObject PyMap_Type = {
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	"map",				/* tp_name */
+	sizeof(mapobject),		/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)map_dealloc,	/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	map_doc,			/* tp_doc */
+	(traverseproc)map_traverse,	/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	PyObject_SelfIter,		/* tp_iter */
+	(iternextfunc)map_next,	/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	PyType_GenericAlloc,		/* tp_alloc */
+	map_new,			/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
+};
 
 static PyObject *
 builtin_next(PyObject *self, PyObject *args)
@@ -1893,7 +2015,6 @@ static PyMethodDef builtin_methods[] = {
  	{"iter",	builtin_iter,       METH_VARARGS, iter_doc},
  	{"len",		builtin_len,        METH_O, len_doc},
  	{"locals",	(PyCFunction)builtin_locals,     METH_NOARGS, locals_doc},
- 	{"map",		builtin_map,        METH_VARARGS, map_doc},
  	{"max",		(PyCFunction)builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
  	{"min",		(PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
 	{"next",	(PyCFunction)builtin_next,       METH_VARARGS, next_doc},
@@ -1965,6 +2086,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("property",		&PyProperty_Type);
 	SETBUILTIN("int",		&PyLong_Type);
 	SETBUILTIN("list",		&PyList_Type);
+	SETBUILTIN("map",		&PyMap_Type);
 	SETBUILTIN("object",		&PyBaseObject_Type);
 	SETBUILTIN("range",		&PyRange_Type);
 	SETBUILTIN("reversed",		&PyReversed_Type);

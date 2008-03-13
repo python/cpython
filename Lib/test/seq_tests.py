@@ -79,10 +79,10 @@ class IterFuncStop:
     def __next__(self):
         raise StopIteration
 
-from itertools import chain, imap
+from itertools import chain, map
 def itermulti(seqn):
     'Test multiple tiers of iterators'
-    return chain(imap(lambda x:x, iterfunc(IterGen(Sequence(seqn)))))
+    return chain(map(lambda x:x, iterfunc(IterGen(Sequence(seqn)))))
 
 class CommonTest(unittest.TestCase):
     # The type to be tested

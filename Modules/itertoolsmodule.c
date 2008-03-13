@@ -1418,155 +1418,6 @@ static PyTypeObject starmap_type = {
 };
 
 
-/* imap object ************************************************************/
-
-typedef struct {
-	PyObject_HEAD
-	PyObject *iters;
-	PyObject *func;
-} imapobject;
-
-static PyTypeObject imap_type;
-
-static PyObject *
-imap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-	PyObject *it, *iters, *func;
-	imapobject *lz;
-	Py_ssize_t numargs, i;
-
-	if (type == &imap_type && !_PyArg_NoKeywords("imap()", kwds))
-		return NULL;
-
-	numargs = PyTuple_Size(args);
-	if (numargs < 2) {
-		PyErr_SetString(PyExc_TypeError,
-		   "imap() must have at least two arguments.");
-		return NULL;
-	}
-
-	iters = PyTuple_New(numargs-1);
-	if (iters == NULL)
-		return NULL;
-
-	for (i=1 ; i<numargs ; i++) {
-		/* Get iterator. */
-		it = PyObject_GetIter(PyTuple_GET_ITEM(args, i));
-		if (it == NULL) {
-			Py_DECREF(iters);
-			return NULL;
-		}
-		PyTuple_SET_ITEM(iters, i-1, it);
-	}
-
-	/* create imapobject structure */
-	lz = (imapobject *)type->tp_alloc(type, 0);
-	if (lz == NULL) {
-		Py_DECREF(iters);
-		return NULL;
-	}
-	lz->iters = iters;
-	func = PyTuple_GET_ITEM(args, 0);
-	Py_INCREF(func);
-	lz->func = func;
-
-	return (PyObject *)lz;
-}
-
-static void
-imap_dealloc(imapobject *lz)
-{
-	PyObject_GC_UnTrack(lz);
-	Py_XDECREF(lz->iters);
-	Py_XDECREF(lz->func);
-	Py_TYPE(lz)->tp_free(lz);
-}
-
-static int
-imap_traverse(imapobject *lz, visitproc visit, void *arg)
-{
-	Py_VISIT(lz->iters);
-	Py_VISIT(lz->func);
-	return 0;
-}
-
-static PyObject *
-imap_next(imapobject *lz)
-{
-	PyObject *val;
-	PyObject *argtuple;
-	PyObject *result;
-	Py_ssize_t numargs, i;
-
-	numargs = PyTuple_Size(lz->iters);
-	argtuple = PyTuple_New(numargs);
-	if (argtuple == NULL)
-		return NULL;
-
-	for (i=0 ; i<numargs ; i++) {
-		val = PyIter_Next(PyTuple_GET_ITEM(lz->iters, i));
-		if (val == NULL) {
-			Py_DECREF(argtuple);
-			return NULL;
-		}
-		PyTuple_SET_ITEM(argtuple, i, val);
-	}
-	result = PyObject_Call(lz->func, argtuple, NULL);
-	Py_DECREF(argtuple);
-	return result;
-}
-
-PyDoc_STRVAR(imap_doc,
-"imap(func, *iterables) --> imap object\n\
-\n\
-Make an iterator that computes the function using arguments from\n\
-each of the iterables.	Stops when the shortest iterable is exhausted.");
-
-static PyTypeObject imap_type = {
-	PyVarObject_HEAD_INIT(NULL, 0)
-	"itertools.imap",		/* tp_name */
-	sizeof(imapobject),		/* tp_basicsize */
-	0,				/* tp_itemsize */
-	/* methods */
-	(destructor)imap_dealloc,	/* tp_dealloc */
-	0,				/* tp_print */
-	0,				/* tp_getattr */
-	0,				/* tp_setattr */
-	0,				/* tp_compare */
-	0,				/* tp_repr */
-	0,				/* tp_as_number */
-	0,				/* tp_as_sequence */
-	0,				/* tp_as_mapping */
-	0,				/* tp_hash */
-	0,				/* tp_call */
-	0,				/* tp_str */
-	PyObject_GenericGetAttr,	/* tp_getattro */
-	0,				/* tp_setattro */
-	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	imap_doc,			/* tp_doc */
-	(traverseproc)imap_traverse,	/* tp_traverse */
-	0,				/* tp_clear */
-	0,				/* tp_richcompare */
-	0,				/* tp_weaklistoffset */
-	PyObject_SelfIter,		/* tp_iter */
-	(iternextfunc)imap_next,	/* tp_iternext */
-	0,				/* tp_methods */
-	0,				/* tp_members */
-	0,				/* tp_getset */
-	0,				/* tp_base */
-	0,				/* tp_dict */
-	0,				/* tp_descr_get */
-	0,				/* tp_descr_set */
-	0,				/* tp_dictoffset */
-	0,				/* tp_init */
-	0,				/* tp_alloc */
-	imap_new,			/* tp_new */
-	PyObject_GC_Del,		/* tp_free */
-};
-
-
 /* chain object ************************************************************/
 
 typedef struct {
@@ -3068,7 +2919,6 @@ izip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
 ifilterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
-imap(fun, p, q, ...) --> fun(p0, q0), fun(p1, q1), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
@@ -3096,7 +2946,6 @@ inititertools(void)
 		&takewhile_type,
 		&islice_type,
 		&starmap_type,
-		&imap_type,
 		&chain_type,
 		&ifilterfalse_type,
 		&count_type,
