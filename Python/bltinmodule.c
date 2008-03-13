@@ -277,29 +277,146 @@ PyDoc_STRVAR(bin_doc,
 Return the binary representation of an integer or long integer.");
 
 
+typedef struct {
+	PyObject_HEAD
+	PyObject *func;
+	PyObject *it;
+} filterobject;
+
+PyTypeObject PyFilter_Type;
+
 static PyObject *
-builtin_filter(PyObject *self, PyObject *args)
+filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *itertools, *ifilter, *result;
-	itertools = PyImport_ImportModuleNoBlock("itertools");
-	if (itertools == NULL)
+	PyObject *func, *seq;
+	PyObject *it;
+	filterobject *lz;
+
+	if (type == &PyFilter_Type && !_PyArg_NoKeywords("filter()", kwds))
 		return NULL;
-	ifilter = PyObject_GetAttrString(itertools, "ifilter");
-	Py_DECREF(itertools);
-	if (ifilter == NULL)
+
+	if (!PyArg_UnpackTuple(args, "filter", 2, 2, &func, &seq))
 		return NULL;
-	result = PyObject_Call(ifilter, args, NULL);
-	Py_DECREF(ifilter);
-	return result;
+
+	/* Get iterator. */
+	it = PyObject_GetIter(seq);
+	if (it == NULL)
+		return NULL;
+
+	/* create filterobject structure */
+	lz = (filterobject *)type->tp_alloc(type, 0);
+	if (lz == NULL) {
+		Py_DECREF(it);
+		return NULL;
+	}
+	Py_INCREF(func);
+	lz->func = func;
+	lz->it = it;
+
+	return (PyObject *)lz;
+}
+
+static void
+filter_dealloc(filterobject *lz)
+{
+	PyObject_GC_UnTrack(lz);
+	Py_XDECREF(lz->func);
+	Py_XDECREF(lz->it);
+	Py_TYPE(lz)->tp_free(lz);
+}
+
+static int
+filter_traverse(filterobject *lz, visitproc visit, void *arg)
+{
+	Py_VISIT(lz->it);
+	Py_VISIT(lz->func);
+	return 0;
+}
+
+static PyObject *
+filter_next(filterobject *lz)
+{
+	PyObject *item;
+	PyObject *it = lz->it;
+	long ok;
+	PyObject *(*iternext)(PyObject *);
+
+	assert(PyIter_Check(it));
+	iternext = *Py_TYPE(it)->tp_iternext;
+	for (;;) {
+		item = iternext(it);
+		if (item == NULL)
+			return NULL;
+
+		if (lz->func == Py_None || lz->func == (PyObject *)&PyBool_Type) {
+			ok = PyObject_IsTrue(item);
+		} else {
+			PyObject *good;
+			good = PyObject_CallFunctionObjArgs(lz->func,
+							    item, NULL);
+			if (good == NULL) {
+				Py_DECREF(item);
+				return NULL;
+			}
+			ok = PyObject_IsTrue(good);
+			Py_DECREF(good);
+		}
+		if (ok)
+			return item;
+		Py_DECREF(item);
+	}
 }
 
 PyDoc_STRVAR(filter_doc,
-"filter(predicate, iterable) -> iterator\n\
+"filter(function or None, sequence) --> filter object\n\
 \n\
-Return an iterator yielding only those elements of the input iterable\n\
-for which the predicate (a Boolean function) returns true.\n\
-If the predicate is None, 'lambda x: bool(x)' is assumed.\n\
-(This is identical to itertools.ifilter().)");
+Return an iterator yielding those items of sequence for which function(item)\n\
+is true. If function is None, return the items that are true.");
+
+PyTypeObject PyFilter_Type = {
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	"filter",			/* tp_name */
+	sizeof(filterobject),		/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)filter_dealloc,	/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	filter_doc,			/* tp_doc */
+	(traverseproc)filter_traverse,	/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	PyObject_SelfIter,		/* tp_iter */
+	(iternextfunc)filter_next,	/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	PyType_GenericAlloc,		/* tp_alloc */
+	filter_new,			/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
+};
+
 
 static PyObject *
 builtin_format(PyObject *self, PyObject *args)
@@ -1763,7 +1880,6 @@ static PyMethodDef builtin_methods[] = {
  	{"divmod",	builtin_divmod,     METH_VARARGS, divmod_doc},
  	{"eval",	builtin_eval,       METH_VARARGS, eval_doc},
 	{"exec",        builtin_exec,       METH_VARARGS, exec_doc},
- 	{"filter",	builtin_filter,     METH_VARARGS, filter_doc},
  	{"format",	builtin_format,     METH_VARARGS, format_doc},
  	{"getattr",	builtin_getattr,    METH_VARARGS, getattr_doc},
  	{"globals",	(PyCFunction)builtin_globals,    METH_NOARGS, globals_doc},
@@ -1843,6 +1959,7 @@ _PyBuiltin_Init(void)
 #endif
 	SETBUILTIN("dict",		&PyDict_Type);
  	SETBUILTIN("enumerate",		&PyEnum_Type);
+ 	SETBUILTIN("filter",		&PyFilter_Type);
 	SETBUILTIN("float",		&PyFloat_Type);
 	SETBUILTIN("frozenset",		&PyFrozenSet_Type);
 	SETBUILTIN("property",		&PyProperty_Type);

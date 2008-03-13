@@ -234,21 +234,6 @@ loops that truncate the stream.
                   self.currkey = self.keyfunc(self.currvalue)
 
 
-.. function:: ifilter(predicate, iterable)
-
-   Make an iterator that filters elements from iterable returning only those for
-   which the predicate is ``True``. If *predicate* is ``None``, return the items
-   that are true.  This function is the same as the built-in :func:`filter`
-   function.  Equivalent to::
-
-      def ifilter(predicate, iterable):
-          if predicate is None:
-              predicate = bool
-          for x in iterable:
-              if predicate(x):
-                  yield x
-
-
 .. function:: ifilterfalse(predicate, iterable)
 
    Make an iterator that filters elements from iterable returning only those for
@@ -606,13 +591,13 @@ which incur interpreter overhead. ::
 
    def any(seq, pred=None):
        "Returns True if pred(x) is true for at least one element in the iterable"
-       for elem in ifilter(pred, seq):
+       for elem in filter(pred, seq):
            return True
        return False
 
    def no(seq, pred=None):
        "Returns True if pred(x) is false for every element in the iterable"
-       for elem in ifilter(pred, seq):
+       for elem in filter(pred, seq):
            return False
        return True
 

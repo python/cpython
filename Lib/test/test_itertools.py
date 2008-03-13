@@ -8,6 +8,7 @@ import random
 from functools import reduce
 maxsize = test_support.MAX_Py_ssize_t
 minsize = -maxsize-1
+ifilter = filter
 
 def lzip(*args):
     return list(zip(*args))
