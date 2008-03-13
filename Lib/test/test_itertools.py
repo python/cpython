@@ -8,8 +8,6 @@ import random
 from functools import reduce
 maxsize = test_support.MAX_Py_ssize_t
 minsize = -maxsize-1
-ifilter = filter
-imap = map
 
 def lzip(*args):
     return list(zip(*args))
@@ -313,16 +311,16 @@ class TestBasicOps(unittest.TestCase):
         keyfunc.skip = 1
         self.assertRaises(ExpectedError, gulp, [None, None], keyfunc)
 
-    def test_ifilter(self):
-        self.assertEqual(list(ifilter(isEven, range(6))), [0,2,4])
-        self.assertEqual(list(ifilter(None, [0,1,0,2,0])), [1,2])
-        self.assertEqual(list(ifilter(bool, [0,1,0,2,0])), [1,2])
-        self.assertEqual(take(4, ifilter(isEven, count())), [0,2,4,6])
-        self.assertRaises(TypeError, ifilter)
-        self.assertRaises(TypeError, ifilter, lambda x:x)
-        self.assertRaises(TypeError, ifilter, lambda x:x, range(6), 7)
-        self.assertRaises(TypeError, ifilter, isEven, 3)
-        self.assertRaises(TypeError, next, ifilter(range(6), range(6)))
+    def test_filter(self):
+        self.assertEqual(list(filter(isEven, range(6))), [0,2,4])
+        self.assertEqual(list(filter(None, [0,1,0,2,0])), [1,2])
+        self.assertEqual(list(filter(bool, [0,1,0,2,0])), [1,2])
+        self.assertEqual(take(4, filter(isEven, count())), [0,2,4,6])
+        self.assertRaises(TypeError, filter)
+        self.assertRaises(TypeError, filter, lambda x:x)
+        self.assertRaises(TypeError, filter, lambda x:x, range(6), 7)
+        self.assertRaises(TypeError, filter, isEven, 3)
+        self.assertRaises(TypeError, next, filter(range(6), range(6)))
 
     def test_filterfalse(self):
         self.assertEqual(list(filterfalse(isEven, range(6))), [1,3,5])
@@ -335,28 +333,28 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, filterfalse, isEven, 3)
         self.assertRaises(TypeError, next, filterfalse(range(6), range(6)))
 
-    def test_izip(self):
-        # XXX This is rather silly now that builtin zip() calls izip()...
-        ans = [(x,y) for x, y in izip('abc',count())]
+    def test_zip(self):
+        # XXX This is rather silly now that builtin zip() calls zip()...
+        ans = [(x,y) for x, y in zip('abc',count())]
         self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
-        self.assertEqual(list(izip('abc', range(6))), lzip('abc', range(6)))
-        self.assertEqual(list(izip('abcdef', range(3))), lzip('abcdef', range(3)))
-        self.assertEqual(take(3,izip('abcdef', count())), lzip('abcdef', range(3)))
-        self.assertEqual(list(izip('abcdef')), lzip('abcdef'))
-        self.assertEqual(list(izip()), lzip())
-        self.assertRaises(TypeError, izip, 3)
-        self.assertRaises(TypeError, izip, range(3), 3)
+        self.assertEqual(list(zip('abc', range(6))), lzip('abc', range(6)))
+        self.assertEqual(list(zip('abcdef', range(3))), lzip('abcdef', range(3)))
+        self.assertEqual(take(3,zip('abcdef', count())), lzip('abcdef', range(3)))
+        self.assertEqual(list(zip('abcdef')), lzip('abcdef'))
+        self.assertEqual(list(zip()), lzip())
+        self.assertRaises(TypeError, zip, 3)
+        self.assertRaises(TypeError, zip, range(3), 3)
         # Check tuple re-use (implementation detail)
-        self.assertEqual([tuple(list(pair)) for pair in izip('abc', 'def')],
+        self.assertEqual([tuple(list(pair)) for pair in zip('abc', 'def')],
                          lzip('abc', 'def'))
-        self.assertEqual([pair for pair in izip('abc', 'def')],
+        self.assertEqual([pair for pair in zip('abc', 'def')],
                          lzip('abc', 'def'))
-        ids = list(map(id, izip('abc', 'def')))
+        ids = list(map(id, zip('abc', 'def')))
         self.assertEqual(min(ids), max(ids))
-        ids = list(map(id, list(izip('abc', 'def'))))
+        ids = list(map(id, list(zip('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
-    def test_iziplongest(self):
+    def test_ziplongest(self):
         for args in [
                 ['abc', range(6)],
                 [range(6), 'abc'],
@@ -378,7 +376,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(zip_longest('abcdef')), list(zip('abcdef')))
 
         self.assertEqual(list(zip_longest('abc', 'defg', **{})),
-                         list(izip(list('abc')+[None], 'defg'))) # empty keyword dict
+                         list(zip(list('abc')+[None], 'defg'))) # empty keyword dict
         self.assertRaises(TypeError, zip_longest, 3)
         self.assertRaises(TypeError, zip_longest, range(3), 3)
 
@@ -448,29 +446,29 @@ class TestBasicOps(unittest.TestCase):
         list(r)
         self.assertEqual(repr(r), 'repeat((1+0j), 0)')
 
-    def test_imap(self):
-        self.assertEqual(list(imap(operator.pow, range(3), range(1,7))),
+    def test_map(self):
+        self.assertEqual(list(map(operator.pow, range(3), range(1,7))),
                          [0**1, 1**2, 2**3])
         def tupleize(*args):
             return args
-        self.assertEqual(list(imap(tupleize, 'abc', range(5))),
+        self.assertEqual(list(map(tupleize, 'abc', range(5))),
                          [('a',0),('b',1),('c',2)])
-        self.assertEqual(list(imap(tupleize, 'abc', count())),
+        self.assertEqual(list(map(tupleize, 'abc', count())),
                          [('a',0),('b',1),('c',2)])
-        self.assertEqual(take(2,imap(tupleize, 'abc', count())),
+        self.assertEqual(take(2,map(tupleize, 'abc', count())),
                          [('a',0),('b',1)])
-        self.assertEqual(list(imap(operator.pow, [])), [])
-        self.assertRaises(TypeError, imap)
-        self.assertRaises(TypeError, list, imap(None, range(3), range(3)))
-        self.assertRaises(TypeError, imap, operator.neg)
-        self.assertRaises(TypeError, next, imap(10, range(5)))
-        self.assertRaises(ValueError, next, imap(errfunc, [4], [5]))
-        self.assertRaises(TypeError, next, imap(onearg, [4], [5]))
+        self.assertEqual(list(map(operator.pow, [])), [])
+        self.assertRaises(TypeError, map)
+        self.assertRaises(TypeError, list, map(None, range(3), range(3)))
+        self.assertRaises(TypeError, map, operator.neg)
+        self.assertRaises(TypeError, next, map(10, range(5)))
+        self.assertRaises(ValueError, next, map(errfunc, [4], [5]))
+        self.assertRaises(TypeError, next, map(onearg, [4], [5]))
 
     def test_starmap(self):
         self.assertEqual(list(starmap(operator.pow, zip(range(3), range(1,7)))),
                          [0**1, 1**2, 2**3])
-        self.assertEqual(take(3, starmap(operator.pow, izip(count(), count(1)))),
+        self.assertEqual(take(3, starmap(operator.pow, zip(count(), count(1)))),
                          [0**1, 1**2, 2**3])
         self.assertEqual(list(starmap(operator.pow, [])), [])
         self.assertEqual(list(starmap(operator.pow, [iter([4,5])])), [4**5])
@@ -641,9 +639,9 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ReferenceError, getattr, p, '__class__')
 
     def test_StopIteration(self):
-        self.assertRaises(StopIteration, next, izip())
+        self.assertRaises(StopIteration, next, zip())
 
-        for f in (chain, cycle, izip, groupby):
+        for f in (chain, cycle, zip, groupby):
             self.assertRaises(StopIteration, next, f([]))
             self.assertRaises(StopIteration, next, f(StopNow()))
 
@@ -659,7 +657,7 @@ class TestBasicOps(unittest.TestCase):
 
         self.assertRaises(StopIteration, next, repeat(None, 0))
 
-        for f in (ifilter, filterfalse, imap, takewhile, dropwhile, starmap):
+        for f in (filter, filterfalse, map, takewhile, dropwhile, starmap):
             self.assertRaises(StopIteration, next, f(lambda x:x, []))
             self.assertRaises(StopIteration, next, f(lambda x:x, StopNow()))
 
@@ -686,21 +684,21 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(groupby([a]*2, lambda x:x), a)
 
-    def test_ifilter(self):
+    def test_filter(self):
         a = []
-        self.makecycle(ifilter(lambda x:True, [a]*2), a)
+        self.makecycle(filter(lambda x:True, [a]*2), a)
 
     def test_filterfalse(self):
         a = []
         self.makecycle(filterfalse(lambda x:False, a), a)
 
-    def test_izip(self):
+    def test_zip(self):
         a = []
-        self.makecycle(izip([a]*2, [a]*3), a)
+        self.makecycle(zip([a]*2, [a]*3), a)
 
-    def test_imap(self):
+    def test_map(self):
         a = []
-        self.makecycle(imap(lambda x:x, [a]*2), a)
+        self.makecycle(map(lambda x:x, [a]*2), a)
 
     def test_islice(self):
         a = []
@@ -792,7 +790,7 @@ class S:
 
 def L(seqn):
     'Test multiple tiers of iterators'
-    return chain(imap(lambda x:x, R(Ig(G(seqn)))))
+    return chain(map(lambda x:x, R(Ig(G(seqn)))))
 
 
 class TestVariousIteratorArgs(unittest.TestCase):
@@ -831,14 +829,14 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, groupby, N(s))
             self.assertRaises(ZeroDivisionError, list, groupby(E(s)))
 
-    def test_ifilter(self):
+    def test_filter(self):
         for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(ifilter(isEven, g(s))),
+                self.assertEqual(list(filter(isEven, g(s))),
                                  [x for x in g(s) if isEven(x)])
-            self.assertRaises(TypeError, ifilter, isEven, X(s))
-            self.assertRaises(TypeError, ifilter, isEven, N(s))
-            self.assertRaises(ZeroDivisionError, list, ifilter(isEven, E(s)))
+            self.assertRaises(TypeError, filter, isEven, X(s))
+            self.assertRaises(TypeError, filter, isEven, N(s))
+            self.assertRaises(ZeroDivisionError, list, filter(isEven, E(s)))
 
     def test_filterfalse(self):
         for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
@@ -849,16 +847,16 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, filterfalse, isEven, N(s))
             self.assertRaises(ZeroDivisionError, list, filterfalse(isEven, E(s)))
 
-    def test_izip(self):
+    def test_zip(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(izip(g(s))), lzip(g(s)))
-                self.assertEqual(list(izip(g(s), g(s))), lzip(g(s), g(s)))
-            self.assertRaises(TypeError, izip, X(s))
-            self.assertRaises(TypeError, izip, N(s))
-            self.assertRaises(ZeroDivisionError, list, izip(E(s)))
+                self.assertEqual(list(zip(g(s))), lzip(g(s)))
+                self.assertEqual(list(zip(g(s), g(s))), lzip(g(s), g(s)))
+            self.assertRaises(TypeError, zip, X(s))
+            self.assertRaises(TypeError, zip, N(s))
+            self.assertRaises(ZeroDivisionError, list, zip(E(s)))
 
-    def test_iziplongest(self):
+    def test_ziplongest(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(zip_longest(g(s))), list(zip(g(s))))
@@ -867,16 +865,16 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, zip_longest, N(s))
             self.assertRaises(ZeroDivisionError, list, zip_longest(E(s)))
 
-    def test_imap(self):
+    def test_map(self):
         for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(imap(onearg, g(s))),
+                self.assertEqual(list(map(onearg, g(s))),
                                  [onearg(x) for x in g(s)])
-                self.assertEqual(list(imap(operator.pow, g(s), g(s))),
+                self.assertEqual(list(map(operator.pow, g(s), g(s))),
                                  [x**x for x in g(s)])
-            self.assertRaises(TypeError, imap, onearg, X(s))
-            self.assertRaises(TypeError, imap, onearg, N(s))
-            self.assertRaises(ZeroDivisionError, list, imap(onearg, E(s)))
+            self.assertRaises(TypeError, map, onearg, X(s))
+            self.assertRaises(TypeError, map, onearg, N(s))
+            self.assertRaises(ZeroDivisionError, list, map(onearg, E(s)))
 
     def test_islice(self):
         for s in ("12345", "", range(1000), ('do', 1.2), range(2000,2200,5)):
@@ -953,8 +951,8 @@ class RegressionTests(unittest.TestCase):
                 return value
             items = list(tuple2)
             items[1:1] = list(tuple1)
-            gen = imap(g, items)
-            z = izip(*[gen]*len(tuple1))
+            gen = map(g, items)
+            z = zip(*[gen]*len(tuple1))
             next(z)
 
         def f(t):
@@ -1001,7 +999,7 @@ class RegressionTests(unittest.TestCase):
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
         # count is not subclassable...
-        for cls in (repeat, izip, ifilter, filterfalse, chain, imap,
+        for cls in (repeat, zip, filter, filterfalse, chain, map,
                     starmap, islice, takewhile, dropwhile, cycle):
             class Subclass(cls):
                 def __init__(self, newarg=None, *args):
@@ -1017,7 +1015,7 @@ libreftest = """ Doctest for examples in the library reference: libitertools.tex
 
 
 >>> amounts = [120.15, 764.05, 823.14]
->>> for checknum, amount in izip(count(1200), amounts):
+>>> for checknum, amount in zip(count(1200), amounts):
 ...     print('Check %d is for $%.2f' % (checknum, amount))
 ...
 Check 1200 is for $120.15
@@ -1025,7 +1023,7 @@ Check 1201 is for $764.05
 Check 1202 is for $823.14
 
 >>> import operator
->>> for cube in imap(operator.pow, range(1,4), repeat(3)):
+>>> for cube in map(operator.pow, range(1,4), repeat(3)):
 ...    print(cube)
 ...
 1
@@ -1070,14 +1068,14 @@ Samuele
 ...     return list(islice(seq, n))
 
 >>> def enumerate(iterable):
-...     return izip(count(), iterable)
+...     return zip(count(), iterable)
 
 >>> def tabulate(function):
 ...     "Return function(0), function(1), ..."
-...     return imap(function, count())
+...     return map(function, count())
 
 >>> def iteritems(mapping):
-...     return izip(mapping.keys(), mapping.values())
+...     return zip(mapping.keys(), mapping.values())
 
 >>> def nth(iterable, n):
 ...     "Returns the nth item"
@@ -1091,19 +1089,19 @@ Samuele
 
 >>> def any(seq, pred=None):
 ...     "Returns True if pred(x) is true for at least one element in the iterable"
-...     for elem in ifilter(pred, seq):
+...     for elem in filter(pred, seq):
 ...         return True
 ...     return False
 
 >>> def no(seq, pred=None):
 ...     "Returns True if pred(x) is false for every element in the iterable"
-...     for elem in ifilter(pred, seq):
+...     for elem in filter(pred, seq):
 ...         return False
 ...     return True
 
 >>> def quantify(seq, pred=None):
 ...     "Count how many times the predicate is true in the sequence"
-...     return sum(imap(pred, seq))
+...     return sum(map(pred, seq))
 
 >>> def padnone(seq):
 ...     "Returns the sequence elements and then returns None indefinitely"
@@ -1114,7 +1112,7 @@ Samuele
 ...     return chain(*repeat(seq, n))
 
 >>> def dotproduct(vec1, vec2):
-...     return sum(imap(operator.mul, vec1, vec2))
+...     return sum(map(operator.mul, vec1, vec2))
 
 >>> def flatten(listOfLists):
 ...     return list(chain(*listOfLists))
@@ -1134,7 +1132,7 @@ Samuele
 ...         next(b)
 ...     except StopIteration:
 ...         pass
-...     return izip(a, b)
+...     return zip(a, b)
 
 This is not part of the examples but it tests to make sure the definitions
 perform as purported.
@@ -1180,7 +1178,7 @@ False
 [8, 8, 8, 8, 8]
 
 >>> import random
->>> take(5, imap(int, repeatfunc(random.random)))
+>>> take(5, map(int, repeatfunc(random.random)))
 [0, 0, 0, 0, 0]
 
 >>> list(pairwise('abcd'))

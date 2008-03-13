@@ -129,7 +129,7 @@ From all times, sorting has always been a Great Art! :-)
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
            'nlargest', 'nsmallest']
 
-from itertools import islice, repeat, count, izip, tee
+from itertools import islice, repeat, count, tee
 from operator import itemgetter, neg
 import bisect
 
@@ -352,7 +352,7 @@ def nsmallest(n, iterable, key=None):
     """
     in1, in2 = tee(iterable)
     keys = in1 if key is None else map(key, in1)
-    it = izip(keys, count(), in2)                           # decorate
+    it = zip(keys, count(), in2)                           # decorate
     result = _nsmallest(n, it)
     return list(map(itemgetter(2), result))                 # undecorate
 
@@ -364,7 +364,7 @@ def nlargest(n, iterable, key=None):
     """
     in1, in2 = tee(iterable)
     keys = in1 if key is None else map(key, in1)
-    it = izip(keys, map(neg, count()), in2)                 # decorate
+    it = zip(keys, map(neg, count()), in2)                 # decorate
     result = _nlargest(n, it)
     return list(map(itemgetter(2), result))                 # undecorate
 
