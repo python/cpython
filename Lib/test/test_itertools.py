@@ -324,16 +324,16 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, ifilter, isEven, 3)
         self.assertRaises(TypeError, next, ifilter(range(6), range(6)))
 
-    def test_ifilterfalse(self):
-        self.assertEqual(list(ifilterfalse(isEven, range(6))), [1,3,5])
-        self.assertEqual(list(ifilterfalse(None, [0,1,0,2,0])), [0,0,0])
-        self.assertEqual(list(ifilterfalse(bool, [0,1,0,2,0])), [0,0,0])
-        self.assertEqual(take(4, ifilterfalse(isEven, count())), [1,3,5,7])
-        self.assertRaises(TypeError, ifilterfalse)
-        self.assertRaises(TypeError, ifilterfalse, lambda x:x)
-        self.assertRaises(TypeError, ifilterfalse, lambda x:x, range(6), 7)
-        self.assertRaises(TypeError, ifilterfalse, isEven, 3)
-        self.assertRaises(TypeError, next, ifilterfalse(range(6), range(6)))
+    def test_filterfalse(self):
+        self.assertEqual(list(filterfalse(isEven, range(6))), [1,3,5])
+        self.assertEqual(list(filterfalse(None, [0,1,0,2,0])), [0,0,0])
+        self.assertEqual(list(filterfalse(bool, [0,1,0,2,0])), [0,0,0])
+        self.assertEqual(take(4, filterfalse(isEven, count())), [1,3,5,7])
+        self.assertRaises(TypeError, filterfalse)
+        self.assertRaises(TypeError, filterfalse, lambda x:x)
+        self.assertRaises(TypeError, filterfalse, lambda x:x, range(6), 7)
+        self.assertRaises(TypeError, filterfalse, isEven, 3)
+        self.assertRaises(TypeError, next, filterfalse(range(6), range(6)))
 
     def test_izip(self):
         # XXX This is rather silly now that builtin zip() calls izip()...
@@ -366,25 +366,25 @@ class TestBasicOps(unittest.TestCase):
             ]:
             target = [tuple([arg[i] if i < len(arg) else None for arg in args])
                       for i in range(max(map(len, args)))]
-            self.assertEqual(list(izip_longest(*args)), target)
-            self.assertEqual(list(izip_longest(*args, **{})), target)
+            self.assertEqual(list(zip_longest(*args)), target)
+            self.assertEqual(list(zip_longest(*args, **{})), target)
             target = [tuple((e is None and 'X' or e) for e in t) for t in target]   # Replace None fills with 'X'
-            self.assertEqual(list(izip_longest(*args, **dict(fillvalue='X'))), target)
+            self.assertEqual(list(zip_longest(*args, **dict(fillvalue='X'))), target)
 
-        self.assertEqual(take(3,izip_longest('abcdef', count())), list(zip('abcdef', range(3)))) # take 3 from infinite input
+        self.assertEqual(take(3,zip_longest('abcdef', count())), list(zip('abcdef', range(3)))) # take 3 from infinite input
 
-        self.assertEqual(list(izip_longest()), list(zip()))
-        self.assertEqual(list(izip_longest([])), list(zip([])))
-        self.assertEqual(list(izip_longest('abcdef')), list(zip('abcdef')))
+        self.assertEqual(list(zip_longest()), list(zip()))
+        self.assertEqual(list(zip_longest([])), list(zip([])))
+        self.assertEqual(list(zip_longest('abcdef')), list(zip('abcdef')))
 
-        self.assertEqual(list(izip_longest('abc', 'defg', **{})),
+        self.assertEqual(list(zip_longest('abc', 'defg', **{})),
                          list(izip(list('abc')+[None], 'defg'))) # empty keyword dict
-        self.assertRaises(TypeError, izip_longest, 3)
-        self.assertRaises(TypeError, izip_longest, range(3), 3)
+        self.assertRaises(TypeError, zip_longest, 3)
+        self.assertRaises(TypeError, zip_longest, range(3), 3)
 
         for stmt in [
-            "izip_longest('abc', fv=1)",
-            "izip_longest('abc', fillvalue=1, bogus_keyword=None)",
+            "zip_longest('abc', fv=1)",
+            "zip_longest('abc', fillvalue=1, bogus_keyword=None)",
         ]:
             try:
                 eval(stmt, globals(), locals())
@@ -394,13 +394,13 @@ class TestBasicOps(unittest.TestCase):
                 self.fail('Did not raise Type in:  ' + stmt)
 
         # Check tuple re-use (implementation detail)
-        self.assertEqual([tuple(list(pair)) for pair in izip_longest('abc', 'def')],
+        self.assertEqual([tuple(list(pair)) for pair in zip_longest('abc', 'def')],
                          list(zip('abc', 'def')))
-        self.assertEqual([pair for pair in izip_longest('abc', 'def')],
+        self.assertEqual([pair for pair in zip_longest('abc', 'def')],
                          list(zip('abc', 'def')))
-        ids = list(map(id, izip_longest('abc', 'def')))
+        ids = list(map(id, zip_longest('abc', 'def')))
         self.assertEqual(min(ids), max(ids))
-        ids = list(map(id, list(izip_longest('abc', 'def'))))
+        ids = list(map(id, list(zip_longest('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
     def test_product(self):
@@ -659,7 +659,7 @@ class TestBasicOps(unittest.TestCase):
 
         self.assertRaises(StopIteration, next, repeat(None, 0))
 
-        for f in (ifilter, ifilterfalse, imap, takewhile, dropwhile, starmap):
+        for f in (ifilter, filterfalse, imap, takewhile, dropwhile, starmap):
             self.assertRaises(StopIteration, next, f(lambda x:x, []))
             self.assertRaises(StopIteration, next, f(lambda x:x, StopNow()))
 
@@ -690,9 +690,9 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(ifilter(lambda x:True, [a]*2), a)
 
-    def test_ifilterfalse(self):
+    def test_filterfalse(self):
         a = []
-        self.makecycle(ifilterfalse(lambda x:False, a), a)
+        self.makecycle(filterfalse(lambda x:False, a), a)
 
     def test_izip(self):
         a = []
@@ -840,14 +840,14 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, ifilter, isEven, N(s))
             self.assertRaises(ZeroDivisionError, list, ifilter(isEven, E(s)))
 
-    def test_ifilterfalse(self):
+    def test_filterfalse(self):
         for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(ifilterfalse(isEven, g(s))),
+                self.assertEqual(list(filterfalse(isEven, g(s))),
                                  [x for x in g(s) if isOdd(x)])
-            self.assertRaises(TypeError, ifilterfalse, isEven, X(s))
-            self.assertRaises(TypeError, ifilterfalse, isEven, N(s))
-            self.assertRaises(ZeroDivisionError, list, ifilterfalse(isEven, E(s)))
+            self.assertRaises(TypeError, filterfalse, isEven, X(s))
+            self.assertRaises(TypeError, filterfalse, isEven, N(s))
+            self.assertRaises(ZeroDivisionError, list, filterfalse(isEven, E(s)))
 
     def test_izip(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
@@ -861,11 +861,11 @@ class TestVariousIteratorArgs(unittest.TestCase):
     def test_iziplongest(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(izip_longest(g(s))), list(zip(g(s))))
-                self.assertEqual(list(izip_longest(g(s), g(s))), list(zip(g(s), g(s))))
-            self.assertRaises(TypeError, izip_longest, X(s))
-            self.assertRaises(TypeError, izip_longest, N(s))
-            self.assertRaises(ZeroDivisionError, list, izip_longest(E(s)))
+                self.assertEqual(list(zip_longest(g(s))), list(zip(g(s))))
+                self.assertEqual(list(zip_longest(g(s), g(s))), list(zip(g(s), g(s))))
+            self.assertRaises(TypeError, zip_longest, X(s))
+            self.assertRaises(TypeError, zip_longest, N(s))
+            self.assertRaises(ZeroDivisionError, list, zip_longest(E(s)))
 
     def test_imap(self):
         for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
@@ -1001,7 +1001,7 @@ class RegressionTests(unittest.TestCase):
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
         # count is not subclassable...
-        for cls in (repeat, izip, ifilter, ifilterfalse, chain, imap,
+        for cls in (repeat, izip, ifilter, filterfalse, chain, imap,
                     starmap, islice, takewhile, dropwhile, cycle):
             class Subclass(cls):
                 def __init__(self, newarg=None, *args):
@@ -1085,7 +1085,7 @@ Samuele
 
 >>> def all(seq, pred=None):
 ...     "Returns True if pred(x) is true for every element in the iterable"
-...     for elem in ifilterfalse(pred, seq):
+...     for elem in filterfalse(pred, seq):
 ...         return False
 ...     return True
 
