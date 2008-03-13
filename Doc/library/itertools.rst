@@ -291,9 +291,8 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Equivalent to::
 
-      def zip_longest(*args, **kwds):
+      def zip_longest(*args, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
-          fillvalue = kwds.get('fillvalue')
           def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
               yield counter()         # yields the fillvalue, or raises IndexError
           fillers = repeat(fillvalue)
@@ -384,10 +383,10 @@ loops that truncate the stream.
    This function is equivalent to the following code, except that the
    actual implementation does not build up intermediate results in memory::
 
-       def product(*args, **kwds):
+       def product(*args, repeat=1):
            # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
            # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
-           pools = map(tuple, args) * kwds.get('repeat', 1)
+           pools = map(tuple, args) * repeat
            result = [[]]
            for pool in pools:
                result = [x+[y] for x in result for y in pool]
@@ -596,8 +595,7 @@ which incur interpreter overhead. ::
    def grouper(n, iterable, fillvalue=None):
        "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
        args = [iter(iterable)] * n
-       kwds = dict(fillvalue=fillvalue)
-       return zip_longest(*args, **kwds)
+       return zip_longest(*args, fillvalue=fillvalue)
 
    def roundrobin(*iterables):
        "roundrobin('abc', 'd', 'ef') --> 'a', 'd', 'e', 'b', 'f', 'c'"
