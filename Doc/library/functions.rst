@@ -1104,20 +1104,30 @@ available.  They are listed here in alphabetical order.
    the effects on the corresponding symbol table are undefined. [#]_
 
 
-.. function:: zip([iterable, ...])
+.. function:: zip(*iterables)
 
-   This function returns an iterator of tuples, where the *i*-th tuple contains
+   Make an iterator that aggregates elements from each of the iterables. 
+
+   Returns an iterator of tuples, where the *i*-th tuple contains
    the *i*-th element from each of the argument sequences or iterables.  The
-   iterator stops when the shortest argument sequence is exhausted.  When there
-   are multiple arguments which are all of the same length, :func:`zip` is
-   similar to :func:`map` with an initial argument of ``None``.  With a single
-   sequence argument, it returns an iterator of 1-tuples.  With no arguments, it
-   returns an empty iterator.
+   iterator stops when the shortest input iterable is exhausted. With a single
+   iterable argument, it returns an iterator of 1-tuples.  With no arguments, 
+   it returns an empty iterator.  Equivalent to::
+
+      def zip(*iterables):
+          # zip('ABCD', 'xy') --> Ax By
+          iterables = map(iter, iterables)
+          while iterables:
+              result = [it.next() for it in iterables]
+              yield tuple(result)
 
    The left-to-right evaluation order of the iterables is guaranteed. This
    makes possible an idiom for clustering a data series into n-length groups
    using ``zip(*[iter(s)]*n)``.
 
+   :func:`zip` should only be used with unequal length inputs when you don't
+   care about trailing, unmatched values from the longer iterables.  If those
+   values are important, use :func:`itertools.zip_longest` instead.
 
 .. rubric:: Footnotes
 
