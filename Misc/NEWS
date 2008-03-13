@@ -50,6 +50,8 @@ Library
 Tests
 -----
 
+- Issue 1960: Convert test_gdbm to unittest.
+
 - GHOP 294: Convert test_contains, test_crypt, and test_select to unittest.
 
 - GHOP 238: Convert test_tokenize to use doctest.
