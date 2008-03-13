@@ -1445,6 +1445,11 @@ imap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	imapobject *lz;
 	Py_ssize_t numargs, i;
 
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "In 3.x, itertools.imap() was moved to builtin map()") < 0)
+		return NULL;
+
 	if (type == &imap_type && !_PyArg_NoKeywords("imap()", kwds))
 		return NULL;
 
@@ -2536,6 +2541,11 @@ ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *it;
 	ifilterobject *lz;
 
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "In 3.x, itertools.ifilter() was moved to builtin filter().") < 0)
+		return NULL;
+
 	if (type == &ifilter_type && !_PyArg_NoKeywords("ifilter()", kwds))
 		return NULL;
 
@@ -2678,6 +2688,11 @@ ifilterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *func, *seq;
 	PyObject *it;
 	ifilterfalseobject *lz;
+
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "In 3.x, ifilterfalse() was renamed to filterfalse().") < 0)
+		return NULL;
 
 	if (type == &ifilterfalse_type &&
 	    !_PyArg_NoKeywords("ifilterfalse()", kwds))
@@ -2984,6 +2999,11 @@ izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *ittuple;  /* tuple of iterators */
 	PyObject *result;
 	Py_ssize_t tuplesize = PySequence_Length(args);
+
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "In 3.x, itertools.izip() was moved to builtin zip()") < 0)
+		return NULL;
 
 	if (type == &izip_type && !_PyArg_NoKeywords("izip()", kwds))
 		return NULL;
@@ -3320,6 +3340,11 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *result;
 	PyObject *fillvalue = Py_None;
 	Py_ssize_t tuplesize = PySequence_Length(args);
+
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "In 3.x, izip_longest() is renamed to zip_longest().") < 0)
+		return NULL;
 
         if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_Size(kwds) > 0) {
                 fillvalue = PyDict_GetItemString(kwds, "fillvalue");
