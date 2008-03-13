@@ -491,6 +491,8 @@ Core and builtins
 Library
 -------
 
+- #2274 Add heapq.heappushpop().
+
 - Add inspect.isabstract(object) to fix bug #2223
 
 - Add a __format__ method to Decimal, to support PEP 3101.

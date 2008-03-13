@@ -45,6 +45,13 @@ The following functions are provided:
    Pop and return the smallest item from the *heap*, maintaining the heap
    invariant.  If the heap is empty, :exc:`IndexError` is raised.
 
+.. function:: heappushpop(heap, item)
+
+   Push *item* on the heap, then pop and return the smallest item from the
+   *heap*.  The combined action runs more efficiently than :func:`heappush`
+   followed by a separate call to :func:`heappop`.
+
+   .. versionadded:: 2.6
 
 .. function:: heapify(x)
 
