@@ -3343,7 +3343,7 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (Py_Py3kWarningFlag &&
 	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "In 3.x, izip_longest() is renamed to zip_longest().") < 0)
+		       "In 3.x, izip_longest() was renamed to zip_longest().") < 0)
 		return NULL;
 
         if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_Size(kwds) > 0) {
