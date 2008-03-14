@@ -1,3 +1,3 @@
 @rem Used by the buildbot "test" step.
-cd PC
-call rt.bat -q -uall -rw -x64
+cd PCbuild
+call rt.bat -q -d -x64 -uall -rw
