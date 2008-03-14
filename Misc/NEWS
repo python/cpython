@@ -63,6 +63,10 @@ Tests
 - Patch #2232: os.tmpfile might fail on Windows if the user has no
   permission to create files in the root directory.
 
+Build
+-----
+
+- Patch #2284: Add -x64 option to rt.bat.
 
 What's New in Python 2.6 alpha 1?
 =================================
