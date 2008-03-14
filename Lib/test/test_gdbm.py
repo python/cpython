@@ -35,7 +35,6 @@ class TestGdbm(unittest.TestCase):
         # Try to open a non-existent database.
         unlink(filename)
         self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
-        self.assertRaises(gdbm.error, gdbm.open, filename, 'w')
         # Try to access a closed database.
         self.g = gdbm.open(filename, 'c')
         self.g.close()
