@@ -2614,6 +2614,11 @@ compiler_list(struct compiler *c, expr_ty e)
 		for (i = 0; i < n; i++) {
 			expr_ty elt = asdl_seq_GET(e->v.List.elts, i);
 			if (elt->kind == Starred_kind && !seen_star) {
+				if ((i >= (1 << 8)) ||
+				    (n-i-1 >= (INT_MAX >> 8)))
+					return compiler_error(c,
+						"too many expressions in "
+						"star-unpacking assignment");
 				ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
 				seen_star = 1;
 				asdl_seq_SET(e->v.List.elts, i, elt->v.Starred.value);
@@ -2642,6 +2647,11 @@ compiler_tuple(struct compiler *c, expr_ty e)
 		for (i = 0; i < n; i++) {
 			expr_ty elt = asdl_seq_GET(e->v.Tuple.elts, i);
 			if (elt->kind == Starred_kind && !seen_star) {
+				if ((i >= (1 << 8)) ||
+				    (n-i-1 >= (INT_MAX >> 8)))
+					return compiler_error(c,
+						"too many expressions in "
+						"star-unpacking assignment");
 				ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
 				seen_star = 1;
 				asdl_seq_SET(e->v.Tuple.elts, i, elt->v.Starred.value);
