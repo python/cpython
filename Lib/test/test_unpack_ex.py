@@ -143,6 +143,23 @@ Now some general starred expressions (all fail).
       ...
     SyntaxError: can use starred expression only as assignment target
 
+Some size constraints (all fail.)
+
+    >>> s = ", ".join("a%d" % i for i in range(1<<8)) + ", *rest = range(1<<8 + 1)"
+    >>> compile(s, 'test', 'exec') # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+     ...
+    SyntaxError: too many expressions in star-unpacking assignment
+
+    >>> s = ", ".join("a%d" % i for i in range(1<<8 + 1)) + ", *rest = range(1<<8 + 2)"
+    >>> compile(s, 'test', 'exec') # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+     ...
+    SyntaxError: too many expressions in star-unpacking assignment
+
+(there is an additional limit, on the number of expressions after the
+'*rest', but it's 1<<24 and testing it takes too much memory.)
+
 """
 
 __test__ = {'doctests' : doctests}
