@@ -2271,7 +2271,7 @@ PyDoc_STRVAR(count_doc,
 PyDoc_STRVAR(reverse_doc,
 "L.reverse() -- reverse *IN PLACE*");
 PyDoc_STRVAR(sort_doc,
-"L.sort(cmp=None, key=None, reverse=False) -- stable sort *IN PLACE*;\n\
+"L.sort(key=None, reverse=False) -- stable sort *IN PLACE*;\n\
 cmp(x, y) -> -1, 0, 1");
 
 static PyObject *list_subscript(PyListObject*, PyObject*);
