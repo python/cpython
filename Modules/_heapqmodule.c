@@ -162,11 +162,6 @@ heapreplace(PyObject *self, PyObject *args)
 {
 	PyObject *heap, *item, *returnitem;
 
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "In 3.x, heapreplace() was removed. Use heappushpop() instead.") < 0)
-		return NULL;
-
 	if (!PyArg_UnpackTuple(args, "heapreplace", 2, 2, &heap, &item))
 		return NULL;
 
