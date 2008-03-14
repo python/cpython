@@ -482,7 +482,7 @@ def test_705836():
     except OverflowError:
         pass
     else:
-        TestFailed("expected OverflowError")
+        raise TestFailed("expected OverflowError")
 
 test_705836()
 

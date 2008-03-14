@@ -21,6 +21,10 @@ Core and builtins
 Library
 -------
 
+- Issue #705836: struct.pack(">f", x) now raises OverflowError on all
+  platforms when x is too large to fit into an IEEE 754 float; previously
+  it only raised OverflowError on non IEEE 754 platforms.
+
 - Issue #1106316: pdb.post_mortem()'s parameter, "traceback", is now
   optional: it defaults to the traceback of the exception that is currently
   being handled (is mandatory to be in the middle of an exception, otherwise
