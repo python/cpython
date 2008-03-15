@@ -52,7 +52,7 @@ everything, though.
 No one has made a Windows port of the curses module.  On a Windows platform, try
 the Console module written by Fredrik Lundh.  The Console module provides
 cursor-addressable text output, plus full support for mouse and keyboard input,
-and is available from http://effbot.org/efflib/console.
+and is available from http://effbot.org/zone/console-index.htm.
 
 
 The Python curses module
@@ -432,5 +432,5 @@ ncurses; feel free to add that.
 If you write an interesting little program, feel free to contribute it as
 another demo.  We can always use more of them!
 
-The ncurses FAQ: http://dickey.his.com/ncurses/ncurses.faq.html
+The ncurses FAQ: http://invisible-island.net/ncurses/ncurses.faq.html
 

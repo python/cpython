@@ -35,7 +35,7 @@ since this would imply that the ZIP has been altered during runtime.
 
 .. seealso::
 
-   `PKZIP Application Note <http://www.pkware.com/business_and_developers/developer/appnote/>`_
+   `PKZIP Application Note <http://www.pkware.com/documents/casestudies/APPNOTE.TXT>`_
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 

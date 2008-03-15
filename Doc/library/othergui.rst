@@ -36,14 +36,12 @@ also available for Python:
 
    `PyGTK <http://www.pygtk.org/>`_
       is a set of bindings for the `GTK <http://www.gtk.org/>`_ widget set. It
-      provides an object oriented interface that is slightly higher level than the C
-      one. It comes with many more widgets than Tkinter provides, and
-      has good Python-specific reference documentation. There are also `bindings
-      <http://www.daa.com.au/~james/gnome/>`_ to  `GNOME <http://www.gnome.org>`_.
-      One well known PyGTK application is
-      `PythonCAD <http://www.pythoncad.org/>`_. An
-      online `tutorial <http://www.pygtk.org/pygtk2tutorial/index.html>`_ is
-      available.
+      provides an object oriented interface that is slightly higher level than
+      the C one. It comes with many more widgets than Tkinter provides, and has
+      good Python-specific reference documentation. There are also bindings to
+      `GNOME <http://www.gnome.org>`_.  One well known PyGTK application is
+      `PythonCAD <http://www.pythoncad.org/>`_. An online `tutorial
+      <http://www.pygtk.org/pygtk2tutorial/index.html>`_ is available.
 
    `PyQt <http://www.riverbankcomputing.co.uk/pyqt/index.php>`_
       PyQt is a :program:`sip`\ -wrapped binding to the Qt toolkit.  Qt is an

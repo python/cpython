@@ -872,10 +872,10 @@ Using non-Microsoft compilers on Windows
 
 
 
-Borland C++
-^^^^^^^^^^^
+Borland/CodeGear C++
+^^^^^^^^^^^^^^^^^^^^
 
-This subsection describes the necessary steps to use Distutils with the  Borland
+This subsection describes the necessary steps to use Distutils with the Borland
 C++ compiler version 5.5.  First you have to know that Borland's object file
 format (OMF) is different from the format used by the Python version you can
 download from the Python or ActiveState Web site.  (Python is built with
@@ -915,7 +915,7 @@ section :ref:`inst-config-files`.)
 
 .. seealso::
 
-   `C++Builder Compiler <http://www.borland.com/bcppbuilder/freecompiler/>`_
+   `C++Builder Compiler <http://www.codegear.com/downloads/free/cppbuilder>`_
       Information about the free C++ compiler from Borland, including links to the
       download pages.
 
@@ -938,9 +938,7 @@ following steps.
 These compilers require some special libraries. This task is more complex than
 for Borland's C++, because there is no program to convert the library.  First
 you have to create a list of symbols which the Python DLL exports. (You can find
-a good program for this task at
-http://starship.python.net/crew/kernr/mingw32/Notes.html, see at  PExports 0.42h
-there.)
+a good program for this task at http://www.emmestech.com/software/cygwin/pexports-0.43/download_pexports.html)
 
 .. I don't understand what the next line means. --amk
 .. (inclusive the references on data structures.)
@@ -984,9 +982,6 @@ Distutils (see section :ref:`inst-config-files`.)
    `Building Python modules on MS Windows platform with MinGW <http://www.zope.org/Members/als/tips/win32_mingw_modules>`_
       Information about building the required libraries for the MinGW environment.
 
-   http://pyopengl.sourceforge.net/ftp/win32-stuff/
-      Converted import libraries in Cygwin/MinGW and Borland format, and a script to
-      create the registry entries needed for Distutils to locate the built Python.
 
 .. rubric:: Footnotes
 

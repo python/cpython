@@ -73,7 +73,7 @@ It defines the following items:
    Module :mod:`multifile`
       Support for reading files which contain distinct parts, such as MIME data.
 
-   http://www.cs.uu.nl/wais/html/na-dir/mail/mime-faq/.html
+   http://faqs.cs.uu.nl/na-dir/mail/mime-faq/.html
       The MIME Frequently Asked Questions document.  For an overview of MIME, see the
       answer to question 1.1 in Part 1 of this document.
 
