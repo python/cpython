@@ -673,7 +673,7 @@ PyBuffer_FillInfo(Py_buffer *view, void *buf, Py_ssize_t len,
 {
 	if (view == NULL) return 0;
 	if (((flags & PyBUF_LOCK) == PyBUF_LOCK) &&
-	    readonly >= 0) {
+	    readonly != 0) {
 		PyErr_SetString(PyExc_BufferError,
 				"Cannot lock this object.");
 		return -1;
