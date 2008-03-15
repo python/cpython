@@ -520,7 +520,7 @@ time_strptime(PyObject *self, PyObject *args)
 
     if (!strptime_module)
         return NULL;
-    strptime_result = PyObject_CallMethod(strptime_module, "strptime", "O", args);
+    strptime_result = PyObject_CallMethod(strptime_module, "_strptime_time", "O", args);
     Py_DECREF(strptime_module);
     return strptime_result;
 }
