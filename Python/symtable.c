@@ -27,8 +27,9 @@ PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
 	k = PyLong_FromVoidPtr(key);
 	if (k == NULL)
 		goto fail;
-	ste = (PySTEntryObject *)PyObject_New(PySTEntryObject,
-					      &PySTEntry_Type);
+	ste = PyObject_New(PySTEntryObject, &PySTEntry_Type);
+	if (ste == NULL)
+		goto fail;
 	ste->ste_table = st;
 	ste->ste_id = k;
 	ste->ste_tmpname = 0;
