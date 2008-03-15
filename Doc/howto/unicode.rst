@@ -210,10 +210,6 @@ To help understand the standard, Jukka Korpela has written an introductory guide
 to reading the Unicode character tables, available at
 <http://www.cs.tut.fi/~jkorpela/unicode/guide.html>.
 
-Roman Czyborra wrote another explanation of Unicode's basic principles; it's at
-<http://czyborra.com/unicode/characters.html>.  Czyborra has written a number of
-other Unicode-related documentation, available from <http://www.cyzborra.com>.
-
 Two other good introductory articles were written by Joel Spolsky
 <http://www.joelonsoftware.com/articles/Unicode.html> and Jason Orendorff
 <http://www.jorendorff.com/articles/unicode/>.  If this introduction didn't make
@@ -490,7 +486,7 @@ The documentation for the :mod:`codecs` module.
 
 Marc-André Lemburg gave a presentation at EuroPython 2002 titled "Python and
 Unicode".  A PDF version of his slides is available at
-<http://www.egenix.com/files/python/Unicode-EPC2002-Talk.pdf>, and is an
+<http://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf>, and is an
 excellent overview of the design of Python's Unicode features.
 
 
@@ -677,7 +673,7 @@ References
 
 The PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware
 Applications in Python" are available at
-<http://www.egenix.com/files/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>
+<http://downloads.egenix.com/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>
 and discuss questions of character encodings as well as how to internationalize
 and localize an application.
 

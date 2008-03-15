@@ -84,7 +84,3 @@ The :mod:`aepack` module defines the following functions:
 
    Module :mod:`aetypes`
       Python definitions of codes for Apple Event descriptor types.
-
-   `Inside Macintosh: Interapplication Communication <http://developer.apple.com/techpubs/mac/IAC/IAC-2.html>`_
-      Information about inter-process communications on the Macintosh.
-

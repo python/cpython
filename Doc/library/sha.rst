@@ -82,6 +82,6 @@ An sha object has the same methods as md5 objects:
       <http://csrc.nist.gov/publications/fips/fips180-2/fips180-2withchangenotice.pdf>`_,
       published in August 2002.
 
-   `Cryptographic Toolkit (Secure Hashing) <http://csrc.nist.gov/encryption/tkhash.html>`_
+   `Cryptographic Toolkit (Secure Hashing) <http://csrc.nist.gov/CryptoToolkit/tkhash.html>`_
       Links from NIST to various information on secure hashing.
 
