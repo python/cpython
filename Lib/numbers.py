@@ -259,7 +259,7 @@ class Real(Complex):
 Real.register(float)
 
 
-class Rational(Real, Exact):
+class Rational(Real):
     """.numerator and .denominator should be in lowest terms."""
 
     @abstractproperty
