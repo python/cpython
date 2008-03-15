@@ -2056,6 +2056,14 @@ compiler_assert(struct compiler *c, stmt_ty s)
 		if (assertion_error == NULL)
 			return 0;
 	}
+	if (s->v.Assert.test->kind == Tuple_kind &&
+	    asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) {
+		const char* msg =
+			"assertion is always true, perhaps remove parentheses?";
+		if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, c->c_filename,
+				       c->u->u_lineno, NULL, NULL) == -1)
+			return 0;
+	}
 	VISIT(c, expr, s->v.Assert.test);
 	end = compiler_new_block(c);
 	if (end == NULL)
