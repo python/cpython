@@ -21,6 +21,10 @@ Core and builtins
 Library
 -------
 
+- Issue #1158: add %f format (fractions of a second represented as
+  microseconds) to datetime objects.  Understood by both strptime and
+  strftime.
+
 - Issue #705836: struct.pack(">f", x) now raises OverflowError on all
   platforms when x is too large to fit into an IEEE 754 float; previously
   it only raised OverflowError on non IEEE 754 platforms.
