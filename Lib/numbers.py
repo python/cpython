@@ -8,10 +8,7 @@ TODO: Fill out more detailed documentation on the operators."""
 from __future__ import division
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-__all__ = ["Number", "Exact", "Inexact",
-           "Complex", "Real", "Rational", "Integral",
-           ]
-
+__all__ = ["Number", "Complex", "Real", "Rational", "Integral"]
 
 class Number(object):
     """All numbers inherit from this class.
@@ -22,60 +19,13 @@ class Number(object):
     __metaclass__ = ABCMeta
 
 
-class Exact(Number):
-    """Operations on instances of this type are exact.
-
-    As long as the result of a homogenous operation is of the same
-    type, you can assume that it was computed exactly, and there are
-    no round-off errors. Laws like commutativity and associativity
-    hold.
-    """
-
-Exact.register(int)
-Exact.register(long)
-
-
-class Inexact(Number):
-    """Operations on instances of this type are inexact.
-
-    Given X, an instance of Inexact, it is possible that (X + -X) + 3
-    == 3, but X + (-X + 3) == 0. The exact form this error takes will
-    vary by type, but it's generally unsafe to compare this type for
-    equality.
-    """
-
-Inexact.register(complex)
-Inexact.register(float)
-# Inexact.register(decimal.Decimal)
-
-
 ## Notes on Decimal
 ## ----------------
 ## Decimal has all of the methods specified by the Real abc, but it should
 ## not be registered as a Real because decimals do not interoperate with
-## binary floats.
-##
-## Decimal has some of the characteristics of Integrals.  It provides
-## logical operations but not as operators.  The logical operations only apply
-## to a subset of decimals (those that are non-negative, have a zero exponent,
-## and have digits that are only 0 or 1).  It does provide __long__() and
-## a three argument form of __pow__ that includes exactness guarantees.
-## It does not provide an __index__() method.
-##
-## Depending on context, decimal operations may be exact or inexact.
-##
-## When decimal is run in a context with small precision and automatic rounding,
-## it is Inexact.  See the "Floating point notes" section of the decimal docs
-## for an example of losing the associative and distributive properties of
-## addition.
-##
-## When decimal is used for high precision integer arithmetic, it is Exact.
-## When the decimal used as fixed-point, it is Exact.
-## When it is run with sufficient precision, it is Exact.
-## When the decimal.Inexact trap is set, decimal operations are Exact.
-## For an example, see the float_to_decimal() recipe in the "Decimal FAQ"
-## section of the docs -- it shows an how traps are used in conjunction
-## with variable precision to reliably achieve exact results.
+## binary floats (i.e.  Decimal('3.14') + 2.71828 is undefined).  But,
+## abstract reals are expected to interoperate (i.e. R1 + R2 should be
+## expected to work if R1 and R2 are both Reals).
 
 class Complex(Number):
     """Complex defines the operations that work on the builtin complex type.
