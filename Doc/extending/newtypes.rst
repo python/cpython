@@ -428,7 +428,7 @@ reference counts.  When don't we have to do this?
 * when decrementing a reference count in a :attr:`tp_dealloc` handler when
   garbage-collections is not supported [#]_
 
-We want to want to expose our instance variables as attributes. There are a
+We want to expose our instance variables as attributes. There are a
 number of ways to do that. The simplest way is to define member definitions::
 
    static PyMemberDef Noddy_members[] = {
@@ -616,7 +616,7 @@ and register it in the :attr:`tp_getset` slot::
 
    Noddy_getseters,           /* tp_getset */
 
-to register out attribute getters and setters.
+to register our attribute getters and setters.
 
 The last item in a :ctype:`PyGetSetDef` structure is the closure mentioned
 above. In this case, we aren't using the closure, so we just pass *NULL*.
@@ -1538,7 +1538,7 @@ might be something like the following::
    less careful about decrementing their reference counts, however, we accept
    instances of string subclasses. Even though deallocating normal strings won't
    call back into our objects, we can't guarantee that deallocating an instance of
-   a string subclass won't. call back into out objects.
+   a string subclass won't call back into our objects.
 
 .. [#] Even in the third version, we aren't guaranteed to avoid cycles.  Instances of
    string subclasses are allowed and string subclasses could allow cycles even if

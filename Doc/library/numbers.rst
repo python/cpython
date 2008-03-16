@@ -6,36 +6,14 @@
 
 
 The :mod:`numbers` module (:pep:`3141`) defines a hierarchy of numeric abstract
-base classes which progressively define more operations. These concepts also
-provide a way to distinguish exact from inexact types. None of the types defined
-in this module can be instantiated.
+base classes which progressively define more operations.  None of the types
+defined in this module can be instantiated.
 
 
 .. class:: Number
 
    The root of the numeric hierarchy. If you just want to check if an argument
    *x* is a number, without caring what kind, use ``isinstance(x, Number)``.
-
-
-Exact and inexact operations
-----------------------------
-
-.. class:: Exact
-
-   Subclasses of this type have exact operations.
-
-   As long as the result of a homogenous operation is of the same type, you can
-   assume that it was computed exactly, and there are no round-off errors. Laws
-   like commutativity and associativity hold.
-
-
-.. class:: Inexact
-
-   Subclasses of this type have inexact operations.
-
-   Given X, an instance of :class:`Inexact`, it is possible that ``(X + -X) + 3
-   == 3``, but ``X + (-X + 3) == 0``. The exact form this error takes will vary
-   by type, but it's generally unsafe to compare this type for equality.
 
 
 The numeric tower
@@ -77,7 +55,7 @@ The numeric tower
 
 .. class:: Rational
 
-   Subtypes both :class:`Real` and :class:`Exact`, and adds
+   Subtypes :class:`Real` and adds
    :attr:`Rational.numerator` and :attr:`Rational.denominator` properties, which
    should be in lowest terms. With these, it provides a default for
    :func:`float`.
