@@ -35,7 +35,7 @@ special needs of your application and users.
    `Tix Programming Guide <http://tix.sourceforge.net/dist/current/docs/tix-book/tix.book.html>`_
       On-line version of the programmer's reference material.
 
-   `Tix Development Applications <http://tix.sourceforge.net/Tide/>`_
+   `Tix Development Applications <http://tix.sourceforge.net/Tixapps/src/Tide.html>`_
       Tix applications for development of Tix and Tkinter programs. Tide applications
       work under Tk or Tkinter, and include :program:`TixInspect`, an inspector to
       remotely modify and debug Tix/Tk/Tkinter applications.

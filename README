@@ -61,6 +61,9 @@ the "What's New in Python 3.0" document, found at
 
 Please help write it!
 
+If you want to install multiple versions of Python see the section below
+entitled "Installing multiple versions".
+
 
 What's New Since 3.0a1
 ----------------------
@@ -82,6 +85,29 @@ Python 2.6 (not yet released) will contain features to help locating
 code that needs to be changed, such as optional warnings when
 deprecated features are used, and backported versions of certain key
 Python 3000 features.
+
+
+Installing multiple versions
+----------------------------
+
+On Unix and Mac systems if you intend to install multiple versions of Python
+using the same installation prefix (--prefix argument to the configure
+script) you must take care that your primary python executable is not
+overwritten by the installation of a different versio.  All files and
+directories installed using "make altinstall" contain the major and minor
+version and can thus live side-by-side.  "make install" also creates
+${prefix}/bin/python which refers to ${prefix}/bin/pythonX.Y.  If you intend
+to install multiple versions using the same prefix you must decide which
+version (if any) is your "primary" version.  Install that version using
+"make install".  Install all other versions using "make altinstall".
+
+For example, if you want to install Python 2.5, 2.6 and 3.0 with 2.6 being
+the primary version, you would execute "make install" in your 2.6 build
+directory and "make altinstall" in the others.
+
+
+Configuration options and variables
+-----------------------------------
 
 A source-to-source translation tool, "2to3", can take care of the
 mundane task of converting large amounts of source code.  It is not a

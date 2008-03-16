@@ -237,7 +237,7 @@ c_voidp = c_void_p # backwards compatibility (to a bug)
 _check_size(c_void_p)
 
 class c_bool(_SimpleCData):
-    _type_ = "t"
+    _type_ = "?"
 
 # This cache maps types to pointers to them.
 _pointer_type_cache = {}

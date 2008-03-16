@@ -113,7 +113,8 @@ or inappropriate for the service) is to maintain an explicit table of partially
 finished requests and to use :func:`select` to decide which request to work on
 next (or whether to handle a new incoming request).  This is particularly
 important for stream services where each client can potentially be connected for
-a long time (if threads or subprocesses cannot be used).
+a long time (if threads or subprocesses cannot be used). See :mod:`asyncore` for
+another way to manage this.
 
 .. XXX should data and methods be intermingled, or separate?
    how should the distinction between class and instance variables be drawn?
@@ -132,16 +133,24 @@ Server Objects
 
 .. function:: handle_request()
 
-   Process a single request.  This function calls the following methods in order:
-   :meth:`get_request`, :meth:`verify_request`, and :meth:`process_request`.  If
-   the user-provided :meth:`handle` method of the handler class raises an
-   exception, the server's :meth:`handle_error` method will be called.
+   Process a single request.  This function calls the following methods in
+   order: :meth:`get_request`, :meth:`verify_request`, and
+   :meth:`process_request`.  If the user-provided :meth:`handle` method of the
+   handler class raises an exception, the server's :meth:`handle_error` method
+   will be called.  If no request is received within :attr:`self.timeout`
+   seconds, :meth:`handle_timeout` will be called and :meth:`handle_request`
+   will return.
 
 
-.. function:: serve_forever()
+.. function:: serve_forever(poll_interval=0.5)
 
-   Handle an infinite number of requests.  This simply calls :meth:`handle_request`
-   inside an infinite loop.
+   Handle requests until an explicit :meth:`shutdown` request.  Polls for
+   shutdown every *poll_interval* seconds.
+
+
+.. function:: shutdown()
+
+   Tells the :meth:`serve_forever` loop to stop and waits until it does.
 
 
 .. data:: address_family
@@ -195,10 +204,9 @@ The server classes support the following class variables:
 
 .. data:: timeout
 
-   Timeout duration, measured in seconds, or :const:`None` if no timeout is desired.
-   If no incoming requests are received within the timeout period, 
-   the :meth:`handle_timeout` method is called and then the server resumes waiting for 
-   requests.
+   Timeout duration, measured in seconds, or :const:`None` if no timeout is
+   desired.  If :meth:`handle_request` receives no incoming requests within the
+   timeout period, the :meth:`handle_timeout` method is called.
 
 There are various server methods that can be overridden by subclasses of base
 server classes like :class:`TCPServer`; these methods aren't useful to external

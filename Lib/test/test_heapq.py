@@ -107,6 +107,34 @@ class TestHeap(unittest.TestCase):
         self.assertRaises(TypeError, self.module.heapreplace, None, None)
         self.assertRaises(IndexError, self.module.heapreplace, [], None)
 
+    def test_nbest_with_pushpop(self):
+        data = [random.randrange(2000) for i in range(1000)]
+        heap = data[:10]
+        self.module.heapify(heap)
+        for item in data[10:]:
+            self.module.heappushpop(heap, item)
+        self.assertEqual(list(self.heapiter(heap)), sorted(data)[-10:])
+        self.assertEqual(self.module.heappushpop([], 'x'), 'x')
+
+    def test_heappushpop(self):
+        h = []
+        x = self.module.heappushpop(h, 10)
+        self.assertEqual((h, x), ([], 10))
+
+        h = [10]
+        x = self.module.heappushpop(h, 10.0)
+        self.assertEqual((h, x), ([10], 10.0))
+        self.assertEqual(type(h[0]), int)
+        self.assertEqual(type(x), float)
+
+        h = [10];
+        x = self.module.heappushpop(h, 9)
+        self.assertEqual((h, x), ([10], 9))
+
+        h = [10];
+        x = self.module.heappushpop(h, 11)
+        self.assertEqual((h, x), ([11], 10))
+
     def test_heapsort(self):
         # Exercise everything with repeated heapsort checks
         for trial in range(100):

@@ -127,7 +127,7 @@ From all times, sorting has always been a Great Art! :-)
 """
 
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
-           'nlargest', 'nsmallest']
+           'nlargest', 'nsmallest', 'heappushpop']
 
 from itertools import islice, repeat, count, tee
 from operator import itemgetter, neg
@@ -165,6 +165,13 @@ def heapreplace(heap, item):
     _siftup(heap, 0)
     return returnitem
 
+def heappushpop(heap, item):
+    """Fast version of a heappush followed by a heappop."""
+    if heap and item > heap[0]:
+        item, heap[0] = heap[0], item
+        _siftup(heap, 0)
+    return item
+
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(heap)) time."""
     n = len(x)
@@ -186,13 +193,9 @@ def nlargest(n, iterable):
     if not result:
         return result
     heapify(result)
-    _heapreplace = heapreplace
-    sol = result[0]         # sol --> smallest of the nlargest
+    _heappushpop = heappushpop
     for elem in it:
-        if elem <= sol:
-            continue
-        _heapreplace(result, elem)
-        sol = result[0]
+        heappushpop(result, elem)
     result.sort(reverse=True)
     return result
 
@@ -304,7 +307,7 @@ def _siftup(heap, pos):
 
 # If available, use C implementation
 try:
-    from _heapq import heappush, heappop, heapify, heapreplace, nlargest, nsmallest
+    from _heapq import heappush, heappop, heapify, heapreplace, nlargest, nsmallest, heappushpop
 except ImportError:
     pass
 

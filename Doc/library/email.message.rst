@@ -38,7 +38,7 @@ Here are the methods of the :class:`Message` class:
 
 .. method:: Message.as_string([unixfrom])
 
-   Return the entire message flatten as a string.  When optional *unixfrom* is
+   Return the entire message flattened as a string.  When optional *unixfrom* is
    ``True``, the envelope header is included in the returned string.  *unixfrom*
    defaults to ``False``.
 

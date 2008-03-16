@@ -346,7 +346,7 @@ http://www.opensource.org
    wasn't written commercially.  This site presents arguments that show how open
    source software can have considerable advantages over closed-source software.
 
-http://sunsite.unc.edu/LDP/HOWTO/mini/Advocacy.html
+http://www.faqs.org/docs/Linux-mini/Advocacy.html
    The Linux Advocacy mini-HOWTO was the inspiration for this document, and is also
    well worth reading for general suggestions on winning acceptance for a new
    technology, such as Linux or Python.  In general, you won't make much progress

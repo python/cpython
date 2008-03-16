@@ -29,7 +29,7 @@ doesn't contain :file:`.pyc` files, importing may be rather slow.
 
 .. seealso::
 
-   `PKZIP Application Note <http://www.pkware.com/business_and_developers/developer/appnote/>`_
+   `PKZIP Application Note <http://www.pkware.com/documents/casestudies/APPNOTE.TXT>`_
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 

@@ -130,7 +130,7 @@ dbm_subscript(dbmobject *dp, register PyObject *key)
         PyErr_SetObject(PyExc_KeyError, key);
         return NULL;
     }
-    v = PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
+    v = PyString_FromStringAndSize(drec.dptr, drec.dsize);
     free(drec.dptr);
     return v;
 }
@@ -220,7 +220,7 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
 
     key = gdbm_firstkey(dp->di_dbm);
     while (key.dptr) {
-        item = PyBytes_FromStringAndSize(key.dptr, key.dsize);
+        item = PyString_FromStringAndSize(key.dptr, key.dsize);
         if (item == NULL) {
             free(key.dptr);
             Py_DECREF(v);
@@ -291,7 +291,7 @@ dbm_firstkey(register dbmobject *dp, PyObject *unused)
     check_dbmobject_open(dp);
     key = gdbm_firstkey(dp->di_dbm);
     if (key.dptr) {
-        v = PyBytes_FromStringAndSize(key.dptr, key.dsize);
+        v = PyString_FromStringAndSize(key.dptr, key.dsize);
         free(key.dptr);
         return v;
     }
@@ -323,7 +323,7 @@ dbm_nextkey(register dbmobject *dp, PyObject *args)
     check_dbmobject_open(dp);
     nextkey = gdbm_nextkey(dp->di_dbm, key);
     if (nextkey.dptr) {
-        v = PyBytes_FromStringAndSize(nextkey.dptr, nextkey.dsize);
+        v = PyString_FromStringAndSize(nextkey.dptr, nextkey.dsize);
         free(nextkey.dptr);
         return v;
     }

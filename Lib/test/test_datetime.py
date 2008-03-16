@@ -1521,11 +1521,12 @@ class TestDateTime(TestDate):
         self.failUnless(abs(from_timestamp - from_now) <= tolerance)
 
     def test_strptime(self):
-        import time
+        import _strptime
 
-        string = '2004-12-01 13:02:47'
-        format = '%Y-%m-%d %H:%M:%S'
-        expected = self.theclass(*(time.strptime(string, format)[0:6]))
+        string = '2004-12-01 13:02:47.197'
+        format = '%Y-%m-%d %H:%M:%S.%f'
+        result, frac = _strptime._strptime(string, format)
+        expected = self.theclass(*(result[0:6]+(frac,)))
         got = self.theclass.strptime(string, format)
         self.assertEqual(expected, got)
 
@@ -1553,9 +1554,9 @@ class TestDateTime(TestDate):
 
     def test_more_strftime(self):
         # This tests fields beyond those tested by the TestDate.test_strftime.
-        t = self.theclass(2004, 12, 31, 6, 22, 33)
-        self.assertEqual(t.strftime("%m %d %y %S %M %H %j"),
-                                    "12 31 04 33 22 06 366")
+        t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
+        self.assertEqual(t.strftime("%m %d %y %f %S %M %H %j"),
+                                    "12 31 04 000047 33 22 06 366")
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -1828,7 +1829,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     def test_strftime(self):
         t = self.theclass(1, 2, 3, 4)
-        self.assertEqual(t.strftime('%H %M %S'), "01 02 03")
+        self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
         # A naive object replaces %z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
 

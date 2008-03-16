@@ -84,8 +84,8 @@ sz = struct.calcsize('i')
 if sz * 3 != struct.calcsize('iii'):
     raise TestFailed('inconsistent sizes')
 
-fmt = 'cbxxxxxxhhhhiillffdt'
-fmt3 = '3c3b18x12h6i6l6f3d3t'
+fmt = 'cbxxxxxxhhhhiillffd?'
+fmt3 = '3c3b18x12h6i6l6f3d3?'
 sz = struct.calcsize(fmt)
 sz3 = struct.calcsize(fmt3)
 if sz * 3 != sz3:
@@ -111,7 +111,7 @@ d = 3.1415
 t = True
 
 for prefix in ('', '@', '<', '>', '=', '!'):
-    for format in ('xcbhilfdt', 'xcBHILfdt'):
+    for format in ('xcbhilfd?', 'xcBHILfd?'):
         format = prefix + format
         if verbose:
             print("trying:", format)
@@ -160,11 +160,11 @@ tests = [
     ('f', -2.0, '\300\000\000\000', '\000\000\000\300', 0),
     ('d', -2.0, '\300\000\000\000\000\000\000\000',
                '\000\000\000\000\000\000\000\300', 0),
-        ('t', 0, '\0', '\0', 0),
-        ('t', 3, '\1', '\1', 1),
-        ('t', True, '\1', '\1', 0),
-        ('t', [], '\0', '\0', 1),
-        ('t', (1,), '\1', '\1', 1),
+        ('?', 0, '\0', '\0', 0),
+        ('?', 3, '\1', '\1', 1),
+        ('?', True, '\1', '\1', 0),
+        ('?', [], '\0', '\0', 1),
+        ('?', (1,), '\1', '\1', 1),
 ]
 
 for fmt, arg, big, lil, asy in tests:
@@ -490,7 +490,7 @@ def test_705836():
     except OverflowError:
         pass
     else:
-        TestFailed("expected OverflowError")
+        raise TestFailed("expected OverflowError")
 
 test_705836()
 
@@ -646,13 +646,13 @@ def test_bool():
         false = (), [], [], '', 0
         true = [1], 'test', 5, -1, 0xffffffff+1, 0xffffffff/2
 
-        falseFormat = prefix + 't' * len(false)
+        falseFormat = prefix + '?' * len(false)
         if verbose:
             print('trying bool pack/unpack on', false, 'using format', falseFormat)
         packedFalse = struct.pack(falseFormat, *false)
         unpackedFalse = struct.unpack(falseFormat, packedFalse)
 
-        trueFormat = prefix + 't' * len(true)
+        trueFormat = prefix + '?' * len(true)
         if verbose:
             print('trying bool pack/unpack on', true, 'using format', trueFormat)
         packedTrue = struct.pack(trueFormat, *true)
@@ -671,10 +671,10 @@ def test_bool():
                 raise TestFailed('%r did not unpack as false' % t)
 
         if prefix and verbose:
-            print('trying size of bool with format %r' % (prefix+'t'))
-        packed = struct.pack(prefix+'t', 1)
+            print('trying size of bool with format %r' % (prefix+'?'))
+        packed = struct.pack(prefix+'?', 1)
 
-        if len(packed) != struct.calcsize(prefix+'t'):
+        if len(packed) != struct.calcsize(prefix+'?'):
             raise TestFailed('packed length is not equal to calculated size')
 
         if len(packed) != 1 and prefix:
@@ -683,7 +683,7 @@ def test_bool():
             print('size of bool in native format is %i' % (len(packed)))
 
         for c in b'\x01\x7f\xff\x0f\xf0':
-            if struct.unpack('>t', bytes([c]))[0] is not True:
+            if struct.unpack('>?', c)[0] is not True:
                 raise TestFailed('%c did not unpack as True' % c)
 
 test_bool()

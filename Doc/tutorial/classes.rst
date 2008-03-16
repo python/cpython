@@ -124,6 +124,8 @@ found outside of the innermost scope are read-only (an attempt to write to such
 a variable will simply create a *new* local variable in the innermost scope,
 leaving the identically named outer variable unchanged).
 
+.. XXX mention nonlocal
+
 Usually, the local scope references the local names of the (textually) current
 function.  Outside functions, the local scope references the same namespace as
 the global scope: the module's namespace. Class definitions place yet another
@@ -137,12 +139,15 @@ language definition is evolving towards static name resolution, at "compile"
 time, so don't rely on dynamic name resolution!  (In fact, local variables are
 already determined statically.)
 
-A special quirk of Python is that assignments normally go into the innermost
-scope.  Assignments do not copy data --- they just bind names to objects.  The
-same is true for deletions: the statement ``del x`` removes the binding of ``x``
-from the namespace referenced by the local scope.  In fact, all operations that
-introduce new names use the local scope: in particular, import statements and
-function definitions bind the module or function name in the local scope.
+A special quirk of Python is that -- if no :keyword:`global` or
+:keyword:`nonlocal` statement is in effect -- assignments to names always go
+into the innermost scope.  Assignments do not copy data --- they just bind names
+to objects.  The same is true for deletions: the statement ``del x`` removes the
+binding of ``x`` from the namespace referenced by the local scope.  In fact, all
+operations that introduce new names use the local scope: in particular, import
+statements and function definitions bind the module or function name in the
+local scope.  (The :keyword:`global` statement can be used to indicate that
+particular variables live in the global scope.)
 
 The :keyword:`global` statement can be used to indicate that particular
 variables live in the global scope and should be rebound there; the
@@ -466,6 +471,9 @@ classes defined in it.  Usually, the class containing the method is itself
 defined in this global scope, and in the next section we'll find some good
 reasons why a method would want to reference its own class!
 
+Each value is an object, and therefore has a *class* (also called its *type*).
+It is stored as ``object.__class__``.
+
 
 .. _tut-inheritance:
 
@@ -514,6 +522,19 @@ call the base class method directly: just call ``BaseClassName.methodname(self,
 arguments)``.  This is occasionally useful to clients as well.  (Note that this
 only works if the base class is defined or imported directly in the global
 scope.)
+
+Python has two builtin functions that work with inheritance:
+
+* Use :func:`isinstance` to check an object's type: ``isinstance(obj, int)``
+  will be ``True`` only if ``obj.__class__`` is :class:`int` or some class
+  derived from :class:`int`.
+
+* Use :func:`issubclass` to check class inheritance: ``issubclass(bool, int)``
+  is ``True`` since :class:`bool` is a subclass of :class:`int`.  However,
+  ``issubclass(unicode, str)`` is ``False`` since :class:`unicode` is not a
+  subclass of :class:`str` (they only share a common ancestor,
+  :class:`basestring`).
+  
 
 
 .. _tut-multiple:

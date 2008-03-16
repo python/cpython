@@ -367,8 +367,8 @@ module.  If you have Tkinter available, you may also want to look at
 Python distribution.  It allows you to enter REs and strings, and displays
 whether the RE matches or fails. :file:`redemo.py` can be quite useful when
 trying to debug a complicated RE.  Phil Schwartz's `Kodos
-<http://www.phil-schwartz.com/kodos.spy>`_ is also an interactive tool for
-developing and testing RE patterns.
+<http://kodos.sourceforge.net/>`_ is also an interactive tool for developing and
+testing RE patterns.
 
 This HOWTO uses the standard Python interpreter for its examples. First, run the
 Python interpreter, import the :mod:`re` module, and compile a RE::

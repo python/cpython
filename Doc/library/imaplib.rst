@@ -116,7 +116,7 @@ example of usage.
 
    Documents describing the protocol, and sources and binaries  for servers
    implementing it, can all be found at the University of Washington's *IMAP
-   Information Center* (http://www.cac.washington.edu/imap/).
+   Information Center* (http://www.washington.edu/imap/).
 
 
 .. _imap4-objects:

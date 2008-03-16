@@ -12,6 +12,15 @@
 
 /* some functions handy for testing */
 
+EXPORT(void)testfunc_array(int values[4])
+{
+	printf("testfunc_array %d %d %d %d\n",
+	       values[0],
+	       values[1],
+	       values[2],
+	       values[3]);
+}
+
 EXPORT(long double)testfunc_Ddd(double a, double b)
 {
 	long double result = (long double)(a * b);

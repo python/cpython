@@ -117,8 +117,12 @@ LaTeX to reStructured Text.
 New Issue Tracker: Roundup
 --------------------------------------------------
 
-XXX write this.
+XXX write this -- this section is currently just brief notes.
 
+The developers were growing increasingly annoyed by SourceForge's 
+bug tracker.  (Discuss problems in a sentence or two.)
+
+Hosting provided by XXX.
 
 New Documentation Format: ReStructured Text
 --------------------------------------------------
@@ -455,7 +459,46 @@ can now be used in scripts running from inside a package.
 PEP 3101: Advanced String Formatting
 =====================================================
 
-XXX write this
+XXX write this -- this section is currently just brief notes.
+
+8-bit and Unicode strings have a .format() method that takes the arguments
+to be formatted.  
+
+.format() uses curly brackets ({, }) as special characters:
+
+     format("User ID: {0}", "root") -> "User ID: root"
+     format("Empty dict: {{}}") -> "Empty dict: {}"
+     0.name
+     0[name]
+
+Format specifiers:
+
+     0:8  -> left-align, pad
+     0:>8 -> right-align, pad
+
+Format data types::
+
+     ... take table from PEP 3101
+
+Classes and types can define a __format__ method to control how it's 
+formatted.  It receives a single argument, the format specifier::
+
+   def __format__(self, format_spec):
+       if isinstance(format_spec, unicode):
+           return unicode(str(self))
+       else:
+           return str(self)
+
+There's also a format() built-in that will format a single value.  It calls
+the type's :meth:`__format__` method with the provided specifier::
+
+    >>> format(75.6564, '.2f')
+    '75.66'
+
+.. seealso::
+
+   :pep:`3101` - Advanced String Formatting
+      PEP written by Talin.
 
 .. ======================================================================
 
@@ -509,12 +552,30 @@ work.
 
 .. ======================================================================
 
+.. _pep-3112:
+
+PEP 3112: Byte Literals
+=====================================================
+
+Python 3.0 adopts Unicode as the language's fundamental string type, and
+denotes 8-bit literals differently, either as ``b'string'`` 
+or using a :class:`bytes` constructor.  For future compatibility, 
+Python 2.6 adds :class:`bytes` as a synonym for the :class:`str` type,
+and it also supports the ``b''`` notation.
+
+.. seealso::
+
+   :pep:`3112` - Bytes literals in Python 3000
+      PEP written by Jason Orendorff; backported to 2.6 by Christian Heimes.
+
+.. ======================================================================
+
 .. _pep-3119:
 
 PEP 3119: Abstract Base Classes
 =====================================================
 
-XXX
+XXX write this -- this section is currently just brief notes.
 
 How to identify a file object?
 
@@ -558,15 +619,22 @@ an abstract method.
 PEP 3127: Integer Literal Support and Syntax
 =====================================================
 
-XXX write this
+XXX write this -- this section is currently just brief notes.
 
 Python 3.0 changes the syntax for octal integer literals, and 
 adds supports for binary integers: 0o instad of 0,
 and 0b for binary.  Python 2.6 doesn't support this, but a bin()
-builtin was added, and 
+builtin was added.
+
+XXX changes to the hex/oct builtins
 
 
 New bin() built-in returns the binary form of a number.
+
+.. seealso::
+
+   :pep:`3127` - Integer Literal Support and Syntax
+      PEP written by Patrick Maupin.
 
 .. ======================================================================
 
@@ -575,7 +643,30 @@ New bin() built-in returns the binary form of a number.
 PEP 3129: Class Decorators
 =====================================================
 
-XXX write this.
+XXX write this -- this section is currently just brief notes.
+
+Class decorators are analogous to function decorators.  After defining a class,
+it's passed through the specified series of decorator functions
+and the ultimate return value is recorded as the class.
+
+::
+
+  class A:
+    pass
+  A = foo(bar(A))
+  
+  
+  @foo
+  @bar
+  class A:
+    pass
+
+XXX need to find a good motivating example.    
+
+.. seealso::
+
+   :pep:`3129` - Class Decorators
+      PEP written by Collin Winter.
 
 .. ======================================================================
 
@@ -631,11 +722,14 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
 
 .. seealso::
 
+   :pep:`3141` - A Type Hierarchy for Numbers
+      PEP written by Jeffrey Yasskin.
+
   XXX link: Discusses Scheme's numeric tower.
 
   
 
-The Fraction Module
+The :mod:`fractions` Module
 --------------------------------------------------
 
 To fill out the hierarchy of numeric types, a rational-number class
@@ -657,11 +751,27 @@ that will be the numerator and denominator of the resulting fraction. ::
     >>> a/b
     Fraction(5, 3)
 
+To help in converting floating-point numbers to rationals, 
+the float type now has a :meth:`as_integer_ratio()` method that returns 
+the numerator and denominator for a fraction that evaluates to the same
+floating-point value::
+
+    >>> (2.5) .as_integer_ratio()
+    (5, 2)
+    >>> (3.1415) .as_integer_ratio()
+    (7074029114692207L, 2251799813685248L)
+    >>> (1./3) .as_integer_ratio()
+    (6004799503160661L, 18014398509481984L)
+
+Note that values that can only be approximated by floating-point
+numbers, such as 1./3, are not simplified to the number being
+approximated; the fraction attempts to match the floating-point value
+**exactly**.
+
 The :mod:`fractions` module is based upon an implementation by Sjoerd
 Mullender that was in Python's :file:`Demo/classes/` directory for a
 long time.  This implementation was significantly updated by Jeffrey
-Yaskin.
-
+Yasskin.
 
 Other Language Changes
 ======================
@@ -740,7 +850,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   positive or negative infinity.  This works on any platform with 
   IEEE 754 semantics.  (Contributed by Christian Heimes.)
 
-  .. Patch 1635.
+  .. Patch 1635
 
   Other functions in the :mod:`math` module, :func:`isinf` and
   :func:`isnan`, return true if their floating-point argument is
@@ -766,6 +876,12 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   (Contributed by Chad Austin.)
 
   .. Patch #1537
+
+* Generator objects now have a :attr:`gi_code` attribute that refers to 
+  the original code object backing the generator.  
+  (Contributed by Collin Winter.)
+
+  .. Patch #1473257
 
 * The :func:`compile` built-in function now accepts keyword arguments
   as well as positional parameters.  (Contributed by Thomas Wouters.)
@@ -816,7 +932,7 @@ Optimizations
   (Original optimization implemented by Armin Rigo, updated for 
   Python 2.6 by Kevin Jacobs.) 
 
-  .. % Patch 1700288
+  .. Patch 1700288
 
 * All of the functions in the :mod:`struct` module have been rewritten in
   C, thanks to work at the Need For Speed sprint.
@@ -1041,7 +1157,7 @@ complete list of changes, or look through the CVS logs for all the details.
         (2, 3, 1, 3), (2, 3, 1, 4), (2, 3, 2, 3), (2, 3, 2, 4), 
         (2, 4, 1, 3), (2, 4, 1, 4), (2, 4, 2, 3), (2, 4, 2, 4)]
 
-  ``combinations(iter, r)`` returns combinations of length *r* from
+  ``combinations(iter, r)`` returns sub-sequences of length *r* from
   the elements of *iterable*. ::
 
     itertools.combinations('123', 2) ->
@@ -1054,8 +1170,18 @@ complete list of changes, or look through the CVS logs for all the details.
       [('1', '2', '3'), ('1', '2', '4'), ('1', '3', '4'), 
        ('2', '3', '4')]
 
+  ``permutations(iter[, r])`` returns all the permutations of length *r* of
+  the iterable's elements.  If *r* is not specified, it will default to the 
+  number of elements produced by the iterable.
+
+    itertools.permutations([1,2,3,4], 2) ->
+      [(1, 2), (1, 3), (1, 4), 
+       (2, 1), (2, 3), (2, 4), 
+       (3, 1), (3, 2), (3, 4), 
+       (4, 1), (4, 2), (4, 3)]
+
   ``itertools.chain(*iterables)` is an existing function in
-  :mod:`itertools` that gained a new constructor.
+  :mod:`itertools` that gained a new constructor in Python 2.6.
   ``itertools.chain.from_iterable(iterable)`` takes a single 
   iterable that should return other iterables.  :func:`chain` will
   then return all the elements of the first iterable, then
@@ -1065,6 +1191,13 @@ complete list of changes, or look through the CVS logs for all the details.
        [1, 2, 3, 4, 5, 6]
   
   (All contributed by Raymond Hettinger.)
+
+* The :mod:`logging` module's :class:`FileHandler` class 
+  and its subclasses :class:`WatchedFileHandler`, :class:`RotatingFileHandler`,
+  and :class:`TimedRotatingFileHandler` now 
+  have an optional *delay* parameter to its constructor.  If *delay* 
+  is true, opening of the log file is deferred until the first
+  :meth:`emit` call is made.  (Contributed by Vinay Sajip.)
 
 * The :mod:`macfs` module has been removed.  This in turn required the
   :func:`macostools.touched` function to be removed because it depended on the
@@ -1171,6 +1304,13 @@ complete list of changes, or look through the CVS logs for all the details.
   changed and :const:`UF_APPEND` to indicate that data can only be appended to the
   file.  (Contributed by M. Levinson.)
 
+  ``os.closerange(*low*, *high*)`` efficiently closes all file descriptors
+  from *low* to *high*, ignoring any errors and not including *high* itself.
+  This function is now used by the :mod:`subprocess` module to make starting
+  processes faster.  (Contributed by Georg Brandl.)
+
+  .. Patch #1663329  
+
 * The :mod:`pyexpat` module's :class:`Parser` objects now allow setting
   their :attr:`buffer_size` attribute to change the size of the buffer 
   used to hold character data.
@@ -1199,9 +1339,17 @@ complete list of changes, or look through the CVS logs for all the details.
   long searches can now be interrupted.
   (Contributed by Josh Hoyt and Ralf Schmitt.)
 
-  .. % Patch 846388
+  .. Patch 846388
 
 * The :mod:`rgbimg` module has been removed.
+
+* The :mod:`sched` module's :class:`scheduler` instances now 
+  have a read-only :attr:`queue` attribute that returns the 
+  contents of the scheduler's queue, represented as a list of
+  named tuples with the fields ``(time, priority, action, argument)``.
+  (Contributed by Raymond Hettinger XXX check.)
+
+  .. Patch 1861
 
 * The :mod:`sets` module has been deprecated; it's better to 
   use the built-in :class:`set` and :class:`frozenset` types.
@@ -1223,9 +1371,9 @@ complete list of changes, or look through the CVS logs for all the details.
   On receiving a signal, a byte will be written and the main event loop 
   will be woken up, without the need to poll.
 
-  Contributed by Adam Olsen.
+  (Contributed by Adam Olsen.)
 
-  .. % Patch 1583
+  .. Patch 1583
 
   The :func:`siginterrupt` function is now available from Python code,
   and allows changing whether signals can interrupt system calls or not.
@@ -1250,7 +1398,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * In the :mod:`smtplib` module, SMTP.starttls() now complies with :rfc:`3207`
   and forgets any knowledge obtained from the server not obtained from
-  the TLS negotiation itself.  Patch contributed by Bill Fenner.
+  the TLS negotiation itself.  (Patch contributed by Bill Fenner.)
 
   .. Issue 829951
 
@@ -1267,6 +1415,10 @@ complete list of changes, or look through the CVS logs for all the details.
   by Michael Pomraning.)
 
   .. Patch #742598
+
+* The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
+  using the format character ``'?'``. 
+  (Contributed by David Remahl.)
  
 * A new variable in the :mod:`sys` module,
   :attr:`float_info`, is an object
@@ -1296,6 +1448,12 @@ complete list of changes, or look through the CVS logs for all the details.
   was executed in verbose mode, :attr:`debug` is true in debugging mode, etc.
   These attributes are all read-only.
   (Contributed by Christian Heimes.)
+
+  It's now possible to determine the current profiler and tracer functions
+  by calling :func:`sys.getprofile` and :func:`sys.gettrace`.  
+  (Contributed by Georg Brandl.)
+
+  .. Patch #1648
 
 * The :mod:`tarfile` module now supports POSIX.1-2001 (pax) and
   POSIX.1-1988 (ustar) format tarfiles, in addition to the GNU tar
@@ -1547,11 +1705,13 @@ Changes to Python's build process and to the C API include:
 
   .. Issue 1635
 
-* Some macros were renamed to make it clearer that they are macros,
+* Some macros were renamed in both 3.0 and 2.6 to make it clearer that
+  they are macros,
   not functions.  :cmacro:`Py_Size()` became :cmacro:`Py_SIZE()`,
   :cmacro:`Py_Type()` became :cmacro:`Py_TYPE()`, and
-  :cmacro:`Py_Refcnt()` became :cmacro:`Py_REFCNT()`.  Macros for backward
-  compatibility are still available for Python 2.6.
+  :cmacro:`Py_Refcnt()` became :cmacro:`Py_REFCNT()`.  
+  The mixed-case macros are still available
+  in Python 2.6 for backward compatibility.
 
   .. Issue 1629
 

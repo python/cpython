@@ -22,7 +22,7 @@ try:
 except:
     from dummy_thread import allocate_lock as _thread_allocate_lock
 
-__all__ = ['strptime']
+__all__ = []
 
 def _getlang():
     # Figure out what the current language is set to.
@@ -190,6 +190,7 @@ class TimeRE(dict):
         base.__init__({
             # The " \d" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
+            'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
             'I': r"(?P<I>1[0-2]|0[1-9]|[1-9])",
             'j': r"(?P<j>36[0-6]|3[0-5]\d|[1-2]\d\d|0[1-9]\d|00[1-9]|[1-9]\d|0[1-9]|[1-9])",
@@ -291,7 +292,7 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
         return 1 + days_to_week + day_of_week
 
 
-def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
+def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the format string."""
     global _TimeRE_cache, _regex_cache
     with _cache_lock:
@@ -327,7 +328,7 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                           data_string[found.end():])
     year = 1900
     month = day = 1
-    hour = minute = second = 0
+    hour = minute = second = fraction = 0
     tz = -1
     # Default to -1 to signify that values not known; not critical to have,
     # though
@@ -384,6 +385,11 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             minute = int(found_dict['M'])
         elif group_key == 'S':
             second = int(found_dict['S'])
+        elif group_key == 'f':
+            s = found_dict['f']
+            # Pad to always return microseconds.
+            s += "0" * (6 - len(s))
+            fraction = int(s)
         elif group_key == 'A':
             weekday = locale_time.f_weekday.index(found_dict['A'].lower())
         elif group_key == 'a':
@@ -440,6 +446,9 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         day = datetime_result.day
     if weekday == -1:
         weekday = datetime_date(year, month, day).weekday()
-    return time.struct_time((year, month, day,
-                             hour, minute, second,
-                             weekday, julian, tz))
+    return (time.struct_time((year, month, day,
+                              hour, minute, second,
+                              weekday, julian, tz)), fraction)
+
+def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
+    return _strptime(data_string, format)[0]

@@ -724,3 +724,26 @@ Currently, :class:`Lock`, :class:`RLock`, :class:`Condition`,
    with some_rlock:
        print("some_rlock is locked while this executes")
 
+
+.. _threaded-imports:
+
+Importing in threaded code
+--------------------------
+
+While the import machinery is thread safe, there are two key
+restrictions on threaded imports due to inherent limitations in the way
+that thread safety is provided:
+
+* Firstly, other than in the main module, an import should not have the
+  side effect of spawning a new thread and then waiting for that thread in
+  any way. Failing to abide by this restriction can lead to a deadlock if
+  the spawned thread directly or indirectly attempts to import a module.
+* Secondly, all import attempts must be completed before the interpreter
+  starts shutting itself down. This can be most easily achieved by only
+  performing imports from non-daemon threads created through the threading
+  module. Daemon threads and threads created directly with the thread
+  module will require some other form of synchronization to ensure they do
+  not attempt imports after system shutdown has commenced. Failure to
+  abide by this restriction will lead to intermittent exceptions and
+  crashes during interpreter shutdown (as the late imports attempt to
+  access machinery which is no longer in a valid state).

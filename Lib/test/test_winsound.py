@@ -9,6 +9,13 @@ import subprocess
 
 
 class BeepTest(unittest.TestCase):
+    # As with PlaySoundTest, incorporate the _have_soundcard() check
+    # into our test methods.  If there's no audio device present,
+    # winsound.Beep returns 0 and GetLastError() returns 127, which
+    # is: ERROR_PROC_NOT_FOUND ("The specified procedure could not
+    # be found").  (FWIW, virtual/Hyper-V systems fall under this
+    # scenario as they have no sound devices whatsoever  (not even
+    # a legacy Beep device).)
 
     def test_errors(self):
         self.assertRaises(TypeError, winsound.Beep)
@@ -16,12 +23,17 @@ class BeepTest(unittest.TestCase):
         self.assertRaises(ValueError, winsound.Beep, 32768, 75)
 
     def test_extremes(self):
-        winsound.Beep(37, 75)
-        winsound.Beep(32767, 75)
+        if _have_soundcard():
+            winsound.Beep(37, 75)
+            winsound.Beep(32767, 75)
+        else:
+            self.assertRaises(RuntimeError, winsound.Beep, 37, 75)
+            self.assertRaises(RuntimeError, winsound.Beep, 32767, 75)
 
     def test_increasingfrequency(self):
-        for i in range(100, 2000, 100):
-            winsound.Beep(i, 75)
+        if _have_soundcard():
+            for i in range(100, 2000, 100):
+                winsound.Beep(i, 75)
 
 class MessageBeepTest(unittest.TestCase):
 

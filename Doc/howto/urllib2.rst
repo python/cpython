@@ -8,7 +8,7 @@
 
     There is an French translation of an earlier revision of this
     HOWTO, available at `urllib2 - Le Manuel manquant
-    <http://www.voidspace/python/articles/urllib2_francais.shtml>`_.
+    <http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
 
  
 

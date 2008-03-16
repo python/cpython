@@ -1486,9 +1486,31 @@ For :class:`time` objects, the format codes for year, month, and day should not
 be used, as time objects have no such values.  If they're used anyway, ``1900``
 is substituted for the year, and ``0`` for the month and day.
 
-For :class:`date` objects, the format codes for hours, minutes, and seconds
-should not be used, as :class:`date` objects have no such values.  If they're
-used anyway, ``0`` is substituted for them.
+For :class:`date` objects, the format codes for hours, minutes, seconds, and
+microseconds should not be used, as :class:`date` objects have no such
+values.  If they're used anyway, ``0`` is substituted for them.
+
+:class:`time` and :class:`datetime` objects support a ``%f`` format code
+which expands to the number of microseconds in the object, zero-padded on
+the left to six places.
+
+.. versionadded:: 2.6
+
+For a naive object, the ``%z`` and ``%Z`` format codes are replaced by empty
+strings.
+
+For an aware object:
+
+``%z``
+   :meth:`utcoffset` is transformed into a 5-character string of the form +HHMM or
+   -HHMM, where HH is a 2-digit string giving the number of UTC offset hours, and
+   MM is a 2-digit string giving the number of UTC offset minutes.  For example, if
+   :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
+   replaced with the string ``'-0330'``.
+
+``%Z``
+   If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty string.
+   Otherwise ``%Z`` is replaced by the returned value, which must be a string.
 
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
@@ -1521,6 +1543,10 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%d``    | Day of the month as a decimal  |       |
 |           | number [01,31].                |       |
 +-----------+--------------------------------+-------+
+| ``%f``    | Microsecond as a decimal       | \(1)  |
+|           | number [0,999999], zero-padded |       |
+|           | on the left                    |       |
++-----------+--------------------------------+-------+
 | ``%H``    | Hour (24-hour clock) as a      |       |
 |           | decimal number [00,23].        |       |
 +-----------+--------------------------------+-------+
@@ -1536,13 +1562,13 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%M``    | Minute as a decimal number     |       |
 |           | [00,59].                       |       |
 +-----------+--------------------------------+-------+
-| ``%p``    | Locale's equivalent of either  | \(1)  |
+| ``%p``    | Locale's equivalent of either  | \(2)  |
 |           | AM or PM.                      |       |
 +-----------+--------------------------------+-------+
-| ``%S``    | Second as a decimal number     | \(2)  |
+| ``%S``    | Second as a decimal number     | \(3)  |
 |           | [00,61].                       |       |
 +-----------+--------------------------------+-------+
-| ``%U``    | Week number of the year        | \(3)  |
+| ``%U``    | Week number of the year        | \(4)  |
 |           | (Sunday as the first day of    |       |
 |           | the week) as a decimal number  |       |
 |           | [00,53].  All days in a new    |       |
@@ -1553,7 +1579,7 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%w``    | Weekday as a decimal number    |       |
 |           | [0(Sunday),6].                 |       |
 +-----------+--------------------------------+-------+
-| ``%W``    | Week number of the year        | \(3)  |
+| ``%W``    | Week number of the year        | \(4)  |
 |           | (Monday as the first day of    |       |
 |           | the week) as a decimal number  |       |
 |           | [00,53].  All days in a new    |       |
@@ -1573,7 +1599,7 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%Y``    | Year with century as a decimal |       |
 |           | number.                        |       |
 +-----------+--------------------------------+-------+
-| ``%z``    | UTC offset in the form +HHMM   | \(4)  |
+| ``%z``    | UTC offset in the form +HHMM   | \(5)  |
 |           | or -HHMM (empty string if the  |       |
 |           | the object is naive).          |       |
 +-----------+--------------------------------+-------+
@@ -1586,17 +1612,22 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 Notes:
 
 (1)
+   When used with the :func:`strptime` function, the ``%f`` directive
+   accepts from one to six digits and zero pads on the right.  ``%f`` is
+   an extension to the set of format characters in the C standard.
+
+(2)
    When used with the :func:`strptime` function, the ``%p`` directive only affects
    the output hour field if the ``%I`` directive is used to parse the hour.
 
-(2)
+(3)
    The range really is ``0`` to ``61``; this accounts for leap seconds and the
    (very rare) double leap seconds.
 
-(3)
+(4)
    When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
    calculations when the day of the week and the year are specified.
 
-(4)
+(5)
    For example, if :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``,
    ``%z`` is replaced with the string ``'-0330'``.

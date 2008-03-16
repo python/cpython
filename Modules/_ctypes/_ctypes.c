@@ -203,7 +203,7 @@ static PyTypeObject DictRemover_Type = {
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
 	0,					/* tp_alloc */
-	PyType_GenericNew,			/* tp_new */
+	0,					/* tp_new */
 	0,					/* tp_free */
 };
 
@@ -1242,7 +1242,7 @@ _type_ attribute.
 
 */
 
-static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOvtg";
+static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOv?g";
 
 static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)

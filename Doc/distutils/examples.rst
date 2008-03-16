@@ -11,7 +11,7 @@ Distutils Cookbook.
 
 .. seealso::
 
-   `Distutils Cookbook <http://www.python.org/cgi-bin/moinmoin/DistutilsCookbook>`_
+   `Distutils Cookbook <http://wiki.python.org/moin/DistutilsCookbook>`_
       Collection of recipes showing how to achieve more control over distutils.
 
 

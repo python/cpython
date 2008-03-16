@@ -41,7 +41,7 @@ the information :func:`init` sets up.
 
    Optional *strict* is a flag specifying whether the list of known MIME types
    is limited to only the official types `registered with IANA
-   <http://www.isi.edu/in-notes/iana/assignments/media-types>`_ are recognized.
+   <http://www.iana.org/assignments/media-types/>`_ are recognized.
    When *strict* is true (the default), only the IANA types are supported; when
    *strict* is false, some additional non-standard but commonly used MIME types
    are also recognized.

@@ -196,6 +196,48 @@ this routine unless written as part of a conditional replacement:\n\n\
             item = heapreplace(heap, item)\n");
 
 static PyObject *
+heappushpop(PyObject *self, PyObject *args)
+{
+	PyObject *heap, *item, *returnitem;
+	int cmp;
+
+	if (!PyArg_UnpackTuple(args, "heappushpop", 2, 2, &heap, &item))
+		return NULL;
+
+	if (!PyList_Check(heap)) {
+		PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
+		return NULL;
+	}
+
+	if (PyList_GET_SIZE(heap) < 1) {
+		Py_INCREF(item);
+		return item;
+	}
+
+	cmp = PyObject_RichCompareBool(item, PyList_GET_ITEM(heap, 0), Py_LE);
+	if (cmp == -1)
+		return NULL;
+	if (cmp == 1) {
+		Py_INCREF(item);
+		return item;
+	}
+
+	returnitem = PyList_GET_ITEM(heap, 0);
+	Py_INCREF(item);
+	PyList_SET_ITEM(heap, 0, item);
+	if (_siftup((PyListObject *)heap, 0) == -1) {
+		Py_DECREF(returnitem);
+		return NULL;
+	}
+	return returnitem;
+}
+
+PyDoc_STRVAR(heappushpop_doc,
+"Push item on the heap, then pop and return the smallest item\n\
+from the heap. The combined action runs more efficiently than\n\
+heappush() followed by a separate call to heappop().");
+
+static PyObject *
 heapify(PyObject *self, PyObject *heap)
 {
 	Py_ssize_t i, n;
@@ -468,6 +510,8 @@ Equivalent to:  sorted(iterable)[:n]\n");
 static PyMethodDef heapq_methods[] = {
 	{"heappush",	(PyCFunction)heappush,		
 		METH_VARARGS,	heappush_doc},
+	{"heappushpop",	(PyCFunction)heappushpop,		
+		METH_VARARGS,	heappushpop_doc},
 	{"heappop",	(PyCFunction)heappop,
 		METH_O,		heappop_doc},
 	{"heapreplace",	(PyCFunction)heapreplace,

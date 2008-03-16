@@ -171,11 +171,15 @@ def main(args=None):
     """
     if args is None:
         args = sys.argv[1:]
+    rv = 0
     for filename in args:
         try:
             compile(filename, doraise=True)
         except PyCompileError as err:
+            # return value to indicate at least one failure
+            rv = 1
             sys.stderr.write(err.msg)
+    return rv
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
