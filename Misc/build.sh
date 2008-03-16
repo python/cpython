@@ -67,7 +67,7 @@ REFLOG="build/reflog.txt.out"
 # Note: test_XXX (none currently) really leak, but are disabled
 # so we don't send spam.  Any test which really leaks should only 
 # be listed here if there are also test cases under Lib/test/leakers.
-LEAKY_TESTS="test_(asynchat|cmd_line|popen2|socket|sys|threadsignals|urllib2_localnet)"
+LEAKY_TESTS="test_(asynchat|cmd_line|popen2|socket|smtplib|sys|threadsignals|urllib2_localnet)"
 
 # These tests always fail, so skip them so we don't get false positives.
 _ALWAYS_SKIP=""
@@ -95,7 +95,7 @@ update_status() {
 place_summary_first() {
     testf=$1
     sed -n '/^[0-9][0-9]* tests OK\./,$p' < $testf \
-	| egrep -v '\[[0-9]+ refs\]' > $testf.tmp
+        | egrep -v '\[[0-9]+ refs\]' > $testf.tmp
     echo "" >> $testf.tmp
     cat $testf >> $testf.tmp
     mv $testf.tmp $testf
@@ -105,7 +105,7 @@ count_failures () {
     testf=$1
     n=`grep -ic " failed:" $testf`
     if [ $n -eq 1 ] ; then
-	n=`grep " failed:" $testf | sed -e 's/ .*//'`
+        n=`grep " failed:" $testf | sed -e 's/ .*//'`
     fi
     echo $n
 }
@@ -117,17 +117,17 @@ mail_on_failure() {
         if [ "$FAILURE_CC" != "" ]; then
             dest="$dest -c $FAILURE_CC"
         fi
-	if [ "x$3" != "x" ] ; then
-	    (echo "More important issues:"
-	     echo "----------------------"
-	     egrep -v "$3" < $2
-	     echo ""
-	     echo "Less important issues:"
-	     echo "----------------------"
-	     egrep "$3" < $2)
+        if [ "x$3" != "x" ] ; then
+            (echo "More important issues:"
+             echo "----------------------"
+             egrep -v "$3" < $2
+             echo ""
+             echo "Less important issues:"
+             echo "----------------------"
+             egrep "$3" < $2)
         else
-	    cat $2
-	fi | mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $dest
+            cat $2
+        fi | mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $dest
     fi
 }
 
@@ -204,7 +204,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## make and run basic tests
             F=make-test.out
             start=`current_time`
-            $PYTHON $REGRTEST_ARGS $ALWAYS_SKIP >& build/$F
+            $PYTHON $REGRTEST_ARGS -u urlfetch >& build/$F
             NUM_FAILURES=`count_failures build/$F`
             place_summary_first build/$F
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
@@ -212,7 +212,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
 
             F=make-test-opt.out
             start=`current_time`
-            $PYTHON -O $REGRTEST_ARGS $ALWAYS_SKIP >& build/$F
+            $PYTHON -O $REGRTEST_ARGS -u urlfetch >& build/$F
             NUM_FAILURES=`count_failures build/$F`
             place_summary_first build/$F
             update_status "Testing opt ($NUM_FAILURES failures)" "$F" $start
@@ -223,8 +223,8 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             start=`current_time`
             ## ensure that the reflog exists so the grep doesn't fail
             touch $REFLOG
-            $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
-	    LEAK_PAT="($LEAKY_TESTS|sum=0)"
+            $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network,urlfetch $LEAKY_SKIPS >& build/$F
+            LEAK_PAT="($LEAKY_TESTS|sum=0)"
             NUM_FAILURES=`egrep -vc "$LEAK_PAT" $REFLOG`
             place_summary_first build/$F
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start

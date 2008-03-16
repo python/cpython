@@ -368,6 +368,7 @@ else:
                 # we assume the certfile contains both private key and certificate
                 self.certfile = certfile
                 self.active = False
+                self.active_lock = threading.Lock()
                 self.allow_reuse_address = True
 
             def __str__(self):
@@ -398,23 +399,32 @@ else:
                 # We want this to run in a thread, so we use a slightly
                 # modified version of "forever".
                 self.active = True
-                while self.active:
+                while 1:
                     try:
-                        self.handle_request()
+                        # We need to lock while handling the request.
+                        # Another thread can close the socket after self.active
+                        # has been checked and before the request is handled.
+                        # This causes an exception when using the closed socket.
+                        with self.active_lock:
+                            if not self.active:
+                                break
+                            self.handle_request()
                     except socket.timeout:
                         pass
                     except KeyboardInterrupt:
                         self.server_close()
                         return
                     except:
-                        sys.stdout.write(''.join(traceback.format_exception(*sys.exc_info())));
+                        sys.stdout.write(''.join(traceback.format_exception(*sys.exc_info())))
+                        break
 
             def server_close(self):
                 # Again, we want this to run in a thread, so we need to override
                 # close to clear the "active" flag, so that serve_forever() will
                 # terminate.
-                HTTPServer.server_close(self)
-                self.active = False
+                with self.active_lock:
+                    HTTPServer.server_close(self)
+                    self.active = False
 
         class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
 
@@ -749,7 +759,7 @@ else:
                         not in cert['subject']):
                         raise test_support.TestFailed(
                             "Missing or invalid 'organizationName' field in certificate subject; "
-                            "should be 'Python Software Foundation'.");
+                            "should be 'Python Software Foundation'.")
                     s.close()
             finally:
                 server.stop()

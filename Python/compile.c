@@ -3092,7 +3092,7 @@ compiler_with(struct compiler *c, stmt_ty s)
 {
     static identifier enter_attr, exit_attr;
     basicblock *block, *finally;
-    identifier tmpexit, tmpvalue = NULL;
+    identifier tmpvalue = NULL;
 
     assert(s->kind == With_kind);
 
@@ -3111,12 +3111,6 @@ compiler_with(struct compiler *c, stmt_ty s)
     finally = compiler_new_block(c);
     if (!block || !finally)
 	return 0;
-
-    /* Create a temporary variable to hold context.__exit__ */
-    tmpexit = compiler_new_tmpname(c);
-    if (tmpexit == NULL)
-	return 0;
-    PyArena_AddPyObject(c->c_arena, tmpexit);
 
     if (s->v.With.optional_vars) {
 	/* Create a temporary variable to hold context.__enter__().
@@ -3137,11 +3131,10 @@ compiler_with(struct compiler *c, stmt_ty s)
     /* Evaluate EXPR */
     VISIT(c, expr, s->v.With.context_expr);
 
-    /* Squirrel away context.__exit__  */
+    /* Squirrel away context.__exit__ by stuffing it under context */
     ADDOP(c, DUP_TOP);
     ADDOP_O(c, LOAD_ATTR, exit_attr, names);
-    if (!compiler_nameop(c, tmpexit, Store))
-	return 0;
+    ADDOP(c, ROT_TWO);
 
     /* Call context.__enter__() */
     ADDOP_O(c, LOAD_ATTR, enter_attr, names);
@@ -3185,10 +3178,9 @@ compiler_with(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, FINALLY_END, finally))
 	return 0;
 
-    /* Finally block starts; push tmpexit and issue our magic opcode. */
-    if (!compiler_nameop(c, tmpexit, Load) ||
-	!compiler_nameop(c, tmpexit, Del))
-	return 0;
+    /* Finally block starts; context.__exit__ is on the stack under
+       the exception or return information. Just issue our magic
+       opcode. */
     ADDOP(c, WITH_CLEANUP);
 
     /* Finally block ends. */

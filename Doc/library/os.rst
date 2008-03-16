@@ -1387,7 +1387,8 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: fork()
 
    Fork a child process.  Return ``0`` in the child and the child's process id in the
-   parent. Availability: Macintosh, Unix.
+   parent.  If an error occurs :exc:`OSError` is raised.
+   Availability: Macintosh, Unix.
 
 
 .. function:: forkpty()
@@ -1396,7 +1397,8 @@ written in Python, such as a mail server's external command delivery program.
    terminal. Return a pair of ``(pid, fd)``, where *pid* is ``0`` in the child, the
    new child's process id in the parent, and *fd* is the file descriptor of the
    master end of the pseudo-terminal.  For a more portable approach, use the
-   :mod:`pty` module. Availability: Macintosh, some flavors of Unix.
+   :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
+   Availability: Macintosh, some flavors of Unix.
 
 
 .. function:: kill(pid, sig)

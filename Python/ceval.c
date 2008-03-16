@@ -2021,17 +2021,20 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case WITH_CLEANUP:
 		{
-			/* TOP is the context.__exit__ bound method.
-			   Below that are 1-3 values indicating how/why
-			   we entered the finally clause:
-			   - SECOND = None
-			   - (SECOND, THIRD) = (WHY_{RETURN,CONTINUE}), retval
-			   - SECOND = WHY_*; no retval below it
-			   - (SECOND, THIRD, FOURTH) = exc_info()
+			/* At the top of the stack are 1-3 values indicating
+			   how/why we entered the finally clause:
+			   - TOP = None
+			   - (TOP, SECOND) = (WHY_{RETURN,CONTINUE}), retval
+			   - TOP = WHY_*; no retval below it
+			   - (TOP, SECOND, THIRD) = exc_info()
+			   Below them is EXIT, the context.__exit__ bound method.
 			   In the last case, we must call
-			     TOP(SECOND, THIRD, FOURTH)
+			     EXIT(TOP, SECOND, THIRD)
 			   otherwise we must call
-			     TOP(None, None, None)
+			     EXIT(None, None, None)
+
+			   In all cases, we remove EXIT from the stack, leaving
+			   the rest in the same order.
 
 			   In addition, if the stack represents an exception,
 			   *and* the function call returns a 'true' value, we
@@ -2040,36 +2043,59 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			   should still be resumed.)
 			*/
 
-			x = TOP();
-			u = SECOND();
-			if (PyLong_Check(u) || u == Py_None) {
+			PyObject *exit_func;
+
+			u = POP();
+			if (u == Py_None) {
+			       	exit_func = TOP();
+				SET_TOP(u);
+				v = w = Py_None;
+			}
+			else if (PyLong_Check(u)) {
+				switch(PyLong_AS_LONG(u)) {
+				case WHY_RETURN:
+				case WHY_CONTINUE:
+					/* Retval in TOP. */
+					exit_func = SECOND();
+					SET_SECOND(TOP());
+					SET_TOP(u);
+					break;
+				default:
+					exit_func = TOP();
+					SET_TOP(u);
+					break;
+				}
 				u = v = w = Py_None;
 			}
 			else {
-				v = THIRD();
-				w = FOURTH();
+				v = TOP();
+				w = SECOND();
+				exit_func = THIRD();
+				SET_TOP(u);
+				SET_SECOND(v);
+				SET_THIRD(w);
 			}
 			/* XXX Not the fastest way to call it... */
-			x = PyObject_CallFunctionObjArgs(x, u, v, w, NULL);
-			if (x == NULL)
+			x = PyObject_CallFunctionObjArgs(exit_func, u, v, w,
+							 NULL);
+			if (x == NULL) {
+				Py_DECREF(exit_func);
 				break; /* Go to error exit */
+			}
 			if (u != Py_None && PyObject_IsTrue(x)) {
 				/* There was an exception and a true return */
-				Py_DECREF(x);
-				x = TOP(); /* Again */
-				STACKADJ(-3);
+				STACKADJ(-2);
 				Py_INCREF(Py_None);
 				SET_TOP(Py_None);
-				Py_DECREF(x);
 				Py_DECREF(u);
 				Py_DECREF(v);
 				Py_DECREF(w);
 			} else {
-				/* Let END_FINALLY do its thing */
-				Py_DECREF(x);
-				x = POP();
-				Py_DECREF(x);
+				/* The stack was rearranged to remove EXIT
+				   above. Let END_FINALLY do its thing */
 			}
+			Py_DECREF(x);
+			Py_DECREF(exit_func);
 			PREDICT(END_FINALLY);
 			break;
 		}

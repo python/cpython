@@ -73,7 +73,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *classifiers*      | A list of categories for the   | The list of available                                       |
    |                    | package                        | categorizations is at                                       |
-   |                    |                                | http://cheeseshop.python.org/pypi?:action=list_classifiers. |
+   |                    |                                | http://pypi.python.org/pypi?:action=list_classifiers.       |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *distclass*        | the :class:`Distribution`      | A subclass of                                               |
    |                    | class to use                   | :class:`distutils.core.Distribution`                        |

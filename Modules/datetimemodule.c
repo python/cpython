@@ -1170,10 +1170,24 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 	return NULL;
 }
 
+static PyObject *
+make_freplacement(PyObject *object)
+{
+	char freplacement[7];
+	if (PyTime_Check(object))
+	    sprintf(freplacement, "%06d", TIME_GET_MICROSECOND(object));
+	else if (PyDateTime_Check(object))
+	    sprintf(freplacement, "%06d", DATE_GET_MICROSECOND(object));
+	else
+	    sprintf(freplacement, "%06d", 0);
+
+	return PyString_FromStringAndSize(freplacement, strlen(freplacement));
+}
+
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
- * giving special meanings to the %z and %Z format codes via a preprocessing
- * step on the format string.
+ * giving special meanings to the %z, %Z and %f format codes via a
+ * preprocessing step on the format string.
  * tzinfoarg is the argument to pass to the object's tzinfo method, if
  * needed.
  */
@@ -1185,6 +1199,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
 	PyObject *zreplacement = NULL;	/* py string, replacement for %z */
 	PyObject *Zreplacement = NULL;	/* py string, replacement for %Z */
+	PyObject *freplacement = NULL;	/* py string, replacement for %f */
 
 	const char *pin;/* pointer to next char in input format */
         Py_ssize_t flen;/* length of input format */
@@ -1232,7 +1247,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 		}
 	}
 
-	/* Scan the input format, looking for %z and %Z escapes, building
+	/* Scan the input format, looking for %z/%Z/%f escapes, building
 	 * a new format.  Since computing the replacements for those codes
 	 * is expensive, don't unless they're actually used.
 	 */
@@ -1295,6 +1310,18 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                                                               &ntoappend);
 			ntoappend = Py_SIZE(Zreplacement);
 		}
+		else if (ch == 'f') {
+			/* format microseconds */
+			if (freplacement == NULL) {
+				freplacement = make_freplacement(object);
+				if (freplacement == NULL)
+					goto Done;
+			}
+			assert(freplacement != NULL);
+			assert(PyString_Check(freplacement));
+			ptoappend = PyString_AS_STRING(freplacement);
+			ntoappend = PyString_GET_SIZE(freplacement);
+		}
 		else {
 			/* percent followed by neither z nor Z */
 			ptoappend = pin - 2;
@@ -1341,6 +1368,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 		Py_DECREF(time);
     	}
  Done:
+	Py_XDECREF(freplacement);
 	Py_XDECREF(zreplacement);
 	Py_XDECREF(Zreplacement);
 	Py_XDECREF(newfmt);
@@ -3800,28 +3828,47 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-	PyObject *result = NULL, *obj, *module;
+	static PyObject *module = NULL;
+	PyObject *result = NULL, *obj, *st = NULL, *frac = NULL;
         const Py_UNICODE *string, *format;
 
 	if (!PyArg_ParseTuple(args, "uu:strptime", &string, &format))
 		return NULL;
 
-	if ((module = PyImport_ImportModuleNoBlock("time")) == NULL)
+	if (module == NULL &&
+	    (module = PyImport_ImportModuleNoBlock("_strptime")) == NULL)
 		return NULL;
-	obj = PyObject_CallMethod(module, "strptime", "uu", string, format);
-	Py_DECREF(module);
 
+	/* _strptime._strptime returns a two-element tuple.  The first
+	   element is a time.struct_time object.  The second is the
+	   microseconds (which are not defined for time.struct_time). */
+	obj = PyObject_CallMethod(module, "_strptime", "ss", string, format);
 	if (obj != NULL) {
-		int i, good_timetuple = 1, overflow;
-		long int ia[6];
-		if (PySequence_Check(obj) && PySequence_Size(obj) >= 6)
-			for (i=0; i < 6; i++) {
-				PyObject *p = PySequence_GetItem(obj, i);
-				if (p == NULL) {
-					Py_DECREF(obj);
-					return NULL;
+		int i, good_timetuple = 1;
+		long int ia[7];
+		if (PySequence_Check(obj) && PySequence_Size(obj) == 2) {
+			st = PySequence_GetItem(obj, 0);
+			frac = PySequence_GetItem(obj, 1);
+			if (st == NULL || frac == NULL)
+				good_timetuple = 0;
+			/* copy y/m/d/h/m/s values out of the
+			   time.struct_time */
+			if (good_timetuple &&
+			    PySequence_Check(st) &&
+			    PySequence_Size(st) >= 6) {
+				for (i=0; i < 6; i++) {
+					PyObject *p = PySequence_GetItem(st, i);
+					if (p == NULL) {
+						good_timetuple = 0;
+						break;
+					}
+					if (PyLong_Check(p))
+						ia[i] = PyLong_AsLong(p);
+					else
+						good_timetuple = 0;
+					Py_DECREF(p);
 				}
-				if (PyLong_CheckExact(p)) {
+/*				if (PyLong_CheckExact(p)) {
 					ia[i] = PyLong_AsLongAndOverflow(p, &overflow);
 					if (overflow)
 						good_timetuple = 0;
@@ -3829,17 +3876,29 @@ datetime_strptime(PyObject *cls, PyObject *args)
 				else
 					good_timetuple = 0;
 				Py_DECREF(p);
-			}
+*/			}
+			else
+				good_timetuple = 0;
+			/* follow that up with a little dose of microseconds */
+			if (PyLong_Check(frac))
+				ia[6] = PyLong_AsLong(frac);
+			else
+				good_timetuple = 0;
+		}
 		else
 			good_timetuple = 0;
 		if (good_timetuple)
-			result = PyObject_CallFunction(cls, "iiiiii",
-				ia[0], ia[1], ia[2], ia[3], ia[4], ia[5]);
+			result = PyObject_CallFunction(cls, "iiiiiii",
+						       ia[0], ia[1], ia[2],
+						       ia[3], ia[4], ia[5],
+						       ia[6]);
 		else
 			PyErr_SetString(PyExc_ValueError,
-				"unexpected value from time.strptime");
-		Py_DECREF(obj);
+				"unexpected value from _strptime._strptime");
 	}
+	Py_XDECREF(obj);
+	Py_XDECREF(st);
+	Py_XDECREF(frac);
 	return result;
 }
 

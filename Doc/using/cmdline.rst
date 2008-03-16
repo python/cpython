@@ -311,7 +311,8 @@ These environment variables influence Python's behavior.
 
    Augment the default search path for module files.  The format is the same as
    the shell's :envvar:`PATH`: one or more directory pathnames separated by
-   colons.  Non-existent directories are silently ignored.
+   :data:`os.pathsep` (e.g. colons on Unix or semicolons on Windows).
+   Non-existent directories are silently ignored.
    
    The default search path is installation dependent, but generally begins with
    :file:`{prefix}/lib/python{version}`` (see :envvar:`PYTHONHOME` above).  It

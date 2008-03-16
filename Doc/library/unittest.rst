@@ -562,6 +562,7 @@ failures.
 
 .. method:: TestCase.assert_(expr[, msg])
             TestCase.failUnless(expr[, msg])
+            TestCase.assertTrue(expr[, msg])
 
    Signal a test failure if *expr* is false; the explanation for the error will be
    *msg* if given, otherwise it will be :const:`None`.
@@ -618,6 +619,7 @@ failures.
 
 
 .. method:: TestCase.failIf(expr[, msg])
+            TestCase.assertFalse(expr[, msg])
 
    The inverse of the :meth:`failUnless` method is the :meth:`failIf` method.  This
    signals a test failure if *expr* is true, with *msg* or :const:`None` for the

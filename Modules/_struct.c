@@ -797,7 +797,7 @@ static formatdef native_table[] = {
 	{'q',	sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_longlong, np_longlong},
 	{'Q',	sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
 #endif
-	{'t',	sizeof(BOOL_TYPE),	BOOL_ALIGN,	nu_bool,	np_bool},
+	{'?',	sizeof(BOOL_TYPE),	BOOL_ALIGN,	nu_bool,	np_bool},
 	{'f',	sizeof(float),	FLOAT_ALIGN,	nu_float,	np_float},
 	{'d',	sizeof(double),	DOUBLE_ALIGN,	nu_double,	np_double},
 	{'P',	sizeof(void *),	VOID_P_ALIGN,	nu_void_p,	np_void_p},
@@ -1034,7 +1034,7 @@ static formatdef bigendian_table[] = {
 	{'L',	4,		0,		bu_uint,	bp_uint},
 	{'q',	8,		0,		bu_longlong,	bp_longlong},
 	{'Q',	8,		0,		bu_ulonglong,	bp_ulonglong},
-	{'t',	1,		0,		bu_bool,	bp_bool},
+	{'?',	1,		0,		bu_bool,	bp_bool},
 	{'f',	4,		0,		bu_float,	bp_float},
 	{'d',	8,		0,		bu_double,	bp_double},
 	{0}
@@ -1253,7 +1253,7 @@ static formatdef lilendian_table[] = {
 	{'L',	4,		0,		lu_uint,	lp_uint},
 	{'q',	8,		0,		lu_longlong,	lp_longlong},
 	{'Q',	8,		0,		lu_ulonglong,	lp_ulonglong},
-	{'t',	1,		0,		bu_bool,	bp_bool}, /* Std rep not endian dep,
+	{'?',	1,		0,		bu_bool,	bp_bool}, /* Std rep not endian dep,
 		but potentially different from native rep -- reuse bx_bool funcs. */
 	{'f',	4,		0,		lu_float,	lp_float},
 	{'d',	8,		0,		lu_double,	lp_double},

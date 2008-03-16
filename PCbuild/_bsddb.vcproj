@@ -115,11 +115,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Debug_AMD64\libdb44sd.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Debug AMD64|Win32&quot;&#x0D;&#x0A;"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist &quot;x64\Debug AMD64\db_static.lib&quot; exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Debug AMD64|x64&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\Debug_AMD64\libdb44sd.lib"
+				AdditionalDependencies="&quot;$(bsddbDir)x64\Debug AMD64\db_static.lib&quot;"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -242,11 +242,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release_AMD64\libdb44s.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist x64\Release AMD64\db_static.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\Release_AMD64\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDir)x64\Release AMD64\db_static.lib"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -369,11 +369,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release_AMD64\libdb44s.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist &quot;x64\Release AMD64\db_static.lib&quot; exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\Release_AMD64\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDir)x64\Release AMD64\db_static.lib"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>
@@ -497,11 +497,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release_AMD64\libdb44s.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist x64\Release AMD64\db_static.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\Release_AMD64\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDir)x64\Release AMD64\db_static.lib"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>

@@ -578,7 +578,7 @@ Notes:
 (4)
    These fields should not be used if your package is to be compatible with Python
    versions prior to 2.2.3 or 2.3.  The list is available from the `PyPI website
-   <http://www.python.org/pypi>`_.
+   <http://pypi.python.org/pypi>`_.
 
 'short string'
    A single line of text, not more than 200 characters.

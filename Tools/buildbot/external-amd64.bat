@@ -10,10 +10,15 @@ call "%VS90COMNTOOLS%vsvars32.bat"
 if not exist bzip2-1.0.3 svn export http://svn.python.org/projects/external/bzip2-1.0.3
 
 @rem Sleepycat db
-if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4.20
-@REM if not exist db-4.4.20\build_win32\debug\libdb44sd.lib (
-@REM    vcbuild db-4.4.20\build_win32\Berkeley_DB.sln /build Debug /project db_static
-@REM )
+@rem Remove VS 2003 builds
+if exist db-4.4.20 if not exist db-4.4.20\build_win32\this_is_for_vs9 (
+   echo Removing old build
+   rd /s/q db-4.4.20
+)
+if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4.20-vs9 db-4.4.20
+if not exist db-4.4.20\build_win32\debug\libdb44sd.lib (
+   vcbuild db-4.4.20\build_win32\db_static.vcproj "Debug AMD64|x64"
+)
 
 @rem OpenSSL
 if not exist openssl-0.9.8g (

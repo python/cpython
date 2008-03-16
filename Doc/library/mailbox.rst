@@ -403,7 +403,7 @@ remarks:
       Notes on Maildir by its inventor. Includes an updated name-creation scheme and
       details on "info" semantics.
 
-   `maildir man page from Courier <http://www.courier-mta.org/?maildir.html>`_
+   `maildir man page from Courier <http://www.courier-mta.org/maildir.html>`_
       Another specification of the format. Describes a common extension for supporting
       folders.
 
@@ -460,7 +460,7 @@ remarks:
    `mbox man page from tin <http://www.tin.org/bin/man.cgi?section=5&topic=mbox>`_
       Another specification of the format, with details on locking.
 
-   `Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad <http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html>`_
+   `Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad <http://www.jwz.org/doc/content-length.html>`_
       An argument for using the original mbox format rather than a variation.
 
    `"mbox" is a family of several mutually incompatible mailbox formats <http://homepages.tesco.net./~J.deBoynePollard/FGA/mail-mbox-formats.html>`_
@@ -664,7 +664,7 @@ remarks:
    `Format of Version 5 Babyl Files <http://quimby.gnus.org/notes/BABYL>`_
       A specification of the Babyl format.
 
-   `Reading Mail with Rmail <http://www.gnu.org/software/emacs/manual/html_node/Rmail.html>`_
+   `Reading Mail with Rmail <http://www.gnu.org/software/emacs/manual/html_node/emacs/Rmail.html>`_
       The Rmail manual, with some information on Babyl semantics.
 
 
@@ -1540,10 +1540,6 @@ counterparts are as follows:
    :class:`UnixMailbox` except that individual messages are separated by only
    ``From`` lines.
 
-   For more information, see `Configuring Netscape Mail on Unix: Why the
-   Content-Length Format is Bad
-   <http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html>`_.
-
 
 .. class:: PortableUnixMailbox(fp[, factory])
 
@@ -1629,7 +1625,7 @@ format-specific information that can be converted::
    destination = mailbox.MH('~/Mail')
    destination.lock()
    for message in mailbox.Babyl('~/RMAIL'):
-       destination.add(MHMessage(message))
+       destination.add(mailbox.MHMessage(message))
    destination.flush()
    destination.unlock()
 

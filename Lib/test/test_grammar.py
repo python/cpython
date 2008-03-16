@@ -310,6 +310,10 @@ class GrammarTests(unittest.TestCase):
         def f(*, k=1): return closure
         def f() -> int: return closure
 
+        # Check ast errors in *args and *kwargs
+        check_syntax_error(self, "f(*g(1=2))")
+        check_syntax_error(self, "f(**g(1=2))")
+
     def testLambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
         l1 = lambda : 0

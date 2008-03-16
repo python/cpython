@@ -137,7 +137,7 @@ reference counts for other objects contained in the object if this is a compound
 object type, such as a list, as well as performing any additional finalization
 that's needed.  There's no chance that the reference count can overflow; at
 least as many bits are used to hold the reference count as there are distinct
-memory locations in virtual memory (assuming ``sizeof(long) >= sizeof(char*)``).
+memory locations in virtual memory (assuming ``sizeof(Py_ssize_t) >= sizeof(void*)``).
 Thus, the reference count increment is a simple operation.
 
 It is not necessary to increment an object's reference count for every  local

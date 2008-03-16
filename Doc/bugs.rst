@@ -53,7 +53,7 @@ taken on the bug.
       Article which goes into some detail about how to create a useful bug report.
       This describes what kind of information is useful and why it is useful.
 
-   `Bug Writing Guidelines <http://www.mozilla.org/quality/bug-writing-guidelines.html>`_
+   `Bug Writing Guidelines <http://developer.mozilla.org/en/docs/Bug_writing_guidelines>`_
       Information about writing a good bug report.  Some of this is specific to the
       Mozilla project, but describes general good practices.
 

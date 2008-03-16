@@ -21,7 +21,7 @@ of Python; it is maintained at ActiveState.)
    `An Introduction to Tkinter <http://www.pythonware.com/library/an-introduction-to-tkinter.htm>`_
       Fredrik Lundh's on-line reference material.
 
-   `Tkinter reference: a GUI for Python <http://www.nmt.edu/tcc/help/pubs/lang.html>`_
+   `Tkinter reference: a GUI for Python <http://infohost.nmt.edu/tcc/help/pubs/lang.html>`_
       On-line reference material.
 
    `Tkinter for JPython <http://jtkinter.sourceforge.net>`_

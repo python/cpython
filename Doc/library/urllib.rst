@@ -107,10 +107,6 @@ High-level interface
       filehandle = urllib.urlopen(some_url, proxies=None)
       filehandle = urllib.urlopen(some_url)
 
-   The :func:`urlopen` function does not support explicit proxy specification.  If
-   you need to override environmental proxy settings, use :class:`URLopener`, or a
-   subclass such as :class:`FancyURLopener`.
-
    Proxies which require authentication for use are not currently supported; this
    is considered an implementation limitation.
 
