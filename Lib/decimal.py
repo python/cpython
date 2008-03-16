@@ -504,7 +504,7 @@ def localcontext(ctx=None):
 
 ##### Decimal class #######################################################
 
-class Decimal(_numbers.Real, _numbers.Inexact):
+class Decimal(_numbers.Real):
     """Floating point class for decimal arithmetic."""
 
     __slots__ = ('_exp','_int','_sign', '_is_special')
