@@ -3842,7 +3842,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
 	/* _strptime._strptime returns a two-element tuple.  The first
 	   element is a time.struct_time object.  The second is the
 	   microseconds (which are not defined for time.struct_time). */
-	obj = PyObject_CallMethod(module, "_strptime", "ss", string, format);
+	obj = PyObject_CallMethod(module, "_strptime", "uu", string, format);
 	if (obj != NULL) {
 		int i, good_timetuple = 1;
 		long int ia[7];
