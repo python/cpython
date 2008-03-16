@@ -732,7 +732,8 @@ functions.
 .. function:: shutdown()
 
    Informs the logging system to perform an orderly shutdown by flushing and
-   closing all handlers.
+   closing all handlers. This should be called at application exit and no
+   further use of the logging system should be made after this call.
 
 
 .. function:: setLoggerClass(klass)
