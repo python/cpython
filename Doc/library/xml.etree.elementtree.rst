@@ -357,7 +357,7 @@ ElementTree Objects
 .. method:: ElementTree.write(file[, encoding])
 
    Writes the element tree to a file, as XML. *file* is a file name, or a file
-   object opened for writing. *encoding* is the output encoding (default is
+   object opened for writing. *encoding* [1]_ is the output encoding (default is
    US-ASCII).
 
 This is the XML file that is going to be manipulated::
@@ -510,3 +510,12 @@ This is an example of counting the maximum depth of an XML file::
     >>> parser.feed(exampleXml)
     >>> parser.close()
     4
+
+
+.. rubric:: Footnotes
+
+.. [#] The encoding string included in XML output should conform to the
+   appropriate standards. For example, "UTF-8" is valid, but "UTF8" is
+   not. See http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
+   and http://www.iana.org/assignments/character-sets .
+
