@@ -259,7 +259,9 @@ class IncrementalDecoder(object):
     def getstate(self):
         """
         Return the current state of the decoder. This must be a
-        (buffered_input, additional_state_info) tuple.
+        (buffered_input, additional_state_info) tuple.  By convention,
+        additional_state_info should represent the state of the decoder
+        WITHOUT yet having processed the contents of buffered_input.
         """
         return (b"", 0)
 
