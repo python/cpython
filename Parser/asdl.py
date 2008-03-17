@@ -181,7 +181,7 @@ class ASDLParser(spark.GenericParser, object):
         " sum ::= constructor """
         return [constructor[0]]
 
-    def p_sum_1(self, ):
+    def p_sum_1(self, info):
         " sum ::= constructor | sum "
         constructor, _, sum = info
         return [constructor] + sum
