@@ -4,7 +4,7 @@ Tests for the tokenize module.
     >>> import glob, random, sys
 
 The tests can be really simple. Given a small fragment of source
-code, print out a table with thokens. The ENDMARK is omitted for
+code, print out a table with tokens. The ENDMARK is omitted for
 brevity.
 
     >>> dump_tokens("1 + 1")
@@ -105,7 +105,7 @@ Some error-handling code
     ...           "else:   print 'Loaded'\\n")
     True
 
-Balancing contunuation
+Balancing continuation
 
     >>> roundtrip("a = (3,4, \\n"
     ...           "5,6)\\n"
@@ -125,6 +125,14 @@ Ordinary integers and binary operators
     NUMBER     '0xff'        (1, 0) (1, 4)
     OP         '<='          (1, 5) (1, 7)
     NUMBER     '255'         (1, 8) (1, 11)
+    >>> dump_tokens("0b10 <= 255")
+    NUMBER     '0b10'        (1, 0) (1, 4)
+    OP         '<='          (1, 5) (1, 7)
+    NUMBER     '255'         (1, 8) (1, 11)
+    >>> dump_tokens("0o123 <= 0O123")
+    NUMBER     '0o123'       (1, 0) (1, 5)
+    OP         '<='          (1, 6) (1, 8)
+    NUMBER     '0O123'       (1, 9) (1, 14)
     >>> dump_tokens("1234567 > ~0x15")
     NUMBER     '1234567'     (1, 0) (1, 7)
     OP         '>'           (1, 8) (1, 9)
