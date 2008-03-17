@@ -42,6 +42,12 @@ The available exception and functions in this module are:
    the algorithm is designed for use as a checksum algorithm, it is not suitable
    for use as a general hash algorithm.
 
+   This function always returns an integer object.
+
+.. versionchanged:: 2.6
+   For consistent cross-platform behavior we always return a signed integer.
+   ie: Results in the (2**31)...(2**32-1) range will be negative.
+
 
 .. function:: compress(string[, level])
 
@@ -73,6 +79,12 @@ The available exception and functions in this module are:
    strong, and should not be used for authentication or digital signatures.  Since
    the algorithm is designed for use as a checksum algorithm, it is not suitable
    for use as a general hash algorithm.
+
+   This function always returns an integer object.
+
+.. versionchanged:: 2.6
+   For consistent cross-platform behavior we always return a signed integer.
+   ie: Results in the (2**31)...(2**32-1) range will be negative.
 
 
 .. function:: decompress(string[, wbits[, bufsize]])

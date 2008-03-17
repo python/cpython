@@ -38,6 +38,15 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(zlib.crc32("penguin"), zlib.crc32("penguin", 0))
         self.assertEqual(zlib.adler32("penguin"),zlib.adler32("penguin",1))
 
+    def test_abcdefghijklmnop(self):
+        """test issue1202 compliance: signed crc32, adler32 in 2.x"""
+        foo = 'abcdefghijklmnop'
+        # explicitly test signed behavior
+        self.assertEqual(zlib.crc32(foo), -1808088941)
+        self.assertEqual(zlib.crc32('spam'), 1138425661)
+        self.assertEqual(zlib.adler32(foo+foo), -721416943)
+        self.assertEqual(zlib.adler32('spam'), 72286642)
+
 
 
 class ExceptionTestCase(unittest.TestCase):
