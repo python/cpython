@@ -27,6 +27,8 @@ Library
   system doesn't support CODESET and LANG isn't set or doesn't
   allow deduction of an encoding.
 
+- Issue #1202: zlib.crc32 and zlib.adler32 now return an unsigned value.
+
 
 What's New in Python 3.0a3?
 ===========================
