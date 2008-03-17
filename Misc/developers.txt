@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- David Wolever was given SVN access on 17 March 2008 by MvL,
+  for 2to3 work.
+
 - Trent Nelson was given SVN access on 17 March 2008 by MvL,
   for general contributions to Python.
 
