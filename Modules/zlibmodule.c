@@ -922,7 +922,7 @@ PyZlib_adler32(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s#|k:adler32", &buf, &len, &adler32val))
 	return NULL;
     adler32val = adler32(adler32val, buf, len);
-    return PyLong_FromLong(adler32val);
+    return PyLong_FromUnsignedLong(adler32val & 0xffffffff);
 }
 
 PyDoc_STRVAR(crc32__doc__,
@@ -940,7 +940,7 @@ PyZlib_crc32(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s#|k:crc32", &buf, &len, &crc32val))
 	return NULL;
     crc32val = crc32(crc32val, buf, len);
-    return PyLong_FromLong(crc32val);
+    return PyLong_FromUnsignedLong(crc32val & 0xffffffff);
 }
 
 
