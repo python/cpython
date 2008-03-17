@@ -116,18 +116,18 @@ class ABCMeta(type):
 
     def __instancecheck__(cls, instance):
         """Override for isinstance(instance, cls)."""
-        # Inline the cache checking for new-style classes.
-        subclass = instance.__class__
+        # Inline the cache checking when it's simple.
+        subclass = getattr(instance, '__class__', None)
         if subclass in cls._abc_cache:
             return True
         subtype = type(instance)
-        if subtype is subclass:
+        if subtype is subclass or subclass is None:
             if (cls._abc_negative_cache_version ==
                 ABCMeta._abc_invalidation_counter and
-                subclass in cls._abc_negative_cache):
+                subtype in cls._abc_negative_cache):
                 return False
             # Fall back to the subclass check.
-            return cls.__subclasscheck__(subclass)
+            return cls.__subclasscheck__(subtype)
         return (cls.__subclasscheck__(subclass) or
                 cls.__subclasscheck__(subtype))
 
