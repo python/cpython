@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
+- Issue #1779871: Gnu gcc can now build Python on OS X because the
+  flags -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd are no
+  longer passed.
+
 - Add a warning when asserting a non-empty tuple which is always true.
 
 - Issue #2179: speed up with statement execution by storing the exit method
