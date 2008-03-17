@@ -529,6 +529,109 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+	/* new buffer API */
+
+#define PyObject_CheckBuffer(obj) \
+        (((obj)->ob_type->tp_as_buffer != NULL) &&  \
+         ((obj)->ob_type->tp_as_buffer->bf_getbuffer != NULL))
+
+	/* Return 1 if the getbuffer function is available, otherwise 
+	   return 0 */
+
+     PyAPI_FUNC(int) PyObject_GetBuffer(PyObject *obj, Py_buffer *view, 
+					int flags);
+
+	/* This is a C-API version of the getbuffer function call.  It checks
+       	   to make sure object has the required function pointer and issues the
+	   call.  Returns -1 and raises an error on failure and returns 0 on 
+	   success
+        */
+
+
+     PyAPI_FUNC(void) PyObject_ReleaseBuffer(PyObject *obj, Py_buffer *view);
+
+
+	/* C-API version of the releasebuffer function call.  It
+	   checks to make sure the object has the required function
+	   pointer and issues the call.  The obj must have the buffer
+	   interface or this function will cause a segfault (i.e. it
+	   is assumed to be called only after a corresponding
+	   getbuffer which already verified the existence of the
+	   tp_as_buffer pointer).
+           
+           Returns 0 on success and -1 (with an error raised) on
+           failure.  This function always succeeds (as a NO-OP) if
+           there is no releasebuffer function for the object so that
+           it can always be called when the consumer is done with the
+           buffer
+        */
+
+     PyAPI_FUNC(void *) PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
+        
+        /* Get the memory area pointed to by the indices for the buffer given. 
+           Note that view->ndim is the assumed size of indices 
+        */
+
+     PyAPI_FUNC(int) PyBuffer_SizeFromFormat(const char *);
+		
+	/* Return the implied itemsize of the data-format area from a 
+	   struct-style description */
+    
+
+	
+     PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, Py_buffer *view,
+    					   Py_ssize_t len, char fort);
+
+     PyAPI_FUNC(int) PyBuffer_FromContiguous(Py_buffer *view, void *buf, 
+    					     Py_ssize_t len, char fort);
+
+
+	/* Copy len bytes of data from the contiguous chunk of memory
+	   pointed to by buf into the buffer exported by obj.  Return
+	   0 on success and return -1 and raise a PyBuffer_Error on
+	   error (i.e. the object does not have a buffer interface or
+	   it is not working).
+
+	   If fort is 'F' and the object is multi-dimensional,
+	   then the data will be copied into the array in
+	   Fortran-style (first dimension varies the fastest).  If
+	   fort is 'C', then the data will be copied into the array
+	   in C-style (last dimension varies the fastest).  If fort
+	   is 'A', then it does not matter and the copy will be made
+	   in whatever way is more efficient.
+
+        */
+
+     PyAPI_FUNC(int) PyObject_CopyData(PyObject *dest, PyObject *src);
+        
+        /* Copy the data from the src buffer to the buffer of destination
+         */
+
+     PyAPI_FUNC(int) PyBuffer_IsContiguous(Py_buffer *view, char fort);
+
+
+     PyAPI_FUNC(void) PyBuffer_FillContiguousStrides(int ndims, 
+	  					    Py_ssize_t *shape, 
+						    Py_ssize_t *strides,
+	                                            int itemsize,
+	     					    char fort);
+
+       	/*  Fill the strides array with byte-strides of a contiguous
+            (Fortran-style if fort is 'F' or C-style otherwise)
+            array of the given shape with the given number of bytes
+            per element.
+        */
+
+     PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, void *buf,
+		             	       Py_ssize_t len, int readonly,
+				       int flags);
+
+        /* Fills in a buffer-info structure correctly for an exporter
+           that can only share a contiguous chunk of memory of
+           "unsigned bytes" of the given length. Returns 0 on success
+           and -1 (with raising an error) on error.
+         */
+
      PyAPI_FUNC(PyObject *) PyObject_Format(PyObject* obj,
 					    PyObject *format_spec);
        /*
