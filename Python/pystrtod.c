@@ -7,7 +7,6 @@
 #define ISSPACE(c)  ((c) == ' ' || (c) == '\f' || (c) == '\n' || \
                      (c) == '\r' || (c) == '\t' || (c) == '\v')
 #define ISDIGIT(c)  ((c) >= '0' && (c) <= '9')
-#define ISXDIGIT(c) (ISDIGIT(c) || ((c) >= 'a' && (c) <= 'f') || ((c) >= 'A' && (c) <= 'F'))
 
 
 /**
@@ -123,7 +122,8 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 			errno = EINVAL;
 			return val;
 		}
-		/* For the other cases, we need not convert the decimal point */
+		/* For the other cases, we need not convert the decimal
+		   point */
 	}
 
 	/* Set errno to zero, so that we can distinguish zero results
@@ -134,7 +134,8 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	{
 		char *copy, *c;
 
-		/* We need to convert the '.' to the locale specific decimal point */
+		/* We need to convert the '.' to the locale specific decimal
+		   point */
 		copy = (char *)PyMem_MALLOC(end - digits_pos +
 					    1 + decimal_point_len);
 		if (copy == NULL) {
@@ -149,7 +150,8 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		c += decimal_point_pos - digits_pos;
 		memcpy(c, decimal_point, decimal_point_len);
 		c += decimal_point_len;
-		memcpy(c, decimal_point_pos + 1, end - (decimal_point_pos + 1));
+		memcpy(c, decimal_point_pos + 1,
+		       end - (decimal_point_pos + 1));
 		c += end - (decimal_point_pos + 1);
 		*c = 0;
 
@@ -262,8 +264,8 @@ PyOS_ascii_formatd(char       *buffer,
 	if (format_char == 'n' || format_char == 'Z') {
 		if (format_len + 1 >= sizeof(tmp_format)) {
 			/* The format won't fit in our copy.  Error out.  In
-			   practice, this will never happen and will be detected
-			   by returning NULL */
+			   practice, this will never happen and will be
+			   detected by returning NULL */
 			return NULL;
 		}
 		strcpy(tmp_format, format);
@@ -295,7 +297,8 @@ PyOS_ascii_formatd(char       *buffer,
 			while (isdigit(Py_CHARMASK(*p)))
 				p++;
 
-			if (strncmp(p, decimal_point, decimal_point_len) == 0) {
+			if (strncmp(p, decimal_point,
+				    decimal_point_len) == 0) {
 				*p = '.';
 				p++;
 				if (decimal_point_len > 1) {
@@ -344,7 +347,8 @@ PyOS_ascii_formatd(char       *buffer,
 			   if we can delete some of the leading zeros */
 			if (significant_digit_cnt < MIN_EXPONENT_DIGITS)
 				significant_digit_cnt = MIN_EXPONENT_DIGITS;
-			extra_zeros_cnt = exponent_digit_cnt - significant_digit_cnt;
+			extra_zeros_cnt = exponent_digit_cnt -
+				significant_digit_cnt;
 
 			/* Delete extra_zeros_cnt worth of characters from the
 			   front of the exponent */
