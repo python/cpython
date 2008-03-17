@@ -160,47 +160,6 @@ is_not(PyObject *s, PyObject *a)
 	return result;
 }
 
-static PyObject*
-op_getslice(PyObject *s, PyObject *a)
-{
-        PyObject *a1;
-        Py_ssize_t a2, a3;
-
-        if (!PyArg_ParseTuple(a, "Onn:getslice", &a1, &a2, &a3))
-                return NULL;
-        return PySequence_GetSlice(a1, a2, a3);
-}
-
-static PyObject*
-op_setslice(PyObject *s, PyObject *a)
-{
-        PyObject *a1, *a4;
-        Py_ssize_t a2, a3;
-
-        if (!PyArg_ParseTuple(a, "OnnO:setslice", &a1, &a2, &a3, &a4))
-                return NULL;
-
-        if (-1 == PySequence_SetSlice(a1, a2, a3, a4))
-                return NULL;
-
-	Py_RETURN_NONE;
-}
-
-static PyObject*
-op_delslice(PyObject *s, PyObject *a)
-{
-        PyObject *a1;
-        Py_ssize_t a2, a3;
-
-        if (!PyArg_ParseTuple(a, "Onn:delslice", &a1, &a2, &a3))
-                return NULL;
-
-        if (-1 == PySequence_DelSlice(a1, a2, a3))
-                return NULL;
-
-	Py_RETURN_NONE;
-}
-
 #undef spam1
 #undef spam2
 #undef spam1o
@@ -276,12 +235,6 @@ spam2(delitem,__delitem__,
  "delitem(a, b) -- Same as del a[b].")
 spam2(pow,__pow__, "pow(a, b) -- Same as a ** b.")
 spam2(ipow,__ipow__, "ipow(a, b) -- Same as a **= b.")
-spam2(getslice,__getslice__,
- "getslice(a, b, c) -- Same as a[b:c].")
-spam2(setslice,__setslice__,
-"setslice(a, b, c, d) -- Same as a[b:c] = d.")
-spam2(delslice,__delslice__,
-"delslice(a, b, c) -- Same as del a[b:c].")
 spam2(lt,__lt__, "lt(a, b) -- Same as a<b.")
 spam2(le,__le__, "le(a, b) -- Same as a<=b.")
 spam2(eq,__eq__, "eq(a, b) -- Same as a==b.")
