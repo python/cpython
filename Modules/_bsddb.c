@@ -312,10 +312,9 @@ static Py_buffer * _malloc_view(PyObject *obj)
                         "Py_buffer malloc failed");
         return NULL;
     }
-    /* XXX(gps): PyBUF_LOCKDATA is desired to prevent other theads from
-       trashing the data buffer while we release the GIL during the db
-       operation.  see http://bugs.python.org/issue1035 */
-    if (PyObject_GetBuffer(obj, view, PyBUF_SIMPLE) == -1) {
+    /* We use PyBUF_LOCK to prevent other threads from trashing the data
+       buffer while we release the GIL.  http://bugs.python.org/issue1035 */
+    if (PyObject_GetBuffer(obj, view, PyBUF_LOCK) == -1) {
         PyMem_Free(view);
         return NULL;
     }
