@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
+- PEP 3127: octal literals now start with "0o". Old-style octal literals
+  are still valid. There are binary literals with a prefix of "0b".
+  This also affects int(x, 0).
+
 - Issue #1779871: Gnu gcc can now build Python on OS X because the
   flags -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd are no
   longer passed.
