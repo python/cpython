@@ -30,6 +30,8 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Issue #2282: io.TextIOWrapper was not overriding seekable() from io.IOBase.
+
 - Issue #2115: Important speedup in setting __slot__ attributes.  Also 
   prevent a possible crash: an Abstract Base Class would try to access a slot 
   on a registered virtual subclass.
