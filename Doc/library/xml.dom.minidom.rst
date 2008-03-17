@@ -141,7 +141,8 @@ module documentation.  This section lists the differences between the API and
       support pretty output.
 
    .. versionchanged:: 2.3
-      For the :class:`Document` node, an additional keyword argument *encoding* can be
+      For the :class:`Document` node, an additional keyword argument
+      *encoding* [1]_ can be
       used to specify the encoding field of the XML header.
 
 
@@ -154,7 +155,7 @@ module documentation.  This section lists the differences between the API and
    document. Encoding this string in an encoding other than UTF-8 is likely
    incorrect, since UTF-8 is the default encoding of XML.
 
-   With an explicit *encoding* argument, the result is a byte string in the
+   With an explicit *encoding* [1]_ argument, the result is a byte string in the
    specified encoding. It is recommended that this argument is always specified. To
    avoid :exc:`UnicodeError` exceptions in case of unrepresentable text data, the
    encoding argument should be specified as "utf-8".
@@ -172,7 +173,7 @@ module documentation.  This section lists the differences between the API and
    .. versionadded:: 2.1
 
    .. versionchanged:: 2.3
-      the encoding argument; see :meth:`toxml`.
+      the encoding [1]_ argument; see :meth:`toxml`.
 
 The following standard DOM methods have special considerations with
 :mod:`xml.dom.minidom`:
@@ -265,3 +266,9 @@ The following interfaces have no implementation in :mod:`xml.dom.minidom`:
 Most of these reflect information in the XML document that is not of general
 utility to most DOM users.
 
+.. rubric:: Footnotes
+
+.. [#] The encoding string included in XML output should conform to the
+   appropriate standards. For example, "UTF-8" is valid, but "UTF8" is
+   not. See http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
+   and http://www.iana.org/assignments/character-sets .
