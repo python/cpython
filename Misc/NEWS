@@ -23,6 +23,18 @@ Extension Modules
 Library
 -------
 
+- A new pickle protocol (protocol 3) is added with explicit support
+  for bytes.  This is the default protocol.  It intentionally cannot
+  be unpickled by Python 2.x.
+
+- When a pickle written by Python 2.x contains an (8-bit) str
+  instance, this is now decoded to a (Unicode) str instance.  The
+  encoding used to do this defaults to ASCII, but can be overridden
+  via two new keyword arguments to the Unpickler class.  Previously
+  this would create bytes instances, which is usually wrong: str
+  instances are often used to pickle attribute names etc., and text is
+  more common than binary data anyway.
+
 - Default to ASCII as the locale.getpreferredencoding, if the POSIX
   system doesn't support CODESET and LANG isn't set or doesn't
   allow deduction of an encoding.

@@ -746,6 +746,11 @@ pyfloat = StackObject(
               doc="A Python float object.")
 
 pystring = StackObject(
+               name='string',
+               obtype=bytes,
+               doc="A Python (8-bit) string object.")
+
+pybytes = StackObject(
                name='bytes',
                obtype=bytes,
                doc="A Python bytes object.")
@@ -753,7 +758,7 @@ pystring = StackObject(
 pyunicode = StackObject(
                 name='str',
                 obtype=str,
-                doc="A Python string object.")
+                doc="A Python (Unicode) string object.")
 
 pynone = StackObject(
              name="None",
@@ -868,7 +873,7 @@ class OpcodeInfo(object):
             assert isinstance(x, StackObject)
         self.stack_after = stack_after
 
-        assert isinstance(proto, int) and 0 <= proto <= 2
+        assert isinstance(proto, int) and 0 <= proto <= 3
         self.proto = proto
 
         assert isinstance(doc, str)
@@ -995,7 +1000,9 @@ opcodes = [
 
       The argument is a repr-style string, with bracketing quote characters,
       and perhaps embedded escapes.  The argument extends until the next
-      newline character.
+      newline character.  (Actually, they are decoded into a str instance
+      using the encoding given to the Unpickler constructor. or the default,
+      'ASCII'.)
       """),
 
     I(name='BINSTRING',
@@ -1008,7 +1015,9 @@ opcodes = [
 
       There are two arguments:  the first is a 4-byte little-endian signed int
       giving the number of bytes in the string, and the second is that many
-      bytes, which are taken literally as the string content.
+      bytes, which are taken literally as the string content.  (Actually,
+      they are decoded into a str instance using the encoding given to the
+      Unpickler constructor. or the default, 'ASCII'.)
       """),
 
     I(name='SHORT_BINSTRING',
@@ -1016,6 +1025,36 @@ opcodes = [
       arg=string1,
       stack_before=[],
       stack_after=[pystring],
+      proto=1,
+      doc="""Push a Python string object.
+
+      There are two arguments:  the first is a 1-byte unsigned int giving
+      the number of bytes in the string, and the second is that many bytes,
+      which are taken literally as the string content.  (Actually, they
+      are decoded into a str instance using the encoding given to the
+      Unpickler constructor. or the default, 'ASCII'.)
+      """),
+
+    # Bytes (protocol 3 only; older protocols don't support bytes at all)
+
+    I(name='BINBYTES',
+      code='B',
+      arg=string4,
+      stack_before=[],
+      stack_after=[pybytes],
+      proto=3,
+      doc="""Push a Python bytes object.
+
+      There are two arguments:  the first is a 4-byte little-endian signed int
+      giving the number of bytes in the string, and the second is that many
+      bytes, which are taken literally as the bytes content.
+      """),
+
+    I(name='SHORT_BINBYTES',
+      code='C',
+      arg=string1,
+      stack_before=[],
+      stack_after=[pybytes],
       proto=1,
       doc="""Push a Python string object.
 
@@ -2006,9 +2045,9 @@ class _Example:
 
 _dis_test = r"""
 >>> import pickle
->>> x = [1, 2, (3, 4), {bytes(b'abc'): "def"}]
->>> pkl = pickle.dumps(x, 0)
->>> dis(pkl)
+>>> x = [1, 2, (3, 4), {b'abc': "def"}]
+>>> pkl0 = pickle.dumps(x, 0)
+>>> dis(pkl0)
     0: (    MARK
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
@@ -2025,19 +2064,32 @@ _dis_test = r"""
    25: (    MARK
    26: d        DICT       (MARK at 25)
    27: p    PUT        2
-   30: S    STRING     'abc'
-   37: p    PUT        3
-   40: V    UNICODE    'def'
-   45: p    PUT        4
-   48: s    SETITEM
-   49: a    APPEND
-   50: .    STOP
+   30: c    GLOBAL     'builtins bytes'
+   46: p    PUT        3
+   49: (    MARK
+   50: (        MARK
+   51: l            LIST       (MARK at 50)
+   52: p        PUT        4
+   55: L        LONG       97
+   59: a        APPEND
+   60: L        LONG       98
+   64: a        APPEND
+   65: L        LONG       99
+   69: a        APPEND
+   70: t        TUPLE      (MARK at 49)
+   71: p    PUT        5
+   74: R    REDUCE
+   75: V    UNICODE    'def'
+   80: p    PUT        6
+   83: s    SETITEM
+   84: a    APPEND
+   85: .    STOP
 highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
 
->>> pkl = pickle.dumps(x, 1)
->>> dis(pkl)
+>>> pkl1 = pickle.dumps(x, 1)
+>>> dis(pkl1)
     0: ]    EMPTY_LIST
     1: q    BINPUT     0
     3: (    MARK
@@ -2050,13 +2102,24 @@ Try again with a "binary" pickle.
    14: q        BINPUT     1
    16: }        EMPTY_DICT
    17: q        BINPUT     2
-   19: U        SHORT_BINSTRING 'abc'
-   24: q        BINPUT     3
-   26: X        BINUNICODE 'def'
-   34: q        BINPUT     4
-   36: s        SETITEM
-   37: e        APPENDS    (MARK at 3)
-   38: .    STOP
+   19: c        GLOBAL     'builtins bytes'
+   35: q        BINPUT     3
+   37: (        MARK
+   38: ]            EMPTY_LIST
+   39: q            BINPUT     4
+   41: (            MARK
+   42: K                BININT1    97
+   44: K                BININT1    98
+   46: K                BININT1    99
+   48: e                APPENDS    (MARK at 41)
+   49: t            TUPLE      (MARK at 37)
+   50: q        BINPUT     5
+   52: R        REDUCE
+   53: X        BINUNICODE 'def'
+   61: q        BINPUT     6
+   63: s        SETITEM
+   64: e        APPENDS    (MARK at 3)
+   65: .    STOP
 highest protocol among opcodes = 1
 
 Exercise the INST/OBJ/BUILD family.
