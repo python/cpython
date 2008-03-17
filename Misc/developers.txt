@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Trent Nelson was given SVN access on 17 March 2008 by MvL,
+  for general contributions to Python.
+
 - Mark Dickinson was given SVN access on 6 January 2008 by Facundo
   Batista for his work on mathemathics and number related issues.
 
