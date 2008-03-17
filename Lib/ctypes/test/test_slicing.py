@@ -45,21 +45,17 @@ class SlicesTestCase(unittest.TestCase):
         b[33::-3] = range(12)
         self.failUnlessEqual(a[:], b)
 
-        from operator import setslice, setitem
+        from operator import setitem
 
         # TypeError: int expected instead of str instance
-        self.assertRaises(TypeError, setslice, a, 0, 5, "abcde")
         self.assertRaises(TypeError, setitem, a, slice(0, 5), "abcde")
         # TypeError: int expected instead of str instance
-        self.assertRaises(TypeError, setslice, a, 0, 5, ["a", "b", "c", "d", "e"])
         self.assertRaises(TypeError, setitem, a, slice(0, 5),
                           ["a", "b", "c", "d", "e"])
         # TypeError: int expected instead of float instance
-        self.assertRaises(TypeError, setslice, a, 0, 5, [1, 2, 3, 4, 3.14])
         self.assertRaises(TypeError, setitem, a, slice(0, 5),
                           [1, 2, 3, 4, 3.14])
         # ValueError: Can only assign sequence of same size
-        self.assertRaises(ValueError, setslice, a, 0, 5, range(32))
         self.assertRaises(ValueError, setitem, a, slice(0, 5), range(32))
 
     def test_char_ptr(self):
@@ -86,8 +82,6 @@ class SlicesTestCase(unittest.TestCase):
         self.assertRaises(ValueError, operator.getitem,
                           res, slice(-5, None, None))
 
-        self.assertRaises(TypeError, operator.setslice,
-                          res, 0, 5, "abcde")
         self.assertRaises(TypeError, operator.setitem,
                           res, slice(0, 5), "abcde")
         dll.my_free(res)
@@ -150,8 +144,6 @@ class SlicesTestCase(unittest.TestCase):
             self.failUnlessEqual(res[len(s)-1:5:-7], s[:5:-7])
 
             import operator
-            self.assertRaises(TypeError, operator.setslice,
-                              res, 0, 5, "abcde")
             self.assertRaises(TypeError, operator.setitem,
                               res, slice(0, 5), "abcde")
             dll.my_free(res)
