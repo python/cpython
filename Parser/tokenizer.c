@@ -1335,7 +1335,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	/* Number */
 	if (isdigit(c)) {
 		if (c == '0') {
-			/* Hex or octal -- maybe. */
+			/* Hex, octal or binary -- maybe. */
 			c = tok_nextc(tok);
 			if (c == '.')
 				goto fraction;
@@ -1355,6 +1355,30 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 				do {
 					c = tok_nextc(tok);
 				} while (isxdigit(c));
+			}
+                        else if (c == 'o' || c == 'O') {
+				/* Octal */
+				c = tok_nextc(tok);
+				if (c < '0' || c > '8') {
+					tok->done = E_TOKEN;
+					tok_backup(tok, c);
+					return ERRORTOKEN;
+				}
+				do {
+					c = tok_nextc(tok);
+				} while ('0' <= c && c < '8');
+			}
+			else if (c == 'b' || c == 'B') {
+				/* Binary */
+				c = tok_nextc(tok);
+				if (c != '0' && c != '1') {
+					tok->done = E_TOKEN;
+					tok_backup(tok, c);
+					return ERRORTOKEN;
+				}
+				do {
+					c = tok_nextc(tok);
+				} while (c == '0' || c == '1');
 			}
 			else {
 				int found_decimal = 0;

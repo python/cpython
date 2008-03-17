@@ -1465,14 +1465,27 @@ PyLong_FromString(char *str, char **pend, int base)
 	while (*str != '\0' && isspace(Py_CHARMASK(*str)))
 		str++;
 	if (base == 0) {
+		/* No base given.  Deduce the base from the contents
+		   of the string */
 		if (str[0] != '0')
 			base = 10;
 		else if (str[1] == 'x' || str[1] == 'X')
 			base = 16;
+		else if (str[1] == 'o' || str[1] == 'O')
+			base = 8;
+		else if (str[1] == 'b' || str[1] == 'B')
+			base = 2;
 		else
+			/* "old" (C-style) octal literal, still valid in
+			   2.x, although illegal in 3.x */
 			base = 8;
 	}
-	if (base == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+	/* Whether or not we were deducing the base, skip leading chars
+	   as needed */
+	if (str[0] == '0' &&
+	    ((base == 16 && (str[1] == 'x' || str[1] == 'X')) ||
+	     (base == 8  && (str[1] == 'o' || str[1] == 'O')) ||
+	     (base == 2  && (str[1] == 'b' || str[1] == 'B'))))
 		str += 2;
 
 	start = str;
