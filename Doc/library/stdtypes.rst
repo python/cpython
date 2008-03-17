@@ -1082,6 +1082,22 @@ string functions based on regular expressions.
 
    .. versionadded:: 2.2.2
 
+The following methods are present only on unicode objects:
+
+.. method:: unicode.isnumeric()
+
+   Return ``True`` if there are only numeric characters in S, ``False``
+   otherwise. Numeric characters include digit characters, and all characters
+   that have the Unicode numeric value property, e.g. U+2155,
+   VULGAR FRACTION ONE FIFTH.
+   
+.. method:: unicode.isdecimal()
+
+   Return ``True`` if there are only decimal characters in S, ``False``
+   otherwise. Decimal characters include digit characters, and all characters
+   that that can be used to form decimal-radix numbers, e.g. U+0660,
+   ARABIC-INDIC DIGIT ZERO.
+
 
 .. _string-formatting:
 
