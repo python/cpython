@@ -23,6 +23,13 @@ class PEP263Test(unittest.TestCase):
         exec(c, d)
         self.assertEqual(d['u'], '\xf3')
 
+    def test_issue2301(self):
+        try:
+            compile(b"# coding: cp932\nprint '\x94\x4e'", "dummy", "exec")
+        except SyntaxError as v:
+            self.assertEquals(v.text, "print '\u5e74'")
+        else:
+            self.fail()
 
 def test_main():
     test_support.run_unittest(PEP263Test)
