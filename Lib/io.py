@@ -397,7 +397,7 @@ class IOBase(metaclass=abc.ABCMeta):
         """For backwards compatibility, a (slowish) readline()."""
         if hasattr(self, "peek"):
             def nreadahead():
-                readahead = self.peek(1, unsafe=True)
+                readahead = self.peek(1)
                 if not readahead:
                     return 1
                 n = (readahead.find(b"\n") + 1) or len(readahead)
@@ -785,14 +785,12 @@ class BufferedReader(_BufferedIOMixin):
             out = nodata_val
         return out
 
-    def peek(self, n=0, *, unsafe=False):
+    def peek(self, n=0):
         """Returns buffered bytes without advancing the position.
 
         The argument indicates a desired minimal number of bytes; we
         do at most one raw read to satisfy it.  We never return more
         than self.buffer_size.
-
-        Unless unsafe=True is passed, we return a copy.
         """
         want = min(n, self.buffer_size)
         have = len(self._read_buf)
@@ -801,10 +799,7 @@ class BufferedReader(_BufferedIOMixin):
             current = self.raw.read(to_read)
             if current:
                 self._read_buf += current
-        result = self._read_buf
-        if unsafe:
-            result = result[:]
-        return result
+        return self._read_buf
 
     def read1(self, n):
         """Reads up to n bytes.
@@ -815,7 +810,7 @@ class BufferedReader(_BufferedIOMixin):
         """
         if n <= 0:
             return b""
-        self.peek(1, unsafe=True)
+        self.peek(1)
         return self.read(min(n, len(self._read_buf)))
 
     def tell(self):
@@ -930,8 +925,8 @@ class BufferedRWPair(BufferedIOBase):
     def write(self, b):
         return self.writer.write(b)
 
-    def peek(self, n=0, *, unsafe=False):
-        return self.reader.peek(n, unsafe=unsafe)
+    def peek(self, n=0):
+        return self.reader.peek(n)
 
     def read1(self, n):
         return self.reader.read1(n)
@@ -991,9 +986,9 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         self.flush()
         return BufferedReader.readinto(self, b)
 
-    def peek(self, n=0, *, unsafe=False):
+    def peek(self, n=0):
         self.flush()
-        return BufferedReader.peek(self, n, unsafe=unsafe)
+        return BufferedReader.peek(self, n)
 
     def read1(self, n):
         self.flush()
