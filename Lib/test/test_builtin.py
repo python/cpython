@@ -853,6 +853,12 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, int, "0x", 16)
         self.assertRaises(ValueError, int, "0x", 0)
 
+        self.assertRaises(ValueError, int, "0o", 8)
+        self.assertRaises(ValueError, int, "0o", 0)
+
+        self.assertRaises(ValueError, int, "0b", 2)
+        self.assertRaises(ValueError, int, "0b", 0)
+
 
         # SF bug 1334662: int(string, base) wrong answers
         # Various representations of 2**32 evaluated to 0
@@ -893,6 +899,45 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(int('2qhxjli', 34), 4294967296L)
         self.assertEqual(int('2br45qb', 35), 4294967296L)
         self.assertEqual(int('1z141z4', 36), 4294967296L)
+
+        # tests with base 0
+        # this fails on 3.0, but in 2.x the old octal syntax is allowed
+        self.assertEqual(int(' 0123  ', 0), 83)
+        self.assertEqual(int(' 0123  ', 0), 83)
+        self.assertEqual(int('000', 0), 0)
+        self.assertEqual(int('0o123', 0), 83)
+        self.assertEqual(int('0x123', 0), 291)
+        self.assertEqual(int('0b100', 0), 4)
+        self.assertEqual(int(' 0O123   ', 0), 83)
+        self.assertEqual(int(' 0X123  ', 0), 291)
+        self.assertEqual(int(' 0B100 ', 0), 4)
+
+        # without base still base 10
+        self.assertEqual(int('0123'), 123)
+        self.assertEqual(int('0123', 10), 123)
+
+        # tests with prefix and base != 0
+        self.assertEqual(int('0x123', 16), 291)
+        self.assertEqual(int('0o123', 8), 83)
+        self.assertEqual(int('0b100', 2), 4)
+        self.assertEqual(int('0X123', 16), 291)
+        self.assertEqual(int('0O123', 8), 83)
+        self.assertEqual(int('0B100', 2), 4)
+
+        # the code has special checks for the first character after the
+        #  type prefix
+        self.assertRaises(ValueError, int, '0b2', 2)
+        self.assertRaises(ValueError, int, '0b02', 2)
+        self.assertRaises(ValueError, int, '0B2', 2)
+        self.assertRaises(ValueError, int, '0B02', 2)
+        self.assertRaises(ValueError, int, '0o8', 8)
+        self.assertRaises(ValueError, int, '0o08', 8)
+        self.assertRaises(ValueError, int, '0O8', 8)
+        self.assertRaises(ValueError, int, '0O08', 8)
+        self.assertRaises(ValueError, int, '0xg', 16)
+        self.assertRaises(ValueError, int, '0x0g', 16)
+        self.assertRaises(ValueError, int, '0Xg', 16)
+        self.assertRaises(ValueError, int, '0X0g', 16)
 
         # SF bug 1334662: int(string, base) wrong answers
         # Checks for proper evaluation of 2**32 + 1
