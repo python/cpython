@@ -70,6 +70,17 @@ class TestABC(unittest.TestCase):
         self.assertFalse(issubclass(OldstyleClass, A))
         self.assertFalse(issubclass(A, OldstyleClass))
 
+    def test_isinstance_class(self):
+        class A:
+            __metaclass__ = abc.ABCMeta
+        class OldstyleClass:
+            pass
+        self.assertFalse(isinstance(OldstyleClass, A))
+        self.assertTrue(isinstance(OldstyleClass, type(OldstyleClass)))
+        self.assertFalse(isinstance(A, OldstyleClass))
+        # This raises a recursion depth error, but is low-priority:
+        # self.assertTrue(isinstance(A, abc.ABCMeta))
+
     def test_registration_basics(self):
         class A:
             __metaclass__ = abc.ABCMeta
