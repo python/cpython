@@ -42,19 +42,22 @@ __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
 bytes_types = (bytes, bytearray, memoryview)
 
 # These are purely informational; no code uses these.
-format_version = "2.0"                  # File format version we write
+format_version = "3.0"                  # File format version we write
 compatible_formats = ["1.0",            # Original protocol 0
                       "1.1",            # Protocol 0 with INST added
                       "1.2",            # Original protocol 1
                       "1.3",            # Protocol 1 with BINFLOAT added
                       "2.0",            # Protocol 2
+                      "3.0",            # Protocol 3
                       ]                 # Old format versions we can read
 
 # This is the highest protocol number we know how to read.
-HIGHEST_PROTOCOL = 2
+HIGHEST_PROTOCOL = 3
 
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
-DEFAULT_PROTOCOL = 2
+# We intentionally write a protocol that Python 2.x cannot read;
+# there are too many issues with that.
+DEFAULT_PROTOCOL = 3
 
 # Why use struct.pack() for pickling but marshal.loads() for
 # unpickling?  struct.pack() is 40% faster than marshal.dumps(), but
@@ -161,6 +164,10 @@ LONG4          = b'\x8b'  # push really big long
 
 _tuplesize2code = [EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3]
 
+# Protocol 3 (Python 3.x)
+
+BINBYTES       = b'B'   # push bytes; counted binary string argument
+SHORT_BINBYTES = b'C'   #  "     "   ;    "      "       "      " < 256 bytes
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
 
@@ -494,20 +501,19 @@ class Pickler:
             self.write(FLOAT + repr(obj).encode("ascii") + b'\n')
     dispatch[float] = save_float
 
-    def save_string(self, obj, pack=struct.pack):
-        if self.bin:
-            n = len(obj)
-            if n < 256:
-                self.write(SHORT_BINSTRING + bytes([n]) + bytes(obj))
-            else:
-                self.write(BINSTRING + pack("<i", n) + bytes(obj))
+    def save_bytes(self, obj, pack=struct.pack):
+        if self.proto < 3:
+            self.save_reduce(bytes, (list(obj),))
+            return
+        n = len(obj)
+        if n < 256:
+            self.write(SHORT_BINBYTES + bytes([n]) + bytes(obj))
         else:
-            # Strip leading 'b' due to repr() of bytes() returning b'...'
-            self.write(STRING + repr(obj).lstrip("b").encode("ascii") + b'\n')
+            self.write(BINBYTES + pack("<i", n) + bytes(obj))
         self.memoize(obj)
-    dispatch[bytes] = save_string
+    dispatch[bytes] = save_bytes
 
-    def save_unicode(self, obj, pack=struct.pack):
+    def save_str(self, obj, pack=struct.pack):
         if self.bin:
             encoded = obj.encode('utf-8')
             n = len(encoded)
@@ -518,7 +524,7 @@ class Pickler:
             self.write(UNICODE + bytes(obj.encode('raw-unicode-escape')) +
                        b'\n')
         self.memoize(obj)
-    dispatch[str] = save_unicode
+    dispatch[str] = save_str
 
     def save_tuple(self, obj):
         write = self.write
@@ -775,7 +781,7 @@ def whichmodule(func, funcname):
 
 class Unpickler:
 
-    def __init__(self, file):
+    def __init__(self, file, *, encoding="ASCII", errors="strict"):
         """This takes a binary file for reading a pickle data stream.
 
         The protocol version of the pickle is detected automatically, so no
@@ -787,10 +793,16 @@ class Unpickler:
         Thus file-like object can be a binary file object opened for
         reading, a BytesIO object, or any other custom object that
         meets this interface.
+
+        Optional keyword arguments are encoding and errors, which are
+        used to decode 8-bit string instances pickled by Python 2.x.
+        These default to 'ASCII' and 'strict', respectively.
         """
         self.readline = file.readline
         self.read = file.read
         self.memo = {}
+        self.encoding = encoding
+        self.errors = errors
 
     def load(self):
         """Read a pickled object representation from the open file.
@@ -831,7 +843,7 @@ class Unpickler:
 
     def load_proto(self):
         proto = ord(self.read(1))
-        if not 0 <= proto <= 2:
+        if not 0 <= proto <= HIGHEST_PROTOCOL:
             raise ValueError("unsupported pickle protocol: %d" % proto)
     dispatch[PROTO[0]] = load_proto
 
@@ -924,8 +936,15 @@ class Unpickler:
 
     def load_binstring(self):
         len = mloads(b'i' + self.read(4))
-        self.append(self.read(len))
+        data = self.read(len)
+        value = str(data, self.encoding, self.errors)
+        self.append(value)
     dispatch[BINSTRING[0]] = load_binstring
+
+    def load_binbytes(self):
+        len = mloads(b'i' + self.read(4))
+        self.append(self.read(len))
+    dispatch[BINBYTES[0]] = load_binbytes
 
     def load_unicode(self):
         self.append(str(self.readline()[:-1], 'raw-unicode-escape'))
@@ -938,8 +957,15 @@ class Unpickler:
 
     def load_short_binstring(self):
         len = ord(self.read(1))
-        self.append(bytes(self.read(len)))
+        data = bytes(self.read(len))
+        value = str(data, self.encoding, self.errors)
+        self.append(value)
     dispatch[SHORT_BINSTRING[0]] = load_short_binstring
+
+    def load_short_binbytes(self):
+        len = ord(self.read(1))
+        self.append(bytes(self.read(len)))
+    dispatch[SHORT_BINBYTES[0]] = load_short_binbytes
 
     def load_tuple(self):
         k = self.marker()

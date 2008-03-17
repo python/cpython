@@ -490,6 +490,12 @@ class AbstractPickleTests(unittest.TestCase):
                 u2 = self.loads(p)
                 self.assertEqual(u2, u)
 
+    def test_bytes(self):
+        for proto in protocols:
+            for u in b'', b'xyz', b'xyz'*100:
+                p = self.dumps(u)
+                self.assertEqual(self.loads(p), u)
+
     def test_ints(self):
         import sys
         for proto in protocols:
@@ -532,8 +538,8 @@ class AbstractPickleTests(unittest.TestCase):
 
     @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_float_format(self):
-        # make sure that floats are formatted locale independent
-        self.assertEqual(self.dumps(1.2)[0:3], b'F1.')
+        # make sure that floats are formatted locale independent with proto 0
+        self.assertEqual(self.dumps(1.2, 0)[0:3], b'F1.')
 
     def test_reduce(self):
         pass
@@ -624,6 +630,12 @@ class AbstractPickleTests(unittest.TestCase):
                            (2, 2): pickle.TUPLE2,
                            (2, 3): pickle.TUPLE3,
                            (2, 4): pickle.TUPLE,
+
+                           (3, 0): pickle.EMPTY_TUPLE,
+                           (3, 1): pickle.TUPLE1,
+                           (3, 2): pickle.TUPLE2,
+                           (3, 3): pickle.TUPLE3,
+                           (3, 4): pickle.TUPLE,
                           }
         a = ()
         b = (1,)
@@ -643,14 +655,17 @@ class AbstractPickleTests(unittest.TestCase):
         expected_opcode = {(0, None): pickle.NONE,
                            (1, None): pickle.NONE,
                            (2, None): pickle.NONE,
+                           (3, None): pickle.NONE,
 
                            (0, True): pickle.INT,
                            (1, True): pickle.INT,
                            (2, True): pickle.NEWTRUE,
+                           (3, True): pickle.NEWTRUE,
 
                            (0, False): pickle.INT,
                            (1, False): pickle.INT,
                            (2, False): pickle.NEWFALSE,
+                           (3, False): pickle.NEWFALSE,
                           }
         for proto in protocols:
             for x in None, False, True:
@@ -955,7 +970,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_highest_protocol(self):
         # Of course this needs to be changed when HIGHEST_PROTOCOL changes.
-        self.assertEqual(self.module.HIGHEST_PROTOCOL, 2)
+        self.assertEqual(self.module.HIGHEST_PROTOCOL, 3)
 
     def test_callapi(self):
         from io import BytesIO

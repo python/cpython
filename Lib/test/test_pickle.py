@@ -12,23 +12,19 @@ class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
     module = pickle
     error = KeyError
 
-    def dumps(self, arg, proto=0, fast=0):
-        # Ignore fast
+    def dumps(self, arg, proto=None):
         return pickle.dumps(arg, proto)
 
     def loads(self, buf):
-        # Ignore fast
         return pickle.loads(buf)
 
 class PicklerTests(AbstractPickleTests):
 
     error = KeyError
 
-    def dumps(self, arg, proto=0, fast=0):
+    def dumps(self, arg, proto=None):
         f = io.BytesIO()
         p = pickle.Pickler(f, proto)
-        if fast:
-            p.fast = fast
         p.dump(arg)
         f.seek(0)
         return bytes(f.read())
@@ -40,14 +36,12 @@ class PicklerTests(AbstractPickleTests):
 
 class PersPicklerTests(AbstractPersistentPicklerTests):
 
-    def dumps(self, arg, proto=0, fast=0):
+    def dumps(self, arg, proto=None):
         class PersPickler(pickle.Pickler):
             def persistent_id(subself, obj):
                 return self.persistent_id(obj)
         f = io.BytesIO()
         p = PersPickler(f, proto)
-        if fast:
-            p.fast = fast
         p.dump(arg)
         f.seek(0)
         return f.read()
