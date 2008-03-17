@@ -9,6 +9,12 @@ What's New in Python 3.0a4?
 
 *Release date: XX-XXX-2008*
 
+Core and Builtins
+-----------------
+
+- Bug #2301: Don't try decoding the source code into the original
+  encoding for syntax errors.
+
 Extension Modules
 -----------------
 
