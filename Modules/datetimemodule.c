@@ -1133,7 +1133,7 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 static PyObject *
 make_freplacement(PyObject *object)
 {
-	char freplacement[7];
+	char freplacement[64];
 	if (PyTime_Check(object))
 	    sprintf(freplacement, "%06d", TIME_GET_MICROSECOND(object));
 	else if (PyDateTime_Check(object))
