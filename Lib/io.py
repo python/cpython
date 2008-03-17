@@ -1203,7 +1203,7 @@ class TextIOWrapper(TextIOBase):
     # were rendered by the decoder after feeding it those bytes.  We
     # use this to reconstruct intermediate decoder states in tell().
 
-    def _seekable(self):
+    def seekable(self):
         return self._seekable
 
     def flush(self):

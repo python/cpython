@@ -895,6 +895,12 @@ class TextIOWrapperTest(unittest.TestCase):
         txt.seek(pos)
         self.assertEquals(txt.read(4), "BBB\n")
 
+    def test_issue2282(self):
+        buffer = io.BytesIO(self.testdata)
+        txt = io.TextIOWrapper(buffer, encoding="ascii")
+
+        self.assertEqual(buffer.seekable(), txt.seekable())
+
     def test_newline_decoder(self):
         import codecs
         decoder = codecs.getincrementaldecoder("utf-8")()
