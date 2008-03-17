@@ -198,7 +198,7 @@ as necessary to represent the exponent.
 /**
  * PyOS_ascii_formatd:
  * @buffer: A buffer to place the resulting string in
- * @buf_len: The length of the buffer.
+ * @buf_size: The length of the buffer.
  * @format: The printf()-style format to use for the
  *          code to use for converting. 
  * @d: The #gdouble to convert
@@ -209,12 +209,14 @@ as necessary to represent the exponent.
  * specifiers are 'e', 'E', 'f', 'F', 'g', 'G', and 'n'.
  * 
  * 'n' is the same as 'g', except it uses the current locale.
+ * 'Z' is the same as 'g', except it always has a decimal and
+ *     at least one digit after the decimal.
  *
  * Return value: The pointer to the buffer with the converted string.
  **/
 char *
 PyOS_ascii_formatd(char       *buffer, 
-		   size_t      buf_len, 
+		   size_t      buf_size, 
 		   const char *format, 
 		   double      d)
 {
@@ -227,19 +229,12 @@ PyOS_ascii_formatd(char       *buffer,
 	   can't modify it directly.  FLOAT_FORMATBUFLEN should be longer than
 	   we ever need this to be.  There's an upcoming check to ensure it's
 	   big enough. */
+	/* Issue 2264: code 'Z' requires copying the format.  'Z' is 'g', but
+	   also with at least one character past the decimal. */
 	char tmp_format[FLOAT_FORMATBUFLEN];
-
-/* 	g_return_val_if_fail (buffer != NULL, NULL); */
-/* 	g_return_val_if_fail (format[0] == '%', NULL); */
-/* 	g_return_val_if_fail (strpbrk (format + 1, "'l%") == NULL, NULL); */
 
 	/* The last character in the format string must be the format char */
 	format_char = format[format_len - 1];
-
-/* 	g_return_val_if_fail (format_char == 'e' || format_char == 'E' || */
-/* 			      format_char == 'f' || format_char == 'F' || */
-/* 			      format_char == 'g' || format_char == 'G', */
-/* 			      NULL); */
 
 	if (format[0] != '%')
 		return NULL;
@@ -251,15 +246,20 @@ PyOS_ascii_formatd(char       *buffer,
 	if (strpbrk(format + 1, "'l%"))
 		return NULL;
 
+	/* Also curious about this function is that it accepts format strings
+	   like "%xg", which are invalid for floats.  In general, the
+	   interface to this function is not very good, but changing it is
+	   difficult because it's a public API. */
+
 	if (!(format_char == 'e' || format_char == 'E' || 
 	      format_char == 'f' || format_char == 'F' || 
 	      format_char == 'g' || format_char == 'G' ||
-	      format_char == 'n'))
+	      format_char == 'n' || format_char == 'Z'))
 		return NULL;
 
-	/* Map 'n' format_char to 'g', by copying the format string and
-	   replacing the final 'n' with a 'g' */
-	if (format_char == 'n') {
+	/* Map 'n' or 'Z' format_char to 'g', by copying the format string and
+	   replacing the final char with a 'g' */
+	if (format_char == 'n' || format_char == 'Z') {
 		if (format_len + 1 >= sizeof(tmp_format)) {
 			/* The format won't fit in our copy.  Error out.  In
 			   practice, this will never happen and will be detected
@@ -271,8 +271,9 @@ PyOS_ascii_formatd(char       *buffer,
 		format = tmp_format;
 	}
 
+
 	/* Have PyOS_snprintf do the hard work */
-	PyOS_snprintf(buffer, buf_len, format, d);
+	PyOS_snprintf(buffer, buf_size, format, d);
 
 	/* Get the current local, and find the decimal point character (or
 	   string?).  Convert that string back to a dot.  Do not do this if
@@ -360,10 +361,53 @@ PyOS_ascii_formatd(char       *buffer,
 			   until there are 2, if there's enough room */
 			int zeros = MIN_EXPONENT_DIGITS - exponent_digit_cnt;
 			if (start + zeros + exponent_digit_cnt + 1
-			      < buffer + buf_len) {
+			      < buffer + buf_size) {
 				memmove(start + zeros, start,
 					exponent_digit_cnt + 1);
 				memset(start, '0', zeros);
+			}
+		}
+	}
+
+	/* If format_char is 'Z', make sure we have at least one character
+	   after the decimal point (and make sure we have a decimal point). */
+	if (format_char == 'Z') {
+		int insert_count = 0;
+		char* chars_to_insert;
+
+		/* search for the first non-digit character */
+		p = buffer;
+		while (*p && isdigit(Py_CHARMASK(*p)))
+			++p;
+
+		if (*p == '.') {
+			if (isdigit(Py_CHARMASK(*(p+1)))) {
+				/* Nothing to do, we already have a decimal
+				   point and a digit after it */
+			}
+			else {
+				/* We have a decimal point, but no following
+				   digit.  Insert a zero after the decimal. */
+				++p;
+				chars_to_insert = "0";
+				insert_count = 1;
+			}
+		}
+		else {
+			chars_to_insert = ".0";
+			insert_count = 2;
+		}
+		if (insert_count) {
+			size_t buf_len = strlen(buffer);
+			if (buf_len + insert_count + 1 >= buf_size) {
+				/* If there is not enough room in the buffer
+				   for the additional text, just skip it.  It's
+				   not worth generating an error over. */
+			}
+			else {
+				memmove(p + insert_count, p,
+					buffer + strlen(buffer) - p + 1);
+				memcpy(p, chars_to_insert, insert_count);
 			}
 		}
 	}
