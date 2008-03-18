@@ -75,6 +75,8 @@ Library
 Tests
 -----
 
+- GHOP 293: Convert test_strftime, test_getargs, and test_pep247 to unittest.
+
 - Issue #2055: Convert test_fcntl to unittest.
 
 - Issue 1960: Convert test_gdbm to unittest.
