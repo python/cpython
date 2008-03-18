@@ -10,6 +10,12 @@ import subprocess
 import time
 import os
 import urllib
+import warnings
+
+warnings.filterwarnings(
+    'ignore',
+    'socket.ssl.. is deprecated.  Use ssl.wrap_socket.. instead.',
+    DeprecationWarning)
 
 # Optionally test SSL support, if we have it in the tested platform
 skip_expected = not hasattr(socket, "ssl")
