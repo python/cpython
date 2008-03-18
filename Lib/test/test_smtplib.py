@@ -348,11 +348,11 @@ class SMTPSimTests(TestCase):
 
     def testBasic(self):
         # smoke test
-        smtp = smtplib.SMTP(HOST, PORT, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, PORT, local_hostname='localhost', timeout=15)
         smtp.quit()
 
     def testEHLO(self):
-        smtp = smtplib.SMTP(HOST, PORT, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, PORT, local_hostname='localhost', timeout=15)
 
         # no features should be present before the EHLO
         self.assertEqual(smtp.esmtp_features, {})
@@ -373,7 +373,7 @@ class SMTPSimTests(TestCase):
         smtp.quit()
 
     def testVRFY(self):
-        smtp = smtplib.SMTP(HOST, PORT, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, PORT, local_hostname='localhost', timeout=15)
 
         for email, name in sim_users.items():
             expected_known = (250, '%s %s' % (name, smtplib.quoteaddr(email)))
@@ -385,7 +385,7 @@ class SMTPSimTests(TestCase):
         smtp.quit()
 
     def testEXPN(self):
-        smtp = smtplib.SMTP(HOST, PORT, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, PORT, local_hostname='localhost', timeout=15)
 
         for listname, members in sim_lists.items():
             users = []
