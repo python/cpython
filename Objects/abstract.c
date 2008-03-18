@@ -2909,6 +2909,11 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	static PyObject *name = NULL;
 	PyObject *t, *v, *tb;
 	PyObject *checker;
+
+	/* Quick test for an exact match */
+	if (Py_TYPE(inst) == cls)
+		return 1;
+
 	PyErr_Fetch(&t, &v, &tb);
 
 	if (name == NULL) {
