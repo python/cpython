@@ -2,6 +2,10 @@
   This file should be kept compatible with Python 2.3, see PEP 291.
  *****************************************************************/
 
+#if defined (__SVR4) && defined (__sun)
+#   include <alloca.h>
+#endif
+
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
 #define PyInt_FromSsize_t PyInt_FromLong
