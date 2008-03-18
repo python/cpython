@@ -11,7 +11,6 @@ Command line options:
 -v: verbose    -- run tests in verbose mode with output to stdout
 -w: verbose2   -- re-run failed tests in verbose mode
 -q: quiet      -- don't print anything except if a test fails
--g: generate   -- write the output file for a test instead of comparing it
 -x: exclude    -- arguments are tests to *exclude*
 -s: single     -- run only a single test (see below)
 -r: random     -- randomize test execution order
@@ -206,8 +205,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     test_support.record_original_stdout(sys.stdout)
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TD:NLR:wM:',
-                                   ['help', 'verbose', 'quiet', 'generate',
-                                    'exclude', 'single', 'random', 'fromfile',
+                                   ['help', 'verbose', 'quiet', 'exclude',
+                                    'single', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
                                     'coverdir=', 'nocoverdir', 'runleaks',
                                     'huntrleaks=', 'verbose2', 'memlimit=',
@@ -228,8 +227,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
-        elif o in ('-g', '--generate'):
-            generate = True
         elif o in ('-x', '--exclude'):
             exclude = True
         elif o in ('-s', '--single'):
@@ -285,8 +282,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                         use_resources.remove(r)
                 elif r not in use_resources:
                     use_resources.append(r)
-    if generate and verbose:
-        usage(2, "-g and -v don't go together!")
     if single and fromfile:
         usage(2, "-s and -f don't go together!")
 
@@ -404,9 +399,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         if not bad and not skipped and len(good) > 1:
             print "All",
         print count(len(good), "test"), "OK."
-        if verbose:
-            print "CAUTION:  stdout isn't compared in verbose mode:"
-            print "a test that passes in verbose mode may fail without it."
     if bad:
         print count(len(bad), "test"), "failed:"
         printlist(bad)
@@ -504,8 +496,6 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
     """Run a single test.
 
     test -- the name of the test
-    generate -- if true, generate output, instead of running the test
-                and comparing it to a previously created output file
     verbose -- if true, print more messages
     quiet -- if true, don't print 'skipped' messages (probably redundant)
     testdir -- test directory
@@ -529,8 +519,6 @@ def runtest_inner(test, generate, verbose, quiet,
     test_support.unload(test)
     if not testdir:
         testdir = findtestdir()
-    outputdir = os.path.join(testdir, "output")
-    outputfile = os.path.join(outputdir, test)
     if verbose:
         cfp = None
     else:
@@ -587,27 +575,7 @@ def runtest_inner(test, generate, verbose, quiet,
         if not cfp:
             return 1
         output = cfp.getvalue()
-        if generate:
-            if output == test + "\n":
-                if os.path.exists(outputfile):
-                    # Write it since it already exists (and the contents
-                    # may have changed), but let the user know it isn't
-                    # needed:
-                    print "output file", outputfile, \
-                          "is no longer needed; consider removing it"
-                else:
-                    # We don't need it, so don't create it.
-                    return 1
-            fp = open(outputfile, "w")
-            fp.write(output)
-            fp.close()
-            return 1
-        if os.path.exists(outputfile):
-            fp = open(outputfile, "r")
-            expected = fp.read()
-            fp.close()
-        else:
-            expected = test + "\n"
+        expected = test + "\n"
         if output == expected or huntrleaks:
             return 1
         print "test", test, "produced unexpected output:"
