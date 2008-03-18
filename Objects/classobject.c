@@ -2242,7 +2242,11 @@ static PyMemberDef instancemethod_memberlist[] = {
 	 "the class associated with a method"},
 	{"im_func",	T_OBJECT,	OFF(im_func),	READONLY|RESTRICTED,
 	 "the function (or other callable) implementing a method"},
+	{"__func__",	T_OBJECT,	OFF(im_func),	READONLY|RESTRICTED,
+	 "the function (or other callable) implementing a method"},
 	{"im_self",	T_OBJECT,	OFF(im_self),	READONLY|RESTRICTED,
+	 "the instance to which a method is bound; None for unbound methods"},
+	{"__self__",	T_OBJECT,	OFF(im_self),	READONLY|RESTRICTED,
 	 "the instance to which a method is bound; None for unbound methods"},
 	{NULL}	/* Sentinel */
 };
