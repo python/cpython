@@ -1,4 +1,5 @@
-"""Test the internal getargs.c implementation
+"""
+Test the internal getargs.c implementation
 
  PyArg_ParseTuple() is defined here.
 
@@ -11,14 +12,23 @@ single case that failed between 2.1 and 2.2a2.
 # verify that the error is propagated properly from the C code back to
 # Python.
 
-# XXX If the encoding succeeds using the current default encoding,
-# this test will fail because it does not test the right part of the
-# PyArg_ParseTuple() implementation.
-from test.test_support import have_unicode
 import marshal
+import unittest
+from test import test_support
 
-if have_unicode:
-    try:
-        marshal.loads(unicode(r"\222", 'unicode-escape'))
-    except UnicodeError:
-        pass
+class GetArgsTest(unittest.TestCase):
+    # If the encoding succeeds using the current default encoding,
+    # this test will fail because it does not test the right part of the
+    # PyArg_ParseTuple() implementation.
+    def test_with_marshal(self):
+        if not test_support.have_unicode:
+            return
+
+        arg = unicode(r'\222', 'unicode-escape')
+        self.assertRaises(UnicodeError, marshal.loads, arg)
+
+def test_main():
+    test_support.run_unittest(GetArgsTest)
+
+if __name__ == '__main__':
+    test_main()
