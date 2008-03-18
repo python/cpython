@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
+- Issue 2332: add new attribute names for instance method objects.
+  The two changes are:  im_self -> __self__ and im_func -> __func__
+
 - Issue 2379: Raise a Py3K warning for __getitem__ or __getslice__ on
   exception instances.
 
