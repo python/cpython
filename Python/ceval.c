@@ -3161,6 +3161,15 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 			     type->ob_type->tp_name);
 		goto raise_error;
 	}
+
+	assert(PyExceptionClass_Check(type));
+	if (Py_Py3kWarningFlag && PyClass_Check(type)) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+			       "exceptions must derive from BaseException "
+			       "in 3.x") == -1)
+			goto raise_error;
+	}
+
 	PyErr_Restore(type, value, tb);
 	if (tb == NULL)
 		return WHY_EXCEPTION;
