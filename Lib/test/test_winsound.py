@@ -26,8 +26,16 @@ class BeepTest(unittest.TestCase):
             winsound.Beep(37, 75)
             winsound.Beep(32767, 75)
         else:
-            self.assertRaises(RuntimeError, winsound.Beep, 37, 75)
-            self.assertRaises(RuntimeError, winsound.Beep, 32767, 75)
+            # The behaviour of winsound.Beep() seems to differ between
+            # different versions of Windows when there's either a) no
+            # sound card entirely, b) legacy beep driver has been disabled,
+            # or c) the legacy beep driver has been uninstalled.  Sometimes
+            # RuntimeErrors are raised, sometimes they're not.  Meh.
+            try:
+                winsound.Beep(37, 75)
+                winsound.Beep(32767, 75)
+            except RuntimeError:
+                pass
 
     def test_increasingfrequency(self):
         if _have_soundcard():
