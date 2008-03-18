@@ -1776,8 +1776,14 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
 			return NULL;
 		res = (cmp == (op == Py_EQ)) ? Py_True : Py_False;
 	}
-	else
+	else {
+		/* Py3K warning if comparison isn't == or !=  */
+		if (Py_Py3kWarningFlag && PyErr_Warn(PyExc_DeprecationWarning,
+				"dict inequality comparisons not supported in 3.x.") < 0) {
+			return NULL;
+		}
 		res = Py_NotImplemented;
+	}
 	Py_INCREF(res);
 	return res;
  }

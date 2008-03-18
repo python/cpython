@@ -593,6 +593,48 @@ type_compare(PyObject *v, PyObject *w)
 	return (vv < ww) ? -1 : (vv > ww) ? 1 : 0;
 }
 
+static PyObject*
+type_richcompare(PyObject *v, PyObject *w, int op)
+{
+	PyObject *result;
+	Py_uintptr_t vv, ww;
+	int c;
+
+	/* Make sure both arguments are types. */
+	if (!PyType_Check(v) || !PyType_Check(w)) {
+		result = Py_NotImplemented;
+		goto out;
+	}
+
+	/* Py3K warning if comparison isn't == or !=  */
+	if (Py_Py3kWarningFlag && op != Py_EQ && op != Py_NE &&
+		PyErr_Warn(PyExc_DeprecationWarning,
+			"type inequality comparisons not supported in 3.x.") < 0) {
+		return NULL;
+	}
+
+	/* Compare addresses */
+	vv = (Py_uintptr_t)v;
+	ww = (Py_uintptr_t)w;
+	switch (op) {
+	case Py_LT: c = vv <  ww; break;
+	case Py_LE: c = vv <= ww; break;
+	case Py_EQ: c = vv == ww; break;
+	case Py_NE: c = vv != ww; break;
+	case Py_GT: c = vv >  ww; break;
+	case Py_GE: c = vv >= ww; break;
+	default:
+		result = Py_NotImplemented;
+		goto out;
+	}
+	result = c ? Py_True : Py_False;
+
+  /* incref and return */
+  out:
+	Py_INCREF(result);
+	return result;
+}
+
 static PyObject *
 type_repr(PyTypeObject *type)
 {
@@ -2666,7 +2708,7 @@ PyTypeObject PyType_Type = {
 	type_doc,				/* tp_doc */
 	(traverseproc)type_traverse,		/* tp_traverse */
 	(inquiry)type_clear,			/* tp_clear */
-	0,					/* tp_richcompare */
+	type_richcompare,					/* tp_richcompare */
 	offsetof(PyTypeObject, tp_weaklist),	/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
