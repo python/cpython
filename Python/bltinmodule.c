@@ -1486,6 +1486,78 @@ With two arguments, equivalent to x**y.  With three arguments,\n\
 equivalent to (x**y) % z, but may be more efficient (e.g. for longs).");
 
 
+static PyObject *
+builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	static char *kwlist[] = {"sep", "end", "file", 0};
+	static PyObject *dummy_args;
+	PyObject *sep = NULL, *end = NULL, *file = NULL;
+	int i, err;
+
+	if (dummy_args == NULL) {
+		if (!(dummy_args = PyTuple_New(0)))
+			return NULL;
+	}
+	if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:print",
+					 kwlist, &sep, &end, &file))
+		return NULL;
+	if (file == NULL || file == Py_None) {
+		file = PySys_GetObject("stdout");
+		/* sys.stdout may be None when FILE* stdout isn't connected */
+		if (file == Py_None)
+			Py_RETURN_NONE;
+	}
+
+	if (sep && sep != Py_None && !PyString_Check(sep) &&
+            !PyUnicode_Check(sep)) {
+		PyErr_Format(PyExc_TypeError,
+			     "sep must be None, str or unicode, not %.200s",
+			     sep->ob_type->tp_name);
+		return NULL;
+	}
+	if (end && end != Py_None && !PyString_Check(end) &&
+	    !PyUnicode_Check(end)) {
+		PyErr_Format(PyExc_TypeError,
+			     "end must be None, str or unicode, not %.200s",
+			     end->ob_type->tp_name);
+		return NULL;
+	}
+
+	for (i = 0; i < PyTuple_Size(args); i++) {
+		if (i > 0) {
+			if (sep == NULL || sep == Py_None)
+				err = PyFile_WriteString(" ", file);
+			else
+				err = PyFile_WriteObject(sep, file,
+							 Py_PRINT_RAW);
+			if (err)
+				return NULL;
+		}
+		err = PyFile_WriteObject(PyTuple_GetItem(args, i), file,
+					 Py_PRINT_RAW);
+		if (err)
+			return NULL;
+	}
+
+	if (end == NULL || end == Py_None)
+		err = PyFile_WriteString("\n", file);
+	else
+		err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
+	if (err)
+		return NULL;
+
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(print_doc,
+"print(value, ..., sep=' ', end='\\n', file=sys.stdout)\n\
+\n\
+Prints the values to a stream, or to sys.stdout by default.\n\
+Optional keyword arguments:\n\
+file: a file-like object (stream); defaults to the current sys.stdout.\n\
+sep:  string inserted between values, default a space.\n\
+end:  string appended after the last value, default a newline.");
+
 
 /* Return number of items in range (lo, hi, step), when arguments are
  * PyInt or PyLong objects.  step > 0 required.  Return a value < 0 if
@@ -2424,6 +2496,7 @@ static PyMethodDef builtin_methods[] = {
  	{"open",	(PyCFunction)builtin_open,       METH_VARARGS | METH_KEYWORDS, open_doc},
  	{"ord",		builtin_ord,        METH_O, ord_doc},
  	{"pow",		builtin_pow,        METH_VARARGS, pow_doc},
+ 	{"print",	(PyCFunction)builtin_print,      METH_VARARGS | METH_KEYWORDS, print_doc},
  	{"range",	builtin_range,      METH_VARARGS, range_doc},
  	{"raw_input",	builtin_raw_input,  METH_VARARGS, raw_input_doc},
  	{"reduce",	builtin_reduce,     METH_VARARGS, reduce_doc},

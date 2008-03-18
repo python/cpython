@@ -27,6 +27,10 @@ typedef struct {
 #define PyPARSE_WITH_IS_KEYWORD		0x0003
 #endif
 
+#define PyPARSE_PRINT_IS_FUNCTION       0x0004
+
+
+
 PyAPI_FUNC(node *) PyParser_ParseString(const char *, grammar *, int,
                                               perrdetail *);
 PyAPI_FUNC(node *) PyParser_ParseFile (FILE *, const char *, grammar *, int,
