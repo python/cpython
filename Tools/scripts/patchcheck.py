@@ -33,7 +33,7 @@ def changed_files():
     cmd = 'svn status --quiet --non-interactive --ignore-externals'
     svn_st = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     svn_st.wait()
-    output = [line.strip() for line in svn_st.stdout.readlines()]
+    output = [x.decode().rstrip() for x in svn_st.stdout.readlines()]
     files = set()
     for line in output:
         if not line[0] in ('A', 'M'):
