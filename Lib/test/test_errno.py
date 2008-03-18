@@ -42,7 +42,8 @@ class ErrnoAttributeTests(unittest.TestCase):
         errors_set = set(errors)
         for attribute in errno.__dict__.iterkeys():
             if attribute.isupper():
-                self.assert_(attribute in errors_set)
+                self.assert_(attribute in errors_set,
+                                "%s is an unexpected error value" % attribute)
 
     def test_using_errorcode(self):
         # Every key value in errno.errorcode should be on the module.
