@@ -13,12 +13,14 @@ class DictTest(unittest.TestCase):
 
     def test_literal_constructor(self):
         # check literal constructor for different sized dicts (to exercise the BUILD_MAP oparg
-        items = []
-        for n in range(400):
+        for n in (0, 1, 6, 256, 400):
+            items = [(''.join([random.choice(string.ascii_letters)
+                               for j in range(8)]),
+                      i)
+                     for i in range(n)]
+            random.shuffle(items)
             dictliteral = '{' + ', '.join('%r: %d' % item for item in items) + '}'
             self.assertEqual(eval(dictliteral), dict(items))
-            items.append((''.join([random.choice(string.ascii_letters) for j in range(8)]), n))
-            random.shuffle(items)
 
     def test_bool(self):
         self.assert_(not {})

@@ -1,56 +1,67 @@
-#
-# Test suite to check compliance with PEP 247, the standard API for
-# hashing algorithms.
-#
+"""
+Test suite to check compilance with PEP 247, the standard API
+for hashing algorithms
+"""
 
+import warnings
+warnings.filterwarnings('ignore', 'the md5 module is deprecated.*',
+                        DeprecationWarning)
+warnings.filterwarnings('ignore', 'the sha module is deprecated.*',
+                        DeprecationWarning)
 import hmac
+import md5
+import sha
+import unittest
+from test import test_support
 
-import hmac
-from test.test_support import verbose
+class Pep247Test(unittest.TestCase):
 
-def check_hash_module(module, key=None):
-    assert hasattr(module, 'digest_size'), "Must have digest_size"
-    assert (module.digest_size is None or
-            module.digest_size > 0), "digest_size must be None or positive"
+    def check_module(self, module, key=None):
+        self.assert_(hasattr(module, 'digest_size'))
+        self.assert_(module.digest_size is None or module.digest_size > 0)
+        if not key is None:
+            obj1 = module.new(key)
+            obj2 = module.new(key, 'string')
+            h1 = module.new(key, 'string').digest()
+            obj3 = module.new(key)
+            obj3.update('string')
+            h2 = obj3.digest()
+        else:
+            obj1 = module.new()
+            obj2 = module.new('string')
+            h1 = module.new('string').digest()
+            obj3 = module.new()
+            obj3.update('string')
+            h2 = obj3.digest()
+        self.assertEquals(h1, h2)
+        self.assert_(hasattr(obj1, 'digest_size'))
 
-    if key is not None:
-        obj1 = module.new(key)
-        obj2 = module.new(key, b"string")
+        if not module.digest_size is None:
+            self.assertEquals(obj1.digest_size, module.digest_size)
 
-        h1 = module.new(key, b"string").digest()
-        obj3 = module.new(key) ; obj3.update(b"string") ; h2 = obj3.digest()
-        assert h1 == h2, "Hashes must match"
+        self.assertEquals(obj1.digest_size, len(h1))
+        obj1.update('string')
+        obj_copy = obj1.copy()
+        self.assertEquals(obj1.digest(), obj_copy.digest())
+        self.assertEquals(obj1.hexdigest(), obj_copy.hexdigest())
 
-    else:
-        obj1 = module.new()
-        obj2 = module.new(b"string")
+        digest, hexdigest = obj1.digest(), obj1.hexdigest()
+        hd2 = ""
+        for byte in digest:
+            hd2 += '%02x' % ord(byte)
+        self.assertEquals(hd2, hexdigest)
 
-        h1 = module.new(b"string").digest()
-        obj3 = module.new() ; obj3.update(b"string") ; h2 = obj3.digest()
-        assert h1 == h2, "Hashes must match"
+    def test_md5(self):
+        self.check_module(md5)
 
-    assert hasattr(obj1, 'digest_size'), "Objects must have digest_size attr"
-    if module.digest_size is not None:
-        assert obj1.digest_size == module.digest_size, "digest_size must match"
-    assert obj1.digest_size == len(h1), "digest_size must match actual size"
-    obj1.update(b"string")
-    obj_copy = obj1.copy()
-    assert obj1.digest() == obj_copy.digest(), "Copied objects must match"
-    assert obj1.hexdigest() == obj_copy.hexdigest(), \
-           "Copied objects must match"
-    digest, hexdigest = obj1.digest(), obj1.hexdigest()
-    hd2 = ""
-    for byte in digest:
-        hd2 += "%02x" % byte
-    assert hd2 == hexdigest, "hexdigest doesn't appear correct"
+    def test_sha(self):
+        self.check_module(sha)
 
-    if verbose:
-        print('Module', module.__name__, 'seems to comply with PEP 247')
-
+    def test_hmac(self):
+        self.check_module(hmac, key='abc')
 
 def test_main():
-    check_hash_module(hmac, key=b'abc')
-
+    test_support.run_unittest(Pep247Test)
 
 if __name__ == '__main__':
     test_main()

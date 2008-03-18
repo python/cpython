@@ -1000,6 +1000,22 @@ functions based on regular expressions.
    Return the numeric string left filled with zeros in a string of length
    *width*.  A sign prefix is handled correctly.  The original string is
    returned if *width* is less than ``len(s)``.
+
+
+.. method:: str.isnumeric()
+
+   Return ``True`` if there are only numeric characters in S, ``False``
+   otherwise. Numeric characters include digit characters, and all characters
+   that have the Unicode numeric value property, e.g. U+2155,
+   VULGAR FRACTION ONE FIFTH.
+
+   
+.. method:: str.isdecimal()
+
+   Return ``True`` if there are only decimal characters in S, ``False``
+   otherwise. Decimal characters include digit characters, and all characters
+   that that can be used to form decimal-radix numbers, e.g. U+0660,
+   ARABIC-INDIC DIGIT ZERO.
    
 
 

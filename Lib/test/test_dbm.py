@@ -1,61 +1,40 @@
-#! /usr/bin/env python
-"""Test script for the dbm module
-   Roger E. Masse
-"""
+from test import test_support
+import unittest
 import os
+import random
 import dbm
 from dbm import error
-from test.test_support import verbose, verify, TestSkipped, TESTFN
 
-# make filename unique to allow multiple concurrent tests
-# and to minimize the likelihood of a problem from an old file
-filename = TESTFN
+class DbmTestCase(unittest.TestCase):
 
-def cleanup():
-    for suffix in ['', '.pag', '.dir', '.db']:
-        try:
-            os.unlink(filename + suffix)
-        except OSError as e:
-            (errno, strerror) = e.errno, e.strerror
-            # if we can't delete the file because of permissions,
-            # nothing will work, so skip the test
-            if errno == 1:
-                raise TestSkipped('unable to remove: ' + filename + suffix)
+    def setUp(self):
+        self.filename = test_support.TESTFN
+        self.d = dbm.open(self.filename, 'c')
+        self.d.close()
 
-def test_keys():
-    d = dbm.open(filename, 'c')
-    verify(d.keys() == [])
-    d[b'a'] = b'b'
-    d[b'12345678910'] = b'019237410982340912840198242'
-    d.keys()
-    if b'a' in d:
-        if verbose:
-            print('Test dbm keys: ', d.keys())
+    def tearDown(self):
+        for suffix in ['', '.pag', '.dir', '.db']:
+            test_support.unlink(self.filename + suffix)
 
-    d.close()
+    def test_keys(self):
+        self.d = dbm.open(self.filename, 'c')
+        self.assert_(self.d.keys() == [])
+        self.d['a'] = 'b'
+        self.d['12345678910'] = '019237410982340912840198242'
+        self.d.keys()
+        self.assert_(b'a' in self.d)
+        self.d.close()
 
-def test_modes():
-    d = dbm.open(filename, 'r')
-    d.close()
-    d = dbm.open(filename, 'rw')
-    d.close()
-    d = dbm.open(filename, 'w')
-    d.close()
-    d = dbm.open(filename, 'n')
-    d.close()
+    def test_modes(self):
+        for mode in ['r', 'rw', 'w', 'n']:
+            try:
+                self.d = dbm.open(self.filename, mode)
+                self.d.close()
+            except dbm.error:
+                self.fail()
 
 def test_main():
-    cleanup()
-    try:
-        test_keys()
-        test_modes()
-    except:
-        cleanup()
-        raise
-
-    cleanup()
-
-
+    test_support.run_unittest(DbmTestCase)
 
 if __name__ == '__main__':
     test_main()

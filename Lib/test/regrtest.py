@@ -12,10 +12,9 @@ Command line options:
 -w: verbose2   -- re-run failed tests in verbose mode
 -d: debug      -- print traceback for failed tests
 -q: quiet      -- don't print anything except if a test fails
--g: generate   -- write the output file for a test instead of comparing it
 -x: exclude    -- arguments are tests to *exclude*
 -s: single     -- run only a single test (see below)
--S: start      -- start running all the tests with the specified one first
+-S: slow       -- print the slowest 10 tests
 -r: random     -- randomize test execution order
 -f: fromfile   -- read names of tests to run from a file (see below)
 -l: findleaks  -- if GC is available detect tests that leak memory
@@ -127,14 +126,15 @@ example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
 """
 
-import os
-import sys
 import getopt
+import os
 import random
-import warnings
 import re
 import io
+import sys
+import time
 import traceback
+import warnings
 from inspect import isabstract
 
 # I see no other way to suppress these warnings;
@@ -186,8 +186,7 @@ def usage(msg):
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
-         runleaks=False, huntrleaks=None, verbose2=False, debug=False,
-         start=None):
+         runleaks=False, huntrleaks=False, verbose2=False, print_slow=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -204,17 +203,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     command-line will be used.  If that's empty, too, then all *.py
     files beginning with test_ will be used.
 
-    The other default arguments (verbose, quiet, generate, exclude, single,
-    randomize, findleaks, use_resources, trace and coverdir) allow programmers
-    calling main() directly to set the values that would normally be set by
-    flags on the command line.
+    The other default arguments (verbose, quiet, generate, exclude,
+    single, randomize, findleaks, use_resources, trace, coverdir, and
+    print_slow) allow programmers calling main() directly to set the
+    values that would normally be set by flags on the command line.
     """
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'dhvgqxsS:rf:lu:t:TD:NLR:wM:n',
-                                   ['help', 'verbose', 'quiet', 'generate',
-                                    'exclude', 'single', 'random', 'fromfile',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsSrf:lu:t:TD:NLR:wM:',
+                                   ['help', 'verbose', 'quiet', 'exclude',
+                                    'single', 'slow', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
                                     'coverdir=', 'nocoverdir', 'runleaks',
                                     'huntrleaks=', 'verbose2', 'memlimit=',
@@ -239,14 +238,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
-        elif o in ('-g', '--generate'):
-            generate = True
         elif o in ('-x', '--exclude'):
             exclude = True
         elif o in ('-S', '--start'):
             start = a
         elif o in ('-s', '--single'):
             single = True
+        elif o in ('-S', '--slow'):
+            print_slow = True
         elif o in ('-r', '--randomize'):
             randomize = True
         elif o in ('-f', '--fromfile'):
@@ -376,18 +375,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     tests = tests or args or findtests(testdir, stdtests, nottests)
     if single:
         tests = tests[:1]
-    # Remove all the tests that precede start if it's set.
-    if start:
-        try:
-            del tests[:tests.index(start)]
-        except ValueError:
-            print("Couldn't find starting test (%s), using all tests" % start)
+    ## Remove all the tests that precede start if it's set.
+    #if start:
+    #   try:
+    #        del tests[:tests.index(start)]
+    #    except ValueError:
+    #        print("Couldn't find starting test (%s), using all tests" % start)
     if randomize:
         random.shuffle(tests)
     if trace:
         import trace
         tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
                              trace=False, count=True)
+    test_times = []
     test_support.verbose = verbose      # Tell tests to be moderately quiet
     test_support.use_resources = use_resources
     save_modules = sys.modules.keys()
@@ -398,12 +398,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         if trace:
             # If we're tracing code coverage, then we don't exit with status
             # if on a false return value from main.
-            tracer.runctx('runtest(test, generate, verbose, quiet, testdir)',
+            tracer.runctx('runtest(test, generate, verbose, quiet,'
+                          '        test_times, testdir)',
                           globals=globals(), locals=vars())
         else:
             try:
-                ok = runtest(test, generate, verbose, quiet, testdir,
-                             huntrleaks)
+                ok = runtest(test, generate, verbose, quiet, test_times,
+                             testdir, huntrleaks)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print()
@@ -444,6 +445,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         if verbose:
             print("CAUTION:  stdout isn't compared in verbose mode:")
             print("a test that passes in verbose mode may fail without it.")
+    if print_slow:
+        test_times.sort(reverse=True)
+        print("10 slowest tests:")
+        for time, test in test_times[:10]:
+            print("%s: %.1fs" % (test, time))
     if bad:
         print(count(len(bad), "test"), "failed:")
         printlist(bad)
@@ -537,15 +543,14 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate, verbose, quiet, testdir=None,
-            huntrleaks=None, debug=False):
+def runtest(test, generate, verbose, quiet, test_times,
+            testdir=None, huntrleaks=False):
     """Run a single test.
 
     test -- the name of the test
-    generate -- if true, generate output, instead of running the test
-                and comparing it to a previously created output file
     verbose -- if true, print more messages
     quiet -- if true, don't print 'skipped' messages (probably redundant)
+    test_times -- a list of (time, test_name) pairs
     testdir -- test directory
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
@@ -559,13 +564,13 @@ def runtest(test, generate, verbose, quiet, testdir=None,
     """
 
     try:
-        return runtest_inner(test, generate, verbose, quiet, testdir,
-                             huntrleaks, debug)
+        return runtest_inner(test, generate, verbose, quiet, test_times,
+                             testdir, huntrleaks)
     finally:
         cleanup_test_droppings(test, verbose)
 
-def runtest_inner(test, generate, verbose, quiet,
-                     testdir=None, huntrleaks=None, debug=False):
+def runtest_inner(test, generate, verbose, quiet, test_times,
+                  testdir=None, huntrleaks=False, debug=False):
     test_support.unload(test)
     if not testdir:
         testdir = findtestdir()
@@ -587,6 +592,7 @@ def runtest_inner(test, generate, verbose, quiet,
             else:
                 # Always import it from the test package
                 abstest = 'test.' + test
+            start_time = time.time()
             the_package = __import__(abstest, globals(), locals(), [])
             the_module = getattr(the_package, test)
             # Old tests run to completion simply as a side-effect of
@@ -597,6 +603,8 @@ def runtest_inner(test, generate, verbose, quiet,
                 indirect_test()
             if huntrleaks:
                 dash_R(the_module, test, indirect_test, huntrleaks)
+            test_time = time.time() - start_time
+            test_times.append((test_time, test))
         finally:
             sys.stdout = save_stdout
     except test_support.ResourceDenied as msg:
@@ -648,6 +656,7 @@ def runtest_inner(test, generate, verbose, quiet,
             fp.close()
         else:
             expected = test + "\n"
+        expected = test + "\n"
         if output == expected or huntrleaks:
             return 1
         print("test", test, "produced unexpected output:")

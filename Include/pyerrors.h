@@ -152,6 +152,8 @@ PyAPI_DATA(PyObject *) PyExc_WindowsError;
 PyAPI_DATA(PyObject *) PyExc_VMSError;
 #endif
 
+PyAPI_DATA(PyObject *) PyExc_BufferError;
+
 PyAPI_DATA(PyObject *) PyExc_MemoryErrorInst;
 PyAPI_DATA(PyObject *) PyExc_RecursionErrorInst;
 

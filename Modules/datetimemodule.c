@@ -1173,7 +1173,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 static PyObject *
 make_freplacement(PyObject *object)
 {
-	char freplacement[7];
+	char freplacement[64];
 	if (PyTime_Check(object))
 	    sprintf(freplacement, "%06d", TIME_GET_MICROSECOND(object));
 	else if (PyDateTime_Check(object))

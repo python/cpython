@@ -4,46 +4,83 @@
 """
 
 import errno
-from test.test_support import verbose
+from test import test_support
+import unittest
 
 errors = ['E2BIG', 'EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL', 'EADV',
           'EAFNOSUPPORT', 'EAGAIN', 'EALREADY', 'EBADE', 'EBADF',
           'EBADFD', 'EBADMSG', 'EBADR', 'EBADRQC', 'EBADSLT',
           'EBFONT', 'EBUSY', 'ECHILD', 'ECHRNG', 'ECOMM',
           'ECONNABORTED', 'ECONNREFUSED', 'ECONNRESET',
-          'EDEADLK', 'EDEADLOCK', 'EDESTADDRREQ', 'EDOM',
+          'EDEADLK', 'EDEADLOCK', 'EDESTADDRREQ', 'EDOTDOT', 'EDOM',
           'EDQUOT', 'EEXIST', 'EFAULT', 'EFBIG', 'EHOSTDOWN',
           'EHOSTUNREACH', 'EIDRM', 'EILSEQ', 'EINPROGRESS',
-          'EINTR', 'EINVAL', 'EIO', 'EISCONN', 'EISDIR',
+          'EINTR', 'EINVAL', 'EIO', 'EISCONN', 'EISDIR', 'EISNAM',
           'EL2HLT', 'EL2NSYNC', 'EL3HLT', 'EL3RST', 'ELIBACC',
           'ELIBBAD', 'ELIBEXEC', 'ELIBMAX', 'ELIBSCN', 'ELNRNG',
           'ELOOP', 'EMFILE', 'EMLINK', 'EMSGSIZE', 'EMULTIHOP',
-          'ENAMETOOLONG', 'ENETDOWN', 'ENETRESET', 'ENETUNREACH',
+          'ENAMETOOLONG', 'ENAVAIL', 'ENETDOWN', 'ENETRESET', 'ENETUNREACH',
           'ENFILE', 'ENOANO', 'ENOBUFS', 'ENOCSI', 'ENODATA',
           'ENODEV', 'ENOENT', 'ENOEXEC', 'ENOLCK', 'ENOLINK',
           'ENOMEM', 'ENOMSG', 'ENONET', 'ENOPKG', 'ENOPROTOOPT',
           'ENOSPC', 'ENOSR', 'ENOSTR', 'ENOSYS', 'ENOTBLK',
-          'ENOTCONN', 'ENOTDIR', 'ENOTEMPTY', 'ENOTOBACCO', 'ENOTSOCK',
+          'ENOTCONN', 'ENOTDIR', 'ENOTEMPTY', 'ENOTNAM', 'ENOTOBACCO', 'ENOTSOCK',
           'ENOTTY', 'ENOTUNIQ', 'ENXIO', 'EOPNOTSUPP',
           'EOVERFLOW', 'EPERM', 'EPFNOSUPPORT', 'EPIPE',
           'EPROTO', 'EPROTONOSUPPORT', 'EPROTOTYPE',
-          'ERANGE', 'EREMCHG', 'EREMOTE', 'ERESTART',
+          'ERANGE', 'EREMCHG', 'EREMOTE', 'EREMOTEIO', 'ERESTART',
           'EROFS', 'ESHUTDOWN', 'ESOCKTNOSUPPORT', 'ESPIPE',
           'ESRCH', 'ESRMNT', 'ESTALE', 'ESTRPIPE', 'ETIME',
-          'ETIMEDOUT', 'ETOOMANYREFS', 'ETXTBSY', 'EUNATCH',
-          'EUSERS', 'EWOULDBLOCK', 'EXDEV', 'EXFULL']
+          'ETIMEDOUT', 'ETOOMANYREFS', 'ETXTBSY', 'EUCLEAN', 'EUNATCH',
+          'EUSERS', 'EWOULDBLOCK', 'EXDEV', 'EXFULL',
+          'WSABASEERR', 'WSADESCRIPTIO', 'WSAEACCES', 'WSAEADDRINUSE',
+          'WSAEADDRNOTAVAIL', 'WSAEAFNOSUPPORT', 'WSAEALREADY',
+          'WSAEBADF', 'WSAECONNABORTED', 'WSAECONNREFUSED',
+          'WSAECONNRESET', 'WSAEDESTADDRREQ', 'WSAEDISCON',
+          'WSAEDQUOT', 'WSAEFAULT', 'WSAEHOSTDOWN', 'WSAEHOSTUNREACH',
+          'WSAEINPROGRESS', 'WSAEINTR', 'WSAEINVAL', 'WSAEISCONN',
+          'WSAELOOP', 'WSAEMFILE', 'WSAEMSGSIZE', 'WSAENAMETOOLONG',
+          'WSAENETDOWN', 'WSAENETRESET', 'WSAENETUNREACH',
+          'WSAENOBUFS', 'WSAENOPROTOOPT', 'WSAENOTCONN',
+          'WSAENOTEMPTY', 'WSAENOTSOCK', 'WSAEOPNOTSUPP',
+          'WSAEPFNOSUPPORT', 'WSAEPROCLIM', 'WSAEPROTONOSUPPORT',
+          'WSAEPROTOTYPE', 'WSAEREMOTE', 'WSAESHUTDOWN',
+          'WSAESOCKTNOSUPPORT', 'WSAESTALE', 'WSAETIMEDOUT',
+          'WSAETOOMANYREFS', 'WSAEUSERS', 'WSAEWOULDBLOCK',
+          'WSAGETASYNCBUFLE', 'WSAGETASYNCERRO', 'WSAGETSELECTERRO',
+          'WSAGETSELECTEVEN', 'WSAHOS', 'WSAMAKEASYNCREPL',
+          'WSAMAKESELECTREPL', 'WSAN', 'WSANOTINITIALISED', 'WSASY',
+          'WSASYSNOTREADY', 'WSATR', 'WSAVERNOTSUPPORTED']
 
-#
-# This is a wee bit bogus since the module only conditionally adds
-# errno constants if they have been defined by errno.h  However, this
-# test seems to work on SGI, Sparc & intel Solaris, and linux.
-#
-for error in errors:
-    try:
-        a = getattr(errno, error)
-    except AttributeError:
-        if verbose:
-            print('%s: not found' % error)
-    else:
-        if verbose:
-            print('%s: %d' % (error, a))
+
+class ErrnoAttributeTests(unittest.TestCase):
+
+    def test_for_improper_attributes(self):
+        # No unexpected attributes should be on the module.
+        errors_set = set(errors)
+        for attribute in errno.__dict__.keys():
+            if attribute.isupper():
+                self.assert_(attribute in errors_set,
+                                "%s is an unexpected error value" % attribute)
+
+    def test_using_errorcode(self):
+        # Every key value in errno.errorcode should be on the module.
+        for value in errno.errorcode.values():
+            self.assert_(hasattr(errno, value), 'no %s attr in errno' % value)
+
+
+class ErrorcodeTests(unittest.TestCase):
+
+    def test_attributes_in_errorcode(self):
+        for attribute in errno.__dict__.keys():
+            if attribute.isupper():
+                self.assert_(getattr(errno, attribute) in errno.errorcode,
+                             'no %s attr in errno.errorcode' % attribute)
+
+
+def test_main():
+    test_support.run_unittest(ErrnoAttributeTests, ErrorcodeTests)
+
+
+if __name__ == '__main__':
+    test_main()
