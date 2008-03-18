@@ -99,7 +99,7 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
         self._db = []
         if not self._in_mem:
             for f in glob.glob(self.fn+"*"):
-                os.unlink(f)
+                test_support.unlink(f)
 
 class TestAsciiFileShelve(TestShelveBase):
     _args={'protocol':0}
