@@ -4086,8 +4086,9 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 					if (ret_val == -1)
 						return NULL;
 				}
-				if (Py_Py3kWarningFlag  &&
-				    !Py3kExceptionClass_Check(exc))
+				else if (Py_Py3kWarningFlag  &&
+					 !PyTuple_Check(exc) &&
+					 !Py3kExceptionClass_Check(exc))
 				{
 					int ret_val;
 					ret_val = PyErr_WarnEx(
@@ -4108,8 +4109,9 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 				if (ret_val == -1)
 					return NULL;
 			}
-			if (Py_Py3kWarningFlag  &&
-			    !Py3kExceptionClass_Check(w))
+			else if (Py_Py3kWarningFlag  &&
+				 !PyTuple_Check(w) &&
+				 !Py3kExceptionClass_Check(w))
 			{
 				int ret_val;
 				ret_val = PyErr_WarnEx(
