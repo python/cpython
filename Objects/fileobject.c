@@ -256,9 +256,12 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 		else if (errno == EINVAL) /* unknown, but not a mode string */
 			errno = ENOENT;
 #endif
+                /* EINVAL is returned when an invalid filename or
+                 * an invalid mode is supplied. */
 		if (errno == EINVAL)
-			PyErr_Format(PyExc_IOError, "invalid mode: %s",
-				     mode);
+			PyErr_Format(PyExc_IOError,
+                                     "invalid filename: %s or mode: %s",
+				     name, mode);
 		else
 			PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, f->f_name);
 		f = NULL;
