@@ -83,33 +83,22 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('\r\n', '\n', 'abc\r\ndef\r\n'),
                          'abc\ndef\n')
 
-# This test makes no sense until re supports bytes, and should then probably
-# test for the *in*ability to mix bytes and str this way :)
-#
-#    def test_bug_1140(self):
-#        # re.sub(x, y, b'') should return b'', not '', and
-#        # re.sub(x, y, '') should return '', not b''.
-#        # Also:
-#        # re.sub(x, y, str(x)) should return str(y), and
-#        # re.sub(x, y, bytes(x)) should return
-#        #     str(y) if isinstance(y, str) else unicode(y).
-#        for x in 'x', u'x':
-#            for y in 'y', u'y':
-#                z = re.sub(x, y, u'')
-#                self.assertEqual(z, u'')
-#                self.assertEqual(type(z), unicode)
-#                #
-#                z = re.sub(x, y, '')
-#                self.assertEqual(z, '')
-#                self.assertEqual(type(z), str)
-#                #
-#                z = re.sub(x, y, unicode(x))
-#                self.assertEqual(z, y)
-#                self.assertEqual(type(z), unicode)
-#                #
-#                z = re.sub(x, y, str(x))
-#                self.assertEqual(z, y)
-#                self.assertEqual(type(z), type(y))
+    def test_bug_1140(self):
+        # re.sub(x, y, b'') should return b'', not '', and
+        # re.sub(x, y, '') should return '', not b''.
+        # Also:
+        # re.sub(x, y, str(x)) should return str(y), and
+        # re.sub(x, y, bytes(x)) should return
+        #     str(y) if isinstance(y, str) else unicode(y).
+        for x in 'x',  b'x':
+            for y in 'y', b'y':
+                z = re.sub(x, y, b'')
+                self.assertEqual(z, b'')
+                self.assertEqual(type(z), bytes)
+                #
+                z = re.sub(x, y, '')
+                self.assertEqual(z, '')
+                self.assertEqual(type(z), str)
 
     def test_bug_1661(self):
         # Verify that flags do not get silently ignored with compiled patterns
@@ -599,10 +588,9 @@ class ReTests(unittest.TestCase):
         self.assertEqual([item.group(0) for item in iter],
                          [":", "::", ":::"])
 
-    # XXX This needs to be restored for str vs. bytes.
-##     def test_bug_926075(self):
-##         self.assert_(re.compile('bug_926075') is not
-##                      re.compile(str8('bug_926075')))
+    def test_bug_926075(self):
+        self.assert_(re.compile('bug_926075') is not
+                     re.compile(b'bug_926075'))
 
     def test_bug_931848(self):
         pattern = eval('"[\u002E\u3002\uFF0E\uFF61]"')
