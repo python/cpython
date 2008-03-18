@@ -209,3 +209,5 @@ docs@python.org), and we'll be glad to correct the problem.
    * Moshe Zadka
    * Milan Zamazal
    * Cheng Zhang
+   * Trent Nelson
+   * Michael Foord

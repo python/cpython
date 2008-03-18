@@ -392,6 +392,9 @@ details.
 * The functions :func:`os.tmpnam`, :func:`os.tempnam` and :func:`os.tmpfile`
   have been removed in favor of the :mod:`tempfile` module.
 
+* The :mod:`tokenize` module has been changed to work with bytes.  The main
+  entry point is now :func:`tokenize.tokenize`, instead of generate_tokens.
+
 .. ======================================================================
 .. whole new modules get described in subsections here
 

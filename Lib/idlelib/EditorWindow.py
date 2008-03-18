@@ -1437,7 +1437,9 @@ class IndentSearcher(object):
         _tokenize.tabsize = self.tabwidth
         try:
             try:
-                _tokenize.tokenize(self.readline, self.tokeneater)
+                tokens = _tokenize.generate_tokens(self.readline)
+                for token in tokens:
+                    self.tokeneater(*token)
             except _tokenize.TokenError:
                 # since we cut off the tokenizer early, we can trigger
                 # spurious errors
