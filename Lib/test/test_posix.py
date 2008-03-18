@@ -9,6 +9,7 @@ except ImportError:
 
 import time
 import os
+import pwd
 import unittest
 import warnings
 warnings.filterwarnings('ignore', '.* potential security risk .*',
@@ -140,6 +141,33 @@ class PosixTester(unittest.TestCase):
     def test_stat(self):
         if hasattr(posix, 'stat'):
             self.assert_(posix.stat(test_support.TESTFN))
+
+    if hasattr(posix, 'chown'):
+        def test_chown(self):
+            # raise an OSError if the file does not exist
+            os.unlink(test_support.TESTFN)
+            self.assertRaises(OSError, posix.chown, test_support.TESTFN, -1, -1)
+
+            # re-create the file
+            open(test_support.TESTFN, 'w').close()
+            if os.getuid() == 0:
+                try:
+                    # Many linux distros have a nfsnobody user as MAX_UID-2
+                    # that makes a good test case for signedness issues.
+                    #   http://bugs.python.org/issue1747858
+                    # This part of the test only runs when run as root.
+                    # Only scary people run their tests as root.
+                    ent = pwd.getpwnam('nfsnobody')
+                    posix.chown(test_support.TESTFN, ent.pw_uid, ent.pw_gid)
+                except KeyError:
+                    pass
+            else:
+                # non-root cannot chown to root, raises OSError
+                self.assertRaises(OSError, posix.chown,
+                                  test_support.TESTFN, 0, 0)
+
+            # test a successful chown call
+            posix.chown(test_support.TESTFN, os.getuid(), os.getgid())
 
     def test_chdir(self):
         if hasattr(posix, 'chdir'):
