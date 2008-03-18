@@ -187,26 +187,44 @@ def rmtree(path, ignore_errors=False, onerror=None):
     except os.error:
         onerror(os.rmdir, path, sys.exc_info())
 
-def move(src, dst):
-    """Recursively move a file or directory to another location.
 
-    If the destination is on our current filesystem, then simply use
-    rename.  Otherwise, copy src to the dst and then remove src.
+def _basename(path):
+    # A basename() variant which first strips the trailing slash, if present.
+    # Thus we always get the last component of the path, even for directories.
+    return os.path.basename(path.rstrip(os.path.sep))
+
+def move(src, dst):
+    """Recursively move a file or directory to another location. This is
+    similar to the Unix "mv" command.
+
+    If the destination is a directory or a symlink to a directory, the source
+    is moved inside the directory. The destination path must not already
+    exist.
+
+    If the destination already exists but is not a directory, it may be
+    overwritten depending on os.rename() semantics.
+
+    If the destination is on our current filesystem, then rename() is used.
+    Otherwise, src is copied to the destination and then removed.
     A lot more could be done here...  A look at a mv.c shows a lot of
     the issues this implementation glosses over.
 
     """
-
+    real_dst = dst
+    if os.path.isdir(dst):
+        real_dst = os.path.join(dst, _basename(src))
+        if os.path.exists(real_dst):
+            raise Error, "Destination path '%s' already exists" % real_dst
     try:
-        os.rename(src, dst)
+        os.rename(src, real_dst)
     except OSError:
         if os.path.isdir(src):
             if destinsrc(src, dst):
                 raise Error, "Cannot move a directory '%s' into itself '%s'." % (src, dst)
-            copytree(src, dst, symlinks=True)
+            copytree(src, real_dst, symlinks=True)
             rmtree(src)
         else:
-            copy2(src,dst)
+            copy2(src, real_dst)
             os.unlink(src)
 
 def destinsrc(src, dst):
