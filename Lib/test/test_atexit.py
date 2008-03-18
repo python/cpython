@@ -41,13 +41,13 @@ class TestCase(unittest.TestCase):
 
     def test_sys_override(self):
         # be sure a preset sys.exitfunc is handled properly
-        s = StringIO.StringIO()
-        sys.stdout = sys.stderr = s
         save_handlers = atexit._exithandlers
         atexit._exithandlers = []
         exfunc = sys.exitfunc
         sys.exitfunc = self.h1
         reload(atexit)
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
         try:
             atexit.register(self.h2)
             atexit._run_exitfuncs()
