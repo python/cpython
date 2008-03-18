@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
+- Issue #2371: Add a Py3k warning when catching an exception that
+  doesn't derive from BaseException.
+
 - Issue #2321: use pymalloc for unicode object string data to reduce
   memory usage in some circumstances.
 

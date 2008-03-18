@@ -4042,6 +4042,13 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	}
 }
 
+#define Py3kExceptionClass_Check(x)     \
+    (PyType_Check((x)) &&               \
+     PyType_FastSubclass((PyTypeObject*)(x), Py_TPFLAGS_BASE_EXC_SUBCLASS))
+
+#define CANNOT_CATCH_MSG "catching classes that don't inherit from " \
+			 "BaseException is not allowed in 3.x."
+
 static PyObject *
 cmp_outcome(int op, register PyObject *v, register PyObject *w)
 {
@@ -4079,6 +4086,16 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 					if (ret_val == -1)
 						return NULL;
 				}
+				if (Py_Py3kWarningFlag  &&
+				    !Py3kExceptionClass_Check(exc))
+				{
+					int ret_val;
+					ret_val = PyErr_WarnEx(
+						PyExc_DeprecationWarning,
+						CANNOT_CATCH_MSG, 1);
+					if (ret_val == -1)
+						return NULL;
+				}
 			}
 		}
 		else {
@@ -4088,6 +4105,16 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 						PyExc_DeprecationWarning,
 						"catching of string "
 						"exceptions is deprecated", 1);
+				if (ret_val == -1)
+					return NULL;
+			}
+			if (Py_Py3kWarningFlag  &&
+			    !Py3kExceptionClass_Check(w))
+			{
+				int ret_val;
+				ret_val = PyErr_WarnEx(
+					PyExc_DeprecationWarning,
+					CANNOT_CATCH_MSG, 1);
 				if (ret_val == -1)
 					return NULL;
 			}
