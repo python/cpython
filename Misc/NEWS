@@ -17,6 +17,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1747858: Fix chown to work with large uid's and gid's on 64-bit
+  platforms.
+
 - Bug #2220: handle rlcompleter attribute match failure more gracefully.
 
 - Bug #1725737: In distutil's sdist, exclude RCS, CVS etc. also in the
