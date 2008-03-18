@@ -255,7 +255,7 @@ TypeError if te dictionary is not empty
 from test import test_support
 
 def test_main():
-    import test_extcall # self import
+    from test import test_extcall # self import
     test_support.run_doctest(test_extcall, True)
 
 if __name__ == '__main__':
