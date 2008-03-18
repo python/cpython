@@ -223,6 +223,40 @@ meth_compare(PyCFunctionObject *a, PyCFunctionObject *b)
 		return 1;
 }
 
+static PyObject *
+meth_richcompare(PyObject *self, PyObject *other, int op)
+{
+	PyCFunctionObject *a, *b;
+	PyObject *res;
+	int eq;
+
+	if ((op != Py_EQ && op != Py_NE) ||
+	    !PyCFunction_Check(self) ||
+	    !PyCFunction_Check(other))
+	{
+		/* Py3K warning if types are not equal and comparison isn't == or !=  */
+		if (Py_Py3kWarningFlag && PyErr_Warn(PyExc_DeprecationWarning,
+				"builtin_function_or_method "
+				"inequality comparisons not supported in 3.x.") < 0) {
+			return NULL;
+		}
+
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	a = (PyCFunctionObject *)self;
+	b = (PyCFunctionObject *)other;
+	eq = a->m_self == b->m_self;
+	if (eq)
+		eq = a->m_ml->ml_meth == b->m_ml->ml_meth;
+	if (op == Py_EQ)
+		res = eq ? Py_True : Py_False;
+	else
+		res = eq ? Py_False : Py_True;
+	Py_INCREF(res);
+	return res;
+}
+
 static long
 meth_hash(PyCFunctionObject *a)
 {
@@ -268,7 +302,7 @@ PyTypeObject PyCFunction_Type = {
  	0,					/* tp_doc */
  	(traverseproc)meth_traverse,		/* tp_traverse */
 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	meth_richcompare,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */

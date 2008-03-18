@@ -50,6 +50,35 @@ class TestPy3KWarnings(unittest.TestCase):
         with catch_warning() as w:
             self.assertWarning(cell0 < cell1, w, expected)
 
+    def test_code_inequality_comparisons(self):
+        expected = 'code inequality comparisons not supported in 3.x.'
+        def f(x):
+            pass
+        def g(x):
+            pass
+        with catch_warning() as w:
+            self.assertWarning(f.func_code < g.func_code, w, expected)
+        with catch_warning() as w:
+            self.assertWarning(f.func_code <= g.func_code, w, expected)
+        with catch_warning() as w:
+            self.assertWarning(f.func_code >= g.func_code, w, expected)
+        with catch_warning() as w:
+            self.assertWarning(f.func_code > g.func_code, w, expected)
+
+    def test_builtin_function_or_method_comparisons(self):
+        expected = ('builtin_function_or_method '
+                    'inequality comparisons not supported in 3.x.')
+        func = eval
+        meth = {}.get
+        with catch_warning() as w:
+            self.assertWarning(func < meth, w, expected)
+        with catch_warning() as w:
+            self.assertWarning(func > meth, w, expected)
+        with catch_warning() as w:
+            self.assertWarning(meth <= func, w, expected)
+        with catch_warning() as w:
+            self.assertWarning(meth >= func, w, expected)
+
     def assertWarning(self, _, warning, expected_message):
         self.assertEqual(str(warning.message), expected_message)
 
