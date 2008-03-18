@@ -78,6 +78,8 @@ Library
 Tests
 -----
 
+- Rewrite test_errno to use unittest and no longer be a no-op.
+
 - GHOP 234: Convert test_extcall to doctest.
 
 - GHOP 290: Convert test_dbm and test_dummy_threading to unittest.
