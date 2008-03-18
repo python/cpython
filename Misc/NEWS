@@ -75,6 +75,8 @@ Library
 Tests
 -----
 
+- GHOP 234: Convert test_extcall to doctest.
+
 - GHOP 290: Convert test_dbm and test_dummy_threading to unittest.
 
 - GHOP 293: Convert test_strftime, test_getargs, and test_pep247 to unittest.
