@@ -327,6 +327,72 @@ code_compare(PyCodeObject *co, PyCodeObject *cp)
 		return 0;
 }
 
+static PyObject *
+code_richcompare(PyObject *self, PyObject *other, int op)
+{
+	PyCodeObject *co, *cp;
+	int eq;
+	PyObject *res;
+
+	if ((op != Py_EQ && op != Py_NE) ||
+	    !PyCode_Check(self) ||
+	    !PyCode_Check(other)) {
+
+		/* Py3K warning if types are not equal and comparison isn't == or !=  */
+		if (Py_Py3kWarningFlag && PyErr_Warn(PyExc_DeprecationWarning,
+				"code inequality comparisons not supported in 3.x.") < 0) {
+			return NULL;
+		}
+
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	co = (PyCodeObject *)self;
+	cp = (PyCodeObject *)other;
+
+	eq = PyObject_RichCompareBool(co->co_name, cp->co_name, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = co->co_argcount == cp->co_argcount;
+	if (!eq) goto unequal;
+	eq = co->co_nlocals == cp->co_nlocals;
+	if (!eq) goto unequal;
+	eq = co->co_flags == cp->co_flags;
+	if (!eq) goto unequal;
+	eq = co->co_firstlineno == cp->co_firstlineno;
+	if (!eq) goto unequal;
+	eq = PyObject_RichCompareBool(co->co_code, cp->co_code, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompareBool(co->co_consts, cp->co_consts, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompareBool(co->co_names, cp->co_names, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompareBool(co->co_varnames, cp->co_varnames, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompareBool(co->co_freevars, cp->co_freevars, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompareBool(co->co_cellvars, cp->co_cellvars, Py_EQ);
+	if (eq <= 0) goto unequal;
+
+	if (op == Py_EQ)
+		res = Py_True;
+	else
+		res = Py_False;
+	goto done;
+
+  unequal:
+	if (eq < 0)
+		return NULL;
+	if (op == Py_NE)
+		res = Py_True;
+	else
+		res = Py_False;
+
+  done:
+	Py_INCREF(res);
+	return res;
+}
+
 static long
 code_hash(PyCodeObject *co)
 {
@@ -377,7 +443,7 @@ PyTypeObject PyCode_Type = {
 	code_doc,			/* tp_doc */
 	0,				/* tp_traverse */
 	0,				/* tp_clear */
-	0,				/* tp_richcompare */
+	code_richcompare,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
 	0,				/* tp_iter */
 	0,				/* tp_iternext */
