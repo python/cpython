@@ -189,6 +189,12 @@ static PyMethodDef BaseException_methods[] = {
 static PyObject *
 BaseException_getitem(PyBaseExceptionObject *self, Py_ssize_t index)
 {
+    if (Py_Py3kWarningFlag) {
+	if (PyErr_Warn(PyExc_DeprecationWarning,
+		       "In 3.x, __getitem__ is not supported for exception "
+		       "classes, use args attribute") == -1)
+	    return NULL;
+    }
     return PySequence_GetItem(self->args, index);
 }
 
@@ -196,6 +202,12 @@ static PyObject *
 BaseException_getslice(PyBaseExceptionObject *self,
 			Py_ssize_t start, Py_ssize_t stop)
 {
+    if (Py_Py3kWarningFlag) {
+	if (PyErr_Warn(PyExc_DeprecationWarning,
+		       "In 3.x, __getslice__ is not supported for exception "
+		       "classes, use args attribute") == -1)
+	    return NULL;
+    }
     return PySequence_GetSlice(self->args, start, stop);
 }
 
