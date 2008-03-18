@@ -90,6 +90,7 @@
 #endif
 #include "rangeobject.h"
 #include "stringobject.h"
+/* #include "memoryobject.h" */
 #include "bufferobject.h"
 #include "tupleobject.h"
 #include "listobject.h"
