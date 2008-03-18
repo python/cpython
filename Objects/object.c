@@ -863,8 +863,18 @@ try_3way_to_rich_compare(PyObject *v, PyObject *w, int op)
 	int c;
 
 	c = try_3way_compare(v, w);
-	if (c >= 2)
+	if (c >= 2) {
+
+		/* Py3K warning if types are not equal and comparison isn't == or !=  */
+		if (Py_Py3kWarningFlag &&
+			v->ob_type != w->ob_type && op != Py_EQ && op != Py_NE &&
+			PyErr_Warn(PyExc_DeprecationWarning,
+				"comparing unequal types not supported in 3.x.") < 0) {
+			return NULL;
+		}
+
 		c = default_3way_compare(v, w);
+	}
 	if (c <= -2)
 		return NULL;
 	return convert_3way_to_object(op, c);
