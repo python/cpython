@@ -166,7 +166,8 @@ dbm_contains(register dbmobject *dp, PyObject *v)
 {
 	datum key, val;
 
-	if (PyString_AsStringAndSize(v, &key.dptr, &key.dsize)) {
+	if (PyString_AsStringAndSize(v, (char **)&key.dptr,
+	                             (Py_ssize_t *)&key.dsize)) {
 		return -1;
 	}
 
