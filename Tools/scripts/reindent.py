@@ -130,9 +130,11 @@ def check(file):
             f.close()
             if verbose:
                 print("wrote new", file)
+        return True
     else:
         if verbose:
             print("unchanged.")
+        return False
 
 def _rstrip(line, JUNK='\n \t'):
     """Return line stripped of trailing spaces, tabs, newlines.
