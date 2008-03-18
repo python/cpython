@@ -41,6 +41,12 @@ Library
 
 - Issue #1202: zlib.crc32 and zlib.adler32 now return an unsigned value.
 
+- Issue #719888: Updated tokenize to use a bytes API. generate_tokens has been
+  renamed tokenize and now works with bytes rather than strings. A new
+  detect_encoding function has been added for determining source file encoding
+  according to PEP-0263. Token sequences returned by tokenize always start
+  with an ENCODING token which specifies the encoding used to decode the file.
+  This token is used to encode the output of untokenize back to bytes.
 
 What's New in Python 3.0a3?
 ===========================
@@ -174,7 +180,6 @@ Library
 - Issue #1585: IDLE uses non-existent xrange() function.
 
 - Issue #1578: Problems in win_getpass.
-
 
 Build
 -----

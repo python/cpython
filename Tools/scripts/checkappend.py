@@ -103,7 +103,9 @@ class AppendChecker:
 
     def run(self):
         try:
-            tokenize.tokenize(self.file.readline, self.tokeneater)
+            tokens = tokenize.generate_tokens(self.file.readline)
+            for _token in tokens:
+                self.tokeneater(*_token)
         except tokenize.TokenError as msg:
             errprint("%r: Token Error: %s" % (self.fname, msg))
             self.nerrors = self.nerrors + 1

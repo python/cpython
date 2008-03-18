@@ -631,7 +631,9 @@ def main():
         try:
             eater.set_filename(filename)
             try:
-                tokenize.tokenize(fp.readline, eater)
+                tokens = tokenize.generate_tokens(fp.readline)
+                for _token in tokens:
+                    eater(*_token)
             except tokenize.TokenError as e:
                 print('%s: %s, line %d, column %d' % (
                     e.args[0], filename, e.args[1][0], e.args[1][1]),

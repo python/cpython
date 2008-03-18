@@ -1,0 +1,13 @@
+﻿# -*- coding: utf-8 -*-
+# IMPORTANT: unlike the other test_tokenize-*.txt files, this file
+# does NOT have the utf-8 BOM signature '\xef\xbb\xbf' at the start
+# of it.  Make sure this is not added inadvertently by your editor
+# if any changes are made to this file!
+
+# Arbitrary encoded utf-8 text (stolen from test_doctest2.py).
+x = 'ЉЊЈЁЂ'
+def y():
+    """
+    And again in a comment.  ЉЊЈЁЂ
+    """
+    pass
