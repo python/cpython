@@ -10,10 +10,13 @@ NUMTASKS = 10
 NUMTRIPS = 3
 
 
+_print_mutex = thread.allocate_lock()
+
 def verbose_print(arg):
     """Helper function for printing out debugging output."""
     if test_support.verbose:
-        print arg
+        with _print_mutex:
+            print arg
 
 
 class BasicThreadTest(unittest.TestCase):
@@ -38,8 +41,8 @@ class ThreadRunningTests(BasicThreadTest):
 
     def task(self, ident):
         with self.random_mutex:
-            delay = random.random() * NUMTASKS
-        verbose_print("task %s will run for %s" % (ident, round(delay, 1)))
+            delay = random.random() / 10000.0
+        verbose_print("task %s will run for %sus" % (ident, round(delay*1e6)))
         time.sleep(delay)
         verbose_print("task %s done" % ident)
         with self.running_mutex:
@@ -138,11 +141,12 @@ class BarrierTest(BasicThreadTest):
                 # give it a good chance to enter the next
                 # barrier before the others are all out
                 # of the current one
-                delay = 0.001
+                delay = 0
             else:
                 with self.random_mutex:
-                    delay = random.random() * NUMTASKS
-            verbose_print("task %s will run for %s" % (ident, round(delay, 1)))
+                    delay = random.random() / 10000.0
+            verbose_print("task %s will run for %sus" %
+                          (ident, round(delay * 1e6)))
             time.sleep(delay)
             verbose_print("task %s entering %s" % (ident, i))
             self.bar.enter()
