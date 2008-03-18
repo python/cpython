@@ -11,6 +11,8 @@ What's New in Python 2.5.3?
 
 Core and builtins
 -----------------
+- Issue #2321: use pymalloc for unicode object string data to reduce
+  memory usage in some circumstances.
 
 Library
 -------
