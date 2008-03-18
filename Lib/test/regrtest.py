@@ -225,6 +225,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     # Defaults
     if use_resources is None:
         use_resources = []
+    debug = False
+    start = None
     for o, a in opts:
         if o in ('-h', '--help'):
             print(__doc__)
@@ -375,12 +377,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     tests = tests or args or findtests(testdir, stdtests, nottests)
     if single:
         tests = tests[:1]
-    ## Remove all the tests that precede start if it's set.
-    #if start:
-    #   try:
-    #        del tests[:tests.index(start)]
-    #    except ValueError:
-    #        print("Couldn't find starting test (%s), using all tests" % start)
+    # Remove all the tests that precede start if it's set.
+    if start:
+        try:
+            del tests[:tests.index(start)]
+        except ValueError:
+            print("Couldn't find starting test (%s), using all tests" % start)
     if randomize:
         random.shuffle(tests)
     if trace:
@@ -477,8 +479,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             print("Re-running test %r in verbose mode" % test)
             sys.stdout.flush()
             try:
-                test_support.verbose = 1
-                ok = runtest(test, generate, 1, quiet, testdir,
+                test_support.verbose = True
+                ok = runtest(test, generate, True, quiet, test_times, testdir,
                              huntrleaks, debug)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
@@ -544,7 +546,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + tests
 
 def runtest(test, generate, verbose, quiet, test_times,
-            testdir=None, huntrleaks=False):
+            testdir=None, huntrleaks=False, debug=False):
     """Run a single test.
 
     test -- the name of the test
@@ -635,27 +637,6 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
         if not cfp:
             return 1
         output = cfp.getvalue()
-        if generate:
-            if output == test + "\n":
-                if os.path.exists(outputfile):
-                    # Write it since it already exists (and the contents
-                    # may have changed), but let the user know it isn't
-                    # needed:
-                    print("output file", outputfile, \
-                          "is no longer needed; consider removing it")
-                else:
-                    # We don't need it, so don't create it.
-                    return 1
-            fp = open(outputfile, "w")
-            fp.write(output)
-            fp.close()
-            return 1
-        if os.path.exists(outputfile):
-            fp = open(outputfile, "r")
-            expected = fp.read()
-            fp.close()
-        else:
-            expected = test + "\n"
         expected = test + "\n"
         if output == expected or huntrleaks:
             return 1
