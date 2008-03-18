@@ -44,6 +44,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1747858: Fix chown to work with large uid's and gid's on 64-bit
+  platforms.
+
 - Issue #1202: zlib.crc32 and zlib.adler32 no longer return different values
   on 32-bit vs. 64-bit python interpreters.  Both were correct, but they now
   both return a signed integer object for consistency.
