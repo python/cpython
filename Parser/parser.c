@@ -149,12 +149,10 @@ classify(parser_state *ps, int type, char *str)
 			    strcmp(l->lb_str, s) != 0)
 				continue;
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
-			if (!(ps->p_flags & CO_FUTURE_WITH_STATEMENT)) {
-				if (s[0] == 'w' && strcmp(s, "with") == 0)
-					break; /* not a keyword yet */
-				else if (s[0] == 'a' && strcmp(s, "as") == 0)
-					break; /* not a keyword yet */
-			}
+                        if (ps->p_flags & CO_FUTURE_PRINT_FUNCTION &&
+                            s[0] == 'p' && strcmp(s, "print") == 0) { 
+                                break; /* no longer a keyword */
+                        }
 #endif
 			D(printf("It's a keyword\n"));
 			return n - i;
@@ -207,6 +205,10 @@ future_hack(parser_state *ps)
 		if (NCH(cch) >= 1 && TYPE(CHILD(cch, 0)) == NAME &&
 		    strcmp(STR(CHILD(cch, 0)), "with_statement") == 0) {
 			ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
+			break;
+		} else if (NCH(cch) >= 1 && TYPE(CHILD(cch, 0)) == NAME &&
+		    strcmp(STR(CHILD(cch, 0)), "print_function") == 0) {
+			ps->p_flags |= CO_FUTURE_PRINT_FUNCTION;
 			break;
 		}
 	}

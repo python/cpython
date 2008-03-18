@@ -123,8 +123,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		return NULL;
 	}
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
-	if (flags & PyPARSE_WITH_IS_KEYWORD)
-		ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
+	if (flags & PyPARSE_PRINT_IS_FUNCTION)
+		ps->p_flags |= CO_FUTURE_PRINT_FUNCTION;
 #endif
 
 	for (;;) {
@@ -167,26 +167,6 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		str[len] = '\0';
 
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
-		/* This is only necessary to support the "as" warning, but
-		   we don't want to warn about "as" in import statements. */
-		if (type == NAME &&
-		    len == 6 && str[0] == 'i' && strcmp(str, "import") == 0)
-			handling_import = 1;
-
-		/* Warn about with as NAME */
-		if (type == NAME &&
-		    !(ps->p_flags & CO_FUTURE_WITH_STATEMENT)) {
-		    if (len == 4 && str[0] == 'w' && strcmp(str, "with") == 0)
-			warn(with_msg, err_ret->filename, tok->lineno);
-		    else if (!(handling_import || handling_with) &&
-		             len == 2 && str[0] == 'a' &&
-			     strcmp(str, "as") == 0)
-			warn(as_msg, err_ret->filename, tok->lineno);
-		}
-		else if (type == NAME &&
-			 (ps->p_flags & CO_FUTURE_WITH_STATEMENT) &&
-			 len == 4 && str[0] == 'w' && strcmp(str, "with") == 0)
-			handling_with = 1;
 #endif
 		if (a >= tok->line_start)
 			col_offset = a - tok->line_start;
