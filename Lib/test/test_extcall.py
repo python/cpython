@@ -2,22 +2,22 @@
 
 We're going the use these types for extra testing
 
-    >>> from UserList import UserList
-    >>> from UserDict import UserDict
+    >>> from collections import UserList
+    >>> from collections import UserDict
 
 We're defining four helper functions
 
     >>> def e(a,b):
-    ...     print a, b
+    ...     print(a, b)
 
     >>> def f(*a, **k):
-    ...     print a, test_support.sortdict(k)
+    ...     print(a, test_support.sortdict(k))
 
     >>> def g(x, *y, **z):
-    ...     print x, y, test_support.sortdict(z)
+    ...     print(x, y, test_support.sortdict(z))
 
     >>> def h(j=1, a=2, h=3):
-    ...     print j, a, h
+    ...     print(j, a, h)
 
 Argument list examples
 
@@ -65,17 +65,17 @@ Verify clearing of SF bug #733667
     >>> g()
     Traceback (most recent call last):
       ...
-    TypeError: g() takes at least 1 argument (0 given)
+    TypeError: g() takes at least 1 positional argument (0 given)
 
     >>> g(*())
     Traceback (most recent call last):
       ...
-    TypeError: g() takes at least 1 argument (0 given)
+    TypeError: g() takes at least 1 positional argument (0 given)
 
     >>> g(*(), **{})
     Traceback (most recent call last):
       ...
-    TypeError: g() takes at least 1 argument (0 given)
+    TypeError: g() takes at least 1 positional argument (0 given)
 
     >>> g(1)
     1 () {}
@@ -91,7 +91,7 @@ Verify clearing of SF bug #733667
     >>> g(*Nothing())
     Traceback (most recent call last):
       ...
-    TypeError: g() argument after * must be a sequence, not instance
+    TypeError: g() argument after * must be a sequence, not Nothing
 
     >>> class Nothing:
     ...     def __len__(self): return 5
@@ -100,7 +100,7 @@ Verify clearing of SF bug #733667
     >>> g(*Nothing())
     Traceback (most recent call last):
       ...
-    TypeError: g() argument after * must be a sequence, not instance
+    TypeError: g() argument after * must be a sequence, not Nothing
 
     >>> class Nothing():
     ...     def __len__(self): return 5
@@ -115,7 +115,7 @@ Verify clearing of SF bug #733667
     >>> class Nothing:
     ...     def __init__(self): self.c = 0
     ...     def __iter__(self): return self
-    ...     def next(self):
+    ...     def __next__(self):
     ...         if self.c == 4:
     ...             raise StopIteration
     ...         c = self.c
@@ -206,7 +206,7 @@ Another helper function
 
 
     >>> d = {}
-    >>> for i in xrange(512):
+    >>> for i in range(512):
     ...     key = 'k%d' % i
     ...     d[key] = i
     >>> a, b = f2(1, *(2,3), **d)
@@ -223,16 +223,9 @@ Another helper function
     >>> Foo.method(x, *(1, 2))
     3
     >>> Foo.method(*(1, 2, 3))
-    Traceback (most recent call last):
-      ...
-    TypeError: unbound method method() must be called with Foo instance as \
-first argument (got int instance instead)
-
+    5
     >>> Foo.method(1, *[2, 3])
-    Traceback (most recent call last):
-      ...
-    TypeError: unbound method method() must be called with Foo instance as \
-first argument (got int instance instead)
+    5
 
 A PyCFunction that takes only positional parameters shoud allow an
 empty keyword dictionary to pass without a complaint, but raise a
@@ -255,7 +248,7 @@ TypeError if te dictionary is not empty
 from test import test_support
 
 def test_main():
-    import test_extcall # self import
+    from test import test_extcall # self import
     test_support.run_doctest(test_extcall, True)
 
 if __name__ == '__main__':
