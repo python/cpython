@@ -112,7 +112,7 @@ name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
 def_op('UNPACK_SEQUENCE', 92)   # Number of tuple items
 jrel_op('FOR_ITER', 93)
-
+def_op('UNPACK_EX', 94)
 name_op('STORE_ATTR', 95)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
 name_op('STORE_GLOBAL', 97)     # ""
