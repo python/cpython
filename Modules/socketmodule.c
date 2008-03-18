@@ -2922,15 +2922,10 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 	}
 
 	if (h->h_addrtype != af) {
-#ifdef HAVE_STRERROR
 		/* Let's get real error message to return */
 		PyErr_SetString(socket_error,
 				(char *)strerror(EAFNOSUPPORT));
-#else
-		PyErr_SetString(
-			socket_error,
-			"Address family not supported by protocol family");
-#endif
+
 		return NULL;
 	}
 

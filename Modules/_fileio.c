@@ -104,11 +104,7 @@ dircheck(PyFileIOObject* self)
 	if (self->fd < 0)
 		return 0;
 	if (fstat(self->fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
-#ifdef HAVE_STRERROR
 		char *msg = strerror(EISDIR);
-#else
-		char *msg = "Is a directory";
-#endif
 		PyObject *exc;
 		internal_close(self);
 
@@ -295,12 +291,8 @@ fileio_dealloc(PyFileIOObject *self)
 	if (self->fd >= 0 && self->closefd) {
 		errno = internal_close(self);
 		if (errno < 0) {
-#ifdef HAVE_STRERROR
 			PySys_WriteStderr("close failed: [Errno %d] %s\n",
                                           errno, strerror(errno));
-#else
-			PySys_WriteStderr("close failed: [Errno %d]\n", errno);
-#endif
 		}
 	}
 
