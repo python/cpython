@@ -5,7 +5,13 @@ import unittest
 from test import test_support
 
 import sys
-import io
+try:
+    # 3.x
+    from io import StringIO
+except ImportError:
+    # 2.x
+    from StringIO import StringIO
+
 from contextlib import contextmanager
 
 NotDefined = object()
@@ -51,7 +57,7 @@ class ClassWith__str__:
         return self.x
 
 class TestPrint(unittest.TestCase):
-    def check(self, expected, args, *,
+    def check(self, expected, args,
             sep=NotDefined, end=NotDefined, file=NotDefined):
         # Capture sys.stdout in a StringIO.  Call print with args,
         #  and with sep, end, and file, if they're defined.  Result
@@ -63,21 +69,21 @@ class TestPrint(unittest.TestCase):
                        end is not NotDefined,
                        file is not NotDefined)]
 
-        t = io.StringIO()
+        t = StringIO()
         with stdout_redirected(t):
             fn(args, sep, end, file)
 
         self.assertEqual(t.getvalue(), expected)
 
     def test_print(self):
-        def x(expected, args, *, sep=NotDefined, end=NotDefined):
+        def x(expected, args, sep=NotDefined, end=NotDefined):
             # Run the test 2 ways: not using file, and using
             #  file directed to a StringIO
 
             self.check(expected, args, sep=sep, end=end)
 
             # When writing to a file, stdout is expected to be empty
-            o = io.StringIO()
+            o = StringIO()
             self.check('', args, sep=sep, end=end, file=o)
 
             # And o will contain the expected output
@@ -87,13 +93,27 @@ class TestPrint(unittest.TestCase):
         x('a\n', ('a',))
         x('None\n', (None,))
         x('1 2\n', (1, 2))
+        x('1   2\n', (1, ' ', 2))
         x('1*2\n', (1, 2), sep='*')
         x('1 s', (1, 's'), end='')
         x('a\nb\n', ('a', 'b'), sep='\n')
         x('1.01', (1.0, 1), sep='', end='')
         x('1*a*1.3+', (1, 'a', 1.3), sep='*', end='+')
+        x('a\n\nb\n', ('a\n', 'b'), sep='\n')
+        x('\0+ +\0\n', ('\0', ' ', '\0'), sep='+')
+
+        x('a\n b\n', ('a\n', 'b'))
+        x('a\n b\n', ('a\n', 'b'), sep=None)
+        x('a\n b\n', ('a\n', 'b'), end=None)
+        x('a\n b\n', ('a\n', 'b'), sep=None, end=None)
 
         x('*\n', (ClassWith__str__('*'),))
+        x('abc 1\n', (ClassWith__str__('abc'), 1))
+
+        # errors
+        self.assertRaises(TypeError, print, '', sep=3)
+        self.assertRaises(TypeError, print, '', end=3)
+        self.assertRaises(AttributeError, print, '', file='')
 
 def test_main():
     test_support.run_unittest(TestPrint)
