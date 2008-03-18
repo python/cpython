@@ -1140,6 +1140,10 @@ funny:
 		-o -name MANIFEST \
 		-o -print
 
+# Perform some verification checks on any modified files.
+check:
+	./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
+
 # Dependencies
 
 Python/thread.o: @THREADHEADERS@
