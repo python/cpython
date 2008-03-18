@@ -1,5 +1,6 @@
 import parser
 import unittest
+import sys
 from test import test_support
 
 #
@@ -494,6 +495,7 @@ class ParserStackLimitTestCase(unittest.TestCase):
 
     def test_trigger_memory_error(self):
         e = self._nested_expression(100)
+        print >>sys.stderr, "Expecting 's_push: parser stack overflow' in next line"
         self.assertRaises(MemoryError, parser.expr, e)
 
 def test_main():
