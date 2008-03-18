@@ -82,6 +82,9 @@ Library
   On all linux systems the --with-system-ffi configure option defaults
   to "yes".
 
+- Issue 1577: shutil.move() now calls os.rename() if the destination is a
+  directory instead of copying-then-remove-source.
+
 Tests
 -----
 
