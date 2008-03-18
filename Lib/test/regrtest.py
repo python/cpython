@@ -437,8 +437,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             print "Re-running test %r in verbose mode" % test
             sys.stdout.flush()
             try:
-                test_support.verbose = 1
-                ok = runtest(test, generate, 1, quiet, testdir,
+                test_support.verbose = True
+                ok = runtest(test, generate, True, quiet, test_times, testdir,
                              huntrleaks)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
