@@ -925,11 +925,16 @@ FORMAT_FLOAT(PyObject *value, PyObject *args)
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, &format, 'g'))
+    if (!parse_internal_render_format_spec(format_spec, &format, '\0'))
         goto done;
 
     /* type conversion? */
     switch (format.type) {
+    case '\0':
+	/* 'Z' means like 'g', but with at least one decimal.  See
+	   PyOS_ascii_formatd */
+	format.type = 'Z';
+	/* Deliberate fall through to the next case statement */
     case 'e':
     case 'E':
     case 'f':

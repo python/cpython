@@ -798,7 +798,8 @@ yes)
 	    ;;
 	# is there any other compiler on Darwin besides gcc?
 	Darwin*)
-	    BASECFLAGS="$BASECFLAGS -Wno-long-double -no-cpp-precomp -mno-fused-madd"
+	    # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
+	    # used to be here, but non-Apple gcc doesn't accept them.
 	    if test "${enable_universalsdk}"; then
 		BASECFLAGS="-arch ppc -arch i386 -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
 	    fi
@@ -2497,10 +2498,13 @@ AC_CHECK_FUNCS(forkpty,,
    )
 )
 
+# Stuff for expat.
+AC_CHECK_FUNCS(memmove)
+
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
-AC_REPLACE_FUNCS(dup2 getcwd strdup strerror memmove)
+AC_REPLACE_FUNCS(dup2 getcwd strdup)
 AC_CHECK_FUNCS(getpgrp, 
   AC_TRY_COMPILE([#include <unistd.h>], 
    [getpgrp(0);], 

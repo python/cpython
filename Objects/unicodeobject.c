@@ -272,7 +272,8 @@ int unicode_resize(register PyUnicodeObject *unicode,
        it contains). */
 
     oldstr = unicode->str;
-    PyMem_RESIZE(unicode->str, Py_UNICODE, length + 1);
+    unicode->str = PyObject_REALLOC(unicode->str,
+				    sizeof(Py_UNICODE) * (length + 1));
     if (!unicode->str) {
 	unicode->str = (Py_UNICODE *)oldstr;
         PyErr_NoMemory();
@@ -322,20 +323,23 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
 	       never downsize it. */
 	    if ((unicode->length < length) &&
                 unicode_resize(unicode, length) < 0) {
-		PyMem_DEL(unicode->str);
+		PyObject_DEL(unicode->str);
 		goto onError;
 	    }
 	}
         else {
-	    unicode->str = PyMem_NEW(Py_UNICODE, length + 1);
+	    size_t new_size = sizeof(Py_UNICODE) * ((size_t)length + 1);
+	    unicode->str = (Py_UNICODE*) PyObject_MALLOC(new_size);
         }
         PyObject_INIT(unicode, &PyUnicode_Type);
     }
     else {
+	size_t new_size;
         unicode = PyObject_New(PyUnicodeObject, &PyUnicode_Type);
         if (unicode == NULL)
             return NULL;
-	unicode->str = PyMem_NEW(Py_UNICODE, length + 1);
+	new_size = sizeof(Py_UNICODE) * ((size_t)length + 1);
+	unicode->str = (Py_UNICODE*) PyObject_MALLOC(new_size);
     }
 
     if (!unicode->str) {
@@ -389,7 +393,7 @@ void unicode_dealloc(register PyUnicodeObject *unicode)
 	numfree < PyUnicode_MAXFREELIST) {
         /* Keep-Alive optimization */
 	if (unicode->length >= KEEPALIVE_SIZE_LIMIT) {
-	    PyMem_DEL(unicode->str);
+	    PyObject_DEL(unicode->str);
 	    unicode->str = NULL;
 	    unicode->length = 0;
 	}
@@ -403,7 +407,7 @@ void unicode_dealloc(register PyUnicodeObject *unicode)
         numfree++;
     }
     else {
-	PyMem_DEL(unicode->str);
+	PyObject_DEL(unicode->str);
 	Py_XDECREF(unicode->defenc);
 	Py_TYPE(unicode)->tp_free((PyObject *)unicode);
     }
@@ -640,7 +644,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	/* step 2: allocate memory for the results of
 	 * PyObject_Str()/PyObject_Repr() calls */
 	if (callcount) {
-		callresults = PyMem_Malloc(sizeof(PyObject *)*callcount);
+		callresults = PyObject_Malloc(sizeof(PyObject *)*callcount);
 		if (!callresults) {
 			PyErr_NoMemory();
 			return NULL;
@@ -787,7 +791,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	}
  expand:
 	if (abuffersize > 20) {
-		abuffer = PyMem_Malloc(abuffersize);
+		abuffer = PyObject_Malloc(abuffersize);
 		if (!abuffer) {
 			PyErr_NoMemory();
 			goto fail;
@@ -950,9 +954,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 
  end:
 	if (callresults)
-		PyMem_Free(callresults);
+		PyObject_Free(callresults);
 	if (abuffer)
-		PyMem_Free(abuffer);
+		PyObject_Free(abuffer);
 	_PyUnicode_Resize(&string, s - PyUnicode_AS_UNICODE(string));
 	return string;
  fail:
@@ -962,10 +966,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			Py_DECREF(*callresult2);
 			++callresult2;
 		}
-		PyMem_Free(callresults);
+		PyObject_Free(callresults);
 	}
 	if (abuffer)
-		PyMem_Free(abuffer);
+		PyObject_Free(abuffer);
 	return NULL;
 }
 
@@ -8277,8 +8281,8 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
             return PyUnicode_FromUnicode(self->str + start, slicelength);
         } else {
             source_buf = PyUnicode_AS_UNICODE((PyObject*)self);
-            result_buf = (Py_UNICODE *)PyMem_MALLOC(slicelength*
-                                                    sizeof(Py_UNICODE));
+            result_buf = (Py_UNICODE *)PyObject_MALLOC(slicelength*
+                                                       sizeof(Py_UNICODE));
 	    
 	    if (result_buf == NULL)
 		    return PyErr_NoMemory();
@@ -8288,7 +8292,7 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
             }
 
             result = PyUnicode_FromUnicode(result_buf, slicelength);
-            PyMem_FREE(result_buf);
+            PyObject_FREE(result_buf);
             return result;
         }
     } else {
@@ -9030,7 +9034,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_DECREF(tmp);
 		return NULL;
 	}
-	pnew->str = PyMem_NEW(Py_UNICODE, n+1);
+	pnew->str = (Py_UNICODE*) PyObject_MALLOC(sizeof(Py_UNICODE) * (n+1));
 	if (pnew->str == NULL) {
 		_Py_ForgetReference((PyObject *)pnew);
 		PyObject_Del(pnew);
@@ -9147,7 +9151,7 @@ PyUnicode_ClearFreeList(void)
 	PyUnicodeObject *v = u;
 	u = *(PyUnicodeObject **)u;
 	if (v->str)
-	    PyMem_DEL(v->str);
+	    PyObject_DEL(v->str);
 	Py_XDECREF(v->defenc);
 	PyObject_Del(v);
 	numfree--;

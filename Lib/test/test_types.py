@@ -451,6 +451,15 @@ class TypesTests(unittest.TestCase):
         test(1.1234e20, 'e', '1.123400e+20')
         test(1.1234e20, 'E', '1.123400E+20')
 
+        # No format code means use g, but must have a decimal
+        # and a number after the decimal.  This is tricky, because
+        # a totaly empty format specifier means something else.
+        # So, just use a sign flag
+        test(1e200, '+g', '+1e+200')
+        test(1e200, '+', '+1.0e+200')
+        test(1.1e200, '+g', '+1.1e+200')
+        test(1.1e200, '+', '+1.1e+200')
+
         # % formatting
         test(-1.0, '%', '-100.000000%')
 
