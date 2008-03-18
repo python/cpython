@@ -576,8 +576,6 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
     test_support.unload(test)
     if not testdir:
         testdir = findtestdir()
-    outputdir = os.path.join(testdir, "output")
-    outputfile = os.path.join(outputdir, test)
     if verbose:
         cfp = None
     else:
