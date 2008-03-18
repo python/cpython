@@ -83,11 +83,7 @@ dircheck(PyFileObject* f)
 		return f;
 	if (fstat(fileno(f->f_fp), &buf) == 0 &&
 	    S_ISDIR(buf.st_mode)) {
-#ifdef HAVE_STRERROR
 		char *msg = strerror(EISDIR);
-#else
-		char *msg = "Is a directory";
-#endif
 		PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(is)",
 						      EISDIR, msg);
 		PyErr_SetObject(PyExc_IOError, exc);
@@ -398,11 +394,7 @@ file_dealloc(PyFileObject *f)
 		sts = (*f->f_close)(f->f_fp);
 		Py_END_ALLOW_THREADS
 		if (sts == EOF) 
-#ifdef HAVE_STRERROR
 			PySys_WriteStderr("close failed: [Errno %d] %s\n", errno, strerror(errno)); 
-#else
-			PySys_WriteStderr("close failed: [Errno %d]\n", errno); 
-#endif
 	}
 	PyMem_Free(f->f_setbuf);
 	Py_XDECREF(f->f_name);
