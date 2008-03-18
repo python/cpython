@@ -590,7 +590,9 @@ class StatefulIncrementalDecoderTest(unittest.TestCase):
         # I=0, O=3
         (b'i.o3.x.xyz.toolong.', False, 'x--.xyz.too.'),
         # I=6, O=3
-        (b'i.o3.i6.abcdefghijklmnop', True, 'abc.ghi.mno.')
+        (b'i.o3.i6.abcdefghijklmnop', True, 'abc.ghi.mno.'),
+        # I=5, O=8 with newlines
+        (b'i.o8.i5.abc\ndef\nghy\nz', True, 'abc\nd---.ef\ngh---.y\nz-----.')
     ]
 
     def testDecoder(self):
@@ -890,8 +892,8 @@ class TextIOWrapperTest(unittest.TestCase):
                 return codecs.CodecInfo(
                     name='test_decoder', encode=None, decode=None,
                     incrementalencoder=None,
-                    streamreader=None, streamwriter=None,
-                    incrementaldecoder=StatefulIncrementalDecoder)
+                    incrementaldecoder=StatefulIncrementalDecoder,
+                    streamreader=None, streamwriter=None)
 
         def testSeekAndTellWithData(data, min_pos=0):
             """Tell/seek to various points within a data stream and ensure
@@ -903,14 +905,40 @@ class TextIOWrapperTest(unittest.TestCase):
             decoded = f.read()
             f.close()
 
-            for i in range(min_pos, len(decoded) + 1): # seek positions
-                for j in [1, 5, len(decoded) - i]: # read lengths
+            # Use read() to move to various positions in the input;
+            # then tell, read some more data, and seek back.
+            for i in range(min_pos, len(decoded) + 1): # to read before tell
+                for j in [1, 5, len(decoded)]: # to read after tell
                     f = io.open(test_support.TESTFN, encoding='test_decoder')
                     self.assertEquals(f.read(i), decoded[:i])
                     cookie = f.tell()
                     self.assertEquals(f.read(j), decoded[i:i + j])
                     f.seek(cookie)
+                    self.assertEquals(f.tell(), cookie)
                     self.assertEquals(f.read(), decoded[i:])
+                    f.close()
+
+            lines = len(decoded.split('\n'))
+
+            # Use readline() to move to various positions in the input;
+            # then tell, read some more data, and seek back.
+            for limit in [-1, 4, 128]: # 'limit' argument for readline()
+                for j in [1, 5, len(decoded)]: # to read after tell()
+                    f = io.open(test_support.TESTFN, encoding='test_decoder')
+                    text = ''
+                    for k in range(lines): # repeatedly call readline()
+                        line = f.readline(limit=limit)
+                        if limit >= 0:
+                            self.assert_(len(line) <= limit)
+                        text += line
+                        i = len(text)
+                        self.assertEquals(text, decoded[:i])
+                        cookie = f.tell()
+                        self.assertEquals(f.read(j), decoded[i:i + j])
+                        f.seek(cookie)
+                        self.assertEquals(f.tell(), cookie)
+                        self.assertEquals(f.read(), decoded[i:])
+                        f.seek(cookie)
                     f.close()
 
         # Register a special incremental decoder for testing.

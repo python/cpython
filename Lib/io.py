@@ -1180,14 +1180,14 @@ class TextIOWrapper(TextIOBase):
         self._encoder = None
         self._decoder = None
         self._decoded_text = ""  # buffer for text produced by decoder
+        self._decoded_text_offset = 0  # offset to text returned by read()
         self._snapshot = None  # info for reconstructing decoder state
         self._seekable = self._telling = self.buffer.seekable()
 
     # A word about _snapshot.  This attribute is either None, or a tuple
-    # (decoder_state, input_chunk, decoded_chars) where decoder_state is
-    # the second (integer) item of the decoder state, input_chunk is the
-    # chunk of bytes that was read, and decoded_chars is the number of
-    # characters rendered by the decoder after feeding it those bytes.
+    # (decoder_state, next_input) where decoder_state is the second
+    # (integer) item of the decoder state, and next_input is the chunk
+    # of bytes that comes after the snapshot point in the input.
     # We use this to reconstruct intermediate decoder states in tell().
 
     # Naming convention:
@@ -1271,10 +1271,10 @@ class TextIOWrapper(TextIOBase):
         """
         Read and decode the next chunk of data from the BufferedReader.
 
-        Return a tuple of two elements: all the bytes that were read, and
-        the decoded string produced by the decoder.  (The entire input
-        chunk is sent to the decoder, but some of it may remain buffered
-        in the decoder, yet to be converted.)
+        The return value is True unless EOF was reached.  The decoded string
+        is placed in self._decoded_text (replacing its previous value).
+        (The entire input chunk is sent to the decoder, though some of it
+        may remain buffered in the decoder, yet to be converted.)
         """
 
         if self._decoder is None:
@@ -1283,8 +1283,9 @@ class TextIOWrapper(TextIOBase):
             # No one should call tell(), so don't bother taking a snapshot.
             input_chunk = self.buffer.read1(self._CHUNK_SIZE)
             eof = not input_chunk
-            decoded = self._decoder.decode(input_chunk, eof)
-            return (input_chunk, decoded)
+            self._decoded_text = self._decoder.decode(input_chunk, eof)
+            self._decoded_text_offset = 0
+            return not eof
 
         # The cookie returned by tell() cannot include the contents of
         # the decoder's buffer, so we need to snapshot a point in the
@@ -1298,16 +1299,15 @@ class TextIOWrapper(TextIOBase):
 
         input_chunk = self.buffer.read1(self._CHUNK_SIZE)
         eof = not input_chunk
-        decoded = self._decoder.decode(input_chunk, eof)
+        self._decoded_text = self._decoder.decode(input_chunk, eof)
+        self._decoded_text_offset = 0
 
-        # At the snapshot point len(dec_buffer) bytes ago, the next input
-        # to be passed to the decoder is dec_buffer + input_chunk.  Save
-        # len(decoded) so that later, tell() can figure out how much
-        # decoded data has been used up by TextIOWrapper.read().
-        self._snapshot = (dec_flags, dec_buffer + input_chunk, len(decoded))
-        return (input_chunk, decoded)
+        # At the snapshot point, len(dec_buffer) bytes ago, the next input
+        # to be passed to the decoder is dec_buffer + input_chunk.
+        self._snapshot = (dec_flags, dec_buffer + input_chunk)
+        return not eof
 
-    def _encode_tell_cookie(self, position, dec_flags=0,
+    def _pack_cookie(self, position, dec_flags=0,
                             feed_bytes=0, need_eof=0, skip_chars=0):
         # The meaning of a tell() cookie is: seek to position, set the
         # decoder flags to dec_flags, read feed_bytes bytes, feed them
@@ -1317,7 +1317,7 @@ class TextIOWrapper(TextIOBase):
         return (position | (dec_flags<<64) | (feed_bytes<<128) |
                 (skip_chars<<192) | bool(need_eof)<<256)
 
-    def _decode_tell_cookie(self, bigint):
+    def _unpack_cookie(self, bigint):
         rest, position = divmod(bigint, 1<<64)
         rest, dec_flags = divmod(rest, 1<<64)
         rest, feed_bytes = divmod(rest, 1<<64)
@@ -1339,14 +1339,14 @@ class TextIOWrapper(TextIOBase):
             return position
 
         # Skip backward to the snapshot point (see _read_chunk).
-        dec_flags, next_input, decoded_chars = self._snapshot
+        dec_flags, next_input = self._snapshot
         position -= len(next_input)
 
-        # How many decoded characters have been consumed since the snapshot?
-        skip_chars = decoded_chars - len(self._decoded_text)
+        # How many decoded characters have been returned since the snapshot?
+        skip_chars = self._decoded_text_offset
         if skip_chars == 0:
             # We haven't moved from the snapshot point.
-            return self._encode_tell_cookie(position, dec_flags)
+            return self._pack_cookie(position, dec_flags)
 
         # Walk the decoder forward, one byte at a time, to find the minimum
         # input necessary to give us the decoded characters we need to skip.
@@ -1373,8 +1373,8 @@ class TextIOWrapper(TextIOBase):
                 if decoded_chars >= skip_chars:
                     break
             else:
-                # We didn't get enough decoded data; send EOF to get more.
-                decoded = decoder.decode(b"", True)
+                # We didn't get enough decoded data; signal EOF to get more.
+                decoded = decoder.decode(b"", final=True)
                 decoded_chars += len(decoded)
                 need_eof = 1
                 if decoded_chars < skip_chars:
@@ -1385,7 +1385,7 @@ class TextIOWrapper(TextIOBase):
             position += safe_fed_bytes
             fed_bytes -= safe_fed_bytes
             skip_chars -= safe_decoded_chars
-            return self._encode_tell_cookie(
+            return self._pack_cookie(
                 position, dec_flags, fed_bytes, need_eof, skip_chars)
         finally:
             decoder.setstate(saved_state)
@@ -1405,8 +1405,7 @@ class TextIOWrapper(TextIOBase):
                 raise IOError("can't do nonzero end-relative seeks")
             self.flush()
             position = self.buffer.seek(0, 2)
-            self._decoded_text = ""
-            self._snapshot = None
+            self._clear_decoded_text()
             if self._decoder:
                 self._decoder.reset()
             return position
@@ -1419,48 +1418,70 @@ class TextIOWrapper(TextIOBase):
 
         # Seek back to the snapshot point.
         position, dec_flags, feed_bytes, need_eof, skip_chars = \
-            self._decode_tell_cookie(cookie)
+            self._unpack_cookie(cookie)
         self.buffer.seek(position)
-        self._decoded_text = ""
-        self._snapshot = None
+        self._clear_decoded_text()
 
         if self._decoder or dec_flags or feed_bytes or need_eof:
             # Restore the decoder flags to their values from the snapshot.
             self._decoder = self._decoder or self._get_decoder()
             self._decoder.setstate((b"", dec_flags))
+            self._snapshot = (dec_flags, b'')
 
         if feed_bytes or need_eof:
             # Feed feed_bytes bytes to the decoder.
             input_chunk = self.buffer.read(feed_bytes)
-            decoded = self._decoder.decode(input_chunk, need_eof)
-            if len(decoded) < skip_chars:
+            self._decoded_text = self._decoder.decode(input_chunk, need_eof)
+            if len(self._decoded_text) < skip_chars:
                 raise IOError("can't restore logical file position")
 
             # Skip skip_chars of the decoded characters.
-            self._decoded_text = decoded[skip_chars:]
+            self._decoded_text_offset = skip_chars
 
             # Restore the snapshot.
-            self._snapshot = (dec_flags, input_chunk, len(decoded))
+            self._snapshot = (dec_flags, input_chunk)
         return cookie
+
+    def _clear_decoded_text(self):
+        """Reset the _decoded_text buffer."""
+        self._decoded_text = ''
+        self._decoded_text_offset = 0
+        self._snapshot = None
+
+    def _emit_decoded_text(self, n=None):
+        """Advance into the _decoded_text buffer."""
+        offset = self._decoded_text_offset
+        if n is None:
+            text = self._decoded_text[offset:]
+        else:
+            text = self._decoded_text[offset:offset + n]
+        self._decoded_text_offset += len(text)
+        return text
+
+    def _unemit_decoded_text(self, n):
+        """Rewind the _decoded_text buffer."""
+        if self._decoded_text_offset < n:
+            raise AssertionError("unemit out of bounds")
+        self._decoded_text_offset -= n
 
     def read(self, n=None):
         if n is None:
             n = -1
         decoder = self._decoder or self._get_decoder()
-        result = self._decoded_text
         if n < 0:
-            result += decoder.decode(self.buffer.read(), True)
-            self._decoded_text = ""
-            self._snapshot = None
+            # Read everything.
+            result = (self._emit_decoded_text() +
+                      decoder.decode(self.buffer.read(), final=True))
+            self._clear_decoded_text()
             return result
         else:
-            while len(result) < n:
-                input_chunk, decoded = self._read_chunk()
-                result += decoded
-                if not input_chunk:
-                    break
-            self._decoded_text = result[n:]
-            return result[:n]
+            # Keep reading chunks until we have n characters to return.
+            eof = False
+            result = self._emit_decoded_text(n)
+            while len(result) < n and not eof:
+                eof = not self._read_chunk()
+                result += self._emit_decoded_text(n - len(result))
+            return result
 
     def __next__(self):
         self._telling = False
@@ -1474,21 +1495,20 @@ class TextIOWrapper(TextIOBase):
     def readline(self, limit=None):
         if limit is None:
             limit = -1
-        if limit >= 0:
-            # XXX Hack to support limit argument, for backwards compatibility
-            line = self.readline()
-            if len(line) <= limit:
-                return line
-            line, self._decoded_text = \
-                line[:limit], line[limit:] + self._decoded_text
-            return line
 
-        line = self._decoded_text
+        # Grab all the decoded text (we will rewind any extra bits later).
+        line = self._emit_decoded_text()
+
         start = 0
         decoder = self._decoder or self._get_decoder()
 
         pos = endpos = None
         while True:
+            if limit >= 0 and len(line) >= limit:
+                # Length limit has been reached.
+                endpos = limit
+                break
+
             if self._readtranslate:
                 # Newlines are already translated, only search for \n
                 pos = line.find('\n', start)
@@ -1538,20 +1558,18 @@ class TextIOWrapper(TextIOBase):
 
             # No line ending seen yet - get more data
             more_line = ''
-            while True:
-                readahead, pending = self._read_chunk()
-                more_line = pending
-                if more_line or not readahead:
+            while self._read_chunk():
+                if self._decoded_text:
                     break
-            if more_line:
-                line += more_line
+            if self._decoded_text:
+                line += self._emit_decoded_text()
             else:
                 # end of file
-                self._decoded_text = ''
-                self._snapshot = None
+                self._clear_decoded_text()
                 return line
 
-        self._decoded_text = line[endpos:]
+        # Rewind _decoded_text to just after the line ending we found.
+        self._unemit_decoded_text(len(line) - endpos)
         return line[:endpos]
 
     @property
