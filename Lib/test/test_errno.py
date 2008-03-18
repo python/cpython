@@ -4,7 +4,8 @@
 """
 
 import errno
-from test.test_support import verbose
+from test import test_support
+import unittest
 
 errors = ['E2BIG', 'EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL', 'EADV',
           'EAFNOSUPPORT', 'EAGAIN', 'EALREADY', 'EBADE', 'EBADF',
@@ -33,17 +34,33 @@ errors = ['E2BIG', 'EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL', 'EADV',
           'ETIMEDOUT', 'ETOOMANYREFS', 'ETXTBSY', 'EUNATCH',
           'EUSERS', 'EWOULDBLOCK', 'EXDEV', 'EXFULL']
 
-#
-# This is a wee bit bogus since the module only conditionally adds
-# errno constants if they have been defined by errno.h  However, this
-# test seems to work on SGI, Sparc & intel Solaris, and linux.
-#
-for error in errors:
-    try:
-        a = getattr(errno, error)
-    except AttributeError:
-        if verbose:
-            print '%s: not found' % error
-    else:
-        if verbose:
-            print '%s: %d' % (error, a)
+
+class ErrnoAttributeTests(unittest.TestCase):
+
+    def test_for_improper_attributes(self):
+        # No unexpected attributes should be on the module.
+        errors_set = set(errors)
+        for attribute in errno.__dict__.iterkeys():
+            if attribute.isupper():
+                self.assert_(attribute in errors_set)
+
+    def test_using_errorcode(self):
+        # Every key value in errno.errorcode should be on the module.
+        for value in errno.errorcode.itervalues():
+            self.assert_(hasattr(errno, value))
+
+
+class ErrorcodeTests(unittest.TestCase):
+
+    def test_attributes_in_errorcode(self):
+        for attribute in errno.__dict__.iterkeys():
+            if attribute.isupper():
+                self.assert_(getattr(errno, attribute) in errno.errorcode)
+
+
+def test_main():
+    test_support.run_unittest(ErrnoAttributeTests, ErrorcodeTests)
+
+
+if __name__ == '__main__':
+    test_main()
