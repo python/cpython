@@ -42,7 +42,7 @@ class ChecksumTestCase(unittest.TestCase):
     def test_crc32_adler32_unsigned(self):
         foo = 'abcdefghijklmnop'
         # explicitly test signed behavior
-        self.assertEqual(zlib.crc32(foo), 2486878355)
+        self.assertEqual(zlib.crc32(foo), -1808088941)
         self.assertEqual(zlib.crc32('spam'), 1138425661)
         self.assertEqual(zlib.adler32(foo+foo), 3573550353)
         self.assertEqual(zlib.adler32('spam'), 72286642)

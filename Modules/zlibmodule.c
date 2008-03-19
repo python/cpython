@@ -940,7 +940,7 @@ PyZlib_crc32(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s#|k:crc32", &buf, &len, &crc32val))
 	return NULL;
     crc32val = crc32(crc32val, buf, len);
-    return PyLong_FromUnsignedLong(crc32val & 0xffffffff);
+    return PyLong_FromLong(crc32val & 0xffffffff);
 }
 
 
