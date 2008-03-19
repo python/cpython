@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
                         "<string>")
 
-class TextHexOctBin(unittest.TestCase):
+class TestHexOctBin(unittest.TestCase):
 
     def test_hex_baseline(self):
         # A few upper/lowercase tests
@@ -185,7 +185,7 @@ class TextHexOctBin(unittest.TestCase):
         self.assertEqual(-0b1111111111111111111111111111111111111111111111111111111111111111, -18446744073709551615L)
 
 def test_main():
-    test_support.run_unittest(TextHexOctBin)
+    test_support.run_unittest(TestHexOctBin)
 
 if __name__ == "__main__":
     test_main()
