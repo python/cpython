@@ -263,7 +263,7 @@ class RelativeImport(unittest.TestCase):
 
     def test_relimport_star(self):
         # This will import * from .test_import.
-        import relimport
+        from . import relimport
         self.assertTrue(hasattr(relimport, "RelativeImport"))
 
 def test_main(verbose=None):
