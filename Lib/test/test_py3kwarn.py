@@ -91,6 +91,20 @@ class TestPy3KWarnings(unittest.TestCase):
     def assertWarning(self, _, warning, expected_message):
         self.assertEqual(str(warning.message), expected_message)
 
+    def test_sort_cmp_arg(self):
+        expected = "In 3.x, the cmp argument is no longer supported."
+        lst = range(5)
+        cmp = lambda x,y: -1
+
+        with catch_warning() as w:
+            self.assertWarning(lst.sort(cmp=cmp), w, expected)
+        with catch_warning() as w:
+            self.assertWarning(sorted(lst, cmp=cmp), w, expected)
+        with catch_warning() as w:
+            self.assertWarning(lst.sort(cmp), w, expected)
+        with catch_warning() as w:
+            self.assertWarning(sorted(lst, cmp), w, expected)
+
 def test_main():
     run_unittest(TestPy3KWarnings)
 

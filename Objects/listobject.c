@@ -2037,7 +2037,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	}
 	if (compare == Py_None)
 		compare = NULL;
-	if (compare == NULL && 
+	if (compare != NULL && 
             Py_Py3kWarningFlag &&
 	    PyErr_Warn(PyExc_DeprecationWarning, 
 		       "In 3.x, the cmp argument is no longer supported.") < 0)
