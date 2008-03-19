@@ -6,8 +6,10 @@ import binascii, cStringIO
 
 try:
     import zlib # We may need its compression method
+    crc32 = zlib.crc32
 except ImportError:
     zlib = None
+    crc32 = binascii.crc32
 
 __all__ = ["BadZipfile", "error", "ZIP_STORED", "ZIP_DEFLATED", "is_zipfile",
            "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile" ]
@@ -940,7 +942,7 @@ class ZipFile:
             if not buf:
                 break
             file_size = file_size + len(buf)
-            CRC = binascii.crc32(buf, CRC)
+            CRC = crc32(buf, CRC)
             if cmpr:
                 buf = cmpr.compress(buf)
                 compress_size = compress_size + len(buf)
@@ -983,7 +985,7 @@ class ZipFile:
         zinfo.header_offset = self.fp.tell()    # Start of header bytes
         self._writecheck(zinfo)
         self._didModify = True
-        zinfo.CRC = binascii.crc32(bytes)       # CRC-32 checksum
+        zinfo.CRC = crc32(bytes)       # CRC-32 checksum
         if zinfo.compress_type == ZIP_DEFLATED:
             co = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
                  zlib.DEFLATED, -15)
@@ -1041,7 +1043,7 @@ class ZipFile:
                 if extra:
                     # Append a ZIP64 field to the extra's
                     extra_data = struct.pack(
-                            '<hh' + 'q'*len(extra),
+                            '<HH' + 'Q'*len(extra),
                             1, 8*len(extra), *extra) + extra_data
 
                     extract_version = max(45, zinfo.extract_version)
