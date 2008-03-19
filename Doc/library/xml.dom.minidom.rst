@@ -172,7 +172,7 @@ module documentation.  This section lists the differences between the API and
    .. versionadded:: 2.1
 
    .. versionchanged:: 2.3
-      the encoding [1]_ argument; see :meth:`toxml`.
+      the encoding argument; see :meth:`toxml`.
 
 The following standard DOM methods have special considerations with
 :mod:`xml.dom.minidom`:
