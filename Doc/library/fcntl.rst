@@ -50,6 +50,8 @@ The module defines the following functions:
    operations are typically defined in the library module :mod:`termios` and the
    argument handling is even more complicated.
 
+   The op parameter is limited to values that can fit in 32-bits.
+
    The parameter *arg* can be one of an integer, absent (treated identically to the
    integer ``0``), an object supporting the read-only buffer interface (most likely
    a plain Python string) or an object supporting the read-write buffer interface.
