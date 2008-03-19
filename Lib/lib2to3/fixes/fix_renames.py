@@ -20,8 +20,8 @@ def alternates(members):
 
 def build_pattern():
     #bare = set()
-    for module, replace in MAPPING.items():
-        for old_attr, new_attr in replace.items():
+    for module, replace in list(MAPPING.items()):
+        for old_attr, new_attr in list(replace.items()):
             LOOKUP[(module, old_attr)] = new_attr
             #bare.add(module)
             #bare.add(old_attr)

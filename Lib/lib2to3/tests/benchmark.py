@@ -23,7 +23,7 @@ from .. import refactor
 ###############################################################################
 class Options:
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             setattr(self, k, v)
 
         self.verbose = False
@@ -34,7 +34,7 @@ def dummy_transform(*args, **kwargs):
 ### Collect list of modules to match against
 ###############################################################################
 files = []
-for mod in sys.modules.values():
+for mod in list(sys.modules.values()):
     if mod is None or not hasattr(mod, '__file__'):
         continue
     f = mod.__file__
@@ -53,6 +53,6 @@ for fixer in refactor.fixers:
 
 t = time()
 for f in files:
-    print "Matching", f
+    print("Matching", f)
     refactor.refactor_file(f)
-print "%d seconds to match %d files" % (time() - t, len(sys.modules))
+print("%d seconds to match %d files" % (time() - t, len(sys.modules)))

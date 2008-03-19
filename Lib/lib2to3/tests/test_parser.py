@@ -149,7 +149,7 @@ class TestParserIdempotency(support.TestCase):
 
     def test_all_project_files(self):
         for filepath in support.all_project_files():
-            print "Parsing %s..." % filepath
+            print("Parsing %s..." % filepath)
             tree = driver.parse_file(filepath, debug=True)
             if diff(filepath, tree):
                 self.fail("Idempotency failed: %s" % filepath)

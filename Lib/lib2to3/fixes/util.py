@@ -323,7 +323,7 @@ def _is_import_binding(node, name, package=None):
     elif node.type == syms.import_from:
         # unicode(...) is used to make life easier here, because
         # from a.b import parses to ['import', ['a', '.', 'b'], ...]
-        if package and unicode(node.children[1]).strip() != package:
+        if package and str(node.children[1]).strip() != package:
             return None
         n = node.children[3]
         if package and _find('as', n):

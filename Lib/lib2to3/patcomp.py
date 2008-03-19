@@ -31,7 +31,7 @@ _PATTERN_GRAMMAR_FILE = os.path.join(os.path.dirname(__file__),
 def tokenize_wrapper(input):
     """Tokenizes a string suppressing significant whitespace."""
     skip = (token.NEWLINE, token.INDENT, token.DEDENT)
-    tokens = tokenize.generate_tokens(driver.generate_lines(input).next)
+    tokens = tokenize.generate_tokens(driver.generate_lines(input).__next__)
     for quintuple in tokens:
         type, value, start, end, line_text = quintuple
         if type not in skip:

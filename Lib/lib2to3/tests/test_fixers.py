@@ -18,7 +18,7 @@ from .. import refactor
 
 class Options:
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             setattr(self, k, v)
 
         self.verbose = False
@@ -1285,7 +1285,7 @@ class Test_imports(FixerTestCase):
               }
 
     def test_import_module(self):
-        for old, (new, members) in self.modules.items():
+        for old, (new, members) in list(self.modules.items()):
             b = "import %s" % old
             a = "import %s" % new
             self.check(b, a)
@@ -1295,7 +1295,7 @@ class Test_imports(FixerTestCase):
             self.check(b, a)
 
     def test_import_from(self):
-        for old, (new, members) in self.modules.items():
+        for old, (new, members) in list(self.modules.items()):
             for member in members:
                 b = "from %s import %s" % (old, member)
                 a = "from %s import %s" % (new, member)
@@ -1305,7 +1305,7 @@ class Test_imports(FixerTestCase):
                 self.unchanged(s)
 
     def test_import_module_as(self):
-        for old, (new, members) in self.modules.items():
+        for old, (new, members) in list(self.modules.items()):
             b = "import %s as foo_bar" % old
             a = "import %s as foo_bar" % new
             self.check(b, a)
@@ -1315,7 +1315,7 @@ class Test_imports(FixerTestCase):
             self.check(b, a)
 
     def test_import_from_as(self):
-        for old, (new, members) in self.modules.items():
+        for old, (new, members) in list(self.modules.items()):
             for member in members:
                 b = "from %s import %s as foo_bar" % (old, member)
                 a = "from %s import %s as foo_bar" % (new, member)
@@ -1327,7 +1327,7 @@ class Test_imports(FixerTestCase):
             self.warns_unchanged(s, "Cannot handle star imports")
 
     def test_import_module_usage(self):
-        for old, (new, members) in self.modules.items():
+        for old, (new, members) in list(self.modules.items()):
             for member in members:
                 b = """
                     import %s
@@ -1340,7 +1340,7 @@ class Test_imports(FixerTestCase):
                 self.check(b, a)
 
     def test_from_import_usage(self):
-        for old, (new, members) in self.modules.items():
+        for old, (new, members) in list(self.modules.items()):
             for member in members:
                 b = """
                     from %s import %s
@@ -2211,7 +2211,7 @@ class Test_renames(FixerTestCase):
               }
 
     def test_import_from(self):
-        for mod, (old, new) in self.modules.items():
+        for mod, (old, new) in list(self.modules.items()):
             b = "from %s import %s" % (mod, old)
             a = "from %s import %s" % (mod, new)
             self.check(b, a)
@@ -2220,13 +2220,13 @@ class Test_renames(FixerTestCase):
             self.unchanged(s)
 
     def test_import_from_as(self):
-        for mod, (old, new) in self.modules.items():
+        for mod, (old, new) in list(self.modules.items()):
             b = "from %s import %s as foo_bar" % (mod, old)
             a = "from %s import %s as foo_bar" % (mod, new)
             self.check(b, a)
 
     def test_import_module_usage(self):
-        for mod, (old, new) in self.modules.items():
+        for mod, (old, new) in list(self.modules.items()):
             b = """
                 import %s
                 foo(%s, %s.%s)
@@ -2239,7 +2239,7 @@ class Test_renames(FixerTestCase):
 
     def XXX_test_from_import_usage(self):
         # not implemented yet
-        for mod, (old, new) in self.modules.items():
+        for mod, (old, new) in list(self.modules.items()):
             b = """
                 from %s import %s
                 foo(%s, %s)

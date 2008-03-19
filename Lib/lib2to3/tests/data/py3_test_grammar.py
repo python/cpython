@@ -32,7 +32,7 @@ class TokenTests(unittest.TestCase):
         self.assertEquals(0o377, 255)
         self.assertEquals(2147483647, 0o17777777777)
         self.assertEquals(0b1001, 9)
-        from sys import maxint
+        from sys import maxsize
         if maxint == 2147483647:
             self.assertEquals(-2147483647-1, -0o20000000000)
             # XXX -2147483648
@@ -438,7 +438,7 @@ class GrammarTests(unittest.TestCase):
 
     def testRaise(self):
         # 'raise' test [',' test]
-        try: raise RuntimeError, 'just testing'
+        try: raise RuntimeError('just testing')
         except RuntimeError: pass
         try: raise KeyboardInterrupt
         except KeyboardInterrupt: pass
