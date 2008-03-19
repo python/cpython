@@ -2552,15 +2552,6 @@ ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!PyArg_UnpackTuple(args, "ifilter", 2, 2, &func, &seq))
 		return NULL;
 
-	if (func == Py_None) {
-		if (Py_Py3kWarningFlag &&
-		    PyErr_Warn(PyExc_DeprecationWarning,
-			       "ifilter with None as a first argument "
-			       "is not supported in 3.x.  Use a list "
-			       "comprehension instead.") < 0)
-			return NULL;
-	}
-
 	/* Get iterator. */
 	it = PyObject_GetIter(seq);
 	if (it == NULL)
