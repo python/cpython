@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_sqlite3"
 	ProjectGUID="{13CECB97-4119-4316-9D42-8534019A5A44}"
 	RootNamespace="_sqlite3"
@@ -53,12 +53,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="Build sqlite3 libs and dll"
-				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -118,12 +115,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="Build sqlite3 libs and dll"
-				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -183,12 +177,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="Build sqlite3 libs and dll"
-				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -249,12 +240,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="Build sqlite3 libs and dll"
-				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -314,12 +302,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="Build sqlite3 libs and dll"
-				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -380,12 +365,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="Build sqlite3 libs and dll"
-				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>
@@ -446,12 +428,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="Build sqlite3 libs and dll"
-				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -512,12 +491,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="Build sqlite3 libs and dll"
-				CommandLine="cd &quot;$(sqlite3Dir)&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; if exist $(PlatformName)\sqlite3.dll copy $(PlatformName)\sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;if exist $(PlatformName)\sqlite3.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName) mkdir $(PlatformName)&#x0D;&#x0A;cd $(PlatformName)&#x0D;&#x0A;cl /DNO_TCL /Ox /Ob1 /Oi /GL /GF /FD /MD /Gy ..\*.c&#x0D;&#x0A;link /INCREMENTAL:NO /NOLOGO /DLL /OPT:REF /OPT:ICF /def:..\sqlite3.def  /dll /out:sqlite3.dll *.obj&#x0D;&#x0A;if not exist &quot;$(OutDir)\sqlite3.dll&quot; copy sqlite3.dll &quot;$(OutDir)&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>
