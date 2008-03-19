@@ -316,7 +316,8 @@ class GzipFile:
         crc32 = read32(self.fileobj)
         isize = U32(read32(self.fileobj))   # may exceed 2GB
         if U32(crc32) != U32(self.crc):
-            raise IOError, "CRC check failed"
+            raise IOError("CRC check failed %s != %s" % (hex(U32(crc32)),
+                                                         hex(U32(self.crc))))
         elif isize != LOWU32(self.size):
             raise IOError, "Incorrect length of data produced"
 
