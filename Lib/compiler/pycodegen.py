@@ -10,7 +10,7 @@ from compiler import pyassem, misc, future, symbols
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.consts import (CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
      CO_NESTED, CO_GENERATOR, CO_FUTURE_DIVISION,
-     CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT)
+     CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT, CO_FUTURE_PRINT_FUNCTION)
 from compiler.pyassem import TupleArg
 
 # XXX The version-specific code can go, since this code only works with 2.x.
@@ -218,6 +218,8 @@ class CodeGenerator:
                 self.graph.setFlag(CO_FUTURE_ABSIMPORT)
             elif feature == "with_statement":
                 self.graph.setFlag(CO_FUTURE_WITH_STATEMENT)
+            elif feature == "print_function":
+                self.graph.setFlag(CO_FUTURE_PRINT_FUNCTION)
 
     def initClass(self):
         """This method is called once for each class"""
