@@ -1,14 +1,12 @@
 import unittest
-from test.test_support import catch_warning, TestSkipped, run_unittest
+import sys
+from test.test_support import (catch_warning, TestSkipped, run_unittest,
+                                TestSkipped)
 import warnings
 
-# TODO: This is a hack to raise TestSkipped if -3 is not enabled. Instead
-# of relying on callable to have a warning, we should expose the -3 flag
-# to Python code somehow
-with catch_warning() as w:
-    callable(int)
-    if w.message is None:
-        raise TestSkipped('%s must be run with the -3 flag' % __name__)
+if not sys.py3kwarning:
+    raise TestSkipped('%s must be run with the -3 flag' % __name__)
+
 
 class TestPy3KWarnings(unittest.TestCase):
 
