@@ -99,6 +99,9 @@ Library
 Tests
 -----
 
+- test_nis no longer fails when test.test_support.verbose is true and NIS is
+  not set up on the testing machine.
+
 - Output comparison tests are no longer supported.
 
 - Rewrite test_errno to use unittest and no longer be a no-op.
