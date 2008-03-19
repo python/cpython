@@ -296,13 +296,6 @@ builtin_filter(PyObject *self, PyObject *args)
 		}
 
 		if (func == (PyObject *)&PyBool_Type || func == Py_None) {
-			if (Py_Py3kWarningFlag &&
-			    PyErr_Warn(PyExc_DeprecationWarning,
-				       "filter with None as a first argument "
-				       "is not supported in 3.x.  Use a list "
-				       "comprehension instead.") < 0)
-				return NULL;
-
 			ok = PyObject_IsTrue(item);
 		}
 		else {

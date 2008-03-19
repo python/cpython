@@ -48,17 +48,6 @@ class TestPy3KWarnings(unittest.TestCase):
         with catch_warning() as w:
             self.assertWarning(cell0 < cell1, w, expected)
 
-    def test_filter(self):
-        from itertools import ifilter
-        from future_builtins import filter
-        expected = 'ifilter with None as a first argument is not supported '\
-                   'in 3.x.  Use a list comprehension instead.'
-
-        with catch_warning() as w:
-            self.assertWarning(ifilter(None, []), w, expected)
-        with catch_warning() as w:
-            self.assertWarning(filter(None, []), w, expected)
-
     def test_code_inequality_comparisons(self):
         expected = 'code inequality comparisons not supported in 3.x.'
         def f(x):
