@@ -3,6 +3,7 @@ from compiler.ast import flatten
 import os, sys, time, unittest
 import test.test_support
 from random import random
+from StringIO import StringIO
 
 # How much time in seconds can pass before we print a 'Still working' message.
 _PRINT_WORKING_MSG_INTERVAL = 5 * 60
@@ -155,6 +156,16 @@ class CompilerTest(unittest.TestCase):
         exec c in dct
         self.assertEquals(dct.get('result'), 1)
 
+
+    def testPrintFunction(self):
+        c = compiler.compile('from __future__ import print_function\n'
+                             'print("a", "b", sep="**", end="++", '
+                                    'file=output)',
+                             '<string>',
+                             'exec' )
+        dct = {'output': StringIO()}
+        exec c in dct
+        self.assertEquals(dct['output'].getvalue(), 'a**b++')
 
     def _testErrEnc(self, src, text, offset):
         try:
