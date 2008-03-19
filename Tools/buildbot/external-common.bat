@@ -5,8 +5,8 @@ cd ..
 @rem XXX: If you need to force the buildbots to start from a fresh environment, uncomment
 @rem the following, check it in, then check it out, comment it out, then check it back in.
 @rem if exist bzip2-1.0.3 rd /s/q bzip2-1.0.3
-if exist tcltk rd /s/q tcltk
-if exist tcltk64 rd /s/q tcltk64
+@rem if exist tcltk rd /s/q tcltk
+@rem if exist tcltk64 rd /s/q tcltk64
 @rem if exist tcl8.4.12 rd /s/q tcl8.4.12
 @rem if exist tcl8.4.16 rd /s/q tcl8.4.16
 @rem if exist tcl-8.4.18.1 rd /s/q tcl-8.4.18.1
