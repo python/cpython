@@ -512,7 +512,7 @@ Py_Finalize(void)
 	/* reset file system default encoding */
 	if (!Py_HasFileSystemDefaultEncoding) {
 		free((char*)Py_FileSystemDefaultEncoding);
-        	Py_FileSystemDefaultEncoding = NULL;
+		Py_FileSystemDefaultEncoding = NULL;
 	}
 
 	/* XXX Still allocated:
@@ -733,6 +733,7 @@ initstdio(void)
 	PyObject *m;
 	PyObject *std = NULL;
 	int status = 0, fd;
+	PyObject * encoding_attr;
 
 	/* Hack to avoid a nasty recursion issue when Python is invoked
 	   in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -823,6 +824,19 @@ initstdio(void)
 			goto error;
 		}
 	} /* if (fd < 0) */
+
+	/* Same as hack above, pre-import stderr's codec to avoid recursion
+	   when import.c tries to write to stderr in verbose mode. */
+	encoding_attr = PyObject_GetAttrString(std, "encoding");
+	if (encoding_attr != NULL) {
+		const char * encoding;
+		encoding = PyUnicode_AsString(encoding_attr);
+		if (encoding != NULL) {
+			_PyCodec_Lookup(encoding);
+		}
+	}
+	PyErr_Clear();  /* Not a fatal error if codec isn't available */
+
 	PySys_SetObject("__stderr__", std);
 	PySys_SetObject("stderr", std);
 	Py_DECREF(std);
@@ -1900,8 +1914,8 @@ PyOS_CheckStack(void)
 		alloca(PYOS_STACK_MARGIN * sizeof(void*));
 		return 0;
 	} __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ?
-		        EXCEPTION_EXECUTE_HANDLER : 
-		        EXCEPTION_CONTINUE_SEARCH) {
+			EXCEPTION_EXECUTE_HANDLER : 
+			EXCEPTION_CONTINUE_SEARCH) {
 		int errcode = _resetstkoflw();
 		if (errcode)
 		{
