@@ -1,6 +1,7 @@
 import unittest
 from test import test_support
 import zlib
+import binascii
 import random
 
 
@@ -46,6 +47,12 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(zlib.adler32(foo+foo), 3573550353)
         self.assertEqual(zlib.adler32('spam'), 72286642)
 
+    def test_same_as_binascii_crc32(self):
+        foo = 'abcdefghijklmnop'
+        crc = -1808088941
+        self.assertEqual(binascii.crc32(foo), crc)
+        self.assertEqual(zlib.crc32(foo), crc)
+        self.assertEqual(binascii.crc32('spam'), zlib.crc32('spam'))
 
 
 

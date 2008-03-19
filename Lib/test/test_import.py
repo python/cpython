@@ -255,8 +255,20 @@ class PathsTests(unittest.TestCase):
         self.assertEqual(mod.testdata, 'test_trailing_slash')
         unload("test_trailing_slash")
 
+class RelativeImport(unittest.TestCase):
+    def tearDown(self):
+        try:
+            del sys.modules["test.relimport"]
+        except:
+            pass
+
+    def test_relimport_star(self):
+        # This will import * from .test_import.
+        from . import relimport
+        self.assertTrue(hasattr(relimport, "RelativeImport"))
+
 def test_main(verbose=None):
-    run_unittest(ImportTest, PathsTests)
+    run_unittest(ImportTest, PathsTests, RelativeImport)
 
 if __name__ == '__main__':
     test_main()

@@ -1906,9 +1906,9 @@ static PyObject *
 posix_chown(PyObject *self, PyObject *args)
 {
 	char *path = NULL;
-	int uid, gid;
+	long uid, gid;
 	int res;
-	if (!PyArg_ParseTuple(args, "etii:chown",
+	if (!PyArg_ParseTuple(args, "etll:chown",
 	                      Py_FileSystemDefaultEncoding, &path,
 	                      &uid, &gid))
 		return NULL;

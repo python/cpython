@@ -902,7 +902,7 @@ binascii_crc32(PyObject *self, PyObject *args)
 	Py_ssize_t len;
 	long result;
 
-	if ( !PyArg_ParseTuple(args, "s#|l:crc32", &bin_data, &len, &crc) )
+	if ( !PyArg_ParseTuple(args, "s#|k:crc32", &bin_data, &len, &crc) )
 		return NULL;
 
 	crc = ~ crc;

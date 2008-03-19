@@ -18,6 +18,9 @@ md5(), sha1(), sha224(), sha256(), sha384(), and sha512()
 More algorithms may be available on your platform but the above are
 guaranteed to exist.
 
+NOTE: If you want the adler32 or crc32 hash functions they are available in
+the zlib module.
+
 Choose your hash function wisely.  Some have known collision weaknesses.
 sha384 and sha512 will be slow on 32 bit platforms.
 

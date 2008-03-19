@@ -19,6 +19,10 @@ algorithm (defined in Internet :rfc:`1321`).  The terms "secure hash" and
 "message digest" are interchangeable.  Older algorithms were called message
 digests.  The modern term is secure hash.
 
+.. note::
+   If you want the adler32 or crc32 hash functions they are available in
+   the :mod:`zlib` module.
+
 .. warning::
 
    Some algorithms have known hash collision weaknesses, see the FAQ at the end.

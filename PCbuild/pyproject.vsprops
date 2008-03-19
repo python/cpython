@@ -46,23 +46,43 @@
 	/>
 	<UserMacro
 		Name="bsddbDir"
-		Value="..\..\db-4.4.20\build_win32\"
+		Value="$(bsddb44Dir)"
+	/>
+	<UserMacro
+		Name="bsddbDepLibs"
+		Value="$(bsddb44DepLibs)"
+	/>
+	<UserMacro
+		Name="bsddb44Dir"
+		Value="..\..\db-4.4.20\build_win32"
+	/>
+	<UserMacro
+		Name="bsddb44DepLibs"
+		Value=""
+	/>
+	<UserMacro
+		Name="bsddb45Dir"
+		Value="..\..\db-4.5.20.x\build_windows"
+	/>
+	<UserMacro
+		Name="bsddb45DepLibs"
+		Value="ws2_32.lib"
 	/>
 	<UserMacro
 		Name="sqlite3Dir"
-		Value="..\..\sqlite-source-3.3.4\"
+		Value="..\..\sqlite-source-3.3.4"
 	/>
 	<UserMacro
 		Name="bz2Dir"
-		Value="..\..\bzip2-1.0.3\"
+		Value="..\..\bzip2-1.0.3"
 	/>
 	<UserMacro
 		Name="opensslDir"
-		Value="..\..\openssl-0.9.8g\"
+		Value="..\..\openssl-0.9.8g"
 	/>
 	<UserMacro
 		Name="tcltkDir"
-		Value="..\..\tcltk\"
+		Value="..\..\tcltk"
 	/>
 	<UserMacro
 		Name="tcltk64Dir"
@@ -73,7 +93,15 @@
 		Value="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib"
 	/>
 	<UserMacro
+		Name="tcltkLibDebug"
+		Value="$(tcltkDir)\lib\tcl84g.lib $(tcltkDir)\lib\tk84g.lib"
+	/>
+	<UserMacro
 		Name="tcltk64Lib"
 		Value="$(tcltk64Dir)\lib\tcl84.lib $(tcltk64Dir)\lib\tk84.lib"
+	/>
+	<UserMacro
+		Name="tcltk64LibDebug"
+		Value="$(tcltk64Dir)\lib\tcl84g.lib $(tcltk64Dir)\lib\tk84g.lib"
 	/>
 </VisualStudioPropertySheet>

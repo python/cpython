@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_bsddb"
 	ProjectGUID="{B4D38F3F-68FB-42EC-A45D-E00657BB3627}"
 	RootNamespace="_bsddb"
@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir)"
+				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -52,11 +52,9 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Debug\libdb44sd.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Debug|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\Debug\libdb44sd.lib"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -105,7 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir)"
+				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -115,11 +113,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist &quot;x64\Debug AMD64\db_static.lib&quot; exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Debug AMD64|x64&quot;&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="&quot;$(bsddbDir)x64\Debug AMD64\db_static.lib&quot;"
+				AdditionalDependencies="$(bsddbDepLibs)"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -168,7 +166,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir)"
+				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -178,11 +176,10 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release\libdb44s.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\Release\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDepLibs)"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -232,7 +229,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir)"
+				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -242,11 +239,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist x64\Release AMD64\db_static.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)x64\Release AMD64\db_static.lib"
+				AdditionalDependencies="$(bsddbDepLibs)"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -295,7 +292,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir)"
+				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -305,11 +302,10 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release\libdb44s.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\Release\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDepLibs)"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -359,7 +355,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir)"
+				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -369,11 +365,10 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist &quot;x64\Release AMD64\db_static.lib&quot; exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)x64\Release AMD64\db_static.lib"
+				AdditionalDependencies="$(bsddbDepLibs)"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>
@@ -423,7 +418,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir)"
+				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -433,11 +428,10 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release\libdb44s.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\Release\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDepLibs)"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -487,7 +481,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir)"
+				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -497,11 +491,10 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist x64\Release AMD64\db_static.lib exit 0&#x0D;&#x0A;vcbuild /useenv db_static.vcproj &quot;Release AMD64|Win32&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)x64\Release AMD64\db_static.lib"
+				AdditionalDependencies="$(bsddbDepLibs)"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>
