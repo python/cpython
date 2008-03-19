@@ -5,6 +5,7 @@
 from ..pgen2 import token
 from ..pytree import Leaf, Node
 from ..pygram import python_symbols as syms
+from .. import patcomp
 
 
 ###########################################################
@@ -163,15 +164,15 @@ except NameError:
 
 def attr_chain(obj, attr):
     """Follow an attribute chain.
-    
+
     If you have a chain of objects where a.foo -> b, b.foo-> c, etc,
     use this to iterate over all objects in the chain. Iteration is
     terminated by getattr(x, attr) is None.
-    
+
     Args:
         obj: the starting object
         attr: the name of the chaining attribute
-    
+
     Yields:
         Each successive object in the chain.
     """
@@ -179,6 +180,44 @@ def attr_chain(obj, attr):
     while next:
         yield next
         next = getattr(next, attr)
+
+p0 = """for_stmt< 'for' any 'in' node=any ':' any* >
+        | comp_for< 'for' any 'in' node=any any* >
+     """
+p1 = """
+power<
+    ( 'iter' | 'list' | 'tuple' | 'sorted' | 'set' | 'sum' |
+      'any' | 'all' | (any* trailer< '.' 'join' >) )
+    trailer< '(' node=any ')' >
+    any*
+>
+"""
+p2 = """
+power<
+    'sorted'
+    trailer< '(' arglist<node=any any*> ')' >
+    any*
+>
+"""
+pats_built = False
+def in_special_context(node):
+    """ Returns true if node is in an environment where all that is required
+        of it is being itterable (ie, it doesn't matter if it returns a list
+        or an itterator).
+        See test_map_nochange in test_fixers.py for some examples and tests.
+        """
+    global p0, p1, p2, pats_built
+    if not pats_built:
+        p1 = patcomp.compile_pattern(p1)
+        p0 = patcomp.compile_pattern(p0)
+        p2 = patcomp.compile_pattern(p2)
+        pats_built = True
+    patterns = [p0, p1, p2]
+    for pattern, parent in zip(patterns, attr_chain(node, "parent")):
+        results = {}
+        if pattern.match(parent, results) and results["node"] is node:
+            return True
+    return False
 
 ###########################################################
 ### The following functions are to find bindings in a suite
@@ -240,8 +279,8 @@ def find_binding(name, node, package=None):
         elif child.type == syms.simple_stmt:
             ret = find_binding(name, child, package)
         elif child.type == syms.expr_stmt:
-                if _find(name, child.children[0]):
-                    ret = child
+            if _find(name, child.children[0]):
+                ret = child
 
         if ret:
             if not package:
