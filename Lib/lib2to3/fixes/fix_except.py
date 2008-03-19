@@ -3,19 +3,19 @@
 The following cases will be converted:
 
 - "except E, T:" where T is a name:
-    
+
     except E as T:
-    
+
 - "except E, T:" where T is not a name, tuple or list:
-    
+
         except E as t:
             T = t
-        
+
     This is done because the target of an "except" clause must be a
     name.
-    
+
 - "except E, T:" where T is a tuple or list literal:
-    
+
         except E as t:
             T = t.args
 """
@@ -39,7 +39,7 @@ class FixExcept(basefix.BaseFix):
     try_stmt< 'try' ':' suite
                   cleanup=((except_clause ':' suite)+ ['else' ':' suite]
                                                       ['finally' ':' suite]
-	                       | 'finally' ':' suite) >
+                               | 'finally' ':' suite) >
     """
 
     def transform(self, node, results):
