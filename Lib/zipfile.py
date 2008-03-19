@@ -8,8 +8,10 @@ import binascii, io
 
 try:
     import zlib # We may need its compression method
+    crc32 = zlib.crc32
 except ImportError:
     zlib = None
+    crc32 = binascii.crc32
 
 __all__ = ["BadZipfile", "error", "ZIP_STORED", "ZIP_DEFLATED", "is_zipfile",
            "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile" ]
@@ -36,13 +38,13 @@ ZIP_DEFLATED = 8
 # Here are some struct module formats for reading headers
 structEndArchive = "<4s4H2LH"     # 9 items, end of archive, 22 bytes
 stringEndArchive = b"PK\005\006"   # magic number for end of archive record
-structCentralDir = "<4s4B4HlLL5HLL"# 19 items, central directory, 46 bytes
+structCentralDir = "<4s4B4HLLL5HLL"# 19 items, central directory, 46 bytes
 stringCentralDir = b"PK\001\002"   # magic number for central directory
-structFileHeader = "<4s2B4HlLL2H"  # 12 items, file header record, 30 bytes
+structFileHeader = "<4s2B4HLLL2H"  # 12 items, file header record, 30 bytes
 stringFileHeader = b"PK\003\004"   # magic number for file header
-structEndArchive64Locator = "<4slql" # 4 items, locate Zip64 header, 20 bytes
+structEndArchive64Locator = "<4sLQL" # 4 items, locate Zip64 header, 20 bytes
 stringEndArchive64Locator = b"PK\x06\x07" # magic token for locator header
-structEndArchive64 = "<4sqhhllqqqq" # 10 items, end of archive (Zip64), 56 bytes
+structEndArchive64 = "<4sQHHLLQQQQ" # 10 items, end of archive (Zip64), 56 bytes
 stringEndArchive64 = b"PK\x06\x06" # magic token for Zip64 header
 
 
@@ -140,7 +142,7 @@ def _EndRecData(fpin):
         endrec = list(endrec)
         endrec.append("")               # Append the archive comment
         endrec.append(filesize - 22)    # Append the record start offset
-        if endrec[-4] == -1 or endrec[-4] == 0xffffffff:
+        if endrec[-4] == 0xffffffff:
             return _EndRecData64(fpin, -22, endrec)
         return endrec
     # Search the last END_BLOCK bytes of the file for the record signature.
@@ -160,7 +162,7 @@ def _EndRecData(fpin):
             # Append the archive comment and start offset
             endrec.append(comment)
             endrec.append(filesize - END_BLOCK + start)
-            if endrec[-4] == -1 or endrec[-4] == 0xffffffff:
+            if endrec[-4] == 0xffffffff:
                 return _EndRecData64(fpin, - END_BLOCK + start, endrec)
             return endrec
     return      # Error, return None
@@ -247,7 +249,7 @@ class ZipInfo (object):
         if file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT:
             # File is larger than what fits into a 4 byte integer,
             # fall back to the ZIP64 extension
-            fmt = '<hhqq'
+            fmt = '<HHQQ'
             extra = extra + struct.pack(fmt,
                     1, struct.calcsize(fmt)-4, file_size, compress_size)
             file_size = 0xffffffff # -1
@@ -267,14 +269,14 @@ class ZipInfo (object):
         extra = self.extra
         unpack = struct.unpack
         while extra:
-            tp, ln = unpack('<hh', extra[:4])
+            tp, ln = unpack('<HH', extra[:4])
             if tp == 1:
                 if ln >= 24:
-                    counts = unpack('<qqq', extra[4:28])
+                    counts = unpack('<QQQ', extra[4:28])
                 elif ln == 16:
-                    counts = unpack('<qq', extra[4:20])
+                    counts = unpack('<QQ', extra[4:20])
                 elif ln == 8:
-                    counts = unpack('<q', extra[4:12])
+                    counts = unpack('<Q', extra[4:12])
                 elif ln == 0:
                     counts = ()
                 else:
@@ -283,7 +285,8 @@ class ZipInfo (object):
                 idx = 0
 
                 # ZIP64 extension (large files and/or large archives)
-                if self.file_size == -1 or self.file_size == 0xFFFFFFFF:
+                # XXX Is this correct? won't this exclude 2**32-1 byte files?
+                if self.file_size in (0xffffffffffffffff, 0xffffffff):
                     self.file_size = counts[idx]
                     idx += 1
 
@@ -950,7 +953,7 @@ class ZipFile:
             if not buf:
                 break
             file_size = file_size + len(buf)
-            CRC = binascii.crc32(buf, CRC)
+            CRC = crc32(buf, CRC) & 0xffffffff
             if cmpr:
                 buf = cmpr.compress(buf)
                 compress_size = compress_size + len(buf)
@@ -968,7 +971,7 @@ class ZipFile:
         # Seek backwards and write CRC and file sizes
         position = self.fp.tell()       # Preserve current position in file
         self.fp.seek(zinfo.header_offset + 14, 0)
-        self.fp.write(struct.pack("<lLL", zinfo.CRC, zinfo.compress_size,
+        self.fp.write(struct.pack("<LLL", zinfo.CRC, zinfo.compress_size,
               zinfo.file_size))
         self.fp.seek(position, 0)
         self.filelist.append(zinfo)
@@ -997,7 +1000,7 @@ class ZipFile:
         zinfo.header_offset = self.fp.tell()    # Start of header data
         self._writecheck(zinfo)
         self._didModify = True
-        zinfo.CRC = binascii.crc32(data)       # CRC-32 checksum
+        zinfo.CRC = crc32(data) & 0xffffffff       # CRC-32 checksum
         if zinfo.compress_type == ZIP_DEFLATED:
             co = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
                  zlib.DEFLATED, -15)
@@ -1047,7 +1050,7 @@ class ZipFile:
 
                 if zinfo.header_offset > ZIP64_LIMIT:
                     extra.append(zinfo.header_offset)
-                    header_offset = -1  # struct "l" format:  32 one bits
+                    header_offset = 0xffffffff  # -1 32 bit
                 else:
                     header_offset = zinfo.header_offset
 
@@ -1055,7 +1058,7 @@ class ZipFile:
                 if extra:
                     # Append a ZIP64 field to the extra's
                     extra_data = struct.pack(
-                            '<hh' + 'q'*len(extra),
+                            '<HH' + 'Q'*len(extra),
                             1, 8*len(extra), *extra) + extra_data
 
                     extract_version = max(45, zinfo.extract_version)
@@ -1064,14 +1067,25 @@ class ZipFile:
                     extract_version = zinfo.extract_version
                     create_version = zinfo.create_version
 
-                centdir = struct.pack(structCentralDir,
-                  stringCentralDir, create_version,
-                  zinfo.create_system, extract_version, zinfo.reserved,
-                  zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
-                  zinfo.CRC, compress_size, file_size,
-                  len(zinfo.filename), len(extra_data), len(zinfo.comment),
-                  0, zinfo.internal_attr, zinfo.external_attr,
-                  header_offset)
+                try:
+                    centdir = struct.pack(structCentralDir,
+                     stringCentralDir, create_version,
+                     zinfo.create_system, extract_version, zinfo.reserved,
+                     zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
+                     zinfo.CRC, compress_size, file_size,
+                     len(zinfo.filename), len(extra_data), len(zinfo.comment),
+                     0, zinfo.internal_attr, zinfo.external_attr,
+                     header_offset)
+                except DeprecationWarning:
+                    print >>sys.stderr, (structCentralDir,
+                     stringCentralDir, create_version,
+                     zinfo.create_system, extract_version, zinfo.reserved,
+                     zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
+                     zinfo.CRC, compress_size, file_size,
+                     len(zinfo.filename), len(extra_data), len(zinfo.comment),
+                     0, zinfo.internal_attr, zinfo.external_attr,
+                     header_offset)
+                    raise
                 self.fp.write(centdir)
                 self.fp.write(zinfo.filename.encode("utf-8"))
                 self.fp.write(extra_data)
@@ -1091,10 +1105,8 @@ class ZipFile:
                         stringEndArchive64Locator, 0, pos2, 1)
                 self.fp.write(zip64locrec)
 
-                # XXX Why is `pos3` computed next?  It's never referenced.
-                pos3 = self.fp.tell()
                 endrec = struct.pack(structEndArchive, stringEndArchive,
-                            0, 0, count, count, pos2 - pos1, -1, 0)
+                            0, 0, count, count, pos2 - pos1, 0xffffffff, 0)
                 self.fp.write(endrec)
 
             else:

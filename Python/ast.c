@@ -2386,10 +2386,6 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             /* from ... import * */
             n = CHILD(n, idx);
             n_children = 1;
-            if (ndots) {
-                ast_error(n, "'import *' not allowed with 'from .'");
-                return NULL;
-            }
             break;
         case LPAR:
             /* from ... import (x, y, z) */
