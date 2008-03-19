@@ -142,8 +142,7 @@ module documentation.  This section lists the differences between the API and
 
    .. versionchanged:: 2.3
       For the :class:`Document` node, an additional keyword argument
-      *encoding* [1]_ can be
-      used to specify the encoding field of the XML header.
+      *encoding* can be used to specify the encoding field of the XML header.
 
 
 .. method:: Node.toxml([encoding])
