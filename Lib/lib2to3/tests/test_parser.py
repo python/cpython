@@ -109,7 +109,7 @@ class TestExcept(GrammarTest):
         self.validate(s)
 
 
-# Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.testAtoms       
+# Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.testAtoms
 class TestSetLiteral(GrammarTest):
     def test_1(self):
         self.validate("""x = {'one'}""")

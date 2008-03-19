@@ -15,8 +15,8 @@ class FixRepr(basefix.BaseFix):
               """
 
     def transform(self, node, results):
-      expr = results["expr"].clone()
+        expr = results["expr"].clone()
 
-      if expr.type == self.syms.testlist1:
-          expr = self.parenthesize(expr)
-      return Call(Name("repr"), [expr], prefix=node.get_prefix())
+        if expr.type == self.syms.testlist1:
+            expr = self.parenthesize(expr)
+        return Call(Name("repr"), [expr], prefix=node.get_prefix())

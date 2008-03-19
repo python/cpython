@@ -5,7 +5,7 @@
     type(x) is T -> isinstance(x, T)
     type(x) != T -> not isinstance(x, T)
     type(x) is not T -> not isinstance(x, T)
-    
+
 * Change "while 1:" into "while True:".
 
 * Change both
@@ -19,7 +19,7 @@ and the more general
     v = EXPR
     v.sort()
     foo(v)
-    
+
 into
 
     v = sorted(EXPR)

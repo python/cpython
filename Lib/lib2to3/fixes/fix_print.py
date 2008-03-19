@@ -5,7 +5,7 @@
 
 Change:
     'print'          into 'print()'
-    'print ...'	     into 'print(...)'
+    'print ...'      into 'print(...)'
     'print ... ,'    into 'print(..., end=" ")'
     'print >>x, ...' into 'print(..., file=x)'
 """

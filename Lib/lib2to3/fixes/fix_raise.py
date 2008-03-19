@@ -12,9 +12,9 @@ raise "foo", V, T               -> warns about string exceptions
 CAVEATS:
 1) "raise E, V" will be incorrectly translated if V is an exception
    instance. The correct Python 3 idiom is
-   
+
         raise E from V
-        
+
    but since we can't detect instance-hood by syntax alone and since
    any client code would have to be changed as well, we don't automate
    this.
@@ -48,11 +48,11 @@ class FixRaise(basefix.BaseFix):
         # Since Python 3 will not support this, we recurse down any tuple
         # literals, always taking the first element.
         if is_tuple(exc):
-          while is_tuple(exc):
-              # exc.children[1:-1] is the unparenthesized tuple
-              # exc.children[1].children[0] is the first element of the tuple
-              exc = exc.children[1].children[0].clone()
-          exc.set_prefix(" ")
+            while is_tuple(exc):
+                # exc.children[1:-1] is the unparenthesized tuple
+                # exc.children[1].children[0] is the first element of the tuple
+                exc = exc.children[1].children[0].clone()
+            exc.set_prefix(" ")
 
         if "val" not in results:
             # One-argument raise

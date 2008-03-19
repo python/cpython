@@ -20,11 +20,9 @@ soon as the shortest argument is exhausted.
 """
 
 # Local imports
-from .. import pytree
-from .. import patcomp
 from ..pgen2 import token
 from . import basefix
-from .util import Name, Call, ListComp, attr_chain, does_tree_import
+from .util import Name, Call, ListComp, does_tree_import, in_special_context
 from ..pygram import python_symbols as syms
 
 class FixMap(basefix.BaseFix):
@@ -71,7 +69,7 @@ class FixMap(basefix.BaseFix):
             # If a future map has been imported for this file, we won't
             # be making any modifications
             return
-            
+
         if node.parent.type == syms.simple_stmt:
             self.warning(node, "You should use a for loop here")
             new = node.clone()
@@ -92,35 +90,3 @@ class FixMap(basefix.BaseFix):
             new = Call(Name("list"), [new])
         new.set_prefix(node.get_prefix())
         return new
-
-P0 = """for_stmt< 'for' any 'in' node=any ':' any* >
-        | comp_for< 'for' any 'in' node=any any* >
-     """
-p0 = patcomp.compile_pattern(P0)
-
-P1 = """
-power<
-    ( 'iter' | 'list' | 'tuple' | 'sorted' | 'set' | 'sum' |
-      'any' | 'all' | (any* trailer< '.' 'join' >) )
-    trailer< '(' node=any ')' >
-    any*
->
-"""
-p1 = patcomp.compile_pattern(P1)
-
-P2 = """
-power<
-    'sorted'
-    trailer< '(' arglist<node=any any*> ')' >
-    any*
->
-"""
-p2 = patcomp.compile_pattern(P2)
-
-def in_special_context(node):
-    patterns = [p0, p1, p2]
-    for pattern, parent in zip(patterns, attr_chain(node, "parent")):
-        results = {}
-        if pattern.match(parent, results) and results["node"] is node:
-            return True
-    return False
