@@ -23,7 +23,7 @@ class Symbols(object):
         Creates an attribute for each grammar symbol (nonterminal),
         whose value is the symbol's type (an int >= 256).
         """
-        for name, symbol in grammar.symbol2number.iteritems():
+        for name, symbol in grammar.symbol2number.items():
             setattr(self, name, symbol)
 
 

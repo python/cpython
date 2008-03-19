@@ -53,7 +53,7 @@ def test():
         s = repr(c)
         e = evalString(s)
         if e != c:
-            print i, c, s, e
+            print(i, c, s, e)
 
 
 if __name__ == "__main__":

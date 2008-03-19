@@ -100,17 +100,17 @@ class Grammar(object):
     def report(self):
         """Dump the grammar tables to standard output, for debugging."""
         from pprint import pprint
-        print "s2n"
+        print("s2n")
         pprint(self.symbol2number)
-        print "n2s"
+        print("n2s")
         pprint(self.number2symbol)
-        print "states"
+        print("states")
         pprint(self.states)
-        print "dfas"
+        print("dfas")
         pprint(self.dfas)
-        print "labels"
+        print("labels")
         pprint(self.labels)
-        print "start", self.start
+        print("start", self.start)
 
 
 # Map from operator to number (since tokenize doesn't do this)
