@@ -18,14 +18,14 @@ CAVEATS:
     m = d.has_key
     if m(k):
         ...
-        
+
    Only *calls* to has_key() are converted. While it is possible to
    convert the above to something like
-   
+
     m = d.__contains__
     if m(k):
         ...
-        
+
    this is currently not done.
 """
 

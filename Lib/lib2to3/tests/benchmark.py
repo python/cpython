@@ -27,10 +27,10 @@ class Options:
             setattr(self, k, v)
 
         self.verbose = False
-        
+
 def dummy_transform(*args, **kwargs):
     pass
-    
+
 ### Collect list of modules to match against
 ###############################################################################
 files = []

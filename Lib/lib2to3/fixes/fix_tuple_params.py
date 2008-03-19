@@ -2,7 +2,7 @@
 
 def func(((a, b), c), d):
     ...
-    
+
     ->
 
 def func(x, d):
@@ -10,7 +10,7 @@ def func(x, d):
     ...
 
 It will also support lambdas:
-  
+
     lambda (x, y): x + y -> lambda t: t[0] + t[1]
 
     # The parens are a syntax error in Python 3

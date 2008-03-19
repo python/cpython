@@ -16,7 +16,7 @@ builtin_names = [name for name in dir(__builtin__)
 
 MAPPING = {"StringIO":  ("io", ["StringIO"]),
            "cStringIO": ("io", ["StringIO"]),
-           "__builtin__" : ("builtins", builtin_names), 
+           "__builtin__" : ("builtins", builtin_names),
           }
 
 
@@ -86,4 +86,4 @@ class FixImports(basefix.BaseFix):
             bare_name = bare_name[0]
             new_name = self.replace.get(bare_name.value)
             if new_name:
-              bare_name.replace(Name(new_name, prefix=bare_name.get_prefix()))
+                bare_name.replace(Name(new_name, prefix=bare_name.get_prefix()))

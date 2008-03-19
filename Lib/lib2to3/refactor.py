@@ -118,7 +118,7 @@ class RefactoringTool(object):
 
     def get_fixers(self):
         """Inspects the options to load the requested patterns and handlers.
-        
+
         Returns:
           (pre_order, post_order), where pre_order is the list of fixers that
           want a pre-order AST traversal, and post_order is the list that want
@@ -232,11 +232,11 @@ class RefactoringTool(object):
 
     def refactor_string(self, data, name):
         """Refactor a given input string.
-        
+
         Args:
             data: a string holding the code to be refactored.
             name: a human-readable name for use in error/log messages.
-            
+
         Returns:
             An AST corresponding to the refactored input stream; None if
             there were errors during the parse.
@@ -274,12 +274,12 @@ class RefactoringTool(object):
 
     def refactor_tree(self, tree, name):
         """Refactors a parse tree (modifying the tree in place).
-        
+
         Args:
             tree: a pytree.Node instance representing the root of the tree
                   to be refactored.
             name: a human-readable name for this tree.
-        
+
         Returns:
             True if the tree was modified, False otherwise.
         """
@@ -296,13 +296,13 @@ class RefactoringTool(object):
 
     def traverse_by(self, fixers, traversal):
         """Traverse an AST, applying a set of fixers to each node.
-        
+
         This is a helper method for refactor_tree().
-        
+
         Args:
             fixers: a list of fixer instances.
             traversal: a generator that yields AST nodes.
-        
+
         Returns:
             None
         """
@@ -523,4 +523,4 @@ def diff_texts(a, b, filename):
 
 
 if __name__ == "__main__":
-  sys.exit(main())
+    sys.exit(main())

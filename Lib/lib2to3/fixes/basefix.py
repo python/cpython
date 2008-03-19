@@ -87,7 +87,7 @@ class BaseFix(object):
         Args:
           node: the root of the parse tree that matched the fixer.
           results: a dict mapping symbolic names to part of the match.
-          
+
         Returns:
           None, or a node that is a modified copy of the
           argument node.  The node argument may also be modified in-place to
@@ -146,7 +146,7 @@ class BaseFix(object):
     def start_tree(self, tree, filename):
         """Some fixers need to maintain tree-wide state.
         This method is called once, at the start of tree fix-up.
-        
+
         tree - the root node of the tree to be processed.
         filename - the name of the file the tree came from.
         """
@@ -158,7 +158,7 @@ class BaseFix(object):
     def finish_tree(self, tree, filename):
         """Some fixers need to maintain tree-wide state.
         This method is called once, at the conclusion of tree fix-up.
-        
+
         tree - the root node of the tree to be processed.
         filename - the name of the file the tree came from.
         """
