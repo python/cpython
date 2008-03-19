@@ -253,4 +253,7 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
-    signal_alarm(3)  # Shutdown shouldn't take more than 3 seconds.
+    # Signal an alarm after 20 seconds if we haven't shut down.  This
+    # was originally 3 seconds, but has been bumped as numerous build
+    # slaves have been failing with SIGALMs on this test.
+    signal_alarm(20)
