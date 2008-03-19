@@ -59,11 +59,24 @@ static PyMethodDef module_functions[] = {
 PyMODINIT_FUNC
 initfuture_builtins(void)
 {
-	PyObject *m;
+	PyObject *m, *itertools, *iter_func;
+	char *it_funcs[] = {"imap", "ifilter", "izip", NULL};
+	char **cur_func;
 
 	m = Py_InitModule3("future_builtins", module_functions, module_doc);
 	if (m == NULL)
 		return;
 
+	itertools = PyImport_ImportModuleNoBlock("itertools");
+	if (itertools == NULL)
+		return;
+
+	for (cur_func = it_funcs; *cur_func; ++cur_func){
+		iter_func = PyObject_GetAttrString(itertools, *cur_func);
+		if (iter_func == NULL)
+			return;
+		PyModule_AddObject(m, *cur_func+1, iter_func);
+	}
+	Py_DECREF(itertools);
 	/* any other initialization needed */
 }

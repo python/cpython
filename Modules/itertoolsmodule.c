@@ -2542,7 +2542,7 @@ ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	ifilterobject *lz;
 
 	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
+	    PyErr_Warn(PyExc_DeprecationWarning,
 		       "In 3.x, itertools.ifilter() was moved to builtin filter().") < 0)
 		return NULL;
 
@@ -2551,6 +2551,15 @@ ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (!PyArg_UnpackTuple(args, "ifilter", 2, 2, &func, &seq))
 		return NULL;
+
+	if (func == Py_None) {
+		if (Py_Py3kWarningFlag &&
+		    PyErr_Warn(PyExc_DeprecationWarning,
+			       "ifilter with None as a first argument "
+			       "is not supported in 3.x.  Use a list "
+			       "comprehension instead.") < 0)
+			return NULL;
+	}
 
 	/* Get iterator. */
 	it = PyObject_GetIter(seq);
@@ -3602,7 +3611,7 @@ inititertools(void)
 		&izip_type,
 		&iziplongest_type,
 		&permutations_type,
-		&product_type,         
+		&product_type,
 		&repeat_type,
 		&groupby_type,
 		NULL
