@@ -49,6 +49,9 @@ Core and builtins
 Library
 -------
 
+- The library implementing the 2to3 conversion, lib2to3, was added
+  to the standard distribution.
+
 - Issue #1747858: Fix chown to work with large uid's and gid's on 64-bit
   platforms.
 
