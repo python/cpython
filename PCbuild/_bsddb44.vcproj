@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\..;""
+				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -96,7 +96,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\..;""
+				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
 				PreprocessorDefinitions="DIAGNOSTIC"
 			/>
 			<Tool
@@ -151,7 +151,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\..;""
+				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -206,7 +206,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\..;""
+				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -260,7 +260,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\..;""
+				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -315,7 +315,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\..;""
+				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -369,7 +369,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\..;""
+				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -424,7 +424,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\..;""
+				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
