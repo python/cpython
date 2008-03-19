@@ -75,7 +75,7 @@ class TestUnicodeFiles(unittest.TestCase):
 
     # Do as many "equivalancy' tests as we can - ie, check that although we
     # have different types for the filename, they refer to the same file.
-    def _do_equivilent(self, filename1, filename2):
+    def _do_equivalent(self, filename1, filename2):
         # Note we only check "filename1 against filename2" - we don't bother
         # checking "filename2 against 1", as we assume we are called again with
         # the args reversed.
@@ -98,31 +98,20 @@ class TestUnicodeFiles(unittest.TestCase):
         os.rename(filename1 + ".new", filename2)
         self.failUnless(os.path.isfile(filename2))
 
-        # Try using shutil on the filenames.
-        try:
-            filename1==filename2
-        except UnicodeDecodeError:
-            # these filenames can't be compared - shutil.copy tries to do
-            # just that.  This is really a bug in 'shutil' - if one of shutil's
-            # 2 params are Unicode and the other isn't, it should coerce the
-            # string to Unicode with the filesystem encoding before comparison.
-            pass
-        else:
-            # filenames can be compared.
-            shutil.copy(filename1, filename2 + ".new")
-            os.unlink(filename1 + ".new") # remove using equiv name.
-            # And a couple of moves, one using each name.
-            shutil.move(filename1, filename2 + ".new")
-            self.failUnless(not os.path.exists(filename2))
-            shutil.move(filename1 + ".new", filename2)
-            self.failUnless(os.path.exists(filename1))
-            # Note - due to the implementation of shutil.move,
-            # it tries a rename first.  This only fails on Windows when on
-            # different file systems - and this test can't ensure that.
-            # So we test the shutil.copy2 function, which is the thing most
-            # likely to fail.
-            shutil.copy2(filename1, filename2 + ".new")
-            os.unlink(filename1 + ".new")
+        shutil.copy(filename1, filename2 + ".new")
+        os.unlink(filename1 + ".new") # remove using equiv name.
+        # And a couple of moves, one using each name.
+        shutil.move(filename1, filename2 + ".new")
+        self.failUnless(not os.path.exists(filename2))
+        shutil.move(filename1 + ".new", filename2)
+        self.failUnless(os.path.exists(filename1))
+        # Note - due to the implementation of shutil.move,
+        # it tries a rename first.  This only fails on Windows when on
+        # different file systems - and this test can't ensure that.
+        # So we test the shutil.copy2 function, which is the thing most
+        # likely to fail.
+        shutil.copy2(filename1, filename2 + ".new")
+        os.unlink(filename1 + ".new")
 
     def _do_directory(self, make_name, chdir_name, encoded):
         cwd = os.getcwd()
@@ -173,7 +162,7 @@ class TestUnicodeFiles(unittest.TestCase):
         f = file(filename1, "w")
         f.close()
         try:
-            self._do_equivilent(filename1, filename2)
+            self._do_equivalent(filename1, filename2)
         finally:
             os.unlink(filename1)
 
@@ -190,7 +179,7 @@ class TestUnicodeFiles(unittest.TestCase):
         self._test_equivalent(TESTFN_UNICODE, TESTFN_ENCODED)
 
     def test_directories(self):
-        # For all 'equivilent' combinations:
+        # For all 'equivalent' combinations:
         #  Make dir with encoded, chdir with unicode, checkdir with encoded
         #  (or unicode/encoded/unicode, etc
         ext = ".dir"
