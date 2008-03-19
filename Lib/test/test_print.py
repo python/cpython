@@ -14,8 +14,6 @@ except ImportError:
     # 2.x
     from StringIO import StringIO
 
-from contextlib import contextmanager
-
 NotDefined = object()
 
 # A dispatch table all 8 combinations of providing
@@ -42,15 +40,6 @@ dispatch = {
      lambda args, sep, end, file: print(sep=sep, end=end, file=file, *args),
     }
 
-@contextmanager
-def stdout_redirected(new_stdout):
-    save_stdout = sys.stdout
-    sys.stdout = new_stdout
-    try:
-        yield None
-    finally:
-        sys.stdout = save_stdout
-
 # Class used to test __str__ and print
 class ClassWith__str__:
     def __init__(self, x):
@@ -71,8 +60,7 @@ class TestPrint(unittest.TestCase):
                        end is not NotDefined,
                        file is not NotDefined)]
 
-        t = StringIO()
-        with stdout_redirected(t):
+        with test_support.captured_stdout() as t:
             fn(args, sep, end, file)
 
         self.assertEqual(t.getvalue(), expected)
