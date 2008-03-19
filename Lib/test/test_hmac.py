@@ -211,8 +211,8 @@ class TestVectorsTestCase(unittest.TestCase):
             def digest(self):
                 return self._x.digest()
 
-        warnings.simplefilter('error', RuntimeWarning)
-        try:
+        with test_support.catch_warning():
+            warnings.simplefilter('error', RuntimeWarning)
             try:
                 hmac.HMAC('a', 'b', digestmod=MockCrazyHash)
             except RuntimeWarning:
@@ -227,8 +227,6 @@ class TestVectorsTestCase(unittest.TestCase):
                 pass
             else:
                 self.fail('Expected warning about small block_size')
-        finally:
-            warnings.resetwarnings()
 
 
 
