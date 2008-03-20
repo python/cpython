@@ -27,7 +27,7 @@ class BeepTest(unittest.TestCase):
         self._beep(32767, 75)
 
     def test_increasingfrequency(self):
-        for i in xrange(100, 2000, 100):
+        for i in range(100, 2000, 100):
             self._beep(i, 75)
 
     def _beep(self, *args):
