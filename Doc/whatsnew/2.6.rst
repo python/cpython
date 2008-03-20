@@ -628,7 +628,7 @@ The parameters are:
 
 .. seealso::
 
-   :pep:`3105` - Advanced String Formatting
+   :pep:`3105` - Make print a function
       PEP written by Georg Brandl.
 
 .. ======================================================================
