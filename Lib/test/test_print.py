@@ -1,6 +1,8 @@
 """Test correct operation of the print function.
 """
 
+# In 2.6, this gives us the behavior we want.  In 3.0, it has
+#  no function, but it still must parse correctly.
 from __future__ import print_function
 
 import unittest
