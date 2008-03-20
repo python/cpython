@@ -91,7 +91,7 @@
 
 __copyright__ = """
     Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
-    Copyright (c) 2000-2007, eGenix.com Software GmbH; mailto:info@egenix.com
+    Copyright (c) 2000-2008, eGenix.com Software GmbH; mailto:info@egenix.com
 
     Permission to use, copy, modify, and distribute this software and its
     documentation for any purpose and without fee or royalty is hereby granted,
@@ -527,7 +527,13 @@ def _win32_getvalue(key,name,default=''):
         In case this fails, default is returned.
 
     """
-    from win32api import RegQueryValueEx
+    try:
+        # Use win32api if available
+        from win32api import RegQueryValueEx
+    except ImportError:
+        # On Python 2.0 and later, emulate using _winreg
+        import _winreg
+        RegQueryValueEx = _winreg.QueryValueEx
     try:
         return RegQueryValueEx(key,name)
     except:
@@ -547,9 +553,9 @@ def win32_ver(release='',version='',csd='',ptype=''):
         means the OS version uses debugging code, i.e. code that
         checks arguments, ranges, etc. (Thomas Heller).
 
-        Note: this function only works if Mark Hammond's win32
-        package is installed and obviously only runs on Win32
-        compatible platforms.
+        Note: this function works best with Mark Hammond's win32
+        package installed, but also on Python 2.3 and later. It
+        obviously only runs on Win32 compatible platforms.
 
     """
     # XXX Is there any way to find out the processor type on WinXX ?
@@ -563,11 +569,29 @@ def win32_ver(release='',version='',csd='',ptype=''):
     # Import the needed APIs
     try:
         import win32api
+        from win32api import RegQueryValueEx, RegOpenKeyEx, \
+             RegCloseKey, GetVersionEx
+        from win32con import HKEY_LOCAL_MACHINE, VER_PLATFORM_WIN32_NT, \
+             VER_PLATFORM_WIN32_WINDOWS, VER_NT_WORKSTATION
     except ImportError:
-        return release,version,csd,ptype
-    from win32api import RegQueryValueEx,RegOpenKeyEx,RegCloseKey,GetVersionEx
-    from win32con import HKEY_LOCAL_MACHINE,VER_PLATFORM_WIN32_NT,\
-                         VER_PLATFORM_WIN32_WINDOWS
+        # Emulate the win32api module using Python APIs
+        try:
+            sys.getwindowsversion
+        except AttributeError:
+            # No emulation possible, so return the defaults...
+            return release,version,csd,ptype
+        else:
+            # Emulation using _winreg (added in Python 2.0) and
+            # sys.getwindowsversion() (added in Python 2.3)
+            import _winreg
+            GetVersionEx = sys.getwindowsversion
+            RegQueryValueEx = _winreg.QueryValueEx
+            RegOpenKeyEx = _winreg.OpenKeyEx
+            RegCloseKey = _winreg.CloseKey
+            HKEY_LOCAL_MACHINE = _winreg.HKEY_LOCAL_MACHINE
+            VER_PLATFORM_WIN32_WINDOWS = 1
+            VER_PLATFORM_WIN32_NT = 2
+            VER_NT_WORKSTATION = 1
 
     # Find out the registry key and some general version infos
     maj,min,buildno,plat,csd = GetVersionEx()
@@ -604,11 +628,18 @@ def win32_ver(release='',version='',csd='',ptype=''):
         elif maj == 6:
             if min == 0:
                 # Per http://msdn2.microsoft.com/en-us/library/ms724429.aspx
-                productType = GetVersionEx(1)[8]
-                if productType == 1: # VER_NT_WORKSTATION
+                try:
+                    productType = GetVersionEx(1)[8]
+                except TypeError:
+                    # sys.getwindowsversion() doesn't take any arguments, so
+                    # we cannot detect 2008 Server that way.
+                    # XXX Add some other means of detecting 2008 Server ?!
                     release = 'Vista'
                 else:
-                    release = '2008Server'
+                    if productType == VER_NT_WORKSTATION:
+                        release = 'Vista'
+                    else:
+                        release = '2008Server'
             else:
                 release = 'post2008Server'
     else:
@@ -619,9 +650,9 @@ def win32_ver(release='',version='',csd='',ptype=''):
 
     # Open the registry key
     try:
-        keyCurVer = RegOpenKeyEx(HKEY_LOCAL_MACHINE,regkey)
+        keyCurVer = RegOpenKeyEx(HKEY_LOCAL_MACHINE, regkey)
         # Get a value to make sure the key exists...
-        RegQueryValueEx(keyCurVer,'SystemRoot')
+        RegQueryValueEx(keyCurVer, 'SystemRoot')
     except:
         return release,version,csd,ptype
 
@@ -1066,10 +1097,12 @@ def uname():
             release,version,csd,ptype = win32_ver()
             if release and version:
                 use_syscmd_ver = 0
-            # XXX Should try to parse the PROCESSOR_* environment variables
+            # Try to use the PROCESSOR_* environment variables
             # available on Win XP and later; see
             # http://support.microsoft.com/kb/888731 and
             # http://www.geocities.com/rick_lively/MANUALS/ENV/MSWIN/PROCESSI.HTM
+            machine = os.environ.get('PROCESSOR_ARCHITECTURE', '')
+            processor = os.environ.get('PROCESSOR_IDENTIFIER', machine)
 
         # Try the 'ver' system command available on some
         # platforms
