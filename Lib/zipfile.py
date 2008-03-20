@@ -1067,25 +1067,14 @@ class ZipFile:
                     extract_version = zinfo.extract_version
                     create_version = zinfo.create_version
 
-                try:
-                    centdir = struct.pack(structCentralDir,
-                     stringCentralDir, create_version,
-                     zinfo.create_system, extract_version, zinfo.reserved,
-                     zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
-                     zinfo.CRC, compress_size, file_size,
-                     len(zinfo.filename), len(extra_data), len(zinfo.comment),
-                     0, zinfo.internal_attr, zinfo.external_attr,
-                     header_offset)
-                except DeprecationWarning:
-                    print >>sys.stderr, (structCentralDir,
-                     stringCentralDir, create_version,
-                     zinfo.create_system, extract_version, zinfo.reserved,
-                     zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
-                     zinfo.CRC, compress_size, file_size,
-                     len(zinfo.filename), len(extra_data), len(zinfo.comment),
-                     0, zinfo.internal_attr, zinfo.external_attr,
-                     header_offset)
-                    raise
+                centdir = struct.pack(structCentralDir,
+                 stringCentralDir, create_version,
+                 zinfo.create_system, extract_version, zinfo.reserved,
+                 zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
+                 zinfo.CRC, compress_size, file_size,
+                 len(zinfo.filename), len(extra_data), len(zinfo.comment),
+                 0, zinfo.internal_attr, zinfo.external_attr,
+                 header_offset)
                 self.fp.write(centdir)
                 self.fp.write(zinfo.filename.encode("utf-8"))
                 self.fp.write(extra_data)
