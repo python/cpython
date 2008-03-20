@@ -3,7 +3,6 @@
 OS/2+EMX doesn't support the file locking operations.
 
 """
-import struct
 import fcntl
 import os
 import struct
@@ -11,12 +10,7 @@ import sys
 import unittest
 from test.test_support import verbose, TESTFN, unlink, run_unittest
 
-# TODO - Write tests for ioctl(), flock() and lockf().
-
-try:
-    import termios
-except ImportError:
-    termios = None
+# TODO - Write tests for flock() and lockf().
 
 def get_lockdata():
     if sys.platform.startswith('atheos'):
@@ -88,29 +82,8 @@ class TestFcntl(unittest.TestCase):
         self.f.close()
 
 
-class TestIoctl(unittest.TestCase):
-    if termios:
-        def test_ioctl_signed_unsigned_code_param(self):
-            if termios.TIOCSWINSZ < 0:
-                set_winsz_opcode_maybe_neg = termios.TIOCSWINSZ
-                set_winsz_opcode_pos = termios.TIOCSWINSZ & 0xffffffffL
-            else:
-                set_winsz_opcode_pos = termios.TIOCSWINSZ
-                set_winsz_opcode_maybe_neg, = struct.unpack("i",
-                        struct.pack("I", termios.TIOCSWINSZ))
-
-            # We're just testing that these calls do not raise exceptions.
-            saved_winsz = fcntl.ioctl(0, termios.TIOCGWINSZ, "\0"*8)
-            our_winsz = struct.pack("HHHH",80,25,0,0)
-            # test both with a positive and potentially negative ioctl code
-            new_winsz = fcntl.ioctl(0, set_winsz_opcode_pos, our_winsz)
-            new_winsz = fcntl.ioctl(0, set_winsz_opcode_maybe_neg, our_winsz)
-            fcntl.ioctl(0, set_winsz_opcode_maybe_neg, saved_winsz)
-
-
 def test_main():
     run_unittest(TestFcntl)
-    run_unittest(TestIoctl)
 
 if __name__ == '__main__':
     test_main()
