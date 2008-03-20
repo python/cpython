@@ -48,6 +48,7 @@ typedef struct {
 #define CO_FUTURE_DIVISION    	0x2000
 #define CO_FUTURE_ABSOLUTE_IMPORT 0x4000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x8000
+#define CO_FUTURE_PRINT_FUNCTION  0x10000
 #endif
 
 /* This should be defined if a future statement modifies the syntax.

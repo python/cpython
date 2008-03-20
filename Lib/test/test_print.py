@@ -1,6 +1,8 @@
 """Test correct operation of the print function.
 """
 
+from __future__ import print_function
+
 import unittest
 from test import test_support
 
@@ -97,6 +99,11 @@ class TestPrint(unittest.TestCase):
 
         x('*\n', (ClassWith__str__('*'),))
         x('abc 1\n', (ClassWith__str__('abc'), 1))
+
+#        # 2.x unicode tests
+#        x(u'1 2\n', ('1', u'2'))
+#        x(u'u\1234\n', (u'u\1234',))
+#        x(u'  abc 1\n', (' ', ClassWith__str__(u'abc'), 1))
 
         # errors
         self.assertRaises(TypeError, print, '', sep=3)
