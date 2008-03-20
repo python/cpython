@@ -3,14 +3,14 @@
 OS/2+EMX doesn't support the file locking operations.
 
 """
-import struct
 import fcntl
-import os, sys
+import os
+import struct
+import sys
 import unittest
 from test.test_support import verbose, TESTFN, unlink, run_unittest
 
-# TODO - Write tests for ioctl(), flock() and lockf().
-
+# TODO - Write tests for flock() and lockf().
 
 def get_lockdata():
     if sys.platform.startswith('atheos'):

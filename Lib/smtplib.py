@@ -174,6 +174,7 @@ else:
             chr = None
             while chr != b"\n":
                 chr = self.sslobj.read(1)
+                if not chr: break
                 str += chr
             return str
 
