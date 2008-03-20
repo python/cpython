@@ -577,20 +577,30 @@ class StatefulIncrementalDecoderTest(unittest.TestCase):
     """
 
     test_cases = [
-        # I=1 fixed-length mode
+        # I=1, O=1 (fixed-length input == fixed-length output)
         (b'abcd', False, 'a.b.c.d.'),
-        # I=0, O=0, variable-length mode
+        # I=0, O=0 (variable-length input, variable-length output)
         (b'oiabcd', True, 'abcd.'),
-        # I=0, O=0, variable-length mode, should ignore extra periods
+        # I=0, O=0 (should ignore extra periods)
         (b'oi...abcd...', True, 'abcd.'),
-        # I=0, O=6
-        (b'i.o6.xyz.', False, 'xyz---.'),
-        # I=2, O=6
+        # I=0, O=6 (variable-length input, fixed-length output)
+        (b'i.o6.x.xyz.toolongtofit.', False, 'x-----.xyz---.toolon.'),
+        # I=2, O=6 (fixed-length input < fixed-length output)
         (b'i.i2.o6xyz', True, 'xy----.z-----.'),
-        # I=0, O=3
-        (b'i.o3.x.xyz.toolong.', False, 'x--.xyz.too.'),
-        # I=6, O=3
-        (b'i.o3.i6.abcdefghijklmnop', True, 'abc.ghi.mno.')
+        # I=6, O=3 (fixed-length input > fixed-length output)
+        (b'i.o3.i6.abcdefghijklmnop', True, 'abc.ghi.mno.'),
+        # I=0, then 3; O=29, then 15 (with longer output)
+        (b'i.o29.a.b.cde.o15.abcdefghijabcdefghij.i3.a.b.c.d.ei00k.l.m', True,
+         'a----------------------------.' +
+         'b----------------------------.' +
+         'cde--------------------------.' +
+         'abcdefghijabcde.' +
+         'a.b------------.' +
+         '.c.------------.' +
+         'd.e------------.' +
+         'k--------------.' +
+         'l--------------.' +
+         'm--------------.')
     ]
 
     def testDecoder(self):
