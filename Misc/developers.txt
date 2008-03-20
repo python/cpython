@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Jerry Seutter was given SVN access on 20 March 2008 by BAC, for
+  general contributions to Python.
+
 - Jeff Rush was given SVN access on 18 March 2008 by AMK, for Distutils work.
 
 - David Wolever was given SVN access on 17 March 2008 by MvL,
