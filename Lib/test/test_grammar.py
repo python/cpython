@@ -260,6 +260,10 @@ d31v(1)
 def d32v((x,)): pass
 d32v((1,))
 
+# Check ast errors in *args and *kwargs
+check_syntax("f(*g(1=2))")
+check_syntax("f(**g(1=2))")
+
 ### lambdef: 'lambda' [varargslist] ':' test
 print 'lambdef'
 l1 = lambda : 0

@@ -14,6 +14,9 @@ Core and builtins
 - Issue #2321: use pymalloc for unicode object string data to reduce
   memory usage in some circumstances.
 
+- Issue #2238: Some syntax errors in *args and **kwargs expressions could give
+  bogus error messages.
+
 Library
 -------
 
