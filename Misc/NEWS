@@ -51,6 +51,14 @@ Core and builtins
 Library
 -------
 
+- Issue #2434: Enhanced platform.win32_ver() to also work on Python
+  installation which do not have the win32all package installed.
+
+- Added support to platform.uname() to also report the machine
+  and processor information on Windows XP and later. As a result,
+  platform.machine() and platform.processor() will report this
+  information as well.
+
 - The library implementing the 2to3 conversion, lib2to3, was added
   to the standard distribution.
 
