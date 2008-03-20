@@ -179,6 +179,7 @@ The following classes are provided:
    Cause requests to go through a proxy. If *proxies* is given, it must be a
    dictionary mapping protocol names to URLs of proxies. The default is to read the
    list of proxies from the environment variables :envvar:`<protocol>_proxy`.
+   To disable autodetected proxy pass an empty dictionary.
 
 
 .. class:: HTTPPasswordMgr()

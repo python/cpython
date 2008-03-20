@@ -3,12 +3,7 @@
 Suggested usage: from stat import *
 """
 
-# XXX Strictly spoken, this module may have to be adapted for each POSIX
-# implementation; in practice, however, the numeric constants used by
-# stat() are almost universal (even for stat() emulations on non-UNIX
-# systems like MS-DOS).
-
-# Indices for stat struct members in tuple returned by os.stat()
+# Indices for stat struct members in the tuple returned by os.stat()
 
 ST_MODE  = 0
 ST_INO   = 1
