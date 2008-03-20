@@ -46,6 +46,8 @@ Core and builtins
 - Issue #2238: Some syntax errors in *args and **kwargs expressions could give
   bogus error messages.
 
+- Issue #2143: Fix embedded readline() hang on SSL socket EOF.
+
 Library
 -------
 
