@@ -898,33 +898,21 @@ static PyObject *
 binascii_crc32(PyObject *self, PyObject *args)
 { /* By Jim Ahlstrom; All rights transferred to CNRI */
 	unsigned char *bin_data;
-	unsigned long crc = 0UL;	/* initial value of CRC */
+	unsigned int crc = 0;	/* initial value of CRC */
 	Py_ssize_t len;
-	long result;
+	unsigned int result;
 
-	if ( !PyArg_ParseTuple(args, "s#|k:crc32", &bin_data, &len, &crc) )
+	if ( !PyArg_ParseTuple(args, "s#|I:crc32", &bin_data, &len, &crc) )
 		return NULL;
 
 	crc = ~ crc;
-#if SIZEOF_LONG > 4
-	/* only want the trailing 32 bits */
-	crc &= 0xFFFFFFFFUL;
-#endif
-	while (len--)
-		crc = crc_32_tab[(crc ^ *bin_data++) & 0xffUL] ^ (crc >> 8);
+	while (len--) {
+		crc = crc_32_tab[(crc ^ *bin_data++) & 0xff] ^ (crc >> 8);
 		/* Note:  (crc >> 8) MUST zero fill on left */
+	}
 
-	result = (long)(crc ^ 0xFFFFFFFFUL);
-#if SIZEOF_LONG > 4
-	/* Extend the sign bit.  This is one way to ensure the result is the
-	 * same across platforms.  The other way would be to return an
-	 * unbounded unsigned long, but the evidence suggests that lots of
-	 * code outside this treats the result as if it were a signed 4-byte
-	 * integer.
-	 */
-	result |= -(result & (1L << 31));
-#endif
-	return PyLong_FromLong(result);
+	result = (crc ^ 0xFFFFFFFF);
+	return PyLong_FromUnsignedLong(result & 0xffffffff);
 }
 
 
