@@ -1878,10 +1878,14 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 	}
 	else if (TYPE(ch) == STAR) {
 	    vararg = ast_for_expr(c, CHILD(n, i+1));
+	    if (!vararg)
+	        return NULL;
 	    i++;
 	}
 	else if (TYPE(ch) == DOUBLESTAR) {
 	    kwarg = ast_for_expr(c, CHILD(n, i+1));
+	    if (!kwarg)
+	        return NULL;
 	    i++;
 	}
     }
