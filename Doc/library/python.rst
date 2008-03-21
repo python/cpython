@@ -14,6 +14,7 @@ overview:
 
    sys.rst
    __builtin__.rst
+   future_builtins.rst
    __main__.rst
    warnings.rst
    contextlib.rst
