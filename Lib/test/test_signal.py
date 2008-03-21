@@ -4,6 +4,7 @@ from contextlib import closing, nested
 import pickle
 import select
 import signal
+import subprocess
 import traceback
 import sys, os, time, errno
 
@@ -40,15 +41,13 @@ class InterProcessSignalTests(unittest.TestCase):
             print "handlerB invoked", args
         raise HandlerBCalled(*args)
 
-    def wait(self, child_pid):
-        """Wait for child_pid to finish, ignoring EINTR."""
+    def wait(self, child):
+        """Wait for child to finish, ignoring EINTR."""
         while True:
             try:
-                os.waitpid(child_pid, 0)
+                child.wait()
                 return
             except OSError as e:
-                if e.errno == errno.ECHILD:
-                    return
                 if e.errno != errno.EINTR:
                     raise
 
@@ -69,35 +68,24 @@ class InterProcessSignalTests(unittest.TestCase):
         if test_support.verbose:
             print "test runner's pid is", pid
 
-        child = os.fork()
-        if child == 0:
-            os.kill(pid, signal.SIGHUP)
-            exit_subprocess()
+        child = subprocess.Popen(['kill', '-HUP', str(pid)])
         self.wait(child)
         self.assertTrue(self.a_called)
         self.assertFalse(self.b_called)
         self.a_called = False
 
         try:
-            child = os.fork()
-            if child == 0:
-                os.kill(pid, signal.SIGUSR1)
-                exit_subprocess()
+            child = subprocess.Popen(['kill', '-USR1', str(pid)])
             # This wait should be interrupted by the signal's exception.
             self.wait(child)
             self.fail('HandlerBCalled exception not thrown')
         except HandlerBCalled:
-            # So we call it again to reap the child's zombie.
-            self.wait(child)
             self.assertTrue(self.b_called)
             self.assertFalse(self.a_called)
             if test_support.verbose:
                 print "HandlerBCalled exception caught"
 
-        child = os.fork()
-        if child == 0:
-            os.kill(pid, signal.SIGUSR2)
-            exit_subprocess()
+        child = subprocess.Popen(['kill', '-USR2', str(pid)])
         self.wait(child)  # Nothing should happen.
 
         try:
