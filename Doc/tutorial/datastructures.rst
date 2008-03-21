@@ -18,17 +18,20 @@ objects:
 
 
 .. method:: list.append(x)
+   :noindex:
 
    Add an item to the end of the list; equivalent to ``a[len(a):] = [x]``.
 
 
 .. method:: list.extend(L)
+   :noindex:
 
    Extend the list by appending all the items in the given list; equivalent to
    ``a[len(a):] = L``.
 
 
 .. method:: list.insert(i, x)
+   :noindex:
 
    Insert an item at a given position.  The first argument is the index of the
    element before which to insert, so ``a.insert(0, x)`` inserts at the front of
@@ -36,12 +39,14 @@ objects:
 
 
 .. method:: list.remove(x)
+   :noindex:
 
    Remove the first item from the list whose value is *x*. It is an error if there
    is no such item.
 
 
 .. method:: list.pop([i])
+   :noindex:
 
    Remove the item at the given position in the list, and return it.  If no index
    is specified, ``a.pop()`` removes and returns the last item in the list.  (The
@@ -51,22 +56,26 @@ objects:
 
 
 .. method:: list.index(x)
+   :noindex:
 
    Return the index in the list of the first item whose value is *x*. It is an
    error if there is no such item.
 
 
 .. method:: list.count(x)
+   :noindex:
 
    Return the number of times *x* appears in the list.
 
 
 .. method:: list.sort()
+   :noindex:
 
    Sort the items of the list, in place.
 
 
 .. method:: list.reverse()
+   :noindex:
 
    Reverse the elements of the list, in place.
 
