@@ -1,4 +1,3 @@
-
 :mod:`__future__` --- Future statement definitions
 ==================================================
 
@@ -22,8 +21,8 @@
 
 Each statement in :file:`__future__.py` is of the form::
 
-   FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease ","
-                           CompilerFlag ")"
+   FeatureName = _Feature(OptionalRelease, MandatoryRelease,
+                          CompilerFlag)
 
 
 where, normally, *OptionalRelease* is less than *MandatoryRelease*, and both are
