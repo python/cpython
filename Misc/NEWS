@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
  
+- Issue #2346/#2347: add Py3k warnings for __methods__ and __members__.
+
 - Issue #2358: Add a Py3k warning on sys.exc_clear() usage.
 
 - Issue #2400: Allow relative imports to "import *".

@@ -352,8 +352,15 @@ PyObject *
 Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
 {
 	if (name[0] == '_' && name[1] == '_') {
-		if (strcmp(name, "__methods__") == 0)
+		if (strcmp(name, "__methods__") == 0) {
+			if (Py_Py3kWarningFlag) {
+				if (PyErr_Warn(PyExc_DeprecationWarning,
+					       "__methods__ not supported "
+					       "in 3.x") < 0)
+					return NULL;
+			}
 			return listmethodchain(chain);
+		}
 		if (strcmp(name, "__doc__") == 0) {
 			const char *doc = self->ob_type->tp_doc;
 			if (doc != NULL)
