@@ -2055,9 +2055,13 @@ Files have the following methods:
 
 .. method:: file.write(str)
 
-   Write a string to the file.  There is no return value.  Due to buffering, the
-   string may not actually show up in the file until the :meth:`flush` or
-   :meth:`close` method is called.
+   Write a string to the file.  Due to buffering, the string may not actually
+   show up in the file until the :meth:`flush` or :meth:`close` method is
+   called.
+
+   The meaning of the return value is not defined for every file-like object.
+   Some (mostly low-level) file-like objects may return the number of bytes
+   actually written, others return ``None``.
 
 
 .. method:: file.writelines(sequence)
