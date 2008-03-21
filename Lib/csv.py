@@ -75,6 +75,8 @@ class DictReader:
         self.restkey = restkey          # key to catch long rows
         self.restval = restval          # default value for short rows
         self.reader = reader(f, dialect, *args, **kwds)
+        self.dialect = dialect
+        self.line_num = 0
 
     def __iter__(self):
         return self
@@ -84,6 +86,7 @@ class DictReader:
         if self.fieldnames is None:
             self.fieldnames = row
             row = self.reader.next()
+        self.line_num = self.reader.line_num
 
         # unlike the basic reader, we prefer not to return blanks,
         # because we will typically wind up with a dict full of None
