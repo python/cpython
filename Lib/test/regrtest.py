@@ -1164,13 +1164,8 @@ class _ExpectedSkips:
                 self.expected.add('test_sunaudiodev')
                 self.expected.add('test_nis')
 
-            # TODO: This is a hack to raise TestSkipped if -3 is not enabled.
-            # Instead of relying on callable to have a warning, we should expose
-            # the -3 flag to Python code somehow
-            with test_support.catch_warning() as w:
-                callable(int)
-                if w.message is None:
-                    self.expected.add('test_py3kwarn')
+            if not sys.py3kwarning:
+                self.expected.add('test_py3kwarn')
 
             self.valid = True
 
