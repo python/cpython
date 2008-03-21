@@ -1102,8 +1102,8 @@ fcntl.h grp.h \
 io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
 shadow.h signal.h stdint.h stropts.h termios.h thread.h \
 unistd.h utime.h \
-sys/audioio.h sys/bsdtty.h sys/file.h sys/loadavg.h sys/lock.h sys/mkdev.h \
-sys/modem.h \
+sys/audioio.h sys/bsdtty.h sys/epoll.h sys/event.h sys/file.h sys/loadavg.h \
+sys/lock.h sys/mkdev.h sys/modem.h \
 sys/param.h sys/poll.h sys/select.h sys/socket.h sys/statvfs.h sys/stat.h \
 sys/time.h \
 sys/times.h sys/types.h sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
@@ -2354,7 +2354,21 @@ AC_TRY_COMPILE([#include <unistd.h>], void *x=fdatasync,
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
-
+AC_MSG_CHECKING(for epoll)
+AC_TRY_COMPILE([#include <sys/epoll.h>], void *x=epoll_create,
+  AC_DEFINE(HAVE_EPOLL, 1, Define if you have the 'epoll' functions.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+AC_MSG_CHECKING(for kqueue)
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/event.h>
+    ], int x=kqueue(),
+  AC_DEFINE(HAVE_KQUEUE, 1, Define if you have the 'kqueue' functions.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
 # On some systems (eg. FreeBSD 5), we would find a definition of the
 # functions ctermid_r, setgroups in the library, but no prototype
 # (e.g. because we use _XOPEN_SOURCE). See whether we can take their

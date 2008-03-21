@@ -825,10 +825,12 @@ _expectations = {
         test_dl
         test_fcntl
         test_fork1
+        test_epoll
         test_gdbm
         test_grp
         test_ioctl
         test_largefile
+        test_kqueue
         test_mhlib
         test_openpty
         test_ossaudiodev
@@ -850,6 +852,7 @@ _expectations = {
         test_curses
         test_dl
         test_largefile
+        test_kqueue
         test_ossaudiodev
         """,
    'mac':
@@ -866,10 +869,12 @@ _expectations = {
         test_dl
         test_fcntl
         test_fork1
+        test_epoll
         test_grp
         test_ioctl
         test_largefile
         test_locale
+        test_kqueue
         test_mmap
         test_openpty
         test_ossaudiodev
@@ -890,7 +895,9 @@ _expectations = {
         test_bsddb
         test_bsddb185
         test_dl
+        test_epoll
         test_largefile
+        test_kqueue
         test_minidom
         test_openpty
         test_pyexpat
@@ -902,7 +909,9 @@ _expectations = {
         test_bsddb
         test_bsddb185
         test_dl
+        test_epoll
         test_largefile
+        test_kqueue
         test_minidom
         test_openpty
         test_pyexpat
@@ -916,9 +925,11 @@ _expectations = {
         test_bsddb185
         test_dl
         test_fork1
+        test_epoll
         test_gettext
         test_largefile
         test_locale
+        test_kqueue
         test_minidom
         test_openpty
         test_pyexpat
@@ -943,10 +954,12 @@ _expectations = {
         test_dl
         test_fcntl
         test_fork1
+        test_epoll
         test_gdbm
         test_grp
         test_largefile
         test_locale
+        test_kqueue
         test_mmap
         test_openpty
         test_poll
@@ -967,9 +980,11 @@ _expectations = {
         test_bsddb
         test_bsddb3
         test_curses
+        test_epoll
         test_gdbm
         test_largefile
         test_locale
+        test_kqueue
         test_minidom
         test_ossaudiodev
         test_poll
@@ -980,6 +995,8 @@ _expectations = {
         test_bsddb185
         test_curses
         test_dbm
+        test_epoll
+        test_kqueue
         test_gdbm
         test_gzip
         test_openpty
@@ -992,10 +1009,12 @@ _expectations = {
         test_bsddb185
         test_curses
         test_dl
+        test_epoll
         test_gdbm
         test_gzip
         test_largefile
         test_locale
+        test_kqueue
         test_minidom
         test_openpty
         test_pyexpat
@@ -1009,8 +1028,10 @@ _expectations = {
         test_curses
         test_dl
         test_gdbm
+        test_epoll
         test_largefile
         test_locale
+        test_kqueue
         test_mhlib
         test_mmap
         test_poll
@@ -1023,7 +1044,9 @@ _expectations = {
         test_bsddb3
         test_curses
         test_dbm
+        test_epoll
         test_ioctl
+        test_kqueue
         test_largefile
         test_locale
         test_ossaudiodev
@@ -1037,6 +1060,8 @@ _expectations = {
         test_commands
         test_curses
         test_dl
+        test_epoll
+        test_kqueue
         test_largefile
         test_mhlib
         test_mmap
@@ -1050,6 +1075,7 @@ _expectations = {
         """
         test_bsddb
         test_bsddb3
+        test_epoll
         test_gdbm
         test_locale
         test_ossaudiodev
@@ -1068,8 +1094,10 @@ _expectations = {
         test_bsddb3
         test_bz2
         test_dl
+        test_epoll
         test_gdbm
         test_gzip
+        test_kqueue
         test_ossaudiodev
         test_tcl
         test_zipimport
@@ -1081,6 +1109,7 @@ _expectations = {
         test_bsddb3
         test_ctypes
         test_dl
+        test_epoll
         test_gdbm
         test_locale
         test_normalization
@@ -1096,6 +1125,7 @@ _expectations = {
         test_ctypes
         test_curses
         test_dl
+        test_epoll
         test_gdbm
         test_locale
         test_ossaudiodev

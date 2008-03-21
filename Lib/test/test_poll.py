@@ -34,7 +34,8 @@ class PollTests(unittest.TestCase):
 
         for i in range(NUM_PIPES):
             rd, wr = os.pipe()
-            p.register(rd, select.POLLIN)
+            p.register(rd)
+            p.modify(rd, select.POLLIN)
             p.register(wr, select.POLLOUT)
             readers.append(rd)
             writers.append(wr)
