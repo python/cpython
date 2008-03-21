@@ -54,12 +54,12 @@ attributes:
 |           | im_class        | class object that asked   | \(1)  |
 |           |                 | for this method           |       |
 +-----------+-----------------+---------------------------+-------+
-|           | im_func         | function object           |       |
-|           |                 | containing implementation |       |
+|           | im_func or      | function object           |       |
+|           | __func__        | containing implementation |       |
 |           |                 | of method                 |       |
 +-----------+-----------------+---------------------------+-------+
-|           | im_self         | instance to which this    |       |
-|           |                 | method is bound, or       |       |
+|           | im_self or      | instance to which this    |       |
+|           | __self__        | method is bound, or       |       |
 |           |                 | ``None``                  |       |
 +-----------+-----------------+---------------------------+-------+
 | function  | __doc__         | documentation string      |       |
