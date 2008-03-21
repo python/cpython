@@ -555,6 +555,10 @@ Callable types
       .. versionchanged:: 2.2
          :attr:`im_self` used to refer to the class that defined the method.
 
+      .. versionchanged:: 2.6
+         For 3.0 forward-compatibility, :attr:`im_func` is also available as
+         :attr:`__func__`, and :attr:`im_self` as :attr:`__self__`.
+
       .. index::
          single: __doc__ (method attribute)
          single: __name__ (method attribute)
