@@ -8347,6 +8347,7 @@ doubletounicode(Py_UNICODE *buffer, size_t len, const char *format, double x)
     return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
 }
 
+#if 0 
 static int
 longtounicode(Py_UNICODE *buffer, size_t len, const char *format, long x)
 {
@@ -8356,6 +8357,7 @@ longtounicode(Py_UNICODE *buffer, size_t len, const char *format, long x)
     result = strtounicode(buffer, (char *)buffer);
     return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
 }
+#endif
 
 /* XXX To save some code duplication, formatfloat/long/int could have been
    shared with stringobject.c, converting from 8-bit to Unicode after the
@@ -8426,6 +8428,7 @@ formatlong(PyObject *val, int flags, int prec, int type)
 	return result;
 }
 
+#if 0
 static int
 formatint(Py_UNICODE *buf,
 	  size_t buflen,
@@ -8501,6 +8504,7 @@ formatint(Py_UNICODE *buf,
     else
         return longtounicode(buf, buflen, fmt, x);
 }
+#endif
 
 static int
 formatchar(Py_UNICODE *buf,
