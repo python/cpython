@@ -2,8 +2,7 @@
   What's New in Python 2.6  
 ****************************
 
-.. XXX mention switch to Roundup for bug tracking
-.. XXX add trademark info for Apple, Microsoft.
+.. XXX add trademark info for Apple, Microsoft, SourceForge.
 
 :Author: A.M. Kuchling
 :Release: |release|
@@ -43,12 +42,12 @@
    
    * It's helpful to add the bug/patch number as a comment:
    
-   % Patch 12345
+   .. Patch 12345
    XXX Describe the transmogrify() function added to the socket
    module.
    (Contributed by P.Y. Developer.)
    
-   This saves the maintainer the effort of going through the SVN log
+   This saves the maintainer the effort of going through the SVN logs
    when researching a change.
 
 This article explains the new features in Python 2.6.  No release date for
@@ -97,6 +96,14 @@ code to 3.0.  The value of this switch is available
 to Python code as the boolean variable ``sys.py3kwarning``,
 and to C extension code as :cdata:`Py_Py3kWarningFlag`.
 
+Python 3.0 adds several new built-in functions and change the
+semantics of some existing built-ins.  Entirely new functions such as
+:func:`bin` have simply been added to Python 2.6, but existing
+built-ins haven't been changed; instead, the :mod:`future_builtins`
+module has versions with the new 3.0 semantics.  Code written to be
+compatible with 3.0 can do ``from future_builtins import hex, map``
+as necessary.
+
 .. seealso::
 
    The 3xxx series of PEPs, which describes the development process for
@@ -117,27 +124,57 @@ LaTeX to reStructured Text.
 New Issue Tracker: Roundup
 --------------------------------------------------
 
-XXX write this -- this section is currently just brief notes.
+For a long time, the Python developers have been growing increasingly
+annoyed by SourceForge's bug tracker.  SourceForge's hosted solution
+doesn't permit much customization; for example, it wasn't possible to
+customize the life cycle of issues.
 
-The developers were growing increasingly annoyed by SourceForge's 
-bug tracker.  (Discuss problems in a sentence or two.)
+The infrastructure committee of the Python Software Foundation
+therefore posted a call for issue trackers, asking volunteers to set
+up different products and import some of the bugs and patches from
+SourceForge.  Four different trackers were examined: Atlassian's `Jira
+<XXX>`__, `Launchpad <http://www.launchpad.net>`__, ` `Roundup
+<XXX>`__, and Trac <XXX>`__.  The committee eventually settled on Jira
+and Roundup as the two candidates.  Jira is a commercial product that
+offers a no-cost hosted instance to free-software projects; Roundup 
+is an open-source project that requires volunteers
+to administer it and a server to host it.
 
-Hosting provided by XXX.
+After posting a call for volunteers, a new Roundup installation was
+set up at http://bugs.python.org.  One installation of Roundup can
+host multiple trackers, and this server now also hosts issue trackers
+for Jython and for the Python web site.  It will surely find 
+other uses in the future.
+
+Hosting is kindly provided by `Upfront <XXX>`__ of XXX.  Martin von
+Loewis put a lot of effort into importing existing bugs and patches
+from SourceForge; his scripts for this import are at XXX.
+
+.. seealso::
+
+  XXX Roundup web site.
+
+  bugs.python.org
+
+  bugs.jython.org
+
+  Python web site bug tracker
+
 
 New Documentation Format: ReStructured Text
 --------------------------------------------------
 
-Python's documentation had been written using LaTeX since the
-project's inception around 1989.  At that time, most documentation was
+Since the Python project's inception around 1989, the documentation
+had been written using LaTeX.  At that time, most documentation was
 printed out for later study, not viewed online. LaTeX was widely used
-because it provided attractive printed output while 
-remaining straightforward to write, once the basic rules 
-of the markup have been learned.
+because it provided attractive printed output while remaining
+straightforward to write, once the basic rules of the markup have been
+learned.
 
 LaTeX is still used today for writing technical publications destined
 for printing, but the landscape for programming tools has shifted.  We
 no longer print out reams of documentation; instead, we browse through
-it online and HTML is the most important format to support.
+it online and HTML has become the most important format to support.
 Unfortunately, converting LaTeX to HTML is fairly complicated, and
 Fred L. Drake Jr., the Python documentation editor for many years,
 spent a lot of time wrestling the conversion process into shape.
@@ -459,26 +496,84 @@ can now be used in scripts running from inside a package.
 PEP 3101: Advanced String Formatting
 =====================================================
 
-XXX write this -- this section is currently just brief notes.
+In Python 3.0, the `%` operator is supplemented by a more powerful
+string formatting method, :meth:`format`.  Support for the
+:meth:`format` method has been backported to Python 2.6.
 
-8-bit and Unicode strings have a .format() method that takes the arguments
-to be formatted.  
+In 2.6, both 8-bit and Unicode strings have a `.format()` method that
+treats the string as a template and takes the arguments to be formatted.
+The formatting template uses curly brackets (`{`, `}`) as special characters::
 
-.format() uses curly brackets ({, }) as special characters:
+     # Substitute positional argument 0 into the string.
+     "User ID: {0}".format("root") -> "User ID: root"
 
-     format("User ID: {0}", "root") -> "User ID: root"
+     # Use the named keyword arguments
+     uid = 'root'
+     
+     'User ID: {uid}   Last seen: {last_login}'.format(uid='root',
+            last_login = '5 Mar 2008 07:20') ->
+       'User ID: root   Last seen: 5 Mar 2008 07:20'
+
+Curly brackets can be escaped by doubling them::
+
      format("Empty dict: {{}}") -> "Empty dict: {}"
-     0.name
-     0[name]
 
-Format specifiers:
+Field names can be integers indicating positional arguments, such as 
+``{0}``, ``{1}``, etc. or names of keyword arguments.  You can also 
+supply compound field names that read attributes or access dictionary keys::
 
-     0:8  -> left-align, pad
-     0:>8 -> right-align, pad
+    import sys
+    'Platform: {0.platform}\nPython version: {0.version}'.format(sys) ->
+        'Platform: darwin\n
+         Python version: 2.6a1+ (trunk:61261M, Mar  5 2008, 20:29:41) \n
+         [GCC 4.0.1 (Apple Computer, Inc. build 5367)]'
+
+     import mimetypes
+     'Content-type: {0[.mp4]}'.format(mimetypes.types_map) ->
+       'Content-type: video/mp4'
+
+Note that when using dictionary-style notation such as ``[.mp4]``, you
+don't need to put any quotation marks around the string; it will look
+up the value using ``.mp4`` as the key.  Strings beginning with a
+number will be converted to an integer.  You can't write more
+complicated expressions inside a format string.
+
+So far we've shown how to specify which field to substitute into the
+resulting string.  The precise formatting used is also controllable by
+adding a colon followed by a format specifier.  For example:
+
+     # Field 0: left justify, pad to 15 characters
+     # Field 1: right justify, pad to 6 characters
+     fmt = '{0:15} ${1:>6}'
+     fmt.format('Registration', 35) ->
+       'Registration    $    35'
+     fmt.format('Tutorial', 50) ->
+       'Tutorial        $    50'
+     fmt.format('Banquet', 125) ->
+       'Banquet         $   125'
+
+Format specifiers can reference other fields through nesting:
+
+    fmt = '{0:{1}}'
+    fmt.format('Invoice #1234', width) ->
+      'Invoice #1234                      '
+    fmt.format('Invoice #1234', 15) ->
+      'Invoice #1234  '
+
+The alignment of a field within the desired width can be specified:
+
+================ ============================================
+Character        Effect
+================ ============================================
+< (default)      Left-align
+>                Right-align
+^                Center
+=                (For numeric types only) Pad after the sign.
+================ ============================================
 
 Format data types::
 
-     ... take table from PEP 3101
+     ... XXX take table from PEP 3101
 
 Classes and types can define a __format__ method to control how it's 
 formatted.  It receives a single argument, the format specifier::
@@ -499,6 +594,42 @@ the type's :meth:`__format__` method with the provided specifier::
 
    :pep:`3101` - Advanced String Formatting
       PEP written by Talin.
+
+.. ======================================================================
+
+.. _pep-3105:
+
+PEP 3105: ``print`` As a Function
+=====================================================
+
+The ``print`` statement becomes the :func:`print` function in Python 3.0.
+Making :func:`print` a function makes it easier to replace within a
+module by doing 'def print(...)' or importing a new 
+function from somewhere else. 
+
+Python 2.6 has a ``__future__`` import that removes ``print`` as language 
+syntax, letting you use the functional form instead.  For example::
+
+    XXX need to check
+    from __future__ import print_function
+    print('# of entries', len(dictionary), file=sys.stderr)
+
+The signature of the new function is::
+
+    def print(*args, sep=' ', end='\n', file=None)
+
+The parameters are:
+
+ * **args**: positional arguments whose values will be printed out.
+ * **sep**: the separator, which will be printed between arguments.
+ * **end**: the ending text, which will be printed after all of the 
+   arguments have been output.
+ * **file**: the file object to which the output will be sent.
+
+.. seealso::
+
+   :pep:`3105` - Make print a function
+      PEP written by Georg Brandl.
 
 .. ======================================================================
 
@@ -643,23 +774,20 @@ New bin() built-in returns the binary form of a number.
 PEP 3129: Class Decorators
 =====================================================
 
-XXX write this -- this section is currently just brief notes.
+Decorators have been extended from functions to classes.  It's now legal to
+write::
 
-Class decorators are analogous to function decorators.  After defining a class,
-it's passed through the specified series of decorator functions
-and the ultimate return value is recorded as the class.
-
-::
-
-  class A:
-    pass
-  A = foo(bar(A))
-  
-  
   @foo
   @bar
   class A:
     pass
+
+This is equivalent to::
+
+  class A:
+    pass
+
+  A = foo(bar(A))
 
 XXX need to find a good motivating example.    
 
@@ -911,6 +1039,11 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   .. Patch 1591665
 
+* Instance method objects have new attributes for the object and function
+  comprising the method; the new synonym for :attr:`im_self` is
+  :attr:`__self__`, and :attr:`im_func` is also available as :attr:`__func__`.
+  The old names are still supported in Python 2.6; they're gone in 3.0.
+
 * An obscure change: when you use the the :func:`locals` function inside a
   :keyword:`class` statement, the resulting dictionary no longer returns free
   variables.  (Free variables, in this case, are variables referred to in the
@@ -945,7 +1078,11 @@ Optimizations
 * Unicode strings now uses faster code for detecting
   whitespace and line breaks; this speeds up the :meth:`split` method 
   by about 25% and :meth:`splitlines` by 35%.
-  (Contributed by Antoine Pitrou.)
+  (Contributed by Antoine Pitrou.)  Memory usage is reduced
+  by using pymalloc for the Unicode string's data.
+
+* The ``with`` statement now stores the :meth:`__exit__` method on the stack,
+  producing a small speedup.  (Implemented by Nick Coghlan.)
 
 * To reduce memory usage, the garbage collector will now clear internal
   free lists when garbage-collecting the highest generation of objects.
@@ -1047,6 +1184,13 @@ complete list of changes, or look through the CVS logs for all the details.
   Insert mode is enabled by supplying a true value for the *insert_mode*
   parameter when creating the :class:`Textbox` instance.
 
+* The :mod:`datetime` module's :meth:`strftime` methods now support a
+  ``%f`` format code that expands to the number of microseconds in the
+  object, zero-padded on
+  the left to six places.  (Contributed by XXX.)
+
+  .. Patch 1158
+
 * The :mod:`decimal` module was updated to version 1.66 of 
   `the General Decimal Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`__.  New features
   include some methods for some basic mathematical functions such as
@@ -1097,13 +1241,18 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The :mod:`gopherlib` module has been removed.
 
-* A new function in the :mod:`heapq` module: ``merge(iter1, iter2, ...)``
-  takes any number of iterables that return data  *in sorted order*,  and  returns
-  a new iterator that returns the contents of all the iterators, also in sorted
-  order.  For example::
+* A new function in the :mod:`heapq` module: ``merge(iter1, iter2, ...)`` 
+  takes any number of iterables that return data *in sorted
+  order*, and returns a new iterator that returns the contents of all
+  the iterators, also in sorted order.  For example::
 
      heapq.merge([1, 3, 5, 9], [2, 8, 16]) ->
        [1, 2, 3, 5, 8, 9, 16]
+
+  Another new function, ``heappushpop(heap, item)``,
+  pushes *item* onto *heap*, then pops off and returns the smallest item. 
+  This is more efficient than making a call to :func:`heappush` and then
+  :func:`heappop`.
 
   (Contributed by Raymond Hettinger.)
 
@@ -1157,7 +1306,7 @@ complete list of changes, or look through the CVS logs for all the details.
         (2, 3, 1, 3), (2, 3, 1, 4), (2, 3, 2, 3), (2, 3, 2, 4), 
         (2, 4, 1, 3), (2, 4, 1, 4), (2, 4, 2, 3), (2, 4, 2, 4)]
 
-  ``combinations(iter, r)`` returns sub-sequences of length *r* from
+  ``combinations(iterable, r)`` returns sub-sequences of length *r* from
   the elements of *iterable*. ::
 
     itertools.combinations('123', 2) ->
@@ -1678,6 +1827,11 @@ Changes to Python's build process and to the C API include:
   See the :file:`PCbuild9` directory for the build files.
   (Implemented by Christian Heimes.)
 
+* Python now can only be compiled with C89 compilers (after 19
+  years!).  This means that the Python source tree can now drop its
+  own implementations of :cfunc:`memmove` and :cfunc:`strerror`, which
+  are in the C89 standard library.
+
 * The BerkeleyDB module now has a C API object, available as 
   ``bsddb.db.api``.   This object can be used by other C extensions
   that wish to use the :mod:`bsddb` module for their own purposes.
@@ -1831,6 +1985,15 @@ code:
   instances.
 
   .. Issue 1330538
+
+* In 3.0-warning mode, inequality comparisons between two dictionaries
+  or two objects that don't implement comparison methods are reported
+  as warnings.  ``dict1 == dict2`` still works, but ``dict1 < dict2``
+  is being phased out.
+  
+  Comparisons between cells, which are an implementation detail of Python's
+  scoping rules, also cause warnings because such comparisons are forbidden
+  entirely in 3.0.
 
 .. ======================================================================
 
