@@ -108,6 +108,16 @@ class TestPy3KWarnings(unittest.TestCase):
         with catch_warning() as w:
             self.assertWarning(dir(c), w, expected)
 
+    def test_softspace(self):
+        expected = 'file.softspace not supported in 3.x'
+        with file(__file__) as f:
+            with catch_warning() as w:
+                self.assertWarning(f.softspace, w, expected)
+            def set():
+                f.softspace = 0
+            with catch_warning() as w:
+                self.assertWarning(set(), w, expected)
+
 
 def test_main():
     run_unittest(TestPy3KWarnings)
