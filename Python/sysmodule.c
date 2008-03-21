@@ -169,8 +169,16 @@ clause in the current stack frame or in an older stack frame."
 static PyObject *
 sys_exc_clear(PyObject *self, PyObject *noargs)
 {
-	PyThreadState *tstate = PyThreadState_GET();
+	PyThreadState *tstate;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
+
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning,
+		       "sys.exc_clear() not supported in 3.x. "
+		       "Use except clauses.") < 0)
+		return NULL;
+
+	tstate = PyThreadState_GET();
 	tmp_type = tstate->exc_type;
 	tmp_value = tstate->exc_value;
 	tmp_tb = tstate->exc_traceback;
