@@ -94,6 +94,11 @@ class TestPy3KWarnings(unittest.TestCase):
         with catch_warning() as w:
             self.assertWarning(sorted(lst, cmp), w, expected)
 
+    def test_sys_exc_clear(self):
+        expected = 'sys.exc_clear() not supported in 3.x. Use except clauses.'
+        with catch_warning() as w:
+            self.assertWarning(sys.exc_clear(), w, expected)
+
 def test_main():
     run_unittest(TestPy3KWarnings)
 
