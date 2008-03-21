@@ -823,6 +823,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			}
 			else
 				return converterr("string", arg, msgbuf, bufsize);
+			/* XXX(gb): this test is completely wrong -- p is a
+			 * byte string while arg is a Unicode. I *think* it should
+			 * check against the size of uarg... */
 			if ((Py_ssize_t)strlen(*p) != PyUnicode_GetSize(arg))
 				return converterr("string without null bytes",
 						  arg, msgbuf, bufsize);
@@ -898,6 +901,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				}
 				format++;
 			}
+			/* XXX(gb): same comment as for 's' applies here... */
 			else if (*p != NULL &&
 				 (Py_ssize_t)strlen(*p) != PyUnicode_GetSize(arg))
 				return converterr(
