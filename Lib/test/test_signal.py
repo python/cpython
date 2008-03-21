@@ -44,9 +44,11 @@ class InterProcessSignalTests(unittest.TestCase):
         """Wait for child_pid to finish, ignoring EINTR."""
         while True:
             try:
-                pid, status = os.waitpid(child_pid, 0)
-                return status
+                os.waitpid(child_pid, 0)
+                return
             except OSError as e:
+                if e.errno == errno.ECHILD:
+                    return
                 if e.errno != errno.EINTR:
                     raise
 
