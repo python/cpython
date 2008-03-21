@@ -269,16 +269,18 @@ class Test_Csv(unittest.TestCase):
             csv.field_size_limit(limit)
 
     def test_read_linenum(self):
-        r = csv.reader(['line,1', 'line,2', 'line,3'])
-        self.assertEqual(r.line_num, 0)
-        r.next()
-        self.assertEqual(r.line_num, 1)
-        r.next()
-        self.assertEqual(r.line_num, 2)
-        r.next()
-        self.assertEqual(r.line_num, 3)
-        self.assertRaises(StopIteration, r.next)
-        self.assertEqual(r.line_num, 3)
+        for r in (csv.reader(['line,1', 'line,2', 'line,3']),
+                  csv.DictReader(['line,1', 'line,2', 'line,3'],
+                                 fieldnames=['a', 'b', 'c'])):
+            self.assertEqual(r.line_num, 0)
+            r.next()
+            self.assertEqual(r.line_num, 1)
+            r.next()
+            self.assertEqual(r.line_num, 2)
+            r.next()
+            self.assertEqual(r.line_num, 3)
+            self.assertRaises(StopIteration, r.next)
+            self.assertEqual(r.line_num, 3)
 
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):

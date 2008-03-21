@@ -20,6 +20,9 @@ Core and builtins
 Library
 -------
 
+- Issue #2432: give DictReader the dialect and line_num attributes
+  advertised in the docs.
+
 - Issue #1747858: Fix chown to work with large uid's and gid's on 64-bit
   platforms.
 
