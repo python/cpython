@@ -1687,6 +1687,16 @@ merge_list_attr(PyObject* dict, PyObject* obj, const char *attrname)
 					break;
 			}
 		}
+		if (Py_Py3kWarningFlag &&
+		    (strcmp(attrname, "__members__") == 0 ||
+		     strcmp(attrname, "__methods__") == 0)) {
+			if (PyErr_Warn(PyExc_DeprecationWarning, 
+				       "__members__ and __methods__ not supported "
+				       "in 3.x") < 0) {
+				Py_XDECREF(list);
+				return -1;
+			}
+		}
 	}
 
 	Py_XDECREF(list);

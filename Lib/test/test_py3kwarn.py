@@ -99,6 +99,16 @@ class TestPy3KWarnings(unittest.TestCase):
         with catch_warning() as w:
             self.assertWarning(sys.exc_clear(), w, expected)
 
+    def test_methods_members(self):
+        expected = '__members__ and __methods__ not supported in 3.x'
+        class C:
+            __methods__ = ['a']
+            __members__ = ['b']
+        c = C()
+        with catch_warning() as w:
+            self.assertWarning(dir(c), w, expected)
+
+
 def test_main():
     run_unittest(TestPy3KWarnings)
 
