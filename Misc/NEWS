@@ -1363,6 +1363,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1657: added select.epoll and select.kqueue
+
 - Patch #1506171: added operator.methodcaller().
 
 - Patch #1826: operator.attrgetter() now supports dotted attribute paths.
