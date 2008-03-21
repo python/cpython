@@ -617,6 +617,8 @@ always available.
    Bool containing the status of the Python 3.0 warning flag. It's ``True``
    when Python is started with the -3 option.
 
+   .. versionadded:: 2.6
+
 
 .. data:: dont_write_bytecode
 
