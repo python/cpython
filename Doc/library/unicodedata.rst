@@ -150,8 +150,9 @@ In addition, the module exposes the following constant:
 
    .. versionadded:: 2.5
 
-Examples::
+Examples:
 
+   >>> import unicodedata
    >>> unicodedata.lookup('LEFT CURLY BRACKET')
    u'{'
    >>> unicodedata.name(u'/')

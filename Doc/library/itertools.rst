@@ -8,6 +8,10 @@
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
 
+.. testsetup::
+
+   from itertools import *
+
 .. versionadded:: 2.3
 
 This module implements a number of :term:`iterator` building blocks inspired by
@@ -549,7 +553,9 @@ Examples
 --------
 
 The following examples show common uses for each tool and demonstrate ways they
-can be combined. ::
+can be combined.
+
+.. doctest::
 
    # Show a dictionary sorted and grouped by value
    >>> from operator import itemgetter
@@ -567,7 +573,7 @@ can be combined. ::
    # same group.
    >>> data = [ 1,  4,5,6, 10, 15,16,17,18, 22, 25,26,27,28]
    >>> for k, g in groupby(enumerate(data), lambda (i,x):i-x):
-   ...     print map(operator.itemgetter(1), g)
+   ...     print map(itemgetter(1), g)
    ... 
    [1]
    [4, 5, 6]
@@ -592,7 +598,9 @@ rather than bringing the whole iterable into memory all at once. Code volume is
 kept small by linking the tools together in a functional style which helps
 eliminate temporary variables.  High speed is retained by preferring
 "vectorized" building blocks over the use of for-loops and :term:`generator`\s
-which incur interpreter overhead. ::
+which incur interpreter overhead.
+
+.. testcode::
 
    def take(n, seq):
        return list(islice(seq, n))

@@ -210,7 +210,10 @@ Morsel Objects
 Example
 -------
 
-The following example demonstrates how to use the :mod:`Cookie` module. ::
+The following example demonstrates how to use the :mod:`Cookie` module.
+
+.. doctest::
+   :options: +NORMALIZE_WHITESPACE
 
    >>> import Cookie
    >>> C = Cookie.SimpleCookie()
@@ -219,11 +222,11 @@ The following example demonstrates how to use the :mod:`Cookie` module. ::
    >>> C["fig"] = "newton"
    >>> C["sugar"] = "wafer"
    >>> print C # generate HTTP headers
-   Set-Cookie: sugar=wafer
    Set-Cookie: fig=newton
+   Set-Cookie: sugar=wafer
    >>> print C.output() # same thing
-   Set-Cookie: sugar=wafer
    Set-Cookie: fig=newton
+   Set-Cookie: sugar=wafer
    >>> C = Cookie.SmartCookie()
    >>> C["rocky"] = "road"
    >>> C["rocky"]["path"] = "/cookie"
@@ -234,8 +237,8 @@ The following example demonstrates how to use the :mod:`Cookie` module. ::
    >>> C = Cookie.SmartCookie()
    >>> C.load("chips=ahoy; vienna=finger") # load from a string (HTTP header)
    >>> print C
-   Set-Cookie: vienna=finger
    Set-Cookie: chips=ahoy
+   Set-Cookie: vienna=finger
    >>> C = Cookie.SmartCookie()
    >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
    >>> print C

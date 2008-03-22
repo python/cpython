@@ -50,18 +50,19 @@ Fraction number class.
 
    Finds and returns the closest :class:`Fraction` to ``self`` that
    has denominator at most max_denominator.  This method is useful for
-   finding rational approximations to a given floating-point number::
+   finding rational approximations to a given floating-point number:
 
+      >>> from fractions import Fraction
       >>> Fraction('3.1415926535897932').limit_denominator(1000)
-      Fraction(355, 113)
+      Fraction(355L, 113L)
 
-   or for recovering a rational number that's represented as a float::
+   or for recovering a rational number that's represented as a float:
 
       >>> from math import pi, cos
       >>> Fraction.from_float(cos(pi/3))
       Fraction(4503599627370497L, 9007199254740992L)
       >>> Fraction.from_float(cos(pi/3)).limit_denominator()
-      Fraction(1, 2)
+      Fraction(1L, 2L)
 
 
 .. method:: Fraction.__floor__()
@@ -90,4 +91,3 @@ Fraction number class.
 
    Module :mod:`numbers`
       The abstract base classes making up the numeric tower.
-

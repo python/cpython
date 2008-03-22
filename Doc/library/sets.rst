@@ -192,8 +192,6 @@ the builtin :class:`set()` and :class:`frozenset()` types.
 Example
 -------
 
-::
-
    >>> from sets import Set
    >>> engineers = Set(['John', 'Jane', 'Jack', 'Janice'])
    >>> programmers = Set(['Jack', 'Sam', 'Susan', 'Janice'])
@@ -202,14 +200,14 @@ Example
    >>> engineering_management = engineers & managers            # intersection
    >>> fulltime_management = managers - engineers - programmers # difference
    >>> engineers.add('Marvin')                                  # add element
-   >>> print engineers
+   >>> print engineers # doctest: +SKIP
    Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
    >>> employees.issuperset(engineers)     # superset test
    False
    >>> employees.update(engineers)         # update from another set
    >>> employees.issuperset(engineers)
    True
-   >>> for group in [engineers, programmers, managers, employees]:
+   >>> for group in [engineers, programmers, managers, employees]: # doctest: +SKIP
    ...     group.discard('Susan')          # unconditionally remove element
    ...     print group
    ...
