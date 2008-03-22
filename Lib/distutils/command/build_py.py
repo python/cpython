@@ -383,3 +383,27 @@ class build_py (Command):
         if self.optimize > 0:
             byte_compile(files, optimize=self.optimize,
                          force=self.force, prefix=prefix, dry_run=self.dry_run)
+
+class build_py_2to3(build_py):
+    def run(self):
+        from lib2to3.refactor import RefactoringTool
+        self.updated_files = []
+        build_py.run(self)
+        class Options:
+            pass
+        o = Options()
+        o.doctests_only = False
+        o.fix = []
+        o.list_fixes = []
+        o.print_function = False
+        o.verbose = False
+        o.write = True
+        r = RefactoringTool(o)
+        r.refactor_args(self.updated_files)
+
+    def build_module(self, module, module_file, package):
+        res = build_py.build_module(self, module, module_file, package)
+        if res[1]:
+            # file was copied
+            self.updated_files.append(res[0])
+        return res

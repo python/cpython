@@ -23,6 +23,10 @@ Extension Modules
 Library
 -------
 
+- The class distutils.commands.build_py.build_py_2to3 can be used
+  as a build_py replacement to automatically run 2to3 on modules
+  that are going to be installed.
+
 - A new pickle protocol (protocol 3) is added with explicit support
   for bytes.  This is the default protocol.  It intentionally cannot
   be unpickled by Python 2.x.
