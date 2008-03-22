@@ -161,6 +161,9 @@ class RefactoringTool(object):
                 post_order_fixers.append(fixer)
             else:
                 raise ValueError("Illegal fixer order: %r" % fixer.order)
+
+        pre_order_fixers.sort(key=lambda x: x.run_order)
+        post_order_fixers.sort(key=lambda x: x.run_order)
         return (pre_order_fixers, post_order_fixers)
 
     def log_error(self, msg, *args, **kwds):

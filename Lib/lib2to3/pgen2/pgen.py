@@ -2,7 +2,7 @@
 # Licensed to PSF under a Contributor Agreement.
 
 # Pgen imports
-from pgen2 import grammar, token, tokenize
+from . import grammar, token, tokenize
 
 class PgenGrammar(grammar.Grammar):
     pass
