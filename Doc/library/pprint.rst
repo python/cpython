@@ -49,14 +49,14 @@ The :mod:`pprint` module defines one class:
    the depth of the objects being formatted.  The desired output width is
    constrained using the *width* parameter; the default is 80 characters.  If a
    structure cannot be formatted within the constrained width, a best effort will
-   be made. ::
+   be made.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
       >>> stuff.insert(0, stuff[:])
       >>> pp = pprint.PrettyPrinter(indent=4)
       >>> pp.pprint(stuff)
-      [   ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
+      [   [   'spam', 'eggs', 'lumberjack', 'knights', 'ni'],
           'spam',
           'eggs',
           'lumberjack',
@@ -89,19 +89,18 @@ The :class:`PrettyPrinter` class supports several derivative functions:
    newline.  If *stream* is omitted, ``sys.stdout`` is used.  This may be used in
    the interactive interpreter instead of a :keyword:`print` statement for
    inspecting values.    *indent*, *width* and *depth* will be passed to the
-   :class:`PrettyPrinter` constructor as formatting parameters. ::
+   :class:`PrettyPrinter` constructor as formatting parameters.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
       >>> stuff.insert(0, stuff)
       >>> pprint.pprint(stuff)
-      [<Recursion on list with id=869440>,
-       '',
-       '/usr/local/lib/python1.5',
-       '/usr/local/lib/python1.5/test',
-       '/usr/local/lib/python1.5/sunos5',
-       '/usr/local/lib/python1.5/sharedmodules',
-       '/usr/local/lib/python1.5/tkinter']
+      [<Recursion on list with id=...>,
+       'spam',
+       'eggs',
+       'lumberjack',
+       'knights',
+       'ni']
 
    .. versionchanged:: 2.4
       The parameters *indent*, *width* and *depth* were added.
@@ -113,7 +112,7 @@ The :class:`PrettyPrinter` class supports several derivative functions:
 
    Determine if the formatted representation of *object* is "readable," or can be
    used to reconstruct the value using :func:`eval`.  This always returns ``False``
-   for recursive objects. ::
+   for recursive objects.
 
       >>> pprint.isreadable(stuff)
       False
@@ -123,8 +122,8 @@ The :class:`PrettyPrinter` class supports several derivative functions:
 
    Determine if *object* requires a recursive representation.
 
-One more support function is also defined:
 
+One more support function is also defined:
 
 .. function:: saferepr(object)
 
@@ -133,12 +132,8 @@ One more support function is also defined:
    recursive reference will be represented as ``<Recursion on typename with
    id=number>``.  The representation is not otherwise formatted.
 
-::
-
    >>> pprint.saferepr(stuff)
-   "[<Recursion on list with id=682968>, '', '/usr/local/lib/python1.5', '/usr/loca
-   l/lib/python1.5/test', '/usr/local/lib/python1.5/sunos5', '/usr/local/lib/python
-   1.5/sharedmodules', '/usr/local/lib/python1.5/tkinter']"
+   "[<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']"
 
 
 .. _prettyprinter-objects:
