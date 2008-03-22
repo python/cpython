@@ -26,18 +26,20 @@ only remaining references to a referent are weak references,
 :term:`garbage collection` is free to destroy the referent and reuse its memory
 for something else.  A primary use for weak references is to implement caches or
 mappings holding large objects, where it's desired that a large object not be
-kept alive solely because it appears in a cache or mapping.  For example, if you
-have a number of large binary image objects, you may wish to associate a name
-with each.  If you used a Python dictionary to map names to images, or images to
-names, the image objects would remain alive just because they appeared as values
-or keys in the dictionaries.  The :class:`WeakKeyDictionary` and
-:class:`WeakValueDictionary` classes supplied by the :mod:`weakref` module are
-an alternative, using weak references to construct mappings that don't keep
-objects alive solely because they appear in the mapping objects.  If, for
-example, an image object is a value in a :class:`WeakValueDictionary`, then when
-the last remaining references to that image object are the weak references held
-by weak mappings, garbage collection can reclaim the object, and its
-corresponding entries in weak mappings are simply deleted.
+kept alive solely because it appears in a cache or mapping.
+
+For example, if you have a number of large binary image objects, you may wish to
+associate a name with each.  If you used a Python dictionary to map names to
+images, or images to names, the image objects would remain alive just because
+they appeared as values or keys in the dictionaries.  The
+:class:`WeakKeyDictionary` and :class:`WeakValueDictionary` classes supplied by
+the :mod:`weakref` module are an alternative, using weak references to construct
+mappings that don't keep objects alive solely because they appear in the mapping
+objects.  If, for example, an image object is a value in a
+:class:`WeakValueDictionary`, then when the last remaining references to that
+image object are the weak references held by weak mappings, garbage collection
+can reclaim the object, and its corresponding entries in weak mappings are
+simply deleted.
 
 :class:`WeakKeyDictionary` and :class:`WeakValueDictionary` use weak references
 in their implementation, setting up callback functions on the weak references
@@ -47,6 +49,12 @@ dictionary types is all they need -- it's not usually necessary to create your
 own weak references directly.  The low-level machinery used by the weak
 dictionary implementations is exposed by the :mod:`weakref` module for the
 benefit of advanced uses.
+
+.. note::
+
+   Weak references to an object are cleared before the object's :meth:`__del__`
+   is called, to ensure that the weak reference callback (if any) finds the
+   object still alive.
 
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), methods (both bound and
@@ -134,11 +142,11 @@ Extension types can easily be made to support weak references; see
 
    .. note::
 
-      Caution:  Because a :class:`WeakKeyDictionary` is built on top of a Python
+      Caution: Because a :class:`WeakKeyDictionary` is built on top of a Python
       dictionary, it must not change size when iterating over it.  This can be
-      difficult to ensure for a :class:`WeakKeyDictionary` because actions performed
-      by the program during iteration may cause items in the dictionary to vanish "by
-      magic" (as a side effect of garbage collection).
+      difficult to ensure for a :class:`WeakKeyDictionary` because actions
+      performed by the program during iteration may cause items in the
+      dictionary to vanish "by magic" (as a side effect of garbage collection).
 
 :class:`WeakKeyDictionary` objects have the following additional methods.  These
 expose the internal references directly.  The references are not guaranteed to
