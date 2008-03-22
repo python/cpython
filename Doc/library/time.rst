@@ -382,11 +382,12 @@ The module defines the following functions and data items:
    The default values used to fill in any missing data when more accurate values
    cannot be inferred are ``(1900, 1, 1, 0, 0, 0, 0, 1, -1)``.
 
-   For example::
+   For example:
 
       >>> import time
-      >>> time.strptime("30 Nov 00", "%d %b %y")
-      (2000, 11, 30, 0, 0, 0, 3, 335, -1)
+      >>> time.strptime("30 Nov 00", "%d %b %y")   # doctest: +NORMALIZE_WHITESPACE
+      time.struct_time(tm_year=2000, tm_mon=11, tm_mday=30, tm_hour=0, tm_min=0,
+                       tm_sec=0, tm_wday=3, tm_yday=335, tm_isdst=-1)
 
    Support for the ``%Z`` directive is based on the values contained in ``tzname``
    and whether ``daylight`` is true.  Because of this, it is platform-specific

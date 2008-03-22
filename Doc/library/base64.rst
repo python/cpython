@@ -150,7 +150,7 @@ The legacy interface:
    :func:`encodestring` returns a string containing one or more lines of
    base64-encoded data always including an extra trailing newline (``'\n'``).
 
-An example usage of the module::
+An example usage of the module:
 
    >>> import base64
    >>> encoded = base64.b64encode('data to be encoded')

@@ -243,7 +243,7 @@ Weak Reference Objects
 ----------------------
 
 Weak reference objects have no attributes or methods, but do allow the referent
-to be obtained, if it still exists, by calling it::
+to be obtained, if it still exists, by calling it:
 
    >>> import weakref
    >>> class Object:
@@ -256,7 +256,7 @@ to be obtained, if it still exists, by calling it::
    True
 
 If the referent no longer exists, calling the reference object returns
-:const:`None`::
+:const:`None`:
 
    >>> del o, o2
    >>> print r()

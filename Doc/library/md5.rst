@@ -22,7 +22,7 @@ using the :meth:`update` method, and at any point you can ask it for the
 concatenation of the strings fed to it so far using the :meth:`digest` method.
 
 For example, to obtain the digest of the string ``'Nobody inspects the spammish
-repetition'``::
+repetition'``:
 
    >>> import md5
    >>> m = md5.new()
@@ -31,7 +31,7 @@ repetition'``::
    >>> m.digest()
    '\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
 
-More condensed::
+More condensed:
 
    >>> md5.new("Nobody inspects the spammish repetition").digest()
    '\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'

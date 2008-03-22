@@ -70,7 +70,7 @@ The following functions are provided:
       if item > heap[0]:
           item = heapreplace(heap, item)
 
-Example of use::
+Example of use:
 
    >>> from heapq import heappush, heappop
    >>> heap = []
@@ -87,7 +87,6 @@ Example of use::
    >>> data.sort()
    >>> print data == ordered
    True
-   >>>
 
 The module also offers three general purpose functions based on heaps.
 

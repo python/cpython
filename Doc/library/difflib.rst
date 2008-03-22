@@ -1,4 +1,3 @@
-
 :mod:`difflib` --- Helpers for computing deltas
 ===============================================
 
@@ -8,7 +7,10 @@
 .. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
 .. Markup by Fred L. Drake, Jr. <fdrake@acm.org>
 
+.. testsetup::
 
+   import sys
+   from difflib import *
 
 .. versionadded:: 2.1
 
@@ -148,12 +150,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    expressed in the format returned by :func:`time.ctime`.  If not specified, the
    strings default to blanks.
 
-   ::
-
       >>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
       >>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
       >>> for line in context_diff(s1, s2, fromfile='before.py', tofile='after.py'):
-      ...     sys.stdout.write(line)
+      ...     sys.stdout.write(line)  # doctest: +NORMALIZE_WHITESPACE
       *** before.py
       --- after.py
       ***************
@@ -186,7 +186,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Possibilities that don't score at least that similar to *word* are ignored.
 
    The best (no more than *n*) matches among the possibilities are returned in a
-   list, sorted by similarity score, most similar first. ::
+   list, sorted by similarity score, most similar first.
 
       >>> get_close_matches('appel', ['ape', 'apple', 'peach', 'puppy'])
       ['apple', 'ape']
@@ -221,7 +221,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; note: bad idea to include newline in this!).
 
-   :file:`Tools/scripts/ndiff.py` is a command-line front-end to this function. ::
+   :file:`Tools/scripts/ndiff.py` is a command-line front-end to this function.
 
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
       ...              'ore\ntree\nemu\n'.splitlines(1))
@@ -245,7 +245,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    lines originating from file 1 or 2 (parameter *which*), stripping off line
    prefixes.
 
-   Example::
+   Example:
 
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
       ...              'ore\ntree\nemu\n'.splitlines(1))
@@ -285,13 +285,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    expressed in the format returned by :func:`time.ctime`.  If not specified, the
    strings default to blanks.
 
-   ::
-
-
       >>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
       >>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
       >>> for line in unified_diff(s1, s2, fromfile='before.py', tofile='after.py'):
-      ...     sys.stdout.write(line)
+      ...     sys.stdout.write(line)   # doctest: +NORMALIZE_WHITESPACE
       --- before.py
       +++ after.py
       @@ -1,4 +1,4 @@
@@ -388,11 +385,11 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
    conditions, the additional conditions ``k >= k'``, ``i <= i'``, and if ``i ==
    i'``, ``j <= j'`` are also met. In other words, of all maximal matching blocks,
    return one that starts earliest in *a*, and of all those maximal matching blocks
-   that start earliest in *a*, return the one that starts earliest in *b*. ::
+   that start earliest in *a*, return the one that starts earliest in *b*.
 
       >>> s = SequenceMatcher(None, " abcd", "abcd abcd")
       >>> s.find_longest_match(0, 5, 0, 9)
-      (0, 4, 5)
+      Match(a=0, b=4, size=5)
 
    If *isjunk* was provided, first the longest matching block is determined as
    above, but with the additional restriction that no junk element appears in the
@@ -403,11 +400,11 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
    Here's the same example as before, but considering blanks to be junk. That
    prevents ``' abcd'`` from matching the ``' abcd'`` at the tail end of the second
    sequence directly.  Instead only the ``'abcd'`` can match, and matches the
-   leftmost ``'abcd'`` in the second sequence::
+   leftmost ``'abcd'`` in the second sequence:
 
       >>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
       >>> s.find_longest_match(0, 5, 0, 9)
-      (1, 0, 4)
+      Match(a=1, b=0, size=4)
 
    If no blocks match, this returns ``(alo, blo, 0)``.
 
@@ -433,11 +430,11 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
       The guarantee that adjacent triples always describe non-adjacent blocks was
       implemented.
 
-   ::
+   .. doctest::
 
       >>> s = SequenceMatcher(None, "abxcd", "abcd")
       >>> s.get_matching_blocks()
-      [(0, 0, 2), (3, 2, 2), (5, 4, 0)]
+      [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
 
 
 .. method:: SequenceMatcher.get_opcodes()
@@ -466,7 +463,7 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
    |               | are equal).                                 |
    +---------------+---------------------------------------------+
 
-   For example::
+   For example:
 
       >>> a = "qabxcd"
       >>> b = "abycdf"
@@ -524,7 +521,7 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
 The three methods that return the ratio of matching to total characters can give
 different results due to differing levels of approximation, although
 :meth:`quick_ratio` and :meth:`real_quick_ratio` are always at least as large as
-:meth:`ratio`::
+:meth:`ratio`:
 
    >>> s = SequenceMatcher(None, "abcd", "bcde")
    >>> s.ratio()
@@ -540,7 +537,7 @@ different results due to differing levels of approximation, although
 SequenceMatcher Examples
 ------------------------
 
-This example compares two strings, considering blanks to be "junk:" ::
+This example compares two strings, considering blanks to be "junk:"
 
    >>> s = SequenceMatcher(lambda x: x == " ",
    ...                     "private Thread currentThread;",
@@ -548,19 +545,18 @@ This example compares two strings, considering blanks to be "junk:" ::
 
 :meth:`ratio` returns a float in [0, 1], measuring the similarity of the
 sequences.  As a rule of thumb, a :meth:`ratio` value over 0.6 means the
-sequences are close matches::
+sequences are close matches:
 
    >>> print round(s.ratio(), 3)
    0.866
 
 If you're only interested in where the sequences match,
-:meth:`get_matching_blocks` is handy::
+:meth:`get_matching_blocks` is handy:
 
    >>> for block in s.get_matching_blocks():
    ...     print "a[%d] and b[%d] match for %d elements" % block
    a[0] and b[0] match for 8 elements
-   a[8] and b[17] match for 6 elements
-   a[14] and b[23] match for 15 elements
+   a[8] and b[17] match for 21 elements
    a[29] and b[38] match for 0 elements
 
 Note that the last tuple returned by :meth:`get_matching_blocks` is always a
@@ -568,14 +564,13 @@ dummy, ``(len(a), len(b), 0)``, and this is the only case in which the last
 tuple element (number of elements matched) is ``0``.
 
 If you want to know how to change the first sequence into the second, use
-:meth:`get_opcodes`::
+:meth:`get_opcodes`:
 
    >>> for opcode in s.get_opcodes():
    ...     print "%6s a[%d:%d] b[%d:%d]" % opcode
     equal a[0:8] b[0:8]
    insert a[8:8] b[8:17]
-    equal a[8:14] b[17:23]
-    equal a[14:29] b[23:38]
+    equal a[8:29] b[17:38]
 
 See also the function :func:`get_close_matches` in this module, which shows how
 simple code building on :class:`SequenceMatcher` can be used to do useful work.
@@ -628,7 +623,7 @@ Differ Example
 
 This example compares two texts. First we set up the texts, sequences of
 individual single-line strings ending with newlines (such sequences can also be
-obtained from the :meth:`readlines` method of file-like objects)::
+obtained from the :meth:`readlines` method of file-like objects):
 
    >>> text1 = '''  1. Beautiful is better than ugly.
    ...   2. Explicit is better than implicit.
@@ -645,7 +640,7 @@ obtained from the :meth:`readlines` method of file-like objects)::
    ...   5. Flat is better than nested.
    ... '''.splitlines(1)
 
-Next we instantiate a Differ object::
+Next we instantiate a Differ object:
 
    >>> d = Differ()
 
@@ -653,11 +648,11 @@ Note that when instantiating a :class:`Differ` object we may pass functions to
 filter out line and character "junk."  See the :meth:`Differ` constructor for
 details.
 
-Finally, we compare the two::
+Finally, we compare the two:
 
    >>> result = list(d.compare(text1, text2))
 
-``result`` is a list of strings, so let's pretty-print it::
+``result`` is a list of strings, so let's pretty-print it:
 
    >>> from pprint import pprint
    >>> pprint(result)
@@ -665,14 +660,14 @@ Finally, we compare the two::
     '-   2. Explicit is better than implicit.\n',
     '-   3. Simple is better than complex.\n',
     '+   3.   Simple is better than complex.\n',
-    '?     ++                                \n',
+    '?     ++\n',
     '-   4. Complex is better than complicated.\n',
-    '?            ^                     ---- ^  \n',
+    '?            ^                     ---- ^\n',
     '+   4. Complicated is better than complex.\n',
-    '?           ++++ ^                      ^  \n',
+    '?           ++++ ^                      ^\n',
     '+   5. Flat is better than nested.\n']
 
-As a single multi-line string it looks like this::
+As a single multi-line string it looks like this:
 
    >>> import sys
    >>> sys.stdout.writelines(result)
@@ -697,7 +692,7 @@ This example shows how to use difflib to create a ``diff``-like utility.
 It is also contained in the Python source distribution, as
 :file:`Tools/scripts/diff.py`.
 
-::
+.. testcode::
 
    """ Command line interface to difflib.py providing diffs in four formats:
 
