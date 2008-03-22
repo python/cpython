@@ -517,17 +517,18 @@ Python/importdl.o: $(srcdir)/Python/importdl.c
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
 
-BYTESTR_DEPS = Include/bytes_methods.h \
-               $(srcdir)/Objects/stringlib/count.h \
-               $(srcdir)/Objects/stringlib/ctype.h \
-               $(srcdir)/Objects/stringlib/eq.h \
-               $(srcdir)/Objects/stringlib/fastsearch.h \
-               $(srcdir)/Objects/stringlib/find.h \
-               $(srcdir)/Objects/stringlib/partition.h \
-               $(srcdir)/Objects/stringlib/stringdefs.h \
-               $(srcdir)/Objects/stringlib/string_format.h \
-               $(srcdir)/Objects/stringlib/transmogrify.h \
-               $(srcdir)/Objects/stringlib/unicodedefs.h \
+BYTESTR_DEPS = \
+		$(srcdir/Include/bytes_methods.h \
+		$(srcdir)/Objects/stringlib/count.h \
+		$(srcdir)/Objects/stringlib/ctype.h \
+		$(srcdir)/Objects/stringlib/eq.h \
+		$(srcdir)/Objects/stringlib/fastsearch.h \
+		$(srcdir)/Objects/stringlib/find.h \
+		$(srcdir)/Objects/stringlib/partition.h \
+		$(srcdir)/Objects/stringlib/stringdefs.h \
+		$(srcdir)/Objects/stringlib/string_format.h \
+		$(srcdir)/Objects/stringlib/transmogrify.h \
+		$(srcdir)/Objects/stringlib/unicodedefs.h \
 
 Objects/stringobject.o: $(srcdir)/Objects/stringobject.c $(BYTESTR_DEPS)
 
