@@ -82,6 +82,11 @@ coverage: BUILDER = coverage
 coverage: build
 	@echo "Coverage finished; see c.txt and python.txt in build/coverage"
 
+doctest: BUILDER = doctest
+doctest: build
+	@echo "Testing of doctests in the sources finished, look at the " \
+	      "results in build/doctest/output.txt"
+
 clean:
 	-rm -rf build/*
 	-rm -rf tools/sphinx

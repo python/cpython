@@ -15,8 +15,11 @@
 
 .. sectionauthor:: Raymond D. Hettinger <python at rcn.com>
 
-
 .. versionadded:: 2.4
+
+.. testsetup:: *
+
+   from decimal import *
 
 The :mod:`decimal` module provides support for decimal floating point
 arithmetic.  It offers several advantages over the :class:`float` datatype:
@@ -47,7 +50,7 @@ arithmetic.  It offers several advantages over the :class:`float` datatype:
 
 * Unlike hardware based binary floating point, the decimal module has a user
   alterable precision (defaulting to 28 places) which can be as large as needed for
-  a given problem::
+  a given problem:
 
      >>> getcontext().prec = 6
      >>> Decimal(1) / Decimal(7)
@@ -115,7 +118,9 @@ Quick-start Tutorial
 
 The usual start to using decimals is importing the module, viewing the current
 context with :func:`getcontext` and, if necessary, setting new values for
-precision, rounding, or enabled traps::
+precision, rounding, or enabled traps:
+
+.. doctest:: newcontext
 
    >>> from decimal import *
    >>> getcontext()
@@ -130,7 +135,7 @@ create a Decimal from a :class:`float`, first convert it to a string.  This
 serves as an explicit reminder of the details of the conversion (including
 representation error).  Decimal numbers include special values such as
 :const:`NaN` which stands for "Not a number", positive and negative
-:const:`Infinity`, and :const:`-0`.         ::
+:const:`Infinity`, and :const:`-0`.
 
    >>> Decimal(10)
    Decimal('10')
@@ -149,7 +154,9 @@ representation error).  Decimal numbers include special values such as
 
 The significance of a new Decimal is determined solely by the number of digits
 input.  Context precision and rounding only come into play during arithmetic
-operations. ::
+operations.
+
+.. doctest:: newcontext
 
    >>> getcontext().prec = 6
    >>> Decimal('3.0')
