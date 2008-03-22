@@ -1,9 +1,11 @@
 """High-perfomance logging profiler, mostly written in C."""
 
 import _hotshot
-
 from _hotshot import ProfilerError
 
+from warnings import warnpy3k as _warnpy3k
+_warnpy3k("The 'hotshot' module is not supported in 3.x, "
+          "use the 'profile' module instead.", stacklevel=2)
 
 class Profile:
     def __init__(self, logfn, lineevents=0, linetimings=1):
