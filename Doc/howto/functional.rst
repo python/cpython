@@ -450,7 +450,7 @@ is what generators provide; they can be thought of as resumable functions.
 
 Here's the simplest example of a generator function:
 
-.. testcode:: doctest_block
+.. testcode::
 
     def generate_ints(N):
         for i in range(N):
@@ -560,7 +560,7 @@ returns ``None``.
 Here's a simple counter that increments by 1 and allows changing the value of
 the internal counter.
 
-.. testcode:: doctest_block
+.. testcode::
 
     def counter (maximum):
         i = 0
