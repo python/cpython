@@ -906,13 +906,14 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual([(handlers[0], "http_open")],
                          [tup[0:2] for tup in o.calls])
 
-    def test_basic_auth(self):
+    def test_basic_auth(self, quote_char='"'):
         opener = OpenerDirector()
         password_manager = MockPasswordManager()
         auth_handler = urllib2.HTTPBasicAuthHandler(password_manager)
         realm = "ACME Widget Store"
         http_handler = MockHTTPHandler(
-            401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+            401, 'WWW-Authenticate: Basic realm=%s%s%s\r\n\r\n' %
+            (quote_char, realm, quote_char) )
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
         self._test_basic_auth(opener, auth_handler, "Authorization",
@@ -920,6 +921,9 @@ class HandlerTests(unittest.TestCase):
                               "http://acme.example.com/protected",
                               "http://acme.example.com/protected",
                               )
+
+    def test_basic_auth_with_single_quoted_realm(self):
+        self.test_basic_auth(quote_char="'")
 
     def test_proxy_basic_auth(self):
         opener = OpenerDirector()

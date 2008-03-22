@@ -144,6 +144,9 @@
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
 
+/* Define if you have the 'epoll' functions. */
+#undef HAVE_EPOLL
+
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
@@ -314,6 +317,9 @@
 
 /* Define to 1 if you have the `killpg' function. */
 #undef HAVE_KILLPG
+
+/* Define if you have the 'kqueue' functions. */
+#undef HAVE_KQUEUE
 
 /* Define to 1 if you have the <langinfo.h> header file. */
 #undef HAVE_LANGINFO_H
@@ -629,6 +635,12 @@
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
 #undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/epoll.h> header file. */
+#undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/event.h> header file. */
+#undef HAVE_SYS_EVENT_H
 
 /* Define to 1 if you have the <sys/file.h> header file. */
 #undef HAVE_SYS_FILE_H

@@ -21,6 +21,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Chris Barker
    * Don Bashford
    * Anthony Baxter
+   * Alexander Belopolsky
    * Bennett Benson
    * Jonathan Black
    * Robin Boerdijk

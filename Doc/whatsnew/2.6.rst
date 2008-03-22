@@ -540,7 +540,7 @@ complicated expressions inside a format string.
 
 So far we've shown how to specify which field to substitute into the
 resulting string.  The precise formatting used is also controllable by
-adding a colon followed by a format specifier.  For example:
+adding a colon followed by a format specifier.  For example::
 
      # Field 0: left justify, pad to 15 characters
      # Field 1: right justify, pad to 6 characters
@@ -552,7 +552,7 @@ adding a colon followed by a format specifier.  For example:
      fmt.format('Banquet', 125) ->
        'Banquet         $   125'
 
-Format specifiers can reference other fields through nesting:
+Format specifiers can reference other fields through nesting::
 
     fmt = '{0:{1}}'
     fmt.format('Invoice #1234', width) ->
