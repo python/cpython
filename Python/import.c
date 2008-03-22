@@ -997,7 +997,7 @@ get_sourcefile(const char *file)
 	}
 
 	strncpy(py, file, len-1);
-	py[len] = '\0';
+	py[len-1] = '\0';
 	if (stat(py, &statbuf) == 0 &&
 		S_ISREG(statbuf.st_mode)) {
 		u = PyUnicode_DecodeFSDefault(py);
