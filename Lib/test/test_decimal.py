@@ -949,21 +949,27 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
 def thfunc1(cls):
     d1 = Decimal(1)
     d3 = Decimal(3)
-    cls.assertEqual(d1/d3, Decimal('0.333333333'))
+    test1 = d1/d3
     cls.synchro.wait()
-    cls.assertEqual(d1/d3, Decimal('0.333333333'))
+    test2 = d1/d3
     cls.finish1.set()
+
+    cls.assertEqual(test1, Decimal('0.333333333'))
+    cls.assertEqual(test2, Decimal('0.333333333'))
     return
 
 def thfunc2(cls):
     d1 = Decimal(1)
     d3 = Decimal(3)
-    cls.assertEqual(d1/d3, Decimal('0.333333333'))
+    test1 = d1/d3
     thiscontext = getcontext()
     thiscontext.prec = 18
-    cls.assertEqual(d1/d3, Decimal('0.333333333333333333'))
+    test2 = d1/d3
     cls.synchro.set()
     cls.finish2.set()
+
+    cls.assertEqual(test1, Decimal('0.333333333'))
+    cls.assertEqual(test2, Decimal('0.333333333333333333'))
     return
 
 
