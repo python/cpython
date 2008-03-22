@@ -25,11 +25,11 @@ class FixImport(basefix.BaseFix):
     def transform(self, node, results):
         imp = results['imp']
 
-        if unicode(imp).startswith('.'):
+        if str(imp).startswith('.'):
             # Already a new-style import
             return
 
-        if not probably_a_local_import(unicode(imp), self.filename):
+        if not probably_a_local_import(str(imp), self.filename):
             # I guess this is a global import -- skip it!
             return
 
