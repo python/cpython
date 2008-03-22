@@ -783,6 +783,7 @@ LIBSUBDIRS=	lib-tk site-packages test test/output test/data \
 		email email/mime email/test email/test/data \
 		sqlite3 sqlite3/test \
 		logging bsddb bsddb/test csv wsgiref \
+		lib2to3 lib2to3/fixes lib2to3/pgen2 \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		setuptools setuptools/command setuptools/tests setuptools.egg-info \
@@ -859,6 +860,8 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
 		./$(BUILDPYTHON) -Wi -t -O $(DESTDIR)$(LIBDEST)/compileall.py \
 		-d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+		./$(BUILDPYTHON) -Wi -t -c "import lib2to3.pygram"
 
 # Create the PLATDIR source directory, if one wasn't distributed..
 $(srcdir)/Lib/$(PLATDIR):

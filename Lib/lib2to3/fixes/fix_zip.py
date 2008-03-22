@@ -9,33 +9,24 @@ iter(<>), list(<>), tuple(<>), sorted(<>), ...join(<>), or for V in <>:.
 
 # Local imports
 from . import basefix
-from .util import Name, Call, does_tree_import, in_special_context
+from .util import Name, Call, in_special_context
 
-class FixZip(basefix.BaseFix):
+class FixZip(basefix.ConditionalFix):
 
     PATTERN = """
     power< 'zip' args=trailer< '(' [any] ')' >
     >
     """
 
-    def start_tree(self, *args):
-        super(FixZip, self).start_tree(*args)
-        self._future_zip_found = None
-
-    def has_future_zip(self, node):
-        if self._future_zip_found is not None:
-            return self._future_zip_found
-        self._future_zip_found = does_tree_import('future_builtins', 'zip', node)
-        return self._future_zip_found
+    skip_on = "future_builtins.zip"
 
     def transform(self, node, results):
-        if self.has_future_zip(node):
-            # If a future zip has been imported for this file, we won't
-            # be making any modifications
+        if self.should_skip(node):
             return
 
         if in_special_context(node):
             return None
+
         new = node.clone()
         new.set_prefix("")
         new = Call(Name("list"), [new])
