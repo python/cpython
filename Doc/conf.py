@@ -13,7 +13,8 @@ sys.path.append('tools/sphinxext')
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.ext.refcounting', 'sphinx.ext.coverage']
+extensions = ['sphinx.ext.refcounting', 'sphinx.ext.coverage',
+              'sphinx.ext.doctest']
 templates_path = ['tools/sphinxext']
 
 # General substitutions.
