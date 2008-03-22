@@ -17,9 +17,14 @@
 
 .. versionadded:: 2.4
 
+.. import modules for testing inline doctests with the Sphinx doctest builder
 .. testsetup:: *
 
+   import decimal
+   import math
    from decimal import *
+   # make sure each group gets a fresh context
+   setcontext(Context())
 
 The :mod:`decimal` module provides support for decimal floating point
 arithmetic.  It offers several advantages over the :class:`float` datatype:
@@ -118,15 +123,13 @@ Quick-start Tutorial
 
 The usual start to using decimals is importing the module, viewing the current
 context with :func:`getcontext` and, if necessary, setting new values for
-precision, rounding, or enabled traps:
-
-.. doctest:: newcontext
+precision, rounding, or enabled traps::
 
    >>> from decimal import *
    >>> getcontext()
    Context(prec=28, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-           capitals=1, flags=[], traps=[Overflow, InvalidOperation,
-           DivisionByZero])
+           capitals=1, flags=[], traps=[Overflow, DivisionByZero,
+           InvalidOperation])
 
    >>> getcontext().prec = 7       # Set a new precision
 
@@ -170,14 +173,14 @@ operations.
    Decimal('5.85988')
 
 Decimals interact well with much of the rest of Python.  Here is a small decimal
-floating point flying circus::
+floating point flying circus:
 
    >>> data = map(Decimal, '1.34 1.87 3.45 2.35 1.00 0.03 9.25'.split())
    >>> max(data)
    Decimal('9.25')
    >>> min(data)
    Decimal('0.03')
-   >>> sorted(data)
+   >>> sorted(data)  # doctest: +NORMALIZE_WHITESPACE
    [Decimal('0.03'), Decimal('1.00'), Decimal('1.34'), Decimal('1.87'),
     Decimal('2.35'), Decimal('3.45'), Decimal('9.25')]
    >>> sum(data)
@@ -198,7 +201,7 @@ floating point flying circus::
    >>> c % a
    Decimal('0.77')
 
-And some mathematical functions are also available to Decimal::
+And some mathematical functions are also available to Decimal:
 
    >>> Decimal(2).sqrt()
    Decimal('1.414213562373095048801688724')
@@ -211,7 +214,7 @@ And some mathematical functions are also available to Decimal::
 
 The :meth:`quantize` method rounds a number to a fixed exponent.  This method is
 useful for monetary applications that often round results to a fixed number of
-places::
+places:
 
    >>> Decimal('7.325').quantize(Decimal('.01'), rounding=ROUND_DOWN)
    Decimal('7.32')
@@ -229,7 +232,10 @@ function.
 In accordance with the standard, the :mod:`Decimal` module provides two ready to
 use standard contexts, :const:`BasicContext` and :const:`ExtendedContext`. The
 former is especially useful for debugging because many of the traps are
-enabled::
+enabled:
+
+.. doctest:: newcontext
+   :options: +NORMALIZE_WHITESPACE
 
    >>> myothercontext = Context(prec=60, rounding=ROUND_HALF_DOWN)
    >>> setcontext(myothercontext)
@@ -263,15 +269,18 @@ using the :meth:`clear_flags` method. ::
    Decimal('3.14159292')
    >>> getcontext()
    Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-           capitals=1, flags=[Inexact, Rounded], traps=[])
+           capitals=1, flags=[Rounded, Inexact], traps=[])
 
 The *flags* entry shows that the rational approximation to :const:`Pi` was
 rounded (digits beyond the context precision were thrown away) and that the
 result is inexact (some of the discarded digits were non-zero).
 
 Individual traps are set using the dictionary in the :attr:`traps` field of a
-context::
+context:
 
+.. doctest:: newcontext
+
+   >>> setcontext(ExtendedContext)
    >>> Decimal(1) / Decimal(0)
    Decimal('Infinity')
    >>> getcontext().traps[DivisionByZero] = 1
@@ -401,7 +410,7 @@ also have a number of specialized methods:
    but the result gives a total ordering on :class:`Decimal`
    instances.  Two :class:`Decimal` instances with the same numeric
    value but different representations compare unequal in this
-   ordering::
+   ordering:
    
       >>> Decimal('12.0').compare_total(Decimal('12'))
       Decimal('-1')
@@ -444,7 +453,7 @@ also have a number of specialized methods:
 .. method:: Decimal.copy_sign(other)
 
    Return a copy of the first operand with the sign set to be the
-   same as the sign of the second operand.  For example::
+   same as the sign of the second operand.  For example:
 
       >>> Decimal('2.3').copy_sign(Decimal('-1.5'))
       Decimal('-2.3')
@@ -989,7 +998,9 @@ method.  For example, ``C.exp(x)`` is equivalent to
    needed by the application.  Another benefit is that rounding immediately
    eliminates unintended effects from digits beyond the current precision. In the
    following example, using unrounded inputs means that adding zero to a sum can
-   change the result::
+   change the result:
+
+   .. doctest:: newcontext
 
       >>> getcontext().prec = 3
       >>> Decimal('3.4445') + Decimal('1.0023')
@@ -1246,7 +1257,9 @@ The effects of round-off error can be amplified by the addition or subtraction
 of nearly offsetting quantities resulting in loss of significance.  Knuth
 provides two instructive examples where rounded floating point arithmetic with
 insufficient precision causes the breakdown of the associative and distributive
-properties of addition::
+properties of addition:
+
+.. doctest:: newcontext
 
    # Examples from Seminumerical Algorithms, Section 4.2.2.
    >>> from decimal import Decimal, getcontext
@@ -1265,7 +1278,9 @@ properties of addition::
    Decimal('0.0060000')
 
 The :mod:`decimal` module makes it possible to restore the identities by
-expanding the precision sufficiently to avoid loss of significance::
+expanding the precision sufficiently to avoid loss of significance:
+
+.. doctest:: newcontext
 
    >>> getcontext().prec = 20
    >>> u, v, w = Decimal(11111113), Decimal(-11111111), Decimal('7.51111111')
@@ -1331,7 +1346,7 @@ In addition to the two signed zeros which are distinct yet equal, there are
 various representations of zero with differing precisions yet equivalent in
 value.  This takes a bit of getting used to.  For an eye accustomed to
 normalized floating point representations, it is not immediately obvious that
-the following calculation returns a value equal to zero::
+the following calculation returns a value equal to zero:
 
    >>> 1 / Decimal('Infinity')
    Decimal('0E-1000000026')
@@ -1533,7 +1548,7 @@ Decimal FAQ
 Q. It is cumbersome to type ``decimal.Decimal('1234.5')``.  Is there a way to
 minimize typing when using the interactive interpreter?
 
-A. Some users abbreviate the constructor to just a single letter::
+A. Some users abbreviate the constructor to just a single letter:
 
    >>> D = decimal.Decimal
    >>> D('1.23') + D('3.45')
@@ -1544,7 +1559,7 @@ places and need to be rounded.  Others are not supposed to have excess digits
 and need to be validated.  What methods should be used?
 
 A. The :meth:`quantize` method rounds to a fixed number of decimal places. If
-the :const:`Inexact` trap is set, it is also useful for validation::
+the :const:`Inexact` trap is set, it is also useful for validation:
 
    >>> TWOPLACES = Decimal(10) ** -2       # same as Decimal('0.01')
 
@@ -1559,7 +1574,7 @@ the :const:`Inexact` trap is set, it is also useful for validation::
    >>> Decimal('3.214').quantize(TWOPLACES, context=Context(traps=[Inexact]))
    Traceback (most recent call last):
       ...
-   Inexact: Changed in rounding
+   Inexact
 
 Q. Once I have valid two place inputs, how do I maintain that invariant
 throughout an application?
@@ -1567,7 +1582,7 @@ throughout an application?
 A. Some operations like addition, subtraction, and multiplication by an integer
 will automatically preserve fixed point.  Others operations, like division and
 non-integer multiplication, will change the number of decimal places and need to
-be followed-up with a :meth:`quantize` step::
+be followed-up with a :meth:`quantize` step:
 
     >>> a = Decimal('102.72')           # Initial fixed-point values
     >>> b = Decimal('3.17')
@@ -1583,7 +1598,7 @@ be followed-up with a :meth:`quantize` step::
     Decimal('0.03')
 
 In developing fixed-point applications, it is convenient to define functions
-to handle the :meth:`quantize` step::
+to handle the :meth:`quantize` step:
 
     >>> def mul(x, y, fp=TWOPLACES):
     ...     return (x * y).quantize(fp)
@@ -1601,7 +1616,7 @@ various precisions. Is there a way to transform them to a single recognizable
 canonical value?
 
 A. The :meth:`normalize` method maps all equivalent values to a single
-representative::
+representative:
 
    >>> values = map(Decimal, '200 200.000 2E2 .02E+4'.split())
    >>> [v.normalize() for v in values]
@@ -1617,7 +1632,7 @@ original's two-place significance.
 
 If an application does not care about tracking significance, it is easy to
 remove the exponent and trailing zeroes, losing significance, but keeping the
-value unchanged::
+value unchanged:
 
     >>> def remove_exponent(d):
     ...     return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()
@@ -1629,7 +1644,9 @@ Q. Is there a way to convert a regular float to a :class:`Decimal`?
 
 A. Yes, all binary floating point numbers can be exactly expressed as a
 Decimal.  An exact conversion may take more precision than intuition would
-suggest, so we trap :const:`Inexact` to signal a need for more precision::
+suggest, so we trap :const:`Inexact` to signal a need for more precision:
+
+.. testcode:: doctest_block
 
     def float_to_decimal(f):
         "Convert a floating point number to a Decimal with no loss of information"
@@ -1642,6 +1659,8 @@ suggest, so we trap :const:`Inexact` to signal a need for more precision::
                 except Inexact:
                     ctx.prec += 1
 
+.. doctest:: doctest_block
+
     >>> float_to_decimal(math.pi)
     Decimal('3.141592653589793115997963468544185161590576171875')
 
@@ -1649,7 +1668,7 @@ Q. Why isn't the :func:`float_to_decimal` routine included in the module?
 
 A. There is some question about whether it is advisable to mix binary and
 decimal floating point.  Also, its use requires some care to avoid the
-representation issues associated with binary floating point::
+representation issues associated with binary floating point:
 
    >>> float_to_decimal(1.1)
    Decimal('1.100000000000000088817841970012523233890533447265625')
@@ -1669,23 +1688,27 @@ different precisions?
 A. Yes.  The principle is that all values are considered to be exact and so is
 the arithmetic on those values.  Only the results are rounded.  The advantage
 for inputs is that "what you type is what you get".  A disadvantage is that the
-results can look odd if you forget that the inputs haven't been rounded::
+results can look odd if you forget that the inputs haven't been rounded:
+
+.. doctest:: newcontext
 
    >>> getcontext().prec = 3
-   >>> Decimal('3.104') + D('2.104')
+   >>> Decimal('3.104') + Decimal('2.104')
    Decimal('5.21')
-   >>> Decimal('3.104') + D('0.000') + D('2.104')
+   >>> Decimal('3.104') + Decimal('0.000') + Decimal('2.104')
    Decimal('5.20')
 
 The solution is either to increase precision or to force rounding of inputs
-using the unary plus operation::
+using the unary plus operation:
+
+.. doctest:: newcontext
 
    >>> getcontext().prec = 3
    >>> +Decimal('1.23456789')      # unary plus triggers rounding
    Decimal('1.23')
 
 Alternatively, inputs can be rounded upon creation using the
-:meth:`Context.create_decimal` method::
+:meth:`Context.create_decimal` method:
 
    >>> Context(prec=5, rounding=ROUND_DOWN).create_decimal('1.2345678')
    Decimal('1.2345')
