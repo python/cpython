@@ -285,13 +285,15 @@ available.  They are listed here in alphabetical order.
      class's attributes, and recursively of the attributes of its class's base
      classes.
 
-   The resulting list is sorted alphabetically.  For example::
+   The resulting list is sorted alphabetically.  For example:
 
       >>> import struct
-      >>> dir()
+      >>> dir()   # doctest: +SKIP
       ['__builtins__', '__doc__', '__name__', 'struct']
-      >>> dir(struct)
-      ['__doc__', '__name__', 'calcsize', 'error', 'pack', 'unpack']
+      >>> dir(struct)   # doctest: +NORMALIZE_WHITESPACE
+      ['Struct', '__builtins__', '__doc__', '__file__', '__name__',
+       '__package__', '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
+       'unpack', 'unpack_from']
       >>> class Foo(object):
       ...     def __dir__(self):
       ...         return ["kan", "ga", "roo"]
@@ -331,10 +333,10 @@ available.  They are listed here in alphabetical order.
    returned by :func:`enumerate` returns a tuple containing a count (from zero) and
    the corresponding value obtained from iterating over *iterable*.
    :func:`enumerate` is useful for obtaining an indexed series: ``(0, seq[0])``,
-   ``(1, seq[1])``, ``(2, seq[2])``, .... For example::
+   ``(1, seq[1])``, ``(2, seq[2])``, .... For example:
 
-      >>> for i, season in enumerate(['Spring', 'Summer', 'Fall', 'Winter')]:
-      >>>     print i, season
+      >>> for i, season in enumerate(['Spring', 'Summer', 'Fall', 'Winter']):
+      ...     print i, season
       0 Spring
       1 Summer
       2 Fall
@@ -361,7 +363,7 @@ available.  They are listed here in alphabetical order.
    propagated.  If the *locals* dictionary is omitted it defaults to the *globals*
    dictionary.  If both dictionaries are omitted, the expression is executed in the
    environment where :func:`eval` is called.  The return value is the result of
-   the evaluated expression. Syntax errors are reported as exceptions.  Example::
+   the evaluated expression. Syntax errors are reported as exceptions.  Example:
 
       >>> x = 1
       >>> print eval('x+1')
@@ -892,7 +894,7 @@ available.  They are listed here in alphabetical order.
    is positive, the last element is the largest ``start + i * step`` less than
    *stop*; if *step* is negative, the last element is the smallest ``start + i *
    step`` greater than *stop*.  *step* must not be zero (or else :exc:`ValueError`
-   is raised).  Example::
+   is raised).  Example:
 
       >>> range(10)
       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -1206,7 +1208,7 @@ available.  They are listed here in alphabetical order.
    becomes the :attr:`__bases__` attribute; and the *dict* dictionary is the
    namespace containing definitions for class body and becomes the :attr:`__dict__`
    attribute.  For example, the following two statements create identical
-   :class:`type` objects::
+   :class:`type` objects:
 
       >>> class X(object):
       ...     a = 1
