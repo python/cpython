@@ -24,12 +24,12 @@ The module defines the following:
    string, as would be printed by the C function :cfunc:`perror`.
 
 
-.. type:: epoll([sizehint=-1])
+.. function:: epoll([sizehint=-1])
 
-   (Only supported on Linux 2.5.44 and newer.)  Returns an edge polling
-   object, which can be used as Edge or Level Triggered interface for I/O
-   events; see section :ref:`epoll-objects` below for the methods supported
-   by epolling objects.
+   (Only supported on Linux 2.5.44 and newer.)  Returns an edge polling object,
+   which can be used as Edge or Level Triggered interface for I/O events; see
+   section :ref:`epoll-objects` below for the methods supported by epolling
+   objects.
 
    .. versionadded:: 2.6
 
@@ -42,20 +42,18 @@ The module defines the following:
    by polling objects.
 
 
-.. type:: kqueue()
+.. function:: kqueue()
 
-   (Only supported on BSD.)  Returns a kernel queue object
-   object; see section :ref:`kqueue-objects` below for the methods supported
-   by kqueue objects.
+   (Only supported on BSD.)  Returns a kernel queue object object; see section
+   :ref:`kqueue-objects` below for the methods supported by kqueue objects.
 
    .. versionadded:: 2.6
 
 
-.. type:: kqueue(ident, filter=KQ_FILTER_READ, flags=KQ_ADD, fflags=0, data=0, udata=0)
+.. function:: kqueue(ident, filter=KQ_FILTER_READ, flags=KQ_ADD, fflags=0, data=0, udata=0)
 
-   (Only supported on BSD.)  Returns a kernel event object
-   object; see section :ref:`kevent-objects` below for the methods supported
-   by kqueue objects.
+   (Only supported on BSD.)  Returns a kernel event object object; see section
+   :ref:`kevent-objects` below for the methods supported by kqueue objects.
 
    .. versionadded:: 2.6
 
@@ -287,16 +285,16 @@ Kqueue Objects
 Kevent Objects
 --------------
 
-   http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
+http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
-   .. attribute:: ident
+.. attribute:: kevent.ident
 
    Value used to identify the event. The interpretation depends on the filter
    but it's usually the file descriptor. In the constructor ident can either
    be an int or an object with a fileno() function. kevent stores the integer
    internally.
 
-   .. attribute:: filter
+.. attribute:: kevent.filter
 
    Name of the kernel filter
 
@@ -325,7 +323,7 @@ Kevent Objects
    | :const:`KQ_FILTER_TIMER`  | Establishes an arbitrary timer              |
    +---------------------------+---------------------------------------------+
 
-   .. attribute:: flags
+.. attribute:: kevent.flags
 
    Filter action
 
@@ -354,12 +352,12 @@ Kevent Objects
    +---------------------------+---------------------------------------------+
 
 
-   .. attribute:: fflags
+.. attribute:: kevent.fflags
 
    Filter specific flags
 
 
-   *:const:`KQ_FILTER_READ` and  :const:`KQ_FILTER_WRITE` filter flags
+   *:const:`KQ_FILTER_READ` and  :const:`KQ_FILTER_WRITE` filter flags*
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |
@@ -425,11 +423,11 @@ Kevent Objects
    +----------------------------+--------------------------------------------+
 
 
-   .. attribute:: data
+.. attribute:: kevent.data
 
    Filter specific data
 
 
-   .. attribute:: udata
+.. attribute:: kevent.udata
 
    User defined value
