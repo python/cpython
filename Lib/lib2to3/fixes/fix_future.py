@@ -11,5 +11,10 @@ from .util import BlankLine
 class FixFuture(basefix.BaseFix):
     PATTERN = """import_from< 'from' module_name="__future__" 'import' any >"""
 
+    # This should be run last -- some things check for the import
+    run_order = 10
+
     def transform(self, node, results):
-        return BlankLine()
+        new = BlankLine()
+        new.prefix = node.get_prefix()
+        return new

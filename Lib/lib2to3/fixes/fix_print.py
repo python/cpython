@@ -8,6 +8,9 @@ Change:
     'print ...'      into 'print(...)'
     'print ... ,'    into 'print(..., end=" ")'
     'print >>x, ...' into 'print(..., file=x)'
+
+No changes are applied if print_function is imported from __future__
+
 """
 
 # Local imports
@@ -23,14 +26,20 @@ parend_expr = patcomp.compile_pattern(
               )
 
 
-class FixPrint(basefix.BaseFix):
+class FixPrint(basefix.ConditionalFix):
 
     PATTERN = """
               simple_stmt< bare='print' any > | print_stmt
               """
 
+    skip_on = '__future__.print_function'
+
     def transform(self, node, results):
         assert results
+
+        if self.should_skip(node):
+            return
+
         bare_print = results.get("bare")
 
         if bare_print:
