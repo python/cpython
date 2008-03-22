@@ -8,9 +8,10 @@ PYTHON       = python
 SVNROOT      = http://svn.python.org/projects
 SPHINXOPTS   =
 PAPER        =
+SOURCES      =
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
-                $(SPHINXOPTS) . build/$(BUILDER)
+                $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help checkout update build html web htmlhelp clean coverage
 
