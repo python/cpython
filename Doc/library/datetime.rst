@@ -159,7 +159,7 @@ dates or times.
    :exc:`OverflowError` is raised.
 
    Note that normalization of negative values may be surprising at first. For
-   example, ::
+   example,
 
       >>> from datetime import timedelta
       >>> d = timedelta(microseconds=-1)
@@ -265,7 +265,7 @@ comparison is ``==`` or ``!=``.  The latter cases return :const:`False` or
 efficient pickling, and in Boolean contexts, a :class:`timedelta` object is
 considered to be true if and only if it isn't equal to ``timedelta(0)``.
 
-Example usage::
+Example usage:
     
     >>> from datetime import timedelta
     >>> year = timedelta(days=365)
@@ -524,14 +524,16 @@ Example of counting days to an event::
     >>> time_to_birthday.days
     202
 
-Example of working with :class:`date`::
+Example of working with :class:`date`:
+
+.. doctest::
 
     >>> from datetime import date
     >>> d = date.fromordinal(730920) # 730920th day after 1. 1. 0001
     >>> d
     datetime.date(2002, 3, 11)
     >>> t = d.timetuple()
-    >>> for i in t:
+    >>> for i in t:     # doctest: +SKIP
     ...     print i
     2002                # year
     3                   # month
@@ -543,8 +545,8 @@ Example of working with :class:`date`::
     70                  # 70th day in the year
     -1
     >>> ic = d.isocalendar()
-    >>> for i in ic:
-    ...     print i     # doctest: +SKIP
+    >>> for i in ic:    # doctest: +SKIP
+    ...     print i
     2002                # ISO year
     11                  # ISO week number
     1                   # ISO day number ( 1 = Monday )
@@ -960,7 +962,7 @@ Instance methods:
    YYYY-MM-DDTHH:MM:SS+HH:MM
 
    The optional argument *sep* (default ``'T'``) is a one-character separator,
-   placed between the date and time portions of the result.  For example, ::
+   placed between the date and time portions of the result.  For example,
 
       >>> from datetime import tzinfo, timedelta, datetime
       >>> class TZ(tzinfo):
@@ -990,8 +992,10 @@ Instance methods:
    Return a string representing the date and time, controlled by an explicit format
    string.  See section :ref:`strftime-behavior`.
 
-Examples of working with datetime objects::
-    
+Examples of working with datetime objects:
+
+.. doctest::
+
     >>> from datetime import datetime, date, time
     >>> # Using datetime.combine()
     >>> d = date(2005, 7, 14)
@@ -999,9 +1003,9 @@ Examples of working with datetime objects::
     >>> datetime.combine(d, t)
     datetime.datetime(2005, 7, 14, 12, 30)
     >>> # Using datetime.now() or datetime.utcnow()
-    >>> datetime.now()
+    >>> datetime.now()   # doctest: +SKIP
     datetime.datetime(2007, 12, 6, 16, 29, 43, 79043)   # GMT +1
-    >>> datetime.utcnow()
+    >>> datetime.utcnow()   # doctest: +SKIP
     datetime.datetime(2007, 12, 6, 15, 29, 43, 79060)
     >>> # Using datetime.strptime()
     >>> dt = datetime.strptime("21/11/06 16:30", "%d/%m/%y %H:%M")
@@ -1009,7 +1013,7 @@ Examples of working with datetime objects::
     datetime.datetime(2006, 11, 21, 16, 30)
     >>> # Using datetime.timetuple() to get tuple of all attributes
     >>> tt = dt.timetuple()
-    >>> for it in tt:
+    >>> for it in tt:   # doctest: +SKIP
     ...     print it
     ... 
     2006    # year
@@ -1023,7 +1027,7 @@ Examples of working with datetime objects::
     -1      # dst - method tzinfo.dst() returned None
     >>> # Date in ISO format
     >>> ic = dt.isocalendar()
-    >>> for it in ic:
+    >>> for it in ic:   # doctest: +SKIP
     ...     print it
     ...
     2006    # ISO year
@@ -1033,7 +1037,7 @@ Examples of working with datetime objects::
     >>> dt.strftime("%A, %d. %B %Y %I:%M%p")
     'Tuesday, 21. November 2006 04:30PM'
 
-Using datetime with tzinfo::
+Using datetime with tzinfo:
 
     >>> from datetime import timedelta, datetime, tzinfo
     >>> class GMT1(tzinfo):
@@ -1235,7 +1239,7 @@ Instance methods:
    ``self.tzinfo.tzname(None)``, or raises an exception if the latter doesn't
    return ``None`` or a string object.
 
-Example::
+Example:
     
     >>> from datetime import time, tzinfo
     >>> class GMT1(tzinfo):
