@@ -21,7 +21,7 @@ import logging
 import sys
 
 # Pgen imports
-from . import grammar, parse, token, tokenize
+from . import grammar, parse, token, tokenize, pgen
 
 
 class Driver(object):
@@ -123,7 +123,6 @@ def load_grammar(gt="Grammar.txt", gp=None,
         gp = head + tail + ".".join(map(str, sys.version_info)) + ".pickle"
     if force or not _newer(gp, gt):
         logger.info("Generating grammar tables from %s", gt)
-        from pgen2 import pgen
         g = pgen.generate_grammar(gt)
         if save:
             logger.info("Writing grammar tables to %s", gp)

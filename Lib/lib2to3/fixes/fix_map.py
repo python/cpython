@@ -22,10 +22,10 @@ soon as the shortest argument is exhausted.
 # Local imports
 from ..pgen2 import token
 from . import basefix
-from .util import Name, Call, ListComp, does_tree_import, in_special_context
+from .util import Name, Call, ListComp, in_special_context
 from ..pygram import python_symbols as syms
 
-class FixMap(basefix.BaseFix):
+class FixMap(basefix.ConditionalFix):
 
     PATTERN = """
     map_none=power<
@@ -54,20 +54,10 @@ class FixMap(basefix.BaseFix):
     >
     """
 
-    def start_tree(self, *args):
-        super(FixMap, self).start_tree(*args)
-        self._future_map_found = None
-
-    def has_future_map(self, node):
-        if self._future_map_found is not None:
-            return self._future_map_found
-        self._future_map_found = does_tree_import('future_builtins', 'map', node)
-        return self._future_map_found
+    skip_on = 'future_builtins.map'
 
     def transform(self, node, results):
-        if self.has_future_map(node):
-            # If a future map has been imported for this file, we won't
-            # be making any modifications
+        if self.should_skip(node):
             return
 
         if node.parent.type == syms.simple_stmt:
