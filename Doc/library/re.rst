@@ -938,7 +938,7 @@ Checking For a Pair
 In this example, we'll use the following helper function to display match
 objects a little more gracefully:
 
-.. testcode:: doctest_block
+.. testcode::
 
    def displaymatch(match):
        if match is None:
@@ -973,7 +973,7 @@ To match this with a regular expression, one could use backreferences as such:
 To find out what card the pair consists of, one could use the :func:`group`
 method of :class:`MatchObject` in the following manner:
 
-.. doctest:: doctest_block
+.. doctest::
 
    >>> pair.match("717ak").group(1)
    '7'
@@ -1112,7 +1112,7 @@ triple-quoted string syntax:
 The entries are separated by one or more newlines. Now we convert the string
 into a list with each nonempty line having its own entry:
 
-.. doctest:: doctest_block
+.. doctest::
    :options: +NORMALIZE_WHITESPACE
 
    >>> entries = re.split("\n+", input)
@@ -1126,7 +1126,7 @@ Finally, split each entry into a list with first name, last name, telephone
 number, and address.  We use the ``maxsplit`` parameter of :func:`split`
 because the address has spaces, our splitting pattern, in it:
 
-.. doctest:: doctest_block
+.. doctest::
    :options: +NORMALIZE_WHITESPACE
 
    >>> [re.split(":? ", entry, 3) for entry in entries]
@@ -1139,7 +1139,7 @@ The ``:?`` pattern matches the colon after the last name, so that it does not
 occur in the result list.  With a ``maxsplit`` of ``4``, we could separate the
 house number from the street name:
 
-.. doctest:: doctest_block
+.. doctest::
    :options: +NORMALIZE_WHITESPACE
 
    >>> [re.split(":? ", entry, 4) for entry in entries]

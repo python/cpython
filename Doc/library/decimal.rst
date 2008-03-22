@@ -175,12 +175,15 @@ operations.
 Decimals interact well with much of the rest of Python.  Here is a small decimal
 floating point flying circus:
 
+.. doctest::
+   :options: +NORMALIZE_WHITESPACE
+
    >>> data = map(Decimal, '1.34 1.87 3.45 2.35 1.00 0.03 9.25'.split())
    >>> max(data)
    Decimal('9.25')
    >>> min(data)
    Decimal('0.03')
-   >>> sorted(data)  # doctest: +NORMALIZE_WHITESPACE
+   >>> sorted(data)
    [Decimal('0.03'), Decimal('1.00'), Decimal('1.34'), Decimal('1.87'),
     Decimal('2.35'), Decimal('3.45'), Decimal('9.25')]
    >>> sum(data)
@@ -1646,7 +1649,7 @@ A. Yes, all binary floating point numbers can be exactly expressed as a
 Decimal.  An exact conversion may take more precision than intuition would
 suggest, so we trap :const:`Inexact` to signal a need for more precision:
 
-.. testcode:: doctest_block
+.. testcode::
 
     def float_to_decimal(f):
         "Convert a floating point number to a Decimal with no loss of information"
@@ -1659,7 +1662,7 @@ suggest, so we trap :const:`Inexact` to signal a need for more precision:
                 except Inexact:
                     ctx.prec += 1
 
-.. doctest:: doctest_block
+.. doctest::
 
     >>> float_to_decimal(math.pi)
     Decimal('3.141592653589793115997963468544185161590576171875')
