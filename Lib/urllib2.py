@@ -777,7 +777,10 @@ class AbstractBasicAuthHandler:
     # XXX this allows for multiple auth-schemes, but will stupidly pick
     # the last one with a realm specified.
 
-    rx = re.compile('(?:.*,)*[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', re.I)
+    # allow for double- and single-quoted realm values
+    # (single quotes are a violation of the RFC, but appear in the wild)
+    rx = re.compile('(?:.*,)*[ \t]*([^ \t]+)[ \t]+'
+                    'realm=(["\'])(.*?)\\2', re.I)
 
     # XXX could pre-emptively send auth info already accepted (RFC 2617,
     # end of section 2, and section 1.2 immediately after "credentials"
@@ -797,7 +800,7 @@ class AbstractBasicAuthHandler:
         if authreq:
             mo = AbstractBasicAuthHandler.rx.search(authreq)
             if mo:
-                scheme, realm = mo.groups()
+                scheme, quote, realm = mo.groups()
                 if scheme.lower() == 'basic':
                     return self.retry_http_basic_auth(host, req, realm)
 

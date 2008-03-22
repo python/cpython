@@ -134,6 +134,19 @@ Importing Modules
    ``sys.modules``).  Note that this is a per-interpreter variable.
 
 
+.. cfunction:: PyObject* PyImport_GetImporter(PyObject *path)
+
+   Return an importer object for a :data:`sys.path`/:attr:`pkg.__path__` item
+   *path*, possibly by fetching it from the :data:`sys.path_importer_cache`
+   dict.  If it wasn't yet cached, traverse :data:`sys.path_hooks` until a hook
+   is found that can handle the path item.  Return ``None`` if no hook could;
+   this tells our caller it should fall back to the builtin import mechanism.
+   Cache the result in :data:`sys.path_importer_cache`.  Return a new reference
+   to the importer object.
+
+   .. versionadded:: 2.6
+
+
 .. cfunction:: void _PyImport_Init()
 
    Initialize the import mechanism.  For internal use only.

@@ -510,6 +510,10 @@ Callable types
       An instance method object combines a class, a class instance and any
       callable object (normally a user-defined function).
 
+      .. versionchanged:: 2.6
+         For 3.0 forward-compatibility, :attr:`im_func` is also available as
+         :attr:`__func__`, and :attr:`im_self` as :attr:`__self__`.
+
       .. index::
          single: __func__ (method attribute)
          single: __self__ (method attribute)
