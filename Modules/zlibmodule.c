@@ -891,8 +891,7 @@ PyZlib_adler32(PyObject *self, PyObject *args)
 {
     uLong adler32val = adler32(0L, Z_NULL, 0);
     Byte *buf;
-    int len;
-    long signed_val;
+    int len, signed_val;
 
     if (!PyArg_ParseTuple(args, "s#|k:adler32", &buf, &len, &adler32val))
 	return NULL;
@@ -915,8 +914,7 @@ PyZlib_crc32(PyObject *self, PyObject *args)
 {
     uLong crc32val = crc32(0L, Z_NULL, 0);
     Byte *buf;
-    int len;
-    long signed_val;
+    int len, signed_val;
 
     if (!PyArg_ParseTuple(args, "s#|k:crc32", &buf, &len, &crc32val))
 	return NULL;
