@@ -193,7 +193,12 @@ be found in any statistics text.
 .. function:: triangular(low, high, mode)
 
    Return a random floating point number *N* such that ``low <= N < high``
-   and with the specified *mode* between those bounds.  
+   and with the specified *mode* between those bounds.
+
+   If *mode* is not specified or is ``None``, it defaults to the midpoint
+   between the upper and lower bounds, producing a symmetric distribution.
+
+   The default values for *low* and *high* are zero and one.
 
 .. function:: betavariate(alpha, beta)
 
