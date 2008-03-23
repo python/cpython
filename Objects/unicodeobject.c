@@ -624,9 +624,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 		if (*f == '%') {
 			const char* p = f;
 			width = 0;
-			while (isdigit(*f))
+			while (isdigit((unsigned)*f))
 				width = (width*10) + *f++ - '0';
-			while (*++f && *f != '%' && !isalpha(*f))
+			while (*++f && *f != '%' && !isalpha((unsigned)*f))
 				;
 
 			/* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
@@ -787,12 +787,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			zeropad = (*f == '0');
 			/* parse the width.precision part */
 			width = 0;
-			while (isdigit(*f))
+			while (isdigit((unsigned)*f))
 				width = (width*10) + *f++ - '0';
 			precision = 0;
 			if (*f == '.') {
 				f++;
-				while (isdigit(*f))
+				while (isdigit((unsigned)*f))
 					precision = (precision*10) + *f++ - '0';
 			}
 			/* handle the long flag, but only for %ld and %lu.
