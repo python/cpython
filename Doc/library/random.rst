@@ -190,6 +190,10 @@ be found in any statistics text.
 
    Return a random floating point number *N* such that ``a <= N < b``.
 
+.. function:: triangular(low, high, mode)
+
+   Return a random floating point number *N* such that ``low <= N < high``
+   and with the specified *mode* between those bounds.  
 
 .. function:: betavariate(alpha, beta)
 
