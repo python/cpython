@@ -141,7 +141,7 @@ class TestBasicOps(unittest.TestCase):
             n = len(pool)
             r = n if r is None else r
             indices = range(n)
-            cycles = range(n-r+1, n+1)[::-1]
+            cycles = range(n, n-r, -1)
             yield tuple(pool[i] for i in indices[:r])
             while n:
                 for i in reversed(range(r)):
