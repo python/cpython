@@ -736,11 +736,24 @@ class UnicodeTest(
         print >>out, u'def\n'
 
     def test_ucs4(self):
-        if sys.maxunicode == 0xFFFF:
-            return
         x = u'\U00100000'
         y = x.encode("raw-unicode-escape").decode("raw-unicode-escape")
         self.assertEqual(x, y)
+
+        y = r'\U00100000'
+        x = y.decode("raw-unicode-escape").encode("raw-unicode-escape")
+        self.assertEqual(x, y)
+        y = r'\U00010000'
+        x = y.decode("raw-unicode-escape").encode("raw-unicode-escape")
+        self.assertEqual(x, y)
+
+        try:
+            '\U11111111'.decode("raw-unicode-escape")
+        except UnicodeDecodeError as e:
+            self.assertEqual(e.start, 0)
+            self.assertEqual(e.end, 10)
+        else:
+            self.fail("Should have raised UnicodeDecodeError")
 
     def test_conversion(self):
         # Make sure __unicode__() works properly
