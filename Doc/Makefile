@@ -8,9 +8,10 @@ PYTHON       = python2.5
 SVNROOT      = http://svn.python.org/projects
 SPHINXOPTS   =
 PAPER        =
+SOURCES      =
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
-                $(SPHINXOPTS) . build/$(BUILDER)
+                $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help checkout update build html web htmlhelp clean coverage
 
@@ -81,6 +82,11 @@ linkcheck: build
 coverage: BUILDER = coverage
 coverage: build
 	@echo "Coverage finished; see c.txt and python.txt in build/coverage"
+
+doctest: BUILDER = doctest
+doctest: build
+	@echo "Testing of doctests in the sources finished, look at the " \
+	      "results in build/doctest/output.txt"
 
 clean:
 	-rm -rf build/*

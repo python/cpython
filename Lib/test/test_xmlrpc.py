@@ -421,6 +421,16 @@ class SimpleServerTestCase(unittest.TestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
+    def test_dotted_attribute(self):
+        # Raises an AttributeError because private methods are not allowed.
+        self.assertRaises(AttributeError,
+                          SimpleXMLRPCServer.resolve_dotted_attribute, str, '__add')
+
+        self.assert_(SimpleXMLRPCServer.resolve_dotted_attribute(str, 'title'))
+        # Get the test to run faster by sending a request with test_simple1.
+        # This avoids waiting for the socket timeout.
+        self.test_simple1()
+
 # This is a contrived way to make a failure occur on the server side
 # in order to test the _send_traceback_header flag on the server
 class FailingMessageClass(mimetools.Message):

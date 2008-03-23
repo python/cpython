@@ -107,15 +107,20 @@ class TimeoutTestCase(unittest.TestCase):
         self.sock.close()
 
     def testConnectTimeout(self):
-        # Test connect() timeout
-        _timeout = 0.001
-        self.sock.settimeout(_timeout)
-
         # If we are too close to www.python.org, this test will fail.
         # Pick a host that should be farther away.
         if (socket.getfqdn().split('.')[-2:] == ['python', 'org'] or
             socket.getfqdn().split('.')[-2:-1] == ['xs4all']):
             self.addr_remote = ('tut.fi', 80)
+
+        # Lookup the IP address to avoid including the DNS lookup time
+        # with the connect time.  This avoids failing the assertion that
+        # the timeout occurred fast enough.
+        self.addr_remote = (socket.gethostbyname(self.addr_remote[0]), 80)
+
+        # Test connect() timeout
+        _timeout = 0.001
+        self.sock.settimeout(_timeout)
 
         _t1 = time.time()
         self.failUnlessRaises(socket.error, self.sock.connect,

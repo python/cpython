@@ -70,7 +70,7 @@ patterns.
 
    Return the shell-style *pattern* converted to a regular expression.
 
-   Example::
+   Example:
 
       >>> import fnmatch, re
       >>>

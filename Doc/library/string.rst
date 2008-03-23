@@ -484,7 +484,7 @@ these rules.  The methods of :class:`Template` are:
    This is the object passed to the constructor's *template* argument.  In general,
    you shouldn't change it, but read-only access is not enforced.
 
-Here is an example of how to use a Template::
+Here is an example of how to use a Template:
 
    >>> from string import Template
    >>> s = Template('$who likes $what')

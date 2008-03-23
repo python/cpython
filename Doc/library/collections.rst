@@ -7,6 +7,11 @@
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
+.. testsetup:: *
+
+   from collections import *
+   import itertools
+   __name__ = '<doctest>'
 
 This module implements high-performance container datatypes.  Currently,
 there are two datatypes, :class:`deque` and :class:`defaultdict`, and
@@ -16,14 +21,14 @@ be useful when inheriting directly from :class:`dict` or
 :class:`list` isn't convenient.
 
 The specialized containers provided in this module provide alternatives
-to Python's general purpose built-in containers, :class:`dict`, 
+to Python's general purpose built-in containers, :class:`dict`,
 :class:`list`, :class:`set`, and :class:`tuple`.
 Besides the containers provided here, the optional :mod:`bsddb`
-module offers the ability to create in-memory or file based ordered 
+module offers the ability to create in-memory or file based ordered
 dictionaries with string keys using the :meth:`bsddb.btopen` method.
 
 In addition to containers, the collections module provides some ABCs
-(abstract base classes). These can be used to test whether a class 
+(abstract base classes) that can be used to test whether a class
 provides a particular interface, for example, is it hashable or
 a mapping, and some of them can also be used as mixin classes.
 
@@ -104,15 +109,15 @@ The ABC supplies the remaining methods such as :meth:`__and__` and
 
 Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 
-(1) 
+(1)
    Since some set operations create new sets, the default mixin methods need
-   a way to create new instances from an iterable. The class constructor is 
-   assumed to have a signature in the form ``ClassName(iterable)``.  
+   a way to create new instances from an iterable. The class constructor is
+   assumed to have a signature in the form ``ClassName(iterable)``.
    That assumption is factored-out to a single internal classmethod called
    :meth:`_from_iterable` which calls ``cls(iterable)`` to produce a new set.
    If the :class:`Set` mixin is being used in a class with a different
-   constructor signature, you will need to override :meth:`from_iterable` 
-   with a classmethod that can construct new instances from 
+   constructor signature, you will need to override :meth:`from_iterable`
+   with a classmethod that can construct new instances from
    an iterable argument.
 
 (2)
@@ -219,12 +224,14 @@ In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
 the :keyword:`in` operator, and subscript references such as ``d[-1]``.
 
-Example::
+Example:
+
+.. doctest::
 
    >>> from collections import deque
    >>> d = deque('ghi')                 # make a new deque with three items
    >>> for elem in d:                   # iterate over the deque's elements
-   ...     print(elem.upper())
+   ...     print elem.upper()
    G
    H
    I
@@ -303,7 +310,7 @@ a reduction function, and calling :meth:`append` to add the result back to the
 deque.
 
 For example, building a balanced binary tree of nested lists entails reducing
-two adjacent nodes into one by grouping them in a list::
+two adjacent nodes into one by grouping them in a list:
 
    >>> def maketree(iterable):
    ...     d = deque(iterable)
@@ -375,7 +382,7 @@ standard :class:`dict` operations:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using :class:`list` as the :attr:`default_factory`, it is easy to group a
-sequence of key-value pairs into a dictionary of lists::
+sequence of key-value pairs into a dictionary of lists:
 
    >>> s = [('yellow', 1), ('blue', 2), ('yellow', 3), ('blue', 4), ('red', 1)]
    >>> d = defaultdict(list)
@@ -391,7 +398,7 @@ function which returns an empty :class:`list`.  The :meth:`list.append`
 operation then attaches the value to the new list.  When keys are encountered
 again, the look-up proceeds normally (returning the list for that key) and the
 :meth:`list.append` operation adds another value to the list. This technique is
-simpler and faster than an equivalent technique using :meth:`dict.setdefault`::
+simpler and faster than an equivalent technique using :meth:`dict.setdefault`:
 
    >>> d = {}
    >>> for k, v in s:
@@ -402,7 +409,7 @@ simpler and faster than an equivalent technique using :meth:`dict.setdefault`::
 
 Setting the :attr:`default_factory` to :class:`int` makes the
 :class:`defaultdict` useful for counting (like a bag or multiset in other
-languages)::
+languages):
 
    >>> s = 'mississippi'
    >>> d = defaultdict(int)
@@ -419,7 +426,7 @@ zero.  The increment operation then builds up the count for each letter.
 The function :func:`int` which always returns zero is just a special case of
 constant functions.  A faster and more flexible way to create constant functions
 is to use a lambda function which can supply any constant value (not just
-zero)::
+zero):
 
    >>> def constant_factory(value):
    ...     return lambda: value
@@ -429,7 +436,7 @@ zero)::
    'John ran to <missing>'
 
 Setting the :attr:`default_factory` to :class:`set` makes the
-:class:`defaultdict` useful for building a dictionary of sets::
+:class:`defaultdict` useful for building a dictionary of sets:
 
    >>> s = [('red', 1), ('blue', 2), ('red', 3), ('blue', 4), ('red', 1), ('blue', 4)]
    >>> d = defaultdict(set)
@@ -472,41 +479,44 @@ they add the ability to access fields by name instead of position index.
    Named tuple instances do not have per-instance dictionaries, so they are
    lightweight and require no more memory than regular tuples.
 
-Example::
+Example:
+
+.. doctest::
+   :options: +NORMALIZE_WHITESPACE
 
    >>> Point = namedtuple('Point', 'x y', verbose=True)
    class Point(tuple):
            'Point(x, y)'
-
+   <BLANKLINE>
            __slots__ = ()
-
+   <BLANKLINE>
            _fields = ('x', 'y')
-
+   <BLANKLINE>
            def __new__(cls, x, y):
                return tuple.__new__(cls, (x, y))
-
+   <BLANKLINE>
            @classmethod
-           def _make(cls, iterable):
+           def _make(cls, iterable, new=tuple.__new__, len=len):
                'Make a new Point object from a sequence or iterable'
-               result = tuple.__new__(cls, iterable)
+               result = new(cls, iterable)
                if len(result) != 2:
                    raise TypeError('Expected 2 arguments, got %d' % len(result))
                return result
-
+   <BLANKLINE>
            def __repr__(self):
                return 'Point(x=%r, y=%r)' % self
-
+   <BLANKLINE>
            def _asdict(t):
                'Return a new dict which maps field names to their values'
                return {'x': t[0], 'y': t[1]}
-
+   <BLANKLINE>
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
                result = self._make(map(kwds.pop, ('x', 'y'), self))
                if kwds:
                    raise ValueError('Got unexpected field names: %r' % kwds.keys())
                return result
-
+   <BLANKLINE>
            x = property(itemgetter(0))
            y = property(itemgetter(1))
 
@@ -545,7 +555,7 @@ field names, the method and attribute names start with an underscore.
 
    Class method that makes a new instance from an existing sequence or iterable.
 
-::
+.. doctest::
 
       >>> t = [11, 22]
       >>> Point._make(t)
@@ -553,16 +563,15 @@ field names, the method and attribute names start with an underscore.
 
 .. method:: somenamedtuple._asdict()
 
-   Return a new dict which maps field names to their corresponding values:
-
-::
+   Return a new dict which maps field names to their corresponding values::
 
       >>> p._asdict()
       {'x': 11, 'y': 22}
-      
+
 .. method:: somenamedtuple._replace(kwargs)
 
-   Return a new instance of the named tuple replacing specified fields with new values:
+   Return a new instance of the named tuple replacing specified fields with new
+   values:
 
 ::
 
@@ -578,7 +587,7 @@ field names, the method and attribute names start with an underscore.
    Tuple of strings listing the field names.  Useful for introspection
    and for creating new named tuple types from existing named tuples.
 
-::
+.. doctest::
 
       >>> p._fields            # view the field names
       ('x', 'y')
@@ -589,12 +598,12 @@ field names, the method and attribute names start with an underscore.
       Pixel(x=11, y=22, red=128, green=255, blue=0)
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
-function::
+function:
 
     >>> getattr(p, 'x')
     11
 
-To convert a dictionary to a named tuple, use the double-star-operator [#]_::
+To convert a dictionary to a named tuple, use the double-star-operator [#]_:
 
    >>> d = {'x': 11, 'y': 22}
    >>> Point(**d)
@@ -602,7 +611,7 @@ To convert a dictionary to a named tuple, use the double-star-operator [#]_::
 
 Since a named tuple is a regular Python class, it is easy to add or change
 functionality with a subclass.  Here is how to add a calculated field and
-a fixed-width print format::
+a fixed-width print format:
 
     >>> class Point(namedtuple('Point', 'x y')):
     ...     __slots__ = ()
@@ -614,7 +623,6 @@ a fixed-width print format::
 
     >>> for p in Point(3, 4), Point(14, 5/7.):
     ...     print(p)
-
     Point: x= 3.000  y= 4.000  hypot= 5.000
     Point: x=14.000  y= 0.714  hypot=14.018
 
@@ -623,12 +631,12 @@ keep memory requirements low by preventing the creation of instance dictionaries
 
 
 Subclassing is not useful for adding new, stored fields.  Instead, simply
-create a new named tuple type from the :attr:`_fields` attribute::
+create a new named tuple type from the :attr:`_fields` attribute:
 
     >>> Point3D = namedtuple('Point3D', Point._fields + ('z',))
 
 Default values can be implemented by using :meth:`_replace` to
-customize a prototype instance::
+customize a prototype instance:
 
     >>> Account = namedtuple('Account', 'owner balance transaction_count')
     >>> default_account = Account('<owner name>', 0.0, 0)

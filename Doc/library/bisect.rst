@@ -64,7 +64,7 @@ Examples
 The :func:`bisect` function is generally useful for categorizing numeric data.
 This example uses :func:`bisect` to look up a letter grade for an exam total
 (say) based on a set of ordered numeric breakpoints: 85 and up is an 'A', 75..84
-is a 'B', etc. ::
+is a 'B', etc.
 
    >>> grades = "FEDCBA"
    >>> breakpoints = [30, 44, 66, 75, 85]

@@ -8,6 +8,11 @@
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
 
+.. testsetup::
+
+   from itertools import *
+
+
 This module implements a number of :term:`iterator` building blocks inspired by
 constructs from the Haskell and SML programming languages.  Each has been recast
 in a form suitable for Python.
@@ -333,7 +338,7 @@ loops that truncate the stream.
             n = len(pool)
             r = n if r is None else r
             indices = range(n)
-            cycles = range(n-r+1, n+1)[::-1]
+            cycles = range(n, n-r, -1)
             yield tuple(pool[i] for i in indices[:r])
             while n:
                 for i in reversed(range(r)):
@@ -475,7 +480,9 @@ Examples
 --------
 
 The following examples show common uses for each tool and demonstrate ways they
-can be combined. ::
+can be combined.
+
+.. doctest::
 
    # Show a dictionary sorted and grouped by value
    >>> from operator import itemgetter
@@ -518,7 +525,9 @@ rather than bringing the whole iterable into memory all at once. Code volume is
 kept small by linking the tools together in a functional style which helps
 eliminate temporary variables.  High speed is retained by preferring
 "vectorized" building blocks over the use of for-loops and :term:`generator`\s
-which incur interpreter overhead. ::
+which incur interpreter overhead.
+
+.. testcode::
 
    def take(n, seq):
        return list(islice(seq, n))

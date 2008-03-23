@@ -61,7 +61,7 @@ spammish repetition'``::
    >>> m.block_size
    64
 
-More condensed::
+More condensed:
 
    >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
    b'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
@@ -71,7 +71,7 @@ algorithm as its first parameter also exists to allow access to the above listed
 hashes as well as any other algorithms that your OpenSSL library may offer.  The
 named constructors are much faster than :func:`new` and should be preferred.
 
-Using :func:`new` with an algorithm provided by OpenSSL::
+Using :func:`new` with an algorithm provided by OpenSSL:
 
    >>> h = hashlib.new('ripemd160')
    >>> h.update(b"Nobody inspects the spammish repetition")
