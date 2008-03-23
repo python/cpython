@@ -55,7 +55,7 @@ class ConnectedTests(unittest.TestCase):
         def error_msg(extra_msg):
             print >> sys.stderr, """\
         WARNING:  an attempt to connect to %r %s, in
-        test_timeout.  That may be legitimate, but is not the outcome we
+        testTimeout.  That may be legitimate, but is not the outcome we
         hoped for.  If this message is seen often, testTimeout should be
         changed to use a more reliable address.""" % (ADDR, extra_msg)
 
@@ -145,7 +145,15 @@ class BasicTests(unittest.TestCase):
         import os, httplib, ssl
         with test_support.transient_internet():
             s = socket.socket(socket.AF_INET)
-            self.connect(s, ("svn.python.org", 443))
+            try:
+                self.connect(s, ("svn.python.org", 443))
+            except IOError:
+                print >> sys.stderr, """\
+        WARNING:  an attempt to connect to svn.python.org:443 failed, in
+        test_978833.  That may be legitimate, but is not the outcome we
+        hoped for.  If this message is seen often, test_978833 should be
+        changed to use a more reliable address."""
+                return
             fd = s._sock.fileno()
             sock = ssl.wrap_socket(s)
             s = None
