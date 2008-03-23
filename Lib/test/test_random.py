@@ -488,6 +488,7 @@ class TestDistributions(unittest.TestCase):
         g.random = x[:].pop; g.gammavariate(1.0, 1.0)
         g.random = x[:].pop; g.gammavariate(200.0, 1.0)
         g.random = x[:].pop; g.betavariate(3.0, 3.0)
+        g.random = x[:].pop; g.triangular(0.0, 1.0, 1.0/3.0)
 
     def test_avg_std(self):
         # Use integration to test distribution average and standard deviation.
@@ -497,6 +498,7 @@ class TestDistributions(unittest.TestCase):
         x = [i/float(N) for i in xrange(1,N)]
         for variate, args, mu, sigmasqrd in [
                 (g.uniform, (1.0,10.0), (10.0+1.0)/2, (10.0-1.0)**2/12),
+                (g.triangular, (0.0, 1.0, 1.0/3.0), 4.0/9.0, 7.0/9.0/18.0),
                 (g.expovariate, (1.5,), 1/1.5, 1/1.5**2),
                 (g.paretovariate, (5.0,), 5.0/(5.0-1),
                                   5.0/((5.0-1)**2*(5.0-2))),

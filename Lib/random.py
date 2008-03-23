@@ -13,6 +13,7 @@
     distributions on the real line:
     ------------------------------
            uniform
+           triangular
            normal (Gaussian)
            lognormal
            negative exponential
@@ -47,7 +48,7 @@ from binascii import hexlify as _hexlify
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
-           "expovariate","vonmisesvariate","gammavariate",
+           "expovariate","vonmisesvariate","gammavariate","triangular",
            "gauss","betavariate","paretovariate","weibullvariate",
            "getstate","setstate","jumpahead", "WichmannHill", "getrandbits",
            "SystemRandom"]
@@ -349,6 +350,25 @@ class Random(_random.Random):
     def uniform(self, a, b):
         """Get a random number in the range [a, b)."""
         return a + (b-a) * self.random()
+
+## -------------------- triangular --------------------
+
+    def triangular(self, low, high, mode):
+        """Triangular distribution.
+
+        Continuous distribution bounded by given lower and upper limits,
+        and having a given mode value in-between.
+
+        http://en.wikipedia.org/wiki/Triangular_distribution
+
+        """
+        u = self.random()
+        c = (mode - low) / (high - low)
+        if u > c:
+            u = 1 - u
+            c = 1 - c
+            low, high = high, low
+        return low + (high - low) * (u * c) ** 0.5
 
 ## -------------------- normal distribution --------------------
 
@@ -839,6 +859,7 @@ def _test(N=2000):
     _test_generator(N, gammavariate, (200.0, 1.0))
     _test_generator(N, gauss, (0.0, 1.0))
     _test_generator(N, betavariate, (3.0, 3.0))
+    _test_generator(N, triangular, (0.0, 1.0, 1.0/3.0))
 
 # Create one instance, seeded from current time, and export its methods
 # as module-level functions.  The functions share state across all uses
@@ -850,6 +871,7 @@ _inst = Random()
 seed = _inst.seed
 random = _inst.random
 uniform = _inst.uniform
+triangular = _inst.triangular
 randint = _inst.randint
 choice = _inst.choice
 randrange = _inst.randrange
