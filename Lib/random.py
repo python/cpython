@@ -39,6 +39,7 @@ General notes on the underlying Mersenne Twister core generator:
 
 """
 
+from __future__ import division
 from warnings import warn as _warn
 from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
@@ -353,7 +354,7 @@ class Random(_random.Random):
 
 ## -------------------- triangular --------------------
 
-    def triangular(self, low, high, mode):
+    def triangular(self, low=0.0, high=1.0, mode=None):
         """Triangular distribution.
 
         Continuous distribution bounded by given lower and upper limits,
@@ -363,10 +364,10 @@ class Random(_random.Random):
 
         """
         u = self.random()
-        c = (mode - low) / (high - low)
+        c = 0.5 if mode is None else (mode - low) / (high - low)
         if u > c:
-            u = 1 - u
-            c = 1 - c
+            u = 1.0 - u
+            c = 1.0 - c
             low, high = high, low
         return low + (high - low) * (u * c) ** 0.5
 
