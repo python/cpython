@@ -15,10 +15,6 @@ FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
 READ, WRITE = 1, 2
 
-def U32(i):
-    """Return the low-order 32 bits, as a non-negative int or long."""
-    return i & 0xFFFFFFFFL
-
 def write32u(output, value):
     # The L format writes the bit pattern correctly whether signed
     # or unsigned.
@@ -306,7 +302,7 @@ class GzipFile:
         if crc32 != self.crc:
             raise IOError("CRC check failed %s != %s" % (hex(crc32),
                                                          hex(self.crc)))
-        elif isize != self.size:
+        elif isize != (self.size & 0xffffffffL):
             raise IOError, "Incorrect length of data produced"
 
     def close(self):
