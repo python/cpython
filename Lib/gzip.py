@@ -310,7 +310,7 @@ class GzipFile:
             self.fileobj.write(self.compress.flush())
             write32u(self.fileobj, self.crc)
             # self.size may exceed 2GB, or even 4GB
-            write32u(self.fileobj, self.size)
+            write32u(self.fileobj, self.size & 0xffffffffL)
             self.fileobj = None
         elif self.mode == READ:
             self.fileobj = None
