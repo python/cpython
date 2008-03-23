@@ -517,7 +517,7 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
     """
 
     def __init__(self, errors='strict'):
-        codecs.IncrementalEncoder.__init__(self, errors)
+        codecs.IncrementalDecoder.__init__(self, errors)
         self.reset()
 
     def __repr__(self):
