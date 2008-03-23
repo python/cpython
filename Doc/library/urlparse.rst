@@ -35,12 +35,13 @@ The :mod:`urlparse` module defines the following functions:
    smaller parts (for example, the network location is a single string), and %
    escapes are not expanded. The delimiters as shown above are not part of the
    result, except for a leading slash in the *path* component, which is retained if
-   present.  For example::
+   present.  For example:
 
       >>> from urlparse import urlparse
       >>> o = urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
-      >>> o
-      ('http', 'www.cwi.nl:80', '/%7Eguido/Python.html', '', '', '')
+      >>> o   # doctest: +NORMALIZE_WHITESPACE
+      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  params='', query='', fragment='')
       >>> o.scheme
       'http'
       >>> o.port
@@ -151,7 +152,7 @@ The :mod:`urlparse` module defines the following functions:
    Construct a full ("absolute") URL by combining a "base URL" (*base*) with
    another URL (*url*).  Informally, this uses components of the base URL, in
    particular the addressing scheme, the network location and (part of) the path,
-   to provide missing components in the relative URL.  For example::
+   to provide missing components in the relative URL.  For example:
 
       >>> from urlparse import urljoin
       >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
@@ -165,7 +166,7 @@ The :mod:`urlparse` module defines the following functions:
       If *url* is an absolute URL (that is, starting with ``//`` or ``scheme://``),
       the *url*'s host name and/or scheme will be present in the result.  For example:
 
-   ::
+   .. doctest::
 
       >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html',
       ...         '//www.python.org/%7Eguido')
@@ -216,7 +217,7 @@ described in those functions, as well as provide an additional method:
    and fragment identifiers will be removed.
 
    The result of this method is a fixpoint if passed back through the original
-   parsing function::
+   parsing function:
 
       >>> import urlparse
       >>> url = 'HTTP://www.Python.org/doc/#'

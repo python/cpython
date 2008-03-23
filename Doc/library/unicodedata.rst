@@ -142,8 +142,9 @@ In addition, the module exposes the following constant:
    Unicode database version 3.2 instead, for applications that require this
    specific version of the Unicode database (such as IDNA).
 
-Examples::
+Examples:
 
+   >>> import unicodedata
    >>> unicodedata.lookup('LEFT CURLY BRACKET')
    u'{'
    >>> unicodedata.name('/')

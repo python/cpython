@@ -77,7 +77,7 @@ exception:
 
    Alias for :exc:`GetoptError`; for backward compatibility.
 
-An example using only Unix style options::
+An example using only Unix style options:
 
    >>> import getopt
    >>> args = '-a -b -cfoo -d bar a1 a2'.split()
@@ -89,7 +89,7 @@ An example using only Unix style options::
    >>> args
    ['a1', 'a2']
 
-Using long option names is equally easy::
+Using long option names is equally easy:
 
    >>> s = '--condition=foo --testing --output-file abc.def -x a1 a2'
    >>> args = s.split()
@@ -98,8 +98,7 @@ Using long option names is equally easy::
    >>> optlist, args = getopt.getopt(args, 'x', [
    ...     'condition=', 'output-file=', 'testing'])
    >>> optlist
-   [('--condition', 'foo'), ('--testing', ''), ('--output-file', 'abc.def'), ('-x',
-    '')]
+   [('--condition', 'foo'), ('--testing', ''), ('--output-file', 'abc.def'), ('-x', '')]
    >>> args
    ['a1', 'a2']
 

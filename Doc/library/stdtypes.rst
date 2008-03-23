@@ -601,7 +601,7 @@ Notes:
    Values of *n* less than ``0`` are treated as ``0`` (which yields an empty
    sequence of the same type as *s*).  Note also that the copies are shallow;
    nested structures are not copied.  This often haunts new Python programmers;
-   consider::
+   consider:
 
       >>> lists = [[]] * 3
       >>> lists
@@ -611,9 +611,9 @@ Notes:
       [[3], [3], [3]]
 
    What has happened is that ``[[]]`` is a one-element list containing an empty
-   list, so all three elements of ``[[]] * 3`` are (pointers to) this single
-   empty list.  Modifying any of the elements of ``lists`` modifies this single
-   list.  You can create a list of different lists this way::
+   list, so all three elements of ``[[]] * 3`` are (pointers to) this single empty
+   list.  Modifying any of the elements of ``lists`` modifies this single list.
+   You can create a list of different lists this way:
 
       >>> lists = [[] for i in range(3)]
       >>> lists[0].append(3)
@@ -819,7 +819,7 @@ functions based on regular expressions.
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a prefix; rather, all combinations of its values are stripped::
+   argument is not a prefix; rather, all combinations of its values are stripped:
 
       >>> '   spacious   '.lstrip()
       'spacious   '
@@ -899,7 +899,7 @@ functions based on regular expressions.
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a suffix; rather, all combinations of its values are stripped::
+   argument is not a suffix; rather, all combinations of its values are stripped:
 
       >>> '   spacious   '.rstrip()
       '   spacious'
@@ -953,7 +953,7 @@ functions based on regular expressions.
    The *chars* argument is a string specifying the set of characters to be removed.
    If omitted or ``None``, the *chars* argument defaults to removing whitespace.
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped::
+   values are stripped:
 
       >>> '   spacious   '.strip()
       'spacious'
@@ -982,6 +982,10 @@ functions based on regular expressions.
 
    A *map* for :meth:`translate` is usually best created by
    :meth:`str.maketrans`.
+
+   You can use the :func:`maketrans` helper function in the :mod:`string` module to
+   create a translation table. For string objects, set the *table* argument to
+   ``None`` for translations that only delete characters:
 
    .. note::
 
@@ -1079,10 +1083,11 @@ components, which must occur in this order:
 When the right argument is a dictionary (or other mapping type), then the
 formats in the string *must* include a parenthesised mapping key into that
 dictionary inserted immediately after the ``'%'`` character. The mapping key
-selects the value to be formatted from the mapping.  For example::
+selects the value to be formatted from the mapping.  For example:
 
-   >>> print('%(language)s has %(#)03d quote types.' %
-             {'language': "Python", "#": 2})
+
+   >>> print('%(language)s has %(#)03d quote types.' % \
+   ...       {'language': "Python", "#": 2})
    Python has 002 quote types.
 
 In this case no ``*`` specifiers may occur in a format (since they require a

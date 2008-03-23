@@ -70,6 +70,7 @@ class SocketServerTest(unittest.TestCase):
         self.test_files = []
 
     def tearDown(self):
+        signal_alarm(0)  # Didn't deadlock.
         reap_children()
 
         for fn in self.test_files:
@@ -78,7 +79,6 @@ class SocketServerTest(unittest.TestCase):
             except os.error:
                 pass
         self.test_files[:] = []
-        signal_alarm(0)  # Didn't deadlock.
 
     def pickaddr(self, proto):
         if proto == socket.AF_INET:

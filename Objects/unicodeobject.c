@@ -656,9 +656,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 		if (*f == '%') {
 			const char* p = f;
 			width = 0;
-			while (ISDIGIT(*f))
+			while (ISDIGIT((unsigned)*f))
 				width = (width*10) + *f++ - '0';
-			while (*++f && *f != '%' && !ISALPHA(*f))
+			while (*++f && *f != '%' && !ISALPHA((unsigned)*f))
 				;
 
 			/* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
@@ -819,12 +819,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			zeropad = (*f == '0');
 			/* parse the width.precision part */
 			width = 0;
-			while (ISDIGIT(*f))
+			while (ISDIGIT((unsigned)*f))
 				width = (width*10) + *f++ - '0';
 			precision = 0;
 			if (*f == '.') {
 				f++;
-				while (ISDIGIT(*f))
+				while (ISDIGIT((unsigned)*f))
 					precision = (precision*10) + *f++ - '0';
 			}
 			/* handle the long flag, but only for %ld and %lu.
@@ -3197,8 +3197,22 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 	    else
 		x += 10 + c - 'A';
 	}
-#ifndef Py_UNICODE_WIDE
-        if (x > 0x10000) {
+        if (x <= 0xffff)
+                /* UCS-2 character */
+                *p++ = (Py_UNICODE) x;
+        else if (x <= 0x10ffff) {
+                /* UCS-4 character. Either store directly, or as
+                   surrogate pair. */
+#ifdef Py_UNICODE_WIDE
+                *p++ = (Py_UNIC0DE) x;
+#else
+                x -= 0x10000L;
+                *p++ = 0xD800 + (Py_UNICODE) (x >> 10);
+                *p++ = 0xDC00 + (Py_UNICODE) (x & 0x03FF);
+#endif
+        } else {
+            endinpos = s-starts;
+            outpos = p-PyUnicode_AS_UNICODE(v);
             if (unicode_decode_call_errorhandler(
                     errors, &errorHandler,
                     "rawunicodeescape", "\\Uxxxxxxxx out of range",
@@ -3206,8 +3220,6 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 		    (PyObject **)&v, &outpos, &p))
 		    goto onError;
         }
-#endif
-	*p++ = x;
 	nextByte:
 	;
     }
@@ -3259,6 +3271,32 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
             *p++ = hexdigits[ch & 15];
         }
         else
+#else
+	/* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
+	if (ch >= 0xD800 && ch < 0xDC00) {
+	    Py_UNICODE ch2;
+	    Py_UCS4 ucs;
+
+	    ch2 = *s++;
+	    size--;
+	    if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+		ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
+		*p++ = '\\';
+		*p++ = 'U';
+		*p++ = hexdigits[(ucs >> 28) & 0xf];
+		*p++ = hexdigits[(ucs >> 24) & 0xf];
+		*p++ = hexdigits[(ucs >> 20) & 0xf];
+		*p++ = hexdigits[(ucs >> 16) & 0xf];
+		*p++ = hexdigits[(ucs >> 12) & 0xf];
+		*p++ = hexdigits[(ucs >> 8) & 0xf];
+		*p++ = hexdigits[(ucs >> 4) & 0xf];
+		*p++ = hexdigits[ucs & 0xf];
+		continue;
+	    }
+	    /* Fall through: isolated surrogates are copied as-is */
+	    s--;
+	    size++;
+	}
 #endif
 	/* Map 16-bit characters to '\uxxxx' */
 	if (ch >= 256) {
