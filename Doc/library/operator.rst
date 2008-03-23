@@ -6,6 +6,11 @@
 .. sectionauthor:: Skip Montanaro <skip@automatrix.com>
 
 
+.. testsetup::
+   
+   import operator
+   from operator import itemgetter
+
 
 The :mod:`operator` module exports a set of functions implemented in C
 corresponding to the intrinsic operators of Python.  For example,
@@ -481,12 +486,10 @@ objects.
 Example: Build a dictionary that maps the ordinals from ``0`` to ``255`` to
 their character equivalents.
 
-   >>> import operator
    >>> d = {}
    >>> keys = range(256)
    >>> vals = map(chr, keys)
-   >>> map(operator.setitem, [d]*len(keys), keys, vals)
-   [None, None, ..., None]
+   >>> map(operator.setitem, [d]*len(keys), keys, vals)   # doctest: +SKIP
 
 .. XXX: find a better, readable, example
 
@@ -536,7 +539,6 @@ expect a function argument.
    method.  Dictionaries accept any hashable value.  Lists, tuples, and 
    strings accept an index or a slice:
 
-      >>> from operator import itemgetter
       >>> itemgetter(1)('ABCDEFG')
       'B'
       >>> itemgetter(1,3,5)('ABCDEFG')
