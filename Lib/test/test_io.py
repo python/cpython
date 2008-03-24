@@ -79,6 +79,9 @@ class MockNonBlockWriterIO(io.RawIOBase):
 
 class IOTest(unittest.TestCase):
 
+    def setUp(self):
+        test_support.unlink(test_support.TESTFN)
+
     def tearDown(self):
         test_support.unlink(test_support.TESTFN)
 
@@ -619,6 +622,7 @@ class TextIOWrapperTest(unittest.TestCase):
     def setUp(self):
         self.testdata = b"AAA\r\nBBB\rCCC\r\nDDD\nEEE\r\n"
         self.normalized = b"AAA\nBBB\nCCC\nDDD\nEEE\n".decode("ascii")
+        test_support.unlink(test_support.TESTFN)
 
     def tearDown(self):
         test_support.unlink(test_support.TESTFN)

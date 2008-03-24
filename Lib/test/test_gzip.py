@@ -25,13 +25,10 @@ class TestGzip(unittest.TestCase):
     filename = test_support.TESTFN
 
     def setUp (self):
-        pass
+        test_support.unlink(self.filename)
 
     def tearDown (self):
-        try:
-            os.unlink(self.filename)
-        except os.error:
-            pass
+        test_support.unlink(self.filename)
 
 
     def test_write (self):
