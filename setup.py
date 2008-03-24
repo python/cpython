@@ -1632,6 +1632,7 @@ def main():
 
           # Scripts to install
           scripts = ['Tools/scripts/pydoc', 'Tools/scripts/idle',
+                     'Tools/scripts/2to3',
                      'Lib/smtpd.py']
         )
 
