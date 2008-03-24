@@ -56,6 +56,9 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#ifdef USE_ZLIB_CRC32
+#include "zlib.h"
+#endif
 
 static PyObject *Error;
 static PyObject *Incomplete;
@@ -776,6 +779,20 @@ binascii_crc_hqx(PyObject *self, PyObject *args)
 PyDoc_STRVAR(doc_crc32,
 "(data, oldcrc = 0) -> newcrc. Compute CRC-32 incrementally");
 
+#ifdef USE_ZLIB_CRC32
+/* This was taken from zlibmodule.c PyZlib_crc32 (but is PY_SSIZE_T_CLEAN) */
+static PyObject *
+binascii_crc32(PyObject *self, PyObject *args)
+{
+    uLong crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
+    Byte *buf;
+    int len;
+    if (!PyArg_ParseTuple(args, "s#|I:crc32", &buf, &len, &crc32val))
+        return NULL;
+    crc32val = crc32(crc32val, buf, len);
+    return PyLong_FromUnsignedLong(crc32val & 0xffffffffU);
+}
+#else  /* USE_ZLIB_CRC32 */
 /*  Crc - 32 BIT ANSI X3.66 CRC checksum files
     Also known as: ISO 3307
 **********************************************************************|
@@ -914,6 +931,7 @@ binascii_crc32(PyObject *self, PyObject *args)
 	result = (crc ^ 0xFFFFFFFF);
 	return PyLong_FromUnsignedLong(result & 0xffffffff);
 }
+#endif  /* USE_ZLIB_CRC32 */
 
 
 static PyObject *

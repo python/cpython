@@ -472,9 +472,6 @@ class PyBuildExt(build_ext):
         # select(2); not on ancient System V
         exts.append( Extension('select', ['selectmodule.c']) )
 
-        # Helper module for various ascii-encoders
-        exts.append( Extension('binascii', ['binascii.c']) )
-
         # Fred Drake's interface to the Python parser
         exts.append( Extension('parser', ['parsermodule.c']) )
 
@@ -1005,6 +1002,7 @@ class PyBuildExt(build_ext):
         # You can upgrade zlib to version 1.1.4 yourself by going to
         # http://www.gzip.org/zlib/
         zlib_inc = find_file('zlib.h', [], inc_dirs)
+        have_zlib = False
         if zlib_inc is not None:
             zlib_h = zlib_inc[0] + '/zlib.h'
             version = '"0.0.0"'
@@ -1026,12 +1024,28 @@ class PyBuildExt(build_ext):
                     exts.append( Extension('zlib', ['zlibmodule.c'],
                                            libraries = ['z'],
                                            extra_link_args = zlib_extra_link_args))
+                    have_zlib = True
                 else:
                     missing.append('zlib')
             else:
                 missing.append('zlib')
         else:
             missing.append('zlib')
+
+        # Helper module for various ascii-encoders.  Uses zlib for an optimized
+        # crc32 if we have it.  Otherwise binascii uses its own.
+        if have_zlib:
+            extra_compile_args = ['-DUSE_ZLIB_CRC32']
+            libraries = ['z']
+            extra_link_args = zlib_extra_link_args
+        else:
+            extra_compile_args = []
+            libraries = []
+            extra_link_args = []
+        exts.append( Extension('binascii', ['binascii.c'],
+                               extra_compile_args = extra_compile_args,
+                               libraries = libraries,
+                               extra_link_args = extra_link_args) )
 
         # Gustavo Niemeyer's bz2 module.
         if (self.compiler.find_library_file(lib_dirs, 'bz2')):
