@@ -13,7 +13,7 @@ import sys
 from time import time
 
 # Test imports
-from support import adjust_path
+from .support import adjust_path
 adjust_path()
 
 # Local imports
