@@ -786,7 +786,7 @@ binascii_crc32(PyObject *self, PyObject *args)
 {
     uLong crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
     Byte *buf;
-    int len;
+    Py_ssize_t len;
     if (!PyArg_ParseTuple(args, "s#|I:crc32", &buf, &len, &crc32val))
         return NULL;
     crc32val = crc32(crc32val, buf, len);
