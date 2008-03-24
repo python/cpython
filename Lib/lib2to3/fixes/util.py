@@ -108,6 +108,26 @@ def ListComp(xp, fp, it, test=None):
                         inner,
                         Leaf(token.RBRACE, "]")])
 
+def FromImport(package_name, name_leafs):
+    """ Return an import statement in the form:
+        from package import name_leafs"""
+    # XXX: May not handle dotted imports properly (eg, package_name='foo.bar')
+    assert package_name == '.' or '.' not in package.name, "FromImport has "\
+           "not been tested with dotted package names -- use at your own "\
+           "peril!"
+
+    for leaf in name_leafs:
+        # Pull the leaves out of their old tree
+        leaf.remove()
+
+    children = [Leaf(token.NAME, 'from'),
+                Leaf(token.NAME, package_name, prefix=" "),
+                Leaf(token.NAME, 'import', prefix=" "),
+                Node(syms.import_as_names, name_leafs)]
+    imp = Node(syms.import_from, children)
+    return imp
+
+
 ###########################################################
 ### Determine whether a node represents a given literal
 ###########################################################
