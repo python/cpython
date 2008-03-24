@@ -7,19 +7,20 @@ Becomes:
 And this import:
     import spam
 Becomes:
-    import .spam
+    from . import spam
 """
 
 # Local imports
 from . import basefix
 from os.path import dirname, join, exists, pathsep
+from .util import FromImport
 
 class FixImport(basefix.BaseFix):
 
     PATTERN = """
-    import_from< 'from' imp=any 'import' any >
+    import_from< type='from' imp=any 'import' any >
     |
-    import_name< 'import' imp=any >
+    import_name< type='import' imp=any >
     """
 
     def transform(self, node, results):
@@ -33,15 +34,19 @@ class FixImport(basefix.BaseFix):
             # I guess this is a global import -- skip it!
             return
 
-        # Some imps are top-level (eg: 'import ham')
-        # some are first level (eg: 'import ham.eggs')
-        # some are third level (eg: 'import ham.eggs as spam')
-        # Hence, the loop
-        while not hasattr(imp, 'value'):
-            imp = imp.children[0]
-
-        imp.value = "." + imp.value
-        node.changed()
+        if results['type'].value == 'from':
+            # Some imps are top-level (eg: 'import ham')
+            # some are first level (eg: 'import ham.eggs')
+            # some are third level (eg: 'import ham.eggs as spam')
+            # Hence, the loop
+            while not hasattr(imp, 'value'):
+                imp = imp.children[0]
+            imp.value = "." + imp.value
+            node.changed()
+        else:
+            new = FromImport('.', getattr(imp, 'content', None) or [imp])
+            new.prefix = node.get_prefix()
+            node = new
         return node
 
 def probably_a_local_import(imp_name, file_path):
