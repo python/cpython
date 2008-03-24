@@ -60,6 +60,11 @@ Core and builtins
 
 - Issue #2143: Fix embedded readline() hang on SSL socket EOF.
 
+Extensions Modules
+------------------
+
+- Patch #2240: Implement signal.setitimer and signal.getitimer.
+
 Library
 -------
 
