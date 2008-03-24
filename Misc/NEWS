@@ -160,6 +160,8 @@ Tests
 Build
 -----
 
+- A new script 2to3 is now installed, to run the 2.x to 3.x converter.
+
 - Python/memmove.c and Python/strerror.c have been removed; both functions are
   in the C89 standard library.
 
