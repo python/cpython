@@ -3036,6 +3036,10 @@ class Test_itertools_imports(FixerTestCase):
         a = ""
         self.check(b, a)
 
+        b = "from itertools import izip"
+        a = ""
+        self.check(b, a)
+
     def test_import_as(self):
         b = "from itertools import izip, bar as bang, imap"
         a = "from itertools import bar as bang"
@@ -3105,6 +3109,10 @@ class Test_import(FixerTestCase):
             self.failUnlessEqual(set(self.files_checked), expected_checks)
 
     def test_from(self):
+        b = "from foo import bar, baz"
+        a = "from .foo import bar, baz"
+        self.check_both(b, a)
+
         b = "from foo import bar"
         a = "from .foo import bar"
         self.check_both(b, a)
@@ -3121,17 +3129,21 @@ class Test_import(FixerTestCase):
 
     def test_import(self):
         b = "import foo"
-        a = "import .foo"
+        a = "from . import foo"
+        self.check_both(b, a)
+
+        b = "import foo, bar"
+        a = "from . import foo, bar"
         self.check_both(b, a)
 
     def test_dotted_import(self):
         b = "import foo.bar"
-        a = "import .foo.bar"
+        a = "from . import foo.bar"
         self.check_both(b, a)
 
     def test_dotted_import_as(self):
         b = "import foo.bar as bang"
-        a = "import .foo.bar as bang"
+        a = "from . import foo.bar as bang"
         self.check_both(b, a)
 
 

@@ -7,7 +7,7 @@
 __author__ = "Guido van Rossum <guido@python.org>"
 
 # Support imports (need to be imported first)
-import support
+from . import support
 
 # Python imports
 import os

@@ -17,6 +17,9 @@ class FixItertoolsImports(basefix.BaseFix):
                 # Handle 'import ... as ...'
                 continue
             if child.value in ('imap', 'izip', 'ifilter'):
+                # The value must be set to none in case child == import,
+                # so that the test for empty imports will work out
+                child.value = None
                 child.remove()
             elif child.value == 'ifilterfalse':
                 node.changed()
@@ -34,10 +37,9 @@ class FixItertoolsImports(basefix.BaseFix):
         if str(children[-1]) == ',':
             children[-1].remove()
 
-        # If there is nothing left, return a blank line
+        # If there are no imports left, just get rid of the entire statement
         if not (imports.children or getattr(imports, 'value', None)):
-            new = BlankLine()
-            new.prefix = node.get_prefix()
-        else:
-            new = node
-        return new
+            p = node.get_prefix()
+            node = BlankLine()
+            node.prefix = p
+        return node
