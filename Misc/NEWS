@@ -18,6 +18,8 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- The dl module was removed, use the ctypes module instead.
+
 - Use wchar_t functions in _locale module.
 
 Library

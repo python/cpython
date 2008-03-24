@@ -295,14 +295,6 @@ _symtable symtablemodule.c
 #_curses_panel _curses_panel.c -lpanel -lncurses 
 
 
-# Generic (SunOS / SVR4) dynamic loading module.
-# This is not needed for dynamic loading of Python modules --
-# it is a highly experimental and dangerous device for calling
-# *arbitrary* C functions in *arbitrary* shared libraries:
-
-#dl dlmodule.c
-
-
 # Modules that provide persistent dictionary-like semantics.  You will
 # probably want to arrange for at least one of them to be available on
 # your machine, though none are defined by default because of library

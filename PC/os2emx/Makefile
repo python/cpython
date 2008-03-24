@@ -290,7 +290,6 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/cStringIO.c \
 		Modules/_csv.c \
 		Modules/datetimemodule.c \
-		Modules/dlmodule.c \
 		Modules/errnomodule.c \
 		Modules/fcntlmodule.c \
 		Modules/_functoolsmodule.c \
