@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import errno
+import socket
+import sys
 import unittest
 from test import test_support
 
@@ -11,7 +14,14 @@ class CurrentTimeTest(unittest.TestCase):
         # Get the current time from xmlrpc.com.  This code exercises
         # the minimal HTTP functionality in xmlrpclib.
         server = xmlrpclib.ServerProxy("http://time.xmlrpc.com/RPC2")
-        t0 = server.currentTime.getCurrentTime()
+        try:
+            t0 = server.currentTime.getCurrentTime()
+        except socket.error as e:
+            if e.errno != errno.ECONNRESET:
+                raise
+            print("    test_current_time: socket got reset, skipping test",
+                  file=sys.stderr)
+            return
 
         # Perform a minimal sanity check on the result, just to be sure
         # the request means what we think it means.
