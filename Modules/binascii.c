@@ -56,6 +56,9 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#ifdef USE_ZLIB_CRC32
+#include "zlib.h"
+#endif
 
 static PyObject *Error;
 static PyObject *Incomplete;
@@ -748,6 +751,26 @@ binascii_crc_hqx(PyObject *self, PyObject *args)
 PyDoc_STRVAR(doc_crc32,
 "(data, oldcrc = 0) -> newcrc. Compute CRC-32 incrementally");
 
+#ifdef USE_ZLIB_CRC32
+/* This was taken from zlibmodule.c PyZlib_crc32 (but is PY_SSIZE_T_CLEAN) */
+static PyObject *
+binascii_crc32(PyObject *self, PyObject *args)
+{
+    uLong crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
+    Byte *buf;
+    Py_ssize_t len;
+    int signed_val;
+
+    if (!PyArg_ParseTuple(args, "s#|k:crc32", &buf, &len, &crc32val))
+	return NULL;
+    /* In Python 2.x we return a signed integer regardless of native platform
+     * long size (the 32bit unsigned long is treated as 32-bit signed and sign
+     * extended into a 64-bit long inside the integer object).  3.0 does the
+     * right thing and returns unsigned. http://bugs.python.org/issue1202 */
+    signed_val = crc32(crc32val, buf, len);
+    return PyInt_FromLong(signed_val);
+}
+#else  /* USE_ZLIB_CRC32 */
 /*  Crc - 32 BIT ANSI X3.66 CRC checksum files
     Also known as: ISO 3307
 **********************************************************************|
@@ -898,6 +921,7 @@ binascii_crc32(PyObject *self, PyObject *args)
 #endif
 	return PyInt_FromLong(result);
 }
+#endif  /* USE_ZLIB_CRC32 */
 
 
 static PyObject *
