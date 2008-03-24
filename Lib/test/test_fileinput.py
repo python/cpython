@@ -34,6 +34,7 @@ class BufferSizesTests(unittest.TestCase):
     def test_buffer_sizes(self):
         # First, run the tests with default and teeny buffer size.
         for round, bs in (0, 0), (1, 30):
+            t1 = t2 = t3 = t4 = None
             try:
                 t1 = writeTmp(1, ["Line %s of file 1\n" % (i+1) for i in range(15)])
                 t2 = writeTmp(2, ["Line %s of file 2\n" % (i+1) for i in range(10)])
@@ -122,6 +123,7 @@ class BufferSizesTests(unittest.TestCase):
 
 class FileInputTests(unittest.TestCase):
     def test_zero_byte_files(self):
+        t1 = t2 = t3 = t4 = None
         try:
             t1 = writeTmp(1, [""])
             t2 = writeTmp(2, [""])
@@ -145,6 +147,7 @@ class FileInputTests(unittest.TestCase):
             remove_tempfiles(t1, t2, t3, t4)
 
     def test_files_that_dont_end_with_newline(self):
+        t1 = t2 = None
         try:
             t1 = writeTmp(1, ["A\nB\nC"])
             t2 = writeTmp(2, ["D\nE\nF"])
@@ -171,6 +174,7 @@ class FileInputTests(unittest.TestCase):
 ##             remove_tempfiles(t1)
 
     def test_fileno(self):
+        t1 = t2 = None
         try:
             t1 = writeTmp(1, ["A\nB"])
             t2 = writeTmp(2, ["C\nD"])
