@@ -518,7 +518,7 @@ Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
 
 BYTESTR_DEPS = \
-		$(srcdir/Include/bytes_methods.h \
+		$(srcdir)/Include/bytes_methods.h \
 		$(srcdir)/Objects/stringlib/count.h \
 		$(srcdir)/Objects/stringlib/ctype.h \
 		$(srcdir)/Objects/stringlib/eq.h \
