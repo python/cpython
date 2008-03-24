@@ -13,7 +13,9 @@
 #include <signal.h>
 
 #include <sys/stat.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 
 #ifndef SIG_ERR
 #define SIG_ERR ((PyOS_sighandler_t)(-1))
