@@ -17,7 +17,6 @@ READ, WRITE = 1, 2
 
 def U32(i):
     """Return i as an unsigned integer, assuming it fits in 32 bits.
-
     If it's >= 2GB when viewed as a 32-bit unsigned int, return a long.
     """
     if i < 0:
@@ -320,7 +319,7 @@ class GzipFile:
         if crc32 != self.crc:
             raise IOError("CRC check failed %s != %s" % (hex(crc32),
                                                          hex(self.crc)))
-        elif isize != self.size:
+        elif isize != (self.size & 0xffffffff):
             raise IOError("Incorrect length of data produced")
 
     def close(self):
@@ -328,7 +327,7 @@ class GzipFile:
             self.fileobj.write(self.compress.flush())
             write32u(self.fileobj, self.crc)
             # self.size may exceed 2GB, or even 4GB
-            write32u(self.fileobj, self.size)
+            write32u(self.fileobj, self.size & 0xffffffff)
             self.fileobj = None
         elif self.mode == READ:
             self.fileobj = None
