@@ -304,7 +304,7 @@ always available.
 .. function:: getdlopenflags()
 
    Return the current value of the flags that are used for :cfunc:`dlopen` calls.
-   The flag constants are defined in the :mod:`dl` and :mod:`DLFCN` modules.
+   The flag constants are defined in the :mod:`ctypes` and :mod:`DLFCN` modules.
    Availability: Unix.
 
 
@@ -587,8 +587,8 @@ always available.
    the interpreter loads extension modules.  Among other things, this will enable a
    lazy resolving of symbols when importing a module, if called as
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as
-   ``sys.setdlopenflags(dl.RTLD_NOW | dl.RTLD_GLOBAL)``.  Symbolic names for the
-   flag modules can be either found in the :mod:`dl` module, or in the :mod:`DLFCN`
+   ``sys.setdlopenflags(ctypes.RTLD_GLOBAL)``.  Symbolic names for the
+   flag modules can be either found in the :mod:`ctypes` module, or in the :mod:`DLFCN`
    module. If :mod:`DLFCN` is not available, it can be generated from
    :file:`/usr/include/dlfcn.h` using the :program:`h2py` script. Availability:
    Unix.

@@ -201,7 +201,6 @@ MODULES		=                   \
 
   # zlibmodule.c    -- Wrapper of ZLib Compression API (GZip Format)
   # puremodule.c    -- Wrapper of Purify Debugging API (Probably Non-OS/2)
-  # dlmodule.c      -- Some Wierd Form of Data Processing Module
   # xxmodule.c      -- Template to Create Your Own Module
 
 #
@@ -412,14 +411,6 @@ cursesmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 stringobject.h sysmodule.h traceback.h tupleobject.h
 
 dbmmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
-	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
-	 import.h intobject.h intrcheck.h listobject.h longobject.h \
-	 methodobject.h modsupport.h moduleobject.h mymalloc.h myproto.h \
-	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
-	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
-	 traceback.h tupleobject.h
-
-dlmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
 	 import.h intobject.h intrcheck.h listobject.h longobject.h \
 	 methodobject.h modsupport.h moduleobject.h mymalloc.h myproto.h \
