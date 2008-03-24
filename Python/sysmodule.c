@@ -1063,8 +1063,15 @@ svnversion_init(void)
 		return;
 
 	python = strstr(headurl, "/python/");
-	if (!python)
+	if (!python) {
+		/* XXX quick hack to get bzr working */
+		*patchlevel_revision = '\0';
+		strcpy(branch, "");
+		strcpy(shortbranch, "unknown");
+		svn_revision = "";
+		return
 		Py_FatalError("subversion keywords missing");
+	}
 
 	br_start = python + 8;
 	br_end = strchr(br_start, '/');
