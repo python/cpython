@@ -1069,8 +1069,8 @@ svnversion_init(void)
 		strcpy(branch, "");
 		strcpy(shortbranch, "unknown");
 		svn_revision = "";
-		return
-		Py_FatalError("subversion keywords missing");
+		return;
+		/* Py_FatalError("subversion keywords missing"); */
 	}
 
 	br_start = python + 8;
