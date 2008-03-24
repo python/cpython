@@ -13,6 +13,7 @@
 #include <signal.h>
 
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #ifndef SIG_ERR
 #define SIG_ERR ((PyOS_sighandler_t)(-1))
@@ -93,6 +94,49 @@ static PyObject *IntHandler;
 
 static PyOS_sighandler_t old_siginthandler = SIG_DFL;
 
+#ifdef HAVE_GETITIMER
+static PyObject *ItimerError;
+
+/* auxiliary functions for setitimer/getitimer */
+static void
+timeval_from_double(double d, struct timeval *tv)
+{
+    tv->tv_sec = floor(d);
+    tv->tv_usec = fmod(d, 1.0) * 1000000.0;
+}
+
+static inline double
+double_from_timeval(struct timeval *tv)
+{
+    return tv->tv_sec + (double)(tv->tv_usec / 1000000.0);
+}
+
+static PyObject *
+itimer_retval(struct itimerval *iv)
+{
+    PyObject *r, *v;
+
+    r = PyTuple_New(2);
+    if (r == NULL)
+        return NULL;
+
+    if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_value)))) {
+        Py_DECREF(r);   
+        return NULL;
+    }
+
+    PyTuple_SET_ITEM(r, 0, v);
+
+    if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_interval)))) {
+        Py_DECREF(r);
+        return NULL;
+    }
+
+    PyTuple_SET_ITEM(r, 1, v);
+
+    return r;
+}
+#endif
 
 static PyObject *
 signal_default_int_handler(PyObject *self, PyObject *args)
@@ -347,10 +391,76 @@ PySignal_SetWakeupFd(int fd)
 }
 
 
+#ifdef HAVE_SETITIMER
+static PyObject *
+signal_setitimer(PyObject *self, PyObject *args)
+{
+    double first;
+    double interval = 0;
+    int which;
+    struct itimerval new, old;
+
+    if(!PyArg_ParseTuple(args, "id|d:setitimer", &which, &first, &interval))
+        return NULL;
+
+    timeval_from_double(first, &new.it_value);
+    timeval_from_double(interval, &new.it_interval);
+    /* Let OS check "which" value */
+    if (setitimer(which, &new, &old) != 0) {
+        PyErr_SetFromErrno(ItimerError);
+        return NULL;
+    }
+
+    return itimer_retval(&old);
+}
+
+PyDoc_STRVAR(setitimer_doc,
+"setitimer(which, seconds[, interval])\n\
+\n\
+Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL\n\
+or ITIMER_PROF) to fire after value seconds and after\n\
+that every interval seconds.\n\
+The itimer can be cleared by setting seconds to zero.\n\
+\n\
+Returns old values as a tuple: (delay, interval).");
+#endif
+
+
+#ifdef HAVE_GETITIMER
+static PyObject *
+signal_getitimer(PyObject *self, PyObject *args)
+{
+    int which;
+    struct itimerval old;
+
+    if (!PyArg_ParseTuple(args, "i:getitimer", &which))
+        return NULL;
+
+    if (getitimer(which, &old) != 0) {
+        PyErr_SetFromErrno(ItimerError);
+        return NULL;
+    }
+
+    return itimer_retval(&old);
+}
+
+PyDoc_STRVAR(getitimer_doc,
+"getitimer(which)\n\
+\n\
+Returns current value of given itimer.");
+#endif
+
+
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
 #ifdef HAVE_ALARM
 	{"alarm",	        signal_alarm, METH_VARARGS, alarm_doc},
+#endif
+#ifdef HAVE_SETITIMER
+    {"setitimer",       signal_setitimer, METH_VARARGS, setitimer_doc},
+#endif
+#ifdef HAVE_GETITIMER
+	{"getitimer",       signal_getitimer, METH_VARARGS, getitimer_doc},
 #endif
 	{"signal",	        signal_signal, METH_VARARGS, signal_doc},
 	{"getsignal",	        signal_getsignal, METH_VARARGS, getsignal_doc},
@@ -374,19 +484,32 @@ PyDoc_STRVAR(module_doc,
 Functions:\n\
 \n\
 alarm() -- cause SIGALRM after a specified time [Unix only]\n\
+setitimer() -- cause a signal (described below) after a specified\n\
+               float time and the timer may restart then [Unix only]\n\
+getitimer() -- get current value of timer [Unix only]\n\
 signal() -- set the action for a given signal\n\
 getsignal() -- get the signal action for a given signal\n\
 pause() -- wait until a signal arrives [Unix only]\n\
 default_int_handler() -- default SIGINT handler\n\
 \n\
-Constants:\n\
-\n\
+signal constants:\n\
 SIG_DFL -- used to refer to the system default handler\n\
 SIG_IGN -- used to ignore the signal\n\
 NSIG -- number of defined signals\n\
-\n\
 SIGINT, SIGTERM, etc. -- signal numbers\n\
 \n\
+itimer constants:\n\
+ITIMER_REAL -- decrements in real time, and delivers SIGALRM upon\n\
+               expiration\n\
+ITIMER_VIRTUAL -- decrements only when the process is executing,\n\
+               and delivers SIGVTALRM upon expiration\n\
+ITIMER_PROF -- decrements both when the process is executing and\n\
+               when the system is executing on behalf of the process.\n\
+               Coupled with ITIMER_VIRTUAL, this timer is usually\n\
+               used to profile the time spent by the application\n\
+               in user and kernel space. SIGPROF is delivered upon\n\
+               expiration.\n\
+\n\n\
 *** IMPORTANT NOTICE ***\n\
 A signal handler function is called with two arguments:\n\
 the first is the signal number, the second is the interrupted stack frame.");
@@ -639,6 +762,29 @@ initsignal(void)
 	PyDict_SetItemString(d, "SIGINFO", x);
         Py_XDECREF(x);
 #endif
+
+#ifdef ITIMER_REAL
+    x = PyLong_FromLong(ITIMER_REAL);
+    PyDict_SetItemString(d, "ITIMER_REAL", x);
+    Py_DECREF(x);
+#endif
+#ifdef ITIMER_VIRTUAL
+    x = PyLong_FromLong(ITIMER_VIRTUAL);
+    PyDict_SetItemString(d, "ITIMER_VIRTUAL", x);
+    Py_DECREF(x);
+#endif
+#ifdef ITIMER_PROF
+    x = PyLong_FromLong(ITIMER_PROF);
+    PyDict_SetItemString(d, "ITIMER_PROF", x);
+    Py_DECREF(x);
+#endif
+
+#if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
+    ItimerError = PyErr_NewException("signal.ItimerError", 
+         PyExc_IOError, NULL);
+    PyDict_SetItemString(d, "ItimerError", ItimerError);
+#endif
+
         if (!PyErr_Occurred())
                 return;
 

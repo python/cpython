@@ -240,6 +240,9 @@
 /* Define this if you have the 6-arg version of gethostbyname_r(). */
 #undef HAVE_GETHOSTBYNAME_R_6_ARG
 
+/* Define to 1 if you have the `getitimer' function. */
+#undef HAVE_GETITIMER
+
 /* Define to 1 if you have the `getloadavg' function. */
 #undef HAVE_GETLOADAVG
 
@@ -500,6 +503,9 @@
 
 /* Define if you have the 'setgroups' function. */
 #undef HAVE_SETGROUPS
+
+/* Define to 1 if you have the `setitimer' function. */
+#undef HAVE_SETITIMER
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
