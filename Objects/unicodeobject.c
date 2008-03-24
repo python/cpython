@@ -2273,8 +2273,22 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 	    else
 		x += 10 + c - 'A';
 	}
-#ifndef Py_UNICODE_WIDE
-        if (x > 0x10000) {
+        if (x <= 0xffff)
+                /* UCS-2 character */
+                *p++ = (Py_UNICODE) x;
+        else if (x <= 0x10ffff) {
+                /* UCS-4 character. Either store directly, or as
+                   surrogate pair. */
+#ifdef Py_UNICODE_WIDE
+                *p++ = (Py_UNICODE) x;
+#else
+                x -= 0x10000L;
+                *p++ = 0xD800 + (Py_UNICODE) (x >> 10);
+                *p++ = 0xDC00 + (Py_UNICODE) (x & 0x03FF);
+#endif
+        } else {
+            endinpos = s-starts;
+            outpos = p-PyUnicode_AS_UNICODE(v);
             if (unicode_decode_call_errorhandler(
                     errors, &errorHandler,
                     "rawunicodeescape", "\\Uxxxxxxxx out of range",
@@ -2282,8 +2296,6 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 		    (PyObject **)&v, &outpos, &p))
 		    goto onError;
         }
-#endif
-	*p++ = x;
 	nextByte:
 	;
     }
@@ -2337,6 +2349,32 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
             *p++ = hexdigit[ch & 15];
         }
         else
+#else
+	/* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
+	if (ch >= 0xD800 && ch < 0xDC00) {
+	    Py_UNICODE ch2;
+	    Py_UCS4 ucs;
+
+	    ch2 = *s++;
+	    size--;
+	    if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+		ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
+		*p++ = '\\';
+		*p++ = 'U';
+		*p++ = hexdigit[(ucs >> 28) & 0xf];
+		*p++ = hexdigit[(ucs >> 24) & 0xf];
+		*p++ = hexdigit[(ucs >> 20) & 0xf];
+		*p++ = hexdigit[(ucs >> 16) & 0xf];
+		*p++ = hexdigit[(ucs >> 12) & 0xf];
+		*p++ = hexdigit[(ucs >> 8) & 0xf];
+		*p++ = hexdigit[(ucs >> 4) & 0xf];
+		*p++ = hexdigit[ucs & 0xf];
+		continue;
+	    }
+	    /* Fall through: isolated surrogates are copied as-is */
+	    s--;
+	    size++;
+	}
 #endif
 	/* Map 16-bit characters to '\uxxxx' */
 	if (ch >= 256) {
