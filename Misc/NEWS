@@ -66,6 +66,8 @@ Library
 - Issue #2432: give DictReader the dialect and line_num attributes
   advertised in the docs.
 
+- Issue #2460:  Make Ellipsis object copyable.
+
 - Issue #1681432:  Add triangular distribution to the random module
 
 - Issue #2136: urllib2's auth handler now allows single-quoted realms in the
