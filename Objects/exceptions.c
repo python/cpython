@@ -190,10 +190,10 @@ static PyObject *
 BaseException_getitem(PyBaseExceptionObject *self, Py_ssize_t index)
 {
     if (Py_Py3kWarningFlag) {
-	if (PyErr_Warn(PyExc_DeprecationWarning,
-		       "In 3.x, __getitem__ is not supported for exception "
-		       "classes, use args attribute") == -1)
-	    return NULL;
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+                       "__getitem__ not supported for exception "
+                       "classes in 3.x; use args attribute") == -1)
+            return NULL;
     }
     return PySequence_GetItem(self->args, index);
 }
@@ -203,10 +203,10 @@ BaseException_getslice(PyBaseExceptionObject *self,
 			Py_ssize_t start, Py_ssize_t stop)
 {
     if (Py_Py3kWarningFlag) {
-	if (PyErr_Warn(PyExc_DeprecationWarning,
-		       "In 3.x, __getslice__ is not supported for exception "
-		       "classes, use args attribute") == -1)
-	    return NULL;
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+                       "__getslice__ not supported for exception "
+                       "classes in 3.x; use args attribute") == -1)
+            return NULL;
     }
     return PySequence_GetSlice(self->args, start, stop);
 }

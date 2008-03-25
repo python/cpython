@@ -93,7 +93,7 @@ A new command-line switch, :option:`-3`, enables warnings
 about features that will be removed in Python 3.0.  You can run code
 with this switch to see how much work will be necessary to port
 code to 3.0.  The value of this switch is available 
-to Python code as the boolean variable ``sys.py3kwarning``,
+to Python code as the boolean variable :data:`sys.py3kwarning`,
 and to C extension code as :cdata:`Py_Py3kWarningFlag`.
 
 Python 3.0 adds several new built-in functions and change the

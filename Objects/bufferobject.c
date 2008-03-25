@@ -231,7 +231,8 @@ buffer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	if (Py_Py3kWarningFlag &&
 	    PyErr_WarnEx(PyExc_DeprecationWarning,
-	    "buffer will be removed in 3.x", 1) < 0)
+			 "buffer() not supported in 3.x; "
+			 "use memoryview()", 1) < 0)
 		return NULL;
 	
 	PyObject *ob;

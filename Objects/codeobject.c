@@ -338,9 +338,12 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 	    !PyCode_Check(self) ||
 	    !PyCode_Check(other)) {
 
-		/* Py3K warning if types are not equal and comparison isn't == or !=  */
-		if (Py_Py3kWarningFlag && PyErr_Warn(PyExc_DeprecationWarning,
-				"code inequality comparisons not supported in 3.x.") < 0) {
+		/* Py3K warning if types are not equal and comparison
+                   isn't == or !=  */
+		if (Py_Py3kWarningFlag &&
+		    PyErr_Warn(PyExc_DeprecationWarning,
+			       "code inequality comparisons not supported "
+			       "in 3.x") < 0) {
 			return NULL;
 		}
 

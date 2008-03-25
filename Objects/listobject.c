@@ -2040,7 +2040,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	if (compare != NULL && 
             Py_Py3kWarningFlag &&
 	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "In 3.x, the cmp argument is no longer supported.") < 0)
+		       "the cmp argument is not supported in 3.x") < 0)
 		return NULL;
 	if (keyfunc == Py_None)
 		keyfunc = NULL;

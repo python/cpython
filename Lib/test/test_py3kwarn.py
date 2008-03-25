@@ -11,21 +11,21 @@ if not sys.py3kwarning:
 class TestPy3KWarnings(unittest.TestCase):
 
     def test_type_inequality_comparisons(self):
-        expected = 'type inequality comparisons not supported in 3.x.'
+        expected = 'type inequality comparisons not supported in 3.x'
         with catch_warning() as w:
             self.assertWarning(int < str, w, expected)
         with catch_warning() as w:
             self.assertWarning(type < object, w, expected)
 
     def test_object_inequality_comparisons(self):
-        expected = 'comparing unequal types not supported in 3.x.'
+        expected = 'comparing unequal types not supported in 3.x'
         with catch_warning() as w:
             self.assertWarning(str < [], w, expected)
         with catch_warning() as w:
             self.assertWarning(object() < (1, 2), w, expected)
 
     def test_dict_inequality_comparisons(self):
-        expected = 'dict inequality comparisons not supported in 3.x.'
+        expected = 'dict inequality comparisons not supported in 3.x'
         with catch_warning() as w:
             self.assertWarning({} < {2:3}, w, expected)
         with catch_warning() as w:
@@ -36,7 +36,7 @@ class TestPy3KWarnings(unittest.TestCase):
             self.assertWarning({2:3} >= {}, w, expected)
 
     def test_cell_inequality_comparisons(self):
-        expected = 'cell comparisons not supported in 3.x.'
+        expected = 'cell comparisons not supported in 3.x'
         def f(x):
             def g():
                 return x
@@ -49,7 +49,7 @@ class TestPy3KWarnings(unittest.TestCase):
             self.assertWarning(cell0 < cell1, w, expected)
 
     def test_code_inequality_comparisons(self):
-        expected = 'code inequality comparisons not supported in 3.x.'
+        expected = 'code inequality comparisons not supported in 3.x'
         def f(x):
             pass
         def g(x):
@@ -65,7 +65,7 @@ class TestPy3KWarnings(unittest.TestCase):
 
     def test_builtin_function_or_method_comparisons(self):
         expected = ('builtin_function_or_method '
-                    'inequality comparisons not supported in 3.x.')
+                    'inequality comparisons not supported in 3.x')
         func = eval
         meth = {}.get
         with catch_warning() as w:
@@ -81,7 +81,7 @@ class TestPy3KWarnings(unittest.TestCase):
         self.assertEqual(str(warning.message), expected_message)
 
     def test_sort_cmp_arg(self):
-        expected = "In 3.x, the cmp argument is no longer supported."
+        expected = "the cmp argument is not supported in 3.x"
         lst = range(5)
         cmp = lambda x,y: -1
 
@@ -95,7 +95,7 @@ class TestPy3KWarnings(unittest.TestCase):
             self.assertWarning(sorted(lst, cmp), w, expected)
 
     def test_sys_exc_clear(self):
-        expected = 'sys.exc_clear() not supported in 3.x. Use except clauses.'
+        expected = 'sys.exc_clear() not supported in 3.x; use except clauses'
         with catch_warning() as w:
             self.assertWarning(sys.exc_clear(), w, expected)
 
@@ -119,7 +119,7 @@ class TestPy3KWarnings(unittest.TestCase):
                 self.assertWarning(set(), w, expected)
 
     def test_buffer(self):
-        expected = 'buffer will be removed in 3.x'
+        expected = 'buffer() not supported in 3.x; use memoryview()'
         with catch_warning() as w:
             self.assertWarning(buffer('a'), w, expected)
 

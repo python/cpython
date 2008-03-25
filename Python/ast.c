@@ -1363,7 +1363,7 @@ ast_for_atom(struct compiling *c, const node *n)
         expr_ty expression;
         if (Py_Py3kWarningFlag) {
             if (PyErr_WarnExplicit(PyExc_DeprecationWarning,
-                                   "backquote not supported in 3.x",
+                                   "backquote not supported in 3.x; use repr()",
                                    c->c_filename, LINENO(n),
                                    NULL, NULL)) {
             return NULL;

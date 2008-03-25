@@ -609,7 +609,8 @@ type_richcompare(PyObject *v, PyObject *w, int op)
 	/* Py3K warning if comparison isn't == or !=  */
 	if (Py_Py3kWarningFlag && op != Py_EQ && op != Py_NE &&
 		PyErr_Warn(PyExc_DeprecationWarning,
-			"type inequality comparisons not supported in 3.x.") < 0) {
+			   "type inequality comparisons not supported "
+			   "in 3.x") < 0) {
 		return NULL;
 	}
 
