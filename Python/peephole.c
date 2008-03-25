@@ -29,7 +29,7 @@
    Also works for BUILD_LIST when followed by an "in" or "not in" test.
 */
 static int
-tuple_of_constants(unsigned char *codestr, int n, PyObject *consts)
+tuple_of_constants(unsigned char *codestr, Py_ssize_t n, PyObject *consts)
 {
 	PyObject *newconst, *constant;
 	Py_ssize_t i, arg, len_consts;
@@ -228,7 +228,7 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
 }
 
 static unsigned int *
-markblocks(unsigned char *code, int len)
+markblocks(unsigned char *code, Py_ssize_t len)
 {
 	unsigned int *blocks = (unsigned int *)PyMem_Malloc(len*sizeof(int));
 	int i,j, opcode, blockcnt = 0;

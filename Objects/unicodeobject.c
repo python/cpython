@@ -7261,7 +7261,7 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
             done = str->length;
 	}
 	while (done < nchars) {
-            int n = (done <= nchars-done) ? done : nchars-done;
+            Py_ssize_t n = (done <= nchars-done) ? done : nchars-done;
             Py_UNICODE_COPY(p+done, p, n);
             done += n;
 	}

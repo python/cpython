@@ -715,7 +715,7 @@ countStrings(char *data, int len)
 static BOOL
 Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 {
-	int i,j;
+	Py_ssize_t i,j;
 	switch (typ) {
 		case REG_DWORD:
 			if (value != Py_None && !PyInt_Check(value))
