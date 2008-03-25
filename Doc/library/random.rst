@@ -155,13 +155,13 @@ be found in any statistics text.
 
 .. function:: triangular(low, high, mode)
 
-   Return a random floating point number *N* such that ``low <= N < high``
-   and with the specified *mode* between those bounds.
+   Return a random floating point number *N* such that ``low <= N < high`` and
+   with the specified *mode* between those bounds.  The *low* and *high* bounds
+   default to zero and one.  The *mode* argument defaults to the midpoint
+   between the bounds, giving a symmetric distribution.
 
-   If *mode* is not specified or is ``None``, it defaults to the midpoint
-   between the upper and lower bounds, producing a symmetric distribution.
+   .. versionadded:: 2.6
 
-   The default values for *low* and *high* are zero and one.
 
 .. function:: betavariate(alpha, beta)
 
