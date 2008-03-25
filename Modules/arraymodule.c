@@ -1255,6 +1255,18 @@ array.  Also called as read.");
 
 
 static PyObject *
+array_fromfile_as_read(arrayobject *self, PyObject *args)
+{
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning,
+		       "array.read() not supported in 3.x; "
+		       "use array.fromfile()") < 0)
+		return NULL;
+	return array_fromfile(self, args);
+}
+
+
+static PyObject *
 array_tofile(arrayobject *self, PyObject *f)
 {
 	FILE *fp;
@@ -1281,6 +1293,18 @@ PyDoc_STRVAR(tofile_doc,
 \n\
 Write all items (as machine values) to the file object f.  Also called as\n\
 write.");
+
+
+static PyObject *
+array_tofile_as_write(arrayobject *self, PyObject *f)
+{
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning,
+		       "array.write() not supported in 3.x; "
+		       "use array.tofile()") < 0)
+		return NULL;
+	return array_tofile(self, f);
+}
 
 
 static PyObject *
@@ -1522,7 +1546,7 @@ PyMethodDef array_methods[] = {
 	 insert_doc},
 	{"pop",		(PyCFunction)array_pop,		METH_VARARGS,
 	 pop_doc},
-	{"read",	(PyCFunction)array_fromfile,	METH_VARARGS,
+	{"read",	(PyCFunction)array_fromfile_as_read,	METH_VARARGS,
 	 fromfile_doc},
 	{"__reduce__",	(PyCFunction)array_reduce,	METH_NOARGS,
 	 array_doc},
@@ -1542,7 +1566,7 @@ PyMethodDef array_methods[] = {
 	{"tounicode",   (PyCFunction)array_tounicode,	METH_NOARGS,
 	 tounicode_doc},
 #endif
-	{"write",	(PyCFunction)array_tofile,	METH_O,
+	{"write",	(PyCFunction)array_tofile_as_write,	METH_O,
 	 tofile_doc},
 	{NULL,		NULL}		/* sentinel */
 };
