@@ -420,7 +420,7 @@ class _Stream:
             except ImportError:
                 raise CompressionError("zlib module is not available")
             self.zlib = zlib
-            self.crc = zlib.crc32("")
+            self.crc = zlib.crc32("") & 0xffffffffL
             if mode == "r":
                 self._init_read_gz()
             else:
@@ -458,7 +458,7 @@ class _Stream:
         """Write string s to the stream.
         """
         if self.comptype == "gz":
-            self.crc = self.zlib.crc32(s, self.crc)
+            self.crc = self.zlib.crc32(s, self.crc) & 0xffffffffL
         self.pos += len(s)
         if self.comptype != "tar":
             s = self.cmp.compress(s)
