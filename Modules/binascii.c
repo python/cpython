@@ -756,12 +756,12 @@ PyDoc_STRVAR(doc_crc32,
 static PyObject *
 binascii_crc32(PyObject *self, PyObject *args)
 {
-    uLong crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
+    unsigned int crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
     Byte *buf;
     Py_ssize_t len;
     int signed_val;
 
-    if (!PyArg_ParseTuple(args, "s#|k:crc32", &buf, &len, &crc32val))
+    if (!PyArg_ParseTuple(args, "s#|I:crc32", &buf, &len, &crc32val))
 	return NULL;
     /* In Python 2.x we return a signed integer regardless of native platform
      * long size (the 32bit unsigned long is treated as 32-bit signed and sign
