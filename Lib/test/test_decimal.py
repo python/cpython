@@ -434,6 +434,12 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertEqual(str(Decimal('1.3E4 \n')), '1.3E+4')
         self.assertEqual(str(Decimal('  -7.89')), '-7.89')
 
+        #unicode strings should be permitted
+        self.assertEqual(str(Decimal(u'0E-017')), '0E-17')
+        self.assertEqual(str(Decimal(u'45')), '45')
+        self.assertEqual(str(Decimal(u'-Inf')), '-Infinity')
+        self.assertEqual(str(Decimal(u'NaN123')), 'NaN123')
+
     def test_explicit_from_tuples(self):
 
         #zero
@@ -1148,6 +1154,16 @@ class DecimalUsabilityTest(unittest.TestCase):
         d = Decimal('15.32')
         self.assertEqual(str(d), '15.32')               # str
         self.assertEqual(repr(d), "Decimal('15.32')")   # repr
+
+        # result type of string methods should be str, not unicode
+        unicode_inputs = [u'123.4', u'0.5E2', u'Infinity', u'sNaN',
+                          u'-0.0E100', u'-NaN001', u'-Inf']
+
+        for u in unicode_inputs:
+            d = Decimal(u)
+            self.assertEqual(type(str(d)), str)
+            self.assertEqual(type(repr(d)), str)
+            self.assertEqual(type(d.to_eng_string()), str)
 
     def test_tonum_methods(self):
         #Test float, int and long methods.
