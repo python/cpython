@@ -118,6 +118,11 @@ class TestPy3KWarnings(unittest.TestCase):
             with catch_warning() as w:
                 self.assertWarning(set(), w, expected)
 
+    def test_buffer(self):
+        expected = 'buffer will be removed in 3.x'
+        with catch_warning() as w:
+            self.assertWarning(buffer('a'), w, expected)
+
 
 def test_main():
     run_unittest(TestPy3KWarnings)

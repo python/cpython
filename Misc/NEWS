@@ -11,7 +11,9 @@ What's New in Python 2.6 alpha 2?
 
 Core and builtins
 -----------------
- 
+
+- Issue #2355: add Py3k warning for buffer().
+
 - Issue #1477: With narrow Unicode builds, the unicode escape sequence
   \Uxxxxxxxx did not accept values outside the Basic Multilingual Plane.  This
   affected raw unicode literals and the 'raw-unicode-escape' codec.  Now
