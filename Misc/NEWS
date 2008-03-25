@@ -72,6 +72,10 @@ Extensions Modules
 Library
 -------
 
+- Issue #2482: Make sure that the coefficient of a Decimal is always
+  stored as a str instance, not as a unicode instance.  This ensures
+  that str(Decimal) is always an instance of str.
+
 - Issue #2478: fix failure of decimal.Decimal(0).sqrt()
 
 - Issue #2432: give DictReader the dialect and line_num attributes
