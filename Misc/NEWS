@@ -48,6 +48,8 @@ Core and builtins
   are still valid. There are binary literals with a prefix of "0b".
   This also affects int(x, 0).
 
+- Issue #2359: Adding deprecation warnings for array.{read,write}.
+
 - Issue #1779871: Gnu gcc can now build Python on OS X because the
   flags -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd are no
   longer passed.
