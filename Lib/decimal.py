@@ -549,17 +549,17 @@ class Decimal(object):
                 fracpart = m.group('frac')
                 exp = int(m.group('exp') or '0')
                 if fracpart is not None:
-                    self._int = (intpart+fracpart).lstrip('0') or '0'
+                    self._int = str((intpart+fracpart).lstrip('0') or '0')
                     self._exp = exp - len(fracpart)
                 else:
-                    self._int = intpart.lstrip('0') or '0'
+                    self._int = str(intpart.lstrip('0') or '0')
                     self._exp = exp
                 self._is_special = False
             else:
                 diag = m.group('diag')
                 if diag is not None:
                     # NaN
-                    self._int = diag.lstrip('0')
+                    self._int = str(diag.lstrip('0'))
                     if m.group('signal'):
                         self._exp = 'N'
                     else:
