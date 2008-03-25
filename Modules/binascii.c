@@ -784,13 +784,15 @@ PyDoc_STRVAR(doc_crc32,
 static PyObject *
 binascii_crc32(PyObject *self, PyObject *args)
 {
-    uLong crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
+    unsigned int crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
     Byte *buf;
     Py_ssize_t len;
+    int signed_val;
+
     if (!PyArg_ParseTuple(args, "s#|I:crc32", &buf, &len, &crc32val))
         return NULL;
-    crc32val = crc32(crc32val, buf, len);
-    return PyLong_FromUnsignedLong(crc32val & 0xffffffffU);
+    signed_val = crc32(crc32val, buf, len);
+    return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
 }
 #else  /* USE_ZLIB_CRC32 */
 /*  Crc - 32 BIT ANSI X3.66 CRC checksum files

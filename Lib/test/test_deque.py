@@ -64,8 +64,27 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), [7, 8, 9])
         d = deque(range(200), maxlen=10)
         d.append(d)
+        fo = open(test_support.TESTFN, "w")
+        try:
+            fo.write(str(d))
+            fo.close()
+            fo = open(test_support.TESTFN, "r")
+            self.assertEqual(fo.read(), repr(d))
+        finally:
+            fo.close()
+            test_support.unlink(test_support.TESTFN)
+
         d = deque(range(10), maxlen=None)
         self.assertEqual(repr(d), 'deque([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])')
+        fo = open(test_support.TESTFN, "w")
+        try:
+            fo.write(str(d))
+            fo.close()
+            fo = open(test_support.TESTFN, "r")
+            self.assertEqual(fo.read(), repr(d))
+        finally:
+            fo.close()
+            test_support.unlink(test_support.TESTFN)
 
     def test_comparisons(self):
         d = deque('xabc'); d.popleft()
@@ -265,13 +284,13 @@ class TestBasic(unittest.TestCase):
         d.append(d)
         try:
             fo = open(test_support.TESTFN, "w")
-            fo.write(str(d))
+            print(d, file=fo, end='')
             fo.close()
             fo = open(test_support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(d))
         finally:
             fo.close()
-            os.remove(test_support.TESTFN)
+            test_support.unlink(test_support.TESTFN)
 
     def test_init(self):
         self.assertRaises(TypeError, deque, 'abc', 2, 3);

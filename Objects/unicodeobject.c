@@ -3204,7 +3204,7 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
                 /* UCS-4 character. Either store directly, or as
                    surrogate pair. */
 #ifdef Py_UNICODE_WIDE
-                *p++ = (Py_UNIC0DE) x;
+                *p++ = (Py_UNICODE) x;
 #else
                 x -= 0x10000L;
                 *p++ = 0xD800 + (Py_UNICODE) (x >> 10);
@@ -7384,7 +7384,7 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
             done = str->length;
 	}
 	while (done < nchars) {
-            int n = (done <= nchars-done) ? done : nchars-done;
+            Py_ssize_t n = (done <= nchars-done) ? done : nchars-done;
             Py_UNICODE_COPY(p+done, p, n);
             done += n;
 	}

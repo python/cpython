@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
     DWORD exit_code=0;
-    int cmdlen = 0;
+    size_t cmdlen = 0;
     int i;
     char *cmdline, *cmdlinefill;
 

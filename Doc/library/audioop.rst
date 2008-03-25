@@ -136,6 +136,18 @@ The module defines the following variables and functions:
 
    Convert samples between 1-, 2- and 4-byte formats.
 
+   .. note::
+
+      In some audio formats, such as .WAV files, 16 and 32 bit samples are
+      signed, but 8 bit samples are unsigned.  So when converting to 8 bit wide
+      samples for these formats, you need to also add 128 to the result::
+
+         new_frames = audioop.lin2lin(frames, old_width, 1)
+         new_frames = audioop.bias(new_frames, 1, 128)
+
+      The same, in reverse, has to be applied when converting from 8 to 16 or 32
+      bit width samples.
+
 
 .. function:: lin2ulaw(fragment, width)
 

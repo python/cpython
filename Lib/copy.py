@@ -101,7 +101,7 @@ def _copy_immutable(x):
     return x
 for t in (type(None), int, float, bool, str, tuple,
           frozenset, type, range,
-          types.BuiltinFunctionType,
+          types.BuiltinFunctionType, type(Ellipsis),
           types.FunctionType):
     d[t] = _copy_immutable
 t = getattr(types, "CodeType", None)
@@ -180,6 +180,7 @@ _deepcopy_dispatch = d = {}
 def _deepcopy_atomic(x, memo):
     return x
 d[type(None)] = _deepcopy_atomic
+d[type(Ellipsis)] = _deepcopy_atomic
 d[int] = _deepcopy_atomic
 d[float] = _deepcopy_atomic
 d[bool] = _deepcopy_atomic

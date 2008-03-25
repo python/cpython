@@ -915,7 +915,7 @@ PyDoc_STRVAR(adler32__doc__,
 static PyObject *
 PyZlib_adler32(PyObject *self, PyObject *args)
 {
-    uLong adler32val = 1;  /* adler32(0L, Z_NULL, 0) */
+    unsigned int adler32val = 1;  /* adler32(0L, Z_NULL, 0) */
     Byte *buf;
     int len;
 
@@ -934,13 +934,14 @@ PyDoc_STRVAR(crc32__doc__,
 static PyObject *
 PyZlib_crc32(PyObject *self, PyObject *args)
 {
-    uLong crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
+    unsigned int crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
     Byte *buf;
-    int len;
+    int len, signed_val;
+
     if (!PyArg_ParseTuple(args, "s#|I:crc32", &buf, &len, &crc32val))
 	return NULL;
-    crc32val = crc32(crc32val, buf, len);
-    return PyLong_FromUnsignedLong(crc32val & 0xffffffffU);
+    signed_val = crc32(crc32val, buf, len);
+    return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
 }
 
 
