@@ -112,6 +112,7 @@ class UUFileTest(unittest.TestCase):
         del self.tmpout
 
     def test_encode(self):
+        fin = fout = None
         try:
             fin = open(self.tmpin, 'wb')
             fin.write(plaintext)
@@ -140,6 +141,7 @@ class UUFileTest(unittest.TestCase):
             self._kill(fout)
 
     def test_decode(self):
+        f = None
         try:
             f = open(self.tmpin, 'w')
             f.write(encodedtextwrapped % (0644, self.tmpout))
@@ -159,6 +161,7 @@ class UUFileTest(unittest.TestCase):
 
     def test_decodetwice(self):
         # Verify that decode() will refuse to overwrite an existing file
+        f = None
         try:
             f = cStringIO.StringIO(encodedtextwrapped % (0644, self.tmpout))
 
