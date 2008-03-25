@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Benjamin Peterson was given SVN access on 25 March 2008 by Georg
+  Brandl, for bug triage work.
+
 - Jerry Seutter was given SVN access on 20 March 2008 by BAC, for
   general contributions to Python.
 
