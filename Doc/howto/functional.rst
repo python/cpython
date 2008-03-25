@@ -670,19 +670,6 @@ If the iterable returns no values at all, a :exc:`TypeError` exception is
 raised.  If the initial value is supplied, it's used as a starting point and
 ``func(initial_value, A)`` is the first calculation. ::
 
-
-``reduce(func, iter, [initial_value])`` doesn't have a counterpart in the
-:mod:`itertools` module because it cumulatively performs an operation on all the
-iterable's elements and therefore can't be applied to infinite iterables.
-``func`` must be a function that takes two elements and returns a single value.
-:func:`reduce` takes the first two elements A and B returned by the iterator and
-calculates ``func(A, B)``.  It then requests the third element, C, calculates
-``func(func(A, B), C)``, combines this result with the fourth element returned,
-and continues until the iterable is exhausted.  If the iterable returns no
-values at all, a :exc:`TypeError` exception is raised.  If the initial value is
-supplied, it's used as a starting point and ``func(initial_value, A)`` is the
-first calculation.
-
     >>> import operator
     >>> reduce(operator.concat, ['A', 'BB', 'C'])
     'ABBC'
