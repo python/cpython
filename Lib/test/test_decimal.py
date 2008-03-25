@@ -1315,6 +1315,12 @@ class DecimalUsabilityTest(unittest.TestCase):
         d = d1.max(d2)
         self.assertTrue(type(d) is Decimal)
 
+    def test_implicit_context(self):
+        # Check results when context given implicitly.  (Issue 2478)
+        c = getcontext()
+        self.assertEqual(str(Decimal(0).sqrt()),
+                         str(c.sqrt(Decimal(0))))
+
 
 class DecimalPythonAPItests(unittest.TestCase):
 
