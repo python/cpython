@@ -283,15 +283,15 @@ class TestJointOps(unittest.TestCase):
         w = ReprWrapper()
         s = self.thetype([w])
         w.value = s
+        fo = open(test_support.TESTFN, "wb")
         try:
-            fo = open(test_support.TESTFN, "wb")
             print >> fo, s,
             fo.close()
             fo = open(test_support.TESTFN, "rb")
             self.assertEqual(fo.read(), repr(s))
         finally:
             fo.close()
-            os.remove(test_support.TESTFN)
+            test_support.unlink(test_support.TESTFN)
 
     def test_do_not_rehash_dict_keys(self):
         n = 10
@@ -626,15 +626,15 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(repr(self.set), self.repr)
 
     def test_print(self):
+        fo = open(test_support.TESTFN, "wb")
         try:
-            fo = open(test_support.TESTFN, "wb")
             print >> fo, self.set,
             fo.close()
             fo = open(test_support.TESTFN, "rb")
             self.assertEqual(fo.read(), repr(self.set))
         finally:
             fo.close()
-            os.remove(test_support.TESTFN)
+            test_support.unlink(test_support.TESTFN)
 
     def test_length(self):
         self.assertEqual(len(self.set), self.length)
