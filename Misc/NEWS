@@ -27,6 +27,8 @@ Core and builtins
 Library
 -------
 
+- Issue #2478: fix failure of decimal.Decimal(0).sqrt()
+
 - Issue #2432: give DictReader the dialect and line_num attributes
   advertised in the docs.
 
