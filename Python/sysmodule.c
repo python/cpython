@@ -174,8 +174,8 @@ sys_exc_clear(PyObject *self, PyObject *noargs)
 
 	if (Py_Py3kWarningFlag &&
 	    PyErr_Warn(PyExc_DeprecationWarning,
-		       "sys.exc_clear() not supported in 3.x. "
-		       "Use except clauses.") < 0)
+		       "sys.exc_clear() not supported in 3.x; "
+		       "use except clauses") < 0)
 		return NULL;
 
 	tstate = PyThreadState_GET();

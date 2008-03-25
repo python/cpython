@@ -4056,7 +4056,7 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
      PyType_FastSubclass((PyTypeObject*)(x), Py_TPFLAGS_BASE_EXC_SUBCLASS))
 
 #define CANNOT_CATCH_MSG "catching classes that don't inherit from " \
-			 "BaseException is not allowed in 3.x."
+			 "BaseException is not allowed in 3.x"
 
 static PyObject *
 cmp_outcome(int op, register PyObject *v, register PyObject *w)

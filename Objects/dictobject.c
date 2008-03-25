@@ -1778,8 +1778,10 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
 	}
 	else {
 		/* Py3K warning if comparison isn't == or !=  */
-		if (Py_Py3kWarningFlag && PyErr_Warn(PyExc_DeprecationWarning,
-				"dict inequality comparisons not supported in 3.x.") < 0) {
+		if (Py_Py3kWarningFlag &&
+                    PyErr_Warn(PyExc_DeprecationWarning,
+			       "dict inequality comparisons not supported "
+			       "in 3.x") < 0) {
 			return NULL;
 		}
 		res = Py_NotImplemented;
@@ -1811,7 +1813,8 @@ dict_has_key(register PyDictObject *mp, PyObject *key)
 {
 	if (Py_Py3kWarningFlag &&
 	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "dict.has_key() not supported in 3.x") < 0)
+		       "dict.has_key() not supported in 3.x; "
+		       "use the in operator") < 0)
 		return NULL;
 	return dict_contains(mp, key);
 }
