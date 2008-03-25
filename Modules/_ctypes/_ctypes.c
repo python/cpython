@@ -104,6 +104,8 @@ bytes(cdata)
  *
  */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "structmember.h"
 
@@ -2293,7 +2295,7 @@ static PyObject *
 CData_setstate(PyObject *_self, PyObject *args)
 {
 	void *data;
-	int len;
+	Py_ssize_t len;
 	int res;
 	PyObject *dict, *mydict;
 	CDataObject *self = (CDataObject *)_self;
@@ -3023,7 +3025,7 @@ CFuncPtr_FromVtblIndex(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	char *name = NULL;
 	PyObject *paramflags = NULL;
 	GUID *iid = NULL;
-	int iid_len = 0;
+	Py_ssize_t iid_len = 0;
 
 	if (!PyArg_ParseTuple(args, "is|Oz#", &index, &name, &paramflags, &iid, &iid_len))
 		return NULL;
