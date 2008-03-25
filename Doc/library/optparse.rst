@@ -534,10 +534,11 @@ help message:
   description "write output to FILE". This is a simple but effective way to make
   your help text a lot clearer and more useful for end users.
 
-* options that have a default value can include ``%default`` in the help
-  string---\ :mod:`optparse` will replace it with :func:`str` of the option's
-  default value.  If an option has no default value (or the default value is
-  ``None``), ``%default`` expands to ``none``.
+.. versionadded:: 2.4
+   Options that have a default value can include ``%default`` in the help
+   string---\ :mod:`optparse` will replace it with :func:`str` of the option's
+   default value.  If an option has no default value (or the default value is
+   ``None``), ``%default`` expands to ``none``.
 
 When dealing with many options, it is convenient to group these
 options for better help output.  An :class:`OptionParser` can contain
