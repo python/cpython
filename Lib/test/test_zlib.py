@@ -53,6 +53,15 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(binascii.crc32(foo), zlib.crc32(foo))
         self.assertEqual(binascii.crc32('spam'), zlib.crc32('spam'))
 
+    def test_negative_crc_iv_input(self):
+        # The range of valid input values for the crc state should be
+        # -2**31 through 2**32-1 to allow inputs artifically constrained
+        # to a signed 32-bit integer.
+        self.assertEqual(zlib.crc32('ham', -1), zlib.crc32('ham', 0xffffffffL))
+        self.assertEqual(zlib.crc32('spam', -3141593),
+                         zlib.crc32('spam',  0xffd01027L))
+        self.assertEqual(zlib.crc32('spam', -(2**31)),
+                         zlib.crc32('spam',  (2**31)))
 
 
 class ExceptionTestCase(unittest.TestCase):
