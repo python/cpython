@@ -311,7 +311,7 @@ class Maildir(Mailbox):
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
         subpath = self._lookup(key)
-        f = open(os.path.join(self._path, subpath), 'r')
+        f = open(os.path.join(self._path, subpath), 'r', newline='')
         try:
             if self._factory:
                 msg = self._factory(f)
@@ -328,7 +328,7 @@ class Maildir(Mailbox):
 
     def get_string(self, key):
         """Return a string representation or raise a KeyError."""
-        f = open(os.path.join(self._path, self._lookup(key)), 'r')
+        f = open(os.path.join(self._path, self._lookup(key)), 'r', newline='')
         try:
             return f.read()
         finally:
@@ -336,7 +336,7 @@ class Maildir(Mailbox):
 
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""
-        f = open(os.path.join(self._path, self._lookup(key)), 'r')
+        f = open(os.path.join(self._path, self._lookup(key)), 'r', newline='')
         return _ProxyFile(f)
 
     def iterkeys(self):
@@ -502,15 +502,15 @@ class _singlefileMailbox(Mailbox):
         """Initialize a single-file mailbox."""
         Mailbox.__init__(self, path, factory, create)
         try:
-            f = open(self._path, 'r+')
+            f = open(self._path, 'r+', newline='')
         except IOError as e:
             if e.errno == errno.ENOENT:
                 if create:
-                    f = open(self._path, 'w+')
+                    f = open(self._path, 'w+', newline='')
                 else:
                     raise NoSuchMailboxError(self._path)
             elif e.errno == errno.EACCES:
-                f = open(self._path, 'r')
+                f = open(self._path, 'r', newline='')
             else:
                 raise
         self._file = f
@@ -866,7 +866,7 @@ class MH(Mailbox):
         """Replace the keyed message; raise KeyError if it doesn't exist."""
         path = os.path.join(self._path, str(key))
         try:
-            f = open(path, 'r+')
+            f = open(path, 'r+', newline='')
         except IOError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -890,9 +890,9 @@ class MH(Mailbox):
         """Return a Message representation or raise a KeyError."""
         try:
             if self._locked:
-                f = open(os.path.join(self._path, str(key)), 'r+')
+                f = open(os.path.join(self._path, str(key)), 'r+', newline='')
             else:
-                f = open(os.path.join(self._path, str(key)), 'r')
+                f = open(os.path.join(self._path, str(key)), 'r', newline='')
         except IOError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -917,9 +917,9 @@ class MH(Mailbox):
         """Return a string representation or raise a KeyError."""
         try:
             if self._locked:
-                f = open(os.path.join(self._path, str(key)), 'r+')
+                f = open(os.path.join(self._path, str(key)), 'r+', newline='')
             else:
-                f = open(os.path.join(self._path, str(key)), 'r')
+                f = open(os.path.join(self._path, str(key)), 'r', newline='')
         except IOError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -939,7 +939,7 @@ class MH(Mailbox):
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""
         try:
-            f = open(os.path.join(self._path, str(key)), 'r')
+            f = open(os.path.join(self._path, str(key)), 'r', newline='')
         except IOError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -1017,7 +1017,7 @@ class MH(Mailbox):
     def get_sequences(self):
         """Return a name-to-key-list dictionary to define each sequence."""
         results = {}
-        f = open(os.path.join(self._path, '.mh_sequences'), 'r')
+        f = open(os.path.join(self._path, '.mh_sequences'), 'r', newline='')
         try:
             all_keys = set(self.keys())
             for line in f:
@@ -1043,7 +1043,7 @@ class MH(Mailbox):
 
     def set_sequences(self, sequences):
         """Set sequences using the given name-to-key-list dictionary."""
-        f = open(os.path.join(self._path, '.mh_sequences'), 'r+')
+        f = open(os.path.join(self._path, '.mh_sequences'), 'r+', newline='')
         try:
             os.close(os.open(f.name, os.O_WRONLY | os.O_TRUNC))
             for name, keys in sequences.items():
@@ -1904,7 +1904,7 @@ def _create_carefully(path):
     """Create a file if it doesn't exist and open for reading and writing."""
     fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
     try:
-        return open(path, 'r+')
+        return open(path, 'r+', newline='')
     finally:
         os.close(fd)
 
@@ -2072,7 +2072,7 @@ class MHMailbox:
         if not self.boxes:
             return None
         fn = self.boxes.pop()
-        fp = open(os.path.join(self.dirname, fn))
+        fp = open(os.path.join(self.dirname, fn), newline='')
         msg = self.factory(fp)
         try:
             msg._mh_msgno = fn
