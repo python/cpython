@@ -3763,6 +3763,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYBUF(bf_getwritebuffer);
 		COPYBUF(bf_getsegcount);
 		COPYBUF(bf_getcharbuffer);
+		COPYBUF(bf_getbuffer);
+		COPYBUF(bf_releasebuffer);
 	}
 
 	basebase = base->tp_base;

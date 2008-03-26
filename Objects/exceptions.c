@@ -1923,6 +1923,12 @@ SimpleExtendsException(PyExc_Warning, UnicodeWarning,
     "Base class for warnings about Unicode related problems, mostly\n"
     "related to conversion problems.");
 
+/*
+ *    BytesWarning extends Warning
+ */
+SimpleExtendsException(PyExc_Warning, BytesWarning,
+    "Base class for warnings about bytes and buffer related problems, mostly\n"
+    "related to conversion from str or comparing to str.");
 
 /* Pre-computed MemoryError instance.  Best to create this as early as
  * possible and not wait until a MemoryError is actually raised!
@@ -2031,6 +2037,7 @@ _PyExc_Init(void)
     PRE_INIT(FutureWarning)
     PRE_INIT(ImportWarning)
     PRE_INIT(UnicodeWarning)
+    PRE_INIT(BytesWarning)
 
     m = Py_InitModule4("exceptions", functions, exceptions_doc,
         (PyObject *)NULL, PYTHON_API_VERSION);
@@ -2097,6 +2104,7 @@ _PyExc_Init(void)
     POST_INIT(FutureWarning)
     POST_INIT(ImportWarning)
     POST_INIT(UnicodeWarning)
+    POST_INIT(BytesWarning)
 
     PyExc_MemoryErrorInst = BaseException_new(&_PyExc_MemoryError, NULL, NULL);
     if (!PyExc_MemoryErrorInst)

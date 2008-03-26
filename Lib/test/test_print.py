@@ -9,10 +9,10 @@ import unittest
 from test import test_support
 
 import sys
-try:
+if sys.version_info[0] == 3:
     # 3.x
     from io import StringIO
-except ImportError:
+else:
     # 2.x
     from StringIO import StringIO
 

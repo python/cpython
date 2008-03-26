@@ -953,6 +953,8 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 		if (PyUnicode_Check(bb))
 		    return PyUnicode_Concat((PyObject *)a, bb);
 #endif
+		if (PyBytes_Check(bb))
+		    return PyBytes_Concat((PyObject *)a, bb);
 		PyErr_Format(PyExc_TypeError,
 			     "cannot concatenate 'str' and '%.200s' objects",
 			     Py_TYPE(bb)->tp_name);
@@ -1303,6 +1305,13 @@ string_buffer_getcharbuf(PyStringObject *self, Py_ssize_t index, const char **pt
 	return Py_SIZE(self);
 }
 
+static int
+string_buffer_getbuffer(PyStringObject *self, Py_buffer *view, int flags)
+{
+	return PyBuffer_FillInfo(view, (void *)self->ob_sval, Py_SIZE(self),
+				 0, flags);
+}
+
 static PySequenceMethods string_as_sequence = {
 	(lenfunc)string_length, /*sq_length*/
 	(binaryfunc)string_concat, /*sq_concat*/
@@ -1325,6 +1334,8 @@ static PyBufferProcs string_as_buffer = {
 	(writebufferproc)string_buffer_getwritebuf,
 	(segcountproc)string_buffer_getsegcount,
 	(charbufferproc)string_buffer_getcharbuf,
+	(getbufferproc)string_buffer_getbuffer,
+	0, /* XXX */
 };
 
 
@@ -4122,7 +4133,8 @@ PyTypeObject PyString_Type = {
 	0,					/* tp_setattro */
 	&string_as_buffer,			/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
-		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_STRING_SUBCLASS,		/* tp_flags */
+		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_STRING_SUBCLASS |
+		Py_TPFLAGS_HAVE_NEWBUFFER,	/* tp_flags */
 	string_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */

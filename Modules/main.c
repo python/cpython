@@ -40,7 +40,7 @@ static char **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS "3Bc:dEhim:OQ:StuUvVW:xX?"
+#define BASE_OPTS "3bBc:dEhim:OQ:StuUvVW:xX?"
 
 #ifndef RISCOS
 #define PROGRAM_OPTS BASE_OPTS
@@ -296,6 +296,9 @@ Py_Main(int argc, char **argv)
 		}
 
 		switch (c) {
+		case 'b':
+			Py_BytesWarningFlag++;
+			break;
 
 		case 'd':
 			Py_DebugFlag++;
