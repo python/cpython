@@ -823,6 +823,8 @@ parse_source_module(const char *pathname, FILE *fp)
 	if (arena == NULL)
 		return NULL;
 
+	flags.cf_flags = 0;
+
 	mod = PyParser_ASTFromFile(fp, pathname, Py_file_input, 0, 0, &flags, 
 				   NULL, arena);
 	if (mod) {

@@ -1398,6 +1398,8 @@ Py_SymtableString(const char *str, const char *filename, int start)
 	if (arena == NULL)
 		return NULL;
 
+	flags.cf_flags = 0;
+
 	mod = PyParser_ASTFromString(str, filename, start, &flags, arena);
 	if (mod == NULL) {
 		PyArena_Free(arena);
