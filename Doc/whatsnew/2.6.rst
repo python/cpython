@@ -555,10 +555,11 @@ adding a colon followed by a format specifier.  For example::
 Format specifiers can reference other fields through nesting::
 
     fmt = '{0:{1}}'
-    fmt.format('Invoice #1234', width) ->
-      'Invoice #1234                      '
     fmt.format('Invoice #1234', 15) ->
       'Invoice #1234  '
+    width = 35
+    fmt.format('Invoice #1234', width) ->
+      'Invoice #1234                      '
 
 The alignment of a field within the desired width can be specified:
 
@@ -571,11 +572,38 @@ Character        Effect
 =                (For numeric types only) Pad after the sign.
 ================ ============================================
 
-Format data types::
+Format specifiers can also include a presentation type, which 
+controls how the value is formatted.  For example, floating-point numbers
+can be formatted as a general number or in exponential notation:
 
-     ... XXX take table from PEP 3101
+    >>> '{0:g}'.format(3.75)
+    '3.75'
+    >>> '{0:e}'.format(3.75)
+    '3.750000e+00'
 
-Classes and types can define a __format__ method to control how it's 
+A variety of presentation types are available.  Consult the 2.6
+documentation for a complete list (XXX add link, once it's in the 2.6
+docs), but here's a sample::
+
+        'b' - Binary. Outputs the number in base 2.
+        'c' - Character. Converts the integer to the corresponding
+              Unicode character before printing.
+        'd' - Decimal Integer. Outputs the number in base 10.
+        'o' - Octal format. Outputs the number in base 8.
+        'x' - Hex format. Outputs the number in base 16, using lower-
+              case letters for the digits above 9.
+        'e' - Exponent notation. Prints the number in scientific
+              notation using the letter 'e' to indicate the exponent.
+        'g' - General format. This prints the number as a fixed-point
+              number, unless the number is too large, in which case
+              it switches to 'e' exponent notation.
+        'n' - Number. This is the same as 'g', except that it uses the
+              current locale setting to insert the appropriate
+              number separator characters.
+        '%' - Percentage. Multiplies the number by 100 and displays
+              in fixed ('f') format, followed by a percent sign.
+
+Classes and types can define a __format__ method to control how they're
 formatted.  It receives a single argument, the format specifier::
 
    def __format__(self, format_spec):
@@ -610,7 +638,6 @@ function from somewhere else.
 Python 2.6 has a ``__future__`` import that removes ``print`` as language 
 syntax, letting you use the functional form instead.  For example::
 
-    XXX need to check
     from __future__ import print_function
     print('# of entries', len(dictionary), file=sys.stderr)
 
@@ -698,6 +725,21 @@ and it also supports the ``b''`` notation.
 
    :pep:`3112` - Bytes literals in Python 3000
       PEP written by Jason Orendorff; backported to 2.6 by Christian Heimes.
+
+.. ======================================================================
+
+.. _pep-3118:
+
+PEP 3118: Revised Buffer Protocol
+=====================================================
+
+The buffer protocol is a C-level API that lets Python extensions 
+XXX
+
+.. seealso::
+
+   :pep:`3118` - Revising the buffer protocol
+      PEP written by Travis Oliphant and Carl Banks.
 
 .. ======================================================================
 
@@ -1082,7 +1124,7 @@ Optimizations
   by using pymalloc for the Unicode string's data.
 
 * The ``with`` statement now stores the :meth:`__exit__` method on the stack,
-  producing a small speedup.  (Implemented by Nick Coghlan.)
+  producing a small speedup.  (Implemented by Jeffrey Yasskin.)
 
 * To reduce memory usage, the garbage collector will now clear internal
   free lists when garbage-collecting the highest generation of objects.
@@ -1361,10 +1403,8 @@ complete list of changes, or look through the CVS logs for all the details.
   the forward search.
   (Contributed by John Lenton.)
 
-* The :mod:`new` module has been removed from Python 3.0.
-  Importing it therefore
-  triggers a warning message when Python is running in 3.0-warning
-  mode.
+* (3.0-warning mode) The :mod:`new` module has been removed from
+  Python 3.0.  Importing it therefore triggers a warning message.
 
 * The :mod:`operator` module gained a 
   :func:`methodcaller` function that takes a name and an optional 
@@ -1483,6 +1523,14 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Issue 1727780
 
+  The new ``triangular(low, high, mode)`` function returns random
+  numbers following a triangular distribution.   The returned values
+  are between *low* and *high*, not including *high* itself, and 
+  with *mode* as the mode, the most frequently occurring value 
+  in the distribution.  (Contributed by Raymond Hettinger. XXX check)
+
+  .. Patch 1681432
+
 * Long regular expression searches carried out by the  :mod:`re`
   module will now check for signals being delivered, so especially
   long searches can now be interrupted.
@@ -1499,6 +1547,16 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Raymond Hettinger XXX check.)
 
   .. Patch 1861
+
+* The :mod:`select` module now has wrapper functions
+  for the Linux :cfunc:`epoll` and BSD :cfunc:`kqueue` system calls.
+  Also, a :meth:`modify` method was added to the existing :class:`poll`
+  objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
+  or file object and an event mask, 
+  
+  (Contributed by XXX.)
+
+  .. Patch 1657
 
 * The :mod:`sets` module has been deprecated; it's better to 
   use the built-in :class:`set` and :class:`frozenset` types.
@@ -1948,9 +2006,8 @@ Some of the more notable changes are:
 Porting to Python 2.6
 =====================
 
-This section lists previously described changes, and a few
-esoteric bugfixes, that may require changes to your
-code:
+This section lists previously described changes and other bugfixes
+that may require changes to your code:
 
 * The :meth:`__init__` method of :class:`collections.deque`
   now clears any existing contents of the deque
@@ -1986,7 +2043,11 @@ code:
 
   .. Issue 1330538
 
-* In 3.0-warning mode, inequality comparisons between two dictionaries
+* (3.0-warning mode) The :class:`Exception` class now warns 
+  when accessed using slicing or index access; having 
+  :class:`Exception` behave like a tuple is being phased out.
+
+* (3.0-warning mode) inequality comparisons between two dictionaries
   or two objects that don't implement comparison methods are reported
   as warnings.  ``dict1 == dict2`` still works, but ``dict1 < dict2``
   is being phased out.
