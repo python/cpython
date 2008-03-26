@@ -655,6 +655,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\bytesobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\bytes_methods.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\cellobject.h"
 				>
 			</File>
@@ -1344,6 +1352,14 @@
 			</File>
 			<File
 				RelativePath="..\Objects\bufferobject.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Objects\bytesobject.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Objects\bytes_methods.c"
 				>
 			</File>
 			<File

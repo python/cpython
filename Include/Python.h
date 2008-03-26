@@ -92,6 +92,7 @@
 #include "stringobject.h"
 /* #include "memoryobject.h" */
 #include "bufferobject.h"
+#include "bytesobject.h"
 #include "tupleobject.h"
 #include "listobject.h"
 #include "dictobject.h"

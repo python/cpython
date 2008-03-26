@@ -295,6 +295,8 @@ OBJECT_OBJS=	\
 		Objects/abstract.o \
 		Objects/boolobject.o \
 		Objects/bufferobject.o \
+		Objects/bytes_methods.o \
+		Objects/bytesobject.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/cobject.o \
@@ -518,19 +520,24 @@ Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
 
 STRINGLIB_HEADERS= \
+		$(srcdir)/Include/bytes_methods.h \
 		$(srcdir)/Objects/stringlib/count.h \
+		$(srcdir)/Objects/stringlib/ctype.h \
 		$(srcdir)/Objects/stringlib/fastsearch.h \
 		$(srcdir)/Objects/stringlib/find.h \
 		$(srcdir)/Objects/stringlib/formatter.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/stringdefs.h \
 		$(srcdir)/Objects/stringlib/string_format.h \
+		$(srcdir)/Objects/stringlib/transmogrify.h \
 		$(srcdir)/Objects/stringlib/unicodedefs.h
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 				$(STRINGLIB_HEADERS)
 
 Objects/stringobject.o: $(srcdir)/Objects/stringobject.c \
+				$(STRINGLIB_HEADERS)
+Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c \
 				$(STRINGLIB_HEADERS)
 
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
@@ -550,6 +557,8 @@ PYTHON_HEADERS= \
 		Include/ast.h \
 		Include/bitset.h \
 		Include/boolobject.h \
+		Include/bytes_methods.h \
+		Include/bytesobject.h \
 		Include/bufferobject.h \
 		Include/cellobject.h \
 		Include/ceval.h \

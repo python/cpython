@@ -181,6 +181,18 @@ class IncrementalEncoder(object):
         Resets the encoder to the initial state.
         """
 
+    def getstate(self):
+        """
+        Return the current state of the encoder.
+        """
+        return 0
+
+    def setstate(self, state):
+        """
+        Set the current state of the encoder. state must have been
+        returned by getstate().
+        """
+
 class BufferedIncrementalEncoder(IncrementalEncoder):
     """
     This subclass of IncrementalEncoder can be used as the baseclass for an
@@ -207,6 +219,12 @@ class BufferedIncrementalEncoder(IncrementalEncoder):
     def reset(self):
         IncrementalEncoder.reset(self)
         self.buffer = ""
+
+    def getstate(self):
+        return self.buffer or 0
+
+    def setstate(self, state):
+        self.buffer = state or ""
 
 class IncrementalDecoder(object):
     """
@@ -235,6 +253,28 @@ class IncrementalDecoder(object):
         Resets the decoder to the initial state.
         """
 
+    def getstate(self):
+        """
+        Return the current state of the decoder.
+
+        This must be a (buffered_input, additional_state_info) tuple.
+        buffered_input must be a bytes object containing bytes that
+        were passed to decode() that have not yet been converted.
+        additional_state_info must be a non-negative integer
+        representing the state of the decoder WITHOUT yet having
+        processed the contents of buffered_input.  In the initial state
+        and after reset(), getstate() must return (b"", 0).
+        """
+        return (b"", 0)
+
+    def setstate(self, state):
+        """
+        Set the current state of the decoder.
+
+        state must have been returned by getstate().  The effect of
+        setstate((b"", 0)) must be equivalent to reset().
+        """
+
 class BufferedIncrementalDecoder(IncrementalDecoder):
     """
     This subclass of IncrementalDecoder can be used as the baseclass for an
@@ -261,6 +301,14 @@ class BufferedIncrementalDecoder(IncrementalDecoder):
     def reset(self):
         IncrementalDecoder.reset(self)
         self.buffer = ""
+
+    def getstate(self):
+        # additional state info is always 0
+        return (self.buffer, 0)
+
+    def setstate(self, state):
+        # ignore additional state info
+        self.buffer = state[0]
 
 #
 # The StreamWriter and StreamReader class provide generic working

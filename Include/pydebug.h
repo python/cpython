@@ -11,6 +11,7 @@ PyAPI_DATA(int) Py_InteractiveFlag;
 PyAPI_DATA(int) Py_InspectFlag;
 PyAPI_DATA(int) Py_OptimizeFlag;
 PyAPI_DATA(int) Py_NoSiteFlag;
+PyAPI_DATA(int) Py_BytesWarningFlag;
 PyAPI_DATA(int) Py_UseClassExceptionsFlag;
 PyAPI_DATA(int) Py_FrozenFlag;
 PyAPI_DATA(int) Py_TabcheckFlag;

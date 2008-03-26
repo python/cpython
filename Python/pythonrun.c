@@ -72,6 +72,7 @@ int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 int Py_InspectFlag; /* Needed to determine whether to exit at SystemError */
 int Py_NoSiteFlag; /* Suppress 'import site' */
+int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
 int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.py[co]) */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
@@ -193,6 +194,9 @@ Py_InitializeEx(int install_sigs)
 	if (!_PyInt_Init())
 		Py_FatalError("Py_Initialize: can't init ints");
 
+	if (!PyBytes_Init())
+		Py_FatalError("Py_Initialize: can't init bytearray");
+
 	_PyFloat_Init();
 
 	interp->modules = PyDict_New();
@@ -251,8 +255,28 @@ Py_InitializeEx(int install_sigs)
 #endif /* WITH_THREAD */
 
 	warnings_module = PyImport_ImportModule("warnings");
-	if (!warnings_module)
+	if (!warnings_module) {
 		PyErr_Clear();
+	}
+	else {
+		PyObject *o;
+		char *action[8];
+
+		if (Py_BytesWarningFlag > 1)
+			*action = "error";
+		else if (Py_BytesWarningFlag)
+			*action = "default";
+		else
+			*action = "ignore";
+
+		o = PyObject_CallMethod(warnings_module,
+					"simplefilter", "sO",
+					*action, PyExc_BytesWarning);
+		if (o == NULL)
+			Py_FatalError("Py_Initialize: can't initialize"
+				      "warning filter for BytesWarning.");
+		Py_DECREF(o);
+        }
 
 #if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
 	/* On Unix, set the file system encoding according to the
@@ -471,6 +495,7 @@ Py_Finalize(void)
 	PyList_Fini();
 	PySet_Fini();
 	PyString_Fini();
+	PyBytes_Fini();
 	PyInt_Fini();
 	PyFloat_Fini();
 	PyDict_Fini();
