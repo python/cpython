@@ -121,7 +121,10 @@ class urlopenNetworkTests(unittest.TestCase):
         # Make sure fd returned by fileno is valid.
         open_url = self.urlopen("http://www.python.org/")
         fd = open_url.fileno()
+        # XXX(nnorwitz): There is currently no way to pass errors, encoding,
+        # etc to fdopen. :-(
         FILE = os.fdopen(fd)
+        FILE._errors = 'ignore'
         try:
             self.assert_(FILE.read(), "reading from file created using fd "
                                       "returned by fileno failed")
@@ -152,7 +155,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
         file_location,info = self.urlretrieve("http://www.python.org/")
         self.assert_(os.path.exists(file_location), "file location returned by"
                         " urlretrieve is not a valid path")
-        FILE = open(file_location)
+        FILE = open(file_location, errors='ignore')
         try:
             self.assert_(FILE.read(), "reading from the file location returned"
                          " by urlretrieve failed")
@@ -166,7 +169,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
                                               test_support.TESTFN)
         self.assertEqual(file_location, test_support.TESTFN)
         self.assert_(os.path.exists(file_location))
-        FILE = open(file_location)
+        FILE = open(file_location, errors='ignore')
         try:
             self.assert_(FILE.read(), "reading from temporary file failed")
         finally:
