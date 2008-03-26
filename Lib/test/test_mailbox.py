@@ -410,8 +410,7 @@ class TestMailbox(TestBase):
                       _sample_message, io.StringIO(_sample_message)):
             output = io.StringIO()
             self._box._dump_message(input, output)
-            self.assertEqual(output.getvalue(),
-                         _sample_message.replace('\n', os.linesep))
+            self.assertEqual(output.getvalue(), _sample_message)
         output = io.StringIO()
         self.assertRaises(TypeError,
                           lambda: self._box._dump_message(None, output))
@@ -757,7 +756,7 @@ class _TestMboxMMDF(TestMailbox):
         self._box._file.seek(0)
         contents = self._box._file.read()
         self._box.close()
-        self.assertEqual(contents, open(self._path, 'r').read())
+        self.assertEqual(contents, open(self._path, 'r', newline='').read())
         self._box = self._factory(self._path)
 
     def test_lock_conflict(self):
