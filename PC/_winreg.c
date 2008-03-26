@@ -750,7 +750,6 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 			{
 				DWORD size = 0;
 				wchar_t *P;
-				int i,j;
 
 				if (value == Py_None)
 					i = 0;
