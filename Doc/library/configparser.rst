@@ -29,18 +29,20 @@ easily.
 
 The configuration file consists of sections, led by a ``[section]`` header and
 followed by ``name: value`` entries, with continuations in the style of
-:rfc:`822`; ``name=value`` is also accepted.  Note that leading whitespace is
-removed from values. The optional values can contain format strings which refer
-to other values in the same section, or values in a special ``DEFAULT`` section.
-Additional defaults can be provided on initialization and retrieval.  Lines
-beginning with ``'#'`` or ``';'`` are ignored and may be used to provide
-comments.
+:rfc:`822` (see section 3.1.1, "LONG HEADER FIELDS"); ``name=value`` is also
+accepted.  Note that leading whitespace is removed from values. The optional
+values can contain format strings which refer to other values in the same
+section, or values in a special ``DEFAULT`` section.  Additional defaults can be
+provided on initialization and retrieval.  Lines beginning with ``'#'`` or
+``';'`` are ignored and may be used to provide comments.
 
 For example::
 
    [My Section]
    foodir: %(dir)s/whatever
    dir=frob
+   long: this value continues
+      in the next line
 
 would resolve the ``%(dir)s`` to the value of ``dir`` (``frob`` in this case).
 All reference expansions are done on demand.
