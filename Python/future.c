@@ -35,6 +35,8 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 			ff->ff_features |= CO_FUTURE_WITH_STATEMENT;
 		} else if (strcmp(feature, FUTURE_PRINT_FUNCTION) == 0) {
 			ff->ff_features |= CO_FUTURE_PRINT_FUNCTION;
+		} else if (strcmp(feature, FUTURE_UNICODE_LITERALS) == 0) {
+			ff->ff_features |= CO_FUTURE_UNICODE_LITERALS;
 		} else if (strcmp(feature, "braces") == 0) {
 			PyErr_SetString(PyExc_SyntaxError,
 					"not a chance");

@@ -774,8 +774,11 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 #define PARSER_FLAGS(flags) \
 	((flags) ? ((((flags)->cf_flags & PyCF_DONT_IMPLY_DEDENT) ? \
 		      PyPARSE_DONT_IMPLY_DEDENT : 0) \
-		    | ((flags)->cf_flags & CO_FUTURE_PRINT_FUNCTION ? \
-		       PyPARSE_PRINT_IS_FUNCTION : 0)) : 0)
+		    | (((flags)->cf_flags & CO_FUTURE_PRINT_FUNCTION) ? \
+		       PyPARSE_PRINT_IS_FUNCTION : 0) \
+		    | (((flags)->cf_flags & CO_FUTURE_UNICODE_LITERALS) ? \
+		       PyPARSE_UNICODE_LITERALS : 0) \
+		    ) : 0)
 #endif
 
 int
@@ -1390,11 +1393,12 @@ Py_SymtableString(const char *str, const char *filename, int start)
 {
 	struct symtable *st;
 	mod_ty mod;
+	PyCompilerFlags flags;
 	PyArena *arena = PyArena_New();
 	if (arena == NULL)
 		return NULL;
 
-	mod = PyParser_ASTFromString(str, filename, start, NULL, arena);
+	mod = PyParser_ASTFromString(str, filename, start, &flags, arena);
 	if (mod == NULL) {
 		PyArena_Free(arena);
 		return NULL;
@@ -1411,10 +1415,16 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
 {
 	mod_ty mod;
 	perrdetail err;
-	node *n = PyParser_ParseStringFlagsFilename(s, filename,
+	int iflags;
+	iflags = PARSER_FLAGS(flags);
+
+	node *n = PyParser_ParseStringFlagsFilenameEx(s, filename,
 					&_PyParser_Grammar, start, &err,
-					PARSER_FLAGS(flags));
+					&iflags);
 	if (n) {
+		if (flags) {
+			flags->cf_flags |= iflags & PyCF_MASK;
+		}
 		mod = PyAST_FromNode(n, flags, filename, arena);
 		PyNode_Free(n);
 		return mod;
@@ -1432,9 +1442,15 @@ PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
 {
 	mod_ty mod;
 	perrdetail err;
-	node *n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar,
-				start, ps1, ps2, &err, PARSER_FLAGS(flags));
+	int iflags;
+
+	iflags = PARSER_FLAGS(flags);
+	node *n = PyParser_ParseFileFlagsEx(fp, filename, &_PyParser_Grammar,
+				start, ps1, ps2, &err, &iflags);
 	if (n) {
+		if (flags) {
+			flags->cf_flags |= iflags & PyCF_MASK;
+		}
 		mod = PyAST_FromNode(n, flags, filename, arena);
 		PyNode_Free(n);
 		return mod;
