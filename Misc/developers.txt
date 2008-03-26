@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Josiah Carlson was given SVN access on 26 March 2008 by Georg Brandl,
+  for work on asyncore/asynchat.
+
 - Benjamin Peterson was given SVN access on 25 March 2008 by Georg
   Brandl, for bug triage work.
 
