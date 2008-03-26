@@ -20,7 +20,7 @@ definition of all other Python objects.
 
    All object types are extensions of this type.  This is a type which contains the
    information Python needs to treat a pointer to an object as an object.  In a
-   normal "release" build, it contains only the objects reference count and a
+   normal "release" build, it contains only the object's reference count and a
    pointer to the corresponding type object.  It corresponds to the fields defined
    by the expansion of the ``PyObject_HEAD`` macro.
 
