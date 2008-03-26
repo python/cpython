@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
+- Added backport of bytearray type.
+
 - Issue #2355: add Py3k warning for buffer().
 
 - Issue #1477: With narrow Unicode builds, the unicode escape sequence
@@ -71,6 +73,8 @@ Extensions Modules
 
 Library
 -------
+
+- Backport of Python 3.0's io module.
 
 - Issue #2482: Make sure that the coefficient of a Decimal is always
   stored as a str instance, not as a unicode instance.  This ensures
