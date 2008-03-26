@@ -206,10 +206,18 @@ future_hack(parser_state *ps)
 	
 	for (i = 0; i < NCH(ch); i += 2) {
 		cch = CHILD(ch, i);
-		if (NCH(cch) >= 1 && TYPE(CHILD(cch, 0)) == NAME &&
-		    strcmp(STR(CHILD(cch, 0)), "with_statement") == 0) {
-			ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
-			break;
+		if (NCH(cch) >= 1 && TYPE(CHILD(cch, 0)) == NAME) {
+			char *str_ch = STR(CHILD(cch, 0));
+			if (strcmp(str_ch, FUTURE_WITH_STATEMENT) == 0) {
+				ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
+				break;
+			} else if (strcmp(str_ch, FUTURE_PRINT_FUNCTION) == 0) {
+				ps->p_flags |= CO_FUTURE_PRINT_FUNCTION;
+				break;
+			} else if (strcmp(str_ch, FUTURE_UNICODE_LITERALS) == 0) {
+				ps->p_flags |= CO_FUTURE_UNICODE_LITERALS;
+				break;
+			}
 		}
 	}
 }
