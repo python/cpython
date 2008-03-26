@@ -1,3 +1,14 @@
+Acknowledgements
+----------------
+
+This list is not complete and not in any useful order, but I would
+like to thank everybody who contributed in any way, with code, hints,
+bug reports, ideas, moral support, endorsement, or even complaints....
+Without you I would've stopped working on Python long ago!
+
+	--Guido
+
+PS: In the standard Python distribution this file is encoded in Latin-1.
 
 David Abrahams
 Jim Ahlstrom

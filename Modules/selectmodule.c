@@ -409,7 +409,7 @@ poll_register(pollObject *self, PyObject *args)
 
 PyDoc_STRVAR(poll_modify_doc,
 "modify(fd, eventmask) -> None\n\n\
-Modify an already register file descriptor.\n\
+Modify an already registered file descriptor.\n\
 fd -- either an integer, or an object with a fileno() method returning an\n\
       int.\n\
 events -- an optional bitmask describing the type of events to check for");
@@ -915,10 +915,10 @@ pyepoll_register(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(pyepoll_register_doc,
 "register(fd[, eventmask]) -> bool\n\
 \n\
-Registers a new fd or modifies an already registered fd. register returns\n\
+Registers a new fd or modifies an already registered fd. register() returns\n\
 True if a new fd was registered or False if the event mask for fd was modified.\n\
-fd is the target file descriptor of the operation\n\
-events is a bit set composed of the various EPOLL constants, the default\n\
+fd is the target file descriptor of the operation.\n\
+events is a bit set composed of the various EPOLL constants; the default\n\
 is EPOLL_IN | EPOLL_OUT | EPOLL_PRI.\n\
 \n\
 The epoll interface supports all file descriptors that support poll.");
@@ -988,6 +988,7 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
 	else if (dtimeout * 1000.0 > INT_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 				"timeout is too large");
+		return NULL;
 	}
 	else {
 		timeout = (int)(dtimeout * 1000.0);
@@ -1024,19 +1025,15 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
 	}
 
 	for (i = 0; i < nfds; i++) {
-		etuple = Py_BuildValue("iI", evs[i].data.fd,
-				       evs[i].events);
+		etuple = Py_BuildValue("iI", evs[i].data.fd, evs[i].events);
 		if (etuple == NULL) {
+			Py_CLEAR(elist);
 			goto error;
 		}
 		PyList_SET_ITEM(elist, i, etuple);
 	}
 
-	if (0) {
-	    error:
-		Py_CLEAR(elist);
-		Py_XDECREF(etuple);
-	}
+    error:
 	PyMem_Free(evs);
 	return elist;
 }
@@ -1716,7 +1713,7 @@ that are ready.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
 On Windows and OpenVMS, only sockets are supported; on Unix, all file\n\
-descriptors.");
+descriptors can be used.");
 
 static PyMethodDef select_methods[] = {
 	{"select",	select_select,	METH_VARARGS,	select_doc},
