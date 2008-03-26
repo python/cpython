@@ -225,6 +225,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 	}
 	else
 		n = NULL;
+
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 	*flags = ps->p_flags;
 #endif
