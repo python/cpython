@@ -991,6 +991,7 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
 	else if (dtimeout * 1000.0 > INT_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 				"timeout is too large");
+		return NULL;
 	}
 	else {
 		timeout = (int)(dtimeout * 1000.0);
@@ -1027,19 +1028,15 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
 	}
 
 	for (i = 0; i < nfds; i++) {
-		etuple = Py_BuildValue("iI", evs[i].data.fd,
-				       evs[i].events);
+		etuple = Py_BuildValue("iI", evs[i].data.fd, evs[i].events);
 		if (etuple == NULL) {
+			Py_CLEAR(elist);
 			goto error;
 		}
 		PyList_SET_ITEM(elist, i, etuple);
 	}
 
-	if (0) {
-	    error:
-		Py_CLEAR(elist);
-		Py_XDECREF(etuple);
-	}
+    error:
 	PyMem_Free(evs);
 	return elist;
 }
