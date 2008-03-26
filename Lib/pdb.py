@@ -1233,7 +1233,7 @@ def help():
         print('along the Python search path')
 
 def main():
-    if not sys.argv[1:]:
+    if not sys.argv[1:] or sys.argv[1] in ("--help", "-h"):
         print("usage: pdb.py scriptfile [arg] ...")
         sys.exit(2)
 
