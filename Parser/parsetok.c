@@ -14,7 +14,7 @@ int Py_TabcheckFlag;
 
 
 /* Forward */
-static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int);
+static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int *);
 static void initerr(perrdetail *err_ret, const char* filename);
 
 /* Parse input coming from a string.  Return error code, print some errors. */
@@ -36,6 +36,16 @@ node *
 PyParser_ParseStringFlagsFilename(const char *s, const char *filename,
 			  grammar *g, int start,
 		          perrdetail *err_ret, int flags)
+{
+	int iflags = flags;
+	return PyParser_ParseStringFlagsFilenameEx(s, filename, g, start,
+						   err_ret, &iflags);
+}
+
+node *
+PyParser_ParseStringFlagsFilenameEx(const char *s, const char *filename,
+			  grammar *g, int start,
+		          perrdetail *err_ret, int *flags)
 {
 	struct tok_state *tok;
 
@@ -64,9 +74,19 @@ PyParser_ParseFile(FILE *fp, const char *filename, grammar *g, int start,
 }
 
 node *
-PyParser_ParseFileFlags(FILE *fp, const char *filename, const char* enc,
+PyParser_ParseFileFlags(FILE *fp, const char *filename, const char *enc,
 			grammar *g, int start,
 			char *ps1, char *ps2, perrdetail *err_ret, int flags)
+{
+	int iflags = flags;
+	return PyParser_ParseFileFlagsEx(fp, filename, enc, g, start, ps1, 
+					 ps2, err_ret, &iflags);
+}
+
+node *
+PyParser_ParseFileFlagsEx(FILE *fp, const char *filename, 
+			  const char *enc, grammar *g, int start,
+			  char *ps1, char *ps2, perrdetail *err_ret, int *flags)
 {
 	struct tok_state *tok;
 
@@ -104,7 +124,7 @@ warn(const char *msg, const char *filename, int lineno)
 
 static node *
 parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
-	 int flags)
+	 int *flags)
 {
 	parser_state *ps;
 	node *n;
@@ -117,7 +137,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		return NULL;
 	}
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
-	if (flags & PyPARSE_WITH_IS_KEYWORD)
+	if (*flags & PyPARSE_WITH_IS_KEYWORD)
 		ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
 #endif
 
@@ -141,7 +161,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			   except if a certain flag is given --
 			   codeop.py uses this. */
 			if (tok->indent &&
-			    !(flags & PyPARSE_DONT_IMPLY_DEDENT))
+			    !(*flags & PyPARSE_DONT_IMPLY_DEDENT))
 			{
 				tok->pendin = -tok->indent;
 				tok->indent = 0;
@@ -205,7 +225,9 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 	}
 	else
 		n = NULL;
-
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
+	*flags = ps->p_flags;
+#endif
 	PyParser_Delete(ps);
 
 	if (n == NULL) {

@@ -821,12 +821,13 @@ parse_source_module(const char *pathname, FILE *fp)
 {
 	PyCodeObject *co = NULL;
 	mod_ty mod;
+	PyCompilerFlags flags;
 	PyArena *arena = PyArena_New();
 	if (arena == NULL)
 		return NULL;
 
 	mod = PyParser_ASTFromFile(fp, pathname, NULL,
-				   Py_file_input, 0, 0, 0, 
+				   Py_file_input, 0, 0, &flags, 
 				   NULL, arena);
 	if (mod) {
 		co = PyAST_Compile(mod, pathname, NULL, arena);
