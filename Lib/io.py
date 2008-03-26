@@ -19,6 +19,8 @@ XXX buffered readinto should work with arbitrary buffer objects
 XXX use incremental encoder for text output, at least for UTF-16 and UTF-8-SIG
 XXX check writable, readable and seekable in appropriate places
 """
+from __future__ import print_function
+from __future__ import unicode_literals
 
 __author__ = ("Guido van Rossum <guido@python.org>, "
               "Mike Verdone <mike.verdone@gmail.com>, "
@@ -110,15 +112,15 @@ def open(file, mode="r", buffering=None, encoding=None, errors=None,
       binary stream, a buffered binary stream, or a buffered text
       stream, open for reading and/or writing.
     """
-    if not isinstance(file, (str, unicode, int)):
+    if not isinstance(file, (basestring, int)):
         raise TypeError("invalid file: %r" % file)
-    if not isinstance(mode, str):
+    if not isinstance(mode, basestring):
         raise TypeError("invalid mode: %r" % mode)
     if buffering is not None and not isinstance(buffering, int):
         raise TypeError("invalid buffering: %r" % buffering)
-    if encoding is not None and not isinstance(encoding, str):
+    if encoding is not None and not isinstance(encoding, basestring):
         raise TypeError("invalid encoding: %r" % encoding)
-    if errors is not None and not isinstance(errors, str):
+    if errors is not None and not isinstance(errors, basestring):
         raise TypeError("invalid errors: %r" % errors)
     modes = set(mode)
     if modes - set("arwb+tU") or len(mode) > len(modes):
@@ -1163,13 +1165,13 @@ class TextIOWrapper(TextIOBase):
                 else:
                     encoding = locale.getpreferredencoding()
 
-        if not isinstance(encoding, str):
+        if not isinstance(encoding, basestring):
             raise ValueError("invalid encoding: %r" % encoding)
 
         if errors is None:
             errors = "strict"
         else:
-            if not isinstance(errors, str):
+            if not isinstance(errors, basestring):
                 raise ValueError("invalid errors: %r" % errors)
 
         self.buffer = buffer
