@@ -318,7 +318,12 @@ An :class:`SMTP` instance has the following methods:
 
 .. method:: SMTP.quit()
 
-   Terminate the SMTP session and close the connection.
+   Terminate the SMTP session and close the connection.  Return the result of
+   the SMTP ``QUIT`` command.
+
+   .. versionchanged:: 2.6
+      Return a value.
+
 
 Low-level methods corresponding to the standard SMTP/ESMTP commands ``HELP``,
 ``RSET``, ``NOOP``, ``MAIL``, ``RCPT``, and ``DATA`` are also supported.
