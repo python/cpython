@@ -76,6 +76,10 @@ Extensions Modules
 Library
 -------
 
+- Issue #2495: tokenize.untokenize now inserts a space between two consecutive
+  string literals; previously, ["" ""] was rendered as [""""], which is
+  incorrect python code.
+
 - Issue #2248: return the result of the QUIT command. from SMTP.quit().
 
 - Backport of Python 3.0's io module.
