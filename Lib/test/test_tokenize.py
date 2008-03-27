@@ -487,13 +487,18 @@ Backslash means line continuation, except for comments
     >>> roundtrip("# Comment \\\\nx = 0")
     True
 
+Two string literals on the same line
+
+    >>> roundtrip("'' ''")
+    True
+
+Test roundtrip on random python modules.
+pass the '-ucompiler' option to process the full directory.
+
     >>>
     >>> tempdir = os.path.dirname(f) or os.curdir
     >>> testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
 
-    XXX: tokenize doesn not support __future__.unicode_literals yet
-    >>> blacklist = ("test_future4.py",)
-    >>> testfiles = [f for f in testfiles if not f.endswith(blacklist)]
     >>> if not test_support.is_resource_enabled("compiler"):
     ...     testfiles = random.sample(testfiles, 10)
     ...

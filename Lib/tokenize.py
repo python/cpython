@@ -210,11 +210,20 @@ class Untokenizer:
             tokval += ' '
         if toknum in (NEWLINE, NL):
             startline = True
+        prevstring = False
         for tok in iterable:
             toknum, tokval = tok[:2]
 
             if toknum in (NAME, NUMBER):
                 tokval += ' '
+
+            # Insert a space between two consecutive strings
+            if toknum == STRING:
+                if prevstring:
+                    tokval = ' ' + tokval
+                prevstring = True
+            else:
+                prevstring = False
 
             if toknum == INDENT:
                 indents.append(tokval)
@@ -244,7 +253,7 @@ def untokenize(iterable):
         t1 = [tok[:2] for tok in generate_tokens(f.readline)]
         newcode = untokenize(t1)
         readline = iter(newcode.splitlines(1)).next
-        t2 = [tok[:2] for tokin generate_tokens(readline)]
+        t2 = [tok[:2] for tok in generate_tokens(readline)]
         assert t1 == t2
     """
     ut = Untokenizer()
