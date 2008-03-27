@@ -44,13 +44,13 @@ extern const char _Py_swapcase__doc__[];
 
 extern const unsigned int _Py_ctype_table[256];
 
-#define ISLOWER(c) (_Py_ctype_table[Py_CHARMASK(c)] & FLAG_LOWER)
-#define ISUPPER(c) (_Py_ctype_table[Py_CHARMASK(c)] & FLAG_UPPER)
-#define ISALPHA(c) (_Py_ctype_table[Py_CHARMASK(c)] & FLAG_ALPHA)
-#define ISDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & FLAG_DIGIT)
-#define ISXDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & FLAG_XDIGIT)
-#define ISALNUM(c) (_Py_ctype_table[Py_CHARMASK(c)] & FLAG_ALNUM)
-#define ISSPACE(c) (_Py_ctype_table[Py_CHARMASK(c)] & FLAG_SPACE)
+#define ISLOWER(c) (_Py_ctype_table[(unsigned)Py_CHARMASK(c)] & FLAG_LOWER)
+#define ISUPPER(c) (_Py_ctype_table[(unsigned)Py_CHARMASK(c)] & FLAG_UPPER)
+#define ISALPHA(c) (_Py_ctype_table[(unsigned)Py_CHARMASK(c)] & FLAG_ALPHA)
+#define ISDIGIT(c) (_Py_ctype_table[(unsigned)Py_CHARMASK(c)] & FLAG_DIGIT)
+#define ISXDIGIT(c) (_Py_ctype_table[(unsigned)Py_CHARMASK(c)] & FLAG_XDIGIT)
+#define ISALNUM(c) (_Py_ctype_table[(unsigned)Py_CHARMASK(c)] & FLAG_ALNUM)
+#define ISSPACE(c) (_Py_ctype_table[(unsigned)Py_CHARMASK(c)] & FLAG_SPACE)
 
 #undef islower
 #define islower(c) undefined_islower(c)
