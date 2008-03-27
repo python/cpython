@@ -1719,7 +1719,7 @@ PyFloat_Fini(void)
 	}
 	else {
 		fprintf(stderr,
-			": %" PY_FORMAT_SIZE_T "d unfreed floats%s in %"
+			": %" PY_FORMAT_SIZE_T "d unfreed float%s in %"
 			PY_FORMAT_SIZE_T "d out of %"
 			PY_FORMAT_SIZE_T "d block%s\n",
 			fsum, fsum == 1 ? "" : "s",

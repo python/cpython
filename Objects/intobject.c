@@ -1378,7 +1378,7 @@ PyInt_Fini(void)
 	}
 	else {
 		fprintf(stderr,
-			": %" PY_FORMAT_SIZE_T "d unfreed ints%s in %"
+			": %" PY_FORMAT_SIZE_T "d unfreed int%s in %"
 			PY_FORMAT_SIZE_T "d out of %"
 			PY_FORMAT_SIZE_T "d block%s\n",
 			isum, isum == 1 ? "" : "s",
