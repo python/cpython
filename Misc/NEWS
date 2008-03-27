@@ -12,7 +12,7 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
-- Patch #2477: Added from __future__ import unicode_literals
+- Patch #2477: Added from __future__ import unicode_literals.
 
 - Added backport of bytearray type.
 
@@ -75,6 +75,8 @@ Extensions Modules
 
 Library
 -------
+
+- Issue #2248: return the result of the QUIT command. from SMTP.quit().
 
 - Backport of Python 3.0's io module.
 
