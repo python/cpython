@@ -1431,7 +1431,7 @@ static void _ssl_thread_locking_function (int mode, int n, const char *file, int
 	*/
 
 	if ((_ssl_locks == NULL) ||
-	    (n < 0) || (n >= _ssl_locks_count))
+	    (n < 0) || ((unsigned)n >= _ssl_locks_count))
 		return;
 
 	if (mode & CRYPTO_LOCK) {
@@ -1443,7 +1443,7 @@ static void _ssl_thread_locking_function (int mode, int n, const char *file, int
 
 static int _setup_ssl_threads(void) {
 
-	int i;
+	unsigned int i;
 
 	if (_ssl_locks == NULL) {
 		_ssl_locks_count = CRYPTO_num_locks();
