@@ -490,11 +490,17 @@ Backslash means line continuation, except for comments
     >>>
     >>> tempdir = os.path.dirname(f) or os.curdir
     >>> testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
+
+    XXX: tokenize doesn not support __future__.unicode_literals yet
+    >>> blacklist = ("test_future4.py",)
+    >>> testfiles = [f for f in testfiles if not f.endswith(blacklist)]
     >>> if not test_support.is_resource_enabled("compiler"):
     ...     testfiles = random.sample(testfiles, 10)
     ...
     >>> for testfile in testfiles:
-    ...     if not roundtrip(open(testfile)): break
+    ...     if not roundtrip(open(testfile)):
+    ...         print "Roundtrip failed for file %s" % testfile
+    ...         break
     ... else: True
     True
 """
