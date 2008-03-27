@@ -549,7 +549,7 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
 static int
 bytes_setitem(PyBytesObject *self, Py_ssize_t i, PyObject *value)
 {
-    Py_ssize_t ival;
+    int ival;
 
     if (i < 0)
         i += Py_SIZE(self);
@@ -564,16 +564,6 @@ bytes_setitem(PyBytesObject *self, Py_ssize_t i, PyObject *value)
 
     if (!_getbytevalue(value, &ival))
         return -1;
-#if 0
-    ival = PyNumber_AsSsize_t(value, PyExc_ValueError);
-    if (ival == -1 && PyErr_Occurred())
-        return -1;
-
-    if (ival < 0 || ival >= 256) {
-        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
-        return -1;
-    }
-#endif
 
     self->ob_bytes[i] = ival;
     return 0;
@@ -609,12 +599,13 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
         else {
             Py_ssize_t ival = PyNumber_AsSsize_t(values, PyExc_ValueError);
             if (ival == -1 && PyErr_Occurred()) {
+                int int_value;
                 /* Also accept str of size 1 in 2.x */
                 PyErr_Clear();
-                if (!_getbytevalue(values, &ival))
+                if (!_getbytevalue(values, &int_value))
                     return -1;
-            }
-            if (ival < 0 || ival >= 256) {
+                ival = (int) int_value;
+            } else if (ival < 0 || ival >= 256) {
                 PyErr_SetString(PyExc_ValueError,
                                 "byte must be in range(0, 256)");
                 return -1;
