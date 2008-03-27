@@ -176,3 +176,5 @@ x = sys.modules['time'].time()
 @staticmethod
 def foo(): pass
 
+# Issue 2495
+x = '' ''
