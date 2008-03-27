@@ -27,6 +27,10 @@ Core and builtins
 Library
 -------
 
+- Issue #2495: tokenize.untokenize now inserts a space between two consecutive
+  string literals; previously, ["" ""] was rendered as [""""], which is
+  incorrect python code.
+
 - Issue #2482: Make sure that the coefficient of a Decimal is always
   stored as a str instance, not as a unicode instance.  This ensures
   that str(Decimal) is always an instance of str.  This fixes a
