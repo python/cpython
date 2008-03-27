@@ -80,7 +80,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
    compiler works which are enabled by command line switches. */
-static long pyc_magic = MAGIC+2;
+static long pyc_magic = MAGIC;
 
 /* See _PyImport_FixupExtension() below */
 static PyObject *extensions = NULL;
