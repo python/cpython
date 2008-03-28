@@ -378,6 +378,27 @@ A :class:`Connection` instance has the following attributes and methods:
    deleted since the database connection was opened.
 
 
+.. attribute:: Connection.iterdump
+
+   Returns an iterator to dump the database in an SQL text format.  Useful when
+   saving an in-memory database for later restoration.  This function provides
+   the same capabilities as the :kbd:`.dump` command in the :program:`sqlite3`
+   shell.
+
+   .. versionadded:: 2.6
+
+   Example::
+
+      # Convert file existing_db.db to SQL dump file dump.sql
+      import sqlite3, os
+
+      con = sqlite3.connect('existing_db.db')
+      full_dump = os.linesep.join([line for line in con.iterdump()])
+      f = open('dump.sql', 'w')
+      f.writelines(full_dump)
+      f.close()
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
