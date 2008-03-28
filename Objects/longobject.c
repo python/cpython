@@ -1397,7 +1397,7 @@ long_from_binary_base(char **str, int base)
 		n >>= 1;
 	/* n <- total # of bits needed, while setting p to end-of-string */
 	n = 0;
-	while (_PyLong_DigitValue[(unsigned)Py_CHARMASK(*p)] < base)
+	while (_PyLong_DigitValue[Py_CHARMASK(*p)] < base)
 		++p;
 	*str = p;
 	/* n <- # of Python digits needed, = ceiling(n/PyLong_SHIFT). */
@@ -1418,7 +1418,7 @@ long_from_binary_base(char **str, int base)
 	bits_in_accum = 0;
 	pdigit = z->ob_digit;
 	while (--p >= start) {
-		int k = _PyLong_DigitValue[(unsigned)Py_CHARMASK(*p)];
+		int k = _PyLong_DigitValue[Py_CHARMASK(*p)];
 		assert(k >= 0 && k < base);
 		accum |= (twodigits)(k << bits_in_accum);
 		bits_in_accum += bits_per_char;
@@ -1609,7 +1609,7 @@ digit beyond the first.
 
 		/* Find length of the string of numeric characters. */
 		scan = str;
-		while (_PyLong_DigitValue[(unsigned)Py_CHARMASK(*scan)] < base)
+		while (_PyLong_DigitValue[Py_CHARMASK(*scan)] < base)
 			++scan;
 
 		/* Create a long object that can contain the largest possible
@@ -1635,10 +1635,10 @@ digit beyond the first.
 		/* Work ;-) */
 		while (str < scan) {
 			/* grab up to convwidth digits from the input string */
-			c = (digit)_PyLong_DigitValue[(unsigned)Py_CHARMASK(*str++)];
+			c = (digit)_PyLong_DigitValue[Py_CHARMASK(*str++)];
 			for (i = 1; i < convwidth && str != scan; ++i, ++str) {
 				c = (twodigits)(c *  base +
-					_PyLong_DigitValue[(unsigned)Py_CHARMASK(*str)]);
+					_PyLong_DigitValue[Py_CHARMASK(*str)]);
 				assert(c < PyLong_BASE);
 			}
 
