@@ -480,8 +480,7 @@ using a non-existent key.
 The :meth:`keys` method of a dictionary object returns a list of all the keys
 used in the dictionary, in arbitrary order (if you want it sorted, just apply
 the :meth:`sort` method to the list of keys).  To check whether a single key is
-in the dictionary, either use the dictionary's :meth:`has_key` method or the
-:keyword:`in` keyword.
+in the dictionary, use the :keyword:`in` keyword.
 
 Here is a small example using a dictionary::
 
@@ -497,8 +496,6 @@ Here is a small example using a dictionary::
    {'guido': 4127, 'irv': 4127, 'jack': 4098}
    >>> tel.keys()
    ['guido', 'irv', 'jack']
-   >>> tel.has_key('guido')
-   True
    >>> 'guido' in tel
    True
 

@@ -260,7 +260,7 @@ A :class:`Message` instance has the following methods:
 :class:`Message` instances also support a limited mapping interface. In
 particular: ``m[name]`` is like ``m.getheader(name)`` but raises :exc:`KeyError`
 if there is no matching header; and ``len(m)``, ``m.get(name[, default])``,
-``m.has_key(name)``, ``m.keys()``, ``m.values()`` ``m.items()``, and
+``name in m``, ``m.keys()``, ``m.values()`` ``m.items()``, and
 ``m.setdefault(name[, default])`` act as expected, with the one difference
 that :meth:`setdefault` uses an empty string as the default value.
 :class:`Message` instances also support the mapping writable interface ``m[name]
