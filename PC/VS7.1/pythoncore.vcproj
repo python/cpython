@@ -368,6 +368,9 @@
 			RelativePath="..\..\Modules\_csv.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\_fileio.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\_functoolsmodule.c">
 		</File>
 		<File
@@ -435,6 +438,12 @@
 		</File>
 		<File
 			RelativePath="..\..\Objects\bufferobject.c">
+		</File>
+		<File
+			RelativePath="..\..\Objects\bytesobject.c">
+		</File>
+		<File
+			RelativePath="..\..\Objects\bytes_methods.c">
 		</File>
 		<File
 			RelativePath="..\..\Objects\cellobject.c">
@@ -531,6 +540,9 @@
 		</File>
 		<File
 			RelativePath="..\..\Python\future.c">
+		</File>
+		<File
+			RelativePath="..\..\Modules\future_builtins.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\gcmodule.c">
@@ -707,8 +719,7 @@
 			RelativePath="..\..\Python\pystate.c">
 		</File>
 		<File
-			RelativePath="..\..\Python\pystrcmp.c"
-			>
+			RelativePath="..\..\Python\pystrcmp.c">
 		</File>
 		<File
 			RelativePath="..\..\Python\pystrtod.c">

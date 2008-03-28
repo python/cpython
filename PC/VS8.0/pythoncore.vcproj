@@ -655,6 +655,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Include\bytesobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Include\bytes_methods.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Include\cellobject.h"
 				>
 			</File>
@@ -979,6 +987,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Modules\_fileio.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Modules\_functoolsmodule.c"
 				>
 			</File>
@@ -1048,6 +1060,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Modules\errnomodule.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\future_builtins.c"
 				>
 			</File>
 			<File
@@ -1343,6 +1359,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Objects\bytesobject.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Objects\bytes_methods.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Objects\cellobject.c"
 				>
 			</File>
@@ -1627,11 +1651,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Python\formatter_string.c"
+				RelativePath="..\..\Python\formatter_string.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Python\formatter_unicode.c"
+				RelativePath="..\..\Python\formatter_unicode.c"
 				>
 			</File>
 			<File

@@ -62,7 +62,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
@@ -136,7 +135,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
@@ -211,7 +209,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="$(OutDir)\python_d.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
@@ -287,7 +284,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="$(OutDir)\python_d.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
@@ -360,7 +356,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
@@ -435,7 +430,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
@@ -510,7 +504,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
@@ -585,7 +578,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"

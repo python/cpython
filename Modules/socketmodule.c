@@ -5230,8 +5230,12 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "RCVALL_OFF", RCVALL_OFF);
 	PyModule_AddIntConstant(m, "RCVALL_ON", RCVALL_ON);
 	PyModule_AddIntConstant(m, "RCVALL_SOCKETLEVELONLY", RCVALL_SOCKETLEVELONLY);
+#ifdef RCVALL_IPLEVEL
 	PyModule_AddIntConstant(m, "RCVALL_IPLEVEL", RCVALL_IPLEVEL);
+#endif
+#ifdef RCVALL_MAX
 	PyModule_AddIntConstant(m, "RCVALL_MAX", RCVALL_MAX);
+#endif
 #endif /* _MSTCPIP_ */
 
 	/* Initialize gethostbyname lock */

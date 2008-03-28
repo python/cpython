@@ -36,7 +36,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile=".\./python.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -93,7 +92,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="./python_d.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -158,7 +156,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK /VSEXTCOMP_VERBOSE"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile=".\./python.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -222,7 +219,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile=".\./python.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
