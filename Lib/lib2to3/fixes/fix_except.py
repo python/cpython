@@ -37,15 +37,18 @@ class FixExcept(basefix.BaseFix):
 
     PATTERN = """
     try_stmt< 'try' ':' suite
-                  cleanup=((except_clause ':' suite)+ ['else' ':' suite]
-                                                      ['finally' ':' suite]
-                               | 'finally' ':' suite) >
+                  cleanup=(except_clause ':' suite)+
+                  tail=(['except' ':' suite]
+                        ['else' ':' suite]
+                        ['finally' ':' suite]) >
     """
 
     def transform(self, node, results):
         syms = self.syms
 
-        try_cleanup = [ch.clone() for ch in results['cleanup']]
+        tail = [n.clone() for n in results["tail"]]
+
+        try_cleanup = [ch.clone() for ch in results["cleanup"]]
         for except_clause, e_suite in find_excepts(try_cleanup):
             if len(except_clause.children) == 4:
                 (E, comma, N) = except_clause.children[1:4]
@@ -85,5 +88,5 @@ class FixExcept(basefix.BaseFix):
                     N.set_prefix(" ")
 
         #TODO(cwinter) fix this when children becomes a smart list
-        children = [c.clone() for c in node.children[:3]] + try_cleanup
+        children = [c.clone() for c in node.children[:3]] + try_cleanup + tail
         return pytree.Node(node.type, children)
