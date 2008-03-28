@@ -435,6 +435,8 @@ class Test_print(FixerTestCase):
         #      is fixed so it won't crash when it sees print(x=y).
         #      When #2412 is fixed, the try/except block can be taken
         #      out and the tests can be run like normal.
+        # MvL: disable entirely for now, so that it doesn't print to stdout
+        return
         try:
             s = "from __future__ import print_function\n"\
                 "print('Hai!', end=' ')"
