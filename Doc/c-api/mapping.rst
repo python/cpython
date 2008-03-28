@@ -36,15 +36,15 @@ Mapping Protocol
 .. cfunction:: int PyMapping_HasKeyString(PyObject *o, char *key)
 
    On success, return ``1`` if the mapping object has the key *key* and ``0``
-   otherwise.  This is equivalent to the Python expression ``o.has_key(key)``.
-   This function always succeeds.
+   otherwise.  This is equivalent to ``o[key]``, returning ``True`` on success
+   and ``False`` on an exception.  This function always succeeds.
 
 
 .. cfunction:: int PyMapping_HasKey(PyObject *o, PyObject *key)
 
-   Return ``1`` if the mapping object has the key *key* and ``0`` otherwise.  This
-   is equivalent to the Python expression ``o.has_key(key)``.  This function always
-   succeeds.
+   Return ``1`` if the mapping object has the key *key* and ``0`` otherwise.
+   This is equivalent to ``o[key]``, returning ``True`` on success and ``False``
+   on an exception.  This function always succeeds.
 
 
 .. cfunction:: PyObject* PyMapping_Keys(PyObject *o)
