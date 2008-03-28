@@ -56,7 +56,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -119,7 +118,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -182,7 +180,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -246,7 +243,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -309,7 +305,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -373,7 +368,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				BaseAddress="0x1D100000"
 				TargetMachine="17"
 			/>
@@ -437,7 +431,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -501,7 +494,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				BaseAddress="0x1D100000"
 				TargetMachine="17"
 			/>

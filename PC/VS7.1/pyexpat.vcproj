@@ -32,7 +32,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="./pyexpat_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -88,7 +87,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="./pyexpat.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -149,7 +147,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="./pyexpat.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -210,7 +207,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="odbccp32.lib"
 				OutputFile="./pyexpat.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

@@ -35,7 +35,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib odbccp32.lib"
+				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib"
 				OutputFile="./_tkinter.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -89,7 +89,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib odbccp32.lib"
+				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib"
 				OutputFile="./_tkinter_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib odbccp32.lib"
+				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib"
 				OutputFile="./_tkinter.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -213,7 +213,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib odbccp32.lib"
+				AdditionalDependencies="..\..\..\tcltk\lib\tk84.lib ..\..\..\tcltk\lib\tcl84.lib"
 				OutputFile="./_tkinter.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

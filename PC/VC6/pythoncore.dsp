@@ -133,6 +133,10 @@ SOURCE=..\..\Modules\_csv.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_fileio.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_functoolsmodule.c
 # End Source File
 # Begin Source File
@@ -226,6 +230,14 @@ SOURCE=..\..\Objects\boolobject.c
 # Begin Source File
 
 SOURCE=..\..\Objects\bufferobject.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Objects\bytesobject.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Objects\bytes_methods.c
 # End Source File
 # Begin Source File
 
@@ -354,6 +366,10 @@ SOURCE=..\..\Objects\funcobject.c
 # Begin Source File
 
 SOURCE=..\..\Python\future.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\future_builtins.c
 # End Source File
 # Begin Source File
 
