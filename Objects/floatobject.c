@@ -10,6 +10,10 @@
 #include <ctype.h>
 #include <float.h>
 
+#ifdef HAVE_IEEEFP_H
+#include <ieeefp.h>
+#endif
+
 #include "formatter_string.h"
 
 #if !defined(__STDC__)
