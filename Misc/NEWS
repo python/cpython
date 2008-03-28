@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
+- Patch #1810: compile() can now compile _ast trees as returned by
+  compile(..., PyCF_ONLY_AST).
+
 - Patch #2426: Added sqlite3.Connection.iterdump method to allow easy dumping
   of databases.  Contributed by Paul Kippes at PyCon 2008.
 

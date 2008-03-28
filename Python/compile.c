@@ -2211,8 +2211,11 @@ unaryop(unaryop_ty op)
 		return UNARY_POSITIVE;
 	case USub:
 		return UNARY_NEGATIVE;
+	default:
+		PyErr_Format(PyExc_SystemError,
+			"unary op %d should not be possible", op);
+		return 0;
 	}
-	return 0;
 }
 
 static int
@@ -2246,8 +2249,11 @@ binop(struct compiler *c, operator_ty op)
 		return BINARY_AND;
 	case FloorDiv:
 		return BINARY_FLOOR_DIVIDE;
+	default:
+		PyErr_Format(PyExc_SystemError,
+			"binary op %d should not be possible", op);
+		return 0;
 	}
-	return 0;
 }
 
 static int
@@ -2274,8 +2280,9 @@ cmpop(cmpop_ty op)
 		return PyCmp_IN;
 	case NotIn:
 		return PyCmp_NOT_IN;
+	default:
+		return PyCmp_BAD;
 	}
-	return PyCmp_BAD;
 }
 
 static int
@@ -2309,10 +2316,11 @@ inplace_binop(struct compiler *c, operator_ty op)
 		return INPLACE_AND;
 	case FloorDiv:
 		return INPLACE_FLOOR_DIVIDE;
+	default:
+		PyErr_Format(PyExc_SystemError,
+			"inplace binary op %d should not be possible", op);
+		return 0;
 	}
-	PyErr_Format(PyExc_SystemError,
-		     "inplace binary op %d should not be possible", op);
-	return 0;
 }
 
 static int
