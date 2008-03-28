@@ -167,9 +167,7 @@ WIN32 is still required for the locale module.
 #else
 #define Py_WINVER 0x0500
 #endif
-#ifdef NTDDI_WIN2KSP4
 #define Py_NTDDI NTDDI_WIN2KSP4
-#endif
 #endif
 
 /* We only set these values when building Python - we don't want to force
