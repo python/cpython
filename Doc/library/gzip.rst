@@ -1,19 +1,22 @@
-
 :mod:`gzip` --- Support for :program:`gzip` files
 =================================================
 
 .. module:: gzip
    :synopsis: Interfaces for gzip compression and decompression using file objects.
 
+This module provides a simple interface to compress and decompress files just
+like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
-The data compression provided by the ``zlib`` module is compatible with that
-used by the GNU compression program :program:`gzip`. Accordingly, the
-:mod:`gzip` module provides the :class:`GzipFile` class to read and write
+The data compression is provided by the :mod:``zlib`` module.
+
+The :mod:`gzip` module provides the :class:`GzipFile` class which is modeled
+after Python's File Object. The :class:`GzipFile` class reads and writes
 :program:`gzip`\ -format files, automatically compressing or decompressing the
-data so it looks like an ordinary file object.  Note that additional file
-formats which can be decompressed by the :program:`gzip` and :program:`gunzip`
-programs, such  as those produced by :program:`compress` and :program:`pack`,
-are not supported by this module.
+data so that it looks like an ordinary file object.
+
+Note that additional file formats which can be decompressed by the
+:program:`gzip` and :program:`gunzip` programs, such  as those produced by
+:program:`compress` and :program:`pack`, are not supported by this module.
 
 For other archive formats, see the :mod:`bz2`, :mod:`zipfile`, and
 :mod:`tarfile` modules.
@@ -61,6 +64,36 @@ The module defines the following items:
    This is a shorthand for ``GzipFile(filename,`` ``mode,`` ``compresslevel)``.
    The *filename* argument is required; *mode* defaults to ``'rb'`` and
    *compresslevel* defaults to ``9``.
+
+
+.. _gzip-usage-examples:
+
+Examples of usage
+-----------------
+
+Example of how to read a compressed file::
+
+   import gzip
+   f = gzip.open('/home/joe/file.txt.gz', 'rb')
+   file_content = f.read()
+   f.close()
+
+Example of how to create a compressed GZIP file::
+
+   import gzip
+   content = "Lots of content here"
+   f = gzip.open('/home/joe/file.txt.gz', 'wb')
+   f.write(content)
+   f.close()
+
+Example of how to GZIP compress an existing file::
+
+   import gzip
+   f_in = open('/home/joe/file.txt', 'rb')
+   f_out = gzip.open('/home/joe/file.txt.gz', 'wb')
+   f_out.writelines(f_in)
+   f_out.close()
+   f_in.close()
 
 
 .. seealso::
