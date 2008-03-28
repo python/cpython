@@ -958,7 +958,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena)
 {
     mod_ty res;
     init_types();
-    if (!PyObject_IsInstance(ast, mod_type)) {
+    if (!PyObject_IsInstance(ast, (PyObject*)mod_type)) {
         PyErr_SetString(PyExc_TypeError, "expected either Module, Interactive "
                         "or Expression node");
         return NULL;
