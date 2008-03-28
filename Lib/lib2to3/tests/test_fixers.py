@@ -435,6 +435,8 @@ class Test_print(FixerTestCase):
         #      is fixed so it won't crash when it sees print(x=y).
         #      When #2412 is fixed, the try/except block can be taken
         #      out and the tests can be run like normal.
+        # MvL: disable entirely for now, so that it doesn't print to stdout
+        return
         try:
             s = "from __future__ import print_function\n"\
                 "print('Hai!', end=' ')"
@@ -676,6 +678,72 @@ class Test_except(FixerTestCase):
                 pass
             except Exception as xxx_todo_changeme:
                 a().foo = xxx_todo_changeme
+                pass"""
+        self.check(b, a)
+
+    def test_bare_except(self):
+        b = """
+            try:
+                pass
+            except Exception, a:
+                pass
+            except:
+                pass"""
+
+        a = """
+            try:
+                pass
+            except Exception as a:
+                pass
+            except:
+                pass"""
+        self.check(b, a)
+
+    def test_bare_except_and_else_finally(self):
+        b = """
+            try:
+                pass
+            except Exception, a:
+                pass
+            except:
+                pass
+            else:
+                pass
+            finally:
+                pass"""
+
+        a = """
+            try:
+                pass
+            except Exception as a:
+                pass
+            except:
+                pass
+            else:
+                pass
+            finally:
+                pass"""
+        self.check(b, a)
+
+    def test_multi_fixed_excepts_before_bare_except(self):
+        b = """
+            try:
+                pass
+            except TypeError, b:
+                pass
+            except Exception, a:
+                pass
+            except:
+                pass"""
+
+        a = """
+            try:
+                pass
+            except TypeError as b:
+                pass
+            except Exception as a:
+                pass
+            except:
                 pass"""
         self.check(b, a)
 
