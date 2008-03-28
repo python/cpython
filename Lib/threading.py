@@ -392,6 +392,9 @@ class Thread(_Verbose):
     # shutdown and thus raises an exception about trying to perform some
     # operation on/with a NoneType
     __exc_info = _sys.exc_info
+    # Keep sys.exc_clear too to clear the exception just before
+    # allowing .join() to return.
+    __exc_clear = _sys.exc_clear
 
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs=None, verbose=None):
@@ -527,6 +530,12 @@ class Thread(_Verbose):
             else:
                 if __debug__:
                     self._note("%s.__bootstrap(): normal return", self)
+            finally:
+                # Prevent a race in
+                # test_threading.test_no_refcycle_through_target when
+                # the exception keeps the target alive past when we
+                # assert that it's dead.
+                self.__exc_clear()
         finally:
             with _active_limbo_lock:
                 self.__stop()
