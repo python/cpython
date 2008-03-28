@@ -96,7 +96,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     return rc;
 }
 
-int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)
+int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter, int allow_8bit_chars)
 {
     int rc = SQLITE_OK;
     long longval;
@@ -108,6 +108,7 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
     Py_ssize_t buflen;
     PyObject* stringval;
     parameter_type paramtype;
+    char* c;
 
     if (parameter == Py_None) {
         rc = sqlite3_bind_null(self->st, pos);
@@ -138,6 +139,17 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
         paramtype = TYPE_UNICODE;
     } else {
         paramtype = TYPE_UNKNOWN;
+    }
+
+    if (paramtype == TYPE_STRING && !allow_8bit_chars) {
+        string = PyString_AS_STRING(parameter);
+        for (c = string; *c != 0; c++) {
+            if (*c & 0x80) {
+                PyErr_SetString(pysqlite_ProgrammingError, "You must not use 8-bit bytestrings unless you use a text_factory that can interpret 8-bit bytestrings (like text_factory = str). It is highly recommended that you instead just switch your application to Unicode strings.");
+                rc = -1;
+                goto final;
+            }
+        }
     }
 
     switch (paramtype) {
@@ -197,7 +209,7 @@ static int _need_adapt(PyObject* obj)
     }
 }
 
-void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters)
+void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters, int allow_8bit_chars)
 {
     PyObject* current_param;
     PyObject* adapted;
@@ -251,11 +263,13 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
                 }
             }
 
-            rc = pysqlite_statement_bind_parameter(self, i + 1, adapted);
+            rc = pysqlite_statement_bind_parameter(self, i + 1, adapted, allow_8bit_chars);
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                PyErr_Format(pysqlite_InterfaceError, "Error binding parameter %d - probably unsupported type.", i);
+                if (!PyErr_Occurred()) {
+                    PyErr_Format(pysqlite_InterfaceError, "Error binding parameter %d - probably unsupported type.", i);
+                }
                 return;
             }
         }
@@ -294,11 +308,13 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
                 }
             }
 
-            rc = pysqlite_statement_bind_parameter(self, i, adapted);
+            rc = pysqlite_statement_bind_parameter(self, i, adapted, allow_8bit_chars);
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                PyErr_Format(pysqlite_InterfaceError, "Error binding parameter :%s - probably unsupported type.", binding_name);
+                if (!PyErr_Occurred()) {
+                    PyErr_Format(pysqlite_InterfaceError, "Error binding parameter :%s - probably unsupported type.", binding_name);
+                }
                 return;
            }
         }

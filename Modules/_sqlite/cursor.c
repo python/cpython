@@ -424,10 +424,14 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     PyObject* descriptor;
     PyObject* second_argument = NULL;
     long rowcount = 0;
+    int allow_8bit_chars;
 
     if (!pysqlite_check_thread(self->connection) || !pysqlite_check_connection(self->connection)) {
         return NULL;
     }
+    /* Make shooting yourself in the foot with not utf-8 decodable 8-bit-strings harder */
+    allow_8bit_chars = ((self->connection->text_factory != (PyObject*)&PyUnicode_Type) &&
+        (self->connection->text_factory != (PyObject*)&PyUnicode_Type && pysqlite_OptimizedUnicode));
 
     Py_XDECREF(self->next_row);
     self->next_row = NULL;
@@ -592,7 +596,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
 
         pysqlite_statement_mark_dirty(self->statement);
 
-        pysqlite_statement_bind_parameters(self->statement, parameters);
+        pysqlite_statement_bind_parameters(self->statement, parameters, allow_8bit_chars);
         if (PyErr_Occurred()) {
             goto error;
         }
