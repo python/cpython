@@ -362,10 +362,9 @@ class Bdb:
         if not isinstance(cmd, types.CodeType):
             cmd = cmd+'\n'
         try:
-            try:
-                exec cmd in globals, locals
-            except BdbQuit:
-                pass
+            exec cmd in globals, locals
+        except BdbQuit:
+            pass
         finally:
             self.quitting = 1
             sys.settrace(None)
@@ -381,10 +380,9 @@ class Bdb:
         if not isinstance(expr, types.CodeType):
             expr = expr+'\n'
         try:
-            try:
-                return eval(expr, globals, locals)
-            except BdbQuit:
-                pass
+            return eval(expr, globals, locals)
+        except BdbQuit:
+            pass
         finally:
             self.quitting = 1
             sys.settrace(None)
@@ -400,10 +398,9 @@ class Bdb:
         sys.settrace(self.trace_dispatch)
         res = None
         try:
-            try:
-                res = func(*args, **kwds)
-            except BdbQuit:
-                pass
+            res = func(*args, **kwds)
+        except BdbQuit:
+            pass
         finally:
             self.quitting = 1
             sys.settrace(None)
