@@ -1,6 +1,6 @@
 /* connection.c - the connection type
  *
- * Copyright (C) 2004-2006 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2006 Gerhard Hï¿½ring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  * 
@@ -1069,6 +1069,52 @@ finally:
     return retval;
 }
 
+/* Function author: Paul Kippes <kippesp@gmail.com>
+ * Class method of Connection to call the Python function _iterdump
+ * of the sqlite3 module.
+ */
+static PyObject *
+pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
+{
+    PyObject* retval = NULL;
+    PyObject* module = NULL;
+    PyObject* module_dict;
+    PyObject* pyfn_iterdump;
+
+    if (!pysqlite_check_connection(self)) {
+        goto finally;
+    }
+
+    module = PyImport_ImportModule(MODULE_NAME ".dump");
+    if (!module) {
+        goto finally;
+    }
+
+    module_dict = PyModule_GetDict(module);
+    if (!module_dict) {
+        goto finally;
+    }
+
+    pyfn_iterdump = PyDict_GetItemString(module_dict, "_iterdump");
+    if (!pyfn_iterdump) {
+        PyErr_SetString(pysqlite_OperationalError, "Failed to obtain _iterdump() reference");
+        goto finally;
+    }
+
+    args = PyTuple_New(1);
+    if (!args) {
+        goto finally;
+    }
+    Py_INCREF(self);
+    PyTuple_SetItem(args, 0, (PyObject*)self);
+    retval = PyObject_CallObject(pyfn_iterdump, args);
+
+finally:
+    Py_XDECREF(args);
+    Py_XDECREF(module);
+    return retval;
+}
+
 static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
 {
@@ -1140,6 +1186,43 @@ finally:
     return retval;
 }
 
+/* Called when the connection is used as a context manager. Returns itself as a
+ * convenience to the caller. */
+static PyObject *
+pysqlite_connection_enter(pysqlite_Connection* self, PyObject* args)
+{
+    Py_INCREF(self);
+    return (PyObject*)self;
+}
+
+/** Called when the connection is used as a context manager. If there was any
+ * exception, a rollback takes place; otherwise we commit. */
+static PyObject *
+pysqlite_connection_exit(pysqlite_Connection* self, PyObject* args)
+{
+    PyObject* exc_type, *exc_value, *exc_tb;
+    char* method_name;
+    PyObject* result;
+
+    if (!PyArg_ParseTuple(args, "OOO", &exc_type, &exc_value, &exc_tb)) {
+        return NULL;
+    }
+
+    if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
+        method_name = "commit";
+    } else {
+        method_name = "rollback";
+    }
+
+    result = PyObject_CallMethod((PyObject*)self, method_name, "");
+    if (!result) {
+        return NULL;
+    }
+    Py_DECREF(result);
+
+    Py_RETURN_FALSE;
+}
+
 static char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
 
@@ -1174,6 +1257,13 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Creates a collation function. Non-standard.")},
     {"interrupt", (PyCFunction)pysqlite_connection_interrupt, METH_NOARGS,
         PyDoc_STR("Abort any pending database operation. Non-standard.")},
+    {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
+        PyDoc_STR("Returns iterator to the dump of the database in an SQL text"
+                  "format.")},
+    {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,
+        PyDoc_STR("For context manager. Non-standard.")},
+    {"__exit__", (PyCFunction)pysqlite_connection_exit, METH_VARARGS,
+        PyDoc_STR("For context manager. Non-standard.")},
     {NULL, NULL}
 };
 

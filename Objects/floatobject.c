@@ -12,6 +12,10 @@
 #include <ctype.h>
 #include <float.h>
 
+#ifdef HAVE_IEEEFP_H
+#include <ieeefp.h>
+#endif
+
 #if !defined(__STDC__)
 extern double fmod(double, double);
 extern double pow(double, double);

@@ -1074,7 +1074,7 @@ dnl AC_MSG_RESULT($cpp_type)
 AC_HEADER_STDC
 AC_CHECK_HEADERS(asm/types.h conio.h curses.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
-io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
+ieeefp.h io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
 shadow.h signal.h stdint.h stropts.h termios.h thread.h \
 unistd.h utime.h \
 sys/audioio.h sys/bsdtty.h sys/epoll.h sys/event.h sys/file.h sys/loadavg.h \

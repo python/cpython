@@ -271,13 +271,17 @@ class ThreadTests(unittest.TestCase):
         weak_cyclic_object = weakref.ref(cyclic_object)
         cyclic_object.thread.join()
         del cyclic_object
-        self.assertEquals(None, weak_cyclic_object())
+        self.assertEquals(None, weak_cyclic_object(),
+                          msg=('%d references still around' %
+                               sys.getrefcount(weak_cyclic_object())))
 
         raising_cyclic_object = RunSelfFunction(should_raise=True)
         weak_raising_cyclic_object = weakref.ref(raising_cyclic_object)
         raising_cyclic_object.thread.join()
         del raising_cyclic_object
-        self.assertEquals(None, weak_raising_cyclic_object())
+        self.assertEquals(None, weak_raising_cyclic_object(),
+                          msg=('%d references still around' %
+                               sys.getrefcount(weak_raising_cyclic_object())))
 
 
 class ThreadingExceptionTests(unittest.TestCase):

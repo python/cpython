@@ -238,9 +238,17 @@ def http_server(evt, numrequests):
         '''This is my function'''
         return True
 
+    class MyXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
+        def get_request(self):
+            # Ensure the socket is always non-blocking.  On Linux, socket
+            # attributes are not inherited like they are on *BSD and Windows.
+            s, port = self.socket.accept()
+            s.setblocking(True)
+            return s, port
+
     try:
-        serv = SimpleXMLRPCServer.SimpleXMLRPCServer(("localhost", 0),
-                        logRequests=False, bind_and_activate=False)
+        serv = MyXMLRPCServer(("localhost", 0),
+                              logRequests=False, bind_and_activate=False)
         serv.server_bind()
         global PORT
         PORT = serv.socket.getsockname()[1]
