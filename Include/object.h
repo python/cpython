@@ -643,7 +643,7 @@ the refcount falls to 0; for
 objects that don't contain references to other objects or heap memory
 this can be the standard function free().  Both macros can be used
 wherever a void expression is allowed.  The argument must not be a
-NIL pointer.  If it may be NIL, use Py_XINCREF/Py_XDECREF instead.
+NULL pointer.  If it may be NULL, use Py_XINCREF/Py_XDECREF instead.
 The macro _Py_NewReference(op) initialize reference counts to 1, and
 in special builds (Py_REF_DEBUG, Py_TRACE_REFS) performs additional
 bookkeeping appropriate to the special build.
