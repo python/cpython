@@ -8,6 +8,10 @@
 #include "Python.h"
 #include "structmember.h"
 
+#ifdef HAVE_IEEEFP_H
+#include <ieeefp.h>
+#endif
+
 #ifndef WITHOUT_COMPLEX
 
 /* Precisions used by repr() and str(), respectively.

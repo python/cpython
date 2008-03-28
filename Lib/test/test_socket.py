@@ -5,8 +5,9 @@ from test import test_support
 
 import socket
 import select
-import time
 import thread, threading
+import time
+import traceback
 import Queue
 import sys
 import os
@@ -1016,10 +1017,13 @@ class TCPTimeoutTest(SocketTCPTest):
             except Alarm:
                 pass
             except:
-                self.fail("caught other exception instead of Alarm")
+                self.fail("caught other exception instead of Alarm:"
+                          " %s(%s):\n%s" %
+                          (sys.exc_info()[:2] + (traceback.format_exc(),)))
             else:
                 self.fail("nothing caught")
-            signal.alarm(0)         # shut off alarm
+            finally:
+                signal.alarm(0)         # shut off alarm
         except Alarm:
             self.fail("got Alarm in wrong place")
         finally:
