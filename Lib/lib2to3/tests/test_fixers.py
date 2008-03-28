@@ -681,6 +681,72 @@ class Test_except(FixerTestCase):
                 pass"""
         self.check(b, a)
 
+    def test_bare_except(self):
+        b = """
+            try:
+                pass
+            except Exception, a:
+                pass
+            except:
+                pass"""
+
+        a = """
+            try:
+                pass
+            except Exception as a:
+                pass
+            except:
+                pass"""
+        self.check(b, a)
+
+    def test_bare_except_and_else_finally(self):
+        b = """
+            try:
+                pass
+            except Exception, a:
+                pass
+            except:
+                pass
+            else:
+                pass
+            finally:
+                pass"""
+
+        a = """
+            try:
+                pass
+            except Exception as a:
+                pass
+            except:
+                pass
+            else:
+                pass
+            finally:
+                pass"""
+        self.check(b, a)
+
+    def test_multi_fixed_excepts_before_bare_except(self):
+        b = """
+            try:
+                pass
+            except TypeError, b:
+                pass
+            except Exception, a:
+                pass
+            except:
+                pass"""
+
+        a = """
+            try:
+                pass
+            except TypeError as b:
+                pass
+            except Exception as a:
+                pass
+            except:
+                pass"""
+        self.check(b, a)
+
     # These should not be touched:
 
     def test_unchanged_1(self):
