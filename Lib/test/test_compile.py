@@ -398,6 +398,10 @@ if 1:
         del d[..., ...]
         self.assertEqual((Ellipsis, Ellipsis) in d, False)
 
+    def test_nested_classes(self):
+        # Verify that it does not leak
+        compile("class A:\n    class B: pass", 'tmp', 'exec')
+
 def test_main():
     test_support.run_unittest(TestSpecifics)
 

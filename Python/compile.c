@@ -2061,6 +2061,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 	if (!compiler_enter_scope(c, s->v.ClassDef.name, (void *)s,
 				  s->lineno))
 		return 0;
+	Py_XDECREF(c->u->u_private);
 	c->u->u_private = s->v.ClassDef.name;
 	Py_INCREF(c->u->u_private);
 	str = PyString_InternFromString("__name__");
