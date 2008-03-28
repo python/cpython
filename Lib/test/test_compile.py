@@ -1,5 +1,6 @@
 import unittest
 import sys
+import _ast
 from test import test_support
 
 class TestSpecifics(unittest.TestCase):
@@ -415,6 +416,32 @@ if 1:
         self.assert_("__not_mangled__" in A.f.func_code.co_varnames)
         self.assert_("_A__mangled_mod" in A.f.func_code.co_varnames)
         self.assert_("__package__" in A.f.func_code.co_varnames)
+
+    def test_compile_ast(self):
+        fname = __file__
+        if fname.lower().endswith(('pyc', 'pyo')):
+            fname = fname[:-1]
+        with open(fname, 'r') as f:
+            fcontents = f.read()
+        sample_code = [
+            ['<assign>', 'x = 5'],
+            ['<print1>', 'print 1'],
+            ['<printv>', 'print v'],
+            ['<printTrue>', 'print True'],
+            ['<printList>', 'print []'],
+            ['<ifblock>', """if True:\n    pass\n"""],
+            ['<forblock>', """for n in [1, 2, 3]:\n    print n\n"""],
+            ['<deffunc>', """def foo():\n    pass\nfoo()\n"""],
+            [fname, fcontents],
+        ]
+
+        for fname, code in sample_code:
+            co1 = compile(code, '%s1' % fname, 'exec')
+            ast = compile(code, '%s2' % fname, 'exec', _ast.PyCF_ONLY_AST)
+            self.assert_(type(ast) == _ast.Module)
+            co2 = compile(ast, '%s3' % fname, 'exec')
+            self.assertEqual(co1, co2)
+
 
 def test_main():
     test_support.run_unittest(TestSpecifics)

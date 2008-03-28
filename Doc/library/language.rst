@@ -15,6 +15,7 @@ These modules include:
 .. toctree::
 
    parser.rst
+   _ast.rst
    symbol.rst
    token.rst
    keyword.rst

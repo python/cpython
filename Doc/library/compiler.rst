@@ -28,12 +28,6 @@ code.
 This chapter explains how the various components of the :mod:`compiler` package
 work.  It blends reference material with a tutorial.
 
-The following modules are part of the :mod:`compiler` package:
-
-.. toctree::
-
-   _ast.rst
-
 
 The basic interface
 ===================
