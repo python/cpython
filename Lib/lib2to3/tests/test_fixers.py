@@ -6,7 +6,7 @@
 try:
     from tests import support
 except ImportError:
-    import support
+    from . import support
 
 # Python imports
 import unittest
