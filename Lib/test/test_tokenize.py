@@ -88,7 +88,7 @@ Some error-handling code
 
     >>> roundtrip("try: import somemodule\\n"
     ...           "except ImportError: # comment\\n"
-    ...           "    print 'Can not import' # comment2\\n"
+    ...           "    print('Can not import' # comment2\\n)"
     ...           "else:   print 'Loaded'\\n")
     True
 
@@ -508,6 +508,28 @@ Backslash means line continuation, except for comments
     ...           "# This also\\n")
     True
     >>> roundtrip("# Comment \\\\nx = 0")
+    True
+
+Two string literals on the same line
+
+    >>> roundtrip("'' ''")
+    True
+
+Test roundtrip on random python modules.
+pass the '-ucompiler' option to process the full directory.
+
+    >>> import random
+    >>> tempdir = os.path.dirname(f) or os.curdir
+    >>> testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
+
+    >>> if not test_support.is_resource_enabled("compiler"):
+    ...     testfiles = random.sample(testfiles, 10)
+    ...
+    >>> for testfile in testfiles:
+    ...     if not roundtrip(open(testfile, 'rb')):
+    ...         print("Roundtrip failed for file %s" % testfile)
+    ...         break
+    ... else: True
     True
 """
 

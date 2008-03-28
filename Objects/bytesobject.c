@@ -2609,17 +2609,21 @@ bytes_extend(PyBytesObject *self, PyObject *arg)
         if (! _getbytevalue(item, &value)) {
             Py_DECREF(item);
             Py_DECREF(it);
+            PyMem_Free(buf);
             return NULL;
         }
         buf[len++] = value;
         Py_DECREF(item);
         if (len >= buf_size) {
+            char *new_buf;
             buf_size = len + (len >> 1) + 1;
-            buf = (char *)PyMem_Realloc(buf, buf_size * sizeof(char));
-            if (buf == NULL) {
+            new_buf = (char *)PyMem_Realloc(buf, buf_size * sizeof(char));
+            if (new_buf == NULL) {
                 Py_DECREF(it);
+                PyMem_Free(buf);
                 return PyErr_NoMemory();
             }
+            buf = new_buf;
         }
     }
     Py_DECREF(it);

@@ -729,8 +729,9 @@ class SMTP:
 
     def quit(self):
         """Terminate the SMTP session."""
-        self.docmd("quit")
+        res = self.docmd("quit")
         self.close()
+        return res
 
 if _have_ssl:
 

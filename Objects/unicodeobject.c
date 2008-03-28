@@ -512,13 +512,13 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 	/* Single characters are shared when using this constructor.
            Restrict to ASCII, since the input must be UTF-8. */
 	if (size == 1 && Py_CHARMASK(*u) < 128) {
-	    unicode = unicode_latin1[Py_CHARMASK(*u)];
+	    unicode = unicode_latin1[(unsigned)Py_CHARMASK(*u)];
 	    if (!unicode) {
 		unicode = _PyUnicode_New(1);
 		if (!unicode)
 		    return NULL;
 		unicode->str[0] = Py_CHARMASK(*u);
-		unicode_latin1[Py_CHARMASK(*u)] = unicode;
+		unicode_latin1[(unsigned)Py_CHARMASK(*u)] = unicode;
 	    }
 	    Py_INCREF(unicode);
 	    return (PyObject *)unicode;
