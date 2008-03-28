@@ -178,6 +178,7 @@ class Untokenizer:
             tokval += ' '
         if toknum in (NEWLINE, NL):
             startline = True
+        prevstring = False
         for tok in iterable:
             toknum, tokval = tok[:2]
             if toknum == ENCODING:
@@ -186,6 +187,14 @@ class Untokenizer:
 
             if toknum in (NAME, NUMBER):
                 tokval += ' '
+
+            # Insert a space between two consecutive strings
+            if toknum == STRING:
+                if prevstring:
+                    tokval = ' ' + tokval
+                prevstring = True
+            else:
+                prevstring = False
 
             if toknum == INDENT:
                 indents.append(tokval)

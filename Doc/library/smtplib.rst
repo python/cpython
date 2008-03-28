@@ -193,8 +193,6 @@ An :class:`SMTP` instance has the following methods:
    :exc:SMTPHeloError
      The server didn't reply properly to the ``HELO`` greeting.
 
-   .. versionadded:: 2.6
-
 .. method:: SMTP.has_extn(name)
 
    Return :const:`True` if *name* is in the set of SMTP service extensions returned
@@ -243,15 +241,11 @@ An :class:`SMTP` instance has the following methods:
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.
 
-   .. versionchanged:: 2.6
-
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.
 
    :exc:`SMTPException`
      The server does not support the STARTTLS extension.
-
-   .. versionchanged:: 2.6
 
    :exc:`RuntimeError`
      SSL/TLS support is not available to your python interpreter.
@@ -311,7 +305,9 @@ An :class:`SMTP` instance has the following methods:
 
 .. method:: SMTP.quit()
 
-   Terminate the SMTP session and close the connection.
+   Terminate the SMTP session and close the connection.  Return the result of
+   the SMTP ``QUIT`` command.
+
 
 Low-level methods corresponding to the standard SMTP/ESMTP commands ``HELP``,
 ``RSET``, ``NOOP``, ``MAIL``, ``RCPT``, and ``DATA`` are also supported.
