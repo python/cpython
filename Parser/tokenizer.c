@@ -27,14 +27,6 @@ extern char *PyOS_Readline(FILE *, FILE *, char *);
 /* Don't ever change this -- it would break the portability of Python code */
 #define TABSIZE 8
 
-/* Convert a possibly signed character to a nonnegative int */
-/* XXX This assumes characters are 8 bits wide */
-#ifdef __CHAR_UNSIGNED__
-#define Py_CHARMASK(c)		(c)
-#else
-#define Py_CHARMASK(c)		((c) & 0xff)
-#endif
-
 /* Forward */
 static struct tok_state *tok_new(void);
 static int tok_nextc(struct tok_state *tok);
