@@ -33,11 +33,15 @@ class SocketTCPTest(unittest.TestCase):
         verbose_write(self)
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        verbose_write(str(self) + " socket created")
         global PORT
         PORT = test_support.bind_port(self.serv, HOST, PORT)
+        verbose_write(str(self) + " start listening")
         self.serv.listen(1)
+        verbose_write(str(self) + " started")
 
     def tearDown(self):
+        verbose_write(str(self) + " close")
         self.serv.close()
         self.serv = None
         verbose_write(str(self) + " done")
@@ -45,7 +49,6 @@ class SocketTCPTest(unittest.TestCase):
 class SocketUDPTest(unittest.TestCase):
 
     def setUp(self):
-        verbose_write(self)
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         global PORT
@@ -54,7 +57,6 @@ class SocketUDPTest(unittest.TestCase):
     def tearDown(self):
         self.serv.close()
         self.serv = None
-        verbose_write(str(self) + " done")
 
 class ThreadableTest:
     """Threadable Test class
