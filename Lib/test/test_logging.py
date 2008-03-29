@@ -450,6 +450,7 @@ class MemoryHandlerTest(BaseTest):
 
     def tearDown(self):
         self.mem_hdlr.close()
+        BaseTest.tearDown(self)
 
     def test_flush(self):
         # The memory handler flushes to its target handler based on specific
