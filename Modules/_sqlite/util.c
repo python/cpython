@@ -1,6 +1,6 @@
 /* util.c - various utility functions
  *
- * Copyright (C) 2005-2006 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -45,9 +45,14 @@ int _sqlite_step_with_busyhandler(sqlite3_stmt* statement, pysqlite_Connection* 
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  * Returns the error code (0 means no error occurred).
  */
-int _pysqlite_seterror(sqlite3* db)
+int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 {
     int errorcode;
+
+    /* SQLite often doesn't report anything useful, unless you reset the statement first */
+    if (st != NULL) {
+        (void)sqlite3_reset(st);
+    }
 
     errorcode = sqlite3_errcode(db);
 

@@ -1,6 +1,6 @@
 /* prepare_protocol.h - the protocol for preparing values for SQLite
  *
- * Copyright (C) 2005 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *

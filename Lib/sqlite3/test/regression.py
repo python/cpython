@@ -21,6 +21,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import datetime
 import unittest
 import sqlite3 as sqlite
 
@@ -78,6 +79,67 @@ class RegressionTests(unittest.TestCase):
         cur.close()
         cur.fetchone()
         cur.fetchone()
+
+    def CheckStatementFinalizationOnCloseDb(self):
+        # pysqlite versions <= 2.3.3 only finalized statements in the statement
+        # cache when closing the database. statements that were still
+        # referenced in cursors weren't closed an could provoke "
+        # "OperationalError: Unable to close due to unfinalised statements".
+        con = sqlite.connect(":memory:")
+        cursors = []
+        # default statement cache size is 100
+        for i in range(105):
+            cur = con.cursor()
+            cursors.append(cur)
+            cur.execute("select 1 x union select " + str(i))
+        con.close()
+
+    def CheckOnConflictRollback(self):
+        if sqlite.sqlite_version_info < (3, 2, 2):
+            return
+        con = sqlite.connect(":memory:")
+        con.execute("create table foo(x, unique(x) on conflict rollback)")
+        con.execute("insert into foo(x) values (1)")
+        try:
+            con.execute("insert into foo(x) values (1)")
+        except sqlite.DatabaseError:
+            pass
+        con.execute("insert into foo(x) values (2)")
+        try:
+            con.commit()
+        except sqlite.OperationalError:
+            self.fail("pysqlite knew nothing about the implicit ROLLBACK")
+
+    def CheckWorkaroundForBuggySqliteTransferBindings(self):
+        """
+        pysqlite would crash with older SQLite versions unless
+        a workaround is implemented.
+        """
+        self.con.execute("create table foo(bar)")
+        self.con.execute("drop table foo")
+        self.con.execute("create table foo(bar)")
+
+    def CheckEmptyStatement(self):
+        """
+        pysqlite used to segfault with SQLite versions 3.5.x. These return NULL
+        for "no-operation" statements
+        """
+        self.con.execute("")
+
+    def CheckTypeMapUsage(self):
+        """
+        pysqlite until 2.4.1 did not rebuild the row_cast_map when recompiling
+        a statement. This test exhibits the problem.
+        """
+        SELECT = "select * from foo"
+        con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
+        con.execute("create table foo(bar timestamp)")
+        con.execute("insert into foo(bar) values (?)", (datetime.datetime.now(),))
+        con.execute(SELECT)
+        con.execute("drop table foo")
+        con.execute("create table foo(bar integer)")
+        con.execute("insert into foo(bar) values (5)")
+        con.execute(SELECT)
 
     def CheckErrorMsgDecodeError(self):
         # When porting the module to Python 3.0, the error message about
