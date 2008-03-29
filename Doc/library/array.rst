@@ -8,7 +8,7 @@
 
 .. index:: single: arrays
 
-This module defines an object type which can Compactly represent an array of
+This module defines an object type which can compactly represent an array of
 basic values: characters, integers, floating point numbers.  Arrays are sequence
 types and behave very much like lists, except that the type of objects stored in
 them is constrained.  The type is specified at object creation time by using a
