@@ -770,7 +770,7 @@ class SuiteCompiler:
             fp.write("        if _object:\n")
             fp.write("            _arguments['----'] = _object\n")
         else:
-            fp.write("        if _no_object != None: raise TypeError, 'No direct arg expected'\n")
+            fp.write("        if _no_object is not None: raise TypeError, 'No direct arg expected'\n")
         fp.write("\n")
         #
         # Do enum-name substitution

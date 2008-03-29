@@ -20,7 +20,7 @@ class Legacy_suite_Events:
         _subcode = 'rest'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -39,7 +39,7 @@ class Legacy_suite_Events:
         _subcode = 'shut'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -58,7 +58,7 @@ class Legacy_suite_Events:
         _subcode = 'slep'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,

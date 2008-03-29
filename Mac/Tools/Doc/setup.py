@@ -175,10 +175,10 @@ class AHVDocInstall(Command):
                 ('root', 'root'))
 #               import pdb ; pdb.set_trace()
         build_cmd = self.get_finalized_command('build')
-        if self.build_dest == None:
+        if self.build_dest is None:
             build_cmd = self.get_finalized_command('build')
             self.build_dest = build_cmd.build_dest
-        if self.install_doc == None:
+        if self.install_doc is None:
             self.install_doc = os.path.join(self.prefix, DESTDIR)
         print 'INSTALL', self.build_dest, '->', self.install_doc
 

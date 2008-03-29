@@ -268,7 +268,7 @@ class AppleScript_Suite_Events:
         _subcode = 'actv'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -371,7 +371,7 @@ class AppleScript_Suite_Events:
         _subcode = 'tend'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -443,7 +443,7 @@ class AppleScript_Suite_Events:
         _subcode = 'idle'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -462,7 +462,7 @@ class AppleScript_Suite_Events:
         _subcode = 'noop'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -585,7 +585,7 @@ class AppleScript_Suite_Events:
         _subcode = 'log1'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -625,7 +625,7 @@ class AppleScript_Suite_Events:
         _subcode = 'log0'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -644,7 +644,7 @@ class AppleScript_Suite_Events:
         _subcode = 'tell'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,

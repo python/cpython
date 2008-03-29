@@ -188,7 +188,7 @@ class Variable:
         else:
             self._name = 'PY_VAR' + repr(_varnum)
             _varnum += 1
-        if value != None:
+        if value is not None:
             self.set(value)
         elif not self._tk.call("info", "exists", self._name):
             self.set(self._default)

@@ -158,7 +158,7 @@ class AEServer:
             #Same try/except comment as above
             rv = _function(**_parameters)
 
-        if rv == None:
+        if rv is None:
             aetools.packevent(_reply, {})
         else:
             aetools.packevent(_reply, {'----':rv})

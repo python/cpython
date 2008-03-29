@@ -188,7 +188,7 @@ class _Reader:
 
     def GetVideoFrameRate(self):
         tv = self.videocurtime
-        if tv == None:
+        if tv is None:
             tv = 0
         flags = QuickTime.nextTimeStep|QuickTime.nextTimeEdgeOK
         tv, dur = self.videomedia.GetMediaNextInterestingTime(flags, tv, 1.0)
@@ -199,7 +199,7 @@ class _Reader:
         if not time is None:
             self.audiocurtime = time
         flags = QuickTime.nextTimeStep|QuickTime.nextTimeEdgeOK
-        if self.audiocurtime == None:
+        if self.audiocurtime is None:
             self.audiocurtime = 0
         tv = self.audiomedia.GetMediaNextInterestingTimeOnly(flags, self.audiocurtime, 1.0)
         if tv < 0 or (self.audiocurtime and tv < self.audiocurtime):
@@ -215,7 +215,7 @@ class _Reader:
         if not time is None:
             self.videocurtime = time
         flags = QuickTime.nextTimeStep
-        if self.videocurtime == None:
+        if self.videocurtime is None:
             flags = flags | QuickTime.nextTimeEdgeOK
             self.videocurtime = 0
         tv = self.videomedia.GetMediaNextInterestingTimeOnly(flags, self.videocurtime, 1.0)

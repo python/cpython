@@ -546,7 +546,7 @@ else:
                           expectedToWork,
                           certsreqs=None):
 
-        if certsreqs == None:
+        if certsreqs is None:
             certsreqs = ssl.CERT_NONE
 
         if certsreqs == ssl.CERT_NONE:

@@ -37,7 +37,7 @@ class builtin_Suite_Events:
         _subcode = 'oapp'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -56,7 +56,7 @@ class builtin_Suite_Events:
         _subcode = 'rapp'
 
         if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -100,7 +100,7 @@ class builtin_Suite_Events:
         _subcode = 'quit'
 
         aetools.keysubst(_arguments, self._argmap_quit)
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object is not None: raise TypeError, 'No direct arg expected'
 
         aetools.enumsubst(_arguments, 'savo', _Enum_savo)
 

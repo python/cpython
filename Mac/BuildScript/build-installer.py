@@ -289,7 +289,7 @@ def runCommand(commandline):
     fd = os.popen(commandline, 'r')
     data = fd.read()
     xit = fd.close()
-    if xit != None:
+    if xit is not None:
         sys.stdout.write(data)
         raise RuntimeError, "command failed: %s"%(commandline,)
 
@@ -300,7 +300,7 @@ def captureCommand(commandline):
     fd = os.popen(commandline, 'r')
     data = fd.read()
     xit = fd.close()
-    if xit != None:
+    if xit is not None:
         sys.stdout.write(data)
         raise RuntimeError, "command failed: %s"%(commandline,)
 
