@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Patch #1442: properly report exceptions when the PYTHONSTARTUP file
+  cannot be executed.
+
 - The compilation of a class nested in another class used to leak one
   reference on the outer class name.
 
@@ -26,6 +29,7 @@ Core and builtins
 
 - Issue #2238: Some syntax errors in *args and **kwargs expressions could give
   bogus error messages.
+
 
 Library
 -------
@@ -81,8 +85,9 @@ Build
 Windows
 -------
 
+
 What's New in Python 2.5.2?
-=============================
+===========================
 
 *Release date: 21-Feb-2008*
 
