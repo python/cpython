@@ -31,8 +31,6 @@ If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
 If no test names are given, all tests are run.
 
--v is incompatible with -g and does not compare test output files.
-
 -T turns on code coverage tracing with the trace module.
 
 -D specifies the directory where coverage files are put.
@@ -178,7 +176,7 @@ def usage(code, msg=''):
     sys.exit(code)
 
 
-def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
+def main(tests=None, testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False):
@@ -198,7 +196,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     command-line will be used.  If that's empty, too, then all *.py
     files beginning with test_ will be used.
 
-    The other default arguments (verbose, quiet, generate, exclude,
+    The other default arguments (verbose, quiet, exclude,
     single, randomize, findleaks, use_resources, trace, coverdir, and
     print_slow) allow programmers calling main() directly to set the
     values that would normally be set by flags on the command line.
@@ -361,12 +359,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         if trace:
             # If we're tracing code coverage, then we don't exit with status
             # if on a false return value from main.
-            tracer.runctx('runtest(test, generate, verbose, quiet,'
+            tracer.runctx('runtest(test, verbose, quiet,'
                           '        test_times, testdir)',
                           globals=globals(), locals=vars())
         else:
             try:
-                ok = runtest(test, generate, verbose, quiet, test_times,
+                ok = runtest(test, verbose, quiet, test_times,
                              testdir, huntrleaks)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
@@ -438,7 +436,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             sys.stdout.flush()
             try:
                 test_support.verbose = True
-                ok = runtest(test, generate, True, quiet, test_times, testdir,
+                ok = runtest(test, True, quiet, test_times, testdir,
                              huntrleaks)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
@@ -502,7 +500,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate, verbose, quiet, test_times,
+def runtest(test, verbose, quiet, test_times,
             testdir=None, huntrleaks=False):
     """Run a single test.
 
@@ -521,27 +519,26 @@ def runtest(test, generate, verbose, quiet, test_times,
     """
 
     try:
-        return runtest_inner(test, generate, verbose, quiet, test_times,
+        return runtest_inner(test, verbose, quiet, test_times,
                              testdir, huntrleaks)
     finally:
         cleanup_test_droppings(test, verbose)
 
-def runtest_inner(test, generate, verbose, quiet, test_times,
+def runtest_inner(test, verbose, quiet, test_times,
                   testdir=None, huntrleaks=False):
     test_support.unload(test)
     if not testdir:
         testdir = findtestdir()
     if verbose:
-        cfp = None
+        capture_stdout = None
     else:
-        cfp = cStringIO.StringIO()
+        capture_stdout = cStringIO.StringIO()
 
     try:
         save_stdout = sys.stdout
         try:
-            if cfp:
-                sys.stdout = cfp
-                print test              # Output file starts with test name
+            if capture_stdout:
+                sys.stdout = capture_stdout
             if test.startswith('test.'):
                 abstest = test
             else:
@@ -587,15 +584,16 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
             sys.stdout.flush()
         return 0
     else:
-        if not cfp:
+        # Except in verbose mode, tests should not print anything
+        if verbose or huntrleaks:
             return 1
-        output = cfp.getvalue()
-        expected = test + "\n"
-        if output == expected or huntrleaks:
+        output = capture_stdout.getvalue()
+        if not output:
             return 1
         print "test", test, "produced unexpected output:"
-        sys.stdout.flush()
-        reportdiff(expected, output)
+        print "*" * 70
+        print output
+        print "*" * 70
         sys.stdout.flush()
         return 0
 
@@ -719,48 +717,6 @@ def dash_R_cleanup(fs, ps, pic, abcs):
 
     # Collect cyclic trash.
     gc.collect()
-
-def reportdiff(expected, output):
-    import difflib
-    print "*" * 70
-    a = expected.splitlines(1)
-    b = output.splitlines(1)
-    sm = difflib.SequenceMatcher(a=a, b=b)
-    tuples = sm.get_opcodes()
-
-    def pair(x0, x1):
-        # x0:x1 are 0-based slice indices; convert to 1-based line indices.
-        x0 += 1
-        if x0 >= x1:
-            return "line " + str(x0)
-        else:
-            return "lines %d-%d" % (x0, x1)
-
-    for op, a0, a1, b0, b1 in tuples:
-        if op == 'equal':
-            pass
-
-        elif op == 'delete':
-            print "***", pair(a0, a1), "of expected output missing:"
-            for line in a[a0:a1]:
-                print "-", line,
-
-        elif op == 'replace':
-            print "*** mismatch between", pair(a0, a1), "of expected", \
-                  "output and", pair(b0, b1), "of actual output:"
-            for line in difflib.ndiff(a[a0:a1], b[b0:b1]):
-                print line,
-
-        elif op == 'insert':
-            print "***", pair(b0, b1), "of actual output doesn't appear", \
-                  "in expected output after line", str(a1)+":"
-            for line in b[b0:b1]:
-                print "+", line,
-
-        else:
-            print "get_opcodes() returned bad tuple?!?!", (op, a0, a1, b0, b1)
-
-    print "*" * 70
 
 def findtestdir():
     if __name__ == '__main__':
