@@ -535,9 +535,7 @@ class Thread(_Verbose):
                 # test_threading.test_no_refcycle_through_target when
                 # the exception keeps the target alive past when we
                 # assert that it's dead.
-                # XXX Temporary experiment
-                # self.__exc_clear()
-                pass
+                self.__exc_clear()
         finally:
             with _active_limbo_lock:
                 self.__stop()
