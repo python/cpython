@@ -355,9 +355,9 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                             error_obj = PyUnicode_FromEncodedObject(buf_bytes, "ascii", "replace");
                             if (!error_obj) {
                                 PyErr_SetString(pysqlite_OperationalError, "Could not decode to UTF-8");
-                                Py_DECREF(error_obj);
                             } else {
                                 PyErr_SetObject(pysqlite_OperationalError, error_obj);
+                                Py_DECREF(error_obj);
                             }
                             Py_DECREF(buf_bytes);
                         }
