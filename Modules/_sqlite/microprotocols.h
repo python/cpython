@@ -28,10 +28,6 @@
 
 #include <Python.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** adapters registry **/
 
 extern PyObject *psyco_adapters;

@@ -21,7 +21,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import bz2, datetime
+import zlib, datetime
 import unittest
 import sqlite3 as sqlite
 
@@ -221,11 +221,13 @@ class ColNamesTests(unittest.TestCase):
         self.cur = self.con.cursor()
         self.cur.execute("create table test(x foo)")
 
-        sqlite.converters["BAR"] = lambda x: b"<" + x + b">"
+        sqlite.converters["FOO"] = lambda x: "[%s]" % x.decode("ascii")
+        sqlite.converters["BAR"] = lambda x: "<%s>" % x.decode("ascii")
         sqlite.converters["EXC"] = lambda x: 5/0
         sqlite.converters["B1B1"] = lambda x: "MARKER"
 
     def tearDown(self):
+        del sqlite.converters["FOO"]
         del sqlite.converters["BAR"]
         del sqlite.converters["EXC"]
         del sqlite.converters["B1B1"]
@@ -252,7 +254,7 @@ class ColNamesTests(unittest.TestCase):
         self.cur.execute("insert into test(x) values (?)", ("xxx",))
         self.cur.execute('select x as "x [bar]" from test')
         val = self.cur.fetchone()[0]
-        self.failUnlessEqual(val, b"<xxx>")
+        self.failUnlessEqual(val, "<xxx>")
 
         # Check if the stripping of colnames works. Everything after the first
         # whitespace should be stripped.
@@ -297,7 +299,7 @@ class ObjectAdaptationTests(unittest.TestCase):
 
 class BinaryConverterTests(unittest.TestCase):
     def convert(s):
-        return bz2.decompress(s)
+        return zlib.decompress(s)
     convert = staticmethod(convert)
 
     def setUp(self):
@@ -309,7 +311,7 @@ class BinaryConverterTests(unittest.TestCase):
 
     def CheckBinaryInputForConverter(self):
         testdata = b"abcdefg" * 10
-        result = self.con.execute('select ? as "x [bin]"', (memoryview(bz2.compress(testdata)),)).fetchone()[0]
+        result = self.con.execute('select ? as "x [bin]"', (memoryview(zlib.compress(testdata)),)).fetchone()[0]
         self.failUnlessEqual(testdata, result)
 
 class DateTimeTests(unittest.TestCase):
@@ -341,7 +343,8 @@ class DateTimeTests(unittest.TestCase):
         if sqlite.sqlite_version_info < (3, 1):
             return
 
-        now = datetime.datetime.utcnow()
+        # SQLite's current_timestamp uses UTC time, while datetime.datetime.now() uses local time.
+        now = datetime.datetime.now()
         self.cur.execute("insert into test(ts) values (current_timestamp)")
         self.cur.execute("select ts from test")
         ts = self.cur.fetchone()[0]
