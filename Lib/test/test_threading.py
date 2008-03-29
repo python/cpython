@@ -32,7 +32,8 @@ class TestThread(threading.Thread):
     def run(self):
         delay = random.random() / 10000.0
         if verbose:
-            print('task', self.getName(), 'will run for', delay, 'sec')
+            print('task %s will run for %.1f usec' %
+                  (self.getName(), delay * 1e6))
 
         with self.sema:
             with self.mutex:
@@ -49,7 +50,7 @@ class TestThread(threading.Thread):
                 self.testcase.assert_(self.nrunning.get() >= 0)
                 if verbose:
                     print('%s is finished. %d tasks are running' %
-                        self.getName(), self.nrunning.get())
+                          (self.getName(), self.nrunning.get()))
 
 class ThreadTests(unittest.TestCase):
 
@@ -242,7 +243,10 @@ class ThreadTests(unittest.TestCase):
         enum = threading.enumerate
         old_interval = sys.getcheckinterval()
         try:
-            for i in range(1, 1000):
+            for i in range(1, 100):
+                # Try a couple times at each thread-switching interval
+                # to get more interleavings.
+                sys.setcheckinterval(i // 5)
                 t = threading.Thread(target=lambda: None)
                 t.start()
                 t.join()
