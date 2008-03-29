@@ -537,6 +537,7 @@ class Thread(_Verbose):
                 # assert that it's dead.
                 # XXX Temporary experiment
                 # self.__exc_clear()
+                pass
         finally:
             with _active_limbo_lock:
                 self.__stop()
