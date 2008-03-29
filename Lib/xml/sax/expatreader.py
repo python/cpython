@@ -107,7 +107,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         xmlreader.IncrementalParser.parse(self, source)
 
     def prepareParser(self, source):
-        if source.getSystemId() != None:
+        if source.getSystemId() is not None:
             self._parser.SetBase(source.getSystemId())
 
     # Redefined setContentHandler to allow changing handlers during parsing

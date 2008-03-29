@@ -183,7 +183,7 @@ class PackageMaker:
 
         # set folder attributes
         self.sourceFolder = root
-        if resources == None:
+        if resources is None:
             self.resourceFolder = root
         else:
             self.resourceFolder = resources

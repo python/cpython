@@ -323,7 +323,7 @@ class TableDBTestCase(unittest.TestCase):
         self.tdb.Insert(tabname, {'Type': 'Unknown', 'Access': '0'})
 
         def set_type(type):
-            if type == None:
+            if type is None:
                 return 'MP3'
             return type
 

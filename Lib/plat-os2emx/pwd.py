@@ -167,7 +167,7 @@ def __read_passwd_file():
     while 1:
         entry = passwd.readline().strip()
         if len(entry) > 6:
-            if sep == None:
+            if sep is None:
                 sep = __get_field_sep(entry)
             fields = entry.split(sep)
             for i in (2, 3):

@@ -148,7 +148,7 @@ class FunctionGenerator(BaseFunctionGenerator):
         for arg in self.argumentList:
             if arg.flags == ErrorMode or arg.flags == SelfMode:
                 continue
-            if arg.type == None:
+            if arg.type is None:
                 str = 'void'
             else:
                 if hasattr(arg.type, 'typeName'):

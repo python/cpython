@@ -203,13 +203,13 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
     dummy, tmplowner = copyres(input, output, skiptypes, 1, progress)
 
     Res.CloseResFile(input)
-##  if ownertype == None:
+##  if ownertype is None:
 ##      raise BuildError, "No owner resource found in either resource file or template"
     # Make sure we're manipulating the output resource file now
 
     Res.UseResFile(output)
 
-    if ownertype == None:
+    if ownertype is None:
         # No owner resource in the template. We have skipped the
         # Python owner resource, so we have to add our own. The relevant
         # bundle stuff is already included in the interpret/applet template.

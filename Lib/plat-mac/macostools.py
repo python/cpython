@@ -106,7 +106,7 @@ def copy(src, dst, createpath=0, copydates=1, forcetype=None):
     sf = srcfss.FSpGetFInfo()
     df = dstfss.FSpGetFInfo()
     df.Creator, df.Type = sf.Creator, sf.Type
-    if forcetype != None:
+    if forcetype is not None:
         df.Type = forcetype
     df.Flags = (sf.Flags & COPY_FLAGS)
     dstfss.FSpSetFInfo(df)

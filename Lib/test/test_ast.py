@@ -130,7 +130,7 @@ if __name__=='__main__' and sys.argv[1:] == ['-g']:
 
 def test_order(ast_node, parent_pos):
 
-    if not isinstance(ast_node, _ast.AST) or ast_node._fields == None:
+    if not isinstance(ast_node, _ast.AST) or ast_node._fields is None:
         return
     if isinstance(ast_node, (_ast.expr, _ast.stmt, _ast.excepthandler)):
         node_pos = (ast_node.lineno, ast_node.col_offset)
@@ -141,7 +141,7 @@ def test_order(ast_node, parent_pos):
         if isinstance(value, list):
             for child in value:
                 test_order(child, parent_pos)
-        elif value != None:
+        elif value is not None:
             test_order(value, parent_pos)
 
 def run_tests():
