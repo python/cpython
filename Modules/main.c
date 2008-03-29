@@ -134,6 +134,15 @@ static void RunStartupFile(PyCompilerFlags *cf)
 			(void) PyRun_SimpleFileExFlags(fp, startup, 0, cf);
 			PyErr_Clear();
 			fclose(fp);
+               } else {
+			int save_errno;
+			save_errno = errno;
+			PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
+			errno = save_errno;
+			PyErr_SetFromErrnoWithFilename(PyExc_IOError,
+						       startup);
+			PyErr_Print();
+			PyErr_Clear();
 		}
 	}
 }
