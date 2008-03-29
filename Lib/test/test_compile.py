@@ -441,6 +441,20 @@ if 1:
             self.assert_(type(ast) == _ast.Module)
             co2 = compile(ast, '%s3' % fname, 'exec')
             self.assertEqual(co1, co2)
+            # the code object's filename comes from the second compilation step
+            self.assertEqual(co2.co_filename, '%s3' % fname)
+
+        # raise exception when node type doesn't match with compile mode
+        co1 = compile('print 1', '<string>', 'exec', _ast.PyCF_ONLY_AST)
+        self.assertRaises(TypeError, compile, co1, '<ast>', 'eval')
+
+        # raise exception when node type is no start node
+        self.assertRaises(TypeError, compile, _ast.If(), '<ast>', 'exec')
+
+        # raise exception when node has invalid children
+        ast = _ast.Module()
+        ast.body = [_ast.BoolOp()]
+        self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
 
 
 def test_main():
