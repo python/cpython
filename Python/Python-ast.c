@@ -5944,13 +5944,20 @@ PyObject* PyAST_mod2obj(mod_ty t)
     return ast2obj_mod(t);
 }
 
-mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena)
+/* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
+mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
     mod_ty res;
+    PyObject *req_type[] = {(PyObject*)Module_type, (PyObject*)Expression_type,
+                            (PyObject*)Interactive_type};
+    char *req_name[] = {"Module", "Expression", "Interactive"};
+    assert(0 <= mode && mode <= 2);
+
     init_types();
-    if (!PyObject_IsInstance(ast, (PyObject*)mod_type)) {
-        PyErr_SetString(PyExc_TypeError, "expected either Module, Interactive "
-                        "or Expression node");
+
+    if (!PyObject_IsInstance(ast, req_type[mode])) {
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
+                     req_name[mode], Py_TYPE(ast)->tp_name);
         return NULL;
     }
     if (obj2ast_mod(ast, &res, arena) != 0)
