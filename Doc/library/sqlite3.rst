@@ -531,6 +531,12 @@ A :class:`Cursor` instance has the following attributes and methods:
    This includes ``SELECT`` statements because we cannot determine the number of
    rows a query produced until all rows were fetched.
 
+.. attribute:: Cursor.lastrowid
+
+   This read-only attribute provides the rowid of the last modified row. It is
+   only set if you issued a ``INSERT`` statement using the :meth:`execute`
+   method. For operations other than ``INSERT`` or when :meth:`executemany` is
+   called, :attr:`lastrowid` is set to :const:`None`.
 
 .. _sqlite3-types:
 
