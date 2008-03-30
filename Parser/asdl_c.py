@@ -629,9 +629,34 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     return res;
 }
 
+/* Pickling support */
+static PyObject *
+ast_type_reduce(PyObject *self, PyObject *unused)
+{
+    PyObject *res;
+    PyObject *dict = PyObject_GetAttrString(self, "__dict__");
+    if (dict == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+            PyErr_Clear();
+        else
+            return NULL;
+    }
+    if (dict) {
+        res = Py_BuildValue("O()O", Py_TYPE(self), dict);
+        Py_DECREF(dict);
+        return res;
+    }
+    return Py_BuildValue("O()", Py_TYPE(self));
+}
+
+static PyMethodDef ast_type_methods[] = {
+    {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
+    {NULL}
+};
+
 static PyTypeObject AST_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "AST",
+    "_ast.AST",
     sizeof(PyObject),
     0,
     0,                       /* tp_dealloc */
@@ -657,7 +682,7 @@ static PyTypeObject AST_type = {
     0,                       /* tp_weaklistoffset */
     0,                       /* tp_iter */
     0,                       /* tp_iternext */
-    0,                       /* tp_methods */
+    ast_type_methods,        /* tp_methods */
     0,                       /* tp_members */
     0,                       /* tp_getset */
     0,                       /* tp_base */
