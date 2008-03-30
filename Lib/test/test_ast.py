@@ -166,6 +166,20 @@ class AST_Tests(unittest.TestCase):
         # this used to fail because Sub._fields was None
         x = _ast.Sub()
 
+    def test_pickling(self):
+        import pickle
+        mods = [pickle]
+        try:
+            import cPickle
+            mods.append(cPickle)
+        except ImportError:
+            pass
+        protocols = [0, 1, 2]
+        for mod in mods:
+            for protocol in protocols:
+                for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
+                    ast2 = mod.loads(mod.dumps(ast, protocol))
+                    self.assertEquals(to_tuple(ast2), to_tuple(ast))
 
 def test_main():
     test_support.run_unittest(AST_Tests)
