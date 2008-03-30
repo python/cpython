@@ -386,8 +386,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     res = 0; /* if no error occurs, this stays 0 to the end */
     if (PyTuple_GET_SIZE(args) > 0) {
         if (numfields != PyTuple_GET_SIZE(args)) {
-            PyErr_Format(PyExc_TypeError, "%.400s constructor takes either 0 or "
-                         "%d positional argument%s", Py_TYPE(self)->tp_name,
+            PyErr_Format(PyExc_TypeError, "%.400s constructor takes %s"
+                         "%" PY_FORMAT_SIZE_T "d positional argument%s",
+                         Py_TYPE(self)->tp_name,
+                         numfields == 0 ? "" : "either 0 or ",
                          numfields, numfields == 1 ? "" : "s");
             res = -1;
             goto cleanup;
