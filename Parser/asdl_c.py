@@ -578,6 +578,98 @@ class PyTypesVisitor(PickleVisitor):
 
     def visitModule(self, mod):
         self.emit("""
+static int
+ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
+{
+    Py_ssize_t i, numfields = 0;
+    int res = -1;
+    PyObject *key, *value, *fields;
+    fields = PyObject_GetAttrString((PyObject*)Py_TYPE(self), "_fields");
+    if (!fields)
+        PyErr_Clear();
+    if (fields) {
+        numfields = PySequence_Size(fields);
+        if (numfields == -1)
+            goto cleanup;
+    }
+    res = 0; /* if no error occurs, this stays 0 to the end */
+    if (PyTuple_GET_SIZE(args) > 0) {
+        if (numfields != PyTuple_GET_SIZE(args)) {
+            PyErr_Format(PyExc_TypeError, "%.400s constructor takes either 0 or "
+                         "%d positional argument%s", Py_TYPE(self)->tp_name,
+                         numfields, numfields == 1 ? "" : "s");
+            res = -1;
+            goto cleanup;
+        }
+        for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
+            /* cannot be reached when fields is NULL */
+            PyObject *name = PySequence_GetItem(fields, i);
+            if (!name) {
+                res = -1;
+                goto cleanup;
+            }
+            res = PyObject_SetAttr(self, name, PyTuple_GET_ITEM(args, i));
+            Py_DECREF(name);
+            if (res < 0)
+                goto cleanup;
+        }
+    }
+    if (kw) {
+        i = 0;  /* needed by PyDict_Next */
+        while (PyDict_Next(kw, &i, &key, &value)) {
+            res = PyObject_SetAttr(self, key, value);
+            if (res < 0)
+                goto cleanup;
+        }
+    }
+  cleanup:
+    Py_XDECREF(fields);
+    return res;
+}
+
+static PyTypeObject AST_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "AST",
+    sizeof(PyObject),
+    0,
+    0,                       /* tp_dealloc */
+    0,                       /* tp_print */
+    0,                       /* tp_getattr */
+    0,                       /* tp_setattr */
+    0,                       /* tp_compare */
+    0,                       /* tp_repr */
+    0,                       /* tp_as_number */
+    0,                       /* tp_as_sequence */
+    0,                       /* tp_as_mapping */
+    0,                       /* tp_hash */
+    0,                       /* tp_call */
+    0,                       /* tp_str */
+    PyObject_GenericGetAttr, /* tp_getattro */
+    PyObject_GenericSetAttr, /* tp_setattro */
+    0,                       /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    0,                       /* tp_doc */
+    0,                       /* tp_traverse */
+    0,                       /* tp_clear */
+    0,                       /* tp_richcompare */
+    0,                       /* tp_weaklistoffset */
+    0,                       /* tp_iter */
+    0,                       /* tp_iternext */
+    0,                       /* tp_methods */
+    0,                       /* tp_members */
+    0,                       /* tp_getset */
+    0,                       /* tp_base */
+    0,                       /* tp_dict */
+    0,                       /* tp_descr_get */
+    0,                       /* tp_descr_set */
+    0,                       /* tp_dictoffset */
+    (initproc)ast_type_init, /* tp_init */
+    PyType_GenericAlloc,     /* tp_alloc */
+    PyType_GenericNew,       /* tp_new */
+    PyObject_Del,            /* tp_free */
+};
+
+
 static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int num_fields)
 {
     PyObject *fnames, *result;
@@ -606,7 +698,7 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
 static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 {
     int i, result;
-    PyObject *s, *l = PyList_New(num_fields);
+    PyObject *s, *l = PyTuple_New(num_fields);
     if (!l) return 0;
     for(i = 0; i < num_fields; i++) {
         s = PyString_FromString(attrs[i]);
@@ -614,7 +706,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
             Py_DECREF(l);
             return 0;
         }
-        PyList_SET_ITEM(l, i, s);
+        PyTuple_SET_ITEM(l, i, s);
     }
     result = PyObject_SetAttrString((PyObject*)type, "_attributes", l) >= 0;
     Py_DECREF(l);
@@ -716,7 +808,6 @@ static int obj2ast_bool(PyObject* obj, bool* out, PyArena* arena)
         self.emit("{", 0)
         self.emit("static int initialized;", 1)
         self.emit("if (initialized) return 1;", 1)
-        self.emit('AST_type = make_type("AST", &PyBaseObject_Type, NULL, 0);', 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("initialized = 1;", 1)
@@ -728,12 +819,13 @@ static int obj2ast_bool(PyObject* obj, bool* out, PyArena* arena)
             fields = name.value+"_fields"
         else:
             fields = "NULL"
-        self.emit('%s_type = make_type("%s", AST_type, %s, %d);' %
+        self.emit('%s_type = make_type("%s", &AST_type, %s, %d);' %
                         (name, name, fields, len(prod.fields)), 1)
         self.emit("if (!%s_type) return 0;" % name, 1)
 
     def visitSum(self, sum, name):
-        self.emit('%s_type = make_type("%s", AST_type, NULL, 0);' % (name, name), 1)
+        self.emit('%s_type = make_type("%s", &AST_type, NULL, 0);' %
+                  (name, name), 1)
         self.emit("if (!%s_type) return 0;" % name, 1)
         if sum.attributes:
             self.emit("if (!add_attributes(%s_type, %s_attributes, %d)) return 0;" %
@@ -772,7 +864,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit('m = Py_InitModule3("_ast", NULL, NULL);', 1)
         self.emit("if (!m) return;", 1)
         self.emit("d = PyModule_GetDict(m);", 1)
-        self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;', 1)
+        self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return;', 1)
         self.emit('if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)', 1)
         self.emit("return;", 2)
         # Value of version: "$Revision$"
@@ -979,7 +1071,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 int PyAST_Check(PyObject* obj)
 {
     init_types();
-    return PyObject_IsInstance(obj, (PyObject*)AST_type);
+    return PyObject_IsInstance(obj, (PyObject*)&AST_type);
 }
 """
 
@@ -1035,7 +1127,7 @@ def main(srcfile):
         print >> f, '#include "Python.h"'
         print >> f, '#include "%s-ast.h"' % mod.name
         print >> f
-        print >>f, "static PyTypeObject* AST_type;"
+        print >>f, "static PyTypeObject AST_type;"
         v = ChainOfVisitors(
             PyTypesDeclareVisitor(f),
             PyTypesVisitor(f),
