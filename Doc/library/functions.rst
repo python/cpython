@@ -193,21 +193,21 @@ available.  They are listed here in alphabetical order.
 
 .. function:: compile(source, filename, mode[, flags[, dont_inherit]])
 
-   Compile the *source* into a code object.  Code objects can be executed by a call
-   to :func:`exec` or evaluated by a call to :func:`eval`.  The *filename* argument
-   should give the file from which the code was read; pass some recognizable value
-   if it wasn't read from a file (``'<string>'`` is commonly used). The *mode*
-   argument specifies what kind of code must be compiled; it can be ``'exec'`` if
-   *source* consists of a sequence of statements, ``'eval'`` if it consists of a
-   single expression, or ``'single'`` if it consists of a single interactive
-   statement (in the latter case, expression statements that evaluate to something
-   else than ``None`` will be printed).
+   Compile the *source* into a code object.  Code objects can be
+   executed by a call to :func:`exec` or evaluated by a call to
+   :func:`eval`. *source* can either be a string or an AST object.
+   Refer to the :mod:`_ast` module documentation for information on
+   how to compile into and from AST objects.
 
-   When compiling multi-line statements, two caveats apply: line endings must be
-   represented by a single newline character (``'\n'``), and the input must be
-   terminated by at least one newline character.  If line endings are represented
-   by ``'\r\n'``, use the string :meth:`replace` method to change them into
-   ``'\n'``.
+   The *filename* argument should give the file from
+   which the code was read; pass some recognizable value if it wasn't
+   read from a file (``'<string>'`` is commonly used). The *mode*
+   argument specifies what kind of code must be compiled; it can be
+   ``'exec'`` if *source* consists of a sequence of statements,
+   ``'eval'`` if it consists of a single expression, or ``'single'``
+   if it consists of a single interactive statement (in the latter
+   case, expression statements that evaluate to something else than
+   ``None`` will be printed).
 
    The optional arguments *flags* and *dont_inherit* (which are new in Python 2.2)
    control which future statements (see :pep:`236`) affect the compilation of
@@ -226,6 +226,9 @@ available.  They are listed here in alphabetical order.
 
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`TypeError` if the source contains null bytes.
+
+   .. versionadded:: 2.6
+      Support for compiling AST objects.
 
 
 .. function:: complex([real[, imag]])
