@@ -83,11 +83,12 @@ Python's power is described there, including the built-in data types
 and functions!
 
 All documentation is also available online at the Python web site
-(http://docs.python.org/, see below).  It is available online for
-occasional reference, or can be downloaded in many formats for faster
-access.  The documentation is available in HTML, PostScript, PDF, and
-LaTeX formats; the LaTeX version is primarily for documentation
-authors, translators, and people with special formatting requirements.
+(http://docs.python.org/, see below).  It is available online for occasional
+reference, or can be downloaded in many formats for faster access.  The
+documentation is available in HTML, PostScript, PDF, LaTeX (through 2.5), and
+reStructuredText (2.6+) formats; the LaTeX and reStructuredText versions are
+primarily for documentation authors, translators, and people with special
+formatting requirements.
 
 Unfortunately, new-style classes (new in Python 2.2) have not yet been
 integrated into Python's standard documentation.  A collection of
@@ -135,9 +136,8 @@ Manager at http://bugs.python.org.  Guidelines
 for patch submission may be found at http://www.python.org/dev/patches/.
 
 If you have a proposal to change Python, it's best to submit a Python
-Enhancement Proposal (PEP) first.  All current PEPs, as well as
-guidelines for submitting a new PEP, are listed at
-http://www.python.org/dev/peps/.
+Enhancement Proposal (PEP) first.  All current PEPs, as well as guidelines for
+submitting a new PEP, are listed at http://www.python.org/dev/peps/.
 
 
 Questions
