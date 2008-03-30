@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 60978.
+   __version__ 62047.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -12,7 +12,7 @@
 #include "Python.h"
 #include "Python-ast.h"
 
-static PyTypeObject* AST_type;
+static PyTypeObject AST_type;
 static PyTypeObject *mod_type;
 static PyObject* ast2obj_mod(void*);
 static PyTypeObject *Module_type;
@@ -369,6 +369,98 @@ static char *alias_fields[]={
 };
 
 
+static int
+ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
+{
+    Py_ssize_t i, numfields = 0;
+    int res = -1;
+    PyObject *key, *value, *fields;
+    fields = PyObject_GetAttrString((PyObject*)Py_TYPE(self), "_fields");
+    if (!fields)
+        PyErr_Clear();
+    if (fields) {
+        numfields = PySequence_Size(fields);
+        if (numfields == -1)
+            goto cleanup;
+    }
+    res = 0; /* if no error occurs, this stays 0 to the end */
+    if (PyTuple_GET_SIZE(args) > 0) {
+        if (numfields != PyTuple_GET_SIZE(args)) {
+            PyErr_Format(PyExc_TypeError, "%.400s constructor takes either 0 or "
+                         "%d positional argument%s", Py_TYPE(self)->tp_name,
+                         numfields, numfields == 1 ? "" : "s");
+            res = -1;
+            goto cleanup;
+        }
+        for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
+            /* cannot be reached when fields is NULL */
+            PyObject *name = PySequence_GetItem(fields, i);
+            if (!name) {
+                res = -1;
+                goto cleanup;
+            }
+            res = PyObject_SetAttr(self, name, PyTuple_GET_ITEM(args, i));
+            Py_DECREF(name);
+            if (res < 0)
+                goto cleanup;
+        }
+    }
+    if (kw) {
+        i = 0;  /* needed by PyDict_Next */
+        while (PyDict_Next(kw, &i, &key, &value)) {
+            res = PyObject_SetAttr(self, key, value);
+            if (res < 0)
+                goto cleanup;
+        }
+    }
+  cleanup:
+    Py_XDECREF(fields);
+    return res;
+}
+
+static PyTypeObject AST_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "AST",
+    sizeof(PyObject),
+    0,
+    0,                       /* tp_dealloc */
+    0,                       /* tp_print */
+    0,                       /* tp_getattr */
+    0,                       /* tp_setattr */
+    0,                       /* tp_compare */
+    0,                       /* tp_repr */
+    0,                       /* tp_as_number */
+    0,                       /* tp_as_sequence */
+    0,                       /* tp_as_mapping */
+    0,                       /* tp_hash */
+    0,                       /* tp_call */
+    0,                       /* tp_str */
+    PyObject_GenericGetAttr, /* tp_getattro */
+    PyObject_GenericSetAttr, /* tp_setattro */
+    0,                       /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    0,                       /* tp_doc */
+    0,                       /* tp_traverse */
+    0,                       /* tp_clear */
+    0,                       /* tp_richcompare */
+    0,                       /* tp_weaklistoffset */
+    0,                       /* tp_iter */
+    0,                       /* tp_iternext */
+    0,                       /* tp_methods */
+    0,                       /* tp_members */
+    0,                       /* tp_getset */
+    0,                       /* tp_base */
+    0,                       /* tp_dict */
+    0,                       /* tp_descr_get */
+    0,                       /* tp_descr_set */
+    0,                       /* tp_dictoffset */
+    (initproc)ast_type_init, /* tp_init */
+    PyType_GenericAlloc,     /* tp_alloc */
+    PyType_GenericNew,       /* tp_new */
+    PyObject_Del,            /* tp_free */
+};
+
+
 static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int num_fields)
 {
     PyObject *fnames, *result;
@@ -397,7 +489,7 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
 static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 {
     int i, result;
-    PyObject *s, *l = PyList_New(num_fields);
+    PyObject *s, *l = PyTuple_New(num_fields);
     if (!l) return 0;
     for(i = 0; i < num_fields; i++) {
         s = PyString_FromString(attrs[i]);
@@ -405,7 +497,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
             Py_DECREF(l);
             return 0;
         }
-        PyList_SET_ITEM(l, i, s);
+        PyTuple_SET_ITEM(l, i, s);
     }
     result = PyObject_SetAttrString((PyObject*)type, "_attributes", l) >= 0;
     Py_DECREF(l);
@@ -506,8 +598,7 @@ static int init_types(void)
 {
         static int initialized;
         if (initialized) return 1;
-        AST_type = make_type("AST", &PyBaseObject_Type, NULL, 0);
-        mod_type = make_type("mod", AST_type, NULL, 0);
+        mod_type = make_type("mod", &AST_type, NULL, 0);
         if (!mod_type) return 0;
         if (!add_attributes(mod_type, NULL, 0)) return 0;
         Module_type = make_type("Module", mod_type, Module_fields, 1);
@@ -520,7 +611,7 @@ static int init_types(void)
         if (!Expression_type) return 0;
         Suite_type = make_type("Suite", mod_type, Suite_fields, 1);
         if (!Suite_type) return 0;
-        stmt_type = make_type("stmt", AST_type, NULL, 0);
+        stmt_type = make_type("stmt", &AST_type, NULL, 0);
         if (!stmt_type) return 0;
         if (!add_attributes(stmt_type, stmt_attributes, 2)) return 0;
         FunctionDef_type = make_type("FunctionDef", stmt_type,
@@ -572,7 +663,7 @@ static int init_types(void)
         if (!Break_type) return 0;
         Continue_type = make_type("Continue", stmt_type, NULL, 0);
         if (!Continue_type) return 0;
-        expr_type = make_type("expr", AST_type, NULL, 0);
+        expr_type = make_type("expr", &AST_type, NULL, 0);
         if (!expr_type) return 0;
         if (!add_attributes(expr_type, expr_attributes, 2)) return 0;
         BoolOp_type = make_type("BoolOp", expr_type, BoolOp_fields, 2);
@@ -614,7 +705,7 @@ static int init_types(void)
         if (!List_type) return 0;
         Tuple_type = make_type("Tuple", expr_type, Tuple_fields, 2);
         if (!Tuple_type) return 0;
-        expr_context_type = make_type("expr_context", AST_type, NULL, 0);
+        expr_context_type = make_type("expr_context", &AST_type, NULL, 0);
         if (!expr_context_type) return 0;
         if (!add_attributes(expr_context_type, NULL, 0)) return 0;
         Load_type = make_type("Load", expr_context_type, NULL, 0);
@@ -641,7 +732,7 @@ static int init_types(void)
         if (!Param_type) return 0;
         Param_singleton = PyType_GenericNew(Param_type, NULL, NULL);
         if (!Param_singleton) return 0;
-        slice_type = make_type("slice", AST_type, NULL, 0);
+        slice_type = make_type("slice", &AST_type, NULL, 0);
         if (!slice_type) return 0;
         if (!add_attributes(slice_type, NULL, 0)) return 0;
         Ellipsis_type = make_type("Ellipsis", slice_type, NULL, 0);
@@ -652,7 +743,7 @@ static int init_types(void)
         if (!ExtSlice_type) return 0;
         Index_type = make_type("Index", slice_type, Index_fields, 1);
         if (!Index_type) return 0;
-        boolop_type = make_type("boolop", AST_type, NULL, 0);
+        boolop_type = make_type("boolop", &AST_type, NULL, 0);
         if (!boolop_type) return 0;
         if (!add_attributes(boolop_type, NULL, 0)) return 0;
         And_type = make_type("And", boolop_type, NULL, 0);
@@ -663,7 +754,7 @@ static int init_types(void)
         if (!Or_type) return 0;
         Or_singleton = PyType_GenericNew(Or_type, NULL, NULL);
         if (!Or_singleton) return 0;
-        operator_type = make_type("operator", AST_type, NULL, 0);
+        operator_type = make_type("operator", &AST_type, NULL, 0);
         if (!operator_type) return 0;
         if (!add_attributes(operator_type, NULL, 0)) return 0;
         Add_type = make_type("Add", operator_type, NULL, 0);
@@ -714,7 +805,7 @@ static int init_types(void)
         if (!FloorDiv_type) return 0;
         FloorDiv_singleton = PyType_GenericNew(FloorDiv_type, NULL, NULL);
         if (!FloorDiv_singleton) return 0;
-        unaryop_type = make_type("unaryop", AST_type, NULL, 0);
+        unaryop_type = make_type("unaryop", &AST_type, NULL, 0);
         if (!unaryop_type) return 0;
         if (!add_attributes(unaryop_type, NULL, 0)) return 0;
         Invert_type = make_type("Invert", unaryop_type, NULL, 0);
@@ -733,7 +824,7 @@ static int init_types(void)
         if (!USub_type) return 0;
         USub_singleton = PyType_GenericNew(USub_type, NULL, NULL);
         if (!USub_singleton) return 0;
-        cmpop_type = make_type("cmpop", AST_type, NULL, 0);
+        cmpop_type = make_type("cmpop", &AST_type, NULL, 0);
         if (!cmpop_type) return 0;
         if (!add_attributes(cmpop_type, NULL, 0)) return 0;
         Eq_type = make_type("Eq", cmpop_type, NULL, 0);
@@ -776,21 +867,21 @@ static int init_types(void)
         if (!NotIn_type) return 0;
         NotIn_singleton = PyType_GenericNew(NotIn_type, NULL, NULL);
         if (!NotIn_singleton) return 0;
-        comprehension_type = make_type("comprehension", AST_type,
+        comprehension_type = make_type("comprehension", &AST_type,
                                        comprehension_fields, 3);
         if (!comprehension_type) return 0;
-        excepthandler_type = make_type("excepthandler", AST_type, NULL, 0);
+        excepthandler_type = make_type("excepthandler", &AST_type, NULL, 0);
         if (!excepthandler_type) return 0;
         if (!add_attributes(excepthandler_type, excepthandler_attributes, 2))
             return 0;
         ExceptHandler_type = make_type("ExceptHandler", excepthandler_type,
                                        ExceptHandler_fields, 3);
         if (!ExceptHandler_type) return 0;
-        arguments_type = make_type("arguments", AST_type, arguments_fields, 4);
+        arguments_type = make_type("arguments", &AST_type, arguments_fields, 4);
         if (!arguments_type) return 0;
-        keyword_type = make_type("keyword", AST_type, keyword_fields, 2);
+        keyword_type = make_type("keyword", &AST_type, keyword_fields, 2);
         if (!keyword_type) return 0;
-        alias_type = make_type("alias", AST_type, alias_fields, 2);
+        alias_type = make_type("alias", &AST_type, alias_fields, 2);
         if (!alias_type) return 0;
         initialized = 1;
         return 1;
@@ -5816,10 +5907,10 @@ init_ast(void)
         m = Py_InitModule3("_ast", NULL, NULL);
         if (!m) return;
         d = PyModule_GetDict(m);
-        if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
+        if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "60978") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "62047") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
@@ -5997,7 +6088,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 int PyAST_Check(PyObject* obj)
 {
     init_types();
-    return PyObject_IsInstance(obj, (PyObject*)AST_type);
+    return PyObject_IsInstance(obj, (PyObject*)&AST_type);
 }
 
 
