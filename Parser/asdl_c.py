@@ -674,14 +674,9 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
 {
     PyObject *fnames, *result;
     int i;
-    if (num_fields) {
-        fnames = PyTuple_New(num_fields);
-        if (!fnames) return NULL;
-    } else {
-        fnames = Py_None;
-        Py_INCREF(Py_None);
-    }
-    for(i=0; i < num_fields; i++) {
+    fnames = PyTuple_New(num_fields);
+    if (!fnames) return NULL;
+    for (i = 0; i < num_fields; i++) {
         PyObject *field = PyString_FromString(fields[i]);
         if (!field) {
             Py_DECREF(fnames);

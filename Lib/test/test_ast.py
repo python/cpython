@@ -163,6 +163,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEquals(x.right, 3)
         self.assertEquals(x.lineno, 0)
 
+        # this used to fail because Sub._fields was None
+        x = _ast.Sub()
+
 
 def test_main():
     test_support.run_unittest(AST_Tests)
