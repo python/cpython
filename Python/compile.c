@@ -1855,32 +1855,32 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 	for (i = 0; i < n; i++) {
 		excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
 						s->v.TryExcept.handlers, i);
-		if (!handler->type && i < n-1)
+		if (!handler->v.ExceptHandler.type && i < n-1)
 		    return compiler_error(c, "default 'except:' must be last");
 		c->u->u_lineno_set = false;
 		c->u->u_lineno = handler->lineno;
 		except = compiler_new_block(c);
 		if (except == NULL)
 			return 0;
-		if (handler->type) {
+		if (handler->v.ExceptHandler.type) {
 			ADDOP(c, DUP_TOP);
-			VISIT(c, expr, handler->type);
+			VISIT(c, expr, handler->v.ExceptHandler.type);
 			ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
 			ADDOP_JREL(c, JUMP_IF_FALSE, except);
 			ADDOP(c, POP_TOP);
 		}
 		ADDOP(c, POP_TOP);
-		if (handler->name) {
-			VISIT(c, expr, handler->name);
+		if (handler->v.ExceptHandler.name) {
+			VISIT(c, expr, handler->v.ExceptHandler.name);
 		}
 		else {
 			ADDOP(c, POP_TOP);
 		}
 		ADDOP(c, POP_TOP);
-		VISIT_SEQ(c, stmt, handler->body);
+		VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
 		ADDOP_JREL(c, JUMP_FORWARD, end);
 		compiler_use_next_block(c, except);
-		if (handler->type)
+		if (handler->v.ExceptHandler.type)
 			ADDOP(c, POP_TOP);
 	}
 	ADDOP(c, END_FINALLY);

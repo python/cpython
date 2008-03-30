@@ -324,10 +324,17 @@ struct _comprehension {
         asdl_seq *ifs;
 };
 
+enum _excepthandler_kind {ExceptHandler_kind=1};
 struct _excepthandler {
-        expr_ty type;
-        expr_ty name;
-        asdl_seq *body;
+        enum _excepthandler_kind kind;
+        union {
+                struct {
+                        expr_ty type;
+                        expr_ty name;
+                        asdl_seq *body;
+                } ExceptHandler;
+                
+        } v;
         int lineno;
         int col_offset;
 };
@@ -489,8 +496,8 @@ slice_ty _Py_Index(expr_ty value, PyArena *arena);
 #define comprehension(a0, a1, a2, a3) _Py_comprehension(a0, a1, a2, a3)
 comprehension_ty _Py_comprehension(expr_ty target, expr_ty iter, asdl_seq *
                                    ifs, PyArena *arena);
-#define excepthandler(a0, a1, a2, a3, a4, a5) _Py_excepthandler(a0, a1, a2, a3, a4, a5)
-excepthandler_ty _Py_excepthandler(expr_ty type, expr_ty name, asdl_seq * body,
+#define ExceptHandler(a0, a1, a2, a3, a4, a5) _Py_ExceptHandler(a0, a1, a2, a3, a4, a5)
+excepthandler_ty _Py_ExceptHandler(expr_ty type, expr_ty name, asdl_seq * body,
                                    int lineno, int col_offset, PyArena *arena);
 #define arguments(a0, a1, a2, a3, a4) _Py_arguments(a0, a1, a2, a3, a4)
 arguments_ty _Py_arguments(asdl_seq * args, identifier vararg, identifier

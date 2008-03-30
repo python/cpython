@@ -336,13 +336,16 @@ static char *comprehension_fields[]={
         "ifs",
 };
 static PyTypeObject *excepthandler_type;
+static char *excepthandler_attributes[] = {
+        "lineno",
+        "col_offset",
+};
 static PyObject* ast2obj_excepthandler(void*);
-static char *excepthandler_fields[]={
+static PyTypeObject *ExceptHandler_type;
+static char *ExceptHandler_fields[]={
         "type",
         "name",
         "body",
-        "lineno",
-        "col_offset",
 };
 static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
@@ -776,9 +779,13 @@ static int init_types(void)
         comprehension_type = make_type("comprehension", AST_type,
                                        comprehension_fields, 3);
         if (!comprehension_type) return 0;
-        excepthandler_type = make_type("excepthandler", AST_type,
-                                       excepthandler_fields, 5);
+        excepthandler_type = make_type("excepthandler", AST_type, NULL, 0);
         if (!excepthandler_type) return 0;
+        if (!add_attributes(excepthandler_type, excepthandler_attributes, 2))
+            return 0;
+        ExceptHandler_type = make_type("ExceptHandler", excepthandler_type,
+                                       ExceptHandler_fields, 3);
+        if (!ExceptHandler_type) return 0;
         arguments_type = make_type("arguments", AST_type, arguments_fields, 4);
         if (!arguments_type) return 0;
         keyword_type = make_type("keyword", AST_type, keyword_fields, 2);
@@ -1825,16 +1832,17 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, PyArena *arena)
 }
 
 excepthandler_ty
-excepthandler(expr_ty type, expr_ty name, asdl_seq * body, int lineno, int
+ExceptHandler(expr_ty type, expr_ty name, asdl_seq * body, int lineno, int
               col_offset, PyArena *arena)
 {
         excepthandler_ty p;
         p = (excepthandler_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
-        p->type = type;
-        p->name = name;
-        p->body = body;
+        p->kind = ExceptHandler_kind;
+        p->v.ExceptHandler.type = type;
+        p->v.ExceptHandler.name = name;
+        p->v.ExceptHandler.body = body;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2901,31 +2909,35 @@ ast2obj_excepthandler(void* _o)
                 return Py_None;
         }
 
-        result = PyType_GenericNew(excepthandler_type, NULL, NULL);
-        if (!result) return NULL;
-        value = ast2obj_expr(o->type);
-        if (!value) goto failed;
-        if (PyObject_SetAttrString(result, "type", value) == -1)
-                goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->name);
-        if (!value) goto failed;
-        if (PyObject_SetAttrString(result, "name", value) == -1)
-                goto failed;
-        Py_DECREF(value);
-        value = ast2obj_list(o->body, ast2obj_stmt);
-        if (!value) goto failed;
-        if (PyObject_SetAttrString(result, "body", value) == -1)
-                goto failed;
-        Py_DECREF(value);
+        switch (o->kind) {
+        case ExceptHandler_kind:
+                result = PyType_GenericNew(ExceptHandler_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.ExceptHandler.type);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "type", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.ExceptHandler.name);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "name", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.ExceptHandler.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
+        }
         value = ast2obj_int(o->lineno);
         if (!value) goto failed;
-        if (PyObject_SetAttrString(result, "lineno", value) == -1)
+        if (PyObject_SetAttrString(result, "lineno", value) < 0)
                 goto failed;
         Py_DECREF(value);
         value = ast2obj_int(o->col_offset);
         if (!value) goto failed;
-        if (PyObject_SetAttrString(result, "col_offset", value) == -1)
+        if (PyObject_SetAttrString(result, "col_offset", value) < 0)
                 goto failed;
         Py_DECREF(value);
         return result;
@@ -5534,58 +5546,13 @@ int
 obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
-        expr_ty type;
-        expr_ty name;
-        asdl_seq* body;
+
         int lineno;
         int col_offset;
 
-        if (PyObject_HasAttrString(obj, "type")) {
-                int res;
-                tmp = PyObject_GetAttrString(obj, "type");
-                if (tmp == NULL) goto failed;
-                res = obj2ast_expr(tmp, &type, arena);
-                if (res != 0) goto failed;
-                Py_XDECREF(tmp);
-                tmp = NULL;
-        } else {
-                type = NULL;
-        }
-        if (PyObject_HasAttrString(obj, "name")) {
-                int res;
-                tmp = PyObject_GetAttrString(obj, "name");
-                if (tmp == NULL) goto failed;
-                res = obj2ast_expr(tmp, &name, arena);
-                if (res != 0) goto failed;
-                Py_XDECREF(tmp);
-                tmp = NULL;
-        } else {
-                name = NULL;
-        }
-        if (PyObject_HasAttrString(obj, "body")) {
-                int res;
-                Py_ssize_t len;
-                Py_ssize_t i;
-                tmp = PyObject_GetAttrString(obj, "body");
-                if (tmp == NULL) goto failed;
-                if (!PyList_Check(tmp)) {
-                        PyErr_Format(PyExc_TypeError, "excepthandler field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
-                        goto failed;
-                }
-                len = PyList_GET_SIZE(tmp);
-                body = asdl_seq_new(len, arena);
-                if (body == NULL) goto failed;
-                for (i = 0; i < len; i++) {
-                        stmt_ty value;
-                        res = obj2ast_stmt(PyList_GET_ITEM(tmp, i), &value, arena);
-                        if (res != 0) goto failed;
-                        asdl_seq_SET(body, i, value);
-                }
-                Py_XDECREF(tmp);
-                tmp = NULL;
-        } else {
-                PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from excepthandler");
-                return 1;
+        if (obj == Py_None) {
+                *out = NULL;
+                return 0;
         }
         if (PyObject_HasAttrString(obj, "lineno")) {
                 int res;
@@ -5611,8 +5578,67 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from excepthandler");
                 return 1;
         }
-        *out = excepthandler(type, name, body, lineno, col_offset, arena);
-        return 0;
+        if (PyObject_IsInstance(obj, (PyObject*)ExceptHandler_type)) {
+                expr_ty type;
+                expr_ty name;
+                asdl_seq* body;
+
+                if (PyObject_HasAttrString(obj, "type")) {
+                        int res;
+                        tmp = PyObject_GetAttrString(obj, "type");
+                        if (tmp == NULL) goto failed;
+                        res = obj2ast_expr(tmp, &type, arena);
+                        if (res != 0) goto failed;
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        type = NULL;
+                }
+                if (PyObject_HasAttrString(obj, "name")) {
+                        int res;
+                        tmp = PyObject_GetAttrString(obj, "name");
+                        if (tmp == NULL) goto failed;
+                        res = obj2ast_expr(tmp, &name, arena);
+                        if (res != 0) goto failed;
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        name = NULL;
+                }
+                if (PyObject_HasAttrString(obj, "body")) {
+                        int res;
+                        Py_ssize_t len;
+                        Py_ssize_t i;
+                        tmp = PyObject_GetAttrString(obj, "body");
+                        if (tmp == NULL) goto failed;
+                        if (!PyList_Check(tmp)) {
+                                PyErr_Format(PyExc_TypeError, "ExceptHandler field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                goto failed;
+                        }
+                        len = PyList_GET_SIZE(tmp);
+                        body = asdl_seq_new(len, arena);
+                        if (body == NULL) goto failed;
+                        for (i = 0; i < len; i++) {
+                                stmt_ty value;
+                                res = obj2ast_stmt(PyList_GET_ITEM(tmp, i), &value, arena);
+                                if (res != 0) goto failed;
+                                asdl_seq_SET(body, i, value);
+                        }
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from ExceptHandler");
+                        return 1;
+                }
+                *out = ExceptHandler(type, name, body, lineno, col_offset,
+                                     arena);
+                if (*out == NULL) goto failed;
+                return 0;
+        }
+
+        tmp = PyObject_Repr(obj);
+        if (tmp == NULL) goto failed;
+        PyErr_Format(PyExc_TypeError, "expected some sort of excepthandler, but got %.400s", PyString_AS_STRING(tmp));
 failed:
         Py_XDECREF(tmp);
         return 1;
@@ -5930,6 +5956,8 @@ init_ast(void)
             (PyObject*)comprehension_type) < 0) return;
         if (PyDict_SetItemString(d, "excepthandler",
             (PyObject*)excepthandler_type) < 0) return;
+        if (PyDict_SetItemString(d, "ExceptHandler",
+            (PyObject*)ExceptHandler_type) < 0) return;
         if (PyDict_SetItemString(d, "arguments", (PyObject*)arguments_type) <
             0) return;
         if (PyDict_SetItemString(d, "keyword", (PyObject*)keyword_type) < 0)
