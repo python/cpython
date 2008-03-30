@@ -1,6 +1,7 @@
 /* Built-in functions */
 
 #include "Python.h"
+#include "Python-ast.h"
 
 #include "node.h"
 #include "code.h"
@@ -527,22 +528,6 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 
 	cf.cf_flags = supplied_flags | PyCF_SOURCE_IS_UTF8;
 
-	str = source_as_string(cmd);
-	if (str == NULL)
-		return NULL;
-
-	if (strcmp(startstr, "exec") == 0)
-		start = Py_file_input;
-	else if (strcmp(startstr, "eval") == 0)
-		start = Py_eval_input;
-	else if (strcmp(startstr, "single") == 0)
-		start = Py_single_input;
-	else {
-		PyErr_SetString(PyExc_ValueError,
-		   "compile() arg 3 must be 'exec' or 'eval' or 'single'");
-		return NULL;
-	}
-
 	if (supplied_flags &
 	    ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST))
 	{
@@ -555,6 +540,48 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 	if (!dont_inherit) {
 		PyEval_MergeCompilerFlags(&cf);
 	}
+
+	if (PyAST_Check(cmd)) {
+		PyObject *result;
+		if (supplied_flags & PyCF_ONLY_AST) {
+			Py_INCREF(cmd);
+			result = cmd;
+		}
+		else {
+			PyArena *arena;
+			mod_ty mod;
+
+			arena = PyArena_New();
+			mod = PyAST_obj2mod(cmd, arena);
+			if (mod == NULL) {
+				PyArena_Free(arena);
+				return NULL;
+			}
+			result = (PyObject*)PyAST_Compile(mod, filename,
+							  &cf, arena);
+			PyArena_Free(arena);
+		}
+		return result;
+	}
+
+	/* XXX: is it possible to pass start to the PyAST_ branch? */
+	if (strcmp(startstr, "exec") == 0)
+		start = Py_file_input;
+	else if (strcmp(startstr, "eval") == 0)
+		start = Py_eval_input;
+	else if (strcmp(startstr, "single") == 0)
+		start = Py_single_input;
+	else {
+		PyErr_SetString(PyExc_ValueError,
+				"compile() arg 3 must be 'exec'"
+				"or 'eval' or 'single'");
+		return NULL;
+	}
+
+	str = source_as_string(cmd);
+	if (str == NULL)
+		return NULL;
+
 	return Py_CompileStringFlags(str, filename, start, &cf);
 }
 
