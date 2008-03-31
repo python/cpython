@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 57783.
+   __version__ 62078.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -445,9 +445,34 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     return res;
 }
 
+/* Pickling support */
+static PyObject *
+ast_type_reduce(PyObject *self, PyObject *unused)
+{
+    PyObject *res;
+    PyObject *dict = PyObject_GetAttrString(self, "__dict__");
+    if (dict == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+            PyErr_Clear();
+        else
+            return NULL;
+    }
+    if (dict) {
+        res = Py_BuildValue("O()O", Py_TYPE(self), dict);
+        Py_DECREF(dict);
+        return res;
+    }
+    return Py_BuildValue("O()", Py_TYPE(self));
+}
+
+static PyMethodDef ast_type_methods[] = {
+    {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
+    {NULL}
+};
+
 static PyTypeObject AST_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "AST",
+    "_ast.AST",
     sizeof(PyObject),
     0,
     0,                       /* tp_dealloc */
@@ -473,7 +498,7 @@ static PyTypeObject AST_type = {
     0,                       /* tp_weaklistoffset */
     0,                       /* tp_iter */
     0,                       /* tp_iternext */
-    0,                       /* tp_methods */
+    ast_type_methods,        /* tp_methods */
     0,                       /* tp_members */
     0,                       /* tp_getset */
     0,                       /* tp_base */
@@ -492,14 +517,9 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
 {
     PyObject *fnames, *result;
     int i;
-    if (num_fields) {
-        fnames = PyTuple_New(num_fields);
-        if (!fnames) return NULL;
-    } else {
-        fnames = Py_None;
-        Py_INCREF(Py_None);
-    }
-    for(i=0; i < num_fields; i++) {
+    fnames = PyTuple_New(num_fields);
+    if (!fnames) return NULL;
+    for (i = 0; i < num_fields; i++) {
         PyObject *field = PyUnicode_FromString(fields[i]);
         if (!field) {
             Py_DECREF(fnames);
@@ -6375,7 +6395,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "57783") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "62078") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
