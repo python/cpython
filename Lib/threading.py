@@ -8,6 +8,7 @@ except ImportError:
     del _sys.modules[__name__]
     raise
 
+import warnings
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
 from collections import deque
@@ -22,6 +23,12 @@ _allocate_lock = thread.allocate_lock
 _get_ident = thread.get_ident
 ThreadError = thread.error
 del thread
+
+
+# sys.exc_clear is used to work around the fact that except blocks
+# don't fully clear the exception until 3.0.
+warnings.filterwarnings('ignore', category=DeprecationWarning,
+                        module='threading', message='sys.exc_clear')
 
 
 # Debug support (adapted from ihooks.py).
