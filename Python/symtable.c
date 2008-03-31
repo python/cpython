@@ -1431,12 +1431,12 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
 static int 
 symtable_visit_excepthandler(struct symtable *st, excepthandler_ty eh)
 {
-	if (eh->type)
-		VISIT(st, expr, eh->type);
-	if (eh->name)
-        if (!symtable_add_def(st, eh->name, DEF_LOCAL))
+	if (eh->v.ExceptHandler.type)
+		VISIT(st, expr, eh->v.ExceptHandler.type);
+	if (eh->v.ExceptHandler.name)
+		if (!symtable_add_def(st, eh->v.ExceptHandler.name, DEF_LOCAL))
 			return 0;
-	VISIT_SEQ(st, stmt, eh->body);
+	VISIT_SEQ(st, stmt, eh->v.ExceptHandler.body);
 	return 1;
 }
 

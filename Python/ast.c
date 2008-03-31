@@ -2787,7 +2787,7 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         if (!suite_seq)
             return NULL;
 
-        return excepthandler(NULL, NULL, suite_seq, LINENO(exc),
+        return ExceptHandler(NULL, NULL, suite_seq, LINENO(exc),
                              exc->n_col_offset, c->c_arena);
     }
     else if (NCH(exc) == 2) {
@@ -2801,7 +2801,7 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         if (!suite_seq)
             return NULL;
 
-        return excepthandler(expression, NULL, suite_seq, LINENO(exc),
+        return ExceptHandler(expression, NULL, suite_seq, LINENO(exc),
                              exc->n_col_offset, c->c_arena);
     }
     else if (NCH(exc) == 4) {
@@ -2817,7 +2817,7 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         if (!suite_seq)
             return NULL;
 
-        return excepthandler(expression, e, suite_seq, LINENO(exc),
+        return ExceptHandler(expression, e, suite_seq, LINENO(exc),
                              exc->n_col_offset, c->c_arena);
     }
 

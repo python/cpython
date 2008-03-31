@@ -152,7 +152,7 @@ def run_tests():
 #### EVERYTHING BELOW IS GENERATED #####
 exec_results = [
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, None, [], None, None, [], []), [('Pass', (1, 9))], [], None)]),
-('Module', [('ClassDef', (1, 0), 'C', [], [], None, None, [('Pass', (1, 8))], [], )]),
+('Module', [('ClassDef', (1, 0), 'C', [], [], None, None, [('Pass', (1, 8))], [])]),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, None, [], None, None, [], []), [('Return', (1, 8), ('Num', (1, 15), 1))], [], None)]),
 ('Module', [('Delete', (1, 0), [('Name', (1, 4), 'v', ('Del',))])]),
 ('Module', [('Assign', (1, 0), [('Name', (1, 0), 'v', ('Store',))], ('Num', (1, 4), 1))]),
@@ -161,7 +161,7 @@ exec_results = [
 ('Module', [('While', (1, 0), ('Name', (1, 6), 'v', ('Load',)), [('Pass', (1, 8))], [])]),
 ('Module', [('If', (1, 0), ('Name', (1, 3), 'v', ('Load',)), [('Pass', (1, 5))], [])]),
 ('Module', [('Raise', (1, 0), ('Call', (1, 6), ('Name', (1, 6), 'Exception', ('Load',)), [('Str', (1, 16), 'string')], [], None, None), None)]),
-('Module', [('TryExcept', (1, 0), [('Pass', (2, 2))], [('excepthandler', (3, 0), ('Name', (3, 7), 'Exception', ('Load',)), None, [('Pass', (4, 2))], 3, 0)], [])]),
+('Module', [('TryExcept', (1, 0), [('Pass', (2, 2))], [('ExceptHandler', (3, 0), ('Name', (3, 7), 'Exception', ('Load',)), None, [('Pass', (4, 2))])], [])]),
 ('Module', [('TryFinally', (1, 0), [('Pass', (2, 2))], [('Pass', (4, 2))])]),
 ('Module', [('Assert', (1, 0), ('Name', (1, 7), 'v', ('Load',)), None)]),
 ('Module', [('Import', (1, 0), [('alias', 'sys', None)])]),
