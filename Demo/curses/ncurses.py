@@ -9,7 +9,7 @@ import curses
 from curses import panel
 
 def wGetchar(win = None):
-    if win == None: win = stdscr
+    if win is None: win = stdscr
     return win.getch()
 
 def Getchar():

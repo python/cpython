@@ -35,10 +35,9 @@ class AutoComplete:
                                    "popupwait", type="int", default=0)
 
     def __init__(self, editwin=None):
-        if editwin == None:  # subprocess and test
-            self.editwin = None
-            return
         self.editwin = editwin
+        if editwin is None:  # subprocess and test
+            return
         self.text = editwin.text
         self.autocompletewindow = None
 

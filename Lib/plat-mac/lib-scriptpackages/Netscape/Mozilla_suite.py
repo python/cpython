@@ -21,7 +21,7 @@ class Mozilla_suite_Events:
         _subcode = 'Impt'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -41,7 +41,7 @@ class Mozilla_suite_Events:
         _subcode = 'upro'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -61,7 +61,7 @@ class Mozilla_suite_Events:
         _subcode = 'wurl'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -126,7 +126,7 @@ class Mozilla_suite_Events:
         _subcode = 'addr'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -165,7 +165,7 @@ class Mozilla_suite_Events:
         _subcode = 'prfl'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,

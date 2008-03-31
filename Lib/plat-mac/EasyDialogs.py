@@ -78,7 +78,7 @@ def Message(msg, id=260, ok=None):
         return
     h = d.GetDialogItemAsControl(2)
     SetDialogItemText(h, lf2cr(msg))
-    if ok != None:
+    if ok is not None:
         h = d.GetDialogItemAsControl(1)
         h.SetControlTitle(ok)
     d.SetDialogDefaultItem(1)
@@ -115,10 +115,10 @@ def AskString(prompt, default = "", id=261, ok=None, cancel=None):
     SetDialogItemText(h, lf2cr(default))
     d.SelectDialogItemText(4, 0, 999)
 #       d.SetDialogItem(4, 0, 255)
-    if ok != None:
+    if ok is not None:
         h = d.GetDialogItemAsControl(1)
         h.SetControlTitle(ok)
-    if cancel != None:
+    if cancel is not None:
         h = d.GetDialogItemAsControl(2)
         h.SetControlTitle(cancel)
     d.SetDialogDefaultItem(1)
@@ -159,10 +159,10 @@ def AskPassword(prompt,  default='', id=264, ok=None, cancel=None):
     SetControlData(pwd, kControlEditTextPart, kControlEditTextPasswordTag, default)
     d.SelectDialogItemText(4, 0, 999)
     Ctl.SetKeyboardFocus(d.GetDialogWindow(), pwd, kControlEditTextPart)
-    if ok != None:
+    if ok is not None:
         h = d.GetDialogItemAsControl(1)
         h.SetControlTitle(ok)
-    if cancel != None:
+    if cancel is not None:
         h = d.GetDialogItemAsControl(2)
         h.SetControlTitle(cancel)
     d.SetDialogDefaultItem(Dialogs.ok)
@@ -203,19 +203,19 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
     # The question string is item 5
     h = d.GetDialogItemAsControl(5)
     SetDialogItemText(h, lf2cr(question))
-    if yes != None:
+    if yes is not None:
         if yes == '':
             d.HideDialogItem(2)
         else:
             h = d.GetDialogItemAsControl(2)
             h.SetControlTitle(yes)
-    if no != None:
+    if no is not None:
         if no == '':
             d.HideDialogItem(3)
         else:
             h = d.GetDialogItemAsControl(3)
             h.SetControlTitle(no)
-    if cancel != None:
+    if cancel is not None:
         if cancel == '':
             d.HideDialogItem(4)
         else:
@@ -316,7 +316,7 @@ class ProgressBar:
 
     def set(self, value, max=None):
         """set(value) - Set progress bar position"""
-        if max != None:
+        if max is not None:
             self.maxval = max
             bar = self.d.GetDialogItemAsControl(3)
             if max <= 0:    # indeterminate bar

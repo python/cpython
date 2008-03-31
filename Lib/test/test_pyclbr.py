@@ -55,7 +55,7 @@ class PyclbrTest(TestCase):
 
         ignore = set(ignore) | set(['object'])
 
-        if module == None:
+        if module is None:
             # Import it.
             # ('<silly>' is to work around an API silliness in __import__)
             module = __import__(moduleName, globals(), {}, ['<silly>'])

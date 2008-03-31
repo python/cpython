@@ -51,7 +51,7 @@ class CodeWarrior_suite_Events:
         _subcode = 'MAKE'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -135,7 +135,8 @@ class CodeWarrior_suite_Events:
         _subcode = 'EXPT'
 
         aetools.keysubst(_arguments, self._argmap_export)
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -154,7 +155,7 @@ class CodeWarrior_suite_Events:
         _subcode = 'RMOB'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -193,7 +194,7 @@ class CodeWarrior_suite_Events:
         _subcode = 'RUN '
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -232,7 +233,7 @@ class CodeWarrior_suite_Events:
         _subcode = 'UP2D'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,

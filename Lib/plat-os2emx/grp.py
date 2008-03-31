@@ -143,7 +143,7 @@ def __read_group_file():
     while 1:
         entry = group.readline().strip()
         if len(entry) > 3:
-            if sep == None:
+            if sep is None:
                 sep = __get_field_sep(entry)
             fields = entry.split(sep)
             fields[2] = int(fields[2])

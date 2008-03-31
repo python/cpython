@@ -72,7 +72,7 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'ClsP'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -190,7 +190,7 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'GDoc'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -217,7 +217,8 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'Gref'
 
         aetools.keysubst(_arguments, self._argmap_Get_Preferences)
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -263,7 +264,7 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'GetP'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -283,7 +284,7 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'GSeg'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -324,7 +325,7 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'NsCl'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -410,7 +411,8 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'Make'
 
         aetools.keysubst(_arguments, self._argmap_Make_Project)
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -503,7 +505,7 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'RemB'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -543,7 +545,7 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'ReFP'
 
         if _arguments: raise TypeError('No optional args expected')
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -570,7 +572,8 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'RunP'
 
         aetools.keysubst(_arguments, self._argmap_Run_Project)
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -682,7 +685,8 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'Pref'
 
         aetools.keysubst(_arguments, self._argmap_Set_Preferences)
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -778,7 +782,8 @@ class Metrowerks_Shell_Suite_Events:
         _subcode = 'UpdP'
 
         aetools.keysubst(_arguments, self._argmap_Update_Project)
-        if _no_object != None: raise TypeError('No direct arg expected')
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object is not None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,

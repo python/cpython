@@ -28,15 +28,6 @@ from . import patcomp
 from . import fixes
 from . import pygram
 
-if sys.version_info < (2, 4):
-    hdlr = logging.StreamHandler()
-    fmt = logging.Formatter('%(name)s: %(message)s')
-    hdlr.setFormatter(fmt)
-    logging.root.addHandler(hdlr)
-else:
-    logging.basicConfig(format='%(name)s: %(message)s', level=logging.INFO)
-
-
 def main(args=None):
     """Main program.
 
@@ -72,6 +63,15 @@ def main(args=None):
         print("At least one file or directory argument required.", file=sys.stderr)
         print("Use --help to show usage.", file=sys.stderr)
         return 2
+
+    # Set up logging handler
+    if sys.version_info < (2, 4):
+        hdlr = logging.StreamHandler()
+        fmt = logging.Formatter('%(name)s: %(message)s')
+        hdlr.setFormatter(fmt)
+        logging.root.addHandler(hdlr)
+    else:
+        logging.basicConfig(format='%(name)s: %(message)s', level=logging.INFO)
 
     # Initialize the refactoring tool
     rt = RefactoringTool(options)

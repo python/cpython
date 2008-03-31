@@ -82,7 +82,7 @@ def pack(x, forcetype = None):
         else:
             return pack(x).AECoerceDesc(forcetype)
 
-    if x == None:
+    if x is None:
         return AE.AECreateDesc(b'null', '')
 
     if isinstance(x, AEDescType):

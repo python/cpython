@@ -922,7 +922,7 @@ class PyShell(OutputWindow):
                 "The program is still running!\n Do you want to kill it?",
                 default="ok",
                 parent=self.text)
-            if response == False:
+            if response is False:
                 return "cancel"
         if self.reading:
             self.top.quit()
