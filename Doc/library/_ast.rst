@@ -44,9 +44,32 @@ node.  The utf8 offset is recorded because the parser uses utf8 internally.
 If these attributes are marked as optional in the grammar (using a question
 mark), the value might be ``None``. If the attributes can have zero-or-more
 values (marked with an asterisk), the values are represented as Python lists.
+All possible attributes must be present and have valid values when compiling an
+AST with :func:`compile`.
 
-The constructors of all ``_ast`` classes don't take arguments; instead, if you
-create instances, you must assign the required attributes separately.
+The constructor of a class ``_ast.T`` parses their arguments as follows:
+
+* If there are positional arguments, there must be as many as there are items in
+  ``T._fields``; they will be assigned as attributes of these names.
+* If there are keyword arguments, they will set the attributes of the same names
+  to the given values.
+
+For example, to create and populate a ``UnaryOp`` node, you could use ::
+
+   node = _ast.UnaryOp()
+   node.op = _ast.USub()
+   node.operand = _ast.Num()
+   node.operand.n = 5
+   node.operand.lineno = 0
+   node.operand.col_offset = 0
+   node.lineno = 0
+   node.col_offset = 0
+
+or the more compact ::
+
+   node = _ast.UnaryOp(_ast.USub(), _ast.Num(5, lineno=0, col_offset=0),
+                       lineno=0, col_offset=0)
+
 
 
 Abstract Grammar
