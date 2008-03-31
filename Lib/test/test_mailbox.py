@@ -626,9 +626,9 @@ class TestMaildir(TestMailbox):
                                                                 "tmp")),
                              "File in wrong location: '%s'" % head)
             match = pattern.match(tail)
-            self.assert_(match != None, "Invalid file name: '%s'" % tail)
+            self.assert_(match is not None, "Invalid file name: '%s'" % tail)
             groups = match.groups()
-            if previous_groups != None:
+            if previous_groups is not None:
                 self.assert_(int(groups[0] >= previous_groups[0]),
                              "Non-monotonic seconds: '%s' before '%s'" %
                              (previous_groups[0], groups[0]))

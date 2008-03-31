@@ -749,25 +749,25 @@ def setup(**geometry):
     global _width, _height, _startx, _starty
 
     width = geometry.get('width',_width)
-    if width is None or width >= 0:
+    if width >= 0 or width is None:
         _width = width
     else:
         raise ValueError("width can not be less than 0")
 
     height = geometry.get('height',_height)
-    if height is None or height >= 0:
+    if height >= 0 or height is None:
         _height = height
     else:
         raise ValueError("height can not be less than 0")
 
     startx = geometry.get('startx', _startx)
-    if startx is None or startx >= 0:
+    if startx >= 0 or startx is None:
         _startx = _startx
     else:
         raise ValueError("startx can not be less than 0")
 
     starty = geometry.get('starty', _starty)
-    if starty is None or starty >= 0:
+    if starty >= 0 or starty is None:
         _starty = starty
     else:
         raise ValueError("startx can not be less than 0")

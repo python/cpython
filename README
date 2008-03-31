@@ -37,6 +37,14 @@ Documentation for Python 3000 is online, updated twice a day:
 
     http://docs.python.org/dev/3.0/
 
+All documentation is also available online at the Python web site
+(http://docs.python.org/, see below).  It is available online for occasional
+reference, or can be downloaded in many formats for faster access.  The
+documentation is downloadable in HTML, PostScript, PDF, LaTeX (through 2.5), and
+reStructuredText (2.6+) formats; the LaTeX and reStructuredText versions are
+primarily for documentation authors, translators, and people with special
+formatting requirements.
+
 This is a work in progress; please help improve it!
 
 The design documents for Python 3000 are also online.  While the
@@ -77,6 +85,12 @@ For a more detailed change log, read Misc/NEWS (though this file, too,
 is incomplete, and also doesn't list anything merged in from the 2.6
 release under development).
 
+Proposals for enhancement
+------------------------------
+
+If you have a proposal to change Python, it's best to submit a Python
+Enhancement Proposal (PEP) first.  All current PEPs, as well as guidelines for
+submitting a new PEP, are listed at http://www.python.org/dev/peps/.
 
 Converting From Python 2.x to 3.0
 ---------------------------------

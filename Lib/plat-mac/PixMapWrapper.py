@@ -147,9 +147,9 @@ class PixMapWrapper:
         """Draw this pixmap into the given (default current) grafport."""
         src = self.bounds
         dest = [x1,y1,x2,y2]
-        if x2 == None:
+        if x2 is None:
             dest[2] = x1 + src[2]-src[0]
-        if y2 == None:
+        if y2 is None:
             dest[3] = y1 + src[3]-src[1]
         if not port: port = Qd.GetPort()
         Qd.CopyBits(self.PixMap(), port.GetPortBitMapForCopyBits(), src, tuple(dest),

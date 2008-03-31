@@ -50,7 +50,7 @@ def test():
                 value = d[key]
                 print('currently:', value)
             value = eval(input('value: '))
-            if value == None:
+            if value is None:
                 del d[key]
             else:
                 d[key] = value

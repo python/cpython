@@ -135,7 +135,7 @@ class DBShelf(MutableMapping):
 
 
     def keys(self, txn=None):
-        if txn != None:
+        if txn is not None:
             return self.db.keys(txn)
         else:
             return self.db.keys()
@@ -161,7 +161,7 @@ class DBShelf(MutableMapping):
 
 
     def items(self, txn=None):
-        if txn != None:
+        if txn is not None:
             items = self.db.items(txn)
         else:
             items = self.db.items()
@@ -172,7 +172,7 @@ class DBShelf(MutableMapping):
         return newitems
 
     def values(self, txn=None):
-        if txn != None:
+        if txn is not None:
             values = self.db.values(txn)
         else:
             values = self.db.values()

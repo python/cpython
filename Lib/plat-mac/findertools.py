@@ -124,7 +124,7 @@ def comment(object, comment=None):
     """comment: get or set the Finder-comment of the item, displayed in the 'Get Info' window."""
     object = Carbon.File.FSRef(object)
     object_alias = object.FSNewAliasMonimal()
-    if comment == None:
+    if comment is None:
         return _getcomment(object_alias)
     else:
         return _setcomment(object_alias, comment)
@@ -329,7 +329,7 @@ def label(object, index=None):
     """label: set or get the label of the item. Specify file by name or fsspec."""
     object = Carbon.File.FSRef(object)
     object_alias = object.FSNewAliasMinimal()
-    if index == None:
+    if index is None:
         return _getlabel(object_alias)
     if index < 0 or index > 7:
         index = 0
@@ -375,7 +375,7 @@ def windowview(folder, view=None):
     """
     fsr = Carbon.File.FSRef(folder)
     folder_alias = fsr.FSNewAliasMinimal()
-    if view == None:
+    if view is None:
         return _getwindowview(folder_alias)
     return _setwindowview(folder_alias, view)
 
@@ -535,7 +535,7 @@ def icon(object, icondata=None):
     Development opportunity: get and set the data as PICT."""
     fsr = Carbon.File.FSRef(object)
     object_alias = fsr.FSNewAliasMinimal()
-    if icondata == None:
+    if icondata is None:
         return _geticon(object_alias)
     return _seticon(object_alias, icondata)
 
