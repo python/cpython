@@ -15,6 +15,14 @@ import array
 from weakref import proxy
 import signal
 
+# Temporary hack to see why test_socket hangs on one buildbot
+if os.environ.get('COMPUTERNAME') == "GRAPE":
+    def verbose_write(arg):
+        print(arg, file=sys.__stdout__)
+else:
+    def verbose_write(arg):
+        pass
+
 PORT = 50007
 HOST = 'localhost'
 MSG = b'Michael Gilfix was here\n'
@@ -22,15 +30,21 @@ MSG = b'Michael Gilfix was here\n'
 class SocketTCPTest(unittest.TestCase):
 
     def setUp(self):
+        verbose_write(self)
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        verbose_write(str(self) + " socket created")
         global PORT
         PORT = test_support.bind_port(self.serv, HOST, PORT)
+        verbose_write(str(self) + " start listening")
         self.serv.listen(1)
+        verbose_write(str(self) + " started")
 
     def tearDown(self):
+        verbose_write(str(self) + " close")
         self.serv.close()
         self.serv = None
+        verbose_write(str(self) + " done")
 
 class SocketUDPTest(unittest.TestCase):
 

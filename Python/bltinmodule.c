@@ -513,13 +513,14 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 	char *str;
 	char *filename;
 	char *startstr;
-	int start;
+	int mode = -1;
 	int dont_inherit = 0;
 	int supplied_flags = 0;
 	PyCompilerFlags cf;
 	PyObject *cmd;
 	static char *kwlist[] = {"source", "filename", "mode", "flags",
 				 "dont_inherit", NULL};
+	int start[] = {Py_file_input, Py_eval_input, Py_single_input};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "Oss|ii:compile",
 					 kwlist, &cmd, &filename, &startstr,
@@ -541,6 +542,18 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 		PyEval_MergeCompilerFlags(&cf);
 	}
 
+	if (strcmp(startstr, "exec") == 0)
+		mode = 0;
+	else if (strcmp(startstr, "eval") == 0)
+		mode = 1;
+	else if (strcmp(startstr, "single") == 0)
+		mode = 2;
+	else {
+		PyErr_SetString(PyExc_ValueError,
+				"compile() arg 3 must be 'exec', 'eval' or 'single'");
+		return NULL;
+	}
+
 	if (PyAST_Check(cmd)) {
 		PyObject *result;
 		if (supplied_flags & PyCF_ONLY_AST) {
@@ -552,7 +565,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 			mod_ty mod;
 
 			arena = PyArena_New();
-			mod = PyAST_obj2mod(cmd, arena);
+			mod = PyAST_obj2mod(cmd, arena, mode);
 			if (mod == NULL) {
 				PyArena_Free(arena);
 				return NULL;
@@ -564,25 +577,11 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 		return result;
 	}
 
-	/* XXX: is it possible to pass start to the PyAST_ branch? */
-	if (strcmp(startstr, "exec") == 0)
-		start = Py_file_input;
-	else if (strcmp(startstr, "eval") == 0)
-		start = Py_eval_input;
-	else if (strcmp(startstr, "single") == 0)
-		start = Py_single_input;
-	else {
-		PyErr_SetString(PyExc_ValueError,
-				"compile() arg 3 must be 'exec'"
-				"or 'eval' or 'single'");
-		return NULL;
-	}
-
 	str = source_as_string(cmd);
 	if (str == NULL)
 		return NULL;
 
-	return Py_CompileStringFlags(str, filename, start, &cf);
+	return Py_CompileStringFlags(str, filename, start[mode], &cf);
 }
 
 PyDoc_STRVAR(compile_doc,
