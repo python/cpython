@@ -417,6 +417,7 @@ else:
                     except:
                         sys.stdout.write(''.join(traceback.format_exception(*sys.exc_info())))
                         break
+                    time.sleep(0.1)
 
             def server_close(self):
                 # Again, we want this to run in a thread, so we need to override
@@ -970,7 +971,11 @@ else:
                     raise test_support.TestFailed(
                         "Couldn't fetch data from HTTPS server")
             finally:
+                if test_support.verbose:
+                    sys.stdout.write('stopping server\n')
                 server.stop()
+                if test_support.verbose:
+                    sys.stdout.write('joining thread\n')
                 server.join()
 
         def testAsyncoreServer(self):
