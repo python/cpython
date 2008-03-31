@@ -10,6 +10,7 @@ Command line options:
 
 -v: verbose    -- run tests in verbose mode with output to stdout
 -w: verbose2   -- re-run failed tests in verbose mode
+-d: debug      -- print traceback for failed tests
 -q: quiet      -- don't print anything except if a test fails
 -x: exclude    -- arguments are tests to *exclude*
 -s: single     -- run only a single test (see below)
@@ -26,6 +27,7 @@ Command line options:
 -L: runleaks   -- run the leaks(1) command just before exit
 -R: huntrleaks -- search for reference leaks (needs debug build, v. slow)
 -M: memlimit   -- run very large memory-consuming tests
+-n: nowindows  -- suppress error message boxes on Windows
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -47,6 +49,12 @@ file is missing, the first test_*.py file in testdir or on the command
 line is used.  (actually tempfile.gettempdir() is used instead of
 /tmp).
 
+-S is used to continue running tests after an aborted run.  It will
+maintain the order a standard run (ie, this assumes -r is not used).
+This is useful after the tests have prematurely stopped for some external
+reason and you want to start running from where you left off rather
+than starting from the beginning.
+
 -f reads the names of tests from the file given as f's argument, one
 or more test names per line.  Whitespace is ignored.  Blank lines and
 lines beginning with '#' are ignored.  This is especially useful for
@@ -62,7 +70,7 @@ be of the form stab:run:fname where 'stab' is the number of times the
 test is run to let gettotalrefcount settle down, 'run' is the number
 of times further it is run and 'fname' is the name of the file the
 reports are written to.  These parameters all have defaults (5, 4 and
-"reflog.txt" respectively), so the minimal invocation is '-R ::'.
+"reflog.txt" respectively), and the minimal invocation is '-R :'.
 
 -M runs tests that require an exorbitant amount of memory. These tests
 typically try to ascertain containers keep working when containing more than
@@ -106,11 +114,8 @@ resources to test.  Currently only the following are defined:
     decimal -   Test the decimal module against a large suite that
                 verifies compliance with standards.
 
-    compiler -  Test the compiler package by compiling all the source
-                in the standard library and test suite.  This takes
-                a long time.  Enabling this resource also allows
-                test_tokenize to verify round-trip lexing on every
-                file in the test library.
+    compiler -  Allow test_tokenize to verify round-trip lexing on
+                every file in the test library.
 
     subprocess  Run all tests for the subprocess module.
 
@@ -121,11 +126,11 @@ example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
 """
 
-import cStringIO
 import getopt
 import os
 import random
 import re
+import io
 import sys
 import time
 import traceback
@@ -136,7 +141,7 @@ from inspect import isabstract
 # putting them in test_grammar.py has no effect:
 warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
                         ".*test.test_grammar$")
-if sys.maxint > 0x7fffffff:
+if sys.maxsize > 0x7fffffff:
     # Also suppress them in <string>, because for 64-bit platforms,
     # that's where test_grammar.py hides them.
     warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
@@ -172,10 +177,10 @@ RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
                   'decimal', 'compiler', 'subprocess', 'urlfetch')
 
 
-def usage(code, msg=''):
-    print __doc__
-    if msg: print msg
-    sys.exit(code)
+def usage(msg):
+    print(msg, file=sys.stderr)
+    print("Use --help for usage", file=sys.stderr)
+    sys.exit(2)
 
 
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
@@ -206,31 +211,39 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsSrf:lu:t:TD:NLR:wM:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsSrf:lu:t:TD:NLR:wM:n',
                                    ['help', 'verbose', 'quiet', 'exclude',
                                     'single', 'slow', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
                                     'coverdir=', 'nocoverdir', 'runleaks',
                                     'huntrleaks=', 'verbose2', 'memlimit=',
+                                    'debug', 'start=', "nowindows"
                                     ])
-    except getopt.error, msg:
-        usage(2, msg)
+    except getopt.error as msg:
+        usage(msg)
 
     # Defaults
     if use_resources is None:
         use_resources = []
+    debug = False
+    start = None
     for o, a in opts:
         if o in ('-h', '--help'):
-            usage(0)
+            print(__doc__)
+            return
         elif o in ('-v', '--verbose'):
             verbose += 1
         elif o in ('-w', '--verbose2'):
             verbose2 = True
+        elif o in ('-d', '--debug'):
+            debug = True
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
         elif o in ('-x', '--exclude'):
             exclude = True
+        elif o in ('-S', '--start'):
+            start = a
         elif o in ('-s', '--single'):
             single = True
         elif o in ('-S', '--slow'):
@@ -254,19 +267,22 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             coverdir = None
         elif o in ('-R', '--huntrleaks'):
             huntrleaks = a.split(':')
-            if len(huntrleaks) != 3:
-                print a, huntrleaks
-                usage(2, '-R takes three colon-separated arguments')
-            if len(huntrleaks[0]) == 0:
+            if len(huntrleaks) not in (2, 3):
+                print(a, huntrleaks)
+                usage('-R takes 2 or 3 colon-separated arguments')
+            if not huntrleaks[0]:
                 huntrleaks[0] = 5
             else:
                 huntrleaks[0] = int(huntrleaks[0])
-            if len(huntrleaks[1]) == 0:
+            if not huntrleaks[1]:
                 huntrleaks[1] = 4
             else:
                 huntrleaks[1] = int(huntrleaks[1])
-            if len(huntrleaks[2]) == 0:
-                huntrleaks[2] = "reflog.txt"
+            if len(huntrleaks) == 2 or not huntrleaks[2]:
+                huntrleaks[2:] = ["reflog.txt"]
+            # Avoid false positives due to the character cache in
+            # stringobject.c filling slowly with random data
+            warm_char_cache()
         elif o in ('-M', '--memlimit'):
             test_support.set_memlimit(a)
         elif o in ('-u', '--use'):
@@ -280,14 +296,31 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                     remove = True
                     r = r[1:]
                 if r not in RESOURCE_NAMES:
-                    usage(1, 'Invalid -u/--use option: ' + a)
+                    usage('Invalid -u/--use option: ' + a)
                 if remove:
                     if r in use_resources:
                         use_resources.remove(r)
                 elif r not in use_resources:
                     use_resources.append(r)
+        elif o in ('-n', '--nowindows'):
+            import msvcrt
+            msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
+                    msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
+                    msvcrt.SEM_NOGPFAULTERRORBOX|
+                    msvcrt.SEM_NOOPENFILEERRORBOX)
+            try:
+                msvcrt.CrtSetReportMode
+            except AttributeError:
+                # release build
+                pass
+            else:
+                for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+    if generate and verbose:
+        usage("-g and -v don't go together!")
     if single and fromfile:
-        usage(2, "-s and -f don't go together!")
+        usage("-s and -f don't go together!")
 
     good = []
     bad = []
@@ -298,7 +331,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         try:
             import gc
         except ImportError:
-            print 'No GC available, disabling findleaks.'
+            print('No GC available, disabling findleaks.')
             findleaks = False
         else:
             # Uncomment the line below to report garbage that is not
@@ -329,21 +362,27 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     # Strip .py extensions.
     if args:
-        args = map(removepy, args)
+        args = list(map(removepy, args))
     if tests:
-        tests = map(removepy, tests)
+        tests = list(map(removepy, tests))
 
     stdtests = STDTESTS[:]
-    nottests = NOTTESTS[:]
+    nottests = NOTTESTS.copy()
     if exclude:
         for arg in args:
             if arg in stdtests:
                 stdtests.remove(arg)
-        nottests[:0] = args
+            nottests.add(arg)
         args = []
     tests = tests or args or findtests(testdir, stdtests, nottests)
     if single:
         tests = tests[:1]
+    # Remove all the tests that precede start if it's set.
+    if start:
+        try:
+            del tests[:tests.index(start)]
+        except ValueError:
+            print("Couldn't find starting test (%s), using all tests" % start)
     if randomize:
         random.shuffle(tests)
     if trace:
@@ -356,7 +395,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     save_modules = sys.modules.keys()
     for test in tests:
         if not quiet:
-            print test
+            print(test)
             sys.stdout.flush()
         if trace:
             # If we're tracing code coverage, then we don't exit with status
@@ -370,7 +409,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                              testdir, huntrleaks)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
-                print
+                print()
                 break
             except:
                 raise
@@ -385,8 +424,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         if findleaks:
             gc.collect()
             if gc.garbage:
-                print "Warning: test created", len(gc.garbage),
-                print "uncollectable object(s)."
+                print("Warning: test created", len(gc.garbage), end=' ')
+                print("uncollectable object(s).")
                 # move the uncollectable objects somewhere so we don't see
                 # them again
                 found_garbage.extend(gc.garbage)
@@ -403,18 +442,21 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
-            print "All",
-        print count(len(good), "test"), "OK."
+            print("All", end=' ')
+        print(count(len(good), "test"), "OK.")
+        if verbose:
+            print("CAUTION:  stdout isn't compared in verbose mode:")
+            print("a test that passes in verbose mode may fail without it.")
     if print_slow:
         test_times.sort(reverse=True)
-        print "10 slowest tests:"
+        print("10 slowest tests:")
         for time, test in test_times[:10]:
-            print "%s: %.1fs" % (test, time)
+            print("%s: %.1fs" % (test, time))
     if bad:
-        print count(len(bad), "test"), "failed:"
+        print(count(len(bad), "test"), "failed:")
         printlist(bad)
     if skipped and not quiet:
-        print count(len(skipped), "test"), "skipped:"
+        print(count(len(skipped), "test"), "skipped:")
         printlist(skipped)
 
         e = _ExpectedSkips()
@@ -422,27 +464,27 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         if e.isvalid():
             surprise = set(skipped) - e.getexpected() - set(resource_denieds)
             if surprise:
-                print count(len(surprise), "skip"), \
-                      "unexpected on", plat + ":"
+                print(count(len(surprise), "skip"), \
+                      "unexpected on", plat + ":")
                 printlist(surprise)
             else:
-                print "Those skips are all expected on", plat + "."
+                print("Those skips are all expected on", plat + ".")
         else:
-            print "Ask someone to teach regrtest.py about which tests are"
-            print "expected to get skipped on", plat + "."
+            print("Ask someone to teach regrtest.py about which tests are")
+            print("expected to get skipped on", plat + ".")
 
     if verbose2 and bad:
-        print "Re-running failed tests in verbose mode"
+        print("Re-running failed tests in verbose mode")
         for test in bad:
-            print "Re-running test %r in verbose mode" % test
+            print("Re-running test %r in verbose mode" % test)
             sys.stdout.flush()
             try:
                 test_support.verbose = True
                 ok = runtest(test, generate, True, quiet, test_times, testdir,
-                             huntrleaks)
+                             huntrleaks, debug)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
-                print
+                print()
                 break
             except:
                 raise
@@ -481,13 +523,13 @@ STDTESTS = [
     'test_unittest',
     'test_doctest',
     'test_doctest2',
-   ]
+]
 
-NOTTESTS = [
+NOTTESTS = {
     'test_support',
     'test_future1',
     'test_future2',
-    ]
+}
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     """Return a list of all applicable test modules."""
@@ -495,7 +537,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     names = os.listdir(testdir)
     tests = []
     for name in names:
-        if name[:5] == "test_" and name[-3:] == os.extsep+"py":
+        if name[:5] == "test_" and name[-3:] == ".py":
             modname = name[:-3]
             if modname not in stdtests and modname not in nottests:
                 tests.append(modname)
@@ -503,7 +545,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + tests
 
 def runtest(test, generate, verbose, quiet, test_times,
-            testdir=None, huntrleaks=False):
+            testdir=None, huntrleaks=False, debug=False):
     """Run a single test.
 
     test -- the name of the test
@@ -513,6 +555,8 @@ def runtest(test, generate, verbose, quiet, test_times,
     testdir -- test directory
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
+    debug -- if true, print tracebacks for failed tests regardless of
+             verbose setting
     Return:
         -2  test skipped because resource denied
         -1  test skipped for some other reason
@@ -527,21 +571,21 @@ def runtest(test, generate, verbose, quiet, test_times,
         cleanup_test_droppings(test, verbose)
 
 def runtest_inner(test, generate, verbose, quiet, test_times,
-                  testdir=None, huntrleaks=False):
+                  testdir=None, huntrleaks=False, debug=False):
     test_support.unload(test)
     if not testdir:
         testdir = findtestdir()
     if verbose:
         cfp = None
     else:
-        cfp = cStringIO.StringIO()
+        cfp = io.StringIO()  # XXX Should use io.StringIO()
 
     try:
         save_stdout = sys.stdout
         try:
             if cfp:
                 sys.stdout = cfp
-                print test              # Output file starts with test name
+                print(test)              # Output file starts with test name
             if test.startswith('test.'):
                 abstest = test
             else:
@@ -562,27 +606,27 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
             test_times.append((test_time, test))
         finally:
             sys.stdout = save_stdout
-    except test_support.ResourceDenied, msg:
+    except test_support.ResourceDenied as msg:
         if not quiet:
-            print test, "skipped --", msg
+            print(test, "skipped --", msg)
             sys.stdout.flush()
         return -2
-    except (ImportError, test_support.TestSkipped), msg:
+    except (ImportError, test_support.TestSkipped) as msg:
         if not quiet:
-            print test, "skipped --", msg
+            print(test, "skipped --", msg)
             sys.stdout.flush()
         return -1
     except KeyboardInterrupt:
         raise
-    except test_support.TestFailed, msg:
-        print "test", test, "failed --", msg
+    except test_support.TestFailed as msg:
+        print("test", test, "failed --", msg)
         sys.stdout.flush()
         return 0
     except:
         type, value = sys.exc_info()[:2]
-        print "test", test, "crashed --", str(type) + ":", value
+        print("test", test, "crashed --", str(type) + ":", value)
         sys.stdout.flush()
-        if verbose:
+        if verbose or debug:
             traceback.print_exc(file=sys.stdout)
             sys.stdout.flush()
         return 0
@@ -593,7 +637,7 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
         expected = test + "\n"
         if output == expected or huntrleaks:
             return 1
-        print "test", test, "produced unexpected output:"
+        print("test", test, "produced unexpected output:")
         sys.stdout.flush()
         reportdiff(expected, output)
         sys.stdout.flush()
@@ -623,12 +667,12 @@ def cleanup_test_droppings(testname, verbose):
                               "directory nor file" % name)
 
         if verbose:
-            print "%r left behind %s %r" % (testname, kind, name)
+            print("%r left behind %s %r" % (testname, kind, name))
         try:
             nuker(name)
-        except Exception, msg:
-            print >> sys.stderr, ("%r left behind %s %r and it couldn't be "
-                "removed: %s" % (testname, kind, name, msg))
+        except Exception as msg:
+            print(("%r left behind %s %r and it couldn't be "
+                "removed: %s" % (testname, kind, name, msg)), file=sys.stderr)
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
     # This code is hackish and inelegant, but it seems to do the job.
@@ -654,27 +698,29 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             indirect_test()
     else:
         def run_the_test():
-            reload(the_module)
+            del sys.modules[the_module.__name__]
+            exec('import ' + the_module.__name__)
 
     deltas = []
     nwarmup, ntracked, fname = huntrleaks
     repcount = nwarmup + ntracked
-    print >> sys.stderr, "beginning", repcount, "repetitions"
-    print >> sys.stderr, ("1234567890"*(repcount//10 + 1))[:repcount]
+    print("beginning", repcount, "repetitions", file=sys.stderr)
+    print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr)
     dash_R_cleanup(fs, ps, pic, abcs)
     for i in range(repcount):
         rc = sys.gettotalrefcount()
         run_the_test()
         sys.stderr.write('.')
+        sys.stderr.flush()
         dash_R_cleanup(fs, ps, pic, abcs)
         if i >= nwarmup:
             deltas.append(sys.gettotalrefcount() - rc - 2)
-    print >> sys.stderr
+    print(file=sys.stderr)
     if any(deltas):
         msg = '%s leaked %s references, sum=%s' % (test, deltas, sum(deltas))
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
         refrep = open(fname, "a")
-        print >> refrep, msg
+        print(msg, file=refrep)
         refrep.close()
 
 def dash_R_cleanup(fs, ps, pic, abcs):
@@ -683,6 +729,7 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     import urlparse, urllib, urllib2, mimetypes, doctest
     import struct, filecmp, _abcoll
     from distutils.dir_util import _path_created
+    from weakref import WeakSet
 
     # Restore some original values.
     warnings.filters[:] = fs
@@ -699,7 +746,7 @@ def dash_R_cleanup(fs, ps, pic, abcs):
         if not isabstract(abc):
             continue
         for obj in abc.__subclasses__() + [abc]:
-            obj._abc_registry = abcs.get(obj, {}).copy()
+            obj._abc_registry = abcs.get(obj, WeakSet()).copy()
             obj._abc_cache.clear()
             obj._abc_negative_cache.clear()
 
@@ -720,9 +767,14 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     # Collect cyclic trash.
     gc.collect()
 
+def warm_char_cache():
+    s = bytes(range(256))
+    for i in range(256):
+        s[i:i+1]
+
 def reportdiff(expected, output):
     import difflib
-    print "*" * 70
+    print("*" * 70)
     a = expected.splitlines(1)
     b = output.splitlines(1)
     sm = difflib.SequenceMatcher(a=a, b=b)
@@ -741,26 +793,26 @@ def reportdiff(expected, output):
             pass
 
         elif op == 'delete':
-            print "***", pair(a0, a1), "of expected output missing:"
+            print("***", pair(a0, a1), "of expected output missing:")
             for line in a[a0:a1]:
-                print "-", line,
+                print("-", line, end='')
 
         elif op == 'replace':
-            print "*** mismatch between", pair(a0, a1), "of expected", \
-                  "output and", pair(b0, b1), "of actual output:"
+            print("*** mismatch between", pair(a0, a1), "of expected", \
+                  "output and", pair(b0, b1), "of actual output:")
             for line in difflib.ndiff(a[a0:a1], b[b0:b1]):
-                print line,
+                print(line, end='')
 
         elif op == 'insert':
-            print "***", pair(b0, b1), "of actual output doesn't appear", \
-                  "in expected output after line", str(a1)+":"
+            print("***", pair(b0, b1), "of actual output doesn't appear", \
+                  "in expected output after line", str(a1)+":")
             for line in b[b0:b1]:
-                print "+", line,
+                print("+", line, end='')
 
         else:
-            print "get_opcodes() returned bad tuple?!?!", (op, a0, a1, b0, b1)
+            print("get_opcodes() returned bad tuple?!?!", (op, a0, a1, b0, b1))
 
-    print "*" * 70
+    print("*" * 70)
 
 def findtestdir():
     if __name__ == '__main__':
@@ -771,7 +823,7 @@ def findtestdir():
     return testdir
 
 def removepy(name):
-    if name.endswith(os.extsep + "py"):
+    if name.endswith(".py"):
         name = name[:-3]
     return name
 
@@ -791,8 +843,8 @@ def printlist(x, width=70, indent=4):
 
     from textwrap import fill
     blanks = ' ' * indent
-    print fill(' '.join(map(str, x)), width,
-               initial_indent=blanks, subsequent_indent=blanks)
+    print(fill(' '.join(map(str, x)), width,
+               initial_indent=blanks, subsequent_indent=blanks))
 
 # Map sys.platform to a string containing the basenames of tests
 # expected to be skipped on that platform.
@@ -801,9 +853,6 @@ def printlist(x, width=70, indent=4):
 #     test_pep277
 #         The _ExpectedSkips constructor adds this to the set of expected
 #         skips if not os.path.supports_unicode_filenames.
-#     test_socket_ssl
-#         Controlled by test_socket_ssl.skip_expected.  Requires the network
-#         resource, and a socket module with ssl support.
 #     test_timeout
 #         Controlled by test_timeout.skip_expected.  Requires the network
 #         resource and a socket module.
@@ -815,7 +864,6 @@ _expectations = {
     'win32':
         """
         test__locale
-        test_bsddb185
         test_bsddb3
         test_commands
         test_crypt
@@ -840,14 +888,13 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
+        test_syslog
         test_threadsignals
-        test_timing
         test_wait3
         test_wait4
         """,
     'linux2':
         """
-        test_bsddb185
         test_curses
         test_dl
         test_largefile
@@ -858,7 +905,6 @@ _expectations = {
         """
         test_atexit
         test_bsddb
-        test_bsddb185
         test_bsddb3
         test_bz2
         test_commands
@@ -879,7 +925,6 @@ _expectations = {
         test_ossaudiodev
         test_poll
         test_popen
-        test_popen2
         test_posix
         test_pty
         test_pwd
@@ -887,12 +932,10 @@ _expectations = {
         test_signal
         test_sundry
         test_tarfile
-        test_timing
         """,
     'unixware7':
         """
         test_bsddb
-        test_bsddb185
         test_dl
         test_epoll
         test_largefile
@@ -906,7 +949,6 @@ _expectations = {
     'openunix8':
         """
         test_bsddb
-        test_bsddb185
         test_dl
         test_epoll
         test_largefile
@@ -921,7 +963,6 @@ _expectations = {
         """
         test_asynchat
         test_bsddb
-        test_bsddb185
         test_dl
         test_fork1
         test_epoll
@@ -940,39 +981,6 @@ _expectations = {
         test_threadedtempfile
         test_threading
         """,
-    'riscos':
-        """
-        test_asynchat
-        test_atexit
-        test_bsddb
-        test_bsddb185
-        test_bsddb3
-        test_commands
-        test_crypt
-        test_dbm
-        test_dl
-        test_fcntl
-        test_fork1
-        test_epoll
-        test_gdbm
-        test_grp
-        test_largefile
-        test_locale
-        test_kqueue
-        test_mmap
-        test_openpty
-        test_poll
-        test_popen2
-        test_pty
-        test_pwd
-        test_strop
-        test_sundry
-        test_thread
-        test_threaded_import
-        test_threadedtempfile
-        test_threading
-        test_timing
-        """,
     'darwin':
         """
         test__locale
@@ -983,7 +991,6 @@ _expectations = {
         test_gdbm
         test_largefile
         test_locale
-        test_kqueue
         test_minidom
         test_ossaudiodev
         test_poll
@@ -991,7 +998,6 @@ _expectations = {
     'sunos5':
         """
         test_bsddb
-        test_bsddb185
         test_curses
         test_dbm
         test_epoll
@@ -1005,7 +1011,6 @@ _expectations = {
     'hp-ux11':
         """
         test_bsddb
-        test_bsddb185
         test_curses
         test_dl
         test_epoll
@@ -1023,7 +1028,6 @@ _expectations = {
         """,
     'atheos':
         """
-        test_bsddb185
         test_curses
         test_dl
         test_gdbm
@@ -1034,12 +1038,10 @@ _expectations = {
         test_mhlib
         test_mmap
         test_poll
-        test_popen2
         test_resource
         """,
     'cygwin':
         """
-        test_bsddb185
         test_bsddb3
         test_curses
         test_dbm
@@ -1054,7 +1056,6 @@ _expectations = {
     'os2emx':
         """
         test_audioop
-        test_bsddb185
         test_bsddb3
         test_commands
         test_curses
@@ -1080,7 +1081,6 @@ _expectations = {
         test_ossaudiodev
         test_pep277
         test_pty
-        test_socket_ssl
         test_socketserver
         test_tcl
         test_timeout
@@ -1089,7 +1089,6 @@ _expectations = {
     'aix5':
         """
         test_bsddb
-        test_bsddb185
         test_bsddb3
         test_bz2
         test_dl
@@ -1119,7 +1118,6 @@ _expectations = {
     'netbsd3':
         """
         test_bsddb
-        test_bsddb185
         test_bsddb3
         test_ctypes
         test_curses
@@ -1147,25 +1145,25 @@ class _ExpectedSkips:
             s = _expectations[sys.platform]
             self.expected = set(s.split())
 
-            # expected to be skipped on every platform, even Linux
-            self.expected.add('test_linuxaudiodev')
+            # These are broken tests, for now skipped on every platform.
+            # XXX Fix these!
+            self.expected.add('test_cProfile')
 
+            # expected to be skipped on every platform, even Linux
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
 
-            try:
-                from test import test_socket_ssl
-            except ImportError:
-                pass
-            else:
-                if test_socket_ssl.skip_expected:
-                    self.expected.add('test_socket_ssl')
+            # doctest, profile and cProfile tests fail when the codec for the
+            # fs encoding isn't built in because PyUnicode_Decode() adds two
+            # calls into Python.
+            encs = ("utf-8", "latin-1", "ascii", "mbcs", "utf-16", "utf-32")
+            if sys.getfilesystemencoding().lower() not in encs:
+                self.expected.add('test_profile')
+                self.expected.add('test_cProfile')
+                self.expected.add('test_doctest')
 
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')
-
-            if sys.maxint == 9223372036854775807L:
-                self.expected.add('test_imageop')
 
             if not sys.platform in ("mac", "darwin"):
                 MAC_ONLY = ["test_macostools", "test_aepack",
@@ -1183,18 +1181,8 @@ class _ExpectedSkips:
                 for skip in WIN_ONLY:
                     self.expected.add(skip)
 
-            if sys.platform != 'irix':
-                IRIX_ONLY = ["test_imageop", "test_al", "test_cd", "test_cl",
-                             "test_gl", "test_imgfile"]
-                for skip in IRIX_ONLY:
-                    self.expected.add(skip)
-
             if sys.platform != 'sunos5':
-                self.expected.add('test_sunaudiodev')
                 self.expected.add('test_nis')
-
-            if not sys.py3kwarning:
-                self.expected.add('test_py3kwarn')
 
             self.valid = True
 
@@ -1225,5 +1213,5 @@ if __name__ == '__main__':
         if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
             del sys.path[i]
     if len(sys.path) == pathlen:
-        print 'Could not find %r in sys.path to remove it' % mydir
+        print('Could not find %r in sys.path to remove it' % mydir)
     main()
