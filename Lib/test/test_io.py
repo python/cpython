@@ -545,7 +545,7 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
         output = ''
         for b in input:
             if self.i == 0: # variable-length, terminated with period
-                if b == ord('.'):
+                if b == '.':
                     if self.buffer:
                         output += self.process_word()
                 else:
@@ -560,9 +560,9 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
 
     def process_word(self):
         output = ''
-        if self.buffer[0] == ord('i'):
+        if self.buffer[0] == 'i':
             self.i = min(99, int(self.buffer[1:] or 0)) # set input length
-        elif self.buffer[0] == ord('o'):
+        elif self.buffer[0] == 'o':
             self.o = min(99, int(self.buffer[1:] or 0)) # set output length
         else:
             output = self.buffer.decode('ascii')
@@ -895,8 +895,7 @@ class TextIOWrapperTest(unittest.TestCase):
         f.readline()
         f.tell()
 
-    # FIXME: figure out why the test fails with Python 2.6
-    def XXXtestSeekAndTell(self):
+    def testSeekAndTell(self):
         """Test seek/tell using the StatefulIncrementalDecoder."""
 
         def lookupTestDecoder(name):
