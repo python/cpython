@@ -17,9 +17,7 @@ class CurrentTimeTest(unittest.TestCase):
         try:
             t0 = server.currentTime.getCurrentTime()
         except socket.error as e:
-            if e.errno != errno.ECONNRESET:
-                raise
-            print("    test_current_time: socket got reset, skipping test",
+            print("    test_current_time: skipping test, got error: %s" % e,
                   file=sys.stderr)
             return
 
