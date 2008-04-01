@@ -3139,7 +3139,7 @@ class Test_import(FixerTestCase):
 
     def setUp(self):
         FixerTestCase.setUp(self)
-        # Need to replace fix_import's isfile and isdir method
+        # Need to replace fix_import's exists method
         # so we can check that it's doing the right thing
         self.files_checked = []
         self.always_exists = True
