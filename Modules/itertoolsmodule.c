@@ -2133,7 +2133,7 @@ permutations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (robj != Py_None) {
 		if (!PyLong_Check(robj)) {
 			PyErr_SetString(PyExc_TypeError, "Expected int as r");
-			return NULL;
+			goto error;
 		}
 		r = PyLong_AsSsize_t(robj);
 		if (r == -1 && PyErr_Occurred())
