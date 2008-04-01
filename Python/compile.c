@@ -1551,6 +1551,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 	{
 		/* use the class name for name mangling */
 		Py_INCREF(s->v.ClassDef.name);
+		Py_XDECREF(c->u->u_private);
 		c->u->u_private = s->v.ClassDef.name;
 		/* force it to have one mandatory argument */
 		c->u->u_argcount = 1;
