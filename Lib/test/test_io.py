@@ -574,6 +574,22 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
         self.buffer = bytearray()
         return output
 
+    codecEnabled = False
+
+    @classmethod
+    def lookupTestDecoder(cls, name):
+        if cls.codecEnabled and name == 'test_decoder':
+            return codecs.CodecInfo(
+                name='test_decoder', encode=None, decode=None,
+                incrementalencoder=None,
+                streamreader=None, streamwriter=None,
+                incrementaldecoder=cls)
+
+# Register the previous decoder for testing.
+# Disabled by default, tests will enable it.
+codecs.register(StatefulIncrementalDecoder.lookupTestDecoder)
+
+
 class StatefulIncrementalDecoderTest(unittest.TestCase):
     """
     Make sure the StatefulIncrementalDecoder actually works.
@@ -898,14 +914,6 @@ class TextIOWrapperTest(unittest.TestCase):
     def testSeekAndTell(self):
         """Test seek/tell using the StatefulIncrementalDecoder."""
 
-        def lookupTestDecoder(name):
-            if self.codecEnabled and name == 'test_decoder':
-                return codecs.CodecInfo(
-                    name='test_decoder', encode=None, decode=None,
-                    incrementalencoder=None,
-                    streamreader=None, streamwriter=None,
-                    incrementaldecoder=StatefulIncrementalDecoder)
-
         def testSeekAndTellWithData(data, min_pos=0):
             """Tell/seek to various points within a data stream and ensure
             that the decoded data returned by read() is consistent."""
@@ -926,9 +934,8 @@ class TextIOWrapperTest(unittest.TestCase):
                     self.assertEquals(f.read(), decoded[i:])
                     f.close()
 
-        # Register a special incremental decoder for testing.
-        codecs.register(lookupTestDecoder)
-        self.codecEnabled = 1
+        # Enable the test decoder.
+        StatefulIncrementalDecoder.codecEnabled = 1
 
         # Run the tests.
         try:
@@ -947,7 +954,7 @@ class TextIOWrapperTest(unittest.TestCase):
 
         # Ensure our test decoder won't interfere with subsequent tests.
         finally:
-            self.codecEnabled = 0
+            StatefulIncrementalDecoder.codecEnabled = 0
 
     def testEncodedWrites(self):
         data = u"1234567890"
