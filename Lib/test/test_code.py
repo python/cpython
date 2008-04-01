@@ -100,3 +100,7 @@ def test_main(verbose=None):
     from test.test_support import run_doctest
     from test import test_code
     run_doctest(test_code, verbose)
+
+
+if __name__ == '__main__':
+    test_main()
