@@ -317,13 +317,12 @@ class TestCollectionABCs(unittest.TestCase):
         self.failIf(issubclass(str, MutableSequence))
 
 import doctest, collections
-NamedTupleDocs = doctest.DocTestSuite(module=collections)
 
 def test_main(verbose=None):
-    import collections as CollectionsModule
+    NamedTupleDocs = doctest.DocTestSuite(module=collections)
     test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs, TestCollectionABCs]
     test_support.run_unittest(*test_classes)
-    test_support.run_doctest(CollectionsModule, verbose)
+    test_support.run_doctest(collections, verbose)
 
 
 if __name__ == "__main__":

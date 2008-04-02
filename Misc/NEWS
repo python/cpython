@@ -29,6 +29,19 @@ Library
   as a build_py replacement to automatically run 2to3 on modules
   that are going to be installed.
 
+- Issue #2315: logging.handlers: TimedRotatingFileHandler now accounts for
+  daylight savings time in calculating the next rollover.
+
+- Issue #2316: logging.handlers: TimedRotatingFileHandler  now calculates
+  rollovers correctly even when nothing is logged for a while.
+
+- Issue #2317: logging.handlers: TimedRotatingFileHandler now uses improved
+  logic for removing old files.
+
+- Issue #2495: tokenize.untokenize now inserts a space between two consecutive
+  string literals; previously, ["" ""] was rendered as [""""], which is
+  incorrect python code.
+
 - A new pickle protocol (protocol 3) is added with explicit support
   for bytes.  This is the default protocol.  It intentionally cannot
   be unpickled by Python 2.x.
@@ -57,6 +70,115 @@ Library
 What's New in Python 3.0a3?
 ===========================
 
+- Issue #1681432:  Add triangular distribution to the random module
+
+- Issue #2136: urllib2's auth handler now allows single-quoted realms in the
+  WWW-Authenticate header.
+
+- Issue #2434: Enhanced platform.win32_ver() to also work on Python
+  installation which do not have the win32all package installed.
+
+- Added support to platform.uname() to also report the machine
+  and processor information on Windows XP and later. As a result,
+  platform.machine() and platform.processor() will report this
+  information as well.
+
+- The library implementing the 2to3 conversion, lib2to3, was added
+  to the standard distribution.
+
+- Issue #1747858: Fix chown to work with large uid's and gid's on 64-bit
+  platforms.
+
+- Issue #1202: zlib.crc32 and zlib.adler32 no longer return different values
+  on 32-bit vs. 64-bit python interpreters.  Both were correct, but they now
+  both return a signed integer object for consistency.
+
+- Issue #1158: add %f format (fractions of a second represented as
+  microseconds) to datetime objects.  Understood by both strptime and
+  strftime.
+
+- Issue #705836: struct.pack(">f", x) now raises OverflowError on all
+  platforms when x is too large to fit into an IEEE 754 float; previously
+  it only raised OverflowError on non IEEE 754 platforms.
+
+- Issue #1106316: pdb.post_mortem()'s parameter, "traceback", is now
+  optional: it defaults to the traceback of the exception that is currently
+  being handled (is mandatory to be in the middle of an exception, otherwise
+  it raises ValueError).
+
+- Issue #1193577: A .shutdown() method has been added to SocketServers
+  which terminates the .serve_forever() loop.
+
+- Bug #2220: handle rlcompleter attribute match failure more gracefully.
+
+- Issue #2225: py_compile, when executed as a script, now returns a non-
+  zero status code if not all files could be compiled successfully.
+
+- Bug #1725737: In distutil's sdist, exclude RCS, CVS etc. also in the
+  root directory, and also exclude .hg, .git, .bzr, and _darcs.
+
+- Issue #1872: The struct module typecode for _Bool has been changed
+  from 't' to '?'.
+
+- The bundled libffi copy is now in sync with the recently released
+  libffi3.0.4 version, apart from some small changes to
+  Modules/_ctypes/libffi/configure.ac.
+  On OS X, preconfigured libffi files are used.
+  On all linux systems the --with-system-ffi configure option defaults
+  to "yes".
+
+- Issue 1577: shutil.move() now calls os.rename() if the destination is a
+  directory instead of copying-then-remove-source.
+
+Tests
+-----
+
+- test_nis no longer fails when test.test_support.verbose is true and NIS is
+  not set up on the testing machine.
+
+- Output comparison tests are no longer supported.
+
+- Rewrite test_errno to use unittest and no longer be a no-op.
+
+- GHOP 234: Convert test_extcall to doctest.
+
+- GHOP 290: Convert test_dbm and test_dummy_threading to unittest.
+
+- GHOP 293: Convert test_strftime, test_getargs, and test_pep247 to unittest.
+
+- Issue #2055: Convert test_fcntl to unittest.
+
+- Issue 1960: Convert test_gdbm to unittest.
+
+- GHOP 294: Convert test_contains, test_crypt, and test_select to unittest.
+
+- GHOP 238: Convert test_tokenize to use doctest.
+
+- GHOP 237: Rewrite test_thread using unittest.
+
+- Patch #2232: os.tmpfile might fail on Windows if the user has no
+  permission to create files in the root directory.
+
+Build
+-----
+
+- A new script 2to3 is now installed, to run the 2.x to 3.x converter.
+
+- Python/memmove.c and Python/strerror.c have been removed; both functions are
+  in the C89 standard library.
+
+- Patch #2284: Add -x64 option to rt.bat.
+
+C API
+-----
+
+- Patch #2477: Added PyParser_ParseFileFlagsEx() and
+  PyParser_ParseStringFlagsFilenameEx()
+
+What's New in Python 2.6 alpha 1?
+=================================
+
+>>>>>>> .merge-right.r62114
 *Release date: 29-Feb-2008*
 
 Core and Builtins
@@ -64,8 +186,40 @@ Core and Builtins
 
 - Issue #2282: io.TextIOWrapper was not overriding seekable() from io.IOBase.
 
-- Issue #2115: Important speedup in setting __slot__ attributes.  Also 
-  prevent a possible crash: an Abstract Base Class would try to access a slot 
+- Issue #2067: file.__exit__() now calls subclasses' close() method.
+
+- Patch #1759: Backport of PEP 3129 class decorators.
+
+- Issue #1881: An internal parser limit has been increased. Also see
+  issue 215555 for a discussion.
+
+- Added the future_builtins module, which contains hex() and oct().
+  These are the PEP 3127 version of these functions, designed to be
+  compatible with the hex() and oct() builtins from Python 3.0.  They
+  differ slightly in their output formats from the existing, unchanged
+  Python 2.6 builtins.  The expected usage of the future_builtins
+  module is:
+    from future_builtins import hex, oct
+
+- Issue #1600: Modifed PyOS_ascii_formatd to use at most 2 digit
+  exponents for exponents with absolute value < 100.  Follows C99
+  standard.  This is a change on Windows, which would use 3 digits.
+  Also, added 'n' to the formats that PyOS_ascii_formatd understands,
+  so that any alterations it does to the resulting string will be
+  available in stringlib/formatter.h (for float.__format__).
+
+- Implemented PEP 3101, Advanced String Formatting.  This adds a new
+  builtin format(); a format() method for str and unicode; a
+  __format__() method to object, str, unicode, int, long, float, and
+  datetime; the class string.Formatter; and the C API
+  PyObject_Format().
+
+- Fixed several potential crashes, all caused by specially crafted __del__
+  methods exploiting objects in temporarily inconsistent state.
+
+>>>>>>> .merge-right.r62114
+- Issue #2115: Important speedup in setting __slot__ attributes.  Also
+  prevent a possible crash: an Abstract Base Class would try to access a slot
   on a registered virtual subclass.
 
 - Fixed repr() and str() of complex numbers with infinity or nan as real or
@@ -105,6 +259,11 @@ Core and Builtins
 - Issue #1771: remove cmp parameter from sorted() and list.sort()
 
 - Issue #1969: split and rsplit in bytearray are inconsistent
+
+- Issue #1920: "while 0" statements were completely removed by the compiler,
+  even in the presence of an "else" clause, which is supposed to be run when
+  the condition is false. Now the compiler correctly emits bytecode for the
+  "else" suite.
 
 - map() and no longer accepts None for the first argument.
   Use zip() instead.
@@ -496,8 +655,14 @@ C API
 - Removed these C APIs:
   PyNumber_Coerce(), PyNumber_CoerceEx(), PyMember_Get, PyMember_Set
 
+- ``PySet_Add()`` can now modify a newly created frozenset.  Similarly to
+  ``PyTuple_SetItem``, it can be used to populate a brand new frozenset; but
+  it does not steal a reference to the added item.
+
 - Removed these C slots/fields:
   nb_divide, nb_inplace_divide
+
+- Added ``PySet_Check()`` and ``PyFrozenSet_Check()`` to the set API.
 
 - Removed these macros:
   staticforward, statichere, PyArg_GetInt, PyArg_NoArgs, _PyObject_Del
@@ -533,5 +698,35 @@ Platforms
 
 Tools/Demos
 -----------
+
+- Bug #1542693: remove semi-colon at end of PyImport_ImportModuleEx macro
+  so it can be used as an expression.
+
+
+Windows
+-------
+
+- Patch #1706: Drop support for Win9x, WinME and NT4. Python now requires
+  Windows 2000 or greater. The _WINVER and NTDDI_VERSION macros are set to
+  Win2k for x86/32bit builds and WinXP for AMD64 builds.
+
+- Conditionalize definition of _CRT_SECURE_NO_DEPRECATE
+  and _CRT_NONSTDC_NO_DEPRECATE.
+
+- Bug #1216: Restore support for Visual Studio 2002.
+
+
+Mac
+---
+
+- cfmfile now raises a DeprecationWarning.
+
+- buildtools now raises a DeprecationWarning.
+
+- Removed the macfs module.  It had been deprecated since Python 2.5.  This
+  lead to the deprecation of macostools.touched() as it relied solely on macfs
+  and was a no-op under OS X.
+
+----
 
 **(For information about older versions, consult the HISTORY file.)**

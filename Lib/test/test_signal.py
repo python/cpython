@@ -28,6 +28,15 @@ def exit_subprocess():
     os._exit(0)
 
 
+def ignoring_eintr(__func, *args, **kwargs):
+    try:
+        return __func(*args, **kwargs)
+    except IOError as e:
+        if e.errno != signal.EINTR:
+            raise
+        return None
+
+
 class InterProcessSignalTests(unittest.TestCase):
     MAX_DURATION = 20   # Entire test should last at most 20 sec.
 
@@ -77,8 +86,11 @@ class InterProcessSignalTests(unittest.TestCase):
         if test_support.verbose:
             print("test runner's pid is", pid)
 
-        child = subprocess.Popen(['kill', '-HUP', str(pid)])
-        self.wait(child)
+        child = ignoring_eintr(subprocess.Popen, ['kill', '-HUP', str(pid)])
+        if child:
+            self.wait(child)
+            if not self.a_called:
+                time.sleep(1)  # Give the signal time to be delivered.
         self.assertTrue(self.a_called)
         self.assertFalse(self.b_called)
         self.a_called = False
@@ -87,6 +99,7 @@ class InterProcessSignalTests(unittest.TestCase):
             child = subprocess.Popen(['kill', '-USR1', str(pid)])
             # This wait should be interrupted by the signal's exception.
             self.wait(child)
+            time.sleep(1)  # Give the signal time to be delivered.
             self.fail('HandlerBCalled exception not thrown')
         except HandlerBCalled:
             self.assertTrue(self.b_called)
@@ -94,8 +107,9 @@ class InterProcessSignalTests(unittest.TestCase):
             if test_support.verbose:
                 print("HandlerBCalled exception caught")
 
-        child = subprocess.Popen(['kill', '-USR2', str(pid)])
-        self.wait(child)  # Nothing should happen.
+        child = ignoring_eintr(subprocess.Popen, ['kill', '-USR2', str(pid)])
+        if child:
+            self.wait(child)  # Nothing should happen.
 
         try:
             signal.alarm(1)
@@ -103,14 +117,18 @@ class InterProcessSignalTests(unittest.TestCase):
             # since alarm is going to raise a KeyboardException, which
             # will skip the call.
             signal.pause()
+            # But if another signal arrives before the alarm, pause
+            # may return early.
+            time.sleep(1)
         except KeyboardInterrupt:
             if test_support.verbose:
                 print("KeyboardInterrupt (the alarm() went off)")
         except:
-            self.fail('Some other exception woke us from pause: %s' %
+            self.fail("Some other exception woke us from pause: %s" %
                       traceback.format_exc())
         else:
-            self.fail('pause returned of its own accord')
+            self.fail("pause returned of its own accord, and the signal"
+                      " didn't arrive after another second.")
 
     def test_main(self):
         # This function spawns a child process to insulate the main
