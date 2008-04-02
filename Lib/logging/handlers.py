@@ -22,12 +22,12 @@ Apache's log4j system.
 Should work under Python versions >= 1.5.2, except that source line
 information is not available unless 'sys._getframe()' is.
 
-Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2008 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
 
-import logging, socket, types, os, string, cPickle, struct, time, glob
+import logging, socket, types, os, string, cPickle, struct, time, re
 from stat import ST_DEV, ST_INO
 
 try:
@@ -176,15 +176,19 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         if self.when == 'S':
             self.interval = 1 # one second
             self.suffix = "%Y-%m-%d_%H-%M-%S"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$"
         elif self.when == 'M':
             self.interval = 60 # one minute
             self.suffix = "%Y-%m-%d_%H-%M"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}$"
         elif self.when == 'H':
             self.interval = 60 * 60 # one hour
             self.suffix = "%Y-%m-%d_%H"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}$"
         elif self.when == 'D' or self.when == 'MIDNIGHT':
             self.interval = 60 * 60 * 24 # one day
             self.suffix = "%Y-%m-%d"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}$"
         elif self.when.startswith('W'):
             self.interval = 60 * 60 * 24 * 7 # one week
             if len(self.when) != 2:
@@ -193,9 +197,11 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 raise ValueError("Invalid day specified for weekly rollover: %s" % self.when)
             self.dayOfWeek = int(self.when[1])
             self.suffix = "%Y-%m-%d"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}$"
         else:
             raise ValueError("Invalid rollover interval specified: %s" % self.when)
 
+        self.extMatch = re.compile(self.extMatch)
         self.interval = self.interval * interval # multiply by units requested
         self.rolloverAt = currentTime + self.interval
 
@@ -238,22 +244,53 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                         daysToWait = self.dayOfWeek - day
                     else:
                         daysToWait = 6 - day + self.dayOfWeek + 1
-                    self.rolloverAt = self.rolloverAt + (daysToWait * (60 * 60 * 24))
+                    newRolloverAt = self.rolloverAt + (daysToWait * (60 * 60 * 24))
+                    dstNow = t[-1]
+                    dstAtRollover = time.localtime(newRolloverAt)[-1]
+                    if dstNow != dstAtRollover:
+                        if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
+                            newRolloverAt = newRolloverAt - 3600
+                        else:           # DST bows out before next rollover, so we need to add an hour
+                            newRolloverAt = newRolloverAt + 3600
+                    self.rolloverAt = newRolloverAt
 
         #print "Will rollover at %d, %d seconds from now" % (self.rolloverAt, self.rolloverAt - currentTime)
 
     def shouldRollover(self, record):
         """
-        Determine if rollover should occur
+        Determine if rollover should occur.
 
         record is not used, as we are just comparing times, but it is needed so
-        the method siguratures are the same
+        the method signatures are the same
         """
         t = int(time.time())
         if t >= self.rolloverAt:
             return 1
         #print "No need to rollover: %d, %d" % (t, self.rolloverAt)
         return 0
+
+    def getFilesToDelete(self):
+        """
+        Determine the files to delete when rolling over.
+
+        More specific than the earlier method, which just used glob.glob().
+        """
+        dirName, baseName = os.path.split(self.baseFilename)
+        fileNames = os.listdir(dirName)
+        result = []
+        prefix = baseName + "."
+        plen = len(prefix)
+        for fileName in fileNames:
+            if fileName[:plen] == prefix:
+                suffix = fileName[plen:]
+                if self.extMatch.match(suffix):
+                    result.append(fileName)
+        result.sort()
+        if len(result) < self.backupCount:
+            result = []
+        else:
+            result = result[:len(result) - self.backupCount]
+        return result
 
     def doRollover(self):
         """
@@ -273,14 +310,29 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         os.rename(self.baseFilename, dfn)
         if self.backupCount > 0:
             # find the oldest log file and delete it
-            s = glob.glob(self.baseFilename + ".20*")
-            if len(s) > self.backupCount:
-                s.sort()
-                os.remove(s[0])
+            #s = glob.glob(self.baseFilename + ".20*")
+            #if len(s) > self.backupCount:
+            #    s.sort()
+            #    os.remove(s[0])
+            for s in self.getFilesToDelete():
+                os.remove(s)
         #print "%s -> %s" % (self.baseFilename, dfn)
         self.mode = 'w'
         self.stream = self._open()
-        self.rolloverAt = self.rolloverAt + self.interval
+        newRolloverAt = self.rolloverAt + self.interval
+        currentTime = int(time.time())
+        while newRolloverAt <= currentTime:
+            newRolloverAt = newRolloverAt + self.interval
+        #If DST changes and midnight or weekly rollover, adjust for this.
+        if self.when == 'MIDNIGHT' or self.when.startswith('W'):
+            dstNow = time.localtime(currentTime)[-1]
+            dstAtRollover = time.localtime(newRolloverAt)[-1]
+            if dstNow != dstAtRollover:
+                if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
+                    newRolloverAt = newRolloverAt - 3600
+                else:           # DST bows out before next rollover, so we need to add an hour
+                    newRolloverAt = newRolloverAt + 3600
+        self.rolloverAt = newRolloverAt
 
 class WatchedFileHandler(logging.FileHandler):
     """
