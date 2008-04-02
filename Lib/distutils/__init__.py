@@ -18,4 +18,7 @@ __revision__ = "$Id$"
 # In general, major and minor version should loosely follow the Python
 # version number the distutils code was shipped with.
 #
-__version__ = "2.6.0"
+
+#--start constants--
+__version__ = "3.0a4"
+#--end constants--
