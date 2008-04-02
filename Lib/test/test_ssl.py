@@ -380,6 +380,7 @@ else:
                     except:
                         sys.stdout.write(''.join(traceback.format_exception(*sys.exc_info())))
                         break
+                    time.sleep(0.1)
 
             def server_close(self):
                 # Again, we want this to run in a thread, so we need to override
