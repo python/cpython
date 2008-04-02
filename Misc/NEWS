@@ -88,6 +88,15 @@ Extensions Modules
 Library
 -------
 
+- Issue #2315: logging.handlers: TimedRotatingFileHandler now accounts for
+  daylight savings time in calculating the next rollover.
+
+- Issue #2316: logging.handlers: TimedRotatingFileHandler  now calculates
+  rollovers correctly even when nothing is logged for a while.
+
+- Issue #2317: logging.handlers: TimedRotatingFileHandler now uses improved
+  logic for removing old files.
+
 - Issue #2495: tokenize.untokenize now inserts a space between two consecutive
   string literals; previously, ["" ""] was rendered as [""""], which is
   incorrect python code.
@@ -209,7 +218,7 @@ Build
 C API
 -----
 
-- Patch #2477: Added PyParser_ParseFileFlagsEx() and 
+- Patch #2477: Added PyParser_ParseFileFlagsEx() and
   PyParser_ParseStringFlagsFilenameEx()
 
 What's New in Python 2.6 alpha 1?
@@ -227,7 +236,7 @@ Core and builtins
 
 - Patch #1759: Backport of PEP 3129 class decorators.
 
-- Issue #1881: An internal parser limit has been increased. Also see 
+- Issue #1881: An internal parser limit has been increased. Also see
   issue 215555 for a discussion.
 
 - Added the future_builtins module, which contains hex() and oct().
@@ -254,8 +263,8 @@ Core and builtins
 - Fixed several potential crashes, all caused by specially crafted __del__
   methods exploiting objects in temporarily inconsistent state.
 
-- Issue #2115: Important speedup in setting __slot__ attributes.  Also 
-  prevent a possible crash: an Abstract Base Class would try to access a slot 
+- Issue #2115: Important speedup in setting __slot__ attributes.  Also
+  prevent a possible crash: an Abstract Base Class would try to access a slot
   on a registered virtual subclass.
 
 - Fixed repr() and str() of complex numbers with infinity or nan as real or
@@ -298,7 +307,7 @@ Core and builtins
   generator.
 
 - Issue #1920: "while 0" statements were completely removed by the compiler,
-  even in the presence of an "else" clause, which is supposed to be run when 
+  even in the presence of an "else" clause, which is supposed to be run when
   the condition is false. Now the compiler correctly emits bytecode for the
   "else" suite.
 
@@ -1836,10 +1845,10 @@ C API
   limit is a macro ``PyName_MAXFREELIST`` inside an #ifndef block.
 
 - ``PySet_Add()`` can now modify a newly created frozenset.  Similarly to
-  ``PyTuple_SetItem``, it can be used to populate a brand new frozenset; but 
+  ``PyTuple_SetItem``, it can be used to populate a brand new frozenset; but
   it does not steal a reference to the added item.
 
-- Added ``PySet_Check()`` and ``PyFrozenSet_Check()`` to the set API. 
+- Added ``PySet_Check()`` and ``PyFrozenSet_Check()`` to the set API.
 
 - Backport of PyUnicode_FromString(), _FromStringAndSize(), _Format and
   _FormatV from Python 3.0. Made PyLong_AsSsize_t and PyLong_FromSsize_t
@@ -1892,7 +1901,7 @@ C API
 Windows
 -------
 
-- Patch #1706: Drop support for Win9x, WinME and NT4. Python now requires 
+- Patch #1706: Drop support for Win9x, WinME and NT4. Python now requires
   Windows 2000 or greater. The _WINVER and NTDDI_VERSION macros are set to
   Win2k for x86/32bit builds and WinXP for AMD64 builds.
 
