@@ -1,10 +1,17 @@
 Building Python using VC++ 9.0
 ------------------------------
 
-This directory is used to build Python for Win32 platforms, e.g. Windows
-2000, XP and Vista.  It requires Microsoft Visual C++ 9.0
-(a.k.a. Visual Studio .NET 2008).
-(For other Windows platforms and compilers, see ../PC/readme.txt.)
+This directory is used to build Python for Win32 and x64 platforms, e.g. 
+Windows 2000, XP, Vista and Windows Server 2008.  In order to build 32-bit
+debug and release executables, Microsoft Visual C++ 2008 Express Edition is
+required at the very least.  In order to build 64-bit debug and release
+executables, Visual Studio 2008 Standard Edition is required at the very
+least.  In order to build all of the above, as well as generate release builds
+that make use of Profile Guided Optimisation (PG0), Visual Studio 2008
+Professional Edition is required at the very least.  The official Python
+releases are built with this version of Visual Studio.
+
+For other Windows platforms and compilers, see ../PC/readme.txt.
 
 All you need to do is open the workspace "pcbuild.sln" in Visual Studio,
 select the desired combination of configuration and platform and eventually
@@ -59,7 +66,7 @@ Visual Studio 2008 uses version 9 of the C runtime (MSVCRT9).  The executables
 are linked to a CRT "side by side" assembly which must be present on the target
 machine.  This is avalible under the VC/Redist folder of your visual studio
 distribution. On XP and later operating systems that support
-side-by-side assemblies it is not enough to have the msvcrt80.dll present,
+side-by-side assemblies it is not enough to have the msvcrt90.dll present,
 it has to be there as a whole assembly, that is, a folder with the .dll
 and a .manifest.  Also, a check is made for the correct version.
 Therefore, one should distribute this assembly with the dlls, and keep
@@ -95,79 +102,19 @@ unicodedata
 winsound
     play sounds (typically .wav files) under Windows
 
-The following subprojects will generally NOT build out of the box. They
-wrap code Python doesn't control, and you'll need to download the base
-packages first and unpack them into siblings of PCbuilds's parent
-directory; for example, if your PCbuild is  ..\dist\py3k\PCbuild\,
-unpack into new subdirectories of ..\dist\.
-
+Python-controlled subprojects that wrap external projects:
+_bsddb
+    Wraps Berkeley DB 4.4.20, which is currently built by _bsddb44.vcproj.
+    project (see below).
+_sqlite3
+    Wraps SQLite 3.3.4, which is currently built by sqlite3.vcproj (see below).
 _tkinter
-    Python wrapper for the Tk windowing system.  Requires building
-    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.16.
-    
-    NOTE: The 64 build builds must land in tcltk64 instead of tcltk.
-
-    Get source
-    ----------
-    In the dist directory, run
-    svn export http://svn.python.org/projects/external/tcl8.4.16
-    svn export http://svn.python.org/projects/external/tk8.4.16
-    svn export http://svn.python.org/projects/external/tix-8.4.0
-
-    Build with build_tkinter.py
-    ---------------------------
-    The PCbuild directory contains a Python script which automates all
-    steps. Run the script in a Visual Studio 2008 command prompt with 
-
-      python build_tkinter.py Win32
-
-    Use x64 instead of Win32 for the x64 platform.
-    
-    NOTE: Tcl/Tk 8.4 doesn't compile for x64.
-    
-    Build Tcl first 
-    ---------------
-    Use "Start -> All Programs -> Microsoft Visual Studio 2008
-         -> Visual Studio Tools -> Visual Studio 2008 Command Prompt"
-    to get a shell window with the correct environment settings
-    cd dist\tcl8.4.16\win
-    nmake -f makefile.vc
-    nmake -f makefile.vc INSTALLDIR=..\..\tcltk install
-
-    XXX Should we compile with OPTS=threads?
-
-    Optional:  run tests, via
-        nmake -f makefile.vc test
-
-        On WinXP Pro, wholly up to date as of 30-Aug-2004:
-        all.tcl:        Total   10678   Passed  9969    Skipped 709     Failed  0
-        Sourced 129 Test Files.
-
-    Build Tk
-    --------
-    cd dist\tk8.4.16\win
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.16
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.16 INSTALLDIR=..\..\tcltk install
-
-    XXX Should we compile with OPTS=threads?
-
-    XXX Our installer copies a lot of stuff out of the Tcl/Tk install
-    XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
-
-    Optional:  run tests, via
-        nmake -f makefile.vc TCLDIR=..\..\tcl8.4.16 test
-
-        On WinXP Pro, wholly up to date as of 30-Aug-2004:
-        all.tcl:        Total   8420    Passed  6826    Skipped 1581    Failed  13
-        Sourced 91 Test Files.
-        Files with failing tests: canvImg.test scrollbar.test textWind.test winWm.test
-
-   Built Tix
-   ---------
-   cd dist\tix-8.4.0\win
-   nmake -f python9.mak
-   nmake -f python9.mak install
-
+    Wraps the Tk windowing system.  Unlike _bsddb and _sqlite3, there's no
+    corresponding tcltk.vcproj-type project that builds Tcl/Tk from vcproj's
+    within our pcbuild.sln, which means this module expects to find a
+    pre-built Tcl/Tk in either ..\..\tcltk for 32-bit or ..\..\tcltk64 for
+    64-bit (relative to this directory).  See below for instructions to build
+    Tcl/Tk. 
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
         http://sources.redhat.com/bzip2/
@@ -175,6 +122,10 @@ bz2
     directory:
 
     svn export http://svn.python.org/projects/external/bzip2-1.0.3
+
+    ** NOTE: if you use the Tools\buildbot\external(-amd64).bat approach for
+    obtaining external sources then you don't need to manually get the source
+    above via subversion. **
 
     A custom pre-link step in the bz2 project settings should manage to
     build bzip2-1.0.3\libbz2.lib by magic before bz2.pyd (or bz2_d.pyd) is
@@ -186,69 +137,16 @@ bz2
     All of this managed to build libbz2.lib in 
     bzip2-1.0.3\$platform-$configuration\, which the Python project links in.
 
-
-_bsddb
-    To use the version of bsddb that Python is built with by default, invoke
-    (in the dist directory)
-
-      svn export http://svn.python.org/projects/external/db-4.4.20
-
-    Next open the solution file db-4.4.20\build_win32\Berkeley_DB.sln with
-    Visual Studio and convert the projects to the new format. VS 2008 
-    builds the necessary libraries in a pre-link step of _bsddb. You
-    have to add "$(VCInstallDir)vcpackages" to the search path first
-    (Tools -> Options -> Projects and Solutions -> VC++ Directories,
-     Platform: Win32, Show directories for: Executable files).
-    
-    The _bsddb subprojects depends only on the db_static project of 
-    Berkeley DB. You have to choose either "Release", "Release AMD64", "Debug"
-    or "Debug AMD64" as configuration. For the AND64 builds, you need to
-    create the "x64" platform first (in Solution Platforms\Configuration
-    Manager...)
-
-    Alternatively, if you want to start with the original sources,
-    go to Sleepycat's download page:
-        http://www.sleepycat.com/downloads/releasehistorybdb.html
-
-    and download version 4.4.20.
-
-    With or without strong cryptography? You can choose either with or
-    without strong cryptography, as per the instructions below.  By
-    default, Python is built and distributed WITHOUT strong crypto.
-
-    Unpack the sources; if you downloaded the non-crypto version, rename
-    the directory from db-4.4.20.NC to db-4.4.20.
-
-    Now apply any patches that apply to your version.
-
-    Open
-        db-4.4.20\docs\ref\build_win\intro.html
-
-    and follow the "Windows->Building Berkeley DB with Visual C++ .NET"
-    instructions for building the Sleepycat
-    software.  Note that Berkeley_DB.dsw is in the build_win32 subdirectory.
-    Build the "db_static" project, for "Release" mode.
-
-    To run extensive tests, pass "-u bsddb" to regrtest.py.  test_bsddb3.py
-    is then enabled.  Running in verbose mode may be helpful.
-
-_sqlite3
-    Python wrapper for SQLite library.
-    
-    Get the source code through
-    
-    svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
-    
-    To use the extension module in a Python build tree, copy sqlite3.dll into
-    the PCbuild folder. The source directory in svn also contains a .def file
-    from the binary release of sqlite3.
-
 _ssl
     Python wrapper for the secure sockets library.
 
     Get the source code through
 
     svn export http://svn.python.org/projects/external/openssl-0.9.8g
+
+    ** NOTE: if you use the Tools\buildbot\external(-amd64).bat approach for
+    obtaining external sources then you don't need to manually get the source
+    above via subversion. **
 
     Alternatively, get the latest version from http://www.openssl.org.
     You can (theoretically) use any version of OpenSSL you like - the
@@ -284,6 +182,69 @@ _ssl
 
     build_ssl.py/MSVC isn't clever enough to clean OpenSSL - you must do
     this by hand.
+
+The subprojects above wrap external projects Python doesn't control, and as
+such, a little more work is required in order to download the relevant source 
+files for each project before they can be built.  The buildbots do this each
+time they're built, so the easiest approach is to run either external.bat or 
+external-amd64.bat in the ..\Tools\buildbot directory from ..\, i.e.:
+
+    C:\..\svn.python.org\projects\python\trunk\PCbuild>cd ..
+    C:\..\svn.python.org\projects\python\trunk>Tools\buildbot\external.bat
+
+This extracts all the external subprojects from http://svn.python.org/external
+via Subversion (so you'll need an svn.exe on your PATH) and places them in 
+..\.. (relative to this directory).  The external(-amd64).bat scripts will
+also build a debug build of Tcl/Tk; there aren't any equivalent batch files
+for building release versions of Tcl/Tk lying around in the Tools\buildbot
+directory.  If you need to build a release version of Tcl/Tk it isn't hard
+though, take a look at the relevant external(-amd64).bat file and find the
+two nmake lines, then call each one without the 'DEBUG=1' parameter, i.e.:
+
+The external-amd64.bat file contains this for tcl:
+    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 DEBUG=1 MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
+
+So for a release build, you'd call it as:
+    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
+
+    XXX Should we compile with OPTS=threads?
+    XXX Our installer copies a lot of stuff out of the Tcl/Tk install
+    XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
+
+This will be cleaned up in the future; ideally Tcl/Tk will be brought into our
+pcbuild.sln as custom .vcproj files, just as we've recently done with the
+_bsddb44.vcproj and sqlite3.vcproj files, which will remove the need for
+Tcl/Tk to be built separately via a batch file.
+
+XXX trent.nelson 02-Apr-08:
+    Having the external subprojects in ..\.. relative to this directory is a
+    bit of a nuisance when you're working on py3k and trunk in parallel and
+    your directory layout mimics that of Python's subversion layout, e.g.:
+
+        C:\..\svn.python.org\projects\python\trunk
+        C:\..\svn.python.org\projects\python\branches\py3k
+        C:\..\svn.python.org\projects\python\branches\release25-maint
+
+    I'd like to change things so that external subprojects are fetched from
+    ..\external instead of ..\.., then provide some helper scripts or batch
+    files that would set up a new ..\external directory with svn checkouts of
+    the relevant branches in http://svn.python.org/projects/external/, or
+    alternatively, use junctions to link ..\external with a pre-existing
+    externals directory being used by another branch.  i.e. if I'm usually
+    working on trunk (and have previously created trunk\external via the
+    provided batch file), and want to do some work on py3k, I'd set up a
+    junction as follows (using the directory structure above as an example):
+
+        C:\..\python\trunk\external <- already exists and has built versions
+                                       of the external subprojects 
+
+        C:\..\python\branches\py3k>linkd.exe external ..\..\trunk\external
+        Link created at: external
+
+    Only a slight tweak would be needed to the buildbots such that bots
+    building trunk and py3k could make use of the same facility.  (2.5.x
+    builds need to be kept separate as they're using Visual Studio 7.1.)
+/XXX trent.nelson 02-Apr-08
 
 Building for Itanium
 --------------------
