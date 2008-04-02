@@ -88,9 +88,11 @@ release under development).
 Proposals for enhancement
 ------------------------------
 
-If you have a proposal to change Python, it's best to submit a Python
-Enhancement Proposal (PEP) first.  All current PEPs, as well as guidelines for
-submitting a new PEP, are listed at http://www.python.org/dev/peps/.
+If you have a proposal to change Python, you may want to send an email to the
+comp.lang.python or python-ideas mailing lists for inital feedback. A Python
+Enhancement Proposal (PEP) may be submitted if your idea gains ground. All
+current PEPs, as well as guidelines for submitting a new PEP, are listed at
+http://www.python.org/dev/peps/.
 
 Converting From Python 2.x to 3.0
 ---------------------------------

@@ -1649,10 +1649,11 @@ timed intervals.
 
    The system will save old log files by appending extensions to the filename.
    The extensions are date-and-time based, using the strftime format
-   ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the rollover
-   interval. If *backupCount* is nonzero, at most *backupCount* files will be
-   kept, and if more would be created when rollover occurs, the oldest one is
-   deleted.
+   ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the
+   rollover interval. If *backupCount* is nonzero, at most *backupCount* files
+   will be kept, and if more would be created when rollover occurs, the oldest
+   one is deleted. The deletion logic uses the interval to determine which
+   files to delete, so changing the interval may leave old files lying around.
 
 
 .. method:: TimedRotatingFileHandler.doRollover()
