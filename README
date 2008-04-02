@@ -1,4 +1,4 @@
-This is Python version 3.0 alpha 3
+This is Python version 3.0 alpha 4
 ==================================
 
 For notes specific to this release, see RELNOTES in this directory.
@@ -21,13 +21,14 @@ the standard library namespace.
 Release Schedule
 ----------------
 
-The release plan is to have a series of alpha releases in 2007, beta
-releases in 2008, and a final release in August 2008.  The alpha
-releases are primarily aimed at developers who want a sneak peek at
-the new langauge, especially those folks who plan to port their code
-to Python 3000.  The hope is that by the time of the final release,
-many 3rd party packages will already be available in a 3.0-compatible
-form.
+The release plan is to have a series of alpha releases in 2007 and 2008,
+beta releases in 2008, and a final release in August 2008.  The alpha
+releases are primarily aimed at developers who want a sneak peek at the
+new langauge, especially those folks who plan to port their code to
+Python 3000.  The hope is that by the time of the final release, many
+3rd party packages will already be available in a 3.0-compatible form.
+
+See PEP 361 for release details: http://www.python.org/dev/peps/pep-0361/
 
 
 Documentation
@@ -38,12 +39,12 @@ Documentation for Python 3000 is online, updated twice a day:
     http://docs.python.org/dev/3.0/
 
 All documentation is also available online at the Python web site
-(http://docs.python.org/, see below).  It is available online for occasional
-reference, or can be downloaded in many formats for faster access.  The
-documentation is downloadable in HTML, PostScript, PDF, LaTeX (through 2.5), and
-reStructuredText (2.6+) formats; the LaTeX and reStructuredText versions are
-primarily for documentation authors, translators, and people with special
-formatting requirements.
+(http://docs.python.org/, see below).  It is available online for
+occasional reference, or can be downloaded in many formats for faster
+access.  The documentation is downloadable in HTML, PostScript, PDF,
+LaTeX (through 2.5), and reStructuredText (2.6+) formats; the LaTeX and
+reStructuredText versions are primarily for documentation authors,
+translators, and people with special formatting requirements.
 
 This is a work in progress; please help improve it!
 
@@ -86,7 +87,7 @@ is incomplete, and also doesn't list anything merged in from the 2.6
 release under development).
 
 Proposals for enhancement
-------------------------------
+-------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
 comp.lang.python or python-ideas mailing lists for inital feedback. A Python
