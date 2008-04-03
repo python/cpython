@@ -8,7 +8,6 @@ if not exist ..\db-4.4.20\build_win32\release\libdb44s.lib (
 )
 
 @rem build Python
-cmd /q/c Tools\buildbot\kill_python.bat
 vcbuild /useenv PCbuild\pcbuild.sln "Release|Win32"
 
 @rem build the documentation
