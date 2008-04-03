@@ -583,15 +583,16 @@ class Thread(_Verbose):
         # since it isn't if dummy_threading is *not* being used then don't
         # hide the exception.
 
-        _active_limbo_lock.acquire()
         try:
-            try:
+            with _active_limbo_lock:
                 del _active[_get_ident()]
-            except KeyError:
-                if 'dummy_threading' not in _sys.modules:
-                    raise
-        finally:
-            _active_limbo_lock.release()
+                # There must not be any python code between the previous line
+                # and after the lock is released.  Otherwise a tracing function
+                # could try to acquire the lock again in the same thread, (in
+                # currentThread()), and would block.
+        except KeyError:
+            if 'dummy_threading' not in _sys.modules:
+                raise
 
     def join(self, timeout=None):
         if not self.__initialized:

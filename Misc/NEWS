@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 2?
 Core and builtins
 -----------------
 
+- Issue #1733757: The interpreter would hang on shutdown if the tracing 
+  function set by sys.settrace is still active and happens to call
+  threading.currentThread().
+
 - Patch #1442: properly report exceptions when the PYTHONSTARTUP file
   cannot be executed.
 
