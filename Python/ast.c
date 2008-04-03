@@ -3231,7 +3231,7 @@ parsestr(struct compiling *c, const node *n, int *bytesmode)
             return NULL;
         }
     }
-    if (!*bytesmode && !rawmode) {
+    if (!*bytesmode) {
         return decode_unicode(s, len, rawmode, c->c_encoding);
     }
     if (*bytesmode) {
