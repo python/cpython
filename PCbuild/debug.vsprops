@@ -8,4 +8,8 @@
 		Name="VCCLCompilerTool"
 		PreprocessorDefinitions="_DEBUG"
 	/>
+	<UserMacro
+		Name="KillPythonExe"
+		Value="$(OutDir)\kill_python_d.exe"
+	/>
 </VisualStudioPropertySheet>
