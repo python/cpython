@@ -23,7 +23,7 @@
 #define PY_RELEASE_SERIAL	4
 
 /* Version as a string */
-#define PY_VERSION      	"3.0a4"
+#define PY_VERSION      	"3.0a4+"
 /*--end constants--*/
 
 /* Subversion Revision number of this file (not of the repository) */
