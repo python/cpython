@@ -3,9 +3,6 @@
 cmd /c Tools\buildbot\external.bat
 @rem build release versions of things
 call "%VS90COMNTOOLS%vsvars32.bat"
-if not exist ..\db-4.4.20\build_win32\release\libdb44s.lib (
-  vcbuild db-4.4.20\build_win32\Berkeley_DB.sln /build Release /project db_static
-)
 
 @rem build Python
 cmd /q/c Tools\buildbot\kill_python.bat
