@@ -118,11 +118,15 @@ main(int argc, char **argv)
 
         /* It's a python process, so figure out which directory it's in... */
         hsm = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pe.th32ProcessID);
-        if (hsm == INVALID_HANDLE_VALUE) {
-            printf("CreateToolhelp32Snapshot[3] failed: %d\n", GetLastError());
-            CloseHandle(hsp);
-            return 1;
-        }
+        if (hsm == INVALID_HANDLE_VALUE)
+            /* 
+             * If our module snapshot fails (which will happen if we don't own
+             * the process), just ignore it and continue.  (It seems different
+             * versions of Windows return different values for GetLastError()
+             * in this situation; it's easier to just ignore it and move on vs.
+             * stopping the build for what could be a false positive.)
+             */
+             continue;
 
         if (!Module32FirstW(hsm, &me)) {
             printf("Module32FirstW[2] failed: %d\n", GetLastError());
