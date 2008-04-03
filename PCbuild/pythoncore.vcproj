@@ -58,8 +58,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; $(ConfigurationName)"
+				Description="Generate build information and kill existing Python processes..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release&#x0D;&#x0A;&quot;$(KillPythonExe)&quot;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -133,8 +133,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				Description="Generate build information and kill existing Python processes..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release&#x0D;&#x0A;&quot;$(KillPythonExe)&quot;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -211,8 +211,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; $(ConfigurationName)"
+				Description="Generate build information and kill existing Python processes..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Debug&#x0D;&#x0A;&quot;$(KillPythonExe)&quot;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -289,8 +289,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				Description="Generate build information and kill existing Python processes..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Debug&#x0D;&#x0A;&quot;$(KillPythonExe)&quot;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -363,8 +363,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe Release"
+				Description="Generate build information and kill existing Python processes..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release&#x0D;&#x0A;&quot;$(KillPythonExe)&quot;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -438,8 +438,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				Description="Generate build information and kill existing Python processes..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release&#x0D;&#x0A;&quot;$(KillPythonExe)&quot;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -513,8 +513,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe Release"
+				Description="Generate build information and kill existing Python processes..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release&#x0D;&#x0A;&quot;$(KillPythonExe)&quot;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -588,8 +588,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				Description="Generate build information and kill existing Python processes..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release&#x0D;&#x0A;&quot;$(KillPythonExe)&quot;"
 			/>
 			<Tool
 				Name="VCLinkerTool"

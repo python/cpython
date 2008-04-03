@@ -5,7 +5,6 @@ cmd /c Tools\buildbot\external.bat
 call "%VS90COMNTOOLS%vsvars32.bat"
 
 @rem build Python
-cmd /q/c Tools\buildbot\kill_python.bat
 vcbuild /useenv PCbuild\pcbuild.sln "Release|Win32"
 
 @rem build the documentation
