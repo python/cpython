@@ -69,7 +69,6 @@ class CoreTestCase(unittest.TestCase):
             self.write_setup(setup_prints_cwd, path=setup_py))
 
         output = sys.stdout.getvalue()
-        open("/dev/tty", "w").write("\n\n%r\n\n\n" % (output,))
         if output.endswith("\n"):
             output = output[:-1]
         self.assertEqual(cwd, output)
