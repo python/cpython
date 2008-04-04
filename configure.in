@@ -1485,7 +1485,11 @@ then
 		then LDSHARED='$(CC) -shared'
 		else LDSHARED='$(CC) -G';
 		fi ;;
-	hp*|HP*) LDSHARED="ld -b";;
+	hp*|HP*)
+		if test "$GCC" = "yes"
+		then LDSHARED='$(CC) -shared'
+		else LDSHARED='ld -b';
+		fi ;;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	Darwin/1.3*)
 		LDSHARED='$(CC) $(LDFLAGS) -bundle'
