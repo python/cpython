@@ -1,8 +1,11 @@
 dnl Process this with autoconf to create configure
+#
+# file from libffi - slightly patched for ctypes
+#
 
 AC_PREREQ(2.59)
 
-AC_INIT([libffi], [3.0.4], [http://gcc.gnu.org/bugs.html])
+AC_INIT([libffi], [3.0.5], [http://gcc.gnu.org/bugs.html])
 AC_CONFIG_HEADERS([fficonfig.h])
 
 AC_CANONICAL_SYSTEM
