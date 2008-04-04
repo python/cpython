@@ -28,6 +28,9 @@ Tests
 Build
 -----
 
+- Issue #2544: On HP-UX systems, use 'gcc -shared' for linking when
+  gcc is used as compiler.
+
 C API
 -----
 
