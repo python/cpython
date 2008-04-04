@@ -3,6 +3,7 @@
 import unittest
 from test import test_support
 
+import errno
 import socket
 import select
 import thread, threading
@@ -485,6 +486,81 @@ class GeneralModuleTests(unittest.TestCase):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.failIf(reuse == 0, "failed to set reuse mode")
+
+    def testAddressReuseSemantics(self):
+        # As per the 'SO_REUSEADDR and SO_REUSEPORT Socket Options' section in
+        # chapter 7.5 of Stevens' UNIX Network Programming Volume 1 (2nd Ed):
+        #
+        #   "With TCP, we are never able to start multiple servers that bind
+        #    the same IP address and same port: a completely duplicate binding.
+        #    That is, we cannot start one server that binds 198.69.10.2 port 80
+        #    and start another that also binds 198.69.10.2 port 80, even if we
+        #    set the SO_REUSEADDR socket option for the second server."
+        #
+        # However, on Windows, it seems that if SO_REUSEADDR is set on the 2nd
+        # socket, binding to an already bound (host, port) combination doesn't
+        # raise an exception.  Instead, it causes Python to wedge pretty badly
+        # when accept() is called against either of the sockets. This test case
+        # is being added to help debug this issue, as well as seeing if the
+        # expected semantics differ on any other platforms.
+
+        # Get a port that we *know* is unique.  Don't rely on test_support's
+        # bind_port method, as this operates under the assumption that an
+        # EADDRINUSE exception will be raised correctly, which is exactly what
+        # we're trying to test here.
+        host = '127.0.0.1'
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((host, 0))
+        port = sock.getsockname()[1]
+        sock.close()
+        del sock
+
+        # First test that we get EADDRINUSE without SO_REUSEADDR.
+        sock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock1.bind((host, port))
+        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock2.bind((host, port))
+        except socket.error, (err, msg):
+            self.assertEqual(err, errno.EADDRINUSE)
+        else:
+            self.fail("expected EADDRINUSE socket.error exception to be "    \
+                      "raised when attempting to bind a second socket to "   \
+                      "a (host, port) we've already bound to (SO_REUSEADDR " \
+                      "was NOT set on the socket)")
+        finally:
+            sock1.close()
+            try:
+                sock2.close()
+            except:
+                pass
+            del sock1
+            del sock2
+
+        # Try again with SO_REUSEADDR; the behaviour *should* be identical to
+        # the test above, i.e. an EADDRINUSE socket.error should be raised.
+        sock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock1.bind((host, port))
+        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock2.bind((host, port))
+        except socket.error, (err, msg):
+            self.assertEqual(err, errno.EADDRINUSE)
+        else:
+            self.fail("expected EADDRINUSE socket.error exception to be "    \
+                      "raised when attempting to bind a second socket to "   \
+                      "a (host, port) we've already bound to (SO_REUSEADDR " \
+                      "*WAS* set on the socket)")
+        finally:
+            sock1.close()
+            try:
+                sock2.close()
+            except:
+                pass
+            del sock1
+            del sock2
 
     def testSendAfterClose(self):
         # testing send() after close() with timeout
