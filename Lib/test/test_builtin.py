@@ -448,6 +448,17 @@ class BuiltinTest(unittest.TestCase):
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
 
+    def test_exec_redirected(self):
+        savestdout = sys.stdout
+        sys.stdout = None # Whatever that cannot flush()
+        try:
+            # Used to raise SystemError('error return without exception set')
+            exec('a')
+        except NameError:
+            pass
+        finally:
+            sys.stdout = savestdout
+
     def test_filter(self):
         self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))
         self.assertEqual(list(filter(None, [1, 'hello', [], [3], '', None, 9, 0])), [1, 'hello', [3], 9])

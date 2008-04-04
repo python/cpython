@@ -1467,6 +1467,11 @@ static void
 flush_io(void)
 {
 	PyObject *f, *r;
+	PyObject *type, *value, *traceback;
+
+	/* Save the current exception */
+	PyErr_Fetch(&type, &value, &traceback);
+
 	f = PySys_GetObject("stderr");
 	if (f != NULL) {
 		r = PyObject_CallMethod(f, "flush", "");
@@ -1483,6 +1488,8 @@ flush_io(void)
 		else
 			PyErr_Clear();
 	}
+
+	PyErr_Restore(type, value, traceback);
 }
 
 static PyObject *
