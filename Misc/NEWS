@@ -4,10 +4,34 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.6 alpha 2?
+What's New in Python 2.6 alpha 3?
 =================================
 
 *Release date: XX-XXX-2008*
+
+Core and builtins
+-----------------
+
+Extensions Modules
+------------------
+
+Library
+-------
+
+Tests
+-----
+
+Build
+-----
+
+C API
+-----
+
+
+What's New in Python 2.6 alpha 2?
+=================================
+
+*Release date: 02-Apr-2008*
 
 Core and builtins
 -----------------
