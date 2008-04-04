@@ -349,14 +349,14 @@ ffi_prep_closure_loc (ffi_closure* closure,
     {
       FFI_INIT_TRAMPOLINE (&closure->tramp[0],
                            &ffi_closure_SYSV,
-                           (void*)closure);
+                           (void*)codeloc);
     }
 #ifdef X86_WIN32
   else if (cif->abi == FFI_STDCALL)
     {
       FFI_INIT_TRAMPOLINE_STDCALL (&closure->tramp[0],
                                    &ffi_closure_STDCALL,
-                                   (void*)closure, cif->bytes);
+                                   (void*)codeloc, cif->bytes);
     }
 #endif
   else

@@ -18,6 +18,10 @@ Extension Modules
 Library
 -------
 
+- The bundled libffi copy is now in sync with the recently released
+  libffi3.0.5 version, apart from some small changes to
+  Modules/_ctypes/libffi/configure.ac.
+
 Build
 -----
 
