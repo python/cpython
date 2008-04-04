@@ -210,8 +210,9 @@ def run_setup (script_name, script_args=None, stop_after="run"):
     _setup_stop_after = stop_after
 
     save_argv = sys.argv
-    g = {}
+    g = {'__file__': script_name}
     l = {}
+    os.chdir(os.path.dirname(script_name) or os.curdir)
     try:
         try:
             sys.argv[0] = script_name
