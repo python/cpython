@@ -57,7 +57,7 @@ class CharPointersTestCase(unittest.TestCase):
 
         try:
             func()
-        except TypeError as details:
+        except TypeError, details:
             self.failUnlessEqual(str(details), "required argument 'input' missing")
         else:
             self.fail("TypeError not raised")

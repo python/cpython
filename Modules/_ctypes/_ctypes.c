@@ -139,6 +139,34 @@ char *conversion_mode_errors = NULL;
 
 /****************************************************************/
 
+#if (PY_VERSION_HEX < 0x02040000)
+/* Only in Python 2.4 and up */
+static PyObject *
+PyTuple_Pack(int n, ...)
+{
+	int i;
+	PyObject *o;
+	PyObject *result;
+	PyObject **items;
+	va_list vargs;
+
+	va_start(vargs, n);
+	result = PyTuple_New(n);
+	if (result == NULL)
+		return NULL;
+	items = ((PyTupleObject *)result)->ob_item;
+	for (i = 0; i < n; i++) {
+		o = va_arg(vargs, PyObject *);
+		Py_INCREF(o);
+		items[i] = o;
+	}
+	va_end(vargs);
+	return result;
+}
+#endif
+
+/****************************************************************/
+
 typedef struct {
 	PyObject_HEAD
 	PyObject *key;
@@ -4431,32 +4459,6 @@ static PyNumberMethods Simple_as_number = {
 	0, /* nb_absolute */
 	(inquiry)Simple_nonzero, /* nb_nonzero */
 };
-
-#if (PY_VERSION_HEX < 0x02040000)
-/* Only in Python 2.4 and up */
-static PyObject *
-PyTuple_Pack(int n, ...)
-{
-	int i;
-	PyObject *o;
-	PyObject *result;
-	PyObject **items;
-	va_list vargs;
-
-	va_start(vargs, n);
-	result = PyTuple_New(n);
-	if (result == NULL)
-		return NULL;
-	items = ((PyTupleObject *)result)->ob_item;
-	for (i = 0; i < n; i++) {
-		o = va_arg(vargs, PyObject *);
-		Py_INCREF(o);
-		items[i] = o;
-	}
-	va_end(vargs);
-	return result;
-}
-#endif
 
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
 static PyObject *
