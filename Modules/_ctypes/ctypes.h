@@ -9,7 +9,17 @@
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
 #define PyInt_FromSsize_t PyInt_FromLong
+#define PyNumber_AsSsize_t(ob, exc) PyInt_AsLong(ob)
 #endif
+
+#if (PY_VERSION_HEX < 0x02060000)
+#define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
+#define PyVarObject_HEAD_INIT(type, size) \
+	PyObject_HEAD_INIT(type) size,
+#define PyImport_ImportModuleNoBlock PyImport_ImportModule
+#define PyIndex_Check(ob) PyInt_Check(ob)
+#endif
+
 
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
