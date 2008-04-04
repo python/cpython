@@ -32,7 +32,7 @@ def ignoring_eintr(__func, *args, **kwargs):
     try:
         return __func(*args, **kwargs)
     except EnvironmentError as e:
-        if e.errno != signal.EINTR:
+        if e.errno != errno.EINTR:
             raise
         return None
 
