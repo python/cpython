@@ -1,7 +1,7 @@
 Status
 ======
 
-libffi-3.0.4 was released on February 24, 2008. Check the libffi web
+libffi-3.0.5 was released on April 3, 2008. Check the libffi web
 page for updates: <URL:http://sourceware.org/libffi/>.
 
 
@@ -157,6 +157,11 @@ arguments' test).
 
 History
 =======
+
+3.0.5 Apr-3-08
+        Fix libffi.pc file.
+	Fix #define ARM for IcedTea users.
+	Fix x86 closure bug.
 
 3.0.4 Feb-24-08
         Fix x86 OpenBSD configury.
