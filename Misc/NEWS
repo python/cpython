@@ -18,6 +18,10 @@ Extensions Modules
 Library
 -------
 
+- The bundled libffi copy is now in sync with the recently released
+  libffi3.0.5 version, apart from some small changes to
+  Modules/_ctypes/libffi/configure.ac.
+
 - Issue #2385: distutils.core.run_script() makes __file__ available, so the
   controlled environment will more closely mirror the typical script
   environment.  This supports setup.py scripts that refer to data files.
