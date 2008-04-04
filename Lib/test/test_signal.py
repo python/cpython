@@ -31,7 +31,7 @@ def exit_subprocess():
 def ignoring_eintr(__func, *args, **kwargs):
     try:
         return __func(*args, **kwargs)
-    except IOError as e:
+    except EnvironmentError as e:
         if e.errno != signal.EINTR:
             raise
         return None
@@ -363,12 +363,15 @@ class ItimerTest(unittest.TestCase):
     def test_itimer_prof(self):
         self.itimer = signal.ITIMER_PROF
         signal.signal(signal.SIGPROF, self.sig_prof)
-        signal.setitimer(self.itimer, 0.2)
+        signal.setitimer(self.itimer, 0.2, 0.2)
 
         for i in xrange(100000000):
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 break # sig_prof handler stopped this itimer
 
+        # profiling itimer should be (0.0, 0.0) now
+        self.assertEquals(signal.getitimer(self.itimer), (0.0, 0.0))
+        # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
 def test_main():
