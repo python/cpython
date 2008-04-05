@@ -133,8 +133,11 @@ The infrastructure committee of the Python Software Foundation
 therefore posted a call for issue trackers, asking volunteers to set
 up different products and import some of the bugs and patches from
 SourceForge.  Four different trackers were examined: Atlassian's `Jira
-<XXX>`__, `Launchpad <http://www.launchpad.net>`__, ` `Roundup
-<XXX>`__, and Trac <XXX>`__.  The committee eventually settled on Jira
+<http://www.atlassian.com/software/jira/>`__, 
+`Launchpad <http://www.launchpad.net>`__, 
+`Roundup <http://roundup.sourceforge.net/>`__, and 
+Trac <http://trac.edgewall.org/>`__.  
+The committee eventually settled on Jira
 and Roundup as the two candidates.  Jira is a commercial product that
 offers a no-cost hosted instance to free-software projects; Roundup 
 is an open-source project that requires volunteers
@@ -146,19 +149,18 @@ host multiple trackers, and this server now also hosts issue trackers
 for Jython and for the Python web site.  It will surely find 
 other uses in the future.
 
-Hosting is kindly provided by `Upfront <XXX>`__ of XXX.  Martin von
-Loewis put a lot of effort into importing existing bugs and patches
-from SourceForge; his scripts for this import are at XXX.
+Hosting is kindly provided by `Upfront Systems <http://www.upfrontsystems.co.za/>`__ of Stellenbosch, South Africa.  Martin von Loewis put a
+lot of effort into importing existing bugs and patches from
+SourceForge; his scripts for this import operation are at 
+http://svn.python.org/view/tracker/importer/.
 
 .. seealso::
 
-  XXX Roundup web site.
+  http://bugs.python.org: The Python bug tracker.
 
-  bugs.python.org
+  http://bugs.jython.org: The Jython bug tracker.
 
-  bugs.jython.org
-
-  Python web site bug tracker
+  http://roundup.sourceforge.net/: Roundup downloads and documentation.
 
 
 New Documentation Format: ReStructured Text
@@ -728,6 +730,21 @@ and it also supports the ``b''`` notation.
 
 .. ======================================================================
 
+.. _pep-3116:
+
+PEP 3116: New I/O Library
+=====================================================
+
+XXX write this.
+
+.. seealso::
+
+   :pep:`3116` - New I/O
+      PEP written by Daniel Stutzbach, Mike Verdone, and Guido van Rossum.
+      XXX code written by who?
+
+.. ======================================================================
+
 .. _pep-3118:
 
 PEP 3118: Revised Buffer Protocol
@@ -895,8 +912,9 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
    :pep:`3141` - A Type Hierarchy for Numbers
       PEP written by Jeffrey Yasskin.
 
-  XXX link: Discusses Scheme's numeric tower.
+   `Scheme's numerical tower <http://www.gnu.org/software/guile/manual/html_node/Numerical-Tower.html#Numerical-Tower>`__, from the Guile manual.
 
+   `Scheme's number datatypes <http://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.2>`__ from the R5RS Scheme specification.
   
 
 The :mod:`fractions` Module
@@ -1229,7 +1247,7 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`datetime` module's :meth:`strftime` methods now support a
   ``%f`` format code that expands to the number of microseconds in the
   object, zero-padded on
-  the left to six places.  (Contributed by XXX.)
+  the left to six places.  (Contributed by Skip Montanaro.)
 
   .. Patch 1158
 
@@ -1527,7 +1545,8 @@ complete list of changes, or look through the CVS logs for all the details.
   numbers following a triangular distribution.   The returned values
   are between *low* and *high*, not including *high* itself, and 
   with *mode* as the mode, the most frequently occurring value 
-  in the distribution.  (Contributed by Raymond Hettinger. XXX check)
+  in the distribution.  (Contributed by Wladmir van der Laan and
+  Raymond Hettinger.)
 
   .. Patch 1681432
 
@@ -1544,7 +1563,7 @@ complete list of changes, or look through the CVS logs for all the details.
   have a read-only :attr:`queue` attribute that returns the 
   contents of the scheduler's queue, represented as a list of
   named tuples with the fields ``(time, priority, action, argument)``.
-  (Contributed by Raymond Hettinger XXX check.)
+  (Contributed by Raymond Hettinger.)
 
   .. Patch 1861
 
@@ -1554,7 +1573,7 @@ complete list of changes, or look through the CVS logs for all the details.
   objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
   or file object and an event mask, 
   
-  (Contributed by XXX.)
+  (Contributed by Christian Heimes.)
 
   .. Patch 1657
 
@@ -1571,7 +1590,7 @@ complete list of changes, or look through the CVS logs for all the details.
   :cfunc:`PySignal_SetWakeupFd`, for setting the descriptor.
 
   Event loops will use this by opening a pipe to create two descriptors,
-  one for reading and one for writing.  The writeable descriptor
+  one for reading and one for writing.  The writable descriptor
   will be passed to :func:`set_wakeup_fd`, and the readable descriptor
   will be added to the list of descriptors monitored by the event loop via
   :cfunc:`select` or :cfunc:`poll`.
@@ -1585,6 +1604,16 @@ complete list of changes, or look through the CVS logs for all the details.
   The :func:`siginterrupt` function is now available from Python code,
   and allows changing whether signals can interrupt system calls or not.
   (Contributed by Ralf Schmitt.)
+
+  The :func:`setitimer` and :func:`getitimer` functions have also been
+  added on systems that support these system calls.  :func:`setitimer`
+  allows setting interval timers that will cause a signal to be
+  delivered to the process after a specified time, measured in
+  wall-clock time, consumed process time, or combined process+system
+  time.  (Contributed by Guilherme Polo.)
+
+  .. Patch 2240
+
 
 * The :mod:`smtplib` module now supports SMTP over SSL thanks to the
   addition of the :class:`SMTP_SSL` class. This class supports an
