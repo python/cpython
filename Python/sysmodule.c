@@ -882,7 +882,7 @@ PySys_ResetWarnOptions(void)
 }
 
 void
-PySys_AddWarnOption(const char *s)
+PySys_AddWarnOption(const wchar_t *s)
 {
 	PyObject *str;
 
@@ -892,7 +892,7 @@ PySys_AddWarnOption(const char *s)
 		if (warnoptions == NULL)
 			return;
 	}
-	str = PyUnicode_FromString(s);
+	str = PyUnicode_FromWideChar(s, -1);
 	if (str != NULL) {
 		PyList_Append(warnoptions, str);
 		Py_DECREF(str);
@@ -1222,12 +1222,12 @@ _PySys_Init(void)
 	SET_SYS_FROM_STRING("platform",
 			    PyUnicode_FromString(Py_GetPlatform()));
 	SET_SYS_FROM_STRING("executable",
-			    PyUnicode_DecodeFSDefault(
-				Py_GetProgramFullPath()));
+			    PyUnicode_FromWideChar(
+				   Py_GetProgramFullPath(), -1));
 	SET_SYS_FROM_STRING("prefix",
-			    PyUnicode_DecodeFSDefault(Py_GetPrefix()));
+			    PyUnicode_FromWideChar(Py_GetPrefix(), -1));
 	SET_SYS_FROM_STRING("exec_prefix",
-		   	    PyUnicode_DecodeFSDefault(Py_GetExecPrefix()));
+		   	    PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
 	SET_SYS_FROM_STRING("maxsize",
 			    PyLong_FromSsize_t(PY_SSIZE_T_MAX));
 	SET_SYS_FROM_STRING("float_info",
@@ -1280,15 +1280,15 @@ _PySys_Init(void)
 }
 
 static PyObject *
-makepathobject(const char *path, int delim)
+makepathobject(const wchar_t *path, wchar_t delim)
 {
 	int i, n;
-	const char *p;
+	const wchar_t *p;
 	PyObject *v, *w;
 
 	n = 1;
 	p = path;
-	while ((p = strchr(p, delim)) != NULL) {
+	while ((p = wcschr(p, delim)) != NULL) {
 		n++;
 		p++;
 	}
@@ -1296,10 +1296,10 @@ makepathobject(const char *path, int delim)
 	if (v == NULL)
 		return NULL;
 	for (i = 0; ; i++) {
-		p = strchr(path, delim);
+		p = wcschr(path, delim);
 		if (p == NULL)
-			p = strchr(path, '\0'); /* End of string */
-		w = PyUnicode_DecodeFSDefaultAndSize(path, (Py_ssize_t) (p - path));
+			p = wcschr(path, L'\0'); /* End of string */
+		w = PyUnicode_FromWideChar(path, (Py_ssize_t)(p - path));
 		if (w == NULL) {
 			Py_DECREF(v);
 			return NULL;
@@ -1313,7 +1313,7 @@ makepathobject(const char *path, int delim)
 }
 
 void
-PySys_SetPath(const char *path)
+PySys_SetPath(const wchar_t *path)
 {
 	PyObject *v;
 	if ((v = makepathobject(path, DELIM)) == NULL)
@@ -1324,12 +1324,12 @@ PySys_SetPath(const char *path)
 }
 
 static PyObject *
-makeargvobject(int argc, char **argv)
+makeargvobject(int argc, wchar_t **argv)
 {
 	PyObject *av;
 	if (argc <= 0 || argv == NULL) {
 		/* Ensure at least one (empty) argument is seen */
-		static char *empty_argv[1] = {""};
+		static wchar_t *empty_argv[1] = {L""};
 		argv = empty_argv;
 		argc = 1;
 	}
@@ -1351,7 +1351,7 @@ makeargvobject(int argc, char **argv)
 			} else
 				v = PyUnicode_FromString(argv[i]);
 #else
-			PyObject *v = PyUnicode_FromString(argv[i]);
+			PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
 #endif
 			if (v == NULL) {
 				Py_DECREF(av);
@@ -1364,13 +1364,38 @@ makeargvobject(int argc, char **argv)
 	return av;
 }
 
+#ifdef HAVE_REALPATH
+static wchar_t*
+_wrealpath(const wchar_t *path, wchar_t *resolved_path)
+{
+	char cpath[PATH_MAX];
+	char cresolved_path[PATH_MAX];
+	char *res;
+	size_t r;
+	r = wcstombs(cpath, path, PATH_MAX);
+	if (r == (size_t)-1 || r >= PATH_MAX) {
+		errno = EINVAL;
+		return NULL;
+	}
+	res = realpath(cpath, cresolved_path);
+	if (res == NULL)
+		return NULL;
+	r = mbstowcs(resolved_path, cresolved_path, PATH_MAX);
+	if (r == (size_t)-1 || r >= PATH_MAX) {
+		errno = EINVAL;
+		return NULL;
+	}
+	return resolved_path;
+}
+#endif
+
 void
-PySys_SetArgv(int argc, char **argv)
+PySys_SetArgv(int argc, wchar_t **argv)
 {
 #if defined(HAVE_REALPATH)
-	char fullpath[MAXPATHLEN];
+	wchar_t fullpath[MAXPATHLEN];
 #elif defined(MS_WINDOWS)
-	char fullpath[MAX_PATH];
+	wchar_t fullpath[MAX_PATH];
 #endif
 	PyObject *av = makeargvobject(argc, argv);
 	PyObject *path = PySys_GetObject("path");
@@ -1379,53 +1404,54 @@ PySys_SetArgv(int argc, char **argv)
 	if (PySys_SetObject("argv", av) != 0)
 		Py_FatalError("can't assign sys.argv");
 	if (path != NULL) {
-		char *argv0 = argv[0];
-		char *p = NULL;
+		wchar_t *argv0 = argv[0];
+		wchar_t *p = NULL;
 		Py_ssize_t n = 0;
 		PyObject *a;
+		extern int _Py_wreadlink(const wchar_t *, wchar_t *, size_t);
 #ifdef HAVE_READLINK
-		char link[MAXPATHLEN+1];
-		char argv0copy[2*MAXPATHLEN+1];
+		wchar_t link[MAXPATHLEN+1];
+		wchar_t argv0copy[2*MAXPATHLEN+1];
 		int nr = 0;
-		if (argc > 0 && argv0 != NULL && strcmp(argv0, "-c") != 0)
-			nr = readlink(argv0, link, MAXPATHLEN);
+		if (argc > 0 && argv0 != NULL && wcscmp(argv0, L"-c") != 0)
+			nr = _Py_wreadlink(argv0, link, MAXPATHLEN);
 		if (nr > 0) {
 			/* It's a symlink */
 			link[nr] = '\0';
 			if (link[0] == SEP)
 				argv0 = link; /* Link to absolute path */
-			else if (strchr(link, SEP) == NULL)
+			else if (wcschr(link, SEP) == NULL)
 				; /* Link without path */
 			else {
 				/* Must join(dirname(argv0), link) */
-				char *q = strrchr(argv0, SEP);
+				wchar_t *q = wcsrchr(argv0, SEP);
 				if (q == NULL)
 					argv0 = link; /* argv0 without path */
 				else {
 					/* Must make a copy */
-					strcpy(argv0copy, argv0);
-					q = strrchr(argv0copy, SEP);
-					strcpy(q+1, link);
+					wcscpy(argv0copy, argv0);
+					q = wcsrchr(argv0copy, SEP);
+					wcscpy(q+1, link);
 					argv0 = argv0copy;
 				}
 			}
 		}
 #endif /* HAVE_READLINK */
 #if SEP == '\\' /* Special case for MS filename syntax */
-		if (argc > 0 && argv0 != NULL && strcmp(argv0, "-c") != 0) {
-			char *q;
+		if (argc > 0 && argv0 != NULL && wcscmp(argv0, L"-c") != 0) {
+			wchar_t *q;
 #ifdef MS_WINDOWS
-			char *ptemp;
-			if (GetFullPathName(argv0,
-					   sizeof(fullpath),
+			wchar_t *ptemp;
+			if (GetFullPathNameW(argv0,
+					   sizeof(fullpath)/sizeof(fullpath[0]),
 					   fullpath,
 					   &ptemp)) {
 				argv0 = fullpath;
 			}
 #endif
-			p = strrchr(argv0, SEP);
+			p = wcsrchr(argv0, SEP);
 			/* Test for alternate separator */
-			q = strrchr(p ? p : argv0, '/');
+			q = wcsrchr(p ? p : argv0, '/');
 			if (q != NULL)
 				p = q;
 			if (p != NULL) {
@@ -1435,13 +1461,13 @@ PySys_SetArgv(int argc, char **argv)
 			}
 		}
 #else /* All other filename syntaxes */
-		if (argc > 0 && argv0 != NULL && strcmp(argv0, "-c") != 0) {
+		if (argc > 0 && argv0 != NULL && wcscmp(argv0, L"-c") != 0) {
 #if defined(HAVE_REALPATH)
-			if (realpath(argv0, fullpath)) {
+			if (_wrealpath(argv0, fullpath)) {
 				argv0 = fullpath;
 			}
 #endif
-			p = strrchr(argv0, SEP);
+			p = wcsrchr(argv0, SEP);
 		}
 		if (p != NULL) {
 			n = p + 1 - argv0;
@@ -1451,7 +1477,7 @@ PySys_SetArgv(int argc, char **argv)
 #endif /* Unix */
 		}
 #endif /* All others */
-		a = PyUnicode_FromStringAndSize(argv0, n);
+		a = PyUnicode_FromWideChar(argv0, n);
 		if (a == NULL)
 			Py_FatalError("no mem for sys.path insertion");
 		if (PyList_Insert(path, 0, a) < 0)

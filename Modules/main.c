@@ -12,6 +12,7 @@
 #include <windows.h>
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#define PATH_MAX MAXPATHLEN
 #endif
 #endif
 
@@ -40,17 +41,17 @@ extern "C" {
 #endif
 
 /* For Py_GetArgcArgv(); set by main() */
-static char **orig_argv;
+static wchar_t **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS "bBc:dEhim:OStuvVW:xX?"
+#define BASE_OPTS L"bBc:dEhim:OStuvVW:xX?"
 
 #define PROGRAM_OPTS BASE_OPTS
 
 /* Short usage message (with %s for argv0) */
 static char *usage_line =
-"usage: %s [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
+"usage: %ls [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
 
 /* Long usage message, split into parts < 512 bytes */
 static char *usage_1 = "\
@@ -96,9 +97,30 @@ PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n\
 PYTHONCASEOK : ignore case in 'import' statements (Windows).\n\
 ";
 
+#ifndef MS_WINDOWS
+static FILE*
+_wfopen(const wchar_t *path, const wchar_t *mode)
+{
+	char cpath[PATH_MAX];
+	char cmode[10];
+	size_t r;
+	r = wcstombs(cpath, path, PATH_MAX);
+	if (r == (size_t)-1 || r >= PATH_MAX) {
+		errno = EINVAL;
+		return NULL;
+	}
+	r = wcstombs(cmode, mode, 10);
+	if (r == (size_t)-1 || r >= 10) {
+		errno = EINVAL;
+		return NULL;
+	}
+	return fopen(cpath, cmode);
+}
+#endif
+
 
 static int
-usage(int exitcode, char* program)
+usage(int exitcode, wchar_t* program)
 {
 	FILE *f = exitcode ? stderr : stdout;
 
@@ -187,11 +209,11 @@ static int RunModule(char *module, int set_argv0)
 	return 0;
 }
 
-static int RunMainFromImporter(char *filename)
+static int RunMainFromImporter(wchar_t *filename)
 {
 	PyObject *argv0 = NULL, *importer = NULL;
 
-	if ((argv0 = PyUnicode_DecodeFSDefault(filename)) &&
+	if ((argv0 = PyUnicode_FromWideChar(filename,wcslen(filename))) &&
 	    (importer = PyImport_GetImporter(argv0)) &&
 	    (importer->ob_type != &PyNullImporter_Type))
 	{
@@ -249,12 +271,12 @@ WaitForThreadShutdown(void)
 /* Main program */
 
 int
-Py_Main(int argc, char **argv)
+Py_Main(int argc, wchar_t **argv)
 {
 	int c;
 	int sts;
 	char *command = NULL;
-	char *filename = NULL;
+	wchar_t *filename = NULL;
 	char *module = NULL;
 	FILE *fp = stdin;
 	char *p;
@@ -275,14 +297,19 @@ Py_Main(int argc, char **argv)
 
 	while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
 		if (c == 'c') {
+			size_t r1 = wcslen(_PyOS_optarg) + 2;
+			size_t r2;
 			/* -c is the last option; following arguments
 			   that look like options are left for the
 			   command to interpret. */
-			command = (char *)malloc(strlen(_PyOS_optarg) + 2);
+			command = (char *)malloc(r1);
 			if (command == NULL)
 				Py_FatalError(
 				   "not enough memory to copy -c argument");
-			strcpy(command, _PyOS_optarg);
+			r2 = wcstombs(command, _PyOS_optarg, r1);
+			if (r2 > r1-2)
+				Py_FatalError(
+				    "not enough memory to copy -c argument");
 			strcat(command, "\n");
 			break;
 		}
@@ -291,11 +318,16 @@ Py_Main(int argc, char **argv)
 			/* -m is the last option; following arguments
 			   that look like options are left for the
 			   module to interpret. */
-			module = (char *)malloc(strlen(_PyOS_optarg) + 2);
+			size_t r1 = wcslen(_PyOS_optarg) + 1;
+			size_t r2;
+			module = (char *)malloc(r1);
 			if (module == NULL)
 				Py_FatalError(
 				   "not enough memory to copy -m argument");
-			strcpy(module, _PyOS_optarg);
+			r2 = wcstombs(module, _PyOS_optarg, r1);
+			if (r2 >= r1)
+				Py_FatalError(
+				   "not enough memory to copy -m argument");
 			break;
 		}
 
@@ -355,7 +387,7 @@ Py_Main(int argc, char **argv)
 			version++;
 			break;
 
-		case 'W':
+		case 'W': 
 			PySys_AddWarnOption(_PyOS_optarg);
 			break;
 
@@ -384,7 +416,7 @@ Py_Main(int argc, char **argv)
 		unbuffered = 1;
 
 	if (command == NULL && module == NULL && _PyOS_optind < argc &&
-	    strcmp(argv[_PyOS_optind], "-") != 0)
+	    wcscmp(argv[_PyOS_optind], L"-") != 0)
 	{
 #ifdef __VMS
 		filename = decc$translate_vms(argv[_PyOS_optind]);
@@ -462,14 +494,14 @@ Py_Main(int argc, char **argv)
 	if (command != NULL) {
 		/* Backup _PyOS_optind and force sys.argv[0] = '-c' */
 		_PyOS_optind--;
-		argv[_PyOS_optind] = "-c";
+		argv[_PyOS_optind] = L"-c";
 	}
 
 	if (module != NULL) {
 		/* Backup _PyOS_optind and force sys.argv[0] = '-c'
 		   so that PySys_SetArgv correctly sets sys.path[0] to ''*/
 		_PyOS_optind--;
-		argv[_PyOS_optind] = "-c";
+		argv[_PyOS_optind] = L"-c";
 	}
 
 	PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
@@ -506,8 +538,8 @@ Py_Main(int argc, char **argv)
 		}
 
 		if (sts==-1 && filename!=NULL) {
-			if ((fp = fopen(filename, "r")) == NULL) {
-				fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
+			if ((fp = _wfopen(filename, L"r")) == NULL) {
+				fprintf(stderr, "%s: can't open file '%ls': [Errno %d] %s\n",
 					argv[0], filename, errno, strerror(errno));
 
 				return 2;
@@ -528,7 +560,7 @@ Py_Main(int argc, char **argv)
 				struct stat sb;
 				if (fstat(fileno(fp), &sb) == 0 &&
 				    S_ISDIR(sb.st_mode)) {
-					fprintf(stderr, "%s: '%s' is a directory, cannot continue\n", argv[0], filename);
+					fprintf(stderr, "%ls: '%ls' is a directory, cannot continue\n", argv[0], filename);
 					fclose(fp);
 					return 1;
 				}
@@ -536,9 +568,17 @@ Py_Main(int argc, char **argv)
 		}
 
 		if (sts==-1) {
+			char cfilename[PATH_MAX];
+			char *p_cfilename = "<stdin>";
+			if (filename) {
+				size_t r = wcstombs(cfilename, filename, PATH_MAX);
+				p_cfilename = cfilename;
+				if (r == (size_t)-1 || r >= PATH_MAX)
+					p_cfilename = "<decoding error>";
+			}
 			sts = PyRun_AnyFileExFlags(
 				fp,
-				filename == NULL ? "<stdin>" : filename,
+				p_cfilename,
 				filename != NULL, &cf) != 0;
 		}
 		
@@ -589,7 +629,7 @@ Py_Main(int argc, char **argv)
    This is rare, but it is needed by the secureware extension. */
 
 void
-Py_GetArgcArgv(int *argc, char ***argv)
+Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
 	*argc = orig_argc;
 	*argv = orig_argv;

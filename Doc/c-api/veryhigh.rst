@@ -25,16 +25,18 @@ are only passed to these functions if it is certain that they were created by
 the same library that the Python runtime is using.
 
 
-.. cfunction:: int Py_Main(int argc, char **argv)
+.. cfunction:: int Py_Main(int argc, wchar_t **argv)
 
-   The main program for the standard interpreter.  This is made available for
-   programs which embed Python.  The *argc* and *argv* parameters should be
-   prepared exactly as those which are passed to a C program's :cfunc:`main`
-   function.  It is important to note that the argument list may be modified (but
-   the contents of the strings pointed to by the argument list are not). The return
-   value will be the integer passed to the :func:`sys.exit` function, ``1`` if the
-   interpreter exits due to an exception, or ``2`` if the parameter list does not
-   represent a valid Python command line.
+   The main program for the standard interpreter.  This is made
+   available for programs which embed Python.  The *argc* and *argv*
+   parameters should be prepared exactly as those which are passed to
+   a C program's :cfunc:`main` function (converted to wchar_t
+   according to the user's locale).  It is important to note that the
+   argument list may be modified (but the contents of the strings
+   pointed to by the argument list are not). The return value will be
+   the integer passed to the :func:`sys.exit` function, ``1`` if the
+   interpreter exits due to an exception, or ``2`` if the parameter
+   list does not represent a valid Python command line.
 
 
 .. cfunction:: int PyRun_AnyFile(FILE *fp, const char *filename)

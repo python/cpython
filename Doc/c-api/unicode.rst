@@ -336,6 +336,8 @@ the system's :ctype:`wchar_t`.
 .. cfunction:: PyObject* PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
 
    Create a Unicode object from the :ctype:`wchar_t` buffer *w* of the given size.
+   Passing -1 as the size indicates that the function must itself compute the length,
+   using wcslen.
    Return *NULL* on failure.
 
 

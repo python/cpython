@@ -12,20 +12,20 @@ extern "C" {
 #if defined(MS_WINDOWS) || defined(__BORLANDC__) || defined(__WATCOMC__) || defined(__DJGPP__) || defined(PYOS_OS2)
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 #define MAXPATHLEN 260
-#define SEP '/'
-#define ALTSEP '\\'
+#define SEP L'/'
+#define ALTSEP L'\\'
 #else
-#define SEP '\\'
-#define ALTSEP '/'
+#define SEP L'\\'
+#define ALTSEP L'/'
 #define MAXPATHLEN 256
 #endif
-#define DELIM ';'
+#define DELIM L';'
 #endif
 #endif
 
 /* Filename separator */
 #ifndef SEP
-#define SEP '/'
+#define SEP L'/'
 #endif
 
 /* Max pathname length */
@@ -39,7 +39,7 @@ extern "C" {
 
 /* Search path entry delimiter */
 #ifndef DELIM
-#define DELIM ':'
+#define DELIM L':'
 #endif
 
 #ifdef __cplusplus

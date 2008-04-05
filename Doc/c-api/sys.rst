@@ -84,11 +84,11 @@ accessible to C code.  They all work with the current interpreter thread's
 
    Reset :data:`sys.warnoptions` to an empty list.
 
-.. cfunction:: void PySys_AddWarnOption(char *s)
+.. cfunction:: void PySys_AddWarnOption(wchar_t *s)
 
    Append *s* to :data:`sys.warnoptions`.
 
-.. cfunction:: void PySys_SetPath(char *path)
+.. cfunction:: void PySys_SetPath(wchar_t *path)
 
    Set :data:`sys.path` to a list object of paths found in *path* which should
    be a list of paths separated with the platform's search path delimiter
