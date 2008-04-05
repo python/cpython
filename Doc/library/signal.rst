@@ -82,7 +82,7 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: ITIMER_REAL    
 
-   Decrements interval timer in real time, and delivers SIGALRM upon expiration.
+   Decrements interval timer in real time, and delivers :const:`SIGALRM` upon expiration.
 
 
 .. data:: ITIMER_VIRTUAL 
@@ -149,6 +149,12 @@ The :mod:`signal` module defines the following functions:
    :func:`alarm`) and after that every *interval* seconds. The interval
    timer specified by *which* can be cleared by setting seconds to zero.
 
+   When an interval timer fires, a signal is sent to the process.
+   The signal sent is dependent on the timer being used; 
+   :const:`signal.ITIMER_REAL` will deliver :const:`SIGALRM`, 
+   :const:`signal.ITIMER_VIRTUAL` sends :const:`SIGVTALRM`,
+   and :const:`signal.ITIMER_PROF` will deliver :const:`SIGPROF`.
+
    The old values are returned as a tuple: (delay, interval).
 
    Attempting to pass an invalid interval timer will cause a 
@@ -159,7 +165,7 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: getitimer(which)
 
-   Returns current value of a given interval timer especified by *which*.
+   Returns current value of a given interval timer specified by *which*.
 
    .. versionadded:: 2.6
 
