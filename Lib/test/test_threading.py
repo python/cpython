@@ -237,6 +237,35 @@ class ThreadTests(unittest.TestCase):
             """])
         self.assertEqual(rc, 42)
 
+    def test_finalize_with_trace(self):
+        # Issue1733757
+        # Avoid a deadlock when sys.settrace steps into threading._shutdown
+        import subprocess
+        rc = subprocess.call([sys.executable, "-c", """if 1:
+            import sys, threading
+
+            # A deadlock-killer, to prevent the
+            # testsuite to hang forever
+            def killer():
+                import os, time
+                time.sleep(2)
+                print('program blocked; aborting')
+                os._exit(2)
+            t = threading.Thread(target=killer)
+            t.setDaemon(True)
+            t.start()
+
+            # This is the trace function
+            def func(frame, event, arg):
+                threading.currentThread()
+                return func
+
+            sys.settrace(func)
+            """])
+        self.failIf(rc == 2, "interpreted was blocked")
+        self.failUnless(rc == 0, "Unexpected error")
+
+
     def test_enumerate_after_join(self):
         # Try hard to trigger #1703448: a thread is still returned in
         # threading.enumerate() after it has been join()ed.
