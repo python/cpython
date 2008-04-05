@@ -480,8 +480,9 @@ local name relative to its module; the pickle module searches the module
 namespace to determine the object's module.
 
 When a tuple is returned, it must be between two and five elements long.
-Optional elements can either be omitted, or ``None`` can be provided  as their
-value.  The semantics of each element are:
+Optional elements can either be omitted, or ``None`` can be provided as their
+value.  The contents of this tuple are pickled as normal and used to
+reconstruct the object at unpickling time.  The semantics of each element are:
 
 * A callable object that will be called to create the initial version of the
   object.  The next element of the tuple will provide arguments for this callable,
