@@ -68,8 +68,6 @@ class UnicodeTest(
         self.assertRaises(SyntaxError, eval, '\'\\Ufffffffe\'')
         self.assertRaises(SyntaxError, eval, '\'\\Uffffffff\'')
         self.assertRaises(SyntaxError, eval, '\'\\U%08x\'' % 0x110000)
-        # Test that raw mode does unicode escapes
-        self.assertEqual(r"\u0020", " ")
 
     def test_repr(self):
         if not sys.platform.startswith('java'):
