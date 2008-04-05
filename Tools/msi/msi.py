@@ -798,6 +798,12 @@ def add_features(db):
     default_feature = Feature(db, "DefaultFeature", "Python",
                               "Python Interpreter and Libraries",
                               1, directory = "TARGETDIR")
+    shared_crt = Feature(db, "SharedCRT", "MSVCRT", "C Run-Time (system-wide)", 0,
+                         level=0)
+    private_crt = Feature(db, "PrivateCRT", "MSVCRT", "C Run-Time (private)", 0,
+                          level=0)
+    add_data(db, "Condition", [("SharedCRT", 1, sys32cond),
+                               ("PrivateCRT", 1, "not "+sys32cond)])
     # We don't support advertisement of extensions
     ext_feature = Feature(db, "Extensions", "Register Extensions",
                           "Make this Python installation the default Python installation", 3,
@@ -898,7 +904,7 @@ def add_files(db):
     DLLs = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
     # XXX determine dependencies
     if MSVCR == "90":
-        root.start_component("msvcr90")
+        root.start_component("msvcr90", feature=private_crt)
         for file, kw in extract_msvcr90():
             root.add_file(file, **kw)
             if file.endswith("manifest"):
