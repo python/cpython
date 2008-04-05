@@ -3012,7 +3012,7 @@ ins_string(PyObject *d, char *name, char *val)
 PyMODINIT_FUNC
 init_tkinter(void)
 {
-	PyObject *m, *d;
+	PyObject *m, *d, *uexe, *cexe;
 
 	Py_TYPE(&Tkapp_Type) = &PyType_Type;
 
@@ -3065,7 +3065,16 @@ init_tkinter(void)
 
 	/* This helps the dynamic loader; in Unicode aware Tcl versions
 	   it also helps Tcl find its encodings. */
-	Tcl_FindExecutable(Py_GetProgramName());
+	uexe = PyUnicode_FromWideChar(Py_GetProgramName(), -1);
+	if (uexe) {
+		cexe = PyUnicode_AsEncodedString(uexe, 
+						 Py_FileSystemDefaultEncoding, 
+						 NULL);
+		if (cexe)
+			Tcl_FindExecutable(PyString_AsString(cexe));
+		Py_XDECREF(cexe);
+		Py_DECREF(uexe);
+	}
 
 	if (PyErr_Occurred())
 		return;

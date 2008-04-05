@@ -12,6 +12,10 @@ What's New in Python 3.0a5?
 Core and Builtins
 -----------------
 
+- The command line processing was converted to pass Unicode strings
+  through as unmodified as possible; as a consequence, the C API
+  related to command line arguments was changed to use wchar_t.
+
 Extension Modules
 -----------------
 

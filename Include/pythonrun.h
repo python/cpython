@@ -17,11 +17,11 @@ typedef struct {
 	int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
 } PyCompilerFlags;
 
-PyAPI_FUNC(void) Py_SetProgramName(char *);
-PyAPI_FUNC(char *) Py_GetProgramName(void);
+PyAPI_FUNC(void) Py_SetProgramName(wchar_t *);
+PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
 
-PyAPI_FUNC(void) Py_SetPythonHome(char *);
-PyAPI_FUNC(char *) Py_GetPythonHome(void);
+PyAPI_FUNC(void) Py_SetPythonHome(wchar_t *);
+PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
 
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(void) Py_InitializeEx(int);
@@ -81,7 +81,7 @@ PyAPI_FUNC(void) Py_Exit(int);
 PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 
 /* Bootstrap */
-PyAPI_FUNC(int) Py_Main(int argc, char **argv);
+PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 
 /* Use macros for a bunch of old variants */
 #define PyRun_String(str, s, g, l) PyRun_StringFlags(str, s, g, l, NULL)
@@ -103,10 +103,10 @@ PyAPI_FUNC(int) Py_Main(int argc, char **argv);
         PyRun_FileExFlags(fp, p, s, g, l, 0, flags)
 
 /* In getpath.c */
-PyAPI_FUNC(char *) Py_GetProgramFullPath(void);
-PyAPI_FUNC(char *) Py_GetPrefix(void);
-PyAPI_FUNC(char *) Py_GetExecPrefix(void);
-PyAPI_FUNC(char *) Py_GetPath(void);
+PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
+PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
+PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
+PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 
 /* In their own files */
 PyAPI_FUNC(const char *) Py_GetVersion(void);

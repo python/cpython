@@ -553,8 +553,14 @@ PyObject *PyUnicode_FromWideChar(register const wchar_t *w,
     PyUnicodeObject *unicode;
 
     if (w == NULL) {
+        if (size == 0)
+            return PyUnicode_FromStringAndSize(NULL, 0);
 	PyErr_BadInternalCall();
 	return NULL;
+    }
+
+    if (size == -1) {
+        size = wcslen(w);
     }
 
     unicode = _PyUnicode_New(size);

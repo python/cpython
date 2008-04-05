@@ -12,5 +12,5 @@ int WINAPI WinMain(
     int nCmdShow              /* show state of window */
 )
 {
-    return Py_Main(__argc, __argv);
+    return Py_Main(__argc, __wargv);
 }

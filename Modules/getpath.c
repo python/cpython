@@ -122,19 +122,81 @@
 #endif
 
 #ifndef LANDMARK
-#define LANDMARK "os.py"
+#define LANDMARK L"os.py"
 #endif
 
-static char prefix[MAXPATHLEN+1];
-static char exec_prefix[MAXPATHLEN+1];
-static char progpath[MAXPATHLEN+1];
-static char *module_search_path = NULL;
-static char lib_python[] = "lib/python" VERSION;
+static wchar_t prefix[MAXPATHLEN+1];
+static wchar_t exec_prefix[MAXPATHLEN+1];
+static wchar_t progpath[MAXPATHLEN+1];
+static wchar_t *module_search_path = NULL;
+static wchar_t lib_python[] = L"lib/python" VERSION;
+
+/* In principle, this should use HAVE__WSTAT, and _wstat
+   should be detected by autoconf. However, no current
+   POSIX system provides that function, so testing for
+   it is pointless. */
+#ifndef MS_WINDOWS
+static int
+_wstat(const wchar_t* path, struct stat *buf)
+{
+    char fname[PATH_MAX];
+    size_t res = wcstombs(fname, path, sizeof(fname));
+    if (res == (size_t)-1) {
+	errno = EINVAL;
+	return -1;
+    }
+    return stat(fname, buf);
+}
+#endif
+
+#ifndef MS_WINDOWS
+static wchar_t*
+_wgetcwd(wchar_t *buf, size_t size)
+{
+    char fname[PATH_MAX];
+    if (getcwd(fname, PATH_MAX) == NULL)
+	return NULL;
+    if (mbstowcs(buf, fname, size) >= size) {
+	errno = ERANGE;
+	return NULL;
+    }
+    return buf;
+}
+#endif
+
+#ifdef HAVE_READLINK
+int 
+_Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
+{
+    char cbuf[PATH_MAX];
+    char cpath[PATH_MAX];
+    int res;
+    size_t r1 = wcstombs(cpath, path, PATH_MAX);
+    if (r1 == (size_t)-1 || r1 >= PATH_MAX) {
+	errno = EINVAL;
+	return -1;
+    }
+    res = (int)readlink(cpath, cbuf, PATH_MAX);
+    if (res == -1)
+	return -1;
+    if (res == PATH_MAX) {
+	errno = EINVAL;
+	return -1;
+    }
+    r1 = mbstowcs(buf, cbuf, bufsiz);
+    if (r1 == -1) {
+	errno = EINVAL;
+	return -1;
+    }
+    return (int)r1;
+    
+}
+#endif
 
 static void
-reduce(char *dir)
+reduce(wchar_t *dir)
 {
-    size_t i = strlen(dir);
+    size_t i = wcslen(dir);
     while (i > 0 && dir[i] != SEP)
         --i;
     dir[i] = '\0';
@@ -142,10 +204,10 @@ reduce(char *dir)
 
 
 static int
-isfile(char *filename)          /* Is file, not directory */
+isfile(wchar_t *filename)          /* Is file, not directory */
 {
     struct stat buf;
-    if (stat(filename, &buf) != 0)
+    if (_wstat(filename, &buf) != 0)
         return 0;
     if (!S_ISREG(buf.st_mode))
         return 0;
@@ -154,14 +216,14 @@ isfile(char *filename)          /* Is file, not directory */
 
 
 static int
-ismodule(char *filename)        /* Is module -- check for .pyc/.pyo too */
+ismodule(wchar_t *filename)        /* Is module -- check for .pyc/.pyo too */
 {
     if (isfile(filename))
         return 1;
 
     /* Check for the compiled version of prefix. */
-    if (strlen(filename) < MAXPATHLEN) {
-        strcat(filename, Py_OptimizeFlag ? "o" : "c");
+    if (wcslen(filename) < MAXPATHLEN) {
+        wcscat(filename, Py_OptimizeFlag ? L"o" : L"c");
         if (isfile(filename))
             return 1;
     }
@@ -170,10 +232,10 @@ ismodule(char *filename)        /* Is module -- check for .pyc/.pyo too */
 
 
 static int
-isxfile(char *filename)         /* Is executable file */
+isxfile(wchar_t *filename)         /* Is executable file */
 {
     struct stat buf;
-    if (stat(filename, &buf) != 0)
+    if (_wstat(filename, &buf) != 0)
         return 0;
     if (!S_ISREG(buf.st_mode))
         return 0;
@@ -184,10 +246,10 @@ isxfile(char *filename)         /* Is executable file */
 
 
 static int
-isdir(char *filename)                   /* Is directory */
+isdir(wchar_t *filename)                   /* Is directory */
 {
     struct stat buf;
-    if (stat(filename, &buf) != 0)
+    if (_wstat(filename, &buf) != 0)
         return 0;
     if (!S_ISDIR(buf.st_mode))
         return 0;
@@ -205,34 +267,34 @@ isdir(char *filename)                   /* Is directory */
    stuff as fits will be appended.
 */
 static void
-joinpath(char *buffer, char *stuff)
+joinpath(wchar_t *buffer, wchar_t *stuff)
 {
     size_t n, k;
     if (stuff[0] == SEP)
         n = 0;
     else {
-        n = strlen(buffer);
+        n = wcslen(buffer);
         if (n > 0 && buffer[n-1] != SEP && n < MAXPATHLEN)
             buffer[n++] = SEP;
     }
     if (n > MAXPATHLEN)
     	Py_FatalError("buffer overflow in getpath.c's joinpath()");
-    k = strlen(stuff);
+    k = wcslen(stuff);
     if (n + k > MAXPATHLEN)
         k = MAXPATHLEN - n;
-    strncpy(buffer+n, stuff, k);
+    wcsncpy(buffer+n, stuff, k);
     buffer[n+k] = '\0';
 }
 
 /* copy_absolute requires that path be allocated at least
    MAXPATHLEN + 1 bytes and that p be no more than MAXPATHLEN bytes. */
 static void
-copy_absolute(char *path, char *p)
+copy_absolute(wchar_t *path, wchar_t *p)
 {
     if (p[0] == SEP)
-        strcpy(path, p);
+        wcscpy(path, p);
     else {
-        getcwd(path, MAXPATHLEN);
+        _wgetcwd(path, MAXPATHLEN);
         if (p[0] == '.' && p[1] == SEP)
             p += 2;
         joinpath(path, p);
@@ -241,46 +303,46 @@ copy_absolute(char *path, char *p)
 
 /* absolutize() requires that path be allocated at least MAXPATHLEN+1 bytes. */
 static void
-absolutize(char *path)
+absolutize(wchar_t *path)
 {
-    char buffer[MAXPATHLEN + 1];
+    wchar_t buffer[MAXPATHLEN + 1];
 
     if (path[0] == SEP)
         return;
     copy_absolute(buffer, path);
-    strcpy(path, buffer);
+    wcscpy(path, buffer);
 }
 
 /* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
    bytes long.
 */
 static int
-search_for_prefix(char *argv0_path, char *home)
+search_for_prefix(wchar_t *argv0_path, wchar_t *home)
 {
     size_t n;
-    char *vpath;
+    wchar_t *vpath;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
     if (home) {
-        char *delim;
-        strncpy(prefix, home, MAXPATHLEN);
-        delim = strchr(prefix, DELIM);
+        wchar_t *delim;
+        wcsncpy(prefix, home, MAXPATHLEN);
+        delim = wcschr(prefix, DELIM);
         if (delim)
-            *delim = '\0';
+            *delim = L'\0';
         joinpath(prefix, lib_python);
         joinpath(prefix, LANDMARK);
         return 1;
     }
 
     /* Check to see if argv[0] is in the build directory */
-    strcpy(prefix, argv0_path);
-    joinpath(prefix, "Modules/Setup");
+    wcscpy(prefix, argv0_path);
+    joinpath(prefix, L"Modules/Setup");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
-        vpath = VPATH;
-        strcpy(prefix, argv0_path);
+        vpath = L"" VPATH;
+        wcscpy(prefix, argv0_path);
         joinpath(prefix, vpath);
-        joinpath(prefix, "Lib");
+        joinpath(prefix, L"Lib");
         joinpath(prefix, LANDMARK);
         if (ismodule(prefix))
             return -1;
@@ -289,17 +351,17 @@ search_for_prefix(char *argv0_path, char *home)
     /* Search from argv0_path, until root is found */
     copy_absolute(prefix, argv0_path);
     do {
-        n = strlen(prefix);
+        n = wcslen(prefix);
         joinpath(prefix, lib_python);
         joinpath(prefix, LANDMARK);
         if (ismodule(prefix))
             return 1;
-        prefix[n] = '\0';
+        prefix[n] = L'\0';
         reduce(prefix);
     } while (prefix[0]);
 
     /* Look at configure's PREFIX */
-    strncpy(prefix, PREFIX, MAXPATHLEN);
+    wcsncpy(prefix, L"" PREFIX, MAXPATHLEN);
     joinpath(prefix, lib_python);
     joinpath(prefix, LANDMARK);
     if (ismodule(prefix))
@@ -314,26 +376,26 @@ search_for_prefix(char *argv0_path, char *home)
    MAXPATHLEN bytes long.
 */
 static int
-search_for_exec_prefix(char *argv0_path, char *home)
+search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home)
 {
     size_t n;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
     if (home) {
-        char *delim;
-        delim = strchr(home, DELIM);
+        wchar_t *delim;
+        delim = wcschr(home, DELIM);
         if (delim)
-            strncpy(exec_prefix, delim+1, MAXPATHLEN);
+            wcsncpy(exec_prefix, delim+1, MAXPATHLEN);
         else
-            strncpy(exec_prefix, home, MAXPATHLEN);
+            wcsncpy(exec_prefix, home, MAXPATHLEN);
         joinpath(exec_prefix, lib_python);
-        joinpath(exec_prefix, "lib-dynload");
+        joinpath(exec_prefix, L"lib-dynload");
         return 1;
     }
 
     /* Check to see if argv[0] is in the build directory */
-    strcpy(exec_prefix, argv0_path);
-    joinpath(exec_prefix, "Modules/Setup");
+    wcscpy(exec_prefix, argv0_path);
+    joinpath(exec_prefix, L"Modules/Setup");
     if (isfile(exec_prefix)) {
         reduce(exec_prefix);
         return -1;
@@ -342,19 +404,19 @@ search_for_exec_prefix(char *argv0_path, char *home)
     /* Search from argv0_path, until root is found */
     copy_absolute(exec_prefix, argv0_path);
     do {
-        n = strlen(exec_prefix);
+        n = wcslen(exec_prefix);
         joinpath(exec_prefix, lib_python);
-        joinpath(exec_prefix, "lib-dynload");
+        joinpath(exec_prefix, L"lib-dynload");
         if (isdir(exec_prefix))
             return 1;
-        exec_prefix[n] = '\0';
+        exec_prefix[n] = L'\0';
         reduce(exec_prefix);
     } while (exec_prefix[0]);
 
     /* Look at configure's EXEC_PREFIX */
-    strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);
+    wcsncpy(exec_prefix, L"" EXEC_PREFIX, MAXPATHLEN);
     joinpath(exec_prefix, lib_python);
-    joinpath(exec_prefix, "lib-dynload");
+    joinpath(exec_prefix, L"lib-dynload");
     if (isdir(exec_prefix))
         return 1;
 
@@ -366,22 +428,25 @@ search_for_exec_prefix(char *argv0_path, char *home)
 static void
 calculate_path(void)
 {
-    extern char *Py_GetProgramName(void);
+    extern wchar_t *Py_GetProgramName(void);
 
-    static char delimiter[2] = {DELIM, '\0'};
-    static char separator[2] = {SEP, '\0'};
-    char *pythonpath = PYTHONPATH;
-    char *rtpypath = Py_GETENV("PYTHONPATH");
-    char *home = Py_GetPythonHome();
-    char *path = getenv("PATH");
-    char *prog = Py_GetProgramName();
-    char argv0_path[MAXPATHLEN+1];
-    char zip_path[MAXPATHLEN+1];
+    static wchar_t delimiter[2] = {DELIM, '\0'};
+    static wchar_t separator[2] = {SEP, '\0'};
+    wchar_t *pythonpath = L"" PYTHONPATH;
+    char *_rtpypath = Py_GETENV("PYTHONPATH"); /* XXX use wide version on Windows */
+    wchar_t rtpypath[MAXPATHLEN+1];
+    wchar_t *home = Py_GetPythonHome();
+    char *_path = getenv("PATH");
+    wchar_t wpath[MAXPATHLEN+1];
+    wchar_t *path = NULL;
+    wchar_t *prog = Py_GetProgramName();
+    wchar_t argv0_path[MAXPATHLEN+1];
+    wchar_t zip_path[MAXPATHLEN+1];
     int pfound, efound; /* 1 if found; -1 if found build directory */
-    char *buf;
+    wchar_t *buf;
     size_t bufsz;
     size_t prefixsz;
-    char *defpath = pythonpath;
+    wchar_t *defpath = pythonpath;
 #ifdef WITH_NEXT_FRAMEWORK
     NSModule pythonModule;
 #endif
@@ -393,13 +458,22 @@ calculate_path(void)
 #endif
 #endif
 
+    if (_path) {
+	    size_t r = mbstowcs(wpath, _path, MAXPATHLEN+1);
+	    path = wpath;
+	    if (r == (size_t)-1 || r > MAXPATHLEN) {
+		    /* Could not convert PATH, or it's too long. */
+		    path = NULL;
+	    }
+    }
+
 	/* If there is no slash in the argv0 path, then we have to
 	 * assume python is on the user's $PATH, since there's no
 	 * other way to find a directory to start the search from.  If
 	 * $PATH isn't exported, you lose.
 	 */
-	if (strchr(prog, SEP))
-		strncpy(progpath, prog, MAXPATHLEN);
+	if (wcschr(prog, SEP))
+		wcsncpy(progpath, prog, MAXPATHLEN);
 #ifdef __APPLE__
      /* On Mac OS X, if a script uses an interpreter of the form
       * "#!/opt/python2.3/bin/python", the kernel only passes "python"
@@ -416,24 +490,24 @@ calculate_path(void)
 #endif /* __APPLE__ */
 	else if (path) {
 		while (1) {
-			char *delim = strchr(path, DELIM);
+			wchar_t *delim = wcschr(path, DELIM);
 
 			if (delim) {
 				size_t len = delim - path;
 				if (len > MAXPATHLEN)
 					len = MAXPATHLEN;
-				strncpy(progpath, path, len);
+				wcsncpy(progpath, path, len);
 				*(progpath + len) = '\0';
 			}
 			else
-				strncpy(progpath, path, MAXPATHLEN);
+				wcsncpy(progpath, path, MAXPATHLEN);
 
 			joinpath(progpath, prog);
 			if (isxfile(progpath))
 				break;
 
 			if (!delim) {
-				progpath[0] = '\0';
+				progpath[0] = L'\0';
 				break;
 			}
 			path = delim + 1;
@@ -443,7 +517,7 @@ calculate_path(void)
 		progpath[0] = '\0';
 	if (progpath[0] != SEP)
 		absolutize(progpath);
-	strncpy(argv0_path, progpath, MAXPATHLEN);
+	wcsncpy(argv0_path, progpath, MAXPATHLEN);
 	argv0_path[MAXPATHLEN] = '\0';
 
 #ifdef WITH_NEXT_FRAMEWORK
@@ -454,7 +528,7 @@ calculate_path(void)
 	*/
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
-    buf = (char *)NSLibraryNameForModule(pythonModule);
+    buf = (wchar_t *)NSLibraryNameForModule(pythonModule);
     if (buf != NULL) {
         /* We're in a framework. */
         /* See if we might be in the build directory. The framework in the
@@ -464,39 +538,39 @@ calculate_path(void)
         ** be running the interpreter in the build directory, so we use the
         ** build-directory-specific logic to find Lib and such.
         */
-        strncpy(argv0_path, buf, MAXPATHLEN);
+        wcsncpy(argv0_path, buf, MAXPATHLEN);
         reduce(argv0_path);
         joinpath(argv0_path, lib_python);
         joinpath(argv0_path, LANDMARK);
         if (!ismodule(argv0_path)) {
                 /* We are in the build directory so use the name of the
                    executable - we know that the absolute path is passed */
-                strncpy(argv0_path, prog, MAXPATHLEN);
+                wcsncpy(argv0_path, prog, MAXPATHLEN);
         }
         else {
                 /* Use the location of the library as the progpath */
-                strncpy(argv0_path, buf, MAXPATHLEN);
+                wcsncpy(argv0_path, buf, MAXPATHLEN);
         }
     }
 #endif
 
 #if HAVE_READLINK
     {
-        char tmpbuffer[MAXPATHLEN+1];
-        int linklen = readlink(progpath, tmpbuffer, MAXPATHLEN);
+        wchar_t tmpbuffer[MAXPATHLEN+1];
+        int linklen = _Py_wreadlink(progpath, tmpbuffer, MAXPATHLEN);
         while (linklen != -1) {
             /* It's not null terminated! */
             tmpbuffer[linklen] = '\0';
             if (tmpbuffer[0] == SEP)
                 /* tmpbuffer should never be longer than MAXPATHLEN,
                    but extra check does not hurt */
-                strncpy(argv0_path, tmpbuffer, MAXPATHLEN);
+                wcsncpy(argv0_path, tmpbuffer, MAXPATHLEN);
             else {
                 /* Interpret relative to progpath */
                 reduce(argv0_path);
                 joinpath(argv0_path, tmpbuffer);
             }
-            linklen = readlink(argv0_path, tmpbuffer, MAXPATHLEN);
+            linklen = _Py_wreadlink(argv0_path, tmpbuffer, MAXPATHLEN);
         }
     }
 #endif /* HAVE_READLINK */
@@ -510,22 +584,22 @@ calculate_path(void)
         if (!Py_FrozenFlag)
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
-        strncpy(prefix, PREFIX, MAXPATHLEN);
+        wcsncpy(prefix, L"" PREFIX, MAXPATHLEN);
         joinpath(prefix, lib_python);
     }
     else
         reduce(prefix);
 
-    strncpy(zip_path, prefix, MAXPATHLEN);
-    zip_path[MAXPATHLEN] = '\0';
+    wcsncpy(zip_path, prefix, MAXPATHLEN);
+    zip_path[MAXPATHLEN] = L'\0';
     if (pfound > 0) { /* Use the reduced prefix returned by Py_GetPrefix() */
         reduce(zip_path);
         reduce(zip_path);
     }
     else
-        strncpy(zip_path, PREFIX, MAXPATHLEN);
-    joinpath(zip_path, "lib/python00.zip");
-    bufsz = strlen(zip_path);	/* Replace "00" with version */
+        wcsncpy(zip_path, L"" PREFIX, MAXPATHLEN);
+    joinpath(zip_path, L"lib/python00.zip");
+    bufsz = wcslen(zip_path);	/* Replace "00" with version */
     zip_path[bufsz - 6] = VERSION[0];
     zip_path[bufsz - 5] = VERSION[2];
 
@@ -533,8 +607,8 @@ calculate_path(void)
         if (!Py_FrozenFlag)
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
-        strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);
-        joinpath(exec_prefix, "lib/lib-dynload");
+        wcsncpy(exec_prefix, L"" EXEC_PREFIX, MAXPATHLEN);
+        joinpath(exec_prefix, L"lib/lib-dynload");
     }
     /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
 
@@ -546,13 +620,19 @@ calculate_path(void)
      */
     bufsz = 0;
 
-    if (rtpypath)
-        bufsz += strlen(rtpypath) + 1;
+    if (_rtpypath) {
+	size_t s = mbstowcs(rtpypath, _rtpypath, sizeof(rtpypath)/sizeof(wchar_t));
+	if (s == (size_t)-1 || s >=sizeof(rtpypath))
+	    /* XXX deal with errors more gracefully */
+	    _rtpypath = NULL;
+	if (_rtpypath)
+	    bufsz += wcslen(rtpypath) + 1;
+    }
 
-    prefixsz = strlen(prefix) + 1;
+    prefixsz = wcslen(prefix) + 1;
 
     while (1) {
-        char *delim = strchr(defpath, DELIM);
+        wchar_t *delim = wcschr(defpath, DELIM);
 
         if (defpath[0] != SEP)
             /* Paths are relative to prefix */
@@ -561,65 +641,65 @@ calculate_path(void)
         if (delim)
             bufsz += delim - defpath + 1;
         else {
-            bufsz += strlen(defpath) + 1;
+            bufsz += wcslen(defpath) + 1;
             break;
         }
         defpath = delim + 1;
     }
 
-    bufsz += strlen(zip_path) + 1;
-    bufsz += strlen(exec_prefix) + 1;
+    bufsz += wcslen(zip_path) + 1;
+    bufsz += wcslen(exec_prefix) + 1;
 
     /* This is the only malloc call in this file */
-    buf = (char *)PyMem_Malloc(bufsz);
+    buf = (wchar_t *)PyMem_Malloc(bufsz*sizeof(wchar_t));
 
     if (buf == NULL) {
         /* We can't exit, so print a warning and limp along */
         fprintf(stderr, "Not enough memory for dynamic PYTHONPATH.\n");
         fprintf(stderr, "Using default static PYTHONPATH.\n");
-        module_search_path = PYTHONPATH;
+        module_search_path = L"" PYTHONPATH;
     }
     else {
         /* Run-time value of $PYTHONPATH goes first */
-        if (rtpypath) {
-            strcpy(buf, rtpypath);
-            strcat(buf, delimiter);
+        if (_rtpypath) {
+            wcscpy(buf, rtpypath);
+            wcscat(buf, delimiter);
         }
         else
             buf[0] = '\0';
 
         /* Next is the default zip path */
-        strcat(buf, zip_path);
-        strcat(buf, delimiter);
+        wcscat(buf, zip_path);
+        wcscat(buf, delimiter);
 
         /* Next goes merge of compile-time $PYTHONPATH with
          * dynamically located prefix.
          */
         defpath = pythonpath;
         while (1) {
-            char *delim = strchr(defpath, DELIM);
+            wchar_t *delim = wcschr(defpath, DELIM);
 
             if (defpath[0] != SEP) {
-                strcat(buf, prefix);
-                strcat(buf, separator);
+                wcscat(buf, prefix);
+                wcscat(buf, separator);
             }
 
             if (delim) {
                 size_t len = delim - defpath + 1;
-                size_t end = strlen(buf) + len;
-                strncat(buf, defpath, len);
+                size_t end = wcslen(buf) + len;
+                wcsncat(buf, defpath, len);
                 *(buf + end) = '\0';
             }
             else {
-                strcat(buf, defpath);
+                wcscat(buf, defpath);
                 break;
             }
             defpath = delim + 1;
         }
-        strcat(buf, delimiter);
+        wcscat(buf, delimiter);
 
         /* Finally, on goes the directory for dynamic-load modules */
-        strcat(buf, exec_prefix);
+        wcscat(buf, exec_prefix);
 
         /* And publish the results */
         module_search_path = buf;
@@ -636,26 +716,26 @@ calculate_path(void)
 	/* The prefix is the root directory, but reduce() chopped
 	 * off the "/". */
 	if (!prefix[0])
-		strcpy(prefix, separator);
+		wcscpy(prefix, separator);
     }
     else
-        strncpy(prefix, PREFIX, MAXPATHLEN);
+        wcsncpy(prefix, L"" PREFIX, MAXPATHLEN);
 
     if (efound > 0) {
         reduce(exec_prefix);
         reduce(exec_prefix);
         reduce(exec_prefix);
 	if (!exec_prefix[0])
-		strcpy(exec_prefix, separator);
+		wcscpy(exec_prefix, separator);
     }
     else
-        strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);
+        wcsncpy(exec_prefix, L"" EXEC_PREFIX, MAXPATHLEN);
 }
 
 
 /* External interface */
 
-char *
+wchar_t *
 Py_GetPath(void)
 {
     if (!module_search_path)
@@ -663,7 +743,7 @@ Py_GetPath(void)
     return module_search_path;
 }
 
-char *
+wchar_t *
 Py_GetPrefix(void)
 {
     if (!module_search_path)
@@ -671,7 +751,7 @@ Py_GetPrefix(void)
     return prefix;
 }
 
-char *
+wchar_t *
 Py_GetExecPrefix(void)
 {
     if (!module_search_path)
@@ -679,7 +759,7 @@ Py_GetExecPrefix(void)
     return exec_prefix;
 }
 
-char *
+wchar_t *
 Py_GetProgramFullPath(void)
 {
     if (!module_search_path)

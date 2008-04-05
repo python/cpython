@@ -17,6 +17,7 @@
 #include "ast.h"
 #include "eval.h"
 #include "marshal.h"
+#include "osdefs.h"
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -30,6 +31,7 @@
 #ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
+#define PATH_MAX MAXPATHLEN
 #endif
 
 #ifndef Py_REF_DEBUG
@@ -44,7 +46,7 @@
 extern "C" {
 #endif
 
-extern char *Py_GetPath(void);
+extern wchar_t *Py_GetPath(void);
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
@@ -646,35 +648,43 @@ Py_EndInterpreter(PyThreadState *tstate)
 	PyInterpreterState_Delete(interp);
 }
 
-static char *progname = "python";
+static wchar_t *progname = L"python";
 
 void
-Py_SetProgramName(char *pn)
+Py_SetProgramName(wchar_t *pn)
 {
 	if (pn && *pn)
 		progname = pn;
 }
 
-char *
+wchar_t *
 Py_GetProgramName(void)
 {
 	return progname;
 }
 
-static char *default_home = NULL;
+static wchar_t *default_home = NULL;
+static wchar_t env_home[PATH_MAX+1];
 
 void
-Py_SetPythonHome(char *home)
+Py_SetPythonHome(wchar_t *home)
 {
 	default_home = home;
 }
 
-char *
+wchar_t *
 Py_GetPythonHome(void)
 {
-	char *home = default_home;
-	if (home == NULL && !Py_IgnoreEnvironmentFlag)
-		home = Py_GETENV("PYTHONHOME");
+	wchar_t *home = default_home;
+	if (home == NULL && !Py_IgnoreEnvironmentFlag) {
+		char* chome = Py_GETENV("PYTHONHOME");
+		if (chome) {
+			size_t r = mbstowcs(env_home, chome, PATH_MAX+1);
+			if (r != (size_t)-1 && r <= PATH_MAX)
+				home = env_home;
+		}
+
+	}
 	return home;
 }
 
