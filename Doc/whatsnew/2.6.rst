@@ -807,41 +807,142 @@ constraints upon the memory returned.  Some examples are:
 PEP 3119: Abstract Base Classes
 =====================================================
 
-XXX write this -- this section is currently just brief notes.
+Some object-oriented languages such as Java support interfaces: declarations
+that a class has a given set of methods or supports a given access protocol.
+Abstract Base Classes (or ABCs) are an equivalent feature for Python. The ABC
+support consists of an :mod:`abc` module containing a metaclass called 
+:class:`ABCMeta`, special handling
+of this metaclass by the :func:`isinstance` and :func:`issubclass` built-ins,
+and a collection of basic ABCs that the Python developers think will be widely
+useful.
 
-How to identify a file object?
+Let's say you have a particular class and wish to know whether it supports 
+dictionary-style access.  The phrase "dictionary-style" is vague, however.
+It probably means that accessing items with ``obj[1]`` works.  
+Does it imply that setting items with ``obj[2] = value`` works?  
+Or that the object will have :meth:`keys`, :meth:`values`, and :meth:`items`
+methods?  What about the iterative variants  such as :meth:`iterkeys`?  :meth:`copy`
+and :meth:`update`?  Iterating over the object with :func:`iter`?
 
-ABCs are a collection of classes describing various interfaces.
-Classes can derive from an ABC to indicate they support that ABC's
-interface.  Concrete classes should obey the semantics specified by 
-an ABC, but Python can't check this; it's up to the implementor.
+Python 2.6 includes a number of different ABCs in the :mod:`collections`
+module.  :class:`Iterable` indicates that a class defines :meth:`__iter__`,
+and :class:`Container` means the class supports  ``x in y`` expressions
+by defining a :meth:`__contains__` method.  The basic dictionary interface of
+getting items, setting items, and 
+:meth:`keys`, :meth:`values`, and :meth:`items`, is defined by the
+:class:`MutableMapping` ABC.
 
-A metaclass lets you declare that an existing class or type
-derives from a particular ABC.  You can even 
+You can derive your own classes from a particular ABC
+to indicate they support that ABC's interface::
 
-class AppendableSequence:
-    __metaclass__ = ABCMeta
+    import collections
+  
+    class Storage(collections.MutableMapping):
+        ...
 
-AppendableSequence.register(list)
-assert issubclass(list, AppendableSequence)
-assert isinstance([], AppendableSequence)
 
-@abstractmethod decorator -- you can't instantiate classes w/
-an abstract method.
+Alternatively, you could write the class without deriving from 
+the desired ABC and instead register the class by
+calling the ABC's :meth:`register` method::
 
-::
+    import collections
+    
+    class Storage:
+        ...
+	
+    collections.MutableMapping.register(Storage)
+    
+For classes that you write, deriving from the ABC is probably clearer.
+The :meth:`register`  method is useful when you've written a new
+ABC that can describe an existing type or class, or if you want
+to declare that some third-party class implements an ABC.
+For example, if you defined a :class:`PrintableType` ABC,
+it's legal to do:
 
-    @abstractproperty decorator
+  # Register Python's types
+  PrintableType.register(int)
+  PrintableType.register(float)
+  PrintableType.register(str)
+
+Classes should obey the semantics specified by an ABC, but 
+Python can't check this; it's up to the class author to  
+understand the ABC's requirements and to implement the code accordingly.
+
+To check whether an object supports a particular interface, you can
+now write::
+
+    def func(d):
+	if not isinstance(d, collections.MutableMapping):
+	    raise ValueError("Mapping object expected, not %r" % d)        
+
+(Don't feel that you must now begin writing lots of checks as in the 
+above example.  Python has a strong tradition of duck-typing, where 
+explicit type-checking isn't done and code simply calls methods on 
+an object, trusting that those methods will be there and raising an
+exception if they aren't.  Be judicious in checking for ABCs
+and only do it where it helps.)
+
+You can write your own ABCs by using ``abc.ABCMeta`` as the
+metaclass in a class definition::
+
+  from abc import ABCMeta
+
+  class Drawable():
+      __metaclass__ = ABCMeta
+  
+      def draw(self, x, y, scale=1.0):
+	  pass
+
+      def draw_doubled(self, x, y):
+	  self.draw(x, y, scale=2.0)
+
+	
+  class Square(Drawable):
+      def draw(self, x, y, scale):
+          ...
+
+	  
+In the :class:`Drawable` ABC above, the :meth:`draw_doubled` method
+renders the object at twice its size and can be implemented in terms
+of other methods described in :class:`Drawable`.  Classes implementing
+this ABC therefore don't need to provide their own implementation 
+of :meth:`draw_doubled`, though they can do so.  An implementation
+of :meth:`draw` is necessary, though; the ABC can't provide 
+a useful generic implementation.  You 
+can apply the ``@abstractmethod`` decorator to methods such as 
+:meth:`draw` that must be implemented; Python will 
+then raise an exception for classes that 
+don't define the method::
+
+    class Drawable():
+	__metaclass__ = ABCMeta
+    
+	@abstractmethod
+	def draw(self, x, y, scale):
+	    pass
+
+Note that the exception is only raised when you actually 
+try to create an instance of a subclass without the method::
+
+    >>> s=Square()
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: Can't instantiate abstract class Square with abstract methods draw
+    >>> 
+
+Abstract data attributes can be declared using the ``@abstractproperty`` decorator::
+
     @abstractproperty
     def readonly(self):
        return self._x
 
+Subclasses must then define a :meth:`readonly` property 
 
 .. seealso::
 
    :pep:`3119` - Introducing Abstract Base Classes
       PEP written by Guido van Rossum and Talin.
-      Implemented by XXX.
+      Implemented by Guido van Rossum.
       Backported to 2.6 by Benjamin Aranguren, with Alex Martelli.
 
 .. ======================================================================
