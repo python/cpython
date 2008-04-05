@@ -156,15 +156,18 @@ http://svn.python.org/view/tracker/importer/.
 
 .. seealso::
 
-  http://bugs.python.org: The Python bug tracker.
+  http://bugs.python.org 
+    The Python bug tracker.
 
-  http://bugs.jython.org: The Jython bug tracker.
+  http://bugs.jython.org:
+    The Jython bug tracker.
 
-  http://roundup.sourceforge.net/: Roundup downloads and documentation.
+  http://roundup.sourceforge.net/
+    Roundup downloads and documentation.
 
 
-New Documentation Format: ReStructured Text
---------------------------------------------------
+New Documentation Format: ReStructured Text Using Sphinx
+-----------------------------------------------------------
 
 Since the Python project's inception around 1989, the documentation
 had been written using LaTeX.  At that time, most documentation was
@@ -191,16 +194,20 @@ The input format is reStructured Text,
 a markup commonly used in the Python community that supports
 custom extensions  and directives.   Sphinx concentrates 
 on HTML output, producing attractively styled 
-and modern HTML, but printed output is still supported through 
-conversion to LaTeX as an output format.
+and modern HTML, though printed output is still supported through 
+conversion to LaTeX.  Sphinx is a standalone package that
+can be used in documenting other projects.
 
 .. seealso::
 
-   `Docutils <http://docutils.sf.net>`__: The fundamental
-   reStructured Text parser and toolset.
+   :ref:`documenting-index`
+       Describes how to write for Python's documentation.
 
-   :ref:`documenting-index`: Describes how to write for 
-   Python's documentation.
+   `Sphinx <http://sphinx.pocoo.org/>`__
+     Documentation and code for the Sphinx toolchain.
+
+   `Docutils <http://docutils.sf.net>`__
+     The underlying reStructured Text parser and toolset.
 
 
 PEP 343: The 'with' statement
@@ -487,8 +494,7 @@ can now be used in scripts running from inside a package.
     .. seealso::
 
        :pep:`370` - XXX
-
-       PEP written by XXX; implemented by Christian Heimes.
+         PEP written by XXX; implemented by Christian Heimes.
 
   
 .. ======================================================================
@@ -633,9 +639,8 @@ PEP 3105: ``print`` As a Function
 =====================================================
 
 The ``print`` statement becomes the :func:`print` function in Python 3.0.
-Making :func:`print` a function makes it easier to replace within a
-module by doing 'def print(...)' or importing a new 
-function from somewhere else. 
+Making :func:`print` a function makes it easier to change 
+by doing 'def print(...)' or importing a new function from somewhere else. 
 
 Python 2.6 has a ``__future__`` import that removes ``print`` as language 
 syntax, letting you use the functional form instead.  For example::
@@ -750,13 +755,50 @@ XXX write this.
 PEP 3118: Revised Buffer Protocol
 =====================================================
 
-The buffer protocol is a C-level API that lets Python extensions 
-XXX
+The buffer protocol is a C-level API that lets Python types
+exchange pointers into their internal representations.  A 
+memory-mapped file can be viewed as a buffer of characters, for
+example, and this lets another module such as :mod:`re`
+treat memory-mapped files as a string of characters to be searched.
+
+The primary users of the buffer protocol are numeric-processing
+packages such as NumPy, which can expose the internal representation
+of arrays so that callers can write data directly into an array instead
+of going through a slower API.  This PEP updates the buffer protocol in light of experience 
+from NumPy development, adding a number of new features
+such as indicating the shape of an array, 
+locking memory .
+
+The most important new C API function is 
+``PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)``, which
+takes an object and a set of flags, and fills in the
+``Py_buffer`` structure with information 
+about the object's memory representation.  Objects
+can use this operation to lock memory in place 
+while an external caller could be modifying the contents,
+so there's a corresponding 
+``PyObject_ReleaseBuffer(PyObject *obj, Py_buffer *view)`` to
+indicate that the external caller is done.
+
+The **flags** argument to :cfunc:`PyObject_GetBuffer` specifies
+constraints upon the memory returned.  Some examples are:
+
+ * :const:`PyBUF_WRITABLE` indicates that the memory must be writable.
+ 
+ * :const:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
+
+ * :const:`PyBUF_C_CONTIGUOUS` and :const:`PyBUF_F_CONTIGUOUS`
+   requests a C-contiguous (last dimension varies the fastest) or
+   Fortran-contiguous (first dimension varies the fastest) layout.
+
+.. XXX this feature is not in 2.6 docs yet
 
 .. seealso::
 
    :pep:`3118` - Revising the buffer protocol
-      PEP written by Travis Oliphant and Carl Banks.
+      PEP written by Travis Oliphant and Carl Banks; implemented by
+      Travis Oliphant.
+      
 
 .. ======================================================================
 
