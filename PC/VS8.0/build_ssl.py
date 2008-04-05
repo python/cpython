@@ -225,7 +225,7 @@ def main():
 
         # Now run make.
         if arch == "amd64":
-            rc = os.system(r"ml64 -c -Foms\uptable.obj ms\uptable.asm")
+            rc = os.system("ml64 -c -Foms\\uptable.obj ms\\uptable.asm")
             if rc:
                 print("ml64 assembler has failed.")
                 sys.exit(rc)
