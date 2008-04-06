@@ -77,8 +77,6 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Killing existing Python processes..."
-				CommandLine="&quot;$(KillPythonExe)&quot;"
 			/>
 		</Configuration>
 		<Configuration
@@ -140,8 +138,6 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Killing existing Python processes..."
-				CommandLine="&quot;$(KillPythonExe)&quot;"
 			/>
 		</Configuration>
 		<Configuration
@@ -202,8 +198,6 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Killing existing Python processes..."
-				CommandLine="&quot;$(KillPythonExe)&quot;"
 			/>
 		</Configuration>
 		<Configuration
@@ -265,8 +259,6 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Killing existing Python processes..."
-				CommandLine="&quot;$(KillPythonExe)&quot;"
 			/>
 		</Configuration>
 	</Configurations>
