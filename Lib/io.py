@@ -228,8 +228,8 @@ class IOBase(metaclass=abc.ABCMeta):
     This does not define read(), readinto() and write(), nor
     readline() and friends, since their signatures vary per layer.
 
-    Not that calling any method (even inquiries) on a closed file is
-    undefined.  Implementations may raise IOError in this case.
+    Note that calling any method (even inquiries) on a closed file is
+    undefined. Implementations may raise IOError in this case.
     """
 
     ### Internal ###
