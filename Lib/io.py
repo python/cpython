@@ -246,8 +246,8 @@ class IOBase(metaclass=abc.ABCMeta):
 
         Seek to byte offset pos relative to position indicated by whence:
              0  Start of stream (the default).  pos should be >= 0;
-             1  Current position - whence may be negative;
-             2  End of stream - whence usually negative.
+             1  Current position - pos may be negative;
+             2  End of stream - pos usually negative.
         Returns the new absolute position.
         """
         self._unsupported("seek")
