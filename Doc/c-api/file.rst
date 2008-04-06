@@ -58,9 +58,41 @@ change in future releases of Python.
    closed.  Return *NULL* on failure.
 
 
-.. cfunction:: FILE* PyFile_AsFile(PyObject *p)
+.. cfunction:: FILE* PyFile_AsFile(PyObject \*p)
 
    Return the file object associated with *p* as a :ctype:`FILE\*`.
+
+   If the caller will ever use the returned :ctype:`FILE\*` object while
+   the GIL is released it must also call the `PyFile_IncUseCount` and
+   `PyFile_DecUseCount` functions described below as appropriate.
+
+
+.. cfunction:: void PyFile_IncUseCount(PyFileObject \*p)
+
+   Increments the PyFileObject's internal use count to indicate
+   that the underlying :ctype:`FILE\*` is being used.
+   This prevents Python from calling f_close() on it from another thread.
+   Callers of this must call `PyFile_DecUseCount` when they are
+   finished with the :ctype:`FILE\*`.  Otherwise the file object will
+   never be closed by Python.
+
+   The GIL must be held while calling this function.
+
+   The suggested use is to call this after `PyFile_AsFile` just before
+   you release the GIL.
+
+   .. versionadded:: 2.6
+
+
+.. cfunction:: void PyFile_DecUseCount(PyFileObject \*p)
+
+   Decrements the PyFileObject's internal unlocked_count member to
+   indicate that the caller is done with its own use of the :ctype:`FILE\*`.
+   This may only be called to undo a prior call to `PyFile_IncUseCount`.
+
+   The GIL must be held while calling this function.
+
+   .. versionadded:: 2.6
 
 
 .. cfunction:: PyObject* PyFile_GetLine(PyObject *p, int n)

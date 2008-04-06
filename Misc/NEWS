@@ -18,6 +18,11 @@ Extensions Modules
 Library
 -------
 
+- Issue #815646: Individual file objects may now be used from multiple
+  threads at once without fear of crashing the Python interpreter.  If
+  file.close() is called while an object is in use by another thread
+  an IOError exception will be raised and the file will not be closed.
+
 - The bundled libffi copy is now in sync with the recently released
   libffi3.0.5 version, apart from some small changes to
   Modules/_ctypes/libffi/configure.ac.
