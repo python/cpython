@@ -539,7 +539,7 @@ Py_Main(int argc, wchar_t **argv)
 
 		if (sts==-1 && filename!=NULL) {
 			if ((fp = _wfopen(filename, L"r")) == NULL) {
-				fprintf(stderr, "%s: can't open file '%ls': [Errno %d] %s\n",
+				fprintf(stderr, "%ls: can't open file '%ls': [Errno %d] %s\n",
 					argv[0], filename, errno, strerror(errno));
 
 				return 2;
