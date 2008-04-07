@@ -1063,6 +1063,10 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	} else {
 		/* we cannot move back, so rewind the stream */
 		BZ2_bzReadClose(&bzerror, self->fp);
+		if (self->fp) {
+			PyFile_DecUseCount(self->file);
+			self->fp = NULL;
+		}
 		if (bzerror != BZ_OK) {
 			Util_CatchBZ2Error(bzerror);
 			goto cleanup;
@@ -1075,6 +1079,8 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 		self->pos = 0;
 		self->fp = BZ2_bzReadOpen(&bzerror, PyFile_AsFile(self->file),
 					  0, 0, NULL, 0);
+		if (self->fp)
+			PyFile_IncUseCount(self->file);
 		if (bzerror != BZ_OK) {
 			Util_CatchBZ2Error(bzerror);
 			goto cleanup;
@@ -1173,6 +1179,10 @@ BZ2File_close(BZ2FileObject *self)
 			BZ2_bzWriteClose(&bzerror, self->fp,
 					 0, NULL, NULL);
 			break;
+	}
+	if (self->fp) {
+		PyFile_DecUseCount(self->file);
+		self->fp = NULL;
 	}
 	self->mode = MODE_CLOSED;
 	ret = PyObject_CallMethod(self->file, "close", NULL);
@@ -1376,6 +1386,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 		Util_CatchBZ2Error(bzerror);
 		goto error;
 	}
+	PyFile_IncUseCount(self->file);
 
 	self->mode = (mode_char == 'r') ? MODE_READ : MODE_WRITE;
 
@@ -1409,6 +1420,10 @@ BZ2File_dealloc(BZ2FileObject *self)
 			BZ2_bzWriteClose(&bzerror, self->fp,
 					 0, NULL, NULL);
 			break;
+	}
+	if (self->fp) {
+		PyFile_DecUseCount(self->file);
+		self->fp = NULL;
 	}
 	Util_DropReadAhead(self);
 	Py_XDECREF(self->file);

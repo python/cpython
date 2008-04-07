@@ -431,9 +431,11 @@ write_file(Picklerobject *self, const char *s, Py_ssize_t  n)
 		return -1;
 	}
 
+	PyFile_IncUseCount((PyFileObject *)self->file);
 	Py_BEGIN_ALLOW_THREADS
 	nbyteswritten = fwrite(s, sizeof(char), n, self->fp);
 	Py_END_ALLOW_THREADS
+	PyFile_DecUseCount((PyFileObject *)self->file);
 	if (nbyteswritten != (size_t)n) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		return -1;
@@ -542,9 +544,11 @@ read_file(Unpicklerobject *self, char **s, Py_ssize_t n)
 		self->buf_size = n;
 	}
 
+	PyFile_IncUseCount((PyFileObject *)self->file);
 	Py_BEGIN_ALLOW_THREADS
 	nbytesread = fread(self->buf, sizeof(char), n, self->fp);
 	Py_END_ALLOW_THREADS
+	PyFile_DecUseCount((PyFileObject *)self->file);
 	if (nbytesread != (size_t)n) {
 		if (feof(self->fp)) {
 			PyErr_SetNone(PyExc_EOFError);
