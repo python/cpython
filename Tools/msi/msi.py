@@ -29,7 +29,6 @@ sqlite_dir = "../sqlite-source-3.3.4"
 # path to PCbuild directory
 PCBUILD="PCbuild"
 # msvcrt version
-#MSVCR = "71"
 MSVCR = "90"
 
 try:
@@ -106,8 +105,6 @@ extensions = [
 # Using the same UUID is fine since these files are versioned,
 # so Installer will always keep the newest version.
 # NOTE: All uuids are self generated.
-msvcr71_uuid = "{8666C8DD-D0B4-4B42-928E-A69E32FA5D4D}"
-msvcr90_uuid = "{9C28CD84-397C-4045-855C-28B02291A272}"
 pythondll_uuid = {
     "24":"{9B81E618-2301-4035-AC77-75D9ABEB7301}",
     "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}",
@@ -795,7 +792,7 @@ def add_features(db):
     # (i.e. additional Python libraries) need to follow the parent feature.
     # Features that have no advertisement trigger (e.g. the test suite)
     # must not support advertisement
-    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature
+    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature, private_crt
     default_feature = Feature(db, "DefaultFeature", "Python",
                               "Python Interpreter and Libraries",
                               1, directory = "TARGETDIR")
@@ -820,27 +817,6 @@ def add_features(db):
     testsuite = Feature(db, "Testsuite", "Test suite",
                         "Python test suite (Lib/test/)", 11,
                         parent = default_feature, attributes=2|8)
-
-def extract_msvcr71():
-    import _winreg
-    # Find the location of the merge modules
-    k = _winreg.OpenKey(
-        _winreg.HKEY_LOCAL_MACHINE,
-        r"Software\Microsoft\VisualStudio\7.1\Setup\VS")
-    dir = _winreg.QueryValueEx(k, "MSMDir")[0]
-    _winreg.CloseKey(k)
-    files = glob.glob1(dir, "*CRT71*")
-    assert len(files) == 1, (dir, files)
-    file = os.path.join(dir, files[0])
-    # Extract msvcr71.dll
-    m = msilib.MakeMerge2()
-    m.OpenModule(file, 0)
-    m.ExtractFiles(".")
-    m.CloseModule()
-    # Find the version/language of msvcr71.dll
-    installer = msilib.MakeInstaller()
-    return installer.FileVersion("msvcr71.dll", 0), \
-           installer.FileVersion("msvcr71.dll", 1)
 
 def extract_msvcr90():
     # Find the redistributable files
@@ -903,21 +879,24 @@ def add_files(db):
                     version=pyversion,
                     language=installer.FileVersion(pydllsrc, 1))
     DLLs = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
-    # XXX determine dependencies
-    if MSVCR == "90":
-        root.start_component("msvcr90", feature=private_crt)
-        for file, kw in extract_msvcr90():
-            root.add_file(file, **kw)
-            if file.endswith("manifest"):
-                DLLs.add_file(file, **kw)
-    else:
-        version, lang = extract_msvcr71()
-        dlldir.start_component("msvcr71", flags=8, keyfile="msvcr71.dll",
-                               uuid=msvcr71_uuid)
-        dlldir.add_file("msvcr71.dll", src=os.path.abspath("msvcr71.dll"),
-                        version=version, language=lang)
-        tmpfiles.append("msvcr71.dll")
 
+    # msvcr90.dll: Need to place the DLL and the manifest into the root directory,
+    # plus another copy of the manifest in the DLLs directory, with the manifest
+    # pointing to the root directory
+    root.start_component("msvcr90", feature=private_crt)
+    # Results are ID,keyword pairs
+    manifest, crtdll = extract_msvcr90()
+    root.add_file(manifest[0], **manifest[1])
+    root.add_file(crtdll[0], **crtdll[1])
+    # Copy the manifest
+    manifest_dlls = manifest[0]+".root"
+    open(manifest_dlls, "w").write(open(manifest[1]['src']).read().replace("msvcr","../msvcr"))
+    DLLs.start_component("msvcr90_dlls", feature=private_crt)
+    DLLs.add_file(manifest[0], src=os.path.abspath(manifest_dlls))
+
+    # Now start the main component for the DLLs directory;
+    # no regular files have been added to the directory yet.
+    DLLs.start_component()
 
     # Check if _ctypes.pyd exists
     have_ctypes = os.path.exists(srcdir+"/%s/_ctypes.pyd" % PCBUILD)
