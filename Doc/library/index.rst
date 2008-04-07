@@ -31,8 +31,9 @@ tools provided with the operating system to obtain some or all of the
 optional components.
 
 In addition to the standard library, there is a growing collection of
-over 2500 additional components available from the `Python Package Index
-<http://pypi.python.org/pypi>`_.
+several thousand components (from individual programs and modules to
+packages and entire application development frameworks), available from
+the `Python Package Index <http://pypi.python.org/pypi>`_.
 
 
 .. toctree::
