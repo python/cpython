@@ -2,12 +2,34 @@ Example Python extension for Windows NT
 =======================================
 
 This directory contains everything needed (except for the Python
-distribution!) to build a Python extension module using Microsoft VC++
-("Developer Studio") version 7.1.  It has been tested with VC++ 7.1 on 
-Python 2.4.  You can also use earlier versions of VC to build Python 
-extensions, but the sample VC project file (example.dsw in this directory) 
-is in VC 7.1 format. Notice that you need to use the same compiler version
-that was used to build Python itself.
+distribution!) to build a Python extension module using Microsoft VC++.
+Notice that you need to use the same compiler version that was used to build 
+Python itself.
+
+The simplest way to build this example is to use the distutils script
+'setup.py'.  To do this, simply execute:
+
+  % python setup.py install
+
+after everything builds and installs, you can test it:
+
+  % python -c "import example; example.foo()"
+  Hello, world
+
+See setup.py for more details.  alternatively, see below for instructions on 
+how to build inside the Visual Studio environment.
+
+Visual Studio Build Instructions
+================================
+
+These are instructions how to build an extension using Visual C++.  The
+instructions and project files have not been updated to the latest VC
+version.  In general, it is recommended you use the 'setup.py' instructions
+above.
+
+It has been tested with VC++ 7.1 on Python 2.4.  You can also use earlier 
+versions of VC to build Python extensions, but the sample VC project file 
+(example.dsw in this directory) is in VC 7.1 format.
 
 COPY THIS DIRECTORY!
 --------------------

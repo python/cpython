@@ -97,7 +97,10 @@ class bdist (Command):
     def finalize_options (self):
         # have to finalize 'plat_name' before 'bdist_base'
         if self.plat_name is None:
-            self.plat_name = get_platform()
+            if self.skip_build:
+                self.plat_name = get_platform()
+            else:
+                self.plat_name = self.get_finalized_command('build').plat_name
 
         # 'bdist_base' -- parent of per-built-distribution-format
         # temporary directories (eg. we'll probably have
@@ -120,7 +123,6 @@ class bdist (Command):
             self.dist_dir = "dist"
 
     # finalize_options()
-
 
     def run (self):
 
