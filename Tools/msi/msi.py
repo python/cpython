@@ -794,7 +794,7 @@ def add_features(db):
     # (i.e. additional Python libraries) need to follow the parent feature.
     # Features that have no advertisement trigger (e.g. the test suite)
     # must not support advertisement
-    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature
+    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature, private_crt
     default_feature = Feature(db, "DefaultFeature", "Python",
                               "Python Interpreter and Libraries",
                               1, directory = "TARGETDIR")
