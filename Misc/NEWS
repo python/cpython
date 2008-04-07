@@ -32,6 +32,11 @@ Library
 Build
 -----
 
+- "make install" is now an alias for "make altinstall", to prevent
+  accidentally overwriting a Python 2.x installation.
+  Use "make fullinstall" to force Python 3.0 to be installed as
+  "python".
+
 - Issue #2544: On HP-UX systems, use 'gcc -shared' for linking when
   gcc is used as compiler.
 
