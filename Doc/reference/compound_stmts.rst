@@ -577,9 +577,8 @@ can be set in a method with ``self.name = value``.  Both class and instance
 variables are accessible through the notation "``self.name``", and an instance
 variable hides a class variable with the same name when accessed in this way.
 Class variables can be used as defaults for instance variables, but using
-mutable values there can lead to unexpected results.  For :term:`new-style
-class`\es, descriptors can be used to create instance variables with different
-implementation details.
+mutable values there can lead to unexpected results.  Descriptors can be used
+to create instance variables with different implementation details.
 
 .. XXX add link to descriptor docs above
 
