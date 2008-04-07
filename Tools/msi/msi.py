@@ -29,7 +29,6 @@ sqlite_dir = "../sqlite-source-3.3.4"
 # path to PCbuild directory
 PCBUILD="PCbuild"
 # msvcrt version
-#MSVCR = "71"
 MSVCR = "90"
 
 try:
@@ -106,7 +105,6 @@ extensions = [
 # Using the same UUID is fine since these files are versioned,
 # so Installer will always keep the newest version.
 # NOTE: All uuids are self generated.
-msvcr71_uuid = "{8666C8DD-D0B4-4B42-928E-A69E32FA5D4D}"
 msvcr90_uuid = "{9C28CD84-397C-4045-855C-28B02291A272}"
 pythondll_uuid = {
     "24":"{9B81E618-2301-4035-AC77-75D9ABEB7301}",
@@ -820,27 +818,6 @@ def add_features(db):
                         "Python test suite (Lib/test/)", 11,
                         parent = default_feature, attributes=2|8)
 
-def extract_msvcr71():
-    import _winreg
-    # Find the location of the merge modules
-    k = _winreg.OpenKey(
-        _winreg.HKEY_LOCAL_MACHINE,
-        r"Software\Microsoft\VisualStudio\7.1\Setup\VS")
-    dir = _winreg.QueryValueEx(k, "MSMDir")[0]
-    _winreg.CloseKey(k)
-    files = glob.glob1(dir, "*CRT71*")
-    assert len(files) == 1, (dir, files)
-    file = os.path.join(dir, files[0])
-    # Extract msvcr71.dll
-    m = msilib.MakeMerge2()
-    m.OpenModule(file, 0)
-    m.ExtractFiles(".")
-    m.CloseModule()
-    # Find the version/language of msvcr71.dll
-    installer = msilib.MakeInstaller()
-    return installer.FileVersion("msvcr71.dll", 0), \
-           installer.FileVersion("msvcr71.dll", 1)
-
 def extract_msvcr90():
     # Find the redistributable files
     dir = os.path.join(os.environ['VS90COMNTOOLS'], r"..\..\VC\redist\x86\Microsoft.VC90.CRT")
@@ -902,21 +879,11 @@ def add_files(db):
                     version=pyversion,
                     language=installer.FileVersion(pydllsrc, 1))
     DLLs = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
-    # XXX determine dependencies
-    if MSVCR == "90":
-        root.start_component("msvcr90", feature=private_crt)
-        for file, kw in extract_msvcr90():
-            root.add_file(file, **kw)
-            if file.endswith("manifest"):
-                DLLs.add_file(file, **kw)
-    else:
-        version, lang = extract_msvcr71()
-        dlldir.start_component("msvcr71", flags=8, keyfile="msvcr71.dll",
-                               uuid=msvcr71_uuid)
-        dlldir.add_file("msvcr71.dll", src=os.path.abspath("msvcr71.dll"),
-                        version=version, language=lang)
-        tmpfiles.append("msvcr71.dll")
-
+    root.start_component("msvcr90", feature=private_crt)
+    for file, kw in extract_msvcr90():
+        root.add_file(file, **kw)
+        if file.endswith("manifest"):
+            DLLs.add_file(file, **kw)
 
     # Check if _ctypes.pyd exists
     have_ctypes = os.path.exists(srcdir+"/%s/_ctypes.pyd" % PCBUILD)
