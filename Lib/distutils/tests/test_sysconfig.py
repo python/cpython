@@ -19,7 +19,27 @@ class SysconfigTestCase(unittest.TestCase):
         # test for pythonxx.lib?
 
     def test_get_python_inc(self):
-        inc_dir = sysconfig.get_python_inc()
+        # The check for srcdir is copied from Python's setup.py,
+        # and is necessary to make this test pass when building
+        # Python in a directory other than the source directory.
+        (srcdir,) = sysconfig.get_config_vars('srcdir')
+        if not srcdir:
+            inc_dir = sysconfig.get_python_inc()
+        else:
+            # This test is not really a proper test: when building
+            # Python from source, even in the same directory,
+            # we won't be testing the same thing as when running
+            # distutils' tests on an installed Python. Nevertheless,
+            # let's try to do our best: if we are running Python's
+            # unittests from a build directory that is not the source
+            # directory, the normal inc_dir will exist, it will just not
+            # contain anything of interest.
+            inc_dir = sysconfig.get_python_inc()
+            self.assert_(os.path.isdir(inc_dir))
+            # Now test the source location, to make sure Python.h does
+            # exist.
+            inc_dir = os.path.join(os.getcwd(), srcdir, 'Include')
+            inc_dir = os.path.normpath(inc_dir)
         self.assert_(os.path.isdir(inc_dir), inc_dir)
         python_h = os.path.join(inc_dir, "Python.h")
         self.assert_(os.path.isfile(python_h), python_h)

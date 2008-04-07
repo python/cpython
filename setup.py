@@ -119,6 +119,8 @@ class PyBuildExt(build_ext):
             raise ValueError("No source directory; cannot proceed.")
 
         # Figure out the location of the source code for extension modules
+        # (This logic is copied in distutils.test.test_sysconfig,
+        # so building in a separate directory does not break test_distutils.)
         moddir = os.path.join(os.getcwd(), srcdir, 'Modules')
         moddir = os.path.normpath(moddir)
         srcdir, tail = os.path.split(moddir)
