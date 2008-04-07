@@ -105,7 +105,6 @@ extensions = [
 # Using the same UUID is fine since these files are versioned,
 # so Installer will always keep the newest version.
 # NOTE: All uuids are self generated.
-msvcr90_uuid = "{9C28CD84-397C-4045-855C-28B02291A272}"
 pythondll_uuid = {
     "24":"{9B81E618-2301-4035-AC77-75D9ABEB7301}",
     "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}",
@@ -879,11 +878,24 @@ def add_files(db):
                     version=pyversion,
                     language=installer.FileVersion(pydllsrc, 1))
     DLLs = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
+
+    # msvcr90.dll: Need to place the DLL and the manifest into the root directory,
+    # plus another copy of the manifest in the DLLs directory, with the manifest
+    # pointing to the root directory
     root.start_component("msvcr90", feature=private_crt)
-    for file, kw in extract_msvcr90():
-        root.add_file(file, **kw)
-        if file.endswith("manifest"):
-            DLLs.add_file(file, **kw)
+    # Results are ID,keyword pairs
+    manifest, crtdll = extract_msvcr90()
+    root.add_file(manifest[0], **manifest[1])
+    root.add_file(crtdll[0], **crtdll[1])
+    # Copy the manifest
+    manifest_dlls = manifest[0]+".root"
+    open(manifest_dlls, "w").write(open(manifest[1]['src']).read().replace("msvcr","../msvcr"))
+    DLLs.start_component("msvcr90_dlls", feature=private_crt)
+    DLLs.add_file(manifest[0], src=os.path.abspath(manifest_dlls))
+
+    # Now start the main component for the DLLs directory;
+    # no regular files have been added to the directory yet.
+    DLLs.start_component()
 
     # Check if _ctypes.pyd exists
     have_ctypes = os.path.exists(srcdir+"/%s/_ctypes.pyd" % PCBUILD)
