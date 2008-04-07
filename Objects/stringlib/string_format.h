@@ -740,9 +740,17 @@ do_conversion(PyObject *obj, STRINGLIB_CHAR conversion)
     case 's':
         return STRINGLIB_TOSTR(obj);
     default:
-        PyErr_Format(PyExc_ValueError,
-                     "Unknown converion specifier %c",
-                     conversion);
+	if (conversion > 32 && conversion < 127) {
+		/* It's the ASCII subrange; casting to char is safe
+		   (assuming the execution character set is an ASCII
+		   superset). */
+        	PyErr_Format(PyExc_ValueError,
+                     "Unknown conversion specifier %c",
+                     (char)conversion);
+	} else
+		PyErr_Format(PyExc_ValueError,
+		     "Unknown conversion specifier \\x%x",
+		     (unsigned int)conversion);
         return NULL;
     }
 }

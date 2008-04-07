@@ -8895,7 +8895,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 		if (!isnumok) {
 			PyErr_Format(PyExc_TypeError, 
 			    "%%%c format: a number is required, "
-			    "not %.200s", c, Py_TYPE(v)->tp_name);
+                                     "not %.200s", (char)c, Py_TYPE(v)->tp_name);
 			goto onError;
 		}
 		if (flags & F_ZERO)
