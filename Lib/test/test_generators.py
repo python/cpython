@@ -377,10 +377,10 @@ From the Iterators list, about the types of these things.
 ...     yield 1
 ...
 >>> type(g)
-<type 'function'>
+<class 'function'>
 >>> i = g()
 >>> type(i)
-<type 'generator'>
+<class 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
 ['close', 'gi_code', 'gi_frame', 'gi_running', 'send', 'throw']
 >>> print(i.__next__.__doc__)
@@ -396,7 +396,7 @@ And more, added later.
 >>> i.gi_running
 0
 >>> type(i.gi_frame)
-<type 'frame'>
+<class 'frame'>
 >>> i.gi_running = 42
 Traceback (most recent call last):
   ...
@@ -794,27 +794,27 @@ These are fine:
 >>> def f():
 ...    yield
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 
 >>> def f():
 ...    if 0:
 ...        yield
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 
 >>> def f():
 ...     if 0:
 ...         yield 1
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 >>> def f():
 ...    if "":
 ...        yield None
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 >>> def f():
 ...     return
@@ -838,7 +838,7 @@ These are fine:
 ...         x = 1
 ...     return
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 >>> def f():
 ...     if 0:
@@ -846,7 +846,7 @@ These are fine:
 ...             yield 1
 ...
 >>> type(f())
-<type 'NoneType'>
+<class 'NoneType'>
 
 >>> def f():
 ...     if 0:
@@ -856,7 +856,7 @@ These are fine:
 ...             def f(self):
 ...                 yield 2
 >>> type(f())
-<type 'NoneType'>
+<class 'NoneType'>
 
 >>> def f():
 ...     if 0:
@@ -864,7 +864,7 @@ These are fine:
 ...     if 0:
 ...         yield 2
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 
 >>> def f():
@@ -1512,7 +1512,7 @@ And a more sane, but still weird usage:
 
 >>> def f(): list(i for i in [(yield 26)])
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 
 A yield expression with augmented assignment.
@@ -1749,25 +1749,25 @@ enclosing function a generator:
 
 >>> def f(): x += yield
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 >>> def f(): x = yield
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 >>> def f(): lambda x=(yield): 1
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 >>> def f(): x=(i for i in (yield) if (yield))
 >>> type(f())
-<type 'generator'>
+<class 'generator'>
 
 >>> def f(d): d[(yield "a")] = d[(yield "b")] = 27
 >>> data = [1,2]
 >>> g = f(data)
 >>> type(g)
-<type 'generator'>
+<class 'generator'>
 >>> g.send(None)
 'a'
 >>> data

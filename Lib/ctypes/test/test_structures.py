@@ -307,14 +307,14 @@ class StructureTestCase(unittest.TestCase):
         cls, msg = self.get_except(Person, "Someone", (1, 2))
         self.failUnlessEqual(cls, RuntimeError)
         self.failUnlessEqual(msg,
-                             "(Phone) <type 'TypeError'>: "
+                             "(Phone) <class 'TypeError'>: "
                              "expected string, int found")
 
         cls, msg = self.get_except(Person, "Someone", ("a", "b", "c"))
         self.failUnlessEqual(cls, RuntimeError)
         if issubclass(Exception, object):
             self.failUnlessEqual(msg,
-                                 "(Phone) <type 'TypeError'>: too many initializers")
+                                 "(Phone) <class 'TypeError'>: too many initializers")
         else:
             self.failUnlessEqual(msg, "(Phone) TypeError: too many initializers")
 

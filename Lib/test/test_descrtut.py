@@ -39,7 +39,7 @@ Here's the new type at work:
     >>> print(defaultdict)              # show our type
     <class 'test.test_descrtut.defaultdict'>
     >>> print(type(defaultdict))        # its metatype
-    <type 'type'>
+    <class 'type'>
     >>> a = defaultdict(default=0.0)    # create an instance
     >>> print(a)                        # show the instance
     {}
@@ -149,11 +149,11 @@ Introspecting instances of built-in types
 For instance of built-in types, x.__class__ is now the same as type(x):
 
     >>> type([])
-    <type 'list'>
+    <class 'list'>
     >>> [].__class__
-    <type 'list'>
+    <class 'list'>
     >>> list
-    <type 'list'>
+    <class 'list'>
     >>> isinstance([], list)
     True
     >>> isinstance([], dict)
@@ -346,7 +346,7 @@ Hmm -- property is builtin now, so let's try it that way too.
 
     >>> del property  # unmask the builtin
     >>> property
-    <type 'property'>
+    <class 'property'>
 
     >>> class C(object):
     ...     def __init__(self):

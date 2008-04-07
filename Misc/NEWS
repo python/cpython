@@ -12,6 +12,9 @@ What's New in Python 3.0a5?
 Core and Builtins
 -----------------
 
+- Bug #2565: The repr() of type objects now calls them 'class', 
+  not 'type' - whether they are builtin types or not.
+
 - The command line processing was converted to pass Unicode strings
   through as unmodified as possible; as a consequence, the C API
   related to command line arguments was changed to use wchar_t.

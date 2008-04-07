@@ -78,7 +78,7 @@ Also pass another keyword.
     >>> class C(object, metaclass=M, other="haha"):
     ...     pass
     ...
-    Prepare called: ('C', (<type 'object'>,)) {'other': 'haha'}
+    Prepare called: ('C', (<class 'object'>,)) {'other': 'haha'}
     New called: {'other': 'haha'}
     >>> C.__class__ is M
     True
@@ -104,7 +104,7 @@ Use various combinations of explicit keywords and **kwds.
     >>> kwds = {'metaclass': M, 'other': 'haha'}
     >>> class C(*bases, **kwds): pass
     ...
-    Prepare called: ('C', (<type 'object'>,)) {'other': 'haha'}
+    Prepare called: ('C', (<class 'object'>,)) {'other': 'haha'}
     New called: {'other': 'haha'}
     >>> C.__class__ is M
     True
@@ -114,7 +114,7 @@ Use various combinations of explicit keywords and **kwds.
     >>> kwds = {'other': 'haha'}
     >>> class C(B, metaclass=M, *bases, **kwds): pass
     ...
-    Prepare called: ('C', (<class 'test.test_metaclass.B'>, <type 'object'>)) {'other': 'haha'}
+    Prepare called: ('C', (<class 'test.test_metaclass.B'>, <class 'object'>)) {'other': 'haha'}
     New called: {'other': 'haha'}
     >>> C.__class__ is M
     True
