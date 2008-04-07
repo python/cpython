@@ -16,6 +16,7 @@ from distutils.sysconfig import get_config_vars
 from distutils.errors import DistutilsPlatformError
 from distutils.file_util import write_file
 from distutils.util import convert_path, subst_vars, change_root
+from distutils.util import get_platform
 from distutils.errors import DistutilsOptionError
 
 if sys.version < "2.2":
@@ -503,6 +504,14 @@ class install (Command):
         # Obviously have to build before we can install
         if not self.skip_build:
             self.run_command('build')
+            # If we built for any other platform, we can't install.
+            build_plat = self.distribution.get_command_obj('build').plat_name
+            # check warn_dir - it is a clue that the 'install' is happening
+            # internally, and not to sys.path, so we don't check the platform
+            # matches what we are running.
+            if self.warn_dir and build_plat != get_platform():
+                raise DistutilsPlatformError("Can't install when "
+                                             "cross-compiling")
 
         # Run all sub-commands (at least those that need to be run)
         for cmd_name in self.get_sub_commands():

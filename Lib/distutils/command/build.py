@@ -8,6 +8,7 @@ __revision__ = "$Id$"
 
 import sys, os
 from distutils.core import Command
+from distutils.errors import DistutilsOptionError
 from distutils.util import get_platform
 
 
@@ -34,6 +35,9 @@ class build (Command):
          "build directory for scripts"),
         ('build-temp=', 't',
          "temporary build directory"),
+        ('plat-name=', 'p',
+         "platform name to build for, if supported "
+         "(default: %s)" % get_platform()),
         ('compiler=', 'c',
          "specify the compiler type"),
         ('debug', 'g',
@@ -61,13 +65,25 @@ class build (Command):
         self.build_temp = None
         self.build_scripts = None
         self.compiler = None
+        self.plat_name = None
         self.debug = None
         self.force = 0
         self.executable = None
 
     def finalize_options (self):
 
-        plat_specifier = ".%s-%s" % (get_platform(), sys.version[0:3])
+        if self.plat_name is None:
+            self.plat_name = get_platform()
+        else:
+            # plat-name only supported for windows (other platforms are
+            # supported via ./configure flags, if at all).  Avoid misleading
+            # other platforms.
+            if os.name != 'nt':
+                raise DistutilsOptionError(
+                            "--plat-name only supported on Windows (try "
+                            "using './configure --help' on your platform)")
+
+        plat_specifier = ".%s-%s" % (self.plat_name, sys.version[0:3])
 
         # Make it so Python 2.x and Python 2.x with --with-pydebug don't
         # share the same build directories. Doing so confuses the build

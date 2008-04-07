@@ -15,6 +15,7 @@ from distutils.errors import *
 from distutils.sysconfig import customize_compiler, get_python_version
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
+from distutils.util import get_platform
 from distutils import log
 
 if os.name == 'nt':
@@ -60,6 +61,9 @@ class build_ext (Command):
          "directory for compiled extension modules"),
         ('build-temp=', 't',
          "directory for temporary files (build by-products)"),
+        ('plat-name=', 'p',
+         "platform name to cross-compile for, if supported "
+         "(default: %s)" % get_platform()),
         ('inplace', 'i',
          "ignore build-lib and put compiled extensions into the source " +
          "directory alongside your pure Python modules"),
@@ -101,6 +105,7 @@ class build_ext (Command):
     def initialize_options (self):
         self.extensions = None
         self.build_lib = None
+        self.plat_name = None
         self.build_temp = None
         self.inplace = 0
         self.package = None
@@ -127,7 +132,9 @@ class build_ext (Command):
                                    ('build_temp', 'build_temp'),
                                    ('compiler', 'compiler'),
                                    ('debug', 'debug'),
-                                   ('force', 'force'))
+                                   ('force', 'force'),
+                                   ('plat_name', 'plat_name'),
+                                   )
 
         if self.package is None:
             self.package = self.distribution.ext_package
@@ -171,6 +178,9 @@ class build_ext (Command):
         # for Release and Debug builds.
         # also Python's library directory must be appended to library_dirs
         if os.name == 'nt':
+            # the 'libs' directory is for binary installs - we assume that
+            # must be the *native* platform.  But we don't really support
+            # cross-compiling via a binary install anyway, so we let it go.
             self.library_dirs.append(os.path.join(sys.exec_prefix, 'libs'))
             if self.debug:
                 self.build_temp = os.path.join(self.build_temp, "Debug")
@@ -181,8 +191,17 @@ class build_ext (Command):
             # this allows distutils on windows to work in the source tree
             self.include_dirs.append(os.path.join(sys.exec_prefix, 'PC'))
             if MSVC_VERSION == 9:
-                self.library_dirs.append(os.path.join(sys.exec_prefix,
-                                         'PCbuild'))
+                # Use the .lib files for the correct architecture
+                if self.plat_name == 'win32':
+                    suffix = ''
+                else:
+                    # win-amd64 or win-ia64
+                    suffix = self.plat_name[4:]
+                new_lib = os.path.join(sys.exec_prefix, 'PCbuild')
+                if suffix:
+                    new_lib = os.path.join(new_lib, suffix)
+                self.library_dirs.append(new_lib)
+
             elif MSVC_VERSION == 8:
                 self.library_dirs.append(os.path.join(sys.exec_prefix,
                                          'PC', 'VS8.0', 'win32release'))
@@ -275,6 +294,11 @@ class build_ext (Command):
                                      dry_run=self.dry_run,
                                      force=self.force)
         customize_compiler(self.compiler)
+        # If we are cross-compiling, init the compiler now (if we are not
+        # cross-compiling, init would not hurt, but people may rely on
+        # late initialization of compiler even if they shouldn't...)
+        if os.name == 'nt' and self.plat_name != get_platform():
+            self.compiler.initialize(self.plat_name)
 
         # And make sure that any compile/link-related options (which might
         # come from the command-line or from the setup script) are set in
