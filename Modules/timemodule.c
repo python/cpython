@@ -661,7 +661,7 @@ Convert a time tuple in local time to seconds since the Epoch.");
 #endif /* HAVE_MKTIME */
 
 #ifdef HAVE_WORKING_TZSET
-void inittimezone(PyObject *module);
+static void inittimezone(PyObject *module);
 
 static PyObject *
 time_tzset(PyObject *self, PyObject *unused)
@@ -697,11 +697,12 @@ the local timezone used by methods such as localtime, but this behaviour\n\
 should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
-void inittimezone(PyObject *m) {
+static void
+inittimezone(PyObject *m) {
     /* This code moved from inittime wholesale to allow calling it from
 	time_tzset. In the future, some parts of it can be moved back
 	(for platforms that don't HAVE_WORKING_TZSET, when we know what they
-	are), and the extranious calls to tzset(3) should be removed.
+	are), and the extraneous calls to tzset(3) should be removed.
 	I haven't done this yet, as I don't want to change this code as
 	little as possible when introducing the time.tzset and time.tzsetwall
 	methods. This should simply be a method of doing the following once,
