@@ -728,6 +728,12 @@ or using a :class:`bytes` constructor.  For future compatibility,
 Python 2.6 adds :class:`bytes` as a synonym for the :class:`str` type,
 and it also supports the ``b''`` notation.
 
+There's also a ``__future__`` import that causes all string literals
+to become Unicode strings.  This means that ``\u`` escape sequences 
+can be used to include Unicode characters.
+
+XXX give example
+
 .. seealso::
 
    :pep:`3112` - Bytes literals in Python 3000
@@ -952,22 +958,48 @@ Subclasses must then define a :meth:`readonly` property
 PEP 3127: Integer Literal Support and Syntax
 =====================================================
 
-XXX write this -- this section is currently just brief notes.
+Python 3.0 changes the syntax for octal (base-8) integer literals,
+which are now prefixed by "0o" or "0O" instead of a leading zero, and
+adds support for binary (base-2) integer literals, signalled by a "0b"
+or "0B" prefix.
 
-Python 3.0 changes the syntax for octal integer literals, and 
-adds supports for binary integers: 0o instad of 0,
-and 0b for binary.  Python 2.6 doesn't support this, but a bin()
-builtin was added.
+Python 2.6 doesn't drop support for a leading 0 signalling 
+an octal number, but it does add support for "0o" and "0b"::
 
-XXX changes to the hex/oct builtins
+    >>> 0o21, 2*8 + 1
+    (17, 17)
+    >>> 0b101111
+    47
 
+The :func:`oct` built-in still returns numbers 
+prefixed with a leading zero, and a new :func:`bin` 
+built-in returns the binary representation for a number::
 
-New bin() built-in returns the binary form of a number.
+    >>> oct(42)
+    '052'
+    >>> bin(173)
+    '0b10101101'
+
+The :func:`int` and :func:`long` built-ins will now accept the "0o"
+and "0b" prefixes when base-8 or base-2 are requested, or when the
+**base** argument is zero (meaning the base used is determined from
+the string):
+
+    >>> int ('0o52', 0)
+    42
+    >>> int('1101', 2)
+    13
+    >>> int('0b1101', 2)
+    13
+    >>> int('0b1101', 0)
+    13
+
 
 .. seealso::
 
    :pep:`3127` - Integer Literal Support and Syntax
-      PEP written by Patrick Maupin.
+      PEP written by Patrick Maupin; backported to 2.6 by
+      Eric Smith.
 
 .. ======================================================================
 
@@ -1123,6 +1155,13 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
     ['a', 'b']
 
   .. Patch 1686487
+
+* Tuples now have an :meth:`index` method matching the list type's
+  :meth:`index` method::
+
+    >>> t = (0,1,2,3,4)
+    >>> t.index(3)
+    3
 
 * The built-in types now have improved support for extended slicing syntax,
   where various combinations of ``(start, stop, step)`` are supplied.
@@ -1642,6 +1681,12 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. Patch #1393667
 
+  The :func:`post_mortem` function, used to enter debugging of a 
+  traceback, will now use the traceback returned by :func:`sys.exc_info`
+  if no traceback is supplied.   (Contributed by Facundo Batista.)
+
+  .. Patch #1106316
+
 * The :mod:`pickletools` module now has an :func:`optimize` function 
   that takes a string containing a pickle and removes some unused 
   opcodes, returning a shorter pickle that contains the same data structure.
@@ -1719,6 +1764,8 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Christian Heimes.)
 
   .. Patch 1657
+
+  .. XXX 
 
 * The :mod:`sets` module has been deprecated; it's better to 
   use the built-in :class:`set` and :class:`frozenset` types.
@@ -2069,6 +2116,19 @@ Changes to Python's build process and to the C API include:
 
   .. Patch 1551895
 
+* Python's use of the C stdio library is now thread-safe, or at least
+  as thread-safe as the underlying library is.  A long-standing potential
+  bug occurred if one thread closed a file object while another thread 
+  was reading from or writing to the object.  In 2.6 file objects 
+  have a reference count, manipulated by the 
+  :cfunc:`PyFile_IncUseCount` and :cfunc:`PyFile_DecUseCount`
+  functions.  File objects can't be closed unless the reference count 
+  is zero.  :cfunc:`PyFile_IncUseCount` should be called while the GIL 
+  is still held, before carrying out an I/O operation using the 
+  ``FILE *`` pointer, and :cfunc:`PyFile_DecUseCount` should be called
+  immediately after the GIL is re-acquired.
+  (Contributed by Antoine Pitrou and Gregory P. Smith.)
+
 * Several functions return information about the platform's 
   floating-point support.  :cfunc:`PyFloat_GetMax` returns
   the maximum representable floating point value,
@@ -2088,6 +2148,13 @@ Changes to Python's build process and to the C API include:
   (Contributed by Christian Heimes.)
 
   .. Issue 1635
+
+* Many C extensions define their own little macro for adding 
+  integers and strings to the module's dictionary in the 
+  ``init*`` function.  Python 2.6 finally defines standard macros 
+  for adding values to a module, :cmacro:`PyModule_AddStringMacro`
+  and :cmacro:`PyModule_AddIntMacro()`.  (Contributed by 
+  Christian Heimes.)
 
 * Some macros were renamed in both 3.0 and 2.6 to make it clearer that
   they are macros,
@@ -2139,6 +2206,13 @@ Port-Specific Changes: Windows
   in an input string.  The handle objects provided by this
   module now support the context protocol, so they can be used 
   in :keyword:`with` statements. (Contributed by Christian Heimes.)
+
+  :mod:`_winreg` also has better support for x64 systems, 
+  exposing the :func:`DisableReflectionKey`, :func:`EnableReflectionKey`,
+  and :func:`QueryReflectionKey` functions, which enable and disable
+  registry reflection for 32-bit processes running on 64-bit systems.
+  
+  .. Patch 1753245
 
 * The new default compiler on Windows is Visual Studio 2008 (VS 9.0). The 
   build directories for Visual Studio 2003 (VS7.1) and 2005 (VS8.0)
