@@ -332,7 +332,7 @@ The installer file will be written to the "distribution directory" --- normally
 .. _cross-compile-windows:
 
 Cross-compiling on Windows
-=====================
+==========================
 
 Starting with Python 2.6, distutils is capable of cross-compiling between 
 Windows platforms.  In practice, this means that with the correct tools 
