@@ -403,6 +403,7 @@ Pickling and unpickling normal class instances
    single: __init__() (instance constructor)
 
 .. XXX is __getinitargs__ only used with old-style classes?
+.. XXX update w.r.t Py3k's classes
 
 When a pickled class instance is unpickled, its :meth:`__init__` method is
 normally *not* invoked.  If it is desirable that the :meth:`__init__` method be
@@ -447,8 +448,8 @@ can do what they want. [#]_
 
 .. warning::
 
-   For :term:`new-style class`\es, if :meth:`__getstate__` returns a false
-   value, the :meth:`__setstate__` method will not be called.
+   If :meth:`__getstate__` returns a false value, the :meth:`__setstate__`
+   method will not be called.
 
 
 Pickling and unpickling extension types

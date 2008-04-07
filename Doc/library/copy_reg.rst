@@ -26,11 +26,9 @@ instances.
 
 .. function:: pickle(type, function[, constructor])
 
-   Declares that *function* should be used as a "reduction" function for objects of
-   type *type*; *type* must not be a "classic" class object.  (Classic classes are
-   handled differently; see the documentation for the :mod:`pickle` module for
-   details.)  *function* should return either a string or a tuple containing two or
-   three elements.
+   Declares that *function* should be used as a "reduction" function for objects
+   of type *type*.  *function* should return either a string or a tuple
+   containing two or three elements.
 
    The optional *constructor* parameter, if provided, is a callable object which
    can be used to reconstruct the object when called with the tuple of arguments

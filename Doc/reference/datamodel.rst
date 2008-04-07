@@ -980,45 +980,6 @@ Internal types
       by the built-in :func:`classmethod` constructor.
 
 
-.. _newstyle:
-
-New-style and classic classes
-=============================
-
-Classes and instances come in two flavors: old-style or classic, and new-style.
-
-Up to Python 2.1, old-style classes were the only flavour available to the user.
-The concept of (old-style) class is unrelated to the concept of type: if *x* is
-an instance of an old-style class, then ``x.__class__`` designates the class of
-*x*, but ``type(x)`` is always ``<type 'instance'>``.  This reflects the fact
-that all old-style instances, independently of their class, are implemented with
-a single built-in type, called ``instance``.
-
-New-style classes were introduced in Python 2.2 to unify classes and types.  A
-new-style class is neither more nor less than a user-defined type.  If *x* is an
-instance of a new-style class, then ``type(x)`` is the same as ``x.__class__``.
-
-The major motivation for introducing new-style classes is to provide a unified
-object model with a full meta-model.  It also has a number of immediate
-benefits, like the ability to subclass most built-in types, or the introduction
-of "descriptors", which enable computed properties.
-
-For compatibility reasons, classes are still old-style by default.  New-style
-classes are created by specifying another new-style class (i.e. a type) as a
-parent class, or the "top-level type" :class:`object` if no other parent is
-needed.  The behaviour of new-style classes differs from that of old-style
-classes in a number of important details in addition to what :func:`type`
-returns.  Some of these changes are fundamental to the new object model, like
-the way special methods are invoked.  Others are "fixes" that could not be
-implemented before for compatibility concerns, like the method resolution order
-in case of multiple inheritance.
-
-This manual is not up-to-date with respect to new-style classes.  For now,
-please see http://www.python.org/doc/newstyle/ for more information.
-
-.. XXX remove old style classes from docs
-
-
 .. _specialnames:
 
 Special method names
@@ -1418,9 +1379,7 @@ continuing through the base classes of ``type(a)`` excluding metaclasses.
 However, if the looked-up value is an object defining one of the descriptor
 methods, then Python may override the default behavior and invoke the descriptor
 method instead.  Where this occurs in the precedence chain depends on which
-descriptor methods were defined and how they were called.  Note that descriptors
-are only invoked for new style objects or classes (ones that subclass
-:class:`object()` or :class:`type()`).
+descriptor methods were defined and how they were called.
 
 The starting point for descriptor invocation is a binding, ``a.x``. How the
 arguments are assembled depends on ``a``:
@@ -1477,7 +1436,7 @@ saved because *__dict__* is not created for each instance.
 .. data:: object.__slots__
 
    This class variable can be assigned a string, iterable, or sequence of
-   strings with variable names used by instances.  If defined in a new-style
+   strings with variable names used by instances.  If defined in a
    class, *__slots__* reserves space for the declared variables and prevents the
    automatic creation of *__dict__* and *__weakref__* for each instance.
 
@@ -1801,7 +1760,7 @@ left undefined.
    ``-``, ``*``, ``/``, ``%``, :func:`divmod`, :func:`pow`, ``**``, ``<<``, ``>>``,
    ``&``, ``^``, ``|``) with reflected (swapped) operands.  These functions are
    only called if the left operand does not support the corresponding operation and
-   the operands are of different types. [#]_ For instance, to evaluate the
+   the operands are of different types. [#]_  For instance, to evaluate the
    expression *x*``-``*y*, where *y* is an instance of a class that has an
    :meth:`__rsub__` method, ``y.__rsub__(x)`` is called if ``x.__sub__(y)`` returns
    *NotImplemented*.
@@ -1927,18 +1886,6 @@ For more information on context managers, see :ref:`typecontextmanager`.
 
 .. rubric:: Footnotes
 
-.. [#] Since Python 2.2, a gradual merging of types and classes has been started that
-   makes this and a few other assertions made in this manual not 100% accurate and
-   complete: for example, it *is* now possible in some cases to change an object's
-   type, under certain controlled conditions.  Until this manual undergoes
-   extensive revision, it must now be taken as authoritative only regarding
-   "classic classes", that are still the default, for compatibility purposes, in
-   Python 2.2 and 2.3.  For more information, see
-   http://www.python.org/doc/newstyle/.
-
-.. [#] This, and other statements, are only roughly true for instances of new-style
-   classes.
-
 .. [#] A descriptor can define any combination of :meth:`__get__`,
    :meth:`__set__` and :meth:`__delete__`.  If it does not define :meth:`__get__`,
    then accessing the attribute even on an instance will return the descriptor
@@ -1949,4 +1896,3 @@ For more information on context managers, see :ref:`typecontextmanager`.
 .. [#] For operands of the same type, it is assumed that if the non-reflected method
    (such as :meth:`__add__`) fails the operation is not supported, which is why the
    reflected method is not called.
-

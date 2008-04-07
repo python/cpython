@@ -39,10 +39,6 @@ Glossary
       "intermediate language" is said to run on a "virtual machine" that calls
       the subroutines corresponding to each bytecode.
     
-   classic class
-      One of the two flavors of classes in earlier Python versions.  Since
-      Python 3.0, there are no classic classes anymore.
-    
    complex number
       An extension of the familiar real number system in which all numbers are
       expressed as a sum of a real part and an imaginary part.  Imaginary
@@ -367,8 +363,6 @@ Glossary
       versatile features like :attr:`__slots__`, descriptors, properties,
       :meth:`__getattribute__`, class methods, and static methods.
 
-      More information can be found in :ref:`newstyle`.
-    
    positional argument
       The arguments assigned to local names inside a function or method,
       determined by the order in which they were given in the call.  ``*`` is
