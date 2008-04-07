@@ -785,8 +785,19 @@ FORMAT_STRING(PyObject* value, PyObject* args)
         break;
     default:
         /* unknown */
-        PyErr_Format(PyExc_ValueError, "Unknown conversion type %c",
-                     format.type);
+	#if STRINGLIB_IS_UNICODE
+	/* If STRINGLIB_CHAR is Py_UNICODE, %c might be out-of-range,
+	   hence the two cases. If it is char, gcc complains that the
+	   condition below is always true, hence the ifdef. */
+        if (format.type > 32 && format.type <128)
+	#endif
+            PyErr_Format(PyExc_ValueError, "Unknown conversion type %c",
+                         (char)format.type);
+	#if STRINGLIB_IS_UNICODE
+	else
+            PyErr_Format(PyExc_ValueError, "Unknown conversion type '\\x%x'",
+                         (unsigned int)format.type);
+	#endif
         goto done;
     }
 
