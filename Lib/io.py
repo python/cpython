@@ -487,8 +487,8 @@ class RawIOBase(IOBase):
             res += data
         return bytes(res)
 
-    def readinto(self, b: bytes) -> int:
-        """readinto(b: bytes) -> int.  Read up to len(b) bytes into b.
+    def readinto(self, b: bytearray) -> int:
+        """readinto(b: bytearray) -> int.  Read up to len(b) bytes into b.
 
         Returns number of bytes read (0 for EOF), or None if the object
         is set not to block as has no data to read.
@@ -563,8 +563,8 @@ class BufferedIOBase(IOBase):
         """
         self._unsupported("read")
 
-    def readinto(self, b: bytes) -> int:
-        """readinto(b: bytes) -> int.  Read up to len(b) bytes into b.
+    def readinto(self, b: bytearray) -> int:
+        """readinto(b: bytearray) -> int.  Read up to len(b) bytes into b.
 
         Like read(), this may issue multiple reads to the underlying
         raw stream, unless the latter is 'interactive' (XXX or a
