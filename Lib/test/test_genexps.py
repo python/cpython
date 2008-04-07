@@ -27,7 +27,7 @@ Test first class
 
     >>> g = (i*i for i in range(4))
     >>> type(g)
-    <type 'generator'>
+    <class 'generator'>
     >>> list(g)
     [0, 1, 4, 9]
 

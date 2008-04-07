@@ -600,7 +600,6 @@ static PyObject *
 type_repr(PyTypeObject *type)
 {
 	PyObject *mod, *name, *rtn;
-	char *kind;
 
 	mod = type_module(type, NULL);
 	if (mod == NULL)
@@ -613,15 +612,10 @@ type_repr(PyTypeObject *type)
 	if (name == NULL)
 		return NULL;
 
-	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-		kind = "class";
-	else
-		kind = "type";
-
 	if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "builtins"))
-		rtn = PyUnicode_FromFormat("<%s '%U.%U'>", kind, mod, name);
+		rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
 	else
-		rtn = PyUnicode_FromFormat("<%s '%s'>", kind, type->tp_name);
+		rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
 
 	Py_XDECREF(mod);
 	Py_DECREF(name);

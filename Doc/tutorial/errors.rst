@@ -184,7 +184,7 @@ desired. ::
    ...    print('x =', x)
    ...    print('y =', y)
    ...
-   <type 'Exception'>
+   <class 'Exception'>
    ('spam', 'eggs')
    ('spam', 'eggs')
    x = spam

@@ -2345,7 +2345,7 @@ by the built-in function :func:`type`.  There are no special operations on
 types.  The standard module :mod:`types` defines names for all standard built-in
 types.
 
-Types are written like this: ``<type 'int'>``.
+Types are written like this: ``<class 'int'>``.
 
 
 .. _bltin-null-object:

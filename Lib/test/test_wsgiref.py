@@ -157,7 +157,7 @@ class IntegrationTests(TestCase):
         self.assertEqual(
             err.splitlines()[-2],
             "AssertionError: Headers (('Content-Type', 'text/plain')) must"
-            " be of type list: <type 'tuple'>"
+            " be of type list: <class 'tuple'>"
         )
 
 
