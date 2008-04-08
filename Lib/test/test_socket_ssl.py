@@ -20,6 +20,7 @@ warnings.filterwarnings(
 # Optionally test SSL support, if we have it in the tested platform
 skip_expected = not hasattr(socket, "ssl")
 
+HOST = test_support.HOST
 
 class ConnectedTests(unittest.TestCase):
 
@@ -86,19 +87,16 @@ class ConnectedTests(unittest.TestCase):
 class BasicTests(unittest.TestCase):
 
     def testRudeShutdown(self):
-        # Some random port to connect to.
-        PORT = [9934]
-
         listener_ready = threading.Event()
         listener_gone = threading.Event()
+        sock = socket.socket()
+        port = test_support.bind_port(sock)
 
-        # `listener` runs in a thread.  It opens a socket listening on
-        # PORT, and sits in an accept() until the main thread connects.
-        # Then it rudely closes the socket, and sets Event `listener_gone`
-        # to let the main thread know the socket is gone.
-        def listener():
-            s = socket.socket()
-            PORT[0] = test_support.bind_port(s, '', PORT[0])
+        # `listener` runs in a thread.  It opens a socket and sits in accept()
+        # until the main thread connects.  Then it rudely closes the socket,
+        # and sets Event `listener_gone` to let the main thread know the socket
+        # is gone.
+        def listener(s):
             s.listen(5)
             listener_ready.set()
             s.accept()
@@ -108,7 +106,7 @@ class BasicTests(unittest.TestCase):
         def connector():
             listener_ready.wait()
             s = socket.socket()
-            s.connect(('localhost', PORT[0]))
+            s.connect((HOST, port))
             listener_gone.wait()
             try:
                 ssl_sock = socket.ssl(s)
@@ -118,7 +116,7 @@ class BasicTests(unittest.TestCase):
                 raise test_support.TestFailed(
                       'connecting to closed SSL socket should have failed')
 
-        t = threading.Thread(target=listener)
+        t = threading.Thread(target=listener, args=(sock,))
         t.start()
         connector()
         t.join()
@@ -169,7 +167,7 @@ class OpenSSLTests(unittest.TestCase):
 
     def testBasic(self):
         s = socket.socket()
-        s.connect(("localhost", 4433))
+        s.connect((HOST, OpenSSLServer.PORT))
         ss = socket.ssl(s)
         ss.write("Foo\n")
         i = ss.read(4)
@@ -183,7 +181,7 @@ class OpenSSLTests(unittest.TestCase):
         info = "/C=PT/ST=Queensland/L=Lisboa/O=Neuronio, Lda./OU=Desenvolvimento/CN=brutus.neuronio.pt/emailAddress=sampo@iki.fi"
 
         s = socket.socket()
-        s.connect(("localhost", 4433))
+        s.connect((HOST, OpenSSLServer.PORT))
         ss = socket.ssl(s)
         cert = ss.server()
         self.assertEqual(cert, info)
@@ -193,6 +191,7 @@ class OpenSSLTests(unittest.TestCase):
 
 
 class OpenSSLServer(threading.Thread):
+    PORT = None
     def __init__(self):
         self.s = None
         self.keepServing = True
@@ -211,7 +210,11 @@ class OpenSSLServer(threading.Thread):
             raise ValueError("No key file found! (tried %r)" % key_file)
 
         try:
-            cmd = "openssl s_server -cert %s -key %s -quiet" % (cert_file, key_file)
+            # XXX TODO: on Windows, this should make more effort to use the
+            # openssl.exe that would have been built by the pcbuild.sln.
+            self.PORT = test_support.find_unused_port()
+            args = (self.PORT, cert_file, key_file)
+            cmd = "openssl s_server -accept %d -cert %s -key %s -quiet" % args
             self.s = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
@@ -222,7 +225,7 @@ class OpenSSLServer(threading.Thread):
             # let's try if it is actually up
             try:
                 s = socket.socket()
-                s.connect(("localhost", 4433))
+                s.connect((HOST, self.PORT))
                 s.close()
                 if self.s.stdout.readline() != "ERROR\n":
                     raise ValueError

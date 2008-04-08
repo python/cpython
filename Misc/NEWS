@@ -41,6 +41,43 @@ Library
 
 Tests
 -----
+- Issue #2550: The approach used by client/server code for obtaining ports
+  to listen on in network-oriented tests has been refined in an effort to
+  facilitate running multiple instances of the entire regression test suite
+  in parallel without issue.  test_support.bind_port() has been fixed such
+  that it will always return a unique port -- which wasn't always the case
+  with the previous implementation, especially if socket options had been
+  set that affected address reuse (i.e. SO_REUSEADDR, SO_REUSEPORT).  The
+  new implementation of bind_port() will actually raise an exception if it
+  is passed an AF_INET/SOCK_STREAM socket with either the SO_REUSEADDR or 
+  SO_REUSEPORT socket option set.  Furthermore, if available, bind_port()
+  will set the SO_EXCLUSIVEADDRUSE option on the socket it's been passed.
+  This currently only applies to Windows.  This option prevents any other
+  sockets from binding to the host/port we've bound to, thus removing the
+  possibility of the 'non-deterministic' behaviour, as Microsoft puts it,
+  that occurs when a second SOCK_STREAM socket binds and accepts to a 
+  host/port that's already been bound by another socket.  The optional 
+  preferred port parameter to bind_port() has been removed.  Under no
+  circumstances should tests be hard coding ports!
+  
+  test_support.find_unused_port() has also been introduced, which will pass
+  a temporary socket object to bind_port() in order to obtain an unused port.
+  The temporary socket object is then closed and deleted, and the port is
+  returned.  This method should only be used for obtaining an unused port
+  in order to pass to an external program (i.e. the -accept [port] argument
+  to openssl's s_server mode) or as a parameter to a server-oriented class
+  that doesn't give you direct access to the underlying socket used.
+
+  Finally, test_support.HOST has been introduced, which should be used for
+  the host argument of any relevant socket calls (i.e. bind and connect).
+
+  The following tests were updated to following the new conventions:
+    test_socket, test_smtplib, test_asyncore, test_ssl, test_httplib, 
+    test_poplib, test_ftplib, test_telnetlib, test_socketserver,
+    test_asynchat and test_socket_ssl.
+
+  It is now possible for multiple instances of the regression test suite to
+  run in parallel without issue.
 
 Build
 -----
