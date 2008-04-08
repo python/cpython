@@ -11,8 +11,7 @@ from test import test_support
 from test.test_support import TESTFN, run_unittest, unlink
 from StringIO import StringIO
 
-HOST = "127.0.0.1"
-PORT = None
+HOST = test_support.HOST
 
 class dummysocket:
     def __init__(self):
@@ -52,14 +51,8 @@ class crashingdummy:
         self.error_handled = True
 
 # used when testing senders; just collects what it gets until newline is sent
-def capture_server(evt, buf):
+def capture_server(evt, buf, serv):
     try:
-        serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        serv.settimeout(3)
-        serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        serv.bind(("", 0))
-        global PORT
-        PORT = serv.getsockname()[1]
         serv.listen(5)
         conn, addr = serv.accept()
     except socket.timeout:
@@ -80,7 +73,6 @@ def capture_server(evt, buf):
         conn.close()
     finally:
         serv.close()
-        PORT = None
         evt.set()
 
 
@@ -339,14 +331,13 @@ class DispatcherWithSendTests(unittest.TestCase):
 
     def test_send(self):
         self.evt = threading.Event()
-        cap = StringIO()
-        threading.Thread(target=capture_server, args=(self.evt,cap)).start()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(3)
+        self.port = test_support.bind_port(self.sock)
 
-        # wait until server thread has assigned a port number
-        n = 1000
-        while PORT is None and n > 0:
-            time.sleep(0.01)
-            n -= 1
+        cap = StringIO()
+        args = (self.evt, cap, self.sock)
+        threading.Thread(target=capture_server, args=args).start()
 
         # wait a little longer for the server to initialize (it sometimes
         # refuses connections on slow machines without this wait)
@@ -355,7 +346,7 @@ class DispatcherWithSendTests(unittest.TestCase):
         data = "Suppose there isn't a 16-ton weight?"
         d = dispatcherwithsend_noread()
         d.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        d.connect((HOST, PORT))
+        d.connect((HOST, self.port))
 
         # give time for socket to connect
         time.sleep(0.1)

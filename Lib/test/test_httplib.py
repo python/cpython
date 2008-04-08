@@ -6,6 +6,8 @@ from unittest import TestCase
 
 from test import test_support
 
+HOST = test_support.HOST
+
 class FakeSocket:
     def __init__(self, text, fileclass=StringIO.StringIO):
         self.text = text
@@ -196,16 +198,12 @@ class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEquals(httplib.responses[httplib.NOT_FOUND], "Not Found")
 
-PORT = 50003
-HOST = "localhost"
-
 class TimeoutTest(TestCase):
+    PORT = None
 
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        global PORT
-        PORT = test_support.bind_port(self.serv, HOST, PORT)
+        self.PORT = test_support.bind_port(self.serv)
         self.serv.listen(5)
 
     def tearDown(self):
@@ -217,13 +215,13 @@ class TimeoutTest(TestCase):
         HTTPConnection and into the socket.
         '''
         # default
-        httpConn = httplib.HTTPConnection(HOST, PORT)
+        httpConn = httplib.HTTPConnection(HOST, self.PORT)
         httpConn.connect()
         self.assertTrue(httpConn.sock.gettimeout() is None)
         httpConn.close()
 
         # a value
-        httpConn = httplib.HTTPConnection(HOST, PORT, timeout=30)
+        httpConn = httplib.HTTPConnection(HOST, self.PORT, timeout=30)
         httpConn.connect()
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
@@ -232,7 +230,7 @@ class TimeoutTest(TestCase):
         previous = socket.getdefaulttimeout()
         socket.setdefaulttimeout(30)
         try:
-            httpConn = httplib.HTTPConnection(HOST, PORT, timeout=None)
+            httpConn = httplib.HTTPConnection(HOST, self.PORT, timeout=None)
             httpConn.connect()
         finally:
             socket.setdefaulttimeout(previous)
@@ -246,11 +244,12 @@ class HTTPSTimeoutTest(TestCase):
     def test_attributes(self):
         # simple test to check it's storing it
         if hasattr(httplib, 'HTTPSConnection'):
-            h = httplib.HTTPSConnection(HOST, PORT, timeout=30)
+            h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
             self.assertEqual(h.timeout, 30)
 
 def test_main(verbose=None):
-    test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest, HTTPSTimeoutTest)
+    test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
+                              HTTPSTimeoutTest)
 
 if __name__ == '__main__':
     test_main()
