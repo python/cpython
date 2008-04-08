@@ -18,6 +18,10 @@ Extensions Modules
 Library
 -------
 
+- Issue #2408: The ``_types`` module, which was used as in implementation
+  detail of the public ``types`` module, has been removed and replaced by pure
+  python code.
+
 - Issue #2513: distutils on Windows is now capable of cross-compiling 
   extension modules between 32 and 64 bit platforms.  See the distutls
   build documentation for more information.
