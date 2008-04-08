@@ -86,16 +86,8 @@ EllipsisType = type(Ellipsis)
 DictProxyType = type(TypeType.__dict__)
 NotImplementedType = type(NotImplemented)
 
-# Extension types defined in a C helper module.  XXX There may be no
-# equivalent in implementations other than CPython, so it seems better to
-# leave them undefined then to set them to e.g. None.
-try:
-    import _types
-except ImportError:
-    pass
-else:
-    GetSetDescriptorType = type(_types.Helper.getter)
-    MemberDescriptorType = type(_types.Helper.member)
-    del _types
+# For Jython, the following two types are identical
+GetSetDescriptorType = type(FunctionType.func_code)
+MemberDescriptorType = type(FunctionType.func_globals)
 
 del sys, _f, _g, _C, _x                           # Not for export

@@ -173,10 +173,6 @@ SOURCE=..\..\PC\_subprocess.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\_typesmodule.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\_weakref.c
 # End Source File
 # Begin Source File

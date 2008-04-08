@@ -233,20 +233,22 @@ The module defines the following names:
 
 .. data:: GetSetDescriptorType
 
-   The type of objects defined in extension modules with ``PyGetSetDef``, such as
-   ``FrameType.f_locals`` or ``array.array.typecode``.  This constant is not
-   defined in implementations of Python that do not have such extension types, so
-   for portable code use ``hasattr(types, 'GetSetDescriptorType')``.
+   The type of objects defined in extension modules with ``PyGetSetDef``, such
+   as ``FrameType.f_locals`` or ``array.array.typecode``.  This type is used as
+   descriptor for object attributes; it has the same purpose as the
+   :class:`property` type, but for classes defined in extension modules.
 
    .. versionadded:: 2.5
 
 
 .. data:: MemberDescriptorType
 
-   The type of objects defined in extension modules with ``PyMemberDef``, such as
-   ``datetime.timedelta.days``.  This constant is not defined in implementations of
-   Python that do not have such extension types, so for portable code use
-   ``hasattr(types, 'MemberDescriptorType')``.
+   The type of objects defined in extension modules with ``PyMemberDef``, such
+   as ``datetime.timedelta.days``.  This type is used as descriptor for simple C
+   data members which use standard conversion functions; it has the same purpose
+   as the :class:`property` type, but for classes defined in extension modules.
+   In other implementations of Python, this type may be identical to
+   ``GetSetDescriptorType``.
 
    .. versionadded:: 2.5
 
