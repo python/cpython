@@ -257,9 +257,9 @@ class IOBase(metaclass=abc.ABCMeta):
         return self.seek(0, 1)
 
     def truncate(self, pos: int = None) -> int:
-        """truncate(size: int = None) -> int. Truncate file to size bytes.
+        """truncate(pos: int = None) -> int. Truncate file to pos bytes.
 
-        Size defaults to the current IO position as reported by tell().
+        Pos defaults to the current IO position as reported by tell().
         Returns the new size.
         """
         self._unsupported("truncate")
@@ -465,7 +465,7 @@ class RawIOBase(IOBase):
     def read(self, n: int = -1) -> bytes:
         """read(n: int) -> bytes.  Read and return up to n bytes.
 
-        Returns an empty bytes array on EOF, or None if the object is
+        Returns an empty bytes object on EOF, or None if the object is
         set not to block and has no data to read.
         """
         if n is None:
@@ -478,7 +478,7 @@ class RawIOBase(IOBase):
         return bytes(b)
 
     def readall(self):
-        """readall() -> bytes.  Read until EOF, using multiple read() call."""
+        """readall() -> bytes.  Read until EOF, using multiple read() calls."""
         res = bytearray()
         while True:
             data = self.read(DEFAULT_BUFFER_SIZE)
@@ -521,6 +521,7 @@ class FileIO(_fileio._FileIO, RawIOBase):
     def name(self):
         return self._name
 
+    # XXX(gb): _FileIO already has a mode property
     @property
     def mode(self):
         return self._mode
