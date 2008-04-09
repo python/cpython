@@ -16,9 +16,6 @@ def test_main():
 
     # some extra thread-state tests driven via _testcapi
     def TestThreadState():
-        import thread
-        import time
-
         if test_support.verbose:
             print("auto-thread-state")
 
@@ -42,6 +39,8 @@ def test_main():
         have_thread_state = False
 
     if have_thread_state:
+        import thread
+        import time
         TestThreadState()
         import threading
         t=threading.Thread(target=TestThreadState)

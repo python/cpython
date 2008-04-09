@@ -30,7 +30,7 @@ def get_platform ():
        irix64-6.2
 
     Windows will return one of:
-       win-x86_64 (64bit Windows on x86_64 (AMD64))
+       win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
        win-ia64 (64bit Windows on Itanium)
        win32 (all others - specifically, sys.platform is returned)
 
@@ -45,7 +45,7 @@ def get_platform ():
         j = sys.version.find(")", i)
         look = sys.version[i+len(prefix):j].lower()
         if look == 'amd64':
-            return 'win-x86_64'
+            return 'win-amd64'
         if look == 'itanium':
             return 'win-ia64'
         return sys.platform

@@ -113,9 +113,9 @@ Edge and Level Trigger Polling (epoll) Objects
    +-----------------------+-----------------------------------------------+
    | :const:`EPOLLPRI`     | Urgent data for read                          |
    +-----------------------+-----------------------------------------------+
-   | :const:`EPOLLERR`     | Error condition happend on the assoc. fd      |
+   | :const:`EPOLLERR`     | Error condition happened on the assoc. fd     |
    +-----------------------+-----------------------------------------------+
-   | :const:`EPOLLHUP`     | Hang up happend on the assoc. fd              |
+   | :const:`EPOLLHUP`     | Hang up happened on the assoc. fd             |
    +-----------------------+-----------------------------------------------+
    | :const:`EPOLLET`      | Set Edge Trigger behavior, the default is     |
    |                       | Level Trigger behavior                        |

@@ -58,7 +58,6 @@ extern void init_codecs_tw(void);
 extern void init_subprocess(void);
 extern void init_lsprof(void);
 extern void init_ast(void);
-extern void init_types(void);
 extern void init_fileio(void);
 extern void initatexit(void);
 
@@ -146,7 +145,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"builtins", NULL},
         {"sys", NULL},
         
-        {"_types", init_types},
         {"_fileio", init_fileio},
         {"atexit", initatexit},
 

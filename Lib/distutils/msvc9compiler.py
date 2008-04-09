@@ -22,6 +22,7 @@ from distutils.errors import (DistutilsExecError, DistutilsPlatformError,
 from distutils.ccompiler import (CCompiler, gen_preprocess_options,
     gen_lib_options)
 from distutils import log
+from distutils.util import get_platform
 
 import _winreg
 
@@ -38,13 +39,15 @@ HKEYS = (_winreg.HKEY_USERS,
 VS_BASE = r"Software\Microsoft\VisualStudio\%0.1f"
 WINSDK_BASE = r"Software\Microsoft\Microsoft SDKs\Windows"
 NET_BASE = r"Software\Microsoft\.NETFramework"
-ARCHS = {'DEFAULT' : 'x86',
-    'intel' : 'x86', 'x86' : 'x86',
-    'amd64' : 'x64', 'x64' : 'x64',
-    'itanium' : 'ia64', 'ia64' : 'ia64',
-    }
 
-# The globals VERSION, ARCH, MACROS and VC_ENV are defined later
+# A map keyed by get_platform() return values to values accepted by
+# 'vcvarsall.bat'.  Note a cross-compile may combine these (eg, 'x86_amd64' is
+# the param to cross-compile on x86 targetting amd64.)
+PLAT_TO_VCVARS = {
+    'win32' : 'x86',
+    'win-amd64' : 'amd64',
+    'win-ia64' : 'ia64',
+}
 
 class Reg:
     """Helper class to read values from the registry
@@ -176,23 +179,6 @@ def get_build_version():
     # else we don't know what version of the compiler this is
     return None
 
-def get_build_architecture():
-    """Return the processor architecture.
-
-    Possible results are "x86" or "amd64".
-    """
-    prefix = " bit ("
-    i = sys.version.find(prefix)
-    if i == -1:
-        return "x86"
-    j = sys.version.find(")", i)
-    sysarch = sys.version[i+len(prefix):j].lower()
-    arch = ARCHS.get(sysarch, None)
-    if arch is None:
-        return ARCHS['DEFAULT']
-    else:
-        return arch
-
 def normalize_and_reduce_paths(paths):
     """Return a list of normalized paths with duplicates removed.
 
@@ -251,6 +237,7 @@ def query_vcvarsall(version, arch="x86"):
 
     if vcvarsall is None:
         raise IOError("Unable to find vcvarsall.bat")
+    log.debug("Calling 'vcvarsall.bat %s' (version=%s)", arch, version)
     popen = subprocess.Popen('"%s" %s & set' % (vcvarsall, arch),
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
@@ -281,9 +268,7 @@ def query_vcvarsall(version, arch="x86"):
 VERSION = get_build_version()
 if VERSION < 8.0:
     raise DistutilsPlatformError("VC %0.1f is not supported by this module" % VERSION)
-ARCH = get_build_architecture()
 # MACROS = MacroExpander(VERSION)
-VC_ENV = query_vcvarsall(VERSION, ARCH)
 
 class MSVCCompiler(CCompiler) :
     """Concrete class that implements an interface to Microsoft Visual C++,
@@ -318,13 +303,25 @@ class MSVCCompiler(CCompiler) :
     def __init__(self, verbose=0, dry_run=0, force=0):
         CCompiler.__init__ (self, verbose, dry_run, force)
         self.__version = VERSION
-        self.__arch = ARCH
         self.__root = r"Software\Microsoft\VisualStudio"
         # self.__macros = MACROS
         self.__path = []
+        # target platform (.plat_name is consistent with 'bdist')
+        self.plat_name = None
+        self.__arch = None # deprecated name
         self.initialized = False
 
-    def initialize(self):
+    def initialize(self, plat_name=None):
+        # multi-init means we would need to check platform same each time...
+        assert not self.initialized, "don't init multiple times"
+        if plat_name is None:
+            plat_name = get_platform()
+        # sanity check for platforms to prevent obscure errors later.
+        ok_plats = 'win32', 'win-amd64', 'win-ia64'
+        if plat_name not in ok_plats:
+            raise DistutilsPlatformError("--plat-name must be one of %s" %
+                                         (ok_plats,))
+
         if "DISTUTILS_USE_SDK" in os.environ and "MSSdk" in os.environ and self.find_exe("cl.exe"):
             # Assume that the SDK set up everything alright; don't try to be
             # smarter
@@ -334,9 +331,24 @@ class MSVCCompiler(CCompiler) :
             self.rc = "rc.exe"
             self.mc = "mc.exe"
         else:
-            self.__paths = VC_ENV['path'].split(os.pathsep)
-            os.environ['lib'] = VC_ENV['lib']
-            os.environ['include'] = VC_ENV['include']
+            # On x86, 'vcvars32.bat amd64' creates an env that doesn't work;
+            # to cross compile, you use 'x86_amd64'.
+            # On AMD64, 'vcvars32.bat amd64' is a native build env; to cross
+            # compile use 'x86' (ie, it runs the x86 compiler directly)
+            # No idea how itanium handles this, if at all.
+            if plat_name == get_platform() or plat_name == 'win32':
+                # native build or cross-compile to win32
+                plat_spec = PLAT_TO_VCVARS[plat_name]
+            else:
+                # cross compile from win32 -> some 64bit
+                plat_spec = PLAT_TO_VCVARS[get_platform()] + '_' + \
+                            PLAT_TO_VCVARS[plat_name]
+
+            vc_env = query_vcvarsall(VERSION, plat_spec)
+
+            self.__paths = vc_env['path'].split(os.pathsep)
+            os.environ['lib'] = vc_env['lib']
+            os.environ['include'] = vc_env['include']
 
             if len(self.__paths) == 0:
                 raise DistutilsPlatformError("Python was built with %s, "

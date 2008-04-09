@@ -3,6 +3,7 @@
 import unittest
 from test import test_support
 
+import errno
 import socket
 import select
 import thread, threading
@@ -15,17 +16,14 @@ import array
 from weakref import proxy
 import signal
 
-PORT = 50007
-HOST = 'localhost'
+HOST = test_support.HOST
 MSG = b'Michael Gilfix was here\n'
 
 class SocketTCPTest(unittest.TestCase):
 
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        global PORT
-        PORT = test_support.bind_port(self.serv, HOST, PORT)
+        self.port = test_support.bind_port(self.serv)
         self.serv.listen(1)
 
     def tearDown(self):
@@ -36,9 +34,7 @@ class SocketUDPTest(unittest.TestCase):
 
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        global PORT
-        PORT = test_support.bind_port(self.serv, HOST, PORT)
+        self.port = test_support.bind_port(self.serv)
 
     def tearDown(self):
         self.serv.close()
@@ -190,7 +186,7 @@ class SocketConnectedTest(ThreadedTCPSocketTest):
 
     def clientSetUp(self):
         ThreadedTCPSocketTest.clientSetUp(self)
-        self.cli.connect((HOST, PORT))
+        self.cli.connect((HOST, self.port))
         self.serv_conn = self.cli
 
     def clientTearDown(self):
@@ -470,16 +466,23 @@ class GeneralModuleTests(unittest.TestCase):
     # XXX The following don't test module-level functionality...
 
     def testSockName(self):
-        # Testing getsockname()
+        # Testing getsockname().  Use a temporary socket to elicit an unused
+        # ephemeral port that we can use later in the test.
+        tempsock = socket.socket()
+        tempsock.bind(("0.0.0.0", 0))
+        (host, port) = tempsock.getsockname()
+        tempsock.close()
+        del tempsock
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind(("0.0.0.0", PORT+1))
+        sock.bind(("0.0.0.0", port))
         name = sock.getsockname()
         # XXX(nnorwitz): http://tinyurl.com/os5jz seems to indicate
         # it reasonable to get the host's addr in addition to 0.0.0.0.
         # At least for eCos.  This is required for the S/390 to pass.
         my_ip_addr = socket.gethostbyname(socket.gethostname())
         self.assert_(name[0] in ("0.0.0.0", my_ip_addr), '%s invalid' % name[0])
-        self.assertEqual(name[1], PORT+1)
+        self.assertEqual(name[1], port)
 
     def testGetSockOpt(self):
         # Testing getsockopt()
@@ -615,7 +618,7 @@ class BasicUDPTest(ThreadedUDPSocketTest):
         self.assertEqual(msg, MSG)
 
     def _testSendtoAndRecv(self):
-        self.cli.sendto(MSG, 0, (HOST, PORT))
+        self.cli.sendto(MSG, 0, (HOST, self.port))
 
     def testRecvFrom(self):
         # Testing recvfrom() over UDP
@@ -623,14 +626,14 @@ class BasicUDPTest(ThreadedUDPSocketTest):
         self.assertEqual(msg, MSG)
 
     def _testRecvFrom(self):
-        self.cli.sendto(MSG, 0, (HOST, PORT))
+        self.cli.sendto(MSG, 0, (HOST, self.port))
 
     def testRecvFromNegative(self):
         # Negative lengths passed to recvfrom should give ValueError.
         self.assertRaises(ValueError, self.serv.recvfrom, -1)
 
     def _testRecvFromNegative(self):
-        self.cli.sendto(MSG, 0, (HOST, PORT))
+        self.cli.sendto(MSG, 0, (HOST, self.port))
 
 class TCPCloserTest(ThreadedTCPSocketTest):
 
@@ -648,7 +651,7 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         conn.close()
 
     def _testClose(self):
-        self.cli.connect((HOST, PORT))
+        self.cli.connect((HOST, self.port))
         time.sleep(1.0)
 
 class BasicSocketPairTest(SocketPairTest):
@@ -706,7 +709,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def _testAccept(self):
         time.sleep(0.1)
-        self.cli.connect((HOST, PORT))
+        self.cli.connect((HOST, self.port))
 
     def testConnect(self):
         # Testing non-blocking connect
@@ -714,7 +717,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def _testConnect(self):
         self.cli.settimeout(10)
-        self.cli.connect((HOST, PORT))
+        self.cli.connect((HOST, self.port))
 
     def testRecv(self):
         # Testing non-blocking recv
@@ -734,7 +737,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
             self.fail("Error during select call to non-blocking socket.")
 
     def _testRecv(self):
-        self.cli.connect((HOST, PORT))
+        self.cli.connect((HOST, self.port))
         time.sleep(0.1)
         self.cli.send(MSG)
 
@@ -883,7 +886,9 @@ class NetworkConnectionTest(object):
     """Prove network connection."""
 
     def clientSetUp(self):
-        self.cli = socket.create_connection((HOST, PORT))
+        # We're inherited below by BasicTCPTest2, which also inherits
+        # BasicTCPTest, which defines self.port referenced below.
+        self.cli = socket.create_connection((HOST, self.port))
         self.serv_conn = self.cli
 
 class BasicTCPTest2(NetworkConnectionTest, BasicTCPTest):
@@ -893,7 +898,11 @@ class BasicTCPTest2(NetworkConnectionTest, BasicTCPTest):
 class NetworkConnectionNoServer(unittest.TestCase):
 
     def testWithoutServer(self):
-        self.failUnlessRaises(socket.error, lambda: socket.create_connection((HOST, PORT)))
+        port = test_support.find_unused_port()
+        self.failUnlessRaises(
+            socket.error,
+            lambda: socket.create_connection((HOST, port))
+        )
 
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
@@ -914,22 +923,22 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     testFamily = _justAccept
     def _testFamily(self):
-        self.cli = socket.create_connection((HOST, PORT), timeout=30)
+        self.cli = socket.create_connection((HOST, self.port), timeout=30)
         self.assertEqual(self.cli.family, 2)
 
     testTimeoutDefault = _justAccept
     def _testTimeoutDefault(self):
-        self.cli = socket.create_connection((HOST, PORT))
+        self.cli = socket.create_connection((HOST, self.port))
         self.assertTrue(self.cli.gettimeout() is None)
 
     testTimeoutValueNamed = _justAccept
     def _testTimeoutValueNamed(self):
-        self.cli = socket.create_connection((HOST, PORT), timeout=30)
+        self.cli = socket.create_connection((HOST, self.port), timeout=30)
         self.assertEqual(self.cli.gettimeout(), 30)
 
     testTimeoutValueNonamed = _justAccept
     def _testTimeoutValueNonamed(self):
-        self.cli = socket.create_connection((HOST, PORT), 30)
+        self.cli = socket.create_connection((HOST, self.port), 30)
         self.assertEqual(self.cli.gettimeout(), 30)
 
     testTimeoutNone = _justAccept
@@ -937,7 +946,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         previous = socket.getdefaulttimeout()
         socket.setdefaulttimeout(30)
         try:
-            self.cli = socket.create_connection((HOST, PORT), timeout=None)
+            self.cli = socket.create_connection((HOST, self.port), timeout=None)
         finally:
             socket.setdefaulttimeout(previous)
         self.assertEqual(self.cli.gettimeout(), 30)
@@ -964,12 +973,12 @@ class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
     testOutsideTimeout = testInsideTimeout
 
     def _testInsideTimeout(self):
-        self.cli = sock = socket.create_connection((HOST, PORT))
+        self.cli = sock = socket.create_connection((HOST, self.port))
         data = sock.recv(5)
         self.assertEqual(data, b"done!")
 
     def _testOutsideTimeout(self):
-        self.cli = sock = socket.create_connection((HOST, PORT), timeout=1)
+        self.cli = sock = socket.create_connection((HOST, self.port), timeout=1)
         self.failUnlessRaises(socket.timeout, lambda: sock.recv(5))
 
 
