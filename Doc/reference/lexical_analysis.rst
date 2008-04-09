@@ -587,7 +587,7 @@ Integer literals
 Integer literals are described by the following lexical definitions:
 
 .. productionlist::
-   integer: `decimalinteger` | `octinteger` | `hexinteger`
+   integer: `decimalinteger` | `octinteger` | `hexinteger` | `bininteger`
    decimalinteger: `nonzerodigit` `digit`* | "0"+
    nonzerodigit: "1"..."9"
    digit: "0"..."9"
