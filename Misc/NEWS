@@ -15,6 +15,9 @@ Core and builtins
 Extensions Modules
 ------------------
 
+- zlib.decompressobj().flush(value) no longer crashes the interpreter when
+  passed a value less than or equal to zero.
+
 Library
 -------
 
