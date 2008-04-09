@@ -556,18 +556,20 @@ available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. function:: int([x[, radix]])
+.. function:: int([number | string[, radix]])
 
-   Convert a string or number to an integer.  If the argument is a string, it
-   must contain a possibly signed number of arbitrary size, possibly embedded in
-   whitespace.  The *radix* parameter gives the base for the conversion (which
-   is 10 by default) and may be any integer in the range [2, 36], or zero.  If
-   *radix* is zero, the interpretation is the same as for integer literals.  If
-   *radix* is specified and *x* is not a string, :exc:`TypeError` is raised.
-   Otherwise, the argument may be another integer, a floating point number or
-   any other object that has an :meth:`__int__` method.  Conversion of floating
-   point numbers to integers truncates (towards zero).  If no arguments are
-   given, returns ``0``.
+   Convert a number or string to an integer.  If no arguments are given, return
+   ``0``.  If a number is given, return ``number.__int__()``.  Conversion of
+   floating point numbers to integers truncates towards zero.  A string must be
+   a base-radix integer literal optionally preceded by '+' or '-' (with no space
+   in between) and optionally surrounded by whitespace.  A base-n literal
+   consists of the digits 0 to n-1, with 'a' to 'z' (or 'A' to 'Z') having
+   values 10 to 35.  The default radix is 10. The allowed values are 0 and 2-36.
+   Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,
+   ``0o``/``0O``, or ``0x``/``0X``, as with integer literals in code.  Radix 0
+   means to interpret exactly as a code literal, so that the actual radix is 2,
+   8, 10, or 16, and so that ``int('010', 0)`` is not legal, while
+   ``int('010')`` is, as well as ``int('010', 8)``.
 
    The integer type is described in :ref:`typesnumeric`.
 
