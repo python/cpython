@@ -1901,9 +1901,12 @@ complete list of changes, or look through the CVS logs for all the details.
 * The base classes in the :mod:`SocketServer` module now support
   calling a :meth:`handle_timeout` method after a span of inactivity 
   specified by the server's :attr:`timeout` attribute.  (Contributed 
-  by Michael Pomraning.)
+  by Michael Pomraning.)  The :meth:`serve_forever` method 
+  now takes an optional poll interval measured in seconds,
+  controlling how often the server will check for a shutdown request.
+  (Contributed by Pedro Werneck and Jeffrey Yasskin.)
 
-  .. Patch #742598
+  .. Patch #742598, #1193577
 
 * The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
   using the format character ``'?'``. 
@@ -2242,6 +2245,13 @@ Changes to Python's build process and to the C API include:
   ``numfree``, and a macro :cmacro:`Py<typename>_MAXFREELIST` is
   always defined.
 
+* A new Makefile target, "make check", prepares the Python source tree
+  for making a patch: it fixes trailing whitespace in all modified 
+  ``.py`` files, checks whether the documentation has been changed,
+  and reports whether the :file:`Misc/ACKS` and :file:`Misc/NEWS` files
+  have been updated.
+  (Contributed by Brett Cannon.)
+
 .. ======================================================================
 
 
@@ -2374,5 +2384,5 @@ Acknowledgements
 ================
 
 The author would like to thank the following people for offering suggestions,
-corrections and assistance with various drafts of this article: .
+corrections and assistance with various drafts of this article: Jim Jewett.
 
