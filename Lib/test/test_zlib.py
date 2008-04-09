@@ -75,6 +75,11 @@ class ExceptionTestCase(unittest.TestCase):
         # verify failure on building decompress object with bad params
         self.assertRaises(ValueError, zlib.decompressobj, 0)
 
+    def test_decompressobj_badflush(self):
+        # verify failure on calling decompressobj.flush with bad params
+        self.assertRaises(ValueError, zlib.decompressobj().flush, 0)
+        self.assertRaises(ValueError, zlib.decompressobj().flush, -1)
+
 
 
 class CompressTestCase(unittest.TestCase):

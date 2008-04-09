@@ -794,6 +794,10 @@ PyZlib_unflush(compobject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "|i:flush", &length))
 	return NULL;
+    if (length <= 0) {
+	PyErr_SetString(PyExc_ValueError, "length must be greater than zero");
+	return NULL;
+    }
     if (!(retval = PyBytes_FromStringAndSize(NULL, length)))
 	return NULL;
 

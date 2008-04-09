@@ -331,7 +331,6 @@ OBJECT_OBJS=	\
 ##########################################################################
 # objects that get linked into the Python library
 LIBRARY_OBJS=	\
-		Modules/_typesmodule.o \
 		Modules/getbuildinfo.o \
 		$(PARSER_OBJS) \
 		$(OBJECT_OBJS) \
@@ -369,7 +368,6 @@ sharedmods: $(BUILDPYTHON)
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
 	$(AR) cr $@ Modules/getbuildinfo.o
-	$(AR) cr $@ Modules/_typesmodule.o
 	$(AR) cr $@ $(PARSER_OBJS)
 	$(AR) cr $@ $(OBJECT_OBJS)
 	$(AR) cr $@ $(PYTHON_OBJS)

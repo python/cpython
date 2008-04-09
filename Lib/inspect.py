@@ -247,7 +247,7 @@ def isgenerator(object):
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
-    return object.__flags__ & TPFLAGS_IS_ABSTRACT
+    return isinstance(object, type) and object.__flags__ & TPFLAGS_IS_ABSTRACT
 
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.

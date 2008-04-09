@@ -28,7 +28,6 @@ extern void PyMarshal_Init(void);
 extern void initimp(void);
 extern void initgc(void);
 extern void init_ast(void);
-extern void init_types(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
@@ -42,9 +41,6 @@ struct _inittab _PyImport_Inittab[] = {
 
 	/* This lives in Python/Python-ast.c */
 	{"_ast", init_ast},
-
-	/* This lives in Modules/_typesmodule.c */
-	{"_types", init_types},
 
 	/* These entries are here for sys.builtin_module_names */
 	{"__main__", NULL},

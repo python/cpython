@@ -1019,10 +1019,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\_typesmodule.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Modules\_weakref.c"
 				>
 			</File>

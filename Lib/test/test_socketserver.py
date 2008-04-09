@@ -22,7 +22,7 @@ from test.test_support import TESTFN as TEST_FILE
 test.test_support.requires("network")
 
 TEST_STR = b"hello world\n"
-HOST = "localhost"
+HOST = test.test_support.HOST
 
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 HAVE_FORKING = hasattr(os, "fork") and os.name != "os2"

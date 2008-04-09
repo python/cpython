@@ -48,16 +48,21 @@ class InterProcessSignalTests(unittest.TestCase):
         if self.using_gc:
             gc.enable()
 
-    def handlerA(self, *args):
+    def format_frame(self, frame, limit=None):
+        return ''.join(traceback.format_stack(frame, limit=limit))
+
+    def handlerA(self, signum, frame):
         self.a_called = True
         if test_support.verbose:
-            print("handlerA invoked", args)
+            print("handlerA invoked from signal %s at:\n%s" % (
+                signum, self.format_frame(frame, limit=1)))
 
-    def handlerB(self, *args):
+    def handlerB(self, signum, frame):
         self.b_called = True
         if test_support.verbose:
-            print("handlerB invoked", args)
-        raise HandlerBCalled(*args)
+            print ("handlerB invoked from signal %s at:\n%s" % (
+                signum, self.format_frame(frame, limit=1)))
+        raise HandlerBCalled(signum, self.format_frame(frame))
 
     def wait(self, child):
         """Wait for child to finish, ignoring EINTR."""
@@ -95,6 +100,10 @@ class InterProcessSignalTests(unittest.TestCase):
         self.assertFalse(self.b_called)
         self.a_called = False
 
+        # Make sure the signal isn't delivered while the previous
+        # Popen object is being destroyed, because __del__ swallows
+        # exceptions.
+        del child
         try:
             child = subprocess.Popen(['kill', '-USR1', str(pid)])
             # This wait should be interrupted by the signal's exception.
