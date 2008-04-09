@@ -161,6 +161,11 @@ PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
     Py_ssize_t alloc;
 
     assert(size >= 0);
+    if (size < 0) {
+        PyErr_SetString(PyExc_SystemError,
+            "Negative size passed to PyBytes_FromStringAndSize");
+        return NULL;
+    }
 
     new = PyObject_New(PyBytesObject, &PyBytes_Type);
     if (new == NULL)

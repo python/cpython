@@ -465,6 +465,14 @@ PyObject *PyUnicode_FromUnicode(const Py_UNICODE *u,
 PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 {
     PyUnicodeObject *unicode;
+
+	assert(size <= 0);
+	if (size < 0) {
+		PyErr_SetString(PyExc_SystemError,
+		    "Negative size passed to PyUnicode_FromStringAndSize");
+		return NULL;
+	}
+
     /* If the Unicode data is known at construction time, we can apply
        some optimizations which share commonly used objects.
        Also, this means the input must be UTF-8, so fall back to the
