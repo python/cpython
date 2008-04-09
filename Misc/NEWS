@@ -30,12 +30,14 @@ Core and builtins
 - Issue #2238: Some syntax errors in *args and **kwargs expressions could give
   bogus error messages.
 
+- Issue #2587: In the C API, PyString_FromStringAndSize() takes a signed size
+  parameter but was not verifying that it was greater than zero.  Values
+  less than zero will now raise a SystemError and return NULL to indicate a
+  bug in the calling C code.
+
 
 Library
 -------
-
-- zlib.decompressobj().flush(value) no longer crashes the interpreter when
-  passed a value less than or equal to zero.
 
 - Issue #2495: tokenize.untokenize now inserts a space between two consecutive
   string literals; previously, ["" ""] was rendered as [""""], which is
@@ -71,6 +73,9 @@ Library
 
 Extension Modules
 -----------------
+
+- zlib.decompressobj().flush(value) no longer crashes the interpreter when
+  passed a value less than or equal to zero.
 
 Tests
 -----
