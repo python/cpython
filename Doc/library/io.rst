@@ -248,14 +248,14 @@ I/O Base Classes
    RawIOBase provides or overrides these methods in addition to those from
    :class:`IOBase`:
 
-   .. method:: RawIOBase.read([n])
+   .. method:: read([n])
 
       Read and return all bytes from the stream until EOF, or if *n* is
       specified, up to *n* bytes.  An empty bytes object is returned on EOF;
       ``None`` is returned if the object is set not to block and has no data to
       read.
 
-   .. method:: RawIOBase.readall()
+   .. method:: readall()
 
       Read and return all bytes from the stream until EOF.
 
