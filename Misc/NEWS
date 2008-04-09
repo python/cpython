@@ -34,6 +34,9 @@ Core and builtins
 Library
 -------
 
+- zlib.decompressobj().flush(value) no longer crashes the interpreter when
+  passed a value less than or equal to zero.
+
 - Issue #2495: tokenize.untokenize now inserts a space between two consecutive
   string literals; previously, ["" ""] was rendered as [""""], which is
   incorrect python code.
