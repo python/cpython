@@ -203,7 +203,7 @@ class TimeoutTest(TestCase):
 
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.PORT = test_support.bind_port(self.serv)
+        TimeoutTest.PORT = test_support.bind_port(self.serv)
         self.serv.listen(5)
 
     def tearDown(self):
@@ -215,13 +215,13 @@ class TimeoutTest(TestCase):
         HTTPConnection and into the socket.
         '''
         # default
-        httpConn = httplib.HTTPConnection(HOST, self.PORT)
+        httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT)
         httpConn.connect()
         self.assertTrue(httpConn.sock.gettimeout() is None)
         httpConn.close()
 
         # a value
-        httpConn = httplib.HTTPConnection(HOST, self.PORT, timeout=30)
+        httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT, timeout=30)
         httpConn.connect()
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
@@ -230,7 +230,8 @@ class TimeoutTest(TestCase):
         previous = socket.getdefaulttimeout()
         socket.setdefaulttimeout(30)
         try:
-            httpConn = httplib.HTTPConnection(HOST, self.PORT, timeout=None)
+            httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT,
+                                              timeout=None)
             httpConn.connect()
         finally:
             socket.setdefaulttimeout(previous)
