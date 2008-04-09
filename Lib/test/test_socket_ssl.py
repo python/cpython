@@ -212,8 +212,8 @@ class OpenSSLServer(threading.Thread):
         try:
             # XXX TODO: on Windows, this should make more effort to use the
             # openssl.exe that would have been built by the pcbuild.sln.
-            self.PORT = test_support.find_unused_port()
-            args = (self.PORT, cert_file, key_file)
+            OpenSSLServer.PORT = test_support.find_unused_port()
+            args = (OpenSSLServer.PORT, cert_file, key_file)
             cmd = "openssl s_server -accept %d -cert %s -key %s -quiet" % args
             self.s = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
@@ -225,7 +225,7 @@ class OpenSSLServer(threading.Thread):
             # let's try if it is actually up
             try:
                 s = socket.socket()
-                s.connect((HOST, self.PORT))
+                s.connect((HOST, OpenSSLServer.PORT))
                 s.close()
                 if self.s.stdout.readline() != "ERROR\n":
                     raise ValueError
