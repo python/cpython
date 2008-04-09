@@ -14,6 +14,7 @@ but they are available on most other systems as well.  Here's an overview:
 .. toctree::
 
    os.rst
+   io.rst
    time.rst
    optparse.rst
    getopt.rst
