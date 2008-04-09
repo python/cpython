@@ -301,7 +301,8 @@ language and built-in functions.
   terminated prematurely.  To get the old behavior of :func:`input`, use
   ``eval(input())``.
 
-* :func:`xrange` renamed to :func:`range`.
+* :func:`xrange` renamed to :func:`range`, so :func:`range` will no longer
+  produce a list but an iterable yielding integers when iterated over.
 
 * PEP 3113: Tuple parameter unpacking removed.  You can no longer write ``def
   foo(a, (b, c)): ...``.  Use ``def foo(a, b_c): b, c = b_c`` instead.
