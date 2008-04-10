@@ -1217,7 +1217,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
     >>> f(**ud)
     ['a', 'b']
 
-  .. Patch 1686487
+  (Contributed by Alexander Belopolsky; :issue:`1686487`.)
 
 * Tuples now have an :meth:`index` method matching the list type's
   :meth:`index` method::
