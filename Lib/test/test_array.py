@@ -163,6 +163,7 @@ class BaseTest(unittest.TestCase):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
         self.assertRaises(TypeError, a.tofile, cStringIO.StringIO())
+        test_support.unlink(test_support.TESTFN)
         f = open(test_support.TESTFN, 'wb')
         try:
             a.tofile(f)
