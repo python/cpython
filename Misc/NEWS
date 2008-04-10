@@ -25,6 +25,8 @@ Extension Modules
 Library
 -------
 
+- Bug #2606: Avoid calling .sort() on a dict_keys object.
+
 - The bundled libffi copy is now in sync with the recently released
   libffi3.0.5 version, apart from some small changes to
   Modules/_ctypes/libffi/configure.ac.
