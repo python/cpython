@@ -63,6 +63,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), range(7, 10))
         d = deque(xrange(200), maxlen=10)
         d.append(d)
+        test_support.unlink(test_support.TESTFN)
         fo = open(test_support.TESTFN, "wb")
         try:
             print >> fo, d,
@@ -281,6 +282,7 @@ class TestBasic(unittest.TestCase):
     def test_print(self):
         d = deque(xrange(200))
         d.append(d)
+        test_support.unlink(test_support.TESTFN)
         fo = open(test_support.TESTFN, "wb")
         try:
             print >> fo, d,
