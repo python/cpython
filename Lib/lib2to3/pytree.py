@@ -167,12 +167,26 @@ class Base(object):
             return None
 
         # Can't use index(); we need to test by identity
-        for i, sibling in enumerate(self.parent.children):
-            if sibling is self:
+        for i, child in enumerate(self.parent.children):
+            if child is self:
                 try:
                     return self.parent.children[i+1]
                 except IndexError:
                     return None
+
+    def get_prev_sibling(self):
+        """Return the node immediately preceding the invocant in their
+        parent's children list. If the invocant does not have a previous
+        sibling, return None."""
+        if self.parent is None:
+            return None
+
+        # Can't use index(); we need to test by identity
+        for i, child in enumerate(self.parent.children):
+            if child is self:
+                if i == 0:
+                    return None
+                return self.parent.children[i-1]
 
     def get_suffix(self):
         """Return the string immediately following the invocant node. This
