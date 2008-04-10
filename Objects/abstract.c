@@ -1240,7 +1240,7 @@ PyNumber_Index(PyObject *item)
 			return NULL;
 		}
 	}
-	else if (m && m->nb_int != NULL) {
+	else if (m && m->nb_int != NULL && m->nb_float == NULL) {
 		result = m->nb_int(item);
 		if (result && !PyLong_Check(result)) {
 			PyErr_Format(PyExc_TypeError,
