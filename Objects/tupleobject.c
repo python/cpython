@@ -208,6 +208,15 @@ tuplerepr(PyTupleObject *v)
 	PyObject *s, *temp;
 	PyObject *pieces, *result = NULL;
 
+	/* While not mutable, it is still possible to end up with a cycle in a
+	   tuple through an object that stores itself within a tuple (and thus
+	   infinitely asks for the repr of itself). This should only be
+	   possible within a type. */
+	i = Py_ReprEnter((PyObject *)v);
+	if (i != 0) {
+		return i > 0 ? PyString_FromString("(...)") : NULL;
+	}
+
 	n = v->ob_size;
 	if (n == 0)
 		return PyString_FromString("()");
@@ -218,7 +227,10 @@ tuplerepr(PyTupleObject *v)
 
 	/* Do repr() on each element. */
 	for (i = 0; i < n; ++i) {
+		if (Py_EnterRecursiveCall(" while getting the repr of a tuple"))
+			goto Done;
 		s = PyObject_Repr(v->ob_item[i]);
+		Py_LeaveRecursiveCall();
 		if (s == NULL)
 			goto Done;
 		PyTuple_SET_ITEM(pieces, i, s);
@@ -253,6 +265,7 @@ tuplerepr(PyTupleObject *v)
 
 Done:
 	Py_DECREF(pieces);
+	Py_ReprLeave((PyObject *)v);
 	return result;
 }
 
