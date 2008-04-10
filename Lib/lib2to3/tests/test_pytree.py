@@ -319,6 +319,24 @@ class TestNodes(support.TestCase):
         self.assertEqual(l2.get_next_sibling(), None)
         self.assertEqual(p1.get_next_sibling(), None)
 
+    def testNodePrevSibling(self):
+        n1 = pytree.Node(1000, [])
+        n2 = pytree.Node(1000, [])
+        p1 = pytree.Node(1000, [n1, n2])
+
+        self.failUnless(n2.get_prev_sibling() is n1)
+        self.assertEqual(n1.get_prev_sibling(), None)
+        self.assertEqual(p1.get_prev_sibling(), None)
+
+    def testLeafPrevSibling(self):
+        l1 = pytree.Leaf(100, "a")
+        l2 = pytree.Leaf(100, "b")
+        p1 = pytree.Node(1000, [l1, l2])
+
+        self.failUnless(l2.get_prev_sibling() is l1)
+        self.assertEqual(l1.get_prev_sibling(), None)
+        self.assertEqual(p1.get_prev_sibling(), None)
+
 
 class TestPatterns(support.TestCase):
 

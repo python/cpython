@@ -182,6 +182,10 @@ except NameError:
 ### Misc
 ###########################################################
 
+
+consuming_calls = set(["sorted", "list", "set", "any", "all", "tuple", "sum",
+                       "min", "max"])
+
 def attr_chain(obj, attr):
     """Follow an attribute chain.
 
