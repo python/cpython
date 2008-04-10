@@ -55,7 +55,6 @@ PyObject *
 PyString_FromStringAndSize(const char *str, Py_ssize_t size)
 {
 	register PyStringObject *op;
-	assert(size >= 0);
 	if (size < 0) {
 		PyErr_SetString(PyExc_SystemError,
 		    "Negative size passed to PyString_FromStringAndSize");
