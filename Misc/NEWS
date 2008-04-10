@@ -12,6 +12,10 @@ What's New in Python 3.0a5?
 Core and Builtins
 -----------------
 
+- Issue #2221: Corrected a SystemError "error return without exception set",
+  when the code executed by exec() raises an exception, and sys.stdout.flush()
+  also raises an error.
+
 - Bug #2565: The repr() of type objects now calls them 'class', 
   not 'type' - whether they are builtin types or not.
 

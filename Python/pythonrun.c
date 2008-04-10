@@ -54,6 +54,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static void initmain(void);
 static void initsite(void);
 static int initstdio(void);
+static void flush_io(void);
 static PyObject *run_mod(mod_ty, const char *, PyObject *, PyObject *,
 			  PyCompilerFlags *, PyArena *);
 static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
@@ -992,6 +993,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 	d = PyModule_GetDict(m);
 	v = run_mod(mod, filename, d, d, flags, arena);
 	PyArena_Free(arena);
+	flush_io();
 	if (v == NULL) {
 		PyErr_Print();
 		return -1;
@@ -1082,6 +1084,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 		v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d,
 				      closeit, flags);
 	}
+	flush_io();
 	if (v == NULL) {
 		PyErr_Print();
 		ret = -1;
@@ -1513,7 +1516,6 @@ run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
 		return NULL;
 	v = PyEval_EvalCode(co, globals, locals);
 	Py_DECREF(co);
-	flush_io();
 	return v;
 }
 
@@ -1546,7 +1548,6 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
 	if (v && flags)
 		flags->cf_flags |= (co->co_flags & PyCF_MASK);
 	Py_DECREF(co);
-	flush_io();
 	return v;
 }
 
