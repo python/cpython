@@ -14,7 +14,7 @@ sys.path.append('tools/sphinxext')
 # ---------------------
 
 extensions = ['sphinx.ext.refcounting', 'sphinx.ext.coverage',
-              'sphinx.ext.doctest']
+              'sphinx.ext.doctest', 'pyspecific']
 templates_path = ['tools/sphinxext']
 
 # General substitutions.

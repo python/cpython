@@ -969,10 +969,7 @@ def add_files(db):
             lib.glob("*.gif")
             lib.add_file("idle.icns")
         if dir=="command" and parent.physical=="distutils":
-            lib.add_file("wininst-6.0.exe")
-            lib.add_file("wininst-7.1.exe")
-            lib.add_file("wininst-8.0.exe")
-            lib.add_file("wininst-9.0.exe")
+            lib.glob("wininst*.exe")
         if dir=="setuptools":
             lib.add_file("cli.exe")
             lib.add_file("gui.exe")
