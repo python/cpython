@@ -403,7 +403,12 @@ _PyObject_Str(PyObject *v)
 	if (v->ob_type->tp_str == NULL)
 		return PyObject_Repr(v);
 
+	/* It is possible for a type to have a tp_str representation that loops
+	   infinitely. */
+	if (Py_EnterRecursiveCall(" while getting the str of an object"))
+		return NULL;
 	res = (*v->ob_type->tp_str)(v);
+	Py_LeaveRecursiveCall();
 	if (res == NULL)
 		return NULL;
 	type_ok = PyString_Check(res);
@@ -2141,4 +2146,3 @@ _PyTrash_destroy_chain(void)
 #ifdef __cplusplus
 }
 #endif
-
