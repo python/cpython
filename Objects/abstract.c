@@ -1220,6 +1220,7 @@ PyNumber_Absolute(PyObject *o)
 PyObject *
 PyNumber_Index(PyObject *item)
 {
+	PyNumberMethods *m;
 	PyObject *result = NULL;
 	if (item == NULL)
 		return null_error();
@@ -1227,8 +1228,9 @@ PyNumber_Index(PyObject *item)
 		Py_INCREF(item);
 		return item;
 	}
+	m = item->ob_type->tp_as_number;
 	if (PyIndex_Check(item)) {
-		result = item->ob_type->tp_as_number->nb_index(item);
+		result = m->nb_index(item);
 		if (result && !PyLong_Check(result)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__index__ returned non-int "
@@ -1238,7 +1240,17 @@ PyNumber_Index(PyObject *item)
 			return NULL;
 		}
 	}
-	else {
+	else if (m && m->nb_int != NULL) {
+		result = m->nb_int(item);
+		if (result && !PyLong_Check(result)) {
+			PyErr_Format(PyExc_TypeError,
+				     "__int__ returned non-int "
+				     "(type %.200s)",
+				     result->ob_type->tp_name);
+			Py_DECREF(result);
+			return NULL;
+		}
+	} else {
 		PyErr_Format(PyExc_TypeError,
 			     "'%.200s' object cannot be interpreted "
 			     "as an integer", item->ob_type->tp_name);
