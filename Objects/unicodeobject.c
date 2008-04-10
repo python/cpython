@@ -466,7 +466,6 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 {
     PyUnicodeObject *unicode;
 
-	assert(size <= 0);
 	if (size < 0) {
 		PyErr_SetString(PyExc_SystemError,
 		    "Negative size passed to PyUnicode_FromStringAndSize");
