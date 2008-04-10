@@ -29,10 +29,10 @@ from .. import patcomp
 from ..pgen2 import token
 from . import basefix
 from .util import Name, Call, LParen, RParen, ArgList, Dot, set
+from . import util
 
 
-exempt = set(["sorted", "list", "set", "any", "all", "tuple", "sum"])
-iter_exempt = exempt | set(["iter"])
+iter_exempt = util.consuming_calls | set(["iter"])
 
 
 class FixDict(basefix.BaseFix):
@@ -92,7 +92,7 @@ class FixDict(basefix.BaseFix):
                 return results["func"].value in iter_exempt
             else:
                 # list(d.keys()) -> list(d.keys()), etc.
-                return results["func"].value in exempt
+                return results["func"].value in util.consuming_calls
         if not isiter:
             return False
         # for ... in d.iterkeys() -> for ... in d.keys(), etc.
