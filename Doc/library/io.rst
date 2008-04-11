@@ -44,13 +44,23 @@ Module Interface
 
 .. function:: open(file[, mode[, buffering[, encoding[, errors[, newline[, closefd=True]]]]]])
 
-   Open *file* and return a stream.
+   Open *file* and return a stream.  If the file cannot be opened, an
+   :exc:`IOError` is raised.
 
-   *file* is a string giving the name of the file, or an integer file descriptor
-   of the file to be wrapped.
+   *file* is either a string giving the name (and the path if the file isn't in
+   the current working directory) of the file to be opened or an integer file
+   descriptor of the file to be wrapped.  (If a file descriptor is given, it is
+   closed when the returned I/O object is closed, unless *closefd* is set to
+   ``False``.)
 
-   The optional *mode* string determines how the file is opened and consists of
-   a combination of the following characters:
+   *mode* is an optional string that specifies the mode in which the file is
+   opened.  It defaults to ``'r'`` which means open for reading in text mode.
+   Other common values are ``'w'`` for writing (truncating the file if it
+   already exists), and ``'a'`` for appending (which on *some* Unix systems,
+   means that *all* writes append to the end of the file regardless of the
+   current seek position).  In text mode, if *encoding* is not specified the
+   encoding used is platform dependent. (For reading and writing raw bytes use
+   binary mode and leave *encoding* unspecified.)  The available modes are:
 
    ========= ===============================================================
    Character Meaning
@@ -69,18 +79,31 @@ Module Interface
    access, the mode ``'w+b'`` opens and truncates the file to 0 bytes, while
    ``'r+b'`` opens the file without truncation.
 
-   *buffering* is an optional argument controling the buffering of the returned
-   stream.  A value of ``0`` means no buffering, ``1`` means line buffered, and
-   a greater value means full buffering with the given buffer size.  Buffering
-   cannot be disabled in text mode.
+   Python distinguishes between files opened in binary and text modes, even
+   when the underlying operating system doesn't.  Files opened in binary
+   mode (appending ``'b'`` to the *mode* argument) return contents as
+   ``bytes`` objects without any decoding.  In text mode (the default, or when
+   ``'t'`` is appended to the *mode* argument) the contents of
+   the file are returned as strings, the bytes having been first decoded
+   using a platform-dependent encoding or using the specified *encoding*
+   if given.
+
+   *buffering* is an optional integer used to set the buffering policy.  By
+   default full buffering is on. Pass 0 to switch buffering off (only allowed in
+   binary mode), 1 to set line buffering, and an integer > 1 for full buffering.
 
    *encoding* is the name of the encoding used to decode or encode the file.
-   This may only be used in text mode.  Any encoding available in the
-   :mod:`codecs` module registry can be used.
+   This should only be used in text mode.  The default encoding is platform
+   dependent, but any encoding supported by Python can be passed.  See the
+   :mod:`codecs` module for the list of supported encodings.
 
-   *errors* specifies how the encoding should treat errors.  "strict", the
-   default raises a :exc:`ValueError` on problems.  See the *errors* argument
-   of :func:`codecs.open` for more information. XXX
+   *errors* is an optional string that specifies how encoding errors are to be
+   handled---this argument should not be used in binary mode.  Pass ``'strict'``
+   to raise a :exc:`ValueError` exception if there is an encoding error (the
+   default of ``None`` has the same effect), or pass ``'ignore'`` to ignore
+   errors.  (Note that ignoring encoding errors can lead to data loss.)  See the
+   documentation for :func:`codecs.register` for a list of the permitted
+   encoding error strings.
 
    *newline* controls how universal newlines works (it only applies to text
    mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
@@ -100,13 +123,14 @@ Module Interface
      the other legal values, any ``'\n'`` characters written are translated to
      the given string.
 
-   If *closefd* is :keyword:`False`, the underlying file descriptor will be kept
-   open when the file is closed.  This does not work when a file name is given.
+   If *closefd* is ``False``, the underlying file descriptor will be kept open
+   when the file is closed.  This does not work when a file name is given and
+   must be ``True`` in that case.
 
-   The :func:`open` function returns a file object whose type depends on the
-   mode, and through which the standard file operations such as reading and
-   writing are performed.  When :func:`open` is used to open a file in a text
-   mode (``'w'``, ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a
+   :func:`open()` returns a file object whose type depends on the mode, and
+   through which the standard file operations such as reading and writing are
+   performed.  When :func:`open()` is used to open a file in a text mode
+   (``'w'``, ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a
    :class:`TextIOWrapper`.  When used to open a file in a binary mode, the
    returned class varies: in read binary mode, it returns a
    :class:`BufferedReader`; in write binary and append binary modes, it returns
@@ -114,9 +138,9 @@ Module Interface
    :class:`BufferedRandom`.
 
    It is also possible to use a string or bytearray as a file for both reading
-   and writing.  For strings :class:`io.StringIO` can be used like a file opened
-   in a text mode, and for bytes a :class:`io.BytesIO` can be used like a file
-   opened in a binary mode.
+   and writing.  For strings :class:`StringIO` can be used like a file opened in
+   a text mode, and for bytes a :class:`BytesIO` can be used like a file opened
+   in a binary mode.
 
 
 .. exception:: BlockingIOError
