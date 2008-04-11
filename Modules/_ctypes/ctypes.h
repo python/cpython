@@ -10,6 +10,7 @@
 typedef int Py_ssize_t;
 #define PyInt_FromSsize_t PyInt_FromLong
 #define PyNumber_AsSsize_t(ob, exc) PyInt_AsLong(ob)
+#define PyIndex_Check(ob) PyInt_Check(ob)
 #endif
 
 #if (PY_VERSION_HEX < 0x02060000)
@@ -17,7 +18,6 @@ typedef int Py_ssize_t;
 #define PyVarObject_HEAD_INIT(type, size) \
 	PyObject_HEAD_INIT(type) size,
 #define PyImport_ImportModuleNoBlock PyImport_ImportModule
-#define PyIndex_Check(ob) PyInt_Check(ob)
 #endif
 
 
