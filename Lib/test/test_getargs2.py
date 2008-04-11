@@ -63,10 +63,6 @@ class Int:
     def __int__(self):
         return 99
 
-class InvalidLongAsString:
-    def __int__(self):
-        return 'foobar'
-
 class Unsigned_TestCase(unittest.TestCase):
     def test_b(self):
         from _testcapi import getargs_b
@@ -203,7 +199,6 @@ class Signed_TestCase(unittest.TestCase):
         self.failUnlessEqual(42, getargs_n(42))
         self.assertRaises(OverflowError, getargs_n, VERY_LARGE)
 
-        self.assertRaises(TypeError, getargs_n, InvalidLongAsString())
 
 class LongLong_TestCase(unittest.TestCase):
     def test_L(self):
