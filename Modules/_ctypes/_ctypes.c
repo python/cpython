@@ -2205,7 +2205,7 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
 		return 0;
 	}
 	ob = CData_GetContainer(target);
-	if (ob->b_objects == NULL || !PyDict_Check(ob->b_objects)) {
+	if (ob->b_objects == NULL || !PyDict_CheckExact(ob->b_objects)) {
 		Py_XDECREF(ob->b_objects);
 		ob->b_objects = keep; /* refcount consumed */
 		return 0;
@@ -4686,7 +4686,7 @@ Pointer_init(CDataObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *value = NULL;
 
-	if (!PyArg_ParseTuple(args, "|O:POINTER", &value))
+	if (!PyArg_UnpackTuple(args, "POINTER", 0, 1, &value))
 		return -1;
 	if (value == NULL)
 		return 0;
@@ -5121,7 +5121,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
 		}
 		Py_XINCREF(obj->b_objects);
 		result->b_objects = obj->b_objects;
-		if (result->b_objects && PyDict_Check(result->b_objects)) {
+		if (result->b_objects && PyDict_CheckExact(result->b_objects)) {
 			PyObject *index;
 			int rc;
 			index = PyLong_FromVoidPtr((void *)src);
