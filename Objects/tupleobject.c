@@ -208,6 +208,10 @@ tuplerepr(PyTupleObject *v)
 	PyObject *s, *temp;
 	PyObject *pieces, *result = NULL;
 
+	n = v->ob_size;
+	if (n == 0)
+		return PyString_FromString("()");
+
 	/* While not mutable, it is still possible to end up with a cycle in a
 	   tuple through an object that stores itself within a tuple (and thus
 	   infinitely asks for the repr of itself). This should only be
@@ -216,10 +220,6 @@ tuplerepr(PyTupleObject *v)
 	if (i != 0) {
 		return i > 0 ? PyString_FromString("(...)") : NULL;
 	}
-
-	n = v->ob_size;
-	if (n == 0)
-		return PyString_FromString("()");
 
 	pieces = PyTuple_New(n);
 	if (pieces == NULL)
