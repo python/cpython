@@ -227,16 +227,6 @@ PyAPI_FUNC(PyObject *) PyErr_NewException(char *name, PyObject *base,
                                          PyObject *dict);
 PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 
-/* Issue a warning or exception */
-PyAPI_FUNC(int) PyErr_WarnEx(PyObject *category, const char *msg,
-			     Py_ssize_t stack_level);
-PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject *, const char *,
-				   const char *, int, 
-				   const char *, PyObject *);
-/* PyErr_Warn is only for backwards compatability and will be removed.
-   Use PyErr_WarnEx instead. */
-#define PyErr_Warn(category, msg) PyErr_WarnEx(category, msg, 1)
-
 /* In sigcheck.c or signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);

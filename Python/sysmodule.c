@@ -940,6 +940,12 @@ PySys_AddWarnOption(char *s)
 	}
 }
 
+int
+PySys_HasWarnOptions(void)
+{
+    return warnoptions ? 1 : 0;
+}
+
 /* XXX This doc string is too long to be a single string literal in VC++ 5.0.
    Two literals concatenated works just fine.  If you have a K&R compiler
    or other abomination that however *does* understand longer strings,
@@ -1165,6 +1171,7 @@ static PyStructSequence_Field flags_fields[] = {
 	/* {"unbuffered",		"-u"}, */
 	{"unicode",		"-U"},
 	/* {"skip_first",		"-x"}, */
+	{"bytes_warning", "-b"},
 	{0}
 };
 
@@ -1211,6 +1218,7 @@ make_flags(void)
 	/* SetFlag(saw_unbuffered_flag); */
 	SetFlag(Py_UnicodeFlag);
 	/* SetFlag(skipfirstline); */
+    SetFlag(Py_BytesWarningFlag);
 #undef SetFlag
 
 	if (PyErr_Occurred()) {

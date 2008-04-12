@@ -21,6 +21,11 @@ Extensions Modules
 - zlib.decompressobj().flush(value) no longer crashes the interpreter when
   passed a value less than or equal to zero.
 
+- Issue #1631171: Re-implement the 'warnings' module in C (the original Python
+  code has been kept as backup). This will allow for using the 'warning's
+  machinery in such places as the parser where use of pure Python code is not
+  possible.
+
 Library
 -------
 
