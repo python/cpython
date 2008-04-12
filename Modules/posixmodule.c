@@ -5539,7 +5539,6 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
         size_t hi = tablesize;
         int cmp;
         const char *confname;
-        Py_ssize_t namelen;
         if (!PyUnicode_Check(arg)) {
             PyErr_SetString(PyExc_TypeError,
                             "configuration names must be strings or integers");
@@ -5548,7 +5547,6 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
         confname = PyUnicode_AsString(arg);
         if (confname == NULL)
             return 0;
-        namelen = strlen(confname);
         while (lo < hi) {
             mid = (lo + hi) / 2;
             cmp = strcmp(confname, table[mid].name);
