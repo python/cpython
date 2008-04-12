@@ -245,6 +245,7 @@ ASDLGEN=	$(srcdir)/Parser/asdl_c.py
 ##########################################################################
 # Python
 PYTHON_OBJS=	\
+		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/asdl.o \
 		Python/ast.o \
@@ -621,6 +622,7 @@ PYTHON_HEADERS= \
 		Include/tupleobject.h \
 		Include/ucnhash.h \
 		Include/unicodeobject.h \
+		Include/warnings.h \
 		Include/weakrefobject.h \
 		pyconfig.h \
 		$(PARSER_HEADERS)

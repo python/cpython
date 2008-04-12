@@ -122,16 +122,16 @@ PyTraceBack_Here(PyFrameObject *frame)
 	return 0;
 }
 
-static int
-tb_displayline(PyObject *f, char *filename, int lineno, char *name)
+int
+Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno)
 {
 	int err = 0;
-	FILE *xfp;
+	FILE *xfp = NULL;
 	char linebuf[2000];
 	int i;
 	char namebuf[MAXPATHLEN+1];
 
-	if (filename == NULL || name == NULL)
+	if (filename == NULL)
 		return -1;
 	/* This is needed by Emacs' compile command */
 #define FMT "  File \"%.500s\", line %d, in %.500s\n"
@@ -139,7 +139,7 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 	if (xfp == NULL) {
 		/* Search tail of filename in sys.path before giving up */
 		PyObject *path;
-		char *tail = strrchr(filename, SEP);
+		const char *tail = strrchr(filename, SEP);
 		if (tail == NULL)
 			tail = filename;
 		else
@@ -175,14 +175,14 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 			}
 		}
 	}
-	PyOS_snprintf(linebuf, sizeof(linebuf), FMT, filename, lineno, name);
-	err = PyFile_WriteString(linebuf, f);
-	if (xfp == NULL)
-		return err;
-	else if (err != 0) {
-		fclose(xfp);
-		return err;
-	}
+
+        if (xfp == NULL)
+            return err;
+        if (err != 0) {
+            fclose(xfp);
+            return err;
+        }
+
 	for (i = 0; i < lineno; i++) {
 		char* pLastChar = &linebuf[sizeof(linebuf)-2];
 		do {
@@ -200,22 +200,38 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 		char *p = linebuf;
 		while (*p == ' ' || *p == '\t' || *p == '\014')
 			p++;
-		err = PyFile_WriteString("    ", f);
-		if (err == 0) {
-			err = PyFile_WriteString(p, f);
-			if (err == 0 && strchr(p, '\n') == NULL)
-				err = PyFile_WriteString("\n", f);
-		}
+                    err = PyFile_WriteString(p, f);
+                    if (err == 0 && strchr(p, '\n') == NULL)
+                            err = PyFile_WriteString("\n", f);
 	}
 	fclose(xfp);
 	return err;
 }
 
 static int
-tb_printinternal(PyTracebackObject *tb, PyObject *f, int limit)
+tb_displayline(PyObject *f, const char *filename, int lineno, const char *name)
 {
 	int err = 0;
-	int depth = 0;
+        char linebuf[2000];
+
+	if (filename == NULL || name == NULL)
+		return -1;
+	/* This is needed by Emacs' compile command */
+#define FMT "  File \"%.500s\", line %d, in %.500s\n"
+	PyOS_snprintf(linebuf, sizeof(linebuf), FMT, filename, lineno, name);
+	err = PyFile_WriteString(linebuf, f);
+	if (err != 0)
+		return err;
+
+        err = PyFile_WriteString("    ", f);
+        return Py_DisplaySourceLine(f, filename, lineno);
+}
+
+static int
+tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
+{
+	int err = 0;
+	long depth = 0;
 	PyTracebackObject *tb1 = tb;
 	while (tb1 != NULL) {
 		depth++;
@@ -242,7 +258,7 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
 {
 	int err;
 	PyObject *limitv;
-	int limit = 1000;
+	long limit = 1000;
 	if (v == NULL)
 		return 0;
 	if (!PyTraceBack_Check(v)) {
