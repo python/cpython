@@ -40,7 +40,7 @@ static char **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS "3bBc:dEhim:OQ:StuUvVW:xX?"
+#define BASE_OPTS "3bBc:dEhiJm:OQ:StuUvVW:xX?"
 
 #ifndef RISCOS
 #define PROGRAM_OPTS BASE_OPTS
@@ -349,6 +349,8 @@ Py_Main(int argc, char **argv)
 			Py_InteractiveFlag++;
 			break;
 
+		/* case 'J': reserved for Jython */
+
 		case 'O':
 			Py_OptimizeFlag++;
 			break;
@@ -387,6 +389,8 @@ Py_Main(int argc, char **argv)
 		case 'x':
 			skipfirstline = 1;
 			break;
+
+		/* case 'X': reserved for non-standard arguments */
 
 		case 'U':
 			Py_UnicodeFlag++;
