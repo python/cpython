@@ -8,7 +8,7 @@
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
 import sys, os, time
-sys.path.append('tools/sphinxext')
+sys.path.append(os.path.abspath('tools/sphinxext'))
 
 # General configuration
 # ---------------------
