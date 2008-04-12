@@ -128,7 +128,7 @@ module documentation.  This section lists the differences between the API and
    to discard children of that node.
 
 
-.. method:: Node.writexml(writer[,indent=""[,addindent=""[,newl=""]]])
+.. method:: Node.writexml(writer[, indent=""[, addindent=""[, newl=""[, encoding=""]]]])
 
    Write XML to the writer object.  The writer should have a :meth:`write` method
    which matches that of the file object interface.  The *indent* parameter is the
@@ -160,10 +160,10 @@ module documentation.  This section lists the differences between the API and
    encoding argument should be specified as "utf-8".
 
    .. versionchanged:: 2.3
-      the *encoding* argument was introduced.
+      the *encoding* argument was introduced; see :meth:`writexml`.
 
 
-.. method:: Node.toprettyxml([indent[, newl]])
+.. method:: Node.toprettyxml([indent=""[, newl=""[, encoding=""]]])
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string
@@ -172,7 +172,7 @@ module documentation.  This section lists the differences between the API and
    .. versionadded:: 2.1
 
    .. versionchanged:: 2.3
-      the encoding argument; see :meth:`toxml`.
+      the encoding argument was introduced; see :meth:`writexml`.
 
 The following standard DOM methods have special considerations with
 :mod:`xml.dom.minidom`:
