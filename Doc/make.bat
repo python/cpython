@@ -28,12 +28,14 @@ goto end
 :checkout
 svn co %SVNROOT%/doctools/trunk/sphinx tools/sphinx
 svn co %SVNROOT%/external/docutils-0.4/docutils tools/docutils
+svn co %SVNROOT%/external/Jinja-1.1/jinja tools/jinja
 svn co %SVNROOT%/external/Pygments-0.9/pygments tools/pygments
 goto end
 
 :update
 svn update tools/sphinx
 svn update tools/docutils
+svn update tools/jinja
 svn update tools/pygments
 goto end
 
