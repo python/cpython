@@ -34,6 +34,10 @@ checkout:
 	  echo "Checking out Docutils..."; \
 	  svn checkout $(SVNROOT)/external/docutils-0.4/docutils tools/docutils; \
 	fi
+	@if [ ! -d tools/jinja ]; then \
+	  echo "Checking out Jinja..."; \
+	  svn checkout $(SVNROOT)/external/Jinja-1.1/jinja tools/jinja; \
+	fi
 	@if [ ! -d tools/pygments ]; then \
 	  echo "Checking out Pygments..."; \
 	  svn checkout $(SVNROOT)/external/Pygments-0.9/pygments tools/pygments; \
@@ -42,6 +46,7 @@ checkout:
 update: checkout
 	svn update tools/sphinx
 	svn update tools/docutils
+	svn update tools/jinja
 	svn update tools/pygments
 
 build: checkout
