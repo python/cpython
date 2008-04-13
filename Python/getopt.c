@@ -88,7 +88,7 @@ int _PyOS_GetOpt(int argc, char **argv, char *optstring)
 
 	if (option == 'X') {
 		fprintf(stderr,
-			"-X is reserved for non-standard arguments\n");
+		  "-X is reserved for implementation-specific arguments\n");
 		return '_';
 	}
 
