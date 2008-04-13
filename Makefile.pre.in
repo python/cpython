@@ -175,6 +175,10 @@ LIBOBJS=	@LIBOBJS@
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
+# The task to run while instrument when building the profile-opt target
+PROFILE_TASK=	Tools/pybench/pybench.py -n 2 --with-gc --with-syscheck
+#PROFILE_TASK=	Lib/test/regrtest.py
+
 # === Definitions added by makesetup ===
 
 
@@ -244,6 +248,7 @@ ASDLGEN=	$(srcdir)/Parser/asdl_c.py
 ##########################################################################
 # Python
 PYTHON_OBJS=	\
+		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/asdl.o \
 		Python/ast.o \
@@ -345,6 +350,27 @@ LIBRARY_OBJS=	\
 # Default target
 all:		build_all
 build_all:	$(BUILDPYTHON) oldsharedmods sharedmods
+
+# Compile a binary with gcc profile guided optimization.
+profile-opt:
+	@echo "Building with support for profile generation:"
+	$(MAKE) clean
+	$(MAKE) build_all_generate_profile
+	@echo "Running benchmark to generate profile data:"
+	$(MAKE) profile-removal
+	$(MAKE) run_profile_task
+	@echo "Rebuilding with profile guided optimizations:"
+	$(MAKE) clean
+	$(MAKE) build_all_use_profile
+
+build_all_generate_profile:
+	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-generate" LIBS="$(LIBS) -lgcov"
+
+run_profile_task:
+	./$(BUILDPYTHON) $(PROFILE_TASK)
+
+build_all_use_profile:
+	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-use"
 
 # Build the interpreter
 $(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY)
@@ -616,6 +642,7 @@ PYTHON_HEADERS= \
 		Include/tupleobject.h \
 		Include/ucnhash.h \
 		Include/unicodeobject.h \
+		Include/warnings.h \
 		Include/weakrefobject.h \
 		pyconfig.h \
 		$(PARSER_HEADERS)
@@ -1100,7 +1127,10 @@ clean: pycremoval
 	find $(srcdir)/build -name 'fficonfig.h' -exec rm -f {} ';' || true
 	find $(srcdir)/build -name 'fficonfig.py' -exec rm -f {} ';' || true
 
-clobber: clean rmtestturds docclean
+profile-removal:
+	find . -name '*.gc??' -exec rm -f {} ';'
+
+clobber: clean profile-removal
 	-rm -f $(BUILDPYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
 		config.cache config.log pyconfig.h Modules/config.c

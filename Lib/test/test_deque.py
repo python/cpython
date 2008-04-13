@@ -64,6 +64,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), [7, 8, 9])
         d = deque(range(200), maxlen=10)
         d.append(d)
+        test_support.unlink(test_support.TESTFN)
         fo = open(test_support.TESTFN, "w")
         try:
             fo.write(str(d))
@@ -283,6 +284,7 @@ class TestBasic(unittest.TestCase):
         d = deque(range(200))
         d.append(d)
         try:
+            test_support.unlink(test_support.TESTFN)
             fo = open(test_support.TESTFN, "w")
             print(d, file=fo, end='')
             fo.close()

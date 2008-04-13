@@ -28,6 +28,7 @@ extern void PyMarshal_Init(void);
 extern void initimp(void);
 extern void initgc(void);
 extern void init_ast(void);
+extern void _PyWarnings_Init(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
@@ -49,6 +50,9 @@ struct _inittab _PyImport_Inittab[] = {
 
 	/* This lives in gcmodule.c */
 	{"gc", initgc},
+
+    /* This lives in _warnings.c */
+    {"_warnings", _PyWarnings_Init},
 
 	/* Sentinel */
 	{0, 0}

@@ -1746,6 +1746,10 @@
 				RelativePath="..\Python\traceback.c"
 				>
 			</File>
+                        <File
+                                RelativePath="..\Python\_warnings.c"
+                                >
+                        </File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

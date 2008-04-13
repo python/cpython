@@ -84,38 +84,12 @@ int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 
-/* Reference to 'warnings' module, to avoid importing it
-   on the fly when the import lock may be held.  See 683658/771097
-*/
-static PyObject *warnings_module = NULL;
-
-/* Returns a borrowed reference to the 'warnings' module, or NULL.
-   If the module is returned, it is guaranteed to have been obtained
-   without acquiring the import lock
-*/
-PyObject *PyModule_GetWarningsModule(void)
+/* PyModule_GetWarningsModule is no longer necessary as of 2.6
+since _warnings is builtin.  This API should not be used. */
+PyObject *
+PyModule_GetWarningsModule(void)
 {
-	PyObject *typ, *val, *tb;
-	PyObject *all_modules;
-	/* If we managed to get the module at init time, just use it */
-	if (warnings_module)
-		return warnings_module;
-	/* If it wasn't available at init time, it may be available
-	   now in sys.modules (common scenario is frozen apps: import
-	   at init time fails, but the frozen init code sets up sys.path
-	   correctly, then does an implicit import of warnings for us
-	*/
-	/* Save and restore any exceptions */
-	PyErr_Fetch(&typ, &val, &tb);
-
-	all_modules = PySys_GetObject("modules");
-	if (all_modules) {
-		warnings_module = PyDict_GetItemString(all_modules, "warnings");
-		/* We keep a ref in the global */
-		Py_XINCREF(warnings_module);
-	}
-	PyErr_Restore(typ, val, tb);
-	return warnings_module;
+	return PyImport_ImportModule("warnings");
 }
 
 static int initialized = 0;
@@ -255,6 +229,15 @@ Py_InitializeEx(int install_sigs)
 
 	if (install_sigs)
 		initsigs(); /* Signal handling stuff, including initintr() */
+		
+    /* Initialize warnings. */
+    _PyWarnings_Init();
+    if (PySys_HasWarnOptions()) {
+        PyObject *warnings_module = PyImport_ImportModule("warnings");
+        if (!warnings_module)
+            PyErr_Clear();
+        Py_XDECREF(warnings_module);
+    }
 
 	initmain(); /* Module __main__ */
 	if (initstdio() < 0)
@@ -267,30 +250,6 @@ Py_InitializeEx(int install_sigs)
 #ifdef WITH_THREAD
 	_PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
-
-	warnings_module = PyImport_ImportModule("warnings");
-	if (!warnings_module) {
-		PyErr_Clear();
-	}
-	else {
-		PyObject *o;
-		char *action[8];
-
-		if (Py_BytesWarningFlag > 1)
-			*action = "error";
-		else if (Py_BytesWarningFlag)
-			*action = "default";
-		else
-			*action = "ignore";
-
-		o = PyObject_CallMethod(warnings_module,
-					"simplefilter", "sO",
-					*action, PyExc_BytesWarning);
-		if (o == NULL)
-			Py_FatalError("Py_Initialize: can't initialize"
-				      "warning filter for BytesWarning.");
-		Py_DECREF(o);
-        }
 
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
 	/* On Unix, set the file system encoding according to the
@@ -402,10 +361,6 @@ Py_Finalize(void)
 
 	/* Disable signal handling */
 	PyOS_FiniInterrupts();
-
-	/* drop module references we saved */
-	Py_XDECREF(warnings_module);
-	warnings_module = NULL;
 
 	/* Clear type lookup cache */
 	PyType_ClearCache();
