@@ -943,7 +943,7 @@ PySys_AddWarnOption(char *s)
 int
 PySys_HasWarnOptions(void)
 {
-    return warnoptions ? 1 : 0;
+    return (warnoptions != NULL && (PyList_Size(warnoptions) > 0)) ? 1 : 0;
 }
 
 /* XXX This doc string is too long to be a single string literal in VC++ 5.0.
