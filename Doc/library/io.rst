@@ -447,7 +447,7 @@ Buffered Streams
 
 .. class:: BufferedReader(raw[, buffer_size])
 
-   A buffer for a readable, sequential :class:`BaseRawIO` object.  It inherits
+   A buffer for a readable, sequential :class:`RawIOBase` object.  It inherits
    :class:`BufferedIOBase`.
 
    The constructor creates a :class:`BufferedReader` for the given readable
