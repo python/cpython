@@ -160,8 +160,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"__builtin__", NULL},
         {"sys", NULL},
 	{"exceptions", NULL},
-        
-        {"_types", init_types},
         {"_warnings", _PyWarnings_Init},
 
         /* Sentinel */
