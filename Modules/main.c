@@ -45,7 +45,7 @@ static wchar_t **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS L"bBc:dEhim:OStuvVW:xX?"
+#define BASE_OPTS L"bBc:dEhiJm:OStuvVW:xX?"
 
 #define PROGRAM_OPTS BASE_OPTS
 
@@ -345,6 +345,8 @@ Py_Main(int argc, wchar_t **argv)
 			Py_InteractiveFlag++;
 			break;
 
+		/* case 'J': reserved for Jython */
+
 		case 'O':
 			Py_OptimizeFlag++;
 			break;
@@ -377,6 +379,8 @@ Py_Main(int argc, wchar_t **argv)
 		case 'x':
 			skipfirstline = 1;
 			break;
+
+		/* case 'X': reserved for non-standard arguments */
 
 		case 'h':
 		case '?':

@@ -162,6 +162,7 @@ class BaseTest(unittest.TestCase):
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
+        test_support.unlink(test_support.TESTFN)
         f = open(test_support.TESTFN, 'wb')
         try:
             a.tofile(f)

@@ -40,12 +40,11 @@
    * Credit the author of a patch or bugfix.   Just the name is
    sufficient; the e-mail address isn't necessary.
    
-   * It's helpful to add the bug/patch number as a comment:
+   * It's helpful to add the bug/patch number in an parenthetical
    
-   .. Patch 12345
    XXX Describe the transmogrify() function added to the socket
    module.
-   (Contributed by P.Y. Developer.)
+   (Contributed by P.Y. Developer; :issue:`12345`.)
    
    This saves the maintainer the effort of going through the SVN logs
    when researching a change.
@@ -53,11 +52,13 @@
 This article explains the new features in Python 2.6.  No release date for
 Python 2.6 has been set; it will probably be released in mid 2008.
 
-This article doesn't attempt to provide a complete specification of the new
-features, but instead provides a convenient overview.  For full details, you
-should refer to the documentation for Python 2.6. If you want to understand the
-complete implementation and design rationale, refer to the PEP for a particular
-new feature.
+This article doesn't attempt to provide a complete specification of
+the new features, but instead provides a convenient overview.  For
+full details, you should refer to the documentation for Python 2.6. If
+you want to understand the complete implementation and design
+rationale, refer to the PEP for a particular new feature.  For smaller
+changes, this edition of "What's New in Python" links to the bug/patch
+item for each change whenever possible.
 
 .. Compare with previous release in 2 - 3 sentences here.
    add hyperlink when the documentation becomes available online.
@@ -147,9 +148,13 @@ After posting a call for volunteers, a new Roundup installation was
 set up at http://bugs.python.org.  One installation of Roundup can
 host multiple trackers, and this server now also hosts issue trackers
 for Jython and for the Python web site.  It will surely find 
-other uses in the future.
+other uses in the future.  Where possible,
+this edition of "What's New in Python" links to the bug/patch
+item for each change.
 
-Hosting is kindly provided by `Upfront Systems <http://www.upfrontsystems.co.za/>`__ of Stellenbosch, South Africa.  Martin von Loewis put a
+Hosting is kindly provided by 
+`Upfront Systems <http://www.upfrontsystems.co.za/>`__ 
+of Stellenbosch, South Africa.  Martin von Loewis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at 
 http://svn.python.org/view/tracker/importer/.
@@ -187,16 +192,15 @@ Occasionally people would suggest converting the documentation into
 SGML or, later, XML, but performing a good conversion is a major task 
 and no one pursued the task to completion.
 
-During the 2.6 development cycle, Georg Brandl put a substantial 
-effort into building a new toolchain called Sphinx 
-for processing the documentation.
-The input format is reStructured Text, 
-a markup commonly used in the Python community that supports
-custom extensions  and directives.   Sphinx concentrates 
-on HTML output, producing attractively styled 
-and modern HTML, though printed output is still supported through 
-conversion to LaTeX.  Sphinx is a standalone package that
-can be used in documenting other projects.
+During the 2.6 development cycle, Georg Brandl put a substantial
+effort into building a new toolchain for processing the documentation.
+The resulting package is called Sphinx, and is available from
+http://sphinx.pocoo.org/.  The input format is reStructured Text, a
+markup commonly used in the Python community that supports custom
+extensions and directives.  Sphinx concentrates on HTML output,
+producing attractively styled and modern HTML, though printed output
+is still supported through conversion to LaTeX.  Sphinx is a
+standalone package that can be used in documenting other projects.
 
 .. seealso::
 
@@ -1266,30 +1270,22 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   have a :meth:`__complex__` method.  In particular, the functions in the 
   :mod:`cmath` module will now accept objects with this method.
   This is a backport of a Python 3.0 change.
-  (Contributed by Mark Dickinson.)
-
-  .. Patch #1675423
+  (Contributed by Mark Dickinson; :issue:`1675423`.)
 
   A numerical nicety: when creating a complex number from two floats
   on systems that support signed zeros (-0 and +0), the 
   :func:`complex` constructor will now preserve the sign 
-  of the zero.
-
-  .. Patch 1507
+  of the zero.  (:issue:`1507`)
 
 * More floating-point features were also added.  The :func:`float` function
   will now turn the strings ``+nan`` and ``-nan`` into the corresponding
   IEEE 754 Not A Number values, and ``+inf`` and ``-inf`` into 
   positive or negative infinity.  This works on any platform with 
-  IEEE 754 semantics.  (Contributed by Christian Heimes.)
-
-  .. Patch 1635
+  IEEE 754 semantics.  (Contributed by Christian Heimes; :issue:`1635`.)
 
   Other functions in the :mod:`math` module, :func:`isinf` and
   :func:`isnan`, return true if their floating-point argument is
-  infinite or Not A Number.
-
-  .. Patch 1640
+  infinite or Not A Number.  (:issue:`1640`)
 
   The ``math.copysign(x, y)`` function
   copies the sign bit of an IEEE 754 number, returning the absolute
@@ -1306,34 +1302,26 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   :exc:`BaseException` instead of :exc:`Exception`.  This means 
   that an exception handler that does ``except Exception:``
   will not inadvertently catch :exc:`GeneratorExit`. 
-  (Contributed by Chad Austin.)
-
-  .. Patch #1537
+  (Contributed by Chad Austin; :issue:`1537`.)
 
 * Generator objects now have a :attr:`gi_code` attribute that refers to 
   the original code object backing the generator.  
-  (Contributed by Collin Winter.)
-
-  .. Patch #1473257
+  (Contributed by Collin Winter; :issue:`1473257`.)
 
 * The :func:`compile` built-in function now accepts keyword arguments
-  as well as positional parameters.  (Contributed by Thomas Wouters.)
-
-  .. Patch 1444529
+  as well as positional parameters.  (Contributed by Thomas Wouters;
+  :issue:`1444529`.)
 
 * The :func:`complex` constructor now accepts strings containing 
   parenthesized complex numbers, letting ``complex(repr(cmplx))``
   will now round-trip values.  For example, ``complex('(3+4j)')``
-  now returns the value (3+4j).
-
-  .. Patch 1491866
+  now returns the value (3+4j).  (:issue:`1491866`)
 
 * The string :meth:`translate` method now accepts ``None`` as the 
   translation table parameter, which is treated as the identity 
   transformation.   This makes it easier to carry out operations
-  that only delete characters.  (Contributed by Bengt Richter.)
-
-  .. Patch 1193128
+  that only delete characters.  (Contributed by Bengt Richter;
+  :issue:`1193128`.)
 
 * The built-in :func:`dir` function now checks for a :meth:`__dir__`
   method on the objects it receives.  This method must return a list
@@ -1341,8 +1329,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   and lets the object control the value that :func:`dir` produces.
   Objects that have :meth:`__getattr__` or :meth:`__getattribute__` 
   methods can use this to advertise pseudo-attributes they will honor.
-
-  .. Patch 1591665
+  (:issue:`1591665`)
 
 * Instance method objects have new attributes for the object and function
   comprising the method; the new synonym for :attr:`im_self` is
@@ -1368,9 +1355,7 @@ Optimizations
   so the cache should remain correct even in the face of Python's dynamic 
   nature.
   (Original optimization implemented by Armin Rigo, updated for 
-  Python 2.6 by Kevin Jacobs.) 
-
-  .. Patch 1700288
+  Python 2.6 by Kevin Jacobs; :issue:`1700288`.) 
 
 * All of the functions in the :mod:`struct` module have been rewritten in
   C, thanks to work at the Need For Speed sprint.
@@ -1398,6 +1383,20 @@ benchmark around XX% faster than Python 2.5.
 
 .. ======================================================================
 
+.. _new-26-interactive:
+
+Interactive Interpreter Changes
+-------------------------------
+
+Two command-line options have been reserved for use by other Python
+implementations.  The :option:`-J` switch has been reserved for use by
+Jython for Jython-specific options, such as ones that are passed to
+the underlying JVM.  :option:`-X` has been reserved for options
+specific to a particular implementation of Python such as CPython,
+Jython, or IronPython.  If either option is used with Python 2.6, the
+interpreter will report that the option isn't currently used.
+
+.. ======================================================================
 
 New, Improved, and Deprecated Modules
 =====================================
@@ -1409,9 +1408,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.
-  (Contributed by W. Barnes.)
-
-  .. Patch 1551443
+  (Contributed by W. Barnes; :issue:`1551443`.)
 
 * A new data type in the :mod:`collections` module: :class:`namedtuple(typename,
   fieldnames)` is a factory function that creates subclasses of the standard tuple
@@ -1464,9 +1461,8 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Raymond Hettinger.)
 
 * The :mod:`ctypes` module now supports a :class:`c_bool` datatype 
-  that represents the C99 ``bool`` type.  (Contributed by David Remahl.)
-
-  .. Patch 1649190
+  that represents the C99 ``bool`` type.  (Contributed by David Remahl;
+  :issue:`1649190`.)
 
   The :mod:`ctypes` string, buffer and array types also have improved
   support for extended slicing syntax,
@@ -1492,9 +1488,7 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`datetime` module's :meth:`strftime` methods now support a
   ``%f`` format code that expands to the number of microseconds in the
   object, zero-padded on
-  the left to six places.  (Contributed by Skip Montanaro.)
-
-  .. Patch 1158
+  the left to six places.  (Contributed by Skip Montanaro; :issue:`1158`.)
 
 * The :mod:`decimal` module was updated to version 1.66 of 
   `the General Decimal Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`__.  New features
@@ -1527,22 +1521,17 @@ complete list of changes, or look through the CVS logs for all the details.
   :meth:`storbinary` and :meth:`storlines`
   now take an optional *callback* parameter that will be called with 
   each block of data after the data has been sent.
-  (Contributed by Phil Schwartz.)
-
-  .. Patch 1221598
+  (Contributed by Phil Schwartz; :issue:`1221598`.)
 
 * The :func:`reduce` built-in function is also available in the 
   :mod:`functools` module.  In Python 3.0, the built-in is dropped and it's
   only available from :mod:`functools`; currently there are no plans
   to drop the built-in in the 2.x series.  (Patched by 
-  Christian Heimes.)
-
-  .. Patch 1739906
+  Christian Heimes; :issue:`1739906`.)
 
 * The :func:`glob.glob` function can now return Unicode filenames if 
-  a Unicode path was used and Unicode filenames are matched within the directory.
-
-  .. Patch #1001604
+  a Unicode path was used and Unicode filenames are matched within the
+  directory.  (:issue:`1001604`)
 
 * The :mod:`gopherlib` module has been removed.
 
@@ -1655,9 +1644,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The :mod:`macfs` module has been removed.  This in turn required the
   :func:`macostools.touched` function to be removed because it depended on the
-  :mod:`macfs` module.
-
-  .. Patch #1490190
+  :mod:`macfs` module.  (:issue:`1490190`)
 
 * :class:`mmap` objects now have a :meth:`rfind` method that finds
   a substring, beginning at the end of the string and searching
@@ -1706,49 +1693,38 @@ complete list of changes, or look through the CVS logs for all the details.
   visit the directory's contents.  For backward compatibility, the
   parameter's default value is false.  Note that the function can fall
   into an infinite recursion if there's a symlink that points to a
-  parent directory.
+  parent directory.  (:issue:`1273829`)
        
-  .. Patch 1273829
-
 * The ``os.environ`` object's :meth:`clear` method will now unset the 
   environment variables using :func:`os.unsetenv` in addition to clearing
-  the object's keys.  (Contributed by Martin Horcicka.)
-
-  .. Patch #1181 
+  the object's keys.  (Contributed by Martin Horcicka; :issue:`1181`.)
 
 * In the :mod:`os.path` module, the :func:`splitext` function
   has been changed to not split on leading period characters.
   This produces better results when operating on Unix's dot-files.
   For example, ``os.path.splitext('.ipython')``
   now returns ``('.ipython', '')`` instead of ``('', '.ipython')``.
-
-  .. Bug #115886
+  (:issue:`115886`)
 
   A new function, :func:`relpath(path, start)` returns a relative path
   from the ``start`` path, if it's supplied, or from the current
   working directory to the destination ``path``.  (Contributed by
-  Richard Barran.)
-
-  .. Patch 1339796
+  Richard Barran; :issue:`1339796`.)
 
   On Windows, :func:`os.path.expandvars` will now expand environment variables 
   in the form "%var%", and "~user" will be expanded into the 
-  user's home directory path.  (Contributed by Josiah Carlson.)
-
-  .. Patch 957650
+  user's home directory path.  (Contributed by Josiah Carlson;
+  :issue:`957650`.)
 
 * The Python debugger provided by the :mod:`pdb` module 
   gained a new command: "run" restarts the Python program being debugged,
   and can optionally take new command-line arguments for the program.
-  (Contributed by Rocky Bernstein.)
-
-  .. Patch #1393667
+  (Contributed by Rocky Bernstein; :issue:`1393667`.)
 
   The :func:`post_mortem` function, used to enter debugging of a 
   traceback, will now use the traceback returned by :func:`sys.exc_info`
-  if no traceback is supplied.   (Contributed by Facundo Batista.)
-
-  .. Patch #1106316
+  if no traceback is supplied.   (Contributed by Facundo Batista;
+  :issue:`1106316`.)
 
 * The :mod:`pickletools` module now has an :func:`optimize` function 
   that takes a string containing a pickle and removes some unused 
@@ -1765,16 +1741,12 @@ complete list of changes, or look through the CVS logs for all the details.
   ``os.closerange(*low*, *high*)`` efficiently closes all file descriptors
   from *low* to *high*, ignoring any errors and not including *high* itself.
   This function is now used by the :mod:`subprocess` module to make starting
-  processes faster.  (Contributed by Georg Brandl.)
-
-  .. Patch #1663329  
+  processes faster.  (Contributed by Georg Brandl; :issue:`1663329`.)
 
 * The :mod:`pyexpat` module's :class:`Parser` objects now allow setting
   their :attr:`buffer_size` attribute to change the size of the buffer 
   used to hold character data.
-  (Contributed by Achim Gaedke.)
-
-  .. Patch 1137
+  (Contributed by Achim Gaedke; :issue:`1137`.)
 
 * The :mod:`Queue` module now provides queue classes that retrieve entries
   in different orders.  The :class:`PriorityQueue` class stores 
@@ -1788,25 +1760,19 @@ complete list of changes, or look through the CVS logs for all the details.
   system, and vice versa.  Unfortunately, this change also means
   that Python 2.6's :class:`Random` objects can't be unpickled correctly
   on earlier versions of Python.
-  (Contributed by Shawn Ligocki.)
-
-  .. Issue 1727780
+  (Contributed by Shawn Ligocki; :issue:`1727780`.)
 
   The new ``triangular(low, high, mode)`` function returns random
   numbers following a triangular distribution.   The returned values
   are between *low* and *high*, not including *high* itself, and 
   with *mode* as the mode, the most frequently occurring value 
   in the distribution.  (Contributed by Wladmir van der Laan and
-  Raymond Hettinger.)
-
-  .. Patch 1681432
+  Raymond Hettinger; :issue:`1681432`.)
 
 * Long regular expression searches carried out by the  :mod:`re`
   module will now check for signals being delivered, so especially
   long searches can now be interrupted.
-  (Contributed by Josh Hoyt and Ralf Schmitt.)
-
-  .. Patch 846388
+  (Contributed by Josh Hoyt and Ralf Schmitt; :issue:`846388`.)
 
 * The :mod:`rgbimg` module has been removed.
 
@@ -1814,9 +1780,7 @@ complete list of changes, or look through the CVS logs for all the details.
   have a read-only :attr:`queue` attribute that returns the 
   contents of the scheduler's queue, represented as a list of
   named tuples with the fields ``(time, priority, action, argument)``.
-  (Contributed by Raymond Hettinger.)
-
-  .. Patch 1861
+  (Contributed by Raymond Hettinger; :issue:`1861`.)
 
 * The :mod:`select` module now has wrapper functions
   for the Linux :cfunc:`epoll` and BSD :cfunc:`kqueue` system calls.
@@ -1824,11 +1788,7 @@ complete list of changes, or look through the CVS logs for all the details.
   objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
   or file object and an event mask, 
   
-  (Contributed by Christian Heimes.)
-
-  .. Patch 1657
-
-  .. XXX 
+  (Contributed by Christian Heimes; :issue:`1657`.)
 
 * The :mod:`sets` module has been deprecated; it's better to 
   use the built-in :class:`set` and :class:`frozenset` types.
@@ -1850,9 +1810,7 @@ complete list of changes, or look through the CVS logs for all the details.
   On receiving a signal, a byte will be written and the main event loop 
   will be woken up, without the need to poll.
 
-  (Contributed by Adam Olsen.)
-
-  .. Patch 1583
+  (Contributed by Adam Olsen; :issue:`1583`.)
 
   The :func:`siginterrupt` function is now available from Python code,
   and allows changing whether signals can interrupt system calls or not.
@@ -1863,10 +1821,7 @@ complete list of changes, or look through the CVS logs for all the details.
   allows setting interval timers that will cause a signal to be
   delivered to the process after a specified time, measured in
   wall-clock time, consumed process time, or combined process+system
-  time.  (Contributed by Guilherme Polo.)
-
-  .. Patch 2240
-
+  time.  (Contributed by Guilherme Polo; :issue:`2240`.)
 
 * The :mod:`smtplib` module now supports SMTP over SSL thanks to the
   addition of the :class:`SMTP_SSL` class. This class supports an
@@ -1881,22 +1836,17 @@ complete list of changes, or look through the CVS logs for all the details.
 
   (SMTP over SSL contributed by Monty Taylor; timeout parameter
   added by Facundo Batista; LMTP implemented by Leif
-  Hedstrom.)
-
-  .. Patch #957003
+  Hedstrom; :issue:`957003`.)
 
 * In the :mod:`smtplib` module, SMTP.starttls() now complies with :rfc:`3207`
   and forgets any knowledge obtained from the server not obtained from
-  the TLS negotiation itself.  (Patch contributed by Bill Fenner.)
-
-  .. Issue 829951
+  the TLS negotiation itself.  (Patch contributed by Bill Fenner;
+  :issue:`829951`.)
 
 * The :mod:`socket` module now supports TIPC (http://tipc.sf.net),
   a high-performance non-IP-based protocol designed for use in clustered
   environments.  TIPC addresses are 4- or 5-tuples.
-  (Contributed by Alberto Bertogli.)
-
-  .. Patch #1646
+  (Contributed by Alberto Bertogli; :issue:`1646`.)
 
 * The base classes in the :mod:`SocketServer` module now support
   calling a :meth:`handle_timeout` method after a span of inactivity 
@@ -1904,9 +1854,8 @@ complete list of changes, or look through the CVS logs for all the details.
   by Michael Pomraning.)  The :meth:`serve_forever` method 
   now takes an optional poll interval measured in seconds,
   controlling how often the server will check for a shutdown request.
-  (Contributed by Pedro Werneck and Jeffrey Yasskin.)
-
-  .. Patch #742598, #1193577
+  (Contributed by Pedro Werneck and Jeffrey Yasskin; 
+  :issue:`742598`, :issue:`1193577`.)
 
 * The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
   using the format character ``'?'``. 
@@ -1919,9 +1868,8 @@ complete list of changes, or look through the CVS logs for all the details.
   include 
   :attr:`mant_dig` (number of digits in the mantissa), :attr:`epsilon`
   (smallest difference between 1.0 and the next largest value
-  representable), and several others.  (Contributed by Christian Heimes.)
-
-  .. Patch 1534
+  representable), and several others.  (Contributed by Christian Heimes;
+  :issue:`1534`.)
 
   Another new variable, :attr:`dont_write_bytecode`, controls whether Python
   writes any :file:`.pyc` or :file:`.pyo` files on importing a module.
@@ -1943,9 +1891,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
   It's now possible to determine the current profiler and tracer functions
   by calling :func:`sys.getprofile` and :func:`sys.gettrace`.  
-  (Contributed by Georg Brandl.)
-
-  .. Patch #1648
+  (Contributed by Georg Brandl; :issue:`1648`.)
 
 * The :mod:`tarfile` module now supports POSIX.1-2001 (pax) and
   POSIX.1-1988 (ustar) format tarfiles, in addition to the GNU tar
@@ -1979,9 +1925,7 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :class:`tempfile.NamedTemporaryFile` class usually deletes 
   the temporary file it created when the file is closed.  This 
   behaviour can now be changed by passing ``delete=False`` to the 
-  constructor.  (Contributed by Damien Miller.)
-
-  .. Patch #1537850
+  constructor.  (Contributed by Damien Miller; :issue:`1537850`.)
 
   A new class, :class:`SpooledTemporaryFile`, behaves like 
   a temporary file but stores its data in memory until a maximum size is 
@@ -1991,9 +1935,7 @@ complete list of changes, or look through the CVS logs for all the details.
   The :class:`NamedTemporaryFile` and :class:`SpooledTemporaryFile` classes
   both work as context managers, so you can write 
   ``with tempfile.NamedTemporaryFile() as tmp: ...``.
-  (Contributed by Alexander Belopolsky.)
-
-  .. Issue #2021
+  (Contributed by Alexander Belopolsky; :issue:`2021`.)
 
 * The :mod:`test.test_support` module now contains a
   :func:`EnvironmentVarGuard`
@@ -2030,9 +1972,7 @@ complete list of changes, or look through the CVS logs for all the details.
        whitespace.
     >>> 
 
-  (Contributed by Dwayne Bailey.)
-
-  .. Patch #1581073
+  (Contributed by Dwayne Bailey; :issue:`1581073`.)
 
 * The :mod:`timeit` module now accepts callables as well as strings 
   for the statement being timed and for the setup code.
@@ -2040,9 +1980,8 @@ complete list of changes, or look through the CVS logs for all the details.
   :class:`Timer` instances: 
   ``repeat(stmt, setup, time, repeat, number)`` and 
   ``timeit(stmt, setup, time, number)`` create an instance and call
-  the corresponding method. (Contributed by Erik Demaine.)
-
-  .. Patch #1533909
+  the corresponding method. (Contributed by Erik Demaine;
+  :issue:`1533909`.)
 
 * An optional ``timeout`` parameter was added to the
   :func:`urllib.urlopen` function and the
@@ -2065,9 +2004,7 @@ complete list of changes, or look through the CVS logs for all the details.
   :attr:`allow_reuse_address` attribute before calling the 
   :meth:`server_bind` and :meth:`server_activate` methods to 
   open the socket and begin listening for connections.
-  (Contributed by Peter Parente.)
-
-  .. Patch 1599845
+  (Contributed by Peter Parente; :issue:`1599845`.)
 
   :class:`SimpleXMLRPCServer` also has a :attr:`_send_traceback_header`
   attribute; if true, the exception and formatted traceback are returned 
@@ -2090,9 +2027,7 @@ complete list of changes, or look through the CVS logs for all the details.
     # Unpack all the files in the archive.
     z.extractall()
 
-  (Contributed by Alan McIntyre.)
-
-  .. Patch 467924
+  (Contributed by Alan McIntyre; :issue:`467924`.)
 
 .. ======================================================================
 .. whole new modules get described in subsections here
@@ -2178,9 +2113,12 @@ Changes to Python's build process and to the C API include:
 * The BerkeleyDB module now has a C API object, available as 
   ``bsddb.db.api``.   This object can be used by other C extensions
   that wish to use the :mod:`bsddb` module for their own purposes.
-  (Contributed by Duncan Grisby.)
+  (Contributed by Duncan Grisby; :issue:`1551895`.)
 
-  .. Patch 1551895
+* The new buffer interface, previously described in 
+  `the PEP 3118 section <#pep-3118-revised-buffer-protocol>`__,
+  adds :cfunc:`PyObject_GetBuffer` and :cfunc:`PyObject_ReleaseBuffer`,
+  as well as a few other functions.
 
 * Python's use of the C stdio library is now thread-safe, or at least
   as thread-safe as the underlying library is.  A long-standing potential
@@ -2195,6 +2133,14 @@ Changes to Python's build process and to the C API include:
   immediately after the GIL is re-acquired.
   (Contributed by Antoine Pitrou and Gregory P. Smith.)
 
+* Importing modules simultaneously in two different threads no longer
+  deadlocks; it will now raise an :exc:`ImportError`.  A new API
+  function, :cfunc:`PyImport_ImportModuleNoBlock`, will look for a
+  module in ``sys.modules`` first, then try to import it after
+  acquiring an import lock.  If the import lock is held by another
+  thread, the :exc:`ImportError` is raised.
+  (Contributed by Christian Heimes.)
+
 * Several functions return information about the platform's 
   floating-point support.  :cfunc:`PyFloat_GetMax` returns
   the maximum representable floating point value,
@@ -2204,16 +2150,12 @@ Changes to Python's build process and to the C API include:
   ``"mant_dig"`` (number of digits in the mantissa), ``"epsilon"``
   (smallest difference between 1.0 and the next largest value
   representable), and several others.
-  (Contributed by Christian Heimes.)
-
-  .. Issue 1534
+  (Contributed by Christian Heimes; :issue:`1534`.)
 
 * Python's C API now includes two functions for case-insensitive string
   comparisons, ``PyOS_stricmp(char*, char*)``
   and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
-  (Contributed by Christian Heimes.)
-
-  .. Issue 1635
+  (Contributed by Christian Heimes; :issue:`1635`.)
 
 * Many C extensions define their own little macro for adding 
   integers and strings to the module's dictionary in the 
@@ -2229,14 +2171,11 @@ Changes to Python's build process and to the C API include:
   :cmacro:`Py_Refcnt()` became :cmacro:`Py_REFCNT()`.  
   The mixed-case macros are still available
   in Python 2.6 for backward compatibility.
-
-  .. Issue 1629
+  (:issue:`1629`)
 
 * Distutils now places C extensions it builds in a 
   different directory when running on a debug version of Python.
-  (Contributed by Collin Winter.)
-
-  .. Patch 1530959
+  (Contributed by Collin Winter; :issue:`1530959`.)
 
 * Several basic data types, such as integers and strings, maintain
   internal free lists of objects that can be re-used.  The data
@@ -2284,8 +2223,7 @@ Port-Specific Changes: Windows
   exposing the :func:`DisableReflectionKey`, :func:`EnableReflectionKey`,
   and :func:`QueryReflectionKey` functions, which enable and disable
   registry reflection for 32-bit processes running on 64-bit systems.
-  
-  .. Patch 1753245
+  (:issue:`1753245`)
 
 * The new default compiler on Windows is Visual Studio 2008 (VS 9.0). The 
   build directories for Visual Studio 2003 (VS7.1) and 2005 (VS8.0)
@@ -2346,21 +2284,21 @@ that may require changes to your code:
   the implementation now explicitly checks for this case and raises 
   an :exc:`ImportError`.
 
+* C API: the :cfunc:`PyImport_Import` and :cfunc:`PyImport_ImportModule`
+  functions now default to absolute imports, not relative imports.  
+  This will affect C extensions that import other modules.
+
 * The :mod:`socket` module exception :exc:`socket.error` now inherits
   from :exc:`IOError`.  Previously it wasn't a subclass of
   :exc:`StandardError` but now it is, through :exc:`IOError`.
-  (Implemented by Gregory P. Smith.)
-
-  .. Issue 1706815
+  (Implemented by Gregory P. Smith; :issue:`1706815`.)
 
 * The :mod:`xmlrpclib` module no longer automatically converts
   :class:`datetime.date` and :class:`datetime.time` to the 
   :class:`xmlrpclib.DateTime` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
   :mod:`xmlrpclib` should convert :class:`date` and :class:`time` 
-  instances.
-
-  .. Issue 1330538
+  instances. (:issue:`1330538`)
 
 * (3.0-warning mode) The :class:`Exception` class now warns 
   when accessed using slicing or index access; having 
@@ -2384,5 +2322,6 @@ Acknowledgements
 ================
 
 The author would like to thank the following people for offering suggestions,
-corrections and assistance with various drafts of this article: Jim Jewett.
+corrections and assistance with various drafts of this article: 
+Georg Brandl, Jim Jewett.
 

@@ -121,6 +121,7 @@ class UUFileTest(unittest.TestCase):
     def test_encode(self):
         fin = fout = None
         try:
+            test_support.unlink(self.tmpin)
             fin = open(self.tmpin, 'wb')
             fin.write(plaintext)
             fin.close()
@@ -150,6 +151,7 @@ class UUFileTest(unittest.TestCase):
     def test_decode(self):
         f = None
         try:
+            test_support.unlink(self.tmpin)
             f = open(self.tmpin, 'wb')
             f.write(encodedtextwrapped(0o644, self.tmpout))
             f.close()

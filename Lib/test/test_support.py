@@ -354,14 +354,26 @@ class WarningMessage(object):
         self.filename = None
         self.lineno = None
 
-    def _showwarning(self, message, category, filename, lineno, file=None):
+    def _showwarning(self, message, category, filename, lineno, file=None,
+                        line=None):
         self.message = message
         self.category = category
         self.filename = filename
         self.lineno = lineno
+        self.line = line
+
+    def reset(self):
+        self._showwarning(*((None,)*6))
+
+    def __str__(self):
+        return ("{message : %r, category : %r, filename : %r, lineno : %s, "
+                    "line : %r}" % (self.message,
+                            self.category.__name__ if self.category else None,
+                            self.filename, self.lineno, self.line))
+
 
 @contextlib.contextmanager
-def catch_warning():
+def catch_warning(module=warnings):
     """
     Guard the warnings filter from being permanently changed and record the
     data of the last warning that has been issued.
@@ -372,15 +384,15 @@ def catch_warning():
             warnings.warn("foo")
             assert str(w.message) == "foo"
     """
-    warning = WarningMessage()
-    original_filters = warnings.filters[:]
-    original_showwarning = warnings.showwarning
-    warnings.showwarning = warning._showwarning
+    warning_obj = WarningMessage()
+    original_filters = module.filters[:]
+    original_showwarning = module.showwarning
+    module.showwarning = warning_obj._showwarning
     try:
-        yield warning
+        yield warning_obj
     finally:
-        warnings.showwarning = original_showwarning
-        warnings.filters = original_filters
+        module.showwarning = original_showwarning
+        module.filters = original_filters
 
 class EnvironmentVarGuard(object):
 
@@ -542,7 +554,7 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
     'minsize' is the minimum useful size for the test (in arbitrary,
     test-interpreted units.) 'memuse' is the number of 'bytes per size' for
     the test, or a good estimate of it. 'overhead' specifies fixed overhead,
-    independant of the testsize, and defaults to 5Mb.
+    independent of the testsize, and defaults to 5Mb.
 
     The decorator tries to guess a good value for 'size' and passes it to
     the decorated test function. If minsize * memuse is more than the
