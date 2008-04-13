@@ -1383,6 +1383,20 @@ benchmark around XX% faster than Python 2.5.
 
 .. ======================================================================
 
+.. _interactive:
+
+Interactive Interpreter Changes
+-------------------------------
+
+Two command-line options have been reserved for use by other Python
+implementations.  The :option:`-J` switch has been reserved for use by
+Jython for Jython-specific options, such as ones that are passed to
+the underlying JVM.  :option:`-X` has been reserved for options
+specific to a particular implementation of Python such as CPython,
+Jython, or IronPython.  If either option is used with Python 2.6, the
+interpreter will report that the option isn't currently used.
+
+.. ======================================================================
 
 New, Improved, and Deprecated Modules
 =====================================
