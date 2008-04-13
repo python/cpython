@@ -44,7 +44,7 @@ get_warnings_attr(const char *attr)
     int result;
 
     if (warnings_str == NULL) {
-        warnings_str = PyString_FromString("warnings");
+        warnings_str = PyString_InternFromString("warnings");
         if (warnings_str == NULL)
             return NULL;
     }
@@ -605,12 +605,12 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *returned;
 
         if (get_source_name == NULL) {
-            get_source_name = PyString_FromString("get_source");
+            get_source_name = PyString_InternFromString("get_source");
             if (!get_source_name)
                 return NULL;
         }
         if (splitlines_name == NULL) {
-            splitlines_name = PyString_FromString("splitlines");
+            splitlines_name = PyString_InternFromString("splitlines");
             if (!splitlines_name)
                 return NULL;
         }
