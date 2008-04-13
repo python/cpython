@@ -8,9 +8,10 @@ from test import test_support
 
 import warning_tests
 
+import warnings as original_warnings
+
 sys.modules['_warnings'] = 0
-if 'warnings' in sys.modules:
-    del sys.modules['warnings']
+del sys.modules['warnings']
 
 import warnings as py_warnings
 
@@ -18,6 +19,9 @@ del sys.modules['_warnings']
 del sys.modules['warnings']
 
 import warnings as c_warnings
+
+sys.modules['warnings'] = original_warnings
+
 
 @contextmanager
 def warnings_state(module):
@@ -40,16 +44,32 @@ def warnings_state(module):
         warning_tests.warnings = original_warnings
 
 
-class FilterTests(unittest.TestCase):
+class BaseTest(unittest.TestCase):
 
-    """Testing the filtering functionality."""
+    """Basic bookkeeping required for testing."""
 
     def setUp(self):
-        global __warningregistry__
-        try:
-            __warningregistry__.clear()
-        except NameError:
-            pass
+        # The __warningregistry__ needs to be in a pristine state for tests
+        # to work properly.
+        if '__warningregistry__' in globals():
+            del globals()['__warningregistry__']
+        if hasattr(warning_tests, '__warningregistry__'):
+            del warning_tests.__warningregistry__
+        if hasattr(sys, '__warningregistry__'):
+            del sys.__warningregistry__
+        # The 'warnings' module must be explicitly set so that the proper
+        # interaction between _warnings and 'warnings' can be controlled.
+        sys.modules['warnings'] = self.module
+        super(BaseTest, self).setUp()
+
+    def tearDown(self):
+        sys.modules['warnings'] = original_warnings
+        super(BaseTest, self).tearDown()
+
+
+class FilterTests(object):
+
+    """Testing the filtering functionality."""
 
     def test_error(self):
         with test_support.catch_warning(self.module) as w:
@@ -164,10 +184,10 @@ class FilterTests(unittest.TestCase):
             self.assertEqual(str(w.message), text)
             self.assert_(w.category is UserWarning)
 
-class CFilterTests(FilterTests):
+class CFilterTests(BaseTest, FilterTests):
     module = c_warnings
 
-class PyFilterTests(FilterTests):
+class PyFilterTests(BaseTest, FilterTests):
     module = py_warnings
 
 
@@ -210,10 +230,10 @@ class WarnTests(unittest.TestCase):
                 self.assertEqual(os.path.basename(w.filename), "sys")
 
 
-class CWarnTests(WarnTests):
+class CWarnTests(BaseTest, WarnTests):
     module = c_warnings
 
-class PyWarnTests(WarnTests):
+class PyWarnTests(BaseTest, WarnTests):
     module = py_warnings
 
 
@@ -232,14 +252,14 @@ class WCmdLineTests(unittest.TestCase):
             self.module._setoption('error::Warning::0')
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
 
-class CWCmdLineTests(WCmdLineTests):
+class CWCmdLineTests(BaseTest, WCmdLineTests):
     module = c_warnings
 
-class PyWCmdLineTests(WCmdLineTests):
+class PyWCmdLineTests(BaseTest, WCmdLineTests):
     module = py_warnings
 
 
-class _WarningsTests(unittest.TestCase):
+class _WarningsTests(BaseTest):
 
     """Tests specific to the _warnings module."""
 
@@ -362,29 +382,22 @@ class WarningsDisplayTests(unittest.TestCase):
                                 file_object, expected_file_line)
         self.failUnlessEqual(expect, file_object.getvalue())
 
-class CWarningsDisplayTests(WarningsDisplayTests):
+class CWarningsDisplayTests(BaseTest, WarningsDisplayTests):
     module = c_warnings
 
-class PyWarningsDisplayTests(WarningsDisplayTests):
+class PyWarningsDisplayTests(BaseTest, WarningsDisplayTests):
     module = py_warnings
 
 
 def test_main():
-    # Obscure hack so that this test passes after reloads or repeated calls
-    # to test_main (regrtest -R).
-    if '__warningregistry__' in globals():
-        del globals()['__warningregistry__']
-    if hasattr(warning_tests, '__warningregistry__'):
-        del warning_tests.__warningregistry__
-    if hasattr(sys, '__warningregistry__'):
-        del sys.__warningregistry__
-    test_support.run_unittest(CFilterTests, PyFilterTests,
-                                CWarnTests, PyWarnTests,
+    test_support.run_unittest(CFilterTests,
+                                PyFilterTests,
+                                CWarnTests,
+                                PyWarnTests,
                                 CWCmdLineTests, PyWCmdLineTests,
                                 _WarningsTests,
                                 CWarningsDisplayTests, PyWarningsDisplayTests,
                              )
-
 
 
 if __name__ == "__main__":
