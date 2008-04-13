@@ -328,7 +328,10 @@ class _WarningsTests(BaseTest):
                              "Too many newlines in %r" % result)
         first_line, second_line = result.split('\n', 1)
         expected_file = os.path.splitext(warning_tests.__file__)[0] + '.py'
-        path, line, warning_class, message = first_line.split(':')
+        first_line_parts = first_line.split(':')
+        self.assertEquals(len(first_line_parts), 4,
+                                "%r does not split into 4 parts" % first_line)
+        path, line, warning_class, message = first_line_parts
         line = int(line)
         self.failUnlessEqual(expected_file, path)
         self.failUnlessEqual(warning_class, ' ' + UserWarning.__name__)
