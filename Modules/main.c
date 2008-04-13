@@ -390,7 +390,7 @@ Py_Main(int argc, char **argv)
 			skipfirstline = 1;
 			break;
 
-		/* case 'X': reserved for non-standard arguments */
+		/* case 'X': reserved for implementation-specific arguments */
 
 		case 'U':
 			Py_UnicodeFlag++;
