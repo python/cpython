@@ -1383,7 +1383,7 @@ benchmark around XX% faster than Python 2.5.
 
 .. ======================================================================
 
-.. _interactive:
+.. _new-26-interactive:
 
 Interactive Interpreter Changes
 -------------------------------
