@@ -736,7 +736,13 @@ There's also a ``__future__`` import that causes all string literals
 to become Unicode strings.  This means that ``\u`` escape sequences 
 can be used to include Unicode characters.
 
-XXX give example
+    from __future__ import unicode_literals
+
+    s = ('\u751f\u3080\u304e\u3000\u751f\u3054'
+         '\u3081\u3000\u751f\u305f\u307e\u3054')
+
+    print len(s)               # 12 Unicode characters
+
 
 .. seealso::
 
