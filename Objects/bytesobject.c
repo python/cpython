@@ -52,27 +52,27 @@ _getbytevalue(PyObject* arg, int *value)
 static int
 bytes_getbuffer(PyBytesObject *obj, Py_buffer *view, int flags)
 {
-        int ret;
-        void *ptr;
-        if (view == NULL) {
-                obj->ob_exports++;
-                return 0;
-        }
-        if (obj->ob_bytes == NULL)
-                ptr = "";
-        else
-                ptr = obj->ob_bytes;
-        ret = PyBuffer_FillInfo(view, ptr, Py_SIZE(obj), 0, flags);
-        if (ret >= 0) {
-                obj->ob_exports++;
-        }
-        return ret;
+    int ret;
+    void *ptr;
+    if (view == NULL) {
+        obj->ob_exports++;
+        return 0;
+    }
+    if (obj->ob_bytes == NULL)
+        ptr = "";
+    else
+        ptr = obj->ob_bytes;
+    ret = PyBuffer_FillInfo(view, ptr, Py_SIZE(obj), 0, flags);
+    if (ret >= 0) {
+        obj->ob_exports++;
+    }
+    return ret;
 }
 
 static void
 bytes_releasebuffer(PyBytesObject *obj, Py_buffer *view)
 {
-        obj->ob_exports--;
+    obj->ob_exports--;
 }
 
 static Py_ssize_t
