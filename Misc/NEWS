@@ -29,6 +29,9 @@ Extensions Modules
 Library
 -------
 
+- Issue #2616: The ctypes.pointer() and ctypes.POINTER() functions are
+  now implemented in C for better performance.
+
 - Issue #2408: The ``_types`` module, which was used as in implementation
   detail of the public ``types`` module, has been removed and replaced by pure
   python code.
