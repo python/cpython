@@ -2585,7 +2585,7 @@ end of B.");
 static PyObject *
 bytes_extend(PyBytesObject *self, PyObject *arg)
 {
-    PyObject *it, *item, *tmp, *res;
+    PyObject *it, *item, *bytes_obj;
     Py_ssize_t buf_size = 0, len = 0;
     int value;
     char *buf;
@@ -2605,40 +2605,46 @@ bytes_extend(PyBytesObject *self, PyObject *arg)
     /* Try to determine the length of the argument. 32 is abitrary. */
     buf_size = _PyObject_LengthHint(arg, 32);
 
-    buf = (char *)PyMem_Malloc(buf_size * sizeof(char));
-    if (buf == NULL)
-        return PyErr_NoMemory();
+    bytes_obj = PyBytes_FromStringAndSize(NULL, buf_size);
+    if (bytes_obj == NULL)
+        return NULL;
+    buf = PyBytes_AS_STRING(bytes_obj);
 
     while ((item = PyIter_Next(it)) != NULL) {
         if (! _getbytevalue(item, &value)) {
             Py_DECREF(item);
             Py_DECREF(it);
-            PyMem_Free(buf);
+            Py_DECREF(bytes_obj);
             return NULL;
         }
         buf[len++] = value;
         Py_DECREF(item);
+
         if (len >= buf_size) {
-            char *new_buf;
             buf_size = len + (len >> 1) + 1;
-            new_buf = (char *)PyMem_Realloc(buf, buf_size * sizeof(char));
-            if (new_buf == NULL) {
+            if (PyBytes_Resize((PyObject *)bytes_obj, buf_size) < 0) {
                 Py_DECREF(it);
-                PyMem_Free(buf);
-                return PyErr_NoMemory();
+                Py_DECREF(bytes_obj);
+                return NULL;
             }
-            buf = new_buf;
+            /* Recompute the `buf' pointer, since the resizing operation may
+               have invalidated it. */
+            buf = PyBytes_AS_STRING(bytes_obj);
         }
     }
     Py_DECREF(it);
 
-    /* XXX: Is possible to avoid a full copy of the buffer? */
-    tmp = PyBytes_FromStringAndSize(buf, len);
-    res = bytes_extend(self, tmp);
-    Py_DECREF(tmp);
-    PyMem_Free(buf);
+    /* Resize down to exact size. */
+    if (PyBytes_Resize((PyObject *)bytes_obj, len) < 0) {
+        Py_DECREF(bytes_obj);
+        return NULL;
+    }
 
-    return res;
+    if (bytes_setslice(self, Py_SIZE(self), Py_SIZE(self), bytes_obj) == -1)
+        return NULL;
+    Py_DECREF(bytes_obj);
+
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(pop__doc__,
