@@ -1,5 +1,4 @@
-"""
-The io module provides the Python interfaces to stream handling. The
+"""The io module provides the Python interfaces to stream handling. The
 builtin open function is defined in this module.
 
 At the top of the I/O hierarchy is the abstract base class IOBase. It
@@ -78,8 +77,7 @@ class BlockingIOError(IOError):
 
 def open(file, mode="r", buffering=None, encoding=None, errors=None,
          newline=None, closefd=True):
-    r"""
-    Open file and return a stream. If the file cannot be opened, an
+    r"""Open file and return a stream. If the file cannot be opened, an
     IOError is raised.
 
     file is either a string giving the name (and the path if the file
@@ -287,8 +285,7 @@ class UnsupportedOperation(ValueError, IOError):
 
 class IOBase(metaclass=abc.ABCMeta):
 
-    """
-    The abstract base class for all I/O classes, acting on streams of
+    """The abstract base class for all I/O classes, acting on streams of
     bytes. There is no public constructor.
 
     This class provides dummy implementations for many methods that
@@ -793,7 +790,7 @@ class BytesIO(BufferedIOBase):
         return bytes(b)
 
     def read1(self, n):
-        """In BytesIO, this is the same as read.
+        """This is the same as read.
         """
         return self.read(n)
 

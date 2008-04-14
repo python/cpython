@@ -437,12 +437,12 @@ Buffered Streams
 
    .. method:: read1()
 
-      In :class:`BytesIO`, this is the same as :meth:`read()`.
+      In :class:`BytesIO`, this is the same as :meth:`read`.
 
    .. method:: truncate([pos])
 
       Truncate the file to at most *pos* bytes.  *pos* defaults to the current
-      stream position, as returned by :meth:`tell()`.
+      stream position, as returned by :meth:`tell`.
 
 
 .. class:: BufferedReader(raw[, buffer_size])
