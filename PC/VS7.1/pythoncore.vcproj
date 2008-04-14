@@ -413,6 +413,9 @@
 			RelativePath="..\..\Modules\arraymodule.c">
 		</File>
 		<File
+			RelativePath="..\..\Python\_warnings.c">
+		</File>
+		<File
 			RelativePath="..\..\Python\asdl.c">
 		</File>
 		<File

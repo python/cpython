@@ -197,6 +197,10 @@ SOURCE=..\..\Modules\arraymodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\_warnings.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\asdl.c
 # End Source File
 # Begin Source File
