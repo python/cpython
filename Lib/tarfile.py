@@ -767,7 +767,7 @@ class ExFileObject(object):
         self.fileobj = _FileInFile(tarfile.fileobj,
                                    tarinfo.offset_data,
                                    tarinfo.size,
-                                   getattr(tarinfo, "sparse", None))
+                                   tarinfo.sparse)
         self.name = tarinfo.name
         self.mode = "r"
         self.closed = False
@@ -906,6 +906,12 @@ class TarInfo(object):
        usually created internally.
     """
 
+    __slots__ = ("name", "mode", "uid", "gid", "size", "mtime",
+                 "chksum", "type", "linkname", "uname", "gname",
+                 "devmajor", "devminor",
+                 "offset", "offset_data", "pax_headers", "sparse",
+                 "tarfile", "_sparse_structs", "_link_target")
+
     def __init__(self, name=""):
         """Construct a TarInfo object. name is the optional name
            of the member.
@@ -927,6 +933,7 @@ class TarInfo(object):
         self.offset = 0         # the tar header starts here
         self.offset_data = 0    # the file's data starts here
 
+        self.sparse = None      # sparse member information
         self.pax_headers = {}   # pax header information
 
     # In pax headers the "name" and "linkname" field are called
@@ -1181,7 +1188,6 @@ class TarInfo(object):
             raise HeaderError("bad checksum")
 
         obj = cls()
-        obj.buf = buf
         obj.name = nts(buf[0:100], encoding, errors)
         obj.mode = nti(buf[100:108])
         obj.uid = nti(buf[108:116])
@@ -1201,6 +1207,24 @@ class TarInfo(object):
         # file with a trailing slash.
         if obj.type == AREGTYPE and obj.name.endswith("/"):
             obj.type = DIRTYPE
+
+        # The old GNU sparse format occupies some of the unused
+        # space in the buffer for up to 4 sparse structures.
+        # Save the them for later processing in _proc_sparse().
+        if obj.type == GNUTYPE_SPARSE:
+            pos = 386
+            structs = []
+            for i in range(4):
+                try:
+                    offset = nti(buf[pos:pos + 12])
+                    numbytes = nti(buf[pos + 12:pos + 24])
+                except ValueError:
+                    break
+                structs.append((offset, numbytes))
+                pos += 24
+            isextended = bool(buf[482])
+            origsize = nti(buf[483:495])
+            obj._sparse_structs = (structs, isextended, origsize)
 
         # Remove redundant slashes from directories.
         if obj.isdir():
@@ -1288,31 +1312,11 @@ class TarInfo(object):
     def _proc_sparse(self, tarfile):
         """Process a GNU sparse header plus extra headers.
         """
-        buf = self.buf
-        sp = _ringbuffer()
-        pos = 386
-        lastpos = 0
-        realpos = 0
-        # There are 4 possible sparse structs in the
-        # first header.
-        for i in range(4):
-            try:
-                offset = nti(buf[pos:pos + 12])
-                numbytes = nti(buf[pos + 12:pos + 24])
-            except ValueError:
-                break
-            if offset > lastpos:
-                sp.append(_hole(lastpos, offset - lastpos))
-            sp.append(_data(offset, numbytes, realpos))
-            realpos += numbytes
-            lastpos = offset + numbytes
-            pos += 24
+        # We already collected some sparse structures in frombuf().
+        structs, isextended, origsize = self._sparse_structs
+        del self._sparse_structs
 
-        isextended = bool(buf[482])
-        origsize = nti(buf[483:495])
-
-        # If the isextended flag is given,
-        # there are extra headers to process.
+        # Collect sparse structures from extended header blocks.
         while isextended:
             buf = tarfile.fileobj.read(BLOCKSIZE)
             pos = 0
@@ -1322,18 +1326,23 @@ class TarInfo(object):
                     numbytes = nti(buf[pos + 12:pos + 24])
                 except ValueError:
                     break
-                if offset > lastpos:
-                    sp.append(_hole(lastpos, offset - lastpos))
-                sp.append(_data(offset, numbytes, realpos))
-                realpos += numbytes
-                lastpos = offset + numbytes
+                structs.append((offset, numbytes))
                 pos += 24
             isextended = bool(buf[504])
 
+        # Transform the sparse structures to something we can use
+        # in ExFileObject.
+        self.sparse = _ringbuffer()
+        lastpos = 0
+        realpos = 0
+        for offset, numbytes in structs:
+            if offset > lastpos:
+                self.sparse.append(_hole(lastpos, offset - lastpos))
+            self.sparse.append(_data(offset, numbytes, realpos))
+            realpos += numbytes
+            lastpos = offset + numbytes
         if lastpos < origsize:
-            sp.append(_hole(lastpos, origsize - lastpos))
-
-        self.sparse = sp
+            self.sparse.append(_hole(lastpos, origsize - lastpos))
 
         self.offset_data = tarfile.fileobj.tell()
         tarfile.offset = self.offset_data + self._block(self.size)
