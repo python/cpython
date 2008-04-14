@@ -342,6 +342,7 @@ extern PyObject *CData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t in
 /* XXX better name needed! */
 extern int IsSimpleSubType(PyObject *obj);
 
+extern PyObject *_pointer_type_cache;
 
 #ifdef MS_WIN32
 extern PyObject *ComError;

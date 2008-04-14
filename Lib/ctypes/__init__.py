@@ -239,27 +239,7 @@ _check_size(c_void_p)
 class c_bool(_SimpleCData):
     _type_ = "?"
 
-# This cache maps types to pointers to them.
-_pointer_type_cache = {}
-
-def POINTER(cls):
-    try:
-        return _pointer_type_cache[cls]
-    except KeyError:
-        pass
-    if type(cls) is str:
-        klass = type(_Pointer)("LP_%s" % cls,
-                               (_Pointer,),
-                               {})
-        _pointer_type_cache[id(klass)] = klass
-        return klass
-    else:
-        name = "LP_%s" % cls.__name__
-        klass = type(_Pointer)(name,
-                               (_Pointer,),
-                               {'_type_': cls})
-        _pointer_type_cache[cls] = klass
-    return klass
+from _ctypes import POINTER, pointer, _pointer_type_cache
 
 try:
     from _ctypes import set_conversion_mode
@@ -308,10 +288,6 @@ def SetPointerType(pointer, cls):
     pointer.set_type(cls)
     _pointer_type_cache[cls] = pointer
     del _pointer_type_cache[id(pointer)]
-
-
-def pointer(inst):
-    return POINTER(type(inst))(inst)
 
 # XXX Deprecated
 def ARRAY(typ, len):
