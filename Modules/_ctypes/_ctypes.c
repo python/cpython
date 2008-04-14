@@ -123,6 +123,10 @@ bytes(cdata)
 #include "ctypes.h"
 
 PyObject *PyExc_ArgError;
+
+/* This dict maps ctypes types to POINTER types */
+PyObject *_pointer_type_cache;
+
 static PyTypeObject Simple_Type;
 
 /* a callable object used for unpickling */
@@ -4993,6 +4997,12 @@ init_ctypes(void)
 	m = Py_InitModule3("_ctypes", module_methods, module_docs);
 	if (!m)
 		return;
+
+	_pointer_type_cache = PyDict_New();
+	if (_pointer_type_cache == NULL)
+		return;
+
+	PyModule_AddObject(m, "_pointer_type_cache", (PyObject *)_pointer_type_cache);
 
 	_unpickle = PyObject_GetAttrString(m, "_unpickle");
 	if (_unpickle == NULL)
