@@ -424,6 +424,9 @@ when the function is called.
 The function definition does not execute the function body; this gets executed
 only when the function is called.
 
+.. index::
+  statement: @
+
 A function definition may be wrapped by one or more :term:`decorator` expressions.
 Decorator expressions are evaluated when the function is defined, in the scope
 that contains the function definition.  The result must be a callable, which is
@@ -463,6 +466,10 @@ as the default, and explicitly test for it in the body of the function, e.g.::
            penguin = []
        penguin.append("property of the zoo")
        return penguin
+
+.. index::
+  statement: *
+  statement: **
 
 Function call semantics are described in more detail in section :ref:`calls`. A
 function call always assigns values to all parameters mentioned in the parameter
