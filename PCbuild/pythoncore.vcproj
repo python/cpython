@@ -1587,6 +1587,10 @@
 			Name="Python"
 			>
 			<File
+				RelativePath="..\Python\_warnings.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Python\asdl.c"
 				>
 			</File>
@@ -1746,10 +1750,6 @@
 				RelativePath="..\Python\traceback.c"
 				>
 			</File>
-                        <File
-                                RelativePath="..\Python\_warnings.c"
-                                >
-                        </File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
