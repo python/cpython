@@ -572,7 +572,7 @@ concise, *formatted*) in different styles; some are more readable than others.
 Making it easy for others to read your code is always a good idea, and adopting
 a nice coding style helps tremendously for that.
 
-For Python, :pep:`8` has emerged as the style guide that most projects adher to;
+For Python, :pep:`8` has emerged as the style guide that most projects adhere to;
 it promotes a very readable and eye-pleasing coding style.  Every Python
 developer should read it at some point; here are the most important points
 extracted for you:
