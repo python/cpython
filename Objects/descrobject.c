@@ -1116,7 +1116,7 @@ static PyMemberDef property_members[] = {
 PyDoc_STRVAR(getter_doc,
 	     "Descriptor to change the getter on a property.");
 
-PyObject *
+static PyObject *
 property_getter(PyObject *self, PyObject *getter)
 {
 	return property_copy(self, getter, NULL, NULL, NULL);
@@ -1126,7 +1126,7 @@ property_getter(PyObject *self, PyObject *getter)
 PyDoc_STRVAR(setter_doc,
 	     "Descriptor to change the setter on a property.");
 
-PyObject *
+static PyObject *
 property_setter(PyObject *self, PyObject *setter)
 {
 	return property_copy(self, NULL, setter, NULL, NULL);
@@ -1136,7 +1136,7 @@ property_setter(PyObject *self, PyObject *setter)
 PyDoc_STRVAR(deleter_doc,
 	     "Descriptor to change the deleter on a property.");
 
-PyObject *
+static PyObject *
 property_deleter(PyObject *self, PyObject *deleter)
 {
 	return property_copy(self, NULL, NULL, deleter, NULL);
