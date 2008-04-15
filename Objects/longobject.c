@@ -99,20 +99,27 @@ PyObject *
 PyLong_FromLong(long ival)
 {
 	PyLongObject *v;
+        unsigned long abs_ival;
 	unsigned long t;  /* unsigned so >> doesn't propagate sign bit */
 	int ndigits = 0;
 	int negative = 0;
 
 	if (ival < 0) {
-		ival = -ival;
+		/* if LONG_MIN == -LONG_MAX-1 (true on most platforms) then
+		   ANSI C says that the result of -ival is undefined when ival
+		   == LONG_MIN.  Hence the following workaround. */
+		abs_ival = (unsigned long)(-1-ival) + 1;
 		negative = 1;
+	}
+	else {
+		abs_ival = (unsigned long)ival;
 	}
 
 	/* Count the number of Python digits.
 	   We used to pick 5 ("big enough for anything"), but that's a
 	   waste of time and space given that 5*15 = 75 bits are rarely
 	   needed. */
-	t = (unsigned long)ival;
+	t = abs_ival;
 	while (t) {
 		++ndigits;
 		t >>= PyLong_SHIFT;
@@ -121,7 +128,7 @@ PyLong_FromLong(long ival)
 	if (v != NULL) {
 		digit *p = v->ob_digit;
 		v->ob_size = negative ? -ndigits : ndigits;
-		t = (unsigned long)ival;
+		t = abs_ival;
 		while (t) {
 			*p++ = (digit)(t & PyLong_MASK);
 			t >>= PyLong_SHIFT;
@@ -830,20 +837,26 @@ PyObject *
 PyLong_FromLongLong(PY_LONG_LONG ival)
 {
 	PyLongObject *v;
+	unsigned PY_LONG_LONG abs_ival;
 	unsigned PY_LONG_LONG t;  /* unsigned so >> doesn't propagate sign bit */
 	int ndigits = 0;
 	int negative = 0;
 
 	if (ival < 0) {
-		ival = -ival;
+		/* avoid signed overflow on negation;  see comments
+		   in PyLong_FromLong above. */
+		abs_ival = (unsigned PY_LONG_LONG)(-1-ival) + 1;
 		negative = 1;
+	}
+	else {
+		abs_ival = (unsigned PY_LONG_LONG)ival;
 	}
 
 	/* Count the number of Python digits.
 	   We used to pick 5 ("big enough for anything"), but that's a
 	   waste of time and space given that 5*15 = 75 bits are rarely
 	   needed. */
-	t = (unsigned PY_LONG_LONG)ival;
+	t = abs_ival;
 	while (t) {
 		++ndigits;
 		t >>= PyLong_SHIFT;
@@ -852,7 +865,7 @@ PyLong_FromLongLong(PY_LONG_LONG ival)
 	if (v != NULL) {
 		digit *p = v->ob_digit;
 		Py_SIZE(v) = negative ? -ndigits : ndigits;
-		t = (unsigned PY_LONG_LONG)ival;
+		t = abs_ival;
 		while (t) {
 			*p++ = (digit)(t & PyLong_MASK);
 			t >>= PyLong_SHIFT;
