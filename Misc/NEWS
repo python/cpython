@@ -29,6 +29,9 @@ Extensions Modules
 Library
 -------
 
+- Issue #2439: Added new function pkgutil.get_data(), which is a
+  convenience wrapper for the PEP 302 get_data() API.
+
 - Issue #2616: The ctypes.pointer() and ctypes.POINTER() functions are
   now implemented in C for better performance.
 
