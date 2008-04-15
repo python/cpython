@@ -380,7 +380,7 @@ Py_Main(int argc, wchar_t **argv)
 			skipfirstline = 1;
 			break;
 
-		/* case 'X': reserved for non-standard arguments */
+		/* case 'X': reserved for implementation-specific arguments */
 
 		case 'h':
 		case '?':

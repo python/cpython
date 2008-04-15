@@ -61,7 +61,7 @@ get_warnings_attr(const char *attr)
 }
 
 
-PyObject *
+static PyObject *
 get_once_registry(void)
 {
     PyObject *registry;
@@ -378,16 +378,17 @@ warn_explicit(PyObject *category, PyObject *message,
             show_warning(filename, lineno, text, category, sourceline);
         }
         else {
-            PyObject *result;
+            PyObject *res;
             
-            result = PyObject_CallFunctionObjArgs(show_fxn, message, category,
+            res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
                                                     filename, lineno_obj,
                                                     Py_None,
                                                     sourceline ?
                                                         sourceline: Py_None,
                                                     NULL);
-            Py_XDECREF(result);
-            if (result == NULL)
+            Py_DECREF(show_fxn);
+            Py_XDECREF(res);
+            if (res == NULL)
                 goto cleanup;
         }
     }
