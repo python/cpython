@@ -825,7 +825,8 @@ their own implementations of buffering and text I/O.
 
    :pep:`3116` - New I/O
       PEP written by Daniel Stutzbach, Mike Verdone, and Guido van Rossum.
-      XXX code written by who?
+      Code by Guido van Rossum, Georg Brandl, Walter Doerwald,
+      Jeremy Hylton, Martin von Loewis, Tony Lownds, and others.
 
 .. ======================================================================
 
@@ -1095,8 +1096,6 @@ This is equivalent to::
     pass
 
   A = foo(bar(A))
-
-XXX need to find a good motivating example.    
 
 .. seealso::
 
@@ -1854,6 +1853,10 @@ complete list of changes, or look through the CVS logs for all the details.
   environments.  TIPC addresses are 4- or 5-tuples.
   (Contributed by Alberto Bertogli; :issue:`1646`.)
 
+  A new function, :func:`create_connection`, takes an address 
+  and connects to it using an optional timeout value, returning 
+  the connected socket object.
+
 * The base classes in the :mod:`SocketServer` module now support
   calling a :meth:`handle_timeout` method after a span of inactivity 
   specified by the server's :attr:`timeout` attribute.  (Contributed 
@@ -2042,14 +2045,20 @@ Improved SSL Support
 --------------------------------------------------
 
 Bill Janssen made extensive improvements to Python 2.6's support for
-SSL.
+the Secure Sockets Layer by adding a new module, :mod:`ssl`, on top of
+the `OpenSSL <http://www.openssl.org/>`__ library.  This new module
+provides more control over the protocol negotiated, the X.509
+certificates used, and has better support for writing SSL servers (as
+opposed to clients) in Python.  The existing SSL support in the
+:mod:`socket` module hasn't been removed and continues to work,
+though it will be removed in Python 3.0.
 
-XXX use ssl.sslsocket - subclass of socket.socket.
+To use the new module, first you must create a TCP connection in the
+usual way and then pass it to the :func:`ssl.wrap_socket` function.
+XXX describe parameters.
 
 XXX Can specify if certificate is required, and obtain certificate info
 by calling getpeercert method.
-
-XXX sslwrap() behaves like socket.ssl
 
 XXX Certain features require the OpenSSL package to be installed, notably
   the 'openssl' binary.
