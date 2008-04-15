@@ -544,3 +544,40 @@ def extend_path(path, name):
                 f.close()
 
     return path
+
+def get_data(package, resource):
+    """Get a resource from a package.
+
+    This is a wrapper round the PEP 302 loader get_data API. The package
+    argument should be the name of a package, in standard module format
+    (foo.bar). The resource argument should be in the form of a relative
+    filename, using '/' as the path separator. The parent directory name '..'
+    is not allowed, and nor is a rooted name (starting with a '/').
+
+    The function returns a binary string, which is the contents of the
+    specified resource.
+
+    For packages located in the filesystem, which have already been imported,
+    this is the rough equivalent of
+
+        d = os.path.dirname(sys.modules[package].__file__)
+        data = open(os.path.join(d, resource), 'rb').read()
+
+    If the package cannot be located or loaded, or it uses a PEP 302 loader
+    which does not support get_data(), then None is returned.
+    """
+
+    loader = get_loader(package)
+    if loader is None or not hasattr(loader, 'get_data'):
+        return None
+    mod = sys.modules.get(package) or loader.load_module(package)
+    if mod is None or not hasattr(mod, '__file__'):
+        return None
+
+    # Modify the resource name to be compatible with the loader.get_data
+    # signature - an os.path format "filename" starting with the dirname of
+    # the package's __file__
+    parts = resource.split('/')
+    parts.insert(0, os.path.dirname(mod.__file__))
+    resource_name = os.path.join(*parts)
+    return loader.get_data(resource_name)

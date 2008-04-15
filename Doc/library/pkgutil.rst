@@ -8,7 +8,7 @@
 
 .. versionadded:: 2.3
 
-This module provides a single function:
+This module provides functions to manipulate packages:
 
 
 .. function:: extend_path(path, name)
@@ -41,3 +41,24 @@ This module provides a single function:
    this function to raise an exception (in line with :func:`os.path.isdir`
    behavior).
 
+.. function:: get_data(package, resource)
+
+   Get a resource from a package.
+
+   This is a wrapper round the PEP 302 loader :func:`get_data` API. The package
+   argument should be the name of a package, in standard module format
+   (foo.bar). The resource argument should be in the form of a relative
+   filename, using ``/`` as the path separator. The parent directory name
+   ``..`` is not allowed, and nor is a rooted name (starting with a ``/``).
+
+   The function returns a binary string, which is the contents of the
+   specified resource.
+
+   For packages located in the filesystem, which have already been imported,
+   this is the rough equivalent of::
+
+       d = os.path.dirname(sys.modules[package].__file__)
+       data = open(os.path.join(d, resource), 'rb').read()
+
+   If the package cannot be located or loaded, or it uses a PEP 302 loader
+   which does not support :func:`get_data`, then None is returned.
