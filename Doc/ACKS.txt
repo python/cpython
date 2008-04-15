@@ -145,6 +145,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Harri Pasanen
    * Bo Peng
    * Tim Peters
+   * Benjamin Peterson
    * Christopher Petrilli
    * Justin D. Pettit
    * Chris Phoenix
