@@ -12,6 +12,9 @@ What's New in Python 3.0a5?
 Core and Builtins
 -----------------
 
+- Fix misbehaviour of PyLong_FromSsize_t on systems where sizeof(size_t) >
+  sizeof(long).
+
 - Issue #2221: Corrected a SystemError "error return without exception set",
   when the code executed by exec() raises an exception, and sys.stdout.flush()
   also raises an error.

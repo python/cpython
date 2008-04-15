@@ -1099,13 +1099,39 @@ PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG ival)
 PyObject *
 PyLong_FromSsize_t(Py_ssize_t ival)
 {
-	Py_ssize_t bytes = ival;
-	int one = 1;
-	if (ival < PyLong_BASE)
-		return PyLong_FromLong(ival);
-	return _PyLong_FromByteArray(
-			(unsigned char *)&bytes,
-			SIZEOF_SIZE_T, IS_LITTLE_ENDIAN, 1);
+	PyLongObject *v;
+	size_t abs_ival;
+	size_t t;  /* unsigned so >> doesn't propagate sign bit */
+	int ndigits = 0;
+	int negative = 0;
+
+	CHECK_SMALL_INT(ival);
+	if (ival < 0) {
+		/* avoid signed overflow when ival = SIZE_T_MIN */
+		abs_ival = (size_t)(-1-ival)+1;
+		negative = 1;
+	}
+	else {
+		abs_ival = (size_t)ival;
+	}
+
+	/* Count the number of Python digits. */
+	t = abs_ival;
+	while (t) {
+		++ndigits;
+		t >>= PyLong_SHIFT;
+	}
+	v = _PyLong_New(ndigits);
+	if (v != NULL) {
+		digit *p = v->ob_digit;
+		Py_SIZE(v) = negative ? -ndigits : ndigits;
+		t = abs_ival;
+		while (t) {
+			*p++ = (digit)(t & PyLong_MASK);
+			t >>= PyLong_SHIFT;
+		}
+	}
+	return (PyObject *)v;
 }
 
 /* Create a new long int object from a C size_t. */
@@ -1113,13 +1139,28 @@ PyLong_FromSsize_t(Py_ssize_t ival)
 PyObject *
 PyLong_FromSize_t(size_t ival)
 {
-	size_t bytes = ival;
-	int one = 1;
+	PyLongObject *v;
+	size_t t;
+	int ndigits = 0;
+
 	if (ival < PyLong_BASE)
 		return PyLong_FromLong(ival);
-	return _PyLong_FromByteArray(
-			(unsigned char *)&bytes,
-			SIZEOF_SIZE_T, IS_LITTLE_ENDIAN, 0);
+	/* Count the number of Python digits. */
+	t = ival;
+	while (t) {
+		++ndigits;
+		t >>= PyLong_SHIFT;
+	}
+	v = _PyLong_New(ndigits);
+	if (v != NULL) {
+		digit *p = v->ob_digit;
+		Py_SIZE(v) = ndigits;
+		while (ival) {
+			*p++ = (digit)(ival & PyLong_MASK);
+			ival >>= PyLong_SHIFT;
+		}
+	}
+	return (PyObject *)v;
 }
 
 /* Get a C PY_LONG_LONG int from a long int object.
