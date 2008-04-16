@@ -162,6 +162,12 @@ Memory-mapped file objects support the following methods:
    changes to the given range of bytes will be flushed to disk; otherwise, the
    whole extent of the mapping is flushed.
 
+   **(Windows version)** A nonzero value returned indicates success; zero
+   indicates failure.
+
+   **(Unix version)** A zero value is returned to indicate success. An
+   exception is raised when the call failed.
+
 
 .. method:: mmap.move(dest, src, count)
 
