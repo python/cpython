@@ -1426,7 +1426,7 @@ to work with the :class:`Decimal` class::
        >>> moneyfmt(Decimal(123456789), sep=' ')
        '123 456 789.00'
        >>> moneyfmt(Decimal('-0.02'), neg='<', trailneg='>')
-       '<.02>'
+       '<0.02>'
 
        """
        q = Decimal(10) ** -places      # 2 places --> '0.01'
@@ -1439,6 +1439,8 @@ to work with the :class:`Decimal` class::
        for i in range(places):
            build(next() if digits else '0')
        build(dp)
+       if not digits:
+           build('0')
        i = 0
        while digits:
            build(next())
