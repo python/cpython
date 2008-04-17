@@ -98,7 +98,7 @@ loops that truncate the stream.
 
 .. function:: combinations(iterable, r)
 
-   Return successive *r* length combinations of elements in the *iterable*.
+   Return *r* length subsequences of elements from the input *iterable*.
 
    Combinations are emitted in lexicographic sort order.  So, if the 
    input *iterable* is sorted, the combination tuples will be produced
@@ -107,9 +107,6 @@ loops that truncate the stream.
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, there will be no repeat
    values in each combination.
-
-   Each result tuple is ordered to match the input order.  So, every
-   combination is a subsequence of the input *iterable*.
 
    Equivalent to::
 
@@ -446,11 +443,10 @@ loops that truncate the stream.
    Equivalent to nested for-loops in a generator expression. For example,
    ``product(A, B)`` returns the same as ``((x,y) for x in A for y in B)``.
 
-   The leftmost iterators correspond to the outermost for-loop, so the output
-   tuples cycle like an odometer (with the rightmost element changing on every 
-   iteration).  This results in a lexicographic ordering so that if the 
-   inputs iterables are sorted, the product tuples are emitted
-   in sorted order.
+   The nested loops cycle like an odometer with the rightmost element advancing
+   on every iteration.  This pattern creats a lexicographic ordering so that if
+   the inputs iterables are sorted, the product tuples are emitted in sorted
+   order.
 
    To compute the product of an iterable with itself, specify the number of
    repetitions with the optional *repeat* keyword argument.  For example,
