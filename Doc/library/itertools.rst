@@ -444,8 +444,8 @@ loops that truncate the stream.
    ``product(A, B)`` returns the same as ``((x,y) for x in A for y in B)``.
 
    The nested loops cycle like an odometer with the rightmost element advancing
-   on every iteration.  This pattern creats a lexicographic ordering so that if
-   the inputs iterables are sorted, the product tuples are emitted in sorted
+   on every iteration.  This pattern creates a lexicographic ordering so that if
+   the input's iterables are sorted, the product tuples are emitted in sorted
    order.
 
    To compute the product of an iterable with itself, specify the number of
