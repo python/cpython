@@ -26,7 +26,7 @@ still needs to be closed when done).
 For both the Unix and Windows versions of the constructor, *access* may be
 specified as an optional keyword parameter. *access* accepts one of three
 values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY`
-to specify readonly, write-through or copy-on-write memory respectively.
+to specify read-only, write-through or copy-on-write memory respectively.
 *access* can be used on both Unix and Windows.  If *access* is not specified,
 Windows mmap returns a write-through mapping.  The initial memory values for
 all three access types are taken from the specified file.  Assignment to an
