@@ -1,6 +1,6 @@
 
 import test.test_support, unittest
-from test.test_support import TESTFN
+from test.test_support import TESTFN, unlink
 import os, sys
 
 class CodingTest(unittest.TestCase):
@@ -45,8 +45,8 @@ class CodingTest(unittest.TestCase):
             __import__(TESTFN)
         finally:
             f.close()
-            os.remove(TESTFN+".py")
-            os.remove(TESTFN+".pyc")
+            unlink(TESTFN+".py")
+            unlink(TESTFN+".pyc")
             sys.path.pop(0)
 
 def test_main():
