@@ -655,11 +655,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Include\bytesobject.h"
+				RelativePath="..\Include\bytes_methods.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Include\bytes_methods.h"
+				RelativePath="..\Include\bytesobject.h"
 				>
 			</File>
 			<File
@@ -868,6 +868,10 @@
 			</File>
 			<File
 				RelativePath="..\Include\pymactoolbox.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pymath.h"
 				>
 			</File>
 			<File
@@ -1355,11 +1359,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Objects\bytesobject.c"
+				RelativePath="..\Objects\bytes_methods.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Objects\bytes_methods.c"
+				RelativePath="..\Objects\bytesobject.c"
 				>
 			</File>
 			<File
@@ -1736,6 +1740,10 @@
 			</File>
 			<File
 				RelativePath="..\Python\pyfpe.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Python\pymath.c"
 				>
 			</File>
 			<File
