@@ -16,10 +16,6 @@
 
 #include "formatter_string.h"
 
-#if !defined(__STDC__)
-extern double fmod(double, double);
-extern double pow(double, double);
-#endif
 
 #ifdef _OSF_SOURCE
 /* OSF1 5.1 doesn't make this available with XOPEN_SOURCE_EXTENDED defined */
@@ -251,11 +247,11 @@ PyFloat_FromString(PyObject *v, char **pend)
 			p++;
 		}
 		if (PyOS_strnicmp(p, "inf", 4) == 0) {
-			return PyFloat_FromDouble(sign * Py_HUGE_VAL);
+			Py_RETURN_INF(sign);
 		}
 #ifdef Py_NAN
 		if(PyOS_strnicmp(p, "nan", 4) == 0) {
-			return PyFloat_FromDouble(Py_NAN);
+			Py_RETURN_NAN;
 		}
 #endif
 		PyOS_snprintf(buffer, sizeof(buffer),
@@ -405,110 +401,6 @@ PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
 	format_float(buf, 100, v, precision);
 }
 
-#ifdef Py_BROKEN_REPR
-/* The following function is based on Tcl_PrintDouble,
- * from tclUtil.c.
- */
-
-#define is_infinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
-#define is_nan(d)		((d) != (d))
-
-static void
-format_double_repr(char *dst, double value)
-{
-    char *p, c;
-    int exp;
-    int signum;
-    char buffer[30];
-
-	/*
-	 * Handle NaN.
-	 */
-
-	if (is_nan(value)) {
-	    strcpy(dst, "nan");
-	    return;
-	}
-
-	/*
-	 * Handle infinities.
-	 */
-
-	if (is_infinite(value)) {
-	    if (value < 0) {
-		strcpy(dst, "-inf");
-	    } else {
-		strcpy(dst, "inf");
-	    }
-	    return;
-	}
-
-	/*
-	 * Ordinary (normal and denormal) values.
-	 */
-
-	exp = _PyFloat_Digits(buffer, value, &signum)+1;
-	if (signum) {
-	    *dst++ = '-';
-	}
-	p = buffer;
-	if (exp < -3 || exp > 17) {
-	    /*
-	     * E format for numbers < 1e-3 or >= 1e17.
-	     */
-
-	    *dst++ = *p++;
-	    c = *p;
-	    if (c != '\0') {
-		*dst++ = '.';
-		while (c != '\0') {
-		    *dst++ = c;
-		    c = *++p;
-		}
-	    }
-	    sprintf(dst, "e%+d", exp-1);
-	} else {
-	    /*
-	     * F format for others.
-	     */
-
-	    if (exp <= 0) {
-		*dst++ = '0';
-	    }
-	    c = *p;
-	    while (exp-- > 0) {
-		if (c != '\0') {
-		    *dst++ = c;
-		    c = *++p;
-		} else {
-		    *dst++ = '0';
-		}
-	    }
-	    *dst++ = '.';
-	    if (c == '\0') {
-		*dst++ = '0';
-	    } else {
-		while (++exp < 0) {
-		    *dst++ = '0';
-		}
-		while (c != '\0') {
-		    *dst++ = c;
-		    c = *++p;
-		}
-	    }
-	    *dst++ = '\0';
-	}
-}
-
-static void
-format_float_repr(char *buf, PyFloatObject *v)
-{
-	assert(PyFloat_Check(v));
-	format_double_repr(buf, PyFloat_AS_DOUBLE(v));
-}
-
-#endif /* Py_BROKEN_REPR */
-
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl; this replaces the functionality of the coercion
    slot function.  If conversion to double raises an exception, obj is
@@ -593,13 +485,8 @@ float_print(PyFloatObject *v, FILE *fp, int flags)
 static PyObject *
 float_repr(PyFloatObject *v)
 {
-#ifdef Py_BROKEN_REPR
-	char buf[30];
-	format_float_repr(buf, v);
-#else
 	char buf[100];
 	format_float(buf, sizeof(buf), v, PREC_REPR);
-#endif
 
 	return PyString_FromString(buf);
 }
@@ -889,10 +776,13 @@ float_div(PyObject *v, PyObject *w)
 	double a,b;
 	CONVERT_TO_DOUBLE(v, a);
 	CONVERT_TO_DOUBLE(w, b);
+#ifdef Py_NAN
 	if (b == 0.0) {
-		PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+		PyErr_SetString(PyExc_ZeroDivisionError,
+				"float division");
 		return NULL;
 	}
+#endif
 	PyFPE_START_PROTECT("divide", return 0)
 	a = a / b;
 	PyFPE_END_PROTECT(a)
@@ -908,10 +798,13 @@ float_classic_div(PyObject *v, PyObject *w)
 	if (Py_DivisionWarningFlag >= 2 &&
 	    PyErr_Warn(PyExc_DeprecationWarning, "classic float division") < 0)
 		return NULL;
+#ifdef Py_NAN
 	if (b == 0.0) {
-		PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+		PyErr_SetString(PyExc_ZeroDivisionError,
+				"float division");
 		return NULL;
 	}
+#endif
 	PyFPE_START_PROTECT("divide", return 0)
 	a = a / b;
 	PyFPE_END_PROTECT(a)
@@ -923,12 +816,15 @@ float_rem(PyObject *v, PyObject *w)
 {
 	double vx, wx;
 	double mod;
- 	CONVERT_TO_DOUBLE(v, vx);
- 	CONVERT_TO_DOUBLE(w, wx);
+	CONVERT_TO_DOUBLE(v, vx);
+	CONVERT_TO_DOUBLE(w, wx);
+#ifdef Py_NAN
 	if (wx == 0.0) {
-		PyErr_SetString(PyExc_ZeroDivisionError, "float modulo");
+		PyErr_SetString(PyExc_ZeroDivisionError,
+				"float modulo");
 		return NULL;
 	}
+#endif
 	PyFPE_START_PROTECT("modulo", return 0)
 	mod = fmod(vx, wx);
 	/* note: checking mod*wx < 0 is incorrect -- underflows to
@@ -1032,6 +928,9 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		}
 		return PyFloat_FromDouble(0.0);
 	}
+	if (iv == 1.0) { /* 1**w is 1, even 1**inf and 1**nan */
+		return PyFloat_FromDouble(1.0);
+	}
 	if (iv < 0.0) {
 		/* Whether this is an error is a mess, and bumps into libm
 		 * bugs so we have to figure it out ourselves.
@@ -1121,6 +1020,57 @@ float_coerce(PyObject **pv, PyObject **pw)
 	}
 	return 1; /* Can't do it */
 }
+
+static PyObject *
+float_is_integer(PyObject *v)
+{
+	double x = PyFloat_AsDouble(v);
+	PyObject *o;
+	
+	if (x == -1.0 && PyErr_Occurred())
+		return NULL;
+	if (!Py_IS_FINITE(x))
+		Py_RETURN_FALSE;
+	PyFPE_START_PROTECT("is_integer", return NULL)
+	o = (floor(x) == x) ? Py_True : Py_False;
+	PyFPE_END_PROTECT(x)
+	if (errno != 0) {
+		PyErr_SetFromErrno(errno == ERANGE ? PyExc_OverflowError :
+						     PyExc_ValueError);
+		return NULL;
+	}
+	Py_INCREF(o);
+	return o;
+}
+
+#if 0
+static PyObject *
+float_is_inf(PyObject *v)
+{
+	double x = PyFloat_AsDouble(v);
+	if (x == -1.0 && PyErr_Occurred())
+		return NULL;
+	return PyBool_FromLong((long)Py_IS_INFINITY(x));
+}
+
+static PyObject *
+float_is_nan(PyObject *v)
+{
+	double x = PyFloat_AsDouble(v);
+	if (x == -1.0 && PyErr_Occurred())
+		return NULL;
+	return PyBool_FromLong((long)Py_IS_NAN(x));
+}
+
+static PyObject *
+float_is_finite(PyObject *v)
+{
+	double x = PyFloat_AsDouble(v);
+	if (x == -1.0 && PyErr_Occurred())
+		return NULL;
+	return PyBool_FromLong((long)Py_IS_FINITE(x));
+}
+#endif
 
 static PyObject *
 float_trunc(PyObject *v)
@@ -1480,12 +1430,22 @@ PyDoc_STRVAR(float__format__doc,
 
 
 static PyMethodDef float_methods[] = {
-  	{"conjugate",	(PyCFunction)float_float,	METH_NOARGS,
+	{"conjugate",	(PyCFunction)float_float,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any float."},
 	{"__trunc__",	(PyCFunction)float_trunc, METH_NOARGS,
          "Returns the Integral closest to x between 0 and x."},
 	{"as_integer_ratio", (PyCFunction)float_as_integer_ratio, METH_NOARGS,
 	 float_as_integer_ratio_doc},
+	{"is_integer",	(PyCFunction)float_is_integer,	METH_NOARGS,
+	 "Returns True if the float is an integer."},
+#if 0
+	{"is_inf",	(PyCFunction)float_is_inf,	METH_NOARGS,
+	 "Returns True if the float is positive or negative infinite."},
+	{"is_finite",	(PyCFunction)float_is_finite,	METH_NOARGS,
+	 "Returns True if the float is finite, neither infinite nor NaN."},
+	{"is_nan",	(PyCFunction)float_is_nan,	METH_NOARGS,
+	 "Returns True if the float is not a number (NaN)."},
+#endif
 	{"__getnewargs__",	(PyCFunction)float_getnewargs,	METH_NOARGS},
 	{"__getformat__",	(PyCFunction)float_getformat,	
 	 METH_O|METH_CLASS,		float_getformat_doc},
@@ -1646,10 +1606,6 @@ _PyFloat_Init(void)
 	double_format = detected_double_format;
 	float_format = detected_float_format;
 
-#ifdef Py_BROKEN_REPR	
-	/* Initialize floating point repr */
-	_PyFloat_DigitsInit();
-#endif
 	/* Init float info */
 	if (FloatInfoType.tp_name == 0)
 		PyStructSequence_InitType(&FloatInfoType, &floatinfo_desc);

@@ -1143,9 +1143,21 @@ int__format__(PyObject *self, PyObject *args)
 	return NULL;
 }
 
+#if 0
+static PyObject *
+int_is_finite(PyObject *v)
+{
+	Py_RETURN_TRUE;
+}
+#endif
+
 static PyMethodDef int_methods[] = {
 	{"conjugate",	(PyCFunction)int_int,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any int."},
+#if 0
+	{"is_finite",	(PyCFunction)int_is_finite,	METH_NOARGS,
+	 "Returns always True."},
+#endif
 	{"__trunc__",	(PyCFunction)int_int,	METH_NOARGS,
          "Truncating an Integral returns itself."},
 	{"__getnewargs__",	(PyCFunction)int_getnewargs,	METH_NOARGS},

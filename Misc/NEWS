@@ -18,6 +18,12 @@ Core and builtins
 Extensions Modules
 ------------------
 
+- Added phase(z) -> phi, polar(z) -> r, phi and rect(r, phi) -> z to the cmath
+  module.
+
+- Four new methods were added to the math and cmath modules:
+  acosh, asinh, atanh and log1p. 
+
 - zlib.decompressobj().flush(value) no longer crashes the interpreter when
   passed a value less than or equal to zero.
 
@@ -107,6 +113,11 @@ Build
 
 C API
 -----
+
+- Added implementation of copysign, acosh, asinh, atanh and log1p 
+  to the new files Include/pymath.h and Python/pymath.h for 
+  platforms which provide the functions through their libm. The
+  files also contains several helpers and constants for math.
 
 
 What's New in Python 2.6 alpha 2?
