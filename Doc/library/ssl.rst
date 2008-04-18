@@ -508,7 +508,7 @@ end, and use :func:`wrap_socket` to create a server-side SSL context for it::
                                    server_side=True,
                                    certfile="mycertfile",
                                    keyfile="mykeyfile",
-                                   ssl_protocol=ssl.PROTOCOL_TLSv1)
+                                   ssl_version=ssl.PROTOCOL_TLSv1)
       deal_with_client(connstream)
 
 Then you'd read data from the ``connstream`` and do something with it till you are finished with the client (or the client is finished with you)::
