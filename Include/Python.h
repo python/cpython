@@ -73,6 +73,7 @@
 #if defined(PYMALLOC_DEBUG) && !defined(WITH_PYMALLOC)
 #error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
 #endif
+#include "pymath.h"
 #include "pymem.h"
 
 #include "object.h"

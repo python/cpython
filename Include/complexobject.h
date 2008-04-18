@@ -19,6 +19,7 @@ typedef struct {
 #define c_prod _Py_c_prod
 #define c_quot _Py_c_quot
 #define c_pow _Py_c_pow
+#define c_abs _Py_c_abs
 
 PyAPI_FUNC(Py_complex) c_sum(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) c_diff(Py_complex, Py_complex);
@@ -26,6 +27,7 @@ PyAPI_FUNC(Py_complex) c_neg(Py_complex);
 PyAPI_FUNC(Py_complex) c_prod(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) c_quot(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) c_pow(Py_complex, Py_complex);
+PyAPI_FUNC(double) c_abs(Py_complex);
 
 
 /* Complex object interface */

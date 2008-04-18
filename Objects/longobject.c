@@ -3441,9 +3441,21 @@ long__format__(PyObject *self, PyObject *args)
 	return NULL;
 }
 
+#if 0
+static PyObject *
+long_is_finite(PyObject *v)
+{
+	Py_RETURN_TRUE;
+}
+#endif
+
 static PyMethodDef long_methods[] = {
 	{"conjugate",	(PyCFunction)long_long,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any long."},
+#if 0
+	{"is_finite",	(PyCFunction)long_is_finite,	METH_NOARGS,
+	 "Returns always True."},
+#endif
 	{"__trunc__",	(PyCFunction)long_long,	METH_NOARGS,
          "Truncating an Integral returns itself."},
 	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
