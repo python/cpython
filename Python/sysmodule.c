@@ -1299,9 +1299,9 @@ _PySys_Init(void)
 	PyDict_SetItemString(sysdict, "__stdout__", sysout);
 	PyDict_SetItemString(sysdict, "__stderr__", syserr);
 	PyDict_SetItemString(sysdict, "__displayhook__",
-                             PyDict_GetItemString(sysdict, "displayhook"));
+			     PyDict_GetItemString(sysdict, "displayhook"));
 	PyDict_SetItemString(sysdict, "__excepthook__",
-                             PyDict_GetItemString(sysdict, "excepthook"));
+			     PyDict_GetItemString(sysdict, "excepthook"));
 	Py_XDECREF(sysin);
 	Py_XDECREF(sysout);
 	Py_XDECREF(syserr);
@@ -1312,10 +1312,10 @@ _PySys_Init(void)
 			     PyInt_FromLong(PY_VERSION_HEX));
 	svnversion_init();
 	SET_SYS_FROM_STRING("subversion",
-			    Py_BuildValue("(ssz)", "CPython", branch,
+			     Py_BuildValue("(ssz)", "CPython", branch,
 					  svn_revision));
 	SET_SYS_FROM_STRING("dont_write_bytecode",
-			    PyBool_FromLong(Py_DontWriteBytecodeFlag));
+			     PyBool_FromLong(Py_DontWriteBytecodeFlag));
 	/*
 	 * These release level checks are mutually exclusive and cover
 	 * the field, so don't get too fancy with the pre-processor!
