@@ -32,15 +32,6 @@ DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
 WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
 OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-The profiler was written after only programming in Python for 3 weeks. As a
-result, it is probably clumsy code, but I don't know for sure yet 'cause I'm a
-beginner :-).  I did work hard to make the code run fast, so that profiling
-would be a reasonable thing to do.  I tried not to repeat code fragments, but
-I'm sure I did some stuff in really awkward ways at times.  Please send
-suggestions for improvements to: jar@netscape.com.  I won't promise *any*
-support.  ...but I'd appreciate the feedback.
-
-
 .. _profiler-introduction:
 
 Introduction to the profilers
