@@ -46,11 +46,19 @@ class Test(unittest.TestCase):
 
     def setUp(self):
         self.root = None
+        self.pkgname = None
         self.syspath = list(sys.path)
 
     def tearDown(self):
         sys.path[:] = self.syspath
         cleanout(self.root)
+
+        # delete all modules concerning the tested hiearchy
+        if self.pkgname:
+            modules = [name for name in sys.modules
+                       if self.pkgname in name.split('.')]
+            for name in modules:
+                del sys.modules[name]
 
     def run_code(self, code):
         exec(textwrap.dedent(code), globals(), {"self": self})
@@ -74,6 +82,8 @@ class Test(unittest.TestCase):
                     f.write('\n')
                 f.close()
         self.root = root
+        # package name is the name of the first item
+        self.pkgname = descr[0][0]
 
     def test_1(self):
         hier = [("t1", None), ("t1 __init__"+os.extsep+"py", "")]
@@ -223,8 +233,8 @@ class Test(unittest.TestCase):
 
     def test_7(self):
         hier = [
-                ("t7"+os.extsep+"py", ""),
                 ("t7", None),
+                ("t7"+os.extsep+"py", ""),
                 ("t7 __init__"+os.extsep+"py", ""),
                 ("t7 sub"+os.extsep+"py",
                  "raise RuntimeError('Shouldnt load sub.py')"),

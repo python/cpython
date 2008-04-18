@@ -391,6 +391,8 @@ class PyWarningsDisplayTests(BaseTest, WarningsDisplayTests):
 
 
 def test_main():
+    py_warnings.onceregistry.clear()
+    c_warnings.onceregistry.clear()
     test_support.run_unittest(CFilterTests,
                                 PyFilterTests,
                                 CWarnTests,

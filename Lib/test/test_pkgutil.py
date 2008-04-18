@@ -48,6 +48,8 @@ class PkgutilTests(unittest.TestCase):
         res2 = pkgutil.get_data(pkg, 'sub/res.txt')
         self.assertEqual(res2, RESOURCE_DATA)
 
+        del sys.modules[pkg]
+
     def test_getdata_zipfile(self):
         zip = 'test_getdata_zipfile.zip'
         pkg = 'test_getdata_zipfile'
@@ -73,6 +75,8 @@ class PkgutilTests(unittest.TestCase):
         res2 = pkgutil.get_data(pkg, 'sub/res.txt')
         self.assertEqual(res2, RESOURCE_DATA)
         del sys.path[0]
+
+        del sys.modules[pkg]
 
 class PkgutilPEP302Tests(unittest.TestCase):
 

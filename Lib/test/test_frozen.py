@@ -35,6 +35,10 @@ class FrozenTests(unittest.TestCase):
         self.assertEquals(stdout.getvalue(),
                           'Hello world...\nHello world...\nHello world...\n')
 
+        del sys.modules['__hello__']
+        del sys.modules['__phello__']
+        del sys.modules['__phello__.spam']
+
 
 def test_main():
     run_unittest(FrozenTests)
