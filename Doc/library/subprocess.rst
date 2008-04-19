@@ -208,6 +208,29 @@ Instances of the :class:`Popen` class have the following methods:
       size is large or unlimited.
 
 
+.. method:: Popen.send_signal(signal)
+
+   Sends the signal *signal* to the child.
+
+   .. note::
+
+      On Windows only SIGTERM is supported so far. It's an alias for
+      *terminate*.
+
+
+.. method:: Popen.terminate()
+
+   Stop the child. On Posix OSs the method sends SIGTERM to the
+   child. On Windows the Win32 API function TerminateProcess is called
+   to stop the child.
+
+
+.. method:: Popen.kill()
+
+   Kills the child. On Posix OSs the function sends SIGKILL to the child.
+   On Windows *kill* is an alias for *terminate*.
+
+
 The following attributes are also available:
 
 .. attribute:: Popen.stdin

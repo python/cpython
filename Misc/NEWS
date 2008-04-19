@@ -18,6 +18,8 @@ Core and builtins
 Extensions Modules
 ------------------
 
+- Added kill, terminate and send_signal(sig) to subprocess.Popen.
+
 - Added phase(z) -> phi, polar(z) -> r, phi and rect(r, phi) -> z to the cmath
   module.
 
