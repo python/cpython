@@ -1707,6 +1707,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Python\pymath.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Python\pystate.c"
 				>
 			</File>

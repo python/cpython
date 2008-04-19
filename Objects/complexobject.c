@@ -187,6 +187,38 @@ c_powi(Py_complex x, long n)
 
 }
 
+double
+c_abs(Py_complex z)
+{
+	/* sets errno = ERANGE on overflow;  otherwise errno = 0 */
+	double result;
+
+	if (!Py_IS_FINITE(z.real) || !Py_IS_FINITE(z.imag)) {
+		/* C99 rules: if either the real or the imaginary part is an
+		   infinity, return infinity, even if the other part is a
+		   NaN. */
+		if (Py_IS_INFINITY(z.real)) {
+			result = fabs(z.real);
+			errno = 0;
+			return result;
+		}
+		if (Py_IS_INFINITY(z.imag)) {
+			result = fabs(z.imag);
+			errno = 0;
+			return result;
+		}
+		/* either the real or imaginary part is a NaN,
+		   and neither is infinite. Result should be NaN. */
+		return Py_NAN;
+	}
+	result = hypot(z.real, z.imag);
+	if (!Py_IS_FINITE(result))
+		errno = ERANGE;
+	else
+		errno = 0;
+	return result;
+}
+
 static PyObject *
 complex_subtype_from_c_complex(PyTypeObject *type, Py_complex cval)
 {
@@ -321,8 +353,7 @@ complex_to_buf(char *buf, int bufsz, PyComplexObject *v, int precision)
 		if (!Py_IS_FINITE(v->cval.imag)) {
 			if (Py_IS_NAN(v->cval.imag))
 				strncpy(buf, "nan*j", 6);
-			/* else if (copysign(1, v->cval.imag) == 1) */
-			else if (v->cval.imag > 0)
+			else if (copysign(1, v->cval.imag) == 1)
 				strncpy(buf, "inf*j", 6);
 			else
 				strncpy(buf, "-inf*j", 7);
@@ -578,9 +609,16 @@ static PyObject *
 complex_abs(PyComplexObject *v)
 {
 	double result;
+
 	PyFPE_START_PROTECT("complex_abs", return 0)
-	result = hypot(v->cval.real,v->cval.imag);
+	result = c_abs(v->cval);
 	PyFPE_END_PROTECT(result)
+
+	if (errno == ERANGE) {
+		PyErr_SetString(PyExc_OverflowError,
+				"absolute value too large");
+		return NULL;
+	}
 	return PyFloat_FromDouble(result);
 }
 
@@ -658,9 +696,29 @@ complex_getnewargs(PyComplexObject *v)
 	return Py_BuildValue("(D)", &v->cval);
 }
 
+#if 0
+static PyObject *
+complex_is_finite(PyObject *self)
+{
+	Py_complex c;
+	c = ((PyComplexObject *)self)->cval;
+	return PyBool_FromLong((long)(Py_IS_FINITE(c.real) &&
+				      Py_IS_FINITE(c.imag)));
+}
+
+PyDoc_STRVAR(complex_is_finite_doc,
+"complex.is_finite() -> bool\n"
+"\n"
+"Returns True if the real and the imaginary part is finite.");
+#endif
+
 static PyMethodDef complex_methods[] = {
 	{"conjugate",	(PyCFunction)complex_conjugate,	METH_NOARGS,
 	 complex_conjugate_doc},
+#if 0
+	{"is_finite",	(PyCFunction)complex_is_finite,	METH_NOARGS,
+	 complex_is_finite_doc},
+#endif
 	{"__getnewargs__",	(PyCFunction)complex_getnewargs,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };

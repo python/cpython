@@ -14,8 +14,81 @@ method: these methods are used to convert the object to a complex or
 floating-point number, respectively, and the function is then applied to the
 result of the conversion.
 
-The functions are:
+.. note::
 
+   On platforms with hardware and system-level support for signed
+   zeros, functions involving branch cuts are continuous on *both*
+   sides of the branch cut: the sign of the zero distinguishes one
+   side of the branch cut from the other.  On platforms that do not
+   support signed zeros the continuity is as specified below.
+
+
+Complex coordinates
+-------------------
+
+Complex numbers can be expressed by two important coordinate systems.
+Python's :class:`complex` type uses rectangular coordinates where a number
+on the complex plain is defined by two floats, the real part and the imaginary
+part.
+
+Definition::
+
+   z = x + 1j * y
+
+   x := real(z)
+   y := imag(z)
+
+In engineering the polar coordinate system is popular for complex numbers. In
+polar coordinates a complex number is defined by the radius *r* and the phase
+angle *φ*. The radius *r* is the absolute value of the complex, which can be
+viewed as distance from (0, 0). The radius *r* is always 0 or a positive float.
+The phase angle *φ* is the counter clockwise angle from the positive x axis,
+e.g. *1* has the angle *0*, *1j* has the angle *π/2* and *-1* the angle *-π*.
+
+.. note::
+   While :func:`phase` and func:`polar` return *+π* for a negative real they
+   may return *-π* for a complex with a very small negative imaginary
+   part, e.g. *-1-1E-300j*.
+
+
+Definition::
+
+   z = r * exp(1j * φ)
+   z = r * cis(φ)
+
+   r := abs(z) := sqrt(real(z)**2 + imag(z)**2)
+   phi := phase(z) := atan2(imag(z), real(z))
+   cis(φ) := cos(φ) + 1j * sin(φ)
+
+
+.. function:: phase(x)
+
+   Return phase, also known as the argument, of a complex.
+
+   .. versionadded:: 2.6
+
+
+.. function:: polar(x)
+
+   Convert a :class:`complex` from rectangular coordinates to polar 
+   coordinates. The function returns a tuple with the two elements
+   *r* and *phi*. *r* is the distance from 0 and *phi* the phase 
+   angle.
+
+   .. versionadded:: 2.6
+
+
+.. function:: rect(r, phi)
+
+   Convert from polar coordinates to rectangular coordinates and return
+   a :class:`complex`.
+
+   .. versionadded:: 2.6
+
+
+
+cmath functions
+---------------
 
 .. function:: acos(x)
 
@@ -37,30 +110,35 @@ The functions are:
 
 .. function:: asinh(x)
 
-   Return the hyperbolic arc sine of *x*. There are two branch cuts, extending
-   left from ``±1j`` to ``±∞j``, both continuous from above. These branch cuts
-   should be considered a bug to be corrected in a future release. The correct
-   branch cuts should extend along the imaginary axis, one from ``1j`` up to
-   ``∞j`` and continuous from the right, and one from ``-1j`` down to ``-∞j``
-   and continuous from the left.
+   Return the hyperbolic arc sine of *x*. There are two branch cuts:
+   One extends from ``1j`` along the imaginary axis to ``∞j``,
+   continuous from the right.  The other extends from ``-1j`` along
+   the imaginary axis to ``-∞j``, continuous from the left.
+
+   .. versionchanged:: 2.6
+      branch cuts moved to match those recommended by the C99 standard
 
 
 .. function:: atan(x)
 
    Return the arc tangent of *x*. There are two branch cuts: One extends from
-   ``1j`` along the imaginary axis to ``∞j``, continuous from the left. The
+   ``1j`` along the imaginary axis to ``∞j``, continuous from the right. The
    other extends from ``-1j`` along the imaginary axis to ``-∞j``, continuous
-   from the left. (This should probably be changed so the upper cut becomes
-   continuous from the other side.)
+   from the left.
+
+   .. versionchanged:: 2.6
+      direction of continuity of upper cut reversed
 
 
 .. function:: atanh(x)
 
    Return the hyperbolic arc tangent of *x*. There are two branch cuts: One
-   extends from ``1`` along the real axis to ``∞``, continuous from above. The
+   extends from ``1`` along the real axis to ``∞``, continuous from below. The
    other extends from ``-1`` along the real axis to ``-∞``, continuous from
-   above. (This should probably be changed so the right cut becomes continuous
-   from the other side.)
+   above.
+
+   .. versionchanged:: 2.6
+      direction of continuity of right cut reversed
 
 
 .. function:: cos(x)
@@ -76,6 +154,21 @@ The functions are:
 .. function:: exp(x)
 
    Return the exponential value ``e**x``.
+
+
+.. function:: isinf(x)
+
+   Return *True* if the real or the imaginary part of x is positive
+   or negative infinity.
+
+   .. versionadded:: 2.6
+
+
+.. function:: isnan(x)
+
+   Return *True* if the real or imaginary part of x is not a number (NaN).
+
+   .. versionadded:: 2.6
 
 
 .. function:: log(x[, base])
@@ -150,4 +243,5 @@ cuts for numerical purposes, a good reference should be the following:
    Kahan, W:  Branch cuts for complex elementary functions; or, Much ado about
    nothing's sign bit.  In Iserles, A., and Powell, M. (eds.), The state of the art
    in numerical analysis. Clarendon Press (1987) pp165-211.
+
 
