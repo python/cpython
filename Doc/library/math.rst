@@ -213,13 +213,6 @@ Trigonometric functions:
    Return the sine of *x* radians.
 
 
-.. function:: asinh(x)
-
-   Return the inverse hyperbolic sine of *x*, in radians.
-
-   .. versionadded:: 2.6
-
-
 .. function:: tan(x)
 
    Return the tangent of *x* radians.
@@ -239,16 +232,30 @@ Angular conversion:
 Hyperbolic functions:
 
 
+.. function:: acosh(x)
+
+   Return the inverse hyperbolic cosine of *x*.
+
+   .. versionadded:: 2.6
+
+
+.. function:: asinh(x)
+
+   Return the inverse hyperbolic sine of *x*.
+
+   .. versionadded:: 2.6
+
+
+.. function:: atanh(x)
+
+   Return the inverse hyperbolic tangent of *x*.
+
+   .. versionadded:: 2.6
+
+
 .. function:: cosh(x)
 
    Return the hyperbolic cosine of *x*.
-
-
-.. function:: acosh(x)
-
-   Return the inverse hyperbolic cosine of *x*, in radians.
-
-   .. versionadded:: 2.6
 
 
 .. function:: sinh(x)
@@ -260,12 +267,6 @@ Hyperbolic functions:
 
    Return the hyperbolic tangent of *x*.
 
-
-.. function:: atanh(x)
-
-   Return the inverse hyperbolic tangent of *x*, in radians.
-
-   .. versionadded:: 2.6
 
 
 The module also defines two mathematical constants:
