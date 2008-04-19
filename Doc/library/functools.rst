@@ -15,13 +15,6 @@ function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
 
-
-.. function:: reduce(function, iterable[, initializer])
-
-   This is the same function as :func:`reduce`.  It is made available in this module
-   to allow writing code more forward-compatible with Python 3.
-
-
 .. function:: partial(func[,*args][, **keywords])
 
    Return a new :class:`partial` object which when called will behave like *func*
@@ -53,7 +46,7 @@ The :mod:`functools` module defines the following functions:
       18
 
 
-.. function:: reduce(function, sequence[, initializer])
+.. function:: reduce(function, iterable[, initializer])
 
    Apply *function* of two arguments cumulatively to the items of *sequence*, from
    left to right, so as to reduce the sequence to a single value.  For example,
