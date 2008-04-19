@@ -513,6 +513,7 @@ math_pow(PyObject *self, PyObject *args)
 {
 	PyObject *ox, *oy;
 	double r, x, y;
+	int y_is_odd;
 
 	if (! PyArg_UnpackTuple(args, "pow", 2, 2, &ox, &oy))
 		return NULL;
@@ -523,6 +524,16 @@ math_pow(PyObject *self, PyObject *args)
 	/* 1**x and x**0 return 1., even if x is a NaN or infinity. */
 	if (x == 1.0 || y == 0.0)
 	        return PyFloat_FromDouble(1.);
+	/* inf ** (nonzero, non-NaN) is one of +-0, +-infinity */
+	if (Py_IS_INFINITY(x) && !Py_IS_NAN(y)) {
+		y_is_odd = Py_IS_FINITE(y) && fmod(fabs(y), 2.0) == 1.0;
+		if (y > 0.)
+			r = y_is_odd ? x : fabs(x);
+		else
+			r = y_is_odd ? copysign(0., x) : 0.;
+		return PyFloat_FromDouble(r);
+	}
+
 	errno = 0;
 	PyFPE_START_PROTECT("in math_pow", return 0);
 	r = pow(x, y);
