@@ -34,7 +34,7 @@ a buffered text interface to a buffered raw stream (:class:`BufferedIOBase`).
 Finally, :class:`StringIO` is a in-memory stream for text.
 
 Argument names are not part of the specification, and only the arguments of
-:func:`open()` are intended to be used as keyword arguments.
+:func:`open` are intended to be used as keyword arguments.
 
 
 Module Interface
@@ -43,7 +43,7 @@ Module Interface
 .. data:: DEFAULT_BUFFER_SIZE
 
    An int containing the default buffer size used by the module's buffered I/O
-   classes.  :func:`open()` uses the file's blksize (as obtained by
+   classes.  :func:`open` uses the file's blksize (as obtained by
    :func:`os.stat`) if possible.
 
 .. function:: open(file[, mode[, buffering[, encoding[, errors[, newline[, closefd=True]]]]]])
@@ -101,13 +101,14 @@ Module Interface
    dependent, but any encoding supported by Python can be passed.  See the
    :mod:`codecs` module for the list of supported encodings.
 
-   *errors* is an optional string that specifies how encoding errors are to be
-   handled---this argument should not be used in binary mode.  Pass ``'strict'``
-   to raise a :exc:`ValueError` exception if there is an encoding error (the
-   default of ``None`` has the same effect), or pass ``'ignore'`` to ignore
-   errors.  (Note that ignoring encoding errors can lead to data loss.)  See the
-   documentation for :func:`codecs.register` for a list of the permitted
-   encoding error strings.
+   *errors* is an optional string that specifies how encoding and decoding
+   errors are to be handled---this argument should not be used in binary mode.
+   Pass ``'strict'`` to raise a :exc:`ValueError` exception if there is an
+   encoding error (the default of ``None`` has the same effect), or pass
+   ``'ignore'`` to ignore errors.  (Note that ignoring encoding errors can lead
+   to data loss.)  ``'replace'`` causes a replacement marker (such as ``'?'``)
+   to be inserted where there is malformed data.  For all possible values, see
+   :func:`codecs.register`.
 
    *newline* controls how universal newlines works (it only applies to text
    mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
@@ -131,15 +132,14 @@ Module Interface
    when the file is closed.  This does not work when a file name is given and
    must be ``True`` in that case.
 
-   :func:`open()` returns a file object whose type depends on the mode, and
+   :func:`open` returns a file object whose type depends on the mode, and
    through which the standard file operations such as reading and writing are
-   performed.  When :func:`open()` is used to open a file in a text mode
-   (``'w'``, ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a
-   :class:`TextIOWrapper`.  When used to open a file in a binary mode, the
-   returned class varies: in read binary mode, it returns a
-   :class:`BufferedReader`; in write binary and append binary modes, it returns
-   a :class:`BufferedWriter`, and in read/write mode, it returns a
-   :class:`BufferedRandom`.
+   performed.  When :func:`open` is used to open a file in a text mode (``'w'``,
+   ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a :class:`TextIOWrapper`.
+   When used to open a file in a binary mode, the returned class varies: in read
+   binary mode, it returns a :class:`BufferedReader`; in write binary and append
+   binary modes, it returns a :class:`BufferedWriter`, and in read/write mode,
+   it returns a :class:`BufferedRandom`.
 
    It is also possible to use a string or bytearray as a file for both reading
    and writing.  For strings :class:`StringIO` can be used like a file opened in
@@ -221,8 +221,8 @@ I/O Base Classes
 
    .. method:: flush()
 
-      Flush the write buffers of the stream if applicable.  This is not
-      implemented for read-only and non-blocking streams.
+      Flush the write buffers of the stream if applicable.  This does nothing
+      for read-only and non-blocking streams.
 
    .. method:: isatty()
 
@@ -239,7 +239,7 @@ I/O Base Classes
       *limit* bytes will be read.
 
       The line terminator is always ``b'\n'`` for binary files; for text files,
-      the *newlines* argument to :func:`.open()` can be used to select the line
+      the *newlines* argument to :func:`open` can be used to select the line
       terminator(s) recognized.
 
    .. method:: readlines([hint])
@@ -438,17 +438,17 @@ Buffered Streams
 
    .. method:: read1()
 
-      In :class:`BytesIO`, this is the same as :meth:`read()`.
+      In :class:`BytesIO`, this is the same as :meth:`read`.
 
    .. method:: truncate([pos])
 
       Truncate the file to at most *pos* bytes.  *pos* defaults to the current
-      stream position, as returned by :meth:`tell()`.
+      stream position, as returned by :meth:`tell`.
 
 
 .. class:: BufferedReader(raw[, buffer_size])
 
-   A buffer for a readable, sequential :class:`BaseRawIO` object.  It inherits
+   A buffer for a readable, sequential :class:`RawIOBase` object.  It inherits
    :class:`BufferedIOBase`.
 
    The constructor creates a :class:`BufferedReader` for the given readable
@@ -577,8 +577,13 @@ Text I/O
    *encoding* gives the name of the encoding that the stream will be decoded or
    encoded with.  It defaults to :func:`locale.getpreferredencoding`.
 
-   *errors* determines the strictness of encoding and decoding (see the errors
-   argument of :func:`codecs.register`) and defaults to ``'strict'``.
+   *errors* is an optional string that specifies how encoding and decoding
+   errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
+   exception if there is an encoding error (the default of ``None`` has the same
+   effect), or pass ``'ignore'`` to ignore errors.  (Note that ignoring encoding
+   errors can lead to data loss.)  ``'replace'`` causes a replacement marker
+   (such as ``'?'``) to be inserted where there is malformed data.  For all
+   possible values see :func:`codecs.register`.
 
    *newline* can be ``None``, ``''``, ``'\n'``, ``'\r'``, or ``'\r\n'``.  It
    controls the handling of line endings.  If it is ``None``, universal newlines
