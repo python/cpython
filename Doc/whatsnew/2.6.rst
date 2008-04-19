@@ -1415,6 +1415,33 @@ complete list of changes, or look through the CVS logs for all the details.
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes; :issue:`1551443`.)
 
+* The :mod:`cmath` module has gained five new functions: :func:`polar`
+  converts a complex number to polar form, returning the modulus and
+  argument of that complex number. :func:`rect` does the opposite,
+  turning a (modulus, argument) pair back into the corresponding
+  complex number. :func:`phase` returns the phase or argument of a
+  complex number.  :func:`isnan` returns True if either the real or
+  imaginary part of its argument is a NaN.  :func:`isinf` returns True
+  if either the real or imaginary part of its argument is infinite.
+
+  The :mod:`cmath` module is no longer numerically unsound. (See
+  :issue:`1381`): for all functions, the real and imaginary parts of
+  the results are accurate to within a few ulps, whenever possible.
+
+  The branch cuts for :func:`asinh`, :func:`atanh`: and :func:`atan`
+  have been corrected.
+
+  The tests for the :mod:`cmath` module have been greatly expanded.  A
+  set of nearly 2000 new testcases provides tests for the algebraic
+  functions.
+
+  On IEEE 754 platforms, the :mod:`cmath` module now handles IEEE 754
+  special values and floating-point exceptions in a manner consistent
+  with Annex 'G' of the C99 standard.
+
+  (Updates to :mod:`cmath` contributed by Mark Dickinson and Christian
+  Heimes.)
+
 * A new data type in the :mod:`collections` module: :class:`namedtuple(typename,
   fieldnames)` is a factory function that creates subclasses of the standard tuple
   whose fields are accessible by name as well as index.  For example::
@@ -1650,6 +1677,30 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`macfs` module has been removed.  This in turn required the
   :func:`macostools.touched` function to be removed because it depended on the
   :mod:`macfs` module.  (:issue:`1490190`)
+
+* The :mod:`math` module has seven new functions, and the existing
+  functions have been improved to give more consistent behaviour
+  across platforms, especially with respect to handling of
+  floating-point exceptions and IEEE 754 special values.
+
+  The new functions are: :func:`isinf` and :func:`isnan`, which
+  determine whether a given float is a (positive or negative) infinity
+  or a NaN (Not a Number), respectively; :func:`copysign`; the inverse
+  hyperbolic functions :func:`acosh`, :func:`asinh` and :func:`atanh`;
+  and the function :func:`log1p`.  (There's also a new function
+  :func:`trunc` as a result of the backport of PEP 3141; see above.)
+
+  The existing math functions have been modified to follow the
+  recommendations of the C99 standard with respect to special values
+  whenever possible.  For example, sqrt(-1.) should now give a
+  ValueError across (nearly) all platforms, while sqrt(float('NaN'))
+  should return a NaN on all IEEE 754 platforms.  Where Annex 'F' of
+  the C99 standard recommends signaling 'divide-by-zero' or 'invalid',
+  Python will raise ValueError.  Where Annex 'F' of the C99 standard
+  recommends signaling 'overflow', Python will raise OverflowError.
+  (See :issue:`711019`, :issue:`1640`.)
+
+  (Contributed by Christian Heimes and Mark Dickinson.)
 
 * :class:`mmap` objects now have a :meth:`rfind` method that finds
   a substring, beginning at the end of the string and searching
