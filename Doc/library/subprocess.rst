@@ -93,8 +93,9 @@ This module defines one class called :class:`Popen`:
    searching the executable, so you can't specify the program's path relative to
    *cwd*.
 
-   If *env* is not ``None``, it defines the environment variables for the new
-   process.
+   If *env* is not ``None``, it must be a mapping that defines the environment
+   variables for the new process; these are used instead of inheriting the current
+   process' environment, which is the default behavior.
 
    If *universal_newlines* is :const:`True`, the file objects stdout and stderr are
    opened as text files, but lines may be terminated by any of ``'\n'``, the Unix
