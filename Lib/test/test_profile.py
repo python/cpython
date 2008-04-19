@@ -22,8 +22,9 @@ class ProfileTest(unittest.TestCase):
     def do_profiling(cls):
         results = []
         prof = cls.profilerclass(timer, 0.001)
+        start_timer = timer()
         prof.runctx("testfunc()", globals(), locals())
-        results.append(timer())
+        results.append(timer() - start_timer)
         for methodname in cls.methodnames:
             s = StringIO()
             stats = pstats.Stats(prof, stream=s)
@@ -40,7 +41,7 @@ class ProfileTest(unittest.TestCase):
 
     def test_cprofile(self):
         results = self.do_profiling()
-        self.assertEqual(results[0], 43000)
+        self.assertEqual(results[0], 1000)
         for i, method in enumerate(self.methodnames):
             if results[i+1] != self.expected_output[method]:
                 print("Stats.%s output for %s doesn't fit expectation!" %

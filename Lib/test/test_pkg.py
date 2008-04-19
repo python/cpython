@@ -46,6 +46,7 @@ class TestPkg(unittest.TestCase):
 
     def setUp(self):
         self.root = None
+        self.pkgname = None
         self.syspath = list(sys.path)
         self.sysmodules = sys.modules.copy()
 
@@ -55,6 +56,13 @@ class TestPkg(unittest.TestCase):
         sys.modules.update(self.sysmodules)
         del self.sysmodules
         cleanout(self.root)
+
+        # delete all modules concerning the tested hiearchy
+        if self.pkgname:
+            modules = [name for name in sys.modules
+                       if self.pkgname in name.split('.')]
+            for name in modules:
+                del sys.modules[name]
 
     def run_code(self, code):
         exec(textwrap.dedent(code), globals(), {"self": self})
@@ -78,6 +86,8 @@ class TestPkg(unittest.TestCase):
                     f.write('\n')
                 f.close()
         self.root = root
+        # package name is the name of the first item
+        self.pkgname = descr[0][0]
 
     def test_1(self):
         hier = [("t1", None), ("t1 __init__.py", "")]

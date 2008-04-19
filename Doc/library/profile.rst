@@ -32,15 +32,6 @@ DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
 WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
 OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-The profiler was written after only programming in Python for 3 weeks. As a
-result, it is probably clumsy code, but I don't know for sure yet 'cause I'm a
-beginner :-).  I did work hard to make the code run fast, so that profiling
-would be a reasonable thing to do.  I tried not to repeat code fragments, but
-I'm sure I did some stuff in really awkward ways at times.  Please send
-suggestions for improvements to: jar@netscape.com.  I won't promise *any*
-support.  ...but I'd appreciate the feedback.
-
-
 .. _profiler-introduction:
 
 Introduction to the profilers
@@ -50,69 +41,38 @@ Introduction to the profilers
    single: deterministic profiling
    single: profiling, deterministic
 
-A :dfn:`profiler` is a program that describes the run time performance of a
-program, providing a variety of statistics.  This documentation describes the
-profiler functionality provided in the modules :mod:`profile` and :mod:`pstats`.
-This profiler provides :dfn:`deterministic profiling` of any Python programs.
-It also provides a series of report generation tools to allow users to rapidly
+A :dfn:`profiler` is a program that describes the run time performance
+of a program, providing a variety of statistics.  This documentation
+describes the profiler functionality provided in the modules
+:mod:`cProfile`, :mod:`profile` and :mod:`pstats`.  This profiler
+provides :dfn:`deterministic profiling` of Python programs.  It also
+provides a series of report generation tools to allow users to rapidly
 examine the results of a profile operation.
 
 The Python standard library provides two different profilers:
 
-#. :mod:`profile`, a pure Python module, described in the sequel. Copyright ©
-   1994, by InfoSeek Corporation.
+#. :mod:`cProfile` is recommended for most users; it's a C extension 
+   with reasonable overhead
+   that makes it suitable for profiling long-running programs. 
+   Based on :mod:`lsprof`,
+   contributed by Brett Rosen and Ted Czotter.  
 
-#. :mod:`cProfile`, a module written in C, with a reasonable overhead that makes
-   it suitable for profiling long-running programs. Based on :mod:`lsprof`,
-   contributed by Brett Rosen and Ted Czotter.
+#. :mod:`profile`, a pure Python module whose interface is imitated by
+   :mod:`cProfile`.  Adds significant overhead to profiled programs. 
+   If you're trying to extend 
+   the profiler in some way, the task might be easier with this module.
+   Copyright © 1994, by InfoSeek Corporation.
 
 The :mod:`profile` and :mod:`cProfile` modules export the same interface, so
-they are mostly interchangeables; :mod:`cProfile` has a much lower overhead but
-is not so far as well-tested and might not be available on all systems.
+they are mostly interchangeable; :mod:`cProfile` has a much lower overhead but
+is newer and might not be available on all systems.
 :mod:`cProfile` is really a compatibility layer on top of the internal
+<<<<<<< .working
 :mod:`_lsprof` module.
-
-.. \section{How Is This Profiler Different From The Old Profiler?}
-   \nodename{Profiler Changes}
-   
-   (This section is of historical importance only; the old profiler
-   discussed here was last seen in Python 1.1.)
-   
-   The big changes from old profiling module are that you get more
-   information, and you pay less CPU time.  It's not a trade-off, it's a
-   trade-up.
-   
-   To be specific:
-   
-   \begin{description}
-   
-   \item[Bugs removed:]
-   Local stack frame is no longer molested, execution time is now charged
-   to correct functions.
-   
-   \item[Accuracy increased:]
-   Profiler execution time is no longer charged to user's code,
-   calibration for platform is supported, file reads are not done \emph{by}
-   profiler \emph{during} profiling (and charged to user's code!).
-   
-   \item[Speed increased:]
-   Overhead CPU cost was reduced by more than a factor of two (perhaps a
-   factor of five), lightweight profiler module is all that must be
-   loaded, and the report generating module (\module{pstats}) is not needed
-   during profiling.
-   
-   \item[Recursive functions support:]
-   Cumulative times in recursive functions are correctly calculated;
-   recursive entries are counted.
-   
-   \item[Large growth in report generating UI:]
-   Distinct profiles runs can be added together forming a comprehensive
-   report; functions that import statistics take arbitrary lists of
-   files; sorting criteria is now based on keywords (instead of 4 integer
-   options); reports shows what functions were profiled as well as what
-   profile file was referenced; output format has been improved.
-   
-   \end{description}
+=======
+:mod:`_lsprof` module.  The :mod:`hotshot` module is reserved for specialized
+usage.
+>>>>>>> .merge-right.r62379
 
 
 .. _profile-instant:

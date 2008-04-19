@@ -101,12 +101,6 @@ class TestWarnings(unittest.TestCase):
 
 
 def test_main(verbose=None):
-    # Obscure hack so that this test passes after reloads or repeated calls
-    # to test_main (regrtest -R).
-    if '__warningregistry__' in globals():
-        del globals()['__warningregistry__']
-    if hasattr(sys, '__warningregistry__'):
-        del sys.__warningregistry__
     test_support.run_unittest(__name__)
 
 if __name__ == "__main__":

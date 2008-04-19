@@ -731,6 +731,11 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     from distutils.dir_util import _path_created
     from weakref import WeakSet
 
+    # Clear the warnings registry, so they can be displayed again
+    for mod in sys.modules.values():
+        if hasattr(mod, '__warningregistry__'):
+            del mod.__warningregistry__
+
     # Restore some original values.
     warnings.filters[:] = fs
     copy_reg.dispatch_table.clear()
