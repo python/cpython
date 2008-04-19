@@ -521,9 +521,19 @@ math_pow(PyObject *self, PyObject *args)
 	y = PyFloat_AsDouble(oy);
 	if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
 		return NULL;
-	/* 1**x and x**0 return 1., even if x is a NaN or infinity. */
-	if (x == 1.0 || y == 0.0)
+
+	/* deal directly with various special cases, to cope with problems on
+	   various platforms whose semantics don't exactly match C99 */
+
+	/* 1**x, x**0, and (-1)**(+-infinity) return 1., even if x is NaN or
+	   an infinity. */
+	if (x == 1. || y == 0. || (x == -1. && Py_IS_INFINITY(y)))
 	        return PyFloat_FromDouble(1.);
+	/* otherwise, return a NaN if either input was a NaN */
+	if (Py_IS_NAN(x))
+		return PyFloat_FromDouble(x);
+	if (Py_IS_NAN(y))
+		return PyFloat_FromDouble(y);
 	/* inf ** (nonzero, non-NaN) is one of +-0, +-infinity */
 	if (Py_IS_INFINITY(x) && !Py_IS_NAN(y)) {
 		y_is_odd = Py_IS_FINITE(y) && fmod(fabs(y), 2.0) == 1.0;
@@ -539,10 +549,7 @@ math_pow(PyObject *self, PyObject *args)
 	r = pow(x, y);
 	PyFPE_END_PROTECT(r);
 	if (Py_IS_NAN(r)) {
-		if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
-			errno = EDOM;
-		else
-			errno = 0;
+		errno = EDOM;
 	}
 	/* an infinite result arises either from:
 
