@@ -276,6 +276,7 @@ PYTHON_OBJS=	\
 		Python/peephole.o \
 		Python/pyarena.o \
 		Python/pyfpe.o \
+		Python/pymath.o \
 		Python/pystate.o \
 		Python/pythonrun.o \
 		Python/structmember.o \
@@ -622,6 +623,7 @@ PYTHON_HEADERS= \
 		Include/pydebug.h \
 		Include/pyerrors.h \
 		Include/pyfpe.h \
+		Include/pymath.h \
 		Include/pygetopt.h \
 		Include/pymem.h \
 		Include/pyport.h \

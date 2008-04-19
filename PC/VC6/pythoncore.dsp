@@ -587,6 +587,10 @@ SOURCE=..\..\Python\pyfpe.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\pymath.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\pystate.c
 # End Source File
 # Begin Source File

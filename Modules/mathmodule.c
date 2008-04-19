@@ -1,16 +1,59 @@
 /* Math module -- standard C math library functions, pi and e */
 
+/* Here are some comments from Tim Peters, extracted from the
+   discussion attached to http://bugs.python.org/issue1640.  They
+   describe the general aims of the math module with respect to
+   special values, IEEE-754 floating-point exceptions, and Python
+   exceptions.
+
+These are the "spirit of 754" rules:
+
+1. If the mathematical result is a real number, but of magnitude too
+large to approximate by a machine float, overflow is signaled and the
+result is an infinity (with the appropriate sign).
+
+2. If the mathematical result is a real number, but of magnitude too
+small to approximate by a machine float, underflow is signaled and the
+result is a zero (with the appropriate sign).
+
+3. At a singularity (a value x such that the limit of f(y) as y
+approaches x exists and is an infinity), "divide by zero" is signaled
+and the result is an infinity (with the appropriate sign).  This is
+complicated a little by that the left-side and right-side limits may
+not be the same; e.g., 1/x approaches +inf or -inf as x approaches 0
+from the positive or negative directions.  In that specific case, the
+sign of the zero determines the result of 1/0.
+
+4. At a point where a function has no defined result in the extended
+reals (i.e., the reals plus an infinity or two), invalid operation is
+signaled and a NaN is returned.
+
+And these are what Python has historically /tried/ to do (but not
+always successfully, as platform libm behavior varies a lot):
+
+For #1, raise OverflowError.
+
+For #2, return a zero (with the appropriate sign if that happens by
+accident ;-)).
+
+For #3 and #4, raise ValueError.  It may have made sense to raise
+Python's ZeroDivisionError in #3, but historically that's only been
+raised for division by zero and mod by zero.
+
+*/
+
+/*
+   In general, on an IEEE-754 platform the aim is to follow the C99
+   standard, including Annex 'F', whenever possible.  Where the
+   standard recommends raising the 'divide-by-zero' or 'invalid'
+   floating-point exceptions, Python should raise a ValueError.  Where
+   the standard recommends raising 'overflow', Python should raise an
+   OverflowError.  In all other circumstances a value should be
+   returned.
+ */
+
 #include "Python.h"
 #include "longintrepr.h" /* just for SHIFT */
-
-#ifndef _MSC_VER
-#ifndef __STDC__
-extern double fmod (double, double);
-extern double frexp (double, int *);
-extern double ldexp (double, int);
-extern double modf (double, double *);
-#endif /* __STDC__ */
-#endif /* _MSC_VER */
 
 #ifdef _OSF_SOURCE
 /* OSF1 5.1 doesn't make this available with XOPEN_SOURCE_EXTENDED defined */
@@ -52,41 +95,111 @@ is_error(double x)
 	return result;
 }
 
+/*
+   math_1 is used to wrap a libm function f that takes a double
+   arguments and returns a double.
+
+   The error reporting follows these rules, which are designed to do
+   the right thing on C89/C99 platforms and IEEE 754/non IEEE 754
+   platforms.
+
+   - a NaN result from non-NaN inputs causes ValueError to be raised
+   - an infinite result from finite inputs causes OverflowError to be
+     raised if can_overflow is 1, or raises ValueError if can_overflow
+     is 0.
+   - if the result is finite and errno == EDOM then ValueError is
+     raised
+   - if the result is finite and nonzero and errno == ERANGE then
+     OverflowError is raised
+
+   The last rule is used to catch overflow on platforms which follow
+   C89 but for which HUGE_VAL is not an infinity.
+
+   For the majority of one-argument functions these rules are enough
+   to ensure that Python's functions behave as specified in 'Annex F'
+   of the C99 standard, with the 'invalid' and 'divide-by-zero'
+   floating-point exceptions mapping to Python's ValueError and the
+   'overflow' floating-point exception mapping to OverflowError.
+   math_1 only works for functions that don't have singularities *and*
+   the possibility of overflow; fortunately, that covers everything we
+   care about right now.
+*/
+
 static PyObject *
 math_1_to_whatever(PyObject *arg, double (*func) (double),
-                   PyObject *(*from_double_func) (double))
+                   PyObject *(*from_double_func) (double),
+                   int can_overflow)
 {
-	double x = PyFloat_AsDouble(arg);
+	double x, r;
+	x = PyFloat_AsDouble(arg);
 	if (x == -1.0 && PyErr_Occurred())
 		return NULL;
 	errno = 0;
-	PyFPE_START_PROTECT("in math_1", return 0)
-	x = (*func)(x);
-	PyFPE_END_PROTECT(x)
-	Py_SET_ERRNO_ON_MATH_ERROR(x);
-	if (errno && is_error(x))
+	PyFPE_START_PROTECT("in math_1", return 0);
+	r = (*func)(x);
+	PyFPE_END_PROTECT(r);
+	if (Py_IS_NAN(r)) {
+		if (!Py_IS_NAN(x))
+			errno = EDOM;
+		else
+			errno = 0;
+	}
+	else if (Py_IS_INFINITY(r)) {
+		if (Py_IS_FINITE(x))
+			errno = can_overflow ? ERANGE : EDOM;
+		else
+			errno = 0;
+	}
+	if (errno && is_error(r))
 		return NULL;
 	else
-        	return (*from_double_func)(x);
+        	return (*from_double_func)(r);
+}
+
+/*
+   math_2 is used to wrap a libm function f that takes two double
+   arguments and returns a double.
+
+   The error reporting follows these rules, which are designed to do
+   the right thing on C89/C99 platforms and IEEE 754/non IEEE 754
+   platforms.
+
+   - a NaN result from non-NaN inputs causes ValueError to be raised
+   - an infinite result from finite inputs causes OverflowError to be
+     raised.
+   - if the result is finite and errno == EDOM then ValueError is
+     raised
+   - if the result is finite and nonzero and errno == ERANGE then
+     OverflowError is raised
+
+   The last rule is used to catch overflow on platforms which follow
+   C89 but for which HUGE_VAL is not an infinity.
+
+   For most two-argument functions (copysign, fmod, hypot, atan2)
+   these rules are enough to ensure that Python's functions behave as
+   specified in 'Annex F' of the C99 standard, with the 'invalid' and
+   'divide-by-zero' floating-point exceptions mapping to Python's
+   ValueError and the 'overflow' floating-point exception mapping to
+   OverflowError.
+*/
+
+static PyObject *
+math_1(PyObject *arg, double (*func) (double), int can_overflow)
+{
+	return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow);
 }
 
 static PyObject *
-math_1(PyObject *arg, double (*func) (double))
+math_1_to_int(PyObject *arg, double (*func) (double), int can_overflow)
 {
-	return math_1_to_whatever(arg, func, PyFloat_FromDouble);
-}
-
-static PyObject *
-math_1_to_int(PyObject *arg, double (*func) (double))
-{
-	return math_1_to_whatever(arg, func, PyLong_FromDouble);
+	return math_1_to_whatever(arg, func, PyLong_FromDouble, can_overflow);
 }
 
 static PyObject *
 math_2(PyObject *args, double (*func) (double, double), char *funcname)
 {
 	PyObject *ox, *oy;
-	double x, y;
+	double x, y, r;
 	if (! PyArg_UnpackTuple(args, funcname, 2, 2, &ox, &oy))
 		return NULL;
 	x = PyFloat_AsDouble(ox);
@@ -94,19 +207,30 @@ math_2(PyObject *args, double (*func) (double, double), char *funcname)
 	if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
 		return NULL;
 	errno = 0;
-	PyFPE_START_PROTECT("in math_2", return 0)
-	x = (*func)(x, y);
-	PyFPE_END_PROTECT(x)
-	Py_SET_ERRNO_ON_MATH_ERROR(x);
-	if (errno && is_error(x))
+	PyFPE_START_PROTECT("in math_2", return 0);
+	r = (*func)(x, y);
+	PyFPE_END_PROTECT(r);
+	if (Py_IS_NAN(r)) {
+		if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
+			errno = EDOM;
+		else
+			errno = 0;
+	}
+	else if (Py_IS_INFINITY(r)) {
+		if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
+			errno = ERANGE;
+		else
+			errno = 0;
+	}
+	if (errno && is_error(r))
 		return NULL;
 	else
-		return PyFloat_FromDouble(x);
+		return PyFloat_FromDouble(r);
 }
 
-#define FUNC1(funcname, func, docstring) \
+#define FUNC1(funcname, func, can_overflow, docstring)			\
 	static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
-		return math_1(args, func); \
+		return math_1(args, func, can_overflow);		    \
 	}\
         PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
@@ -116,15 +240,21 @@ math_2(PyObject *args, double (*func) (double, double), char *funcname)
 	}\
         PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
-FUNC1(acos, acos,
+FUNC1(acos, acos, 0,
       "acos(x)\n\nReturn the arc cosine (measured in radians) of x.")
-FUNC1(asin, asin,
+FUNC1(acosh, acosh, 0,
+      "acosh(x)\n\nReturn the hyperbolic arc cosine (measured in radians) of x.")
+FUNC1(asin, asin, 0,
       "asin(x)\n\nReturn the arc sine (measured in radians) of x.")
-FUNC1(atan, atan,
+FUNC1(asinh, asinh, 0,
+      "asinh(x)\n\nReturn the hyperbolic arc sine (measured in radians) of x.")
+FUNC1(atan, atan, 0,
       "atan(x)\n\nReturn the arc tangent (measured in radians) of x.")
 FUNC2(atan2, atan2,
       "atan2(y, x)\n\nReturn the arc tangent (measured in radians) of y/x.\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
+FUNC1(atanh, atanh, 0,
+      "atanh(x)\n\nReturn the hyperbolic arc tangent (measured in radians) of x.")
 
 static PyObject * math_ceil(PyObject *self, PyObject *number) {
 	static PyObject *ceil_str = NULL;
@@ -138,7 +268,7 @@ static PyObject * math_ceil(PyObject *self, PyObject *number) {
 
 	method = _PyType_Lookup(Py_TYPE(number), ceil_str);
 	if (method == NULL)
-		return math_1_to_int(number, ceil);
+		return math_1_to_int(number, ceil, 0);
 	else
 		return PyObject_CallFunction(method, "O", number);
 }
@@ -147,23 +277,15 @@ PyDoc_STRVAR(math_ceil_doc,
 	     "ceil(x)\n\nReturn the ceiling of x as an int.\n"
 	     "This is the smallest integral value >= x.");
 
-FUNC1(cos, cos,
-      "cos(x)\n\nReturn the cosine of x (measured in radians).")
-FUNC1(cosh, cosh,
-      "cosh(x)\n\nReturn the hyperbolic cosine of x.")
-
-#ifdef MS_WINDOWS
-#  define copysign _copysign
-#  define HAVE_COPYSIGN 1
-#endif
-#ifdef HAVE_COPYSIGN
 FUNC2(copysign, copysign,
-      "copysign(x,y)\n\nReturn x with the sign of y.");
-#endif
-
-FUNC1(exp, exp,
+      "copysign(x,y)\n\nReturn x with the sign of y.")
+FUNC1(cos, cos, 0,
+      "cos(x)\n\nReturn the cosine of x (measured in radians).")
+FUNC1(cosh, cosh, 1,
+      "cosh(x)\n\nReturn the hyperbolic cosine of x.")
+FUNC1(exp, exp, 1,
       "exp(x)\n\nReturn e raised to the power of x.")
-FUNC1(fabs, fabs,
+FUNC1(fabs, fabs, 0,
       "fabs(x)\n\nReturn the absolute value of the float x.")
 
 static PyObject * math_floor(PyObject *self, PyObject *number) {
@@ -178,7 +300,7 @@ static PyObject * math_floor(PyObject *self, PyObject *number) {
 
 	method = _PyType_Lookup(Py_TYPE(number), floor_str);
 	if (method == NULL)
-        	return math_1_to_int(number, floor);
+        	return math_1_to_int(number, floor, 0);
 	else
 		return PyObject_CallFunction(method, "O", number);
 }
@@ -187,22 +309,18 @@ PyDoc_STRVAR(math_floor_doc,
 	     "floor(x)\n\nReturn the floor of x as an int.\n"
 	     "This is the largest integral value <= x.");
 
-FUNC2(fmod, fmod,
-      "fmod(x,y)\n\nReturn fmod(x, y), according to platform C."
-      "  x % y may differ.")
-FUNC2(hypot, hypot,
-      "hypot(x,y)\n\nReturn the Euclidean distance, sqrt(x*x + y*y).")
-FUNC2(pow, pow,
-      "pow(x,y)\n\nReturn x**y (x to the power of y).")
-FUNC1(sin, sin,
+FUNC1(log1p, log1p, 1,
+      "log1p(x)\n\nReturn the natural logarithm of 1+x (base e).\n\
+      The result is computed in a way which is accurate for x near zero.")
+FUNC1(sin, sin, 0,
       "sin(x)\n\nReturn the sine of x (measured in radians).")
-FUNC1(sinh, sinh,
+FUNC1(sinh, sinh, 1,
       "sinh(x)\n\nReturn the hyperbolic sine of x.")
-FUNC1(sqrt, sqrt,
+FUNC1(sqrt, sqrt, 0,
       "sqrt(x)\n\nReturn the square root of x.")
-FUNC1(tan, tan,
+FUNC1(tan, tan, 0,
       "tan(x)\n\nReturn the tangent of x (measured in radians).")
-FUNC1(tanh, tanh,
+FUNC1(tanh, tanh, 0,
       "tanh(x)\n\nReturn the hyperbolic tangent of x.")
 
 static PyObject *
@@ -244,13 +362,17 @@ math_frexp(PyObject *self, PyObject *arg)
 	double x = PyFloat_AsDouble(arg);
 	if (x == -1.0 && PyErr_Occurred())
 		return NULL;
-	errno = 0;
-	x = frexp(x, &i);
-	Py_SET_ERRNO_ON_MATH_ERROR(x);
-	if (errno && is_error(x))
-		return NULL;
-	else
-		return Py_BuildValue("(di)", x, i);
+	/* deal with special cases directly, to sidestep platform
+	   differences */
+	if (Py_IS_NAN(x) || Py_IS_INFINITY(x) || !x) {
+		i = 0;
+	}
+	else {
+		PyFPE_START_PROTECT("in math_frexp", return 0);
+		x = frexp(x, &i);
+		PyFPE_END_PROTECT(x);
+	}
+	return Py_BuildValue("(di)", x, i);
 }
 
 PyDoc_STRVAR(math_frexp_doc,
@@ -263,19 +385,24 @@ PyDoc_STRVAR(math_frexp_doc,
 static PyObject *
 math_ldexp(PyObject *self, PyObject *args)
 {
-	double x;
+	double x, r;
 	int exp;
 	if (! PyArg_ParseTuple(args, "di:ldexp", &x, &exp))
 		return NULL;
 	errno = 0;
-	PyFPE_START_PROTECT("ldexp", return 0)
-	x = ldexp(x, exp);
-	PyFPE_END_PROTECT(x)
-	Py_SET_ERRNO_ON_MATH_ERROR(x);
-	if (errno && is_error(x))
+	PyFPE_START_PROTECT("in math_ldexp", return 0)
+	r = ldexp(x, exp);
+	PyFPE_END_PROTECT(r)
+	if (Py_IS_FINITE(x) && Py_IS_INFINITY(r))
+		errno = ERANGE;
+	/* Windows MSVC8 sets errno = EDOM on ldexp(NaN, i);
+	   we unset it to avoid raising a ValueError here. */
+	if (errno == EDOM)
+		errno = 0;
+	if (errno && is_error(r))
 		return NULL;
 	else
-		return PyFloat_FromDouble(x);
+		return PyFloat_FromDouble(r);
 }
 
 PyDoc_STRVAR(math_ldexp_doc,
@@ -288,12 +415,10 @@ math_modf(PyObject *self, PyObject *arg)
 	if (x == -1.0 && PyErr_Occurred())
 		return NULL;
 	errno = 0;
+	PyFPE_START_PROTECT("in math_modf", return 0);
 	x = modf(x, &y);
-	Py_SET_ERRNO_ON_MATH_ERROR(x);
-	if (errno && is_error(x))
-		return NULL;
-	else
-		return Py_BuildValue("(dd)", x, y);
+	PyFPE_END_PROTECT(x);
+	return Py_BuildValue("(dd)", x, y);
 }
 
 PyDoc_STRVAR(math_modf_doc,
@@ -332,7 +457,7 @@ loghelper(PyObject* arg, double (*func)(double), char *funcname)
 	}
 
 	/* Else let libm handle it by itself. */
-	return math_1(arg, func);
+	return math_1(arg, func, 0);
 }
 
 static PyObject *
@@ -374,6 +499,141 @@ math_log10(PyObject *self, PyObject *arg)
 
 PyDoc_STRVAR(math_log10_doc,
 "log10(x) -> the base 10 logarithm of x.");
+
+static PyObject *
+math_fmod(PyObject *self, PyObject *args)
+{
+	PyObject *ox, *oy;
+	double r, x, y;
+	if (! PyArg_UnpackTuple(args, "fmod", 2, 2, &ox, &oy))
+		return NULL;
+	x = PyFloat_AsDouble(ox);
+	y = PyFloat_AsDouble(oy);
+	if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
+		return NULL;
+	/* fmod(x, +/-Inf) returns x for finite x. */
+	if (Py_IS_INFINITY(y) && Py_IS_FINITE(x))
+		return PyFloat_FromDouble(x);
+	errno = 0;
+	PyFPE_START_PROTECT("in math_fmod", return 0);
+	r = fmod(x, y);
+	PyFPE_END_PROTECT(r);
+	if (Py_IS_NAN(r)) {
+		if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
+			errno = EDOM;
+		else
+			errno = 0;
+	}
+	if (errno && is_error(r))
+		return NULL;
+	else
+		return PyFloat_FromDouble(r);
+}
+
+PyDoc_STRVAR(math_fmod_doc,
+"fmod(x,y)\n\nReturn fmod(x, y), according to platform C."
+"  x % y may differ.");
+
+static PyObject *
+math_hypot(PyObject *self, PyObject *args)
+{
+	PyObject *ox, *oy;
+	double r, x, y;
+	if (! PyArg_UnpackTuple(args, "hypot", 2, 2, &ox, &oy))
+		return NULL;
+	x = PyFloat_AsDouble(ox);
+	y = PyFloat_AsDouble(oy);
+	if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
+		return NULL;
+	/* hypot(x, +/-Inf) returns Inf, even if x is a NaN. */
+	if (Py_IS_INFINITY(x))
+		return PyFloat_FromDouble(fabs(x));
+	if (Py_IS_INFINITY(y))
+		return PyFloat_FromDouble(fabs(y));
+	errno = 0;
+	PyFPE_START_PROTECT("in math_hypot", return 0);
+	r = hypot(x, y);
+	PyFPE_END_PROTECT(r);
+	if (Py_IS_NAN(r)) {
+		if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
+			errno = EDOM;
+		else
+			errno = 0;
+	}
+	else if (Py_IS_INFINITY(r)) {
+		if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
+			errno = ERANGE;
+		else
+			errno = 0;
+	}
+	if (errno && is_error(r))
+		return NULL;
+	else
+		return PyFloat_FromDouble(r);
+}
+
+PyDoc_STRVAR(math_hypot_doc,
+"hypot(x,y)\n\nReturn the Euclidean distance, sqrt(x*x + y*y).");
+
+/* pow can't use math_2, but needs its own wrapper: the problem is
+   that an infinite result can arise either as a result of overflow
+   (in which case OverflowError should be raised) or as a result of
+   e.g. 0.**-5. (for which ValueError needs to be raised.)
+*/
+
+static PyObject *
+math_pow(PyObject *self, PyObject *args)
+{
+	PyObject *ox, *oy;
+	double r, x, y;
+
+	if (! PyArg_UnpackTuple(args, "pow", 2, 2, &ox, &oy))
+		return NULL;
+	x = PyFloat_AsDouble(ox);
+	y = PyFloat_AsDouble(oy);
+	if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
+		return NULL;
+	/* 1**x and x**0 return 1., even if x is a NaN or infinity. */
+	if (x == 1.0 || y == 0.0)
+	        return PyFloat_FromDouble(1.);
+	errno = 0;
+	PyFPE_START_PROTECT("in math_pow", return 0);
+	r = pow(x, y);
+	PyFPE_END_PROTECT(r);
+	if (Py_IS_NAN(r)) {
+		if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
+			errno = EDOM;
+		else
+			errno = 0;
+	}
+	/* an infinite result arises either from:
+
+	   (A) (+/-0.)**negative,
+	   (B) overflow of x**y with both x and y finite (and x nonzero)
+	   (C) (+/-inf)**positive, or
+	   (D) x**inf with |x| > 1, or x**-inf with |x| < 1.
+
+	   In case (A) we want ValueError to be raised.  In case (B)
+	   OverflowError should be raised.  In cases (C) and (D) the infinite
+	   result should be returned.
+	*/
+	else if (Py_IS_INFINITY(r)) {
+		if (x == 0.)
+			errno = EDOM;
+		else if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
+			errno = ERANGE;
+		else
+			errno = 0;
+	}
+
+	if (errno && is_error(r))
+		return NULL;
+	else
+		return PyFloat_FromDouble(r);
+}
+
+PyDoc_STRVAR(math_pow_doc,
+"pow(x,y)\n\nReturn x**y (x to the power of y).");
 
 static const double degToRad = Py_MATH_PI / 180.0;
 static const double radToDeg = 180.0 / Py_MATH_PI;
@@ -428,16 +688,16 @@ PyDoc_STRVAR(math_isinf_doc,
 "isinf(x) -> bool\n\
 Checks if float x is infinite (positive or negative)");
 
-
 static PyMethodDef math_methods[] = {
 	{"acos",	math_acos,	METH_O,		math_acos_doc},
+	{"acosh",	math_acosh,	METH_O,		math_acosh_doc},
 	{"asin",	math_asin,	METH_O,		math_asin_doc},
+	{"asinh",	math_asinh,	METH_O,		math_asinh_doc},
 	{"atan",	math_atan,	METH_O,		math_atan_doc},
 	{"atan2",	math_atan2,	METH_VARARGS,	math_atan2_doc},
+	{"atanh",	math_atanh,	METH_O,		math_atanh_doc},
 	{"ceil",	math_ceil,	METH_O,		math_ceil_doc},
-#ifdef HAVE_COPYSIGN
 	{"copysign",	math_copysign,	METH_VARARGS,	math_copysign_doc},
-#endif
 	{"cos",		math_cos,	METH_O,		math_cos_doc},
 	{"cosh",	math_cosh,	METH_O,		math_cosh_doc},
 	{"degrees",	math_degrees,	METH_O,		math_degrees_doc},
@@ -451,6 +711,7 @@ static PyMethodDef math_methods[] = {
 	{"isnan",	math_isnan,	METH_O,		math_isnan_doc},
 	{"ldexp",	math_ldexp,	METH_VARARGS,	math_ldexp_doc},
 	{"log",		math_log,	METH_VARARGS,	math_log_doc},
+	{"log1p",	math_log1p,	METH_O,		math_log1p_doc},
 	{"log10",	math_log10,	METH_O,		math_log10_doc},
 	{"modf",	math_modf,	METH_O,		math_modf_doc},
 	{"pow",		math_pow,	METH_VARARGS,	math_pow_doc},
@@ -472,27 +733,15 @@ PyDoc_STRVAR(module_doc,
 PyMODINIT_FUNC
 initmath(void)
 {
-	PyObject *m, *d, *v;
+	PyObject *m;
 
 	m = Py_InitModule3("math", math_methods, module_doc);
 	if (m == NULL)
 		goto finally;
-	d = PyModule_GetDict(m);
-	if (d == NULL)
-		goto finally;
 
-        if (!(v = PyFloat_FromDouble(Py_MATH_PI)))
-                goto finally;
-	if (PyDict_SetItemString(d, "pi", v) < 0)
-                goto finally;
-	Py_DECREF(v);
+	PyModule_AddObject(m, "pi", PyFloat_FromDouble(Py_MATH_PI));
+	PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
 
-        if (!(v = PyFloat_FromDouble(Py_MATH_E)))
-                goto finally;
-	if (PyDict_SetItemString(d, "e", v) < 0)
-                goto finally;
-	Py_DECREF(v);
-
-  finally:
+    finally:
 	return;
 }
