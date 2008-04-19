@@ -630,9 +630,11 @@ the more significant byte last.
 
 .. opcode:: IMPORT_NAME (namei)
 
-   Imports the module ``co_names[namei]``.  The module object is pushed onto the
-   stack.  The current namespace is not affected: for a proper import statement, a
-   subsequent ``STORE_FAST`` instruction modifies the namespace.
+   Imports the module ``co_names[namei]``.  TOS and TOS1 are popped and provide
+   the *fromlist* and *level* arguments of :func:`__import__`.  The module
+   object is pushed onto the stack.  The current namespace is not affected:
+   for a proper import statement, a subsequent ``STORE_FAST`` instruction
+   modifies the namespace.
 
 
 .. opcode:: IMPORT_FROM (namei)
