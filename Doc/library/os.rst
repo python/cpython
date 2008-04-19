@@ -1464,7 +1464,8 @@ to be ignored.
 
    For :func:`execle`, :func:`execlpe`, :func:`execve`, and :func:`execvpe` (note
    that these all end in "e"), the *env* parameter must be a mapping which is
-   used to define the environment variables for the new process; the :func:`execl`,
+   used to define the environment variables for the new process (these are used
+   instead of the current process' environment); the functions :func:`execl`,
    :func:`execlp`, :func:`execv`, and :func:`execvp` all cause the new process to
    inherit the environment of the current process. Availability: Macintosh, Unix,
    Windows.
@@ -1733,7 +1734,8 @@ written in Python, such as a mail server's external command delivery program.
 
    For :func:`spawnle`, :func:`spawnlpe`, :func:`spawnve`, and :func:`spawnvpe`
    (note that these all end in "e"), the *env* parameter must be a mapping
-   which is used to define the environment variables for the new process; the
+   which is used to define the environment variables for the new process (they are
+   used instead of the current process' environment); the functions
    :func:`spawnl`, :func:`spawnlp`, :func:`spawnv`, and :func:`spawnvp` all cause
    the new process to inherit the environment of the current process.
 
