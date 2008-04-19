@@ -7,7 +7,6 @@
 .. moduleauthor:: Mike Verdone <mike.verdone@gmail.com>
 .. moduleauthor:: Mark Russell <mark.russell@zen.co.uk>
 .. sectionauthor:: Benjamin Peterson
-.. versionadded:: 2.6
 
 The :mod:`io` module provides the Python interfaces to stream handling.  The
 builtin :func:`open` function is defined in this module.
