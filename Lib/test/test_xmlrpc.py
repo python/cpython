@@ -49,6 +49,17 @@ class XMLRPCTestCase(unittest.TestCase):
         (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
         self.assertEquals(newdt, xmlrpclib.DateTime('20050210T11:41:23'))
 
+    def test_datetime_before_1900(self):
+        # same as before but with an date before 1900
+        dt = datetime.datetime(1,  2, 10, 11, 41, 23)
+        s = xmlrpclib.dumps((dt,))
+        (newdt,), m = xmlrpclib.loads(s, use_datetime=1)
+        self.assertEquals(newdt, dt)
+        self.assertEquals(m, None)
+
+        (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
+        self.assertEquals(newdt, xmlrpclib.DateTime('00010210T11:41:23'))
+
     def test_cmp_datetime_DateTime(self):
         now = datetime.datetime.now()
         dt = xmlrpclib.DateTime(now.timetuple())

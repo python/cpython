@@ -1191,9 +1191,9 @@ _PySys_Init(void)
         /* stdin/stdout/stderr are now set by pythonrun.c */
 
 	PyDict_SetItemString(sysdict, "__displayhook__",
-                             PyDict_GetItemString(sysdict, "displayhook"));
+			     PyDict_GetItemString(sysdict, "displayhook"));
 	PyDict_SetItemString(sysdict, "__excepthook__",
-                             PyDict_GetItemString(sysdict, "excepthook"));
+			     PyDict_GetItemString(sysdict, "excepthook"));
 	SET_SYS_FROM_STRING("version",
 			     PyUnicode_FromString(Py_GetVersion()));
 	SET_SYS_FROM_STRING("hexversion",
@@ -1203,7 +1203,7 @@ _PySys_Init(void)
 			    Py_BuildValue("(UUU)", "CPython", branch,
 					  svn_revision));
 	SET_SYS_FROM_STRING("dont_write_bytecode",
-			    PyBool_FromLong(Py_DontWriteBytecodeFlag));
+			     PyBool_FromLong(Py_DontWriteBytecodeFlag));
 	/*
 	 * These release level checks are mutually exclusive and cover
 	 * the field, so don't get too fancy with the pre-processor!

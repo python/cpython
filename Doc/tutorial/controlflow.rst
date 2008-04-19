@@ -467,6 +467,9 @@ if this is not done, the order in which the arguments are printed is undefined.
 Arbitrary Argument Lists
 ------------------------
 
+.. index::
+  statement: *  
+
 Finally, the least frequently used option is to specify that a function can be
 called with an arbitrary number of arguments.  These arguments will be wrapped
 up in a tuple.  Before the variable number of arguments, zero or more normal
@@ -507,6 +510,9 @@ or tuple::
    >>> args = [3, 6]
    >>> list(range(*args))            # call with arguments unpacked from a list
    [3, 4, 5]
+
+.. index::
+  statement: **
 
 In the same fashion, dictionaries can deliver keyword arguments with the ``**``\
 -operator::
@@ -610,7 +616,7 @@ concise, *formatted*) in different styles; some are more readable than others.
 Making it easy for others to read your code is always a good idea, and adopting
 a nice coding style helps tremendously for that.
 
-For Python, :pep:`8` has emerged as the style guide that most projects adher to;
+For Python, :pep:`8` has emerged as the style guide that most projects adhere to;
 it promotes a very readable and eye-pleasing coding style.  Every Python
 developer should read it at some point; here are the most important points
 extracted for you:

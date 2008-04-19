@@ -4,7 +4,7 @@
 
 :Author: Moshe Zadka
 
-This document is placed in the public doman.
+This document is placed in the public domain.
 
 
 .. topic:: Abstract

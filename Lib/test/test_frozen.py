@@ -39,6 +39,18 @@ class FrozenTests(unittest.TestCase):
         else:
             self.fail("import __phello__.foo should have failed")
 
+            if sys.platform != "mac":  # On the Mac this import does succeed.
+                try:
+                    import __phello__.foo
+                except ImportError:
+                    pass
+                else:
+                    self.fail("import __phello__.foo should have failed")
+
+        del sys.modules['__hello__']
+        del sys.modules['__phello__']
+        del sys.modules['__phello__.spam']
+
 def test_main():
     run_unittest(FrozenTests)
 
