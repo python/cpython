@@ -101,13 +101,15 @@ Module Interface
    :mod:`codecs` module for the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
-   errors are to be handled---this argument should not be used in binary mode.
-   Pass ``'strict'`` to raise a :exc:`ValueError` exception if there is an
-   encoding error (the default of ``None`` has the same effect), or pass
-   ``'ignore'`` to ignore errors.  (Note that ignoring encoding errors can lead
-   to data loss.)  ``'replace'`` causes a replacement marker (such as ``'?'``)
-   to be inserted where there is malformed data.  For all possible values, see
-   :func:`codecs.register`.
+   errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
+   exception if there is an encoding error (the default of ``None`` has the same
+   effect), or pass ``'ignore'`` to ignore errors.  (Note that ignoring encoding
+   errors can lead to data loss.)  ``'replace'`` causes a replacement marker
+   (such as ``'?'``) to be inserted where there is malformed data.  When
+   writing, ``'xmlcharrefreplace'`` (replace with the appropriate XML character
+   reference) or ``'backslashreplace'`` (replace with backslashed escape
+   sequences) can be used.  Any other error handling name that has been
+   registered with :func:`codecs.register_error` is also valid.
 
    *newline* controls how universal newlines works (it only applies to text
    mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
@@ -581,8 +583,11 @@ Text I/O
    exception if there is an encoding error (the default of ``None`` has the same
    effect), or pass ``'ignore'`` to ignore errors.  (Note that ignoring encoding
    errors can lead to data loss.)  ``'replace'`` causes a replacement marker
-   (such as ``'?'``) to be inserted where there is malformed data.  For all
-   possible values see :func:`codecs.register`.
+   (such as ``'?'``) to be inserted where there is malformed data.  When
+   writing, ``'xmlcharrefreplace'`` (replace with the appropriate XML character
+   reference) or ``'backslashreplace'`` (replace with backslashed escape
+   sequences) can be used.  Any other error handling name that has been
+   registered with :func:`codecs.register_error` is also valid.
 
    *newline* can be ``None``, ``''``, ``'\n'``, ``'\r'``, or ``'\r\n'``.  It
    controls the handling of line endings.  If it is ``None``, universal newlines

@@ -89,8 +89,9 @@ This module defines one class called :class:`Popen`:
    searching the executable, so you can't specify the program's path relative to
    *cwd*.
 
-   If *env* is not ``None``, it defines the environment variables for the new
-   process.
+   If *env* is not ``None``, it must be a mapping that defines the environment
+   variables for the new process; these are used instead of inheriting the current
+   process' environment, which is the default behavior.
 
    If *universal_newlines* is :const:`True`, the file objects stdout and stderr are
    opened as text files, but lines may be terminated by any of ``'\n'``, the Unix
@@ -200,6 +201,35 @@ Instances of the :class:`Popen` class have the following methods:
 
       The data read is buffered in memory, so do not use this method if the data
       size is large or unlimited.
+
+
+.. method:: Popen.send_signal(signal)
+
+   Sends the signal *signal* to the child.
+
+   .. note::
+
+      On Windows only SIGTERM is supported so far. It's an alias for
+      :meth:`terminate`.
+
+   .. versionadded:: 2.6
+
+
+.. method:: Popen.terminate()
+
+   Stop the child. On Posix OSs the method sends SIGTERM to the
+   child. On Windows the Win32 API function TerminateProcess is called
+   to stop the child.
+
+   .. versionadded:: 2.6
+
+
+.. method:: Popen.kill()
+
+   Kills the child. On Posix OSs the function sends SIGKILL to the child.
+   On Windows :meth:`kill` is an alias for :meth:`terminate`.
+
+   .. versionadded:: 2.6
 
 
 The following attributes are also available:

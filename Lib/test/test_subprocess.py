@@ -584,6 +584,29 @@ class ProcessTestCase(unittest.TestCase):
             os.remove(fname)
             self.assertEqual(rc, 47)
 
+        def test_send_signal(self):
+            p = subprocess.Popen([sys.executable,
+                              "-c", "input()"])
+
+            self.assert_(p.poll() is None, p.poll())
+            p.send_signal(signal.SIGINT)
+            self.assertNotEqual(p.wait(), 0)
+
+        def test_kill(self):
+            p = subprocess.Popen([sys.executable,
+                            "-c", "input()"])
+
+            self.assert_(p.poll() is None, p.poll())
+            p.kill()
+            self.assertEqual(p.wait(), -signal.SIGKILL)
+
+        def test_terminate(self):
+            p = subprocess.Popen([sys.executable,
+                            "-c", "input()"])
+
+            self.assert_(p.poll() is None, p.poll())
+            p.terminate()
+            self.assertEqual(p.wait(), -signal.SIGTERM)
 
     #
     # Windows tests
@@ -655,6 +678,29 @@ class ProcessTestCase(unittest.TestCase):
                                  ' -c "import sys; sys.exit(47)"')
             self.assertEqual(rc, 47)
 
+        def test_send_signal(self):
+            p = subprocess.Popen([sys.executable,
+                              "-c", "input()"])
+
+            self.assert_(p.poll() is None, p.poll())
+            p.send_signal(signal.SIGTERM)
+            self.assertNotEqual(p.wait(), 0)
+
+        def test_kill(self):
+            p = subprocess.Popen([sys.executable,
+                            "-c", "input()"])
+
+            self.assert_(p.poll() is None, p.poll())
+            p.kill()
+            self.assertNotEqual(p.wait(), 0)
+
+        def test_terminate(self):
+            p = subprocess.Popen([sys.executable,
+                            "-c", "input()"])
+
+            self.assert_(p.poll() is None, p.poll())
+            p.terminate()
+            self.assertNotEqual(p.wait(), 0)
 
 def test_main():
     test_support.run_unittest(ProcessTestCase)

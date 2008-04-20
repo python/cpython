@@ -414,6 +414,15 @@ math_modf(PyObject *self, PyObject *arg)
 	double y, x = PyFloat_AsDouble(arg);
 	if (x == -1.0 && PyErr_Occurred())
 		return NULL;
+	/* some platforms don't do the right thing for NaNs and
+	   infinities, so we take care of special cases directly. */
+	if (!Py_IS_FINITE(x)) {
+		if (Py_IS_INFINITY(x))
+			return Py_BuildValue("(dd)", copysign(0., x), x);
+		else if (Py_IS_NAN(x))
+			return Py_BuildValue("(dd)", x, x);
+	}          
+
 	errno = 0;
 	PyFPE_START_PROTECT("in math_modf", return 0);
 	x = modf(x, &y);
@@ -586,6 +595,7 @@ math_pow(PyObject *self, PyObject *args)
 {
 	PyObject *ox, *oy;
 	double r, x, y;
+	int odd_y;
 
 	if (! PyArg_UnpackTuple(args, "pow", 2, 2, &ox, &oy))
 		return NULL;
@@ -593,37 +603,62 @@ math_pow(PyObject *self, PyObject *args)
 	y = PyFloat_AsDouble(oy);
 	if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
 		return NULL;
-	/* 1**x and x**0 return 1., even if x is a NaN or infinity. */
-	if (x == 1.0 || y == 0.0)
-	        return PyFloat_FromDouble(1.);
-	errno = 0;
-	PyFPE_START_PROTECT("in math_pow", return 0);
-	r = pow(x, y);
-	PyFPE_END_PROTECT(r);
-	if (Py_IS_NAN(r)) {
-		if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
-			errno = EDOM;
-		else
-			errno = 0;
+
+	/* deal directly with IEEE specials, to cope with problems on various
+	   platforms whose semantics don't exactly match C99 */
+	if (!Py_IS_FINITE(x) || !Py_IS_FINITE(y)) {
+		errno = 0;
+		if (Py_IS_NAN(x))
+			r = y == 0. ? 1. : x; /* NaN**0 = 1 */
+		else if (Py_IS_NAN(y))
+			r = x == 1. ? 1. : y; /* 1**NaN = 1 */
+		else if (Py_IS_INFINITY(x)) {
+			odd_y = Py_IS_FINITE(y) && fmod(fabs(y), 2.0) == 1.0;
+			if (y > 0.)
+				r = odd_y ? x : fabs(x);
+			else if (y == 0.)
+				r = 1.;
+			else /* y < 0. */
+				r = odd_y ? copysign(0., x) : 0.;
+		}
+		else if (Py_IS_INFINITY(y)) {
+			if (fabs(x) == 1.0)
+				r = 1.;
+			else if (y > 0. && fabs(x) > 1.0)
+				r = y;
+			else if (y < 0. && fabs(x) < 1.0) {
+				r = -y; /* result is +inf */
+				if (x == 0.) /* 0**-inf: divide-by-zero */
+					errno = EDOM;
+			}
+			else
+				r = 0.;
+		}
 	}
-	/* an infinite result arises either from:
-
-	   (A) (+/-0.)**negative,
-	   (B) overflow of x**y with both x and y finite (and x nonzero)
-	   (C) (+/-inf)**positive, or
-	   (D) x**inf with |x| > 1, or x**-inf with |x| < 1.
-
-	   In case (A) we want ValueError to be raised.  In case (B)
-	   OverflowError should be raised.  In cases (C) and (D) the infinite
-	   result should be returned.
-	*/
-	else if (Py_IS_INFINITY(r)) {
-		if (x == 0.)
-			errno = EDOM;
-		else if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
-			errno = ERANGE;
-		else
-			errno = 0;
+	else {
+		/* let libm handle finite**finite */
+		errno = 0;
+		PyFPE_START_PROTECT("in math_pow", return 0);
+		r = pow(x, y);
+		PyFPE_END_PROTECT(r);
+		/* a NaN result should arise only from (-ve)**(finite
+		   non-integer); in this case we want to raise ValueError. */
+		if (!Py_IS_FINITE(r)) {
+			if (Py_IS_NAN(r)) {
+				errno = EDOM;
+			}
+			/* 
+			   an infinite result here arises either from:
+			   (A) (+/-0.)**negative (-> divide-by-zero)
+			   (B) overflow of x**y with x and y finite
+			*/
+			else if (Py_IS_INFINITY(r)) {
+				if (x == 0.)
+					errno = EDOM;
+				else
+					errno = ERANGE;
+			}
+		}
 	}
 
 	if (errno && is_error(r))
