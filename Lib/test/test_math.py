@@ -672,7 +672,12 @@ class MathTests(unittest.TestCase):
                 # no real versions of rect, polar
                 continue
             func = getattr(math, fn)
-            result = func(ar)
+            try:
+                result = func(ar)
+            except ValueError:
+                message = ("Unexpected ValueError in " +
+                           "test %s:%s(%r)\n" % (id, fn, ar))
+                self.fail(message)
             self.ftest("%s:%s(%r)" % (id, fn, ar), result, er)
 
 def test_main():
