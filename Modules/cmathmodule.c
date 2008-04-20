@@ -264,7 +264,8 @@ c_atan(Py_complex z)
 	return r;
 }
 
-/* Windows screws up atan2 for inf and nan */
+/* Windows screws up atan2 for inf and nan, and alpha Tru64 5.1 doesn't follow
+   C99 for atan2(0., 0.). */
 static double
 c_atan2(Py_complex z)
 {
@@ -281,6 +282,14 @@ c_atan2(Py_complex z)
 		}
 		/* atan2(+-inf, x) == +-pi/2 for finite x */
 		return copysign(0.5*Py_MATH_PI, z.imag);
+	}
+	if (Py_IS_INFINITY(z.real) || z.imag == 0.) {
+		if (copysign(1., z.real) == 1.)
+			/* atan2(+-y, +inf) = atan2(+-0, +x) = +-0. */
+			return copysign(0., z.imag);
+		else
+			/* atan2(+-y, -inf) = atan2(+-0., -x) = +-pi. */
+			return copysign(Py_MATH_PI, z.imag);
 	}
 	return atan2(z.imag, z.real);
 }
