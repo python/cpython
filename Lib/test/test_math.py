@@ -498,6 +498,18 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.pow(-1.1, INF), INF)
         self.assertEqual(math.pow(-1.9, INF), INF)
 
+        # pow(x, y) should work for x negative, y an integer
+        self.ftest('(-2.)**3.', math.pow(-2.0, 3.0), -8.0)
+        self.ftest('(-2.)**2.', math.pow(-2.0, 2.0), 4.0)
+        self.ftest('(-2.)**1.', math.pow(-2.0, 1.0), -2.0)
+        self.ftest('(-2.)**0.', math.pow(-2.0, 0.0), 1.0)
+        self.ftest('(-2.)**-0.', math.pow(-2.0, -0.0), 1.0)
+        self.ftest('(-2.)**-1.', math.pow(-2.0, -1.0), -0.5)
+        self.ftest('(-2.)**-2.', math.pow(-2.0, -2.0), 0.25)
+        self.ftest('(-2.)**-3.', math.pow(-2.0, -3.0), -0.125)
+        self.assertRaises(ValueError, math.pow, -2.0, -0.5)
+        self.assertRaises(ValueError, math.pow, -2.0, 0.5)
+
         # the following tests have been commented out since they don't
         # really belong here:  the implementation of ** for floats is
         # independent of the implemention of math.pow
