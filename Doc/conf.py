@@ -75,9 +75,6 @@ html_last_updated_fmt = '%b %d, %Y'
 # typographically correct entities.
 html_use_smartypants = True
 
-# Content template for the index page, filename relative to this file.
-html_index = 'indexcontent.html'
-
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
     'index': 'indexsidebar.html',
@@ -86,6 +83,7 @@ html_sidebars = {
 # Additional templates that should be rendered to pages.
 html_additional_pages = {
     'download': 'download.html',
+    'index': 'indexcontent.html',
 }
 
 # Output file base name for HTML help builder.

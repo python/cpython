@@ -319,8 +319,8 @@ a matching identifier is found:
 .. describe:: func
 
    The name of a Python function; dotted names may be used.  The role text
-   should include trailing parentheses to enhance readability.  The parentheses
-   are stripped when searching for identifiers.
+   should not include trailing parentheses to enhance readability.  The
+   parentheses are stripped when searching for identifiers.
 
 .. describe:: data
 
@@ -338,7 +338,7 @@ a matching identifier is found:
 .. describe:: meth
 
    The name of a method of an object.  The role text should include the type
-   name, method name and the trailing parentheses.  A dotted name may be used.
+   name and the method name.  A dotted name may be used.
 
 .. describe:: attr
 

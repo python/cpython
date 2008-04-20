@@ -143,11 +143,15 @@ Power and logarithmic functions:
 
 .. function:: pow(x, y)
 
-   Return ``x**y``. ``1.0**y`` returns *1.0*, even for ``1.0**nan``. ``0**y``
-   returns *0.* for all positive *y*, *0* and *NAN*.
+   Return ``x`` raised to the power ``y``.  Exceptional cases follow
+   Annex 'F' of the C99 standard as far as possible.  In particular,
+   ``pow(1.0, x)`` and ``pow(x, 0.0)`` always return ``1.0``, even
+   when ``x`` is a zero or a NaN.  If both ``x`` and ``y`` are finite,
+   ``x`` is negative, and ``y`` is not an integer then ``pow(x, y)``
+   is undefined, and raises :exc:`ValueError`.
 
    .. versionchanged:: 2.6
-      The outcome of ``1**nan`` and ``0**nan`` was undefined.
+      The outcome of ``1**nan`` and ``nan**0`` was undefined.
 
 
 .. function:: sqrt(x)
@@ -198,13 +202,6 @@ Trigonometric functions:
    Return the sine of *x* radians.
 
 
-.. function:: asinh(x)
-
-   Return the inverse hyperbolic sine of *x*, in radians.
-
-   .. versionadded:: 2.6
-
-
 .. function:: tan(x)
 
    Return the tangent of *x* radians.
@@ -224,16 +221,30 @@ Angular conversion:
 Hyperbolic functions:
 
 
+.. function:: acosh(x)
+
+   Return the inverse hyperbolic cosine of *x*.
+
+   .. versionadded:: 2.6
+
+
+.. function:: asinh(x)
+
+   Return the inverse hyperbolic sine of *x*.
+
+   .. versionadded:: 2.6
+
+
+.. function:: atanh(x)
+
+   Return the inverse hyperbolic tangent of *x*.
+
+   .. versionadded:: 2.6
+
+
 .. function:: cosh(x)
 
    Return the hyperbolic cosine of *x*.
-
-
-.. function:: acosh(x)
-
-   Return the inverse hyperbolic cosine of *x*, in radians.
-
-   .. versionadded:: 2.6
 
 
 .. function:: sinh(x)
@@ -245,12 +256,6 @@ Hyperbolic functions:
 
    Return the hyperbolic tangent of *x*.
 
-
-.. function:: atanh(x)
-
-   Return the inverse hyperbolic tangent of *x*, in radians.
-
-   .. versionadded:: 2.6
 
 
 The module also defines two mathematical constants:
@@ -279,7 +284,7 @@ The module also defines two mathematical constants:
    :exc:`OverflowError` isn't defined, and in cases where ``math.log(0)`` raises
    :exc:`OverflowError`, ``math.log(0L)`` may raise :exc:`ValueError` instead.
 
-   All functions return a quite *NaN* if at least one of the args is *NaN*.
+   All functions return a quiet *NaN* if at least one of the args is *NaN*.
    Signaling *NaN*s raise an exception. The exception type still depends on the
    platform and libm implementation. It's usually :exc:`ValueError` for *EDOM*
    and :exc:`OverflowError` for errno *ERANGE*.
