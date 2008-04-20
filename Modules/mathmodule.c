@@ -341,6 +341,15 @@ math_modf(PyObject *self, PyObject *arg)
 	double y, x = PyFloat_AsDouble(arg);
 	if (x == -1.0 && PyErr_Occurred())
 		return NULL;
+	/* some platforms don't do the right thing for NaNs and
+	   infinities, so we take care of special cases directly. */
+	if (!Py_IS_FINITE(x)) {
+		if (Py_IS_INFINITY(x))
+			return Py_BuildValue("(dd)", copysign(0., x), x);
+		else if (Py_IS_NAN(x))
+			return Py_BuildValue("(dd)", x, x);
+	}          
+
 	errno = 0;
 	PyFPE_START_PROTECT("in math_modf", return 0);
 	x = modf(x, &y);
