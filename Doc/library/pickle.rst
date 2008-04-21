@@ -194,18 +194,18 @@ process more convenient:
 
 .. function:: dumps(obj[, protocol])
 
-   Return the pickled representation of the object as a string, instead of writing
-   it to a file.
+   Return the pickled representation of the object as a :class:`bytes`
+   object, instead of writing it to a file.
 
    If the *protocol* parameter is omitted, protocol 3 is used.  If *protocol* 
    is specified as a negative value or :const:`HIGHEST_PROTOCOL`, the highest 
    protocol version will be used.
 
 
-.. function:: loads(string)
+.. function:: loads(bytes_object)
 
-   Read a pickled object hierarchy from a string.  Characters in the string past
-   the pickled object's representation are ignored.
+   Read a pickled object hierarchy from a :class:`bytes` object.
+   Bytes past the pickled object's representation are ignored.
 
 The :mod:`pickle` module also defines three exceptions:
 
