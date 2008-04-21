@@ -1,7 +1,10 @@
 What's New in IDLE 1.2.3c1?
-=========================
+===========================
 
 *Release date: XX-XXX-2008*
+
+- Issue #2665: On Windows, an IDLE installation upgraded from an old version
+  would not start if a custom theme was defined.
 
 
 What's New in IDLE 1.2.2?
