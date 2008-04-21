@@ -921,6 +921,9 @@
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
 
+/* Define if tanh(-0.) is -0., or if platform doesn't have signed zeros */
+#undef TANH_PRESERVES_ZERO_SIGN
+
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
 
