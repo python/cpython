@@ -119,7 +119,7 @@ While 2.6 was being developed, the Python development process
 underwent two significant changes: the developer group 
 switched from SourceForge's issue tracker to a customized 
 Roundup installation, and the documentation was converted from
-LaTeX to reStructured Text.
+LaTeX to reStructuredText.
 
 
 New Issue Tracker: Roundup
@@ -171,7 +171,7 @@ http://svn.python.org/view/tracker/importer/.
     Roundup downloads and documentation.
 
 
-New Documentation Format: ReStructured Text Using Sphinx
+New Documentation Format: ReStructuredText Using Sphinx
 -----------------------------------------------------------
 
 Since the Python project's inception around 1989, the documentation
@@ -195,7 +195,7 @@ and no one pursued the task to completion.
 During the 2.6 development cycle, Georg Brandl put a substantial
 effort into building a new toolchain for processing the documentation.
 The resulting package is called Sphinx, and is available from
-http://sphinx.pocoo.org/.  The input format is reStructured Text, a
+http://sphinx.pocoo.org/.  The input format is reStructuredText, a
 markup commonly used in the Python community that supports custom
 extensions and directives.  Sphinx concentrates on HTML output,
 producing attractively styled and modern HTML, though printed output
@@ -211,7 +211,7 @@ standalone package that can be used in documenting other projects.
      Documentation and code for the Sphinx toolchain.
 
    `Docutils <http://docutils.sf.net>`__
-     The underlying reStructured Text parser and toolset.
+     The underlying reStructuredText parser and toolset.
 
 
 PEP 343: The 'with' statement
