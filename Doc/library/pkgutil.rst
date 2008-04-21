@@ -45,13 +45,13 @@ This module provides functions to manipulate packages:
 
    Get a resource from a package.
 
-   This is a wrapper round the PEP 302 loader :func:`get_data` API. The package
+   This is a wrapper for the PEP 302 loader :func:`get_data` API. The package
    argument should be the name of a package, in standard module format
    (foo.bar). The resource argument should be in the form of a relative
    filename, using ``/`` as the path separator. The parent directory name
    ``..`` is not allowed, and nor is a rooted name (starting with a ``/``).
 
-   The function returns a binary string, which is the contents of the
+   The function returns a binary string that is the contents of the
    specified resource.
 
    For packages located in the filesystem, which have already been imported,
