@@ -122,6 +122,9 @@ class PkgutilPEP302Tests(unittest.TestCase):
 
 def test_main():
     run_unittest(PkgutilTests, PkgutilPEP302Tests)
+    # this is necessary if test is run repeated (like when finding leaks)
+    import zipimport
+    zipimport._zip_directory_cache.clear()
 
 if __name__ == '__main__':
     test_main()

@@ -96,6 +96,42 @@ is_error(double x)
 }
 
 /*
+   wrapper for atan2 that deals directly with special cases before
+   delegating to the platform libm for the remaining cases.  This
+   is necessary to get consistent behaviour across platforms.
+   Windows, FreeBSD and alpha Tru64 are amongst platforms that don't
+   always follow C99.
+*/
+
+static double
+m_atan2(double y, double x)
+{
+	if (Py_IS_NAN(x) || Py_IS_NAN(y))
+		return Py_NAN;
+	if (Py_IS_INFINITY(y)) {
+		if (Py_IS_INFINITY(x)) {
+			if (copysign(1., x) == 1.)
+				/* atan2(+-inf, +inf) == +-pi/4 */
+				return copysign(0.25*Py_MATH_PI, y);
+			else
+				/* atan2(+-inf, -inf) == +-pi*3/4 */
+				return copysign(0.75*Py_MATH_PI, y);
+		}
+		/* atan2(+-inf, x) == +-pi/2 for finite x */
+		return copysign(0.5*Py_MATH_PI, y);
+	}
+	if (Py_IS_INFINITY(x) || y == 0.) {
+		if (copysign(1., x) == 1.)
+			/* atan2(+-y, +inf) = atan2(+-0, +x) = +-0. */
+			return copysign(0., y);
+		else
+			/* atan2(+-y, -inf) = atan2(+-0., -x) = +-pi. */
+			return copysign(Py_MATH_PI, y);
+	}
+	return atan2(y, x);
+}
+
+/*
    math_1 is used to wrap a libm function f that takes a double
    arguments and returns a double.
 
@@ -250,7 +286,7 @@ FUNC1(asinh, asinh, 0,
       "asinh(x)\n\nReturn the hyperbolic arc sine (measured in radians) of x.")
 FUNC1(atan, atan, 0,
       "atan(x)\n\nReturn the arc tangent (measured in radians) of x.")
-FUNC2(atan2, atan2,
+FUNC2(atan2, m_atan2,
       "atan2(y, x)\n\nReturn the arc tangent (measured in radians) of y/x.\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
 FUNC1(atanh, atanh, 0,
