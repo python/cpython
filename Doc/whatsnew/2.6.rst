@@ -1383,6 +1383,11 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 Optimizations
 -------------
 
+* The :mod:`warnings` module has been rewritten in C.  This makes
+  it possible to invoke warnings from the parser, and may also
+  make the interpreter's startup faster.
+  (Contributed by Neal Norwitz and Brett Cannon; :issue:`1631171`.)
+
 * Type objects now have a cache of methods that can reduce
   the amount of work required to find the correct method implementation
   for a particular class; once cached, the interpreter doesn't need to
@@ -1401,7 +1406,7 @@ Optimizations
   built-in types.  This speeds up checking if an object is a subclass of one of
   these types.  (Contributed by Neal Norwitz.)
 
-* Unicode strings now uses faster code for detecting
+* Unicode strings now use faster code for detecting
   whitespace and line breaks; this speeds up the :meth:`split` method 
   by about 25% and :meth:`splitlines` by 35%.
   (Contributed by Antoine Pitrou.)  Memory usage is reduced
@@ -1801,6 +1806,24 @@ complete list of changes, or look through the CVS logs for all the details.
   opcodes, returning a shorter pickle that contains the same data structure.
   (Contributed by Raymond Hettinger.)
 
+* A :func:`get_data` function was added to the :mod:`pkgutil`
+  module that returns the contents of resource files included
+  with an installed Python package.  For example::
+
+  >>> import pkgutil
+  >>> pkgutil.get_data('test', 'exception_hierarchy.txt')
+  'BaseException
+   +-- SystemExit
+   +-- KeyboardInterrupt
+   +-- GeneratorExit
+   +-- Exception
+        +-- StopIteration
+        +-- StandardError
+   ...'
+  >>> 
+
+  (Contributed by Paul Moore; :issue:`2439`.)
+
 * New functions in the :mod:`posix` module: :func:`chflags` and :func:`lchflags`
   are wrappers for the corresponding system calls (where they're available).
   Constants for the flag values are defined in the :mod:`stat` module; some
@@ -1934,6 +1957,13 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
   using the format character ``'?'``. 
   (Contributed by David Remahl.)
+
+* The :class:`Popen` objects provided by the :mod:`subprocess` module
+  now have :meth:`terminate`, :meth:`kill`, and :meth:`send_signal` methods.
+  On Windows, :meth:`send_signal` only supports the :const:`SIGTERM`
+  signal, and all these methods are aliases for the Win32 API function
+  :cfunc:`TerminateProcess`.  
+  (Contributed by Christian Heimes.)
  
 * A new variable in the :mod:`sys` module,
   :attr:`float_info`, is an object
@@ -2087,6 +2117,14 @@ complete list of changes, or look through the CVS logs for all the details.
   because the tracebacks could possibly reveal passwords or other sensitive
   information.  (Contributed by Alan McIntyre as part of his 
   project for Google's Summer of Code 2007.)
+
+* The :mod:`xmlrpclib` module no longer automatically converts
+  :class:`datetime.date` and :class:`datetime.time` to the 
+  :class:`xmlrpclib.DateTime` type; the conversion semantics were
+  not necessarily correct for all applications.  Code using
+  :mod:`xmlrpclib` should convert :class:`date` and :class:`time` 
+  instances. (:issue:`1330538`)  The code can also handle 
+  dates before 1900.  (Contributed by Ralf Schmitt; :issue:`2014`.)
 
 * The :mod:`zipfile` module's :class:`ZipFile` class now has 
   :meth:`extract` and :meth:`extractall` methods that will unpack 
@@ -2270,6 +2308,13 @@ Changes to Python's build process and to the C API include:
   and reports whether the :file:`Misc/ACKS` and :file:`Misc/NEWS` files
   have been updated.
   (Contributed by Brett Cannon.)
+
+  Another new target, "make profile-opt", compiles a Python binary
+  using GCC's profile-guided optimization.  It compiles Python with
+  profiling enabled, runs the test suite to obtain a set of profiling
+  results, and then compiles using these results for optimization.
+  (Contributed by Gregory P. Smith.)
+
 
 .. ======================================================================
 
