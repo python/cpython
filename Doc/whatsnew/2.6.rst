@@ -1810,17 +1810,17 @@ complete list of changes, or look through the CVS logs for all the details.
   module that returns the contents of resource files included
   with an installed Python package.  For example::
 
-  >>> import pkgutil
-  >>> pkgutil.get_data('test', 'exception_hierarchy.txt')
-  'BaseException
-   +-- SystemExit
-   +-- KeyboardInterrupt
-   +-- GeneratorExit
-   +-- Exception
-        +-- StopIteration
-        +-- StandardError
-   ...'
-  >>> 
+    >>> import pkgutil
+    >>> pkgutil.get_data('test', 'exception_hierarchy.txt')
+    'BaseException
+     +-- SystemExit
+     +-- KeyboardInterrupt
+     +-- GeneratorExit
+     +-- Exception
+          +-- StopIteration
+          +-- StandardError
+     ...'
+    >>> 
 
   (Contributed by Paul Moore; :issue:`2439`.)
 
