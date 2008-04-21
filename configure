@@ -20851,6 +20851,82 @@ fi
 # ************************************
 # * Check for mathematical functions *
 # ************************************
+
+# On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
+# -0. on some architectures.
+{ echo "$as_me:$LINENO: checking whether tanh preserves the sign of zero" >&5
+echo $ECHO_N "checking whether tanh preserves the sign of zero... $ECHO_C" >&6; }
+if test "${ac_cv_tanh_preserves_zero_sign+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+if test "$cross_compiling" = yes; then
+  ac_cv_tanh_preserves_zero_sign=no
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <math.h>
+int main() {
+    /* return 0 if either negative zeros don't exist
+       on this platform or if negative zeros exist
+       and tanh(-0.) == -0. */
+  if (atan2(0., -1.) == atan2(-0., -1.) ||
+      atan2(tanh(-0.), -1.) == atan2(-0., -1.)) exit(0);
+  else exit(1);
+}
+
+_ACEOF
+rm -f conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_tanh_preserves_zero_sign=yes
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+ac_cv_tanh_preserves_zero_sign=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+
+
+fi
+
+{ echo "$as_me:$LINENO: result: $ac_cv_tanh_preserves_zero_sign" >&5
+echo "${ECHO_T}$ac_cv_tanh_preserves_zero_sign" >&6; }
+if test "$ac_cv_tanh_preserves_zero_sign" = yes
+then
+
+cat >>confdefs.h <<\_ACEOF
+#define TANH_PRESERVES_ZERO_SIGN 1
+_ACEOF
+
+fi
+
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
