@@ -48,7 +48,7 @@ import time, sys
 ### Choose an implementation
 
 SYSTIMES_IMPLEMENTATION = None
-USE_CTYPES_GETPROCESSTIMES = 'cytpes GetProcessTimes() wrapper'
+USE_CTYPES_GETPROCESSTIMES = 'ctypes GetProcessTimes() wrapper'
 USE_WIN32PROCESS_GETPROCESSTIMES = 'win32process.GetProcessTimes()'
 USE_RESOURCE_GETRUSAGE = 'resource.getrusage()'
 USE_PROCESS_TIME_CLOCK = 'time.clock() (process time)'
