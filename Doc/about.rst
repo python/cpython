@@ -18,8 +18,8 @@ Many thanks go to:
 
 * Fred L. Drake, Jr., the creator of the original Python documentation toolset
   and writer of much of the content;
-* the `docutils <http://docutils.sf.net/>`_ project for creating
-  reStructuredText and the docutils suite;
+* the `Docutils <http://docutils.sf.net/>`_ project for creating
+  reStructuredText and the Docutils suite;
 * Fredrik Lundh for his `Alternative Python Reference
   <http://effbot.org/zone/pyref.htm>`_ project from which Sphinx got many good
   ideas.
