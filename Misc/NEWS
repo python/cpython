@@ -37,6 +37,9 @@ Extensions Modules
 Library
 -------
 
+- getpass.getpass() now works when sys.stdin is not a tty by printing a warning
+  and falling back to sys.stdin.readline instead of raising termios.error.
+
 - Issue #2014: Allow XML-RPC datetime objects to have dates before
   1900-01-01.
 

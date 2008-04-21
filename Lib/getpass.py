@@ -24,6 +24,10 @@ def unix_getpass(prompt='Password: ', stream=None):
     if stream is None:
         stream = sys.stdout
 
+    if not sys.stdin.isatty():
+        print >>sys.stderr, "Warning: sys.stdin is not a tty."
+        return default_getpass(prompt)
+
     try:
         fd = sys.stdin.fileno()
     except:
