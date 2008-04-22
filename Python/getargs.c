@@ -663,7 +663,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	}
 
 	case 'n': /* Py_ssize_t */
-#if SIZEOF_SIZE_T != SIZEOF_LONG
 	{
 		PyObject *iobj;
 		Py_ssize_t *p = va_arg(*p_va, Py_ssize_t *);
@@ -672,14 +671,12 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		iobj = PyNumber_Index(arg);
 		if (iobj != NULL)
-			ival = PyLong_AsSsize_t(arg);
+			ival = PyLong_AsSsize_t(iobj);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		*p = ival;
 		break;
 	}
-#endif
-	/* Fall through from 'n' to 'l' if Py_ssize_t is int */
 	case 'l': {/* long int */
 		long *p = va_arg(*p_va, long *);
 		long ival;
