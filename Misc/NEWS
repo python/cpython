@@ -37,8 +37,9 @@ Extensions Modules
 Library
 -------
 
-- getpass.getpass() now works when sys.stdin is not a tty by printing a warning
-  and falling back to sys.stdin.readline instead of raising termios.error.
+- The getpass module has been improved on Unix.  It now uses /dev/tty
+  by default and uses stderr instead of stdout.  A GetPassWarning is
+  issued when input echo cannot be controlled.
 
 - Issue #2014: Allow XML-RPC datetime objects to have dates before
   1900-01-01.
