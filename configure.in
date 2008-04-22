@@ -2995,12 +2995,16 @@ fi],
 # * Check for mathematical functions *
 # ************************************
 
+LIBS_SAVE=$LIBS
+LIBS="$LIBS $LIBM"
+
 # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
 # -0. on some architectures.
 AC_MSG_CHECKING(whether tanh preserves the sign of zero)
 AC_CACHE_VAL(ac_cv_tanh_preserves_zero_sign, [
 AC_TRY_RUN([
 #include <math.h>
+#include <stdlib.h>
 int main() {
     /* return 0 if either negative zeros don't exist
        on this platform or if negative zeros exist
@@ -3020,8 +3024,6 @@ then
   [Define if tanh(-0.) is -0., or if platform doesn't have signed zeros])
 fi
 
-LIBS_SAVE=$LIBS
-LIBS="$LIBS $LIBM"
 AC_REPLACE_FUNCS(hypot)
 
 AC_CHECK_FUNCS(acosh asinh atanh copysign expm1 finite isinf isnan log1p)
