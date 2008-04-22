@@ -223,7 +223,7 @@ I/O Base Classes
 
    .. method:: fileno()
 
-      Return the underlying file descriptor (an integer) of the stream, if it
+      Return the underlying file descriptor (an integer) of the stream if it
       exists.  An :exc:`IOError` is raised if the IO object does not use a file
       descriptor.
 
@@ -234,18 +234,18 @@ I/O Base Classes
 
    .. method:: isatty()
 
-      Returns ``True`` if the stream is interactive (i.e., connected to
+      Return ``True`` if the stream is interactive (i.e., connected to
       a terminal/tty device).
 
    .. method:: readable()
 
-      Returns ``True`` if the stream can be read from.  If False,
-      :meth:`read` will raise :exc:`IOError`.
+      Return ``True`` if the stream can be read from.  If False, :meth:`read`
+      will raise :exc:`IOError`.
 
    .. method:: readline([limit])
 
-      Reads and returns one line from the stream.  If *limit* is
-      specified, at most *limit* bytes will be read.
+      Read and return one line from the stream.  If *limit* is specified, at
+      most *limit* bytes will be read.
 
       The line terminator is always ``b'\n'`` for binary files; for text files,
       the *newlines* argument to :func:`open` can be used to select the line
@@ -253,9 +253,9 @@ I/O Base Classes
 
    .. method:: readlines([hint])
 
-      Returns a list of lines from the stream.  *hint* can be specified to
-      control the number of lines read: no more lines will be read if the total
-      size (in bytes/characters) of all lines so far exceeds *hint*.
+      Read and return a list of lines from the stream.  *hint* can be specified
+      to control the number of lines read: no more lines will be read if the
+      total size (in bytes/characters) of all lines so far exceeds *hint*.
 
    .. method:: seek(offset[, whence])
 
@@ -267,33 +267,32 @@ I/O Base Classes
       * ``1`` -- current stream position; *offset* may be negative
       * ``2`` -- end of the stream; *offset* is usually negative
 
-      Returns the new absolute position.
+      Return the new absolute position.
 
    .. method:: seekable()
 
-      Returns ``True`` if the stream supports random access.  If
-      ``False``, :meth:`seek`, :meth:`tell` and :meth:`truncate` will
-      raise :exc:`IOError`.
+      Return ``True`` if the stream supports random access.  If ``False``,
+      :meth:`seek`, :meth:`tell` and :meth:`truncate` will raise :exc:`IOError`.
 
    .. method:: tell()
 
-      Returns the current stream position.
+      Return the current stream position.
 
    .. method:: truncate([size])
 
-      Truncates the file to at most *size* bytes.  *size* defaults to the current
+      Truncate the file to at most *size* bytes.  *size* defaults to the current
       file position, as returned by :meth:`tell`.
 
    .. method:: writable()
 
-      Returns ``True`` if the stream supports writing.  If ``False``,
+      Return ``True`` if the stream supports writing.  If ``False``,
       :meth:`write` and :meth:`truncate` will raise :exc:`IOError`.
 
    .. method:: writelines(lines)
 
-      Writes a list of lines to the stream.  Line separators are not
-      added, so it is usual for each of the lines provided to have a
-      line separator at the end.
+      Write a list of lines to the stream.  Line separators are not added, so it
+      is usual for each of the lines provided to have a line separator at the
+      end.
 
 
 .. class:: RawIOBase
@@ -306,27 +305,26 @@ I/O Base Classes
 
    .. method:: read([n])
 
-      Reads and returns all the bytes from the stream until EOF, or if *n* is
-      specified, up to *n* bytes.  An empty bytes object is returned on EOF;
-      ``None`` is returned if the object is set not to block and has no data to
-      read.
+      Read and return all the bytes from the stream until EOF, or if *n* is
+      specified, up to *n* bytes.  Only one system call is ever made.  An empty
+      bytes object is returned on EOF; ``None`` is returned if the object is set
+      not to block and has no data to read.
 
    .. method:: readall()
 
-      Reads and returns all the bytes from the stream until EOF, using
-      multiple calls to the stream if necessary.
+      Read and return all the bytes from the stream until EOF, using multiple
+      calls to the stream if necessary.
 
    .. method:: readinto(b)
 
-      Reads up to len(b) bytes into bytearray *b* and returns the number
-      of bytes read.
+      Read up to len(b) bytes into bytearray *b* and return the number of bytes
+      read.
 
    .. method:: write(b)
 
-      Writes the given bytes or bytearray object, *b*, to the underlying
-      raw stream and returns the number of bytes written (never less
-      than ``len(b)``, since if the write fails an :exc:`IOError` will
-      be raised).
+      Write the given bytes or bytearray object, *b*, to the underlying raw
+      stream and return the number of bytes written (This is never less than
+      ``len(b)``, since if the write fails, an :exc:`IOError` will be raised).
 
 
 Raw File I/O
@@ -353,22 +351,21 @@ Raw File I/O
 
    .. attribute:: name
 
-      The file name.
+      The file name.  This is the file descriptor of the file when no name is
+      given in the constructor.
 
    .. method:: read([n])
 
-      Reads and returns at most *n* bytes.  Only one system call is made, so
-      it is possible that less data than was requested is returned. Call
-      :func:`len` on the returned bytes object to see how many bytes
-      were actually returned (In non-blocking mode, ``None`` is returned
-      when no data is available.)
+      Read and return at most *n* bytes.  Only one system call is made, so it is
+      possible that less data than was requested is returned.  Use :func:`len`
+      on the returned bytes object to see how many bytes were actually returned.
+      (In non-blocking mode, ``None`` is returned when no data is available.)
 
    .. method:: readall()
 
-      Reads and returns the entire file's contents in a single bytes
-      object.  As much as immediately available is returned in
-      non-blocking mode.  If the EOF has been reached, ``b''`` is
-      returned.
+      Read and return the entire file's contents in a single bytes object.  As
+      much as immediately available is returned in non-blocking mode.  If the
+      EOF has been reached, ``b''`` is returned.
 
    .. method:: write(b)
 
@@ -406,7 +403,7 @@ Buffered Streams
 
    .. method:: read([n])
 
-      Reads and returns up to *n* bytes.  If the argument is omitted, ``None``, or
+      Read and return up to *n* bytes.  If the argument is omitted, ``None``, or
       negative, data is read and returned until EOF is reached.  An empty bytes
       object is returned if the stream is already at EOF.
 
@@ -421,7 +418,7 @@ Buffered Streams
 
    .. method:: readinto(b)
 
-      Reads up to len(b) bytes into bytearray *b* and returns the number of bytes
+      Read up to len(b) bytes into bytearray *b* and return the number of bytes
       read.
 
       Like :meth:`read`, multiple reads may be issued to the underlying raw
@@ -432,10 +429,9 @@ Buffered Streams
 
    .. method:: write(b)
 
-      Writes the given bytes or bytearray object, *b*, to the underlying
-      raw stream and returns the number of bytes written (never less than
-      ``len(b)``, since if the write fails an :exc:`IOError` will
-      be raised).
+      Write the given bytes or bytearray object, *b*, to the underlying raw
+      stream and return the number of bytes written (never less than ``len(b)``,
+      since if the write fails an :exc:`IOError` will be raised).
 
       A :exc:`BlockingIOError` is raised if the buffer is full, and the
       underlying raw stream cannot accept more data at the moment.
@@ -453,8 +449,7 @@ Buffered Streams
 
    .. method:: getvalue()
 
-      Returns a bytes object containing the entire contents of the
-      buffer.
+      Return ``bytes`` containing the entire contents of the buffer.
 
    .. method:: read1()
 
@@ -462,8 +457,8 @@ Buffered Streams
 
    .. method:: truncate([size])
 
-      Truncates the buffer to at most *size* bytes.  *size* defaults to the current
-      stream position, as returned by :meth:`tell`.
+      Truncate the buffer to at most *size* bytes.  *size* defaults to the
+      current stream position, as returned by :meth:`tell`.
 
 
 .. class:: BufferedReader(raw[, buffer_size])
@@ -480,20 +475,20 @@ Buffered Streams
 
    .. method:: peek([n])
 
-      Returns 1 (or *n* if specified) bytes from a buffer without
-      advancing the position.  Only a single read on the raw stream is done to
-      satisfy the call. The number of bytes returned may be less than
-      requested since at most all the buffer's bytes from the current
-      position to the end are returned.
+      Return 1 (or *n* if specified) bytes from a buffer without advancing the
+      position.  Only a single read on the raw stream is done to satisfy the
+      call. The number of bytes returned may be less than requested since at
+      most all the buffer's bytes from the current position to the end are
+      returned.
 
    .. method:: read([n])
 
-      Reads and returns *n* bytes, or if *n* is not given or negative, until EOF
+      Read and return *n* bytes, or if *n* is not given or negative, until EOF
       or if the read call would block in non-blocking mode.
 
    .. method:: read1(n)
 
-      Reads and returns up to *n* bytes with only one call on the raw stream.  If
+      Read and return up to *n* bytes with only one call on the raw stream.  If
       at least one byte is buffered, only buffered bytes are returned.
       Otherwise, one raw stream read call is made.
 
@@ -518,9 +513,9 @@ Buffered Streams
 
    .. method:: write(b)
 
-      Writes the bytes or bytearray object, *b*, onto the raw stream and
-      returns the number of bytes written.  A :exc:`BlockingIOError` is
-      raised when the raw stream blocks.
+      Write the bytes or bytearray object, *b*, onto the raw stream and return
+      the number of bytes written.  A :exc:`BlockingIOError` is raised when the
+      raw stream blocks.
 
 
 .. class:: BufferedRWPair(reader, writer[, buffer_size[, max_buffer_size]])
@@ -577,18 +572,18 @@ Text I/O
 
    .. method:: read(n)
 
-      Reads and returns at most *n* characters from the stream as a
-      single :class:`str`.  If *n* is negative or ``None``, reads to EOF.
+      Read and return at most *n* characters from the stream as a single
+      :class:`str`.  If *n* is negative or ``None``, reads to EOF.
 
    .. method:: readline()
 
-      Reads until newline or EOF and returns a single :class:`str`.  If
-      the stream is already at EOF, an empty string is returned.
+      Read until newline or EOF and return a single ``str``.  If the stream is
+      already at EOF, an empty string is returned.
 
    .. method:: write(s)
 
-      Writes the string *s* to the stream and returns the number of
-      characters written.
+      Write the string *s* to the stream and return the number of characters
+      written.
 
 
 .. class:: TextIOWrapper(buffer[, encoding[, errors[, newline[, line_buffering]]]])
@@ -647,7 +642,7 @@ Text I/O
 
    .. method:: getvalue()
 
-      Returns a :class:`str` containing the entire contents of the buffer.
+      Return a ``str`` containing the entire contents of the buffer.
 
 
 .. class:: IncrementalNewlineDecoder
