@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Thomas Lee was given SVN access on 21 April 2008 by NCN,
+  for work on branches (ast/optimizer related).
+
 - Jeroen Ruigrok van der Werven was given SVN access on 12 April 2008
   by Georg Brandl, for documentation work.
 
