@@ -14,13 +14,29 @@ The :mod:`getpass` module provides two functions:
 
    Prompt the user for a password without echoing.  The user is prompted using the
    string *prompt*, which defaults to ``'Password: '``. On Unix, the prompt is
-   written to the file-like object *stream*, which defaults to ``sys.stdout`` (this
-   argument is ignored on Windows).
+   written to the file-like object *stream*.  *stream* defaults to the
+   controlling terminal (/dev/tty) or if that is unavailable to ``sys.stderr``
+   (this argument is ignored on Windows).
+
+   If echo free input is unavailable getpass() falls back to printing
+   a warning message to *stream* and reading from ``sys.stdin`` and
+   issuing a :exc:`GetPassWarning`.
 
    Availability: Macintosh, Unix, Windows.
 
    .. versionchanged:: 2.5
       The *stream* parameter was added.
+   .. versionchanged:: 2.6
+      On Unix it defaults to using /dev/tty before falling back
+      to ``sys.stdin`` and ``sys.stderr``.
+      .. note::
+         If you call getpass from within idle, the input may be done in the
+         terminal you launched idle from rather than the idle window itself.
+
+
+.. exception:: GetPassWarning
+
+   A :exc:`UserWarning` subclass issued when password input may be echoed.
 
 
 .. function:: getuser()
