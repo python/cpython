@@ -45,6 +45,9 @@ Core and builtins
 Library
 -------
 
+- Issue #2670:  Fix a failure in urllib2.build_opener(), when passed two
+  handlers that derive the same default base class.
+
 - Issue #2495: tokenize.untokenize now inserts a space between two consecutive
   string literals; previously, ["" ""] was rendered as [""""], which is
   incorrect python code.
