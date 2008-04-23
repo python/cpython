@@ -1638,7 +1638,7 @@ arguments::
 
    [...]
    parser.add_option("-c", "--callback",
-                     action="callback", callback=varargs)
+                     action="callback", callback=vararg_callback)
 
 The main weakness with this particular implementation is that negative numbers
 in the arguments following ``"-c"`` will be interpreted as further options
