@@ -29,9 +29,9 @@ The :mod:`getpass` module provides two functions:
    .. versionchanged:: 2.6
       On Unix it defaults to using /dev/tty before falling back
       to ``sys.stdin`` and ``sys.stderr``.
-      .. note::
-         If you call getpass from within idle, the input may be done in the
-         terminal you launched idle from rather than the idle window itself.
+   .. note::
+      If you call getpass from within IDLE, the input may be done in the
+      terminal you launched IDLE from rather than the idle window itself.
 
 
 .. exception:: GetPassWarning
