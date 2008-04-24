@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Guilherme Polo was given SVN access on 24 April 2008 by MvL,
+  for GSoC contributions.
+
 - Thomas Lee was given SVN access on 21 April 2008 by NCN,
   for work on branches (ast/optimizer related).
 
