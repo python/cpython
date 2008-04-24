@@ -160,14 +160,10 @@ The :mod:`signal` module defines the following functions:
    Attempting to pass an invalid interval timer will cause a 
    :exc:`ItimerError`.
 
-   .. versionadded:: 2.6
-
 
 .. function:: getitimer(which)
 
    Returns current value of a given interval timer specified by *which*.
-
-   .. versionadded:: 2.6
 
 
 .. function:: set_wakeup_fd(fd)
@@ -194,8 +190,6 @@ The :mod:`signal` module defines the following functions:
    Note that installing a signal handler with :func:`signal` will reset the restart
    behaviour to interruptible by implicitly calling :cfunc:`siginterrupt` with a true *flag*
    value for the given signal.
-
-   .. versionadded:: 2.6
 
 
 .. function:: signal(signalnum, handler)

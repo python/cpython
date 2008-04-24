@@ -102,7 +102,6 @@ Number-theoretic and representation functions:
    Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
    a long integer). Delegates to ``x.__trunc__()``.
 
-   .. versionadded:: 2.6
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
 than their C equivalents: they take a single argument and return a pair of
@@ -133,8 +132,6 @@ Power and logarithmic functions:
    Return the natural logarithm of *1+x* (base *e*). The
    result is calculated in a way which is accurate for *x* near zero.
 
-   .. versionadded:: 2.6
-
 
 .. function:: log10(x)
 
@@ -149,9 +146,6 @@ Power and logarithmic functions:
    when ``x`` is a zero or a NaN.  If both ``x`` and ``y`` are finite,
    ``x`` is negative, and ``y`` is not an integer then ``pow(x, y)``
    is undefined, and raises :exc:`ValueError`.
-
-   .. versionchanged:: 2.6
-      The outcome of ``1**nan`` and ``nan**0`` was undefined.
 
 
 .. function:: sqrt(x)
@@ -225,21 +219,15 @@ Hyperbolic functions:
 
    Return the inverse hyperbolic cosine of *x*.
 
-   .. versionadded:: 2.6
-
 
 .. function:: asinh(x)
 
    Return the inverse hyperbolic sine of *x*.
 
-   .. versionadded:: 2.6
-
 
 .. function:: atanh(x)
 
    Return the inverse hyperbolic tangent of *x*.
-
-   .. versionadded:: 2.6
 
 
 .. function:: cosh(x)

@@ -7,10 +7,6 @@
 .. sectionauthor:: Georg Brandl <georg@python.org>
 .. (harvested from docstrings in the original file)
 
-.. versionchanged:: 2.6
-   This module was previously only available in the Mac-specific library, it is
-   now available for all platforms.
-
 .. index::
    pair: plist; file
    single: property list

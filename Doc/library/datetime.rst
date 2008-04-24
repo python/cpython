@@ -1498,8 +1498,6 @@ values.  If they're used anyway, ``0`` is substituted for them.
 which expands to the number of microseconds in the object, zero-padded on
 the left to six places.
 
-.. versionadded:: 2.6
-
 For a naive object, the ``%z`` and ``%Z`` format codes are replaced by empty
 strings.
 

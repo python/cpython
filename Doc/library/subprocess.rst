@@ -212,8 +212,6 @@ Instances of the :class:`Popen` class have the following methods:
       On Windows only SIGTERM is supported so far. It's an alias for
       :meth:`terminate`.
 
-   .. versionadded:: 2.6
-
 
 .. method:: Popen.terminate()
 
@@ -221,15 +219,11 @@ Instances of the :class:`Popen` class have the following methods:
    child. On Windows the Win32 API function TerminateProcess is called
    to stop the child.
 
-   .. versionadded:: 2.6
-
 
 .. method:: Popen.kill()
 
    Kills the child. On Posix OSs the function sends SIGKILL to the child.
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
-
-   .. versionadded:: 2.6
 
 
 The following attributes are also available:

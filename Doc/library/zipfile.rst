@@ -182,8 +182,6 @@ ZipFile Objects
    filename or a :class:`ZipInfo` object.  *pwd* is the password used for
    encrypted files.
 
-   .. versionadded:: 2.6
-
 
 .. method:: ZipFile.extractall([path[, members[, pwd]]])
 
@@ -191,8 +189,6 @@ ZipFile Objects
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
    used for encrypted files.
-
-   .. versionadded:: 2.6
 
 
 .. method:: ZipFile.printdir()

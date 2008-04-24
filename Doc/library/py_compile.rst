@@ -45,10 +45,6 @@ When this module is run as a script, the :func:`main` is used to compile all the
 files named on the command line.  The exit status is nonzero if one of the files
 could not be compiled.
 
-.. versionchanged:: 2.6
-
-   Added the nonzero exit status.
-
 
 .. seealso::
 

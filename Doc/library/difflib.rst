@@ -401,8 +401,7 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
 
    If no blocks match, this returns ``(alo, blo, 0)``.
 
-   .. versionchanged:: 2.6
-      This method returns a :term:`named tuple` ``Match(a, b, size)``.
+   This method returns a :term:`named tuple` ``Match(a, b, size)``.
 
 
 .. method:: SequenceMatcher.get_matching_blocks()

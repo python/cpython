@@ -91,8 +91,6 @@ loops that truncate the stream.
               for element in it:
                   yield element
 
-   .. versionadded:: 2.6
-
 
 .. function:: combinations(iterable, r)
 
@@ -137,7 +135,6 @@ loops that truncate the stream.
                 if sorted(indices) == list(indices):
                     yield tuple(pool[i] for i in indices)
 
-   .. versionadded:: 2.6
 
 .. function:: count([n])
 
@@ -363,7 +360,6 @@ loops that truncate the stream.
                 if len(set(indices)) == r:
                     yield tuple(pool[i] for i in indices)
 
-   .. versionadded:: 2.6
 
 .. function:: product(*iterables[, repeat])
 
@@ -424,10 +420,6 @@ loops that truncate the stream.
           # starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000
           for args in iterable:
               yield function(*args)
-
-   .. versionchanged:: 2.6
-      Previously, :func:`starmap` required the function arguments to be tuples.
-      Now, any iterable is allowed.
 
 
 .. function:: takewhile(predicate, iterable)

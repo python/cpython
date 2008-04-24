@@ -6,7 +6,6 @@
    :synopsis: Rational numbers.
 .. moduleauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
 .. sectionauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
-.. versionadded:: 2.6
 
 
 The :mod:`fractions` module defines an immutable, infinite-precision

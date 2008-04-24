@@ -457,7 +457,6 @@ expect a function argument.
       >>> itemgetter(slice(2,None))('ABCDEFG')
       'CDEFG'
 
-   .. versionadded:: 2.4
 
    Example of using :func:`itemgetter` to retrieve specific fields from a
    tuple record:

@@ -66,8 +66,6 @@ always available.
 
    This function should be used for specialized purposes only.
 
-   .. versionadded:: 2.6
-
 
 .. function:: _clear_type_cache()
 
@@ -76,8 +74,6 @@ always available.
    during reference leak debugging.
 
    This function should be used for internal and specialized purposes only.
-
-   .. versionadded:: 2.6
 
 
 .. function:: _current_frames()
@@ -245,8 +241,6 @@ always available.
    | :const:`unicode`             | -U                                       |
    +------------------------------+------------------------------------------+
 
-   .. versionadded:: 2.6
-
 
 .. data:: float_info
 
@@ -360,8 +354,6 @@ always available.
 
    Get the profiler function as set by :func:`setprofile`.
 
-   .. versionadded:: 2.6
-
 
 .. function:: gettrace()
 
@@ -377,8 +369,6 @@ always available.
       profilers, coverage tools and the like. Its behavior is part of the
       implementation platform, rather than part of the language definition,
       and thus may not be available in all Python implementations.
-
-   .. versionadded:: 2.6
 
 
 .. function:: getwindowsversion()
@@ -555,8 +545,6 @@ always available.
    depending on the ``-B`` command line option and the ``PYTHONDONTWRITEBYTECODE``
    environment variable, but you can set it yourself to control bytecode file
    generation.
-
-   .. versionadded:: 2.6
 
 
 .. function:: setcheckinterval(interval)

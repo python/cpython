@@ -1240,10 +1240,6 @@ When this script is run, the output should look something like this::
    2008-01-18 14:49:54,033 d.e.f WARNING  IP: 192.168.0.1     User: sheila   A message at WARNING level with 2 parameters
    2008-01-18 14:49:54,033 d.e.f WARNING  IP: 127.0.0.1       User: jim      A message at WARNING level with 2 parameters
 
-.. versionadded:: 2.6
-
-The :class:`LoggerAdapter` class was not present in previous versions.
-
 
 .. _network-logging:
 
@@ -2142,8 +2138,6 @@ made, and any exception information to be logged.
 
 LoggerAdapter Objects
 ---------------------
-
-.. versionadded:: 2.6
 
 :class:`LoggerAdapter` instances are used to conveniently pass contextual
 information into logging calls. For a usage example , see the section on

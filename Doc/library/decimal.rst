@@ -340,9 +340,6 @@ Decimal objects
 
    Once constructed, :class:`Decimal` objects are immutable.
 
-   .. versionchanged:: 2.6
-      leading and trailing whitespace characters are permitted when
-      creating a Decimal instance from a string.
 
 Decimal floating point objects share many properties with the other built-in
 numeric types such as :class:`float` and :class:`int`.  All of the usual math
@@ -366,9 +363,6 @@ also have a number of specialized methods:
 
    Return a :term:`named tuple` representation of the number:
    ``DecimalTuple(sign, digits, exponent)``.
-
-   .. versionchanged:: 2.6
-      Use a named tuple.
 
 
 .. method:: Decimal.canonical()

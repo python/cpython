@@ -22,9 +22,6 @@ width constraint.
 
 Dictionaries are sorted by key before the display is computed.
 
-.. versionchanged:: 2.6
-   Added support for :class:`set` and :class:`frozenset`.
-
 The :mod:`pprint` module defines one class:
 
 .. First the implementation class:

@@ -1441,9 +1441,6 @@ DocTestRunner objects
    The optional *verbose* argument controls how detailed the summary is.  If the
    verbosity is not specified, then the :class:`DocTestRunner`'s verbosity is used.
 
-   .. versionchanged:: 2.6
-      Use a named tuple.
-
 
 .. _doctest-outputchecker:
 

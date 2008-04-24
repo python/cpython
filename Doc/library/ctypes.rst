@@ -2004,14 +2004,11 @@ Fundamental data types
 
 .. class:: _SimpleCData
 
-   This non-public class is the base class of all fundamental ctypes data types. It
-   is mentioned here because it contains the common attributes of the fundamental
-   ctypes data types.  ``_SimpleCData`` is a subclass of ``_CData``, so it inherits
-   their methods and attributes.
-
-   .. versionchanged:: 2.6
-      ctypes data types that are not and do not contain pointers can
-      now be pickled.
+   This non-public class is the base class of all fundamental ctypes data
+   types. It is mentioned here because it contains the common attributes of the
+   fundamental ctypes data types.  ``_SimpleCData`` is a subclass of ``_CData``,
+   so it inherits their methods and attributes. ctypes data types that are not
+   and do not contain pointers can now be pickled.
 
 Instances have a single attribute:
 

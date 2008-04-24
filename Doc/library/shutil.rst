@@ -110,10 +110,6 @@ copying and removal. For operations on individual files, see also the
    information return by :func:`sys.exc_info`.  Exceptions raised by *onerror*
    will not be caught.
 
-   .. versionchanged:: 2.6
-      Explicitly check for *path* being a symbolic link and raise :exc:`OSError`
-      in that case.
-
 
 .. function:: move(src, dst)
 
