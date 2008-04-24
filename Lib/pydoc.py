@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: Latin-1 -*-
+# -*- coding: latin-1 -*-
 """Generate Python documentation in HTML or text for interactive use.
 
 In the Python interpreter, do "from pydoc import help" to provide online
@@ -1074,7 +1074,7 @@ class TextDoc(Doc):
         if submodules:
             submodules.sort()
             result = result + self.section(
-                'SUBMODULES', join(submodules, '\n'))
+                'SUBMODULES', '\n'.join(submodules))
 
         if classes:
             classlist = [value for key, value in classes]
@@ -1484,7 +1484,8 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0):
         desc += ' in ' + name[:name.rfind('.')]
     elif module and module is not object:
         desc += ' in module ' + module.__name__
-    elif not (inspect.ismodule(object) or
+
+    if not (inspect.ismodule(object) or
               inspect.isclass(object) or
               inspect.isroutine(object) or
               inspect.isgetsetdescriptor(object) or
