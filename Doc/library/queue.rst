@@ -37,8 +37,6 @@ The :mod:`Queue` module defines the following classes and exceptions:
    block once this size has been reached, until queue items are consumed.  If
    *maxsize* is less than or equal to zero, the queue size is infinite.
 
-   .. versionadded:: 2.6
-
 
 .. class:: PriorityQueue(maxsize)
 
@@ -50,8 +48,6 @@ The :mod:`Queue` module defines the following classes and exceptions:
    The lowest valued entries are retrieved first (the lowest valued entry is the
    one returned by ``sorted(list(entries))[0]``).  A typical pattern for entries
    is a tuple in the form: ``(priority_number, data)``.
-
-   .. versionadded:: 2.6
 
 
 .. exception:: Empty

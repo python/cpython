@@ -65,8 +65,6 @@ Definition::
 
    Return phase, also known as the argument, of a complex.
 
-   .. versionadded:: 2.6
-
 
 .. function:: polar(x)
 
@@ -75,15 +73,11 @@ Definition::
    *r* and *phi*. *r* is the distance from 0 and *phi* the phase 
    angle.
 
-   .. versionadded:: 2.6
-
 
 .. function:: rect(r, phi)
 
    Convert from polar coordinates to rectangular coordinates and return
    a :class:`complex`.
-
-   .. versionadded:: 2.6
 
 
 
@@ -115,9 +109,6 @@ cmath functions
    continuous from the right.  The other extends from ``-1j`` along
    the imaginary axis to ``-∞j``, continuous from the left.
 
-   .. versionchanged:: 2.6
-      branch cuts moved to match those recommended by the C99 standard
-
 
 .. function:: atan(x)
 
@@ -126,9 +117,6 @@ cmath functions
    other extends from ``-1j`` along the imaginary axis to ``-∞j``, continuous
    from the left.
 
-   .. versionchanged:: 2.6
-      direction of continuity of upper cut reversed
-
 
 .. function:: atanh(x)
 
@@ -136,9 +124,6 @@ cmath functions
    extends from ``1`` along the real axis to ``∞``, continuous from below. The
    other extends from ``-1`` along the real axis to ``-∞``, continuous from
    above.
-
-   .. versionchanged:: 2.6
-      direction of continuity of right cut reversed
 
 
 .. function:: cos(x)
@@ -161,14 +146,10 @@ cmath functions
    Return *True* if the real or the imaginary part of x is positive
    or negative infinity.
 
-   .. versionadded:: 2.6
-
 
 .. function:: isnan(x)
 
    Return *True* if the real or imaginary part of x is not a number (NaN).
-
-   .. versionadded:: 2.6
 
 
 .. function:: log(x[, base])

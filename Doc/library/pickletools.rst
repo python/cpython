@@ -39,4 +39,3 @@ probably won't find the :mod:`pickletools` module relevant.
    opcodes. The optimized pickle is shorter, takes less transmission time,
    requires less storage space, and unpickles more efficiently.
 
-   .. versionadded:: 2.6

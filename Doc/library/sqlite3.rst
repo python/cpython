@@ -350,8 +350,6 @@ A :class:`Connection` instance has the following attributes and methods:
 
 .. method:: Connection.set_progress_handler(handler, n)
 
-   .. versionadded:: 2.6
-
    This routine registers a callback. The callback is invoked for every *n*
    instructions of the SQLite virtual machine. This is useful if you want to
    get called from SQLite during long-running operations, for example to update
@@ -413,8 +411,6 @@ A :class:`Connection` instance has the following attributes and methods:
    saving an in-memory database for later restoration.  This function provides
    the same capabilities as the :kbd:`.dump` command in the :program:`sqlite3`
    shell.
-
-   .. versionadded:: 2.6
 
    Example::
 
@@ -763,8 +759,6 @@ case-insensitively by name:
 
 Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 2.6
 
 Connection objects can be used as context managers
 that automatically commit or rollback transactions.  In the event of an

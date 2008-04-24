@@ -31,8 +31,6 @@ The module defines the following:
    section :ref:`epoll-objects` below for the methods supported by epolling
    objects.
 
-   .. versionadded:: 2.6
-
 
 .. function:: poll()
 
@@ -47,15 +45,11 @@ The module defines the following:
    (Only supported on BSD.)  Returns a kernel queue object object; see section
    :ref:`kqueue-objects` below for the methods supported by kqueue objects.
 
-   .. versionadded:: 2.6
-
 
 .. function:: kqueue(ident, filter=KQ_FILTER_READ, flags=KQ_ADD, fflags=0, data=0, udata=0)
 
    (Only supported on BSD.)  Returns a kernel event object object; see section
    :ref:`kevent-objects` below for the methods supported by kqueue objects.
-
-   .. versionadded:: 2.6
 
 
 .. function:: select(iwtd, owtd, ewtd[, timeout])
@@ -223,8 +217,6 @@ linearly scanned again. :cfunc:`select` is O(highest file descriptor), while
    :meth:`register(fd, eventmask)`.  Attempting to modify a file descriptor
    that was never registered causes an :exc:`IOError` exception with errno
    :const:`ENOENT` to be raised.
-
-   .. versionadded:: 2.6
 
 
 .. method:: poll.unregister(fd)

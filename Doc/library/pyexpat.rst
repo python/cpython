@@ -182,9 +182,6 @@ XMLParser Objects
    to this attribute.  
    When the size is changed, the buffer will be flushed.
 
-   .. versionchanged:: 2.6
-      The buffer size can now be changed.
-
 
 .. attribute:: xmlparser.buffer_text
 

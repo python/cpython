@@ -227,9 +227,6 @@ available.  They are listed here in alphabetical order.
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`TypeError` if the source contains null bytes.
 
-   .. versionadded:: 2.6
-      Support for compiling AST objects.
-
 
 .. function:: complex([real[, imag]])
 
