@@ -203,7 +203,7 @@ static PyObject* DBPermissionsError;    /* EPERM  */
 
 staticforward PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLock_Type;
 
-#ifndef Py_Type
+#ifndef Py_TYPE
 /* for compatibility with Python 2.5 and earlier */
 #define Py_TYPE(ob)              (((PyObject*)(ob))->ob_type)
 #endif
