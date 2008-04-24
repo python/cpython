@@ -86,7 +86,6 @@ class TestUntestedModules(unittest.TestCase):
             import pdb
             import pstats
             import py_compile
-            import pydoc
             import rlcompleter
             import sched
             import smtplib
