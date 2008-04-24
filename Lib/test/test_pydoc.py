@@ -5,7 +5,7 @@ import pydoc
 class TestDescriptions(unittest.TestCase):
     def test_module(self):
         # Check that pydocfodder module can be described
-        import pydocfodder
+        from test import pydocfodder
         doc = pydoc.render_doc(pydocfodder)
         assert "pydocfodder" in doc
 
