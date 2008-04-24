@@ -32,6 +32,9 @@ Extension Modules
 Library
 -------
 
+- Issue #2682: ctypes callback functions now longer contain a cyclic
+  reference to themselves.
+
 - Issue #2058: Remove the buf attribute and add __slots__ to the TarInfo
   class in order to reduce tarfile's memory usage.
 
