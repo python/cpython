@@ -9,14 +9,6 @@ class TestDescriptions(unittest.TestCase):
         doc = pydoc.render_doc(pydocfodder)
         assert "pydocfodder" in doc
 
-    def test_classic_class(self):
-        class C: "Classic class"
-        c = C()
-        self.failUnlessEqual(pydoc.describe(C), 'class C')
-        self.failUnlessEqual(pydoc.describe(c), 'instance of C')
-        self.failUnless('instance of C in module test.test_pydoc'
-                        in pydoc.render_doc(c))
-
     def test_class(self):
         class C(object): "New-style class"
         c = C()
