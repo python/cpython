@@ -1950,6 +1950,28 @@ Data types
    exact, they are methods of the :term:`metaclass`):
 
 
+   .. method:: _CData.from_buffer(source[, offset])
+
+      This method returns a ctypes instance that shares the buffer of
+      the ``source`` object.  The ``source`` object must support the
+      writeable buffer interface.  The optional ``offset`` parameter
+      specifies an offset into the source buffer in bytes; the default
+      is zero.  If the source buffer is not large enough a ValueError
+      is raised.
+
+      .. versionadded:: 2.6
+
+   .. method:: _CData.from_buffer_copy(source[, offset])
+
+      This method creates a ctypes instance, the buffer is copied from
+      the source object buffer which must be readable.  The optional
+      ``offset`` parameter specifies an offset into the source buffer
+      in bytes; the default is zero.  If the source buffer is not
+      large enough a ValueError is raised.
+
+      .. versionadded:: 2.6
+
+
    .. method:: from_address(address)
 
       This method returns a ctypes type instance using the memory specified by
