@@ -43,6 +43,9 @@ Extensions Modules
 Library
 -------
 
+- Add from_buffer() and from_buffer_copy() class methods to ctypes
+  data types
+
 - Issue #2682: ctypes callback functions no longer contain a cyclic
   reference to themselves.
 
