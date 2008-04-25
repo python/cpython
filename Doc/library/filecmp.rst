@@ -66,88 +66,91 @@ The :class:`dircmp` class
    'tags']``. *hide* is a list of names to hide, and defaults to ``[os.curdir,
    os.pardir]``.
 
-The :class:`dircmp` class provides the following methods:
+   The :class:`dircmp` class provides the following methods:
 
 
-.. method:: dircmp.report()
+   .. method:: report()
 
-   Print (to ``sys.stdout``) a comparison between *a* and *b*.
-
-
-.. method:: dircmp.report_partial_closure()
-
-   Print a comparison between *a* and *b* and common immediate subdirectories.
+      Print (to ``sys.stdout``) a comparison between *a* and *b*.
 
 
-.. method:: dircmp.report_full_closure()
+   .. method:: report_partial_closure()
 
-   Print a comparison between *a* and *b* and common  subdirectories (recursively).
-
-The :class:`dircmp` offers a number of interesting attributes that may be used
-to get various bits of information about the directory trees being compared.
-
-Note that via :meth:`__getattr__` hooks, all attributes are computed lazily, so
-there is no speed penalty if only those attributes which are lightweight to
-compute are used.
+      Print a comparison between *a* and *b* and common immediate
+      subdirectories.
 
 
-.. attribute:: dircmp.left_list
+   .. method:: report_full_closure()
 
-   Files and subdirectories in *a*, filtered by *hide* and *ignore*.
+      Print a comparison between *a* and *b* and common subdirectories
+      (recursively).
 
+   The :class:`dircmp` offers a number of interesting attributes that may be
+   used to get various bits of information about the directory trees being
+   compared.
 
-.. attribute:: dircmp.right_list
-
-   Files and subdirectories in *b*, filtered by *hide* and *ignore*.
-
-
-.. attribute:: dircmp.common
-
-   Files and subdirectories in both *a* and *b*.
-
-
-.. attribute:: dircmp.left_only
-
-   Files and subdirectories only in *a*.
+   Note that via :meth:`__getattr__` hooks, all attributes are computed lazily,
+   so there is no speed penalty if only those attributes which are lightweight
+   to compute are used.
 
 
-.. attribute:: dircmp.right_only
+   .. attribute:: left_list
 
-   Files and subdirectories only in *b*.
-
-
-.. attribute:: dircmp.common_dirs
-
-   Subdirectories in both *a* and *b*.
+      Files and subdirectories in *a*, filtered by *hide* and *ignore*.
 
 
-.. attribute:: dircmp.common_files
+   .. attribute:: right_list
 
-   Files in both *a* and *b*
-
-
-.. attribute:: dircmp.common_funny
-
-   Names in both *a* and *b*, such that the type differs between the directories,
-   or names for which :func:`os.stat` reports an error.
+      Files and subdirectories in *b*, filtered by *hide* and *ignore*.
 
 
-.. attribute:: dircmp.same_files
+   .. attribute:: common
 
-   Files which are identical in both *a* and *b*.
-
-
-.. attribute:: dircmp.diff_files
-
-   Files which are in both *a* and *b*, whose contents differ.
+      Files and subdirectories in both *a* and *b*.
 
 
-.. attribute:: dircmp.funny_files
+   .. attribute:: left_only
 
-   Files which are in both *a* and *b*, but could not be compared.
+      Files and subdirectories only in *a*.
 
 
-.. attribute:: dircmp.subdirs
+   .. attribute:: right_only
 
-   A dictionary mapping names in :attr:`common_dirs` to :class:`dircmp` objects.
+      Files and subdirectories only in *b*.
+
+
+   .. attribute:: common_dirs
+
+      Subdirectories in both *a* and *b*.
+
+
+   .. attribute:: common_files
+
+      Files in both *a* and *b*
+
+
+   .. attribute:: common_funny
+
+      Names in both *a* and *b*, such that the type differs between the
+      directories, or names for which :func:`os.stat` reports an error.
+
+
+   .. attribute:: same_files
+
+      Files which are identical in both *a* and *b*.
+
+
+   .. attribute:: diff_files
+
+      Files which are in both *a* and *b*, whose contents differ.
+
+
+   .. attribute:: funny_files
+
+      Files which are in both *a* and *b*, but could not be compared.
+
+
+   .. attribute:: subdirs
+
+      A dictionary mapping names in :attr:`common_dirs` to :class:`dircmp` objects.
 

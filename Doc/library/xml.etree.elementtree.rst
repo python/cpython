@@ -304,61 +304,63 @@ ElementTree Objects
    XML *file* if given.
 
 
-.. method:: ElementTree._setroot(element)
+   .. method:: _setroot(element)
 
-   Replaces the root element for this tree.  This discards the current contents of
-   the tree, and replaces it with the given element.  Use with care. *element* is
-   an element instance.
-
-
-.. method:: ElementTree.find(path)
-
-   Finds the first toplevel element with given tag. Same as getroot().find(path).
-   *path* is the element to look for. Returns the first matching element, or
-   ``None`` if no element was found.
+      Replaces the root element for this tree.  This discards the current
+      contents of the tree, and replaces it with the given element.  Use with
+      care. *element* is an element instance.
 
 
-.. method:: ElementTree.findall(path)
+   .. method:: find(path)
 
-   Finds all toplevel elements with the given tag. Same as getroot().findall(path).
-   *path* is the element to look for. Returns a list or :term:`iterator` containing all
-   matching elements, in document order.
-
-
-.. method:: ElementTree.findtext(path[, default])
-
-   Finds the element text for the first toplevel element with given tag.  Same as
-   getroot().findtext(path). *path* is the toplevel element to look for. *default*
-   is the value to return if the element was not found. Returns the text content of
-   the first matching element, or the default value no element was found.  Note
-   that if the element has is found, but has no text content, this method returns
-   an empty string.
+      Finds the first toplevel element with given tag. Same as
+      getroot().find(path).  *path* is the element to look for. Returns the
+      first matching element, or ``None`` if no element was found.
 
 
-.. method:: ElementTree.getiterator([tag])
+   .. method:: findall(path)
 
-   Creates and returns a tree iterator for the root element.  The iterator loops
-   over all elements in this tree, in section order. *tag* is the tag to look for
-   (default is to return all elements)
-
-
-.. method:: ElementTree.getroot()
-
-   Returns the root element for this tree.
+      Finds all toplevel elements with the given tag. Same as
+      getroot().findall(path).  *path* is the element to look for. Returns a
+      list or :term:`iterator` containing all matching elements, in document
+      order.
 
 
-.. method:: ElementTree.parse(source[, parser])
+   .. method:: findtext(path[, default])
 
-   Loads an external XML section into this element tree. *source* is a file name or
-   file object. *parser* is an optional parser instance.  If not given, the
-   standard XMLTreeBuilder parser is used. Returns the section root element.
+      Finds the element text for the first toplevel element with given tag.
+      Same as getroot().findtext(path). *path* is the toplevel element to look
+      for. *default* is the value to return if the element was not
+      found. Returns the text content of the first matching element, or the
+      default value no element was found.  Note that if the element has is
+      found, but has no text content, this method returns an empty string.
 
 
-.. method:: ElementTree.write(file[, encoding])
+   .. method:: getiterator([tag])
 
-   Writes the element tree to a file, as XML. *file* is a file name, or a file
-   object opened for writing. *encoding* [1]_ is the output encoding (default is
-   US-ASCII).
+      Creates and returns a tree iterator for the root element.  The iterator
+      loops over all elements in this tree, in section order. *tag* is the tag
+      to look for (default is to return all elements)
+
+
+   .. method:: getroot()
+
+      Returns the root element for this tree.
+
+
+   .. method:: parse(source[, parser])
+
+      Loads an external XML section into this element tree. *source* is a file
+      name or file object. *parser* is an optional parser instance.  If not
+      given, the standard XMLTreeBuilder parser is used. Returns the section
+      root element.
+
+
+   .. method:: write(file[, encoding])
+
+      Writes the element tree to a file, as XML. *file* is a file name, or a
+      file object opened for writing. *encoding* [1]_ is the output encoding
+      (default is US-ASCII).
 
 This is the XML file that is going to be manipulated::
 
@@ -419,28 +421,28 @@ TreeBuilder Objects
    Element instances when given.
 
 
-.. method:: TreeBuilder.close()
+   .. method:: close()
 
-   Flushes the parser buffers, and returns the toplevel document element. Returns an
-   Element instance.
-
-
-.. method:: TreeBuilder.data(data)
-
-   Adds text to the current element. *data* is a string.  This should be either an
-   ASCII-only :class:`bytes` object or a :class:`str` object.
+      Flushes the parser buffers, and returns the toplevel document
+      element. Returns an Element instance.
 
 
-.. method:: TreeBuilder.end(tag)
+   .. method:: data(data)
 
-   Closes the current element. *tag* is the element name. Returns the closed
-   element.
+      Adds text to the current element. *data* is a string.  This should be
+      either an ASCII-only :class:`bytes` object or a :class:`str` object.
 
 
-.. method:: TreeBuilder.start(tag, attrs)
+   .. method:: end(tag)
 
-   Opens a new element. *tag* is the element name. *attrs* is a dictionary
-   containing element attributes. Returns the opened element.
+      Closes the current element. *tag* is the element name. Returns the closed
+      element.
+
+
+   .. method:: start(tag, attrs)
+
+      Opens a new element. *tag* is the element name. *attrs* is a dictionary
+      containing element attributes. Returns the opened element.
 
 
 .. _elementtree-xmltreebuilder-objects:
@@ -457,20 +459,20 @@ XMLTreeBuilder Objects
    instance of the standard TreeBuilder class.
 
 
-.. method:: XMLTreeBuilder.close()
+   .. method:: close()
 
-   Finishes feeding data to the parser. Returns an element structure.
-
-
-.. method:: XMLTreeBuilder.doctype(name, pubid, system)
-
-   Handles a doctype declaration. *name* is the doctype name. *pubid* is the public
-   identifier. *system* is the system identifier.
+      Finishes feeding data to the parser. Returns an element structure.
 
 
-.. method:: XMLTreeBuilder.feed(data)
+   .. method:: doctype(name, pubid, system)
 
-   Feeds data to the parser. *data* is encoded data.
+      Handles a doctype declaration. *name* is the doctype name. *pubid* is the
+      public identifier. *system* is the system identifier.
+
+
+   .. method:: feed(data)
+
+      Feeds data to the parser. *data* is encoded data.
 
 :meth:`XMLTreeBuilder.feed` calls *target*\'s :meth:`start` method
 for each opening tag, its :meth:`end` method for each closing tag,

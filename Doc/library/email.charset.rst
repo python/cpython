@@ -38,164 +38,168 @@ Import this class from the :mod:`email.charset` module.
    will not be encoded, but output text will be converted from the ``euc-jp``
    character set to the ``iso-2022-jp`` character set.
 
-:class:`Charset` instances have the following data attributes:
+   :class:`Charset` instances have the following data attributes:
 
 
-.. data:: input_charset
+   .. attribute:: input_charset
 
-   The initial character set specified.  Common aliases are converted to their
-   *official* email names (e.g. ``latin_1`` is converted to ``iso-8859-1``).
-   Defaults to 7-bit ``us-ascii``.
+      The initial character set specified.  Common aliases are converted to
+      their *official* email names (e.g. ``latin_1`` is converted to
+      ``iso-8859-1``).  Defaults to 7-bit ``us-ascii``.
 
 
-.. data:: header_encoding
+   .. attribute:: header_encoding
 
-   If the character set must be encoded before it can be used in an email header,
-   this attribute will be set to ``Charset.QP`` (for quoted-printable),
-   ``Charset.BASE64`` (for base64 encoding), or ``Charset.SHORTEST`` for the
-   shortest of QP or BASE64 encoding. Otherwise, it will be ``None``.
+      If the character set must be encoded before it can be used in an email
+      header, this attribute will be set to ``Charset.QP`` (for
+      quoted-printable), ``Charset.BASE64`` (for base64 encoding), or
+      ``Charset.SHORTEST`` for the shortest of QP or BASE64 encoding. Otherwise,
+      it will be ``None``.
 
 
-.. data:: body_encoding
+   .. attribute:: body_encoding
 
-   Same as *header_encoding*, but describes the encoding for the mail message's
-   body, which indeed may be different than the header encoding.
-   ``Charset.SHORTEST`` is not allowed for *body_encoding*.
+      Same as *header_encoding*, but describes the encoding for the mail
+      message's body, which indeed may be different than the header encoding.
+      ``Charset.SHORTEST`` is not allowed for *body_encoding*.
 
 
-.. data:: output_charset
+   .. attribute:: output_charset
 
-   Some character sets must be converted before they can be used in email headers
-   or bodies.  If the *input_charset* is one of them, this attribute will contain
-   the name of the character set output will be converted to.  Otherwise, it will
-   be ``None``.
+      Some character sets must be converted before they can be used in email headers
+      or bodies.  If the *input_charset* is one of them, this attribute will
+      contain the name of the character set output will be converted to.  Otherwise, it will
+      be ``None``.
 
 
-.. data:: input_codec
+   .. attribute:: input_codec
 
-   The name of the Python codec used to convert the *input_charset* to Unicode.  If
-   no conversion codec is necessary, this attribute will be ``None``.
+      The name of the Python codec used to convert the *input_charset* to
+      Unicode.  If no conversion codec is necessary, this attribute will be
+      ``None``.
 
 
-.. data:: output_codec
+   .. attribute:: output_codec
 
-   The name of the Python codec used to convert Unicode to the *output_charset*.
-   If no conversion codec is necessary, this attribute will have the same value as
-   the *input_codec*.
+      The name of the Python codec used to convert Unicode to the
+      *output_charset*.  If no conversion codec is necessary, this attribute
+      will have the same value as the *input_codec*.
 
-:class:`Charset` instances also have the following methods:
+   :class:`Charset` instances also have the following methods:
 
 
-.. method:: Charset.get_body_encoding()
+   .. method:: get_body_encoding()
 
-   Return the content transfer encoding used for body encoding.
+      Return the content transfer encoding used for body encoding.
 
-   This is either the string ``quoted-printable`` or ``base64`` depending on the
-   encoding used, or it is a function, in which case you should call the function
-   with a single argument, the Message object being encoded.  The function should
-   then set the :mailheader:`Content-Transfer-Encoding` header itself to whatever
-   is appropriate.
+      This is either the string ``quoted-printable`` or ``base64`` depending on
+      the encoding used, or it is a function, in which case you should call the
+      function with a single argument, the Message object being encoded.  The
+      function should then set the :mailheader:`Content-Transfer-Encoding`
+      header itself to whatever is appropriate.
 
-   Returns the string ``quoted-printable`` if *body_encoding* is ``QP``, returns
-   the string ``base64`` if *body_encoding* is ``BASE64``, and returns the string
-   ``7bit`` otherwise.
+      Returns the string ``quoted-printable`` if *body_encoding* is ``QP``,
+      returns the string ``base64`` if *body_encoding* is ``BASE64``, and
+      returns the string ``7bit`` otherwise.
 
 
-.. method:: Charset.convert(s)
+   .. method:: convert(s)
 
-   Convert the string *s* from the *input_codec* to the *output_codec*.
+      Convert the string *s* from the *input_codec* to the *output_codec*.
 
 
-.. method:: Charset.to_splittable(s)
+   .. method:: to_splittable(s)
 
-   Convert a possibly multibyte string to a safely splittable format. *s* is the
-   string to split.
+      Convert a possibly multibyte string to a safely splittable format. *s* is
+      the string to split.
 
-   Uses the *input_codec* to try and convert the string to Unicode, so it can be
-   safely split on character boundaries (even for multibyte characters).
+      Uses the *input_codec* to try and convert the string to Unicode, so it can
+      be safely split on character boundaries (even for multibyte characters).
 
-   Returns the string as-is if it isn't known how to convert *s* to Unicode with
-   the *input_charset*.
+      Returns the string as-is if it isn't known how to convert *s* to Unicode
+      with the *input_charset*.
 
-   Characters that could not be converted to Unicode will be replaced with the
-   Unicode replacement character ``'U+FFFD'``.
+      Characters that could not be converted to Unicode will be replaced with
+      the Unicode replacement character ``'U+FFFD'``.
 
 
-.. method:: Charset.from_splittable(ustr[, to_output])
+   .. method:: from_splittable(ustr[, to_output])
 
-   Convert a splittable string back into an encoded string.  *ustr* is a Unicode
-   string to "unsplit".
+      Convert a splittable string back into an encoded string.  *ustr* is a
+      Unicode string to "unsplit".
 
-   This method uses the proper codec to try and convert the string from Unicode
-   back into an encoded format.  Return the string as-is if it is not Unicode, or
-   if it could not be converted from Unicode.
+      This method uses the proper codec to try and convert the string from
+      Unicode back into an encoded format.  Return the string as-is if it is not
+      Unicode, or if it could not be converted from Unicode.
 
-   Characters that could not be converted from Unicode will be replaced with an
-   appropriate character (usually ``'?'``).
+      Characters that could not be converted from Unicode will be replaced with
+      an appropriate character (usually ``'?'``).
 
-   If *to_output* is ``True`` (the default), uses *output_codec* to convert to an
-   encoded format.  If *to_output* is ``False``, it uses *input_codec*.
+      If *to_output* is ``True`` (the default), uses *output_codec* to convert
+      to an encoded format.  If *to_output* is ``False``, it uses *input_codec*.
 
 
-.. method:: Charset.get_output_charset()
+   .. method:: get_output_charset()
 
-   Return the output character set.
+      Return the output character set.
 
-   This is the *output_charset* attribute if that is not ``None``, otherwise it is
-   *input_charset*.
+      This is the *output_charset* attribute if that is not ``None``, otherwise
+      it is *input_charset*.
 
 
-.. method:: Charset.encoded_header_len()
+   .. method:: encoded_header_len()
 
-   Return the length of the encoded header string, properly calculating for
-   quoted-printable or base64 encoding.
+      Return the length of the encoded header string, properly calculating for
+      quoted-printable or base64 encoding.
 
 
-.. method:: Charset.header_encode(s[, convert])
+   .. method:: header_encode(s[, convert])
 
-   Header-encode the string *s*.
+      Header-encode the string *s*.
 
-   If *convert* is ``True``, the string will be converted from the input charset to
-   the output charset automatically.  This is not useful for multibyte character
-   sets, which have line length issues (multibyte characters must be split on a
-   character, not a byte boundary); use the higher-level :class:`Header` class to
-   deal with these issues (see :mod:`email.header`).  *convert* defaults to
-   ``False``.
+      If *convert* is ``True``, the string will be converted from the input
+      charset to the output charset automatically.  This is not useful for
+      multibyte character sets, which have line length issues (multibyte
+      characters must be split on a character, not a byte boundary); use the
+      higher-level :class:`Header` class to deal with these issues (see
+      :mod:`email.header`).  *convert* defaults to ``False``.
 
-   The type of encoding (base64 or quoted-printable) will be based on the
-   *header_encoding* attribute.
+      The type of encoding (base64 or quoted-printable) will be based on the
+      *header_encoding* attribute.
 
 
-.. method:: Charset.body_encode(s[, convert])
+   .. method:: body_encode(s[, convert])
 
-   Body-encode the string *s*.
+      Body-encode the string *s*.
 
-   If *convert* is ``True`` (the default), the string will be converted from the
-   input charset to output charset automatically. Unlike :meth:`header_encode`,
-   there are no issues with byte boundaries and multibyte charsets in email bodies,
-   so this is usually pretty safe.
+      If *convert* is ``True`` (the default), the string will be converted from
+      the input charset to output charset automatically. Unlike
+      :meth:`header_encode`, there are no issues with byte boundaries and
+      multibyte charsets in email bodies, so this is usually pretty safe.
 
-   The type of encoding (base64 or quoted-printable) will be based on the
-   *body_encoding* attribute.
+      The type of encoding (base64 or quoted-printable) will be based on the
+      *body_encoding* attribute.
 
-The :class:`Charset` class also provides a number of methods to support standard
-operations and built-in functions.
+   The :class:`Charset` class also provides a number of methods to support
+   standard operations and built-in functions.
 
 
-.. method:: Charset.__str__()
+   .. method:: __str__()
 
-   Returns *input_charset* as a string coerced to lower case. :meth:`__repr__` is
-   an alias for :meth:`__str__`.
+      Returns *input_charset* as a string coerced to lower
+      case. :meth:`__repr__` is an alias for :meth:`__str__`.
 
 
-.. method:: Charset.__eq__(other)
+   .. method:: __eq__(other)
 
-   This method allows you to compare two :class:`Charset` instances for equality.
+      This method allows you to compare two :class:`Charset` instances for
+      equality.
 
 
-.. method:: Header.__ne__(other)
+   .. method:: __ne__(other)
 
-   This method allows you to compare two :class:`Charset` instances for inequality.
+      This method allows you to compare two :class:`Charset` instances for
+      inequality.
 
 The :mod:`email.charset` module also provides the following functions for adding
 new entries to the global character set, alias, and codec registries:

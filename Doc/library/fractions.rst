@@ -30,60 +30,58 @@ Rational number class.
    :class:`numbers.Rational` and is immutable and hashable.
 
 
-.. method:: Fraction.from_float(flt)
+   .. method:: from_float(flt)
 
-   This classmethod constructs a :class:`Fraction` representing the
-   exact value of *flt*, which must be a :class:`float`. Beware that
-   ``Fraction.from_float(0.3)`` is not the same value as ``Rational(3,
-   10)``
-
-
-.. method:: Fraction.from_decimal(dec)
-
-   This classmethod constructs a :class:`Fraction` representing the
-   exact value of *dec*, which must be a
-   :class:`decimal.Decimal`.
+      This classmethod constructs a :class:`Fraction` representing the exact
+      value of *flt*, which must be a :class:`float`. Beware that
+      ``Fraction.from_float(0.3)`` is not the same value as ``Rational(3, 10)``
 
 
-.. method:: Fraction.limit_denominator(max_denominator=1000000)
+   .. method:: from_decimal(dec)
 
-   Finds and returns the closest :class:`Fraction` to ``self`` that
-   has denominator at most max_denominator.  This method is useful for
-   finding rational approximations to a given floating-point number:
-
-      >>> from fractions import Fraction
-      >>> Fraction('3.1415926535897932').limit_denominator(1000)
-      Fraction(355L, 113L)
-
-   or for recovering a rational number that's represented as a float:
-
-      >>> from math import pi, cos
-      >>> Fraction.from_float(cos(pi/3))
-      Fraction(4503599627370497L, 9007199254740992L)
-      >>> Fraction.from_float(cos(pi/3)).limit_denominator()
-      Fraction(1L, 2L)
+      This classmethod constructs a :class:`Fraction` representing the exact
+      value of *dec*, which must be a :class:`decimal.Decimal`.
 
 
-.. method:: Fraction.__floor__()
+   .. method:: limit_denominator(max_denominator=1000000)
 
-   Returns the greatest :class:`int` ``<= self``. Will be accessible
-   through :func:`math.floor` in Py3k.
+      Finds and returns the closest :class:`Fraction` to ``self`` that has
+      denominator at most max_denominator.  This method is useful for finding
+      rational approximations to a given floating-point number:
+
+         >>> from fractions import Fraction
+         >>> Fraction('3.1415926535897932').limit_denominator(1000)
+         Fraction(355L, 113L)
+
+      or for recovering a rational number that's represented as a float:
+
+         >>> from math import pi, cos
+         >>> Fraction.from_float(cos(pi/3))
+         Fraction(4503599627370497L, 9007199254740992L)
+         >>> Fraction.from_float(cos(pi/3)).limit_denominator()
+         Fraction(1L, 2L)
 
 
-.. method:: Fraction.__ceil__()
+   .. method:: __floor__()
 
-   Returns the least :class:`int` ``>= self``. Will be accessible
-   through :func:`math.ceil` in Py3k.
+      Returns the greatest :class:`int` ``<= self``. Will be accessible through
+      :func:`math.floor` in Py3k.
 
 
-.. method:: Fraction.__round__()
-            Fraction.__round__(ndigits)
+   .. method:: __ceil__()
 
-   The first version returns the nearest :class:`int` to ``self``,
-   rounding half to even. The second version rounds ``self`` to the
-   nearest multiple of ``Fraction(1, 10**ndigits)`` (logically, if
-   ``ndigits`` is negative), again rounding half toward even. Will be
-   accessible through :func:`round` in Py3k.
+      Returns the least :class:`int` ``>= self``. Will be accessible through
+      :func:`math.ceil` in Py3k.
+
+
+   .. method:: __round__()
+               __round__(ndigits)
+
+      The first version returns the nearest :class:`int` to ``self``, rounding
+      half to even. The second version rounds ``self`` to the nearest multiple
+      of ``Fraction(1, 10**ndigits)`` (logically, if ``ndigits`` is negative),
+      again rounding half toward even. Will be accessible through :func:`round`
+      in Py3k.
 
 
 .. seealso::

@@ -166,59 +166,60 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    where only the most recent activity is of interest.
 
 
-Deque objects support the following methods:
+   Deque objects support the following methods:
 
-.. method:: deque.append(x)
+   .. method:: append(x)
 
-   Add *x* to the right side of the deque.
-
-
-.. method:: deque.appendleft(x)
-
-   Add *x* to the left side of the deque.
+      Add *x* to the right side of the deque.
 
 
-.. method:: deque.clear()
+   .. method:: appendleft(x)
 
-   Remove all elements from the deque leaving it with length 0.
-
-
-.. method:: deque.extend(iterable)
-
-   Extend the right side of the deque by appending elements from the iterable
-   argument.
+      Add *x* to the left side of the deque.
 
 
-.. method:: deque.extendleft(iterable)
+   .. method:: clear()
 
-   Extend the left side of the deque by appending elements from *iterable*.  Note,
-   the series of left appends results in reversing the order of elements in the
-   iterable argument.
+      Remove all elements from the deque leaving it with length 0.
 
 
-.. method:: deque.pop()
+   .. method:: extend(iterable)
 
-   Remove and return an element from the right side of the deque. If no elements
-   are present, raises an :exc:`IndexError`.
-
-
-.. method:: deque.popleft()
-
-   Remove and return an element from the left side of the deque. If no elements are
-   present, raises an :exc:`IndexError`.
+      Extend the right side of the deque by appending elements from the iterable
+      argument.
 
 
-.. method:: deque.remove(value)
+   .. method:: extendleft(iterable)
 
-   Removed the first occurrence of *value*.  If not found, raises a
-   :exc:`ValueError`.
+      Extend the left side of the deque by appending elements from *iterable*.
+      Note, the series of left appends results in reversing the order of
+      elements in the iterable argument.
 
 
-.. method:: deque.rotate(n)
+   .. method:: pop()
 
-   Rotate the deque *n* steps to the right.  If *n* is negative, rotate to the
-   left.  Rotating one step to the right is equivalent to:
-   ``d.appendleft(d.pop())``.
+      Remove and return an element from the right side of the deque. If no
+      elements are present, raises an :exc:`IndexError`.
+
+
+   .. method:: popleft()
+
+      Remove and return an element from the left side of the deque. If no
+      elements are present, raises an :exc:`IndexError`.
+
+
+   .. method:: remove(value)
+
+      Removed the first occurrence of *value*.  If not found, raises a
+      :exc:`ValueError`.
+
+
+   .. method:: rotate(n)
+
+      Rotate the deque *n* steps to the right.  If *n* is negative, rotate to
+      the left.  Rotating one step to the right is equivalent to:
+      ``d.appendleft(d.pop())``.
+
 
 In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
@@ -348,32 +349,34 @@ in Unix::
    arguments.
 
 
-:class:`defaultdict` objects support the following method in addition to the
-standard :class:`dict` operations:
+   :class:`defaultdict` objects support the following method in addition to the
+   standard :class:`dict` operations:
 
-.. method:: defaultdict.__missing__(key)
+   .. method:: defaultdict.__missing__(key)
 
-   If the :attr:`default_factory` attribute is ``None``, this raises an
-   :exc:`KeyError` exception with the *key* as argument.
+      If the :attr:`default_factory` attribute is ``None``, this raises an
+      :exc:`KeyError` exception with the *key* as argument.
 
-   If :attr:`default_factory` is not ``None``, it is called without arguments to
-   provide a default value for the given *key*, this value is inserted in the
-   dictionary for the *key*, and returned.
+      If :attr:`default_factory` is not ``None``, it is called without arguments
+      to provide a default value for the given *key*, this value is inserted in
+      the dictionary for the *key*, and returned.
 
-   If calling :attr:`default_factory` raises an exception this exception is
-   propagated unchanged.
+      If calling :attr:`default_factory` raises an exception this exception is
+      propagated unchanged.
 
-   This method is called by the :meth:`__getitem__` method of the :class:`dict`
-   class when the requested key is not found; whatever it returns or raises is then
-   returned or raised by :meth:`__getitem__`.
-
-:class:`defaultdict` objects support the following instance variable:
+      This method is called by the :meth:`__getitem__` method of the
+      :class:`dict` class when the requested key is not found; whatever it
+      returns or raises is then returned or raised by :meth:`__getitem__`.
 
 
-.. attribute:: defaultdict.default_factory
+   :class:`defaultdict` objects support the following instance variable:
 
-   This attribute is used by the :meth:`__missing__` method; it is initialized from
-   the first argument to the constructor, if present, or to ``None``,  if absent.
+
+   .. attribute:: defaultdict.default_factory
+
+      This attribute is used by the :meth:`__missing__` method; it is
+      initialized from the first argument to the constructor, if present, or to
+      ``None``, if absent.
 
 
 .. _defaultdict-examples:
