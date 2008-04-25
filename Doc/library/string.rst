@@ -136,29 +136,29 @@ these rules.  The methods of :class:`Template` are:
    The constructor takes a single argument which is the template string.
 
 
-.. method:: Template.substitute(mapping[, **kws])
+   .. method:: substitute(mapping[, **kws])
 
-   Performs the template substitution, returning a new string.  *mapping* is any
-   dictionary-like object with keys that match the placeholders in the template.
-   Alternatively, you can provide keyword arguments, where the keywords are the
-   placeholders.  When both *mapping* and *kws* are given and there are duplicates,
-   the placeholders from *kws* take precedence.
+      Performs the template substitution, returning a new string.  *mapping* is
+      any dictionary-like object with keys that match the placeholders in the
+      template.  Alternatively, you can provide keyword arguments, where the
+      keywords are the placeholders.  When both *mapping* and *kws* are given
+      and there are duplicates, the placeholders from *kws* take precedence.
 
 
-.. method:: Template.safe_substitute(mapping[, **kws])
+   .. method:: safe_substitute(mapping[, **kws])
 
-   Like :meth:`substitute`, except that if placeholders are missing from *mapping*
-   and *kws*, instead of raising a :exc:`KeyError` exception, the original
-   placeholder will appear in the resulting string intact.  Also, unlike with
-   :meth:`substitute`, any other appearances of the ``$`` will simply return ``$``
-   instead of raising :exc:`ValueError`.
+      Like :meth:`substitute`, except that if placeholders are missing from
+      *mapping* and *kws*, instead of raising a :exc:`KeyError` exception, the
+      original placeholder will appear in the resulting string intact.  Also,
+      unlike with :meth:`substitute`, any other appearances of the ``$`` will
+      simply return ``$`` instead of raising :exc:`ValueError`.
 
-   While other exceptions may still occur, this method is called "safe" because
-   substitutions always tries to return a usable string instead of raising an
-   exception.  In another sense, :meth:`safe_substitute` may be anything other than
-   safe, since it will silently ignore malformed templates containing dangling
-   delimiters, unmatched braces, or placeholders that are not valid Python
-   identifiers.
+      While other exceptions may still occur, this method is called "safe"
+      because substitutions always tries to return a usable string instead of
+      raising an exception.  In another sense, :meth:`safe_substitute` may be
+      anything other than safe, since it will silently ignore malformed
+      templates containing dangling delimiters, unmatched braces, or
+      placeholders that are not valid Python identifiers.
 
 :class:`Template` instances also provide one public data attribute:
 

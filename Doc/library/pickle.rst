@@ -256,34 +256,34 @@ The :mod:`pickle` module also exports two callables [#]_, :class:`Pickler` and
    It can thus be an open file object, a :mod:`StringIO` object, or any other
    custom object that meets this interface.
 
-:class:`Pickler` objects define one (or two) public methods:
+   :class:`Pickler` objects define one (or two) public methods:
 
 
-.. method:: Pickler.dump(obj)
+   .. method:: dump(obj)
 
-   Write a pickled representation of *obj* to the open file object given in the
-   constructor.  Either the binary or ASCII format will be used, depending on the
-   value of the *protocol* argument passed to the constructor.
+      Write a pickled representation of *obj* to the open file object given in the
+      constructor.  Either the binary or ASCII format will be used, depending on the
+      value of the *protocol* argument passed to the constructor.
 
 
-.. method:: Pickler.clear_memo()
+   .. method:: clear_memo()
 
-   Clears the pickler's "memo".  The memo is the data structure that remembers
-   which objects the pickler has already seen, so that shared or recursive objects
-   pickled by reference and not by value.  This method is useful when re-using
-   picklers.
+      Clears the pickler's "memo".  The memo is the data structure that remembers
+      which objects the pickler has already seen, so that shared or recursive objects
+      pickled by reference and not by value.  This method is useful when re-using
+      picklers.
 
-   .. note::
+      .. note::
 
-      Prior to Python 2.3, :meth:`clear_memo` was only available on the picklers
-      created by :mod:`cPickle`.  In the :mod:`pickle` module, picklers have an
-      instance variable called :attr:`memo` which is a Python dictionary.  So to clear
-      the memo for a :mod:`pickle` module pickler, you could do the following::
+         Prior to Python 2.3, :meth:`clear_memo` was only available on the picklers
+         created by :mod:`cPickle`.  In the :mod:`pickle` module, picklers have an
+         instance variable called :attr:`memo` which is a Python dictionary.  So to clear
+         the memo for a :mod:`pickle` module pickler, you could do the following::
 
-         mypickler.memo.clear()
+            mypickler.memo.clear()
 
-      Code that does not need to support older versions of Python should simply use
-      :meth:`clear_memo`.
+         Code that does not need to support older versions of Python should simply use
+         :meth:`clear_memo`.
 
 It is possible to make multiple calls to the :meth:`dump` method of the same
 :class:`Pickler` instance.  These must then be matched to the same number of
@@ -307,29 +307,30 @@ instance.  If the same object is pickled by multiple :meth:`dump` calls, the
    reading, a :mod:`StringIO` object, or any other custom object that meets this
    interface.
 
-:class:`Unpickler` objects have one (or two) public methods:
+   :class:`Unpickler` objects have one (or two) public methods:
 
 
-.. method:: Unpickler.load()
+   .. method:: load()
 
-   Read a pickled object representation from the open file object given in the
-   constructor, and return the reconstituted object hierarchy specified therein.
+      Read a pickled object representation from the open file object given in
+      the constructor, and return the reconstituted object hierarchy specified
+      therein.
 
-   This method automatically determines whether the data stream was written in
-   binary mode or not.
+      This method automatically determines whether the data stream was written
+      in binary mode or not.
 
 
-.. method:: Unpickler.noload()
+   .. method:: noload()
 
-   This is just like :meth:`load` except that it doesn't actually create any
-   objects.  This is useful primarily for finding what's called "persistent ids"
-   that may be referenced in a pickle data stream.  See section
-   :ref:`pickle-protocol` below for more details.
+      This is just like :meth:`load` except that it doesn't actually create any
+      objects.  This is useful primarily for finding what's called "persistent
+      ids" that may be referenced in a pickle data stream.  See section
+      :ref:`pickle-protocol` below for more details.
 
-   **Note:** the :meth:`noload` method is currently only available on
-   :class:`Unpickler` objects created with the :mod:`cPickle` module.
-   :mod:`pickle` module :class:`Unpickler`\ s do not have the :meth:`noload`
-   method.
+      **Note:** the :meth:`noload` method is currently only available on
+      :class:`Unpickler` objects created with the :mod:`cPickle` module.
+      :mod:`pickle` module :class:`Unpickler`\ s do not have the :meth:`noload`
+      method.
 
 
 What can be pickled and unpickled?

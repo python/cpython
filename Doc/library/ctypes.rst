@@ -1443,10 +1443,10 @@ loader instance.
    so repeated attribute accesses return the same library each time.
 
 
-.. method:: LibraryLoader.LoadLibrary(name)
+   .. method:: LoadLibrary(name)
 
-   Load a shared library into the process and return it.  This method always
-   returns a new instance of the library.
+      Load a shared library into the process and return it.  This method always
+      returns a new instance of the library.
 
 These prefabricated library loaders are available:
 
@@ -1503,50 +1503,51 @@ They are instances of a private class:
 
    Base class for C callable foreign functions.
 
-Instances of foreign functions are also C compatible data types; they represent
-C function pointers.
+   Instances of foreign functions are also C compatible data types; they
+   represent C function pointers.
 
-This behavior can be customized by assigning to special attributes of the
-foreign function object.
-
-
-.. attribute:: _FuncPtr.restype
-
-   Assign a ctypes type to specify the result type of the foreign function.  Use
-   ``None`` for ``void`` a function not returning anything.
-
-   It is possible to assign a callable Python object that is not a ctypes type, in
-   this case the function is assumed to return a C ``int``, and the callable will
-   be called with this integer, allowing to do further processing or error
-   checking.  Using this is deprecated, for more flexible post processing or error
-   checking use a ctypes data type as :attr:`restype` and assign a callable to the
-   :attr:`errcheck` attribute.
+   This behavior can be customized by assigning to special attributes of the
+   foreign function object.
 
 
-.. attribute:: _FuncPtr.argtypes
+   .. attribute:: restype
 
-   Assign a tuple of ctypes types to specify the argument types that the function
-   accepts.  Functions using the ``stdcall`` calling convention can only be called
-   with the same number of arguments as the length of this tuple; functions using
-   the C calling convention accept additional, unspecified arguments as well.
+      Assign a ctypes type to specify the result type of the foreign function.
+      Use ``None`` for ``void`` a function not returning anything.
 
-   When a foreign function is called, each actual argument is passed to the
-   :meth:`from_param` class method of the items in the :attr:`argtypes` tuple, this
-   method allows to adapt the actual argument to an object that the foreign
-   function accepts.  For example, a :class:`c_char_p` item in the :attr:`argtypes`
-   tuple will convert a unicode string passed as argument into an byte string using
-   ctypes conversion rules.
-
-   New: It is now possible to put items in argtypes which are not ctypes types, but
-   each item must have a :meth:`from_param` method which returns a value usable as
-   argument (integer, string, ctypes instance).  This allows to define adapters
-   that can adapt custom objects as function parameters.
+      It is possible to assign a callable Python object that is not a ctypes
+      type, in this case the function is assumed to return a C ``int``, and the
+      callable will be called with this integer, allowing to do further
+      processing or error checking.  Using this is deprecated, for more flexible
+      post processing or error checking use a ctypes data type as
+      :attr:`restype` and assign a callable to the :attr:`errcheck` attribute.
 
 
-.. attribute:: _FuncPtr.errcheck
+   .. attribute:: argtypes
 
-   Assign a Python function or another callable to this attribute. The callable
-   will be called with three or more arguments:
+      Assign a tuple of ctypes types to specify the argument types that the
+      function accepts.  Functions using the ``stdcall`` calling convention can
+      only be called with the same number of arguments as the length of this
+      tuple; functions using the C calling convention accept additional,
+      unspecified arguments as well.
+
+      When a foreign function is called, each actual argument is passed to the
+      :meth:`from_param` class method of the items in the :attr:`argtypes`
+      tuple, this method allows to adapt the actual argument to an object that
+      the foreign function accepts.  For example, a :class:`c_char_p` item in
+      the :attr:`argtypes` tuple will convert a unicode string passed as
+      argument into an byte string using ctypes conversion rules.
+
+      New: It is now possible to put items in argtypes which are not ctypes
+      types, but each item must have a :meth:`from_param` method which returns a
+      value usable as argument (integer, string, ctypes instance).  This allows
+      to define adapters that can adapt custom objects as function parameters.
+
+
+   .. attribute:: errcheck
+
+      Assign a Python function or another callable to this attribute. The
+      callable will be called with three or more arguments:
 
 
 .. function:: callable(result, func, arguments)
@@ -1561,9 +1562,9 @@ foreign function object.
    ``arguments`` is a tuple containing the parameters originally passed to the
    function call, this allows to specialize the behavior on the arguments used.
 
-   The object that this function returns will be returned from the foreign function
-   call, but it can also check the result value and raise an exception if the
-   foreign function call failed.
+   The object that this function returns will be returned from the foreign
+   function call, but it can also check the result value and raise an exception
+   if the foreign function call failed.
 
 
 .. exception:: ArgumentError()
@@ -1945,57 +1946,58 @@ Data types
    :attr:`_objects`; this contains other Python objects that need to be kept alive
    in case the memory block contains pointers.
 
-Common methods of ctypes data types, these are all class methods (to be exact,
-they are methods of the :term:`metaclass`):
+   Common methods of ctypes data types, these are all class methods (to be
+   exact, they are methods of the :term:`metaclass`):
 
 
-.. method:: _CData.from_address(address)
+   .. method:: from_address(address)
 
-   This method returns a ctypes type instance using the memory specified by address
-   which must be an integer.
-
-
-.. method:: _CData.from_param(obj)
-
-   This method adapts obj to a ctypes type.  It is called with the actual object
-   used in a foreign function call, when the type is present in the foreign
-   functions :attr:`argtypes` tuple; it must return an object that can be used as
-   function call parameter.
-
-   All ctypes data types have a default implementation of this classmethod,
-   normally it returns ``obj`` if that is an instance of the type.  Some types
-   accept other objects as well.
+      This method returns a ctypes type instance using the memory specified by
+      address which must be an integer.
 
 
-.. method:: _CData.in_dll(library, name)
+   .. method:: from_param(obj)
 
-   This method returns a ctypes type instance exported by a shared library. *name*
-   is the name of the symbol that exports the data, *library* is the loaded shared
-   library.
+      This method adapts obj to a ctypes type.  It is called with the actual
+      object used in a foreign function call, when the type is present in the
+      foreign functions :attr:`argtypes` tuple; it must return an object that
+      can be used as function call parameter.
 
-Common instance variables of ctypes data types:
-
-
-.. attribute:: _CData._b_base_
-
-   Sometimes ctypes data instances do not own the memory block they contain,
-   instead they share part of the memory block of a base object.  The
-   :attr:`_b_base_` read-only member is the root ctypes object that owns the memory
-   block.
+      All ctypes data types have a default implementation of this classmethod,
+      normally it returns ``obj`` if that is an instance of the type.  Some
+      types accept other objects as well.
 
 
-.. attribute:: _CData._b_needsfree_
+   .. method:: in_dll(library, name)
 
-   This read-only variable is true when the ctypes data instance has allocated the
-   memory block itself, false otherwise.
+      This method returns a ctypes type instance exported by a shared
+      library. *name* is the name of the symbol that exports the data, *library*
+      is the loaded shared library.
 
 
-.. attribute:: _CData._objects
+   Common instance variables of ctypes data types:
 
-   This member is either ``None`` or a dictionary containing Python objects that
-   need to be kept alive so that the memory block contents is kept valid.  This
-   object is only exposed for debugging; never modify the contents of this
-   dictionary.
+
+   .. attribute:: _b_base_
+
+      Sometimes ctypes data instances do not own the memory block they contain,
+      instead they share part of the memory block of a base object.  The
+      :attr:`_b_base_` read-only member is the root ctypes object that owns the
+      memory block.
+
+
+   .. attribute:: _b_needsfree_
+
+      This read-only variable is true when the ctypes data instance has
+      allocated the memory block itself, false otherwise.
+
+
+   .. attribute:: _objects
+
+      This member is either ``None`` or a dictionary containing Python objects
+      that need to be kept alive so that the memory block contents is kept
+      valid.  This object is only exposed for debugging; never modify the
+      contents of this dictionary.
 
 
 .. _ctypes-fundamental-data-types-2:
@@ -2015,19 +2017,20 @@ Fundamental data types
       ctypes data types that are not and do not contain pointers can
       now be pickled.
 
-Instances have a single attribute:
+   Instances have a single attribute:
 
 
-.. attribute:: _SimpleCData.value
+   .. attribute:: value
 
-   This attribute contains the actual value of the instance. For integer and
-   pointer types, it is an integer, for character types, it is a single character
-   string, for character pointer types it is a Python string or unicode string.
+      This attribute contains the actual value of the instance. For integer and
+      pointer types, it is an integer, for character types, it is a single
+      character string, for character pointer types it is a Python string or
+      unicode string.
 
-   When the ``value`` attribute is retrieved from a ctypes instance, usually a new
-   object is returned each time.  ``ctypes`` does *not* implement original object
-   return, always a new object is constructed.  The same is true for all other
-   ctypes object instances.
+      When the ``value`` attribute is retrieved from a ctypes instance, usually
+      a new object is returned each time.  ``ctypes`` does *not* implement
+      original object return, always a new object is constructed.  The same is
+      true for all other ctypes object instances.
 
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
@@ -2265,90 +2268,92 @@ other data types containing pointer type fields.
 
    Abstract base class for structures in *native* byte order.
 
-Concrete structure and union types must be created by subclassing one of these
-types, and at least define a :attr:`_fields_` class variable. ``ctypes`` will
-create :term:`descriptor`\s which allow reading and writing the fields by direct
-attribute accesses.  These are the
+   Concrete structure and union types must be created by subclassing one of these
+   types, and at least define a :attr:`_fields_` class variable. ``ctypes`` will
+   create :term:`descriptor`\s which allow reading and writing the fields by direct
+   attribute accesses.  These are the
 
 
-.. attribute:: Structure._fields_
+   .. attribute:: _fields_
 
-   A sequence defining the structure fields.  The items must be 2-tuples or
-   3-tuples.  The first item is the name of the field, the second item specifies
-   the type of the field; it can be any ctypes data type.
+      A sequence defining the structure fields.  The items must be 2-tuples or
+      3-tuples.  The first item is the name of the field, the second item
+      specifies the type of the field; it can be any ctypes data type.
 
-   For integer type fields like :class:`c_int`, a third optional item can be given.
-   It must be a small positive integer defining the bit width of the field.
+      For integer type fields like :class:`c_int`, a third optional item can be
+      given.  It must be a small positive integer defining the bit width of the
+      field.
 
-   Field names must be unique within one structure or union.  This is not checked,
-   only one field can be accessed when names are repeated.
+      Field names must be unique within one structure or union.  This is not
+      checked, only one field can be accessed when names are repeated.
 
-   It is possible to define the :attr:`_fields_` class variable *after* the class
-   statement that defines the Structure subclass, this allows to create data types
-   that directly or indirectly reference themselves::
+      It is possible to define the :attr:`_fields_` class variable *after* the
+      class statement that defines the Structure subclass, this allows to create
+      data types that directly or indirectly reference themselves::
 
-      class List(Structure):
-          pass
-      List._fields_ = [("pnext", POINTER(List)),
-                       ...
-                      ]
+         class List(Structure):
+             pass
+         List._fields_ = [("pnext", POINTER(List)),
+                          ...
+                         ]
 
-   The :attr:`_fields_` class variable must, however, be defined before the type is
-   first used (an instance is created, ``sizeof()`` is called on it, and so on).
-   Later assignments to the :attr:`_fields_` class variable will raise an
-   AttributeError.
+      The :attr:`_fields_` class variable must, however, be defined before the
+      type is first used (an instance is created, ``sizeof()`` is called on it,
+      and so on).  Later assignments to the :attr:`_fields_` class variable will
+      raise an AttributeError.
 
-   Structure and union subclass constructors accept both positional and named
-   arguments.  Positional arguments are used to initialize the fields in the same
-   order as they appear in the :attr:`_fields_` definition, named arguments are
-   used to initialize the fields with the corresponding name.
+      Structure and union subclass constructors accept both positional and named
+      arguments.  Positional arguments are used to initialize the fields in the
+      same order as they appear in the :attr:`_fields_` definition, named
+      arguments are used to initialize the fields with the corresponding name.
 
-   It is possible to defined sub-subclasses of structure types, they inherit the
-   fields of the base class plus the :attr:`_fields_` defined in the sub-subclass,
-   if any.
-
-
-.. attribute:: Structure._pack_
-
-   An optional small integer that allows to override the alignment of structure
-   fields in the instance.  :attr:`_pack_` must already be defined when
-   :attr:`_fields_` is assigned, otherwise it will have no effect.
+      It is possible to defined sub-subclasses of structure types, they inherit
+      the fields of the base class plus the :attr:`_fields_` defined in the
+      sub-subclass, if any.
 
 
-.. attribute:: Structure._anonymous_
+   .. attribute:: _pack_
 
-   An optional sequence that lists the names of unnamed (anonymous) fields.
-   ``_anonymous_`` must be already defined when :attr:`_fields_` is assigned,
-   otherwise it will have no effect.
+      An optional small integer that allows to override the alignment of
+      structure fields in the instance.  :attr:`_pack_` must already be defined
+      when :attr:`_fields_` is assigned, otherwise it will have no effect.
 
-   The fields listed in this variable must be structure or union type fields.
-   ``ctypes`` will create descriptors in the structure type that allows to access
-   the nested fields directly, without the need to create the structure or union
-   field.
 
-   Here is an example type (Windows)::
+   .. attribute:: _anonymous_
 
-      class _U(Union):
-          _fields_ = [("lptdesc", POINTER(TYPEDESC)),
-                      ("lpadesc", POINTER(ARRAYDESC)),
-                      ("hreftype", HREFTYPE)]
+      An optional sequence that lists the names of unnamed (anonymous) fields.
+      ``_anonymous_`` must be already defined when :attr:`_fields_` is assigned,
+      otherwise it will have no effect.
 
-      class TYPEDESC(Structure):
-          _fields_ = [("u", _U),
-                      ("vt", VARTYPE)]
+      The fields listed in this variable must be structure or union type fields.
+      ``ctypes`` will create descriptors in the structure type that allows to
+      access the nested fields directly, without the need to create the
+      structure or union field.
 
-          _anonymous_ = ("u",)
+      Here is an example type (Windows)::
 
-   The ``TYPEDESC`` structure describes a COM data type, the ``vt`` field specifies
-   which one of the union fields is valid.  Since the ``u`` field is defined as
-   anonymous field, it is now possible to access the members directly off the
-   TYPEDESC instance. ``td.lptdesc`` and ``td.u.lptdesc`` are equivalent, but the
-   former is faster since it does not need to create a temporary union instance::
+         class _U(Union):
+             _fields_ = [("lptdesc", POINTER(TYPEDESC)),
+                         ("lpadesc", POINTER(ARRAYDESC)),
+                         ("hreftype", HREFTYPE)]
 
-      td = TYPEDESC()
-      td.vt = VT_PTR
-      td.lptdesc = POINTER(some_type)
-      td.u.lptdesc = POINTER(some_type)
+         class TYPEDESC(Structure):
+             _fields_ = [("u", _U),
+                         ("vt", VARTYPE)]
+
+             _anonymous_ = ("u",)
+
+      The ``TYPEDESC`` structure describes a COM data type, the ``vt`` field
+      specifies which one of the union fields is valid.  Since the ``u`` field
+      is defined as anonymous field, it is now possible to access the members
+      directly off the TYPEDESC instance. ``td.lptdesc`` and ``td.u.lptdesc``
+      are equivalent, but the former is faster since it does not need to create
+      a temporary union instance::
+
+         td = TYPEDESC()
+         td.vt = VT_PTR
+         td.lptdesc = POINTER(some_type)
+         td.u.lptdesc = POINTER(some_type)
 
 It is possible to defined sub-subclasses of structures, they inherit the fields
 of the base class.  If the subclass definition has a separate :attr:`_fields_`

@@ -1514,19 +1514,19 @@ and :meth:`flush` methods).
    will be used.
 
 
-.. method:: StreamHandler.emit(record)
+   .. method:: emit(record)
 
-   If a formatter is specified, it is used to format the record. The record is then
-   written to the stream with a trailing newline. If exception information is
-   present, it is formatted using :func:`traceback.print_exception` and appended to
-   the stream.
+      If a formatter is specified, it is used to format the record. The record
+      is then written to the stream with a trailing newline. If exception
+      information is present, it is formatted using
+      :func:`traceback.print_exception` and appended to the stream.
 
 
-.. method:: StreamHandler.flush()
+   .. method:: flush()
 
-   Flushes the stream by calling its :meth:`flush` method. Note that the
-   :meth:`close` method is inherited from :class:`Handler` and so does nothing, so
-   an explicit :meth:`flush` call may be needed at times.
+      Flushes the stream by calling its :meth:`flush` method. Note that the
+      :meth:`close` method is inherited from :class:`Handler` and so does
+      nothing, so an explicit :meth:`flush` call may be needed at times.
 
 
 FileHandler
@@ -1546,14 +1546,14 @@ sends logging output to a disk file.  It inherits the output functionality from
    first call to :meth:`emit`. By default, the file grows indefinitely.
 
 
-.. method:: FileHandler.close()
+   .. method:: close()
 
-   Closes the file.
+      Closes the file.
 
 
-.. method:: FileHandler.emit(record)
+   .. method:: emit(record)
 
-   Outputs the record to the file.
+      Outputs the record to the file.
 
 
 WatchedFileHandler
@@ -1588,11 +1588,11 @@ this value.
    first call to :meth:`emit`.  By default, the file grows indefinitely.
 
 
-.. method:: WatchedFileHandler.emit(record)
+   .. method:: emit(record)
 
-   Outputs the record to the file, but first checks to see if the file has changed.
-   If it has, the existing stream is flushed and closed and the file opened again,
-   before outputting the record to the file.
+      Outputs the record to the file, but first checks to see if the file has
+      changed.  If it has, the existing stream is flushed and closed and the
+      file opened again, before outputting the record to the file.
 
 
 RotatingFileHandler
@@ -1624,14 +1624,15 @@ module, supports rotation of disk log files.
    :file:`app.log.2`, :file:`app.log.3` etc.  respectively.
 
 
-.. method:: RotatingFileHandler.doRollover()
+   .. method:: doRollover()
 
-   Does a rollover, as described above.
+      Does a rollover, as described above.
 
 
-.. method:: RotatingFileHandler.emit(record)
+   .. method:: emit(record)
 
-   Outputs the record to the file, catering for rollover as described previously.
+      Outputs the record to the file, catering for rollover as described
+      previously.
 
 
 TimedRotatingFileHandler
@@ -1677,14 +1678,14 @@ timed intervals.
    files to delete, so changing the interval may leave old files lying around.
 
 
-.. method:: TimedRotatingFileHandler.doRollover()
+   .. method:: doRollover()
 
-   Does a rollover, as described above.
+      Does a rollover, as described above.
 
 
-.. method:: TimedRotatingFileHandler.emit(record)
+   .. method:: emit(record)
 
-   Outputs the record to the file, catering for rollover as described above.
+      Outputs the record to the file, catering for rollover as described above.
 
 
 SocketHandler
@@ -1700,43 +1701,44 @@ sends logging output to a network socket. The base class uses a TCP socket.
    communicate with a remote machine whose address is given by *host* and *port*.
 
 
-.. method:: SocketHandler.close()
+   .. method:: close()
 
-   Closes the socket.
-
-
-.. method:: SocketHandler.emit()
-
-   Pickles the record's attribute dictionary and writes it to the socket in binary
-   format. If there is an error with the socket, silently drops the packet. If the
-   connection was previously lost, re-establishes the connection. To unpickle the
-   record at the receiving end into a :class:`LogRecord`, use the
-   :func:`makeLogRecord` function.
+      Closes the socket.
 
 
-.. method:: SocketHandler.handleError()
+   .. method:: emit()
 
-   Handles an error which has occurred during :meth:`emit`. The most likely cause
-   is a lost connection. Closes the socket so that we can retry on the next event.
-
-
-.. method:: SocketHandler.makeSocket()
-
-   This is a factory method which allows subclasses to define the precise type of
-   socket they want. The default implementation creates a TCP socket
-   (:const:`socket.SOCK_STREAM`).
+      Pickles the record's attribute dictionary and writes it to the socket in
+      binary format. If there is an error with the socket, silently drops the
+      packet. If the connection was previously lost, re-establishes the
+      connection. To unpickle the record at the receiving end into a
+      :class:`LogRecord`, use the :func:`makeLogRecord` function.
 
 
-.. method:: SocketHandler.makePickle(record)
+   .. method:: handleError()
 
-   Pickles the record's attribute dictionary in binary format with a length prefix,
-   and returns it ready for transmission across the socket.
+      Handles an error which has occurred during :meth:`emit`. The most likely
+      cause is a lost connection. Closes the socket so that we can retry on the
+      next event.
 
 
-.. method:: SocketHandler.send(packet)
+   .. method:: makeSocket()
 
-   Send a pickled string *packet* to the socket. This function allows for partial
-   sends which can happen when the network is busy.
+      This is a factory method which allows subclasses to define the precise
+      type of socket they want. The default implementation creates a TCP socket
+      (:const:`socket.SOCK_STREAM`).
+
+
+   .. method:: makePickle(record)
+
+      Pickles the record's attribute dictionary in binary format with a length
+      prefix, and returns it ready for transmission across the socket.
+
+
+   .. method:: send(packet)
+
+      Send a pickled string *packet* to the socket. This function allows for
+      partial sends which can happen when the network is busy.
 
 
 DatagramHandler
@@ -1753,23 +1755,23 @@ over UDP sockets.
    communicate with a remote machine whose address is given by *host* and *port*.
 
 
-.. method:: DatagramHandler.emit()
+   .. method:: emit()
 
-   Pickles the record's attribute dictionary and writes it to the socket in binary
-   format. If there is an error with the socket, silently drops the packet. To
-   unpickle the record at the receiving end into a :class:`LogRecord`, use the
-   :func:`makeLogRecord` function.
-
-
-.. method:: DatagramHandler.makeSocket()
-
-   The factory method of :class:`SocketHandler` is here overridden to create a UDP
-   socket (:const:`socket.SOCK_DGRAM`).
+      Pickles the record's attribute dictionary and writes it to the socket in
+      binary format. If there is an error with the socket, silently drops the
+      packet. To unpickle the record at the receiving end into a
+      :class:`LogRecord`, use the :func:`makeLogRecord` function.
 
 
-.. method:: DatagramHandler.send(s)
+   .. method:: makeSocket()
 
-   Send a pickled string to a socket.
+      The factory method of :class:`SocketHandler` is here overridden to create
+      a UDP socket (:const:`socket.SOCK_DGRAM`).
+
+
+   .. method:: send(s)
+
+      Send a pickled string to a socket.
 
 
 SysLogHandler
@@ -1791,22 +1793,22 @@ supports sending logging messages to a remote or local Unix syslog.
    :const:`LOG_USER` is used.
 
 
-.. method:: SysLogHandler.close()
+   .. method:: close()
 
-   Closes the socket to the remote host.
-
-
-.. method:: SysLogHandler.emit(record)
-
-   The record is formatted, and then sent to the syslog server. If exception
-   information is present, it is *not* sent to the server.
+      Closes the socket to the remote host.
 
 
-.. method:: SysLogHandler.encodePriority(facility, priority)
+   .. method:: emit(record)
 
-   Encodes the facility and priority into an integer. You can pass in strings or
-   integers - if strings are passed, internal mapping dictionaries are used to
-   convert them to integers.
+      The record is formatted, and then sent to the syslog server. If exception
+      information is present, it is *not* sent to the server.
+
+
+   .. method:: encodePriority(facility, priority)
+
+      Encodes the facility and priority into an integer. You can pass in strings
+      or integers - if strings are passed, internal mapping dictionaries are
+      used to convert them to integers.
 
 
 NTEventLogHandler
@@ -1834,45 +1836,45 @@ extensions for Python installed.
    defaults to ``'Application'``.
 
 
-.. method:: NTEventLogHandler.close()
+   .. method:: close()
 
-   At this point, you can remove the application name from the registry as a source
-   of event log entries. However, if you do this, you will not be able to see the
-   events as you intended in the Event Log Viewer - it needs to be able to access
-   the registry to get the .dll name. The current version does not do this (in fact
-   it doesn't do anything).
-
-
-.. method:: NTEventLogHandler.emit(record)
-
-   Determines the message ID, event category and event type, and then logs the
-   message in the NT event log.
+      At this point, you can remove the application name from the registry as a
+      source of event log entries. However, if you do this, you will not be able
+      to see the events as you intended in the Event Log Viewer - it needs to be
+      able to access the registry to get the .dll name. The current version does
+      not do this (in fact it doesn't do anything).
 
 
-.. method:: NTEventLogHandler.getEventCategory(record)
+   .. method:: emit(record)
 
-   Returns the event category for the record. Override this if you want to specify
-   your own categories. This version returns 0.
-
-
-.. method:: NTEventLogHandler.getEventType(record)
-
-   Returns the event type for the record. Override this if you want to specify your
-   own types. This version does a mapping using the handler's typemap attribute,
-   which is set up in :meth:`__init__` to a dictionary which contains mappings for
-   :const:`DEBUG`, :const:`INFO`, :const:`WARNING`, :const:`ERROR` and
-   :const:`CRITICAL`. If you are using your own levels, you will either need to
-   override this method or place a suitable dictionary in the handler's *typemap*
-   attribute.
+      Determines the message ID, event category and event type, and then logs
+      the message in the NT event log.
 
 
-.. method:: NTEventLogHandler.getMessageID(record)
+   .. method:: getEventCategory(record)
 
-   Returns the message ID for the record. If you are using your own messages, you
-   could do this by having the *msg* passed to the logger being an ID rather than a
-   format string. Then, in here, you could use a dictionary lookup to get the
-   message ID. This version returns 1, which is the base message ID in
-   :file:`win32service.pyd`.
+      Returns the event category for the record. Override this if you want to
+      specify your own categories. This version returns 0.
+
+
+   .. method:: getEventType(record)
+
+      Returns the event type for the record. Override this if you want to
+      specify your own types. This version does a mapping using the handler's
+      typemap attribute, which is set up in :meth:`__init__` to a dictionary
+      which contains mappings for :const:`DEBUG`, :const:`INFO`,
+      :const:`WARNING`, :const:`ERROR` and :const:`CRITICAL`. If you are using
+      your own levels, you will either need to override this method or place a
+      suitable dictionary in the handler's *typemap* attribute.
+
+
+   .. method:: getMessageID(record)
+
+      Returns the message ID for the record. If you are using your own messages,
+      you could do this by having the *msg* passed to the logger being an ID
+      rather than a format string. Then, in here, you could use a dictionary
+      lookup to get the message ID. This version returns 1, which is the base
+      message ID in :file:`win32service.pyd`.
 
 
 SMTPHandler
@@ -1895,15 +1897,15 @@ supports sending logging messages to an email address via SMTP.
       *credentials* was added.
 
 
-.. method:: SMTPHandler.emit(record)
+   .. method:: emit(record)
 
-   Formats the record and sends it to the specified addressees.
+      Formats the record and sends it to the specified addressees.
 
 
-.. method:: SMTPHandler.getSubject(record)
+   .. method:: getSubject(record)
 
-   If you want to specify a subject line which is record-dependent, override this
-   method.
+      If you want to specify a subject line which is record-dependent, override
+      this method.
 
 
 MemoryHandler
@@ -1926,22 +1928,22 @@ should, then :meth:`flush` is expected to do the needful.
    Initializes the handler with a buffer of the specified capacity.
 
 
-.. method:: BufferingHandler.emit(record)
+   .. method:: emit(record)
 
-   Appends the record to the buffer. If :meth:`shouldFlush` returns true, calls
-   :meth:`flush` to process the buffer.
-
-
-.. method:: BufferingHandler.flush()
-
-   You can override this to implement custom flushing behavior. This version just
-   zaps the buffer to empty.
+      Appends the record to the buffer. If :meth:`shouldFlush` returns true,
+      calls :meth:`flush` to process the buffer.
 
 
-.. method:: BufferingHandler.shouldFlush(record)
+   .. method:: flush()
 
-   Returns true if the buffer is up to capacity. This method can be overridden to
-   implement custom flushing strategies.
+      You can override this to implement custom flushing behavior. This version
+      just zaps the buffer to empty.
+
+
+   .. method:: shouldFlush(record)
+
+      Returns true if the buffer is up to capacity. This method can be
+      overridden to implement custom flushing strategies.
 
 
 .. class:: MemoryHandler(capacity[, flushLevel [, target]])
@@ -1952,25 +1954,27 @@ should, then :meth:`flush` is expected to do the needful.
    set using :meth:`setTarget` before this handler does anything useful.
 
 
-.. method:: MemoryHandler.close()
+   .. method:: close()
 
-   Calls :meth:`flush`, sets the target to :const:`None` and clears the buffer.
-
-
-.. method:: MemoryHandler.flush()
-
-   For a :class:`MemoryHandler`, flushing means just sending the buffered records
-   to the target, if there is one. Override if you want different behavior.
+      Calls :meth:`flush`, sets the target to :const:`None` and clears the
+      buffer.
 
 
-.. method:: MemoryHandler.setTarget(target)
+   .. method:: flush()
 
-   Sets the target handler for this handler.
+      For a :class:`MemoryHandler`, flushing means just sending the buffered
+      records to the target, if there is one. Override if you want different
+      behavior.
 
 
-.. method:: MemoryHandler.shouldFlush(record)
+   .. method:: setTarget(target)
 
-   Checks for buffer full or a record at the *flushLevel* or higher.
+      Sets the target handler for this handler.
+
+
+   .. method:: shouldFlush(record)
+
+      Checks for buffer full or a record at the *flushLevel* or higher.
 
 
 HTTPHandler
@@ -1989,9 +1993,9 @@ supports sending logging messages to a Web server, using either ``GET`` or
    *method* is specified, ``GET`` is used.
 
 
-.. method:: HTTPHandler.emit(record)
+   .. method:: emit(record)
 
-   Sends the record to the Web server as an URL-encoded dictionary.
+      Sends the record to the Web server as an URL-encoded dictionary.
 
 
 .. _formatter-objects:
@@ -2079,38 +2083,42 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
    is used.
 
 
-.. method:: Formatter.format(record)
+   .. method:: format(record)
 
-   The record's attribute dictionary is used as the operand to a string formatting
-   operation. Returns the resulting string. Before formatting the dictionary, a
-   couple of preparatory steps are carried out. The *message* attribute of the
-   record is computed using *msg* % *args*. If the formatting string contains
-   ``'(asctime)'``, :meth:`formatTime` is called to format the event time. If there
-   is exception information, it is formatted using :meth:`formatException` and
-   appended to the message. Note that the formatted exception information is cached
-   in attribute *exc_text*. This is useful because the exception information can
-   be pickled and sent across the wire, but you should be careful if you have more
-   than one :class:`Formatter` subclass which customizes the formatting of exception
-   information. In this case, you will have to clear the cached value after a
-   formatter has done its formatting, so that the next formatter to handle the event
-   doesn't use the cached value but recalculates it afresh.
-
-
-.. method:: Formatter.formatTime(record[, datefmt])
-
-   This method should be called from :meth:`format` by a formatter which wants to
-   make use of a formatted time. This method can be overridden in formatters to
-   provide for any specific requirement, but the basic behavior is as follows: if
-   *datefmt* (a string) is specified, it is used with :func:`time.strftime` to
-   format the creation time of the record. Otherwise, the ISO8601 format is used.
-   The resulting string is returned.
+      The record's attribute dictionary is used as the operand to a string
+      formatting operation. Returns the resulting string. Before formatting the
+      dictionary, a couple of preparatory steps are carried out. The *message*
+      attribute of the record is computed using *msg* % *args*. If the
+      formatting string contains ``'(asctime)'``, :meth:`formatTime` is called
+      to format the event time. If there is exception information, it is
+      formatted using :meth:`formatException` and appended to the message. Note
+      that the formatted exception information is cached in attribute
+      *exc_text*. This is useful because the exception information can be
+      pickled and sent across the wire, but you should be careful if you have
+      more than one :class:`Formatter` subclass which customizes the formatting
+      of exception information. In this case, you will have to clear the cached
+      value after a formatter has done its formatting, so that the next
+      formatter to handle the event doesn't use the cached value but
+      recalculates it afresh.
 
 
-.. method:: Formatter.formatException(exc_info)
+   .. method:: formatTime(record[, datefmt])
 
-   Formats the specified exception information (a standard exception tuple as
-   returned by :func:`sys.exc_info`) as a string. This default implementation just
-   uses :func:`traceback.print_exception`. The resulting string is returned.
+      This method should be called from :meth:`format` by a formatter which
+      wants to make use of a formatted time. This method can be overridden in
+      formatters to provide for any specific requirement, but the basic behavior
+      is as follows: if *datefmt* (a string) is specified, it is used with
+      :func:`time.strftime` to format the creation time of the
+      record. Otherwise, the ISO8601 format is used.  The resulting string is
+      returned.
+
+
+   .. method:: formatException(exc_info)
+
+      Formats the specified exception information (a standard exception tuple as
+      returned by :func:`sys.exc_info`) as a string. This default implementation
+      just uses :func:`traceback.print_exception`. The resulting string is
+      returned.
 
 
 Filter Objects
@@ -2131,10 +2139,11 @@ initialized with the empty string, all events are passed.
    through the filter. If no name is specified, allows every event.
 
 
-.. method:: Filter.filter(record)
+   .. method:: filter(record)
 
-   Is the specified record to be logged? Returns zero for no, nonzero for yes. If
-   deemed appropriate, the record may be modified in-place by this method.
+      Is the specified record to be logged? Returns zero for no, nonzero for
+      yes. If deemed appropriate, the record may be modified in-place by this
+      method.
 
 
 LogRecord Objects
@@ -2165,10 +2174,11 @@ made, and any exception information to be logged.
       *func* was added.
 
 
-.. method:: LogRecord.getMessage()
+   .. method:: getMessage()
 
-   Returns the message for this :class:`LogRecord` instance after merging any
-   user-supplied arguments with the message.
+      Returns the message for this :class:`LogRecord` instance after merging any
+      user-supplied arguments with the message.
+
 
 LoggerAdapter Objects
 ---------------------
@@ -2186,13 +2196,13 @@ __ context-info_
   Returns an instance of :class:`LoggerAdapter` initialized with an
   underlying :class:`Logger` instance and a dict-like object.
 
-.. method:: LoggerAdapter.process(msg, kwargs)
+  .. method:: process(msg, kwargs)
 
-  Modifies the message and/or keyword arguments passed to a logging call in
-  order to insert contextual information. This implementation takes the
-  object passed as *extra* to the constructor and adds it to *kwargs* using
-  key 'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
-  (possibly modified) versions of the arguments passed in.
+    Modifies the message and/or keyword arguments passed to a logging call in
+    order to insert contextual information. This implementation takes the object
+    passed as *extra* to the constructor and adds it to *kwargs* using key
+    'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
+    (possibly modified) versions of the arguments passed in.
 
 In addition to the above, :class:`LoggerAdapter` supports all the logging
 methods of :class:`Logger`, i.e. :meth:`debug`, :meth:`info`, :meth:`warning`,

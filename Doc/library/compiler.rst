@@ -153,22 +153,24 @@ set of named attributes for child nodes.
    ``None``.  XXX Not sure what the rules are for which nodes will have a useful
    lineno.
 
-All :class:`Node` objects offer the following methods:
+   All :class:`Node` objects offer the following methods:
 
 
-.. method:: Node.getChildren()
+   .. method:: getChildren()
 
-   Returns a flattened list of the child nodes and objects in the order they occur.
-   Specifically, the order of the nodes is the order in which they appear in the
-   Python grammar.  Not all of the children are :class:`Node` instances.  The names
-   of functions and classes, for example, are plain strings.
+      Returns a flattened list of the child nodes and objects in the order they
+      occur.  Specifically, the order of the nodes is the order in which they
+      appear in the Python grammar.  Not all of the children are :class:`Node`
+      instances.  The names of functions and classes, for example, are plain
+      strings.
 
 
-.. method:: Node.getChildNodes()
+   .. method:: getChildNodes()
 
-   Returns a flattened list of the child nodes in the order they occur.  This
-   method is like :meth:`getChildren`, except that it only returns those children
-   that are :class:`Node` instances.
+      Returns a flattened list of the child nodes in the order they occur.  This
+      method is like :meth:`getChildren`, except that it only returns those
+      children that are :class:`Node` instances.
+
 
 Two examples illustrate the general structure of :class:`Node` classes.  The
 :keyword:`while` statement is defined by the following grammar production::
@@ -613,18 +615,18 @@ XXX The magic :meth:`visit` method for visitors.
    particular child node.  If no visitor is found for a particular node type, the
    :meth:`default` method is called.
 
-:class:`ASTVisitor` objects have the following methods:
+   :class:`ASTVisitor` objects have the following methods:
 
-XXX describe extra arguments
-
-
-.. method:: ASTVisitor.default(node[, ...])
+   XXX describe extra arguments
 
 
-.. method:: ASTVisitor.dispatch(node[, ...])
+   .. method:: default(node[, ...])
 
 
-.. method:: ASTVisitor.preorder(tree, visitor)
+   .. method:: dispatch(node[, ...])
+
+
+   .. method:: preorder(tree, visitor)
 
 
 Bytecode Generation

@@ -40,19 +40,21 @@ report of the imported modules will be printed.
    be replaced in module paths.
 
 
-.. method:: ModuleFinder.report()
+   .. method:: report()
 
-   Print a report to standard output that lists the modules imported by the script
-   and their paths, as well as modules that are missing or seem to be missing.
+      Print a report to standard output that lists the modules imported by the
+      script and their paths, as well as modules that are missing or seem to be
+      missing.
 
+   .. method:: run_script(pathname)
 
-.. method:: ModuleFinder.run_script(pathname)
+      Analyze the contents of the *pathname* file, which must contain Python
+      code.
 
-   Analyze the contents of the *pathname* file, which must contain  Python code.
+   .. attribute:: modules
 
-.. attribute:: ModuleFinder.modules
-
-   A dictionary mapping module names to modules. See :ref:`modulefinder-example`
+      A dictionary mapping module names to modules. See
+      :ref:`modulefinder-example`
 
 
 .. _modulefinder-example:

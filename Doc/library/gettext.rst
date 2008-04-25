@@ -240,7 +240,7 @@ interface you can use to write your own specialized translation classes.  Here
 are the methods of :class:`NullTranslations`:
 
 
-.. method:: NullTranslations.__init__([fp])
+.. class:: NullTranslations([fp])
 
    Takes an optional file object *fp*, which is ignored by the base class.
    Initializes "protected" instance variables *_info* and *_charset* which are set
@@ -249,121 +249,126 @@ are the methods of :class:`NullTranslations`:
    ``None``.
 
 
-.. method:: NullTranslations._parse(fp)
+   .. method:: _parse(fp)
 
-   No-op'd in the base class, this method takes file object *fp*, and reads the
-   data from the file, initializing its message catalog.  If you have an
-   unsupported message catalog file format, you should override this method to
-   parse your format.
-
-
-.. method:: NullTranslations.add_fallback(fallback)
-
-   Add *fallback* as the fallback object for the current translation object. A
-   translation object should consult the fallback if it cannot provide a
-   translation for a given message.
+      No-op'd in the base class, this method takes file object *fp*, and reads
+      the data from the file, initializing its message catalog.  If you have an
+      unsupported message catalog file format, you should override this method
+      to parse your format.
 
 
-.. method:: NullTranslations.gettext(message)
+   .. method:: add_fallback(fallback)
 
-   If a fallback has been set, forward :meth:`gettext` to the fallback. Otherwise,
-   return the translated message.  Overridden in derived classes.
-
-
-.. method:: NullTranslations.lgettext(message)
-
-   If a fallback has been set, forward :meth:`lgettext` to the fallback. Otherwise,
-   return the translated message.  Overridden in derived classes.
-
-   .. versionadded:: 2.4
+      Add *fallback* as the fallback object for the current translation
+      object. A translation object should consult the fallback if it cannot provide a
+      translation for a given message.
 
 
-.. method:: NullTranslations.ugettext(message)
+   .. method:: gettext(message)
 
-   If a fallback has been set, forward :meth:`ugettext` to the fallback. Otherwise,
-   return the translated message as a Unicode string. Overridden in derived
-   classes.
-
-
-.. method:: NullTranslations.ngettext(singular, plural, n)
-
-   If a fallback has been set, forward :meth:`ngettext` to the fallback. Otherwise,
-   return the translated message.  Overridden in derived classes.
-
-   .. versionadded:: 2.3
+      If a fallback has been set, forward :meth:`gettext` to the
+      fallback. Otherwise, return the translated message.  Overridden in derived
+      classes.
 
 
-.. method:: NullTranslations.lngettext(singular, plural, n)
+   .. method:: lgettext(message)
 
-   If a fallback has been set, forward :meth:`ngettext` to the fallback. Otherwise,
-   return the translated message.  Overridden in derived classes.
+      If a fallback has been set, forward :meth:`lgettext` to the
+      fallback. Otherwise, return the translated message.  Overridden in derived
+      classes.
 
-   .. versionadded:: 2.4
-
-
-.. method:: NullTranslations.ungettext(singular, plural, n)
-
-   If a fallback has been set, forward :meth:`ungettext` to the fallback.
-   Otherwise, return the translated message as a Unicode string. Overridden in
-   derived classes.
-
-   .. versionadded:: 2.3
+      .. versionadded:: 2.4
 
 
-.. method:: NullTranslations.info()
+   .. method:: ugettext(message)
 
-   Return the "protected" :attr:`_info` variable.
-
-
-.. method:: NullTranslations.charset()
-
-   Return the "protected" :attr:`_charset` variable.
+      If a fallback has been set, forward :meth:`ugettext` to the
+      fallback. Otherwise, return the translated message as a Unicode
+      string. Overridden in derived classes.
 
 
-.. method:: NullTranslations.output_charset()
+   .. method:: ngettext(singular, plural, n)
 
-   Return the "protected" :attr:`_output_charset` variable, which defines the
-   encoding used to return translated messages.
+      If a fallback has been set, forward :meth:`ngettext` to the
+      fallback. Otherwise, return the translated message.  Overridden in derived
+      classes.
 
-   .. versionadded:: 2.4
-
-
-.. method:: NullTranslations.set_output_charset(charset)
-
-   Change the "protected" :attr:`_output_charset` variable, which defines the
-   encoding used to return translated messages.
-
-   .. versionadded:: 2.4
+      .. versionadded:: 2.3
 
 
-.. method:: NullTranslations.install([unicode [, names]])
+   .. method:: lngettext(singular, plural, n)
 
-   If the *unicode* flag is false, this method installs :meth:`self.gettext` into
-   the built-in namespace, binding it to ``_``.  If *unicode* is true, it binds
-   :meth:`self.ugettext` instead.  By default, *unicode* is false.
+      If a fallback has been set, forward :meth:`ngettext` to the
+      fallback. Otherwise, return the translated message.  Overridden in derived
+      classes.
 
-   If the *names* parameter is given, it must be a sequence containing the names of
-   functions you want to install in the builtin namespace in addition to :func:`_`.
-   Supported names are ``'gettext'`` (bound to :meth:`self.gettext` or
-   :meth:`self.ugettext` according to the *unicode* flag), ``'ngettext'`` (bound to
-   :meth:`self.ngettext` or :meth:`self.ungettext` according to the *unicode*
-   flag), ``'lgettext'`` and ``'lngettext'``.
+      .. versionadded:: 2.4
 
-   Note that this is only one way, albeit the most convenient way, to make the
-   :func:`_` function available to your application.  Because it affects the entire
-   application globally, and specifically the built-in namespace, localized modules
-   should never install :func:`_`. Instead, they should use this code to make
-   :func:`_` available to their module::
 
-      import gettext
-      t = gettext.translation('mymodule', ...)
-      _ = t.gettext
+   .. method:: ungettext(singular, plural, n)
 
-   This puts :func:`_` only in the module's global namespace and so only affects
-   calls within this module.
+      If a fallback has been set, forward :meth:`ungettext` to the fallback.
+      Otherwise, return the translated message as a Unicode string. Overridden
+      in derived classes.
 
-   .. versionchanged:: 2.5
-      Added the *names* parameter.
+      .. versionadded:: 2.3
+
+
+   .. method:: info()
+
+      Return the "protected" :attr:`_info` variable.
+
+
+   .. method:: charset()
+
+      Return the "protected" :attr:`_charset` variable.
+
+
+   .. method:: output_charset()
+
+      Return the "protected" :attr:`_output_charset` variable, which defines the
+      encoding used to return translated messages.
+
+      .. versionadded:: 2.4
+
+
+   .. method:: set_output_charset(charset)
+
+      Change the "protected" :attr:`_output_charset` variable, which defines the
+      encoding used to return translated messages.
+
+      .. versionadded:: 2.4
+
+
+   .. method:: install([unicode [, names]])
+
+      If the *unicode* flag is false, this method installs :meth:`self.gettext`
+      into the built-in namespace, binding it to ``_``.  If *unicode* is true,
+      it binds :meth:`self.ugettext` instead.  By default, *unicode* is false.
+
+      If the *names* parameter is given, it must be a sequence containing the
+      names of functions you want to install in the builtin namespace in
+      addition to :func:`_`.  Supported names are ``'gettext'`` (bound to
+      :meth:`self.gettext` or :meth:`self.ugettext` according to the *unicode*
+      flag), ``'ngettext'`` (bound to :meth:`self.ngettext` or
+      :meth:`self.ungettext` according to the *unicode* flag), ``'lgettext'``
+      and ``'lngettext'``.
+
+      Note that this is only one way, albeit the most convenient way, to make
+      the :func:`_` function available to your application.  Because it affects
+      the entire application globally, and specifically the built-in namespace,
+      localized modules should never install :func:`_`. Instead, they should use
+      this code to make :func:`_` available to their module::
+
+         import gettext
+         t = gettext.translation('mymodule', ...)
+         _ = t.gettext
+
+      This puts :func:`_` only in the module's global namespace and so only
+      affects calls within this module.
+
+      .. versionchanged:: 2.5
+         Added the *names* parameter.
 
 
 The :class:`GNUTranslations` class
