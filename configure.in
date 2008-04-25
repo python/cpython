@@ -333,6 +333,10 @@ AC_SUBST(EXPORT_MACOSX_DEPLOYMENT_TARGET)
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
+AC_MSG_CHECKING(machine type as reported by uname -m)
+ac_sys_machine=`uname -m`
+AC_MSG_RESULT($ac_sys_machine)
+
 # checks for alternative programs
 
 # compiler flags are generated in two sets, BASECFLAGS and OPT.  OPT is just
@@ -817,6 +821,16 @@ yes)
     then
       BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
     fi
+
+    # if using gcc on alpha, use -mieee to get (near) full IEEE 754
+    # support.  Without this, treatment of subnormals doesn't follow
+    # the standard.
+    case $ac_sys_machine in
+         alpha*)
+                BASECFLAGS="$BASECFLAGS -mieee"
+                ;;
+    esac
+
     case $ac_sys_system in
 	SCO_SV*)
 	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
