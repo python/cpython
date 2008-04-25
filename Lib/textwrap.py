@@ -90,6 +90,7 @@ class TextWrapper:
     sentence_end_re = re.compile(r'[%s]'              # lowercase letter
                                  r'[\.\!\?]'          # sentence-ending punct.
                                  r'[\"\']?'           # optional end-of-quote
+                                 r'\Z'                # end of chunk
                                  % string.lowercase)
 
 
