@@ -43,6 +43,10 @@ Extensions Modules
 Library
 -------
 
+- Issue #2635: Fix bug in 'fix_sentence_endings' textwrap.fill option,
+  where an extra space was added after a word containing (but not
+  ending in) '.', '!' or '?'.
+
 - Add from_buffer() and from_buffer_copy() class methods to ctypes
   data types
 
