@@ -270,4 +270,6 @@ def test_main(verbose=None):
     run_unittest(ImportTest, PathsTests, RelativeImport)
 
 if __name__ == '__main__':
+    # test needs to be a package, so we can do relative import
+    from test.test_import import test_main
     test_main()
