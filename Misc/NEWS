@@ -43,7 +43,7 @@ Extensions Modules
 Library
 -------
 
-- Issue #2682: ctypes callback functions now longer contain a cyclic
+- Issue #2682: ctypes callback functions no longer contain a cyclic
   reference to themselves.
 
 - The getpass module has been improved on Unix.  It now uses /dev/tty
