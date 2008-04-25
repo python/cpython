@@ -65,20 +65,21 @@ Here is the API for the :class:`FeedParser`:
    defaults to the :class:`email.message.Message` class.
 
 
-.. method:: FeedParser.feed(data)
+   .. method:: feed(data)
 
-   Feed the :class:`FeedParser` some more data.  *data* should be a string
-   containing one or more lines.  The lines can be partial and the
-   :class:`FeedParser` will stitch such partial lines together properly.  The lines
-   in the string can have any of the common three line endings, carriage return,
-   newline, or carriage return and newline (they can even be mixed).
+      Feed the :class:`FeedParser` some more data.  *data* should be a string
+      containing one or more lines.  The lines can be partial and the
+      :class:`FeedParser` will stitch such partial lines together properly.  The
+      lines in the string can have any of the common three line endings,
+      carriage return, newline, or carriage return and newline (they can even be
+      mixed).
 
 
-.. method:: FeedParser.close()
+   .. method:: close()
 
-   Closing a :class:`FeedParser` completes the parsing of all previously fed data,
-   and returns the root message object.  It is undefined what happens if you feed
-   more data to a closed :class:`FeedParser`.
+      Closing a :class:`FeedParser` completes the parsing of all previously fed
+      data, and returns the root message object.  It is undefined what happens
+      if you feed more data to a closed :class:`FeedParser`.
 
 
 Parser class API
@@ -111,33 +112,33 @@ class.
       effectively non-strict.  You should simply stop passing a *strict* flag to
       the :class:`Parser` constructor.
 
-The other public :class:`Parser` methods are:
+   The other public :class:`Parser` methods are:
 
 
-.. method:: Parser.parse(fp[, headersonly])
+   .. method:: parse(fp[, headersonly])
 
-   Read all the data from the file-like object *fp*, parse the resulting text, and
-   return the root message object.  *fp* must support both the :meth:`readline` and
-   the :meth:`read` methods on file-like objects.
+      Read all the data from the file-like object *fp*, parse the resulting
+      text, and return the root message object.  *fp* must support both the
+      :meth:`readline` and the :meth:`read` methods on file-like objects.
 
-   The text contained in *fp* must be formatted as a block of :rfc:`2822` style
-   headers and header continuation lines, optionally preceded by a envelope
-   header.  The header block is terminated either by the end of the data or by a
-   blank line.  Following the header block is the body of the message (which may
-   contain MIME-encoded subparts).
+      The text contained in *fp* must be formatted as a block of :rfc:`2822`
+      style headers and header continuation lines, optionally preceded by a
+      envelope header.  The header block is terminated either by the end of the
+      data or by a blank line.  Following the header block is the body of the
+      message (which may contain MIME-encoded subparts).
 
-   Optional *headersonly* is as with the :meth:`parse` method.
+      Optional *headersonly* is as with the :meth:`parse` method.
 
+   .. method:: parsestr(text[, headersonly])
 
-.. method:: Parser.parsestr(text[, headersonly])
+      Similar to the :meth:`parse` method, except it takes a string object
+      instead of a file-like object.  Calling this method on a string is exactly
+      equivalent to wrapping *text* in a :class:`StringIO` instance first and
+      calling :meth:`parse`.
 
-   Similar to the :meth:`parse` method, except it takes a string object instead of
-   a file-like object.  Calling this method on a string is exactly equivalent to
-   wrapping *text* in a :class:`StringIO` instance first and calling :meth:`parse`.
-
-   Optional *headersonly* is a flag specifying whether to stop parsing after
-   reading the headers or not.  The default is ``False``, meaning it parses the
-   entire contents of the file.
+      Optional *headersonly* is a flag specifying whether to stop parsing after
+      reading the headers or not.  The default is ``False``, meaning it parses
+      the entire contents of the file.
 
 
 Since creating a message object structure from a string or a file object is such

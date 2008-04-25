@@ -66,62 +66,64 @@ instance will fail with a :exc:`EOFError` exception.
    optional argument *inclheader* is true, the size given in the chunk header
    includes the size of the header.  The default value is false.
 
-A :class:`Chunk` object supports the following methods:
+   A :class:`Chunk` object supports the following methods:
 
 
-.. method:: Chunk.getname()
+   .. method:: getname()
 
-   Returns the name (ID) of the chunk.  This is the first 4 bytes of the chunk.
-
-
-.. method:: Chunk.getsize()
-
-   Returns the size of the chunk.
+      Returns the name (ID) of the chunk.  This is the first 4 bytes of the
+      chunk.
 
 
-.. method:: Chunk.close()
+   .. method:: getsize()
 
-   Close and skip to the end of the chunk.  This does not close the underlying
-   file.
-
-The remaining methods will raise :exc:`IOError` if called after the
-:meth:`close` method has been called.
+      Returns the size of the chunk.
 
 
-.. method:: Chunk.isatty()
+   .. method:: close()
 
-   Returns ``False``.
+      Close and skip to the end of the chunk.  This does not close the
+      underlying file.
 
-
-.. method:: Chunk.seek(pos[, whence])
-
-   Set the chunk's current position.  The *whence* argument is optional and
-   defaults to ``0`` (absolute file positioning); other values are ``1`` (seek
-   relative to the current position) and ``2`` (seek relative to the file's end).
-   There is no return value. If the underlying file does not allow seek, only
-   forward seeks are allowed.
+   The remaining methods will raise :exc:`IOError` if called after the
+   :meth:`close` method has been called.
 
 
-.. method:: Chunk.tell()
+   .. method:: isatty()
 
-   Return the current position into the chunk.
-
-
-.. method:: Chunk.read([size])
-
-   Read at most *size* bytes from the chunk (less if the read hits the end of the
-   chunk before obtaining *size* bytes).  If the *size* argument is negative or
-   omitted, read all data until the end of the chunk.  The bytes are returned as a
-   string object.  An empty string is returned when the end of the chunk is
-   encountered immediately.
+      Returns ``False``.
 
 
-.. method:: Chunk.skip()
+   .. method:: seek(pos[, whence])
 
-   Skip to the end of the chunk.  All further calls to :meth:`read` for the chunk
-   will return ``''``.  If you are not interested in the contents of the chunk,
-   this method should be called so that the file points to the start of the next
-   chunk.
+      Set the chunk's current position.  The *whence* argument is optional and
+      defaults to ``0`` (absolute file positioning); other values are ``1``
+      (seek relative to the current position) and ``2`` (seek relative to the
+      file's end).  There is no return value. If the underlying file does not
+      allow seek, only forward seeks are allowed.
+
+
+   .. method:: tell()
+
+      Return the current position into the chunk.
+
+
+   .. method:: read([size])
+
+      Read at most *size* bytes from the chunk (less if the read hits the end of
+      the chunk before obtaining *size* bytes).  If the *size* argument is
+      negative or omitted, read all data until the end of the chunk.  The bytes
+      are returned as a string object.  An empty string is returned when the end
+      of the chunk is encountered immediately.
+
+
+   .. method:: skip()
+
+      Skip to the end of the chunk.  All further calls to :meth:`read` for the
+      chunk will return ``''``.  If you are not interested in the contents of
+      the chunk, this method should be called so that the file points to the
+      start of the next chunk.
+
 
 .. rubric:: Footnotes
 

@@ -425,16 +425,16 @@ define in order to be compatible with the Python codec registry.
    :func:`register_error`.
 
 
-.. method:: IncrementalEncoder.encode(object[, final])
+   .. method:: encode(object[, final])
 
-   Encodes *object* (taking the current state of the encoder into account) and
-   returns the resulting encoded object. If this is the last call to :meth:`encode`
-   *final* must be true (the default is false).
+      Encodes *object* (taking the current state of the encoder into account)
+      and returns the resulting encoded object. If this is the last call to
+      :meth:`encode` *final* must be true (the default is false).
 
 
-.. method:: IncrementalEncoder.reset()
+   .. method:: reset()
 
-   Reset the encoder to the initial state.
+      Reset the encoder to the initial state.
 
 
 .. method:: IncrementalEncoder.getstate()
@@ -488,41 +488,42 @@ define in order to be compatible with the Python codec registry.
    :func:`register_error`.
 
 
-.. method:: IncrementalDecoder.decode(object[, final])
+   .. method:: decode(object[, final])
 
-   Decodes *object* (taking the current state of the decoder into account) and
-   returns the resulting decoded object. If this is the last call to :meth:`decode`
-   *final* must be true (the default is false). If *final* is true the decoder must
-   decode the input completely and must flush all buffers. If this isn't possible
-   (e.g. because of incomplete byte sequences at the end of the input) it must
-   initiate error handling just like in the stateless case (which might raise an
-   exception).
-
-
-.. method:: IncrementalDecoder.reset()
-
-   Reset the decoder to the initial state.
+      Decodes *object* (taking the current state of the decoder into account)
+      and returns the resulting decoded object. If this is the last call to
+      :meth:`decode` *final* must be true (the default is false). If *final* is
+      true the decoder must decode the input completely and must flush all
+      buffers. If this isn't possible (e.g. because of incomplete byte sequences
+      at the end of the input) it must initiate error handling just like in the
+      stateless case (which might raise an exception).
 
 
-.. method:: IncrementalDecoder.getstate()
+   .. method:: reset()
 
-   Return the current state of the decoder. This must be a tuple with two items,
-   the first must be the buffer containing the still undecoded input. The second
-   must be an integer and can be additional state info. (The implementation should
-   make sure that ``0`` is the most common additional state info.) If this
-   additional state info is ``0`` it must be possible to set the decoder to the
-   state which has no input buffered and ``0`` as the additional state info, so
-   that feeding the previously buffered input to the decoder returns it to the
-   previous state without producing any output. (Additional state info that is more
-   complicated than integers can be converted into an integer by
-   marshaling/pickling the info and encoding the bytes of the resulting string into
-   an integer.)
+      Reset the decoder to the initial state.
 
 
-.. method:: IncrementalDecoder.setstate(state)
+   .. method:: getstate()
 
-   Set the state of the encoder to *state*. *state* must be a decoder state
-   returned by :meth:`getstate`.
+      Return the current state of the decoder. This must be a tuple with two
+      items, the first must be the buffer containing the still undecoded
+      input. The second must be an integer and can be additional state
+      info. (The implementation should make sure that ``0`` is the most common
+      additional state info.) If this additional state info is ``0`` it must be
+      possible to set the decoder to the state which has no input buffered and
+      ``0`` as the additional state info, so that feeding the previously
+      buffered input to the decoder returns it to the previous state without
+      producing any output. (Additional state info that is more complicated than
+      integers can be converted into an integer by marshaling/pickling the info
+      and encoding the bytes of the resulting string into an integer.)
+
+
+   .. method:: setstate(state)
+
+      Set the state of the encoder to *state*. *state* must be a decoder state
+      returned by :meth:`getstate`.
+
 
 The :class:`StreamWriter` and :class:`StreamReader` classes provide generic
 working interfaces which can be used to implement new encoding submodules very
@@ -570,24 +571,25 @@ compatible with the Python codec registry.
    :func:`register_error`.
 
 
-.. method:: StreamWriter.write(object)
+   .. method:: write(object)
 
-   Writes the object's contents encoded to the stream.
-
-
-.. method:: StreamWriter.writelines(list)
-
-   Writes the concatenated list of strings to the stream (possibly by reusing the
-   :meth:`write` method).
+      Writes the object's contents encoded to the stream.
 
 
-.. method:: StreamWriter.reset()
+   .. method:: writelines(list)
 
-   Flushes and resets the codec buffers used for keeping state.
+      Writes the concatenated list of strings to the stream (possibly by reusing
+      the :meth:`write` method).
 
-   Calling this method should ensure that the data on the output is put into a
-   clean state that allows appending of new fresh data without having to rescan the
-   whole stream to recover state.
+
+   .. method:: reset()
+
+      Flushes and resets the codec buffers used for keeping state.
+
+      Calling this method should ensure that the data on the output is put into
+      a clean state that allows appending of new fresh data without having to
+      rescan the whole stream to recover state.
+
 
 In addition to the above methods, the :class:`StreamWriter` must also inherit
 all other methods and attributes from the underlying stream.
@@ -630,55 +632,59 @@ compatible with the Python codec registry.
    :func:`register_error`.
 
 
-.. method:: StreamReader.read([size[, chars, [firstline]]])
+   .. method:: read([size[, chars, [firstline]]])
 
-   Decodes data from the stream and returns the resulting object.
+      Decodes data from the stream and returns the resulting object.
 
-   *chars* indicates the number of characters to read from the stream. :func:`read`
-   will never return more than *chars* characters, but it might return less, if
-   there are not enough characters available.
+      *chars* indicates the number of characters to read from the
+      stream. :func:`read` will never return more than *chars* characters, but
+      it might return less, if there are not enough characters available.
 
-   *size* indicates the approximate maximum number of bytes to read from the stream
-   for decoding purposes. The decoder can modify this setting as appropriate. The
-   default value -1 indicates to read and decode as much as possible.  *size* is
-   intended to prevent having to decode huge files in one step.
+      *size* indicates the approximate maximum number of bytes to read from the
+      stream for decoding purposes. The decoder can modify this setting as
+      appropriate. The default value -1 indicates to read and decode as much as
+      possible.  *size* is intended to prevent having to decode huge files in
+      one step.
 
-   *firstline* indicates that it would be sufficient to only return the first line,
-   if there are decoding errors on later lines.
+      *firstline* indicates that it would be sufficient to only return the first
+      line, if there are decoding errors on later lines.
 
-   The method should use a greedy read strategy meaning that it should read as much
-   data as is allowed within the definition of the encoding and the given size,
-   e.g.  if optional encoding endings or state markers are available on the stream,
-   these should be read too.
-
-
-.. method:: StreamReader.readline([size[, keepends]])
-
-   Read one line from the input stream and return the decoded data.
-
-   *size*, if given, is passed as size argument to the stream's :meth:`readline`
-   method.
-
-   If *keepends* is false line-endings will be stripped from the lines returned.
+      The method should use a greedy read strategy meaning that it should read
+      as much data as is allowed within the definition of the encoding and the
+      given size, e.g.  if optional encoding endings or state markers are
+      available on the stream, these should be read too.
 
 
-.. method:: StreamReader.readlines([sizehint[, keepends]])
+   .. method:: readline([size[, keepends]])
 
-   Read all lines available on the input stream and return them as a list of lines.
+      Read one line from the input stream and return the decoded data.
 
-   Line-endings are implemented using the codec's decoder method and are included
-   in the list entries if *keepends* is true.
+      *size*, if given, is passed as size argument to the stream's
+      :meth:`readline` method.
 
-   *sizehint*, if given, is passed as the *size* argument to the stream's
-   :meth:`read` method.
+      If *keepends* is false line-endings will be stripped from the lines
+      returned.
 
 
-.. method:: StreamReader.reset()
+   .. method:: readlines([sizehint[, keepends]])
 
-   Resets the codec buffers used for keeping state.
+      Read all lines available on the input stream and return them as a list of
+      lines.
 
-   Note that no stream repositioning should take place.  This method is primarily
-   intended to be able to recover from decoding errors.
+      Line-endings are implemented using the codec's decoder method and are
+      included in the list entries if *keepends* is true.
+
+      *sizehint*, if given, is passed as the *size* argument to the stream's
+      :meth:`read` method.
+
+
+   .. method:: reset()
+
+      Resets the codec buffers used for keeping state.
+
+      Note that no stream repositioning should take place.  This method is
+      primarily intended to be able to recover from decoding errors.
+
 
 In addition to the above methods, the :class:`StreamReader` must also inherit
 all other methods and attributes from the underlying stream.
@@ -746,6 +752,7 @@ The design is such that one can use the factory functions returned by the
 
    Error handling is done in the same way as defined for the stream readers and
    writers.
+
 
 :class:`StreamRecoder` instances define the combined interfaces of
 :class:`StreamReader` and :class:`StreamWriter` classes. They inherit all other

@@ -318,19 +318,20 @@ CAB Objects
    *name* is the name of the CAB file in the MSI file.
 
 
-.. method:: CAB.append(full, file, logical)
+   .. method:: append(full, file, logical)
 
-   Add the file with the pathname *full* to the CAB file, under the name *logical*.
-   If there is already a file named *logical*, a new file name is created.
+      Add the file with the pathname *full* to the CAB file, under the name
+      *logical*.  If there is already a file named *logical*, a new file name is
+      created.
 
-   Return the index of the file in the CAB file, and the new name of the file
-   inside the CAB file.
+      Return the index of the file in the CAB file, and the new name of the file
+      inside the CAB file.
 
 
-.. method:: CAB.commit(database)
+   .. method:: commit(database)
 
-   Generate a CAB file, add it as a stream to the MSI file, put it into the
-   ``Media`` table, and remove the generated file from the disk.
+      Generate a CAB file, add it as a stream to the MSI file, put it into the
+      ``Media`` table, and remove the generated file from the disk.
 
 
 .. _msi-directory:
@@ -351,33 +352,33 @@ Directory Objects
    the default flags that new components get.
 
 
-.. method:: Directory.start_component([component[, feature[, flags[, keyfile[, uuid]]]]])
+   .. method:: start_component([component[, feature[, flags[, keyfile[, uuid]]]]])
 
-   Add an entry to the Component table, and make this component the current
-   component for this directory. If no component name is given, the directory name
-   is used. If no *feature* is given, the current feature is used. If no *flags*
-   are given, the directory's default flags are used. If no *keyfile* is given, the
-   KeyPath is left null in the Component table.
-
-
-.. method:: Directory.add_file(file[, src[, version[, language]]])
-
-   Add a file to the current component of the directory, starting a new one if
-   there is no current component. By default, the file name in the source and the
-   file table will be identical. If the *src* file is specified, it is interpreted
-   relative to the current directory. Optionally, a *version* and a *language* can
-   be specified for the entry in the File table.
+      Add an entry to the Component table, and make this component the current
+      component for this directory. If no component name is given, the directory
+      name is used. If no *feature* is given, the current feature is used. If no
+      *flags* are given, the directory's default flags are used. If no *keyfile*
+      is given, the KeyPath is left null in the Component table.
 
 
-.. method:: Directory.glob(pattern[, exclude])
+   .. method:: add_file(file[, src[, version[, language]]])
 
-   Add a list of files to the current component as specified in the glob pattern.
-   Individual files can be excluded in the *exclude* list.
+      Add a file to the current component of the directory, starting a new one
+      if there is no current component. By default, the file name in the source
+      and the file table will be identical. If the *src* file is specified, it
+      is interpreted relative to the current directory. Optionally, a *version*
+      and a *language* can be specified for the entry in the File table.
 
 
-.. method:: Directory.remove_pyc()
+   .. method:: glob(pattern[, exclude])
 
-   Remove ``.pyc``/``.pyo`` files on uninstall.
+      Add a list of files to the current component as specified in the glob
+      pattern.  Individual files can be excluded in the *exclude* list.
+
+
+   .. method:: remove_pyc()
+
+      Remove ``.pyc``/``.pyo`` files on uninstall.
 
 
 .. seealso::
@@ -401,11 +402,11 @@ Features
    :class:`Directory`.
 
 
-.. method:: Feature.set_current()
+   .. method:: set_current()
 
-   Make this feature the current feature of :mod:`msilib`. New components are
-   automatically added to the default feature, unless a feature is explicitly
-   specified.
+      Make this feature the current feature of :mod:`msilib`. New components are
+      automatically added to the default feature, unless a feature is explicitly
+      specified.
 
 
 .. seealso::
@@ -428,19 +429,19 @@ to create MSI files with a user-interface for installing Python packages.
    belongs to, and *name* is the control's name.
 
 
-.. method:: Control.event(event, argument[,  condition=1[, ordering]])
+   .. method:: event(event, argument[,  condition=1[, ordering]])
 
-   Make an entry into the ``ControlEvent`` table for this control.
-
-
-.. method:: Control.mapping(event, attribute)
-
-   Make an entry into the ``EventMapping`` table for this control.
+      Make an entry into the ``ControlEvent`` table for this control.
 
 
-.. method:: Control.condition(action, condition)
+   .. method:: mapping(event, attribute)
 
-   Make an entry into the ``ControlCondition`` table for this control.
+      Make an entry into the ``EventMapping`` table for this control.
+
+
+   .. method:: condition(action, condition)
+
+      Make an entry into the ``ControlCondition`` table for this control.
 
 
 .. class:: RadioButtonGroup(dlg, name, property)
@@ -449,11 +450,11 @@ to create MSI files with a user-interface for installing Python packages.
    that gets set when a radio button is selected.
 
 
-.. method:: RadioButtonGroup.add(name, x, y, width, height, text [, value])
+   .. method:: add(name, x, y, width, height, text [, value])
 
-   Add a radio button named *name* to the group, at the coordinates *x*, *y*,
-   *width*, *height*, and with the label *text*. If *value* is omitted, it defaults
-   to *name*.
+      Add a radio button named *name* to the group, at the coordinates *x*, *y*,
+      *width*, *height*, and with the label *text*. If *value* is omitted, it
+      defaults to *name*.
 
 
 .. class:: Dialog(db, name, x, y, w, h, attr, title, first,  default, cancel)
@@ -463,42 +464,43 @@ to create MSI files with a user-interface for installing Python packages.
    default, and cancel controls.
 
 
-.. method:: Dialog.control(name, type, x, y, width, height,  attributes, property, text, control_next, help)
+   .. method:: control(name, type, x, y, width, height,  attributes, property, text, control_next, help)
 
-   Return a new :class:`Control` object. An entry in the ``Control`` table is made
-   with the specified parameters.
+      Return a new :class:`Control` object. An entry in the ``Control`` table is
+      made with the specified parameters.
 
-   This is a generic method; for specific types, specialized methods are provided.
-
-
-.. method:: Dialog.text(name, x, y, width, height, attributes, text)
-
-   Add and return a ``Text`` control.
+      This is a generic method; for specific types, specialized methods are
+      provided.
 
 
-.. method:: Dialog.bitmap(name, x, y, width, height, text)
+   .. method:: text(name, x, y, width, height, attributes, text)
 
-   Add and return a ``Bitmap`` control.
-
-
-.. method:: Dialog.line(name, x, y, width, height)
-
-   Add and return a ``Line`` control.
+      Add and return a ``Text`` control.
 
 
-.. method:: Dialog.pushbutton(name, x, y, width, height, attributes,  text, next_control)
+   .. method:: bitmap(name, x, y, width, height, text)
 
-   Add and return a ``PushButton`` control.
-
-
-.. method:: Dialog.radiogroup(name, x, y, width, height,  attributes, property, text, next_control)
-
-   Add and return a ``RadioButtonGroup`` control.
+      Add and return a ``Bitmap`` control.
 
 
-.. method:: Dialog.checkbox(name, x, y, width, height,  attributes, property, text, next_control)
+   .. method:: line(name, x, y, width, height)
 
-   Add and return a ``CheckBox`` control.
+      Add and return a ``Line`` control.
+
+
+   .. method:: pushbutton(name, x, y, width, height, attributes,  text, next_control)
+
+      Add and return a ``PushButton`` control.
+
+
+   .. method:: radiogroup(name, x, y, width, height,  attributes, property, text, next_control)
+
+      Add and return a ``RadioButtonGroup`` control.
+
+
+   .. method:: checkbox(name, x, y, width, height,  attributes, property, text, next_control)
+
+      Add and return a ``CheckBox`` control.
 
 
 .. seealso::

@@ -95,132 +95,132 @@ any that have been added to the map during asynchronous service) is closed.
    should be added to the list of channels :cfunc:`select`\ ed or
    :cfunc:`poll`\ ed for read and write events.
 
-Thus, the set of channel events is larger than the basic socket events.  The
-full set of methods that can be overridden in your subclass follows:
+   Thus, the set of channel events is larger than the basic socket events.  The
+   full set of methods that can be overridden in your subclass follows:
 
 
-.. method:: dispatcher.handle_read()
+   .. method:: handle_read()
 
-   Called when the asynchronous loop detects that a :meth:`read` call on the
-   channel's socket will succeed.
-
-
-.. method:: dispatcher.handle_write()
-
-   Called when the asynchronous loop detects that a writable socket can be
-   written.  Often this method will implement the necessary buffering for
-   performance.  For example::
-
-      def handle_write(self):
-          sent = self.send(self.buffer)
-          self.buffer = self.buffer[sent:]
+      Called when the asynchronous loop detects that a :meth:`read` call on the
+      channel's socket will succeed.
 
 
-.. method:: dispatcher.handle_expt()
+   .. method:: handle_write()
 
-   Called when there is out of band (OOB) data for a socket connection.  This
-   will almost never happen, as OOB is tenuously supported and rarely used.
+      Called when the asynchronous loop detects that a writable socket can be
+      written.  Often this method will implement the necessary buffering for
+      performance.  For example::
 
-
-.. method:: dispatcher.handle_connect()
-
-   Called when the active opener's socket actually makes a connection.  Might
-   send a "welcome" banner, or initiate a protocol negotiation with the remote
-   endpoint, for example.
+         def handle_write(self):
+             sent = self.send(self.buffer)
+             self.buffer = self.buffer[sent:]
 
 
-.. method:: dispatcher.handle_close()
+   .. method:: handle_expt()
 
-   Called when the socket is closed.
-
-
-.. method:: dispatcher.handle_error()
-
-   Called when an exception is raised and not otherwise handled.  The default
-   version prints a condensed traceback.
+      Called when there is out of band (OOB) data for a socket connection.  This
+      will almost never happen, as OOB is tenuously supported and rarely used.
 
 
-.. method:: dispatcher.handle_accept()
+   .. method:: handle_connect()
 
-   Called on listening channels (passive openers) when a   connection can be
-   established with a new remote endpoint that has issued a :meth:`connect`
-   call for the local endpoint.
-
-
-.. method:: dispatcher.readable()
-
-   Called each time around the asynchronous loop to determine whether a
-   channel's socket should be added to the list on which read events can
-   occur.  The default method simply returns ``True``, indicating that by
-   default, all channels will be interested in read events.
+      Called when the active opener's socket actually makes a connection.  Might
+      send a "welcome" banner, or initiate a protocol negotiation with the
+      remote endpoint, for example.
 
 
-.. method:: dispatcher.writable()
+   .. method:: handle_close()
 
-   Called each time around the asynchronous loop to determine whether a
-   channel's socket should be added to the list on which write events can
-   occur.  The default method simply returns ``True``, indicating that by
-   default, all channels will be interested in write events.
-
-In addition, each channel delegates or extends many of the socket methods.
-Most of these are nearly identical to their socket partners.
+      Called when the socket is closed.
 
 
-.. method:: dispatcher.create_socket(family, type)
+   .. method:: handle_error()
 
-   This is identical to the creation of a normal socket, and will use the same
-   options for creation.  Refer to the :mod:`socket` documentation for
-   information on creating sockets.
-
-
-.. method:: dispatcher.connect(address)
-
-   As with the normal socket object, *address* is a tuple with the first
-   element the host to connect to, and the second the port number.
+      Called when an exception is raised and not otherwise handled.  The default
+      version prints a condensed traceback.
 
 
-.. method:: dispatcher.send(data)
+   .. method:: handle_accept()
 
-   Send *data* to the remote end-point of the socket.
-
-
-.. method:: dispatcher.recv(buffer_size)
-
-   Read at most *buffer_size* bytes from the socket's remote end-point.
-   An empty string implies that the channel has been closed from the other
-   end.
+      Called on listening channels (passive openers) when a connection can be
+      established with a new remote endpoint that has issued a :meth:`connect`
+      call for the local endpoint.
 
 
-.. method:: dispatcher.listen(backlog)
+   .. method:: readable()
 
-   Listen for connections made to the socket.  The *backlog* argument
-   specifies the maximum number of queued connections and should be at least
-   1; the maximum value is system-dependent (usually 5).
-
-
-.. method:: dispatcher.bind(address)
-
-   Bind the socket to *address*.  The socket must not already be bound.  (The
-   format of *address* depends on the address family --- see above.)  To mark
-   the socket as re-usable (setting the :const:`SO_REUSEADDR` option), call
-   the :class:`dispatcher` object's :meth:`set_reuse_addr` method.
+      Called each time around the asynchronous loop to determine whether a
+      channel's socket should be added to the list on which read events can
+      occur.  The default method simply returns ``True``, indicating that by
+      default, all channels will be interested in read events.
 
 
-.. method:: dispatcher.accept()
+   .. method:: writable()
 
-   Accept a connection.  The socket must be bound to an address and listening
-   for connections.  The return value is a pair ``(conn, address)`` where
-   *conn* is a *new* socket object usable to send and receive data on the
-   connection, and *address* is the address bound to the socket on the other
-   end of the connection.
+      Called each time around the asynchronous loop to determine whether a
+      channel's socket should be added to the list on which write events can
+      occur.  The default method simply returns ``True``, indicating that by
+      default, all channels will be interested in write events.
 
 
-.. method:: dispatcher.close()
+   In addition, each channel delegates or extends many of the socket methods.
+   Most of these are nearly identical to their socket partners.
 
-   Close the socket.  All future operations on the socket object will fail.
-   The remote end-point will receive no more data (after queued data is
-   flushed).  Sockets are automatically closed when they are
-   garbage-collected.
+
+   .. method:: create_socket(family, type)
+
+      This is identical to the creation of a normal socket, and will use the
+      same options for creation.  Refer to the :mod:`socket` documentation for
+      information on creating sockets.
+
+
+   .. method:: connect(address)
+
+      As with the normal socket object, *address* is a tuple with the first
+      element the host to connect to, and the second the port number.
+
+
+   .. method:: send(data)
+
+      Send *data* to the remote end-point of the socket.
+
+
+   .. method:: recv(buffer_size)
+
+      Read at most *buffer_size* bytes from the socket's remote end-point.  An
+      empty string implies that the channel has been closed from the other end.
+
+
+   .. method:: listen(backlog)
+
+      Listen for connections made to the socket.  The *backlog* argument
+      specifies the maximum number of queued connections and should be at least
+      1; the maximum value is system-dependent (usually 5).
+
+
+   .. method:: bind(address)
+
+      Bind the socket to *address*.  The socket must not already be bound.  (The
+      format of *address* depends on the address family --- see above.)  To mark
+      the socket as re-usable (setting the :const:`SO_REUSEADDR` option), call
+      the :class:`dispatcher` object's :meth:`set_reuse_addr` method.
+
+
+   .. method:: accept()
+
+      Accept a connection.  The socket must be bound to an address and listening
+      for connections.  The return value is a pair ``(conn, address)`` where
+      *conn* is a *new* socket object usable to send and receive data on the
+      connection, and *address* is the address bound to the socket on the other
+      end of the connection.
+
+
+   .. method:: close()
+
+      Close the socket.  All future operations on the socket object will fail.
+      The remote end-point will receive no more data (after queued data is
+      flushed).  Sockets are automatically closed when they are
+      garbage-collected.
 
 
 .. _asyncore-example:

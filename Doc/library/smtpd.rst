@@ -27,14 +27,15 @@ SMTPServer Objects
    :mod:`asyncore`'s event loop on instantiation.
 
 
-.. method:: SMTPServer.process_message(peer, mailfrom, rcpttos, data)
+   .. method:: process_message(peer, mailfrom, rcpttos, data)
 
-   Raise :exc:`NotImplementedError` exception. Override this in subclasses to do
-   something useful with this message. Whatever was passed in the constructor as
-   *remoteaddr* will be available as the :attr:`_remoteaddr` attribute. *peer* is
-   the remote host's address, *mailfrom* is the envelope originator, *rcpttos* are
-   the envelope recipients and *data* is a string containing the contents of the
-   e-mail (which should be in :rfc:`2822` format).
+      Raise :exc:`NotImplementedError` exception. Override this in subclasses to
+      do something useful with this message. Whatever was passed in the
+      constructor as *remoteaddr* will be available as the :attr:`_remoteaddr`
+      attribute. *peer* is the remote host's address, *mailfrom* is the envelope
+      originator, *rcpttos* are the envelope recipients and *data* is a string
+      containing the contents of the e-mail (which should be in :rfc:`2822`
+      format).
 
 
 DebuggingServer Objects
