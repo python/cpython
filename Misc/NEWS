@@ -126,6 +126,8 @@ Tests
 Build
 -----
 
+- Issue #1496032: On alpha, use -mieee when gcc is the compiler.
+
 - Issue #2544: On HP-UX systems, use 'gcc -shared' for linking when
   gcc is used as compiler.
 
