@@ -2878,7 +2878,7 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	CFuncPtrObject *self;
 	PyObject *callable;
 	StgDictObject *dict;
-	ffi_info *thunk;
+	CThunkObject *thunk;
 
 	if (PyTuple_GET_SIZE(args) == 0)
 		return GenericCData_new(type, args, kwds);
@@ -2935,11 +2935,6 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	/*****************************************************************/
-	/* The thunk keeps unowned references to callable and dict->argtypes
-	   so we have to keep them alive somewhere else: callable is kept in self,
-	   dict->argtypes is in the type's stgdict.
-	*/
 	thunk = AllocFunctionCallback(callable,
 				      dict->argtypes,
 				      dict->restype,
@@ -2948,27 +2943,22 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	self = (CFuncPtrObject *)GenericCData_new(type, args, kwds);
-	if (self == NULL)
+	if (self == NULL) {
+		Py_DECREF(thunk);
 		return NULL;
+	}
 
 	Py_INCREF(callable);
 	self->callable = callable;
 
 	self->thunk = thunk;
-	*(void **)self->b_ptr = *(void **)thunk;
-
-	/* We store ourself in self->b_objects[0], because the whole instance
-	   must be kept alive if stored in a structure field, for example.
-	   Cycle GC to the rescue! And we have a unittest proving that this works
-	   correctly...
-	*/
-
-	Py_INCREF((PyObject *)self); /* for KeepRef */
-	if (-1 == KeepRef((CDataObject *)self, 0, (PyObject *)self)) {
+	*(void **)self->b_ptr = (void *)thunk->pcl;
+	
+	Py_INCREF((PyObject *)thunk); /* for KeepRef */
+	if (-1 == KeepRef((CDataObject *)self, 0, (PyObject *)thunk)) {
 		Py_DECREF((PyObject *)self);
 		return NULL;
 	}
-
 	return (PyObject *)self;
 }
 
@@ -3415,6 +3405,7 @@ CFuncPtr_traverse(CFuncPtrObject *self, visitproc visit, void *arg)
 	Py_VISIT(self->argtypes);
 	Py_VISIT(self->converters);
 	Py_VISIT(self->paramflags);
+	Py_VISIT(self->thunk);
 	return CData_traverse((CDataObject *)self, visit, arg);
 }
 
@@ -3428,13 +3419,7 @@ CFuncPtr_clear(CFuncPtrObject *self)
 	Py_CLEAR(self->argtypes);
 	Py_CLEAR(self->converters);
 	Py_CLEAR(self->paramflags);
-
-	if (self->thunk) {
-		FreeClosure(self->thunk->pcl);
-		PyMem_Free(self->thunk);
-		self->thunk = NULL;
-	}
-
+	Py_CLEAR(self->thunk);
 	return CData_clear((CDataObject *)self);
 }
 
@@ -4671,6 +4656,9 @@ init_ctypes(void)
 		return;
 
 	if (PyType_Ready(&PyCArg_Type) < 0)
+		return;
+
+	if (PyType_Ready(&CThunk_Type) < 0)
 		return;
 
 	/* StgDict is derived from PyDict_Type */
