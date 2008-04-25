@@ -1500,23 +1500,6 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0):
 def doc(thing, title='Python Library Documentation: %s', forceload=0):
     """Display text documentation, given an object or a path to an object."""
     try:
-        object, name = resolve(thing, forceload)
-        desc = describe(object)
-        module = inspect.getmodule(object)
-        if name and '.' in name:
-            desc += ' in ' + name[:name.rfind('.')]
-        elif module and module is not object:
-            desc += ' in module ' + module.__name__
-        elif not (inspect.ismodule(object) or
-                  inspect.isclass(object) or
-                  inspect.isroutine(object) or
-                  inspect.isgetsetdescriptor(object) or
-                  inspect.ismemberdescriptor(object) or
-                  isinstance(object, property)):
-            # If the passed object is a piece of data or an instance,
-            # document its available methods instead of its value.
-            object = type(object)
-            desc += ' object'
         pager(render_doc(thing, title, forceload))
     except (ImportError, ErrorDuringImport) as value:
         print(value)
