@@ -260,38 +260,38 @@ The :mod:`struct` module also defines the following type:
 
    .. versionadded:: 2.5
 
-Compiled Struct objects support the following methods and attributes:
+   Compiled Struct objects support the following methods and attributes:
 
 
-.. method:: Struct.pack(v1, v2, ...)
+   .. method:: pack(v1, v2, ...)
 
-   Identical to the :func:`pack` function, using the compiled format.
-   (``len(result)`` will equal :attr:`self.size`.)
-
-
-.. method:: Struct.pack_into(buffer, offset, v1, v2, ...)
-
-   Identical to the :func:`pack_into` function, using the compiled format.
+      Identical to the :func:`pack` function, using the compiled format.
+      (``len(result)`` will equal :attr:`self.size`.)
 
 
-.. method:: Struct.unpack(string)
+   .. method:: pack_into(buffer, offset, v1, v2, ...)
 
-   Identical to the :func:`unpack` function, using the compiled format.
-   (``len(string)`` must equal :attr:`self.size`).
-
-
-.. method:: Struct.unpack_from(buffer[, offset=0])
-
-   Identical to the :func:`unpack_from` function, using the compiled format.
-   (``len(buffer[offset:])`` must be at least :attr:`self.size`).
+      Identical to the :func:`pack_into` function, using the compiled format.
 
 
-.. attribute:: Struct.format
+   .. method:: unpack(string)
 
-   The format string used to construct this Struct object.
+      Identical to the :func:`unpack` function, using the compiled format.
+      (``len(string)`` must equal :attr:`self.size`).
 
-.. attribute:: Struct.size
 
-   The calculated size of the struct (and hence of the string) corresponding
-   to :attr:`format`.
+   .. method:: unpack_from(buffer[, offset=0])
+
+      Identical to the :func:`unpack_from` function, using the compiled format.
+      (``len(buffer[offset:])`` must be at least :attr:`self.size`).
+
+
+   .. attribute:: format
+
+      The format string used to construct this Struct object.
+
+   .. attribute:: size
+
+      The calculated size of the struct (and hence of the string) corresponding
+      to :attr:`format`.
 

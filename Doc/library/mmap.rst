@@ -137,111 +137,111 @@ memory but does not update the underlying file.
           map.close()
 
 
-Memory-mapped file objects support the following methods:
+   Memory-mapped file objects support the following methods:
 
 
-.. method:: mmap.close()
+   .. method:: close()
 
-   Close the file.  Subsequent calls to other methods of the object will
-   result in an exception being raised.
-
-
-.. method:: mmap.find(string[, start[, end]])
-
-   Returns the lowest index in the object where the substring *string* is
-   found, such that *string* is contained in the range [*start*, *end*].
-   Optional arguments *start* and *end* are interpreted as in slice notation.
-   Returns ``-1`` on failure.
+      Close the file.  Subsequent calls to other methods of the object will
+      result in an exception being raised.
 
 
-.. method:: mmap.flush([offset, size])
+   .. method:: find(string[, start[, end]])
 
-   Flushes changes made to the in-memory copy of a file back to disk. Without
-   use of this call there is no guarantee that changes are written back before
-   the object is destroyed.  If *offset* and *size* are specified, only
-   changes to the given range of bytes will be flushed to disk; otherwise, the
-   whole extent of the mapping is flushed.
-
-   **(Windows version)** A nonzero value returned indicates success; zero
-   indicates failure.
-
-   **(Unix version)** A zero value is returned to indicate success. An
-   exception is raised when the call failed.
+      Returns the lowest index in the object where the substring *string* is
+      found, such that *string* is contained in the range [*start*, *end*].
+      Optional arguments *start* and *end* are interpreted as in slice notation.
+      Returns ``-1`` on failure.
 
 
-.. method:: mmap.move(dest, src, count)
+   .. method:: flush([offset, size])
 
-   Copy the *count* bytes starting at offset *src* to the destination index
-   *dest*.  If the mmap was created with :const:`ACCESS_READ`, then calls to
-   move will throw a :exc:`TypeError` exception.
+      Flushes changes made to the in-memory copy of a file back to disk. Without
+      use of this call there is no guarantee that changes are written back before
+      the object is destroyed.  If *offset* and *size* are specified, only
+      changes to the given range of bytes will be flushed to disk; otherwise, the
+      whole extent of the mapping is flushed.
 
+      **(Windows version)** A nonzero value returned indicates success; zero
+      indicates failure.
 
-.. method:: mmap.read(num)
-
-   Return a string containing up to *num* bytes starting from the current file
-   position; the file position is updated to point after the bytes that were
-   returned.
-
-
-.. method:: mmap.read_byte()
-
-   Returns a string of length 1 containing the character at the current file
-   position, and advances the file position by 1.
+      **(Unix version)** A zero value is returned to indicate success. An
+      exception is raised when the call failed.
 
 
-.. method:: mmap.readline()
+   .. method:: move(dest, src, count)
 
-   Returns a single line, starting at the current file position and up to the
-   next newline.
-
-
-.. method:: mmap.resize(newsize)
-
-   Resizes the map and the underlying file, if any. If the mmap was created
-   with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
-   throw a :exc:`TypeError` exception.
+      Copy the *count* bytes starting at offset *src* to the destination index
+      *dest*.  If the mmap was created with :const:`ACCESS_READ`, then calls to
+      move will throw a :exc:`TypeError` exception.
 
 
-.. method:: mmap.rfind(string[, start[, end]])
+   .. method:: read(num)
 
-   Returns the highest index in the object where the substring *string* is
-   found, such that *string* is contained in the range [*start*, *end*].
-   Optional arguments *start* and *end* are interpreted as in slice notation.
-   Returns ``-1`` on failure.
-
-
-.. method:: mmap.seek(pos[, whence])
-
-   Set the file's current position.  *whence* argument is optional and
-   defaults to ``os.SEEK_SET`` or ``0`` (absolute file positioning); other
-   values are ``os.SEEK_CUR`` or ``1`` (seek relative to the current position)
-   and ``os.SEEK_END`` or ``2`` (seek relative to the file's end).
+      Return a string containing up to *num* bytes starting from the current
+      file position; the file position is updated to point after the bytes that
+      were returned.
 
 
-.. method:: mmap.size()
+   .. method:: read_byte()
 
-   Return the length of the file, which can be larger than the size of the
-   memory-mapped area.
-
-
-.. method:: mmap.tell()
-
-   Returns the current position of the file pointer.
+      Returns a string of length 1 containing the character at the current file
+      position, and advances the file position by 1.
 
 
-.. method:: mmap.write(string)
+   .. method:: readline()
 
-   Write the bytes in *string* into memory at the current position of the file
-   pointer; the file position is updated to point after the bytes that were
-   written. If the mmap was created with :const:`ACCESS_READ`, then writing to
-   it will throw a :exc:`TypeError` exception.
+      Returns a single line, starting at the current file position and up to the
+      next newline.
 
 
-.. method:: mmap.write_byte(byte)
+   .. method:: resize(newsize)
 
-   Write the single-character string *byte* into memory at the current
-   position of the file pointer; the file position is advanced by ``1``. If
-   the mmap was created with :const:`ACCESS_READ`, then writing to it will
-   throw a :exc:`TypeError` exception.
+      Resizes the map and the underlying file, if any. If the mmap was created
+      with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
+      throw a :exc:`TypeError` exception.
+
+
+   .. method:: rfind(string[, start[, end]])
+
+      Returns the highest index in the object where the substring *string* is
+      found, such that *string* is contained in the range [*start*, *end*].
+      Optional arguments *start* and *end* are interpreted as in slice notation.
+      Returns ``-1`` on failure.
+
+
+   .. method:: seek(pos[, whence])
+
+      Set the file's current position.  *whence* argument is optional and
+      defaults to ``os.SEEK_SET`` or ``0`` (absolute file positioning); other
+      values are ``os.SEEK_CUR`` or ``1`` (seek relative to the current
+      position) and ``os.SEEK_END`` or ``2`` (seek relative to the file's end).
+
+
+   .. method:: size()
+
+      Return the length of the file, which can be larger than the size of the
+      memory-mapped area.
+
+
+   .. method:: tell()
+
+      Returns the current position of the file pointer.
+
+
+   .. method:: write(string)
+
+      Write the bytes in *string* into memory at the current position of the
+      file pointer; the file position is updated to point after the bytes that
+      were written. If the mmap was created with :const:`ACCESS_READ`, then
+      writing to it will throw a :exc:`TypeError` exception.
+
+
+   .. method:: write_byte(byte)
+
+      Write the single-character string *byte* into memory at the current
+      position of the file pointer; the file position is advanced by ``1``. If
+      the mmap was created with :const:`ACCESS_READ`, then writing to it will
+      throw a :exc:`TypeError` exception.
 
 

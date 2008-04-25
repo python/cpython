@@ -29,18 +29,18 @@ The numeric tower
    ``-``, ``*``, ``/``, :func:`abs`, :meth:`conjugate`, ``==``, and ``!=``. All
    except ``-`` and ``!=`` are abstract.
 
-.. attribute:: Complex.real
+   .. attribute:: real
 
-   Abstract. Retrieves the :class:`Real` component of this number.
+      Abstract. Retrieves the :class:`Real` component of this number.
 
-.. attribute:: Complex.imag
+   .. attribute:: imag
 
-   Abstract. Retrieves the :class:`Real` component of this number.
+      Abstract. Retrieves the :class:`Real` component of this number.
 
-.. method:: Complex.conjugate()
+   .. method:: conjugate()
 
-   Abstract. Returns the complex conjugate. For example, ``(1+3j).conjugate() ==
-   (1-3j)``.
+      Abstract. Returns the complex conjugate. For example, ``(1+3j).conjugate()
+      == (1-3j)``.
 
 .. class:: Real
 
@@ -62,13 +62,13 @@ The numeric tower
    should be in lowest terms. With these, it provides a default for
    :func:`float`.
 
-.. attribute:: Rational.numerator
+   .. attribute:: numerator
 
-   Abstract.
+      Abstract.
 
-.. attribute:: Rational.denominator
+   .. attribute:: denominator
 
-   Abstract.
+      Abstract.
 
 
 .. class:: Integral

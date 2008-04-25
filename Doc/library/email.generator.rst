@@ -44,39 +44,40 @@ Here are the public methods of the :class:`Generator` class, imported from the
    :mod:`email.header.Header` class.  Set to zero to disable header wrapping.  The
    default is 78, as recommended (but not required) by :rfc:`2822`.
 
-The other public :class:`Generator` methods are:
+   The other public :class:`Generator` methods are:
 
 
-.. method:: Generator.flatten(msg[, unixfrom])
+   .. method:: flatten(msg[, unixfrom])
 
-   Print the textual representation of the message object structure rooted at *msg*
-   to the output file specified when the :class:`Generator` instance was created.
-   Subparts are visited depth-first and the resulting text will be properly MIME
-   encoded.
+      Print the textual representation of the message object structure rooted at
+      *msg* to the output file specified when the :class:`Generator` instance
+      was created.  Subparts are visited depth-first and the resulting text will
+      be properly MIME encoded.
 
-   Optional *unixfrom* is a flag that forces the printing of the envelope header
-   delimiter before the first :rfc:`2822` header of the root message object.  If
-   the root object has no envelope header, a standard one is crafted.  By default,
-   this is set to ``False`` to inhibit the printing of the envelope delimiter.
+      Optional *unixfrom* is a flag that forces the printing of the envelope
+      header delimiter before the first :rfc:`2822` header of the root message
+      object.  If the root object has no envelope header, a standard one is
+      crafted.  By default, this is set to ``False`` to inhibit the printing of
+      the envelope delimiter.
 
-   Note that for subparts, no envelope header is ever printed.
+      Note that for subparts, no envelope header is ever printed.
 
-   .. versionadded:: 2.2.2
-
-
-.. method:: Generator.clone(fp)
-
-   Return an independent clone of this :class:`Generator` instance with the exact
-   same options.
-
-   .. versionadded:: 2.2.2
+      .. versionadded:: 2.2.2
 
 
-.. method:: Generator.write(s)
+   .. method:: clone(fp)
 
-   Write the string *s* to the underlying file object, i.e. *outfp* passed to
-   :class:`Generator`'s constructor.  This provides just enough file-like API for
-   :class:`Generator` instances to be used in extended print statements.
+      Return an independent clone of this :class:`Generator` instance with the
+      exact same options.
+
+      .. versionadded:: 2.2.2
+
+
+   .. method:: write(s)
+
+      Write the string *s* to the underlying file object, i.e. *outfp* passed to
+      :class:`Generator`'s constructor.  This provides just enough file-like API
+      for :class:`Generator` instances to be used in extended print statements.
 
 As a convenience, see the methods :meth:`Message.as_string` and
 ``str(aMessage)``, a.k.a. :meth:`Message.__str__`, which simplify the generation

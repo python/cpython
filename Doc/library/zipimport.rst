@@ -76,55 +76,57 @@ zipimporter Objects
    (provided that it exists).
 
 
-.. method:: zipimporter.find_module(fullname[, path])
+   .. method:: find_module(fullname[, path])
 
-   Search for a module specified by *fullname*. *fullname* must be the fully
-   qualified (dotted) module name. It returns the zipimporter instance itself if
-   the module was found, or :const:`None` if it wasn't. The optional *path*
-   argument is ignored---it's there for  compatibility with the importer protocol.
-
-
-.. method:: zipimporter.get_code(fullname)
-
-   Return the code object for the specified module. Raise :exc:`ZipImportError` if
-   the module couldn't be found.
+      Search for a module specified by *fullname*. *fullname* must be the fully
+      qualified (dotted) module name. It returns the zipimporter instance itself
+      if the module was found, or :const:`None` if it wasn't. The optional
+      *path* argument is ignored---it's there for compatibility with the
+      importer protocol.
 
 
-.. method:: zipimporter.get_data(pathname)
+   .. method:: get_code(fullname)
 
-   Return the data associated with *pathname*. Raise :exc:`IOError` if the file
-   wasn't found.
-
-
-.. method:: zipimporter.get_source(fullname)
-
-   Return the source code for the specified module. Raise :exc:`ZipImportError` if
-   the module couldn't be found, return :const:`None` if the archive does contain
-   the module, but has no source for it.
+      Return the code object for the specified module. Raise
+      :exc:`ZipImportError` if the module couldn't be found.
 
 
-.. method:: zipimporter.is_package(fullname)
+   .. method:: get_data(pathname)
 
-   Return True if the module specified by *fullname* is a package. Raise
-   :exc:`ZipImportError` if the module couldn't be found.
-
-
-.. method:: zipimporter.load_module(fullname)
-
-   Load the module specified by *fullname*. *fullname* must be the fully qualified
-   (dotted) module name. It returns the imported module, or raises
-   :exc:`ZipImportError` if it wasn't found.
+      Return the data associated with *pathname*. Raise :exc:`IOError` if the
+      file wasn't found.
 
 
-.. attribute:: zipimporter.archive
+   .. method:: get_source(fullname)
 
-   The file name of the importer's associated ZIP file.
+      Return the source code for the specified module. Raise
+      :exc:`ZipImportError` if the module couldn't be found, return
+      :const:`None` if the archive does contain the module, but has no source
+      for it.
 
 
-.. attribute:: zipimporter.prefix
+   .. method:: is_package(fullname)
 
-   The path within the ZIP file where modules are searched; see
-   :class:`zipimporter` for details.
+      Return True if the module specified by *fullname* is a package. Raise
+      :exc:`ZipImportError` if the module couldn't be found.
+
+
+   .. method:: load_module(fullname)
+
+      Load the module specified by *fullname*. *fullname* must be the fully
+      qualified (dotted) module name. It returns the imported module, or raises
+      :exc:`ZipImportError` if it wasn't found.
+
+
+   .. attribute:: archive
+
+      The file name of the importer's associated ZIP file.
+
+
+   .. attribute:: prefix
+
+      The path within the ZIP file where modules are searched; see
+      :class:`zipimporter` for details.
 
 
 .. _zipimport-examples:

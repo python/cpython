@@ -197,10 +197,10 @@ asynchat - Auxiliary Classes and Functions
    the data no larger than *buffer_size*.
 
 
-.. method:: simple_producer.more()
+   .. method:: more()
 
-   Produces the next chunk of information from the producer, or returns the
-   empty string.
+      Produces the next chunk of information from the producer, or returns the
+      empty string.
 
 
 .. class:: fifo([list=None])
@@ -212,26 +212,26 @@ asynchat - Auxiliary Classes and Functions
    producers or data items to be written to the channel.
 
 
-.. method:: fifo.is_empty()
+   .. method:: is_empty()
 
-   Returns ``True`` if and only if the fifo is empty.
-
-
-.. method:: fifo.first()
-
-   Returns the least-recently :meth:`push`\ ed item from the fifo.
+      Returns ``True`` if and only if the fifo is empty.
 
 
-.. method:: fifo.push(data)
+   .. method:: first()
 
-   Adds the given data (which may be a string or a producer object) to the
-   producer fifo.
+      Returns the least-recently :meth:`push`\ ed item from the fifo.
 
 
-.. method:: fifo.pop()
+   .. method:: push(data)
 
-   If the fifo is not empty, returns ``True, first()``, deleting the popped
-   item.  Returns ``False, None`` for an empty fifo.
+      Adds the given data (which may be a string or a producer object) to the
+      producer fifo.
+
+
+   .. method:: pop()
+
+      If the fifo is not empty, returns ``True, first()``, deleting the popped
+      item.  Returns ``False, None`` for an empty fifo.
 
 The :mod:`asynchat` module also defines one utility function, which may be of
 use in network and textual analysis operations.
