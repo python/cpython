@@ -49,6 +49,22 @@ Long Integer Objects
    *NULL* on failure.
 
 
+.. cfunction:: PyObject* PyLong_FromSsize_t(Py_ssize_t v)
+
+   Return a new :ctype:`PyLongObject` object from a C :ctype:`Py_ssize_t`, or
+   *NULL* on failure.
+
+   .. versionadded:: 2.5
+
+
+.. cfunction:: PyObject* PyLong_FromSize_t(size_t v)
+
+   Return a new :ctype:`PyLongObject` object from a C :ctype:`size_t`, or
+   *NULL* on failure.
+
+   .. versionadded:: 2.5
+
+
 .. cfunction:: PyObject* PyLong_FromLongLong(PY_LONG_LONG v)
 
    Return a new :ctype:`PyLongObject` object from a C :ctype:`long long`, or *NULL*
@@ -109,7 +125,21 @@ Long Integer Objects
       single: OverflowError (built-in exception)
 
    Return a C :ctype:`long` representation of the contents of *pylong*.  If
-   *pylong* is greater than :const:`LONG_MAX`, an :exc:`OverflowError` is raised.
+   *pylong* is greater than :const:`LONG_MAX`, an :exc:`OverflowError` is raised
+   and ``-1`` will be returned. 
+
+
+.. cfunction:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
+
+   .. index::
+      single: PY_SSIZE_T_MAX
+      single: OverflowError (built-in exception)
+
+   Return a C :ctype:`Py_ssize_t` representation of the contents of *pylong*.  If
+   *pylong* is greater than :const:`PY_SSIZE_T_MAX`, an :exc:`OverflowError` is raised
+   and ``-1`` will be returned.
+
+   .. versionadded:: 2.5
 
 
 .. cfunction:: unsigned long PyLong_AsUnsignedLong(PyObject *pylong)
