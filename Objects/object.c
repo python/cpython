@@ -868,9 +868,9 @@ try_3way_to_rich_compare(PyObject *v, PyObject *w, int op)
 		/* Py3K warning if types are not equal and comparison isn't == or !=  */
 		if (Py_Py3kWarningFlag &&
 		    v->ob_type != w->ob_type && op != Py_EQ && op != Py_NE &&
-		    PyErr_Warn(PyExc_DeprecationWarning,
+		    PyErr_WarnEx(PyExc_DeprecationWarning,
 			       "comparing unequal types not supported "
-			       "in 3.x") < 0) {
+			       "in 3.x", 1) < 0) {
 			return NULL;
 		}
 
@@ -1691,9 +1691,9 @@ merge_list_attr(PyObject* dict, PyObject* obj, const char *attrname)
 		if (Py_Py3kWarningFlag &&
 		    (strcmp(attrname, "__members__") == 0 ||
 		     strcmp(attrname, "__methods__") == 0)) {
-			if (PyErr_Warn(PyExc_DeprecationWarning, 
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, 
 				       "__members__ and __methods__ not "
-				       "supported in 3.x") < 0) {
+				       "supported in 3.x", 1) < 0) {
 				Py_XDECREF(list);
 				return -1;
 			}

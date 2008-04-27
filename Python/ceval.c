@@ -3164,9 +3164,9 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 
 	assert(PyExceptionClass_Check(type));
 	if (Py_Py3kWarningFlag && PyClass_Check(type)) {
-		if (PyErr_Warn(PyExc_DeprecationWarning,
+		if (PyErr_WarnEx(PyExc_DeprecationWarning,
 			       "exceptions must derive from BaseException "
-			       "in 3.x") == -1)
+			       "in 3.x", 1) == -1)
 			goto raise_error;
 	}
 

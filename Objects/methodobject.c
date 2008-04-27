@@ -235,10 +235,8 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
 	    !PyCFunction_Check(other))
 	{
 		/* Py3K warning if types are not equal and comparison isn't == or !=  */
-		if (Py_Py3kWarningFlag &&
-		    PyErr_Warn(PyExc_DeprecationWarning,
-			       "builtin_function_or_method inequality "
-			       "comparisons not supported in 3.x") < 0) {
+		if (PyErr_WarnPy3k("builtin_function_or_method inequality "
+			       "comparisons not supported in 3.x", 1) < 0) {
 			return NULL;
 		}
 

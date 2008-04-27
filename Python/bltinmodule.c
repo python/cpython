@@ -165,10 +165,8 @@ builtin_apply(PyObject *self, PyObject *args)
 	PyObject *func, *alist = NULL, *kwdict = NULL;
 	PyObject *t = NULL, *retval = NULL;
 
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "apply() not supported in 3.x; "
-		       "use func(*args, **kwargs)") < 0)
+	if (PyErr_WarnPy3k("apply() not supported in 3.x; "
+		       "use func(*args, **kwargs)", 1) < 0)
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "apply", 1, 3, &func, &alist, &kwdict))
@@ -225,10 +223,8 @@ Return the binary representation of an integer or long integer.");
 static PyObject *
 builtin_callable(PyObject *self, PyObject *v)
 {
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "callable() not supported in 3.x; "
-		       "use hasattr(o, '__call__')") < 0)
+	if (PyErr_WarnPy3k("callable() not supported in 3.x; "
+		       "use hasattr(o, '__call__')", 1) < 0)
 		return NULL;
 	return PyBool_FromLong((long)PyCallable_Check(v));
 }
@@ -438,9 +434,7 @@ builtin_coerce(PyObject *self, PyObject *args)
 	PyObject *v, *w;
 	PyObject *res;
 
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "coerce() not supported in 3.x") < 0)
+	if (PyErr_WarnPy3k("coerce() not supported in 3.x", 1) < 0)
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "coerce", 2, 2, &v, &w))
@@ -709,9 +703,8 @@ builtin_execfile(PyObject *self, PyObject *args)
 	PyCompilerFlags cf;
 	int exists;
 
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "execfile() not supported in 3.x; use exec()") < 0)
+	if (PyErr_WarnPy3k("execfile() not supported in 3.x; use exec()",
+                           1) < 0)
 		return NULL;
 
 	if (!PyArg_ParseTuple(args, "s|O!O:execfile",
@@ -937,10 +930,8 @@ builtin_map(PyObject *self, PyObject *args)
 	n--;
 
 	if (func == Py_None) {
-		if (Py_Py3kWarningFlag &&
-		    PyErr_Warn(PyExc_DeprecationWarning, 
-			       "map(None, ...) not supported in 3.x; "
-			       "use list(...)") < 0)
+		if (PyErr_WarnPy3k("map(None, ...) not supported in 3.x; "
+			       "use list(...)", 1) < 0)
 			return NULL;
 		if (n == 1) {
 			/* map(None, S) is the same as list(S). */
@@ -1967,10 +1958,8 @@ builtin_reduce(PyObject *self, PyObject *args)
 {
 	PyObject *seq, *func, *result = NULL, *it;
 
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "reduce() not supported in 3.x; "
-		       "use functools.reduce()") < 0)
+	if (PyErr_WarnPy3k("reduce() not supported in 3.x; "
+		       "use functools.reduce()", 1) < 0)
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "reduce", 2, 3, &func, &seq, &result))
@@ -2045,9 +2034,8 @@ sequence is empty.");
 static PyObject *
 builtin_reload(PyObject *self, PyObject *v)
 {
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, 
-		       "reload() not supported in 3.x; use imp.reload()") < 0)
+	if (PyErr_WarnPy3k("In 3.x, reload() is renamed to imp.reload()",
+                           1) < 0)
 		return NULL;
 
 	return PyImport_ReloadModule(v);
