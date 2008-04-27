@@ -6,6 +6,9 @@ What's New in IDLE 2.6a3?
 - Issue #2665: On Windows, an IDLE installation upgraded from an old version
   would not start if a custom theme was defined.
 
+- Home / Control-A toggles between left margin and end of leading white
+  space.  Patch 1196903 Jeff Shute.
+
 What's New in IDLE 2.6a1?
 =========================
 

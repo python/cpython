@@ -153,6 +153,7 @@ class EditorWindow(object):
         text.bind("<Right>", self.move_at_edge_if_selection(1))
         text.bind("<<del-word-left>>", self.del_word_left)
         text.bind("<<del-word-right>>", self.del_word_right)
+        text.bind("<<beginning-of-line>>", self.home_callback)
 
         if flist:
             flist.inversedict[self] = key
@@ -279,6 +280,50 @@ class EditorWindow(object):
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
         self.flist.new(dirname)
+        return "break"
+
+    def home_callback(self, event):
+        if (event.state & 12) != 0 and event.keysym == "Home":
+            # state&1==shift, state&4==control, state&8==alt
+            return # <Modifier-Home>; fall back to class binding
+
+        if self.text.index("iomark") and \
+           self.text.compare("iomark", "<=", "insert lineend") and \
+           self.text.compare("insert linestart", "<=", "iomark"):
+            insertpt = int(self.text.index("iomark").split(".")[1])
+        else:
+            line = self.text.get("insert linestart", "insert lineend")
+            for insertpt in xrange(len(line)):
+                if line[insertpt] not in (' ','\t'):
+                    break
+            else:
+                insertpt=len(line)
+
+        lineat = int(self.text.index("insert").split('.')[1])
+
+        if insertpt == lineat:
+            insertpt = 0
+
+        dest = "insert linestart+"+str(insertpt)+"c"
+
+        if (event.state&1) == 0:
+            # shift not pressed
+            self.text.tag_remove("sel", "1.0", "end")
+        else:
+            if not self.text.index("sel.first"):
+                self.text.mark_set("anchor","insert")
+
+            first = self.text.index(dest)
+            last = self.text.index("anchor")
+
+            if self.text.compare(first,">",last):
+                first,last = last,first
+
+            self.text.tag_remove("sel", "1.0", "end")
+            self.text.tag_add("sel", first, last)
+
+        self.text.mark_set("insert", dest)
+        self.text.see("insert")
         return "break"
 
     def set_status_bar(self):
