@@ -173,7 +173,7 @@ sys_exc_clear(PyObject *self, PyObject *noargs)
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
 
 	if (PyErr_WarnPy3k("sys.exc_clear() not supported in 3.x; "
-		       "use except clauses", 1) < 0)
+			   "use except clauses", 1) < 0)
 		return NULL;
 
 	tstate = PyThreadState_GET();

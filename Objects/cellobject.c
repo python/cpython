@@ -56,7 +56,7 @@ cell_compare(PyCellObject *a, PyCellObject *b)
 {
 	/* Py3K warning for comparisons  */
 	if (PyErr_WarnPy3k("cell comparisons not supported in 3.x",
-                           1) < 0) {
+			   1) < 0) {
 		return -2;
 	}
 

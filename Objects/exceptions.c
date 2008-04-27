@@ -279,9 +279,8 @@ BaseException_get_message(PyBaseExceptionObject *self)
 	int ret;
 	ret = PyErr_WarnEx(PyExc_DeprecationWarning,
 				"BaseException.message has been deprecated as "
-					"of Python 2.6",
-				1);
-	if (ret == -1)
+				"of Python 2.6", 1);
+	if (ret < 0)
 		return NULL;
 
 	Py_INCREF(self->message);
@@ -294,9 +293,8 @@ BaseException_set_message(PyBaseExceptionObject *self, PyObject *val)
 	int ret;
 	ret = PyErr_WarnEx(PyExc_DeprecationWarning,
 				"BaseException.message has been deprecated as "
-					"of Python 2.6",
-				1);
-	if (ret == -1)
+				"of Python 2.6", 1);
+	if (ret < 0)
 		return -1;
 	Py_INCREF(val);
 	Py_DECREF(self->message);

@@ -627,8 +627,9 @@ file_seek(PyFileObject *f, PyObject *args)
 			return NULL;
 		/* Deprecated in 2.6 */
 		PyErr_Clear();
-		if (PyErr_Warn(PyExc_DeprecationWarning,
-			       "integer argument expected, got float"))
+		if (PyErr_WarnEx(PyExc_DeprecationWarning,
+				 "integer argument expected, got float",
+				 1) < 0)
 			return NULL;
 		off_index = offobj;
 		Py_INCREF(offobj);

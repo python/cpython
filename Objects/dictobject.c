@@ -1779,7 +1779,7 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
 	else {
 		/* Py3K warning if comparison isn't == or !=  */
 		if (PyErr_WarnPy3k("dict inequality comparisons not supported "
-			       "in 3.x", 1) < 0) {
+				   "in 3.x", 1) < 0) {
 			return NULL;
 		}
 		res = Py_NotImplemented;
@@ -1810,7 +1810,7 @@ static PyObject *
 dict_has_key(register PyDictObject *mp, PyObject *key)
 {
 	if (PyErr_WarnPy3k("dict.has_key() not supported in 3.x; "
-		       "use the in operator", 1) < 0)
+			   "use the in operator", 1) < 0)
 		return NULL;
 	return dict_contains(mp, key);
 }
