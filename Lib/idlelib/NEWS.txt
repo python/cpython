@@ -9,6 +9,8 @@ What's New in IDLE 2.6a3?
 - Home / Control-A toggles between left margin and end of leading white
   space.  Patch 1196903 Jeff Shute.
 
+- Improved AutoCompleteWindow logic.  Patch 2062 Tal Einat.  
+
 What's New in IDLE 2.6a1?
 =========================
 
