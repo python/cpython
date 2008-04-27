@@ -23,6 +23,10 @@ ID_CHARS = string.ascii_letters + string.digits + "_"
 # These constants represent the two different types of completions
 COMPLETE_ATTRIBUTES, COMPLETE_FILES = range(1, 2+1)
 
+SEPS = os.sep
+if os.altsep:  # e.g. '/' on Windows...
+    SEPS += os.altsep
+
 class AutoComplete:
 
     menudefs = [
@@ -70,7 +74,7 @@ class AutoComplete:
         if lastchar == ".":
             self._open_completions_later(False, False, False,
                                          COMPLETE_ATTRIBUTES)
-        elif lastchar == os.sep:
+        elif lastchar in SEPS:
             self._open_completions_later(False, False, False,
                                          COMPLETE_FILES)
 
@@ -126,7 +130,7 @@ class AutoComplete:
                 i -= 1
             comp_start = curline[i:j]
             j = i
-            while i and curline[i-1] in FILENAME_CHARS+os.sep:
+            while i and curline[i-1] in FILENAME_CHARS + SEPS:
                 i -= 1
             comp_what = curline[i:j]
         elif hp.is_in_code() and (not mode or mode==COMPLETE_ATTRIBUTES):
