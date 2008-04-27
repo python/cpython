@@ -1910,9 +1910,7 @@ get_newlines(PyFileObject *f, void *closure)
 static PyObject *
 get_softspace(PyFileObject *f, void *closure)
 {
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning,
-		       "file.softspace not supported in 3.x") < 0)
+	if (PyErr_WarnPy3k("file.softspace not supported in 3.x", 1) < 0)
 		return NULL;
 	return PyInt_FromLong(f->f_softspace);
 }
@@ -1921,9 +1919,7 @@ static int
 set_softspace(PyFileObject *f, PyObject *value)
 {
 	int new;
-	if (Py_Py3kWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning,
-		       "file.softspace not supported in 3.x") < 0)
+	if (PyErr_WarnPy3k("file.softspace not supported in 3.x", 1) < 0)
 		return -1;
 
 	if (value == NULL) {
