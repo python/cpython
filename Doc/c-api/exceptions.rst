@@ -344,6 +344,14 @@ is a separate error indicator for each thread.
    described there.
 
 
+.. cfunction:: int PyErr_WarnPy3k(char *message, int stacklevel)
+
+   Issue a :exc:`DeprecationWarning` with the given *message* and *stacklevel*
+   if the :cdata:`Py_Py3kWarningFlag` flag is enabled.
+
+   .. versionadded:: 2.6
+
+
 .. cfunction:: int PyErr_CheckSignals()
 
    .. index::

@@ -732,6 +732,15 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
 }
 
 
+int
+PyErr_WarnPy3k(const char *text, Py_ssize_t stacklevel)
+{
+    if (Py_Py3kWarningFlag)
+        return PyErr_WarnEx(PyExc_DeprecationWarning, text, stacklevel);
+    return 0;
+}
+
+
 PyDoc_STRVAR(warn_doc,
 "Issue a warning, or maybe ignore it or raise an exception.");
 
