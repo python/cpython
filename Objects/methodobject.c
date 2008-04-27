@@ -236,7 +236,7 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
 	{
 		/* Py3K warning if types are not equal and comparison isn't == or !=  */
 		if (PyErr_WarnPy3k("builtin_function_or_method inequality "
-			       "comparisons not supported in 3.x", 1) < 0) {
+				   "comparisons not supported in 3.x", 1) < 0) {
 			return NULL;
 		}
 
@@ -352,9 +352,8 @@ Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
 {
 	if (name[0] == '_' && name[1] == '_') {
 		if (strcmp(name, "__methods__") == 0) {
-			if (Py_Py3kWarningFlag &&
-			    PyErr_Warn(PyExc_DeprecationWarning,
-				       "__methods__ not supported in 3.x") < 0)
+			if (PyErr_WarnPy3k("__methods__ not supported in 3.x",
+					   1) < 0)
 				return NULL;
 			return listmethodchain(chain);
 		}

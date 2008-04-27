@@ -1258,7 +1258,7 @@ static PyObject *
 array_fromfile_as_read(arrayobject *self, PyObject *args)
 {
 	if (PyErr_WarnPy3k("array.read() not supported in 3.x; "
-		       "use array.fromfile()", 1) < 0)
+			   "use array.fromfile()", 1) < 0)
 		return NULL;
 	return array_fromfile(self, args);
 }
@@ -1297,7 +1297,7 @@ static PyObject *
 array_tofile_as_write(arrayobject *self, PyObject *f)
 {
 	if (PyErr_WarnPy3k("array.write() not supported in 3.x; "
-		       "use array.tofile()", 1) < 0)
+			   "use array.tofile()", 1) < 0)
 		return NULL;
 	return array_tofile(self, f);
 }
