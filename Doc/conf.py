@@ -85,6 +85,12 @@ html_additional_pages = {
     'index': 'indexcontent.html',
 }
 
+# Output an OpenSearch description file.
+html_use_opensearch = True
+
+# Additional static files.
+html_static_path = ['tools/sphinxext/static']
+
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
 
