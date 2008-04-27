@@ -826,7 +826,6 @@ class PyShell(OutputWindow):
         text.bind("<<newline-and-indent>>", self.enter_callback)
         text.bind("<<plain-newline-and-indent>>", self.linefeed_callback)
         text.bind("<<interrupt-execution>>", self.cancel_callback)
-        text.bind("<<beginning-of-line>>", self.home_callback)
         text.bind("<<end-of-file>>", self.eof_callback)
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
@@ -1062,16 +1061,6 @@ class PyShell(OutputWindow):
             self.endoffile = 1
             self.top.quit()
         return "break"
-
-    def home_callback(self, event):
-        if event.state != 0 and event.keysym == "Home":
-            return # <Modifier-Home>; fall back to class binding
-        if self.text.compare("iomark", "<=", "insert") and \
-           self.text.compare("insert linestart", "<=", "iomark"):
-            self.text.mark_set("insert", "iomark")
-            self.text.tag_remove("sel", "1.0", "end")
-            self.text.see("insert")
-            return "break"
 
     def linefeed_callback(self, event):
         # Insert a linefeed without entering anything (still autoindented)
