@@ -736,13 +736,13 @@ test_with_docstring(PyObject *self)
 
 /* To test the format of tracebacks as printed out. */
 static PyObject *
-test_traceback_print(PyObject *self, PyObject *args)
+traceback_print(PyObject *self, PyObject *args)
 {
 	PyObject *file;
 	PyObject *traceback;
 	int result;
 	
-	if (!PyArg_ParseTuple(args, "OO:test_traceback_print",
+	if (!PyArg_ParseTuple(args, "OO:traceback_print",
 				&traceback, &file))
 		return NULL;
 		
@@ -792,7 +792,7 @@ static PyMethodDef TestMethods[] = {
 #ifdef WITH_THREAD
 	{"_test_thread_state",  test_thread_state, 		 METH_VARARGS},
 #endif
-	{"test_traceback_print", test_traceback_print, 	         METH_VARARGS},
+	{"traceback_print", traceback_print, 	         METH_VARARGS},
 	{NULL, NULL} /* sentinel */
 };
 
