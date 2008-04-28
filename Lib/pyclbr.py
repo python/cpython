@@ -41,8 +41,8 @@ Instances of this class have the following instance variables:
 
 import sys
 import imp
-import tokenize # Python tokenizer
-from token import NAME, DEDENT, NEWLINE, OP
+import tokenize
+from token import NAME, DEDENT, OP
 from operator import itemgetter
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
@@ -73,37 +73,37 @@ class Function:
         self.file = file
         self.lineno = lineno
 
-def readmodule(module, path=[]):
+def readmodule(module, path=None):
     '''Backwards compatible interface.
 
     Call readmodule_ex() and then only keep Class objects from the
     resulting dictionary.'''
 
-    dict = _readmodule(module, path)
     res = {}
-    for key, value in dict.items():
+    for key, value in _readmodule(module, path or []).items():
         if isinstance(value, Class):
             res[key] = value
     return res
 
-def readmodule_ex(module, path=[]):
+def readmodule_ex(module, path=None):
     '''Read a module file and return a dictionary of classes.
 
     Search for MODULE in PATH and sys.path, read and parse the
     module and return a dictionary with one entry for each class
     found in the module.
+    '''
+    return _readmodule(module, path or [])
 
-    If INPACKAGE is true, it must be the dotted name of the package in
+def _readmodule(module, path, inpackage=None):
+    '''Do the hard work for readmodule[_ex].
+
+    If INPACKAGE is given, it must be the dotted name of the package in
     which we are searching for a submodule, and then PATH must be the
     package search path; otherwise, we are searching for a top-level
     module, and PATH is combined with sys.path.
     '''
-    return _readmodule(module, path)
-
-def _readmodule(module, path, inpackage=None):
-    '''Do the hard work for readmodule[_ex].'''
     # Compute the full module name (prepending inpackage if set)
-    if inpackage:
+    if inpackage is not None:
         fullmodule = "%s.%s" % (inpackage, module)
     else:
         fullmodule = module
@@ -116,7 +116,7 @@ def _readmodule(module, path, inpackage=None):
     dict = {}
 
     # Check if it is a built-in module; we don't do much for these
-    if module in sys.builtin_module_names and not inpackage:
+    if module in sys.builtin_module_names and inpackage is None:
         _modules[module] = dict
         return dict
 
@@ -126,22 +126,22 @@ def _readmodule(module, path, inpackage=None):
         package = module[:i]
         submodule = module[i+1:]
         parent = _readmodule(package, path, inpackage)
-        if inpackage:
+        if inpackage is not None:
             package = "%s.%s" % (inpackage, package)
         return _readmodule(submodule, parent['__path__'], package)
 
     # Search the path for the module
     f = None
-    if inpackage:
-        f, file, (suff, mode, type) = imp.find_module(module, path)
+    if inpackage is not None:
+        f, fname, (_s, _m, ty) = imp.find_module(module, path)
     else:
-        f, file, (suff, mode, type) = imp.find_module(module, path + sys.path)
-    if type == imp.PKG_DIRECTORY:
-        dict['__path__'] = [file]
-        path = [file] + path
-        f, file, (suff, mode, type) = imp.find_module('__init__', [file])
+        f, fname, (_s, _m, ty) = imp.find_module(module, path + sys.path)
+    if ty == imp.PKG_DIRECTORY:
+        dict['__path__'] = [fname]
+        path = [fname] + path
+        f, fname, (_s, _m, ty) = imp.find_module('__init__', [fname])
     _modules[fullmodule] = dict
-    if type != imp.PY_SOURCE:
+    if ty != imp.PY_SOURCE:
         # not Python source, can't do anything with this module
         f.close()
         return dict
@@ -150,7 +150,7 @@ def _readmodule(module, path, inpackage=None):
 
     g = tokenize.generate_tokens(f.readline)
     try:
-        for tokentype, token, start, end, line in g:
+        for tokentype, token, start, _end, _line in g:
             if tokentype == DEDENT:
                 lineno, thisindent = start
                 # close nested classes and defs
@@ -161,7 +161,7 @@ def _readmodule(module, path, inpackage=None):
                 # close previous nested classes and defs
                 while stack and stack[-1][1] >= thisindent:
                     del stack[-1]
-                tokentype, meth_name, start, end, line = g.next()
+                tokentype, meth_name, start = g.next()[0:3]
                 if tokentype != NAME:
                     continue # Syntax error
                 if stack:
@@ -172,18 +172,19 @@ def _readmodule(module, path, inpackage=None):
                     # else it's a nested def
                 else:
                     # it's a function
-                    dict[meth_name] = Function(fullmodule, meth_name, file, lineno)
+                    dict[meth_name] = Function(fullmodule, meth_name,
+                                               fname, lineno)
                 stack.append((None, thisindent)) # Marker for nested fns
             elif token == 'class':
                 lineno, thisindent = start
                 # close previous nested classes and defs
                 while stack and stack[-1][1] >= thisindent:
                     del stack[-1]
-                tokentype, class_name, start, end, line = g.next()
+                tokentype, class_name, start = g.next()[0:3]
                 if tokentype != NAME:
                     continue # Syntax error
                 # parse what follows the class name
-                tokentype, token, start, end, line = g.next()
+                tokentype, token, start = g.next()[0:3]
                 inherit = None
                 if token == '(':
                     names = [] # List of superclasses
@@ -191,7 +192,7 @@ def _readmodule(module, path, inpackage=None):
                     level = 1
                     super = [] # Tokens making up current superclass
                     while True:
-                        tokentype, token, start, end, line = g.next()
+                        tokentype, token, start = g.next()[0:3]
                         if token in (')', ',') and level == 1:
                             n = "".join(super)
                             if n in dict:
@@ -224,16 +225,17 @@ def _readmodule(module, path, inpackage=None):
                             super.append(token)
                         # expressions in the base list are not supported
                     inherit = names
-                cur_class = Class(fullmodule, class_name, inherit, file, lineno)
+                cur_class = Class(fullmodule, class_name, inherit,
+                                  fname, lineno)
                 if not stack:
                     dict[class_name] = cur_class
                 stack.append((cur_class, thisindent))
             elif token == 'import' and start[1] == 0:
                 modules = _getnamelist(g)
-                for mod, mod2 in modules:
+                for mod, _mod2 in modules:
                     try:
                         # Recursively read the imported module
-                        if not inpackage:
+                        if inpackage is None:
                             _readmodule(mod, path)
                         else:
                             try:
@@ -287,7 +289,7 @@ def _getnamelist(g):
             name2 = None
         names.append((name, name2))
         while token != "," and "\n" not in token:
-            tokentype, token, start, end, line = g.next()
+            token = g.next()[1]
         if token != ",":
             break
     return names
@@ -297,15 +299,15 @@ def _getname(g):
     # name is the dotted name, or None if there was no dotted name,
     # and token is the next input token.
     parts = []
-    tokentype, token, start, end, line = g.next()
+    tokentype, token = g.next()[0:2]
     if tokentype != NAME and token != '*':
         return (None, token)
     parts.append(token)
     while True:
-        tokentype, token, start, end, line = g.next()
+        tokentype, token = g.next()[0:2]
         if token != '.':
             break
-        tokentype, token, start, end, line = g.next()
+        tokentype, token = g.next()[0:2]
         if tokentype != NAME:
             break
         parts.append(token)
