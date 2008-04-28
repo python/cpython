@@ -26,6 +26,9 @@ Core and Builtins
   through as unmodified as possible; as a consequence, the C API
   related to command line arguments was changed to use wchar_t.
 
+- All backslashes in raw strings are interpreted literally.  This means that
+  '\u' and '\U' escapes are not treated specially.
+
 Extension Modules
 -----------------
 
