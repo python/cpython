@@ -1,9 +1,23 @@
 """Test cases for traceback module"""
 
+from _testcapi import test_traceback_print
+from StringIO import StringIO
+import sys
 import unittest
-from test.test_support import run_unittest, is_jython
+from test.test_support import run_unittest, is_jython, Error
 
 import traceback
+
+try:
+    raise KeyError
+except KeyError:
+    type_, value, tb = sys.exc_info()
+    file_ = StringIO()
+    test_traceback_print(tb, file_)
+    example_traceback = file_.getvalue()
+else:
+    raise Error("unable to create test traceback string")
+
 
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
@@ -154,8 +168,20 @@ def test():
         self.assertEqual(err, ['None\n'])
 
 
+class TracebackFormatTests(unittest.TestCase):
+
+    def test_traceback_indentation(self):
+        # Make sure that the traceback is properly indented.
+        tb_lines = example_traceback.splitlines()
+        self.assertEquals(len(tb_lines), 3)
+        banner, location, source_line = tb_lines
+        self.assert_(banner.startswith('Traceback'))
+        self.assert_(location.startswith('  File'))
+        self.assert_(source_line.startswith('raise'))
+
+
 def test_main():
-    run_unittest(TracebackCases)
+    run_unittest(TracebackCases, TracebackFormatTests)
 
 
 if __name__ == "__main__":
