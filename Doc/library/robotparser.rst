@@ -4,7 +4,7 @@
 
 .. module:: robotparser
    :synopsis: Loads a robots.txt file and answers questions about
-   fetchability of other URLs.
+              fetchability of other URLs.
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 
