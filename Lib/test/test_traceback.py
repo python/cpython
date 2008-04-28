@@ -1,6 +1,6 @@
 """Test cases for traceback module"""
 
-from _testcapi import test_traceback_print
+from _testcapi import traceback_print
 from StringIO import StringIO
 import sys
 import unittest
@@ -13,7 +13,7 @@ try:
 except KeyError:
     type_, value, tb = sys.exc_info()
     file_ = StringIO()
-    test_traceback_print(tb, file_)
+    traceback_print(tb, file_)
     example_traceback = file_.getvalue()
 else:
     raise Error("unable to create test traceback string")
