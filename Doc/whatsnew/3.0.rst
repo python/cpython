@@ -167,6 +167,9 @@ Strings and Bytes
   explicitly convert between them, using the :meth:`str.encode` (str -> bytes)
   or :meth:`bytes.decode` (bytes -> str) methods.
 
+* All backslashes in raw strings are interpreted literally.  This means that
+  Unicode escapes are not treated specially.
+
 .. XXX add bytearray
 
 * PEP 3112: Bytes literals, e.g. ``b"abc"``, create :class:`bytes` instances.
@@ -182,6 +185,8 @@ Strings and Bytes
 
 * The :mod:`StringIO` and :mod:`cStringIO` modules are gone.  Instead, import
   :class:`io.StringIO` or :class:`io.BytesIO`.
+
+* ``'\U'`` and ``'\u'`` escapes in raw strings are not treated specially.
 
 
 PEP 3101: A New Approach to String Formatting

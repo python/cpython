@@ -423,8 +423,9 @@ characters that otherwise have a special meaning, such as newline, backslash
 itself, or the quote character.
 
 String literals may optionally be prefixed with a letter ``'r'`` or ``'R'``;
-such strings are called :dfn:`raw strings` and use different rules for
-interpreting backslash escape sequences.
+such strings are called :dfn:`raw strings` and treat backslashes as literal
+characters.  As a result, ``'\U'`` and ``'\u'`` escapes in raw strings are not
+treated specially.
 
 Bytes literals are always prefixed with ``'b'`` or ``'B'``; they produce an
 instance of the :class:`bytes` type instead of the :class:`str` type.  They
@@ -519,15 +520,6 @@ useful when debugging: if an escape sequence is mistyped, the resulting output
 is more easily recognized as broken.)  It is also important to note that the
 escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
-
-When an ``'r'`` or ``'R'`` prefix is used in a string literal, then the
-``\uXXXX`` and ``\UXXXXXXXX`` escape sequences are processed while *all other
-backslashes are left in the string*. For example, the string literal
-``r"\u0062\n"`` consists of three Unicode characters: 'LATIN SMALL LETTER B',
-'REVERSE SOLIDUS', and 'LATIN SMALL LETTER N'. Backslashes can be escaped with a
-preceding backslash; however, both remain in the string.  As a result,
-``\uXXXX`` escape sequences are only recognized when there is an odd number of
-backslashes.
 
 Even in a raw string, string quotes can be escaped with a backslash, but the
 backslash remains in the string; for example, ``r"\""`` is a valid string
