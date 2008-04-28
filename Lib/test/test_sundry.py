@@ -9,41 +9,24 @@ import warnings
 class TestUntestedModules(unittest.TestCase):
     def test_at_least_import_untested_modules(self):
         with test_support.catch_warning():
-            import BaseHTTPServer
-            import DocXMLRPCServer
             import CGIHTTPServer
-            import SimpleHTTPServer
-            import SimpleXMLRPCServer
             import aifc
             import audiodev
             import bdb
             import cgitb
-            import cmd
             import code
             import compileall
 
-            import distutils.archive_util
             import distutils.bcppcompiler
             import distutils.ccompiler
-            import distutils.cmd
-            import distutils.core
             import distutils.cygwinccompiler
-            import distutils.dep_util
-            import distutils.dir_util
             import distutils.emxccompiler
-            import distutils.errors
-            import distutils.extension
-            import distutils.file_util
             import distutils.filelist
-            import distutils.log
             if sys.platform.startswith('win'):
                 import distutils.msvccompiler
             import distutils.mwerkscompiler
-            import distutils.sysconfig
             import distutils.text_file
             import distutils.unixccompiler
-            import distutils.util
-            import distutils.version
 
             import distutils.command.bdist_dumb
             if sys.platform.startswith('win'):
@@ -54,23 +37,18 @@ class TestUntestedModules(unittest.TestCase):
             import distutils.command.build_clib
             import distutils.command.build_ext
             import distutils.command.build
-            import distutils.command.build_py
-            import distutils.command.build_scripts
             import distutils.command.clean
             import distutils.command.config
             import distutils.command.install_data
             import distutils.command.install_egg_info
             import distutils.command.install_headers
             import distutils.command.install_lib
-            import distutils.command.install
-            import distutils.command.install_scripts
             import distutils.command.register
             import distutils.command.sdist
             import distutils.command.upload
 
             import encodings
             import formatter
-            import ftplib
             import getpass
             import htmlentitydefs
             import ihooks
@@ -81,7 +59,6 @@ class TestUntestedModules(unittest.TestCase):
             import macurl2path
             import mailcap
             import mimify
-            import mutex
             import nntplib
             import nturl2path
             import opcode
@@ -93,7 +70,6 @@ class TestUntestedModules(unittest.TestCase):
             import rexec
             import rlcompleter
             import sched
-            import smtplib
             import sndhdr
             import statvfs
             import stringold
@@ -101,7 +77,6 @@ class TestUntestedModules(unittest.TestCase):
             import sunaudio
             import symbol
             import tabnanny
-            import telnetlib
             import timeit
             import toaiff
             import token
