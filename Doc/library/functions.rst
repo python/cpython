@@ -671,7 +671,7 @@ available.  They are listed here in alphabetical order.
 
 .. function:: next(iterator[, default])
 
-   Retrieve the next item from the *iterable* by calling its :meth:`__next__`
+   Retrieve the next item from the *iterator* by calling its :meth:`__next__`
    method.  If *default* is given, it is returned if the iterator is exhausted,
    otherwise :exc:`StopIteration` is raised.
 
