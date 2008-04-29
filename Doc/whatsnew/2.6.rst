@@ -2158,17 +2158,12 @@ though it will be removed in Python 3.0.
 
 To use the new module, first you must create a TCP connection in the
 usual way and then pass it to the :func:`ssl.wrap_socket` function.
-XXX describe parameters.
-
-XXX Can specify if certificate is required, and obtain certificate info
-by calling getpeercert method.
-
-XXX Certain features require the OpenSSL package to be installed, notably
-  the 'openssl' binary.
+It's possible to specify whether a certificate is required, and to
+obtain certificate info by calling the :meth:`getpeercert` method.
 
 .. seealso::
 
-   SSL module documentation.
+   The documentation for the :mod:`ssl` module.
 
 
 .. ======================================================================
