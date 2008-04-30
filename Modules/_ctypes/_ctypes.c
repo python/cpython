@@ -261,6 +261,36 @@ PyDict_GetItemProxy(PyObject *dict, PyObject *key)
 
 /******************************************************************/
 /*
+  Allocate a memory block for a pep3118 format string, copy prefix (if
+  non-null) and suffix into it.  Returns NULL on failure, with the error
+  indicator set.  If called with a suffix of NULL the error indicator must
+  already be set.
+ */
+char *
+alloc_format_string(const char *prefix, const char *suffix)
+{
+	size_t len;
+	char *result;
+
+	if (suffix == NULL) {
+		assert(PyErr_Occurred());
+		return NULL;
+	}
+	len = strlen(suffix);
+	if (prefix)
+		len += strlen(prefix);
+	result = PyMem_Malloc(len + 1);
+	if (result == NULL)
+		return NULL;
+	if (prefix)
+		strcpy(result, prefix);
+	else
+		result[0] = '\0';
+	strcat(result, suffix);
+	return result;
+}
+
+/*
   StructType_Type - a meta type/class.  Creating a new class using this one as
   __metaclass__ will call the contructor StructUnionType_new.  It replaces the
   tp_dict member with a new instance of StgDict, and initializes the C
@@ -727,6 +757,16 @@ PointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
+	if (proto) {
+		StgDictObject *itemdict = PyType_stgdict(proto);
+		assert(itemdict);
+		stgdict->format = alloc_format_string("&", itemdict->format);
+		if (stgdict->format == NULL) {
+			Py_DECREF((PyObject *)stgdict);
+			return NULL;
+		}
+	}
+
 	/* create the new instance (which is a class,
 	   since we are a metatype!) */
 	result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
@@ -1101,6 +1141,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	long length;
 	int overflow;
 	Py_ssize_t itemsize, itemalign;
+	char buf[32];
 
 	typedict = PyTuple_GetItem(args, 2);
 	if (!typedict)
@@ -1139,6 +1180,28 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_DECREF((PyObject *)stgdict);
 		return NULL;
 	}
+
+	assert(itemdict->format);
+	if (itemdict->format[0] == '(') {
+		sprintf(buf, "(%ld,", length);
+		stgdict->format = alloc_format_string(buf, itemdict->format+1);
+	} else {
+		sprintf(buf, "(%ld)", length);
+		stgdict->format = alloc_format_string(buf, itemdict->format);
+	}
+	if (stgdict->format == NULL) {
+		Py_DECREF((PyObject *)stgdict);
+		return NULL;
+	}
+	stgdict->ndim = itemdict->ndim + 1;
+	stgdict->shape = PyMem_Malloc(sizeof(Py_ssize_t *) * stgdict->ndim);
+	if (stgdict->shape == NULL) {
+		Py_DECREF((PyObject *)stgdict);
+		return NULL;
+	}
+	stgdict->shape[0] = length;
+	memmove(&stgdict->shape[1], itemdict->shape,
+		sizeof(Py_ssize_t) * (stgdict->ndim - 1));
 
 	itemsize = itemdict->size;
 	if (length * itemsize < 0) {
@@ -1691,6 +1754,16 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	stgdict->size = fmt->pffi_type->size;
 	stgdict->setfunc = fmt->setfunc;
 	stgdict->getfunc = fmt->getfunc;
+#ifdef WORDS_BIGENDIAN
+	stgdict->format = alloc_format_string(">", proto_str);
+#else
+	stgdict->format = alloc_format_string("<", proto_str);
+#endif
+	if (stgdict->format == NULL) {
+		Py_DECREF(result);
+		Py_DECREF((PyObject *)stgdict);
+		return NULL;
+	}
 
 	stgdict->paramfunc = SimpleType_paramfunc;
 /*
@@ -1760,22 +1833,32 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (type == &SimpleType_Type && fmt->setfunc_swapped && fmt->getfunc_swapped) {
 		PyObject *swapped = CreateSwappedType(type, args, kwds,
 						      proto, fmt);
+		StgDictObject *sw_dict;
 		if (swapped == NULL) {
 			Py_DECREF(result);
 			return NULL;
 		}
+		sw_dict = PyType_stgdict(swapped);
 #ifdef WORDS_BIGENDIAN
 		PyObject_SetAttrString((PyObject *)result, "__ctype_le__", swapped);
 		PyObject_SetAttrString((PyObject *)result, "__ctype_be__", (PyObject *)result);
 		PyObject_SetAttrString(swapped, "__ctype_be__", (PyObject *)result);
 		PyObject_SetAttrString(swapped, "__ctype_le__", swapped);
+		/* We are creating the type for the OTHER endian */
+		sw_dict->format = alloc_format_string("<", stgdict->format+1);
 #else
 		PyObject_SetAttrString((PyObject *)result, "__ctype_be__", swapped);
 		PyObject_SetAttrString((PyObject *)result, "__ctype_le__", (PyObject *)result);
 		PyObject_SetAttrString(swapped, "__ctype_le__", (PyObject *)result);
 		PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
+		/* We are creating the type for the OTHER endian */
+		sw_dict->format = alloc_format_string(">", stgdict->format+1);
 #endif
 		Py_DECREF(swapped);
+		if (PyErr_Occurred()) {
+			Py_DECREF(result);
+			return NULL;
+		}
 	};
 
 	return (PyObject *)result;
@@ -2025,6 +2108,13 @@ CFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	stgdict->paramfunc = CFuncPtrType_paramfunc;
+	/* We do NOT expose the function signature in the format string.  It
+	   is impossible, generally, because the only requirement for the
+	   argtypes items is that they have a .from_param method - we do not
+	   know the types of the arguments (although, in practice, most
+	   argtypes would be a ctypes type).
+	*/
+	stgdict->format = alloc_format_string(NULL, "X{}");
 	stgdict->flags |= TYPEFLAG_ISPOINTER;
 
 	/* create the new instance (which is a class,
@@ -2240,7 +2330,31 @@ static PyMemberDef CData_members[] = {
 static int CData_GetBuffer(PyObject *_self, Py_buffer *view, int flags)
 {
 	CDataObject *self = (CDataObject *)_self;
-        return PyBuffer_FillInfo(view, self->b_ptr, self->b_size, 0, flags);
+	StgDictObject *dict = PyObject_stgdict(_self);
+	Py_ssize_t i;
+
+	if (view == NULL) return 0;
+	if (((flags & PyBUF_LOCK) == PyBUF_LOCK)) {
+		PyErr_SetString(PyExc_BufferError,
+				"Cannot lock this object.");
+		return -1;
+	}
+
+	view->buf = self->b_ptr;
+	view->len = self->b_size;
+	view->readonly = 0;
+	/* use default format character if not set */
+	view->format = dict->format ? dict->format : "B";
+	view->ndim = dict->ndim;
+	view->shape = dict->shape;
+	view->itemsize = self->b_size;
+	for (i = 0; i < view->ndim; ++i) {
+		view->itemsize /= dict->shape[i];
+	}
+	view->strides = NULL;
+	view->suboffsets = NULL;
+	view->internal = NULL;
+	return 0;
 }
 
 static PyBufferProcs CData_as_buffer = {

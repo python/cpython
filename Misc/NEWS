@@ -35,6 +35,8 @@ Extension Modules
 Library
 -------
 
+- ctypes objects now support the PEP3118 buffer interface
+
 - Issue #2682: ctypes callback functions now longer contain a cyclic
   reference to themselves.
 

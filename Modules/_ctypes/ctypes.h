@@ -204,6 +204,14 @@ typedef struct {
 	PyObject *restype;	/* CDataObject or NULL */
 	PyObject *checker;
 	int flags;		/* calling convention and such */
+
+	/* pep3118 fields, pointers neeed PyMem_Free */
+	char *format;
+	int ndim;
+	Py_ssize_t *shape;
+/*	Py_ssize_t *strides;	*/ /* unused in ctypes */
+/*	Py_ssize_t *suboffsets;	*/ /* unused in ctypes */
+
 } StgDictObject;
 
 /****************************************************************
@@ -342,6 +350,7 @@ extern void *MallocClosure(void);
 extern void _AddTraceback(char *, char *, int);
 
 extern PyObject *CData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr);
+extern char *alloc_format_string(const char *prefix, const char *suffix);
 
 /* XXX better name needed! */
 extern int IsSimpleSubType(PyObject *obj);
