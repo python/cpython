@@ -739,9 +739,11 @@ set.
 
 .. cmember:: iternextfunc PyTypeObject.tp_iternext
 
-   An optional pointer to a function that returns the next item in an iterator, or
-   raises :exc:`StopIteration` when the iterator is exhausted.  Its presence
-   normally signals that the instances of this type are iterators.
+   An optional pointer to a function that returns the next item in an iterator.
+   When the iterator is exhausted, it must return *NULL*; a :exc:`StopIteration`
+   exception may or may not be set.  When another error occurs, it must return
+   *NULL* too.  Its presence signals that the instances of this type are
+   iterators.
 
    Iterator types should also define the :attr:`tp_iter` function, and that
    function should return the iterator instance itself (not a new iterator
