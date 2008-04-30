@@ -127,31 +127,31 @@ Trigonometric Functions
 >>> sin(INF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: math domain error (invalid argument)
 >>> sin(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: math domain error (invalid argument)
 >>> sin(NAN)
 nan
 >>> cos(INF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: math domain error (invalid argument)
 >>> cos(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: math domain error (invalid argument)
 >>> cos(NAN)
 nan
 >>> tan(INF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: math domain error (invalid argument)
 >>> tan(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: math domain error (invalid argument)
 >>> tan(NAN)
 nan
 
@@ -169,11 +169,11 @@ True
 >>> asin(INF), asin(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: math domain error (invalid argument)
 >>> acos(INF), acos(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: math domain error (invalid argument)
 >>> equal(atan(INF), PI/2), equal(atan(NINF), -PI/2)
 (True, True)
 

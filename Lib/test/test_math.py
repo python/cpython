@@ -741,9 +741,9 @@ class MathTests(unittest.TestCase):
             func = getattr(math, fn)
             try:
                 result = func(ar)
-            except ValueError:
-                message = ("Unexpected ValueError in " +
-                           "test %s:%s(%r)\n" % (id, fn, ar))
+            except ValueError as exc:
+                message = (("Unexpected ValueError: %s\n        " +
+                           "in test %s:%s(%r)\n") % (exc.args[0], id, fn, ar))
                 self.fail(message)
             self.ftest("%s:%s(%r)" % (id, fn, ar), result, er)
 
