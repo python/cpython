@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 3?
 Core and builtins
 -----------------
 
+- Issue #2719: backported the ``next()`` builtin from Python 3.
+
 - Issue #2681: The octal literal ``0o8`` was incorrecly acctepted. Now it
   properly raises a SyntaxError.
 

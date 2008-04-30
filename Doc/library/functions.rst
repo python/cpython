@@ -710,6 +710,15 @@ available.  They are listed here in alphabetical order.
       Added support for the optional *key* argument.
 
 
+.. function:: next(iterator[, default])
+
+   Retrieve the next item from the *iterator* by calling its :meth:`next`
+   method.  If *default* is given, it is returned if the iterator is exhausted,
+   otherwise :exc:`StopIteration` is raised.
+
+   .. versionadded:: 2.6
+
+
 .. function:: object()
 
    Return a new featureless object.  :class:`object` is a base for all new style

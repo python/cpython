@@ -1071,6 +1071,47 @@ the items of the sequence (or a list of tuples if more than one sequence).");
 
 
 static PyObject *
+builtin_next(PyObject *self, PyObject *args)
+{
+	PyObject *it, *res;
+	PyObject *def = NULL;
+
+	if (!PyArg_UnpackTuple(args, "next", 1, 2, &it, &def))
+		return NULL;
+	if (!PyIter_Check(it)) {
+		PyErr_Format(PyExc_TypeError,
+			"%.200s object is not an iterator",
+			it->ob_type->tp_name);
+		return NULL;
+	}
+	
+	res = (*it->ob_type->tp_iternext)(it);
+	if (res != NULL) {
+		return res;
+	} else if (def != NULL) {
+		if (PyErr_Occurred()) {
+			if (!PyErr_ExceptionMatches(PyExc_StopIteration))
+				return NULL;
+			PyErr_Clear();
+		}
+		Py_INCREF(def);
+		return def;
+	} else if (PyErr_Occurred()) {
+		return NULL;
+	} else {
+		PyErr_SetNone(PyExc_StopIteration);
+		return NULL;
+	}
+}
+
+PyDoc_STRVAR(next_doc,
+"next(iterator[, default])\n\
+\n\
+Return the next item from the iterator. If default is given and the iterator\n\
+is exhausted, it is returned instead of raising StopIteration.");
+
+
+static PyObject *
 builtin_setattr(PyObject *self, PyObject *args)
 {
 	PyObject *v;
@@ -2509,6 +2550,7 @@ static PyMethodDef builtin_methods[] = {
  	{"map",		builtin_map,        METH_VARARGS, map_doc},
  	{"max",		(PyCFunction)builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
  	{"min",		(PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
+	{"next", 	builtin_next,       METH_VARARGS, next_doc},
  	{"oct",		builtin_oct,        METH_O, oct_doc},
  	{"open",	(PyCFunction)builtin_open,       METH_VARARGS | METH_KEYWORDS, open_doc},
  	{"ord",		builtin_ord,        METH_O, ord_doc},
