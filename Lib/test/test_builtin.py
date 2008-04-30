@@ -1539,6 +1539,33 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(min(data, key=f),
                          sorted(data, key=f)[0])
 
+    def test_next(self):
+        it = iter(range(2))
+        self.assertEqual(next(it), 0)
+        self.assertEqual(next(it), 1)
+        self.assertRaises(StopIteration, next, it)
+        self.assertRaises(StopIteration, next, it)
+        self.assertEquals(next(it, 42), 42)
+
+        class Iter(object):
+            def __iter__(self):
+                return self
+            def next(self):
+                raise StopIteration
+
+        it = iter(Iter())
+        self.assertEquals(next(it, 42), 42)
+        self.assertRaises(StopIteration, next, it)
+
+        def gen():
+            yield 1
+            return
+
+        it = gen()
+        self.assertEquals(next(it), 1)
+        self.assertRaises(StopIteration, next, it)
+        self.assertEquals(next(it, 42), 42)
+
     def test_oct(self):
         self.assertEqual(oct(100), '0144')
         self.assertEqual(oct(100L), '0144L')
