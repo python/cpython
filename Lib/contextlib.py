@@ -1,6 +1,7 @@
 """Utilities for with-statement contexts.  See PEP 343."""
 
 import sys
+from functools import wraps
 
 __all__ = ["contextmanager", "nested", "closing"]
 
@@ -77,14 +78,9 @@ def contextmanager(func):
             <cleanup>
 
     """
+    @wraps(func)
     def helper(*args, **kwds):
         return GeneratorContextManager(func(*args, **kwds))
-    try:
-        helper.__name__ = func.__name__
-        helper.__doc__ = func.__doc__
-        helper.__dict__ = func.__dict__
-    except:
-        pass
     return helper
 
 
