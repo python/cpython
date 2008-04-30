@@ -18,8 +18,8 @@ Core and builtins
 - Patch #2617: Reserved -J and -X arguments for Jython, IronPython and other
   implementations of Python. 
 
-Extensions Modules
-------------------
+Extension Modules
+-----------------
 
 - Issue #2670:  Fix a failure in urllib2.build_opener(), when passed two
   handlers that derive the same default base class.
@@ -227,8 +227,8 @@ Core and builtins
 
 - Issue #2143: Fix embedded readline() hang on SSL socket EOF.
 
-Extensions Modules
-------------------
+Extension Modules
+-----------------
 
 - Patch #2240: Implement signal.setitimer and signal.getitimer.
 
