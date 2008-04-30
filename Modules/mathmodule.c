@@ -174,18 +174,21 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
 	PyFPE_START_PROTECT("in math_1", return 0);
 	r = (*func)(x);
 	PyFPE_END_PROTECT(r);
-	if (Py_IS_NAN(r)) {
-		if (!Py_IS_NAN(x))
-			errno = EDOM;
-		else
-			errno = 0;
+	if (Py_IS_NAN(r) && !Py_IS_NAN(x)) {
+		PyErr_SetString(PyExc_ValueError,
+				"math domain error (invalid argument)");
+		return NULL;
 	}
-	else if (Py_IS_INFINITY(r)) {
-		if (Py_IS_FINITE(x))
-			errno = can_overflow ? ERANGE : EDOM;
-		else
-			errno = 0;
+	if (Py_IS_INFINITY(r) && Py_IS_FINITE(x)) {
+			if (can_overflow)
+				PyErr_SetString(PyExc_OverflowError,
+					"math range error (overflow)");
+			else
+				PyErr_SetString(PyExc_ValueError,
+					"math domain error (singularity)");
+			return NULL;
 	}
+	/* on most machines, errno should be 0 at this point */
 	if (errno && is_error(r))
 		return NULL;
 	else
