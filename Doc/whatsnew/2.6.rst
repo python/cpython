@@ -137,7 +137,7 @@ SourceForge.  Four different trackers were examined: Atlassian's `Jira
 <http://www.atlassian.com/software/jira/>`__, 
 `Launchpad <http://www.launchpad.net>`__, 
 `Roundup <http://roundup.sourceforge.net/>`__, and 
-Trac <http://trac.edgewall.org/>`__.  
+`Trac <http://trac.edgewall.org/>`__.  
 The committee eventually settled on Jira
 and Roundup as the two candidates.  Jira is a commercial product that
 offers a no-cost hosted instance to free-software projects; Roundup 
