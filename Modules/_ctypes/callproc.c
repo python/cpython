@@ -1632,10 +1632,36 @@ pointer(PyObject *self, PyObject *arg)
 	return result;
 }
 
+static PyObject *
+buffer_info(PyObject *self, PyObject *arg)
+{
+	StgDictObject *dict = PyType_stgdict(arg);
+	PyObject *shape;
+	Py_ssize_t i;
+
+	if (dict == NULL)
+		dict = PyObject_stgdict(arg);
+	if (dict == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"not a ctypes type or object");
+		return NULL;
+	}
+	shape = PyTuple_New(dict->ndim);
+	for (i = 0; i < (int)dict->ndim; ++i)
+		PyTuple_SET_ITEM(shape, i, PyLong_FromSsize_t(dict->shape[i]));
+
+	if (PyErr_Occurred()) {
+		Py_DECREF(shape);
+		return NULL;
+	}
+	return Py_BuildValue("siN", dict->format, dict->ndim, shape);
+}
+
 PyMethodDef module_methods[] = {
 	{"POINTER", POINTER, METH_O },
 	{"pointer", pointer, METH_O },
 	{"_unpickle", unpickle, METH_VARARGS },
+	{"buffer_info", buffer_info, METH_O, "Return buffer interface information"},
 	{"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},
 #ifdef CTYPES_UNICODE
 	{"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},

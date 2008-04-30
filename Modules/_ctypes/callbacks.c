@@ -9,7 +9,8 @@
 
 /**************************************************************/
 
-static CThunkObject_dealloc(PyObject *_self)
+static void
+CThunkObject_dealloc(PyObject *_self)
 {
 	CThunkObject *self = (CThunkObject *)_self;
 	Py_XDECREF(self->converters);
