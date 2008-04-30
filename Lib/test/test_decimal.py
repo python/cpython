@@ -23,7 +23,6 @@ or Behaviour) to test each part, or without parameter to test both parts. If
 you're working through IDLE, you can import this test module and call test_main()
 with the corresponding argument.
 """
-from __future__ import with_statement
 
 import glob
 import math

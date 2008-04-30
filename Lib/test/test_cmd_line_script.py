@@ -1,5 +1,4 @@
 # Tests command line execution of scripts
-from __future__ import with_statement
 
 import unittest
 import os
