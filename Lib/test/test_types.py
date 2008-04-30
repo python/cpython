@@ -1,8 +1,9 @@
 # Python test set -- part 6, built-in types
 
-from test.test_support import run_unittest, have_unicode
+from test.test_support import run_unittest, have_unicode, run_with_locale
 import unittest
 import sys
+import locale
 
 class TypesTests(unittest.TestCase):
 
@@ -475,6 +476,15 @@ class TypesTests(unittest.TestCase):
             for value in [0L, 1L, -1L, 100L, -100L, 1234567890L, -1234567890L]:
                 self.assertEqual(value.__format__(format_spec),
                                  float(value).__format__(format_spec))
+
+    @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
+    def test_float__format__locale(self):
+        # test locale support for __format__ code 'n'
+
+        for i in range(-10, 10):
+            x = 1234567890.0 * (10.0 ** i)
+            self.assertEqual(locale.format('%g', x, grouping=True), format(x, 'n'))
+            self.assertEqual(locale.format('%.10g', x, grouping=True), format(x, '.10n'))
 
     def test_float__format__(self):
         # these should be rewritten to use both format(x, spec) and
