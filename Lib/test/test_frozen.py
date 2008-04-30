@@ -1,5 +1,4 @@
 # Test the frozen module defined in frozen.c.
-from __future__ import with_statement
 
 from test.test_support import captured_stdout, run_unittest
 import unittest

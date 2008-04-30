@@ -1,5 +1,4 @@
 # tempfile.py unit tests.
-from __future__ import with_statement
 import tempfile
 import os
 import sys
