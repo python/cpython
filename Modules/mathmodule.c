@@ -188,11 +188,11 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
 					"math domain error (singularity)");
 			return NULL;
 	}
-	/* on most machines, errno should be 0 at this point */
-	if (errno && is_error(r))
+	if (Py_IS_FINITE(r) && errno && is_error(r))
+		/* this branch unnecessary on most platforms */
 		return NULL;
-	else
-        	return (*from_double_func)(r);
+
+	return (*from_double_func)(r);
 }
 
 /*
