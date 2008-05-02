@@ -121,8 +121,8 @@
         return YES;
     } else {
         [self run];
-        [self close];
-        return NO;
+	[self performSelector:@selector(close) withObject:nil afterDelay:0.0];
+        return YES;
     }
 }
 
