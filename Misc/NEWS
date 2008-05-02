@@ -40,7 +40,9 @@ Extension Modules
 - Issue #1631171: Re-implement the 'warnings' module in C (the original Python
   code has been kept as backup). This will allow for using the 'warning's
   machinery in such places as the parser where use of pure Python code is not
-  possible.
+  possible.  Both the ``showarning()`` and ``formatwarning()`` gain an
+  optional 'line' argument which is not called by default for
+  backwards-compatibility reasons.
 
 Library
 -------
