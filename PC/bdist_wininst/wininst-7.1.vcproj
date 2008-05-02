@@ -24,7 +24,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="1"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\Include,..\..\..\zlib-1.2.1"
+				AdditionalIncludeDirectories="..\..\Include,..\..\..\zlib-1.2.3"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -41,7 +41,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\zlib-1.2.1\zlib.lib imagehlp.lib comctl32.lib"
+				AdditionalDependencies="..\..\..\zlib-1.2.3\zlib.lib imagehlp.lib comctl32.lib"
 				OutputFile="..\..\lib\distutils\command/wininst-7.1.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
