@@ -171,7 +171,7 @@ http://svn.python.org/view/tracker/importer/.
     Roundup downloads and documentation.
 
 
-New Documentation Format: ReStructuredText Using Sphinx
+New Documentation Format: reStructuredText Using Sphinx
 -----------------------------------------------------------
 
 Since the Python project's inception around 1989, the documentation
