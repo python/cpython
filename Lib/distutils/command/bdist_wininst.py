@@ -50,6 +50,10 @@ class bdist_wininst (Command):
                      "Fully qualified filename of a script to be run before "
                      "any files are installed.  This script need not be in the "
                      "distribution"),
+                    ('user-access-control=', None,
+                     "specify Vista's UAC handling - 'none'/default=no "
+                     "handling, 'auto'=use UAC if target Python installed for "
+                     "all users, 'force'=always use UAC"),
                    ]
 
     boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
@@ -68,6 +72,7 @@ class bdist_wininst (Command):
         self.skip_build = 0
         self.install_script = None
         self.pre_install_script = None
+        self.user_access_control = None
 
     # initialize_options()
 
@@ -220,6 +225,8 @@ class bdist_wininst (Command):
         lines.append("target_optimize=%d" % (not self.no_target_optimize))
         if self.target_version:
             lines.append("target_version=%s" % self.target_version)
+        if self.user_access_control:
+            lines.append("user_access_control=%s" % self.user_access_control)
 
         title = self.title or self.distribution.get_fullname()
         lines.append("title=%s" % escape(title))

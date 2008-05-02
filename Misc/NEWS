@@ -47,6 +47,8 @@ Extension Modules
 Library
 -------
 
+- Issue #2581: distutils: Vista UAC/elevation support for bdist_wininst
+
 - Issue #2635: Fix bug in 'fix_sentence_endings' textwrap.fill option,
   where an extra space was added after a word containing (but not
   ending in) '.', '!' or '?'.
