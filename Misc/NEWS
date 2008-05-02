@@ -141,6 +141,9 @@ Build
 - Issue #2544: On HP-UX systems, use 'gcc -shared' for linking when
   gcc is used as compiler.
 
+- Issue #2573: On MacOS X it is now possible to install the framework
+  with a different name using --with-framework-name=NAME. 
+
 C API
 -----
 

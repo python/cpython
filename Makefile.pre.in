@@ -418,18 +418,16 @@ libpython$(VERSION).sl: $(LIBRARY_OBJS)
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
 # directory.
-RESSRCDIR=$(srcdir)/Mac/Resources/framework
+RESSRCDIR=Mac/Resources/framework
 $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(LIBRARY) \
-		$(RESSRCDIR)/Info.plist \
-                $(RESSRCDIR)/version.plist \
-                $(RESSRCDIR)/English.lproj/InfoPlist.strings
+		$(RESSRCDIR)/Info.plist
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
 	if test "${UNIVERSALSDK}"; then \
 		$(CC) -o $(LDLIBRARY) -arch i386 -arch ppc -dynamiclib \
 			-isysroot "${UNIVERSALSDK}" \
 			-all_load $(LIBRARY) -Wl,-single_module \
-			-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/Python \
+			-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
 			-compatibility_version $(VERSION) \
 			-current_version $(VERSION); \
         else \
@@ -440,10 +438,6 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/Info.plist
-	$(INSTALL_DATA) $(RESSRCDIR)/version.plist \
-		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/version.plist
-	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
-		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj/InfoPlist.strings
 	$(LN) -fsn $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
 	$(LN) -fsn Versions/Current/$(PYTHONFRAMEWORK) $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)
 	$(LN) -fsn Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
@@ -1030,12 +1024,9 @@ frameworkinstallstructure:	$(LDLIBRARY)
 		fi; \
 	done
 	$(LN) -fsn include/python$(VERSION) $(DESTDIR)$(prefix)/Headers
-	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(DESTDIR)$(prefix)/Resources/Info.plist
-	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(DESTDIR)$(prefix)/Resources/version.plist
-	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
-		$(DESTDIR)$(prefix)/Resources/English.lproj/InfoPlist.strings
+	sed 's/%VERSION%/'"`$(RUNSHARED) ./$(BUILDPYTHON) -c 'import platform; print platform.python_version()'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(prefix)/Resources/Info.plist
 	$(LN) -fsn $(VERSION) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
-	$(LN) -fsn Versions/Current/Python $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Python
+	$(LN) -fsn Versions/Current/$(PYTHONFRAMEWORK) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/$(PYTHONFRAMEWORK)
 	$(LN) -fsn Versions/Current/Headers $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers
 	$(LN) -fsn Versions/Current/Resources $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
@@ -1044,7 +1035,7 @@ frameworkinstallstructure:	$(LDLIBRARY)
 # Install a number of symlinks to keep software that expects a normal unix
 # install (which includes python-config) happy.
 frameworkinstallmaclib:
-	ln -fs "../../../Python" "$(DESTDIR)$(prefix)/lib/python$(VERSION)/config/libpython$(VERSION).a"
+	ln -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(prefix)/lib/python$(VERSION)/config/libpython$(VERSION).a"
 	cd Mac && $(MAKE) installmacsubtree DESTDIR="$(DESTDIR)"
 
 # This installs the IDE, the Launcher and other apps into /Applications

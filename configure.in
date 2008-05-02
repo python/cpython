@@ -83,6 +83,18 @@ AC_ARG_ENABLE(universalsdk,
 ])
 AC_SUBST(UNIVERSALSDK)
 
+AC_ARG_WITH(framework-name,
+              AC_HELP_STRING(--with-framework-name=FRAMEWORK, 
+                             specify an alternate name of the framework built with --enable-framework),
+[
+    PYTHONFRAMEWORK=${withval}
+    PYTHONFRAMEWORKDIR=${withval}.framework
+    PYTHONFRAMEWORKIDENTIFIER=org.python.`echo $withval | tr '[A-Z]' '[a-z]'`
+    ],[
+    PYTHONFRAMEWORK=Python
+    PYTHONFRAMEWORKDIR=Python.framework
+    PYTHONFRAMEWORKIDENTIFIER=org.python.python
+])
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(framework,
               AC_HELP_STRING(--enable-framework@<:@=INSTALLDIR@:>@, Build (MacOSX|Darwin) framework),
@@ -109,8 +121,6 @@ AC_ARG_ENABLE(framework,
 		enable_framework=
 		;;
 	*)
-		PYTHONFRAMEWORK=Python
-		PYTHONFRAMEWORKDIR=Python.framework
 		PYTHONFRAMEWORKPREFIX=$enableval
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
@@ -124,11 +134,13 @@ AC_ARG_ENABLE(framework,
 		fi
 		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
 
-		# Add makefiles for Mac specific code to the list of output
+		# Add files for Mac specific code to the list of output
 		# files:
 		AC_CONFIG_FILES(Mac/Makefile)
 		AC_CONFIG_FILES(Mac/PythonLauncher/Makefile)
 		AC_CONFIG_FILES(Mac/IDLE/Makefile)
+		AC_CONFIG_FILES(Mac/Resources/framework/Info.plist)
+		AC_CONFIG_FILES(Mac/Resources/app/Info.plist)
 	esac
 	],[
 	PYTHONFRAMEWORK=
@@ -147,6 +159,7 @@ AC_ARG_ENABLE(framework,
 	enable_framework=
 ])
 AC_SUBST(PYTHONFRAMEWORK)
+AC_SUBST(PYTHONFRAMEWORKIDENTIFIER)
 AC_SUBST(PYTHONFRAMEWORKDIR)
 AC_SUBST(PYTHONFRAMEWORKPREFIX)
 AC_SUBST(PYTHONFRAMEWORKINSTALLDIR)
