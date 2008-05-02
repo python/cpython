@@ -1,6 +1,7 @@
 # Generated from 'AEDataModel.h'
 
 def FOUR_CHAR_CODE(x): return x
+typeApplicationBundleID = FOUR_CHAR_CODE('bund')
 typeBoolean = FOUR_CHAR_CODE('bool')
 typeChar = FOUR_CHAR_CODE('TEXT')
 typeSInt16 = FOUR_CHAR_CODE('shor')
