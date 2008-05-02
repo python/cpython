@@ -27,7 +27,7 @@ SEND_MODE = kAENoReply  # kAEWaitReply hangs when run from Terminal.app itself
 
 def run(command):
     """Run a shell command in a new Terminal.app window."""
-    termAddress = AE.AECreateDesc(typeApplSignature, TERMINAL_SIG)
+    termAddress = AE.AECreateDesc(typeApplicationBundleID, "com.apple.Terminal")
     theEvent = AE.AECreateAppleEvent(kAECoreSuite, kAEDoScript, termAddress,
                                      kAutoGenerateReturnID, kAnyTransactionID)
     commandDesc = AE.AECreateDesc(typeChar, command)
