@@ -46,10 +46,12 @@ Signals = getcontext().flags.keys()
 def init():
     global ORIGINAL_CONTEXT
     ORIGINAL_CONTEXT = getcontext().copy()
-    DefaultContext.prec = 9
-    DefaultContext.rounding = ROUND_HALF_EVEN
-    DefaultContext.traps = dict.fromkeys(Signals, 0)
-    setcontext(DefaultContext)
+    DefaultTestContext = Context(
+        prec = 9,
+        rounding = ROUND_HALF_EVEN,
+        traps = dict.fromkeys(Signals, 0)
+        )
+    setcontext(DefaultTestContext)
 
 TESTDATADIR = 'decimaltestdata'
 if __name__ == '__main__':
@@ -179,8 +181,6 @@ class DecimalTest(unittest.TestCase):
     """
     def setUp(self):
         self.context = Context()
-        for key in DefaultContext.traps.keys():
-            DefaultContext.traps[key] = 1
         self.ignore_list = ['#']
         # Basically, a # means return NaN InvalidOperation.
         # Different from a sNaN in trim
@@ -190,13 +190,6 @@ class DecimalTest(unittest.TestCase):
                       'maxexponent' : self.change_max_exponent,
                       'minexponent' : self.change_min_exponent,
                       'clamp' : self.change_clamp}
-
-    def tearDown(self):
-        """Cleaning up enviroment."""
-        # leaving context in original state
-        for key in DefaultContext.traps.keys():
-            DefaultContext.traps[key] = 0
-        return
 
     def eval_file(self, file):
         global skip_expected
@@ -959,8 +952,8 @@ def thfunc1(cls):
     test2 = d1/d3
     cls.finish1.set()
 
-    cls.assertEqual(test1, Decimal('0.333333333'))
-    cls.assertEqual(test2, Decimal('0.333333333'))
+    cls.assertEqual(test1, Decimal('0.3333333333333333333333333333'))
+    cls.assertEqual(test2, Decimal('0.3333333333333333333333333333'))
     return
 
 def thfunc2(cls):
@@ -973,7 +966,7 @@ def thfunc2(cls):
     cls.synchro.set()
     cls.finish2.set()
 
-    cls.assertEqual(test1, Decimal('0.333333333'))
+    cls.assertEqual(test1, Decimal('0.3333333333333333333333333333'))
     cls.assertEqual(test2, Decimal('0.333333333333333333'))
     return
 
