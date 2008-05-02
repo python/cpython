@@ -382,9 +382,6 @@ warn_explicit(PyObject *category, PyObject *message,
             
             res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
                                                     filename, lineno_obj,
-                                                    Py_None,
-                                                    sourceline ?
-                                                        sourceline: Py_None,
                                                     NULL);
             Py_DECREF(show_fxn);
             Py_XDECREF(res);
