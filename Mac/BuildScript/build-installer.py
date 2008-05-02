@@ -199,7 +199,7 @@ PKG_RECIPES = [
     dict(
         name="PythonApplications",
         long_name="GUI Applications",
-        source="/Applications/MacPython %(VER)s",
+        source="/Applications/Python %(VER)s",
         readme="""\
             This package installs IDLE (an interactive Python IDE),
             Python Launcher and Build Applet (create application bundles

@@ -13,14 +13,16 @@ BUILDPYTHON=$(builddir)/python$(BUILDEXE)
 DESTDIR=
 LDFLAGS=@LDFLAGS@
 FRAMEWORKUNIXTOOLSPREFIX=@FRAMEWORKUNIXTOOLSPREFIX@
+PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
+
 
 # These are normally glimpsed from the previous set
 bindir=$(prefix)/bin
-PYTHONAPPSDIR=/Applications/MacPython $(VERSION)
+PYTHONAPPSDIR=/Applications/$(PYTHONFRAMEWORK) $(VERSION)
 APPINSTALLDIR=$(prefix)/Resources/Python.app
 
 # Variables for installing the "normal" unix binaries
-INSTALLED_PYTHONAPP=$(APPINSTALLDIR)/Contents/MacOS/Python
+INSTALLED_PYTHONAPP=$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)
 
 # Items more-or-less copied from the main Makefile
 DIRMODE=755
@@ -103,7 +105,7 @@ install_versionedtools:
 
 pythonw: $(srcdir)/Tools/pythonw.c Makefile
 	$(CC) $(LDFLAGS) -o $@ $(srcdir)/Tools/pythonw.c \
-		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/Python"'
+		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"'
 
 
 install_PythonLauncher:
@@ -155,7 +157,7 @@ install_Python:
 			esac; \
 		done; \
 	done
-	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/Python"
+	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
 
 install_IDLE:
 	cd IDLE && make install

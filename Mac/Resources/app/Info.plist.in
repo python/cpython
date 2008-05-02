@@ -20,7 +20,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Python</string>
 	<key>CFBundleGetInfoString</key>
-	<string>2.5alpha0, (c) 2004 Python Software Foundation.</string>
+	<string>@VERSION@, (c) 2004 Python Software Foundation.</string>
 	<key>CFBundleHelpBookFolder</key>
 	<array>
 		<string>Documentation</string>
@@ -33,21 +33,21 @@
 	<key>CFBundleIconFile</key>
 	<string>PythonInterpreter.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.python.python</string>
+	<string>@PYTHONFRAMEWORKIDENTIFIER@.app</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLongVersionString</key>
-	<string>2.5alpha0, (c) 2004 Python Software Foundation.</string>
+	<string>@VERSION@, (c) 2004-2008 Python Software Foundation.</string>
 	<key>CFBundleName</key>
 	<string>Python</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.5alpha0</string>
+	<string>@VERSION@</string>
 	<key>CFBundleSignature</key>
 	<string>PytX</string>
 	<key>CFBundleVersion</key>
-	<string>2.5alpha0</string>
+	<string>@VERSION@</string>
 	<key>CSResourcesFileMapped</key>
 	<true/>
 	<key>LSRequiresCarbon</key>
