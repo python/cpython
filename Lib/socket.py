@@ -79,6 +79,11 @@ else:
 import os, sys, warnings
 
 try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
+try:
     from errno import EBADF
 except ImportError:
     EBADF = 9
@@ -234,6 +239,9 @@ class _fileobject(object):
             bufsize = self.default_bufsize
         self.bufsize = bufsize
         self.softspace = False
+        # _rbufsize is the suggested recv buffer size.  It is *strictly*
+        # obeyed within readline() for recv calls.  If it is larger than
+        # default_bufsize it will be used for recv calls within read().
         if bufsize == 0:
             self._rbufsize = 1
         elif bufsize == 1:
@@ -241,7 +249,11 @@ class _fileobject(object):
         else:
             self._rbufsize = bufsize
         self._wbufsize = bufsize
-        self._rbuf = "" # A string
+        # We use StringIO for the read buffer to avoid holding a list
+        # of variously sized string objects which have been known to
+        # fragment the heap due to how they are malloc()ed and often
+        # realloc()ed down much smaller than their original allocation.
+        self._rbuf = StringIO()
         self._wbuf = [] # A list of strings
         self._close = close
 
@@ -299,56 +311,86 @@ class _fileobject(object):
         return buf_len
 
     def read(self, size=-1):
-        data = self._rbuf
+        # Use max, disallow tiny reads in a loop as they are very inefficient.
+        # We never leave read() with any leftover data in our internal buffer.
+        rbufsize = max(self._rbufsize, self.default_bufsize)
+        # Our use of StringIO rather than lists of string objects returned by
+        # recv() minimizes memory usage and fragmentation that occurs when
+        # rbufsize is large compared to the typical return value of recv().
+        buf = self._rbuf
+        buf.seek(0, 2)  # seek end
         if size < 0:
             # Read until EOF
-            buffers = []
-            if data:
-                buffers.append(data)
-            self._rbuf = ""
-            if self._rbufsize <= 1:
-                recv_size = self.default_bufsize
-            else:
-                recv_size = self._rbufsize
+            self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
-                data = self._sock.recv(recv_size)
+                data = self._sock.recv(rbufsize)
                 if not data:
                     break
-                buffers.append(data)
-            return "".join(buffers)
+                buf.write(data)
+            return buf.getvalue()
         else:
             # Read until size bytes or EOF seen, whichever comes first
-            buf_len = len(data)
+            buf_len = buf.tell()
             if buf_len >= size:
-                self._rbuf = data[size:]
-                return data[:size]
-            buffers = []
-            if data:
-                buffers.append(data)
-            self._rbuf = ""
+                # Already have size bytes in our buffer?  Extract and return.
+                buf.seek(0)
+                rv = buf.read(size)
+                self._rbuf = StringIO()
+                self._rbuf.write(buf.read())
+                return rv
+
+            self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
                 left = size - buf_len
-                recv_size = min(self._rbufsize, left)
+                # Using max() here means that recv() can malloc a
+                # large amount of memory even though recv may return
+                # much less data than that.  But the returned data
+                # string is short lived in that case as we copy it
+                # into a StringIO and free it.
+                recv_size = max(rbufsize, left)
                 data = self._sock.recv(recv_size)
                 if not data:
                     break
-                buffers.append(data)
                 n = len(data)
+                if n == size and not buf_len:
+                    # Shortcut.  Avoid buffer data copies when:
+                    # - We have no data in our buffer.
+                    # AND
+                    # - Our call to recv returned exactly the
+                    #   number of bytes we were asked to read.
+                    return data
                 if n >= left:
-                    self._rbuf = data[left:]
-                    buffers[-1] = data[:left]
+                    # avoids data copy of: buf.write(data[:left])
+                    buf.write(buffer(data, 0, left))
+                    # avoids data copy of: self._rbuf.write(data[left:])
+                    self._rbuf.write(buffer(data, left))
+                    del data  # explicit free
                     break
+                buf.write(data)
                 buf_len += n
-            return "".join(buffers)
+                del data  # explicit free
+                #assert buf_len == buf.tell()
+            return buf.getvalue()
 
     def readline(self, size=-1):
-        data = self._rbuf
+        buf = self._rbuf
+        if self._rbufsize > 1:
+            # if we're buffering, check if we already have it in our buffer
+            buf.seek(0)
+            bline = buf.readline(size)
+            if bline.endswith('\n') or len(bline) == size:
+                self._rbuf = StringIO()
+                self._rbuf.write(buf.read())
+                return bline
+            del bline
+        buf.seek(0, 2)  # seek end
         if size < 0:
             # Read until \n or EOF, whichever comes first
             if self._rbufsize <= 1:
                 # Speed up unbuffered case
-                assert data == ""
+                assert buf.tell() == 0
                 buffers = []
+                data = None
                 recv = self._sock.recv
                 while data != "\n":
                     data = recv(1)
@@ -356,61 +398,64 @@ class _fileobject(object):
                         break
                     buffers.append(data)
                 return "".join(buffers)
-            nl = data.find('\n')
-            if nl >= 0:
-                nl += 1
-                self._rbuf = data[nl:]
-                return data[:nl]
-            buffers = []
-            if data:
-                buffers.append(data)
-            self._rbuf = ""
+
+            buf = self._rbuf
+            buf.seek(0, 2)  # seek end
+            self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
                 data = self._sock.recv(self._rbufsize)
                 if not data:
                     break
-                buffers.append(data)
                 nl = data.find('\n')
                 if nl >= 0:
                     nl += 1
-                    self._rbuf = data[nl:]
-                    buffers[-1] = data[:nl]
+                    buf.write(buffer(data, 0, nl))
+                    self._rbuf.write(buffer(data, nl))
+                    del data
                     break
-            return "".join(buffers)
+                buf.write(data)
+            return buf.getvalue()
         else:
             # Read until size bytes or \n or EOF seen, whichever comes first
-            nl = data.find('\n', 0, size)
-            if nl >= 0:
-                nl += 1
-                self._rbuf = data[nl:]
-                return data[:nl]
-            buf_len = len(data)
+            buf_len = buf.tell()
             if buf_len >= size:
-                self._rbuf = data[size:]
-                return data[:size]
-            buffers = []
-            if data:
-                buffers.append(data)
-            self._rbuf = ""
+                buf.seek(0)
+                rv = buf.read(size)
+                self._rbuf = StringIO()
+                self._rbuf.write(buf.read())
+                return rv
+            self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
                 data = self._sock.recv(self._rbufsize)
                 if not data:
                     break
-                buffers.append(data)
                 left = size - buf_len
+                # did we just receive a newline?
                 nl = data.find('\n', 0, left)
                 if nl >= 0:
                     nl += 1
-                    self._rbuf = data[nl:]
-                    buffers[-1] = data[:nl]
-                    break
+                    # save the excess data to _rbuf
+                    self._rbuf.write(buffer(data, nl))
+                    if buf_len:
+                        buf.write(buffer(data, 0, nl))
+                        break
+                    else:
+                        # Shortcut.  Avoid data copy through buf when returning
+                        # a substring of our first recv().
+                        return data[:nl]
                 n = len(data)
+                if n == size and not buf_len:
+                    # Shortcut.  Avoid data copy through buf when
+                    # returning exactly all of our first recv().
+                    return data
                 if n >= left:
-                    self._rbuf = data[left:]
-                    buffers[-1] = data[:left]
+                    buf.write(buffer(data, 0, left))
+                    self._rbuf.write(buffer(data, left))
                     break
+                buf.write(data)
                 buf_len += n
-            return "".join(buffers)
+                #assert buf_len == buf.tell()
+            return buf.getvalue()
 
     def readlines(self, sizehint=0):
         total = 0
