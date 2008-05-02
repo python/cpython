@@ -167,6 +167,7 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
                    int can_overflow)
 {
 	double x, r;
+	char err_message[150];
 	x = PyFloat_AsDouble(arg);
 	if (x == -1.0 && PyErr_Occurred())
 		return NULL;
@@ -183,9 +184,16 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
 			if (can_overflow)
 				PyErr_SetString(PyExc_OverflowError,
 					"math range error (overflow)");
-			else
-				PyErr_SetString(PyExc_ValueError,
-					"math domain error (singularity)");
+			else {
+				/* temporary code to include the inputs
+				   and outputs to func in the error
+				   message */
+				sprintf(err_message,
+					"math domain error (singularity) "
+					"%.17g -> %.17g",
+					x, r);
+				PyErr_SetString(PyExc_ValueError, err_message);
+			}
 			return NULL;
 	}
 	if (Py_IS_FINITE(r) && errno && is_error(r))
