@@ -61,16 +61,14 @@ static int
 zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
 {
 	char *path, *p, *prefix, buf[MAXPATHLEN+2];
-	size_t len;
+	Py_ssize_t len;
 
 	if (!_PyArg_NoKeywords("zipimporter()", kwds))
 		return -1;
 
-	if (!PyArg_ParseTuple(args, "s:zipimporter",
-			      &path))
+	if (!PyArg_ParseTuple(args, "s#:zipimporter", &path, &len))
 		return -1;
 
-	len = strlen(path);
 	if (len == 0) {
 		PyErr_SetString(ZipImportError, "archive path is empty");
 		return -1;
@@ -329,7 +327,7 @@ zipimporter_load_module(PyObject *obj, PyObject *args)
 		fullpath = PyUnicode_FromFormat("%s%c%s%s",
 					PyUnicode_AsString(self->archive),
 					SEP,
-					*prefix ? prefix : "",
+					prefix ? prefix : "",
 					subname);
 		if (fullpath == NULL)
 			goto error;
@@ -388,6 +386,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 #endif
 	PyObject *toc_entry;
 	Py_ssize_t len;
+	char *archive_str;
 
 	if (!PyArg_ParseTuple(args, "s:zipimporter.get_data", &path))
 		return NULL;
@@ -404,9 +403,9 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 	}
 	path = buf;
 #endif
-	len = PyUnicode_GET_SIZE(self->archive);
+	archive_str = PyUnicode_AsStringAndSize(self->archive, &len);
 	if ((size_t)len < strlen(path) &&
-	    strncmp(path, PyUnicode_AsString(self->archive), len) == 0 &&
+	    strncmp(path, archive_str, len) == 0 &&
 	    path[len] == SEP) {
 		path = path + len + 1;
 	}
@@ -416,7 +415,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 		PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
 		return NULL;
 	}
-	return get_data(PyUnicode_AsString(self->archive), toc_entry);
+	return get_data(archive_str, toc_entry);
 }
 
 static PyObject *

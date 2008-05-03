@@ -1217,10 +1217,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	assert(object && format && timetuple);
 	assert(PyUnicode_Check(format));
 	/* Convert the input format to a C string and size */
-	pin = PyUnicode_AsString(format);
+	pin = PyUnicode_AsStringAndSize(format, &flen);
 	if (!pin)
 		return NULL;
-	flen = PyUnicode_GetSize(format);
 
 	/* Give up if the year is before 1900.
 	 * Python strftime() plays games with the year, and different
