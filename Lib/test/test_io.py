@@ -560,9 +560,9 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
 
     def process_word(self):
         output = ''
-        if self.buffer[0] == 'i':
+        if self.buffer[0] == ord('i'):
             self.i = min(99, int(self.buffer[1:] or 0)) # set input length
-        elif self.buffer[0] == 'o':
+        elif self.buffer[0] == ord('o'):
             self.o = min(99, int(self.buffer[1:] or 0)) # set output length
         else:
             output = self.buffer.decode('ascii')
@@ -1160,10 +1160,10 @@ class MiscIOTest(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(IOTest, BytesIOTest, StringIOTest,
-                              BufferedReaderTest,
-                              BufferedWriterTest, BufferedRWPairTest,
-                              BufferedRandomTest, TextIOWrapperTest,
-                              MiscIOTest)
+                              BufferedReaderTest, BufferedWriterTest,
+                              BufferedRWPairTest, BufferedRandomTest,
+                              StatefulIncrementalDecoderTest,
+                              TextIOWrapperTest, MiscIOTest)
 
 if __name__ == "__main__":
     unittest.main()

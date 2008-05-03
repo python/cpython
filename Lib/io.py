@@ -1528,8 +1528,7 @@ class TextIOWrapper(TextIOBase):
             # nearest "safe start point" before the current location
             # (a point where the decoder has nothing buffered, so seek()
             # can safely start from there and advance to this location).
-            next_byte = bytearray(1)
-            for next_byte[0] in next_input:
+            for next_byte in next_input:
                 bytes_fed += 1
                 chars_decoded += len(decoder.decode(next_byte))
                 dec_buffer, dec_flags = decoder.getstate()
