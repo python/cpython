@@ -717,11 +717,10 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                     Py_DECREF(o);
                 }
             }
-            temp_str = PyUnicode_AsString(temp);
-            len = PyUnicode_GET_SIZE(temp) + 1;
-            strn = (char *)PyObject_MALLOC(len);
+            temp_str = PyUnicode_AsStringAndSize(temp, &len);
+            strn = (char *)PyObject_MALLOC(len + 1);
             if (strn != NULL)
-                (void) memcpy(strn, temp_str, len);
+                (void) memcpy(strn, temp_str, len + 1);
             Py_DECREF(temp);
         }
         else if (!ISNONTERMINAL(type)) {
@@ -807,11 +806,10 @@ build_node_tree(PyObject *tuple)
             if (res && encoding) {
                 Py_ssize_t len;
                 const char *temp;
-                temp = PyUnicode_AsString(encoding);
-                len = PyUnicode_GET_SIZE(encoding) + 1;
-                res->n_str = (char *)PyObject_MALLOC(len);
+                temp = PyUnicode_AsStringAndSize(encoding, &len);
+                res->n_str = (char *)PyObject_MALLOC(len + 1);
                 if (res->n_str != NULL && temp != NULL)
-                    (void) memcpy(res->n_str, temp, len);
+                    (void) memcpy(res->n_str, temp, len + 1);
                 Py_DECREF(encoding);
                 Py_DECREF(tuple);
             }

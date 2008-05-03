@@ -239,15 +239,22 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		*(PyObject **)addr = v;
 		Py_XDECREF(oldv);
 		break;
-	case T_CHAR:
-		if (PyUnicode_Check(v) && PyUnicode_GetSize(v) == 1) {
-			*(char*)addr = PyUnicode_AsString(v)[0];
-		}
-		else {
+	case T_CHAR: {
+		char *string;
+		Py_ssize_t len;
+
+		if (!PyUnicode_Check(v)) {
 			PyErr_BadArgument();
 			return -1;
 		}
+		string = PyUnicode_AsStringAndSize(v, &len);
+		if (len != 1) {
+			PyErr_BadArgument();
+			return -1;
+		}
+		*(char*)addr = string[0];
 		break;
+		}
 #ifdef HAVE_LONG_LONG
 	case T_LONGLONG:{
 		PY_LONG_LONG value;

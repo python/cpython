@@ -2131,13 +2131,15 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 
 	if ((pkgname != NULL) && (pkgname != Py_None)) {
 		/* __package__ is set, so use it */
+		char *pkgname_str;
 		Py_ssize_t len;
+
 		if (!PyUnicode_Check(pkgname)) {
 			PyErr_SetString(PyExc_ValueError,
 					"__package__ set to non-string");
 			return NULL;
 		}
-		len = PyUnicode_GET_SIZE(pkgname);
+		pkgname_str = PyUnicode_AsStringAndSize(pkgname, &len);
 		if (len == 0) {
 			if (level > 0) {
 				PyErr_SetString(PyExc_ValueError,
@@ -2151,7 +2153,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 					"Package name too long");
 			return NULL;
 		}
-		strcpy(buf, PyUnicode_AsString(pkgname));
+		strcpy(buf, pkgname_str);
 	} else {
 		/* __package__ not set, so figure it out and set it */
 		modname = PyDict_GetItem(globals, namestr);
@@ -2161,14 +2163,17 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 		modpath = PyDict_GetItem(globals, pathstr);
 		if (modpath != NULL) {
 			/* __path__ is set, so modname is already the package name */
-			Py_ssize_t len = PyUnicode_GET_SIZE(modname);
+			char *modname_str;
+			Py_ssize_t len;
 			int error;
+
+			modname_str = PyUnicode_AsStringAndSize(modname, &len);
 			if (len > MAXPATHLEN) {
 				PyErr_SetString(PyExc_ValueError,
 						"Module name too long");
 				return NULL;
 			}
-			strcpy(buf, PyUnicode_AsString(modname));
+			strcpy(buf, modname_str);
 			error = PyDict_SetItem(globals, pkgstr, modname);
 			if (error) {
 				PyErr_SetString(PyExc_ValueError,

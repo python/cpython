@@ -1255,7 +1255,7 @@ check_duplicates(PyObject *list)
 			if (PyList_GET_ITEM(list, j) == o) {
 				o = class_name(o);
 				PyErr_Format(PyExc_TypeError,
-					     "duplicate base class %s",
+					     "duplicate base class %.400s",
 					     o ? PyUnicode_AsString(o) : "?");
 				Py_XDECREF(o);
 				return -1;
@@ -2133,20 +2133,27 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	{
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
 		if (doc != NULL && PyUnicode_Check(doc)) {
-			size_t n;
+			Py_ssize_t len;
+			char *doc_str;
 			char *tp_doc;
-			const char *str = PyUnicode_AsString(doc);
-			if (str == NULL) {
+
+			doc_str = PyUnicode_AsStringAndSize(doc, &len);
+			if (doc_str == NULL) {
 				Py_DECREF(type);
 				return NULL;
 			}
-			n = strlen(str);
-			tp_doc = (char *)PyObject_MALLOC(n+1);
+			if ((Py_ssize_t)strlen(doc_str) != len) {
+				PyErr_SetString(PyExc_TypeError,
+						"__doc__ contains null-bytes");
+				Py_DECREF(type);
+				return NULL;
+			}
+			tp_doc = (char *)PyObject_MALLOC(len + 1);
 			if (tp_doc == NULL) {
 				Py_DECREF(type);
 				return NULL;
 			}
-			memcpy(tp_doc, str, n+1);
+			memcpy(tp_doc, doc_str, len + 1);
 			type->tp_doc = tp_doc;
 		}
 	}
