@@ -9062,7 +9062,7 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (type != &PyUnicode_Type)
 		return unicode_subtype_new(type, args, kwds);
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:unicode",
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:str",
 					  kwlist, &x, &encoding, &errors))
 	    return NULL;
 	if (x == NULL)
