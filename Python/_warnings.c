@@ -462,9 +462,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
     if (*filename != NULL) {
-	Py_ssize_t len = PyString_Size(*filename);
+	    Py_ssize_t len = PyString_Size(*filename);
         const char *file_str = PyString_AsString(*filename);
-	if (file_str == NULL || (len < 0 && PyErr_Occurred()))
+	    if (file_str == NULL || (len < 0 && PyErr_Occurred()))
             goto handle_error;
 
         /* if filename.lower().endswith((".pyc", ".pyo")): */
@@ -473,12 +473,13 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             tolower(file_str[len-3]) == 'p' &&
             tolower(file_str[len-2]) == 'y' &&
             (tolower(file_str[len-1]) == 'c' ||
-             tolower(file_str[len-1]) == 'o')) {
+                tolower(file_str[len-1]) == 'o'))
+        {
             *filename = PyString_FromStringAndSize(file_str, len-1);
-	    if (*filename == NULL)
-		    goto handle_error;
-	}
-	else
+	        if (*filename == NULL)
+		        goto handle_error;
+	    }
+	    else
             Py_INCREF(*filename);
     }
     else {
@@ -492,8 +493,8 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             else {
                 /* embedded interpreters don't have sys.argv, see bug #839151 */
                 *filename = PyString_FromString("__main__");
-	        if (*filename == NULL)
-	            goto handle_error;
+	            if (*filename == NULL)
+	                goto handle_error;
             }
         }
         if (*filename == NULL) {
