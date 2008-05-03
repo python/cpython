@@ -487,8 +487,21 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         if (module_str && strcmp(module_str, "__main__") == 0) {
             PyObject *argv = PySys_GetObject("argv");
             if (argv != NULL && PyList_Size(argv) > 0) {
+                int is_true;
                 *filename = PyList_GetItem(argv, 0);
                 Py_INCREF(*filename);
+                /* If sys.argv[0] is false, then use '__main__'. */
+                is_true = PyObject_IsTrue(*filename);
+                if (is_true < 0) {
+                    Py_DECREF(*filename);
+                    goto handle_error;
+                }
+                else if (!is_true) {
+                    Py_DECREF(*filename);
+                    *filename = PyString_FromString("__main__");
+                    if (*filename == NULL)
+                        goto handle_error;
+                }
             }
             else {
                 /* embedded interpreters don't have sys.argv, see bug #839151 */

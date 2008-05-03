@@ -229,6 +229,77 @@ class WarnTests(unittest.TestCase):
                 warning_tests.inner("spam7", stacklevel=9999)
                 self.assertEqual(os.path.basename(w.filename), "sys")
 
+    def test_missing_filename_not_main(self):
+        # If __file__ is not specified and __main__ is not the module name,
+        # then __file__ should be set to the module name.
+        filename = warning_tests.__file__
+        try:
+            del warning_tests.__file__
+            with warnings_state(self.module):
+                with test_support.catch_warning(self.module) as w:
+                    warning_tests.inner("spam8", stacklevel=1)
+                    self.assertEqual(w.filename, warning_tests.__name__)
+        finally:
+            warning_tests.__file__ = filename
+
+    def test_missing_filename_main_with_argv(self):
+        # If __file__ is not specified and the caller is __main__ and sys.argv
+        # exists, then use sys.argv[0] as the file.
+        if not hasattr(sys, 'argv'):
+            return
+        filename = warning_tests.__file__
+        module_name = warning_tests.__name__
+        try:
+            del warning_tests.__file__
+            warning_tests.__name__ = '__main__'
+            with warnings_state(self.module):
+                with test_support.catch_warning(self.module) as w:
+                    warning_tests.inner('spam9', stacklevel=1)
+                    self.assertEqual(w.filename, sys.argv[0])
+        finally:
+            warning_tests.__file__ = filename
+            warning_tests.__name__ = module_name
+
+    def test_missing_filename_main_without_argv(self):
+        # If __file__ is not specified, the caller is __main__, and sys.argv
+        # is not set, then '__main__' is the file name.
+        filename = warning_tests.__file__
+        module_name = warning_tests.__name__
+        argv = sys.argv
+        try:
+            del warning_tests.__file__
+            warning_tests.__name__ = '__main__'
+            del sys.argv
+            with warnings_state(self.module):
+                with test_support.catch_warning(self.module) as w:
+                    warning_tests.inner('spam10', stacklevel=1)
+                    self.assertEqual(w.filename, '__main__')
+        finally:
+            warning_tests.__file__ = filename
+            warning_tests.__name__ = module_name
+            sys.argv = argv
+
+    def test_missing_filename_main_with_argv_empty_string(self):
+        # If __file__ is not specified, the caller is __main__, and sys.argv[0]
+        # is the empty string, then '__main__ is the file name.
+        # Tests issue 2743.
+        file_name = warning_tests.__file__
+        module_name = warning_tests.__name__
+        argv = sys.argv
+        try:
+            del warning_tests.__file__
+            warning_tests.__name__ = '__main__'
+            sys.argv = ['']
+            with warnings_state(self.module):
+                with test_support.catch_warning(self.module) as w:
+                    warning_tests.inner('spam11', stacklevel=1)
+                    self.assertEqual(w.filename, '__main__')
+        finally:
+            warning_tests.__file__ = file_name
+            warning_tests.__name__ = module_name
+            sys.argv = argv
+
+
 
 class CWarnTests(BaseTest, WarnTests):
     module = c_warnings
