@@ -39,7 +39,7 @@ __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
 
 # Shortcut for use in isinstance testing
-bytes_types = (bytes, bytearray, memoryview)
+bytes_types = (bytes, bytearray)
 
 # These are purely informational; no code uses these.
 format_version = "3.0"                  # File format version we write
