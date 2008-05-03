@@ -1649,9 +1649,6 @@ class Decimal(_numbers.Real):
         else:
             return -1
 
-    def __round__(self):
-        return self._round_down(0)
-
     def _round_up(self, prec):
         """Rounds away from 0."""
         return -self._round_down(prec)
@@ -1687,18 +1684,12 @@ class Decimal(_numbers.Real):
         else:
             return -self._round_down(prec)
 
-    def __ceil__(self):
-        return self._round_ceiling(0)
-
     def _round_floor(self, prec):
         """Rounds down (not towards 0 if negative)"""
         if not self._sign:
             return self._round_down(prec)
         else:
             return -self._round_down(prec)
-
-    def __floor__(self):
-        return self._round_floor(0)
 
     def _round_05up(self, prec):
         """Round down unless digit prec-1 is 0 or 5."""
