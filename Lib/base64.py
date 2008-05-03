@@ -53,12 +53,13 @@ def b64encode(s, altchars=None):
     The encoded byte string is returned.
     """
     if not isinstance(s, bytes_types):
-        s = bytes(s, "ascii")
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     # Strip off the trailing newline
     encoded = binascii.b2a_base64(s)[:-1]
     if altchars is not None:
         if not isinstance(altchars, bytes_types):
-            altchars = bytes(altchars, "ascii")
+            altchars = TypeError("expected bytes, not %s"
+                                 % altchars.__class__.__name__)
         assert len(altchars) == 2, repr(altchars)
         return _translate(encoded, {'+': altchars[0:1], '/': altchars[1:2]})
     return encoded
@@ -76,10 +77,11 @@ def b64decode(s, altchars=None):
     present in the string.
     """
     if not isinstance(s, bytes_types):
-        s = bytes(s)
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     if altchars is not None:
         if not isinstance(altchars, bytes_types):
-            altchars = bytes(altchars, "ascii")
+            raise TypeError("expected bytes, not %s"
+                            % altchars.__class__.__name__)
         assert len(altchars) == 2, repr(altchars)
         s = _translate(s, {chr(altchars[0]): b'+', chr(altchars[1]): b'/'})
     return binascii.a2b_base64(s)
@@ -148,7 +150,7 @@ def b32encode(s):
     s is the byte string to encode.  The encoded byte string is returned.
     """
     if not isinstance(s, bytes_types):
-        s = bytes(s)
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     quanta, leftover = divmod(len(s), 5)
     # Pad the last quantum with zero bits if necessary
     if leftover:
@@ -205,16 +207,16 @@ def b32decode(s, casefold=False, map01=None):
     characters present in the input.
     """
     if not isinstance(s, bytes_types):
-        s = bytes(s)
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     quanta, leftover = divmod(len(s), 8)
     if leftover:
         raise binascii.Error('Incorrect padding')
     # Handle section 2.4 zero and one mapping.  The flag map01 will be either
     # False, or the character to map the digit 1 (one) to.  It should be
     # either L (el) or I (eye).
-    if map01:
+    if map01 is not None:
         if not isinstance(map01, bytes_types):
-            map01 = bytes(map01)
+            raise TypeError("expected bytes, not %s" % map01.__class__.__name__)
         assert len(map01) == 1, repr(map01)
         s = _translate(s, {b'0': b'O', b'1': map01})
     if casefold:
@@ -269,6 +271,8 @@ def b16encode(s):
 
     s is the byte string to encode.  The encoded byte string is returned.
     """
+    if not isinstance(s, bytes_types):
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     return binascii.hexlify(s).upper()
 
 
@@ -284,7 +288,7 @@ def b16decode(s, casefold=False):
     present in the string.
     """
     if not isinstance(s, bytes_types):
-        s = bytes(s)
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     if casefold:
         s = s.upper()
     if re.search('[^0-9A-F]', s):

@@ -66,9 +66,10 @@ def header_encode(header_bytes, charset='iso-8859-1'):
     charset names the character set to use to encode the header.  It defaults
     to iso-8859-1.  Base64 encoding is defined in RFC 2045.
     """
-    # Return empty headers unchanged
     if not header_bytes:
-        return str(header_bytes)
+        return ""
+    if isinstance(header_bytes, str):
+        header_bytes = header_bytes.encode(charset)
     encoded = b64encode(header_bytes).decode("ascii")
     return '=?%s?b?%s?=' % (charset, encoded)
 
