@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>Python Docs</ShortName>
+  <LongName>Python Documentation</LongName>
+  <Description>Search the Python documentation</Description>
+  <InputEncoding>utf-8</InputEncoding>
+  <Url type="text/html" method="get" template="{{ pathto('search') }}?">
+    <Param name="q" value="{searchTerms}" />
+    <Param name="check_keywords" value="yes" />
+    <Param name="area" value="default" />
+  </Url>
+  <Image height="16" width="16" type="image/x-icon">http://www.python.org/images/favicon16x16.ico</Image>
+</OpenSearchDescription>
+
