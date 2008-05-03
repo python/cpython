@@ -201,7 +201,7 @@ tuplerepr(PyTupleObject *v)
 	   possible within a type. */
 	i = Py_ReprEnter((PyObject *)v);
 	if (i != 0) {
-		return i > 0 ? PyString_FromString("(...)") : NULL;
+		return i > 0 ? PyUnicode_FromString("(...)") : NULL;
 	}
 
 	pieces = PyTuple_New(n);
