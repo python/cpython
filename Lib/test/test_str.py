@@ -17,6 +17,20 @@ class StrTest(
     def fixtype(self, obj):
         return obj
 
+    def test_basic_creation(self):
+        self.assertEqual(str(''), '')
+        self.assertEqual(str(0), '0')
+        self.assertEqual(str(0L), '0')
+        self.assertEqual(str(()), '()')
+        self.assertEqual(str([]), '[]')
+        self.assertEqual(str({}), '{}')
+        a = []
+        a.append(a)
+        self.assertEqual(str(a), '[[...]]')
+        a = {}
+        a[0] = a
+        self.assertEqual(str(a), '{0: {...}}')
+
     def test_formatting(self):
         string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
         self.assertRaises(OverflowError, '%c'.__mod__, 0x1234)
