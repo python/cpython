@@ -100,7 +100,7 @@ decimal module are: :const:`Clamped`, :const:`InvalidOperation`,
 :const:`Overflow`, and :const:`Underflow`.
 
 For each signal there is a flag and a trap enabler.  When a signal is
-encountered, its flag is incremented from zero and, then, if the trap enabler is
+encountered, its flag is set to one, then, if the trap enabler is
 set to one, an exception is raised.  Flags are sticky, so the user needs to
 reset them before monitoring a calculation.
 
@@ -1121,7 +1121,7 @@ Signals
 Signals represent conditions that arise during computation. Each corresponds to
 one context flag and one context trap enabler.
 
-The context flag is incremented whenever the condition is encountered. After the
+The context flag is set whenever the condition is encountered. After the
 computation, flags may be checked for informational purposes (for instance, to
 determine whether a computation was exact). After checking the flags, be sure to
 clear all flags before starting the next computation.
