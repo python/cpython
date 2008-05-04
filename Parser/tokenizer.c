@@ -1371,7 +1371,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
                         else if (c == 'o' || c == 'O') {
 				/* Octal */
 				c = tok_nextc(tok);
-				if (c < '0' || c > '8') {
+				if (c < '0' || c >= '8') {
 					tok->done = E_TOKEN;
 					tok_backup(tok, c);
 					return ERRORTOKEN;

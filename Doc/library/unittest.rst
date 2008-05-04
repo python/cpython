@@ -260,7 +260,6 @@ Such a working environment for the testing code is called a :dfn:`fixture`.
 Often, many small test cases will use the same fixture.  In this case, we would
 end up subclassing :class:`SimpleWidgetTestCase` into many small one-method
 classes such as :class:`DefaultWidgetSizeTestCase`.  This is time-consuming and
-
 discouraging, so in the same vein as JUnit, :mod:`unittest` provides a simpler
 mechanism::
 

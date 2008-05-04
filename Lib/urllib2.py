@@ -443,14 +443,14 @@ def build_opener(*handlers):
                        FTPHandler, FileHandler, HTTPErrorProcessor]
     if hasattr(httplib, 'HTTPS'):
         default_classes.append(HTTPSHandler)
-    skip = []
+    skip = set()
     for klass in default_classes:
         for check in handlers:
             if isclass(check):
                 if issubclass(check, klass):
-                    skip.append(klass)
+                    skip.add(klass)
             elif isinstance(check, klass):
-                skip.append(klass)
+                skip.add(klass)
     for klass in skip:
         default_classes.remove(klass)
 

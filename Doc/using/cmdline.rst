@@ -28,20 +28,25 @@ The most common use case is, of course, a simple invocation of a script::
     python myscript.py
 
 
+.. _using-on-interface-options:
+
 Interface options
 ~~~~~~~~~~~~~~~~~
 
-The interpreter interface resembles that of the UNIX shell:
+The interpreter interface resembles that of the UNIX shell, but provides some
+additional methods of invocation:
 
 * When called with standard input connected to a tty device, it prompts for
   commands and executes them until an EOF (an end-of-file character, you can
   produce that with *Ctrl-D* on UNIX or *Ctrl-Z, Enter* on Windows) is read.
 * When called with a file name argument or with a file as standard input, it
   reads and executes a script from that file.
+* When called with a directory name argument, it reads and executes an
+  appropriately named script from that directory.
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
   newlines. Leading whitespace is significant in Python statements!
-* When called with ``-m module-name``, the given module is searched on the
+* When called with ``-m module-name``, the given module is located on the
   Python module path and executed as a script.
 
 In non-interactive mode, the entire input is parsed before it is executed.
@@ -58,25 +63,31 @@ source.
    normal module code.
    
    If this option is given, the first element of :data:`sys.argv` will be
-   ``"-c"``.
+   ``"-c"`` and the current directory will be added to the start of
+   :data:`sys.path` (allowing modules in that directory to be imported as top
+   level modules).
 
 
 .. cmdoption:: -m <module-name>
 
-   Search :data:`sys.path` for the named module and run the corresponding module
-   file as if it were executed with ``python modulefile.py`` as a script.
+   Search :data:`sys.path` for the named module and execute its contents as
+   the :mod:`__main__` module.
    
    Since the argument is a *module* name, you must not give a file extension
-   (``.py``).  However, the ``module-name`` does not have to be a valid Python
-   identifer (e.g. you can use a file name including a hyphen).
+   (``.py``).  The ``module-name`` should be a valid Python module name, but
+   the implementation may not always enforce this (e.g. it may allow you to
+   use a name that includes a hyphen).
 
    .. note::
 
       This option cannot be used with builtin modules and extension modules
-      written in C, since they do not have Python module files.
+      written in C, since they do not have Python module files. However, it
+      can still be used for precompiled modules, even if the original source
+      file is not available.
    
    If this option is given, the first element of :data:`sys.argv` will be the
-   full path to the module file.
+   full path to the module file. As with the :option:`-c` option, the current
+   directory will be added to the start of :data:`sys.path`.
    
    Many standard library modules contain code that is invoked on their execution
    as a script.  An example is the :mod:`timeit` module::
@@ -91,28 +102,44 @@ source.
       :pep:`338` -- Executing modules as scripts
 
 
-.. describe:: <script>
-
-   Execute the Python code contained in *script*, which must be an (absolute or
-   relative) file name.
-
-   If this option is given, the first element of :data:`sys.argv` will be the
-   script file name as given on the command line.
-
-
 .. describe:: -
 
    Read commands from standard input (:data:`sys.stdin`).  If standard input is
    a terminal, :option:`-i` is implied.
 
    If this option is given, the first element of :data:`sys.argv` will be
-   ``"-"``.
+   ``"-"`` and the current directory will be added to the start of
+   :data:`sys.path`.
+
+
+.. describe:: <script>
+
+   Execute the Python code contained in *script*, which must be a filesystem
+   path (absolute or relative) referring to either a Python file, a directory
+   containing a ``__main__.py`` file, or a zipfile containing a
+   ``__main__.py`` file.
+
+   If this option is given, the first element of :data:`sys.argv` will be the
+   script name as given on the command line.
+
+   If the script name refers directly to a Python file, the directory
+   containing that file is added to the start of :data:`sys.path`, and the
+   file is executed as the :mod:`__main__` module.
+
+   If the script name refers to a directory or zipfile, the script name is
+   added to the start of :data:`sys.path` and the ``__main__.py`` file in
+   that location is executed as the :mod:`__main__` module.
+
+   .. versionchanged:: 2.5
+      Directories and zipfiles containing a ``__main__.py`` file at the top
+      level are now considered valid Python scripts.
+
+If no interface option is given, :option:`-i` is implied, ``sys.argv[0]`` is
+an empty string (``""``) and the current directory will be added to the
+start of :data:`sys.path`.
 
    .. seealso:: 
       :ref:`tut-invoking`
-
-
-If no script name is given, ``sys.argv[0]`` is an empty string (``""``).
 
 
 Generic options
@@ -276,6 +303,7 @@ Miscellaneous options
    thus equivalent to an omitted line number.
 
    .. seealso::
+      :mod:`warnings` -- the warnings module
 
       :pep:`230` -- Warning framework
 
@@ -313,14 +341,19 @@ These environment variables influence Python's behavior.
    the shell's :envvar:`PATH`: one or more directory pathnames separated by
    :data:`os.pathsep` (e.g. colons on Unix or semicolons on Windows).
    Non-existent directories are silently ignored.
+
+   In addition to normal directories, individual :envvar:`PYTHONPATH` entries
+   may refer to zipfiles containing pure Python modules (in either source or
+   compiled form). Extension modules cannot be imported from zipfiles.
    
    The default search path is installation dependent, but generally begins with
    :file:`{prefix}/lib/python{version}`` (see :envvar:`PYTHONHOME` above).  It
    is *always* appended to :envvar:`PYTHONPATH`.
    
-   If a script argument is given, the directory containing the script is
-   inserted in the path in front of :envvar:`PYTHONPATH`.  The search path can
-   be manipulated from within a Python program as the variable :data:`sys.path`.
+   An additional directory will be inserted in the search path in front of
+   :envvar:`PYTHONPATH` as described above under
+   :ref:`using-on-interface-options`. The search path can be manipulated from
+   within a Python program as the variable :data:`sys.path`.
 
 
 .. envvar:: PYTHONSTARTUP
@@ -406,7 +439,7 @@ if Python was configured with the :option:`--with-pydebug` build option.
 
 .. envvar:: PYTHONTHREADDEBUG
 
-   If set, Python will print debug threading debug info.
+   If set, Python will print threading debug info.
 
    .. versionchanged:: 2.6
       Previously, this variable was called ``THREADDEBUG``.

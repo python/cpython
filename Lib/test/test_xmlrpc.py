@@ -50,7 +50,7 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertEquals(newdt, xmlrpclib.DateTime('20050210T11:41:23'))
 
     def test_datetime_before_1900(self):
-        # same as before but with an date before 1900
+        # same as before but with a date before 1900
         dt = datetime.datetime(1,  2, 10, 11, 41, 23)
         s = xmlrpclib.dumps((dt,))
         (newdt,), m = xmlrpclib.loads(s, use_datetime=1)

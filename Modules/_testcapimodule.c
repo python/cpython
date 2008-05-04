@@ -900,6 +900,24 @@ profile_int(PyObject *self, PyObject* args)
 }
 #endif
 
+/* To test the format of tracebacks as printed out. */
+static PyObject *
+traceback_print(PyObject *self, PyObject *args)
+{
+	PyObject *file;
+	PyObject *traceback;
+	int result;
+	
+	if (!PyArg_ParseTuple(args, "OO:traceback_print",
+				&traceback, &file))
+		return NULL;
+		
+	result = PyTraceBack_Print(traceback, file);
+	if (result < 0)
+		return NULL;
+	Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
@@ -942,6 +960,7 @@ static PyMethodDef TestMethods[] = {
 #ifdef HAVE_GETTIMEOFDAY
 	{"profile_int",		profile_int,			METH_NOARGS},
 #endif
+	{"traceback_print", traceback_print, 	         METH_VARARGS},
 	{NULL, NULL} /* sentinel */
 };
 

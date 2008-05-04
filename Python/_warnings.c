@@ -382,9 +382,6 @@ warn_explicit(PyObject *category, PyObject *message,
             
             res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
                                                     filename, lineno_obj,
-                                                    Py_None,
-                                                    sourceline ?
-                                                        sourceline: Py_None,
                                                     NULL);
             Py_DECREF(show_fxn);
             Py_XDECREF(res);
@@ -465,9 +462,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
     if (*filename != NULL) {
-	Py_ssize_t len = PyUnicode_GetSize(*filename);
+        Py_ssize_t len = PyUnicode_GetSize(*filename);
         const char *file_str = PyUnicode_AsString(*filename);
-	if (file_str == NULL || (len < 0 && PyErr_Occurred()))
+	    if (file_str == NULL || (len < 0 && PyErr_Occurred()))
             goto handle_error;
 
         /* if filename.lower().endswith((".pyc", ".pyo")): */
@@ -476,12 +473,13 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             tolower(file_str[len-3]) == 'p' &&
             tolower(file_str[len-2]) == 'y' &&
             (tolower(file_str[len-1]) == 'c' ||
-             tolower(file_str[len-1]) == 'o')) {
+                tolower(file_str[len-1]) == 'o'))
+        {
             *filename = PyUnicode_FromStringAndSize(file_str, len-1);
-	    if (*filename == NULL)
-		    goto handle_error;
-	}
-	else
+	        if (*filename == NULL)
+		        goto handle_error;
+	    }
+	    else
             Py_INCREF(*filename);
     }
     else {
@@ -489,14 +487,27 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         if (module_str && strcmp(module_str, "__main__") == 0) {
             PyObject *argv = PySys_GetObject("argv");
             if (argv != NULL && PyList_Size(argv) > 0) {
+                int is_true;
                 *filename = PyList_GetItem(argv, 0);
                 Py_INCREF(*filename);
+                /* If sys.argv[0] is false, then use '__main__'. */
+                is_true = PyObject_IsTrue(*filename);
+                if (is_true < 0) {
+                    Py_DECREF(*filename);
+                    goto handle_error;
+                }
+                else if (!is_true) {
+                    Py_DECREF(*filename);
+                    *filename = PyString_FromString("__main__");
+                    if (*filename == NULL)
+                        goto handle_error;
+                }
             }
             else {
                 /* embedded interpreters don't have sys.argv, see bug #839151 */
                 *filename = PyUnicode_FromString("__main__");
-	        if (*filename == NULL)
-	            goto handle_error;
+	            if (*filename == NULL)
+	                goto handle_error;
             }
         }
         if (*filename == NULL) {

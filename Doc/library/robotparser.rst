@@ -3,7 +3,8 @@
 =============================================
 
 .. module:: robotparser
-   :synopsis: Loads a robots.txt file and answers questions about fetchability of other URLs.
+   :synopsis: Loads a robots.txt file and answers questions about
+              fetchability of other URLs.
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 
@@ -21,8 +22,8 @@ structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
 
 .. class:: RobotFileParser()
 
-   This class provides a set of methods to read, parse and answer questions about a
-   single :file:`robots.txt` file.
+   This class provides a set of methods to read, parse and answer questions
+   about a single :file:`robots.txt` file.
 
 
    .. method:: set_url(url)
@@ -42,20 +43,22 @@ structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
 
    .. method:: can_fetch(useragent, url)
 
-      Returns ``True`` if the *useragent* is allowed to fetch the *url* according to
-      the rules contained in the parsed :file:`robots.txt` file.
+      Returns ``True`` if the *useragent* is allowed to fetch the *url*
+      according to the rules contained in the parsed :file:`robots.txt`
+      file.
 
 
    .. method:: mtime()
 
-      Returns the time the ``robots.txt`` file was last fetched.  This is useful for
-      long-running web spiders that need to check for new ``robots.txt`` files
-      periodically.
+      Returns the time the ``robots.txt`` file was last fetched.  This is
+      useful for long-running web spiders that need to check for new
+      ``robots.txt`` files periodically.
 
 
    .. method:: modified()
 
-      Sets the time the ``robots.txt`` file was last fetched to the current time.
+      Sets the time the ``robots.txt`` file was last fetched to the current
+      time.
 
 The following example demonstrates basic use of the RobotFileParser class. ::
 

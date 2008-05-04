@@ -426,6 +426,13 @@ built-in functions in the installation script.
    also the configuration.  For details refer to Microsoft's documentation of the
    :cfunc:`SHGetSpecialFolderPath` function.
 
+Vista User Access Control (UAC)
+===============================
+
+Starting with Python 2.6, bdist_wininst supports a :option:`--user-access-control`
+option.  The default is 'none' (meaning no UAC handling is done), and other
+valid values are 'auto' (meaning prompt for UAC elevation if Python was
+installed for all users) and 'force' (meaning always prompt for elevation)
 
 .. function:: create_shortcut(target, description, filename[, arguments[, workdir[, iconpath[, iconindex]]]])
 
@@ -437,5 +444,3 @@ built-in functions in the installation script.
    and *iconindex* is the index of the icon in the file *iconpath*.  Again, for
    details consult the Microsoft documentation for the :class:`IShellLink`
    interface.
-
-

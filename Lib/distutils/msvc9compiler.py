@@ -594,13 +594,24 @@ class MSVCCompiler(CCompiler) :
             # needed! Make sure they are generated in the temporary build
             # directory. Since they have different names for debug and release
             # builds, they can go into the same directory.
+            build_temp = os.path.dirname(objects[0])
             if export_symbols is not None:
                 (dll_name, dll_ext) = os.path.splitext(
                     os.path.basename(output_filename))
                 implib_file = os.path.join(
-                    os.path.dirname(objects[0]),
+                    build_temp,
                     self.library_filename(dll_name))
                 ld_args.append ('/IMPLIB:' + implib_file)
+
+            # Embedded manifests are recommended - see MSDN article titled
+            # "How to: Embed a Manifest Inside a C/C++ Application"
+            # (currently at http://msdn2.microsoft.com/en-us/library/ms235591(VS.80).aspx)
+            # Ask the linker to generate the manifest in the temp dir, so
+            # we can embed it later.
+            temp_manifest = os.path.join(
+                    build_temp,
+                    os.path.basename(output_filename) + ".manifest")
+            ld_args.append('/MANIFESTFILE:' + temp_manifest)
 
             if extra_preargs:
                 ld_args[:0] = extra_preargs
@@ -613,6 +624,18 @@ class MSVCCompiler(CCompiler) :
             except DistutilsExecError as msg:
                 raise LinkError(msg)
 
+            # embed the manifest
+            # XXX - this is somewhat fragile - if mt.exe fails, distutils
+            # will still consider the DLL up-to-date, but it will not have a
+            # manifest.  Maybe we should link to a temp file?  OTOH, that
+            # implies a build environment error that shouldn't go undetected.
+            mfid = 1 if target_desc == CCompiler.EXECUTABLE else 2
+            out_arg = '-outputresource:%s;%s' % (output_filename, mfid)
+            try:
+                self.spawn(['mt.exe', '-nologo', '-manifest',
+                            temp_manifest, out_arg])
+            except DistutilsExecError as msg:
+                raise LinkError(msg)
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
 

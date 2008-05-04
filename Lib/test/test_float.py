@@ -9,6 +9,116 @@ import operator
 INF = float("inf")
 NAN = float("nan")
 
+class GeneralFloatCases(unittest.TestCase):
+
+    def test_float(self):
+        self.assertEqual(float(3.14), 3.14)
+        self.assertEqual(float(314), 314.0)
+        self.assertEqual(float("  3.14  "), 3.14)
+        self.assertRaises(ValueError, float, "  0x3.1  ")
+        self.assertRaises(ValueError, float, "  -0x3.p-1  ")
+        self.assertRaises(ValueError, float, "  +0x3.p-1  ")
+        self.assertRaises(ValueError, float, "++3.14")
+        self.assertRaises(ValueError, float, "+-3.14")
+        self.assertRaises(ValueError, float, "-+3.14")
+        self.assertRaises(ValueError, float, "--3.14")
+        if have_unicode:
+            self.assertEqual(float(unicode("  3.14  ")), 3.14)
+            self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
+            # Implementation limitation in PyFloat_FromString()
+            self.assertRaises(ValueError, float, unicode("1"*10000))
+
+    @test_support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
+    def test_float_with_comma(self):
+        # set locale to something that doesn't use '.' for the decimal point
+        # float must not accept the locale specific decimal point but
+        # it still has to accept the normal python syntac
+        import locale
+        if not locale.localeconv()['decimal_point'] == ',':
+            return
+
+        self.assertEqual(float("  3.14  "), 3.14)
+        self.assertEqual(float("+3.14  "), 3.14)
+        self.assertEqual(float("-3.14  "), -3.14)
+        self.assertEqual(float(".14  "), .14)
+        self.assertEqual(float("3.  "), 3.0)
+        self.assertEqual(float("3.e3  "), 3000.0)
+        self.assertEqual(float("3.2e3  "), 3200.0)
+        self.assertEqual(float("2.5e-1  "), 0.25)
+        self.assertEqual(float("5e-1"), 0.5)
+        self.assertRaises(ValueError, float, "  3,14  ")
+        self.assertRaises(ValueError, float, "  +3,14  ")
+        self.assertRaises(ValueError, float, "  -3,14  ")
+        self.assertRaises(ValueError, float, "  0x3.1  ")
+        self.assertRaises(ValueError, float, "  -0x3.p-1  ")
+        self.assertRaises(ValueError, float, "  +0x3.p-1  ")
+        self.assertEqual(float("  25.e-1  "), 2.5)
+        self.assertEqual(fcmp(float("  .25e-1  "), .025), 0)
+
+    def test_floatconversion(self):
+        # Make sure that calls to __float__() work properly
+        class Foo0:
+            def __float__(self):
+                return 42.
+
+        class Foo1(object):
+            def __float__(self):
+                return 42.
+
+        class Foo2(float):
+            def __float__(self):
+                return 42.
+
+        class Foo3(float):
+            def __new__(cls, value=0.):
+                return float.__new__(cls, 2*value)
+
+            def __float__(self):
+                return self
+
+        class Foo4(float):
+            def __float__(self):
+                return 42
+
+        self.assertAlmostEqual(float(Foo0()), 42.)
+        self.assertAlmostEqual(float(Foo1()), 42.)
+        self.assertAlmostEqual(float(Foo2()), 42.)
+        self.assertAlmostEqual(float(Foo3(21)), 42.)
+        self.assertRaises(TypeError, float, Foo4(42))
+
+    def test_floatasratio(self):
+        for f, ratio in [
+                (0.875, (7, 8)),
+                (-0.875, (-7, 8)),
+                (0.0, (0, 1)),
+                (11.5, (23, 2)),
+            ]:
+            self.assertEqual(f.as_integer_ratio(), ratio)
+
+        for i in range(10000):
+            f = random.random()
+            f *= 10 ** random.randint(-100, 100)
+            n, d = f.as_integer_ratio()
+            self.assertEqual(float(n).__truediv__(d), f)
+
+        R = fractions.Fraction
+        self.assertEqual(R(0, 1),
+                         R(*float(0.0).as_integer_ratio()))
+        self.assertEqual(R(5, 2),
+                         R(*float(2.5).as_integer_ratio()))
+        self.assertEqual(R(1, 2),
+                         R(*float(0.5).as_integer_ratio()))
+        self.assertEqual(R(4728779608739021, 2251799813685248),
+                         R(*float(2.1).as_integer_ratio()))
+        self.assertEqual(R(-4728779608739021, 2251799813685248),
+                         R(*float(-2.1).as_integer_ratio()))
+        self.assertEqual(R(-2100, 1),
+                         R(*float(-2100.0).as_integer_ratio()))
+
+        self.assertRaises(OverflowError, float('inf').as_integer_ratio)
+        self.assertRaises(OverflowError, float('-inf').as_integer_ratio)
+        self.assertRaises(ValueError, float('nan').as_integer_ratio)
+
 class FormatFunctionsTestCase(unittest.TestCase):
 
     def setUp(self):

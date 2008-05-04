@@ -5,7 +5,6 @@ default, these calendars have Monday as the first day of the week, and
 Sunday as the last (the European convention). Use setfirstweekday() to
 set the first day of the week (0=Monday, 6=Sunday)."""
 
-from __future__ import with_statement
 import sys
 import datetime
 import locale as _locale

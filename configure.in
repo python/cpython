@@ -83,6 +83,18 @@ AC_ARG_ENABLE(universalsdk,
 ])
 AC_SUBST(UNIVERSALSDK)
 
+AC_ARG_WITH(framework-name,
+              AC_HELP_STRING(--with-framework-name=FRAMEWORK, 
+                             specify an alternate name of the framework built with --enable-framework),
+[
+    PYTHONFRAMEWORK=${withval}
+    PYTHONFRAMEWORKDIR=${withval}.framework
+    PYTHONFRAMEWORKIDENTIFIER=org.python.`echo $withval | tr '[A-Z]' '[a-z]'`
+    ],[
+    PYTHONFRAMEWORK=Python
+    PYTHONFRAMEWORKDIR=Python.framework
+    PYTHONFRAMEWORKIDENTIFIER=org.python.python
+])
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(framework,
               AC_HELP_STRING(--enable-framework@<:@=INSTALLDIR@:>@, Build (MacOSX|Darwin) framework),
@@ -109,8 +121,6 @@ AC_ARG_ENABLE(framework,
 		enable_framework=
 		;;
 	*)
-		PYTHONFRAMEWORK=Python
-		PYTHONFRAMEWORKDIR=Python.framework
 		PYTHONFRAMEWORKPREFIX=$enableval
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
@@ -124,11 +134,13 @@ AC_ARG_ENABLE(framework,
 		fi
 		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
 
-		# Add makefiles for Mac specific code to the list of output
+		# Add files for Mac specific code to the list of output
 		# files:
 		AC_CONFIG_FILES(Mac/Makefile)
 		AC_CONFIG_FILES(Mac/PythonLauncher/Makefile)
 		AC_CONFIG_FILES(Mac/IDLE/Makefile)
+		AC_CONFIG_FILES(Mac/Resources/framework/Info.plist)
+		AC_CONFIG_FILES(Mac/Resources/app/Info.plist)
 	esac
 	],[
 	PYTHONFRAMEWORK=
@@ -147,6 +159,7 @@ AC_ARG_ENABLE(framework,
 	enable_framework=
 ])
 AC_SUBST(PYTHONFRAMEWORK)
+AC_SUBST(PYTHONFRAMEWORKIDENTIFIER)
 AC_SUBST(PYTHONFRAMEWORKDIR)
 AC_SUBST(PYTHONFRAMEWORKPREFIX)
 AC_SUBST(PYTHONFRAMEWORKINSTALLDIR)
@@ -2978,8 +2991,36 @@ fi],
 # ************************************
 # * Check for mathematical functions *
 # ************************************
+
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
+
+# On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
+# -0. on some architectures.
+AC_MSG_CHECKING(whether tanh preserves the sign of zero)
+AC_CACHE_VAL(ac_cv_tanh_preserves_zero_sign, [
+AC_TRY_RUN([
+#include <math.h>
+#include <stdlib.h>
+int main() {
+    /* return 0 if either negative zeros don't exist
+       on this platform or if negative zeros exist
+       and tanh(-0.) == -0. */
+  if (atan2(0., -1.) == atan2(-0., -1.) ||
+      atan2(tanh(-0.), -1.) == atan2(-0., -1.)) exit(0);
+  else exit(1);
+}
+],
+ac_cv_tanh_preserves_zero_sign=yes,
+ac_cv_tanh_preserves_zero_sign=no,
+ac_cv_tanh_preserves_zero_sign=no)])
+AC_MSG_RESULT($ac_cv_tanh_preserves_zero_sign)
+if test "$ac_cv_tanh_preserves_zero_sign" = yes
+then
+  AC_DEFINE(TANH_PRESERVES_ZERO_SIGN, 1,
+  [Define if tanh(-0.) is -0., or if platform doesn't have signed zeros])
+fi
+
 AC_REPLACE_FUNCS(hypot)
 
 AC_CHECK_FUNCS(acosh asinh atanh copysign expm1 finite isinf isnan log1p)

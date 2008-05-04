@@ -653,6 +653,7 @@ math_pow(PyObject *self, PyObject *args)
 
 	/* deal directly with IEEE specials, to cope with problems on various
 	   platforms whose semantics don't exactly match C99 */
+	r = 0.; /* silence compiler warning */
 	if (!Py_IS_FINITE(x) || !Py_IS_FINITE(y)) {
 		errno = 0;
 		if (Py_IS_NAN(x))

@@ -9,7 +9,7 @@
 	<key>CFBundleGetInfoString</key>
 	<string>Python Runtime and Library</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.python.python</string>
+	<string>@PYTHONFRAMEWORKIDENTIFIER@</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -17,10 +17,12 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.5</string>
+	<string>%VERSION%, (c) 2004-2008 Python Software Foundation.</string>
+	<key>CFBundleLongVersionString</key>
+	<string>%VERSION%, (c) 2004-2008 Python Software Foundation.</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2.5</string>
+	<string>%VERSION%</string>
 </dict>
 </plist>

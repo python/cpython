@@ -4,6 +4,7 @@ from test import test_support
 import unittest
 import sys
 import difflib
+import gc
 
 # A very basic example.  If this fails, we're in deep trouble.
 def basic():
@@ -244,6 +245,17 @@ class Tracer:
         return self.trace
 
 class TraceTestCase(unittest.TestCase):
+
+    # Disable gc collection when tracing, otherwise the
+    # deallocators may be traced as well.
+    def setUp(self):
+        self.using_gc = gc.isenabled()
+        gc.disable()
+
+    def tearDown(self):
+        if self.using_gc:
+            gc.enable()
+
     def compare_events(self, line_offset, events, expected_events):
         events = [(l - line_offset, e) for (l, e) in events]
         if events != expected_events:

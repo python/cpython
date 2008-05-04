@@ -651,6 +651,14 @@ slots for which no default value is specified, a :exc:`TypeError` exception is
 raised.  Otherwise, the list of filled slots is used as the argument list for
 the call.
 
+.. note::
+   
+   An implementation may provide builtin functions whose positional parameters do
+   not have names, even if they are 'named' for the purpose of documentation, and
+   which therefore cannot be supplied by keyword.  In CPython, this is the case for
+   functions implemented in C that use :cfunc:`PyArg_ParseTuple` to parse their
+   arguments.
+
 If there are more positional arguments than there are formal parameter slots, a
 :exc:`TypeError` exception is raised, unless a formal parameter using the syntax
 ``*identifier`` is present; in this case, that formal parameter receives a tuple

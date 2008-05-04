@@ -19,7 +19,7 @@ environment, an applet builder), plus a set of pre-built
 extension modules that open up specific Macintosh technologies 
 to Python programs (Carbon, AppleScript, Quicktime, more).
 
-The installer puts the applications in "MacPython $VERSION" 
+The installer puts the applications in "Python $VERSION" 
 in your Applications folder, command-line tools in
 /usr/local/bin and the underlying machinery in
 $PYTHONFRAMEWORKINSTALLDIR.

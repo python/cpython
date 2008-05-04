@@ -1161,10 +1161,10 @@ class MiscIOTest(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(IOTest, BytesIOTest, StringIOTest,
-                              BufferedReaderTest,
-                              BufferedWriterTest, BufferedRWPairTest,
-                              BufferedRandomTest, TextIOWrapperTest,
-                              MiscIOTest)
+                              BufferedReaderTest, BufferedWriterTest,
+                              BufferedRWPairTest, BufferedRandomTest,
+                              StatefulIncrementalDecoderTest,
+                              TextIOWrapperTest, MiscIOTest)
 
 if __name__ == "__main__":
     unittest.main()

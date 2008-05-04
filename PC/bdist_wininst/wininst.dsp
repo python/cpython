@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /O1 /I "..\..\Include" /I "..\..\..\zlib-1.2.1" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /O1 /I "..\..\Include" /I "..\..\..\zlib-1.2.3" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x407 /d "NDEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 ..\..\..\zlib-1.2.1\zlib.lib imagehlp.lib comdlg32.lib ole32.lib comctl32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\lib\distutils\command/wininst-6.exe"
+# ADD LINK32 ..\..\..\zlib-1.2.3\zlib.lib imagehlp.lib comdlg32.lib ole32.lib comctl32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\lib\distutils\command/wininst-6.0.exe"
 
 !ELSEIF  "$(CFG)" == "wininst - Win32 Debug"
 
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 ..\..\..\zlib-1.2.1\zlib.lib imagehlp.lib comdlg32.lib ole32.lib comctl32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /pdb:none /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\lib\distutils\command/wininst-6_d.exe"
+# ADD LINK32 ..\..\..\zlib-1.2.3\zlib.lib imagehlp.lib comdlg32.lib ole32.lib comctl32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /pdb:none /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\lib\distutils\command/wininst-6.0_d.exe"
 
 !ENDIF 
 

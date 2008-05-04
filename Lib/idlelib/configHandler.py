@@ -204,7 +204,10 @@ class IdleConf:
             if not os.path.exists(userDir):
                 warn = ('\n Warning: os.path.expanduser("~") points to\n '+
                         userDir+',\n but the path does not exist.\n')
-                sys.stderr.write(warn)
+                try:
+                    sys.stderr.write(warn)
+                except IOError:
+                    pass
                 userDir = '~'
         if userDir == "~": # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
@@ -247,7 +250,10 @@ class IdleConf:
                            ' from section %r.\n'
                            ' returning default value: %r\n' %
                            (option, section, default))
-                sys.stderr.write(warning)
+                try:
+                    sys.stderr.write(warning)
+                except IOError:
+                    pass
             return default
 
     def SetOption(self, configType, section, option, value):
@@ -356,7 +362,10 @@ class IdleConf:
                            '\n from theme %r.\n'
                            ' returning default value: %r\n' %
                            (element, themeName, theme[element]))
-                sys.stderr.write(warning)
+                try:
+                    sys.stderr.write(warning)
+                except IOError:
+                    pass
             colour=cfgParser.Get(themeName,element,default=theme[element])
             theme[element]=colour
         return theme
@@ -610,7 +619,10 @@ class IdleConf:
                                '\n from key set %r.\n'
                                ' returning default value: %r\n' %
                                (event, keySetName, keyBindings[event]))
-                    sys.stderr.write(warning)
+                    try:
+                        sys.stderr.write(warning)
+                    except IOError:
+                        pass
         return keyBindings
 
     def GetExtraHelpSourceList(self,configSet):
