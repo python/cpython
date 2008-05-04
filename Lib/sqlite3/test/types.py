@@ -98,7 +98,7 @@ class DeclTypesTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_DECLTYPES)
         self.cur = self.con.cursor()
-        self.cur.execute("create table test(i int, s str, f float, b bool, u unicode, foo foo, bin blob)")
+        self.cur.execute("create table test(i int, s str, f float, b bool, u unicode, foo foo, bin blob, n1 number, n2 number(5))")
 
         # override float, make them always return the same number
         sqlite.converters["FLOAT"] = lambda x: 47.2
@@ -107,11 +107,13 @@ class DeclTypesTests(unittest.TestCase):
         sqlite.converters["BOOL"] = lambda x: bool(int(x))
         sqlite.converters["FOO"] = DeclTypesTests.Foo
         sqlite.converters["WRONG"] = lambda x: "WRONG"
+        sqlite.converters["NUMBER"] = float
 
     def tearDown(self):
         del sqlite.converters["FLOAT"]
         del sqlite.converters["BOOL"]
         del sqlite.converters["FOO"]
+        del sqlite.converters["NUMBER"]
         self.cur.close()
         self.con.close()
 
@@ -202,6 +204,19 @@ class DeclTypesTests(unittest.TestCase):
         self.cur.execute("select bin from test")
         row = self.cur.fetchone()
         self.failUnlessEqual(row[0], val)
+
+    def CheckNumber1(self):
+        self.cur.execute("insert into test(n1) values (5)")
+        value = self.cur.execute("select n1 from test").fetchone()[0]
+        # if the converter is not used, it's an int instead of a float
+        self.failUnlessEqual(type(value), float)
+
+    def CheckNumber2(self):
+        """Checks wether converter names are cut off at '(' characters"""
+        self.cur.execute("insert into test(n2) values (5)")
+        value = self.cur.execute("select n2 from test").fetchone()[0]
+        # if the converter is not used, it's an int instead of a float
+        self.failUnlessEqual(type(value), float)
 
 class ColNamesTests(unittest.TestCase):
     def setUp(self):
