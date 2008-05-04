@@ -169,6 +169,30 @@ static PyObject* pysqlite_iter(pysqlite_Row* self)
     return PyObject_GetIter(self->data);
 }
 
+static long pysqlite_row_hash(pysqlite_Row *self)
+{
+    return PyObject_Hash(self->description) ^ PyObject_Hash(self->data);
+}
+
+static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, int opid)
+{
+    if (opid != Py_EQ && opid != Py_NE) {
+	Py_INCREF(Py_NotImplemented);
+	return Py_NotImplemented;
+    }
+    if (PyType_IsSubtype(Py_TYPE(_other), &pysqlite_RowType)) {
+	pysqlite_Row *other = (pysqlite_Row *)_other;
+	PyObject *res = PyObject_RichCompare(self->description, other->description, opid);
+	if (opid == Py_EQ && res == Py_True
+	    || opid == Py_NE && res == Py_False) {
+	    Py_DECREF(res);
+	    return PyObject_RichCompare(self->data, other->data, opid);
+	}
+    }
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
+}
+
 PyMappingMethods pysqlite_row_as_mapping = {
     /* mp_length        */ (lenfunc)pysqlite_row_length,
     /* mp_subscript     */ (binaryfunc)pysqlite_row_subscript,
@@ -196,7 +220,7 @@ PyTypeObject pysqlite_RowType = {
         0,                                              /* tp_as_number */
         0,                                              /* tp_as_sequence */
         0,                                              /* tp_as_mapping */
-        0,                                              /* tp_hash */
+        (hashfunc)pysqlite_row_hash,                    /* tp_hash */
         0,                                              /* tp_call */
         0,                                              /* tp_str */
         0,                                              /* tp_getattro */
@@ -206,7 +230,7 @@ PyTypeObject pysqlite_RowType = {
         0,                                              /* tp_doc */
         (traverseproc)0,                                /* tp_traverse */
         0,                                              /* tp_clear */
-        0,                                              /* tp_richcompare */
+        (richcmpfunc)pysqlite_row_richcompare,          /* tp_richcompare */
         0,                                              /* tp_weaklistoffset */
         (getiterfunc)pysqlite_iter,                     /* tp_iter */
         0,                                              /* tp_iternext */
