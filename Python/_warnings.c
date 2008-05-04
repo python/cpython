@@ -498,7 +498,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
                 }
                 else if (!is_true) {
                     Py_DECREF(*filename);
-                    *filename = PyString_FromString("__main__");
+                    *filename = PyUnicode_FromString("__main__");
                     if (*filename == NULL)
                         goto handle_error;
                 }
