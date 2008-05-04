@@ -119,7 +119,7 @@ While 2.6 was being developed, the Python development process
 underwent two significant changes: the developer group 
 switched from SourceForge's issue tracker to a customized 
 Roundup installation, and the documentation was converted from
-LaTeX to reStructured Text.
+LaTeX to reStructuredText.
 
 
 New Issue Tracker: Roundup
@@ -137,7 +137,7 @@ SourceForge.  Four different trackers were examined: Atlassian's `Jira
 <http://www.atlassian.com/software/jira/>`__, 
 `Launchpad <http://www.launchpad.net>`__, 
 `Roundup <http://roundup.sourceforge.net/>`__, and 
-Trac <http://trac.edgewall.org/>`__.  
+`Trac <http://trac.edgewall.org/>`__.  
 The committee eventually settled on Jira
 and Roundup as the two candidates.  Jira is a commercial product that
 offers a no-cost hosted instance to free-software projects; Roundup 
@@ -171,7 +171,7 @@ http://svn.python.org/view/tracker/importer/.
     Roundup downloads and documentation.
 
 
-New Documentation Format: ReStructured Text Using Sphinx
+New Documentation Format: reStructuredText Using Sphinx
 -----------------------------------------------------------
 
 Since the Python project's inception around 1989, the documentation
@@ -195,7 +195,7 @@ and no one pursued the task to completion.
 During the 2.6 development cycle, Georg Brandl put a substantial
 effort into building a new toolchain for processing the documentation.
 The resulting package is called Sphinx, and is available from
-http://sphinx.pocoo.org/.  The input format is reStructured Text, a
+http://sphinx.pocoo.org/.  The input format is reStructuredText, a
 markup commonly used in the Python community that supports custom
 extensions and directives.  Sphinx concentrates on HTML output,
 producing attractively styled and modern HTML, though printed output
@@ -211,7 +211,7 @@ standalone package that can be used in documenting other projects.
      Documentation and code for the Sphinx toolchain.
 
    `Docutils <http://docutils.sf.net>`__
-     The underlying reStructured Text parser and toolset.
+     The underlying reStructuredText parser and toolset.
 
 
 PEP 343: The 'with' statement
@@ -734,7 +734,8 @@ and it also supports the ``b''`` notation.
 
 There's also a ``__future__`` import that causes all string literals
 to become Unicode strings.  This means that ``\u`` escape sequences 
-can be used to include Unicode characters.
+can be used to include Unicode characters::
+
 
     from __future__ import unicode_literals
 
@@ -742,6 +743,7 @@ can be used to include Unicode characters.
          '\u3081\u3000\u751f\u305f\u307e\u3054')
 
     print len(s)               # 12 Unicode characters
+
 
 
 .. seealso::
@@ -1383,6 +1385,11 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 Optimizations
 -------------
 
+* The :mod:`warnings` module has been rewritten in C.  This makes
+  it possible to invoke warnings from the parser, and may also
+  make the interpreter's startup faster.
+  (Contributed by Neal Norwitz and Brett Cannon; :issue:`1631171`.)
+
 * Type objects now have a cache of methods that can reduce
   the amount of work required to find the correct method implementation
   for a particular class; once cached, the interpreter doesn't need to
@@ -1401,7 +1408,7 @@ Optimizations
   built-in types.  This speeds up checking if an object is a subclass of one of
   these types.  (Contributed by Neal Norwitz.)
 
-* Unicode strings now uses faster code for detecting
+* Unicode strings now use faster code for detecting
   whitespace and line breaks; this speeds up the :meth:`split` method 
   by about 25% and :meth:`splitlines` by 35%.
   (Contributed by Antoine Pitrou.)  Memory usage is reduced
@@ -1801,6 +1808,24 @@ complete list of changes, or look through the CVS logs for all the details.
   opcodes, returning a shorter pickle that contains the same data structure.
   (Contributed by Raymond Hettinger.)
 
+* A :func:`get_data` function was added to the :mod:`pkgutil`
+  module that returns the contents of resource files included
+  with an installed Python package.  For example::
+
+    >>> import pkgutil
+    >>> pkgutil.get_data('test', 'exception_hierarchy.txt')
+    'BaseException
+     +-- SystemExit
+     +-- KeyboardInterrupt
+     +-- GeneratorExit
+     +-- Exception
+          +-- StopIteration
+          +-- StandardError
+     ...'
+    >>> 
+
+  (Contributed by Paul Moore; :issue:`2439`.)
+
 * New functions in the :mod:`posix` module: :func:`chflags` and :func:`lchflags`
   are wrappers for the corresponding system calls (where they're available).
   Constants for the flag values are defined in the :mod:`stat` module; some
@@ -1934,6 +1959,13 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
   using the format character ``'?'``. 
   (Contributed by David Remahl.)
+
+* The :class:`Popen` objects provided by the :mod:`subprocess` module
+  now have :meth:`terminate`, :meth:`kill`, and :meth:`send_signal` methods.
+  On Windows, :meth:`send_signal` only supports the :const:`SIGTERM`
+  signal, and all these methods are aliases for the Win32 API function
+  :cfunc:`TerminateProcess`.  
+  (Contributed by Christian Heimes.)
  
 * A new variable in the :mod:`sys` module,
   :attr:`float_info`, is an object
@@ -2088,6 +2120,14 @@ complete list of changes, or look through the CVS logs for all the details.
   information.  (Contributed by Alan McIntyre as part of his 
   project for Google's Summer of Code 2007.)
 
+* The :mod:`xmlrpclib` module no longer automatically converts
+  :class:`datetime.date` and :class:`datetime.time` to the 
+  :class:`xmlrpclib.DateTime` type; the conversion semantics were
+  not necessarily correct for all applications.  Code using
+  :mod:`xmlrpclib` should convert :class:`date` and :class:`time` 
+  instances. (:issue:`1330538`)  The code can also handle 
+  dates before 1900.  (Contributed by Ralf Schmitt; :issue:`2014`.)
+
 * The :mod:`zipfile` module's :class:`ZipFile` class now has 
   :meth:`extract` and :meth:`extractall` methods that will unpack 
   a single file or all the files in the archive to the current directory, or 
@@ -2120,17 +2160,12 @@ though it will be removed in Python 3.0.
 
 To use the new module, first you must create a TCP connection in the
 usual way and then pass it to the :func:`ssl.wrap_socket` function.
-XXX describe parameters.
-
-XXX Can specify if certificate is required, and obtain certificate info
-by calling getpeercert method.
-
-XXX Certain features require the OpenSSL package to be installed, notably
-  the 'openssl' binary.
+It's possible to specify whether a certificate is required, and to
+obtain certificate info by calling the :meth:`getpeercert` method.
 
 .. seealso::
 
-   SSL module documentation.
+   The documentation for the :mod:`ssl` module.
 
 
 .. ======================================================================
@@ -2271,11 +2306,21 @@ Changes to Python's build process and to the C API include:
   have been updated.
   (Contributed by Brett Cannon.)
 
+  Another new target, "make profile-opt", compiles a Python binary
+  using GCC's profile-guided optimization.  It compiles Python with
+  profiling enabled, runs the test suite to obtain a set of profiling
+  results, and then compiles using these results for optimization.
+  (Contributed by Gregory P. Smith.)
+
+
 .. ======================================================================
 
 
 Port-Specific Changes: Windows
 -----------------------------------
+
+* The support for Windows 95, 98, ME and NT4 has been dropped.
+  Python 2.6 requires at least Windows 2000 SP4.
 
 * The :mod:`msvcrt` module now supports 
   both the normal and wide char variants of the console I/O

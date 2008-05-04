@@ -17,6 +17,21 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Rodrigo Bernardo Pimentel was given SVN access on 29 April 2008 by MvL,
+  for GSoC contributions.
+
+- Heiko Weinen was given SVN access on 29 April 2008 by MvL,
+  for GSoC contributions.
+
+- Jesus Cea was was given SVN access on 24 April 2008 by MvL,
+  for maintenance of bsddb.
+
+- Guilherme Polo was given SVN access on 24 April 2008 by MvL,
+  for GSoC contributions.
+
+- Thomas Lee was given SVN access on 21 April 2008 by NCN,
+  for work on branches (ast/optimizer related).
+
 - Jeroen Ruigrok van der Werven was given SVN access on 12 April 2008
   by Georg Brandl, for documentation work.
 

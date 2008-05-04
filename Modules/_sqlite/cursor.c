@@ -202,7 +202,11 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
             decltype = sqlite3_column_decltype(self->statement->st, i);
             if (decltype) {
                 for (pos = decltype;;pos++) {
-                    if (*pos == ' ' || *pos == 0) {
+                    /* Converter names are split at '(' and blanks.
+                     * This allows 'INTEGER NOT NULL' to be treated as 'INTEGER' and
+                     * 'NUMBER(10)' to be treated as 'NUMBER', for example.
+                     * In other words, it will work as people expect it to work.*/
+                    if (*pos == ' ' || *pos == '(' || *pos == 0) {
                         py_decltype = PyUnicode_FromStringAndSize(decltype, pos - decltype);
                         if (!py_decltype) {
                             return -1;

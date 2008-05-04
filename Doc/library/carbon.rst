@@ -70,7 +70,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 
 .. module:: Carbon.CG
    :platform: Mac
-   :synopsis: Interface to the Component Manager.
+   :synopsis: Interface to Core Graphics.
 
 
 

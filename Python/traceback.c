@@ -228,8 +228,6 @@ tb_displayline(PyObject *f, const char *filename, int lineno, const char *name)
 	err = PyFile_WriteString(linebuf, f);
 	if (err != 0)
 		return err;
-
-        err = PyFile_WriteString("    ", f);
         return Py_DisplaySourceLine(f, filename, lineno);
 }
 

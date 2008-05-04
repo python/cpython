@@ -1,5 +1,6 @@
 import unittest
 from test import test_support
+import sys
 
 import random
 
@@ -32,6 +33,26 @@ for i in range(2*SHIFT):
 del p2
 # add complements & negations
 special += [~x for x in special] + [-x for x in special]
+
+L = [
+        ('0', 0),
+        ('1', 1),
+        ('9', 9),
+        ('10', 10),
+        ('99', 99),
+        ('100', 100),
+        ('314', 314),
+        (' 314', 314),
+        ('314 ', 314),
+        ('  \t\t  314  \t\t  ', 314),
+        (repr(sys.maxsize), sys.maxsize),
+        ('  1x', ValueError),
+        ('  1  ', 1),
+        ('  1\02  ', ValueError),
+        ('', ValueError),
+        (' ', ValueError),
+        ('  \t\t  ', ValueError)
+]
 
 
 class LongTest(unittest.TestCase):
@@ -229,8 +250,206 @@ class LongTest(unittest.TestCase):
                 x = self.getran(lenx)
                 self.check_format_1(x)
 
+    def test_long(self):
+        self.assertEqual(int(314), 314)
+        self.assertEqual(int(3.14), 3)
+        self.assertEqual(int(314), 314)
+        # Check that conversion from float truncates towards zero
+        self.assertEqual(int(-3.14), -3)
+        self.assertEqual(int(3.9), 3)
+        self.assertEqual(int(-3.9), -3)
+        self.assertEqual(int(3.5), 3)
+        self.assertEqual(int(-3.5), -3)
+        self.assertEqual(int("-3"), -3)
+        # Different base:
+        self.assertEqual(int("10",16), 16)
+        # Check conversions from string (same test set as for int(), and then some)
+        LL = [
+                ('1' + '0'*20, 10**20),
+                ('1' + '0'*100, 10**100)
+        ]
+        L2 = L[:]
+        for s, v in L2 + LL:
+            for sign in "", "+", "-":
+                for prefix in "", " ", "\t", "  \t\t  ":
+                    ss = prefix + sign + s
+                    vv = v
+                    if sign == "-" and v is not ValueError:
+                        vv = -v
+                    try:
+                        self.assertEqual(int(ss), int(vv))
+                    except ValueError:
+                        pass
+
+        self.assertRaises(ValueError, int, '123\0')
+        self.assertRaises(ValueError, int, '53', 40)
+        self.assertRaises(TypeError, int, 1, 12)
+
+        # SF patch #1638879: embedded NULs were not detected with
+        # explicit base
+        self.assertRaises(ValueError, int, '123\0', 10)
+        self.assertRaises(ValueError, int, '123\x00 245', 20)
+
+        self.assertEqual(int('100000000000000000000000000000000', 2),
+                         4294967296)
+        self.assertEqual(int('102002022201221111211', 3), 4294967296)
+        self.assertEqual(int('10000000000000000', 4), 4294967296)
+        self.assertEqual(int('32244002423141', 5), 4294967296)
+        self.assertEqual(int('1550104015504', 6), 4294967296)
+        self.assertEqual(int('211301422354', 7), 4294967296)
+        self.assertEqual(int('40000000000', 8), 4294967296)
+        self.assertEqual(int('12068657454', 9), 4294967296)
+        self.assertEqual(int('4294967296', 10), 4294967296)
+        self.assertEqual(int('1904440554', 11), 4294967296)
+        self.assertEqual(int('9ba461594', 12), 4294967296)
+        self.assertEqual(int('535a79889', 13), 4294967296)
+        self.assertEqual(int('2ca5b7464', 14), 4294967296)
+        self.assertEqual(int('1a20dcd81', 15), 4294967296)
+        self.assertEqual(int('100000000', 16), 4294967296)
+        self.assertEqual(int('a7ffda91', 17), 4294967296)
+        self.assertEqual(int('704he7g4', 18), 4294967296)
+        self.assertEqual(int('4f5aff66', 19), 4294967296)
+        self.assertEqual(int('3723ai4g', 20), 4294967296)
+        self.assertEqual(int('281d55i4', 21), 4294967296)
+        self.assertEqual(int('1fj8b184', 22), 4294967296)
+        self.assertEqual(int('1606k7ic', 23), 4294967296)
+        self.assertEqual(int('mb994ag', 24), 4294967296)
+        self.assertEqual(int('hek2mgl', 25), 4294967296)
+        self.assertEqual(int('dnchbnm', 26), 4294967296)
+        self.assertEqual(int('b28jpdm', 27), 4294967296)
+        self.assertEqual(int('8pfgih4', 28), 4294967296)
+        self.assertEqual(int('76beigg', 29), 4294967296)
+        self.assertEqual(int('5qmcpqg', 30), 4294967296)
+        self.assertEqual(int('4q0jto4', 31), 4294967296)
+        self.assertEqual(int('4000000', 32), 4294967296)
+        self.assertEqual(int('3aokq94', 33), 4294967296)
+        self.assertEqual(int('2qhxjli', 34), 4294967296)
+        self.assertEqual(int('2br45qb', 35), 4294967296)
+        self.assertEqual(int('1z141z4', 36), 4294967296)
+
+        self.assertEqual(int('100000000000000000000000000000001', 2),
+                         4294967297)
+        self.assertEqual(int('102002022201221111212', 3), 4294967297)
+        self.assertEqual(int('10000000000000001', 4), 4294967297)
+        self.assertEqual(int('32244002423142', 5), 4294967297)
+        self.assertEqual(int('1550104015505', 6), 4294967297)
+        self.assertEqual(int('211301422355', 7), 4294967297)
+        self.assertEqual(int('40000000001', 8), 4294967297)
+        self.assertEqual(int('12068657455', 9), 4294967297)
+        self.assertEqual(int('4294967297', 10), 4294967297)
+        self.assertEqual(int('1904440555', 11), 4294967297)
+        self.assertEqual(int('9ba461595', 12), 4294967297)
+        self.assertEqual(int('535a7988a', 13), 4294967297)
+        self.assertEqual(int('2ca5b7465', 14), 4294967297)
+        self.assertEqual(int('1a20dcd82', 15), 4294967297)
+        self.assertEqual(int('100000001', 16), 4294967297)
+        self.assertEqual(int('a7ffda92', 17), 4294967297)
+        self.assertEqual(int('704he7g5', 18), 4294967297)
+        self.assertEqual(int('4f5aff67', 19), 4294967297)
+        self.assertEqual(int('3723ai4h', 20), 4294967297)
+        self.assertEqual(int('281d55i5', 21), 4294967297)
+        self.assertEqual(int('1fj8b185', 22), 4294967297)
+        self.assertEqual(int('1606k7id', 23), 4294967297)
+        self.assertEqual(int('mb994ah', 24), 4294967297)
+        self.assertEqual(int('hek2mgm', 25), 4294967297)
+        self.assertEqual(int('dnchbnn', 26), 4294967297)
+        self.assertEqual(int('b28jpdn', 27), 4294967297)
+        self.assertEqual(int('8pfgih5', 28), 4294967297)
+        self.assertEqual(int('76beigh', 29), 4294967297)
+        self.assertEqual(int('5qmcpqh', 30), 4294967297)
+        self.assertEqual(int('4q0jto5', 31), 4294967297)
+        self.assertEqual(int('4000001', 32), 4294967297)
+        self.assertEqual(int('3aokq95', 33), 4294967297)
+        self.assertEqual(int('2qhxjlj', 34), 4294967297)
+        self.assertEqual(int('2br45qc', 35), 4294967297)
+        self.assertEqual(int('1z141z5', 36), 4294967297)
+
+
+    def test_conversion(self):
+        # Test __long__()
+        class ClassicMissingMethods:
+            pass
+        self.assertRaises(TypeError, int, ClassicMissingMethods())
+
+        class MissingMethods(object):
+            pass
+        self.assertRaises(TypeError, int, MissingMethods())
+
+        class Foo0:
+            def __int__(self):
+                return 42
+
+        class Foo1(object):
+            def __int__(self):
+                return 42
+
+        class Foo2(int):
+            def __int__(self):
+                return 42
+
+        class Foo3(int):
+            def __int__(self):
+                return self
+
+        class Foo4(int):
+            def __int__(self):
+                return 42
+
+        class Foo5(int):
+            def __int__(self):
+                return 42.
+
+        self.assertEqual(int(Foo0()), 42)
+        self.assertEqual(int(Foo1()), 42)
+        self.assertEqual(int(Foo2()), 42)
+        self.assertEqual(int(Foo3()), 0)
+        self.assertEqual(int(Foo4()), 42)
+        self.assertRaises(TypeError, int, Foo5())
+
+        class Classic:
+            pass
+        for base in (object, Classic):
+            class LongOverridesTrunc(base):
+                def __long__(self):
+                    return 42
+                def __trunc__(self):
+                    return -12
+            self.assertEqual(int(LongOverridesTrunc()), 42)
+
+            class JustTrunc(base):
+                def __trunc__(self):
+                    return 42
+            self.assertEqual(int(JustTrunc()), 42)
+
+            for trunc_result_base in (object, Classic):
+                class Integral(trunc_result_base):
+                    def __int__(self):
+                        return 42
+
+                class TruncReturnsNonLong(base):
+                    def __trunc__(self):
+                        return Integral()
+                self.assertEqual(int(TruncReturnsNonLong()), 42)
+
+                class NonIntegral(trunc_result_base):
+                    def __trunc__(self):
+                        # Check that we avoid infinite recursion.
+                        return NonIntegral()
+
+                class TruncReturnsNonIntegral(base):
+                    def __trunc__(self):
+                        return NonIntegral()
+                try:
+                    int(TruncReturnsNonIntegral())
+                except TypeError as e:
+                    self.assertEquals(str(e),
+                                      "__trunc__ returned non-Integral"
+                                      " (type NonIntegral)")
+                else:
+                    self.fail("Failed to raise TypeError with %s" %
+                              ((base, trunc_result_base),))
+
     def test_misc(self):
-        import sys
 
         # check the extremes in int<->long conversion
         hugepos = sys.maxsize
@@ -403,7 +622,6 @@ class LongTest(unittest.TestCase):
     def test_mixed_compares(self):
         eq = self.assertEqual
         import math
-        import sys
 
         # We're mostly concerned with that mixing floats and longs does the
         # right stuff, even when longs are too large to fit in a float.

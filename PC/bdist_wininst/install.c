@@ -133,6 +133,7 @@ char meta_name[80];		/* package name without version like
 char install_script[MAX_PATH];
 char *pre_install_script; /* run before we install a single file */
 
+char user_access_control[10]; // one of 'auto', 'force', otherwise none.
 
 int py_major, py_minor;		/* Python version selected for installation */
 
@@ -344,8 +345,15 @@ struct PyMethodDef {
 };
 typedef struct PyMethodDef PyMethodDef;
 
+// XXX - all of these are potentially fragile!  We load and unload
+// the Python DLL multiple times - so storing functions pointers 
+// is dangerous (although things *look* OK at present)
+// Better might be to roll prepare_script_environment() into
+// LoadPythonDll(), and create a new UnloadPythonDLL() which also
+// clears the global pointers.
 void *(*g_Py_BuildValue)(char *, ...);
 int (*g_PyArg_ParseTuple)(PyObject *, char *, ...);
+PyObject * (*g_PyLong_FromVoidPtr)(void *);
 
 PyObject *g_PyExc_ValueError;
 PyObject *g_PyExc_OSError;
@@ -597,7 +605,7 @@ static PyObject *PyMessageBox(PyObject *self, PyObject *args)
 
 static PyObject *GetRootHKey(PyObject *self)
 {
-	return g_Py_BuildValue("l", hkey_root);
+	return g_PyLong_FromVoidPtr(hkey_root);
 }
 
 #define METH_VARARGS 0x0001
@@ -631,7 +639,9 @@ static HINSTANCE LoadPythonDll(char *fname)
 		 "SOFTWARE\\Python\\PythonCore\\%d.%d\\InstallPath",
 		 py_major, py_minor);
 	if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER, subkey_name,
-					   fullpath, &size))
+	                                   fullpath, &size) &&
+	    ERROR_SUCCESS != RegQueryValue(HKEY_LOCAL_MACHINE, subkey_name,
+	                                   fullpath, &size))
 		return NULL;
 	strcat(fullpath, "\\");
 	strcat(fullpath, fname);
@@ -648,6 +658,7 @@ static int prepare_script_environment(HINSTANCE hPython)
 	DECLPROC(hPython, PyObject *, Py_BuildValue, (char *, ...));
 	DECLPROC(hPython, int, PyArg_ParseTuple, (PyObject *, char *, ...));
 	DECLPROC(hPython, PyObject *, PyErr_Format, (PyObject *, char *));
+	DECLPROC(hPython, PyObject *, PyLong_FromVoidPtr, (void *));
 	if (!PyImport_ImportModule || !PyObject_GetAttrString || 
 	    !PyObject_SetAttrString || !PyCFunction_New)
 		return 1;
@@ -667,6 +678,7 @@ static int prepare_script_environment(HINSTANCE hPython)
 	g_Py_BuildValue = Py_BuildValue;
 	g_PyArg_ParseTuple = PyArg_ParseTuple;
 	g_PyErr_Format = PyErr_Format;
+	g_PyLong_FromVoidPtr = PyLong_FromVoidPtr;
 
 	return 0;
 }
@@ -777,7 +789,9 @@ static int run_simple_script(char *script)
 
 	hPython = LoadPythonDll(pythondll);
 	if (!hPython) {
-		set_failure_reason("Can't load Python for pre-install script");
+		char reason[128];
+		wsprintf(reason, "Can't load Python for pre-install script (%d)", GetLastError());
+		set_failure_reason(reason);
 		return -1;
 	}
 	rc = do_run_simple_script(hPython, script);
@@ -2073,6 +2087,71 @@ void RunWizard(HWND hwnd)
 		PropertySheet(&psh);
 }
 
+// subtly different from HasLocalMachinePrivs(), in that after executing
+// an 'elevated' process, we expect this to return TRUE - but there is no
+// such implication for HasLocalMachinePrivs
+BOOL MyIsUserAnAdmin()
+{
+	typedef BOOL (WINAPI *PFNIsUserAnAdmin)();
+	static PFNIsUserAnAdmin pfnIsUserAnAdmin = NULL;
+	HMODULE shell32;
+	// This function isn't guaranteed to be available (and it can't hurt 
+	// to leave the library loaded)
+	if (0 == (shell32=LoadLibrary("shell32.dll")))
+		return FALSE;
+	if (0 == (pfnIsUserAnAdmin=(PFNIsUserAnAdmin)GetProcAddress(shell32, "IsUserAnAdmin")))
+		return FALSE;
+	return (*pfnIsUserAnAdmin)();
+}
+
+// Some magic for Vista's UAC.  If there is a target_version, and
+// if that target version is installed in the registry under
+// HKLM, and we are not current administrator, then
+// re-execute ourselves requesting elevation.
+// Split into 2 functions - "should we elevate" and "spawn elevated"
+
+// Returns TRUE if we should spawn an elevated child
+BOOL NeedAutoUAC()
+{
+	HKEY hk;
+	char key_name[80];
+	OSVERSIONINFO winverinfo;
+	winverinfo.dwOSVersionInfoSize = sizeof(winverinfo);
+	// If less than XP, then we can't do it (and its not necessary).
+	if (!GetVersionEx(&winverinfo) || winverinfo.dwMajorVersion < 5)
+		return FALSE;
+	// no Python version info == we can't know yet.
+	if (target_version[0] == '\0')
+		return FALSE;
+	// see how python is current installed
+	wsprintf(key_name,
+			 "Software\\Python\\PythonCore\\%s\\InstallPath",
+			 target_version);
+	if (ERROR_SUCCESS != RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
+	                                  key_name, 0, KEY_READ, &hk))
+		return FALSE;
+	RegCloseKey(hk);
+	// Python is installed in HKLM - we must elevate.
+	return TRUE;
+}
+
+// Spawn ourself as an elevated application.  On failure, a message is
+// displayed to the user - but this app will always terminate, even
+// on error.
+void SpawnUAC()
+{
+	// interesting failure scenario that has been seen: initial executable
+	// runs from a network drive - but once elevated, that network share
+	// isn't seen, and ShellExecute fails with SE_ERR_ACCESSDENIED.
+	int ret = (int)ShellExecute(0, "runas", modulename, "", NULL, 
+	                            SW_SHOWNORMAL);
+	if (ret <= 32) {
+		char msg[128];
+		wsprintf(msg, "Failed to start elevated process (ShellExecute returned %d)", ret);
+		MessageBox(0, msg, "Setup", MB_OK | MB_ICONERROR);
+	}
+}
+
 int DoInstall(void)
 {
 	char ini_buffer[4096];
@@ -2106,6 +2185,31 @@ int DoInstall(void)
 				 install_script, sizeof(install_script),
 				 ini_file);
 
+	GetPrivateProfileString("Setup", "user_access_control", "",
+				 user_access_control, sizeof(user_access_control), ini_file);
+
+	// See if we need to do the Vista UAC magic.
+	if (strcmp(user_access_control, "force")==0) {
+		if (!MyIsUserAnAdmin()) {
+			SpawnUAC();
+			return 0;
+		}
+		// already admin - keep going
+	} else if (strcmp(user_access_control, "auto")==0) {
+		// Check if it looks like we need UAC control, based
+		// on how Python itself was installed.
+		if (!MyIsUserAnAdmin() && NeedAutoUAC()) {
+			SpawnUAC();
+			return 0;
+		}
+	} else {
+		// display a warning about unknown values - only the developer
+		// of the extension will see it (until they fix it!)
+		if (user_access_control[0] && strcmp(user_access_control, "none") != 0) {
+			MessageBox(GetFocus(), "Bad user_access_control value", "oops", MB_OK);
+		// nothing to do.
+		}
+	}
 
 	hwndMain = CreateBackground(title);
 

@@ -112,10 +112,11 @@ Module functions and constants
    :func:`connect` function.
 
    Setting it makes the :mod:`sqlite3` module parse the declared type for each
-   column it returns.  It will parse out the first word of the declared type, i. e.
-   for "integer primary key", it will parse out "integer". Then for that column, it
-   will look into the converters dictionary and use the converter function
-   registered for that type there.  Converter names are case-sensitive!
+   column it returns.  It will parse out the first word of the declared type,
+   i. e.  for "integer primary key", it will parse out "integer", or for
+   "number(10)" it will parse out "number". Then for that column, it will look
+   into the converters dictionary and use the converter function registered for
+   that type there.
 
 
 .. data:: PARSE_COLNAMES
@@ -653,10 +654,6 @@ and constructs a :class:`Point` object from it.
 
    Converter functions **always** get called with a string, no matter under which
    data type you sent the value to SQLite.
-
-.. note::
-
-   Converter names are looked up in a case-sensitive manner.
 
 ::
 

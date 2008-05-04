@@ -1,3 +1,4 @@
+# -coding=latin1-
 svTempDisable   =   -32768  #svTempDisable
 svDisabled  =   -32640  #Reserve range -32640 to -32768 for Apple temp disables.
 fontNotOutlineErr   =   -32615  #bitmap font passed to routine that does outlines only

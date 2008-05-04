@@ -379,17 +379,17 @@ always available.
 
    *platform* may be one of the following values:
 
-   +-----------------------------------------+-----------------------+
-   | Constant                                | Platform              |
-   +=========================================+=======================+
-   | :const:`0 (VER_PLATFORM_WIN32s)`        | Win32s on Windows 3.1 |
-   +-----------------------------------------+-----------------------+
-   | :const:`1 (VER_PLATFORM_WIN32_WINDOWS)` | Windows 95/98/ME      |
-   +-----------------------------------------+-----------------------+
-   | :const:`2 (VER_PLATFORM_WIN32_NT)`      | Windows NT/2000/XP    |
-   +-----------------------------------------+-----------------------+
-   | :const:`3 (VER_PLATFORM_WIN32_CE)`      | Windows CE            |
-   +-----------------------------------------+-----------------------+
+   +-----------------------------------------+-------------------------+
+   | Constant                                | Platform                |
+   +=========================================+=========================+
+   | :const:`0 (VER_PLATFORM_WIN32s)`        | Win32s on Windows 3.1   |
+   +-----------------------------------------+-------------------------+
+   | :const:`1 (VER_PLATFORM_WIN32_WINDOWS)` | Windows 95/98/ME        |
+   +-----------------------------------------+-------------------------+
+   | :const:`2 (VER_PLATFORM_WIN32_NT)`      | Windows NT/2000/XP/x64  |
+   +-----------------------------------------+-------------------------+
+   | :const:`3 (VER_PLATFORM_WIN32_CE)`      | Windows CE              |
+   +-----------------------------------------+-------------------------+
 
    This function wraps the Win32 :cfunc:`GetVersionEx` function; see the Microsoft
    documentation for more information about these fields.

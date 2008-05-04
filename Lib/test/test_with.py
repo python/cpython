@@ -2,7 +2,6 @@
 
 """Unit tests for the with statement specified in PEP 343."""
 
-from __future__ import with_statement
 
 __author__ = "Mike Bland"
 __email__ = "mbland at acm dot org"

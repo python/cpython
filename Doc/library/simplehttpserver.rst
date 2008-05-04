@@ -7,39 +7,40 @@
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 
-The :mod:`SimpleHTTPServer` module defines a request-handler class,
-interface-compatible with :class:`BaseHTTPServer.BaseHTTPRequestHandler`, that
-serves files only from a base directory.
+The :mod:`SimpleHTTPServer` module defines a single class,
+:class:`SimpleHTTPRequestHandler`, which is interface-compatible with
+:class:`BaseHTTPServer.BaseHTTPRequestHandler`.
 
 The :mod:`SimpleHTTPServer` module defines the following class:
 
 
 .. class:: SimpleHTTPRequestHandler(request, client_address, server)
 
-   This class is used to serve files from the current directory and below, directly
+   This class serves files from the current directory and below, directly
    mapping the directory structure to HTTP requests.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPServer.BaseHTTPRequestHandler`.  This class implements the
    :func:`do_GET` and :func:`do_HEAD` functions.
 
-   The :class:`SimpleHTTPRequestHandler` defines the following member variables:
+   The following are defined as class-level attributes of
+   :class:`SimpleHTTPRequestHandler`:
 
 
    .. attribute:: server_version
 
-      This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
-      defined in the module.
+   This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
+   defined at the module level.
 
 
    .. attribute:: extensions_map
 
-      A dictionary mapping suffixes into MIME types. The default is signified by
-      an empty string, and is considered to be ``application/octet-stream``. The
-      mapping is used case-insensitively, and so should contain only lower-cased
-      keys.
+      A dictionary mapping suffixes into MIME types. The default is
+      signified by an empty string, and is considered to be
+      ``application/octet-stream``. The mapping is used case-insensitively,
+      and so should contain only lower-cased keys.
 
-   The :class:`SimpleHTTPRequestHandler` defines the following methods:
+   The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
 
    .. method:: do_HEAD()

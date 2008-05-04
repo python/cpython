@@ -478,11 +478,7 @@ def localcontext(ctx=None):
                  # General Decimal Arithmetic Specification
              return +s  # Convert result to normal context
 
-    """
-    # The string below can't be included in the docstring until Python 2.6
-    # as the doctest module doesn't understand __future__ statements
-    """
-    >>> from __future__ import with_statement
+    >>> setcontext(DefaultContext)
     >>> print(getcontext().prec)
     28
     >>> with localcontext():
@@ -3618,9 +3614,9 @@ class Context(object):
         if _ignored_flags is None:
             _ignored_flags = []
         if not isinstance(flags, dict):
-            flags = dict([(s,s in flags) for s in _signals])
+            flags = dict([(s, int(s in flags)) for s in _signals])
         if traps is not None and not isinstance(traps, dict):
-            traps = dict([(s,s in traps) for s in _signals])
+            traps = dict([(s, int(s in traps)) for s in _signals])
         for name, val in locals().items():
             if val is None:
                 setattr(self, name, _copy.copy(getattr(DefaultContext, name)))

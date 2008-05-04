@@ -89,10 +89,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter, int allow_8bit_chars)
 {
     int rc = SQLITE_OK;
-    long longval;
-#ifdef HAVE_LONG_LONG
     PY_LONG_LONG longlongval;
-#endif
     const char* buffer;
     char* string;
     Py_ssize_t buflen;
@@ -136,12 +133,8 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
     switch (paramtype) {
         case TYPE_LONG:
             /* in the overflow error case, longval/longlongval is -1, and an exception is set */
-#ifdef HAVE_LONG_LONG      
             longlongval = PyLong_AsLongLong(parameter);
             rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longlongval);
-#else
-            rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longval);
-#endif
             break;
         case TYPE_FLOAT:
             rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));

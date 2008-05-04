@@ -1059,6 +1059,12 @@ class MiscTests(unittest.TestCase):
         o = build_opener(urllib2.HTTPHandler())
         self.opener_has_handler(o, urllib2.HTTPHandler)
 
+        # Issue2670: multiple handlers sharing the same base class
+        class MyOtherHTTPHandler(urllib2.HTTPHandler): pass
+        o = build_opener(MyHTTPHandler, MyOtherHTTPHandler)
+        self.opener_has_handler(o, MyHTTPHandler)
+        self.opener_has_handler(o, MyOtherHTTPHandler)
+
     def opener_has_handler(self, opener, handler_class):
         for h in opener.handlers:
             if h.__class__ == handler_class:

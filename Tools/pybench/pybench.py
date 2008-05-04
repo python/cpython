@@ -501,6 +501,7 @@ class Benchmark:
     def calibrate(self):
 
         print('Calibrating tests. Please wait...', end=' ')
+        sys.stdout.flush()
         if self.verbose:
             print()
             print()

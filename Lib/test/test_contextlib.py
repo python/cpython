@@ -1,6 +1,5 @@
 """Unit tests for contextlib.py, and other context managers."""
 
-from __future__ import with_statement
 
 import sys
 import os

@@ -129,6 +129,10 @@ What a mess!
         expect = ['And she said, "Go to hell!"  Can you believe that?']
         self.check(wrapper.wrap(text), expect)
 
+        text = 'File stdio.h is nice.'
+        expect = ['File stdio.h is nice.']
+        self.check(wrapper.wrap(text), expect)
+
     def test_wrap_short(self):
         # Wrapping to make short lines longer
 

@@ -78,8 +78,6 @@ else:
 
 template = "tmp"
 
-tempdir = None
-
 # Internal routines.
 
 _once_lock = _allocate_lock()
@@ -252,7 +250,7 @@ def gettempprefix():
 tempdir = None
 
 def gettempdir():
-    """Accessor for tempdir.tempdir."""
+    """Accessor for tempfile.tempdir."""
     global tempdir
     if tempdir is None:
         _once_lock.acquire()
@@ -264,8 +262,7 @@ def gettempdir():
     return tempdir
 
 def mkstemp(suffix="", prefix=template, dir=None, text=False):
-    """mkstemp([suffix, [prefix, [dir, [text]]]])
-    User-callable function to create and return a unique temporary
+    """User-callable function to create and return a unique temporary
     file.  The return value is a pair (fd, name) where fd is the
     file descriptor returned by os.open, and name is the filename.
 
@@ -302,8 +299,7 @@ def mkstemp(suffix="", prefix=template, dir=None, text=False):
 
 
 def mkdtemp(suffix="", prefix=template, dir=None):
-    """mkdtemp([suffix, [prefix, [dir]]])
-    User-callable function to create and return a unique temporary
+    """User-callable function to create and return a unique temporary
     directory.  The return value is the pathname of the directory.
 
     Arguments are as for mkstemp, except that the 'text' argument is
@@ -334,8 +330,7 @@ def mkdtemp(suffix="", prefix=template, dir=None):
     raise IOError(_errno.EEXIST, "No usable temporary directory name found")
 
 def mktemp(suffix="", prefix=template, dir=None):
-    """mktemp([suffix, [prefix, [dir]]])
-    User-callable function to return a unique temporary file name.  The
+    """User-callable function to return a unique temporary file name.  The
     file is not created.
 
     Arguments are as for mkstemp, except that the 'text' argument is

@@ -12,6 +12,7 @@ builddir=	../..
 RUNSHARED=      @RUNSHARED@
 BUILDEXE=       @BUILDEXEEXT@
 BUILDPYTHON=    $(builddir)/python$(BUILDEXE)
+PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
 
 # Deployment target selected during configure, to be checked
 # by distutils  
@@ -20,7 +21,7 @@ MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 
 BUNDLEBULDER=$(srcdir)/../../Lib/plat-mac/bundlebuilder.py
 
-PYTHONAPPSDIR=/Applications/MacPython $(VERSION)
+PYTHONAPPSDIR=/Applications/$(PYTHONFRAMEWORK) $(VERSION)
 OBJECTS=FileSettings.o MyAppDelegate.o MyDocument.o PreferencesWindowController.o doscript.o main.o
 
 all: Python\ Launcher.app
