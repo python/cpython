@@ -1206,7 +1206,7 @@ class Decimal(object):
         return ans
     __rmul__ = __mul__
 
-    def __div__(self, other, context=None):
+    def __truediv__(self, other, context=None):
         """Return self / other."""
         other = _convert_other(other)
         if other is NotImplemented:
@@ -1265,8 +1265,6 @@ class Decimal(object):
         ans = _dec_from_triple(sign, str(coeff), exp)
         return ans._fix(context)
 
-    __truediv__ = __div__
-
     def _divide(self, other, context):
         """Return (self // other, self % other), to context.prec precision.
 
@@ -1300,13 +1298,15 @@ class Decimal(object):
                                    'quotient too large in //, % or divmod')
         return ans, ans
 
-    def __rdiv__(self, other, context=None):
-        """Swaps self/other and returns __div__."""
+    def __rtruediv__(self, other, context=None):
+        """Swaps self/other and returns __truediv__."""
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__div__(self, context=context)
-    __rtruediv__ = __rdiv__
+        return other.__truediv__(self, context=context)
+
+    __div__ = __truediv__
+    __rdiv__ = __rtruediv__
 
     def __divmod__(self, other, context=None):
         """
@@ -1506,7 +1506,7 @@ class Decimal(object):
                 context = getcontext()
                 return context._raise_error(InvalidContext)
             elif self._isinfinity():
-                raise OverflowError("Cannot convert infinity to long")
+                raise OverflowError("Cannot convert infinity to int")
         s = (-1)**self._sign
         if self._exp >= 0:
             return s*int(self._int)*10**self._exp
@@ -3677,7 +3677,7 @@ class Context(object):
 
         # Errors should only be risked on copies of the context
         # self._ignored_flags = []
-        raise error, explanation
+        raise error(explanation)
 
     def _ignore_all_flags(self):
         """Ignore all flags, if they are raised"""
