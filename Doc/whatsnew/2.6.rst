@@ -734,7 +734,8 @@ and it also supports the ``b''`` notation.
 
 There's also a ``__future__`` import that causes all string literals
 to become Unicode strings.  This means that ``\u`` escape sequences 
-can be used to include Unicode characters.
+can be used to include Unicode characters::
+
 
     from __future__ import unicode_literals
 
@@ -742,6 +743,7 @@ can be used to include Unicode characters.
          '\u3081\u3000\u751f\u305f\u307e\u3054')
 
     print len(s)               # 12 Unicode characters
+
 
 
 .. seealso::
