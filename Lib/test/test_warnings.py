@@ -279,7 +279,7 @@ class WarnTests(unittest.TestCase):
             warning_tests.__name__ = module_name
             sys.argv = argv
 
-    def BROKEN_test_missing_filename_main_with_argv_empty_string(self):
+    def test_missing_filename_main_with_argv_empty_string(self):
         # If __file__ is not specified, the caller is __main__, and sys.argv[0]
         # is the empty string, then '__main__ is the file name.
         # Tests issue 2743.
