@@ -2319,6 +2319,9 @@ Changes to Python's build process and to the C API include:
 Port-Specific Changes: Windows
 -----------------------------------
 
+* The support for Windows 95, 98, ME and NT4 has been dropped.
+  Python 2.6 requires at least Windows 2000 SP4.
+
 * The :mod:`msvcrt` module now supports 
   both the normal and wide char variants of the console I/O
   API.  The :func:`getwch` function reads a keypress and returns a Unicode 
