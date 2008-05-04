@@ -131,6 +131,26 @@ class RowFactoryTests(unittest.TestCase):
         self.failUnlessEqual(d["a"], row["a"])
         self.failUnlessEqual(d["b"], row["b"])
 
+    def CheckSqliteRowHashCmp(self):
+        """Checks if the row object compares and hashes correctly"""
+        self.con.row_factory = sqlite.Row
+        row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
+        row_2 = self.con.execute("select 1 as a, 2 as b").fetchone()
+        row_3 = self.con.execute("select 1 as a, 3 as b").fetchone()
+
+        self.failUnless(row_1 == row_1)
+        self.failUnless(row_1 == row_2)
+        self.failUnless(row_2 != row_3)
+
+        self.failIf(row_1 != row_1)
+        self.failIf(row_1 != row_2)
+        self.failIf(row_2 == row_3)
+
+        self.failUnlessEqual(row_1, row_2)
+        self.failUnlessEqual(hash(row_1), hash(row_2))
+        self.failIfEqual(row_1, row_3)
+        self.failIfEqual(hash(row_1), hash(row_3))
+
     def tearDown(self):
         self.con.close()
 
