@@ -808,7 +808,7 @@ The first two examples support IPv4 only. ::
    # Echo server program
    import socket
 
-   HOST = ''                 # Symbolic name meaning the local host
+   HOST = ''                 # Symbolic name meaning all available interfaces
    PORT = 50007              # Arbitrary non-privileged port
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    s.bind((HOST, PORT))
