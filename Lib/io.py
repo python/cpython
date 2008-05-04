@@ -81,9 +81,8 @@ class BlockingIOError(IOError):
 
 def open(file, mode="r", buffering=None, encoding=None, errors=None,
          newline=None, closefd=True):
-    r"""
-    Open file and return a stream. If the file cannot be opened, an
-    IOError is raised.
+    r"""Open file and return a stream. If the file cannot be opened, an IOError is
+    raised.
 
     file is either a string giving the name (and the path if the file
     isn't in the current working directory) of the file to be opened or an
@@ -290,8 +289,7 @@ class UnsupportedOperation(ValueError, IOError):
 
 class IOBase(object):
 
-    """
-    The abstract base class for all I/O classes, acting on streams of
+    """The abstract base class for all I/O classes, acting on streams of
     bytes. There is no public constructor.
 
     This class provides dummy implementations for many methods that
@@ -333,7 +331,7 @@ class IOBase(object):
     ### Positioning ###
 
     def seek(self, pos, whence = 0):
-        """seek(pos: int, whence: int = 0) -> int.  Change stream position.
+        """Change stream position.
 
         Change the stream position to byte offset offset. offset is
         interpreted relative to the position indicated by whence.  Values
@@ -348,21 +346,21 @@ class IOBase(object):
         self._unsupported("seek")
 
     def tell(self):
-        """tell() -> int.  Return current stream position."""
+        """Return current stream position."""
         return self.seek(0, 1)
 
     def truncate(self, pos = None):
-        """truncate(size: int = None) -> int. Truncate file to size bytes.
+        """Truncate file to size bytes.
 
-        Size defaults to the current IO position as reported by tell().
-        Returns the new size.
+        Size defaults to the current IO position as reported by tell().  Return
+        the new size.
         """
         self._unsupported("truncate")
 
     ### Flush and close ###
 
     def flush(self):
-        """flush() -> None.  Flushes write buffers, if applicable.
+        """Flush write buffers, if applicable.
 
         This is not implemented for read-only and non-blocking streams.
         """
@@ -371,7 +369,7 @@ class IOBase(object):
     __closed = False
 
     def close(self):
-        """close() -> None.  Flushes and closes the IO object.
+        """Flush and close the IO object.
 
         This method has no effect if the file is already closed.
         """
@@ -397,7 +395,7 @@ class IOBase(object):
     ### Inquiries ###
 
     def seekable(self):
-        """seekable() -> bool.  Return whether object supports random access.
+        """Return whether object supports random access.
 
         If False, seek(), tell() and truncate() will raise IOError.
         This method may need to do a test seek().
@@ -413,7 +411,7 @@ class IOBase(object):
 
 
     def readable(self):
-        """readable() -> bool.  Return whether object was opened for reading.
+        """Return whether object was opened for reading.
 
         If False, read() will raise IOError.
         """
@@ -427,7 +425,7 @@ class IOBase(object):
                           if msg is None else msg)
 
     def writable(self):
-        """writable() -> bool.  Return whether object was opened for writing.
+        """Return whether object was opened for writing.
 
         If False, write() and truncate() will raise IOError.
         """
@@ -471,16 +469,16 @@ class IOBase(object):
     # XXX Should these be present even if unimplemented?
 
     def fileno(self):
-        """fileno() -> int.  Returns underlying file descriptor if one exists.
+        """Returns underlying file descriptor if one exists.
 
-        Raises IOError if the IO object does not use a file descriptor.
+        An IOError is raised if the IO object does not use a file descriptor.
         """
         self._unsupported("fileno")
 
     def isatty(self):
-        """isatty() -> int.  Returns whether this is an 'interactive' stream.
+        """Return whether this is an 'interactive' stream.
 
-        Returns False if we don't know.
+        Return False if it can't be determined.
         """
         self._checkClosed()
         return False
@@ -488,8 +486,7 @@ class IOBase(object):
     ### Readline[s] and writelines ###
 
     def readline(self, limit = -1):
-        r"""readline(limit: int = -1) -> bytes Read and return a line from the
-        stream.
+        r"""Read and return a line from the stream.
 
         If limit is specified, at most limit bytes will be read.
 
@@ -532,7 +529,7 @@ class IOBase(object):
         return line
 
     def readlines(self, hint=None):
-        """readlines(hint=None) -> list Return a list of lines from the stream.
+        """Return a list of lines from the stream.
 
         hint can be specified to control the number of lines read: no more
         lines will be read if the total size (in bytes/characters) of all
@@ -570,7 +567,7 @@ class RawIOBase(IOBase):
     # a subclass doesn't implement either.)
 
     def read(self, n = -1):
-        """read(n: int) -> bytes.  Read and return up to n bytes.
+        """Read and return up to n bytes.
 
         Returns an empty bytes array on EOF, or None if the object is
         set not to block and has no data to read.
@@ -585,7 +582,7 @@ class RawIOBase(IOBase):
         return bytes(b)
 
     def readall(self):
-        """readall() -> bytes.  Read until EOF, using multiple read() call."""
+        """Read until EOF, using multiple read() call."""
         res = bytearray()
         while True:
             data = self.read(DEFAULT_BUFFER_SIZE)
@@ -595,7 +592,7 @@ class RawIOBase(IOBase):
         return bytes(res)
 
     def readinto(self, b):
-        """readinto(b: bytes) -> int.  Read up to len(b) bytes into b.
+        """Read up to len(b) bytes into b.
 
         Returns number of bytes read (0 for EOF), or None if the object
         is set not to block as has no data to read.
@@ -603,7 +600,7 @@ class RawIOBase(IOBase):
         self._unsupported("readinto")
 
     def write(self, b):
-        """write(b: bytes) -> int.  Write the given buffer to the IO stream.
+        """Write the given buffer to the IO stream.
 
         Returns the number of bytes written, which may be less than len(b).
         """
@@ -650,7 +647,7 @@ class BufferedIOBase(IOBase):
     """
 
     def read(self, n = None):
-        """read(n: int = None) -> bytes.  Read and return up to n bytes.
+        """Read and return up to n bytes.
 
         If the argument is omitted, None, or negative, reads and
         returns all data until EOF.
@@ -670,7 +667,7 @@ class BufferedIOBase(IOBase):
         self._unsupported("read")
 
     def readinto(self, b):
-        """readinto(b: bytearray) -> int.  Read up to len(b) bytes into b.
+        """Read up to len(b) bytes into b.
 
         Like read(), this may issue multiple reads to the underlying raw
         stream, unless the latter is 'interactive'.
@@ -693,9 +690,9 @@ class BufferedIOBase(IOBase):
         return n
 
     def write(self, b):
-        """write(b: bytes) -> int.  Write the given buffer to the IO stream.
+        """Write the given buffer to the IO stream.
 
-        Returns the number of bytes written, which is never less than
+        Return the number of bytes written, which is never less than
         len(b).
 
         Raises BlockingIOError if the buffer is full and the
@@ -785,7 +782,7 @@ class BytesIO(BufferedIOBase):
         self._pos = 0
 
     def getvalue(self):
-        """getvalue() -> bytes Return the bytes value (contents) of the buffer
+        """Return the bytes value (contents) of the buffer
         """
         return bytes(self._buffer)
 
@@ -800,7 +797,7 @@ class BytesIO(BufferedIOBase):
         return bytes(b)
 
     def read1(self, n):
-        """In BytesIO, this is the same as read.
+        """this is the same as read.
         """
         return self.read(n)
 
@@ -939,9 +936,7 @@ class BufferedReader(_BufferedIOMixin):
 
 class BufferedWriter(_BufferedIOMixin):
 
-    """BufferedWriter(raw[, buffer_size[, max_buffer_size]])
-
-    A buffer for a writeable sequential RawIO object.
+    """A buffer for a writeable sequential RawIO object.
 
     The constructor creates a BufferedWriter for the given writeable raw
     stream. If the buffer_size is not given, it defaults to
@@ -1079,9 +1074,7 @@ class BufferedRWPair(BufferedIOBase):
 
 class BufferedRandom(BufferedWriter, BufferedReader):
 
-    """BufferedRandom(raw[, buffer_size[, max_buffer_size]])
-
-    A buffered interface to random access streams.
+    """A buffered interface to random access streams.
 
     The constructor creates a reader and writer for a seekable stream,
     raw, given in the first argument. If the buffer_size is omitted it
@@ -1144,7 +1137,7 @@ class TextIOBase(IOBase):
     """
 
     def read(self, n = -1):
-        """read(n: int = -1) -> unicode.  Read at most n characters from stream.
+        """Read at most n characters from stream.
 
         Read from underlying buffer until we have n characters or we hit EOF.
         If n is negative or omitted, read until EOF.
@@ -1152,11 +1145,11 @@ class TextIOBase(IOBase):
         self._unsupported("read")
 
     def write(self, s):
-        """write(s: unicode) -> int.  Write string s to stream."""
+        """Write string s to stream."""
         self._unsupported("write")
 
     def truncate(self, pos = None):
-        """truncate(pos: int = None) -> int.  Truncate size to pos."""
+        """Truncate size to pos."""
         self.flush()
         if pos is None:
             pos = self.tell()
@@ -1164,7 +1157,7 @@ class TextIOBase(IOBase):
         return self.buffer.truncate()
 
     def readline(self):
-        """readline() -> unicode.  Read until newline or EOF.
+        """Read until newline or EOF.
 
         Returns an empty string if EOF is hit immediately.
         """
@@ -1177,8 +1170,7 @@ class TextIOBase(IOBase):
 
     @property
     def newlines(self):
-        """newlines -> None | unicode | tuple of unicode. Line endings translated
-        so far.
+        """Line endings translated so far.
 
         Only line endings translated during reading are considered.
 
@@ -1268,9 +1260,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
 
 class TextIOWrapper(TextIOBase):
 
-    r"""TextIOWrapper(buffer[, encoding[, errors[, newline[, line_buffering]]]])
-
-    Character and line based layer over a BufferedIOBase object, buffer.
+    r"""Character and line based layer over a BufferedIOBase object, buffer.
 
     encoding gives the name of the encoding that the stream will be
     decoded or encoded with. It defaults to locale.getpreferredencoding.
@@ -1727,9 +1717,7 @@ class TextIOWrapper(TextIOBase):
 
 class StringIO(TextIOWrapper):
 
-    """StringIO([initial_value[, encoding, [errors, [newline]]]])
-
-    An in-memory stream for text. The initial_value argument sets the
+    """An in-memory stream for text. The initial_value argument sets the
     value of object. The other arguments are like those of TextIOWrapper's
     constructor.
     """
