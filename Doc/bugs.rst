@@ -37,7 +37,7 @@ The submission form has a number of fields.  For the "Title" field, enter a
 "Type" field, select the type of your problem; also select the "Component" and
 "Versions" to which the bug relates.
 
-In the "Change Note" field, describe the problem in detail, including what you
+In the "Comment" field, describe the problem in detail, including what you
 expected to happen and what did happen.  Be sure to include whether any
 extension modules were involved, and what hardware and software platform you
 were using (including version information as appropriate).
