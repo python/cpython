@@ -3,7 +3,6 @@
 # Note: function level imports should *not* be used
 # in this module as it may cause import lock deadlock.
 # See bug 683658.
-import inspect
 import linecache
 import sys
 import types
@@ -262,16 +261,24 @@ def warn_explicit(message, category, filename, lineno,
         raise RuntimeError(
               "Unrecognized action (%r) in warnings.filters:\n %s" %
               (action, item))
-    # Print message and context
-    if inspect.isfunction(showwarning):
-        arg_spec = inspect.getargspec(showwarning)
-        if 'line' not in arg_spec.args:
+    # Warn if showwarning() does not support the 'line' argument.
+    # Don't use 'inspect' as it relies on an extension module, which break the
+    # build thanks to 'warnings' being imported by setup.py.
+    fxn_code = None
+    if hasattr(showwarning, 'func_code'):
+        fxn_code = showwarning.func_code
+    elif hasattr(showwarning, '__func__'):
+        fxn_code = showwarning.__func__.func_code
+    if fxn_code:
+        args = fxn_code.co_varnames[:fxn_code.co_argcount]
+        if 'line' not in args:
             showwarning_msg = ("functions overriding warnings.showwarning() "
                                 "must support the 'line' argument")
             if message == showwarning_msg:
                 _show_warning(message, category, filename, lineno)
             else:
                 warn(showwarning_msg, DeprecationWarning)
+    # Print message and context
     showwarning(message, category, filename, lineno)
 
 
