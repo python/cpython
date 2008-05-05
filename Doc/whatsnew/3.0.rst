@@ -232,7 +232,8 @@ Exception Stuff
 * PEP 3109: Raising exceptions.  You must now use ``raise Exception(args)``
   instead of ``raise Exception, args``.
 
-* PEP 3110: Catching exceptions.
+* PEP 3110: Catching exceptions.  You must now use ``except SomeException as
+  identifier:`` instead of ``except Exception, identifier:``
 
 * PEP 3134: Exception chaining.  (The :attr:`__context__` feature from the PEP
   hasn't been implemented yet in 3.0a2.)

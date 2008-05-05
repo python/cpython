@@ -480,7 +480,7 @@ The :keyword:`raise` statement
    pair: raising; exception
 
 .. productionlist::
-   raise_stmt: "raise" [`expression` ["," `expression` ["," `expression`]]]
+   raise_stmt: "raise" [`expression` ["from" `expression`]]
 
 If no expressions are present, :keyword:`raise` re-raises the last exception
 that was active in the current scope.  If no exception is active in the current
@@ -498,23 +498,19 @@ The :dfn:`type` of the exception is the exception instance's class, the
 .. index:: object: traceback
 
 A traceback object is normally created automatically when an exception is raised
-and attached to it as the :attr:`__traceback__` attribute; however, you can set
-your own traceback using the :meth:`with_traceback` exception method, like so::
+and attached to it as the :attr:`__traceback__` attribute, which is writable.
+You can create an exception and set your own traceback in one step using the
+:meth:`with_traceback` exception method (which returns the same exception
+instance, with its traceback set to its argument), like so::
 
    raise RuntimeError("foo occurred").with_traceback(tracebackobj)
 
-.. XXX document exception chaining
+.. XXX document exception chaining 
 
 The "from" clause is used for exception chaining, which is not documented yet.
 
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information about handling exceptions is in section :ref:`try`.
-
-.. seealso::
-
-   :pep:`3109` - Raising exceptions in Python 3000
-      Describes the differences in :keyword:`raise` statements between Python
-      2.x and 3.0.
 
 
 .. _break:

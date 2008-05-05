@@ -270,16 +270,20 @@ Identifiers and keywords
 .. index:: identifier, name
 
 Identifiers (also referred to as *names*) are described by the following lexical
-definitions:
+definitions.
 
 The syntax of identifiers in Python is based on the Unicode standard annex
-UAX-31, with elaboration and changes as defined below.
+UAX-31, with elaboration and changes as defined below; see also :pep:`3131` for
+further details.
 
 Within the ASCII range (U+0001..U+007F), the valid characters for identifiers
-are the same as in Python 2.5; Python 3.0 introduces additional
-characters from outside the ASCII range (see :pep:`3131`).  For other
-characters, the classification uses the version of the Unicode Character
-Database as included in the :mod:`unicodedata` module.
+are the same as in Python 2.x: the uppercase and lowercase letters ``A`` through
+``Z``, the underscore ``_`` and, except for the first character, the digits
+``0`` through ``9``.
+
+Python 3.0 introduces additional characters from outside the ASCII range (see
+:pep:`3131`).  For these characters, the classification uses the version of the
+Unicode Character Database as included in the :mod:`unicodedata` module.
 
 Identifiers are unlimited in length.  Case is significant.
 
@@ -308,7 +312,6 @@ A non-normative HTML file listing all valid identifier characters for Unicode
 4.1 can be found at
 http://www.dcl.hpi.uni-potsdam.de/home/loewis/table-3131.html.
 
-See :pep:`3131` for further details.
 
 .. _keywords:
 

@@ -209,15 +209,15 @@ are always available.  They are listed here in alphabetical order.
    case, expression statements that evaluate to something else than
    ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* (which are new in Python 2.2)
-   control which future statements (see :pep:`236`) affect the compilation of
-   *source*.  If neither is present (or both are zero) the code is compiled with
-   those future statements that are in effect in the code that is calling compile.
-   If the *flags* argument is given and *dont_inherit* is not (or is zero) then the
+   The optional arguments *flags* and *dont_inherit* control which future
+   statements (see :pep:`236`) affect the compilation of *source*.  If neither
+   is present (or both are zero) the code is compiled with those future
+   statements that are in effect in the code that is calling compile.  If the
+   *flags* argument is given and *dont_inherit* is not (or is zero) then the
    future statements specified by the *flags* argument are used in addition to
    those that would be used anyway. If *dont_inherit* is a non-zero integer then
-   the *flags* argument is it -- the future statements in effect around the call to
-   compile are ignored.
+   the *flags* argument is it -- the future statements in effect around the call
+   to compile are ignored.
 
    Future statements are specified by bits which can be bitwise ORed together to
    specify multiple statements.  The bitfield required to specify a given feature
@@ -813,19 +813,14 @@ are always available.  They are listed here in alphabetical order.
    modulo *z* (computed more efficiently than ``pow(x, y) % z``). The two-argument
    form ``pow(x, y)`` is equivalent to using the power operator: ``x**y``.
 
-   The arguments must have numeric types.  With mixed operand types, the coercion
-   rules for binary arithmetic operators apply.  For :class:`int` operands, the
-   result has the same type as the operands (after coercion) unless the second
-   argument is negative; in that case, all arguments are converted to float and a
-   float result is delivered.  For example, ``10**2`` returns ``100``, but
-   ``10**-2`` returns ``0.01``.  (This last feature was added in Python 2.2.  In
-   Python 2.1 and before, if both arguments were of integer types and the second
-   argument was negative, an exception was raised.) If the second argument is
-   negative, the third argument must be omitted. If *z* is present, *x* and *y*
-   must be of integer types, and *y* must be non-negative.  (This restriction was
-   added in Python 2.2.  In Python 2.1 and before, floating 3-argument ``pow()``
-   returned platform-dependent results depending on floating-point rounding
-   accidents.)
+   The arguments must have numeric types.  With mixed operand types, the
+   coercion rules for binary arithmetic operators apply.  For :class:`int`
+   operands, the result has the same type as the operands (after coercion)
+   unless the second argument is negative; in that case, all arguments are
+   converted to float and a float result is delivered.  For example, ``10**2``
+   returns ``100``, but ``10**-2`` returns ``0.01``.  If the second argument is
+   negative, the third argument must be omitted.  If *z* is present, *x* and *y*
+   must be of integer types, and *y* must be non-negative.
 
 
 .. function:: print([object, ...][, sep=' '][, end='\n'][, file=sys.stdout])

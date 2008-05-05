@@ -334,12 +334,6 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
-.. seealso::
-
-   :pep:`3110` - Catching exceptions in Python 3000
-      Describes the differences in :keyword:`try` statements between Python 2.x
-      and 3.0.
-
 
 .. _with:
 .. _as:
@@ -389,11 +383,6 @@ The execution of the :keyword:`with` statement proceeds as follows:
    If the suite was exited for any reason other than an exception, the return
    value from :meth:`__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
-
-
-   In Python 2.5, the :keyword:`with` statement is only allowed when the
-   ``with_statement`` feature has been enabled.  It is always enabled in
-   Python 2.6.
 
 .. seealso::
 
