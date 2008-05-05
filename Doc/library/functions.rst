@@ -4,8 +4,8 @@
 Built-in Functions
 ==================
 
-The Python interpreter has a number of functions built into it that are always
-available.  They are listed here in alphabetical order.
+The Python interpreter has a number of functions and types built into it that
+are always available.  They are listed here in alphabetical order.
 
 
 .. function:: __import__(name[, globals[, locals[, fromlist[, level]]]])
