@@ -229,8 +229,8 @@ static void
 show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
                 *category, PyObject *sourceline)
 {
-    PyObject *f_stderr; 
-    PyObject *name; 
+    PyObject *f_stderr;
+    PyObject *name;
     char lineno_str[128];
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
@@ -272,7 +272,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
 }
 
 static PyObject *
-warn_explicit(PyObject *category, PyObject *message, 
+warn_explicit(PyObject *category, PyObject *message,
               PyObject *filename, int lineno,
               PyObject *module, PyObject *registry, PyObject *sourceline)
 {
@@ -347,12 +347,12 @@ warn_explicit(PyObject *category, PyObject *message,
                     goto cleanup;
             }
             /* _once_registry[(text, category)] = 1 */
-            rc = update_registry(registry, text, category, 0); 
+            rc = update_registry(registry, text, category, 0);
         }
         else if (strcmp(action, "module") == 0) {
             /* registry[(text, category, 0)] = 1 */
             if (registry != NULL)
-                rc = update_registry(registry, text, category, 0); 
+                rc = update_registry(registry, text, category, 0);
         }
         else if (strcmp(action, "default") != 0) {
             PyObject *to_str = PyObject_Str(item);
@@ -378,15 +378,45 @@ warn_explicit(PyObject *category, PyObject *message,
             show_warning(filename, lineno, text, category, sourceline);
         }
         else {
-            PyObject *res;
-            
-            res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
+            const char *msg = "functions overriding warnings.showwarning() "
+                                "must support the 'line' argument";
+            const char *text_char = PyString_AS_STRING(text);
+
+            if (strcmp(msg, text_char) == 0) {
+                /* Prevent infinite recursion by using built-in implementation
+                   of showwarning(). */
+                show_warning(filename, lineno, text, category, sourceline);
+            }
+            else {
+                PyObject *check_fxn;
+                PyObject *defaults;
+                PyObject *res;
+
+                if (PyMethod_Check(show_fxn))
+                    check_fxn = PyMethod_Function(show_fxn);
+                else if (PyFunction_Check(show_fxn))
+                    check_fxn = show_fxn;
+                else {
+                    PyErr_SetString(PyExc_TypeError,
+                                    "warnings.showwarning() must be set to a "
+                                    "function or method");
+                }
+
+                defaults = PyFunction_GetDefaults(check_fxn);
+                /* A proper implementation of warnings.showwarning() should
+                    have at least two default arguments. */
+                if ((defaults == NULL) || (PyTuple_Size(defaults) < 2)) {
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning, msg, 1) < 0)
+                        goto cleanup;
+                }
+                res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
                                                     filename, lineno_obj,
                                                     NULL);
-            Py_DECREF(show_fxn);
-            Py_XDECREF(res);
-            if (res == NULL)
-                goto cleanup;
+                Py_DECREF(show_fxn);
+                Py_XDECREF(res);
+                if (res == NULL)
+                    goto cleanup;
+            }
         }
     }
     else /* if (rc == -1) */
@@ -578,7 +608,7 @@ warnings_warn(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *message, *category = NULL;
     Py_ssize_t stack_level = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|On:warn", kw_list, 
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|On:warn", kw_list,
                                      &message, &category, &stack_level))
         return NULL;
 

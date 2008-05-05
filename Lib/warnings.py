@@ -3,6 +3,7 @@
 # Note: function level imports should *not* be used
 # in this module as it may cause import lock deadlock.
 # See bug 683658.
+import inspect
 import linecache
 import sys
 import types
@@ -21,7 +22,7 @@ def warnpy3k(message, category=None, stacklevel=1):
             category = DeprecationWarning
         warn(message, category, stacklevel+1)
 
-def showwarning(message, category, filename, lineno, file=None, line=None):
+def _show_warning(message, category, filename, lineno, file=None, line=None):
     """Hook to write a warning to a file; replace if you like."""
     if file is None:
         file = sys.stderr
@@ -29,6 +30,9 @@ def showwarning(message, category, filename, lineno, file=None, line=None):
         file.write(formatwarning(message, category, filename, lineno, line))
     except IOError:
         pass # the file (probably stderr) is invalid - this warning gets lost.
+# Keep a worrking version around in case the deprecation of the old API is
+# triggered.
+showwarning = _show_warning
 
 def formatwarning(message, category, filename, lineno, line=None):
     """Function to format a warning the standard way."""
@@ -259,6 +263,15 @@ def warn_explicit(message, category, filename, lineno,
               "Unrecognized action (%r) in warnings.filters:\n %s" %
               (action, item))
     # Print message and context
+    if inspect.isfunction(showwarning):
+        arg_spec = inspect.getargspec(showwarning)
+        if 'line' not in arg_spec.args:
+            showwarning_msg = ("functions overriding warnings.showwarning() "
+                                "must support the 'line' argument")
+            if message == showwarning_msg:
+                _show_warning(message, category, filename, lineno)
+            else:
+                warn(showwarning_msg, DeprecationWarning)
     showwarning(message, category, filename, lineno)
 
 
