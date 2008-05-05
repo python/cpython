@@ -312,7 +312,8 @@ class _fileobject(object):
 
     def read(self, size=-1):
         # Use max, disallow tiny reads in a loop as they are very inefficient.
-        # We never leave read() with any leftover data in our internal buffer.
+        # We never leave read() with any leftover data from a new recv() call
+        # in our internal buffer.
         rbufsize = max(self._rbufsize, self.default_bufsize)
         # Our use of StringIO rather than lists of string objects returned by
         # recv() minimizes memory usage and fragmentation that occurs when
@@ -342,13 +343,12 @@ class _fileobject(object):
             self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
                 left = size - buf_len
-                # Using max() here means that recv() can malloc a
-                # large amount of memory even though recv may return
-                # much less data than that.  But the returned data
-                # string is short lived in that case as we copy it
-                # into a StringIO and free it.
-                recv_size = max(rbufsize, left)
-                data = self._sock.recv(recv_size)
+                # recv() will malloc the amount of memory given as its
+                # parameter even though it often returns much less data
+                # than that.  The returned data string is short lived
+                # as we copy it into a StringIO and free it.  This avoids
+                # fragmentation issues on many platforms.
+                data = self._sock.recv(left)
                 if not data:
                     break
                 n = len(data)
@@ -359,13 +359,11 @@ class _fileobject(object):
                     # - Our call to recv returned exactly the
                     #   number of bytes we were asked to read.
                     return data
-                if n >= left:
-                    # avoids data copy of: buf.write(data[:left])
-                    buf.write(buffer(data, 0, left))
-                    # avoids data copy of: self._rbuf.write(data[left:])
-                    self._rbuf.write(buffer(data, left))
+                if n == left:
+                    buf.write(data)
                     del data  # explicit free
                     break
+                assert n <= left, "recv(%d) returned %d bytes" % (left, n)
                 buf.write(data)
                 buf_len += n
                 del data  # explicit free
@@ -374,8 +372,9 @@ class _fileobject(object):
 
     def readline(self, size=-1):
         buf = self._rbuf
-        if self._rbufsize > 1:
-            # if we're buffering, check if we already have it in our buffer
+        buf.seek(0, 2)  # seek end
+        if buf.tell() > 0:
+            # check if we already have it in our buffer
             buf.seek(0)
             bline = buf.readline(size)
             if bline.endswith('\n') or len(bline) == size:
@@ -383,13 +382,13 @@ class _fileobject(object):
                 self._rbuf.write(buf.read())
                 return bline
             del bline
-        buf.seek(0, 2)  # seek end
         if size < 0:
             # Read until \n or EOF, whichever comes first
             if self._rbufsize <= 1:
                 # Speed up unbuffered case
-                assert buf.tell() == 0
-                buffers = []
+                buf.seek(0)
+                buffers = [buf.read()]
+                self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
                 data = None
                 recv = self._sock.recv
                 while data != "\n":
@@ -399,7 +398,6 @@ class _fileobject(object):
                     buffers.append(data)
                 return "".join(buffers)
 
-            buf = self._rbuf
             buf.seek(0, 2)  # seek end
             self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
@@ -417,6 +415,7 @@ class _fileobject(object):
             return buf.getvalue()
         else:
             # Read until size bytes or \n or EOF seen, whichever comes first
+            buf.seek(0, 2)  # seek end
             buf_len = buf.tell()
             if buf_len >= size:
                 buf.seek(0)

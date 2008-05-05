@@ -789,6 +789,33 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.cli_file.write(MSG)
         self.cli_file.flush()
 
+    def testReadlineAfterRead(self):
+        a_baloo_is = self.serv_file.read(len("A baloo is"))
+        self.assertEqual("A baloo is", a_baloo_is)
+        _a_bear = self.serv_file.read(len(" a bear"))
+        self.assertEqual(" a bear", _a_bear)
+        line = self.serv_file.readline()
+        self.assertEqual("\n", line)
+        line = self.serv_file.readline()
+        self.assertEqual("A BALOO IS A BEAR.\n", line)
+        line = self.serv_file.readline()
+        self.assertEqual(MSG, line)
+
+    def _testReadlineAfterRead(self):
+        self.cli_file.write("A baloo is a bear\n")
+        self.cli_file.write("A BALOO IS A BEAR.\n")
+        self.cli_file.write(MSG)
+        self.cli_file.flush()
+
+    def testReadlineAfterReadNoNewline(self):
+        end_of_ = self.serv_file.read(len("End Of "))
+        self.assertEqual("End Of ", end_of_)
+        line = self.serv_file.readline()
+        self.assertEqual("Line", line)
+
+    def _testReadlineAfterReadNoNewline(self):
+        self.cli_file.write("End Of Line")
+
     def testClosedAttr(self):
         self.assert_(not self.serv_file.closed)
 
