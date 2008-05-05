@@ -438,6 +438,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_fileio", ["_fileio.c"]) )
         # _functools
         exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
+        # _json speedups
+        exts.append( Extension("_json", ["_json.c"]) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
         # profilers (_lsprof is for cProfile.py)

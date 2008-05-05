@@ -380,6 +380,9 @@
 			RelativePath="..\..\Modules\_hotshot.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\json.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\_localemodule.c">
 		</File>
 		<File

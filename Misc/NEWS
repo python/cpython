@@ -49,6 +49,9 @@ Extension Modules
 Library
 -------
 
+- Issue #2750: Add the 'json' package. Based on simplejson 1.9 and contributed
+  by Bob Ippolito.
+
 - Issue #1734346: Support Unicode file names for zipfiles.
 
 - Issue #2581: distutils: Vista UAC/elevation support for bdist_wininst
