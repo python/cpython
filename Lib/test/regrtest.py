@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-"""Regression test.
+"""Regression test driver.
 
 This will find all modules whose name is "test_*" in the test
 directory, and run them.  Various command line options provide

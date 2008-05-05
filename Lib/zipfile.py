@@ -255,12 +255,28 @@ class ZipInfo (object):
             self.extract_version = max(45, self.extract_version)
             self.create_version = max(45, self.extract_version)
 
+        filename, flag_bits = self._encodeFilenameFlags()
         header = struct.pack(structFileHeader, stringFileHeader,
-                 self.extract_version, self.reserved, self.flag_bits,
+                 self.extract_version, self.reserved, flag_bits,
                  self.compress_type, dostime, dosdate, CRC,
                  compress_size, file_size,
-                 len(self.filename), len(extra))
-        return header + self.filename + extra
+                 len(filename), len(extra))
+        return header + filename + extra
+
+    def _encodeFilenameFlags(self):
+        if isinstance(self.filename, unicode):
+            try:
+                return self.filename.encode('ascii'), self.flag_bits
+            except UnicodeEncodeError:
+                return self.filename.encode('utf-8'), self.flag_bits | 0x800
+        else:
+            return self.filename, self.flag_bits
+
+    def _decodeFilename(self):
+        if self.flag_bits & 0x800:
+            return self.filename.decode('utf-8')
+        else:
+            return self.filename
 
     def _decodeExtra(self):
         # Try to decode the extra field.
@@ -693,6 +709,7 @@ class ZipFile:
 
             x._decodeExtra()
             x.header_offset = x.header_offset + concat
+            x.filename = x._decodeFilename()
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
             if self.debug > 2:
@@ -1054,12 +1071,13 @@ class ZipFile:
                     create_version = zinfo.create_version
 
                 try:
+                    filename, flag_bits = zinfo._encodeFilenameFlags()
                     centdir = struct.pack(structCentralDir,
                      stringCentralDir, create_version,
                      zinfo.create_system, extract_version, zinfo.reserved,
-                     zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
+                     flag_bits, zinfo.compress_type, dostime, dosdate,
                      zinfo.CRC, compress_size, file_size,
-                     len(zinfo.filename), len(extra_data), len(zinfo.comment),
+                     len(filename), len(extra_data), len(zinfo.comment),
                      0, zinfo.internal_attr, zinfo.external_attr,
                      header_offset)
                 except DeprecationWarning:
@@ -1073,7 +1091,7 @@ class ZipFile:
                      header_offset)
                     raise
                 self.fp.write(centdir)
-                self.fp.write(zinfo.filename)
+                self.fp.write(filename)
                 self.fp.write(extra_data)
                 self.fp.write(zinfo.comment)
 

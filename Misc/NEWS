@@ -49,6 +49,8 @@ Extension Modules
 Library
 -------
 
+- Issue #1734346: Support Unicode file names for zipfiles.
+
 - Issue #2581: distutils: Vista UAC/elevation support for bdist_wininst
 
 - Issue #2635: Fix bug in 'fix_sentence_endings' textwrap.fill option,
