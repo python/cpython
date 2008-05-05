@@ -42,7 +42,9 @@ Extension Modules
   machinery in such places as the parser where use of pure Python code is not
   possible.  Both the ``showarning()`` and ``formatwarning()`` gain an
   optional 'line' argument which is not called by default for
-  backwards-compatibility reasons.
+  backwards-compatibility reasons. Setting ``warnings.showwarning()`` to
+  an implementation that lacks support for the ``line`` argument will raise a
+  DeprecationWarning.
 
 Library
 -------

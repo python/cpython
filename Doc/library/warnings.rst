@@ -220,7 +220,8 @@ Available Functions
    ``warnings.showwarning``.
 
    .. versionchanged:: 2.6
-      Added the *line* argument.
+      Added the *line* argument. Implementations that lack the new argument
+      will trigger a :exc:`DeprecationWarning`.
 
 
 .. function:: formatwarning(message, category, filename, lineno[, line])
