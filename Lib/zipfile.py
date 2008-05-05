@@ -257,12 +257,19 @@ class ZipInfo (object):
             self.extract_version = max(45, self.extract_version)
             self.create_version = max(45, self.extract_version)
 
+        filename, flag_bits = self._encodeFilenameFlags()
         header = struct.pack(structFileHeader, stringFileHeader,
-                 self.extract_version, self.reserved, self.flag_bits,
+                 self.extract_version, self.reserved, flag_bits,
                  self.compress_type, dostime, dosdate, CRC,
                  compress_size, file_size,
-                 len(self.filename), len(extra))
-        return header + self.filename.encode("utf-8") + extra
+                 len(filename), len(extra))
+        return header + filename + extra
+
+    def _encodeFilenameFlags(self):
+        try:
+            return self.filename.encode('ascii'), self.flag_bits
+        except UnicodeEncodeError:
+            return self.filename.encode('utf-8'), self.flag_bits | 0x800
 
     def _decodeExtra(self):
         # Try to decode the extra field.
@@ -681,8 +688,15 @@ class ZipFile:
             if self.debug > 2:
                 print(centdir)
             filename = fp.read(centdir[_CD_FILENAME_LENGTH])
+            flags = centdir[5]
+            if flags & 0x800:
+                # UTF-8 file names extension
+                filename = filename.decode('utf-8')
+            else:
+                # Historical ZIP filename encoding
+                filename = filename.decode('cp437')
             # Create ZipInfo instance to store file information
-            x = ZipInfo(filename.decode("utf-8"))
+            x = ZipInfo(filename)
             x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
             x.comment = fp.read(centdir[_CD_COMMENT_LENGTH])
             total = (total + centdir[_CD_FILENAME_LENGTH]
@@ -1067,16 +1081,17 @@ class ZipFile:
                     extract_version = zinfo.extract_version
                     create_version = zinfo.create_version
 
+                filename, flag_bits = zinfo._encodeFilenameFlags()
                 centdir = struct.pack(structCentralDir,
                  stringCentralDir, create_version,
                  zinfo.create_system, extract_version, zinfo.reserved,
-                 zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
+                 flag_bits, zinfo.compress_type, dostime, dosdate,
                  zinfo.CRC, compress_size, file_size,
-                 len(zinfo.filename), len(extra_data), len(zinfo.comment),
+                 len(filename), len(extra_data), len(zinfo.comment),
                  0, zinfo.internal_attr, zinfo.external_attr,
                  header_offset)
                 self.fp.write(centdir)
-                self.fp.write(zinfo.filename.encode("utf-8"))
+                self.fp.write(filename)
                 self.fp.write(extra_data)
                 self.fp.write(zinfo.comment)
 
