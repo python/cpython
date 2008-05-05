@@ -151,11 +151,16 @@ BaseException_with_traceback(PyObject *self, PyObject *tb) {
     return self;
 }
 
+PyDoc_STRVAR(with_traceback_doc,
+"Exception.with_traceback(tb) --\n\
+    set self.__traceback__ to tb and return self.");
+
 
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
-   {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O },
+   {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
+    with_traceback_doc},
    {NULL, NULL, 0, NULL},
 };
 
