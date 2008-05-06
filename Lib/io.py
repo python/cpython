@@ -794,7 +794,7 @@ class _BytesIO(BufferedIOBase):
         if n < 0:
             n = len(self._buffer)
         if len(self._buffer) <= self._pos:
-            return self._buffer[:0]
+            return bytes(self._buffer[:0])
         newpos = min(len(self._buffer), self._pos + n)
         b = self._buffer[self._pos : newpos]
         self._pos = newpos

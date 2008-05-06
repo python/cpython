@@ -114,6 +114,8 @@ class MemoryTestMixin:
         self.assertEqual(memio.read(-1), buf)
         memio.seek(0)
         self.assertEqual(type(memio.read()), type(buf))
+        memio.seek(100)
+        self.assertEqual(type(memio.read()), type(buf))
         memio.seek(0)
         self.assertEqual(memio.read(None), buf)
         self.assertRaises(TypeError, memio.read, '')
