@@ -490,7 +490,7 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
 			      &obj, &offset))
 		return NULL;
 
-	if (-1 == PyObject_AsReadBuffer(obj, &buffer, &buffer_len))
+	if (-1 == PyObject_AsReadBuffer(obj, (const void**)&buffer, &buffer_len))
 		return NULL;
 
 	if (offset < 0) {
