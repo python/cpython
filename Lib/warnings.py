@@ -247,6 +247,9 @@ def warn_explicit(message, category, filename, lineno,
         raise RuntimeError(
               "Unrecognized action (%r) in warnings.filters:\n %s" %
               (action, item))
+    if not hasattr(showwarning, "__call__"):
+        raise TypeError("warnings.showwarning() must be set to a "
+                        "function or method")
     # Print message and context
     showwarning(message, category, filename, lineno)
 

@@ -82,3 +82,51 @@ Note that for some non-Unix systems, ``sys.prefix`` and ``sys.exec_prefix`` are
 empty, and the path manipulations are skipped; however the import of
 :mod:`sitecustomize` is still attempted.
 
+
+.. data:: PREFIXES
+
+   A list of prefixes for site package directories
+
+   .. versionadded:: 2.6
+
+
+.. data:: ENABLE_USER_SITE
+
+   Flag showing the status of the user site directory. True means the
+   user site directory is enabled and added to sys.path. When the flag
+   is None the user site directory is disabled for security reasons.
+
+   .. versionadded:: 2.6
+
+
+.. data:: USER_SITE
+
+   Path to the user site directory for the current Python version or None
+
+   .. versionadded:: 2.6
+
+
+.. data:: USER_BASE
+
+   Path to the base directory for user site directories
+
+   .. versionadded:: 2.6
+
+
+.. envvar:: PYTHONNOUSERSITE
+
+   .. versionadded:: 2.6
+
+
+.. envvar:: PYTHONUSERBASE
+
+   .. versionadded:: 2.6
+
+
+.. function:: addsitedir(sitedir, known_paths=None)
+
+   Adds a directory to sys.path and processes its pth files.
+
+
+XXX Update documentation
+XXX document python -m site --user-base --user-site
