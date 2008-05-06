@@ -552,11 +552,10 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 			PyErr_SetString(PyExc_TypeError, "an integer is required");
 			return NULL;
 		}
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-		pos = PyLong_AsLong(posobj);
+#if defined(HAVE_LARGEFILE_SUPPORT)
+		pos = PyLong_AsLongLong(posobj);
 #else
-		pos = PyLong_Check(posobj) ?
-			PyLong_AsLongLong(posobj) : PyLong_AsLong(posobj);
+		pos = PyLong_AsLong(posobj);
 #endif
 		if (PyErr_Occurred())
 			return NULL;
@@ -572,10 +571,10 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 	if (res < 0)
 		return PyErr_SetFromErrno(PyExc_IOError);
 
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-	return PyLong_FromLong(res);
-#else
+#if defined(HAVE_LARGEFILE_SUPPORT)
 	return PyLong_FromLongLong(res);
+#else
+	return PyLong_FromLong(res);
 #endif
 }
 
@@ -622,48 +621,29 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 		return NULL;
 
 	if (posobj == Py_None || posobj == NULL) {
+		/* Get the current position. */
                 posobj = portable_lseek(fd, NULL, 1);
                 if (posobj == NULL)
-                  return NULL;
+			return NULL;
         }
         else {
-		Py_INCREF(posobj);
+		/* Move to the position to be truncated. */
+                posobj = portable_lseek(fd, posobj, 0);
         }
 
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-	pos = PyLong_AsLong(posobj);
+#if defined(HAVE_LARGEFILE_SUPPORT)
+	pos = PyLong_AsLongLong(posobj);
 #else
-	pos = PyLong_Check(posobj) ?
-		PyLong_AsLongLong(posobj) : PyLong_AsLong(posobj);
+	pos = PyLong_AsLong(posobj);
 #endif
-	if (PyErr_Occurred()) {
-		Py_DECREF(posobj);
+	if (PyErr_Occurred())
 		return NULL;
-	}
 
 #ifdef MS_WINDOWS
 	/* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
 	   so don't even try using it. */
 	{
 		HANDLE hFile;
-		PyObject *pos2, *oldposobj;
-
-		/* store the current position */
-		oldposobj = portable_lseek(self->fd, NULL, 1);
-		if (oldposobj == NULL) {
-			Py_DECREF(posobj);
-			return NULL;
-		}
-
-		/* Have to move current pos to desired endpoint on Windows. */
-		errno = 0;
-		pos2 = portable_lseek(fd, posobj, SEEK_SET);
-		if (pos2 == NULL) {
-			Py_DECREF(posobj);
-			Py_DECREF(oldposobj);
-			return NULL;
-		}
-		Py_DECREF(pos2);
 
 		/* Truncate.  Note that this may grow the file! */
 		Py_BEGIN_ALLOW_THREADS
@@ -676,18 +656,6 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 				errno = EACCES;
 		}
 		Py_END_ALLOW_THREADS
-
-		if (ret == 0) {
-			/* Move to the previous position in the file */
-			pos2 = portable_lseek(fd, oldposobj, SEEK_SET);
-			if (pos2 == NULL) {
-				Py_DECREF(posobj);
-				Py_DECREF(oldposobj);
-				return NULL;
-			}
-		}
-		Py_DECREF(pos2);
-		Py_DECREF(oldposobj);
 	}
 #else
 	Py_BEGIN_ALLOW_THREADS
@@ -697,7 +665,6 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 #endif /* !MS_WINDOWS */
 
 	if (ret != 0) {
-		Py_DECREF(posobj);
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
@@ -791,7 +758,8 @@ PyDoc_STRVAR(seek_doc,
 PyDoc_STRVAR(truncate_doc,
 "truncate([size: int]) -> None.	 Truncate the file to at most size bytes.\n"
 "\n"
-"Size defaults to the current file position, as returned by tell().");
+"Size defaults to the current file position, as returned by tell()."
+"The current file position is changed to the value of size.");
 #endif
 
 PyDoc_STRVAR(tell_doc,

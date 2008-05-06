@@ -58,7 +58,7 @@ class MimeToolsTest(unittest.TestCase):
             s.add(nb)
 
     def test_message(self):
-        msg = mimetools.Message(io.StringIO(msgtext1))
+        msg = mimetools.Message(io.StringIO(str(msgtext1)))
         self.assertEqual(msg.gettype(), "text/plain")
         self.assertEqual(msg.getmaintype(), "text")
         self.assertEqual(msg.getsubtype(), "plain")

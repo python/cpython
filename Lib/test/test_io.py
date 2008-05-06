@@ -98,7 +98,7 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.seek(-1, 2), 13)
         self.assertEqual(f.tell(), 13)
         self.assertEqual(f.truncate(12), 12)
-        self.assertEqual(f.tell(), 13)
+        self.assertEqual(f.tell(), 12)
         self.assertRaises(TypeError, f.seek, 0.0)
 
     def read_ops(self, f, buffered=False):
@@ -143,7 +143,7 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.tell(), self.LARGE + 2)
         self.assertEqual(f.seek(0, 2), self.LARGE + 2)
         self.assertEqual(f.truncate(self.LARGE + 1), self.LARGE + 1)
-        self.assertEqual(f.tell(), self.LARGE + 2)
+        self.assertEqual(f.tell(), self.LARGE + 1)
         self.assertEqual(f.seek(0, 2), self.LARGE + 1)
         self.assertEqual(f.seek(-1, 2), self.LARGE)
         self.assertEqual(f.read(2), b"x")
@@ -727,6 +727,7 @@ class TextIOWrapperTest(unittest.TestCase):
             txt.write("BB\nCCC\n")
             txt.write("X\rY\r\nZ")
             txt.flush()
+            self.assertEquals(buf.closed, False)
             self.assertEquals(buf.getvalue(), expected)
 
     def testNewlines(self):
@@ -807,7 +808,8 @@ class TextIOWrapperTest(unittest.TestCase):
                 txt = io.TextIOWrapper(buf, encoding="ascii", newline=newline)
                 txt.write(data)
                 txt.close()
-                self.assertEquals(buf.getvalue(), expected)
+                self.assertEquals(buf.closed, True)
+                self.assertRaises(ValueError, buf.getvalue)
         finally:
             os.linesep = save_linesep
 

@@ -240,11 +240,11 @@ Py_InitializeEx(int install_sigs)
     }
 
 	initmain(); /* Module __main__ */
+	if (!Py_NoSiteFlag)
+		initsite(); /* Module site */
 	if (initstdio() < 0)
 		Py_FatalError(
 		    "Py_Initialize: can't initialize sys standard streams");
-	if (!Py_NoSiteFlag)
-		initsite(); /* Module site */
 
 	/* auto-thread-state API, if available */
 #ifdef WITH_THREAD

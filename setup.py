@@ -426,6 +426,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('operator', ['operator.c']) )
         # _functools
         exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
+        # Memory-based IO accelerator modules
+        exts.append( Extension("_bytesio", ["_bytesio.c"]) )
         # atexit
         exts.append( Extension("atexit", ["atexitmodule.c"]) )
         # Python C API test module
