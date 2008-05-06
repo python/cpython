@@ -56,10 +56,20 @@ import sys
 import os
 import builtins
 
+# Prefixes for site-packages; add additional prefixes like /usr/local here
+PREFIXES = [sys.prefix, sys.exec_prefix]
+# Enable per user site-packages directory
+# set it to False to disable the feature or True to force the feature
+ENABLE_USER_SITE = None
+# for distutils.commands.install
+USER_SITE = None
+USER_BASE = None
+
 
 def makepath(*paths):
     dir = os.path.abspath(os.path.join(*paths))
     return dir, os.path.normcase(dir)
+
 
 def abs__file__():
     """Set all module' __file__ attribute to an absolute path"""
@@ -70,6 +80,7 @@ def abs__file__():
             m.__file__ = os.path.abspath(m.__file__)
         except AttributeError:
             continue
+
 
 def removeduppaths():
     """ Remove duplicate entries from sys.path along with making them
@@ -101,6 +112,7 @@ def addbuilddir():
     s = os.path.join(os.path.dirname(sys.path[-1]), s)
     sys.path.append(s)
 
+
 def _init_pathinfo():
     """Return a set containing all existing directory entries from sys.path"""
     d = set()
@@ -112,6 +124,7 @@ def _init_pathinfo():
         except TypeError:
             continue
     return d
+
 
 def addpackage(sitedir, name, known_paths):
     """Process a .pth file within the site-packages directory:
@@ -128,11 +141,11 @@ def addpackage(sitedir, name, known_paths):
         f = open(fullname, "rU")
     except IOError:
         return
-    try:
+    with f:
         for line in f:
             if line.startswith("#"):
                 continue
-            if line.startswith("import ") or line.startswith("import\t"):
+            if line.startswith(("import ", "import\t")):
                 exec(line)
                 continue
             line = line.rstrip()
@@ -140,11 +153,10 @@ def addpackage(sitedir, name, known_paths):
             if not dircase in known_paths and os.path.exists(dir):
                 sys.path.append(dir)
                 known_paths.add(dircase)
-    finally:
-        f.close()
     if reset:
         known_paths = None
     return known_paths
+
 
 def addsitedir(sitedir, known_paths=None):
     """Add 'sitedir' argument to sys.path if missing and handle .pth files in
@@ -161,48 +173,114 @@ def addsitedir(sitedir, known_paths=None):
         names = os.listdir(sitedir)
     except os.error:
         return
-    names.sort()
-    for name in names:
-        if name.endswith(".pth"):
-            addpackage(sitedir, name, known_paths)
+    names = [name for name in names if name.endswith(".pth")]
+    for name in sorted(names):
+        addpackage(sitedir, name, known_paths)
     if reset:
         known_paths = None
     return known_paths
 
+
+def check_enableusersite():
+    """Check if user site directory is safe for inclusion
+
+    The functions tests for the command line flag (including environment var),
+    process uid/gid equal to effective uid/gid.
+
+    None: Disabled for security reasons
+    False: Disabled by user (command line option)
+    True: Safe and enabled
+    """
+    if sys.flags.no_user_site:
+        return False
+
+    if hasattr(os, "getuid") and hasattr(os, "geteuid"):
+        # check process uid == effective uid
+        if os.geteuid() != os.getuid():
+            return None
+    if hasattr(os, "getgid") and hasattr(os, "getegid"):
+        # check process gid == effective gid
+        if os.getegid() != os.getgid():
+            return None
+
+    return True
+
+
+def addusersitepackages(known_paths):
+    """Add a per user site-package to sys.path
+
+    Each user has its own python directory with site-packages in the
+    home directory.
+
+    USER_BASE is the root directory for all Python versions
+
+    USER_SITE is the user specific site-packages directory
+
+    USER_SITE/.. can be used for data.
+    """
+    global USER_BASE, USER_SITE, ENABLE_USER_SITE
+    env_base = os.environ.get("PYTHONUSERBASE", None)
+
+    def joinuser(*args):
+        return os.path.expanduser(os.path.join(*args))
+
+    #if sys.platform in ('os2emx', 'riscos'):
+    #    # Don't know what to put here
+    #    USER_BASE = ''
+    #    USER_SITE = ''
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or "~"
+        USER_BASE = env_base if env_base else joinuser(base, "Python")
+        USER_SITE = os.path.join(USER_BASE,
+                                 "Python" + sys.version[0] + sys.version[2],
+                                 "site-packages")
+    else:
+        USER_BASE = env_base if env_base else joinuser("~", ".local")
+        USER_SITE = os.path.join(USER_BASE, "lib",
+                                 "python" + sys.version[:3],
+                                 "site-packages")
+
+    if ENABLE_USER_SITE and os.path.isdir(USER_SITE):
+        addsitedir(USER_SITE, known_paths)
+    return known_paths
+
+
 def addsitepackages(known_paths):
     """Add site-packages (and possibly site-python) to sys.path"""
-    prefixes = [sys.prefix]
-    if sys.exec_prefix != sys.prefix:
-        prefixes.append(sys.exec_prefix)
-    for prefix in prefixes:
-        if prefix:
-            if sys.platform == 'os2emx':
-                sitedirs = [os.path.join(prefix, "Lib", "site-packages")]
-            elif os.sep == '/':
-                sitedirs = [os.path.join(prefix,
-                                         "lib",
-                                         "python" + sys.version[:3],
-                                         "site-packages"),
-                            os.path.join(prefix, "lib", "site-python")]
-            else:
-                sitedirs = [prefix, os.path.join(prefix, "lib", "site-packages")]
-            if sys.platform == 'darwin':
-                # for framework builds *only* we add the standard Apple
-                # locations. Currently only per-user, but /Library and
-                # /Network/Library could be added too
-                if 'Python.framework' in prefix:
-                    home = os.environ.get('HOME')
-                    if home:
-                        sitedirs.append(
-                            os.path.join(home,
-                                         'Library',
-                                         'Python',
-                                         sys.version[:3],
-                                         'site-packages'))
-            for sitedir in sitedirs:
-                if os.path.isdir(sitedir):
-                    addsitedir(sitedir, known_paths)
-    return None
+    sitedirs = []
+    seen = []
+
+    for prefix in PREFIXES:
+        if not prefix or prefix in seen:
+            continue
+        seen.append(prefix)
+
+        if sys.platform in ('os2emx', 'riscos'):
+            sitedirs.append(os.path.join(prefix, "Lib", "site-packages"))
+        elif os.sep == '/':
+            sitedirs.append(os.path.join(prefix, "lib",
+                                        "python" + sys.version[:3],
+                                        "site-packages"))
+            sitedirs.append(os.path.join(prefix, "lib", "site-python"))
+        else:
+            sitedirs.append(prefix)
+            sitedirs.append(os.path.join(prefix, "lib", "site-packages"))
+
+        if sys.platform == "darwin":
+            # for framework builds *only* we add the standard Apple
+            # locations. Currently only per-user, but /Library and
+            # /Network/Library could be added too
+            if 'Python.framework' in prefix:
+                sitedirs.append(
+                    os.path.expanduser(
+                        os.path.join("~", "Library", "Python",
+                                     sys.version[:3], "site-packages")))
+
+    for sitedir in sitedirs:
+        if os.path.isdir(sitedir):
+            addsitedir(sitedir, known_paths)
+
+    return known_paths
 
 
 def setBEGINLIBPATH():
@@ -401,13 +479,26 @@ def execsitecustomize():
             (err.__class__.__name__, err))
 
 
+def execusercustomize():
+    """Run custom user specific code, if available."""
+    try:
+        import usercustomize
+    except ImportError:
+        pass
+
+
 def main():
+    global ENABLE_USER_SITE
+
     abs__file__()
-    paths_in_sys = removeduppaths()
+    known_paths = removeduppaths()
     if (os.name == "posix" and sys.path and
         os.path.basename(sys.path[-1]) == "Modules"):
         addbuilddir()
-    paths_in_sys = addsitepackages(paths_in_sys)
+    if ENABLE_USER_SITE is None:
+        ENABLE_USER_SITE = check_enableusersite()
+    known_paths = addusersitepackages(known_paths)
+    known_paths = addsitepackages(known_paths)
     if sys.platform == 'os2emx':
         setBEGINLIBPATH()
     setquit()
@@ -416,6 +507,8 @@ def main():
     aliasmbcs()
     setencoding()
     execsitecustomize()
+    if ENABLE_USER_SITE:
+        execusercustomize()
     # Remove sys.setdefaultencoding() so that users cannot change the
     # encoding after initialization.  The test for presence is needed when
     # this module is run as a script, because this code is executed twice.
@@ -424,11 +517,54 @@ def main():
 
 main()
 
-def _test():
-    print("sys.path = [")
-    for dir in sys.path:
-        print("    %r," % (dir,))
-    print("]")
+def _script():
+    help = """\
+    %s [--user-base] [--user-site]
+
+    Without arguments print some useful information
+    With arguments print the value of USER_BASE and/or USER_SITE separated
+    by '%s'.
+
+    Exit codes with --user-base or --user-site:
+      0 - user site directory is enabled
+      1 - user site diretory is disabled by user
+      2 - uses site directory is disabled by super user
+          or for security reasons
+     >2 - unknown error
+    """
+    args = sys.argv[1:]
+    if not args:
+        print("sys.path = [")
+        for dir in sys.path:
+            print("    %r," % (dir,))
+        print("]")
+        print("USER_BASE: %r (%s)" % (USER_BASE,
+            "exists" if os.path.isdir(USER_BASE) else "doesn't exist"))
+        print("USER_SITE: %r (%s)" % (USER_SITE,
+            "exists" if os.path.isdir(USER_SITE) else "doesn't exist"))
+        print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
+        sys.exit(0)
+
+    buffer = []
+    if '--user-base' in args:
+        buffer.append(USER_BASE)
+    if '--user-site' in args:
+        buffer.append(USER_SITE)
+
+    if buffer:
+        print(os.pathsep.join(buffer))
+        if ENABLE_USER_SITE:
+            sys.exit(0)
+        elif ENABLE_USER_SITE is False:
+            sys.exit(1)
+        elif ENABLE_USER_SITE is None:
+            sys.exit(2)
+        else:
+            sys.exit(3)
+    else:
+        import textwrap
+        print(textwrap.dedent(help % (sys.argv[0], os.pathsep)))
+        sys.exit(10)
 
 if __name__ == '__main__':
-    _test()
+    _script()

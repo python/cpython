@@ -83,6 +83,7 @@ int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.py[co]) */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
+int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 
 /* PyModule_GetWarningsModule is no longer necessary as of 2.6
 since _warnings is builtin.  This API should not be used. */

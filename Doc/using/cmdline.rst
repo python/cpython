@@ -21,7 +21,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bdEiOStuUvxX?] [-c command | -m module-name | script | - ] [args]
+    python [-bdEiOsStuUvxX?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -214,6 +214,29 @@ Miscellaneous options
 
 
 
+<<<<<<< .working
+=======
+   .. seealso::
+      :file:`Tools/scripts/fixdiv.py`
+         for a use of ``warnall``
+
+      :pep:`238` -- Changing the division operator
+
+
+.. cmdoption:: -s
+
+   Don't add user site directory to sys.path
+
+   .. versionadded:: 2.6
+
+   .. seealso::
+
+      :pep:`370` -- Per user site-packages directory
+
+
+.. cmdoption:: -S
+
+>>>>>>> .merge-right.r62788
    Disable the import of the module :mod:`site` and the site-dependent
    manipulations of :data:`sys.path` that it entails.
 
@@ -422,6 +445,24 @@ These environment variables influence Python's behavior.
    import of source modules.
 
    .. versionadded:: 2.6
+
+
+.. envvar:: PYTHONNOUSERSITE
+
+   If this is set, Python won't add the user site directory to sys.path
+
+   .. seealso::
+
+      :pep:`370` -- Per user site-packages directory
+
+
+.. envvar:: PYTHONUSERBASE
+
+   Sets the base directory for the user site directory
+
+   .. seealso::
+
+      :pep:`370` -- Per user site-packages directory
 
 
 .. envvar:: PYTHONEXECUTABLE
