@@ -1213,11 +1213,11 @@ The conversion types are:
 | ``'F'``    | Floating point decimal format.                      | \(3)  |
 +------------+-----------------------------------------------------+-------+
 | ``'g'``    | Floating point format. Uses lowercase exponential   | \(4)  |
-|            | format if exponent is less than -4 or greater than  |       |
+|            | format if exponent is less than -4 or not less than |       |
 |            | precision, decimal format otherwise.                |       |
 +------------+-----------------------------------------------------+-------+
 | ``'G'``    | Floating point format. Uses uppercase exponential   | \(4)  |
-|            | format if exponent is less than -4 or greater than  |       |
+|            | format if exponent is less than -4 or not less than |       |
 |            | precision, decimal format otherwise.                |       |
 +------------+-----------------------------------------------------+-------+
 | ``'c'``    | Single character (accepts integer or single         |       |
