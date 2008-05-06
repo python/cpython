@@ -47,6 +47,8 @@ Multimedia
 :mod:`audiodev`
    --- Platform-independent API for playing audio data.
 
+   .. warning:: The :mod:`audiodev` module has been removed in 3.0.
+
 :mod:`linuxaudiodev`
    --- Play audio data on the Linux audio device.  Replaced in Python 2.3 by the
    :mod:`ossaudiodev` module.
