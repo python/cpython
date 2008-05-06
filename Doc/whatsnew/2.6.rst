@@ -1692,7 +1692,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
   ``permutations(iter[, r])`` returns all the permutations of length *r* of
   the iterable's elements.  If *r* is not specified, it will default to the 
-  number of elements produced by the iterable.
+  number of elements produced by the iterable. ::
 
     itertools.permutations([1,2,3,4], 2) ->
       [(1, 2), (1, 3), (1, 4), 

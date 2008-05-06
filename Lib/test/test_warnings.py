@@ -225,6 +225,8 @@ class WarnTests(unittest.TestCase):
                 self.assertEqual(os.path.basename(w.filename), "test_warnings.py")
                 warning_tests.outer("spam6", stacklevel=2)
                 self.assertEqual(os.path.basename(w.filename), "warning_tests.py")
+                warning_tests.outer("spam6.5", stacklevel=3)
+                self.assertEqual(os.path.basename(w.filename), "test_warnings.py")
 
                 warning_tests.inner("spam7", stacklevel=9999)
                 self.assertEqual(os.path.basename(w.filename), "sys")
