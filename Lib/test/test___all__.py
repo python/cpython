@@ -1,18 +1,21 @@
 import unittest
-from test.test_support import run_unittest
+from test.test_support import run_unittest, catch_warning
 import sys
+import warnings
 
 
 class AllTest(unittest.TestCase):
 
     def check_all(self, modname):
         names = {}
-        try:
-            exec("import %s" % modname, names)
-        except ImportError:
-            # Silent fail here seems the best route since some modules
-            # may not be available in all environments.
-            return
+        with catch_warning():
+            warnings.filterwarnings("ignore", ".* module", DeprecationWarning)
+            try:
+                exec("import %s" % modname, names)
+            except ImportError:
+                # Silent fail here seems the best route since some modules
+                # may not be available in all environments.
+                return
         self.failUnless(hasattr(sys.modules[modname], "__all__"),
                         "%s has no __all__ attribute" % modname)
         names = {}

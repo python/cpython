@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>nop</string>
+	<key>command</key>
+	<string># Search order:
+#  - Current project.
+#  - TM_PYTHONDEV_DOCS.
+#  - Online docs in development.
+
+html_index=$TM_PROJECT_DIRECTORY/Doc/build/html/index.html
+if [[ -f $html_index ]]; then
+	open $html_index
+elif [[ $TM_PYTHONDEV_DOCS ]]; then
+	open $TM_PYTHONDEV_DOCS
+else
+	open http://docs.python.org/dev/
+fi</string>
+	<key>input</key>
+	<string>none</string>
+	<key>keyEquivalent</key>
+	<string>@H</string>
+	<key>name</key>
+	<string>Open Docs</string>
+	<key>output</key>
+	<string>discard</string>
+	<key>uuid</key>
+	<string>BF336FFF-E14D-4BF1-A156-71CF768AC034</string>
+</dict>
+</plist>
