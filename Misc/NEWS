@@ -20,6 +20,8 @@ Core and builtins
 - Patch #2617: Reserved -J and -X arguments for Jython, IronPython and other
   implementations of Python. 
 
+- Implemented PEP 370: Per user site-packages directory
+
 Extension Modules
 -----------------
 

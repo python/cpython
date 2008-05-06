@@ -10,6 +10,7 @@ import __builtin__
 import os
 import sys
 import encodings
+import subprocess
 # Need to make sure to not import 'site' if someone specified ``-S`` at the
 # command-line.  Detect this by just making sure 'site' has not been imported
 # already.
@@ -17,6 +18,11 @@ if "site" in sys.modules:
     import site
 else:
     raise TestSkipped("importation of site.py suppressed")
+
+if not os.path.isdir(site.USER_SITE):
+    # need to add user site directory for tests
+    os.makedirs(site.USER_SITE)
+    site.addsitedir(site.USER_SITE)
 
 class HelperFunctionsTests(unittest.TestCase):
     """Tests for helper functions.
@@ -30,7 +36,7 @@ class HelperFunctionsTests(unittest.TestCase):
         """Save a copy of sys.path"""
         self.sys_path = sys.path[:]
 
-    def tearDown(self):
+
         """Restore sys.path"""
         sys.path = self.sys_path
 
@@ -89,6 +95,33 @@ class HelperFunctionsTests(unittest.TestCase):
             self.pth_file_tests(pth_file)
         finally:
             pth_file.cleanup()
+
+    def test_s_option(self):
+        usersite = site.USER_SITE
+        self.assert_(usersite in sys.path)
+
+        rc = subprocess.call([sys.executable, '-c',
+            'import sys; sys.exit("%s" in sys.path)' % usersite])
+        self.assertEqual(rc, 1)
+
+        rc = subprocess.call([sys.executable, '-s', '-c',
+            'import sys; sys.exit("%s" in sys.path)' % usersite])
+        self.assertEqual(rc, 0)
+
+        env = os.environ.copy()
+        env["PYTHONNOUSERSITE"] = "1"
+        rc = subprocess.call([sys.executable, '-c',
+            'import sys; sys.exit("%s" in sys.path)' % usersite],
+            env=env)
+        self.assertEqual(rc, 0)
+
+        env = os.environ.copy()
+        env["PYTHONUSERBASE"] = "/tmp"
+        rc = subprocess.call([sys.executable, '-c',
+            'import sys, site; sys.exit(site.USER_BASE.startswith("/tmp"))'],
+            env=env)
+        self.assertEqual(rc, 1)
+
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
