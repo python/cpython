@@ -8,6 +8,7 @@ Usage::
     }
     $ echo '{ 1.2:3.4}' | python -mjson.tool
     Expecting property name: line 1 column 2 (char 2)
+
 """
 import sys
 import json
