@@ -400,6 +400,8 @@ warn_explicit(PyObject *category, PyObject *message,
                     PyErr_SetString(PyExc_TypeError,
                                     "warnings.showwarning() must be set to a "
                                     "function or method");
+                    Py_DECREF(show_fxn);
+                    goto cleanup;
                 }
 
                 defaults = PyFunction_GetDefaults(check_fxn);

@@ -388,6 +388,15 @@ class _WarningsTests(BaseTest):
                 result = stream.getvalue()
         self.failUnless(text in result)
 
+    def test_showwarning_not_callable(self):
+        self.module.filterwarnings("always", category=UserWarning)
+        old_showwarning = self.module.showwarning
+        self.module.showwarning = 23
+        try:
+            self.assertRaises(TypeError, self.module.warn, "Warning!")
+        finally:
+            self.module.showwarning = old_showwarning
+
     def test_show_warning_output(self):
         # With showarning() missing, make sure that output is okay.
         text = 'test show_warning'
