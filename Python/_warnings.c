@@ -445,10 +445,8 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     /* Setup globals and lineno. */
     PyFrameObject *f = PyThreadState_GET()->frame;
-    while (--stack_level > 0 && f != NULL) {
+    while (--stack_level > 0 && f != NULL)
         f = f->f_back;
-        --stack_level;
-    }
 
     if (f == NULL) {
         globals = PyThreadState_Get()->interp->sysdict;
