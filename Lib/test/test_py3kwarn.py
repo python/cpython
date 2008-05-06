@@ -124,8 +124,42 @@ class TestPy3KWarnings(unittest.TestCase):
             self.assertWarning(buffer('a'), w, expected)
 
 
+class TestStdlibRemovals(unittest.TestCase):
+
+    all_platforms = ('audiodev',)
+
+    def check_removal(self, module_name):
+        """Make sure the specified module, when imported, raises a
+        DeprecationWarning and specifies itself in the message."""
+        original_module = None
+        if module_name in sys.modules:
+            original_module = sys.modules[module_name]
+            del sys.modules[module_name]
+        try:
+            with catch_warning() as w:
+                warnings.filterwarnings("error", ".+ removed",
+                                        DeprecationWarning)
+                try:
+                    __import__(module_name, level=0)
+                except DeprecationWarning as exc:
+                    self.assert_(module_name in exc.args[0])
+                else:
+                    self.fail("DeprecationWarning not raised for %s" %
+                                module_name)
+        finally:
+            if original_module:
+                sys.modules[module_name] = original_module
+
+
+    def test_platform_independent_removals(self):
+        # Make sure that the modules that are available on all platforms raise
+        # the proper DeprecationWarning.
+        for module_name in self.all_platforms:
+            self.check_removal(module_name)
+
+
 def test_main():
-    run_unittest(TestPy3KWarnings)
+    run_unittest(TestPy3KWarnings, TestStdlibRemovals)
 
 if __name__ == '__main__':
     test_main()
