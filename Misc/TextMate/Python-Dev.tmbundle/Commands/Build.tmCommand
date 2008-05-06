@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>nop</string>
+	<key>command</key>
+	<string># XXX TODO
+# - Highlight any compiler warnings for Python code.
+# - Point out if compile failed.
+
+cd $TM_PROJECT_DIRECTORY
+make -s -j2 2&gt;&amp;1 | pre
+
+rescan_project</string>
+	<key>input</key>
+	<string>none</string>
+	<key>name</key>
+	<string>Build Python</string>
+	<key>output</key>
+	<string>showAsHTML</string>
+	<key>uuid</key>
+	<string>B545BB1B-A8E1-426C-B50A-426E78B96D38</string>
+</dict>
+</plist>

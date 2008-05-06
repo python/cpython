@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>nop</string>
+	<key>command</key>
+	<string>#!/usr/bin/python
+
+template = """from warnings import warnpy3k
+warnpy3k("the ${1:%s} module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+$0"""
+
+import imp
+import os
+
+file_name = os.path.split(os.environ['TM_FILEPATH'])[1]
+for suffix in (tuple_[0] for tuple_ in imp.get_suffixes()):
+    if not file_name.endswith(suffix):
+        continue
+    module_name = file_name[:-len(suffix)]
+    print (template % module_name),
+    break
+else:
+    print (template % "XXX"),</string>
+	<key>input</key>
+	<string>none</string>
+	<key>name</key>
+	<string>2 to 3 - Module Deletion</string>
+	<key>output</key>
+	<string>insertAsSnippet</string>
+	<key>tabTrigger</key>
+	<string>2to3moddel</string>
+	<key>uuid</key>
+	<string>9519C22B-6AB8-41A1-94F6-079E0B45C147</string>
+</dict>
+</plist>
