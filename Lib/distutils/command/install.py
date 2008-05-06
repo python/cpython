@@ -18,6 +18,9 @@ from distutils.file_util import write_file
 from distutils.util import convert_path, subst_vars, change_root
 from distutils.util import get_platform
 from distutils.errors import DistutilsOptionError
+from site import USER_BASE
+from site import USER_SITE
+
 
 if sys.version < "2.2":
     WINDOWS_SCHEME = {
@@ -51,7 +54,21 @@ INSTALL_SCHEMES = {
         'scripts': '$base/bin',
         'data'   : '$base',
         },
+    'unix_user': {
+        'purelib': '$usersite',
+        'platlib': '$usersite',
+        'headers': '$userbase/include/python$py_version_short/$dist_name',
+        'scripts': '$userbase/bin',
+        'data'   : '$userbase',
+        },
     'nt': WINDOWS_SCHEME,
+    'nt_user': {
+        'purelib': '$usersite',
+        'platlib': '$usersite',
+        'headers': '$userbase/Python$py_version_nodot/Include/$dist_name',
+        'scripts': '$userbase/Scripts',
+        'data'   : '$userbase',
+        },
     'mac': {
         'purelib': '$base/Lib/site-packages',
         'platlib': '$base/Lib/site-packages',
@@ -59,13 +76,27 @@ INSTALL_SCHEMES = {
         'scripts': '$base/Scripts',
         'data'   : '$base',
         },
+    'mac_user': {
+        'purelib': '$usersite',
+        'platlib': '$usersite',
+        'headers': '$userbase/$py_version_short/include/$dist_name',
+        'scripts': '$userbase/bin',
+        'data'   : '$userbase',
+        },
     'os2': {
         'purelib': '$base/Lib/site-packages',
         'platlib': '$base/Lib/site-packages',
         'headers': '$base/Include/$dist_name',
         'scripts': '$base/Scripts',
         'data'   : '$base',
-        }
+        },
+    'os2_home': {
+        'purelib': '$usersite',
+        'platlib': '$usersite',
+        'headers': '$userbase/include/python$py_version_short/$dist_name',
+        'scripts': '$userbase/bin',
+        'data'   : '$userbase',
+        },
     }
 
 # The keys to an installation scheme; if any new types of files are to be
@@ -86,6 +117,8 @@ class install (Command):
          "(Unix only) prefix for platform-specific files"),
         ('home=', None,
          "(Unix only) home directory to install under"),
+        ('user', None,
+         "install in user site-package '%s'" % USER_SITE),
 
         # Or, just set the base director(y|ies)
         ('install-base=', None,
@@ -137,7 +170,7 @@ class install (Command):
          "filename in which to record list of installed files"),
         ]
 
-    boolean_options = ['compile', 'force', 'skip-build']
+    boolean_options = ['compile', 'force', 'skip-build', 'user']
     negative_opt = {'no-compile' : 'compile'}
 
 
@@ -148,6 +181,7 @@ class install (Command):
         self.prefix = None
         self.exec_prefix = None
         self.home = None
+        self.user = 0
 
         # These select only the installation base; it's up to the user to
         # specify the installation scheme (currently, that means supplying
@@ -166,6 +200,8 @@ class install (Command):
         self.install_lib = None         # set to either purelib or platlib
         self.install_scripts = None
         self.install_data = None
+        self.install_userbase = USER_BASE
+        self.install_usersite = USER_SITE
 
         self.compile = None
         self.optimize = None
@@ -241,6 +277,11 @@ class install (Command):
             raise DistutilsOptionError, \
                   "must supply either home or prefix/exec-prefix -- not both"
 
+        if self.user and (self.prefix or self.exec_prefix or self.home or
+                self.install_base or self.install_platbase):
+            raise DistutilsOptionError("can't combine user with with prefix/"
+                                       "exec_prefix/home or install_(plat)base")
+
         # Next, stuff that's wrong (or dubious) only on certain platforms.
         if os.name != "posix":
             if self.exec_prefix:
@@ -276,10 +317,13 @@ class install (Command):
                             'dist_fullname': self.distribution.get_fullname(),
                             'py_version': py_version,
                             'py_version_short': py_version[0:3],
+                            'py_version_nodot': py_version[0] + py_version[2],
                             'sys_prefix': prefix,
                             'prefix': prefix,
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
+                            'userbase': self.install_userbase,
+                            'usersite': self.install_usersite,
                            }
         self.expand_basedirs()
 
@@ -301,6 +345,10 @@ class install (Command):
 
         self.dump_dirs("post-expand_dirs()")
 
+        # Create directories in the home dir:
+        if self.user:
+            self.create_home_path()
+
         # Pick the actual directory to install all modules to: either
         # install_purelib or install_platlib, depending on whether this
         # module distribution is pure or not.  Of course, if the user
@@ -315,7 +363,8 @@ class install (Command):
         # Convert directories from Unix /-separated syntax to the local
         # convention.
         self.convert_paths('lib', 'purelib', 'platlib',
-                           'scripts', 'data', 'headers')
+                           'scripts', 'data', 'headers',
+                           'userbase', 'usersite')
 
         # Well, we're not actually fully completely finalized yet: we still
         # have to deal with 'extra_path', which is the hack for allowing
@@ -376,7 +425,13 @@ class install (Command):
                       "installation scheme is incomplete")
             return
 
-        if self.home is not None:
+        if self.user:
+            if self.install_userbase is None:
+                raise DistutilsPlatformError(
+                    "User base directory is not specified")
+            self.install_base = self.install_platbase = self.install_userbase
+            self.select_scheme("unix_user")
+        elif self.home is not None:
             self.install_base = self.install_platbase = self.home
             self.select_scheme("unix_home")
         else:
@@ -401,7 +456,13 @@ class install (Command):
 
     def finalize_other (self):          # Windows and Mac OS for now
 
-        if self.home is not None:
+        if self.user:
+            if self.install_userbase is None:
+                raise DistutilsPlatformError(
+                    "User base directory is not specified")
+            self.install_base = self.install_platbase = self.install_userbase
+            self.select_scheme(os.name + "_user")
+        elif self.home is not None:
             self.install_base = self.install_platbase = self.home
             self.select_scheme("unix_home")
         else:
@@ -431,7 +492,7 @@ class install (Command):
         for attr in attrs:
             val = getattr(self, attr)
             if val is not None:
-                if os.name == 'posix':
+                if os.name == 'posix' or os.name == 'nt':
                     val = os.path.expanduser(val)
                 val = subst_vars(val, self.config_vars)
                 setattr(self, attr, val)
@@ -496,6 +557,16 @@ class install (Command):
             attr = "install_" + name
             setattr(self, attr, change_root(self.root, getattr(self, attr)))
 
+    def create_home_path(self):
+        """Create directories under ~
+        """
+        if not self.user:
+            return
+        home = convert_path(os.path.expanduser("~"))
+        for name, path in self.config_vars.iteritems():
+            if path.startswith(home) and not os.path.isdir(path):
+                self.debug_print("os.makedirs('%s', 0700)" % path)
+                os.makedirs(path, 0700)
 
     # -- Command execution methods -------------------------------------
 

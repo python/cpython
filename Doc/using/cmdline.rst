@@ -21,7 +21,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-dEiOQStuUvxX3?] [-c command | -m module-name | script | - ] [args]
+    python [-dEiOQsStuUvxX3?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -238,6 +238,17 @@ Miscellaneous options
          for a use of ``warnall``
 
       :pep:`238` -- Changing the division operator
+
+
+.. cmdoption:: -s
+
+   Don't add user site directory to sys.path
+
+   .. versionadded:: 2.6
+
+   .. seealso::
+
+      :pep:`370` -- Per user site-packages directory
 
 
 .. cmdoption:: -S
@@ -469,6 +480,28 @@ These environment variables influence Python's behavior.
    import of source modules.
 
    .. versionadded:: 2.6
+
+
+.. envvar:: PYTHONNOUSERSITE
+
+   If this is set, Python won't add the user site directory to sys.path
+
+   .. versionadded:: 2.6
+
+   .. seealso::
+
+      :pep:`370` -- Per user site-packages directory
+
+
+.. envvar:: PYTHONUSERBASE
+
+   Sets the base directory for the user site directory
+
+   .. versionadded:: 2.6
+
+   .. seealso::
+
+      :pep:`370` -- Per user site-packages directory
 
 
 .. envvar:: PYTHONEXECUTABLE
