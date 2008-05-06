@@ -51,6 +51,8 @@ Extension Modules
 Library
 -------
 
+- The audiodev module has been deprecated for removal in Python 3.0.
+
 - Issue #2750: Add the 'json' package. Based on simplejson 1.9 and contributed
   by Bob Ippolito.
 
