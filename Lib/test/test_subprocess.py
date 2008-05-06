@@ -584,7 +584,7 @@ class ProcessTestCase(unittest.TestCase):
             os.remove(fname)
             self.assertEqual(rc, 47)
 
-        def test_send_signal(self):
+        def DISABLED_test_send_signal(self):
             p = subprocess.Popen([sys.executable,
                               "-c", "input()"])
 
@@ -592,7 +592,7 @@ class ProcessTestCase(unittest.TestCase):
             p.send_signal(signal.SIGINT)
             self.assertNotEqual(p.wait(), 0)
 
-        def test_kill(self):
+        def DISABLED_test_kill(self):
             p = subprocess.Popen([sys.executable,
                             "-c", "input()"])
 
@@ -600,7 +600,7 @@ class ProcessTestCase(unittest.TestCase):
             p.kill()
             self.assertEqual(p.wait(), -signal.SIGKILL)
 
-        def test_terminate(self):
+        def DISABLED_test_terminate(self):
             p = subprocess.Popen([sys.executable,
                             "-c", "input()"])
 
@@ -678,7 +678,7 @@ class ProcessTestCase(unittest.TestCase):
                                  ' -c "import sys; sys.exit(47)"')
             self.assertEqual(rc, 47)
 
-        def test_send_signal(self):
+        def DISABLED_test_send_signal(self):
             p = subprocess.Popen([sys.executable,
                               "-c", "input()"])
 
@@ -686,7 +686,7 @@ class ProcessTestCase(unittest.TestCase):
             p.send_signal(signal.SIGTERM)
             self.assertNotEqual(p.wait(), 0)
 
-        def test_kill(self):
+        def DISABLED_test_kill(self):
             p = subprocess.Popen([sys.executable,
                             "-c", "input()"])
 
@@ -694,7 +694,7 @@ class ProcessTestCase(unittest.TestCase):
             p.kill()
             self.assertNotEqual(p.wait(), 0)
 
-        def test_terminate(self):
+        def DISABLED_test_terminate(self):
             p = subprocess.Popen([sys.executable,
                             "-c", "input()"])
 
