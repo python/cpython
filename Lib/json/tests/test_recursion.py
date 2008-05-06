@@ -5,6 +5,7 @@ import json
 class JSONTestObject:
     pass
 
+
 class RecursiveJSONEncoder(json.JSONEncoder):
     recurse = False
     def default(self, o):
@@ -14,6 +15,7 @@ class RecursiveJSONEncoder(json.JSONEncoder):
             else:
                 return 'JSONTestObject'
         return json.JSONEncoder.default(o)
+
 
 class TestRecursion(TestCase):
     def test_listrecursion(self):
