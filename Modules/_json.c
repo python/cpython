@@ -215,7 +215,7 @@ join_list_unicode(PyObject *lst)
         ustr = PyUnicode_FromUnicode(&c, 0);
     }
     if (joinstr == NULL) {
-        joinstr = PyString_FromString("join");
+        joinstr = PyString_InternFromString("join");
     }
     if (joinstr == NULL || ustr == NULL) {
         return NULL;
