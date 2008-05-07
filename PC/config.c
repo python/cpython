@@ -59,6 +59,7 @@ extern void init_subprocess(void);
 extern void init_lsprof(void);
 extern void init_ast(void);
 extern void init_fileio(void);
+extern void init_bytesio(void);
 extern void initatexit(void);
 extern void _PyWarnings_Init(void);
 
@@ -148,6 +149,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"_warnings", _PyWarnings_Init},
 
         {"_fileio", init_fileio},
+        {"_bytesio", init_bytesio},
         {"atexit", initatexit},
 
         /* Sentinel */
