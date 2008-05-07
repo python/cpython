@@ -2,6 +2,7 @@
 """
 
 import re
+import math
 
 try:
     from _json import encode_basestring_ascii as c_encode_basestring_ascii
@@ -25,20 +26,19 @@ ESCAPE_DCT = {
 for i in range(0x20):
     ESCAPE_DCT.setdefault(chr(i), '\\u{0:04x}'.format(i))
 
-# Assume this produces an infinity on all machines (probably not guaranteed)
-INFINITY = float('1e66666')
 FLOAT_REPR = repr
 
 def floatstr(o, allow_nan=True):
     # Check for specials.  Note that this type of test is processor- and/or
     # platform-specific, so do tests which don't depend on the internals.
 
-    if o != o:
+    if math.isnan(o):
         text = 'NaN'
-    elif o == INFINITY:
-        text = 'Infinity'
-    elif o == -INFINITY:
-        text = '-Infinity'
+    elif math.isinf(o):
+        if math.copysign(1., o) == 1.:
+            text = 'Infinity'
+        else:
+            text = '-Infinity'
     else:
         return FLOAT_REPR(o)
 
