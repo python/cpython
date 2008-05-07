@@ -278,9 +278,6 @@ def warn_explicit(message, category, filename, lineno,
                 _show_warning(message, category, filename, lineno)
             else:
                 warn(showwarning_msg, DeprecationWarning)
-    if not callable(showwarning):
-        raise TypeError("warnings.showwarning() must be set to a "
-                        "function or method")
     # Print message and context
     showwarning(message, category, filename, lineno)
 
