@@ -543,10 +543,11 @@ bytesio_write(BytesIOObject *self, PyObject *obj)
 }
 
 PyDoc_STRVAR(writelines_doc,
-"writelines(sequence_of_strings) -> None.  Write the strings to the file.\n"
+"writelines(sequence_of_strings) -> None.  Write strings to the file.\n"
 "\n"
-"Note that newlines are not added.  The sequence can be any iterable object\n"
-"producing strings. This is equivalent to calling write() for each string.");
+"Note that newlines are not added.  The sequence can be any iterable\n"
+"object producing strings. This is equivalent to calling write() for\n"
+"each string.");
 
 static PyObject *
 bytesio_writelines(BytesIOObject *self, PyObject *v)
