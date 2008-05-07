@@ -212,17 +212,6 @@ Miscellaneous options
    Discard docstrings in addition to the :option:`-O` optimizations.
 
 
-
-
-<<<<<<< .working
-=======
-   .. seealso::
-      :file:`Tools/scripts/fixdiv.py`
-         for a use of ``warnall``
-
-      :pep:`238` -- Changing the division operator
-
-
 .. cmdoption:: -s
 
    Don't add user site directory to sys.path
@@ -236,7 +225,6 @@ Miscellaneous options
 
 .. cmdoption:: -S
 
->>>>>>> .merge-right.r62788
    Disable the import of the module :mod:`site` and the site-dependent
    manipulations of :data:`sys.path` that it entails.
 
