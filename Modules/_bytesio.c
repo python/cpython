@@ -110,16 +110,8 @@ write_bytes(BytesIOObject *self, const char *bytes, Py_ssize_t len)
     assert(self->pos >= 0);
     assert(len >= 0);
 
-    /* This overflow check is not strictly necessary. However, it avoids us to
-       deal with funky things like comparing an unsigned and a signed
-       integer. */
-    if (self->pos > PY_SSIZE_T_MAX - len) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "new position too large");
-        return -1;
-    }
-    if (self->pos + len > self->buf_size) {
-        if (resize_buffer(self, self->pos + len) < 0)
+    if ((size_t)self->pos + len > self->buf_size) {
+        if (resize_buffer(self, (size_t)self->pos + len) < 0)
             return -1;
     }
 
