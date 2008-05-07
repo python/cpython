@@ -1,4 +1,4 @@
-.purify
+´.purify
 autom4te.cache
 config.log
 config.cache
@@ -41,3 +41,7 @@ Modules/Setup.local
 Modules/config.c
 Parser/pgen
 Lib/plat-mac/errors.rsrc.df.rsrc
+Lib/lib2to3/Grammar2.6.0.alpha.1.pickle
+Lib/lib2to3/Grammar2.6.0.alpha.2.pickle
+Lib/lib2to3/PatternGrammar2.6.0.alpha.1.pickle
+Lib/lib2to3/PatternGrammar2.6.0.alpha.2.pickle
