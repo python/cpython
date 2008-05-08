@@ -713,10 +713,10 @@ fullinstall:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall maninstall @FRAMEWORK
 # "make install" is an alias for "make altinstall" since we never want to
 # overwrite Python 2.x.
 install:	altinstall
-		echo "* Note: not installed as 'python'."
-		echo "* Use 'make fullinstall' to install as 'python'."
-		echo "* However, 'make fulinstall' is discouraged,"
-		echo "* as it will clobber your Python 2.x installation."
+		@echo "* Note: not installed as 'python'."
+		@echo "* Use 'make fullinstall' to install as 'python'."
+		@echo "* However, 'make fullinstall' is discouraged,"
+		@echo "* as it will clobber your Python 2.x installation."
 
 # Install almost everything without disturbing previous versions
 altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
