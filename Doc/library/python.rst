@@ -24,5 +24,4 @@ overview:
    gc.rst
    inspect.rst
    site.rst
-   user.rst
    fpectl.rst
