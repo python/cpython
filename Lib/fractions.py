@@ -8,7 +8,7 @@ import numbers
 import operator
 import re
 
-__all__ = ["Fraction"]
+__all__ = ['Fraction', 'gcd']
 
 
 
