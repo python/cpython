@@ -404,19 +404,6 @@ if has_c_implementation:
     class CBytesIOTest(PyBytesIOTest):
         ioclass = io.BytesIO
 
-        def test_overflow(self):
-            buf = self.buftype("a")
-            memio = self.ioclass()
-
-            memio.seek(sys.maxsize)
-            self.assertRaises(OverflowError, memio.seek, 1, 1)
-            # Ensure that the position has not been changed
-            self.assertEqual(memio.tell(), sys.maxsize)
-            self.assertEqual(memio.write(self.EOF), 0)
-            self.assertRaises(OverflowError, memio.write, buf)
-            self.assertEqual(memio.tell(), sys.maxsize)
-
-
 def test_main():
     tests = [PyBytesIOTest, PyStringIOTest]
     if has_c_implementation:
