@@ -4,6 +4,26 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's new in Python 3.0b1?
+===========================
+
+*Release date: XX-June-2008*
+
+Core and Builtins
+-----------------
+
+Extension Modules
+-----------------
+
+Library
+-------
+
+- The imputil module has been removed.
+
+Build
+-----
+
+
 What's New in Python 3.0a5?
 ===========================
 
