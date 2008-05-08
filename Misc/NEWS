@@ -12,6 +12,8 @@ What's New in Python 2.6 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #2790: sys.flags was not properly exposing its bytes_warning attribute.
+
 Extension Modules
 -----------------
 
