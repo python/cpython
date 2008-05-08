@@ -24,6 +24,8 @@ Library
 
 - The imputil module has been removed.
 
+- os.path.walk has been removed in favor of os.walk
+
 Build
 -----
 
