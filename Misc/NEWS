@@ -18,6 +18,8 @@ Extension Modules
 Library
 -------
 
+- The mutex module has bene deprecated for removal in Python 3.0.
+
 - The imputil module has been deprecated for removal in Python 3.0.
 
 Build
