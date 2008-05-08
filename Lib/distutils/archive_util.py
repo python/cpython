@@ -92,18 +92,16 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
         log.info("creating '%s' and adding '%s' to it",
                  zip_filename, base_dir)
 
-        def visit (z, dirname, names):
-            for name in names:
-                path = os.path.normpath(os.path.join(dirname, name))
-                if os.path.isfile(path):
-                    z.write(path, path)
-                    log.info("adding '%s'" % path)
-
         if not dry_run:
             z = zipfile.ZipFile(zip_filename, "w",
                                 compression=zipfile.ZIP_DEFLATED)
 
-            os.path.walk(base_dir, visit, z)
+            for dirpath, dirnames, filenames in os.walk(base_dir):
+                for name in filenames:
+                    path = os.path.normpath(os.path.join(dirpath, name))
+                    if os.path.isfile(path):
+                        z.write(path, path)
+                        log.info("adding '%s'" % path)
             z.close()
 
     return zip_filename
