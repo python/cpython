@@ -1477,6 +1477,19 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					"'finally' pops bad exception");
 				why = WHY_EXCEPTION;
 			}
+			/*
+			  Make sure the exception state is cleaned up before
+			  the end of an except block. This ensures objects
+			  referenced by the exception state are not kept
+			  alive too long.
+			  See #2507.
+			*/
+			if (tstate->frame->f_exc_type != NULL)
+				reset_exc_info(tstate);
+			else {
+				assert(tstate->frame->f_exc_value == NULL);
+				assert(tstate->frame->f_exc_traceback == NULL);
+			}
 			Py_DECREF(v);
 			break;
 
