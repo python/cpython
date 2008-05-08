@@ -167,7 +167,7 @@ bytesio_flush(BytesIOObject *self)
 }
 
 PyDoc_STRVAR(getval_doc,
-"getvalue() -> string.\n"
+"getvalue() -> bytes.\n"
 "\n"
 "Retrieve the entire contents of the BytesIO object.");
 
@@ -369,7 +369,7 @@ bytesio_readlines(BytesIOObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(readinto_doc,
-"readinto(bytes) -> int.  Read up to len(b) bytes into b.\n"
+"readinto(bytearray) -> int.  Read up to len(b) bytes into b.\n"
 "\n"
 "Returns number of bytes read (0 for EOF), or None if the object\n"
 "is set not to block as has no data to read.");
@@ -517,7 +517,7 @@ bytesio_seek(BytesIOObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(write_doc,
-"write(str) -> int.  Write string str to file.\n"
+"write(bytes) -> int.  Write bytes to file.\n"
 "\n"
 "Return the number of bytes written.");
 
