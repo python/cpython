@@ -14,7 +14,7 @@ from genericpath import *
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
-           "ismount","walk","expanduser","expandvars","normpath","abspath",
+           "ismount", "expanduser","expandvars","normpath","abspath",
            "splitunc","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath"]
 
@@ -224,40 +224,6 @@ def ismount(path):
         return rest in ("", "/", "\\")
     p = splitdrive(path)[1]
     return len(p) == 1 and p[0] in '/\\'
-
-
-# Directory tree walk.
-# For each directory under top (including top itself, but excluding
-# '.' and '..'), func(arg, dirname, filenames) is called, where
-# dirname is the name of the directory and filenames is the list
-# of files (and subdirectories etc.) in the directory.
-# The func may modify the filenames list, to implement a filter,
-# or to impose a different order of visiting.
-
-def walk(top, func, arg):
-    """Directory tree walk with callback function.
-
-    For each directory in the directory tree rooted at top (including top
-    itself, but excluding '.' and '..'), call func(arg, dirname, fnames).
-    dirname is the name of the directory, and fnames a list of the names of
-    the files and subdirectories in dirname (excluding '.' and '..').  func
-    may modify the fnames list in-place (e.g. via del or slice assignment),
-    and walk will only recurse into the subdirectories whose names remain in
-    fnames; this can be used to implement a filter, or to impose a specific
-    order of visiting.  No semantics are defined for, or required of, arg,
-    beyond that arg is always passed to func.  It can be used, e.g., to pass
-    a filename pattern, or a mutable object designed to accumulate
-    statistics.  Passing None for arg is common."""
-
-    try:
-        names = os.listdir(top)
-    except os.error:
-        return
-    func(arg, top, names)
-    for name in names:
-        name = join(top, name)
-        if isdir(name):
-            walk(name, func, arg)
 
 
 # Expand paths beginning with '~' or '~user'.

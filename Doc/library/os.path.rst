@@ -261,30 +261,6 @@ write files see :func:`open`, and for accessing the filesystem see the
    *unc* will always be the empty string. Availability:  Windows.
 
 
-.. function:: walk(path, visit, arg)
-
-   Calls the function *visit* with arguments ``(arg, dirname, names)`` for each
-   directory in the directory tree rooted at *path* (including *path* itself, if it
-   is a directory).  The argument *dirname* specifies the visited directory, the
-   argument *names* lists the files in the directory (gotten from
-   ``os.listdir(dirname)``). The *visit* function may modify *names* to influence
-   the set of directories visited below *dirname*, e.g. to avoid visiting certain
-   parts of the tree.  (The object referred to by *names* must be modified in
-   place, using :keyword:`del` or slice assignment.)
-
-   .. note::
-
-      Symbolic links to directories are not treated as subdirectories, and that
-      :func:`walk` therefore will not visit them. To visit linked directories you must
-      identify them with ``os.path.islink(file)`` and ``os.path.isdir(file)``, and
-      invoke :func:`walk` as necessary.
-
-   .. note::
-
-      The newer :func:`os.walk` :term:`generator` supplies similar functionality
-      and can be easier to use.
-
-
 .. data:: supports_unicode_filenames
 
    True if arbitrary Unicode strings can be used as file names (within limitations
