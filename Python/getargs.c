@@ -670,8 +670,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		if (float_argument_error(arg))
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		iobj = PyNumber_Index(arg);
-		if (iobj != NULL)
+		if (iobj != NULL) {
 			ival = PyLong_AsSsize_t(iobj);
+			Py_DECREF(iobj);
+		}
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		*p = ival;
