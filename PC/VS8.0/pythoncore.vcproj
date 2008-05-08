@@ -1003,6 +1003,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Modules\_json.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Modules\_localemodule.c"
 				>
 			</File>

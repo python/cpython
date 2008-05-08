@@ -430,6 +430,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_bytesio", ["_bytesio.c"]) )
         # atexit
         exts.append( Extension("atexit", ["atexitmodule.c"]) )
+        # _json speedups
+        exts.append( Extension("_json", ["_json.c"]) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
         # profiler (_lsprof is for cProfile.py)

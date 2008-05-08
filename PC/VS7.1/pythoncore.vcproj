@@ -377,6 +377,9 @@
 			RelativePath="..\..\Modules\_heapqmodule.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\json.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\_localemodule.c">
 		</File>
 		<File
