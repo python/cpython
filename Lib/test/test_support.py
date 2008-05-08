@@ -406,11 +406,11 @@ def catch_warning(module=warnings, record=True):
             warnings.warn("foo")
             assert str(w.message) == "foo"
     """
+    original_filters = module.filters[:]
+    original_showwarning = module.showwarning
     if record:
         warning_obj = WarningMessage()
         module.showwarning = warning_obj._showwarning
-    original_filters = module.filters[:]
-    original_showwarning = module.showwarning
     try:
         yield warning_obj if record else None
     finally:
