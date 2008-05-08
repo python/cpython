@@ -1585,7 +1585,7 @@ proper superset of the second set (is a superset, but is not equal).
 
 Instances of :class:`set` are compared to instances of :class:`frozenset` based
 on their members.  For example, ``set('abc') == frozenset('abc')`` returns
-``True``.
+``True`` and so does ``set('abc') in set([frozenset('abc')])``.
 
 The subset and equality comparisons do not generalize to a complete ordering
 function.  For example, any two disjoint sets are not equal and are not subsets
@@ -1624,18 +1624,18 @@ apply to immutable instances of :class:`frozenset`:
 
    Update the set, keeping only elements found in either set, but not in both.
 
-.. method:: set.add(el)
+.. method:: set.add(elem)
 
-   Add element *el* to the set.
+   Add element *elem* to the set.
 
-.. method:: set.remove(el)
+.. method:: set.remove(elem)
 
-   Remove element *el* from the set.  Raises :exc:`KeyError` if *el* is not
+   Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is not
    contained in the set.
 
-.. method:: set.discard(el)
+.. method:: set.discard(elem)
 
-   Remove element *el* from the set if it is present.
+   Remove element *elem* from the set if it is present.
 
 .. method:: set.pop()
 
@@ -1652,8 +1652,11 @@ Note, the non-operator versions of the :meth:`update`,
 :meth:`symmetric_difference_update` methods will accept any iterable as an
 argument.
 
-The design of the set types was based on lessons learned from the Python
-implementation found in the :mod:`sets` module.
+Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
+:meth:`discard` methods may be a set.  To support searching for an equivalent
+frozenset, the *elem* set is temporarily mutated during the search and then
+restored.  During the search, the *elem* set should not be read or mutated
+since it does not have a meaningful value.
 
 
 .. seealso::
