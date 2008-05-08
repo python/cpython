@@ -26,6 +26,8 @@ Library
 
 - The imputil module has been deprecated for removal in Python 3.0.
 
+- test.test_support.catch_warning() gained a 'record' argument.
+
 Build
 -----
 
