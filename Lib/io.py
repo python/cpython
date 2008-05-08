@@ -831,9 +831,9 @@ class _BytesIO(BufferedIOBase):
         except AttributeError as err:
             raise TypeError("an integer is required") from err
         if whence == 0:
-            self._pos = max(0, pos)
             if pos < 0:
                 raise ValueError("negative seek position %r" % (pos,))
+            self._pos = max(0, pos)
         elif whence == 1:
             self._pos = max(0, self._pos + pos)
         elif whence == 2:
