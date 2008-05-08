@@ -20,6 +20,9 @@ The user's .pythonrc.py could conceivably test for sys.version if it
 wishes to do different things depending on the Python version.
 
 """
+from warnings import warnpy3k
+warnpy3k("the user module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 import os
 

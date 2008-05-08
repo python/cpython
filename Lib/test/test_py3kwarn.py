@@ -126,7 +126,7 @@ class TestPy3KWarnings(unittest.TestCase):
 
 class TestStdlibRemovals(unittest.TestCase):
 
-    all_platforms = ('audiodev', 'imputil', 'mutex')
+    all_platforms = ('audiodev', 'imputil', 'mutex', 'user')
 
     def check_removal(self, module_name):
         """Make sure the specified module, when imported, raises a
