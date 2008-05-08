@@ -20,5 +20,5 @@ __revision__ = "$Id$"
 #
 
 #--start constants--
-__version__ = "3.0a4"
+__version__ = "3.0a5"
 #--end constants--
