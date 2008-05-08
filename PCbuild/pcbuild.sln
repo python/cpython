@@ -29,7 +29,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_buildinfo", "make_buil
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{553EC33E-9816-4996-A660-5D6186A0B0B3}"
 	ProjectSection(SolutionItems) = preProject
-		..\Modules\getbuildinfo.c = ..\Modules\getbuildinfo.c
 		readme.txt = readme.txt
 	EndProjectSection
 EndProject
