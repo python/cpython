@@ -108,8 +108,6 @@ def updatecache(filename, module_globals=None):
         # Try looking through the module search path.
 
         for dirname in sys.path:
-            # When using imputil, sys.path may contain things other than
-            # strings; ignore them when it happens.
             try:
                 fullname = os.path.join(dirname, basename)
             except (TypeError, AttributeError):
