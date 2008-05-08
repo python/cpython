@@ -357,7 +357,7 @@ class SysModuleTest(unittest.TestCase):
         attrs = ("debug", "py3k_warning", "division_warning", "division_new",
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
                  "no_site", "ignore_environment", "tabcheck", "verbose",
-                 "unicode")
+                 "unicode", "bytes_warning")
         for attr in attrs:
             self.assert_(hasattr(sys.flags, attr), attr)
             self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
