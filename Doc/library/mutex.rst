@@ -4,6 +4,11 @@
 
 .. module:: mutex
    :synopsis: Lock and queue for mutual exclusion.
+   :deprecated:
+   
+.. deprecated::
+   The mutex module has been removed in Python 3.0.
+
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 

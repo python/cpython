@@ -37,6 +37,19 @@ class ResourceDenied(TestSkipped):
     and unexpected skips.
     """
 
+def import_module(name, deprecated=False):
+    """Import the module to be tested, raising TestSkipped if it is not
+    available."""
+    with catch_warning():
+        if deprecated:
+            warnings.filterwarnings("ignore", ".+ module", DeprecationWarning)
+        try:
+            module = __import__(name, level=0)
+        except ImportError:
+            raise TestSkipped("No module named " + name)
+        else:
+            return module
+
 verbose = 1              # Flag set to 0 by regrtest.py
 use_resources = None     # Flag set to [] by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with
