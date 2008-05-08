@@ -591,7 +591,17 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
         major = (sysv & 0xFF00) >> 8
         minor = (sysv & 0x00F0) >> 4
         patch = (sysv & 0x000F)
-        release = '%s.%i.%i' % (_bcd2str(major),minor,patch)
+
+        if (major, minor) >= (10, 4):
+            # the 'sysv' gestald cannot return patchlevels
+            # higher than 9. Apple introduced 3 new
+            # gestalt codes in 10.4 to deal with this
+            # issue (needed because patch levels can
+            # run higher than 9, such as 10.4.11)
+            major,minor,patch = _mac_ver_lookup(('sys1','sys2','sys3'))
+            release = '%i.%i.%i' %(major, minor, patch)
+        else:
+            release = '%s.%i.%i' % (_bcd2str(major),minor,patch)
     if sysu:
         major =  int((sysu & 0xFF000000L) >> 24)
         minor =  (sysu & 0x00F00000) >> 20
