@@ -20,6 +20,8 @@ Library
 
 - The user module has been removed.
 
+- The mutex module has been removed.
+
 - The imputil module has been removed.
 
 Build
