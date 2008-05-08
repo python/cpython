@@ -1,4 +1,4 @@
-This is Python version 3.0 alpha 4
+This is Python version 3.0 alpha 5
 ==================================
 
 For notes specific to this release, see RELNOTES in this directory.
@@ -70,21 +70,13 @@ the "What's New in Python 3.0" document, found at
 
 Please help write it!
 
-If you want to install multiple versions of Python see the section below
-entitled "Installing multiple versions".
-
-
-What's New Since 3.0a1
-----------------------
-
-Undoubtedly the biggest change is in the bytes type: 'bytes' is now
-immutable, and there is a new mutable bytes type 'bytearray'.  These
-two types are interoperable in every way.  For more info on this
-issue, read PEP 3137.
-
 For a more detailed change log, read Misc/NEWS (though this file, too,
 is incomplete, and also doesn't list anything merged in from the 2.6
 release under development).
+
+If you want to install multiple versions of Python see the section below
+entitled "Installing multiple versions".
+
 
 Proposals for enhancement
 -------------------------
@@ -95,13 +87,14 @@ Enhancement Proposal (PEP) may be submitted if your idea gains ground. All
 current PEPs, as well as guidelines for submitting a new PEP, are listed at
 http://www.python.org/dev/peps/.
 
+
 Converting From Python 2.x to 3.0
 ---------------------------------
 
-Python 2.6 (not yet released) will contain features to help locating
-code that needs to be changed, such as optional warnings when
-deprecated features are used, and backported versions of certain key
-Python 3000 features.
+Python 2.6 (to be released concurrent with Python 3.0) will contain features
+to help locating code that needs to be changed, such as optional warnings when
+deprecated features are used, and backported versions of certain key Python
+3000 features.
 
 
 Installing multiple versions
