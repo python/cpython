@@ -79,7 +79,6 @@ class AllTest(unittest.TestCase):
         self.check_all("ihooks")
         self.check_all("imaplib")
         self.check_all("imghdr")
-        self.check_all("imputil")
         self.check_all("keyword")
         self.check_all("linecache")
         self.check_all("locale")
