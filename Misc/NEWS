@@ -4,6 +4,25 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.6 beta 1?
+================================
+
+*Release date: XX-June-2008*
+
+Core and Builtins
+-----------------
+
+Extension Modules
+-----------------
+
+Library
+-------
+
+- The imputil module has been deprecated for removal in Python 3.0.
+
+Build
+-----
+
 What's New in Python 2.6 alpha 3?
 =================================
 

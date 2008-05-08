@@ -4,6 +4,10 @@
 
 .. module:: imputil
    :synopsis: Manage and augment the import process.
+   :deprecated:
+
+.. deprecated:: 2.6
+   The module has been removed in Python 3.0.
 
 
 .. index:: statement: import
