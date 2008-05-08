@@ -4,6 +4,7 @@ import os
 import sys
 import unittest
 import pickle
+import weakref
 
 from test.test_support import TESTFN, unlink, run_unittest
 
@@ -400,8 +401,9 @@ class ExceptionTests(unittest.TestCase):
         self.failUnless(str(Exception('a')))
         self.failUnless(str(Exception('a')))
 
-    def testExceptionCleanup(self):
-        # Make sure "except V as N" exceptions are cleaned up properly
+    def testExceptionCleanupNames(self):
+        # Make sure the local variable bound to the exception instance by
+        # an "except" statement is only visible inside the except block.
 
         try:
             raise Exception()
@@ -409,6 +411,31 @@ class ExceptionTests(unittest.TestCase):
             self.failUnless(e)
             del e
         self.failIf('e' in locals())
+
+    def testExceptionCleanupState(self):
+        # Make sure exception state is cleaned up as soon as the except
+        # block is left. See #2507
+
+        class MyException(Exception):
+            def __init__(self, obj):
+                self.obj = obj
+        class MyObj:
+            pass
+
+        def inner_raising_func():
+            # Create some references in exception value and traceback
+            local_ref = obj
+            raise MyException(obj)
+
+        obj = MyObj()
+        wr = weakref.ref(obj)
+        try:
+            inner_raising_func()
+        except MyException as e:
+            pass
+        obj = None
+        obj = wr()
+        self.failUnless(obj is None, "%s" % obj)
 
 
 def test_main():
