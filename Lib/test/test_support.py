@@ -40,7 +40,7 @@ class ResourceDenied(TestSkipped):
 def import_module(name, deprecated=False):
     """Import the module to be tested, raising TestSkipped if it is not
     available."""
-    with catch_warning():
+    with catch_warning(record=False):
         if deprecated:
             warnings.filterwarnings("ignore", ".+ module", DeprecationWarning)
         try:
@@ -395,7 +395,7 @@ class WarningMessage(object):
 
 
 @contextlib.contextmanager
-def catch_warning(module=warnings):
+def catch_warning(module=warnings, record=True):
     """
     Guard the warnings filter from being permanently changed and record the
     data of the last warning that has been issued.
@@ -406,12 +406,13 @@ def catch_warning(module=warnings):
             warnings.warn("foo")
             assert str(w.message) == "foo"
     """
-    warning_obj = WarningMessage()
+    if record:
+        warning_obj = WarningMessage()
+        module.showwarning = warning_obj._showwarning
     original_filters = module.filters[:]
     original_showwarning = module.showwarning
-    module.showwarning = warning_obj._showwarning
     try:
-        yield warning_obj
+        yield warning_obj if record else None
     finally:
         module.showwarning = original_showwarning
         module.filters = original_filters
