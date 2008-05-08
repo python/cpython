@@ -1743,7 +1743,7 @@ set_contains(PySetObject *so, PyObject *key)
 
 	rv = set_contains_key(so, key);
 	if (rv == -1) {
-		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+		if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
 			return -1;
 		PyErr_Clear();
 		tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
@@ -1778,7 +1778,7 @@ set_remove(PySetObject *so, PyObject *key)
 
 	rv = set_discard_key(so, key);
 	if (rv == -1) {
-		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+		if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
 			return NULL;
 		PyErr_Clear();
 		tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
@@ -1809,7 +1809,7 @@ set_discard(PySetObject *so, PyObject *key)
 
 	rv = set_discard_key(so, key);
 	if (rv == -1) {
-		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+		if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
 			return NULL;
 		PyErr_Clear();
 		tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
