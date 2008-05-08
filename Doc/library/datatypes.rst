@@ -26,7 +26,6 @@ The following modules are documented in this chapter:
    bisect.rst
    array.rst
    sched.rst
-   mutex.rst
    queue.rst
    weakref.rst
    types.rst
