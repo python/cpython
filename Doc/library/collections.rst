@@ -550,16 +550,6 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
    for emp in map(EmployeeRecord._make, cursor.fetchall()):
        print(emp.name, emp.title)
 
-Named tuples can also be used to generate enumerated constants:
-
-.. testcode::
-
-   def enum(*names):
-       return namedtuple('Enum', ' '.join(names))(*range(len(names)))
-   
-   Status = enum('open', 'pending', 'closed')
-   assert (0, 1, 2) == (Status.open, Status.pending, Status.closed)
-
 In addition to the methods inherited from tuples, named tuples support
 three additional methods and one attribute.  To prevent conflicts with
 field names, the method and attribute names start with an underscore.
@@ -654,6 +644,15 @@ customize a prototype instance:
     >>> Account = namedtuple('Account', 'owner balance transaction_count')
     >>> default_account = Account('<owner name>', 0.0, 0)
     >>> johns_account = default_account._replace(owner='John')
+
+Enumerated constants can be implemented with named tuples, but it is simpler
+and more efficient to use a simple class declaration:
+
+    >>> Status = namedtuple('Status', 'open pending closed')._make(range(3))
+    >>> Status.open, Status.pending, Status.closed
+    (0, 1, 2)
+    >>> class Status:
+    ...     open, pending, closed = range(3)
 
 .. rubric:: Footnotes
 
