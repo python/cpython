@@ -283,13 +283,15 @@ The :mod:`test.test_support` module defines the following functions:
    This will run all tests defined in the named module.
 
 
-.. function:: catch_warning()
+.. function:: catch_warning(record=True)
 
-   This is a context manager that guards the warnings filter from being
+   Return a context manager that guards the warnings filter from being
    permanently changed and records the data of the last warning that has been
-   issued.
+   issued. The ``record`` argument specifies whether any raised warnings are
+   captured by the object returned by :func:`warnings.catch_warning` or allowed
+   to propagate as normal.
 
-   Use like this::
+   The context manager is typically used like this::
 
       with catch_warning() as w:
           warnings.warn("foo")
