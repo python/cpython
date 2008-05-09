@@ -22,7 +22,7 @@ def main():
         zappyc(dir)
 
 def zappyc(dir):
-    os.path.walk(dir, walker, None)
+    os.walk(dir, walker, None)
 
 def walker(dummy, top, names):
     for name in names:

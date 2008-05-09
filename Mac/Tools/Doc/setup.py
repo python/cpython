@@ -109,7 +109,7 @@ class DocBuild(build):
 
     def hackHtml(self):
         self.r = re.compile('<dl><dd>')
-        os.path.walk(self.build_html, self.visit, None)
+        os.walk(self.build_html, self.visit, None)
 
     def visit(self, dummy, dirname, filenames):
         for f in filenames:

@@ -341,7 +341,7 @@ def getFilesForName(name):
     if os.path.isdir(name):
         # find all python files in directory
         list = []
-        os.path.walk(name, _visit_pyfiles, list)
+        os.walk(name, _visit_pyfiles, list)
         return list
     elif os.path.exists(name):
         # a single file

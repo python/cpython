@@ -39,7 +39,7 @@ def main():
         if o == '-f':
             force = 1
     for dir in sys.argv[1:]:
-        os.path.walk(dir, handler, (verbose, force))
+        os.walk(dir, handler, (verbose, force))
 
 if __name__ == '__main__':
     main()

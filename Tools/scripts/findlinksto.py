@@ -22,7 +22,7 @@ def main():
     pat, dirs = args[0], args[1:]
     prog = re.compile(pat)
     for dirname in dirs:
-        os.path.walk(dirname, visit, prog)
+        os.walk(dirname, visit, prog)
 
 def visit(prog, dirname, names):
     if os.path.islink(dirname):

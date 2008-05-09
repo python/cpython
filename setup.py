@@ -1574,7 +1574,7 @@ class PyBuildInstallLib(install_lib):
 
     def set_dir_modes(self, dirname, mode):
         if not self.is_chmod_supported(): return
-        os.path.walk(dirname, self.set_dir_modes_visitor, mode)
+        os.walk(dirname, self.set_dir_modes_visitor, mode)
 
     def set_dir_modes_visitor(self, mode, dirname, names):
         if os.path.islink(dirname): return
