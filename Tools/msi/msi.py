@@ -111,6 +111,12 @@ pythondll_uuid = {
     "26":"{34ebecac-f046-4e1c-b0e3-9bac3cdaacfa}",
     } [major+minor]
 
+# Compute the name that Sphinx gives to the docfile
+docfile = ""
+if level < 0xf:
+    docfile = '%x%s' % (level, serial)
+docfile = 'python%s%s%s.chm' % (major, minor, docfile)
+
 # Build the mingw import library, libpythonXY.a
 # This requires 'nm' and 'dlltool' executables on your PATH
 def build_mingw_lib(lib_file, def_file, dll_file, mingw_lib):
@@ -1072,8 +1078,8 @@ def add_files(db):
     # Add documentation
     htmlfiles.set_current()
     lib = PyDirectory(db, cab, root, "Doc", "Doc", "DOC|Doc")
-    lib.start_component("documentation", keyfile="Python%s%s.chm" % (major,minor))
-    lib.add_file("Python%s%s.chm" % (major, minor), src="build/htmlhelp/pydoc.chm")
+    lib.start_component("documentation", keyfile=docfile)
+    lib.add_file(docfile, src="build/htmlhelp/"+docfile)
 
     cab.commit(db)
 
@@ -1181,7 +1187,7 @@ def add_registry(db):
               ("PythonPath", -1, prefix+r"\PythonPath", "",
                r"[TARGETDIR]Lib;[TARGETDIR]DLLs;[TARGETDIR]Lib\lib-tk", "REGISTRY"),
               ("Documentation", -1, prefix+r"\Help\Main Python Documentation", "",
-               r"[TARGETDIR]Doc\Python%s%s.chm" % (major, minor), "REGISTRY.doc"),
+               "[TARGETDIR]Doc\\"+docfile , "REGISTRY.doc"),
               ("Modules", -1, prefix+r"\Modules", "+", None, "REGISTRY"),
               ("AppPaths", -1, r"Software\Microsoft\Windows\CurrentVersion\App Paths\Python.exe",
                "", r"[TARGETDIR]Python.exe", "REGISTRY.def")
@@ -1211,7 +1217,7 @@ def add_registry(db):
               # htmlfiles.id, None, None, None, None, None, None, None),
               ## Non-advertised shortcuts: must be associated with a registry component
               ("Manual", "MenuDir", "MANUAL|Python Manuals", "REGISTRY.doc",
-               "[#Python%s%s.chm]" % (major,minor), None,
+               "[#%s]" % docfile, None,
                None, None, None, None, None, None),
               ("Uninstall", "MenuDir", "UNINST|Uninstall Python", "REGISTRY",
                SystemFolderName+"msiexec",  "/x%s" % product_code,
