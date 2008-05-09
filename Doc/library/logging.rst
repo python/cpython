@@ -698,6 +698,8 @@ functions.
    :func:`error` and :func:`critical` will call :func:`basicConfig` automatically
    if no handlers are defined for the root logger.
 
+   This function does nothing if the root logger already has handlers configured.
+
    .. versionchanged:: 2.4
       Formerly, :func:`basicConfig` did not take any keyword arguments.
 
