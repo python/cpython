@@ -157,6 +157,17 @@ class TestStdlibRemovals(unittest.TestCase):
         for module_name in self.all_platforms:
             self.check_removal(module_name)
 
+    def test_os_path_walk(self):
+        msg = "In 3.x, os.path.walk is removed in favor of os.walk."
+        def dumbo(where, names, args): pass
+        for path_mod in ("ntpath", "macpath", "os2emxpath", "posixpath"):
+            mod = __import__(path_mod)
+            with catch_warning() as w:
+                # Since os3exmpath just imports it from ntpath
+                warnings.simplefilter("always")
+                mod.walk(".", dumbo, None)
+            self.assertEquals(str(w.message), msg)
+
 
 def test_main():
     run_unittest(TestPy3KWarnings, TestStdlibRemovals)

@@ -303,10 +303,10 @@ write files see :func:`open`, and for accessing the filesystem see the
       identify them with ``os.path.islink(file)`` and ``os.path.isdir(file)``, and
       invoke :func:`walk` as necessary.
 
-   .. note::
+   .. warning::
 
-      The newer :func:`os.walk` :term:`generator` supplies similar functionality
-      and can be easier to use.
+      This function is deprecated and is removed in 3.0 in favor of
+      :func:`os.walk`.
 
 
 .. data:: supports_unicode_filenames
