@@ -522,7 +522,7 @@ def _script():
 
     Exit codes with --user-base or --user-site:
       0 - user site directory is enabled
-      1 - user site diretory is disabled by user
+      1 - user site directory is disabled by user
       2 - uses site directory is disabled by super user
           or for security reasons
      >2 - unknown error

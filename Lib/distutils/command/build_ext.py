@@ -10,6 +10,7 @@ __revision__ = "$Id$"
 
 import sys, os, string, re
 from types import *
+from site import USER_BASE, USER_SITE
 from distutils.core import Command
 from distutils.errors import *
 from distutils.sysconfig import customize_compiler, get_python_version
@@ -93,9 +94,11 @@ class build_ext (Command):
          "list of SWIG command line options"),
         ('swig=', None,
          "path to the SWIG executable"),
+        ('user', None,
+         "add user include, library and rpath"),
         ]
 
-    boolean_options = ['inplace', 'debug', 'force', 'swig-cpp']
+    boolean_options = ['inplace', 'debug', 'force', 'swig-cpp', 'user']
 
     help_options = [
         ('help-compiler', None,
@@ -123,6 +126,7 @@ class build_ext (Command):
         self.swig = None
         self.swig_cpp = None
         self.swig_opts = None
+        self.user = None
 
     def finalize_options (self):
         from distutils import sysconfig
@@ -256,6 +260,16 @@ class build_ext (Command):
             self.swig_opts = []
         else:
             self.swig_opts = self.swig_opts.split(' ')
+
+        # Finally add the user include and library directories if requested
+        if self.user:
+            user_include = os.path.join(USER_BASE, "include")
+            user_lib = os.path.join(USER_BASE, "lib")
+            if os.path.isdir(user_include):
+                self.include_dirs.append(user_include)
+            if os.path.isdir(user_lib):
+                self.library_dirs.append(user_lib)
+                self.rpath.append(user_lib)
 
     # finalize_options ()
 
