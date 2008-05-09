@@ -30,6 +30,8 @@ Library
 
 - test.test_support.catch_warning() gained a 'record' argument.
 
+- os.path.walk is deprecated in favor of os.walk.
+
 Build
 -----
 

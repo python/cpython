@@ -13,6 +13,7 @@ for manipulation of the pathname component of URLs.
 import os
 import stat
 import genericpath
+import warnings
 from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
@@ -215,7 +216,7 @@ def walk(top, func, arg):
     beyond that arg is always passed to func.  It can be used, e.g., to pass
     a filename pattern, or a mutable object designed to accumulate
     statistics.  Passing None for arg is common."""
-
+    warnings.warnpy3k("In 3.x, os.path.walk is removed in favor of os.walk.")
     try:
         names = os.listdir(top)
     except os.error:
