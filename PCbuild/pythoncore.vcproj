@@ -995,6 +995,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Modules\_bytesio.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Modules\_functoolsmodule.c"
 				>
 			</File>

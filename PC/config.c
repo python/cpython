@@ -53,6 +53,7 @@ extern void init_winreg(void);
 extern void init_struct(void);
 extern void initdatetime(void);
 extern void init_fileio(void);
+extern void init_bytesio(void);
 extern void init_functools(void);
 extern void init_json(void);
 extern void initzlib(void);
@@ -132,6 +133,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_struct", init_struct},
 	{"datetime", initdatetime},
 	{"_fileio", init_fileio},
+	{"_bytesio", init_bytesio},
 	{"_functools", init_functools},
 	{"_json", init_json},
 
