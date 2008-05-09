@@ -20,6 +20,8 @@ Extension Modules
 Library
 -------
 
+- The test.testall module has been deprecated for removal in Python 3.0.
+
 - The new module has been deprecated for removal in Python 3.0.
 
 - The user module has been deprecated for removal in Python 3.0.

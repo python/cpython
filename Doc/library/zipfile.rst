@@ -316,7 +316,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 
       string.pyc                                # Top level name 
       test/__init__.pyc                         # Package directory 
-      test/testall.pyc                          # Module test.testall
+      test/test_support.pyc                          # Module test.test_support
       test/bogus/__init__.pyc                   # Subpackage directory 
       test/bogus/myfile.pyc                     # Submodule test.bogus.myfile
 

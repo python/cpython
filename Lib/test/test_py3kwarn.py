@@ -126,6 +126,8 @@ class TestPy3KWarnings(unittest.TestCase):
 
 class TestStdlibRemovals(unittest.TestCase):
 
+    # test.testall not tested as it executes all unit tests as an
+    # import side-effect.
     all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new')
 
     def check_removal(self, module_name):
