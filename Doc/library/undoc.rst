@@ -61,6 +61,9 @@ Multimedia
    or demo.  Requires the external program :program:`sox`.
 
 
+   .. warning:: The :mod:`toaiff` module has been removed in 3.0.
+
+
 .. _undoc-mac-modules:
 
 Undocumented Mac OS modules
