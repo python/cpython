@@ -833,7 +833,7 @@ class _BytesIO(BufferedIOBase):
         if whence == 0:
             if pos < 0:
                 raise ValueError("negative seek position %r" % (pos,))
-            self._pos = max(0, pos)
+            self._pos = pos
         elif whence == 1:
             self._pos = max(0, self._pos + pos)
         elif whence == 2:
