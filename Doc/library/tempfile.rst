@@ -167,6 +167,24 @@ The module defines the following user-callable functions:
       Use of this function may introduce a security hole in your program.
       By the time you get around to doing anything with the file name it
       returns, someone else may have beaten you to the punch.
+      :func:`mktemp` usage can be replaced easily with
+      :func:`NamedTemporaryFile`, passing it the  `delete=False` parameter ::
+
+   >>> f = NamedTemporaryFile(delete=False)
+   >>> print f.name
+   >>> f.write("Hello World!\n")
+   >>> f.close()
+   >>> os.unlink(f.name)
+   >>> f = NamedTemporaryFile(delete=False)
+   >>> f
+   <open file '<fdopen>', mode 'w+b' at 0x384698>
+   >>> f.name
+   '/var/folders/5q/5qTPn6xq2RaWqk+1Ytw3-U+++TI/-Tmp-/tmpG7V1Y0'
+   >>> f.write("Hello World!\n")
+   >>> f.close()
+   >>> os.unlink(f.name)
+   >>> os.path.exists(f.name)
+   False
 
 The module uses two global variables that tell it how to construct a
 temporary name.  They are initialized at the first call to any of the
