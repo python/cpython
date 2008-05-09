@@ -1031,6 +1031,7 @@ float_is_integer(PyObject *v)
 		return NULL;
 	if (!Py_IS_FINITE(x))
 		Py_RETURN_FALSE;
+	errno = 0;
 	PyFPE_START_PROTECT("is_integer", return NULL)
 	o = (floor(x) == x) ? Py_True : Py_False;
 	PyFPE_END_PROTECT(x)
