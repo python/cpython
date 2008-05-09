@@ -264,7 +264,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     from os.path import join, isdir, islink
 
     # We may not have read permission for top, in which case we can't
-    # get a list of the files the directory contains.  os.path.walk
+    # get a list of the files the directory contains.  os.walk
     # always suppressed the exception then, rather than blow up for a
     # minor reason when (say) a thousand readable directories are still
     # left to visit.  That logic is copied here.

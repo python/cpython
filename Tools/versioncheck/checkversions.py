@@ -31,7 +31,7 @@ def check1dir(dummy, dir, files):
             print('** Exception in', fullname)
 
 def walk1tree(tree):
-    os.path.walk(tree, check1dir, None)
+    os.walk(tree, check1dir, None)
 
 def main():
     global VERBOSE
