@@ -103,6 +103,13 @@ There is even a variant to import all names that a module defines::
 
 This imports all names except those beginning with an underscore (``_``).
 
+.. note::
+
+   For efficiency reasons, each module is only imported once per interpreter
+   session.  Therefore, if you change your modules, you must restart the
+   interpreter -- or, if it's just one module you want to test interactively,
+   use :func:`reload`, e.g. ``reload('modulename')``.
+
 
 .. _tut-modulesasscripts:
 
