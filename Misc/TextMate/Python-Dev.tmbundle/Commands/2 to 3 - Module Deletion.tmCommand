@@ -6,7 +6,14 @@
 	<string>nop</string>
 	<key>command</key>
 	<string>#!/usr/bin/python
+"""Generate code to warn about a module's removal in Python 3.0.
 
+XXX Not supported:
+- Module's in a package do not have their full name generated.
+- Package's __init__ module; should detect and use the package's name instead.
+- Extension modules; need to create template.
+
+"""
 template = """from warnings import warnpy3k
 warnpy3k("the ${1:%s} module has been removed in Python 3.0", stacklevel=2)
 del warnpy3k
