@@ -374,6 +374,24 @@ class MathTests(unittest.TestCase):
         self.assertEquals(math.ldexp(NINF, -213), NINF)
         self.assert_(math.isnan(math.ldexp(NAN, 0)))
 
+        # large second argument
+        for n in [10**5, 10L**5, 10**10, 10L**10, 10**20, 10**40]:
+            self.assertEquals(math.ldexp(INF, -n), INF)
+            self.assertEquals(math.ldexp(NINF, -n), NINF)
+            self.assertEquals(math.ldexp(1., -n), 0.)
+            self.assertEquals(math.ldexp(-1., -n), -0.)
+            self.assertEquals(math.ldexp(0., -n), 0.)
+            self.assertEquals(math.ldexp(-0., -n), -0.)
+            self.assert_(math.isnan(math.ldexp(NAN, -n)))
+
+            self.assertRaises(OverflowError, math.ldexp, 1., n)
+            self.assertRaises(OverflowError, math.ldexp, -1., n)
+            self.assertEquals(math.ldexp(0., n), 0.)
+            self.assertEquals(math.ldexp(-0., n), -0.)
+            self.assertEquals(math.ldexp(INF, n), INF)
+            self.assertEquals(math.ldexp(NINF, n), NINF)
+            self.assert_(math.isnan(math.ldexp(NAN, n)))
+
     def testLog(self):
         self.assertRaises(TypeError, math.log)
         self.ftest('log(1/e)', math.log(1/math.e), -1)
