@@ -315,8 +315,8 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
     Py_buffer vo;
 
     if (_getbuffer(other, &vo) < 0) {
-        PyErr_Format(PyExc_TypeError, "can't concat bytes to %.100s",
-                     Py_TYPE(self)->tp_name);
+        PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
+                     Py_TYPE(other)->tp_name, Py_TYPE(self)->tp_name);
         return NULL;
     }
 

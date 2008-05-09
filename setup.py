@@ -436,6 +436,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('operator', ['operator.c']) )
         # Python 3.0 _fileio module
         exts.append( Extension("_fileio", ["_fileio.c"]) )
+        # Python 3.0 _bytesio module
+        exts.append( Extension("_bytesio", ["_bytesio.c"]) )
         # _functools
         exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
         # _json speedups

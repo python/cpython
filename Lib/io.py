@@ -494,6 +494,7 @@ class IOBase(object):
         files, the newlines argument to open can be used to select the line
         terminator(s) recognized.
         """
+        self._checkClosed()
         if hasattr(self, "peek"):
             def nreadahead():
                 readahead = self.peek(1)
@@ -508,6 +509,8 @@ class IOBase(object):
                 return 1
         if limit is None:
             limit = -1
+        if not isinstance(limit, (int, long)):
+            raise TypeError("limit must be an integer")
         res = bytearray()
         while limit < 0 or len(res) < limit:
             b = self.read(nreadahead())
@@ -536,6 +539,10 @@ class IOBase(object):
         lines so far exceeds hint.
         """
         if hint is None:
+            hint = -1
+        if not isinstance(hint, (int, long)):
+            raise TypeError("hint must be an integer")
+        if hint <= 0:
             return list(self)
         n = 0
         lines = []
@@ -686,7 +693,7 @@ class BufferedIOBase(IOBase):
             import array
             if not isinstance(b, array.array):
                 raise err
-            b[:n] = array.array('b', data)
+            b[:n] = array.array(b'b', data)
         return n
 
     def write(self, b):
@@ -729,6 +736,8 @@ class _BufferedIOMixin(BufferedIOBase):
 
         if pos is None:
             pos = self.tell()
+        # XXX: Should seek() be used, instead of passing the position
+        # XXX  directly to truncate?
         return self.raw.truncate(pos)
 
     ### Flush and close ###
@@ -768,7 +777,7 @@ class _BufferedIOMixin(BufferedIOBase):
         return self.raw.isatty()
 
 
-class BytesIO(BufferedIOBase):
+class _BytesIO(BufferedIOBase):
 
     """Buffered I/O implementation using an in-memory bytes buffer."""
 
@@ -777,20 +786,28 @@ class BytesIO(BufferedIOBase):
     def __init__(self, initial_bytes=None):
         buf = bytearray()
         if initial_bytes is not None:
-            buf += initial_bytes
+            buf += bytearray(initial_bytes)
         self._buffer = buf
         self._pos = 0
 
     def getvalue(self):
         """Return the bytes value (contents) of the buffer
         """
+        if self.closed:
+            raise ValueError("getvalue on closed file")
         return bytes(self._buffer)
 
     def read(self, n=None):
+        if self.closed:
+            raise ValueError("read from closed file")
         if n is None:
             n = -1
+        if not isinstance(n, (int, long)):
+            raise TypeError("argument must be an integer")
         if n < 0:
             n = len(self._buffer)
+        if len(self._buffer) <= self._pos:
+            return b""
         newpos = min(len(self._buffer), self._pos + n)
         b = self._buffer[self._pos : newpos]
         self._pos = newpos
@@ -807,6 +824,8 @@ class BytesIO(BufferedIOBase):
         if isinstance(b, unicode):
             raise TypeError("can't write unicode to binary stream")
         n = len(b)
+        if n == 0:
+            return 0
         newpos = self._pos + n
         if newpos > len(self._buffer):
             # Inserts null bytes between the current end of the file
@@ -818,28 +837,38 @@ class BytesIO(BufferedIOBase):
         return n
 
     def seek(self, pos, whence=0):
+        if self.closed:
+            raise ValueError("seek on closed file")
         try:
             pos = pos.__index__()
         except AttributeError as err:
             raise TypeError("an integer is required") # from err
         if whence == 0:
-            self._pos = max(0, pos)
+            if pos < 0:
+                raise ValueError("negative seek position %r" % (pos,))
+            self._pos = pos
         elif whence == 1:
             self._pos = max(0, self._pos + pos)
         elif whence == 2:
             self._pos = max(0, len(self._buffer) + pos)
         else:
-            raise IOError("invalid whence value")
+            raise ValueError("invalid whence value")
         return self._pos
 
     def tell(self):
+        if self.closed:
+            raise ValueError("tell on closed file")
         return self._pos
 
     def truncate(self, pos=None):
+        if self.closed:
+            raise ValueError("truncate on closed file")
         if pos is None:
             pos = self._pos
+        elif pos < 0:
+            raise ValueError("negative truncate position %r" % (pos,))
         del self._buffer[pos:]
-        return pos
+        return self.seek(pos)
 
     def readable(self):
         return True
@@ -849,6 +878,16 @@ class BytesIO(BufferedIOBase):
 
     def seekable(self):
         return True
+
+# Use the faster implementation of BytesIO if available
+try:
+    import _bytesio
+
+    class BytesIO(_bytesio._BytesIO, BufferedIOBase):
+        __doc__ = _bytesio._BytesIO.__doc__
+
+except ImportError:
+    BytesIO = _BytesIO
 
 
 class BufferedReader(_BufferedIOMixin):
@@ -983,6 +1022,12 @@ class BufferedWriter(_BufferedIOMixin):
                     raise BlockingIOError(e.errno, e.strerror, overage)
         return written
 
+    def truncate(self, pos=None):
+        self.flush()
+        if pos is None:
+            pos = self.raw.tell()
+        return self.raw.truncate(pos)
+
     def flush(self):
         if self.closed:
             raise ValueError("flush of closed file")
@@ -1102,6 +1147,13 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         else:
             return self.raw.tell() - len(self._read_buf)
 
+    def truncate(self, pos=None):
+        if pos is None:
+            pos = self.tell()
+        # Use seek to flush the read buffer.
+        self.seek(pos)
+        return BufferedWriter.truncate(self)
+
     def read(self, n=None):
         if n is None:
             n = -1
@@ -1150,11 +1202,7 @@ class TextIOBase(IOBase):
 
     def truncate(self, pos = None):
         """Truncate size to pos."""
-        self.flush()
-        if pos is None:
-            pos = self.tell()
-        self.seek(pos)
-        return self.buffer.truncate()
+        self._unsupported("truncate")
 
     def readline(self):
         """Read until newline or EOF.
@@ -1351,6 +1399,12 @@ class TextIOWrapper(TextIOBase):
     def seekable(self):
         return self._seekable
 
+    def readable(self):
+        return self.buffer.readable()
+
+    def writable(self):
+        return self.buffer.writable()
+
     def flush(self):
         self.buffer.flush()
         self._telling = self._seekable
@@ -1542,7 +1596,16 @@ class TextIOWrapper(TextIOBase):
         finally:
             decoder.setstate(saved_state)
 
+    def truncate(self, pos=None):
+        self.flush()
+        if pos is None:
+            pos = self.tell()
+        self.seek(pos)
+        return self.buffer.truncate()
+
     def seek(self, cookie, whence=0):
+        if self.closed:
+            raise ValueError("tell on closed file")
         if not self._seekable:
             raise IOError("underlying stream is not seekable")
         if whence == 1: # seek relative to current position
@@ -1629,8 +1692,12 @@ class TextIOWrapper(TextIOBase):
         return line
 
     def readline(self, limit=None):
+        if self.closed:
+            raise ValueError("read from closed file")
         if limit is None:
             limit = -1
+        if not isinstance(limit, (int, long)):
+            raise TypeError("limit must be an integer")
 
         # Grab all the decoded text (we will rewind any extra bits later).
         line = self._get_decoded_chars()
