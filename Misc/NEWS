@@ -12,6 +12,9 @@ What's new in Python 3.0b1?
 Core and Builtins
 -----------------
 
+- Issue 2801: fix bug in the float.is_integer method where a ValueError
+  was sometimes incorrectly raised.
+
 Extension Modules
 -----------------
 
