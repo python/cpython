@@ -129,8 +129,9 @@ class TestStdlibRemovals(unittest.TestCase):
     # test.testall not tested as it executes all unit tests as an
     # import side-effect.
     all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new')
+    inclusive_platforms = {'irix':('pure',)}
 
-    def check_removal(self, module_name):
+    def check_removal(self, module_name, optional=False):
         """Make sure the specified module, when imported, raises a
         DeprecationWarning and specifies itself in the message."""
         original_module = None
@@ -145,6 +146,9 @@ class TestStdlibRemovals(unittest.TestCase):
                     __import__(module_name, level=0)
                 except DeprecationWarning as exc:
                     self.assert_(module_name in exc.args[0])
+                except ImportError:
+                    if not optional:
+                        raise
                 else:
                     self.fail("DeprecationWarning not raised for %s" %
                                 module_name)
@@ -158,6 +162,11 @@ class TestStdlibRemovals(unittest.TestCase):
         # the proper DeprecationWarning.
         for module_name in self.all_platforms:
             self.check_removal(module_name)
+
+    def test_platform_specific_removals(self):
+        # Test the removal of platform-specific modules.
+        for module_name in self.inclusive_platforms.get(sys.platform, []):
+            self.check_removal(module_name, optional=True)
 
     def test_os_path_walk(self):
         msg = "In 3.x, os.path.walk is removed in favor of os.walk."
