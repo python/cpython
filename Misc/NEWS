@@ -18,6 +18,10 @@ Extension Modules
 Library
 -------
 
+- The Decimal module gained the magic methods __round__, __ceil__,
+  __floor__ and __trunc__, to give support for round, math.ceil,
+  math.floor and math.trunc.
+
 - The user module has been removed.
 
 - The mutex module has been removed.

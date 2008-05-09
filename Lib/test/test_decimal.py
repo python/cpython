@@ -1150,6 +1150,94 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(float(d1), 66)
         self.assertEqual(float(d2), 15.32)
 
+        #floor
+        test_pairs = [
+            ('123.00', 123),
+            ('3.2', 3),
+            ('3.54', 3),
+            ('3.899', 3),
+            ('-2.3', -3),
+            ('-11.0', -11),
+            ('0.0', 0),
+            ('-0E3', 0),
+            ]
+        for d, i in test_pairs:
+            self.assertEqual(math.floor(Decimal(d)), i)
+        self.assertRaises(ValueError, math.floor, Decimal('-NaN'))
+        self.assertRaises(ValueError, math.floor, Decimal('sNaN'))
+        self.assertRaises(ValueError, math.floor, Decimal('NaN123'))
+        self.assertRaises(OverflowError, math.floor, Decimal('Inf'))
+        self.assertRaises(OverflowError, math.floor, Decimal('-Inf'))
+
+        #ceiling
+        test_pairs = [
+            ('123.00', 123),
+            ('3.2', 4),
+            ('3.54', 4),
+            ('3.899', 4),
+            ('-2.3', -2),
+            ('-11.0', -11),
+            ('0.0', 0),
+            ('-0E3', 0),
+            ]
+        for d, i in test_pairs:
+            self.assertEqual(math.ceil(Decimal(d)), i)
+        self.assertRaises(ValueError, math.ceil, Decimal('-NaN'))
+        self.assertRaises(ValueError, math.ceil, Decimal('sNaN'))
+        self.assertRaises(ValueError, math.ceil, Decimal('NaN123'))
+        self.assertRaises(OverflowError, math.ceil, Decimal('Inf'))
+        self.assertRaises(OverflowError, math.ceil, Decimal('-Inf'))
+
+        #round, single argument
+        test_pairs = [
+            ('123.00', 123),
+            ('3.2', 3),
+            ('3.54', 4),
+            ('3.899', 4),
+            ('-2.3', -2),
+            ('-11.0', -11),
+            ('0.0', 0),
+            ('-0E3', 0),
+            ('-3.5', -4),
+            ('-2.5', -2),
+            ('-1.5', -2),
+            ('-0.5', 0),
+            ('0.5', 0),
+            ('1.5', 2),
+            ('2.5', 2),
+            ('3.5', 4),
+            ]
+        for d, i in test_pairs:
+            self.assertEqual(round(Decimal(d)), i)
+        self.assertRaises(ValueError, round, Decimal('-NaN'))
+        self.assertRaises(ValueError, round, Decimal('sNaN'))
+        self.assertRaises(ValueError, round, Decimal('NaN123'))
+        self.assertRaises(OverflowError, round, Decimal('Inf'))
+        self.assertRaises(OverflowError, round, Decimal('-Inf'))
+
+        #round, two arguments;  this is essentially equivalent
+        #to quantize, which is already extensively tested
+        test_triples = [
+            ('123.456', -4, '0E+4'),
+            ('123.456', -3, '0E+3'),
+            ('123.456', -2, '1E+2'),
+            ('123.456', -1, '1.2E+2'),
+            ('123.456', 0, '123'),
+            ('123.456', 1, '123.5'),
+            ('123.456', 2, '123.46'),
+            ('123.456', 3, '123.456'),
+            ('123.456', 4, '123.4560'),
+            ('123.455', 2, '123.46'),
+            ('123.445', 2, '123.44'),
+            ('Inf', 4, 'NaN'),
+            ('-Inf', -23, 'NaN'),
+            ('sNaN314', 3, 'NaN314'),
+            ]
+        for d, n, r in test_triples:
+            self.assertEqual(str(round(Decimal(d), n)), r)
+
+
+
     def test_eval_round_trip(self):
 
         #with zero

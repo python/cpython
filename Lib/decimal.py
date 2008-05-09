@@ -1645,9 +1645,6 @@ class Decimal(_numbers.Real):
         else:
             return -1
 
-    def __round__(self):
-        return self._round_down(0)
-
     def _round_up(self, prec):
         """Rounds away from 0."""
         return -self._round_down(prec)
@@ -1683,9 +1680,6 @@ class Decimal(_numbers.Real):
         else:
             return -self._round_down(prec)
 
-    def __ceil__(self):
-        return self._round_ceiling(0)
-
     def _round_floor(self, prec):
         """Rounds down (not towards 0 if negative)"""
         if not self._sign:
@@ -1693,15 +1687,108 @@ class Decimal(_numbers.Real):
         else:
             return -self._round_down(prec)
 
-    def __floor__(self):
-        return self._round_floor(0)
-
     def _round_05up(self, prec):
         """Round down unless digit prec-1 is 0 or 5."""
         if prec and self._int[prec-1] not in '05':
             return self._round_down(prec)
         else:
             return -self._round_down(prec)
+
+    def __round__(self, n=None):
+        """Round self to the nearest integer, or to a given precision.
+
+        If only one argument is supplied, round a finite Decimal
+        instance self to the nearest integer.  If self is infinite or
+        a NaN then a Python exception is raised.  If self is finite
+        and lies exactly halfway between two integers then it is
+        rounded to the integer with even last digit.
+
+        >>> round(Decimal('123.456'))
+        123
+        >>> round(Decimal('-456.789'))
+        -457
+        >>> round(Decimal('-3.0'))
+        -3
+        >>> round(Decimal('2.5'))
+        2
+        >>> round(Decimal('3.5'))
+        4
+        >>> round(Decimal('Inf'))
+        Traceback (most recent call last):
+          ...
+          ...
+          ...
+        OverflowError: cannot round an infinity
+        >>> round(Decimal('NaN'))
+        Traceback (most recent call last):
+          ...
+          ...
+          ...
+        ValueError: cannot round a NaN
+
+        If a second argument n is supplied, self is rounded to n
+        decimal places using the rounding mode for the current
+        context.
+
+        For an integer n, round(self, -n) is exactly equivalent to
+        self.quantize(Decimal('1En')).
+
+        >>> round(Decimal('123.456'), 0)
+        Decimal('123')
+        >>> round(Decimal('123.456'), 2)
+        Decimal('123.46')
+        >>> round(Decimal('123.456'), -2)
+        Decimal('1E+2')
+        >>> round(Decimal('-Infinity'), 37)
+        Decimal('NaN')
+        >>> round(Decimal('sNaN123'), 0)
+        Decimal('NaN123')
+
+        """
+        if n is not None:
+            # two-argument form: use the equivalent quantize call
+            if not isinstance(n, int):
+                raise TypeError('Second argument to round should be integral')
+            exp = _dec_from_triple(0, '1', -n)
+            return self.quantize(exp)
+
+        # one-argument form
+        if self._is_special:
+            if self.is_nan():
+                raise ValueError("cannot round a NaN")
+            else:
+                raise OverflowError("cannot round an infinity")
+        return int(self._rescale(0, ROUND_HALF_EVEN))
+
+    def __floor__(self):
+        """Return the floor of self, as an integer.
+
+        For a finite Decimal instance self, return the greatest
+        integer n such that n <= self.  If self is infinite or a NaN
+        then a Python exception is raised.
+
+        """
+        if self._is_special:
+            if self.is_nan():
+                raise ValueError("cannot round a NaN")
+            else:
+                raise OverflowError("cannot round an infinity")
+        return int(self._rescale(0, ROUND_FLOOR))
+
+    def __ceil__(self):
+        """Return the ceiling of self, as an integer.
+
+        For a finite Decimal instance self, return the least integer n
+        such that n >= self.  If self is infinite or a NaN then a
+        Python exception is raised.
+
+        """
+        if self._is_special:
+            if self.is_nan():
+                raise ValueError("cannot round a NaN")
+            else:
+                raise OverflowError("cannot round an infinity")
+        return int(self._rescale(0, ROUND_CEILING))
 
     def fma(self, other, third, context=None):
         """Fused multiply-add.
