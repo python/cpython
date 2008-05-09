@@ -23,6 +23,11 @@ Extension Modules
 Library
 -------
 
+- Issue #2487: change the semantics of math.ldexp(x, n) when n is too
+  large to fit in a C long.  ldexp(x, n) now returns a zero (with
+  suitable sign) if n is large and negative; previously, it raised
+  OverflowError.
+
 - The toaiff module has been deprecated for removal in Python 3.0.
 
 - The test.testall module has been deprecated for removal in Python 3.0.
