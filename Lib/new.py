@@ -3,9 +3,10 @@
 This module is no longer required except for backward compatibility.
 Objects of most types can now be created by calling the type object.
 """
-from warnings import warnpy3k as _warnpy3k
-_warnpy3k("The 'new' module is not supported in 3.x, use the 'types' module "
-    "instead.", stacklevel=2)
+from warnings import warnpy3k
+warnpy3k("The 'new' module has been removed in Python 3.0; use the 'types' "
+            "module instead.", stacklevel=2)
+del warnpy3k
 
 from types import ClassType as classobj
 from types import FunctionType as function

@@ -1,6 +1,7 @@
 import unittest
 from test import test_support
-import sys, new
+import sys
+new = test_support.import_module('new', deprecated=True)
 
 class NewTest(unittest.TestCase):
     def test_spam(self):
