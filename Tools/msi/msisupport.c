@@ -1,8 +1,6 @@
 #include "windows.h"
 #include "msiquery.h"
 
-int isWinNT;
-
 /* Print a debug message to the installer log file.
  * To see the debug messages, install with
  * msiexec /i pythonxy.msi /l*v python.log
@@ -30,21 +28,14 @@ UINT __declspec(dllexport) __stdcall CheckDir(MSIHANDLE hInstall)
 	DWORD size = PSIZE;
 	DWORD attributes;
 
-	isWinNT = (GetVersion() < 0x80000000) ? 1 : 0;
 	
-	if (isWinNT)
-		result = MsiGetPropertyW(hInstall, L"TARGETDIR", wpath, &size);
-	else
-		result = MsiGetPropertyA(hInstall, "TARGETDIR", path, &size);
+	result = MsiGetPropertyW(hInstall, L"TARGETDIR", wpath, &size);
 	if (result != ERROR_SUCCESS)
 		return result;
 	wpath[size] = L'\0';
 	path[size] = L'\0';
 
-	if (isWinNT)
-		attributes = GetFileAttributesW(wpath);
-	else
-		attributes = GetFileAttributesA(path);
+	attributes = GetFileAttributesW(wpath);
 	if (attributes == INVALID_FILE_ATTRIBUTES ||
 		!(attributes & FILE_ATTRIBUTE_DIRECTORY)) 
 	{
