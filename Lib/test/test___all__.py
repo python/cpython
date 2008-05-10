@@ -10,7 +10,8 @@ class AllTest(unittest.TestCase):
     def check_all(self, modname):
         names = {}
         with catch_warning():
-            warnings.filterwarnings("ignore", ".* module", DeprecationWarning)
+            warnings.filterwarnings("ignore", ".* (module|package)",
+                                    DeprecationWarning)
             try:
                 exec "import %s" % modname in names
             except ImportError:
