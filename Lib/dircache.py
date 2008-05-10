@@ -3,6 +3,9 @@
 The listdir() routine returns a sorted list of the files in a directory,
 using a cache to avoid reading the directory more often than necessary.
 The annotate() routine appends slashes to directories."""
+from warnings import warnpy3k
+warnpy3k("the dircache module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 import os
 

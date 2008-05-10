@@ -4,6 +4,12 @@
 
 .. module:: dircache
    :synopsis: Return directory listing, with cache mechanism.
+   :deprecated:
+   
+.. deprecated:: 2.6
+   The dircache module has been removed in Python 3.0.
+   
+   
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 
