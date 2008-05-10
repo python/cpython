@@ -55,6 +55,7 @@ class DistributionTestCase(unittest.TestCase):
         self.assertEqual(d.get_command_packages(), ["distutils.command"])
 
     def test_command_packages_cmdline(self):
+        from distutils.tests.test_dist import test_dist
         sys.argv.extend(["--command-packages",
                          "foo.bar,distutils.tests",
                          "test_dist",
@@ -65,6 +66,7 @@ class DistributionTestCase(unittest.TestCase):
         self.assertEqual(d.get_command_packages(),
                          ["distutils.command", "foo.bar", "distutils.tests"])
         cmd = d.get_command_obj("test_dist")
+        print cmd.__class__, test_dist
         self.assert_(isinstance(cmd, test_dist))
         self.assertEqual(cmd.sample_option, "sometext")
 
@@ -179,9 +181,54 @@ class MetadataTestCase(unittest.TestCase):
         dist.metadata.write_pkg_file(sio)
         return sio.getvalue()
 
+    def test_custom_pydistutils(self):
+        # fixes #2166
+        # make sure pydistutils.cfg is found
+        old = {}
+        for env in ('HOME', 'HOMEPATH', 'HOMEDRIVE'):
+            value = os.environ.get(env)
+            old[env] = value
+            if value is not None:
+                del os.environ[env]
+
+        if os.name == 'posix':
+            user_filename = ".pydistutils.cfg"
+        else:
+            user_filename = "pydistutils.cfg"
+
+        curdir = os.path.dirname(__file__)
+        user_filename = os.path.join(curdir, user_filename)
+        f = open(user_filename, 'w')
+        f.write('.')
+        f.close()
+
+        try:
+            dist = distutils.dist.Distribution()
+
+            # linux-style
+            if sys.platform in ('linux', 'darwin'):
+                os.environ['HOME'] = curdir
+                files = dist.find_config_files()
+                self.assert_(user_filename in files)
+
+            # win32-style
+            if sys.platform == 'win32':
+                # home drive should be found
+                os.environ['HOMEPATH'] = curdir
+                files = dist.find_config_files()
+                self.assert_(user_filename in files)
+        finally:
+            for key, value in old.items():
+                if value is None:
+                    continue
+                os.environ[key] = value
+            os.remove(user_filename)
 
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(DistributionTestCase))
     suite.addTest(unittest.makeSuite(MetadataTestCase))
     return suite
+
+if __name__ == "__main__":
+    unittest.main(defaultTest="test_suite")
