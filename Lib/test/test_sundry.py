@@ -49,7 +49,6 @@ class TestUntestedModules(unittest.TestCase):
             import formatter
             import getpass
             import htmlentitydefs
-            import ihooks
             import imghdr
             import keyword
             import linecache

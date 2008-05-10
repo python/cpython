@@ -14,15 +14,6 @@ Fredrik Lundh; the specific contents of this chapter have been substantially
 revised.
 
 
-Miscellaneous useful utilities
-==============================
-
-Some of these are very old and/or not very robust; marked with "hmm."
-
-:mod:`ihooks`
-   --- Import hook support (for :mod:`rexec`; may become obsolete).
-
-
 Platform specific modules
 =========================
 
