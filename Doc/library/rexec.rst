@@ -4,7 +4,10 @@
 
 .. module:: rexec
    :synopsis: Basic restricted execution framework.
-
+   :deprecated:
+   
+.. deprecated:: 2.6
+   The rexec module has been removed in Python 3.0.
 
 .. versionchanged:: 2.3
    Disabled module.

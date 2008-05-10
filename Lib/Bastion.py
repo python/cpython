@@ -25,6 +25,9 @@ the repr() of the original object.  This is precomputed when the
 bastion is created.
 
 """
+from warnings import warnpy3k
+warnpy3k("the Bastion module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 __all__ = ["BastionClass", "Bastion"]
 
