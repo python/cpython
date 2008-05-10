@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The Canvas module has been removed.
+
 - The Decimal module gained the magic methods __round__, __ceil__,
   __floor__ and __trunc__, to give support for round, math.ceil,
   math.floor and math.trunc.
