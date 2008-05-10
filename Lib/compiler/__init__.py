@@ -20,6 +20,9 @@ compile(source, filename, mode, flags=None, dont_inherit=None)
 compileFile(filename)
     Generates a .pyc file by compiling filename.
 """
+from warnings import warnpy3k
+warnpy3k("the compiler package has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 from compiler.transformer import parse, parseFile
 from compiler.visitor import walk

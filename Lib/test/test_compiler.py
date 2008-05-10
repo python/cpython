@@ -1,7 +1,7 @@
-import compiler
+import test.test_support
+compiler = test.test_support.import_module('compiler', deprecated=True)
 from compiler.ast import flatten
 import os, sys, time, unittest
-import test.test_support
 from random import random
 from StringIO import StringIO
 
