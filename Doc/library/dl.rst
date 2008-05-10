@@ -5,6 +5,11 @@
 .. module:: dl
    :platform: Unix
    :synopsis: Call C functions in shared objects.
+   :deprecated:
+   
+.. deprecated:: 2.6
+    The dl module has been removed in Python 3.0.
+   
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 The :mod:`dl` module defines an interface to the :cfunc:`dlopen` function, which

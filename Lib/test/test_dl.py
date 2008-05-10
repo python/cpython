@@ -2,9 +2,8 @@
 """Test dlmodule.c
    Roger E. Masse  revised strategy by Barry Warsaw
 """
-
-import dl
-from test.test_support import verbose,TestSkipped
+from test.test_support import verbose,TestSkipped, import_module
+dl = import_module('dl', deprecated=True)
 
 sharedlibs = [
     ('/usr/lib/libc.so', 'getpid'),
