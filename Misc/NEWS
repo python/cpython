@@ -23,6 +23,8 @@ Extension Modules
 Library
 -------
 
+- The bsddb185 module has been deprecated for removal in Python 3.0.
+
 - The pure module has been deprecated for removal in Python 3.0.
 
 - Issue #2487: change the semantics of math.ldexp(x, n) when n is too
