@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The ihooks module has been removed.
+
 - The fpformat module has been removed.
 
 - The dircache module has been removed.

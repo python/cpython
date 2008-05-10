@@ -22,8 +22,7 @@ are always available.  They are listed here in alphabetical order.
    The function is invoked by the :keyword:`import` statement.  It mainly exists
    so that you can replace it with another function that has a compatible
    interface, in order to change the semantics of the :keyword:`import`
-   statement.  For examples of why and how you would do this, see the standard
-   library module :mod:`ihooks`.  See also the built-in module :mod:`imp`, which
+   statement. See also the built-in module :mod:`imp`, which
    defines some useful operations out of which you can build your own
    :func:`__import__` function.
 
