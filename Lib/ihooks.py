@@ -49,7 +49,9 @@ by the way the __import__ hook is used by the Python interpreter.)  It
 would also do wise to install a different version of reload().
 
 """
-
+from warnings import warnpy3k
+warnpy3k("the ihooks module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 import __builtin__
 import imp
