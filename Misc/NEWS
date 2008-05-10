@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The dircache module has been removed.
+
 - The Canvas module has been removed.
 
 - The Decimal module gained the magic methods __round__, __ceil__,

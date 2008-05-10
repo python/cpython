@@ -23,7 +23,6 @@ in this chapter is:
    fnmatch.rst
    linecache.rst
    shutil.rst
-   dircache.rst
    macpath.rst
 
 
