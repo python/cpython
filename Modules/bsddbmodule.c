@@ -847,6 +847,10 @@ PyMODINIT_FUNC
 initbsddb185(void) {
 	PyObject *m, *d;
 
+    if (PyErr_WarnPy3k("the bsddb185 module has been removed in "
+                       "Python 3.0", 2) < 0)
+        return;    
+
 	Bsddbtype.ob_type = &PyType_Type;
 	m = Py_InitModule("bsddb185", bsddbmodule_methods);
 	if (m == NULL)

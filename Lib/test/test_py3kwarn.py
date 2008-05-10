@@ -131,6 +131,7 @@ class TestStdlibRemovals(unittest.TestCase):
     all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new', 'rexec',
                         'Bastion')
     inclusive_platforms = {'irix':('pure',)}
+    optional_modules = ('bsddb185',)
 
     def check_removal(self, module_name, optional=False):
         """Make sure the specified module, when imported, raises a
@@ -167,6 +168,11 @@ class TestStdlibRemovals(unittest.TestCase):
     def test_platform_specific_removals(self):
         # Test the removal of platform-specific modules.
         for module_name in self.inclusive_platforms.get(sys.platform, []):
+            self.check_removal(module_name, optional=True)
+
+    def test_optional_module_removals(self):
+        # Test the removal of modules that may or may not be built.
+        for module_name in self.optional_modules:
             self.check_removal(module_name, optional=True)
 
     def test_os_path_walk(self):
