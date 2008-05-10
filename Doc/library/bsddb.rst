@@ -83,7 +83,7 @@ arguments should be used in most instances.
    This is present *only* to allow backwards compatibility with systems which ship
    with the old Berkeley DB 1.85 database library.  The :mod:`bsddb185` module
    should never be used directly in new code. The module has been removed in
-   Python 3.0.
+   Python 3.0.  If you find you still need it look in PyPI.
 
 
 .. seealso::
