@@ -142,7 +142,7 @@ class TestStdlibRemovals(unittest.TestCase):
             original_module = sys.modules[module_name]
             del sys.modules[module_name]
         try:
-            with catch_warning() as w:
+            with catch_warning(record=False) as w:
                 warnings.filterwarnings("error", ".+ removed",
                                         DeprecationWarning)
                 try:
