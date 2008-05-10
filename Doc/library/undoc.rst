@@ -21,6 +21,8 @@ Some of these are very old and/or not very robust; marked with "hmm."
 
 :mod:`ihooks`
    --- Import hook support (for :mod:`rexec`; may become obsolete).
+   
+   .. warning:: The ihooks module has been removed in Python 3.0.
 
 
 Platform specific modules
