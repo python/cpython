@@ -369,11 +369,6 @@ Library
   platforms when x is too large to fit into an IEEE 754 float; previously
   it only raised OverflowError on non IEEE 754 platforms.
 
-- Issues #2166, #1741 and #1531505: now distutils deals with HOME
-  correctly under win32
-
-- distutils: added multiple server support in .pypirc
-
 - Issue #1106316: pdb.post_mortem()'s parameter, "traceback", is now
   optional: it defaults to the traceback of the exception that is currently
   being handled (is mandatory to be in the middle of an exception, otherwise
