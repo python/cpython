@@ -128,7 +128,8 @@ class TestStdlibRemovals(unittest.TestCase):
 
     # test.testall not tested as it executes all unit tests as an
     # import side-effect.
-    all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new')
+    all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new', 'rexec',
+                        'Bastion')
     inclusive_platforms = {'irix':('pure',)}
 
     def check_removal(self, module_name, optional=False):
