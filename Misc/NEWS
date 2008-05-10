@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The fpformat module has been removed.
+
 - The dircache module has been removed.
 
 - The Canvas module has been removed.
