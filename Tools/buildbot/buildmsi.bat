@@ -9,7 +9,7 @@ vcbuild /useenv PCbuild\pcbuild.sln "Release|Win32"
 
 @rem build the documentation
 bash.exe -c 'cd Doc;make PYTHON=python2.5 update htmlhelp'
-"%ProgramFiles%\HTML Help Workshop\hhc.exe" Doc\build\htmlhelp\pydoc.hhp
+"%ProgramFiles%\HTML Help Workshop\hhc.exe" Doc\build\htmlhelp\python26a3.hhp
 
 @rem buold the MSI file
 cd PC
