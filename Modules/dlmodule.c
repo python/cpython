@@ -235,6 +235,10 @@ initdl(void)
 {
 	PyObject *m, *d, *x;
 
+    if (PyErr_WarnPy3k("the dl module has been removed in "
+                       "Python 3.0", 2) < 0)
+        return;    
+
 	/* Initialize object type */
 	Py_TYPE(&Dltype) = &PyType_Type;
 
