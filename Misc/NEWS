@@ -23,6 +23,8 @@ Extension Modules
 Library
 -------
 
+- The Canvas module has been deprecated for removal in Python 3.0.
+
 - The compiler package has been deprecated for removal in Python 3.0.
 
 - The Bastion and rexec modules have been deprecated for removal in Python 3.0.
