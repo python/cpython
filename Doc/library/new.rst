@@ -6,7 +6,8 @@
    :synopsis: Interface to the creation of runtime implementation objects.
    :deprecated:
 
-.. deprecated:: The new module has been removed in Python 3.0.
+.. deprecated:: 2.6
+   The new module has been removed in Python 3.0.
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
