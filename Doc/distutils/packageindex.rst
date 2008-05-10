@@ -55,40 +55,11 @@ The .pypirc file
 
 The format of the :file:`.pypirc` file is as follows::
 
-   [distutils]
-   index-servers =
-     pypi
-
-   [pypi]
+   [server-login]
    repository: <repository-url>
    username: <username>
    password: <password>
 
 *repository* can be omitted and defaults to ``http://www.python.org/pypi``.
 
-If you want to define another server a new section can be created::
 
-   [distutils]
-   index-servers =
-     pypi
-     other
- 
-   [pypi]
-   repository: <repository-url>
-   username: <username>
-   password: <password>
-
-   [other]
-   repository: http://example.com/pypi
-   username: <username>
-   password: <password>
-
-The command can then be called with the -r option::
-
-   python setup.py register -r http://example.com/pypi
-
-Or even with the section name::
-
-   python setup.py register -r other
-
- 
