@@ -5,6 +5,9 @@
 Python compiler package
 ***********************
 
+.. deprecated:: 2.6
+   The compiler package has been removed in Python 3.0.
+
 .. sectionauthor:: Jeremy Hylton <jeremy@zope.com>
 
 
@@ -34,6 +37,7 @@ The basic interface
 
 .. module:: compiler
    :synopsis: Python code compiler written in Python.
+   :deprecated:
 
 
 The top-level of the package defines four functions.  If you import
