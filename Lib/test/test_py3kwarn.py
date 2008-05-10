@@ -129,7 +129,7 @@ class TestStdlibRemovals(unittest.TestCase):
     # test.testall not tested as it executes all unit tests as an
     # import side-effect.
     all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new', 'rexec',
-                        'Bastion', 'compiler', 'dircache')
+                        'Bastion', 'compiler', 'dircache', 'fpformat')
     inclusive_platforms = {'irix':('pure',)}
     # XXX Don't know if lib-tk is only installed if _tkinter is built.
     optional_modules = ('bsddb185', 'Canvas', 'dl')

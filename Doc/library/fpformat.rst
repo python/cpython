@@ -4,6 +4,11 @@
 
 .. module:: fpformat
    :synopsis: General floating point formatting functions.
+   :deprecated:
+   
+.. deprecated:: 2.6
+    The fpformat module has been removed in Python 3.0.
+   
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 
