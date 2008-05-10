@@ -26,5 +26,4 @@ string functions based on regular expressions.
    codecs.rst
    unicodedata.rst
    stringprep.rst
-   fpformat.rst
 
