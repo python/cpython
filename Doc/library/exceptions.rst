@@ -254,11 +254,10 @@ The following exceptions are the exceptions that are actually raised.
 
    Raised when the result of an arithmetic operation is too large to be
    represented.  This cannot occur for long integers (which would rather raise
-   :exc:`MemoryError` than give up).  Because of the lack of standardization of
-   floating point exception handling in C, most floating point operations also
-   aren't checked.  For plain integers, all operations that can overflow are
-   checked except left shift, where typical applications prefer to drop bits than
-   raise an exception.
+   :exc:`MemoryError` than give up) and for most operations with plain integers,
+   which return a long integer instead.  Because of the lack of standardization
+   of floating point exception handling in C, most floating point operations
+   also aren't checked.
 
 
 .. exception:: ReferenceError
