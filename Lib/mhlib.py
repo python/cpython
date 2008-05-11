@@ -52,6 +52,10 @@ s = m.getheadertext(pred) # text of message's headers, filtered by pred
 s = m.getbodytext()     # text of message's body, decoded
 s = m.getbodytext(0)    # text of message's body, not decoded
 """
+from warnings import warnpy3k
+warnpy3k("the mhlib module has been removed in Python 3.0; use the mailbox "
+            "module instead", stacklevel=2)
+del warnpy3k
 
 # XXX To do, functionality:
 # - annotate messages

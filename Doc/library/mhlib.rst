@@ -3,6 +3,12 @@
 
 .. module:: mhlib
    :synopsis: Manipulate MH mailboxes from Python.
+   :deprecated:
+   
+.. deprecated:: 2.6
+    The :mod:`mhlib` module has been removed in Python 3.0. Use the
+    :mod:`mailbox` instead.
+
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 The :mod:`mhlib` module provides a Python interface to MH folders and their
