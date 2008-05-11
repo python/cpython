@@ -114,4 +114,4 @@ class scheduler:
                     void = action(*argument)
                     delayfunc(0)   # Let other threads run
                 else:
-                    heapq.heappush(event)
+                    heapq.heappush(q, event)
