@@ -99,15 +99,14 @@ MacPython, as a MacPython applet or under OSX Python.
 A low-level interface to Navigation Services.
 
 
-:mod:`PixMapWrapper` --- Wrapper for PixMap objects
+:mod:`pixmapwrapper` --- Wrapper for PixMap objects
 ---------------------------------------------------
 
-.. module:: PixMapWrapper
+.. module:: pixmapwrapper
    :platform: Mac
    :synopsis: Wrapper for PixMap objects.
 
-
-:mod:`PixMapWrapper` wraps a PixMap object with a Python object that allows
+:mod:`pixmapwrapper` wraps a PixMap object with a Python object that allows
 access to the fields by name. It also has methods to convert to and from
 :mod:`PIL` images.
 
