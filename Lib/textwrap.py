@@ -63,6 +63,10 @@ class TextWrapper:
       break_long_words (default: true)
         Break words longer than 'width'.  If false, those words will not
         be broken, and some lines might be longer than 'width'.
+      break_on_hyphens (default: true)
+        Allow breaking hyphenated words. If true, wrapping will occur
+        preferably on whitespaces and right after hyphens part of
+        compound words.
       drop_whitespace (default: true)
         Drop leading and trailing whitespace from lines.
     """
@@ -85,6 +89,12 @@ class TextWrapper:
         r'[^\s\w]*\w+[a-zA-Z]-(?=\w+[a-zA-Z])|'   # hyphenated words
         r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
 
+    # This less funky little regex just split on recognized spaces. E.g.
+    #   "Hello there -- you goof-ball, use the -b option!"
+    # splits into
+    #   Hello/ /there/ /--/ /you/ /goof-ball,/ /use/ /the/ /-b/ /option!/
+    wordsep_simple_re = re.compile(r'(\s+)')
+
     # XXX this is not locale- or charset-aware -- string.lowercase
     # is US-ASCII only (and therefore English-only)
     sentence_end_re = re.compile(r'[%s]'              # lowercase letter
@@ -102,7 +112,8 @@ class TextWrapper:
                  replace_whitespace=True,
                  fix_sentence_endings=False,
                  break_long_words=True,
-                 drop_whitespace=True):
+                 drop_whitespace=True,
+                 break_on_hyphens=True):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -111,6 +122,7 @@ class TextWrapper:
         self.fix_sentence_endings = fix_sentence_endings
         self.break_long_words = break_long_words
         self.drop_whitespace = drop_whitespace
+        self.break_on_hyphens = break_on_hyphens
 
 
     # -- Private methods -----------------------------------------------
@@ -143,8 +155,15 @@ class TextWrapper:
         breaks into the following chunks:
           'Look,', ' ', 'goof-', 'ball', ' ', '--', ' ',
           'use', ' ', 'the', ' ', '-b', ' ', 'option!'
+        if break_on_hyphens is True, or in:
+          'Look,', ' ', 'goof-ball', ' ', '--', ' ',
+          'use', ' ', 'the', ' ', '-b', ' ', option!'
+        otherwise.
         """
-        chunks = self.wordsep_re.split(text)
+        if self.break_on_hyphens is True:
+            chunks = self.wordsep_re.split(text)
+        else:
+            chunks = self.wordsep_simple_re.split(text)
         chunks = filter(None, chunks)  # remove empty chunks
         return chunks
 

@@ -364,6 +364,14 @@ What a mess!
              ["Hello", " ", "there", " ", "--", " ", "you", " ", "goof-",
               "ball,", " ", "use", " ", "the", " ", "-b", " ",  "option!"])
 
+    def test_break_on_hyphens(self):
+        # Ensure that the break_on_hyphens attributes work
+        text = "yaba daba-doo"
+        self.check_wrap(text, 10, ["yaba daba-", "doo"],
+                        break_on_hyphens=True)
+        self.check_wrap(text, 10, ["yaba", "daba-doo"],
+                        break_on_hyphens=False)
+
     def test_bad_width(self):
         # Ensure that width <= 0 is caught.
         text = "Whatever, it doesn't matter."
