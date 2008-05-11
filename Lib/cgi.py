@@ -15,9 +15,6 @@ This module defines a number of utilities for use by CGI scripts
 written in Python.
 """
 
-# XXX Perhaps there should be a slimmed version that doesn't contain
-# all those backwards compatible and debugging classes and functions?
-
 # History
 # -------
 #
@@ -43,8 +40,7 @@ import rfc822
 import collections
 from io import StringIO
 
-__all__ = ["MiniFieldStorage", "FieldStorage", "FormContentDict",
-           "SvFormContentDict", "InterpFormContentDict", "FormContent",
+__all__ = ["MiniFieldStorage", "FieldStorage",
            "parse", "parse_qs", "parse_qsl", "parse_multipart",
            "parse_header", "print_exception", "print_environ",
            "print_form", "print_directory", "print_arguments",
@@ -775,124 +771,6 @@ class FieldStorage:
         """
         import tempfile
         return tempfile.TemporaryFile("w+", encoding="utf-8", newline="\n")
-
-
-
-# Backwards Compatibility Classes
-# ===============================
-
-class FormContentDict(collections.Mapping):
-    """Form content as dictionary with a list of values per field.
-
-    form = FormContentDict()
-
-    form[key] -> [value, value, ...]
-    key in form -> Boolean
-    form.keys() -> [key, key, ...]
-    form.values() -> [[val, val, ...], [val, val, ...], ...]
-    form.items() ->  [(key, [val, val, ...]), (key, [val, val, ...]), ...]
-    form.dict == {key: [val, val, ...], ...}
-
-    """
-    def __init__(self, environ=os.environ, keep_blank_values=0, strict_parsing=0):
-        self.dict = self.data = parse(environ=environ,
-                                      keep_blank_values=keep_blank_values,
-                                      strict_parsing=strict_parsing)
-        self.query_string = environ['QUERY_STRING']
-
-    def __len__(self):
-        return len(self.dict)
-
-    def __iter__(self):
-        return iter(self.dict)
-
-    def __getitem__(self, key):
-        return self.dict[key]
-
-
-class SvFormContentDict(FormContentDict):
-    """Form content as dictionary expecting a single value per field.
-
-    If you only expect a single value for each field, then form[key]
-    will return that single value.  It will raise an IndexError if
-    that expectation is not true.  If you expect a field to have
-    possible multiple values, than you can use form.getlist(key) to
-    get all of the values.  values() and items() are a compromise:
-    they return single strings where there is a single value, and
-    lists of strings otherwise.
-
-    """
-    def __getitem__(self, key):
-        if len(self.dict[key]) > 1:
-            raise IndexError('expecting a single value')
-        return self.dict[key][0]
-    def getlist(self, key):
-        return self.dict[key]
-    def values(self):
-        result = []
-        for value in self.dict.values():
-            if len(value) == 1:
-                result.append(value[0])
-            else: result.append(value)
-        return result
-    def items(self):
-        result = []
-        for key, value in self.dict.items():
-            if len(value) == 1:
-                result.append((key, value[0]))
-            else: result.append((key, value))
-        return result
-
-
-class InterpFormContentDict(SvFormContentDict):
-    """This class is present for backwards compatibility only."""
-    def __getitem__(self, key):
-        v = SvFormContentDict.__getitem__(self, key)
-        if v[0] in '0123456789+-.':
-            try: return int(v)
-            except ValueError:
-                try: return float(v)
-                except ValueError: pass
-        return v.strip()
-    def values(self):
-        result = []
-        for key in self.keys():
-            try:
-                result.append(self[key])
-            except IndexError:
-                result.append(self.dict[key])
-        return result
-    def items(self):
-        result = []
-        for key in self.keys():
-            try:
-                result.append((key, self[key]))
-            except IndexError:
-                result.append((key, self.dict[key]))
-        return result
-
-
-class FormContent(FormContentDict):
-    """This class is present for backwards compatibility only."""
-    def values(self, key):
-        if key in self.dict :return self.dict[key]
-        else: return None
-    def indexed_value(self, key, location):
-        if key in self.dict:
-            if len(self.dict[key]) > location:
-                return self.dict[key][location]
-            else: return None
-        else: return None
-    def value(self, key):
-        if key in self.dict: return self.dict[key][0]
-        else: return None
-    def length(self, key):
-        return len(self.dict[key])
-    def stripped(self, key):
-        if key in self.dict: return self.dict[key][0].strip()
-        else: return None
-    def pars(self):
-        return self.dict
 
 
 # Test/debug code

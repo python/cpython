@@ -143,56 +143,22 @@ class CgiTests(unittest.TestCase):
             self.assertEqual(d, expect, "Error parsing %s" % repr(orig))
 
             env = {'QUERY_STRING': orig}
-            fcd = cgi.FormContentDict(env)
-            sd = cgi.SvFormContentDict(env)
             fs = cgi.FieldStorage(environ=env)
             if type(expect) == type({}):
                 # test dict interface
-                self.assertEqual(len(expect), len(fcd))
-                self.assertEqual(norm(expect.keys()), norm(fcd.keys()))
-                self.assertEqual(norm(expect.values()), norm(fcd.values()))
-                self.assertEqual(norm(expect.items()), norm(fcd.items()))
-                self.assertEqual(fcd.get("nonexistent field", "default"), "default")
-                self.assertEqual(len(sd), len(fs))
-                self.assertEqual(norm(sd.keys()), norm(fs.keys()))
+                self.assertEqual(len(expect), len(fs))
+                self.assertEqual(norm(expect.keys()), norm(fs.keys()))
+                ##self.assertEqual(norm(expect.values()), norm(fs.values()))
+                ##self.assertEqual(norm(expect.items()), norm(fs.items()))
                 self.assertEqual(fs.getvalue("nonexistent field", "default"), "default")
                 # test individual fields
                 for key in expect.keys():
                     expect_val = expect[key]
-                    self.assert_(key in fcd)
-                    self.assertEqual(norm(fcd[key]), norm(expect[key]))
-                    self.assertEqual(fcd.get(key, "default"), fcd[key])
                     self.assert_(key in fs)
                     if len(expect_val) > 1:
-                        single_value = 0
-                    else:
-                        single_value = 1
-                    try:
-                        val = sd[key]
-                    except IndexError:
-                        self.failIf(single_value)
                         self.assertEqual(fs.getvalue(key), expect_val)
                     else:
-                        self.assert_(single_value)
-                        self.assertEqual(val, expect_val[0])
                         self.assertEqual(fs.getvalue(key), expect_val[0])
-                    self.assertEqual(norm(sd.getlist(key)), norm(expect_val))
-                    if single_value:
-                        self.assertEqual(norm(sd.values()),
-                               first_elts(norm(expect.values())))
-                        self.assertEqual(norm(sd.items()),
-                               first_second_elts(norm(expect.items())))
-
-    def test_weird_formcontentdict(self):
-        # Test the weird FormContentDict classes
-        env = {'QUERY_STRING': "x=1&y=2.0&z=2-3.%2b0&1=1abc"}
-        expect = {'x': 1, 'y': 2.0, 'z': '2-3.+0', '1': '1abc'}
-        d = cgi.InterpFormContentDict(env)
-        for k, v in expect.items():
-            self.assertEqual(d[k], v)
-        for k, v in d.items():
-            self.assertEqual(expect[k], v)
-        self.assertEqual(norm(expect.values()), norm(d.values()))
 
     def test_log(self):
         cgi.log("Testing")
