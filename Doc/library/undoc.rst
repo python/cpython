@@ -161,9 +161,6 @@ A low-level interface to Navigation Services.
    :platform: Mac
    :synopsis: Wrapper for PixMap objects.
 
-.. note::
-    The :mod:`PixMapWrapper` module has been renamed to
-    `pixmapwrapper` in Python 3.0.
 
 :mod:`PixMapWrapper` wraps a PixMap object with a Python object that allows
 access to the fields by name. It also has methods to convert to and from

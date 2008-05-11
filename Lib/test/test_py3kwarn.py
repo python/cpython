@@ -183,10 +183,9 @@ class TestStdlibRemovals(unittest.TestCase):
 
 class TestStdlibRenames(unittest.TestCase):
 
-    all_platforms = {'copy_reg': 'copyreg', 'Queue': 'queue'}
-    inclusive_platforms = {'mac': {'PixMapWrapper': 'pixmapwrapper'}}
+    renames = {'copy_reg': 'copyreg', 'Queue': 'queue'}
 
-    def check_rename(self, module_name, new_module_name, optional=False):
+    def check_rename(self, module_name, new_module_name):
         """Make sure that:
         - A DeprecationWarning is raised when importing using the
           old 2.x module name.
@@ -202,31 +201,22 @@ class TestStdlibRenames(unittest.TestCase):
                 except DeprecationWarning as exc:
                     self.assert_(module_name in exc.args[0])
                     self.assert_(new_module_name in exc.args[0])
-                except ImportError:
-                    if not optional:
-                        raise
                 else:
                     self.fail("DeprecationWarning not raised for %s" %
                               module_name)
         with CleanImport(new_module_name):
             try:
                 __import__(new_module_name, level=0)
+            except ImportError:
+                self.fail("cannot import %s with its 3.x name, %s" %
+                          module_name, new_module_name)
             except DeprecationWarning:
                 self.fail("unexpected DeprecationWarning raised for %s" %
                           module_name)
-            except ImportError:
-                if not optional:
-                    self.fail("cannot import %s with its 3.x name, %s" %
-                              module_name, new_module_name)
 
-    def test_platform_independent_renames(self):
-        for module_name, new_module_name in self.all_platforms.items():
+    def test_module_renames(self):
+        for module_name, new_module_name in self.renames.items():
             self.check_rename(module_name, new_module_name)
-
-    def test_platform_specific_renames(self):
-        renames = self.inclusive_platforms.get(sys.platform, {})
-        for module_name, new_module_name in renames.items():
-            self.check_removal(module_name, new_module_name, optional=True)
 
 
 def test_main():
