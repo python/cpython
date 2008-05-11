@@ -250,9 +250,11 @@ Using these methods you can write nice compact code::
 Old classes
 -----------
 
-These classes, present in earlier versions of the :mod:`cgi` module, are still
-supported for backward compatibility.  New applications should use the
-:class:`FieldStorage` class.
+.. deprecated:: 2.6
+
+   These classes, present in earlier versions of the :mod:`cgi` module, are
+   still supported for backward compatibility.  New applications should use the
+   :class:`FieldStorage` class.
 
 :class:`SvFormContentDict` stores single value form content as dictionary; it
 assumes each field name occurs in the form only once.
