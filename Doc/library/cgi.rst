@@ -63,9 +63,7 @@ prints a simple piece of HTML::
 Using the cgi module
 --------------------
 
-Begin by writing ``import cgi``.  Do not use ``from cgi import *`` --- the
-module defines all sorts of names for its own use or for backward compatibility
-that you don't want in your namespace.
+Begin by writing ``import cgi``.
 
 When you write a new script, consider adding the line::
 
@@ -83,12 +81,11 @@ produced by :mod:`cgitb` provide information that can save you a lot of time in
 tracking down bugs.  You can always remove the ``cgitb`` line later when you
 have tested your script and are confident that it works correctly.
 
-To get at submitted form data, it's best to use the :class:`FieldStorage` class.
-The other classes defined in this module are provided mostly for backward
-compatibility. Instantiate it exactly once, without arguments.  This reads the
-form contents from standard input or the environment (depending on the value of
-various environment variables set according to the CGI standard).  Since it may
-consume standard input, it should be instantiated only once.
+To get at submitted form data, use the :class:`FieldStorage` class.  Instantiate
+it exactly once, without arguments.  This reads the form contents from standard
+input or the environment (depending on the value of various environment
+variables set according to the CGI standard).  Since it may consume standard
+input, it should be instantiated only once.
 
 The :class:`FieldStorage` instance can be indexed like a Python dictionary, and
 also supports the standard dictionary methods :meth:`__contains__` and
@@ -243,26 +240,6 @@ Using these methods you can write nice compact code::
    user = form.getfirst("user", "").upper()    # This way it's safe.
    for item in form.getlist("item"):
        do_something(item)
-
-
-Old classes
------------
-
-These classes, present in earlier versions of the :mod:`cgi` module, are still
-supported for backward compatibility.  New applications should use the
-:class:`FieldStorage` class.
-
-:class:`SvFormContentDict` stores single value form content as dictionary; it
-assumes each field name occurs in the form only once.
-
-:class:`FormContentDict` stores multiple value form content as a dictionary (the
-form items are lists of values).  Useful if your form contains multiple fields
-with the same name.
-
-Other classes (:class:`FormContent`, :class:`InterpFormContentDict`) are present
-for backwards compatibility with really old applications only. If you still use
-these and would be inconvenienced when they disappeared from a next version of
-this module, drop me a note.
 
 
 .. _functions-in-cgi-module:
