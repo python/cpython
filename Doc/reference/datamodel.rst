@@ -175,23 +175,24 @@ Ellipsis
             object: plain integer
             single: OverflowError (built-in exception)
 
-         These represent numbers in the range -2147483648 through 2147483647. (The range
-         may be larger on machines with a larger natural word size, but not smaller.)
-         When the result of an operation would fall outside this range, the result is
-         normally returned as a long integer (in some cases, the exception
-         :exc:`OverflowError` is raised instead). For the purpose of shift and mask
-         operations, integers are assumed to have a binary, 2's complement notation using
-         32 or more bits, and hiding no bits from the user (i.e., all 4294967296
-         different bit patterns correspond to different values).
+         These represent numbers in the range -2147483648 through 2147483647.
+         (The range may be larger on machines with a larger natural word size,
+         but not smaller.)  When the result of an operation would fall outside
+         this range, the result is normally returned as a long integer (in some
+         cases, the exception :exc:`OverflowError` is raised instead).  For the
+         purpose of shift and mask operations, integers are assumed to have a
+         binary, 2's complement notation using 32 or more bits, and hiding no
+         bits from the user (i.e., all 4294967296 different bit patterns
+         correspond to different values).
 
       Long integers
          .. index:: object: long integer
 
-         These represent numbers in an unlimited range, subject to available (virtual)
-         memory only.  For the purpose of shift and mask operations, a binary
-         representation is assumed, and negative numbers are represented in a variant of
-         2's complement which gives the illusion of an infinite string of sign bits
-         extending to the left.
+         These represent numbers in an unlimited range, subject to available
+         (virtual) memory only.  For the purpose of shift and mask operations, a
+         binary representation is assumed, and negative numbers are represented
+         in a variant of 2's complement which gives the illusion of an infinite
+         string of sign bits extending to the left.
 
       Booleans
          .. index::
@@ -199,20 +200,22 @@ Ellipsis
             single: False
             single: True
 
-         These represent the truth values False and True.  The two objects representing
-         the values False and True are the only Boolean objects. The Boolean type is a
-         subtype of plain integers, and Boolean values behave like the values 0 and 1,
-         respectively, in almost all contexts, the exception being that when converted to
-         a string, the strings ``"False"`` or ``"True"`` are returned, respectively.
+         These represent the truth values False and True.  The two objects
+         representing the values False and True are the only Boolean objects.
+         The Boolean type is a subtype of plain integers, and Boolean values
+         behave like the values 0 and 1, respectively, in almost all contexts,
+         the exception being that when converted to a string, the strings
+         ``"False"`` or ``"True"`` are returned, respectively.
 
       .. index:: pair: integer; representation
 
-      The rules for integer representation are intended to give the most meaningful
-      interpretation of shift and mask operations involving negative integers and the
-      least surprises when switching between the plain and long integer domains.  Any
-      operation except left shift, if it yields a result in the plain integer domain
-      without causing overflow, will yield the same result in the long integer domain
-      or when using mixed operands.
+      The rules for integer representation are intended to give the most
+      meaningful interpretation of shift and mask operations involving negative
+      integers and the least surprises when switching between the plain and long
+      integer domains.  Any operation, if it yields a result in the plain
+      integer domain, will yield the same result in the long integer domain or
+      when using mixed operands.  The switch between domains is transparent to
+      the programmer.
 
    :class:`numbers.Real` (:class:`float`)
       .. index::

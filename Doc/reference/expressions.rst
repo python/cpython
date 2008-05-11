@@ -944,11 +944,9 @@ by the number of bits given by the second argument.
 
 .. index:: exception: ValueError
 
-A right shift by *n* bits is defined as division by ``pow(2,n)``.  A left shift
-by *n* bits is defined as multiplication with ``pow(2,n)``; for plain integers
-there is no overflow check so in that case the operation drops bits and flips
-the sign if the result is not less than ``pow(2,31)`` in absolute value.
-Negative shift counts raise a :exc:`ValueError` exception.
+A right shift by *n* bits is defined as division by ``pow(2, n)``.  A left shift
+by *n* bits is defined as multiplication with ``pow(2, n)``.  Negative shift
+counts raise a :exc:`ValueError` exception.
 
 
 .. _bitwise:

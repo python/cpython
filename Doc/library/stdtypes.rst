@@ -406,8 +406,7 @@ The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
 same priority as the other unary numeric operations (``+`` and ``-``).
 
-This table lists the bit-string operations sorted in ascending priority
-(operations in the same box have the same priority):
+This table lists the bit-string operations sorted in ascending priority:
 
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
@@ -440,12 +439,11 @@ Notes:
    Negative shift counts are illegal and cause a :exc:`ValueError` to be raised.
 
 (2)
-   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``
-   without overflow check.
+   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``.  A
+   long integer is returned if the result exceeds the range of plain integers.
 
 (3)
-   A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
-   overflow check.
+   A right shift by *n* bits is equivalent to division by ``pow(2, n)``.
 
 
 .. _typeiter:
