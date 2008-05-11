@@ -434,16 +434,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual(pat.match(p) is not None, True)
         self.assertEqual(pat.match(p).span(), (0,256))
 
-    def test_pickling(self):
-        import pickle
-        self.pickle_test(pickle)
-        # old pickles expect the _compile() reconstructor in sre module
-        import warnings
-        with catch_warning():
-            warnings.filterwarnings("ignore", "The sre module is deprecated",
-                                    DeprecationWarning)
-            from sre import _compile
-
     def pickle_test(self, pickle):
         oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
         s = pickle.dumps(oldpat)
