@@ -555,8 +555,15 @@ PyDoc_STRVAR(zipimporter_doc,
 "zipimporter(archivepath) -> zipimporter object\n\
 \n\
 Create a new zipimporter instance. 'archivepath' must be a path to\n\
-a zipfile. ZipImportError is raised if 'archivepath' doesn't point to\n\
-a valid Zip archive.");
+a zipfile, or to a specific path inside a zipfile. For example, it can be\n\
+'/tmp/myimport.zip', or '/tmp/myimport.zip/mydirectory', if mydirectory is a\n\
+valid directory inside the archive.\n\
+\n\
+'ZipImportError is raised if 'archivepath' doesn't point to a valid Zip\n\
+archive.\n\
+\n\
+The 'archive' attribute of zipimporter objects contains the name of the\n\
+zipfile targeted.");
 
 #define DEFERRED_ADDRESS(ADDR) 0
 
