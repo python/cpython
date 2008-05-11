@@ -30,8 +30,7 @@ except ImportError:
 
 __all__ = [ 'Mailbox', 'Maildir', 'mbox', 'MH', 'Babyl', 'MMDF',
             'Message', 'MaildirMessage', 'mboxMessage', 'MHMessage',
-            'BabylMessage', 'MMDFMessage', 'UnixMailbox',
-            'PortableUnixMailbox', 'MmdfMailbox', 'MHMailbox', 'BabylMailbox' ]
+            'BabylMessage', 'MMDFMessage']
 
 class Mailbox:
     """A group of messages in a particular place."""
