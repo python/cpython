@@ -598,7 +598,7 @@ The resulting profiler will then call :func:`your_time_func`.
    timer call, along with the appropriate calibration constant.
 
 :class:`cProfile.Profile`
-   :func:`your_time_func` should return a single number.  If it returns plain
+   :func:`your_time_func` should return a single number.  If it returns
    integers, you can also invoke the class constructor with a second argument
    specifying the real duration of one unit of time.  For example, if
    :func:`your_integer_time_func` returns times measured in thousands of seconds,

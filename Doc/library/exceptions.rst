@@ -157,9 +157,9 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: IndexError
 
-   Raised when a sequence subscript is out of range.  (Slice indices are silently
-   truncated to fall in the allowed range; if an index is not a plain integer,
-   :exc:`TypeError` is raised.)
+   Raised when a sequence subscript is out of range.  (Slice indices are
+   silently truncated to fall in the allowed range; if an index is not an
+   integer, :exc:`TypeError` is raised.)
 
    .. XXX xref to sequences
 
@@ -282,10 +282,10 @@ The following exceptions are the exceptions that are actually raised.
 
    This exception is raised by the :func:`sys.exit` function.  When it is not
    handled, the Python interpreter exits; no stack traceback is printed.  If the
-   associated value is a plain integer, it specifies the system exit status (passed
-   to C's :cfunc:`exit` function); if it is ``None``, the exit status is zero; if
-   it has another type (such as a string), the object's value is printed and the
-   exit status is one.
+   associated value is an integer, it specifies the system exit status (passed
+   to C's :cfunc:`exit` function); if it is ``None``, the exit status is zero;
+   if it has another type (such as a string), the object's value is printed and
+   the exit status is one.
 
    Instances have an attribute :attr:`code` which is set to the proposed exit
    status or error message (defaulting to ``None``). Also, this exception derives

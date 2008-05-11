@@ -821,9 +821,9 @@ The unary ``+`` (plus) operator yields its numeric argument unchanged.
 .. index:: single: inversion
 
 
-The unary ``~`` (invert) operator yields the bitwise inversion of its plain or
-long integer argument.  The bitwise inversion of ``x`` is defined as
-``-(x+1)``.  It only applies to integral numbers.
+The unary ``~`` (invert) operator yields the bitwise inversion of its integer
+argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
+applies to integral numbers.
 
 .. index:: exception: TypeError
 

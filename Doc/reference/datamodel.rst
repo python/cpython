@@ -172,10 +172,7 @@ Ellipsis
 
       There are two types of integers:
 
-      Plain integers
-         .. index::
-            object: plain integer
-            single: OverflowError (built-in exception)
+      Integers
 
          These represent numbers in an unlimited range, subject to available (virtual)
          memory only.  For the purpose of shift and mask operations, a binary
@@ -191,7 +188,7 @@ Ellipsis
 
          These represent the truth values False and True.  The two objects representing
          the values False and True are the only Boolean objects. The Boolean type is a
-         subtype of plain integers, and Boolean values behave like the values 0 and 1,
+         subtype of the integer type, and Boolean values behave like the values 0 and 1,
          respectively, in almost all contexts, the exception being that when converted to
          a string, the strings ``"False"`` or ``"True"`` are returned, respectively.
 
