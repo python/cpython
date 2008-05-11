@@ -198,7 +198,7 @@ variables, and semaphores.
 While those tools are powerful, minor design errors can result in problems that
 are difficult to reproduce.  So, the preferred approach to task coordination is
 to concentrate all access to a resource in a single thread and then use the
-:mod:`Queue` module to feed that thread with requests from other threads.
+:mod:`queue` module to feed that thread with requests from other threads.
 Applications using :class:`Queue` objects for inter-thread communication and
 coordination are easier to design, more readable, and more reliable.
 

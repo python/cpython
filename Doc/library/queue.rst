@@ -1,12 +1,12 @@
 
-:mod:`Queue` --- A synchronized queue class
+:mod:`queue` --- A synchronized queue class
 ===========================================
 
-.. module:: Queue
+.. module:: queue
    :synopsis: A synchronized queue class.
 
 
-The :mod:`Queue` module implements multi-producer, multi-consumer queues.
+The :mod:`queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
 exchanged safely between multiple threads.  The :class:`Queue` class in this
 module implements all the required locking semantics.  It depends on the
@@ -20,7 +20,7 @@ the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
 lowest valued entry is retrieved first.
 
-The :mod:`Queue` module defines the following classes and exceptions:
+The :mod:`queue` module defines the following classes and exceptions:
 
 .. class:: Queue(maxsize)
 

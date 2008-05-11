@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The Queue module has been renamed to queue.
+
 - The copy_reg module has been renamed to copyreg.
 
 - The mhlib module has been removed.
