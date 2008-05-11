@@ -814,7 +814,9 @@ LIBSUBDIRS=	lib-tk site-packages test test/output test/data \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
-		setuptools setuptools/command setuptools/tests setuptools.egg-info \
+		setuptools setuptools/command setuptools/tests \
+		setuptools.egg-info \
+		lib-old \
 		curses $(MACHDEPS)
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
