@@ -10,7 +10,7 @@ from Tkinter import *
 import websucker
 import os
 import threading
-import Queue
+import queue
 import time
 
 VERBOSE = 2
@@ -139,7 +139,7 @@ class App:
 
     def go(self, event=None):
         if not self.msgq:
-            self.msgq = Queue.Queue(0)
+            self.msgq = queue.Queue(0)
             self.check_msgq()
         if not self.sucker:
             self.sucker = SuckerThread(self.msgq)

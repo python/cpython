@@ -1,6 +1,6 @@
-# Some simple Queue module tests, plus some failure conditions
+# Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
-import Queue
+import queue
 import sys
 import threading
 import time
@@ -107,12 +107,12 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
         try:
             q.put("full", block=0)
             self.fail("Didn't appear to block with a full queue")
-        except Queue.Full:
+        except queue.Full:
             pass
         try:
             q.put("full", timeout=0.01)
             self.fail("Didn't appear to time-out with a full queue")
-        except Queue.Full:
+        except queue.Full:
             pass
         # Test a blocking put
         self.do_blocking_test(q.put, ("full",), q.get, ())
@@ -124,12 +124,12 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
         try:
             q.get(block=0)
             self.fail("Didn't appear to block with an empty queue")
-        except Queue.Empty:
+        except queue.Empty:
             pass
         try:
             q.get(timeout=0.01)
             self.fail("Didn't appear to time-out with an empty queue")
-        except Queue.Empty:
+        except queue.Empty:
             pass
         # Test a blocking get
         self.do_blocking_test(q.get, (), q.put, ('empty',))
@@ -191,13 +191,13 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
 
 
 class QueueTest(BaseQueueTest):
-    type2test = Queue.Queue
+    type2test = queue.Queue
 
 class LifoQueueTest(BaseQueueTest):
-    type2test = Queue.LifoQueue
+    type2test = queue.LifoQueue
 
 class PriorityQueueTest(BaseQueueTest):
-    type2test = Queue.PriorityQueue
+    type2test = queue.PriorityQueue
 
 
 
@@ -205,21 +205,21 @@ class PriorityQueueTest(BaseQueueTest):
 class FailingQueueException(Exception):
     pass
 
-class FailingQueue(Queue.Queue):
+class FailingQueue(queue.Queue):
     def __init__(self, *args):
         self.fail_next_put = False
         self.fail_next_get = False
-        Queue.Queue.__init__(self, *args)
+        queue.Queue.__init__(self, *args)
     def _put(self, item):
         if self.fail_next_put:
             self.fail_next_put = False
             raise FailingQueueException, "You Lose"
-        return Queue.Queue._put(self, item)
+        return queue.Queue._put(self, item)
     def _get(self):
         if self.fail_next_get:
             self.fail_next_get = False
             raise FailingQueueException, "You Lose"
-        return Queue.Queue._get(self)
+        return queue.Queue._get(self)
 
 class FailingQueueTest(unittest.TestCase, BlockingTestMixin):
 

@@ -35,7 +35,7 @@ import SocketServer
 import struct
 import cPickle as pickle
 import threading
-import Queue
+import queue
 import traceback
 import copyreg
 import types
@@ -117,8 +117,8 @@ class RPCServer(SocketServer.TCPServer):
 #----------------- end class RPCServer --------------------
 
 objecttable = {}
-request_queue = Queue.Queue(0)
-response_queue = Queue.Queue(0)
+request_queue = queue.Queue(0)
+response_queue = queue.Queue(0)
 
 
 class SocketIO(object):
@@ -413,7 +413,7 @@ class SocketIO(object):
             # send queued response if there is one available
             try:
                 qmsg = response_queue.get(0)
-            except Queue.Empty:
+            except queue.Empty:
                 pass
             else:
                 seq, response = qmsg
