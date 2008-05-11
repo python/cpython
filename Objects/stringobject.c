@@ -1498,7 +1498,8 @@ PyDoc_STRVAR(split__doc__,
 Return a list of the words in the string S, using sep as the\n\
 delimiter string.  If maxsplit is given, at most maxsplit\n\
 splits are done. If sep is not specified or is None, any\n\
-whitespace string is a separator.");
+whitespace string is a separator and leading and trailing\n\
+whitespace is stripped before splitting.");
 
 static PyObject *
 string_split(PyStringObject *self, PyObject *args)
