@@ -1409,6 +1409,17 @@ PyAPI_FUNC(PyObject *) _PyUnicode_XStrip(
     PyObject *sepobj
     );
 
+/* Using the current locale, insert the thousands grouping
+   into the string pointed to by buffer.  For the argument descriptions,
+   see Objects/stringlib/localeutil.h */
+
+PyAPI_FUNC(int) _PyUnicode_InsertThousandsGrouping(Py_UNICODE *buffer,
+						  Py_ssize_t len,
+						  Py_UNICODE *plast,
+						  Py_ssize_t buf_size,
+						  Py_ssize_t *count,
+						  int append_zero_char);
+
 /* === Characters Type APIs =============================================== */
 
 /* These should not be used directly. Use the Py_UNICODE_IS* and

@@ -453,6 +453,9 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     Py_ssize_t n_digits;       /* count of digits need from the computed
                                   string */
     Py_ssize_t n_leading_chars;
+    Py_ssize_t n_grouping_chars = 0; /* Count of additional chars to
+					allocate, used for 'n'
+					formatting. */
     NumberFieldWidths spec;
     long x;
 
@@ -523,6 +526,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
             break;
         default:  /* shouldn't be needed, but stops a compiler warning */
         case 'd':
+        case 'n':
             base = 10;
             leading_chars_to_skip = 0;
             break;
@@ -555,8 +559,15 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     /* Calculate the widths of the various leading and trailing parts */
     calc_number_widths(&spec, sign, n_digits, format);
 
+    if (format->type == 'n')
+	    /* Compute how many additional chars we need to allocate
+	       to hold the thousands grouping. */
+	    STRINGLIB_GROUPING(pnumeric_chars, n_digits,
+			       pnumeric_chars+n_digits,
+			       0, &n_grouping_chars, 0);
+
     /* Allocate a new string to hold the result */
-    result = STRINGLIB_NEW(NULL, spec.n_total);
+    result = STRINGLIB_NEW(NULL, spec.n_total + n_grouping_chars);
     if (!result)
 	goto done;
     p = STRINGLIB_STR(result);
@@ -567,11 +578,24 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 	    pnumeric_chars,
 	    n_digits * sizeof(STRINGLIB_CHAR));
 
-    /* if X, convert to uppercase */
+    /* If type is 'X', convert to uppercase */
     if (format->type == 'X') {
 	Py_ssize_t t;
 	for (t = 0; t < n_digits; ++t)
 	    p[t + n_leading_chars] = STRINGLIB_TOUPPER(p[t + n_leading_chars]);
+    }
+
+    /* Insert the grouping, if any, after the uppercasing of 'X', so we can
+       ensure that grouping chars won't be affeted. */
+    if (n_grouping_chars && format->type == 'n') {
+	    /* We know this can't fail, since we've already
+	       reserved enough space. */
+	    STRINGLIB_CHAR *pstart = p + n_leading_chars;
+	    int r = STRINGLIB_GROUPING(pstart, n_digits,
+				       pstart + n_digits,
+				       spec.n_total+n_grouping_chars-n_leading_chars,
+				       NULL, 0);
+	    assert(r);
     }
 
     /* Fill in the non-digit parts */
@@ -841,6 +865,7 @@ format_int_or_long(PyObject* value, PyObject* args, IntOrLongToString tostring)
     case 'o':
     case 'x':
     case 'X':
+    case 'n':
         /* no type conversion needed, already an int (or long).  do
 	   the formatting */
 	    result = format_int_or_long_internal(value, &format, tostring);
@@ -852,7 +877,6 @@ format_int_or_long(PyObject* value, PyObject* args, IntOrLongToString tostring)
     case 'F':
     case 'g':
     case 'G':
-    case 'n':
     case '%':
         /* convert to float */
         tmp = PyNumber_Float(value);

@@ -570,6 +570,8 @@ PyString_AsStringAndSize(register PyObject *obj,
 #include "stringlib/ctype.h"
 #include "stringlib/transmogrify.h"
 
+#define _Py_InsertThousandsGrouping _PyString_InsertThousandsGrouping
+#include "stringlib/localeutil.h"
 
 PyObject *
 PyString_Repr(PyObject *obj, int smartquotes)
