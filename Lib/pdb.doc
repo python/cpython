@@ -130,8 +130,7 @@ n(ext)
 
 unt(il)
         Continue execution until the line with a number greater than the 
-        current one is reached or until the current frame returns
-
+        current one is reached or until the current frame returns.
 
 r(eturn)
         Continue execution until the current function returns.
