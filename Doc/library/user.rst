@@ -7,7 +7,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-   The user module has been removed in Python 3.0.
+   The :mod:`user` module has been removed in Python 3.0.
 
 .. index::
    pair: .pythonrc.py; file
