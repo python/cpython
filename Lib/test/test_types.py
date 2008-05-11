@@ -377,7 +377,7 @@ class TypesTests(unittest.TestCase):
 
         # ensure that float type specifiers work; format converts
         #  the int to a float
-        for format_spec in 'eEfFgGn%':
+        for format_spec in 'eEfFgG%':
             for value in [0, 1, -1, 100, -100, 1234567890, -1234567890]:
                 self.assertEqual(value.__format__(format_spec),
                                  float(value).__format__(format_spec))
@@ -472,7 +472,7 @@ class TypesTests(unittest.TestCase):
 
         # ensure that float type specifiers work; format converts
         #  the long to a float
-        for format_spec in 'eEfFgGn%':
+        for format_spec in 'eEfFgG%':
             for value in [0L, 1L, -1L, 100L, -100L, 1234567890L, -1234567890L]:
                 self.assertEqual(value.__format__(format_spec),
                                  float(value).__format__(format_spec))
@@ -485,6 +485,17 @@ class TypesTests(unittest.TestCase):
             x = 1234567890.0 * (10.0 ** i)
             self.assertEqual(locale.format('%g', x, grouping=True), format(x, 'n'))
             self.assertEqual(locale.format('%.10g', x, grouping=True), format(x, '.10n'))
+
+    @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
+    def test_int__format__locale(self):
+        # test locale support for __format__ code 'n' for integers
+
+        x = 123456789012345678901234567890
+        for i in range(0, 30):
+            self.assertEqual(locale.format('%d', x, grouping=True), format(x, 'n'))
+
+            # move to the next integer to test
+            x = x // 10
 
     def test_float__format__(self):
         # these should be rewritten to use both format(x, spec) and
