@@ -612,6 +612,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.lineno = None
     do_d = do_down
 
+    def do_until(self, arg):
+        self.set_until(self.curframe)
+        return 1
+    do_unt = do_until
+
     def do_step(self, arg):
         self.set_step()
         return 1
@@ -961,6 +966,14 @@ i.e., the breakpoint is made unconditional."""
         print >>self.stdout, """s(tep)
 Execute the current line, stop at the first possible occasion
 (either in a function that is called or in the current function)."""
+
+    def help_until(self):
+        self.help_unt()
+
+    def help_unt(self):
+        print """unt(il)
+Continue execution until the line with a number greater than the current
+one is reached or until the current frame returns"""
 
     def help_next(self):
         self.help_n()
