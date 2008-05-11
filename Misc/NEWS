@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The PixMapWrapper module has been renamed to pixmapwrapper.
+
 - The Queue module has been renamed to queue.
 
 - The copy_reg module has been renamed to copyreg.
