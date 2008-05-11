@@ -192,7 +192,6 @@ class TestStdlibRenames(unittest.TestCase):
         - The module can be imported using the new 3.x name.
         - The warning message specify both names.
         """
-        ModuleType = type(sys) # get the module type object
         with CleanImport(module_name):
             with catch_warning(record=False) as w:
                 warnings.filterwarnings("error", ".+ renamed to",
