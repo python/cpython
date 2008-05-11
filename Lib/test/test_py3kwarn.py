@@ -1,7 +1,7 @@
 import unittest
 import sys
-from test.test_support import (catch_warning, TestSkipped, run_unittest,
-                                TestSkipped)
+from test.test_support import (catch_warning, CleanImport,
+                               TestSkipped, run_unittest)
 import warnings
 
 if not sys.py3kwarning:
@@ -138,11 +138,7 @@ class TestStdlibRemovals(unittest.TestCase):
     def check_removal(self, module_name, optional=False):
         """Make sure the specified module, when imported, raises a
         DeprecationWarning and specifies itself in the message."""
-        original_module = None
-        if module_name in sys.modules:
-            original_module = sys.modules[module_name]
-            del sys.modules[module_name]
-        try:
+        with CleanImport(module_name):
             with catch_warning(record=False) as w:
                 warnings.filterwarnings("error", ".+ removed",
                                         DeprecationWarning)
@@ -156,10 +152,6 @@ class TestStdlibRemovals(unittest.TestCase):
                 else:
                     self.fail("DeprecationWarning not raised for %s" %
                                 module_name)
-        finally:
-            if original_module:
-                sys.modules[module_name] = original_module
-
 
     def test_platform_independent_removals(self):
         # Make sure that the modules that are available on all platforms raise
@@ -189,8 +181,49 @@ class TestStdlibRemovals(unittest.TestCase):
             self.assertEquals(str(w.message), msg)
 
 
+class TestStdlibRenames(unittest.TestCase):
+
+    renames = {}
+
+    def check_rename(self, module_name, new_module_name):
+        """Make sure that:
+        - A DeprecationWarning is raised when importing using the
+          old 2.x module name.
+        - The module can be imported using the new 3.x name.
+        - The warning message specify both names.
+        """
+        ModuleType = type(sys) # get the module type object
+        with CleanImport(module_name):
+            with catch_warning(record=False) as w:
+                warnings.filterwarnings("error", ".+ renamed to",
+                                        DeprecationWarning)
+                try:
+                    __import__(module_name, level=0)
+                except DeprecationWarning as exc:
+                    self.assert_(module_name in exc.args[0])
+                    self.assert_(new_module_name in exc.args[0])
+                else:
+                    self.fail("DeprecationWarning not raised for %s" %
+                              module_name)
+        with CleanImport(new_module_name):
+            try:
+                __import__(new_module_name, level=0)
+            except ImportError:
+                self.fail("cannot import %s with its 3.x name, %s" %
+                          module_name, new_module_name)
+            except DeprecationWarning:
+                self.fail("unexpected DeprecationWarning raised for %s" %
+                          module_name)
+
+    def test_module_renames(self):
+        for module_name, new_module_name in self.renames.items():
+            self.check_rename(module_name, new_module_name)
+
+
 def test_main():
-    run_unittest(TestPy3KWarnings, TestStdlibRemovals)
+    run_unittest(TestPy3KWarnings,
+                 TestStdlibRemovals,
+                 TestStdlibRenames)
 
 if __name__ == '__main__':
     test_main()
