@@ -429,13 +429,13 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: float([x])
 
-   Convert a string or a number to floating point.  If the argument is a string, it
-   must contain a possibly signed decimal or floating point number, possibly
-   embedded in whitespace. The argument may also be [+|-]nan or [+|-]inf.
-   Otherwise, the argument may be a plain integer
-   or a floating point number, and a floating point number with the same value
-   (within Python's floating point precision) is returned.  If no argument is
-   given, returns ``0.0``.
+   Convert a string or a number to floating point.  If the argument is a string,
+   it must contain a possibly signed decimal or floating point number, possibly
+   embedded in whitespace. The argument may also be ``'[+|-]nan'`` or
+   ``'[+|-]inf'``.  Otherwise, the argument may be an integer or a floating
+   point number, and a floating point number with the same value (within
+   Python's floating point precision) is returned.  If no argument is given,
+   ``0.0`` is returned.
 
    .. note::
 
@@ -443,11 +443,12 @@ are always available.  They are listed here in alphabetical order.
          single: NaN
          single: Infinity
 
-      When passing in a string, values for NaN and Infinity may be returned, depending
-      on the underlying C library.  Float accepts the strings nan, inf and -inf for
-      NaN and positive or negative infinity. The case and a leading + are ignored as
-      well as a leading - is ignored for NaN. Float always represents NaN and infinity
-      as nan, inf or -inf.
+      When passing in a string, values for NaN and Infinity may be returned,
+      depending on the underlying C library.  Float accepts the strings
+      ``'nan'``, ``'inf'`` and ``'-inf'`` for NaN and positive or negative
+      infinity.  The case and a leading + are ignored as well as a leading - is
+      ignored for NaN.  Float always represents NaN and infinity as ``nan``,
+      ``inf`` or ``-inf``.
 
    The float type is described in :ref:`typesnumeric`.
 
@@ -873,15 +874,15 @@ are always available.  They are listed here in alphabetical order.
 .. XXX does accept objects with __index__ too
 .. function:: range([start,] stop[, step])
 
-   This is a versatile function to create lists containing arithmetic progressions.
-   It is most often used in :keyword:`for` loops.  The arguments must be plain
-   integers.  If the *step* argument is omitted, it defaults to ``1``.  If the
-   *start* argument is omitted, it defaults to ``0``.  The full form returns a list
-   of plain integers ``[start, start + step, start + 2 * step, ...]``.  If *step*
-   is positive, the last element is the largest ``start + i * step`` less than
-   *stop*; if *step* is negative, the last element is the smallest ``start + i *
-   step`` greater than *stop*.  *step* must not be zero (or else :exc:`ValueError`
-   is raised).  Example:
+   This is a versatile function to create iterators yielding arithmetic
+   progressions.  It is most often used in :keyword:`for` loops.  The arguments
+   must be integers.  If the *step* argument is omitted, it defaults to ``1``.
+   If the *start* argument is omitted, it defaults to ``0``.  The full form
+   returns an iterator of integers ``[start, start + step, start + 2 * step,
+   ...]``.  If *step* is positive, the last element is the largest ``start + i *
+   step`` less than *stop*; if *step* is negative, the last element is the
+   smallest ``start + i * step`` greater than *stop*.  *step* must not be zero
+   (or else :exc:`ValueError` is raised).  Example:
 
       >>> list(range(10))
       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]

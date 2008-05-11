@@ -565,9 +565,9 @@ Numeric literals
    floating point literal, hexadecimal literal
    octal literal, binary literal, decimal literal, imaginary literal, complex literal
 
-There are three types of numeric literals: plain integers, floating point
-numbers, and imaginary numbers.  There are no complex literals
-(complex numbers can be formed by adding a real number and an imaginary number).
+There are three types of numeric literals: integers, floating point numbers, and
+imaginary numbers.  There are no complex literals (complex numbers can be formed
+by adding a real number and an imaginary number).
 
 Note that numeric literals do not include a sign; a phrase like ``-1`` is
 actually an expression composed of the unary operator '``-``' and the literal
