@@ -3091,7 +3091,7 @@ initparser(void)
      * If this fails, the import of this module will fail because an
      * exception will be raised here; should we clear the exception?
      */
-    copyreg = PyImport_ImportModuleNoBlock("copy_reg");
+    copyreg = PyImport_ImportModuleNoBlock("copyreg");
     if (copyreg != NULL) {
         PyObject *func, *pickler;
 

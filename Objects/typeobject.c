@@ -2941,31 +2941,31 @@ static PyGetSetDef object_getsets[] = {
 
 
 /* Stuff to implement __reduce_ex__ for pickle protocols >= 2.
-   We fall back to helpers in copy_reg for:
+   We fall back to helpers in copyreg for:
    - pickle protocols < 2
    - calculating the list of slot names (done only once per class)
    - the __newobj__ function (which is used as a token but never called)
 */
 
 static PyObject *
-import_copy_reg(void)
+import_copyreg(void)
 {
-	static PyObject *copy_reg_str;
+	static PyObject *copyreg_str;
 
-	if (!copy_reg_str) {
-		copy_reg_str = PyUnicode_InternFromString("copy_reg");
-		if (copy_reg_str == NULL)
+	if (!copyreg_str) {
+		copyreg_str = PyUnicode_InternFromString("copyreg");
+		if (copyreg_str == NULL)
 			return NULL;
 	}
 
-	return PyImport_Import(copy_reg_str);
+	return PyImport_Import(copyreg_str);
 }
 
 static PyObject *
 slotnames(PyObject *cls)
 {
 	PyObject *clsdict;
-	PyObject *copy_reg;
+	PyObject *copyreg;
 	PyObject *slotnames;
 
 	if (!PyType_Check(cls)) {
@@ -2980,18 +2980,18 @@ slotnames(PyObject *cls)
 		return slotnames;
 	}
 
-	copy_reg = import_copy_reg();
-	if (copy_reg == NULL)
+	copyreg = import_copyreg();
+	if (copyreg == NULL)
 		return NULL;
 
-	slotnames = PyObject_CallMethod(copy_reg, "_slotnames", "O", cls);
-	Py_DECREF(copy_reg);
+	slotnames = PyObject_CallMethod(copyreg, "_slotnames", "O", cls);
+	Py_DECREF(copyreg);
 	if (slotnames != NULL &&
 	    slotnames != Py_None &&
 	    !PyList_Check(slotnames))
 	{
 		PyErr_SetString(PyExc_TypeError,
-			"copy_reg._slotnames didn't return a list or None");
+			"copyreg._slotnames didn't return a list or None");
 		Py_DECREF(slotnames);
 		slotnames = NULL;
 	}
@@ -3006,7 +3006,7 @@ reduce_2(PyObject *obj)
 	PyObject *args = NULL, *args2 = NULL;
 	PyObject *getstate = NULL, *state = NULL, *names = NULL;
 	PyObject *slots = NULL, *listitems = NULL, *dictitems = NULL;
-	PyObject *copy_reg = NULL, *newobj = NULL, *res = NULL;
+	PyObject *copyreg = NULL, *newobj = NULL, *res = NULL;
 	Py_ssize_t i, n;
 
 	cls = PyObject_GetAttrString(obj, "__class__");
@@ -3105,10 +3105,10 @@ reduce_2(PyObject *obj)
 			goto end;
 	}
 
-	copy_reg = import_copy_reg();
-	if (copy_reg == NULL)
+	copyreg = import_copyreg();
+	if (copyreg == NULL)
 		goto end;
-	newobj = PyObject_GetAttrString(copy_reg, "__newobj__");
+	newobj = PyObject_GetAttrString(copyreg, "__newobj__");
 	if (newobj == NULL)
 		goto end;
 
@@ -3135,7 +3135,7 @@ reduce_2(PyObject *obj)
 	Py_XDECREF(names);
 	Py_XDECREF(listitems);
 	Py_XDECREF(dictitems);
-	Py_XDECREF(copy_reg);
+	Py_XDECREF(copyreg);
 	Py_XDECREF(newobj);
 	return res;
 }
@@ -3158,17 +3158,17 @@ reduce_2(PyObject *obj)
 static PyObject *
 _common_reduce(PyObject *self, int proto)
 {
-	PyObject *copy_reg, *res;
+	PyObject *copyreg, *res;
 
 	if (proto >= 2)
 		return reduce_2(self);
 
-	copy_reg = import_copy_reg();
-	if (!copy_reg)
+	copyreg = import_copyreg();
+	if (!copyreg)
 		return NULL;
 
-	res = PyEval_CallMethod(copy_reg, "_reduce_ex", "(Oi)", self, proto);
-	Py_DECREF(copy_reg);
+	res = PyEval_CallMethod(copyreg, "_reduce_ex", "(Oi)", self, proto);
+	Py_DECREF(copyreg);
 
 	return res;
 }

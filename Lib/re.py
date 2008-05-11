@@ -272,12 +272,12 @@ def _subx(pattern, template):
 
 # register myself for pickling
 
-import copy_reg
+import copyreg
 
 def _pickle(p):
     return _compile, (p.pattern, p.flags)
 
-copy_reg.pickle(_pattern_type, _pickle, _compile)
+copyreg.pickle(_pattern_type, _pickle, _compile)
 
 # --------------------------------------------------------------------
 # experimental stuff (see python-dev discussions for details)

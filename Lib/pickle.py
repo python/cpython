@@ -1,6 +1,6 @@
 """Create portable serialized representations of Python objects.
 
-See module copy_reg for a mechanism for registering custom picklers.
+See module copyreg for a mechanism for registering custom picklers.
 See module pickletools source for extensive comments.
 
 Classes:
@@ -26,8 +26,8 @@ Misc variables:
 __version__ = "$Revision$"       # Code version
 
 from types import FunctionType, BuiltinFunctionType
-from copy_reg import dispatch_table
-from copy_reg import _extension_registry, _inverted_registry, _extension_cache
+from copyreg import dispatch_table
+from copyreg import _extension_registry, _inverted_registry, _extension_cache
 import marshal
 import sys
 import struct
@@ -299,7 +299,7 @@ class Pickler:
             self.save_global(obj)
             return
 
-        # Check copy_reg.dispatch_table
+        # Check copyreg.dispatch_table
         reduce = dispatch_table.get(t)
         if reduce:
             rv = reduce(obj)

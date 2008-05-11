@@ -142,7 +142,7 @@ this and there isn't a use case that warrants the expense of such an
 analysis.
 
 To this end, all tests for __safe_for_unpickling__ or for
-copy_reg.safe_constructors are removed from the unpickling code.
+copyreg.safe_constructors are removed from the unpickling code.
 References to these variables in the descriptions below are to be seen
 as describing unpickling in Python 2.2 and before.
 """
@@ -1559,7 +1559,7 @@ opcodes = [
       BUILD opcode to apply  __setstate__ to that argument.
 
       If not isinstance(callable, type), REDUCE complains unless the
-      callable has been registered with the copy_reg module's
+      callable has been registered with the copyreg module's
       safe_constructors dict, or the callable has a magic
       '__safe_for_unpickling__' attribute with a true value.  I'm not sure
       why it does this, but I've sure seen this complaint often enough when
@@ -2137,58 +2137,58 @@ highest protocol among opcodes = 0
     0: (    MARK
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
-    5: c    GLOBAL     'copy_reg _reconstructor'
-   30: p    PUT        1
-   33: (    MARK
-   34: c        GLOBAL     'pickletools _Example'
-   56: p        PUT        2
-   59: c        GLOBAL     'builtins object'
-   76: p        PUT        3
-   79: N        NONE
-   80: t        TUPLE      (MARK at 33)
-   81: p    PUT        4
-   84: R    REDUCE
-   85: p    PUT        5
-   88: (    MARK
-   89: d        DICT       (MARK at 88)
-   90: p    PUT        6
-   93: V    UNICODE    'value'
-  100: p    PUT        7
-  103: L    LONG       42
-  107: s    SETITEM
-  108: b    BUILD
-  109: a    APPEND
-  110: g    GET        5
-  113: a    APPEND
-  114: .    STOP
+    5: c    GLOBAL     'copyreg _reconstructor'
+   29: p    PUT        1
+   32: (    MARK
+   33: c        GLOBAL     'pickletools _Example'
+   55: p        PUT        2
+   58: c        GLOBAL     'builtins object'
+   75: p        PUT        3
+   78: N        NONE
+   79: t        TUPLE      (MARK at 32)
+   80: p    PUT        4
+   83: R    REDUCE
+   84: p    PUT        5
+   87: (    MARK
+   88: d        DICT       (MARK at 87)
+   89: p    PUT        6
+   92: V    UNICODE    'value'
+   99: p    PUT        7
+  102: L    LONG       42
+  106: s    SETITEM
+  107: b    BUILD
+  108: a    APPEND
+  109: g    GET        5
+  112: a    APPEND
+  113: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))
     0: ]    EMPTY_LIST
     1: q    BINPUT     0
     3: (    MARK
-    4: c        GLOBAL     'copy_reg _reconstructor'
-   29: q        BINPUT     1
-   31: (        MARK
-   32: c            GLOBAL     'pickletools _Example'
-   54: q            BINPUT     2
-   56: c            GLOBAL     'builtins object'
-   73: q            BINPUT     3
-   75: N            NONE
-   76: t            TUPLE      (MARK at 31)
-   77: q        BINPUT     4
-   79: R        REDUCE
-   80: q        BINPUT     5
-   82: }        EMPTY_DICT
-   83: q        BINPUT     6
-   85: X        BINUNICODE 'value'
-   95: q        BINPUT     7
-   97: K        BININT1    42
-   99: s        SETITEM
-  100: b        BUILD
-  101: h        BINGET     5
-  103: e        APPENDS    (MARK at 3)
-  104: .    STOP
+    4: c        GLOBAL     'copyreg _reconstructor'
+   28: q        BINPUT     1
+   30: (        MARK
+   31: c            GLOBAL     'pickletools _Example'
+   53: q            BINPUT     2
+   55: c            GLOBAL     'builtins object'
+   72: q            BINPUT     3
+   74: N            NONE
+   75: t            TUPLE      (MARK at 30)
+   76: q        BINPUT     4
+   78: R        REDUCE
+   79: q        BINPUT     5
+   81: }        EMPTY_DICT
+   82: q        BINPUT     6
+   84: X        BINUNICODE 'value'
+   94: q        BINPUT     7
+   96: K        BININT1    42
+   98: s        SETITEM
+   99: b        BUILD
+  100: h        BINGET     5
+  102: e        APPENDS    (MARK at 3)
+  103: .    STOP
 highest protocol among opcodes = 1
 
 Try "the canonical" recursive-object test.

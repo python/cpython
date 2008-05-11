@@ -524,7 +524,7 @@ not :meth:`__reduce_ex__`, the :meth:`__reduce_ex__` implementation detects this
 and calls :meth:`__reduce__`.
 
 An alternative to implementing a :meth:`__reduce__` method on the object to be
-pickled, is to register the callable with the :mod:`copy_reg` module.  This
+pickled, is to register the callable with the :mod:`copyreg` module.  This
 module provides a way for programs to register "reduction functions" and
 constructors for user-defined types.   Reduction functions have the same
 semantics and interface as the :meth:`__reduce__` method described above, except
@@ -775,7 +775,7 @@ the same process or a new process. ::
 
 .. seealso::
 
-   Module :mod:`copy_reg`
+   Module :mod:`copyreg`
       Pickle interface constructor registration for extension types.
 
    Module :mod:`shelve`

@@ -1,7 +1,7 @@
 import unittest
 import pickle
 import pickletools
-import copy_reg
+import copyreg
 
 from test.test_support import TestFailed, TESTFN, run_with_locale
 
@@ -43,21 +43,21 @@ class ExtensionSaver:
     # there is one).
     def __init__(self, code):
         self.code = code
-        if code in copy_reg._inverted_registry:
-            self.pair = copy_reg._inverted_registry[code]
-            copy_reg.remove_extension(self.pair[0], self.pair[1], code)
+        if code in copyreg._inverted_registry:
+            self.pair = copyreg._inverted_registry[code]
+            copyreg.remove_extension(self.pair[0], self.pair[1], code)
         else:
             self.pair = None
 
     # Restore previous registration for code.
     def restore(self):
         code = self.code
-        curpair = copy_reg._inverted_registry.get(code)
+        curpair = copyreg._inverted_registry.get(code)
         if curpair is not None:
-            copy_reg.remove_extension(curpair[0], curpair[1], code)
+            copyreg.remove_extension(curpair[0], curpair[1], code)
         pair = self.pair
         if pair is not None:
-            copy_reg.add_extension(pair[0], pair[1], code)
+            copyreg.add_extension(pair[0], pair[1], code)
 
 class C:
     def __eq__(self, other):
@@ -98,7 +98,7 @@ DATA0 = (
     b'L-65535\naL-65536\naL2'
     b'147483647\naL-2147483'
     b'647\naL-2147483648\na('
-    b'Vabc\np4\ng4\nccopy_reg'
+    b'Vabc\np4\ng4\nccopyreg'
     b'\n_reconstructor\np5\n('
     b'c__main__\nC\np6\ncbu'
     b'iltins\nobject\np7\nNt'
@@ -119,74 +119,74 @@ DATA0_DIS = """\
    13: F    FLOAT      2.0
    18: a    APPEND
    19: c    GLOBAL     'builtins complex'
-   40: p    PUT        1
-   43: (    MARK
-   44: F        FLOAT      3.0
-   49: F        FLOAT      0.0
-   54: t        TUPLE      (MARK at 43)
-   55: p    PUT        2
-   58: R    REDUCE
-   59: p    PUT        3
-   62: a    APPEND
-   63: L    LONG       1
-   66: a    APPEND
-   67: L    LONG       -1
-   71: a    APPEND
-   72: L    LONG       255
-   77: a    APPEND
-   78: L    LONG       -255
-   84: a    APPEND
-   85: L    LONG       -256
-   91: a    APPEND
-   92: L    LONG       65535
-   99: a    APPEND
-  100: L    LONG       -65535
-  108: a    APPEND
-  109: L    LONG       -65536
-  117: a    APPEND
-  118: L    LONG       2147483647
-  130: a    APPEND
-  131: L    LONG       -2147483647
-  144: a    APPEND
-  145: L    LONG       -2147483648
-  158: a    APPEND
-  159: (    MARK
-  160: V        UNICODE    'abc'
-  165: p        PUT        4
-  168: g        GET        4
-  171: c        GLOBAL     'copy_reg _reconstructor'
-  196: p        PUT        5
-  199: (        MARK
-  200: c            GLOBAL     '__main__ C'
-  212: p            PUT        6
-  215: c            GLOBAL     'builtins object'
-  235: p            PUT        7
-  238: N            NONE
-  239: t            TUPLE      (MARK at 199)
-  240: p        PUT        8
-  243: R        REDUCE
-  244: p        PUT        9
-  247: (        MARK
-  248: d            DICT       (MARK at 247)
-  249: p        PUT        10
-  253: V        UNICODE    'foo'
-  258: p        PUT        11
-  262: L        LONG       1
-  265: s        SETITEM
-  266: V        UNICODE    'bar'
-  271: p        PUT        12
-  275: L        LONG       2
-  278: s        SETITEM
-  279: b        BUILD
-  280: g        GET        9
-  283: t        TUPLE      (MARK at 159)
-  284: p    PUT        13
-  288: a    APPEND
-  289: g    GET        13
-  293: a    APPEND
-  294: L    LONG       5
-  297: a    APPEND
-  298: .    STOP
+   37: p    PUT        1
+   40: (    MARK
+   41: F        FLOAT      3.0
+   46: F        FLOAT      0.0
+   51: t        TUPLE      (MARK at 40)
+   52: p    PUT        2
+   55: R    REDUCE
+   56: p    PUT        3
+   59: a    APPEND
+   60: L    LONG       1
+   63: a    APPEND
+   64: L    LONG       -1
+   68: a    APPEND
+   69: L    LONG       255
+   74: a    APPEND
+   75: L    LONG       -255
+   81: a    APPEND
+   82: L    LONG       -256
+   88: a    APPEND
+   89: L    LONG       65535
+   96: a    APPEND
+   97: L    LONG       -65535
+  105: a    APPEND
+  106: L    LONG       -65536
+  114: a    APPEND
+  115: L    LONG       2147483647
+  127: a    APPEND
+  128: L    LONG       -2147483647
+  141: a    APPEND
+  142: L    LONG       -2147483648
+  155: a    APPEND
+  156: (    MARK
+  157: V        UNICODE    'abc'
+  162: p        PUT        4
+  165: g        GET        4
+  168: c        GLOBAL     'copyreg _reconstructor'
+  192: p        PUT        5
+  195: (        MARK
+  196: c            GLOBAL     '__main__ C'
+  208: p            PUT        6
+  211: c            GLOBAL     'builtins object'
+  228: p            PUT        7
+  231: N            NONE
+  232: t            TUPLE      (MARK at 195)
+  233: p        PUT        8
+  236: R        REDUCE
+  237: p        PUT        9
+  240: (        MARK
+  241: d            DICT       (MARK at 240)
+  242: p        PUT        10
+  246: V        UNICODE    'foo'
+  251: p        PUT        11
+  255: L        LONG       1
+  258: s        SETITEM
+  259: V        UNICODE    'bar'
+  264: p        PUT        12
+  268: L        LONG       2
+  271: s        SETITEM
+  272: b        BUILD
+  273: g        GET        9
+  276: t        TUPLE      (MARK at 156)
+  277: p    PUT        13
+  281: a    APPEND
+  282: g    GET        13
+  286: a    APPEND
+  287: L    LONG       5
+  290: a    APPEND
+  291: .    STOP
 highest protocol among opcodes = 0
 """
 
@@ -197,7 +197,7 @@ DATA1 = (
     b'q\x02Rq\x03K\x01J\xff\xff\xff\xffK\xffJ\x01\xff\xff\xffJ'
     b'\x00\xff\xff\xffM\xff\xffJ\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff'
     b'\xff\x7fJ\x01\x00\x00\x80J\x00\x00\x00\x80(X\x03\x00\x00\x00ab'
-    b'cq\x04h\x04ccopy_reg\n_reco'
+    b'cq\x04h\x04ccopyreg\n_reco'
     b'nstructor\nq\x05(c__main'
     b'__\nC\nq\x06cbuiltins\n'
     b'object\nq\x07Ntq\x08Rq\t}q\n('
@@ -214,59 +214,59 @@ DATA1_DIS = """\
     6: K        BININT1    1
     8: G        BINFLOAT   2.0
    17: c        GLOBAL     'builtins complex'
-   38: q        BINPUT     1
-   40: (        MARK
-   41: G            BINFLOAT   3.0
-   50: G            BINFLOAT   0.0
-   59: t            TUPLE      (MARK at 40)
-   60: q        BINPUT     2
-   62: R        REDUCE
-   63: q        BINPUT     3
-   65: K        BININT1    1
-   67: J        BININT     -1
-   72: K        BININT1    255
-   74: J        BININT     -255
-   79: J        BININT     -256
-   84: M        BININT2    65535
-   87: J        BININT     -65535
-   92: J        BININT     -65536
-   97: J        BININT     2147483647
-  102: J        BININT     -2147483647
-  107: J        BININT     -2147483648
-  112: (        MARK
-  113: X            BINUNICODE 'abc'
-  121: q            BINPUT     4
-  123: h            BINGET     4
-  125: c            GLOBAL     'copy_reg _reconstructor'
-  150: q            BINPUT     5
-  152: (            MARK
-  153: c                GLOBAL     '__main__ C'
-  165: q                BINPUT     6
-  167: c                GLOBAL     'builtins object'
-  187: q                BINPUT     7
-  189: N                NONE
-  190: t                TUPLE      (MARK at 152)
-  191: q            BINPUT     8
-  193: R            REDUCE
-  194: q            BINPUT     9
-  196: }            EMPTY_DICT
-  197: q            BINPUT     10
-  199: (            MARK
-  200: X                BINUNICODE 'foo'
-  208: q                BINPUT     11
-  210: K                BININT1    1
-  212: X                BINUNICODE 'bar'
-  220: q                BINPUT     12
-  222: K                BININT1    2
-  224: u                SETITEMS   (MARK at 199)
-  225: b            BUILD
-  226: h            BINGET     9
-  228: t            TUPLE      (MARK at 112)
-  229: q        BINPUT     13
-  231: h        BINGET     13
-  233: K        BININT1    5
-  235: e        APPENDS    (MARK at 3)
-  236: .    STOP
+   35: q        BINPUT     1
+   37: (        MARK
+   38: G            BINFLOAT   3.0
+   47: G            BINFLOAT   0.0
+   56: t            TUPLE      (MARK at 37)
+   57: q        BINPUT     2
+   59: R        REDUCE
+   60: q        BINPUT     3
+   62: K        BININT1    1
+   64: J        BININT     -1
+   69: K        BININT1    255
+   71: J        BININT     -255
+   76: J        BININT     -256
+   81: M        BININT2    65535
+   84: J        BININT     -65535
+   89: J        BININT     -65536
+   94: J        BININT     2147483647
+   99: J        BININT     -2147483647
+  104: J        BININT     -2147483648
+  109: (        MARK
+  110: X            BINUNICODE 'abc'
+  118: q            BINPUT     4
+  120: h            BINGET     4
+  122: c            GLOBAL     'copyreg _reconstructor'
+  146: q            BINPUT     5
+  148: (            MARK
+  149: c                GLOBAL     '__main__ C'
+  161: q                BINPUT     6
+  163: c                GLOBAL     'builtins object'
+  180: q                BINPUT     7
+  182: N                NONE
+  183: t                TUPLE      (MARK at 148)
+  184: q            BINPUT     8
+  186: R            REDUCE
+  187: q            BINPUT     9
+  189: }            EMPTY_DICT
+  190: q            BINPUT     10
+  192: (            MARK
+  193: X                BINUNICODE 'foo'
+  201: q                BINPUT     11
+  203: K                BININT1    1
+  205: X                BINUNICODE 'bar'
+  213: q                BINPUT     12
+  215: K                BININT1    2
+  217: u                SETITEMS   (MARK at 192)
+  218: b            BUILD
+  219: h            BINGET     9
+  221: t            TUPLE      (MARK at 109)
+  222: q        BINPUT     13
+  224: h        BINGET     13
+  226: K        BININT1    5
+  228: e        APPENDS    (MARK at 3)
+  229: .    STOP
 highest protocol among opcodes = 1
 """
 
@@ -293,51 +293,51 @@ DATA2_DIS = """\
     8: K        BININT1    1
    10: G        BINFLOAT   2.0
    19: c        GLOBAL     'builtins complex'
-   40: q        BINPUT     1
-   42: G        BINFLOAT   3.0
-   51: G        BINFLOAT   0.0
-   60: \x86     TUPLE2
-   61: q        BINPUT     2
-   63: R        REDUCE
-   64: q        BINPUT     3
-   66: K        BININT1    1
-   68: J        BININT     -1
-   73: K        BININT1    255
-   75: J        BININT     -255
-   80: J        BININT     -256
-   85: M        BININT2    65535
-   88: J        BININT     -65535
-   93: J        BININT     -65536
-   98: J        BININT     2147483647
-  103: J        BININT     -2147483647
-  108: J        BININT     -2147483648
-  113: (        MARK
-  114: X            BINUNICODE 'abc'
-  122: q            BINPUT     4
-  124: h            BINGET     4
-  126: c            GLOBAL     '__main__ C'
-  138: q            BINPUT     5
-  140: )            EMPTY_TUPLE
-  141: \x81         NEWOBJ
-  142: q            BINPUT     6
-  144: }            EMPTY_DICT
-  145: q            BINPUT     7
-  147: (            MARK
-  148: X                BINUNICODE 'foo'
-  156: q                BINPUT     8
-  158: K                BININT1    1
-  160: X                BINUNICODE 'bar'
-  168: q                BINPUT     9
-  170: K                BININT1    2
-  172: u                SETITEMS   (MARK at 147)
-  173: b            BUILD
-  174: h            BINGET     6
-  176: t            TUPLE      (MARK at 113)
-  177: q        BINPUT     10
-  179: h        BINGET     10
-  181: K        BININT1    5
-  183: e        APPENDS    (MARK at 5)
-  184: .    STOP
+   37: q        BINPUT     1
+   39: G        BINFLOAT   3.0
+   48: G        BINFLOAT   0.0
+   57: \x86     TUPLE2
+   58: q        BINPUT     2
+   60: R        REDUCE
+   61: q        BINPUT     3
+   63: K        BININT1    1
+   65: J        BININT     -1
+   70: K        BININT1    255
+   72: J        BININT     -255
+   77: J        BININT     -256
+   82: M        BININT2    65535
+   85: J        BININT     -65535
+   90: J        BININT     -65536
+   95: J        BININT     2147483647
+  100: J        BININT     -2147483647
+  105: J        BININT     -2147483648
+  110: (        MARK
+  111: X            BINUNICODE 'abc'
+  119: q            BINPUT     4
+  121: h            BINGET     4
+  123: c            GLOBAL     '__main__ C'
+  135: q            BINPUT     5
+  137: )            EMPTY_TUPLE
+  138: \x81         NEWOBJ
+  139: q            BINPUT     6
+  141: }            EMPTY_DICT
+  142: q            BINPUT     7
+  144: (            MARK
+  145: X                BINUNICODE 'foo'
+  153: q                BINPUT     8
+  155: K                BININT1    1
+  157: X                BINUNICODE 'bar'
+  165: q                BINPUT     9
+  167: K                BININT1    2
+  169: u                SETITEMS   (MARK at 144)
+  170: b            BUILD
+  171: h            BINGET     6
+  173: t            TUPLE      (MARK at 110)
+  174: q        BINPUT     10
+  176: h        BINGET     10
+  178: K        BININT1    5
+  180: e        APPENDS    (MARK at 5)
+  181: .    STOP
 highest protocol among opcodes = 2
 """
 
@@ -707,14 +707,14 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assertEqual(B(x), B(y), detail)
                 self.assertEqual(x.__dict__, y.__dict__, detail)
 
-    # Register a type with copy_reg, with extension code extcode.  Pickle
+    # Register a type with copyreg, with extension code extcode.  Pickle
     # an object of that type.  Check that the resulting pickle uses opcode
     # (EXT[124]) under proto 2, and not in proto 1.
 
     def produce_global_ext(self, extcode, opcode):
         e = ExtensionSaver(extcode)
         try:
-            copy_reg.add_extension(__name__, "MyList", extcode)
+            copyreg.add_extension(__name__, "MyList", extcode)
             x = MyList([1, 2, 3])
             x.foo = 42
             x.bar = "hello"
