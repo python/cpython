@@ -133,7 +133,7 @@ class TestStdlibRemovals(unittest.TestCase):
                         'ihooks')
     inclusive_platforms = {'irix':('pure',)}
     # XXX Don't know if lib-tk is only installed if _tkinter is built.
-    optional_modules = ('bsddb185', 'Canvas', 'dl')
+    optional_modules = ('bsddb185', 'Canvas', 'dl', 'linuxaudiodev')
 
     def check_removal(self, module_name, optional=False):
         """Make sure the specified module, when imported, raises a
