@@ -73,10 +73,6 @@ PyAPI_FUNC(PyCodeObject *) PyCode_New(
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
-#define _PyCode_GETCODEPTR(co, pp) \
-	((*Py_TYPE((co)->co_code)->tp_as_buffer->bf_getreadbuffer) \
-	 ((co)->co_code, 0, (void **)(pp)))
-
 typedef struct _addr_pair {
         int ap_lower;
         int ap_upper;
