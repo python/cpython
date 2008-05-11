@@ -548,6 +548,7 @@ BYTESTR_DEPS = \
 		$(srcdir)/Objects/stringlib/string_format.h \
 		$(srcdir)/Objects/stringlib/transmogrify.h \
 		$(srcdir)/Objects/stringlib/unicodedefs.h \
+		$(srcdir)/Objects/stringlib/localeutil.h
 
 Objects/stringobject.o: $(srcdir)/Objects/stringobject.c $(BYTESTR_DEPS)
 

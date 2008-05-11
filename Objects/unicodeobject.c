@@ -5234,6 +5234,9 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
 
+#define _Py_InsertThousandsGrouping _PyUnicode_InsertThousandsGrouping
+#include "stringlib/localeutil.h"
+
 /* helper macro to fixup start/end slice values */
 #define FIX_START_END(obj)                      \
     if (start < 0)                              \

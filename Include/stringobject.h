@@ -87,6 +87,17 @@ PyAPI_FUNC(int) PyString_AsStringAndSize(
 				   strings) */
     );
 
+/* Using the current locale, insert the thousands grouping
+   into the string pointed to by buffer.  For the argument descriptions,
+   see Objects/stringlib/localeutil.h */
+
+PyAPI_FUNC(int) _PyString_InsertThousandsGrouping(char *buffer,
+						  Py_ssize_t len,
+						  char *plast,
+						  Py_ssize_t buf_size,
+						  Py_ssize_t *count,
+						  int append_zero_char);
+
 /* Flags used by string formatting */
 #define F_LJUST (1<<0)
 #define F_SIGN	(1<<1)

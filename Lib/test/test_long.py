@@ -761,7 +761,7 @@ class LongTest(unittest.TestCase):
 
         # ensure that float type specifiers work; format converts
         #  the int to a float
-        for format_spec in 'eEfFgGn%':
+        for format_spec in 'eEfFgG%':
             for value in [0, 1, -1, 100, -100, 1234567890, -1234567890]:
                 self.assertEqual(format(value, format_spec),
                                  format(float(value), format_spec))
