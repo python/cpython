@@ -436,7 +436,7 @@ class CleanImport(object):
         for module_name in module_names:
             if module_name in sys.modules:
                 module = sys.modules[module_name]
-                # It is possible that module_name is an just alias for
+                # It is possible that module_name is just an alias for
                 # another module (e.g. stub for modules renamed in 3.x).
                 # In that case, we also need delete the real module to clear
                 # the import cache.
