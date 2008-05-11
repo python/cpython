@@ -183,7 +183,7 @@ class TestStdlibRemovals(unittest.TestCase):
 
 class TestStdlibRenames(unittest.TestCase):
 
-    renames = {}
+    renames = {'copy_reg': 'copyreg'}
 
     def check_rename(self, module_name, new_module_name):
         """Make sure that:

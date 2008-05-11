@@ -5,6 +5,8 @@
 .. module:: copy_reg
    :synopsis: Register pickle support functions.
 
+.. note::
+    The :mod:`copy_reg` module has been renamed to `copyreg` in Python 3.0.
 
 .. index::
    module: pickle
