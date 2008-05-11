@@ -22,7 +22,7 @@ Some of these are very old and/or not very robust; marked with "hmm."
 :mod:`ihooks`
    --- Import hook support (for :mod:`rexec`; may become obsolete).
    
-   .. warning:: The ihooks module has been removed in Python 3.0.
+   .. warning:: The :mod:`ihooks` module has been removed in Python 3.0.
 
 
 Platform specific modules
@@ -55,7 +55,7 @@ Multimedia
    --- Play audio data on the Linux audio device.  Replaced in Python 2.3 by the
    :mod:`ossaudiodev` module.
    
-   .. warning:: The linuxaudiodev module has been removed in Python 3.0.
+   .. warning:: The :mod:`linuxaudiodev` module has been removed in Python 3.0.
 
 :mod:`sunaudio`
    --- Interpret Sun audio headers (may become obsolete or a tool/demo).
