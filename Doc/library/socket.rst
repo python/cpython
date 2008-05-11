@@ -908,7 +908,7 @@ sends traffic to the first one connected successfully. ::
 
    
 The last example shows how to write a very simple network sniffer with raw
-sockets on Windows. The example requires administrator priviliges to modify
+sockets on Windows. The example requires administrator privileges to modify
 the interface::
 
    import socket
