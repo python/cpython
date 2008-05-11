@@ -5,7 +5,6 @@ import stat
 import socket
 import email
 import email.message
-import rfc822
 import re
 import io
 from test import test_support
@@ -131,11 +130,11 @@ class TestMailbox(TestBase):
         self.assert_(self._box.get('foo') is None)
         self.assert_(self._box.get('foo', False) is False)
         self._box.close()
-        self._box = self._factory(self._path, factory=rfc822.Message)
+        self._box = self._factory(self._path)
         key1 = self._box.add(self._template % 1)
         msg = self._box.get(key1)
         self.assertEqual(msg['from'], 'foo')
-        self.assertEqual(msg.fp.read(), '1')
+        self.assertEqual(msg.get_payload(), '1')
 
     def test_getitem(self):
         # Retrieve message using __getitem__()
@@ -526,7 +525,7 @@ class TestMaildir(TestMailbox):
         # Initialize a non-existent mailbox
         self.tearDown()
         self._box = mailbox.Maildir(self._path)
-        self._check_basics(factory=rfc822.Message)
+        self._check_basics()
         self._delete_recursively(self._path)
         self._box = self._factory(self._path, factory=None)
         self._check_basics()
@@ -537,8 +536,6 @@ class TestMaildir(TestMailbox):
         for subdir in '', 'tmp', 'new', 'cur':
             os.mkdir(os.path.normpath(os.path.join(self._path, subdir)))
         self._box = mailbox.Maildir(self._path)
-        self._check_basics(factory=rfc822.Message)
-        self._box = mailbox.Maildir(self._path, factory=None)
         self._check_basics()
 
     def _check_basics(self, factory=None):
