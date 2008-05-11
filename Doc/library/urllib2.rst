@@ -26,10 +26,10 @@ The :mod:`urllib2` module defines the following functions:
    :func:`urllib.urlencode` function takes a mapping or sequence of 2-tuples and
    returns a string in this format.
 
-   The optional *timeout* parameter specifies a timeout in seconds for the
-   connection attempt (if not specified, or passed as None, the global default
-   timeout setting will be used). This actually only work for HTTP, HTTPS, FTP and
-   FTPS connections.
+   The optional *timeout* parameter specifies a timeout in seconds for blocking
+   operations like the connection attempt (if not specified, or passed as
+   ``None``, the global default timeout setting will be used).  This actually
+   only works for HTTP, HTTPS, FTP and FTPS connections.
 
    This function returns a file-like object with two additional methods:
 
@@ -407,12 +407,13 @@ OpenerDirector Objects
 .. method:: OpenerDirector.open(url[, data][, timeout])
 
    Open the given *url* (which can be a request object or a string), optionally
-   passing the given *data*. Arguments, return values and exceptions raised are the
-   same as those of :func:`urlopen` (which simply calls the :meth:`open` method on
-   the currently installed global :class:`OpenerDirector`).  The optional *timeout*
-   parameter specifies a timeout in seconds for the connection  attempt (if not
-   specified, or passed as None, the global default timeout  setting will be used;
-   this actually only work for HTTP, HTTPS, FTP and FTPS connections).
+   passing the given *data*. Arguments, return values and exceptions raised are
+   the same as those of :func:`urlopen` (which simply calls the :meth:`open`
+   method on the currently installed global :class:`OpenerDirector`).  The
+   optional *timeout* parameter specifies a timeout in seconds for blocking
+   operations like the connection attempt (if not specified, or passed as
+   ``None``, the global default timeout setting will be used; this actually only
+   works for HTTP, HTTPS, FTP and FTPS connections).
 
    .. versionchanged:: 2.6
       *timeout* was added.

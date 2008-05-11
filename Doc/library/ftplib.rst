@@ -40,11 +40,12 @@ The module defines the following items:
 .. class:: FTP([host[, user[, passwd[, acct[, timeout]]]]])
 
    Return a new instance of the :class:`FTP` class.  When *host* is given, the
-   method call ``connect(host)`` is made.  When *user* is given, additionally the
-   method call ``login(user, passwd, acct)`` is made (where *passwd* and *acct*
-   default to the empty string when not given). The optional *timeout* parameter
-   specifies a timeout in seconds for the connection attempt (if is not specified,
-   or passed as None, the global default timeout setting will be used).
+   method call ``connect(host)`` is made.  When *user* is given, additionally
+   the method call ``login(user, passwd, acct)`` is made (where *passwd* and
+   *acct* default to the empty string when not given).  The optional *timeout*
+   parameter specifies a timeout in seconds for blocking operations like the
+   connection attempt (if is not specified, or passed as None, the global
+   default timeout setting will be used).
 
    .. versionchanged:: 2.6
       *timeout* was added.
@@ -125,9 +126,10 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    made.
 
    The optional *timeout* parameter specifies a timeout in seconds for the
-   connection attempt. If is not specified, or passed as None, the  object timeout
-   is used (the timeout that you passed when instantiating the class); if the
-   object timeout is also None, the global default timeout  setting will be used.
+   connection attempt. If is not specified, or passed as None, the object
+   timeout is used (the timeout that you passed when instantiating the class);
+   if the object timeout is also None, the global default timeout setting will
+   be used.
 
    .. versionchanged:: 2.6
       *timeout* was added.
