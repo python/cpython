@@ -105,18 +105,18 @@ static PyObject *BadPickleGet;
 /* As the name says, an empty tuple. */
 static PyObject *empty_tuple;
 
-/* copy_reg.dispatch_table, {type_object: pickling_function} */
+/* copyreg.dispatch_table, {type_object: pickling_function} */
 static PyObject *dispatch_table;
 
 /* For EXT[124] opcodes. */
-/* copy_reg._extension_registry, {(module_name, function_name): code} */
+/* copyreg._extension_registry, {(module_name, function_name): code} */
 static PyObject *extension_registry;
-/* copy_reg._inverted_registry, {code: (module_name, function_name)} */
+/* copyreg._inverted_registry, {code: (module_name, function_name)} */
 static PyObject *inverted_registry;
-/* copy_reg._extension_cache, {code: object} */
+/* copyreg._extension_cache, {code: object} */
 static PyObject *extension_cache;
 
-/* For looking up name pairs in copy_reg._extension_registry. */
+/* For looking up name pairs in copyreg._extension_registry. */
 static PyObject *two_tuple;
 
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
@@ -124,7 +124,7 @@ static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__reduce_ex___str,
   *write_str, *append_str,
   *read_str, *readline_str, *__main___str, 
-  *copy_reg_str, *dispatch_table_str;
+  *copyreg_str, *dispatch_table_str;
 
 /*************************************************************************
  Internal Data type for pickle data.                                     */
@@ -2477,7 +2477,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 	}
 
 	/* Get a reduction callable, and call it.  This may come from
-	 * copy_reg.dispatch_table, the object's __reduce_ex__ method,
+	 * copyreg.dispatch_table, the object's __reduce_ex__ method,
 	 * or the object's __reduce__ method.
 	 */
 	__reduce__ = PyDict_GetItem(dispatch_table, (PyObject *)type);
@@ -2856,7 +2856,7 @@ newPicklerobject(PyObject *file, int proto)
 
 	if (PyEval_GetRestricted()) {
 		/* Restricted execution, get private tables */
-		PyObject *m = PyImport_Import(copy_reg_str);
+		PyObject *m = PyImport_Import(copyreg_str);
 
 		if (m == NULL)
 			goto err;
@@ -5566,7 +5566,7 @@ static struct PyMethodDef cPickle_methods[] = {
 static int
 init_stuff(PyObject *module_dict)
 {
-	PyObject *copy_reg, *t, *r;
+	PyObject *copyreg, *t, *r;
 
 #define INIT_STR(S) if (!( S ## _str=PyString_InternFromString(#S)))  return -1;
 
@@ -5588,30 +5588,30 @@ init_stuff(PyObject *module_dict)
 	INIT_STR(append);
 	INIT_STR(read);
 	INIT_STR(readline);
-	INIT_STR(copy_reg);
+	INIT_STR(copyreg);
 	INIT_STR(dispatch_table);
 
-	if (!( copy_reg = PyImport_ImportModule("copy_reg")))
+	if (!( copyreg = PyImport_ImportModule("copyreg")))
 		return -1;
 
 	/* This is special because we want to use a different
 	   one in restricted mode. */
-	dispatch_table = PyObject_GetAttr(copy_reg, dispatch_table_str);
+	dispatch_table = PyObject_GetAttr(copyreg, dispatch_table_str);
 	if (!dispatch_table) return -1;
 
-	extension_registry = PyObject_GetAttrString(copy_reg,
+	extension_registry = PyObject_GetAttrString(copyreg,
 				"_extension_registry");
 	if (!extension_registry) return -1;
 
-	inverted_registry = PyObject_GetAttrString(copy_reg,
+	inverted_registry = PyObject_GetAttrString(copyreg,
 				"_inverted_registry");
 	if (!inverted_registry) return -1;
 
-	extension_cache = PyObject_GetAttrString(copy_reg,
+	extension_cache = PyObject_GetAttrString(copyreg,
 				"_extension_cache");
 	if (!extension_cache) return -1;
 
-	Py_DECREF(copy_reg);
+	Py_DECREF(copyreg);
 
 	if (!(empty_tuple = PyTuple_New(0)))
 		return -1;
