@@ -485,7 +485,7 @@ The :keyword:`raise` statement
 If no expressions are present, :keyword:`raise` re-raises the last exception
 that was active in the current scope.  If no exception is active in the current
 scope, a :exc:`TypeError` exception is raised indicating that this is an error
-(if running under IDLE, a :exc:`Queue.Empty` exception is raised instead).
+(if running under IDLE, a :exc:`queue.Empty` exception is raised instead).
 
 Otherwise, :keyword:`raise` evaluates the first expression as the exception
 object.  It must be either a subclass or an instance of :class:`BaseException`.

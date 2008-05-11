@@ -8,7 +8,7 @@
 
 This module constructs higher-level threading interfaces on top of the  lower
 level :mod:`thread` module.
-See also the :mod:`Queue` module.
+See also the :mod:`queue` module.
 
 The :mod:`dummy_threading` module is provided for situations where
 :mod:`threading` cannot be used because :mod:`thread` is missing.

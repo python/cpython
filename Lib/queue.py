@@ -90,6 +90,20 @@ class Queue:
         self.mutex.release()
         return n
 
+    def empty(self):
+        """Return True if the queue is empty, False otherwise (not reliable!)."""
+        self.mutex.acquire()
+        n = not self._qsize()
+        self.mutex.release()
+        return n
+
+    def full(self):
+        """Return True if the queue is full, False otherwise (not reliable!)."""
+        self.mutex.acquire()
+        n = 0 < self.maxsize == self._qsize()
+        self.mutex.release()
+        return n
+
     def put(self, item, block=True, timeout=None):
         """Put an item into the queue.
 
