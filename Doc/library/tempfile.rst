@@ -171,11 +171,6 @@ The module defines the following user-callable functions:
       :func:`NamedTemporaryFile`, passing it the  `delete=False` parameter::
 
          >>> f = NamedTemporaryFile(delete=False)
-         >>> print f.name
-         >>> f.write("Hello World!\n")
-         >>> f.close()
-         >>> os.unlink(f.name)
-         >>> f = NamedTemporaryFile(delete=False)
          >>> f
          <open file '<fdopen>', mode 'w+b' at 0x384698>
          >>> f.name
