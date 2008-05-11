@@ -7,7 +7,7 @@ implementation as its sole argument.
 """
 import dummy_thread as _thread
 import time
-import Queue
+import queue
 import random
 import unittest
 from test import test_support
@@ -124,7 +124,7 @@ class ThreadTests(unittest.TestCase):
             """Use to test _thread.start_new_thread() passes args properly."""
             queue.put((arg1, arg2))
 
-        testing_queue = Queue.Queue(1)
+        testing_queue = queue.Queue(1)
         _thread.start_new_thread(arg_tester, (testing_queue, True, True))
         result = testing_queue.get()
         self.failUnless(result[0] and result[1],
@@ -148,7 +148,7 @@ class ThreadTests(unittest.TestCase):
             queue.put(_thread.get_ident())
 
         thread_count = 5
-        testing_queue = Queue.Queue(thread_count)
+        testing_queue = queue.Queue(thread_count)
         if test_support.verbose:
             print
             print "*** Testing multiple thread creation "\
