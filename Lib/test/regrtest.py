@@ -629,7 +629,7 @@ def cleanup_test_droppings(testname, verbose):
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
     # This code is hackish and inelegant, but it seems to do the job.
-    import copy_reg, _abcoll, io
+    import copyreg, _abcoll, io
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -637,7 +637,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 
     # Save current values for dash_R_cleanup() to restore.
     fs = warnings.filters[:]
-    ps = copy_reg.dispatch_table.copy()
+    ps = copyreg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
     abcs = {}
     modules = _abcoll, io
@@ -677,7 +677,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         refrep.close()
 
 def dash_R_cleanup(fs, ps, pic, abcs):
-    import gc, copy_reg
+    import gc, copyreg
     import _strptime, linecache
     dircache = test_support.import_module('dircache', deprecated=True)
     import urlparse, urllib, urllib2, mimetypes, doctest
@@ -691,8 +691,8 @@ def dash_R_cleanup(fs, ps, pic, abcs):
 
     # Restore some original values.
     warnings.filters[:] = fs
-    copy_reg.dispatch_table.clear()
-    copy_reg.dispatch_table.update(ps)
+    copyreg.dispatch_table.clear()
+    copyreg.dispatch_table.update(ps)
     sys.path_importer_cache.clear()
     sys.path_importer_cache.update(pic)
 

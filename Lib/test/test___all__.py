@@ -61,7 +61,7 @@ class AllTest(unittest.TestCase):
         self.check_all("commands")
         self.check_all("compileall")
         self.check_all("copy")
-        self.check_all("copy_reg")
+        self.check_all("copyreg")
         self.check_all("csv")
         self.check_all("dbhash")
         self.check_all("decimal")
