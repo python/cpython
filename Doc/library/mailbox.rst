@@ -1507,11 +1507,13 @@ The following exception classes are defined in the :mod:`mailbox` module:
 Deprecated classes and methods
 ------------------------------
 
+.. deprecated:: 2.6
+
 Older versions of the :mod:`mailbox` module do not support modification of
 mailboxes, such as adding or removing message, and do not provide classes to
 represent format-specific message properties. For backward compatibility, the
 older mailbox classes are still available, but the newer classes should be used
-in preference to them.
+in preference to them.  The old classes will be removed in Python 3.0.
 
 Older mailbox objects support only iteration and provide a single public method:
 
