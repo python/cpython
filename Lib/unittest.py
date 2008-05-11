@@ -682,6 +682,7 @@ class _TextTestResult(TestResult):
         if self.showAll:
             self.stream.write(self.getDescription(test))
             self.stream.write(" ... ")
+            self.stream.flush()
 
     def addSuccess(self, test):
         TestResult.addSuccess(self, test)
@@ -689,6 +690,7 @@ class _TextTestResult(TestResult):
             self.stream.writeln("ok")
         elif self.dots:
             self.stream.write('.')
+            self.stream.flush()
 
     def addError(self, test, err):
         TestResult.addError(self, test, err)
@@ -696,6 +698,7 @@ class _TextTestResult(TestResult):
             self.stream.writeln("ERROR")
         elif self.dots:
             self.stream.write('E')
+            self.stream.flush()
 
     def addFailure(self, test, err):
         TestResult.addFailure(self, test, err)
@@ -703,6 +706,7 @@ class _TextTestResult(TestResult):
             self.stream.writeln("FAIL")
         elif self.dots:
             self.stream.write('F')
+            self.stream.flush()
 
     def printErrors(self):
         if self.dots or self.showAll:
