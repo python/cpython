@@ -267,6 +267,12 @@ n(ext)
    inside a called function, while ``next`` executes called functions at (nearly)
    full speed, only stopping at the next line in the current function.)
 
+unt(il)
+   Continue execution until the line with the the line number greater than the
+   current one is reached or when returning from current frame
+
+   .. versionadded:: 2.6
+
 r(eturn)
    Continue execution until the current function returns.
 
