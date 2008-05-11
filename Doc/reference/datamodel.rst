@@ -198,9 +198,7 @@ Ellipsis
       .. index:: pair: integer; representation
 
       The rules for integer representation are intended to give the most meaningful
-      interpretation of shift and mask operations involving negative integers.  Any
-      operation except left shift, if it yields a result in the plain integer domain
-      without causing overflow, will yield the same result when using mixed operands.
+      interpretation of shift and mask operations involving negative integers.
 
    :class:`numbers.Real` (:class:`float`)
       .. index::
