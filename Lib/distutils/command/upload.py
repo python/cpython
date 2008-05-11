@@ -3,7 +3,7 @@
 Implements the Distutils 'upload' subcommand (upload package to PyPI)."""
 
 from distutils.errors import *
-from distutils.core import Command
+from distutils.core import PyPIRCCommand
 from distutils.spawn import spawn
 from distutils import log
 from hashlib import md5
@@ -16,53 +16,38 @@ import base64
 import urlparse
 import cStringIO as StringIO
 
-class upload(Command):
+class upload(PyPIRCCommand):
 
     description = "upload binary package to PyPI"
 
-    DEFAULT_REPOSITORY = 'http://pypi.python.org/pypi'
-
-    user_options = [
-        ('repository=', 'r',
-         "url of repository [default: %s]" % DEFAULT_REPOSITORY),
-        ('show-response', None,
-         'display full response text from server'),
+    user_options = PyPIRCCommand.user_options + [
         ('sign', 's',
          'sign files to upload using gpg'),
         ('identity=', 'i', 'GPG identity used to sign files'),
         ]
-    boolean_options = ['show-response', 'sign']
+
+    boolean_options = PyPIRCCommand.boolean_options + ['sign']
 
     def initialize_options(self):
+        PyPIRCCommand.initialize_options(self)
         self.username = ''
         self.password = ''
-        self.repository = ''
         self.show_response = 0
         self.sign = False
         self.identity = None
 
     def finalize_options(self):
+        PyPIRCCommand.finalize_options(self)
         if self.identity and not self.sign:
             raise DistutilsOptionError(
                 "Must use --sign for --identity to have meaning"
             )
-        if 'HOME' in os.environ:
-            rc = os.path.join(os.environ['HOME'], '.pypirc')
-            if os.path.exists(rc):
-                self.announce('Using PyPI login from %s' % rc)
-                config = ConfigParser.ConfigParser({
-                        'username':'',
-                        'password':'',
-                        'repository':''})
-                config.read(rc)
-                if not self.repository:
-                    self.repository = config.get('server-login', 'repository')
-                if not self.username:
-                    self.username = config.get('server-login', 'username')
-                if not self.password:
-                    self.password = config.get('server-login', 'password')
-        if not self.repository:
-            self.repository = self.DEFAULT_REPOSITORY
+        config = self._read_pypirc()
+        if config != {}:
+            self.username = config['username']
+            self.password = config['password']
+            self.repository = config['repository']
+            self.realm = config['realm']
 
     def run(self):
         if not self.distribution.dist_files:
