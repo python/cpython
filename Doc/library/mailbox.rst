@@ -277,7 +277,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^^^
 
 
-.. class:: Maildir(dirname[, factory=rfc822.Message[, create=True]])
+.. class:: Maildir(dirname[, factory=None[, create=True]])
 
    A subclass of :class:`Mailbox` for mailboxes in Maildir format. Parameter
    *factory* is a callable object that accepts a file-like message representation
@@ -286,10 +286,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
    representation. If *create* is ``True``, the mailbox is created if it does not
    exist.
 
-   It is for historical reasons that *factory* defaults to :class:`rfc822.Message`
-   and that *dirname* is named as such rather than *path*. For a :class:`Maildir`
-   instance that behaves like instances of other :class:`Mailbox` subclasses, set
-   *factory* to ``None``.
+   It is for historical reasons that *dirname* is named as such rather than *path*.
 
    Maildir is a directory-based mailbox format invented for the qmail mail
    transfer agent and now widely supported by other programs. Messages in a
