@@ -343,14 +343,9 @@ ensure_decimal_point(char* buffer, size_t buf_size)
 Py_LOCAL_INLINE(int)
 add_thousands_grouping(char* buffer, size_t buf_size)
 {
+	Py_ssize_t len = strlen(buffer);
 	struct lconv *locale_data = localeconv();
-	const char *grouping = locale_data->grouping;
-	const char *thousands_sep = locale_data->thousands_sep;
-	size_t thousands_sep_len = strlen(thousands_sep);
 	const char *decimal_point = locale_data->decimal_point;
-	char *pend = buffer + strlen(buffer); /* current end of buffer */
-	char *pmax = buffer + buf_size;       /* max of buffer */
-	char current_grouping;
 
 	/* Find the decimal point, if any.  We're only concerned
 	   about the characters to the left of the decimal when
@@ -364,49 +359,13 @@ add_thousands_grouping(char* buffer, size_t buf_size)
 		if (!p)
 			/* No exponent and no decimal.  Use the entire
 			   string. */
-			p = pend;
+			p = buffer + len;
 	}
 	/* At this point, p points just past the right-most character we
 	   want to format.  We need to add the grouping string for the
 	   characters between buffer and p. */
-
-	/* Starting at p and working right-to-left, keep track of
-	   what grouping needs to be added and insert that. */
-	current_grouping = *grouping++;
-
-	/* If the first character is 0, perform no grouping at all. */
-	if (current_grouping == 0)
-		return 1;
-
-	while (p - buffer > current_grouping) {
-		/* Always leave buffer and pend valid at the end of this
-		   loop, since we might leave with a return statement. */
-
-		/* Is there room to insert thousands_sep_len chars?. */
-		if (pmax - pend <= thousands_sep_len)
-			/* No room. */
-			return 0;
-
-		/* Move the rest of the string down. */
-		p -= current_grouping;
-		memmove(p + thousands_sep_len,
-			p,
-			pend - p + 1);
-		/* Adjust end pointer. */
-		pend += thousands_sep_len;
-		/* Copy the thousands_sep chars into the buffer. */
-		memcpy(p, thousands_sep, thousands_sep_len);
-
-		/* Move to the next grouping character, unless we're
-		   repeating (which is designated by a grouping of 0). */
-		if (*grouping != 0) {
-			current_grouping = *grouping++;
-			if (current_grouping == CHAR_MAX)
-				/* We're done. */
-				return 1;
-		}
-	}
-	return 1;
+	return _PyString_InsertThousandsGrouping(buffer, len, p,
+						 buf_size, NULL, 1);
 }
 
 /* see FORMATBUFLEN in unicodeobject.c */

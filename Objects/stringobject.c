@@ -784,6 +784,10 @@ PyString_AsStringAndSize(register PyObject *obj,
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
 
+#define _Py_InsertThousandsGrouping _PyString_InsertThousandsGrouping
+#include "stringlib/localeutil.h"
+
+
 
 static int
 string_print(PyStringObject *op, FILE *fp, int flags)

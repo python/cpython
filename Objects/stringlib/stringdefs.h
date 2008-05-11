@@ -23,5 +23,6 @@
 #define STRINGLIB_CHECK          PyString_Check
 #define STRINGLIB_CMP            memcmp
 #define STRINGLIB_TOSTR          PyObject_Str
+#define STRINGLIB_GROUPING       _PyString_InsertThousandsGrouping
 
 #endif /* !STRINGLIB_STRINGDEFS_H */

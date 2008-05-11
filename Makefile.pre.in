@@ -549,7 +549,8 @@ STRINGLIB_HEADERS= \
 		$(srcdir)/Objects/stringlib/stringdefs.h \
 		$(srcdir)/Objects/stringlib/string_format.h \
 		$(srcdir)/Objects/stringlib/transmogrify.h \
-		$(srcdir)/Objects/stringlib/unicodedefs.h
+		$(srcdir)/Objects/stringlib/unicodedefs.h \
+		$(srcdir)/Objects/stringlib/localeutil.h
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 				$(STRINGLIB_HEADERS)
