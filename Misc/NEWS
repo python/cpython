@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The sre module has been removed.
+
 - The PixMapWrapper module has been renamed to pixmapwrapper.
 
 - The Queue module has been renamed to queue.
