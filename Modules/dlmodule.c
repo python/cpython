@@ -236,7 +236,7 @@ initdl(void)
 	PyObject *m, *d, *x;
 
     if (PyErr_WarnPy3k("the dl module has been removed in "
-                       "Python 3.0", 2) < 0)
+                        "Python 3.0; use the ctypes module instead", 2) < 0)
         return;    
 
 	/* Initialize object type */
