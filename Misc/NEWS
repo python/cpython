@@ -23,6 +23,8 @@ Extension Modules
 Library
 -------
 
+- #2659: Added ``break_on_hyphens`` option to textwrap TextWrapper class.
+
 - The mhlib module has been deprecated for removal in Python 3.0.
 
 - The linuxaudiodev module has been deprecated for removal in Python 3.0.

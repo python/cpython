@@ -41,6 +41,10 @@ instance and calling a single method on it.  That instance is not reused, so for
 applications that wrap/fill many text strings, it will be more efficient for you
 to create your own :class:`TextWrapper` object.
 
+Text is preferably wrapped on whitespaces and right after the hyphens in
+hyphenated words; only then will long words be broken if necessary, unless
+:attr:`TextWrapper.break_long_words` is set to false.
+
 An additional utility function, :func:`dedent`, is provided to remove
 indentation from strings that have unwanted whitespace to the left of the text.
 
@@ -174,9 +178,21 @@ indentation from strings that have unwanted whitespace to the left of the text.
       than :attr:`width`.  (Long words will be put on a line by themselves, in
       order to minimize the amount by which :attr:`width` is exceeded.)
 
+
+   .. attribute:: break_on_hyphens
+
+      (default: ``True``) If true, wrapping will occur preferably on whitespaces
+      and right after hyphens in compound words, as it is customary in English.
+      If false, only whitespaces will be considered as potentially good places
+      for line breaks, but you need to set :attr:`break_long_words` to false if
+      you want truly insecable words.  Default behaviour in previous versions
+      was to always allow breaking hyphenated words.
+
+      .. versionadded:: 2.6
+
+
    :class:`TextWrapper` also provides two public methods, analogous to the
    module-level convenience functions:
-
 
    .. method:: wrap(text)
 
