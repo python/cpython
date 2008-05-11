@@ -1,8 +1,8 @@
 
-:mod:`copy_reg` --- Register :mod:`pickle` support functions
+:mod:`copyreg` --- Register :mod:`pickle` support functions
 ============================================================
 
-.. module:: copy_reg
+.. module:: copyreg
    :synopsis: Register pickle support functions.
 
 
@@ -11,7 +11,7 @@
    module: cPickle
    module: copy
 
-The :mod:`copy_reg` module provides support for the :mod:`pickle` and
+The :mod:`copyreg` module provides support for the :mod:`pickle` and
 :mod:`cPickle` modules.  The :mod:`copy` module is likely to use this in the
 future as well.  It provides configuration information about object constructors
 which are not classes.  Such constructors may be factory functions or class

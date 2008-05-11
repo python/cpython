@@ -588,7 +588,7 @@ otherwise return -SIG, where SIG is the signal that killed it. """
 
     __all__.extend(["spawnvp", "spawnvpe", "spawnlp", "spawnlpe",])
 
-import copy_reg as _copy_reg
+import copyreg as _copyreg
 
 def _make_stat_result(tup, dict):
     return stat_result(tup, dict)
@@ -598,7 +598,7 @@ def _pickle_stat_result(sr):
     return (_make_stat_result, args)
 
 try:
-    _copy_reg.pickle(stat_result, _pickle_stat_result, _make_stat_result)
+    _copyreg.pickle(stat_result, _pickle_stat_result, _make_stat_result)
 except NameError: # stat_result may not exist
     pass
 
@@ -610,7 +610,7 @@ def _pickle_statvfs_result(sr):
     return (_make_statvfs_result, args)
 
 try:
-    _copy_reg.pickle(statvfs_result, _pickle_statvfs_result,
+    _copyreg.pickle(statvfs_result, _pickle_statvfs_result,
                      _make_statvfs_result)
 except NameError: # statvfs_result may not exist
     pass

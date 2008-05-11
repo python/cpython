@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The copy_reg module has been renamed to copyreg.
+
 - The mhlib module has been removed.
 
 - The ihooks module has been removed.
