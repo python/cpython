@@ -156,7 +156,6 @@ class PyclbrTest(TestCase):
         # These were once about the 10 longest modules
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
-        cm('mhlib')
         cm('urllib', ignore=('getproxies_registry',
                              'proxy_bypass_registry',
                              'open_https',

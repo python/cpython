@@ -15,7 +15,6 @@ on the Internet.
    json.rst
    mailcap.rst
    mailbox.rst
-   mhlib.rst
    mimetools.rst
    mimetypes.rst
    multifile.rst
