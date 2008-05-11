@@ -215,7 +215,8 @@ class MetadataTestCase(unittest.TestCase):
                 # home drive should be found
                 os.environ['HOMEPATH'] = curdir
                 files = dist.find_config_files()
-                self.assert_(user_filename in files)
+                self.assert_(user_filename in files,
+                             '%r not found in %r' % (user_filename, files))
         finally:
             for key, value in old.items():
                 if value is None:
