@@ -343,10 +343,9 @@ Common commands: (see '--help-commands' for more)
             user_filename = "pydistutils.cfg"
 
         # And look for the user config file
-        if 'HOME' in os.environ:
-            user_file = os.path.join(os.environ.get('HOME'), user_filename)
-            if os.path.isfile(user_file):
-                files.append(user_file)
+        user_file = os.path.join(os.path.expanduser('~'), user_filename)
+        if os.path.isfile(user_file):
+            files.append(user_file)
 
         # All platforms support local setup.cfg
         local_file = "setup.cfg"
