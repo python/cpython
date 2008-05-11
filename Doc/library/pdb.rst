@@ -269,7 +269,7 @@ n(ext)
 
 unt(il)
    Continue execution until the line with the the line number greater than the
-   current one is reached or when returning from current frame
+   current one is reached or when returning from current frame.
 
    .. versionadded:: 2.6
 
