@@ -207,15 +207,14 @@ utility functions:
 
    .. note::
 
-      The wrapped version will only accept the object format defined by the codecs,
-      i.e. Unicode objects for most built-in codecs.  Output is also codec-dependent
-      and will usually be Unicode as well.
+      The wrapped version's methods will accept and return strings only.  Bytes
+      arguments will be rejected.
 
    .. note::
 
       Files are always opened in binary mode, even if no binary mode was
       specified.  This is done to avoid data loss due to encodings using 8-bit
-      values.  This means that no automatic conversion of ``'\n'`` is done
+      values.  This means that no automatic conversion of ``b'\n'`` is done
       on reading and writing.
 
    *encoding* specifies the encoding which is to be used for the file.
@@ -232,10 +231,9 @@ utility functions:
    Return a wrapped version of file which provides transparent encoding
    translation.
 
-   Strings written to the wrapped file are interpreted according to the given
-   *input* encoding and then written to the original file as strings using the
-   *output* encoding. The intermediate encoding will usually be Unicode but depends
-   on the specified codecs.
+   Bytes written to the wrapped file are interpreted according to the given
+   *input* encoding and then written to the original file as bytes using the
+   *output* encoding.
 
    If *output* is not given, it defaults to *input*.
 
@@ -338,8 +336,7 @@ interfaces of the stateless encoder and decoder:
 .. method:: Codec.encode(input[, errors])
 
    Encodes the object *input* and returns a tuple (output object, length consumed).
-   While codecs are not restricted to use with Unicode, in a Unicode context,
-   encoding converts a Unicode object to a plain string using a particular
+   Encoding converts a string object to a bytes object using a particular
    character set encoding (e.g., ``cp1252`` or ``iso-8859-1``).
 
    *errors* defines the error handling to apply. It defaults to ``'strict'``
@@ -355,13 +352,12 @@ interfaces of the stateless encoder and decoder:
 
 .. method:: Codec.decode(input[, errors])
 
-   Decodes the object *input* and returns a tuple (output object, length consumed).
-   In a Unicode context, decoding converts a plain string encoded using a
-   particular character set encoding to a Unicode object.
+   Decodes the object *input* and returns a tuple (output object, length
+   consumed).  Decoding converts a bytes object encoded using a particular
+   character set encoding to a string object.
 
-   *input* must be an object which provides the ``bf_getreadbuf`` buffer slot.
-   Python strings, buffer objects and memory mapped files are examples of objects
-   providing this slot.
+   *input* must be a bytes object or one which provides the read-only character
+   buffer interface -- for example, buffer objects and memory mapped files.
 
    *errors* defines the error handling to apply. It defaults to ``'strict'``
    handling.
@@ -746,9 +742,7 @@ The design is such that one can use the factory functions returned by the
    :class:`StreamReader` and :class:`StreamWriter` interface respectively.
 
    *encode* and *decode* are needed for the frontend translation, *Reader* and
-   *Writer* for the backend translation.  The intermediate format used is
-   determined by the two sets of codecs, e.g. the Unicode codecs will use Unicode
-   as the intermediate encoding.
+   *Writer* for the backend translation.
 
    Error handling is done in the same way as defined for the stream readers and
    writers.
@@ -764,32 +758,32 @@ methods and attributes from the underlying stream.
 Encodings and Unicode
 ---------------------
 
-Unicode strings are stored internally as sequences of codepoints (to be precise
+Strings are stored internally as sequences of codepoints (to be precise
 as :ctype:`Py_UNICODE` arrays). Depending on the way Python is compiled (either
 via :option:`--without-wide-unicode` or :option:`--with-wide-unicode`, with the
 former being the default) :ctype:`Py_UNICODE` is either a 16-bit or 32-bit data
-type. Once a Unicode object is used outside of CPU and memory, CPU endianness
+type. Once a string object is used outside of CPU and memory, CPU endianness
 and how these arrays are stored as bytes become an issue.  Transforming a
-unicode object into a sequence of bytes is called encoding and recreating the
-unicode object from the sequence of bytes is known as decoding.  There are many
+string object into a sequence of bytes is called encoding and recreating the
+string object from the sequence of bytes is known as decoding.  There are many
 different methods for how this transformation can be done (these methods are
 also called encodings). The simplest method is to map the codepoints 0-255 to
-the bytes ``0x0``-``0xff``. This means that a unicode object that contains
+the bytes ``0x0``-``0xff``. This means that a string object that contains
 codepoints above ``U+00FF`` can't be encoded with this method (which is called
-``'latin-1'`` or ``'iso-8859-1'``). :func:`unicode.encode` will raise a
+``'latin-1'`` or ``'iso-8859-1'``). :func:`str.encode` will raise a
 :exc:`UnicodeEncodeError` that looks like this: ``UnicodeEncodeError: 'latin-1'
-codec can't encode character u'\u1234' in position 3: ordinal not in
+codec can't encode character '\u1234' in position 3: ordinal not in
 range(256)``.
 
 There's another group of encodings (the so called charmap encodings) that choose
-a different subset of all unicode code points and how these codepoints are
+a different subset of all Unicode code points and how these codepoints are
 mapped to the bytes ``0x0``-``0xff``. To see how this is done simply open
 e.g. :file:`encodings/cp1252.py` (which is an encoding that is used primarily on
 Windows). There's a string constant with 256 characters that shows you which
 character is mapped to which byte value.
 
 All of these encodings can only encode 256 of the 65536 (or 1114111) codepoints
-defined in unicode. A simple and straightforward way that can store each Unicode
+defined in Unicode. A simple and straightforward way that can store each Unicode
 code point, is to store each codepoint as two consecutive bytes. There are two
 possibilities: Store the bytes in big endian or in little endian order. These
 two encodings are called UTF-16-BE and UTF-16-LE respectively. Their
@@ -810,7 +804,7 @@ With Unicode 4.0 using ``U+FEFF`` as a ``ZERO WIDTH NO-BREAK SPACE`` has been
 deprecated (with ``U+2060`` (``WORD JOINER``) assuming this role). Nevertheless
 Unicode software still must be able to handle ``U+FEFF`` in both roles: As a BOM
 it's a device to determine the storage layout of the encoded bytes, and vanishes
-once the byte sequence has been decoded into a Unicode string; as a ``ZERO WIDTH
+once the byte sequence has been decoded into a string; as a ``ZERO WIDTH
 NO-BREAK SPACE`` it's a normal character that will be decoded like any other.
 
 There's another encoding that is able to encoding the full range of Unicode
@@ -841,11 +835,11 @@ Unicode character):
 The least significant bit of the Unicode character is the rightmost x bit.
 
 As UTF-8 is an 8-bit encoding no BOM is required and any ``U+FEFF`` character in
-the decoded Unicode string (even if it's the first character) is treated as a
-``ZERO WIDTH NO-BREAK SPACE``.
+the decoded string (even if it's the first character) is treated as a ``ZERO
+WIDTH NO-BREAK SPACE``.
 
 Without external information it's impossible to reliably determine which
-encoding was used for encoding a Unicode string. Each charmap encoding can
+encoding was used for encoding a string. Each charmap encoding can
 decode any random byte sequence. However that's not possible with UTF-8, as
 UTF-8 byte sequences have a structure that doesn't allow arbitrary byte
 sequences. To increase the reliability with which a UTF-8 encoding can be
@@ -1096,54 +1090,45 @@ particular, the following variants typically exist:
 | utf_8_sig       |                                | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
 
-A number of codecs are specific to Python, so their codec names have no meaning
-outside Python. Some of them don't convert from Unicode strings to byte strings,
-but instead use the property of the Python codecs machinery that any bijective
-function with one argument can be considered as an encoding.
-
-For the codecs listed below, the result in the "encoding" direction is always a
-byte string. The result of the "decoding" direction is listed as operand type in
-the table.
-
 .. XXX fix here, should be in above table
 
-+--------------------+---------+----------------+---------------------------+
-| Codec              | Aliases | Operand type   | Purpose                   |
-+====================+=========+================+===========================+
-| idna               |         | Unicode string | Implements :rfc:`3490`,   |
-|                    |         |                | see also                  |
-|                    |         |                | :mod:`encodings.idna`     |
-+--------------------+---------+----------------+---------------------------+
-| mbcs               | dbcs    | Unicode string | Windows only: Encode      |
-|                    |         |                | operand according to the  |
-|                    |         |                | ANSI codepage (CP_ACP)    |
-+--------------------+---------+----------------+---------------------------+
-| palmos             |         | Unicode string | Encoding of PalmOS 3.5    |
-+--------------------+---------+----------------+---------------------------+
-| punycode           |         | Unicode string | Implements :rfc:`3492`    |
-+--------------------+---------+----------------+---------------------------+
-| raw_unicode_escape |         | Unicode string | Produce a string that is  |
-|                    |         |                | suitable as raw Unicode   |
-|                    |         |                | literal in Python source  |
-|                    |         |                | code                      |
-+--------------------+---------+----------------+---------------------------+
-| undefined          |         | any            | Raise an exception for    |
-|                    |         |                | all conversions. Can be   |
-|                    |         |                | used as the system        |
-|                    |         |                | encoding if no automatic  |
-|                    |         |                | coercion between byte and |
-|                    |         |                | Unicode strings is        |
-|                    |         |                | desired.                  |
-+--------------------+---------+----------------+---------------------------+
-| unicode_escape     |         | Unicode string | Produce a string that is  |
-|                    |         |                | suitable as Unicode       |
-|                    |         |                | literal in Python source  |
-|                    |         |                | code                      |
-+--------------------+---------+----------------+---------------------------+
-| unicode_internal   |         | Unicode string | Return the internal       |
-|                    |         |                | representation of the     |
-|                    |         |                | operand                   |
-+--------------------+---------+----------------+---------------------------+
++--------------------+---------+---------------------------+
+| Codec              | Aliases | Purpose                   |
++====================+=========+===========================+
+| idna               |         | Implements :rfc:`3490`,   |
+|                    |         | see also                  |
+|                    |         | :mod:`encodings.idna`     |
++--------------------+---------+---------------------------+
+| mbcs               | dbcs    | Windows only: Encode      |
+|                    |         | operand according to the  |
+|                    |         | ANSI codepage (CP_ACP)    |
++--------------------+---------+---------------------------+
+| palmos             |         | Encoding of PalmOS 3.5    |
++--------------------+---------+---------------------------+
+| punycode           |         | Implements :rfc:`3492`    |
++--------------------+---------+---------------------------+
+| raw_unicode_escape |         | Produce a string that is  |
+|                    |         | suitable as raw Unicode   |
+|                    |         | literal in Python source  |
+|                    |         | code                      |
++--------------------+---------+---------------------------+
+| undefined          |         | Raise an exception for    |
+|                    |         | all conversions. Can be   |
+|                    |         | used as the system        |
+|                    |         | encoding if no automatic  |
+|                    |         | coercion between byte and |
+|                    |         | Unicode strings is        |
+|                    |         | desired.                  |
++--------------------+---------+---------------------------+
+| unicode_escape     |         | Produce a string that is  |
+|                    |         | suitable as Unicode       |
+|                    |         | literal in Python source  |
+|                    |         | code                      |
++--------------------+---------+---------------------------+
+| unicode_internal   |         | Return the internal       |
+|                    |         | representation of the     |
+|                    |         | operand                   |
++--------------------+---------+---------------------------+
 
 
 :mod:`encodings.idna` --- Internationalized Domain Names in Applications
