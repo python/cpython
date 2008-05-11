@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The mhlib module has been removed.
+
 - The ihooks module has been removed.
 
 - The fpformat module has been removed.
