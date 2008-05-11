@@ -1768,20 +1768,7 @@ class MaildirTestCase(unittest.TestCase):
         self.assert_(self.mbox.next() is None)
         self.assert_(self.mbox.next() is None)
 
-    def test_unix_mbox(self):
-        ### should be better!
-        import email.parser
-        fname = self.createMessage("cur", True)
-        n = 0
-        for msg in mailbox.PortableUnixMailbox(open(fname),
-                                               email.parser.Parser().parse):
-            n += 1
-            self.assertEqual(msg["subject"], "Simple Test")
-            # XXX Disabled until we figure out how to fix this
-            ##self.assertEqual(len(str(msg)), len(FROM_)+len(DUMMY_MESSAGE))
-        self.assertEqual(n, 1)
-
-## End: classes from the original module (for backward compatibility).
+## End: tests from the original module (for backward compatibility).
 
 
 _sample_message = """\
