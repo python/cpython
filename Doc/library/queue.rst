@@ -5,6 +5,8 @@
 .. module:: Queue
    :synopsis: A synchronized queue class.
 
+.. note::
+    The :mod:`Queue` module has been renamed to `queue` in Python 3.0.
 
 The :mod:`Queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
