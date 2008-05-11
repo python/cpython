@@ -130,7 +130,7 @@ class TestStdlibRemovals(unittest.TestCase):
     # import side-effect.
     all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new', 'rexec',
                         'Bastion', 'compiler', 'dircache', 'fpformat',
-                        'ihooks')
+                        'ihooks', 'mhlib')
     inclusive_platforms = {'irix':('pure',)}
     # XXX Don't know if lib-tk is only installed if _tkinter is built.
     optional_modules = ('bsddb185', 'Canvas', 'dl', 'linuxaudiodev')

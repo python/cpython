@@ -7,10 +7,10 @@
 ###      mhlib.  It should.
 
 import unittest
-from test.test_support import run_unittest, TESTFN, TestSkipped
+from test.test_support import run_unittest, TESTFN, TestSkipped, import_module
 import os, StringIO
 import sys
-import mhlib
+mhlib = import_module('mhlib', deprecated=True)
 
 if (sys.platform.startswith("win") or sys.platform=="riscos" or
       sys.platform.startswith("atheos")):

@@ -23,6 +23,8 @@ Extension Modules
 Library
 -------
 
+- The mhlib module has been deprecated for removal in Python 3.0.
+
 - The linuxaudiodev module has been deprecated for removal in Python 3.0.
 
 - The ihooks module has been deprecated for removal in Python 3.0.
