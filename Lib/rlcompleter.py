@@ -127,7 +127,10 @@ class Completer:
         if not m:
             return []
         expr, attr = m.group(1, 3)
-        object = eval(expr, self.namespace)
+        try:
+            object = eval(expr, self.namespace)
+        except Exception:
+            return []
         words = dir(object)
         if hasattr(object,'__class__'):
             words.append('__class__')
