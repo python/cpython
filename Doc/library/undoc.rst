@@ -54,6 +54,8 @@ Multimedia
 :mod:`linuxaudiodev`
    --- Play audio data on the Linux audio device.  Replaced in Python 2.3 by the
    :mod:`ossaudiodev` module.
+   
+   .. warning:: The linuxaudiodev module has been removed in Python 3.0.
 
 :mod:`sunaudio`
    --- Interpret Sun audio headers (may become obsolete or a tool/demo).

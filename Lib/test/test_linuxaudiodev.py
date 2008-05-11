@@ -4,7 +4,7 @@ test_support.requires('audio')
 from test.test_support import findfile, TestSkipped, run_unittest
 
 import errno
-import linuxaudiodev
+linuxaudiodev = test_support.import_module('linuxaudiodev', deprecated=True)
 import sys
 import sunaudio
 import audioop
