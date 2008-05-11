@@ -18,7 +18,6 @@ import copy
 import email
 import email.message
 import email.generator
-import rfc822
 import io
 try:
     if sys.platform == 'os2emx':
@@ -222,7 +221,7 @@ class Maildir(Mailbox):
 
     colon = ':'
 
-    def __init__(self, dirname, factory=rfc822.Message, create=True):
+    def __init__(self, dirname, factory=None, create=True):
         """Initialize a Maildir instance."""
         Mailbox.__init__(self, dirname, factory, create)
         if not os.path.exists(self._path):
