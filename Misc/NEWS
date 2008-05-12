@@ -23,6 +23,8 @@ Extension Modules
 Library
 -------
 
+- The imageop module has been deprecated for removal in Python 3.0.
+
 - #2250: Exceptions raised during evaluation of names in rlcompleter's
   ``Completer.complete()`` method are now caught and ignored.
 
