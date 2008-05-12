@@ -723,7 +723,7 @@ functions based on regular expressions.
    found.
 
 
-.. method:: str.format(format_string, *args, **ksargs)
+.. method:: str.format(format_string, *args, **kwargs)
 
    Perform a string formatting operation.  The *format_string* argument can
    contain literal text or replacement fields delimited by braces ``{}``.  Each
