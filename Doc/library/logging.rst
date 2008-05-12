@@ -1274,17 +1274,17 @@ the receiving end. A simple way of doing this is attaching a
    logger2.warning('Jail zesty vixen who grabbed pay from quack.')
    logger2.error('The five boxing wizards jump quickly.')
 
-At the receiving end, you can set up a receiver using the :mod:`SocketServer`
+At the receiving end, you can set up a receiver using the :mod:`socketserver`
 module. Here is a basic working example::
 
    import cPickle
    import logging
    import logging.handlers
-   import SocketServer
+   import socketserver
    import struct
 
 
-   class LogRecordStreamHandler(SocketServer.StreamRequestHandler):
+   class LogRecordStreamHandler(socketserver.StreamRequestHandler):
        """Handler for a streaming logging request.
 
        This basically logs the record using whatever logging policy is
@@ -1326,7 +1326,7 @@ module. Here is a basic working example::
            # cycles and network bandwidth!
            logger.handle(record)
 
-   class LogRecordSocketReceiver(SocketServer.ThreadingTCPServer):
+   class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
        """simple TCP socket-based logging receiver suitable for testing.
        """
 
@@ -1335,7 +1335,7 @@ module. Here is a basic working example::
        def __init__(self, host='localhost',
                     port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                     handler=LogRecordStreamHandler):
-           SocketServer.ThreadingTCPServer.__init__(self, (host, port), handler)
+           socketserver.ThreadingTCPServer.__init__(self, (host, port), handler)
            self.abort = 0
            self.timeout = 1
            self.logname = None

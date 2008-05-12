@@ -1,5 +1,5 @@
 """
-Test suite for SocketServer.py.
+Test suite for socketserver.
 """
 
 import contextlib
@@ -13,7 +13,7 @@ import tempfile
 import threading
 import time
 import unittest
-import SocketServer
+import socketserver
 
 import test.test_support
 from test.test_support import reap_children, verbose, TestSkipped
@@ -40,12 +40,12 @@ def receive(sock, n, timeout=20):
         raise RuntimeError("timed out on %r" % (sock,))
 
 if HAVE_UNIX_SOCKETS:
-    class ForkingUnixStreamServer(SocketServer.ForkingMixIn,
-                                  SocketServer.UnixStreamServer):
+    class ForkingUnixStreamServer(socketserver.ForkingMixIn,
+                                  socketserver.UnixStreamServer):
         pass
 
-    class ForkingUnixDatagramServer(SocketServer.ForkingMixIn,
-                                    SocketServer.UnixDatagramServer):
+    class ForkingUnixDatagramServer(socketserver.ForkingMixIn,
+                                    socketserver.UnixDatagramServer):
         pass
 
 
@@ -172,55 +172,55 @@ class SocketServerTest(unittest.TestCase):
         s.close()
 
     def test_TCPServer(self):
-        self.run_server(SocketServer.TCPServer,
-                        SocketServer.StreamRequestHandler,
+        self.run_server(socketserver.TCPServer,
+                        socketserver.StreamRequestHandler,
                         self.stream_examine)
 
     def test_ThreadingTCPServer(self):
-        self.run_server(SocketServer.ThreadingTCPServer,
-                        SocketServer.StreamRequestHandler,
+        self.run_server(socketserver.ThreadingTCPServer,
+                        socketserver.StreamRequestHandler,
                         self.stream_examine)
 
     if HAVE_FORKING:
         def test_ForkingTCPServer(self):
             with simple_subprocess(self):
-                self.run_server(SocketServer.ForkingTCPServer,
-                                SocketServer.StreamRequestHandler,
+                self.run_server(socketserver.ForkingTCPServer,
+                                socketserver.StreamRequestHandler,
                                 self.stream_examine)
 
     if HAVE_UNIX_SOCKETS:
         def test_UnixStreamServer(self):
-            self.run_server(SocketServer.UnixStreamServer,
-                            SocketServer.StreamRequestHandler,
+            self.run_server(socketserver.UnixStreamServer,
+                            socketserver.StreamRequestHandler,
                             self.stream_examine)
 
         def test_ThreadingUnixStreamServer(self):
-            self.run_server(SocketServer.ThreadingUnixStreamServer,
-                            SocketServer.StreamRequestHandler,
+            self.run_server(socketserver.ThreadingUnixStreamServer,
+                            socketserver.StreamRequestHandler,
                             self.stream_examine)
 
         if HAVE_FORKING:
             def test_ForkingUnixStreamServer(self):
                 with simple_subprocess(self):
                     self.run_server(ForkingUnixStreamServer,
-                                    SocketServer.StreamRequestHandler,
+                                    socketserver.StreamRequestHandler,
                                     self.stream_examine)
 
     def test_UDPServer(self):
-        self.run_server(SocketServer.UDPServer,
-                        SocketServer.DatagramRequestHandler,
+        self.run_server(socketserver.UDPServer,
+                        socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
     def test_ThreadingUDPServer(self):
-        self.run_server(SocketServer.ThreadingUDPServer,
-                        SocketServer.DatagramRequestHandler,
+        self.run_server(socketserver.ThreadingUDPServer,
+                        socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
     if HAVE_FORKING:
         def test_ForkingUDPServer(self):
             with simple_subprocess(self):
-                self.run_server(SocketServer.ForkingUDPServer,
-                                SocketServer.DatagramRequestHandler,
+                self.run_server(socketserver.ForkingUDPServer,
+                                socketserver.DatagramRequestHandler,
                                 self.dgram_examine)
 
     # Alas, on Linux (at least) recvfrom() doesn't return a meaningful
@@ -228,19 +228,19 @@ class SocketServerTest(unittest.TestCase):
 
     # if HAVE_UNIX_SOCKETS:
     #     def test_UnixDatagramServer(self):
-    #         self.run_server(SocketServer.UnixDatagramServer,
-    #                         SocketServer.DatagramRequestHandler,
+    #         self.run_server(socketserver.UnixDatagramServer,
+    #                         socketserver.DatagramRequestHandler,
     #                         self.dgram_examine)
     #
     #     def test_ThreadingUnixDatagramServer(self):
-    #         self.run_server(SocketServer.ThreadingUnixDatagramServer,
-    #                         SocketServer.DatagramRequestHandler,
+    #         self.run_server(socketserver.ThreadingUnixDatagramServer,
+    #                         socketserver.DatagramRequestHandler,
     #                         self.dgram_examine)
     #
     #     if HAVE_FORKING:
     #         def test_ForkingUnixDatagramServer(self):
-    #             self.run_server(SocketServer.ForkingUnixDatagramServer,
-    #                             SocketServer.DatagramRequestHandler,
+    #             self.run_server(socketserver.ForkingUnixDatagramServer,
+    #                             socketserver.DatagramRequestHandler,
     #                             self.dgram_examine)
 
 
