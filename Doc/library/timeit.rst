@@ -94,8 +94,8 @@ The module defines the following public class:
 
          timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
-Starting with version 2.6, the module also defines two convenience functions:
 
+The module also defines two convenience functions:
 
 .. function:: repeat(stmt[, setup[, timer[, repeat=3 [, number=1000000]]]])
 

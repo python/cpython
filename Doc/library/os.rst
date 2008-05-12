@@ -463,8 +463,7 @@ by file descriptors.
 
    If you're starting with a Python file object *f*, first do ``f.flush()``, and
    then do ``os.fsync(f.fileno())``, to ensure that all internal buffers associated
-   with *f* are written to disk. Availability: Macintosh, Unix, and Windows
-   starting in 2.2.3.
+   with *f* are written to disk.  Availability: Macintosh, Unix, and Windows.
 
 
 .. function:: ftruncate(fd, length)

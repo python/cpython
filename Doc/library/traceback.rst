@@ -122,14 +122,6 @@ The module defines the following functions:
    A shorthand for ``format_list(extract_stack(f, limit))``.
 
 
-.. function:: tb_lineno(tb)
-
-   This function returns the current line number set in the traceback object.  This
-   function was necessary because in versions of Python prior to 2.3 when the
-   :option:`-O` flag was passed to Python the ``tb.tb_lineno`` was not updated
-   correctly.  This function has no use in versions past 2.3.
-
-
 .. _traceback-example:
 
 Traceback Examples

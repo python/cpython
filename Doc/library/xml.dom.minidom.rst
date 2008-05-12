@@ -162,16 +162,6 @@ module documentation.  This section lists the differences between the API and
    There's also an *encoding* argument; see :meth:`toxml`.
 
 
-The following standard DOM methods have special considerations with
-:mod:`xml.dom.minidom`:
-
-.. method:: Node.cloneNode(deep)
-
-   Although this method was present in the version of :mod:`xml.dom.minidom`
-   packaged with Python 2.0, it was seriously broken.  This has been corrected for
-   subsequent releases.
-
-
 .. _dom-example:
 
 DOM Example
@@ -224,18 +214,18 @@ rules apply:
   :exc:`TypeError` and :exc:`AttributeError`.
 
 * :class:`NodeList` objects are implemented using Python's built-in list type.
-  Starting with Python 2.2, these objects provide the interface defined in the DOM
-  specification, but with earlier versions of Python they do not support the
-  official API.  They are, however, much more "Pythonic" than the interface
-  defined in the W3C recommendations.
+  These objects provide the interface defined in the DOM specification, but with
+  earlier versions of Python they do not support the official API.  They are,
+  however, much more "Pythonic" than the interface defined in the W3C
+  recommendations.
 
 The following interfaces have no implementation in :mod:`xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`DocumentType` (added in Python 2.1)
+* :class:`DocumentType`
 
-* :class:`DOMImplementation` (added in Python 2.1)
+* :class:`DOMImplementation`
 
 * :class:`CharacterData`
 

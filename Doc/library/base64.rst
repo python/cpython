@@ -21,8 +21,7 @@ encoding and decoding string objects using all three alphabets.  The legacy
 interface provides for encoding and decoding to and from file-like objects as
 well as strings, but only using the Base64 standard alphabet.
 
-The modern interface, which was introduced in Python 2.4, provides:
-
+The modern interface provides:
 
 .. function:: b64encode(s[, altchars])
 

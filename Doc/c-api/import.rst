@@ -22,10 +22,8 @@ Importing Modules
    be the case.  (Unfortunately, this has an additional side effect when *name* in
    fact specifies a subpackage instead of a submodule: the submodules specified in
    the package's ``__all__`` variable are  loaded.)  Return a new reference to the
-   imported module, or *NULL* with an exception set on failure.  Before Python 2.4,
-   the module may still be created in the failure case --- examine ``sys.modules``
-   to find out.  Starting with Python 2.4, a failing import of a module no longer
-   leaves the module in ``sys.modules``.
+   imported module, or *NULL* with an exception set on failure.  A failing
+   import of a module doesn't leave the module in :data:`sys.modules`.
 
 
 .. cfunction:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
@@ -47,11 +45,11 @@ Importing Modules
    function :func:`__import__`, as the standard :func:`__import__` function calls
    this function directly.
 
-   The return value is a new reference to the imported module or top-level package,
-   or *NULL* with an exception set on failure (before Python 2.4, the module may
-   still be created in this case).  Like for :func:`__import__`, the return value
-   when a submodule of a package was requested is normally the top-level package,
-   unless a non-empty *fromlist* was given.
+   The return value is a new reference to the imported module or top-level
+   package, or *NULL* with an exception set on failure.  Like for
+   :func:`__import__`, the return value when a submodule of a package was
+   requested is normally the top-level package, unless a non-empty *fromlist*
+   was given.
 
    Failing imports remove incomplete module objects, like with
    :cfunc:`PyImport_ImportModule`.
@@ -106,9 +104,8 @@ Importing Modules
    Given a module name (possibly of the form ``package.module``) and a code object
    read from a Python bytecode file or obtained from the built-in function
    :func:`compile`, load the module.  Return a new reference to the module object,
-   or *NULL* with an exception set if an error occurred.  Before Python 2.4, the
-   module could still be created in error cases.  Starting with Python 2.4, *name*
-   is removed from :attr:`sys.modules` in error cases, and even if *name* was already
+   or *NULL* with an exception set if an error occurred.  *name*
+   is removed from :attr:`sys.modules` in error cases, even if *name* was already
    in :attr:`sys.modules` on entry to :cfunc:`PyImport_ExecCodeModule`.  Leaving
    incompletely initialized modules in :attr:`sys.modules` is dangerous, as imports of
    such modules have no way to know that the module object is an unknown (and
@@ -143,8 +140,6 @@ Importing Modules
    this tells our caller it should fall back to the builtin import mechanism.
    Cache the result in :data:`sys.path_importer_cache`.  Return a new reference
    to the importer object.
-
-   .. versionadded:: 2.6
 
 
 .. cfunction:: void _PyImport_Init()

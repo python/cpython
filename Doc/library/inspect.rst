@@ -273,10 +273,10 @@ attributes:
    Return true if the object is a method descriptor, but not if :func:`ismethod`
    or :func:`isclass` or :func:`isfunction` are true.
 
-   This is new as of Python 2.2, and, for example, is true of
-   ``int.__add__``. An object passing this test has a :attr:`__get__` attribute
-   but not a :attr:`__set__` attribute, but beyond that the set of attributes
-   varies.  :attr:`__name__` is usually sensible, and :attr:`__doc__` often is.
+   This, for example, is true of ``int.__add__``.  An object passing this test
+   has a :attr:`__get__` attribute but not a :attr:`__set__` attribute, but
+   beyond that the set of attributes varies.  :attr:`__name__` is usually
+   sensible, and :attr:`__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
    return false from the :func:`ismethoddescriptor` test, simply because the

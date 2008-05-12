@@ -273,14 +273,14 @@ Initialization, Finalization, and Threads
    Return the version of this Python interpreter.  This is a string that looks
    something like ::
 
-      "1.5 (#67, Dec 31 1997, 22:34:28) [GCC 2.7.2.2]"
+      "3.0a5+ (py3k:63103M, May 12 2008, 00:53:55) \n[GCC 4.2.3]"
 
    .. index:: single: version (in module sys)
 
    The first word (up to the first space character) is the current Python version;
    the first three characters are the major and minor version separated by a
    period.  The returned string points into static storage; the caller should not
-   modify its value.  The value is available to Python code as ``sys.version``.
+   modify its value.  The value is available to Python code as :data:`sys.version`.
 
 
 .. cfunction:: const char* Py_GetBuildNumber()
@@ -479,9 +479,9 @@ the lock, and finally storing their thread state pointer, before they can start
 using the Python/C API.  When they are done, they should reset the thread state
 pointer, release the lock, and finally free their thread state data structure.
 
-Beginning with version 2.3, threads can now take advantage of the
-:cfunc:`PyGILState_\*` functions to do all of the above automatically.  The
-typical idiom for calling into Python from a C thread is now::
+Threads can take advantage of the :cfunc:`PyGILState_\*` functions to do all of
+the above automatically.  The typical idiom for calling into Python from a C
+thread is now::
 
    PyGILState_STATE gstate;
    gstate = PyGILState_Ensure();
@@ -777,14 +777,12 @@ The Python interpreter provides some low-level support for attaching profiling
 and execution tracing facilities.  These are used for profiling, debugging, and
 coverage analysis tools.
 
-Starting with Python 2.2, the implementation of this facility was substantially
-revised, and an interface from C was added.  This C interface allows the
-profiling or tracing code to avoid the overhead of calling through Python-level
-callable objects, making a direct C function call instead.  The essential
-attributes of the facility have not changed; the interface allows trace
-functions to be installed per-thread, and the basic events reported to the trace
-function are the same as had been reported to the Python-level trace functions
-in previous versions.
+This C interface allows the profiling or tracing code to avoid the overhead of
+calling through Python-level callable objects, making a direct C function call
+instead.  The essential attributes of the facility have not changed; the
+interface allows trace functions to be installed per-thread, and the basic
+events reported to the trace function are the same as had been reported to the
+Python-level trace functions in previous versions.
 
 
 .. ctype:: int (*Py_tracefunc)(PyObject *obj, PyFrameObject *frame, int what, PyObject *arg)

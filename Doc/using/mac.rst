@@ -14,18 +14,13 @@ the IDE and the Package Manager that are worth pointing out.
 
 The Mac-specific modules are documented in :ref:`mac-specific-services`.
 
-Python on Mac OS 9 or earlier can be quite different from Python on Unix or
-Windows, but is beyond the scope of this manual, as that platform is no longer
-supported, starting with Python 2.4. See http://www.cwi.nl/~jack/macpython for
-installers for the latest 2.3 release for Mac OS 9 and related documentation.
-
 
 .. _getting-osx:
 
 Getting and Installing MacPython
 ================================
 
-Mac OS X 10.4 comes with Python 2.3 pre-installed by Apple. However, you are
+Mac OS X 10.5 comes with Python 2.5 pre-installed by Apple. However, you are
 encouraged to install the most recent version of Python from the Python website
 (http://www.python.org). A "universal binary" build of Python 2.5, which runs
 natively on the Mac's new Intel and legacy PPC CPU's, is available there.

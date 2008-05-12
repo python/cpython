@@ -451,13 +451,11 @@ evaluation stack: enough information is saved so that the next time :meth:`next`
 is invoked, the function can proceed exactly as if the :keyword:`yield`
 statement were just another external call.
 
-As of Python version 2.5, the :keyword:`yield` statement is now allowed in the
-:keyword:`try` clause of a :keyword:`try` ...  :keyword:`finally` construct.  If
-the generator is not resumed before it is finalized (by reaching a zero
-reference count or by being garbage collected), the generator-iterator's
-:meth:`close` method will be called, allowing any pending :keyword:`finally`
-clauses to execute.
-
+The :keyword:`yield` statement is allowed in the :keyword:`try` clause of a
+:keyword:`try` ...  :keyword:`finally` construct.  If the generator is not
+resumed before it is finalized (by reaching a zero reference count or by being
+garbage collected), the generator-iterator's :meth:`close` method will be
+called, allowing any pending :keyword:`finally` clauses to execute.
 
 .. seealso::
 

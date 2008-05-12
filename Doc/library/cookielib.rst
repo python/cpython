@@ -38,12 +38,7 @@ The module defines the following exception:
 .. exception:: LoadError
 
    Instances of :class:`FileCookieJar` raise this exception on failure to load
-   cookies from a file.
-
-   .. note::
-
-      For backwards-compatibility with Python 2.4 (which raised an :exc:`IOError`),
-      :exc:`LoadError` is a subclass of :exc:`IOError`.
+   cookies from a file.  :exc:`LoadError` is a subclass of :exc:`IOError`.
 
 
 The following classes are provided:
@@ -265,11 +260,6 @@ contained :class:`Cookie` objects.
    The named file must be in the format understood by the class, or
    :exc:`LoadError` will be raised.  Also, :exc:`IOError` may be raised, for
    example if the file does not exist.
-
-   .. note::
-
-      For backwards-compatibility with Python 2.4 (which raised an :exc:`IOError`),
-      :exc:`LoadError` is a subclass of :exc:`IOError`.
 
 
 .. method:: FileCookieJar.revert(filename=None, ignore_discard=False, ignore_expires=False)

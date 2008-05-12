@@ -93,10 +93,6 @@ the constructor functions work with any iterable Python object.
    set on success or *NULL* on failure.  Raise :exc:`TypeError` if *iterable* is
    not actually iterable.
 
-   .. versionchanged:: 2.6
-      Now guaranteed to return a brand-new :class:`frozenset`.  Formerly,
-      frozensets of zero-length were a singleton.  This got in the way of 
-      building-up new frozensets with :meth:`PySet_Add`.
 
 The following functions and macros are available for instances of :class:`set`
 or :class:`frozenset` or instances of their subtypes.
@@ -127,16 +123,14 @@ or :class:`frozenset` or instances of their subtypes.
 
 .. cfunction:: int PySet_Add(PyObject *set, PyObject *key)
 
-   Add *key* to a :class:`set` instance.  Does not apply to :class:`frozenset`
-   instances.  Return 0 on success or -1 on failure. Raise a :exc:`TypeError` if
-   the *key* is unhashable. Raise a :exc:`MemoryError` if there is no room to grow.
-   Raise a :exc:`SystemError` if *set* is an not an instance of :class:`set` or its
+   Add *key* to a :class:`set` instance.  Also works with :class:`frozenset`
+   instances (like :cfunc:`PyTuple_SetItem` it can be used to fill-in the values
+   of brand new frozensets before they are exposed to other code).  Return 0 on
+   success or -1 on failure. Raise a :exc:`TypeError` if the *key* is
+   unhashable. Raise a :exc:`MemoryError` if there is no room to grow.  Raise a
+   :exc:`SystemError` if *set* is an not an instance of :class:`set` or its
    subtype.
 
-   .. versionchanged:: 2.6
-      Now works with instances of :class:`frozenset` or its subtypes.
-      Like :cfunc:`PyTuple_SetItem` in that it can be used to fill-in the
-      values of brand new frozensets before they are exposed to other code.
 
 The following functions are available for instances of :class:`set` or its
 subtypes but not for instances of :class:`frozenset` or its subtypes.

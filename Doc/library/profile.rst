@@ -546,7 +546,7 @@ The object of this exercise is to get a fairly consistent result. If your
 computer is *very* fast, or your timer function has poor resolution, you might
 have to pass 100000, or even 1000000, to get consistent results.
 
-When you have a consistent answer, there are three ways you can use it: [#]_ ::
+When you have a consistent answer, there are three ways you can use it::
 
    import profile
 
@@ -616,8 +616,3 @@ The resulting profiler will then call :func:`your_time_func`.
 .. [#] Updated and converted to LaTeX by Guido van Rossum. Further updated by Armin
    Rigo to integrate the documentation for the new :mod:`cProfile` module of Python
    2.5.
-
-.. [#] Prior to Python 2.2, it was necessary to edit the profiler source code to embed
-   the bias as a literal number.  You still can, but that method is no longer
-   described, because no longer needed.
-

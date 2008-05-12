@@ -766,9 +766,8 @@ Each thread has its own current context which is accessed or changed using the
 
    Set the current context for the active thread to *c*.
 
-Beginning with Python 2.5, you can also use the :keyword:`with` statement and
-the :func:`localcontext` function to temporarily change the active context.
-
+You can also use the :keyword:`with` statement and the :func:`localcontext`
+function to temporarily change the active context.
 
 .. function:: localcontext([c])
 

@@ -479,12 +479,6 @@ correspond to Unix system calls applicable to sockets.
    Bind the socket to *address*.  The socket must not already be bound. (The format
    of *address* depends on the address family --- see above.)
 
-   .. note::
-
-      This method has historically accepted a pair of parameters for :const:`AF_INET`
-      addresses instead of only a tuple.  This was never intentional and is no longer
-      available in Python 2.0 and later.
-
 
 .. method:: socket.close()
 
@@ -498,12 +492,6 @@ correspond to Unix system calls applicable to sockets.
    Connect to a remote socket at *address*. (The format of *address* depends on the
    address family --- see above.)
 
-   .. note::
-
-      This method has historically accepted a pair of parameters for :const:`AF_INET`
-      addresses instead of only a tuple.  This was never intentional and is no longer
-      available in Python 2.0 and later.
-
 
 .. method:: socket.connect_ex(address)
 
@@ -513,12 +501,6 @@ correspond to Unix system calls applicable to sockets.
    indicator is ``0`` if the operation succeeded, otherwise the value of the
    :cdata:`errno` variable.  This is useful to support, for example, asynchronous
    connects.
-
-   .. note::
-
-      This method has historically accepted a pair of parameters for :const:`AF_INET`
-      addresses instead of only a tuple. This was never intentional and is no longer
-      available in Python 2.0 and later.
 
 
 .. method:: socket.fileno()

@@ -100,10 +100,9 @@ In addition, the following constants are defined:
 
 .. data:: version
 
-   Indicates the format that the module uses. Version 0 is the historical format,
-   version 1 (added in Python 2.4) shares interned strings and version 2 (added in
-   Python 2.5) uses a binary format for floating point numbers. The current version
-   is 2.
+   Indicates the format that the module uses. Version 0 is the historical
+   format, version 1 shares interned strings and version 2 uses a binary format
+   for floating point numbers. The current version is 2.
 
 
 .. rubric:: Footnotes

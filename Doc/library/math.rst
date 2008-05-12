@@ -277,10 +277,6 @@ The module also defines two mathematical constants:
    platform and libm implementation. It's usually :exc:`ValueError` for *EDOM*
    and :exc:`OverflowError` for errno *ERANGE*.
 
-   ..versionchanged:: 2.6
-      In earlier versions of Python the outcome of an operation with NaN as
-      input depended on platform and libm implementation.
-
 
 .. seealso::
 

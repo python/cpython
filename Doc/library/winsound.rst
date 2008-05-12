@@ -20,13 +20,6 @@ provided by Windows platforms.  It includes functions and several constants.
    parameter specifies the number of milliseconds the sound should last.  If the
    system is not able to beep the speaker, :exc:`RuntimeError` is raised.
 
-   .. note::
-
-      Under Windows 95 and 98, the Windows :cfunc:`Beep` function exists but is
-      useless (it ignores its arguments).  In that case Python simulates it via direct
-      port manipulation (added in version 2.1).  It's unknown whether that will work
-      on all systems.
-
 
 .. function:: PlaySound(sound, flags)
 

@@ -86,9 +86,8 @@ between conformable Python objects and XML on the wire.
    raise a special :exc:`Fault` instance, used to signal XML-RPC server errors, or
    :exc:`ProtocolError` used to signal an error in the HTTP/HTTPS transport layer.
    Both :exc:`Fault` and :exc:`ProtocolError` derive from a base class called
-   :exc:`Error`.  Note that even though starting with Python 2.2 you can subclass
-   builtin types, the xmlrpclib module currently does not marshal instances of such
-   subclasses.
+   :exc:`Error`.  Note that the xmlrpclib module currently does not marshal
+   instances of subclasses of builtin types.
 
    When passing strings, characters special to XML such as ``<``, ``>``, and ``&``
    will be automatically escaped.  However, it's the caller's responsibility to
