@@ -1,4 +1,5 @@
-__all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict']
+__all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
+            'UserString']
 # For bootstrapping reasons, the collection ABCs are defined in _abcoll.py.
 # They should however be considered an integral part of collections.py.
 from _abcoll import *
