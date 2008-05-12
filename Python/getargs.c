@@ -822,10 +822,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			}
 			else
 				return converterr("string", arg, msgbuf, bufsize);
-			/* XXX(gb): this test is completely wrong -- p is a
-			 * byte string while arg is a Unicode. I *think* it should
-			 * check against the size of uarg... */
-			if ((Py_ssize_t)strlen(*p) != PyUnicode_GetSize(arg))
+			if ((Py_ssize_t) strlen(*p) != PyString_GET_SIZE(uarg))
 				return converterr("string without null bytes",
 						  arg, msgbuf, bufsize);
 		}
@@ -874,11 +871,15 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			format++;
 		} else {
 			char **p = va_arg(*p_va, char **);
+			uarg = NULL;
 
 			if (arg == Py_None)
 				*p = 0;
-			else if (PyString_Check(arg))
+			else if (PyString_Check(arg)) {
+				/* Enable null byte check below */
+				uarg = arg;
 				*p = PyString_AS_STRING(arg);
+			}
 			else if (PyUnicode_Check(arg)) {
 				uarg = UNICODE_DEFAULT_ENCODING(arg);
 				if (uarg == NULL)
@@ -900,9 +901,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				}
 				format++;
 			}
-			/* XXX(gb): same comment as for 's' applies here... */
-			else if (*p != NULL &&
-				 (Py_ssize_t)strlen(*p) != PyUnicode_GetSize(arg))
+			else if (*p != NULL && uarg != NULL &&
+				(Py_ssize_t) strlen(*p) != PyString_GET_SIZE(uarg))
 				return converterr(
 					"string without null bytes or None",
 					arg, msgbuf, bufsize);
