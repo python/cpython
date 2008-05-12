@@ -1,12 +1,11 @@
 
-:mod:`SocketServer` --- A framework for network servers
+:mod:`socketserver` --- A framework for network servers
 =======================================================
 
-.. module:: SocketServer
+.. module:: socketserver
    :synopsis: A framework for network servers.
 
-
-The :mod:`SocketServer` module simplifies the task of writing network servers.
+The :mod:`socketserver` module simplifies the task of writing network servers.
 
 There are four basic server classes: :class:`TCPServer` uses the Internet TCP
 protocol, which provides for continuous streams of data between the client and
@@ -213,7 +212,7 @@ server classes like :class:`TCPServer`; these methods aren't useful to external
 users of the server object.
 
 .. XXX should the default implementations of these be documented, or should
-   it be assumed that the user will look at SocketServer.py?
+   it be assumed that the user will look at socketserver.py?
 
 
 .. function:: finish_request()
