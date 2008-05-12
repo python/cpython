@@ -44,6 +44,7 @@ class AllTest(unittest.TestCase):
         self.check_all("bdb")
         self.check_all("binhex")
         self.check_all("calendar")
+        self.check_all("collections")
         self.check_all("cgi")
         self.check_all("cmd")
         self.check_all("code")
