@@ -213,6 +213,8 @@ extensions.
 
 :mod:`timing`
    --- Measure time intervals to high resolution (use :func:`time.clock` instead).
+   
+   .. warning:: The :mod:`timing` module has been removed in Python 3.0.
 
 
 SGI-specific Extension modules
