@@ -131,6 +131,10 @@ class PrettyPrinter:
         sepLines = _len(rep) > (self._width - 1 - indent - allowance)
         write = stream.write
 
+        if self._depth and level > self._depth:
+            write(rep)
+            return
+
         r = getattr(typ, "__repr__", None)
         if issubclass(typ, dict) and r is dict.__repr__:
             write('{')
@@ -211,8 +215,8 @@ class PrettyPrinter:
                 write(',')
             write(endchar)
             return
-        write(rep)
 
+        write(rep)
 
     def _repr(self, object, context, level):
         repr, readable, recursive = self.format(object, context.copy(),
@@ -259,7 +263,7 @@ def _safe_repr(object, context, maxlevels, level):
         if not object:
             return "{}", True, False
         objid = _id(object)
-        if maxlevels and level > maxlevels:
+        if maxlevels and level >= maxlevels:
             return "{...}", False, objid in context
         if objid in context:
             return _recursion(object), False, True
@@ -293,7 +297,7 @@ def _safe_repr(object, context, maxlevels, level):
                 return "()", True, False
             format = "(%s)"
         objid = _id(object)
-        if maxlevels and level > maxlevels:
+        if maxlevels and level >= maxlevels:
             return format % "...", False, objid in context
         if objid in context:
             return _recursion(object), False, True
