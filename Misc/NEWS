@@ -17,6 +17,9 @@ Core and Builtins
 
 - Issue #2790: sys.flags was not properly exposing its bytes_warning attribute.
 
+- Issue #2196: hasattr now lets exceptions which do not inherit Exception
+  (KeyboardInterrupt, and SystemExit) propagate instead of ignoring them
+
 Extension Modules
 -----------------
 
