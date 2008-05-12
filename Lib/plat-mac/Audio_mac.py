@@ -1,6 +1,9 @@
 QSIZE = 100000
 error='Audio_mac.error'
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the Play_Audio_mac module is removed.")
+
 class Play_Audio_mac:
 
     def __init__(self, qsize=QSIZE):

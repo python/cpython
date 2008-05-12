@@ -7,6 +7,9 @@
 
 import os
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the bgenlocations module is removed.")
+
 Error = "bgenlocations.Error"
 #
 # Where bgen is. For unix-Python bgen isn't installed, so you have to refer to

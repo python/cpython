@@ -1,5 +1,9 @@
 """tools for BuildApplet and BuildApplication"""
 
+import warnings
+warnings.warn("the buildtools module is deprecated and is removed in 3.0",
+              DeprecationWarning, 2)
+
 import sys
 import os
 import string
@@ -13,9 +17,6 @@ import macostools
 import macresource
 import EasyDialogs
 import shutil
-
-import warnings
-warnings.warn("the buildtools module is deprecated", DeprecationWarning, 2)
 
 
 BuildError = "BuildError"

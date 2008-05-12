@@ -1,5 +1,9 @@
 r"""Routines to decode AppleSingle files
 """
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the applesingle module is removed.")
+
 import struct
 import sys
 try:

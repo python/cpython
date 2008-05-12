@@ -5,6 +5,7 @@
 .. module:: aepack
    :platform: Mac
    :synopsis: Conversion between Python variables and AppleEvent data containers.
+   :deprecated:
 .. sectionauthor:: Vincent Marchetti <vincem@en.com>
 .. moduleauthor:: Jack Jansen
 
@@ -12,6 +13,11 @@ The :mod:`aepack` module defines functions for converting (packing) Python
 variables to AppleEvent descriptors and back (unpacking). Within Python the
 AppleEvent descriptor is handled by Python objects of built-in type
 :class:`AEDesc`, defined in module :mod:`Carbon.AE`.
+
+.. warning::
+
+   This module is removed in 3.0.
+
 
 The :mod:`aepack` module defines the following functions:
 

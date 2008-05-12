@@ -22,8 +22,9 @@ framework and Qt is in the QuickTime framework. The normal use pattern is ::
 
    from Carbon import AE
 
-**Warning!**  These modules are not yet documented.  If you wish to contribute
-documentation of any of these modules, please get in touch with docs@python.org.
+.. warning::
+
+   The Carbon modules are removed in 3.0.
 
 
 :mod:`Carbon.AE` --- Apple Events
@@ -32,6 +33,7 @@ documentation of any of these modules, please get in touch with docs@python.org.
 .. module:: Carbon.AE
    :platform: Mac
    :synopsis: Interface to the Apple Events toolbox.
+   :deprecated:
 
 
 
@@ -41,6 +43,7 @@ documentation of any of these modules, please get in touch with docs@python.org.
 .. module:: Carbon.AH
    :platform: Mac
    :synopsis: Interface to the Apple Help manager.
+   :deprecated:
 
 
 
@@ -50,6 +53,7 @@ documentation of any of these modules, please get in touch with docs@python.org.
 .. module:: Carbon.App
    :platform: Mac
    :synopsis: Interface to the Appearance Manager.
+   :deprecated:
 
 
 
@@ -59,6 +63,7 @@ documentation of any of these modules, please get in touch with docs@python.org.
 .. module:: Carbon.CF
    :platform: Mac
    :synopsis: Interface to the Core Foundation.
+   :deprecated:
 
 
 The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
@@ -71,6 +76,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.CG
    :platform: Mac
    :synopsis: Interface to Core Graphics.
+   :deprecated:
 
 
 
@@ -80,6 +86,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.CarbonEvt
    :platform: Mac
    :synopsis: Interface to the Carbon Event Manager.
+   :deprecated:
 
 
 
@@ -89,6 +96,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Cm
    :platform: Mac
    :synopsis: Interface to the Component Manager.
+   :deprecated:
 
 
 
@@ -98,6 +106,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Ctl
    :platform: Mac
    :synopsis: Interface to the Control Manager.
+   :deprecated:
 
 
 
@@ -107,6 +116,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Dlg
    :platform: Mac
    :synopsis: Interface to the Dialog Manager.
+   :deprecated:
 
 
 
@@ -116,6 +126,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Evt
    :platform: Mac
    :synopsis: Interface to the classic Event Manager.
+   :deprecated:
 
 
 
@@ -125,6 +136,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Fm
    :platform: Mac
    :synopsis: Interface to the Font Manager.
+   :deprecated:
 
 
 
@@ -134,6 +146,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Folder
    :platform: Mac
    :synopsis: Interface to the Folder Manager.
+   :deprecated:
 
 
 
@@ -143,6 +156,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Help
    :platform: Mac
    :synopsis: Interface to the Carbon Help Manager.
+   :deprecated:
 
 
 
@@ -152,6 +166,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.List
    :platform: Mac
    :synopsis: Interface to the List Manager.
+   :deprecated:
 
 
 
@@ -161,6 +176,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Menu
    :platform: Mac
    :synopsis: Interface to the Menu Manager.
+   :deprecated:
 
 
 
@@ -170,6 +186,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Mlte
    :platform: Mac
    :synopsis: Interface to the MultiLingual Text Editor.
+   :deprecated:
 
 
 
@@ -179,6 +196,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Qd
    :platform: Mac
    :synopsis: Interface to the QuickDraw toolbox.
+   :deprecated:
 
 
 
@@ -188,6 +206,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Qdoffs
    :platform: Mac
    :synopsis: Interface to the QuickDraw Offscreen APIs.
+   :deprecated:
 
 
 
@@ -197,6 +216,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Qt
    :platform: Mac
    :synopsis: Interface to the QuickTime toolbox.
+   :deprecated:
 
 
 
@@ -206,6 +226,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
 .. module:: Carbon.Res
    :platform: Mac
    :synopsis: Interface to the Resource Manager and Handles.
+   :deprecated:
 
 
 
@@ -216,6 +237,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
    :platform: Mac
    :synopsis: The Scrap Manager provides basic services for implementing cut & paste and
               clipboard operations.
+   :deprecated:
 
 
 This module is only fully available on MacOS9 and earlier under classic PPC
@@ -266,6 +288,7 @@ Manager.  It contains the following functions:
 .. module:: Carbon.Snd
    :platform: Mac
    :synopsis: Interface to the Sound Manager.
+   :deprecated:
 
 
 
@@ -275,6 +298,7 @@ Manager.  It contains the following functions:
 .. module:: Carbon.TE
    :platform: Mac
    :synopsis: Interface to TextEdit.
+   :deprecated:
 
 
 
@@ -284,5 +308,4 @@ Manager.  It contains the following functions:
 .. module:: Carbon.Win
    :platform: Mac
    :synopsis: Interface to the Window Manager.
-
-
+   :deprecated:

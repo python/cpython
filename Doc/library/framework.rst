@@ -5,6 +5,7 @@
 .. module:: FrameWork
    :platform: Mac
    :synopsis: Interactive application framework.
+   :deprecated:
 
 
 The :mod:`FrameWork` module contains classes that together provide a framework
@@ -14,6 +15,10 @@ thereby implementing the functionality wanted. Overriding functionality can
 often be done on various different levels, i.e. to handle clicks in a single
 dialog window in a non-standard way it is not necessary to override the complete
 event handling.
+
+.. warning::
+
+   This module is removed in 3.0.
 
 Work on the :mod:`FrameWork` has pretty much stopped, now that :mod:`PyObjC` is
 available for full Cocoa access from Python, and the documentation describes

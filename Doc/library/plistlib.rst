@@ -75,11 +75,21 @@ This module defines the following functions:
     Read a plist from the resource with type *restype* from the resource fork of
     *path*.  Availability: MacOS X.
 
+    .. warning::
+
+       In 3.0, this function is removed.
+
+
 
 .. function:: writePlistToResource(rootObject, path[, restype='plst'[, resid=0]])
 
     Write *rootObject* as a resource with type *restype* to the resource fork of
     *path*.  Availability: MacOS X.
+
+    .. warning::
+
+       In 3.0, this function is removed.
+
 
 
 The following class is available:

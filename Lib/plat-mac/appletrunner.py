@@ -3,6 +3,9 @@
 # BuildApplet will use it as the main executable in the .app bundle if
 # we are not running in a framework build.
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, appletrunner is removed.")
+
 import os
 import sys
 for name in ["__rawmain__.py", "__rawmain__.pyc", "__main__.py", "__main__.pyc"]:

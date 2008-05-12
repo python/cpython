@@ -14,6 +14,10 @@ So bottom line: the processes() stuff does not work on < MacOS9
 
 Mostly written by erik@letterror.com
 """
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the findertools module is removed.")
+
 import Finder
 from Carbon import AppleEvents
 import aetools

@@ -4,6 +4,10 @@
 # This script is put into __rawmain__.pyc for applets that need argv
 # emulation, by BuildApplet and friends.
 #
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the appletrawmain module is removed.")
+
 import argvemulator
 import os
 import sys

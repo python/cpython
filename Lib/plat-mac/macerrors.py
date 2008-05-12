@@ -1,4 +1,8 @@
 # -coding=latin1-
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the macerrors module is removed.")
+
 svTempDisable   =   -32768  #svTempDisable
 svDisabled  =   -32640  #Reserve range -32640 to -32768 for Apple temp disables.
 fontNotOutlineErr   =   -32615  #bitmap font passed to routine that does outlines only

@@ -1,6 +1,10 @@
 """
 Package generated from /Applications/Internet Explorer.app
 """
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the Explorer module is removed.")
+
 import aetools
 Error = aetools.Error
 import Standard_Suite

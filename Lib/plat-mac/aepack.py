@@ -12,6 +12,9 @@ coerce(x, wanted_sample) coerces a python object to another python object
 # Apple Event Registry, chapter 9.
 #
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the aepack module is removed.")
+
 import struct
 import types
 from types import *

@@ -5,6 +5,7 @@
 .. module:: aetypes
    :platform: Mac
    :synopsis: Python representation of the Apple Event Object Model.
+   :deprecated:
 .. sectionauthor:: Vincent Marchetti <vincem@en.com>
 .. moduleauthor:: Jack Jansen
 
@@ -29,6 +30,12 @@ For reasons of backward compatibility, and for cases where you need to script an
 application for which you have not generated the stub package this module also
 contains object specifiers for a number of common OSA classes such as
 ``Document``, ``Window``, ``Character``, etc.
+
+.. warning::
+
+   This module is removed in 3.0.
+
+
 
 The :mod:`AEObjects` module defines the following classes to represent Apple
 Event descriptor data:

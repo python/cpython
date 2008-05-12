@@ -62,6 +62,7 @@ import binascii
 import datetime
 from cStringIO import StringIO
 import re
+import warnings
 
 
 def readPlist(pathOrFile):
@@ -113,6 +114,7 @@ def writePlistToString(rootObject):
 def readPlistFromResource(path, restype='plst', resid=0):
     """Read plst resource from the resource fork of path.
     """
+    warnings.warnpy3k("In 3.x, readPlistFromResource is removed.")
     from Carbon.File import FSRef, FSGetResourceForkName
     from Carbon.Files import fsRdPerm
     from Carbon import Res
@@ -127,6 +129,7 @@ def readPlistFromResource(path, restype='plst', resid=0):
 def writePlistToResource(rootObject, path, restype='plst', resid=0):
     """Write 'rootObject' as a plst resource to the resource fork of path.
     """
+    warnings.warnpy3k("In 3.x, writePlistToResource is removed.")
     from Carbon.File import FSRef, FSGetResourceForkName
     from Carbon.Files import fsRdWrPerm
     from Carbon import Res

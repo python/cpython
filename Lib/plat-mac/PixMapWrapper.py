@@ -5,6 +5,10 @@ Python Imaging Library Image object.
 
 J. Strout <joe@strout.net>  February 1999"""
 
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the PixMapWrapper module is removed.")
+
 from Carbon import Qd
 from Carbon import QuickDraw
 import struct

@@ -2,6 +2,10 @@
 Package generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 Resource aeut resid 0 Standard Event Suites for English
 """
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the StdSuites package is removed.")
+
 import aetools
 Error = aetools.Error
 import Text_Suite
