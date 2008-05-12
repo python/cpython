@@ -783,6 +783,28 @@ string functions based on regular expressions.
    found.
 
 
+.. method:: str.format(format_string, *args, **kwargs)
+
+   Perform a string formatting operation.  The *format_string* argument can
+   contain literal text or replacement fields delimited by braces ``{}``.  Each
+   replacement field contains either the numeric index of a positional argument,
+   or the name of a keyword argument.  Returns a copy of *format_string* where
+   each replacement field is replaced with the string value of the corresponding
+   argument.
+
+      >>> "The sum of 1 + 2 is {0}".format(1+2)
+      'The sum of 1 + 2 is 3'
+
+   See :ref:`formatstrings` for a description of the various formatting options
+   that can be specified in format strings.
+
+   This method of string formatting is the new standard in Python 3.0, and
+   should be preferred to the ``%`` formatting described in
+   :ref:`string-formatting` in new code.
+
+   .. versionadded:: 2.6
+
+
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`find`, but raise :exc:`ValueError` when the substring is not found.

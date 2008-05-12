@@ -612,8 +612,7 @@ can be formatted as a general number or in exponential notation:
     '3.750000e+00'
 
 A variety of presentation types are available.  Consult the 2.6
-documentation for a complete list (XXX add link, once it's in the 2.6
-docs), but here's a sample::
+documentation for a :ref:`complete list <formatstrings>`; here's a sample::
 
         'b' - Binary. Outputs the number in base 2.
         'c' - Character. Converts the integer to the corresponding
