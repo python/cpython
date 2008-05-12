@@ -23,6 +23,8 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- Support for Windows9x has been removed from the winsound module.
+
 Library
 -------
 
