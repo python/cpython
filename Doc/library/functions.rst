@@ -874,11 +874,11 @@ are always available.  They are listed here in alphabetical order.
 .. XXX does accept objects with __index__ too
 .. function:: range([start,] stop[, step])
 
-   This is a versatile function to create iterators yielding arithmetic
+   This is a versatile function to create iterables yielding arithmetic
    progressions.  It is most often used in :keyword:`for` loops.  The arguments
    must be integers.  If the *step* argument is omitted, it defaults to ``1``.
    If the *start* argument is omitted, it defaults to ``0``.  The full form
-   returns an iterator of integers ``[start, start + step, start + 2 * step,
+   returns an iterable of integers ``[start, start + step, start + 2 * step,
    ...]``.  If *step* is positive, the last element is the largest ``start + i *
    step`` less than *stop*; if *step* is negative, the last element is the
    smallest ``start + i * step`` greater than *stop*.  *step* must not be zero
