@@ -157,10 +157,13 @@ class TestStdlibRemovals(unittest.TestCase):
                 try:
                     __import__(module_name, level=0)
                 except DeprecationWarning as exc:
-                    self.assert_(module_name in exc.args[0])
+                    self.assert_(module_name in exc.args[0],
+                                 "%s warning didn't contain module name"
+                                 % module_name)
                 except ImportError:
                     if not optional:
-                        raise
+                        self.fail("Non-optional module %s raised an "
+                                  "ImportError." % module_name)
                 else:
                     self.fail("DeprecationWarning not raised for %s" %
                                 module_name)
