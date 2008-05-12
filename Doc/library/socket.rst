@@ -481,7 +481,7 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. seealso::
 
-   Module :mod:`SocketServer`
+   Module :mod:`socketserver`
       Classes that simplify writing network servers.
 
 

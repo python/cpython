@@ -22,7 +22,7 @@ XML-RPC servers written in Python.  Servers can either be free standing, using
    functions that can be called by the XML-RPC protocol.  The *requestHandler*
    parameter should be a factory for request handler instances; it defaults to
    :class:`SimpleXMLRPCRequestHandler`.  The *addr* and *requestHandler* parameters
-   are passed to the :class:`SocketServer.TCPServer` constructor.  If *logRequests*
+   are passed to the :class:`socketserver.TCPServer` constructor.  If *logRequests*
    is true (the default), requests will be logged; setting this parameter to false
    will turn off logging.   The *allow_none* and *encoding* parameters are passed
    on to  :mod:`xmlrpclib` and control the XML-RPC responses that will be returned
@@ -63,7 +63,7 @@ SimpleXMLRPCServer Objects
 --------------------------
 
 The :class:`SimpleXMLRPCServer` class is based on
-:class:`SocketServer.TCPServer` and provides a means of creating simple, stand
+:class:`socketserver.TCPServer` and provides a means of creating simple, stand
 alone XML-RPC servers.
 
 
