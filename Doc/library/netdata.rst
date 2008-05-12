@@ -17,7 +17,6 @@ on the Internet.
    mailbox.rst
    mimetools.rst
    mimetypes.rst
-   multifile.rst
    rfc822.rst
    base64.rst
    binhex.rst
