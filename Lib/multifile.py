@@ -26,6 +26,10 @@ it normally attempts in order to make seeks relative to the beginning of the
 current file part.  This may be useful when using MultiFile with a non-
 seekable stream object.
 """
+from warnings import warn
+warn("the multifile module has been deprecated since Python 2.5",
+        DeprecationWarning, stacklevel=2)
+del warn
 
 __all__ = ["MultiFile","Error"]
 
