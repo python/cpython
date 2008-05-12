@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- The SocketServer module has been renamed to socketserver.
+
 - Fix the __all__ setting on 'collections' to include UserList and UserString.
 
 - The sre module has been removed.

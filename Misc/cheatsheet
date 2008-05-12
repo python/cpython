@@ -1919,7 +1919,7 @@ site             Append module search paths for third-party packages to
                  sys.path.
 smtplib          SMTP Client class (RFC 821)
 sndhdr           Several routines that help recognizing sound.
-SocketServer     Generic socket server classes.
+socketserver     Generic socket server classes.
 stat             Constants and functions for interpreting stat/lstat struct.
 statvfs          Constants for interpreting statvfs struct as returned by
                  os.statvfs()and os.fstatvfs() (if they exist).
@@ -2211,5 +2211,3 @@ Breakpoints are stored as filename, line number tuples. If a module is reloaded
 after editing, any remembered breakpoints are likely to be wrong.
 
 Always single-steps through top-most stack frame. That is, "c" acts like "n".
-
-
