@@ -14,8 +14,8 @@ Numeric values are stored with the least significant byte first.
 
 The module supports two versions of the data format: version 0 is the historical
 version, version 1 (new in Python 2.4) shares interned strings in the file, and
-upon unmarshalling. *Py_MARSHAL_VERSION* indicates the current file format
-(currently 1).
+upon unmarshalling.  Version 2 uses a binary format for floating point numbers.
+*Py_MARSHAL_VERSION* indicates the current file format (currently 2).
 
 
 .. cfunction:: void PyMarshal_WriteLongToFile(long value, FILE *file, int version)
