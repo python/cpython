@@ -71,9 +71,8 @@ The :mod:`urllib2` module defines the following functions:
    If the Python installation has SSL support (i.e., if the :mod:`ssl` module can be imported),
    :class:`HTTPSHandler` will also be added.
 
-   Beginning in Python 2.3, a :class:`BaseHandler` subclass may also change its
-   :attr:`handler_order` member variable to modify its position in the handlers
-   list.
+   A :class:`BaseHandler` subclass may also change its :attr:`handler_order`
+   member variable to modify its position in the handlers list.
 
 The following exceptions are raised as appropriate:
 

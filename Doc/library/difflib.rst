@@ -201,14 +201,13 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Optional keyword parameters *linejunk* and *charjunk* are for filter functions
    (or ``None``):
 
-   *linejunk*: A function that accepts a single string argument, and returns true
-   if the string is junk, or false if not. The default is (``None``), starting with
-   Python 2.3.  Before then, the default was the module-level function
-   :func:`IS_LINE_JUNK`, which filters out lines without visible characters, except
-   for at most one pound character (``'#'``). As of Python 2.3, the underlying
-   :class:`SequenceMatcher` class does a dynamic analysis of which lines are so
-   frequent as to constitute noise, and this usually works better than the pre-2.3
-   default.
+   *linejunk*: A function that accepts a single string argument, and returns
+   true if the string is junk, or false if not. The default is ``None``. There
+   is also a module-level function :func:`IS_LINE_JUNK`, which filters out lines
+   without visible characters, except for at most one pound character (``'#'``)
+   -- however the underlying :class:`SequenceMatcher` class does a dynamic
+   analysis of which lines are so frequent as to constitute noise, and this
+   usually works better than using this function.
 
    *charjunk*: A function that accepts a character (a string of length 1), and
    returns if the character is junk, or false if not. The default is module-level
@@ -302,7 +301,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    Return true for ignorable lines.  The line *line* is ignorable if *line* is
    blank or contains a single ``'#'``, otherwise it is not ignorable.  Used as a
-   default for parameter *linejunk* in :func:`ndiff` before Python 2.3.
+   default for parameter *linejunk* in :func:`ndiff` in older versions.
 
 
 .. function:: IS_CHARACTER_JUNK(ch)

@@ -130,9 +130,6 @@ source.
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
 
-   .. versionchanged:: 2.5
-      Directories and zipfiles containing a ``__main__.py`` file at the top
-      level are now considered valid Python scripts.
 
 If no interface option is given, :option:`-i` is implied, ``sys.argv[0]`` is
 an empty string (``""``) and the current directory will be added to the
@@ -157,7 +154,7 @@ Generic options
 
    Print the Python version number and exit.  Example output could be::
     
-       Python 2.5.1
+       Python 3.0
 
 
 Miscellaneous options
@@ -173,8 +170,6 @@ Miscellaneous options
 
    If given, Python won't try to write ``.pyc`` or ``.pyo`` files on the
    import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
-
-   .. versionadded:: 2.6
 
 
 .. cmdoption:: -d
@@ -215,8 +210,6 @@ Miscellaneous options
 .. cmdoption:: -s
 
    Don't add user site directory to sys.path
-
-   .. versionadded:: 2.6
 
    .. seealso::
 
@@ -432,8 +425,6 @@ These environment variables influence Python's behavior.
    If this is set, Python won't try to write ``.pyc`` or ``.pyo`` files on the
    import of source modules.
 
-   .. versionadded:: 2.6
-
 
 .. envvar:: PYTHONNOUSERSITE
 
@@ -470,8 +461,6 @@ if Python was configured with the :option:`--with-pydebug` build option.
 
    If set, Python will print threading debug info.
 
-   .. versionchanged:: 2.6
-      Previously, this variable was called ``THREADDEBUG``.
 
 .. envvar:: PYTHONDUMPREFS
 

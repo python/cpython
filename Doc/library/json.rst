@@ -5,7 +5,6 @@
    :synopsis: Encode and decode the JSON format.
 .. moduleauthor:: Bob Ippolito <bob@redivi.com>
 .. sectionauthor:: Bob Ippolito <bob@redivi.com>
-.. versionadded:: 2.6
 
 JSON (JavaScript Object Notation) <http://json.org> is a subset of JavaScript
 syntax (ECMA-262 3rd edition) used as a lightweight data interchange format.

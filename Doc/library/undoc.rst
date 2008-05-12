@@ -149,7 +149,7 @@ in the build tree and either rebuilding Python if the modules are statically
 linked, or building and installing the shared object if using dynamically-loaded
 extensions.
 
-.. (lib-old is empty as of Python 2.5)
+.. XXX new explanation of lib-old necessary
 
    Those which are written in Python will be installed into the directory
    \file{lib-old/} installed as part of the standard library.  To use

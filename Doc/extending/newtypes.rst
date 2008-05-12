@@ -19,14 +19,6 @@ strings and lists in core Python.
 This is not hard; the code for all extension types follows a pattern, but there
 are some details that you need to understand before you can get started.
 
-.. note::
-
-   The way new types are defined changed dramatically (and for the better) in
-   Python 2.2.  This document documents how to define new types for Python 2.2 and
-   later.  If you need to support older versions of Python, you will need to refer
-   to `older versions of this documentation
-   <http://www.python.org/doc/versions/>`_.
-
 
 .. _dnt-basics:
 
@@ -734,9 +726,8 @@ For each subobject that can participate in cycles, we need to call the
 *arg* passed to the traversal method.  It returns an integer value that must be
 returned if it is non-zero.
 
-Python 2.4 and higher provide a :cfunc:`Py_VISIT` macro that automates calling
-visit functions.  With :cfunc:`Py_VISIT`, :cfunc:`Noddy_traverse` can be
-simplified::
+Python provides a :cfunc:`Py_VISIT` macro that automates calling visit
+functions.  With :cfunc:`Py_VISIT`, :cfunc:`Noddy_traverse` can be simplified::
 
    static int
    Noddy_traverse(Noddy *self, visitproc visit, void *arg)
@@ -789,9 +780,9 @@ collection is run, our :attr:`tp_traverse` handler could get called. We can't
 take a chance of having :cfunc:`Noddy_traverse` called when a member's reference
 count has dropped to zero and its value hasn't been set to *NULL*.
 
-Python 2.4 and higher provide a :cfunc:`Py_CLEAR` that automates the careful
-decrementing of reference counts.  With :cfunc:`Py_CLEAR`, the
-:cfunc:`Noddy_clear` function can be simplified::
+Python provides a :cfunc:`Py_CLEAR` that automates the careful decrementing of
+reference counts.  With :cfunc:`Py_CLEAR`, the :cfunc:`Noddy_clear` function can
+be simplified::
 
    static int
    Noddy_clear(Noddy *self)
@@ -1397,7 +1388,6 @@ Here is a desultory example of the implementation of the call function. ::
 
 XXX some fields need to be added here... ::
 
-   /* Added in release 2.2 */
    /* Iterators */
    getiterfunc tp_iter;
    iternextfunc tp_iternext;

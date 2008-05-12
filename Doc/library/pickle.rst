@@ -262,17 +262,6 @@ The :mod:`pickle` module also exports two callables [#]_, :class:`Pickler` and
       pickled by reference and not by value.  This method is useful when re-using
       picklers.
 
-      .. note::
-
-         Prior to Python 2.3, :meth:`clear_memo` was only available on the picklers
-         created by :mod:`cPickle`.  In the :mod:`pickle` module, picklers have an
-         instance variable called :attr:`memo` which is a Python dictionary.  So to clear
-         the memo for a :mod:`pickle` module pickler, you could do the following::
-
-            mypickler.memo.clear()
-
-         Code that does not need to support older versions of Python should simply use
-         :meth:`clear_memo`.
 
 It is possible to make multiple calls to the :meth:`dump` method of the same
 :class:`Pickler` instance.  These must then be matched to the same number of

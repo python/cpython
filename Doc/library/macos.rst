@@ -16,9 +16,7 @@ Note the capitalization of the module name; this is a historical artifact.
 
 .. data:: runtimemodel
 
-   Always ``'macho'``, from Python 2.4 on. In earlier versions of Python the value
-   could also be ``'ppc'`` for the classic Mac OS 8 runtime model or ``'carbon'``
-   for the Mac OS 9 runtime model.
+   Always ``'macho'``.
 
 
 .. data:: linkmodel

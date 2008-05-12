@@ -153,9 +153,9 @@ Dictionary Objects
           ...
       }
 
-   The dictionary *p* should not be mutated during iteration.  It is safe (since
-   Python 2.1) to modify the values of the keys as you iterate over the dictionary,
-   but only so long as the set of keys does not change.  For example::
+   The dictionary *p* should not be mutated during iteration.  It is safe to
+   modify the values of the keys as you iterate over the dictionary, but only so
+   long as the set of keys does not change.  For example::
 
       PyObject *key, *value;
       Py_ssize_t pos = 0;

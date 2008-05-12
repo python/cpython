@@ -24,8 +24,6 @@ With ongoing development of Python, some platforms that used to be supported
 earlier are no longer supported (due to the lack of users or developers).
 Check :pep:`11` for details on all unsupported platforms.
 
-* DOS and Windows 3.x are deprecated since Python 2.0 and code specific to these
-  systems was removed in Python 2.1.
 * Up to 2.5, Python was still compatible with Windows 95, 98 and ME (but already
   raised a deprecation warning on installation).  For Python 2.6 (and all
   following releases), this support was dropped and new releases are just

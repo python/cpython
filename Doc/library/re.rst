@@ -1035,10 +1035,10 @@ recursion, you may encounter a :exc:`RuntimeError` exception with the message
 
 You can often restructure your regular expression to avoid recursion.
 
-Starting with Python 2.3, simple uses of the ``*?`` pattern are special-cased to
-avoid recursion.  Thus, the above regular expression can avoid recursion by
-being recast as ``Begin [a-zA-Z0-9_ ]*?end``.  As a further benefit, such
-regular expressions will run faster than their recursive equivalents.
+Simple uses of the ``*?`` pattern are special-cased to avoid recursion.  Thus,
+the above regular expression can avoid recursion by being recast as ``Begin
+[a-zA-Z0-9_ ]*?end``.  As a further benefit, such regular expressions will run
+faster than their recursive equivalents.
 
 
 search() vs. match()

@@ -1906,7 +1906,7 @@ Files have the following methods:
    which requires that the file be open will raise a :exc:`ValueError` after the
    file has been closed.  Calling :meth:`close` more than once is allowed.
 
-   As of Python 2.5, you can avoid having to call this method explicitly if you use
+   You can avoid having to call this method explicitly if you use
    the :keyword:`with` statement.  For example, the following code will
    automatically close *f* when the :keyword:`with` block is exited::
 

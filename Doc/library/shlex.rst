@@ -43,15 +43,14 @@ The :mod:`shlex` module defines the following class:
    A :class:`shlex` instance or subclass instance is a lexical analyzer object.
    The initialization argument, if present, specifies where to read characters
    from. It must be a file-/stream-like object with :meth:`read` and
-   :meth:`readline` methods, or a string (strings are accepted since Python 2.3).
-   If no argument is given, input will be taken from ``sys.stdin``.  The second
-   optional argument is a filename string, which sets the initial value of the
-   :attr:`infile` member.  If the *instream* argument is omitted or equal to
-   ``sys.stdin``, this second argument defaults to "stdin".  The *posix* argument
-   was introduced in Python 2.3, and defines the operational mode.  When *posix* is
-   not true (default), the :class:`shlex` instance will operate in compatibility
-   mode.  When operating in POSIX mode, :class:`shlex` will try to be as close as
-   possible to the POSIX shell parsing rules.
+   :meth:`readline` methods, or a string.  If no argument is given, input will
+   be taken from ``sys.stdin``.  The second optional argument is a filename
+   string, which sets the initial value of the :attr:`infile` member.  If the
+   *instream* argument is omitted or equal to ``sys.stdin``, this second
+   argument defaults to "stdin".  The *posix* argument defines the operational
+   mode: when *posix* is not true (default), the :class:`shlex` instance will
+   operate in compatibility mode.  When operating in POSIX mode, :class:`shlex`
+   will try to be as close as possible to the POSIX shell parsing rules.
 
 
 .. seealso::

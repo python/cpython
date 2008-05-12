@@ -187,9 +187,8 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.set_pasv(boolean)
 
-   Enable "passive" mode if *boolean* is true, other disable passive mode.  (In
-   Python 2.0 and before, passive mode was off by default; in Python 2.1 and later,
-   it is on by default.)
+   Enable "passive" mode if *boolean* is true, other disable passive mode.
+   Passive mode is on by default.
 
 
 .. method:: FTP.storbinary(command, file[, blocksize, callback])

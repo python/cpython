@@ -66,28 +66,3 @@ To do just the former:
    :func:`compile_command`; the difference is that if the instance compiles program
    text containing a ``__future__`` statement, the instance 'remembers' and
    compiles all subsequent program texts with the statement in force.
-
-A note on version compatibility: the :class:`Compile` and
-:class:`CommandCompiler` are new in Python 2.2.  If you want to enable the
-future-tracking features of 2.2 but also retain compatibility with 2.1 and
-earlier versions of Python you can either write ::
-
-   try:
-       from codeop import CommandCompiler
-       compile_command = CommandCompiler()
-       del CommandCompiler
-   except ImportError:
-       from codeop import compile_command
-
-which is a low-impact change, but introduces possibly unwanted global state into
-your program, or you can write::
-
-   try:
-       from codeop import CommandCompiler
-   except ImportError:
-       def CommandCompiler():
-           from codeop import compile_command
-           return compile_command
-
-and then call ``CommandCompiler`` every time you need a fresh compiler object.
-

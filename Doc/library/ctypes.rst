@@ -1957,7 +1957,6 @@ Data types
       is zero.  If the source buffer is not large enough a ValueError
       is raised.
 
-      .. versionadded:: 2.6
 
    .. method:: _CData.from_buffer_copy(source[, offset])
 
@@ -1966,8 +1965,6 @@ Data types
       ``offset`` parameter specifies an offset into the source buffer
       in bytes; the default is zero.  If the source buffer is not
       large enough a ValueError is raised.
-
-      .. versionadded:: 2.6
 
 
    .. method:: from_address(address)

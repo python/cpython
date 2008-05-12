@@ -14,14 +14,11 @@
    pair: temporary; file
 
 This module generates temporary files and directories.  It works on all
-supported platforms.
-
-In version 2.3 of Python, this module was overhauled for enhanced security.  It
-now provides three new functions, :func:`NamedTemporaryFile`, :func:`mkstemp`,
-and :func:`mkdtemp`, which should eliminate all remaining need to use the
-insecure :func:`mktemp` function.  Temporary file names created by this module
-no longer contain the process ID; instead a string of six random characters is
-used.
+supported platforms.  It provides three new functions,
+:func:`NamedTemporaryFile`, :func:`mkstemp`, and :func:`mkdtemp`, which should
+eliminate all remaining need to use the insecure :func:`mktemp` function.
+Temporary file names created by this module no longer contain the process ID;
+instead a string of six random characters is used.
 
 Also, all the user-callable functions now take additional arguments which
 allow direct control over the location and name of temporary files.  It is
@@ -207,10 +204,6 @@ the appropriate function arguments, instead.
    random letters and digits is appended to the prefix to make the filename unique.
    On Windows, the default prefix is :file:`~T`; on all other systems it is
    :file:`tmp`.
-
-   Older versions of this module used to require that ``template`` be set to
-   ``None`` after a call to :func:`os.fork`; this has not been necessary since
-   version 1.5.2.
 
 
 .. function:: gettempprefix()

@@ -52,9 +52,7 @@ indentation from strings that have unwanted whitespace to the left of the text.
 
    Note that tabs and spaces are both treated as whitespace, but they are not
    equal: the lines ``"  hello"`` and ``"\thello"`` are considered to have no
-   common leading whitespace.  (This behaviour is new in Python 2.5; older versions
-   of this module incorrectly expanded tabs before searching for common leading
-   whitespace.)
+   common leading whitespace.
 
    For example::
 

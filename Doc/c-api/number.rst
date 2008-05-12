@@ -267,8 +267,6 @@ Number Protocol
    base. If *n* is not an int object, it is converted with
    :cfunc:`PyNumber_Index` first.
 
-   .. versionadded:: 2.6
-
 
 .. cfunction:: Py_ssize_t PyNumber_AsSsize_t(PyObject *o, PyObject *exc)
 
