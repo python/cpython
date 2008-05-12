@@ -25,6 +25,8 @@ Extension Modules
 Library
 -------
 
+- Issue 2865: webbrowser.open() works again in a KDE environment.
+
 - The multifile module has been removed.
 
 - The SocketServer module has been renamed to socketserver.
