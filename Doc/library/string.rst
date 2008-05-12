@@ -383,6 +383,10 @@ The available integer presentation types are:
    | ``'X'`` | Hex format. Outputs the number in base 16, using upper-  |
    |         | case letters for the digits above 9.                     |
    +---------+----------------------------------------------------------+
+   | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
+   |         | the current locale setting to insert the appropriate     |
+   |         | number separator characters.                             |
+   +---------+----------------------------------------------------------+
    | None    | the same as ``'d'``                                      |
    +---------+----------------------------------------------------------+
                                                                          
