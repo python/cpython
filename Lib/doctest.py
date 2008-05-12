@@ -80,13 +80,11 @@ __all__ = [
     'testmod',
     'testfile',
     'run_docstring_examples',
-    # 7. Tester
-    'Tester',
-    # 8. Unittest Support
+    # 7. Unittest Support
     'DocTestSuite',
     'DocFileSuite',
     'set_unittest_reportflags',
-    # 9. Debugging Support
+    # 8. Debugging Support
     'script_from_examples',
     'testsource',
     'debug_src',
