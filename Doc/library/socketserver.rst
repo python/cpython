@@ -4,6 +4,8 @@
 
 .. module:: socketserver
    :synopsis: A framework for network servers.
+.. versionadded:: 2.6
+
 
 The :mod:`socketserver` module simplifies the task of writing network servers.
 
