@@ -163,10 +163,9 @@ prohibit it by passing ``verbose=False``.  In either of those cases,
 ``sys.argv`` is not examined by :func:`testmod` (so passing :option:`-v` or not
 has no effect).
 
-Since Python 2.6, there is also a command line shortcut for running
-:func:`testmod`.  You can instruct the Python interpreter to run the doctest
-module directly from the standard library and pass the module name(s) on the
-command line::
+There is also a command line shortcut for running :func:`testmod`.  You can
+instruct the Python interpreter to run the doctest module directly from the
+standard library and pass the module name(s) on the command line::
 
    python -m doctest -v example.py
 
@@ -233,10 +232,9 @@ Like :func:`testmod`, :func:`testfile`'s verbosity can be set with the
 :option:`-v` command-line switch or with the optional keyword argument
 *verbose*.
 
-Since Python 2.6, there is also a command line shortcut for running
-:func:`testfile`.  You can instruct the Python interpreter to run the doctest
-module directly from the standard library and pass the file name(s) on the
-command line::
+There is also a command line shortcut for running :func:`testfile`.  You can
+instruct the Python interpreter to run the doctest module directly from the
+standard library and pass the file name(s) on the command line::
 
    python -m doctest -v example.txt
 
@@ -888,15 +886,10 @@ Unittest API
 ------------
 
 As your collection of doctest'ed modules grows, you'll want a way to run all
-their doctests systematically.  Prior to Python 2.4, :mod:`doctest` had a barely
-documented :class:`Tester` class that supplied a rudimentary way to combine
-doctests from multiple modules. :class:`Tester` was feeble, and in practice most
-serious Python testing frameworks build on the :mod:`unittest` module, which
-supplies many flexible ways to combine tests from multiple sources.  So, in
-Python 2.4, :mod:`doctest`'s :class:`Tester` class is deprecated, and
-:mod:`doctest` provides two functions that can be used to create :mod:`unittest`
-test suites from modules and text files containing doctests.  These test suites
-can then be run using :mod:`unittest` test runners::
+their doctests systematically.  :mod:`doctest` provides two functions that can
+be used to create :mod:`unittest` test suites from modules and text files
+containing doctests.  These test suites can then be run using :mod:`unittest`
+test runners::
 
    import unittest
    import doctest

@@ -166,10 +166,9 @@ ELLIPSIS_MARKER = '...'
 #  4. DocTest Finder -- extracts test cases from objects
 #  5. DocTest Runner -- runs test cases
 #  6. Test Functions -- convenient wrappers for testing
-#  7. Tester Class -- for backwards compatibility
-#  8. Unittest Support
-#  9. Debugging Support
-# 10. Example Usage
+#  7. Unittest Support
+#  8. Debugging Support
+#  9. Example Usage
 
 ######################################################################
 ## 1. Utility Functions
@@ -1968,72 +1967,7 @@ def run_docstring_examples(f, globs, verbose=False, name="NoName",
         runner.run(test, compileflags=compileflags)
 
 ######################################################################
-## 7. Tester
-######################################################################
-# This is provided only for backwards compatibility.  It's not
-# actually used in any way.
-
-class Tester:
-    def __init__(self, mod=None, globs=None, verbose=None, optionflags=0):
-
-        warnings.warn("class Tester is deprecated; "
-                      "use class doctest.DocTestRunner instead",
-                      DeprecationWarning, stacklevel=2)
-        if mod is None and globs is None:
-            raise TypeError("Tester.__init__: must specify mod or globs")
-        if mod is not None and not inspect.ismodule(mod):
-            raise TypeError("Tester.__init__: mod must be a module; %r" %
-                            (mod,))
-        if globs is None:
-            globs = mod.__dict__
-        self.globs = globs
-
-        self.verbose = verbose
-        self.optionflags = optionflags
-        self.testfinder = DocTestFinder()
-        self.testrunner = DocTestRunner(verbose=verbose,
-                                        optionflags=optionflags)
-
-    def runstring(self, s, name):
-        test = DocTestParser().get_doctest(s, self.globs, name, None, None)
-        if self.verbose:
-            print("Running string", name)
-        (f,t) = self.testrunner.run(test)
-        if self.verbose:
-            print(f, "of", t, "examples failed in string", name)
-        return TestResults(f,t)
-
-    def rundoc(self, object, name=None, module=None):
-        f = t = 0
-        tests = self.testfinder.find(object, name, module=module,
-                                     globs=self.globs)
-        for test in tests:
-            (f2, t2) = self.testrunner.run(test)
-            (f,t) = (f+f2, t+t2)
-        return TestResults(f,t)
-
-    def rundict(self, d, name, module=None):
-        import types
-        m = types.ModuleType(name)
-        m.__dict__.update(d)
-        if module is None:
-            module = False
-        return self.rundoc(m, name, module)
-
-    def run__test__(self, d, name):
-        import types
-        m = types.ModuleType(name)
-        m.__test__ = d
-        return self.rundoc(m, name)
-
-    def summarize(self, verbose=None):
-        return self.testrunner.summarize(verbose)
-
-    def merge(self, other):
-        self.testrunner.merge(other.testrunner)
-
-######################################################################
-## 8. Unittest Support
+## 7. Unittest Support
 ######################################################################
 
 _unittest_reportflags = 0
@@ -2393,7 +2327,7 @@ def DocFileSuite(*paths, **kw):
     return suite
 
 ######################################################################
-## 9. Debugging Support
+## 8. Debugging Support
 ######################################################################
 
 def script_from_examples(s):
@@ -2546,7 +2480,7 @@ def debug(module, name, pm=False):
     debug_script(testsrc, pm, module.__dict__)
 
 ######################################################################
-## 10. Example Usage
+## 9. Example Usage
 ######################################################################
 class _TestClass:
     """
