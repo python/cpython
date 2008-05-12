@@ -5,11 +5,10 @@
    Roger E. Masse
 """
 
-from test.test_support import verbose, unlink
+from test.test_support import verbose, unlink, import_module
 
-import imageop, uu, os, imgfile
-
-import warnings
+imageop = import_module('imageop', deprecated=True)
+import uu, os, imgfile
 
 def test_main():
 

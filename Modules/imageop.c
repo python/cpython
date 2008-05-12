@@ -775,6 +775,11 @@ PyMODINIT_FUNC
 initimageop(void)
 {
 	PyObject *m;
+	
+	if (PyErr_WarnPy3k("the imageop module has been removed in "
+	                   "Python 3.0", 2) < 0)
+	    return;
+	
 	m = Py_InitModule("imageop", imageop_methods);
 	if (m == NULL)
 		return;
