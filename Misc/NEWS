@@ -26,6 +26,8 @@ Extension Modules
 Library
 -------
 
+- #1713041: fix pprint's handling of maximum depth.
+
 - The timing module has been deprecated for removal in Python 3.0.
 
 - The sv module has been deprecated for removal in Python 3.0.
