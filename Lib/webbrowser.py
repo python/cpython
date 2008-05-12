@@ -347,7 +347,8 @@ class Konqueror(BaseBrowser):
         else:
             action = "openURL"
 
-        devnull = open(os.devnull, "r+")
+        import io
+        devnull = io.open(os.devnull, "r+")
         # if possible, put browser in separate process group, so
         # keyboard interrupts don't affect browser as well as Python
         setsid = getattr(os, 'setsid', None)
