@@ -7,7 +7,7 @@ import types
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
-           'print_last', 'print_stack', 'print_tb', 'tb_lineno']
+           'print_last', 'print_stack', 'print_tb']
 
 def _print(file, str='', terminator='\n'):
     file.write(str+terminator)
@@ -293,10 +293,3 @@ def extract_stack(f=None, limit = None):
         n = n+1
     list.reverse()
     return list
-
-def tb_lineno(tb):
-    """Calculate correct line number of traceback given in tb.
-
-    Obsolete in 2.3.
-    """
-    return tb.tb_lineno
