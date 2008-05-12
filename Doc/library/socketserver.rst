@@ -1,10 +1,16 @@
-
 :mod:`socketserver` --- A framework for network servers
 =======================================================
 
+.. module:: SocketServer
+   :synopsis: Old name for the socketserver module.
+
 .. module:: socketserver
    :synopsis: A framework for network servers.
-.. versionadded:: 2.6
+
+.. note::
+   The :mod:`SocketServer` module has been renamed to :mod:`socketserver` in
+   Python 3.0.  It is importable under both names in Python 2.6 and the rest of
+   the 2.x series.
 
 
 The :mod:`socketserver` module simplifies the task of writing network servers.
