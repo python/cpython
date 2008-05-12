@@ -5,6 +5,7 @@
 .. module:: aetools
    :platform: Mac
    :synopsis: Basic support for sending Apple Events
+   :deprecated:
 .. sectionauthor:: Jack Jansen <Jack.Jansen@cwi.nl>
 .. moduleauthor:: Jack Jansen
 
@@ -20,6 +21,11 @@ The :mod:`aetools` module itself uses the AppleEvent support provided by the
 :mod:`Carbon.AE` module. This has one drawback: you need access to the window
 manager, see section :ref:`osx-gui-scripts` for details. This restriction may be
 lifted in future releases.
+
+.. warning::
+
+   This module is removed in 3.0.
+
 
 The :mod:`aetools` module defines the following functions:
 

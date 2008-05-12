@@ -5,12 +5,17 @@
 .. module:: ColorPicker
    :platform: Mac
    :synopsis: Interface to the standard color selection dialog.
+   :deprecated:
 .. moduleauthor:: Just van Rossum <just@letterror.com>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
 The :mod:`ColorPicker` module provides access to the standard color picker
 dialog.
+
+.. warning::
+
+   This module is removed in 3.0.
 
 
 .. function:: GetColor(prompt, rgb)

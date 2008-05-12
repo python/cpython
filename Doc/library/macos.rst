@@ -5,11 +5,16 @@
 .. module:: MacOS
    :platform: Mac
    :synopsis: Access to Mac OS-specific interpreter features.
+   :deprecated:
 
 
 This module provides access to MacOS specific functionality in the Python
 interpreter, such as how the interpreter eventloop functions and the like. Use
 with care.
+
+.. warning::
+
+   This module is removed in 3.0.
 
 Note the capitalization of the module name; this is a historical artifact.
 

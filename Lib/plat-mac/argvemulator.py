@@ -2,6 +2,9 @@
 want unix-style arguments.
 """
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the argvemulator module is removed.")
+
 import sys
 import traceback
 from Carbon import AE

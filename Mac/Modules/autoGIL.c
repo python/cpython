@@ -134,6 +134,9 @@ initautoGIL(void)
 {
 	PyObject *mod;
 
+	if (PyErr_WarnPy3k("In 3.x, the autoGIL module is removed.", 1) < 0)
+		return;
+
 	mod = Py_InitModule4("autoGIL", autoGIL_methods, autoGIL_docs,
 			     NULL, PYTHON_API_VERSION);
 	if (mod == NULL)

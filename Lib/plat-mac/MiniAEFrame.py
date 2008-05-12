@@ -6,6 +6,9 @@ There are two classes:
         only suitable for the simplest of AppleEvent servers.
 """
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the MiniAEFrame module is removed.")
+
 import traceback
 import MacOS
 from Carbon import AE

@@ -5,6 +5,11 @@
 #
 # Jack Jansen, August 2000
 #
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the videoreader module is removed.")
+
+
 import sys
 from Carbon import Qt
 from Carbon import QuickTime

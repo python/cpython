@@ -2,6 +2,9 @@
 
 DEBUG=0
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the FrameWork module is removed.")
+
 import MacOS
 import traceback
 

@@ -1,6 +1,10 @@
 """
 Package generated from /System/Library/CoreServices/Finder.app
 """
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the Finder package is removed.")
+
 import aetools
 Error = aetools.Error
 import Standard_Suite

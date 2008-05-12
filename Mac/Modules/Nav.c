@@ -916,6 +916,9 @@ void
 initNav(void)
 {
 	PyObject *m, *d;
+	
+	if (PyErr_WarnPy3k("In 3.x, Nav is removed.", 1))
+		return;
 
 	/* Test that we have NavServices */
 	if ( !NavServicesAvailable() ) {

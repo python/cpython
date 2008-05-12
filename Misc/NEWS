@@ -91,6 +91,9 @@ Library
 
 - pdb gained the "until" command.
 
+- The Mac Modules (including Carbon) have been deprecated for removal in
+  3.0.
+
 Build
 -----
 

@@ -10,6 +10,10 @@ See the chapters :ref:`mac-scripting` and :ref:`undoc-mac-modules` for more
 modules, and the HOWTO :ref:`using-on-mac` for a general introduction to
 Mac-specific Python programming.
 
+.. warning::
+
+   These modules are deprecated and are removed in 3.0
+
 
 .. toctree::
 

@@ -21,6 +21,9 @@ files: the pack stuff from aepack, the objects from aetypes.
 """
 
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the aetools module is removed.")
+
 from types import *
 from Carbon import AE
 from Carbon import Evt

@@ -80,7 +80,9 @@ Undocumented Mac OS modules
 .. module:: applesingle
    :platform: Mac
    :synopsis: Rudimentary decoder for AppleSingle format files.
+   :deprecated:
 
+.. deprecated:: 2.6
 
 
 :mod:`buildtools` --- Helper module for BuildApplet and Friends
@@ -89,6 +91,7 @@ Undocumented Mac OS modules
 .. module:: buildtools
    :platform: Mac
    :synopsis: Helper module for BuildApplet, BuildApplication and macfreeze.
+   :deprecated:
 
 
 .. deprecated:: 2.4
@@ -99,6 +102,7 @@ Undocumented Mac OS modules
 .. module:: cfmfile
    :platform: Mac
    :synopsis: Code Fragment Resource module.
+   :deprecated:
 
 
 :mod:`cfmfile` is a module that understands Code Fragments and the accompanying
@@ -113,10 +117,13 @@ BuildApplication to combine all plugin modules to a single executable.
 .. module:: icopen
    :platform: Mac
    :synopsis: Internet Config replacement for open().
+   :deprecated:
 
 
 Importing :mod:`icopen` will replace the builtin :meth:`open` with a version
 that uses Internet Config to set file type and creator for new files.
+
+.. deprecated:: 2.6
 
 
 :mod:`macerrors` --- Mac OS Errors
@@ -125,9 +132,12 @@ that uses Internet Config to set file type and creator for new files.
 .. module:: macerrors
    :platform: Mac
    :synopsis: Constant definitions for many Mac OS error codes.
+   :deprecated:
 
 
 :mod:`macerrors` contains constant definitions for many Mac OS error codes.
+
+.. deprecated:: 2.6
 
 
 :mod:`macresource` --- Locate script resources
@@ -136,11 +146,14 @@ that uses Internet Config to set file type and creator for new files.
 .. module:: macresource
    :platform: Mac
    :synopsis: Locate script resources.
+   :deprecated:
 
 
 :mod:`macresource` helps scripts finding their resources, such as dialogs and
 menus, without requiring special case code for when the script is run under
 MacPython, as a MacPython applet or under OSX Python.
+
+.. deprecated:: 2.6
 
 
 :mod:`Nav` --- NavServices calls
@@ -149,9 +162,12 @@ MacPython, as a MacPython applet or under OSX Python.
 .. module:: Nav
    :platform: Mac
    :synopsis: Interface to Navigation Services.
+   :deprecated:
 
 
 A low-level interface to Navigation Services.
+
+.. deprecated:: 2.6
 
 
 :mod:`PixMapWrapper` --- Wrapper for PixMap objects
@@ -160,11 +176,14 @@ A low-level interface to Navigation Services.
 .. module:: PixMapWrapper
    :platform: Mac
    :synopsis: Wrapper for PixMap objects.
+   :deprecated:
 
 
 :mod:`PixMapWrapper` wraps a PixMap object with a Python object that allows
 access to the fields by name. It also has methods to convert to and from
 :mod:`PIL` images.
+
+.. deprecated:: 2.6
 
 
 :mod:`videoreader` --- Read QuickTime movies
@@ -173,10 +192,13 @@ access to the fields by name. It also has methods to convert to and from
 .. module:: videoreader
    :platform: Mac
    :synopsis: Read QuickTime movies frame by frame for further processing.
+   :deprecated:
 
 
 :mod:`videoreader` reads and decodes QuickTime movies and passes a stream of
 images to your program. It also provides some support for audio tracks.
+
+.. deprecated:: 2.6
 
 
 :mod:`W` --- Widgets built on :mod:`FrameWork`
@@ -185,9 +207,12 @@ images to your program. It also provides some support for audio tracks.
 .. module:: W
    :platform: Mac
    :synopsis: Widgets for the Mac, built on top of FrameWork.
+   :deprecated:
 
 
 The :mod:`W` widgets are used extensively in the :program:`IDE`.
+
+.. deprecated:: 2.6
 
 
 .. _obsolete-modules:

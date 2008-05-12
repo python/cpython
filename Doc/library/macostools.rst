@@ -5,12 +5,17 @@
 .. module:: macostools
    :platform: Mac
    :synopsis: Convenience routines for file manipulation.
+   :deprecated:
 
 
 This module contains some convenience routines for file-manipulation on the
 Macintosh. All file parameters can be specified as pathnames, :class:`FSRef` or
 :class:`FSSpec` objects.  This module expects a filesystem which supports forked
 files, so it should not be used on UFS partitions.
+
+.. warning::
+
+   This module is removed in 3.0.
 
 The :mod:`macostools` module defines the following functions:
 

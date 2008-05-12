@@ -14,6 +14,9 @@ with a decent input/output window.
 # Mac/OSX/PythonLauncher/doscript.m.
 #
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the terminalcommand module is removed.")
+
 import time
 import os
 from Carbon import AE

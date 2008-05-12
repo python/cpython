@@ -1,6 +1,10 @@
 """
 Package generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 """
+
+from warnings import warnpy3k
+warnpy3k("In 3.x, the Netscape package is removed.")
+
 import aetools
 Error = aetools.Error
 import Standard_Suite

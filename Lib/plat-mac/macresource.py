@@ -1,5 +1,8 @@
 """macresource - Locate and open the resources needed for a script."""
 
+from warnings import warnpy3k
+warnpy3k("In 3.x, the macresource module is removed.")
+
 from Carbon import Res
 import os
 import sys
