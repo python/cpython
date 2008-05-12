@@ -65,19 +65,6 @@ This module defines the following functions:
    Return *rootObject* as a plist-formatted string.
 
 
-
-.. function:: readPlistFromResource(path[, restype='plst'[, resid=0]])
-
-    Read a plist from the resource with type *restype* from the resource fork of
-    *path*.  Availability: MacOS X.
-
-
-.. function:: writePlistToResource(rootObject, path[, restype='plst'[, resid=0]])
-
-    Write *rootObject* as a resource with type *restype* to the resource fork of
-    *path*.  Availability: MacOS X.
-
-
 The following class is available:
 
 .. class:: Data(data)

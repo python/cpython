@@ -53,7 +53,6 @@ Parse Plist example:
 
 __all__ = [
     "readPlist", "writePlist", "readPlistFromBytes", "writePlistToBytes",
-    "readPlistFromResource", "writePlistToResource",
     "Plist", "Data", "Dict"
 ]
 # Note: the Plist and Dict classes have been deprecated.
@@ -108,40 +107,6 @@ def writePlistToBytes(rootObject):
     f = BytesIO()
     writePlist(rootObject, f)
     return f.getvalue()
-
-
-def readPlistFromResource(path, restype='plst', resid=0):
-    """Read plst resource from the resource fork of path.
-    """
-    from Carbon.File import FSRef, FSGetResourceForkName
-    from Carbon.Files import fsRdPerm
-    from Carbon import Res
-    fsRef = FSRef(path)
-    resNum = Res.FSOpenResourceFile(fsRef, FSGetResourceForkName(), fsRdPerm)
-    Res.UseResFile(resNum)
-    plistData = Res.Get1Resource(restype, resid).data
-    Res.CloseResFile(resNum)
-    return readPlistFromString(plistData)
-
-
-def writePlistToResource(rootObject, path, restype='plst', resid=0):
-    """Write 'rootObject' as a plst resource to the resource fork of path.
-    """
-    from Carbon.File import FSRef, FSGetResourceForkName
-    from Carbon.Files import fsRdWrPerm
-    from Carbon import Res
-    plistData = writePlistToString(rootObject)
-    fsRef = FSRef(path)
-    resNum = Res.FSOpenResourceFile(fsRef, FSGetResourceForkName(), fsRdWrPerm)
-    Res.UseResFile(resNum)
-    try:
-        Res.Get1Resource(restype, resid).RemoveResource()
-    except Res.Error:
-        pass
-    res = Res.Resource(plistData)
-    res.AddResource(restype, resid, '')
-    res.WriteResource()
-    Res.CloseResFile(resNum)
 
 
 class DumbXMLWriter:

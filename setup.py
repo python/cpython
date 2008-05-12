@@ -132,12 +132,6 @@ class PyBuildExt(build_ext):
 
         # Platform-dependent module source and include directories
         platform = self.get_platform()
-        if platform in ('darwin', 'mac') and ("--disable-toolbox-glue" not in
-            sysconfig.get_config_var("CONFIG_ARGS")):
-            # Mac OS X also includes some mac-specific modules
-            macmoddir = os.path.join(os.getcwd(), srcdir, 'Mac/Modules')
-            moddirlist.append(macmoddir)
-            incdirlist.append('./Mac/Include')
 
         alldirlist = moddirlist + incdirlist
 
@@ -1123,88 +1117,6 @@ class PyBuildExt(build_ext):
             exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
         else:
             missing.append('ossaudiodev')
-
-        if platform == 'darwin' and ("--disable-toolbox-glue" not in
-                sysconfig.get_config_var("CONFIG_ARGS")):
-
-            if os.uname()[2] > '8.':
-                # We're on Mac OS X 10.4 or later, the compiler should
-                # support '-Wno-deprecated-declarations'. This will
-                # surpress deprecation warnings for the Carbon extensions,
-                # these extensions wrap the Carbon APIs and even those
-                # parts that are deprecated.
-                carbon_extra_compile_args = ['-Wno-deprecated-declarations']
-            else:
-                carbon_extra_compile_args = []
-
-            # Mac OS X specific modules.
-            def macSrcExists(name1, name2=''):
-                if not name1:
-                    return None
-                names = (name1,)
-                if name2:
-                    names = (name1, name2)
-                path = os.path.join(srcdir, 'Mac', 'Modules', *names)
-                return os.path.exists(path)
-
-            def addMacExtension(name, kwds, extra_srcs=[]):
-                dirname = ''
-                if name[0] == '_':
-                    dirname = name[1:].lower()
-                cname = name + '.c'
-                cmodulename = name + 'module.c'
-                # Check for NNN.c, NNNmodule.c, _nnn/NNN.c, _nnn/NNNmodule.c
-                if macSrcExists(cname):
-                    srcs = [cname]
-                elif macSrcExists(cmodulename):
-                    srcs = [cmodulename]
-                elif macSrcExists(dirname, cname):
-                    # XXX(nnorwitz): If all the names ended with module, we
-                    # wouldn't need this condition.  ibcarbon is the only one.
-                    srcs = [os.path.join(dirname, cname)]
-                elif macSrcExists(dirname, cmodulename):
-                    srcs = [os.path.join(dirname, cmodulename)]
-                else:
-                    raise RuntimeError("%s not found" % name)
-
-                # Here's the whole point:  add the extension with sources
-                exts.append(Extension(name, srcs + extra_srcs, **kwds))
-
-            # Core Foundation
-            core_kwds = {'extra_compile_args': carbon_extra_compile_args,
-                         'extra_link_args': ['-framework', 'CoreFoundation'],
-                        }
-            addMacExtension('_CF', core_kwds, ['cf/pycfbridge.c'])
-            addMacExtension('autoGIL', core_kwds)
-
-            # Carbon
-            carbon_kwds = {'extra_compile_args': carbon_extra_compile_args,
-                           'extra_link_args': ['-framework', 'Carbon'],
-                          }
-            CARBON_EXTS = ['ColorPicker', 'gestalt', 'MacOS', 'Nav',
-                           'OSATerminology', 'icglue',
-                           # All these are in subdirs
-                           '_AE', '_AH', '_App', '_CarbonEvt', '_Cm', '_Ctl',
-                           '_Dlg', '_Drag', '_Evt', '_File', '_Folder', '_Fm',
-                           '_Help', '_Icn', '_IBCarbon', '_List',
-                           '_Menu', '_Mlte', '_OSA', '_Res', '_Qd', '_Qdoffs',
-                           '_Scrap', '_Snd', '_TE', '_Win',
-                          ]
-            for name in CARBON_EXTS:
-                addMacExtension(name, carbon_kwds)
-
-            # Application Services & QuickTime
-            app_kwds = {'extra_compile_args': carbon_extra_compile_args,
-                        'extra_link_args': ['-framework','ApplicationServices'],
-                       }
-            addMacExtension('_Launch', app_kwds)
-            addMacExtension('_CG', app_kwds)
-
-            exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'QuickTime',
-                                     '-framework', 'Carbon']) )
-
 
         self.extensions.extend(exts)
 
