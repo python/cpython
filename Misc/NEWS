@@ -26,6 +26,8 @@ Extension Modules
 Library
 -------
 
+- The sv module has been deprecated for removal in Python 3.0.
+
 - The multifile module has been deprecated as per PEP 4.
 
 - The SocketServer module has been renamed 'socketserver'.  The old

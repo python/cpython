@@ -132,7 +132,8 @@ class TestStdlibRemovals(unittest.TestCase):
                         'Bastion', 'compiler', 'dircache', 'fpformat',
                         'ihooks', 'mhlib')
     inclusive_platforms = {'irix':('pure',)}
-    optional_modules = ('bsddb185', 'Canvas', 'dl', 'linuxaudiodev', 'imageop')
+    optional_modules = ('bsddb185', 'Canvas', 'dl', 'linuxaudiodev', 'imageop',
+                        'sv')
 
     def check_removal(self, module_name, optional=False):
         """Make sure the specified module, when imported, raises a

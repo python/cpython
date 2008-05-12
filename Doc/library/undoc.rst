@@ -226,4 +226,6 @@ of reality.
 
 :mod:`sv`
    --- Interface to the "simple video" board on SGI Indigo (obsolete hardware).
+   
+   .. warning:: The :mod:`sv` module has been removed in Python 3.0.
 
