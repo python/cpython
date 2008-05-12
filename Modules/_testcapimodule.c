@@ -475,6 +475,38 @@ test_k_code(PyObject *self)
 }
 
 
+/* Test the s and z codes for PyArg_ParseTuple.
+*/
+static PyObject *
+test_s_code(PyObject *self)
+{
+    /* Unicode strings should be accepted */
+    PyObject *tuple, *obj;
+    char *value;
+
+    tuple = PyTuple_New(1);
+    if (tuple == NULL)
+        return NULL;
+
+    obj = PyUnicode_Decode("t\xeate", strlen("t\xeate"),
+			   "latin-1", NULL);
+    if (obj == NULL)
+	return NULL;
+
+    PyTuple_SET_ITEM(tuple, 0, obj);
+
+    /* These two blocks used to raise a TypeError:
+     * "argument must be string without null bytes, not str" 
+     */
+    if (PyArg_ParseTuple(tuple, "s:test_s_code1", &value) < 0)
+    	return NULL;
+
+    if (PyArg_ParseTuple(tuple, "z:test_s_code2", &value) < 0)
+    	return NULL;
+
+    Py_RETURN_NONE;
+}
+
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
 */
@@ -952,6 +984,7 @@ static PyMethodDef TestMethods[] = {
 	{"codec_incrementaldecoder",
 	 (PyCFunction)codec_incrementaldecoder,	 METH_VARARGS},
 #endif
+	{"test_s_code",		(PyCFunction)test_s_code,	 METH_NOARGS},
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
 	{"test_Z_code",		(PyCFunction)test_Z_code,	 METH_NOARGS},
 #ifdef WITH_THREAD
