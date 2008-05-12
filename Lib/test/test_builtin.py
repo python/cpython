@@ -590,6 +590,16 @@ class BuiltinTest(unittest.TestCase):
         if have_unicode:
             self.assertRaises(UnicodeError, hasattr, sys, unichr(sys.maxunicode))
 
+        # Check that hasattr allows SystemExit and KeyboardInterrupts by
+        class A:
+            def __getattr__(self, what):
+                raise KeyboardInterrupt
+        self.assertRaises(KeyboardInterrupt, hasattr, A(), "b")
+        class B:
+            def __getattr__(self, what):
+                raise SystemExit
+        self.assertRaises(SystemExit, hasattr, B(), "b")
+
     def test_hash(self):
         hash(None)
         self.assertEqual(hash(1), hash(1L))
