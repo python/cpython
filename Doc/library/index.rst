@@ -73,6 +73,4 @@ the `Python Package Index <http://pypi.python.org/pypi>`_.
    misc.rst
    windows.rst
    unix.rst
-   mac.rst
-   macosa.rst
    undoc.rst

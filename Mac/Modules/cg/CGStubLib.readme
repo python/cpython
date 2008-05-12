@@ -1,3 +1,0 @@
-# CGStubLib was created by issuing this command in MPW:
-
-MakeStub CGStubLib.exp -o CGStubLib

@@ -43,68 +43,39 @@ RUNCHAR = b"\x90"
 #
 # This code is no longer byte-order dependent
 
-#
-# Workarounds for non-mac machines.
-try:
-    from Carbon.File import FSSpec, FInfo
-    from MacOS import openrf
 
-    def getfileinfo(name):
-        finfo = FSSpec(name).FSpGetFInfo()
-        dir, file = os.path.split(name)
-        # XXX Get resource/data sizes
-        fp = io.open(name, 'rb')
-        fp.seek(0, 2)
-        dlen = fp.tell()
-        fp = openrf(name, '*rb')
-        fp.seek(0, 2)
-        rlen = fp.tell()
-        return file, finfo, dlen, rlen
+class FInfo:
+    def __init__(self):
+        self.Type = '????'
+        self.Creator = '????'
+        self.Flags = 0
 
-    def openrsrc(name, *mode):
-        if not mode:
-            mode = '*rb'
-        else:
-            mode = '*' + mode[0]
-        return openrf(name, mode)
+def getfileinfo(name):
+    finfo = FInfo()
+    fp = io.open(name, 'rb')
+    # Quick check for textfile
+    data = fp.read(512)
+    if 0 not in data:
+        finfo.Type = 'TEXT'
+    fp.seek(0, 2)
+    dsize = fp.tell()
+    fp.close()
+    dir, file = os.path.split(name)
+    file = file.replace(':', '-', 1)
+    return file, finfo, dsize, 0
 
-except ImportError:
-    #
-    # Glue code for non-macintosh usage
-    #
+class openrsrc:
+    def __init__(self, *args):
+        pass
 
-    class FInfo:
-        def __init__(self):
-            self.Type = '????'
-            self.Creator = '????'
-            self.Flags = 0
+    def read(self, *args):
+        return b''
 
-    def getfileinfo(name):
-        finfo = FInfo()
-        fp = io.open(name, 'rb')
-        # Quick check for textfile
-        data = fp.read(512)
-        if 0 not in data:
-            finfo.Type = 'TEXT'
-        fp.seek(0, 2)
-        dsize = fp.tell()
-        fp.close()
-        dir, file = os.path.split(name)
-        file = file.replace(':', '-', 1)
-        return file, finfo, dsize, 0
+    def write(self, *args):
+        pass
 
-    class openrsrc:
-        def __init__(self, *args):
-            pass
-
-        def read(self, *args):
-            return b''
-
-        def write(self, *args):
-            pass
-
-        def close(self):
-            pass
+    def close(self):
+        pass
 
 class _Hqxcoderengine:
     """Write data to the coder in 3-byte chunks"""
