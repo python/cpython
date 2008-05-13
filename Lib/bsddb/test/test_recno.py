@@ -3,11 +3,10 @@
 
 import os
 import errno
-import tempfile
 from pprint import pprint
 import unittest
 
-from test_all import verbose
+from test_all import verbose, get_new_environment_path, get_new_database_path
 
 try:
     # For Pythons w/distutils pybsddb
@@ -27,8 +26,13 @@ letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 #----------------------------------------------------------------------
 
 class SimpleRecnoTestCase(unittest.TestCase):
+    import sys
+    if sys.version_info[:3] < (2, 4, 0):
+        def assertFalse(self, expr, msg=None):
+            self.failIf(expr,msg=msg)
+
     def setUp(self):
-        self.filename = tempfile.mktemp()
+        self.filename = get_new_database_path()
         self.homeDir = None
 
     def tearDown(self):
@@ -46,8 +50,8 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         for x in letters:
             recno = d.append(x * 60)
-            assert type(recno) == type(0)
-            assert recno >= 1
+            self.assertEqual(type(recno), type(0))
+            self.assert_(recno >= 1)
             if verbose:
                 print recno,
 
@@ -62,13 +66,13 @@ class SimpleRecnoTestCase(unittest.TestCase):
             if verbose:
                 print data
 
-            assert type(data) == type("")
-            assert data == d.get(recno)
+            self.assertEqual(type(data), type(""))
+            self.assertEqual(data, d.get(recno))
 
         try:
             data = d[0]  # This should raise a KeyError!?!?!
         except db.DBInvalidArgError, val:
-            assert val[0] == db.EINVAL
+            self.assertEqual(val[0], db.EINVAL)
             if verbose: print val
         else:
             self.fail("expected exception")
@@ -94,35 +98,35 @@ class SimpleRecnoTestCase(unittest.TestCase):
             if get_returns_none:
                 self.fail("unexpected exception")
         else:
-            assert data == None
+            self.assertEqual(data, None)
 
         keys = d.keys()
         if verbose:
             print keys
-        assert type(keys) == type([])
-        assert type(keys[0]) == type(123)
-        assert len(keys) == len(d)
+        self.assertEqual(type(keys), type([]))
+        self.assertEqual(type(keys[0]), type(123))
+        self.assertEqual(len(keys), len(d))
 
         items = d.items()
         if verbose:
             pprint(items)
-        assert type(items) == type([])
-        assert type(items[0]) == type(())
-        assert len(items[0]) == 2
-        assert type(items[0][0]) == type(123)
-        assert type(items[0][1]) == type("")
-        assert len(items) == len(d)
+        self.assertEqual(type(items), type([]))
+        self.assertEqual(type(items[0]), type(()))
+        self.assertEqual(len(items[0]), 2)
+        self.assertEqual(type(items[0][0]), type(123))
+        self.assertEqual(type(items[0][1]), type(""))
+        self.assertEqual(len(items), len(d))
 
-        assert d.has_key(25)
+        self.assert_(d.has_key(25))
 
         del d[25]
-        assert not d.has_key(25)
+        self.assertFalse(d.has_key(25))
 
         d.delete(13)
-        assert not d.has_key(13)
+        self.assertFalse(d.has_key(13))
 
         data = d.get_both(26, "z" * 60)
-        assert data == "z" * 60, 'was %r' % data
+        self.assertEqual(data, "z" * 60, 'was %r' % data)
         if verbose:
             print data
 
@@ -146,7 +150,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         c.set(50)
         rec = c.current()
-        assert rec == (50, "a replacement record")
+        self.assertEqual(rec, (50, "a replacement record"))
         if verbose:
             print rec
 
@@ -157,7 +161,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         # test that non-existant key lookups work (and that
         # DBC_set_range doesn't have a memleak under valgrind)
         rec = c.set_range(999999)
-        assert rec == None
+        self.assertEqual(rec, None)
         if verbose:
             print rec
 
@@ -170,7 +174,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         # put a record beyond the consecutive end of the recno's
         d[100] = "way out there"
-        assert d[100] == "way out there"
+        self.assertEqual(d[100], "way out there")
 
         try:
             data = d[99]
@@ -185,7 +189,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
             if get_returns_none:
                 self.fail("unexpected DBKeyEmptyError exception")
             else:
-                assert val[0] == db.DB_KEYEMPTY
+                self.assertEqual(val[0], db.DB_KEYEMPTY)
                 if verbose: print val
         else:
             if not get_returns_none:
@@ -207,7 +211,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         just a line in the file, but you can set a different record delimiter
         if needed.
         """
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
+        homeDir = get_new_environment_path()
         self.homeDir = homeDir
         source = os.path.join(homeDir, 'test_recno.txt')
         if not os.path.isdir(homeDir):
@@ -236,7 +240,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
             print data
             print text.split('\n')
 
-        assert text.split('\n') == data
+        self.assertEqual(text.split('\n'), data)
 
         # open as a DB again
         d = db.DB()
@@ -255,8 +259,8 @@ class SimpleRecnoTestCase(unittest.TestCase):
             print text
             print text.split('\n')
 
-        assert text.split('\n') == \
-             "The quick reddish-brown fox jumped over the comatose dog".split()
+        self.assertEqual(text.split('\n'),
+           "The quick reddish-brown fox jumped over the comatose dog".split())
 
     def test03_FixedLength(self):
         d = db.DB()
@@ -273,7 +277,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         try:                    # this one will fail
             d.append('bad' * 20)
         except db.DBInvalidArgError, val:
-            assert val[0] == db.EINVAL
+            self.assertEqual(val[0], db.EINVAL)
             if verbose: print val
         else:
             self.fail("expected exception")

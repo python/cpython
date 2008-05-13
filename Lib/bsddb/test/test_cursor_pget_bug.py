@@ -1,5 +1,4 @@
 import unittest
-import tempfile
 import os, glob
 
 try:
@@ -9,11 +8,12 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
+from test_all import get_new_environment_path, get_new_database_path
+
 try:
     from bsddb3 import test_support
 except ImportError:
     from test import test_support
-
 
 #----------------------------------------------------------------------
 
@@ -22,11 +22,7 @@ class pget_bugTestCase(unittest.TestCase):
     db_name = 'test-cursor_pget.db'
 
     def setUp(self):
-        self.homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
-        try:
-            os.mkdir(self.homeDir)
-        except os.error:
-            pass
+        self.homeDir = get_new_environment_path()
         self.env = db.DBEnv()
         self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
         self.primary_db = db.DB(self.env)

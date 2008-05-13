@@ -3,7 +3,6 @@
 
 import os
 import unittest
-import tempfile
 
 try:
     # For Pythons w/distutils pybsddb
@@ -11,6 +10,8 @@ try:
 except ImportError:
     # For Python 2.3
     from bsddb import db, dbshelve, hashopen
+
+from test_all import get_new_environment_path, get_new_database_path
 
 try:
     from bsddb3 import test_support
@@ -22,12 +23,7 @@ except ImportError:
 class MiscTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
-        self.homeDir = homeDir
-        try:
-            os.mkdir(homeDir)
-        except OSError:
-            pass
+        self.homeDir = get_new_environment_path()
 
     def tearDown(self):
         test_support.unlink(self.filename)
@@ -41,9 +37,9 @@ class MiscTestCase(unittest.TestCase):
     def test02_db_home(self):
         env = db.DBEnv()
         # check for crash fixed when db_home is used before open()
-        assert env.db_home is None
+        self.assert_(env.db_home is None)
         env.open(self.homeDir, db.DB_CREATE)
-        assert self.homeDir == env.db_home
+        self.assertEqual(self.homeDir, env.db_home)
 
     def test03_repr_closed_db(self):
         db = hashopen(self.filename)
@@ -93,7 +89,7 @@ class MiscTestCase(unittest.TestCase):
     def test_DB_set_flags_persists(self):
         if db.version() < (4,2):
             # The get_flags API required for this to work is only available
-            # in BerkeleyDB >= 4.2
+            # in Berkeley DB >= 4.2
             return
         try:
             db1 = db.DB()

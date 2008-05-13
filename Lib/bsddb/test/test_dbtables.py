@@ -21,16 +21,14 @@
 # $Id$
 
 import os, re
-import tempfile
 try:
     import cPickle
     pickle = cPickle
 except ImportError:
     import pickle
-import tempfile
 
 import unittest
-from test_all import verbose
+from test_all import verbose, get_new_environment_path, get_new_database_path
 
 try:
     # For Pythons w/distutils pybsddb
@@ -48,16 +46,12 @@ except ImportError:
 #----------------------------------------------------------------------
 
 class TableDBTestCase(unittest.TestCase):
-    db_home = 'db_home'
     db_name = 'test-table.db'
 
     def setUp(self):
-        homeDir = tempfile.mkdtemp()
-        self.testHomeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.testHomeDir = get_new_environment_path()
         self.tdb = dbtables.bsdTableDB(
-            filename='tabletest.db', dbhome=homeDir, create=1)
+            filename='tabletest.db', dbhome=self.testHomeDir, create=1)
 
     def tearDown(self):
         self.tdb.close()
@@ -323,7 +317,7 @@ class TableDBTestCase(unittest.TestCase):
         self.tdb.Insert(tabname, {'Type': 'Unknown', 'Access': '0'})
 
         def set_type(type):
-            if type is None:
+            if type == None:
                 return 'MP3'
             return type
 

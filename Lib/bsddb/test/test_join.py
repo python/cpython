@@ -2,13 +2,6 @@
 """
 
 import os
-import tempfile
-
-try:
-    from threading import Thread, currentThread
-    have_threads = 1
-except ImportError:
-    have_threads = 0
 
 import unittest
 from test_all import verbose
@@ -20,10 +13,13 @@ except ImportError:
     # For Python 2.3
     from bsddb import db, dbshelve
 
+from test_all import get_new_environment_path, get_new_database_path
+
 try:
     from bsddb3 import test_support
 except ImportError:
     from test import test_support
+
 
 #----------------------------------------------------------------------
 
@@ -51,12 +47,9 @@ class JoinTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
-        self.homeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.homeDir = get_new_environment_path()
         self.env = db.DBEnv()
-        self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL | db.DB_INIT_LOCK )
+        self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL | db.DB_INIT_LOCK )
 
     def tearDown(self):
         self.env.close()
@@ -87,7 +80,7 @@ class JoinTestCase(unittest.TestCase):
             # Don't do the .set() in an assert, or you can get a bogus failure
             # when running python -O
             tmp = sCursor.set('red')
-            assert tmp
+            self.assert_(tmp)
 
             # FIXME: jCursor doesn't properly hold a reference to its
             # cursors, if they are closed before jcursor is used it
