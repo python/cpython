@@ -32,7 +32,7 @@ report of the imported modules will be printed.
    This class provides :meth:`run_script` and :meth:`report` methods to determine
    the set of modules imported by a script. *path* can be a list of directories to
    search for modules; if not specified, ``sys.path`` is used.  *debug* sets the
-   debugging level; higher values make the class print  debugging messages about
+   debugging level; higher values make the class print debugging messages about
    what it's doing. *excludes* is a list of module names to exclude from the
    analysis. *replace_paths* is a list of ``(oldpath, newpath)`` tuples that will
    be replaced in module paths.
@@ -82,14 +82,14 @@ The script that will output the report of bacon.py::
    finder = ModuleFinder()
    finder.run_script('bacon.py')
 
-   print 'Loaded modules:'
-   for name, mod in finder.modules.iteritems():
-       print '%s: ' % name,
-       print ','.join(mod.globalnames.keys()[:3])
+   print('Loaded modules:')
+   for name, mod in finder.modules.items():
+       print('%s: ' % name, end='')
+       print(','.join(mod.globalnames.keys()[:3]))
 
-   print '-'*50
-   print 'Modules not imported:'
-   print '\n'.join(finder.badmodules.iterkeys())
+   print('-'*50)
+   print('Modules not imported:')
+   print('\n'.join(finder.badmodules.keys()))
 
 Sample output (may vary depending on the architecture)::
 

@@ -239,7 +239,7 @@ lists, one list per row::
 Now, if you wanted to swap rows and columns, you could use a list 
 comprehension::
 
-    >>> print [[row[i] for row in mat] for i in [0, 1, 2]]
+    >>> print([[row[i] for row in mat] for i in [0, 1, 2]])
     [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
 
 Special care has to be taken for the *nested* list comprehension:
@@ -251,7 +251,7 @@ A more verbose version of this snippet shows the flow explicitly::
 
     for i in [0, 1, 2]:
         for row in mat:
-            print row[i],
+            print(row[i], end="")
         print
 
 In real world, you should prefer builtin functions to complex flow statements. 

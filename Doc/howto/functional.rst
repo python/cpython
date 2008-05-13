@@ -222,10 +222,10 @@ These two statements are equivalent::
 
 
     for i in iter(obj):
-        print i
+        print(i)
 
     for i in obj:
-        print i
+        print(i)
 
 Iterators can be materialized as lists or tuples by using the :func:`list` or
 :func:`tuple` constructor functions:
@@ -709,7 +709,7 @@ obvious :keyword:`for` loop::
 containing the count and each element. ::
 
     >>> for item in enumerate(['subject', 'verb', 'object']):
-    ...     print item
+    ...     print(item)
     (0, 'subject')
     (1, 'verb')
     (2, 'object')

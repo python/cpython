@@ -89,7 +89,7 @@ Some error-handling code
     >>> roundtrip("try: import somemodule\\n"
     ...           "except ImportError: # comment\\n"
     ...           "    print('Can not import' # comment2\\n)"
-    ...           "else:   print 'Loaded'\\n")
+    ...           "else:   print('Loaded')\\n")
     True
 
 Balancing continuation

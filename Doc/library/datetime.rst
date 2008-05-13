@@ -532,7 +532,7 @@ Example of working with :class:`date`:
     datetime.date(2002, 3, 11)
     >>> t = d.timetuple()
     >>> for i in t:     # doctest: +SKIP
-    ...     print i
+    ...     print(i)
     2002                # year
     3                   # month
     11                  # day
@@ -544,7 +544,7 @@ Example of working with :class:`date`:
     -1
     >>> ic = d.isocalendar()
     >>> for i in ic:    # doctest: +SKIP
-    ...     print i
+    ...     print(i)
     2002                # ISO year
     11                  # ISO week number
     1                   # ISO day number ( 1 = Monday )
@@ -1011,7 +1011,7 @@ Examples of working with datetime objects:
     >>> # Using datetime.timetuple() to get tuple of all attributes
     >>> tt = dt.timetuple()
     >>> for it in tt:   # doctest: +SKIP
-    ...     print it
+    ...     print(it)
     ... 
     2006    # year
     11      # month
@@ -1025,7 +1025,7 @@ Examples of working with datetime objects:
     >>> # Date in ISO format
     >>> ic = dt.isocalendar()
     >>> for it in ic:   # doctest: +SKIP
-    ...     print it
+    ...     print(it)
     ...
     2006    # ISO year
     47      # ISO week
