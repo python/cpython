@@ -133,7 +133,7 @@ class TestStdlibRemovals(unittest.TestCase):
                         'ihooks', 'mhlib')
     inclusive_platforms = {'irix' : ('pure',),
                           'darwin' : ('autoGIL', 'Carbon', 'OSATerminology',
-                                      'icglue', 'Nav', 'MacOS', 'aepack', 'aetools'
+                                      'icglue', 'Nav', 'MacOS', 'aepack', 'aetools',
                                       'aetypes', 'applesingle', 'appletrawmain',
                                       'appletrunner', 'argvemulator', 'bgenlocations',
                                       'EasyDialogs', 'macerrors', 'macostools',
@@ -162,11 +162,11 @@ class TestStdlibRemovals(unittest.TestCase):
                                  % module_name)
                 except ImportError:
                     if not optional:
-                        self.fail("Non-optional module %s raised an "
-                                  "ImportError." % module_name)
+                        self.fail("Non-optional module {0} raised an "
+                                  "ImportError.".format(module_name))
                 else:
-                    self.fail("DeprecationWarning not raised for %s" %
-                                module_name)
+                    self.fail("DeprecationWarning not raised for {0}"
+                                .format(module_name))
 
     def test_platform_independent_removals(self):
         # Make sure that the modules that are available on all platforms raise
