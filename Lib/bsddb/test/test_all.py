@@ -11,6 +11,11 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
+try:
+    from bsddb3 import test_support
+except ImportError:
+    from test import test_support
+
 verbose = 0
 if 'verbose' in sys.argv:
     verbose = 1
@@ -31,6 +36,53 @@ def print_versions():
     print 'python version:       %s' % sys.version
     print 'My pid:               %s' % os.getpid()
     print '-=' * 38
+
+
+def get_new_path(name) :
+    get_new_path.mutex.acquire()
+    try :
+        import os
+        path=os.path.join(get_new_path.prefix,
+                name+"_"+str(os.getpid())+"_"+str(get_new_path.num))
+        get_new_path.num+=1
+    finally :
+        get_new_path.mutex.release()
+    return path
+
+def get_new_environment_path() :
+    path=get_new_path("environment")
+    import os
+    try:
+        os.makedirs(path,mode=0700)
+    except os.error:
+        test_support.rmtree(path)
+        os.makedirs(path)
+    return path
+
+def get_new_database_path() :
+    path=get_new_path("database")
+    import os
+    if os.path.exists(path) :
+        os.remove(path)
+    return path
+
+
+get_new_path.prefix="/tmp/z-Berkeley_DB"
+get_new_path.num=0
+
+try :
+    import threading
+    get_new_path.mutex=threading.Lock()
+    del threading
+except ImportError:
+    class Lock(object) :
+        def acquire(self) :
+            pass
+        def release(self) :
+            pass
+    get_new_path.mutex=Lock()
+    del Lock
+
 
 
 class PrintInfoFakeTest(unittest.TestCase):
@@ -60,7 +112,9 @@ def suite():
         'test_dbobj',
         'test_dbshelve',
         'test_dbtables',
-        'test_env_close',
+        'test_early_close',
+        'test_distributed_transactions',
+        'test_replication',
         'test_get_none',
         'test_join',
         'test_lock',

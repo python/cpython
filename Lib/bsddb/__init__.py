@@ -33,10 +33,10 @@
 #----------------------------------------------------------------------
 
 
-"""Support for BerkeleyDB 3.3 through 4.4 with a simple interface.
+"""Support for Berkeley DB 3.3 through 4.6 with a simple interface.
 
 For the full featured object oriented interface use the bsddb.db module
-instead.  It mirrors the Sleepycat BerkeleyDB C API.
+instead.  It mirrors the Oracle Berkeley DB C API.
 """
 
 try:
@@ -188,7 +188,7 @@ class _DBWithCursor(_iter_mixin):
                 self.saved_dbc_key = None
 
     # This method is needed for all non-cursor DB calls to avoid
-    # BerkeleyDB deadlocks (due to being opened with DB_INIT_LOCK
+    # Berkeley DB deadlocks (due to being opened with DB_INIT_LOCK
     # and DB_THREAD to be thread safe) when intermixing database
     # operations that use the cursor internally with those that don't.
     def _closeCursors(self, save=1):
@@ -372,7 +372,7 @@ def _checkflag(flag, file):
     elif flag == 'n':
         flags = db.DB_CREATE
         #flags = db.DB_CREATE | db.DB_TRUNCATE
-        # we used db.DB_TRUNCATE flag for this before but BerkeleyDB
+        # we used db.DB_TRUNCATE flag for this before but Berkeley DB
         # 4.2.52 changed to disallowed truncate with txn environments.
         if file is not None and os.path.isfile(file):
             os.unlink(file)
@@ -385,10 +385,10 @@ def _checkflag(flag, file):
 
 # This is a silly little hack that allows apps to continue to use the
 # DB_THREAD flag even on systems without threads without freaking out
-# BerkeleyDB.
+# Berkeley DB.
 #
 # This assumes that if Python was built with thread support then
-# BerkeleyDB was too.
+# Berkeley DB was too.
 
 try:
     import thread

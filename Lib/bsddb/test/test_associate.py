@@ -3,7 +3,6 @@ TestCases for DB.associate.
 """
 
 import sys, os, string
-import tempfile
 import time
 from pprint import pprint
 
@@ -14,7 +13,7 @@ except ImportError:
     have_threads = 0
 
 import unittest
-from test_all import verbose
+from test_all import verbose, get_new_environment_path
 
 try:
     # For Pythons w/distutils pybsddb
@@ -96,17 +95,9 @@ musicdata = {
 class AssociateErrorTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
-        self.homeDir = homeDir
-        try:
-            os.mkdir(homeDir)
-        except os.error:
-            import glob
-            files = glob.glob(os.path.join(self.homeDir, '*'))
-            for file in files:
-                os.remove(file)
+        self.homeDir = get_new_environment_path()
         self.env = db.DBEnv()
-        self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
+        self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
 
     def tearDown(self):
         self.env.close()
@@ -127,7 +118,7 @@ class AssociateErrorTestCase(unittest.TestCase):
         secDB.open(self.filename, "secondary", db.DB_BTREE, db.DB_CREATE)
 
         # dupDB has been configured to allow duplicates, it can't
-        # associate with a secondary.  BerkeleyDB will return an error.
+        # associate with a secondary.  Berkeley DB will return an error.
         try:
             def f(a,b): return a+b
             dupDB.associate(secDB, f)
@@ -152,27 +143,16 @@ class AssociateTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
-        self.homeDir = homeDir
-        try:
-            os.mkdir(homeDir)
-        except os.error:
-            import glob
-            files = glob.glob(os.path.join(self.homeDir, '*'))
-            for file in files:
-                os.remove(file)
+        self.homeDir = get_new_environment_path()
         self.env = db.DBEnv()
-        self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL |
+        self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL |
                                db.DB_INIT_LOCK | db.DB_THREAD | self.envFlags)
 
     def tearDown(self):
         self.closeDB()
         self.env.close()
         self.env = None
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        test_support.rmtree(self.homeDir)
 
     def addDataToDB(self, d, txn=None):
         for key, value in musicdata.items():
@@ -249,10 +229,10 @@ class AssociateTestCase(unittest.TestCase):
     def finish_test(self, secDB, txn=None):
         # 'Blues' should not be in the secondary database
         vals = secDB.pget('Blues', txn=txn)
-        assert vals == None, vals
+        self.assertEqual(vals, None, vals)
 
         vals = secDB.pget('Unknown', txn=txn)
-        assert vals[0] == 99 or vals[0] == '99', vals
+        self.assert_(vals[0] == 99 or vals[0] == '99', vals)
         vals[1].index('Unknown')
         vals[1].index('Unnamed')
         vals[1].index('unknown')
@@ -264,14 +244,14 @@ class AssociateTestCase(unittest.TestCase):
         rec = self.cur.first()
         while rec is not None:
             if type(self.keytype) == type(''):
-                assert string.atoi(rec[0])  # for primary db, key is a number
+                self.assert_(string.atoi(rec[0]))  # for primary db, key is a number
             else:
-                assert rec[0] and type(rec[0]) == type(0)
+                self.assert_(rec[0] and type(rec[0]) == type(0))
             count = count + 1
             if verbose:
                 print rec
             rec = self.cur.next()
-        assert count == len(musicdata) # all items accounted for
+        self.assertEqual(count, len(musicdata))  # all items accounted for
 
 
         if verbose:
@@ -281,29 +261,29 @@ class AssociateTestCase(unittest.TestCase):
 
         # test cursor pget
         vals = self.cur.pget('Unknown', flags=db.DB_LAST)
-        assert vals[1] == 99 or vals[1] == '99', vals
-        assert vals[0] == 'Unknown'
+        self.assert_(vals[1] == 99 or vals[1] == '99', vals)
+        self.assertEqual(vals[0], 'Unknown')
         vals[2].index('Unknown')
         vals[2].index('Unnamed')
         vals[2].index('unknown')
 
         vals = self.cur.pget('Unknown', data='wrong value', flags=db.DB_GET_BOTH)
-        assert vals == None, vals
+        self.assertEqual(vals, None, vals)
 
         rec = self.cur.first()
-        assert rec[0] == "Jazz"
+        self.assertEqual(rec[0], "Jazz")
         while rec is not None:
             count = count + 1
             if verbose:
                 print rec
             rec = self.cur.next()
         # all items accounted for EXCEPT for 1 with "Blues" genre
-        assert count == len(musicdata)-1
+        self.assertEqual(count, len(musicdata)-1)
 
         self.cur = None
 
     def getGenre(self, priKey, priData):
-        assert type(priData) == type("")
+        self.assertEqual(type(priData), type(""))
         if verbose:
             print 'getGenre key: %r data: %r' % (priKey, priData)
         genre = string.split(priData, '|')[2]
@@ -388,7 +368,7 @@ class ShelveAssociateTestCase(AssociateTestCase):
 
 
     def getGenre(self, priKey, priData):
-        assert type(priData) == type(())
+        self.assertEqual(type(priData), type(()))
         if verbose:
             print 'getGenre key: %r data: %r' % (priKey, priData)
         genre = priData[2]
@@ -419,6 +399,8 @@ class ThreadedAssociateTestCase(AssociateTestCase):
         t2 = Thread(target = self.writer2,
                     args = (d, ))
 
+        t1.setDaemon(True)
+        t2.setDaemon(True)
         t1.start()
         t2.start()
         t1.join()

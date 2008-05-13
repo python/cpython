@@ -5,9 +5,9 @@ regression test suite.
 
 import os, string
 import unittest
-import tempfile
 
-from test_all import verbose
+from test_all import verbose, get_new_database_path
+
 
 try:
     # For Pythons w/distutils pybsddb
@@ -16,10 +16,9 @@ except ImportError:
     # For Python 2.3
     from bsddb import db, hashopen, btopen, rnopen
 
-
 class CompatibilityTestCase(unittest.TestCase):
     def setUp(self):
-        self.filename = tempfile.mktemp()
+        self.filename = get_new_database_path()
 
     def tearDown(self):
         try:
@@ -47,7 +46,7 @@ class CompatibilityTestCase(unittest.TestCase):
         if verbose:
             print '%s %s %s' % getTest
 
-        assert getTest[1] == 'quick', 'data mismatch!'
+        self.assertEqual(getTest[1], 'quick', 'data mismatch!')
 
         rv = f.set_location(3)
         if rv != (3, 'brown'):
@@ -120,13 +119,13 @@ class CompatibilityTestCase(unittest.TestCase):
             try:
                 rec = f.next()
             except KeyError:
-                assert rec == f.last(), 'Error, last <> last!'
+                self.assertEqual(rec, f.last(), 'Error, last <> last!')
                 f.previous()
                 break
             if verbose:
                 print rec
 
-        assert f.has_key('f'), 'Error, missing key!'
+        self.assert_(f.has_key('f'), 'Error, missing key!')
 
         # test that set_location() returns the next nearest key, value
         # on btree databases and raises KeyError on others.

@@ -3,7 +3,6 @@ TestCases for checking set_get_returns_none.
 """
 
 import os, string
-import tempfile
 import unittest
 
 try:
@@ -13,14 +12,14 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
-from test_all import verbose
+from test_all import verbose, get_new_database_path
 
 
 #----------------------------------------------------------------------
 
 class GetReturnsNoneTestCase(unittest.TestCase):
     def setUp(self):
-        self.filename = tempfile.mktemp()
+        self.filename = get_new_database_path()
 
     def tearDown(self):
         try:
@@ -38,10 +37,10 @@ class GetReturnsNoneTestCase(unittest.TestCase):
             d.put(x, x * 40)
 
         data = d.get('bad key')
-        assert data == None
+        self.assertEqual(data, None)
 
         data = d.get('a')
-        assert data == 'a'*40
+        self.assertEqual(data, 'a'*40)
 
         count = 0
         c = d.cursor()
@@ -50,8 +49,8 @@ class GetReturnsNoneTestCase(unittest.TestCase):
             count = count + 1
             rec = c.next()
 
-        assert rec == None
-        assert count == 52
+        self.assertEqual(rec, None)
+        self.assertEqual(count, 52)
 
         c.close()
         d.close()
@@ -69,7 +68,7 @@ class GetReturnsNoneTestCase(unittest.TestCase):
         self.assertRaises(KeyError, d.get, 'bad key')
 
         data = d.get('a')
-        assert data == 'a'*40
+        self.assertEqual(data, 'a'*40)
 
         count = 0
         exceptionHappened = 0
@@ -83,9 +82,9 @@ class GetReturnsNoneTestCase(unittest.TestCase):
                 exceptionHappened = 1
                 break
 
-        assert rec != None
-        assert exceptionHappened
-        assert count == 52
+        self.assertNotEqual(rec, None)
+        self.assert_(exceptionHappened)
+        self.assertEqual(count, 52)
 
         c.close()
         d.close()

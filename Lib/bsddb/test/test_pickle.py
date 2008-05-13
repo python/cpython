@@ -6,7 +6,6 @@ try:
 except ImportError:
     cPickle = None
 import unittest
-import tempfile
 
 try:
     # For Pythons w/distutils pybsddb
@@ -14,6 +13,8 @@ try:
 except ImportError, e:
     # For Python 2.3
     from bsddb import db
+
+from test_all import get_new_environment_path, get_new_database_path
 
 try:
     from bsddb3 import test_support
@@ -25,14 +26,10 @@ except ImportError:
 
 class pickleTestCase(unittest.TestCase):
     """Verify that DBError can be pickled and unpickled"""
-    db_home = 'db_home'
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
-        self.homeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.homeDir = get_new_environment_path()
 
     def tearDown(self):
         if hasattr(self, 'db'):
@@ -47,7 +44,7 @@ class pickleTestCase(unittest.TestCase):
         self.db = db.DB(self.env)
         self.db.open(self.db_name, db.DB_HASH, db.DB_CREATE)
         self.db.put('spam', 'eggs')
-        assert self.db['spam'] == 'eggs'
+        self.assertEqual(self.db['spam'], 'eggs')
         try:
             self.db.put('spam', 'ham', flags=db.DB_NOOVERWRITE)
         except db.DBError, egg:

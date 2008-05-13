@@ -37,9 +37,18 @@ import sys
 #DictMixin was added
 if sys.version_info[:3] >= (2, 3, 0):
     HIGHEST_PROTOCOL = cPickle.HIGHEST_PROTOCOL
-    def _dumps(object, protocol):
-        return cPickle.dumps(object, protocol=protocol)
+# In python 2.3.*, "cPickle.dumps" accepts no
+# named parameters. "pickle.dumps" accepts them,
+# so this seems a bug.
+    if sys.version_info[:3] < (2, 4, 0):
+        def _dumps(object, protocol):
+            return cPickle.dumps(object, protocol)
+    else :
+        def _dumps(object, protocol):
+            return cPickle.dumps(object, protocol=protocol)
+
     from UserDict import DictMixin
+
 else:
     HIGHEST_PROTOCOL = None
     def _dumps(object, protocol):
@@ -133,7 +142,7 @@ class DBShelf(DictMixin):
 
 
     def keys(self, txn=None):
-        if txn is not None:
+        if txn != None:
             return self.db.keys(txn)
         else:
             return self.db.keys()
@@ -157,7 +166,7 @@ class DBShelf(DictMixin):
 
 
     def items(self, txn=None):
-        if txn is not None:
+        if txn != None:
             items = self.db.items(txn)
         else:
             items = self.db.items()
@@ -168,7 +177,7 @@ class DBShelf(DictMixin):
         return newitems
 
     def values(self, txn=None):
-        if txn is not None:
+        if txn != None:
             values = self.db.values(txn)
         else:
             values = self.db.values()
