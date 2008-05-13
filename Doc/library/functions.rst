@@ -335,15 +335,15 @@ available.  They are listed here in alphabetical order.
       Using :func:`divmod` with complex numbers is deprecated.
 
 
-.. function:: enumerate(sequence)
+.. function:: enumerate(sequence[, start=0])
 
    Return an enumerate object. *sequence* must be a sequence, an
    :term:`iterator`, or some other object which supports iteration.  The
    :meth:`next` method of the iterator returned by :func:`enumerate` returns a
-   tuple containing a count (from zero) and the corresponding value obtained
-   from iterating over *iterable*.  :func:`enumerate` is useful for obtaining an
-   indexed series: ``(0, seq[0])``, ``(1, seq[1])``, ``(2, seq[2])``, .... For
-   example:
+   tuple containing a count (from *start* which defaults to 0) and the
+   corresponding value obtained from iterating over *iterable*.
+   :func:`enumerate` is useful for obtaining an indexed series: ``(0, seq[0])``,
+   ``(1, seq[1])``, ``(2, seq[2])``, .... For example:
 
       >>> for i, season in enumerate(['Spring', 'Summer', 'Fall', 'Winter']):
       ...     print i, season
@@ -353,6 +353,8 @@ available.  They are listed here in alphabetical order.
       3 Winter
 
    .. versionadded:: 2.3
+   .. versionadded:: 2.6
+      The *start* parameter.
 
 
 .. function:: eval(expression[, globals[, locals]])
