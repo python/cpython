@@ -67,12 +67,7 @@ The :mod:`profile` and :mod:`cProfile` modules export the same interface, so
 they are mostly interchangeable; :mod:`cProfile` has a much lower overhead but
 is newer and might not be available on all systems.
 :mod:`cProfile` is really a compatibility layer on top of the internal
-<<<<<<< .working
 :mod:`_lsprof` module.
-=======
-:mod:`_lsprof` module.  The :mod:`hotshot` module is reserved for specialized
-usage.
->>>>>>> .merge-right.r62379
 
 
 .. _profile-instant:
