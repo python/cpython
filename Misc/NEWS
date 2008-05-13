@@ -25,6 +25,8 @@ Extension Modules
 
 - Support for Windows9x has been removed from the winsound module.
 
+- bsddb module updated to version 4.6.4.
+
 Library
 -------
 
