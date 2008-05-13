@@ -132,7 +132,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
           return ret
 
       httpd = make_server('', 8000, simple_app)
-      print "Serving on port 8000..."
+      print("Serving on port 8000...")
       httpd.serve_forever()
 
 

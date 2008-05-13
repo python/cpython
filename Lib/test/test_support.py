@@ -481,7 +481,7 @@ def captured_output(stream_name):
     Example use (with 'stream_name=stdout')::
 
        with captured_stdout() as s:
-           print "hello"
+           print("hello")
        assert s.getvalue() == "hello"
     """
     import io

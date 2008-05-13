@@ -1273,7 +1273,7 @@ idle -est "Baz" foo.py
         Run $IDLESTARTUP or $PYTHONSTARTUP, edit foo.py, and open a shell
         window with the title "Baz".
 
-idle -c "import sys; print sys.argv" "foo"
+idle -c "import sys; print(sys.argv)" "foo"
         Open a shell window and run the command, passing "-c" in sys.argv[0]
         and "foo" in sys.argv[1].
 
@@ -1282,7 +1282,7 @@ idle -d -s -r foo.py "Hello World"
         run foo.py, passing "foo.py" in sys.argv[0] and "Hello World" in
         sys.argv[1].
 
-echo "import sys; print sys.argv" | idle - "foobar"
+echo "import sys; print(sys.argv)" | idle - "foobar"
         Open a shell window, run the script piped in, passing '' in sys.argv[0]
         and "foobar" in sys.argv[1].
 """

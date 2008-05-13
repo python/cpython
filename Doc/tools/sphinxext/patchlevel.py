@@ -63,9 +63,10 @@ def get_version_info():
         return get_header_version_info('.')
     except (IOError, OSError):
         version, release = get_sys_version_info()
-        print >>sys.stderr, 'Can\'t get version info from Include/patchlevel.h, ' \
-              'using version of this interpreter (%s).' % release
+        print('Can\'t get version info from Include/patchlevel.h, '
+              'using version of this interpreter (%s).' % release,
+              file=sys.stderr)
         return version, release
 
 if __name__ == '__main__':
-    print get_header_version_info('.')[1]
+    print(get_header_version_info('.')[1])

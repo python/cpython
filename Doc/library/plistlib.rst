@@ -104,4 +104,4 @@ Generating a plist::
 Parsing a plist::
 
     pl = readPlist(pathOrFile)
-    print pl["aKey"]
+    print(pl["aKey"])
