@@ -36,7 +36,7 @@ class HelperFunctionsTests(unittest.TestCase):
         """Save a copy of sys.path"""
         self.sys_path = sys.path[:]
 
-
+    def tearDown(self):
         """Restore sys.path"""
         sys.path = self.sys_path
 
@@ -256,13 +256,8 @@ class ImportSideEffectTests(unittest.TestCase):
             else:
                 self.fail("sitecustomize not imported automatically")
 
-
-
-
 def test_main():
     run_unittest(HelperFunctionsTests, ImportSideEffectTests)
-
-
 
 if __name__ == "__main__":
     test_main()
