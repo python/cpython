@@ -2240,12 +2240,12 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
 .. function:: fileConfig(fname[, defaults])
 
-   Reads the logging configuration from a ConfigParser-format file named *fname*.
-   This function can be called several times from an application, allowing an end
-   user the ability to select from various pre-canned configurations (if the
-   developer provides a mechanism to present the choices and load the chosen
-   configuration). Defaults to be passed to ConfigParser can be specified in the
-   *defaults* argument.
+   Reads the logging configuration from a :mod:`configparser`\-format file named
+   *fname*.  This function can be called several times from an application,
+   allowing an end user the ability to select from various pre-canned
+   configurations (if the developer provides a mechanism to present the choices
+   and load the chosen configuration). Defaults to be passed to the ConfigParser
+   can be specified in the *defaults* argument.
 
 
 .. function:: listen([port])

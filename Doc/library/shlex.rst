@@ -63,7 +63,7 @@ The :mod:`shlex` module defines the following class:
 
 .. seealso::
 
-   Module :mod:`ConfigParser`
+   Module :mod:`configparser`
       Parser for configuration files similar to the Windows :file:`.ini` files.
 
 
