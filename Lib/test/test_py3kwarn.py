@@ -132,7 +132,7 @@ class TestStdlibRemovals(unittest.TestCase):
                         'Bastion', 'compiler', 'dircache', 'fpformat',
                         'ihooks', 'mhlib')
     inclusive_platforms = {'irix' : ('pure', 'AL', 'al', 'CD', 'cd', 'cddb',
-                                     'cdplayer'),
+                                     'cdplayer', 'CL', 'cl'),
                           'darwin' : ('autoGIL', 'Carbon', 'OSATerminology',
                                       'icglue', 'Nav', 'MacOS', 'aepack',
                                       'aetools', 'aetypes', 'applesingle',

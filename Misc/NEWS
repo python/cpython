@@ -32,6 +32,9 @@ Extension Modules
 Library
 -------
 
+- The CL, CL_old, and cl modules for IRIX have been deprecated for removal in
+  Python 3.0.
+
 - The cdplayer module for IRIX has been deprecated for removal in Python 3.0.
 
 - The cddb module for IRIX has been deprecated for removal in Python 3.0.
