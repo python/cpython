@@ -1,3 +1,7 @@
+from warnings import warnpy3k
+warnpy3k("the CD module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+
 ERROR           = 0
 NODISC          = 1
 READY           = 2
