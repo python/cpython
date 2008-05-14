@@ -133,17 +133,20 @@ class TestStdlibRemovals(unittest.TestCase):
                         'ihooks', 'mhlib')
     inclusive_platforms = {'irix' : ('pure', 'AL', 'al'),
                           'darwin' : ('autoGIL', 'Carbon', 'OSATerminology',
-                                      'icglue', 'Nav', 'MacOS', 'aepack', 'aetools',
-                                      'aetypes', 'applesingle', 'appletrawmain',
-                                      'appletrunner', 'argvemulator', 'bgenlocations',
+                                      'icglue', 'Nav', 'MacOS', 'aepack',
+                                      'aetools', 'aetypes', 'applesingle',
+                                      'appletrawmain', 'appletrunner',
+                                      'argvemulator', 'bgenlocations',
                                       'EasyDialogs', 'macerrors', 'macostools',
                                       'findertools', 'FrameWork', 'ic',
                                       'gensuitemodule', 'icopen', 'macresource',
                                       'MiniAEFrame', 'pimp', 'PixMapWrapper',
-                                      'terminalcommand', 'videoreader', '_builtinSuites',
-                                      'CodeWarrior', 'Explorer', 'Finder', 'Netscape',
-                                      'StdSuites', 'SystemEvents', 'Terminal', 'cfmfile',
-                                      'bundlebuilder', 'buildtools', 'ColorPicker')}
+                                      'terminalcommand', 'videoreader',
+                                      '_builtinSuites', 'CodeWarrior',
+                                      'Explorer', 'Finder', 'Netscape',
+                                      'StdSuites', 'SystemEvents', 'Terminal',
+                                      'cfmfile', 'bundlebuilder', 'buildtools',
+                                      'ColorPicker')}
     optional_modules = ('bsddb185', 'Canvas', 'dl', 'linuxaudiodev', 'imageop',
                         'sv')
 
