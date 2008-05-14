@@ -1,6 +1,9 @@
 :mod:`configparser` --- Configuration file parser
 =================================================
 
+.. module:: ConfigParser
+   :synopsis: Old name for the configparser module.
+
 .. module:: configparser
    :synopsis: Configuration file parser.
 
@@ -8,6 +11,11 @@
 .. moduleauthor:: Barry Warsaw <bwarsaw@python.org>
 .. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
 .. sectionauthor:: Christopher G. Petrilli <petrilli@amber.org>
+
+.. note::
+   The :mod:`ConfigParser` module has been renamed to :mod:`configparser` in
+   Python 3.0.  It is importable under both names in Python 2.6 and the rest of
+   the 2.x series.
 
 .. index::
    pair: .ini; file
