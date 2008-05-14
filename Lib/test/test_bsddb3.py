@@ -49,30 +49,27 @@ class TimingCheck(unittest.TestCase):
 
 
 def suite():
-    try:
-        # this is special, it used to segfault the interpreter
-        import bsddb.test.test_1413192
-    except:
-        for f in ['__db.001', '__db.002', '__db.003', 'log.0000000001']:
-            unlink(f)
-
     test_modules = [
         'test_associate',
         'test_basics',
+        'test_compare',
         'test_compat',
+        'test_cursor_pget_bug',
         'test_dbobj',
         'test_dbshelve',
         'test_dbtables',
-        'test_env_close',
+        'test_distributed_transactions',
+        'test_early_close',
         'test_get_none',
         'test_join',
         'test_lock',
         'test_misc',
+        'test_pickle',
         'test_queue',
         'test_recno',
-        'test_thread',
+        'test_replication',
         'test_sequence',
-        'test_cursor_pget_bug',
+        'test_thread',
         ]
 
     alltests = unittest.TestSuite()
