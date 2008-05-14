@@ -32,6 +32,9 @@ Extension Modules
 Library
 -------
 
+- The cd and CD modules for IRIX have been deprecated for removal in
+  Python 3.0.
+
 - The al and AL modules for IRIX have been deprecated for removal in
   Python 3.0.
 

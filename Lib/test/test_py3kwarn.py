@@ -131,7 +131,7 @@ class TestStdlibRemovals(unittest.TestCase):
     all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new', 'rexec',
                         'Bastion', 'compiler', 'dircache', 'fpformat',
                         'ihooks', 'mhlib')
-    inclusive_platforms = {'irix' : ('pure', 'AL', 'al'),
+    inclusive_platforms = {'irix' : ('pure', 'AL', 'al', 'CD', 'cd'),
                           'darwin' : ('autoGIL', 'Carbon', 'OSATerminology',
                                       'icglue', 'Nav', 'MacOS', 'aepack',
                                       'aetools', 'aetypes', 'applesingle',
