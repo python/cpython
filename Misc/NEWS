@@ -32,6 +32,9 @@ Extension Modules
 Library
 -------
 
+- The ConfigParser module has been renamed 'configparser'.  The old
+  name is now deprecated.
+
 - The CL, CL_old, and cl modules for IRIX have been deprecated for removal in
   Python 3.0.
 
