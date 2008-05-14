@@ -594,7 +594,7 @@ class Pickler:
             write(MARK + LIST)
 
         self.memoize(obj)
-        self._batch_appends(iter(obj))
+        self._batch_appends(obj)
 
     dispatch[list] = save_list
 
@@ -611,6 +611,7 @@ class Pickler:
                 write(APPEND)
             return
 
+        items = iter(items)
         r = range(self._BATCHSIZE)
         while items is not None:
             tmp = []
@@ -641,7 +642,7 @@ class Pickler:
             write(MARK + DICT)
 
         self.memoize(obj)
-        self._batch_setitems(iter(obj.items()))
+        self._batch_setitems(obj.items())
 
     dispatch[dict] = save_dict
     if PyStringMap is not None:
@@ -659,6 +660,7 @@ class Pickler:
                 write(SETITEM)
             return
 
+        items = iter(items)
         r = range(self._BATCHSIZE)
         while items is not None:
             tmp = []
