@@ -1994,6 +1994,10 @@ inital(void)
 {
 	PyObject *m, *d, *x;
 
+	if (PyErr_WarnPy3k("the al module has been removed in "
+	                   "Python 3.0", 2) < 0)
+	    return;	
+
 	/* Create the module and add the functions */
 	m = Py_InitModule4("al", al_methods,
 		al_module_documentation,

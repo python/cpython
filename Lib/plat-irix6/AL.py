@@ -1,3 +1,7 @@
+from warnings import warnpy3k
+warnpy3k("the AL module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+
 RATE_48000      = 48000
 RATE_44100      = 44100
 RATE_32000      = 32000
