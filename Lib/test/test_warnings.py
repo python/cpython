@@ -396,6 +396,7 @@ class _WarningsTests(BaseTest):
             self.assertRaises(TypeError, self.module.warn, "Warning!")
         finally:
             self.module.showwarning = old_showwarning
+            self.module.resetwarnings()
 
     def test_show_warning_output(self):
         # With showarning() missing, make sure that output is okay.
