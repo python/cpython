@@ -21,7 +21,7 @@ import os
 import sys
 
 from idlelib import macosxSupport
-from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+from configparser import ConfigParser, NoOptionError, NoSectionError
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass

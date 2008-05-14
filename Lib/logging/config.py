@@ -62,9 +62,9 @@ def fileConfig(fname, defaults=None):
     rather than a filename, in which case the file-like object will be read
     using readfp.
     """
-    import ConfigParser
+    import configparser
 
-    cp = ConfigParser.ConfigParser(defaults)
+    cp = configparser.ConfigParser(defaults)
     if hasattr(cp, 'readfp') and hasattr(fname, 'readline'):
         cp.readfp(fname)
     else:
