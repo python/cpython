@@ -13,6 +13,9 @@
 # It is also possible to set the above mentioned variables to new values.
 # You can then use c.write() to write out the changed values to the
 # .cdplayerrc file.
+from warnings import warnpy3k
+warnpy3k("the cddb module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 import string, posix, os
 

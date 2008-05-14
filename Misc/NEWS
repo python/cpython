@@ -32,6 +32,8 @@ Extension Modules
 Library
 -------
 
+- The cddb module for IRIX has been deprecated for removal in Python 3.0.
+
 - The cd and CD modules for IRIX have been deprecated for removal in
   Python 3.0.
 
