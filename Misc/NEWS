@@ -19,6 +19,9 @@ Core and Builtins
 - Issue 2801: fix bug in the float.is_integer method where a ValueError
   was sometimes incorrectly raised.
 
+- The --with-toolbox-glue option (and the associated pymactoolbox.h) have been
+  removed.
+
 Extension Modules
 -----------------
 
