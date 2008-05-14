@@ -10,7 +10,7 @@ from hashlib import md5
 import os
 import socket
 import platform
-import ConfigParser
+import configparser
 import httplib
 import base64
 import urlparse
