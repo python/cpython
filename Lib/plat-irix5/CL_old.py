@@ -8,6 +8,10 @@
 #
 # originalFormat parameter values
 #
+from warnings import warnpy3k
+warnpy3k("the CL_old module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+
 MAX_NUMBER_OF_ORIGINAL_FORMATS = 32
 
 # Audio
