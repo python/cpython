@@ -1,14 +1,13 @@
-
-:mod:`ConfigParser` --- Configuration file parser
+:mod:`configparser` --- Configuration file parser
 =================================================
 
-.. module:: ConfigParser
+.. module:: configparser
    :synopsis: Configuration file parser.
+
 .. moduleauthor:: Ken Manheimer <klm@zope.com>
 .. moduleauthor:: Barry Warsaw <bwarsaw@python.org>
 .. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
 .. sectionauthor:: Christopher G. Petrilli <petrilli@amber.org>
-
 
 .. index::
    pair: .ini; file
@@ -213,9 +212,9 @@ RawConfigParser Objects
    load the required file or files using :meth:`readfp` before calling :meth:`read`
    for any optional files::
 
-      import ConfigParser, os
+      import configparser, os
 
-      config = ConfigParser.ConfigParser()
+      config = configparser.ConfigParser()
       config.readfp(open('defaults.cfg'))
       config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
 
@@ -342,9 +341,9 @@ Examples
 
 An example of writing to a configuration file::
 
-   import ConfigParser
+   import configparser
 
-   config = ConfigParser.RawConfigParser()
+   config = configparser.RawConfigParser()
    
    # When adding sections or items, add them in the reverse order of
    # how you want them to be displayed in the actual file.
@@ -367,9 +366,9 @@ An example of writing to a configuration file::
 
 An example of reading the configuration file again::
 
-   import ConfigParser
+   import configparser
 
-   config = ConfigParser.RawConfigParser()
+   config = configparser.RawConfigParser()
    config.read('example.cfg')
 
    # getfloat() raises an exception if the value is not a float
@@ -386,9 +385,9 @@ An example of reading the configuration file again::
 To get interpolation, you will need to use a :class:`ConfigParser` or
 :class:`SafeConfigParser`::
 
-   import ConfigParser
+   import configparser
 
-   config = ConfigParser.ConfigParser()
+   config = configparser.ConfigParser()
    config.read('example.cfg')
 
    # Set the third, optional argument of get to 1 if you wish to use raw mode.
@@ -403,10 +402,10 @@ To get interpolation, you will need to use a :class:`ConfigParser` or
 Defaults are available in all three types of ConfigParsers. They are used in 
 interpolation if an option used is not defined elsewhere. ::
 
-   import ConfigParser
+   import configparser
 
    # New instance with 'bar' and 'baz' defaulting to 'Life' and 'hard' each
-   config = ConfigParser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
+   config = configparser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
    config.read('example.cfg')
    
    print(config.get('Section1', 'foo')) # -> "Python is fun!"
@@ -419,7 +418,7 @@ The function ``opt_move`` below can be used to move options between sections::
    def opt_move(config, section1, section2, option):
        try:
            config.set(section2, option, config.get(section1, option, 1))
-       except ConfigParser.NoSectionError:
+       except configparser.NoSectionError:
            # Create non-existent section
            config.add_section(section2)
            opt_move(config, section1, section2, option)
