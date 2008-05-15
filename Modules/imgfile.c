@@ -491,6 +491,11 @@ void
 initimgfile(void)
 {
 	PyObject *m, *d;
+	
+	if (PyErr_WarnPy3k("the imgfile module has been removed in "
+	                   "Python 3.0", 2) < 0)
+	    return;
+	
 	m = Py_InitModule("imgfile", imgfile_methods);
 	if (m == NULL)
 		return;
