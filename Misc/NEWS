@@ -32,6 +32,9 @@ Extension Modules
 Library
 -------
 
+- The FL, flp, and fl modules from IRIX have been deprecated for removal in
+  Python 3.0.
+
 - The FILE module on IRIX has been deprecated for removal in Python 3.0.
 
 - The ERRNO module on IRIX has been deprecated for removal in Python 3.0.
