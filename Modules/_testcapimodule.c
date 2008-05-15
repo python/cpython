@@ -504,6 +504,7 @@ test_s_code(PyObject *self)
     if (PyArg_ParseTuple(tuple, "z:test_s_code2", &value) < 0)
     	return NULL;
 
+    Py_DECREF(tuple);
     Py_RETURN_NONE;
 }
 
