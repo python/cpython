@@ -42,7 +42,8 @@ def import_module(name, deprecated=False):
     available."""
     with catch_warning(record=False):
         if deprecated:
-            warnings.filterwarnings("ignore", ".+ module", DeprecationWarning)
+            warnings.filterwarnings("ignore", ".+ (module|package)",
+                                    DeprecationWarning)
         try:
             module = __import__(name, level=0)
         except ImportError:

@@ -1458,159 +1458,160 @@ The constructors for both classes work the same:
    sets, the inner sets must be :class:`frozenset` objects.  If *iterable* is
    not specified, a new empty set is returned.
 
-Instances of :class:`set` and :class:`frozenset` provide the following
-operations:
+   Instances of :class:`set` and :class:`frozenset` provide the following
+   operations:
 
-.. describe:: len(s)
+   .. describe:: len(s)
 
-   Return the cardinality of set *s*.
+      Return the cardinality of set *s*.
 
-.. describe:: x in s
+   .. describe:: x in s
 
-   Test *x* for membership in *s*.
+      Test *x* for membership in *s*.
 
-.. describe:: x not in s
+   .. describe:: x not in s
 
-   Test *x* for non-membership in *s*.
+      Test *x* for non-membership in *s*.
 
-.. method:: set.isdisjoint(other)
+   .. method:: isdisjoint(other)
 
-   Return True if the set has no elements in common with *other*.
-   Sets are disjoint if and only if their interesection is the empty set.
+      Return True if the set has no elements in common with *other*.  Sets are
+      disjoint if and only if their interesection is the empty set.
 
-.. method:: set.issubset(other)
-            set <= other
+   .. method:: issubset(other)
+               set <= other
 
-   Test whether every element in the set is in *other*.
+      Test whether every element in the set is in *other*.
 
-.. method:: set < other
+   .. method:: set < other
 
-   Test whether the set is a true subset of *other*, that is,
-   ``set <= other and set != other``.
+      Test whether the set is a true subset of *other*, that is,
+      ``set <= other and set != other``.
 
-.. method:: set.issuperset(other)
-            set >= other
+   .. method:: issuperset(other)
+               set >= other
 
-   Test whether every element in *other* is in the set.
+      Test whether every element in *other* is in the set.
 
-.. method:: set > other
+   .. method:: set > other
 
-   Test whether the set is a true superset of *other*, that is,
-   ``set >= other and set != other``.
+      Test whether the set is a true superset of *other*, that is, ``set >=
+      other and set != other``.
 
-.. method:: set.union(other)
-            set | other
+   .. method:: union(other)
+               set | other
 
-   Return a new set with elements from both sets.
+      Return a new set with elements from both sets.
 
-.. method:: set.intersection(other)
-            set & other
+   .. method:: intersection(other)
+               set & other
 
-   Return a new set with elements common to both sets.
+      Return a new set with elements common to both sets.
 
-.. method:: set.difference(other)
-            set - other
+   .. method:: difference(other)
+               set - other
 
-   Return a new set with elements in the set that are not in *other*.
+      Return a new set with elements in the set that are not in *other*.
 
-.. method:: set.symmetric_difference(other)
-            set ^ other
+   .. method:: symmetric_difference(other)
+               set ^ other
 
-   Return a new set with elements in either the set or *other* but not both.
+      Return a new set with elements in either the set or *other* but not both.
 
-.. method:: set.copy()
+   .. method:: copy()
 
-   Return a new set with a shallow copy of *s*.
-
-
-Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-:meth:`difference`, and :meth:`symmetric_difference`, :meth:`issubset`, and
-:meth:`issuperset` methods will accept any iterable as an argument.  In
-contrast, their operator based counterparts require their arguments to be sets.
-This precludes error-prone constructions like ``set('abc') & 'cbs'`` in favor of
-the more readable ``set('abc').intersection('cbs')``.
-
-Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
-sets are equal if and only if every element of each set is contained in the
-other (each is a subset of the other). A set is less than another set if and
-only if the first set is a proper subset of the second set (is a subset, but is
-not equal). A set is greater than another set if and only if the first set is a
-proper superset of the second set (is a superset, but is not equal).
-
-Instances of :class:`set` are compared to instances of :class:`frozenset` based
-on their members.  For example, ``set('abc') == frozenset('abc')`` returns
-``True`` and so does ``set('abc') in set([frozenset('abc')])``.
-
-The subset and equality comparisons do not generalize to a complete ordering
-function.  For example, any two disjoint sets are not equal and are not subsets
-of each other, so *all* of the following return ``False``:  ``a<b``, ``a==b``,
-or ``a>b``. Accordingly, sets do not implement the :meth:`__cmp__` method.
-
-Since sets only define partial ordering (subset relationships), the output of
-the :meth:`list.sort` method is undefined for lists of sets.
-
-Set elements, like dictionary keys, must be :term:`hashable`.
-
-Binary operations that mix :class:`set` instances with :class:`frozenset` return
-the type of the first operand.  For example: ``frozenset('ab') | set('bc')``
-returns an instance of :class:`frozenset`.
-
-The following table lists operations available for :class:`set` that do not
-apply to immutable instances of :class:`frozenset`:
-
-.. method:: set.update(other)
-            set |= other
-
-   Update the set, adding elements from *other*.
-
-.. method:: set.intersection_update(other)
-            set &= other
-
-   Update the set, keeping only elements found in it and *other*.
-
-.. method:: set.difference_update(other)
-            set -= other
-
-   Update the set, removing elements found in *other*.
-
-.. method:: set.symmetric_difference_update(other)
-            set ^= other
-
-   Update the set, keeping only elements found in either set, but not in both.
-
-.. method:: set.add(elem)
-
-   Add element *elem* to the set.
-
-.. method:: set.remove(elem)
-
-   Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is not
-   contained in the set.
-
-.. method:: set.discard(elem)
-
-   Remove element *elem* from the set if it is present.
-
-.. method:: set.pop()
-
-   Remove and return an arbitrary element from the set.  Raises :exc:`KeyError`
-   if the set is empty.
-
-.. method:: set.clear()
-
-   Remove all elements from the set.
+      Return a new set with a shallow copy of *s*.
 
 
-Note, the non-operator versions of the :meth:`update`,
-:meth:`intersection_update`, :meth:`difference_update`, and
-:meth:`symmetric_difference_update` methods will accept any iterable as an
-argument.
+   Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
+   :meth:`difference`, and :meth:`symmetric_difference`, :meth:`issubset`, and
+   :meth:`issuperset` methods will accept any iterable as an argument.  In
+   contrast, their operator based counterparts require their arguments to be
+   sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
+   in favor of the more readable ``set('abc').intersection('cbs')``.
 
-Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
-:meth:`discard` methods may be a set.  To support searching for an equivalent
-frozenset, the *elem* set is temporarily mutated during the search and then
-restored.  During the search, the *elem* set should not be read or mutated
-since it does not have a meaningful value.
+   Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
+   sets are equal if and only if every element of each set is contained in the
+   other (each is a subset of the other). A set is less than another set if and
+   only if the first set is a proper subset of the second set (is a subset, but
+   is not equal). A set is greater than another set if and only if the first set
+   is a proper superset of the second set (is a superset, but is not equal).
+
+   Instances of :class:`set` are compared to instances of :class:`frozenset`
+   based on their members.  For example, ``set('abc') == frozenset('abc')``
+   returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
+
+   The subset and equality comparisons do not generalize to a complete ordering
+   function.  For example, any two disjoint sets are not equal and are not
+   subsets of each other, so *all* of the following return ``False``: ``a<b``,
+   ``a==b``, or ``a>b``. Accordingly, sets do not implement the :meth:`__cmp__`
+   method.
+
+   Since sets only define partial ordering (subset relationships), the output of
+   the :meth:`list.sort` method is undefined for lists of sets.
+
+   Set elements, like dictionary keys, must be :term:`hashable`.
+
+   Binary operations that mix :class:`set` instances with :class:`frozenset`
+   return the type of the first operand.  For example: ``frozenset('ab') |
+   set('bc')`` returns an instance of :class:`frozenset`.
+
+   The following table lists operations available for :class:`set` that do not
+   apply to immutable instances of :class:`frozenset`:
+
+   .. method:: update(other)
+               set |= other
+
+      Update the set, adding elements from *other*.
+
+   .. method:: intersection_update(other)
+               set &= other
+
+      Update the set, keeping only elements found in it and *other*.
+
+   .. method:: difference_update(other)
+               set -= other
+
+      Update the set, removing elements found in *other*.
+
+   .. method:: symmetric_difference_update(other)
+               set ^= other
+
+      Update the set, keeping only elements found in either set, but not in both.
+
+   .. method:: add(elem)
+
+      Add element *elem* to the set.
+
+   .. method:: remove(elem)
+
+      Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
+      not contained in the set.
+
+   .. method:: discard(elem)
+
+      Remove element *elem* from the set if it is present.
+
+   .. method:: pop()
+
+      Remove and return an arbitrary element from the set.  Raises
+      :exc:`KeyError` if the set is empty.
+
+   .. method:: clear()
+
+      Remove all elements from the set.
+
+
+   Note, the non-operator versions of the :meth:`update`,
+   :meth:`intersection_update`, :meth:`difference_update`, and
+   :meth:`symmetric_difference_update` methods will accept any iterable as an
+   argument.
+
+   Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
+   :meth:`discard` methods may be a set.  To support searching for an equivalent
+   frozenset, the *elem* set is temporarily mutated during the search and then
+   restored.  During the search, the *elem* set should not be read or mutated
+   since it does not have a meaningful value.
 
 
 .. _typesmapping:
@@ -1674,108 +1675,109 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    others work with any valid keys.
 
 
-These are the operations that dictionaries support (and therefore, custom mapping
-types should support too):
+   These are the operations that dictionaries support (and therefore, custom
+   mapping types should support too):
 
-.. describe:: len(d)
+   .. describe:: len(d)
 
-   Return the number of items in the dictionary *d*.
+      Return the number of items in the dictionary *d*.
 
-.. describe:: d[key]
+   .. describe:: d[key]
 
-   Return the item of *d* with key *key*.  Raises a :exc:`KeyError` if *key* is
-   not in the map.
-   
-   If a subclass of dict defines a method :meth:`__missing__`, if the key *key*
-   is not present, the ``d[key]`` operation calls that method with the key *key*
-   as argument.  The ``d[key]`` operation then returns or raises whatever is
-   returned or raised by the ``__missing__(key)`` call if the key is not
-   present. No other operations or methods invoke :meth:`__missing__`. If
-   :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
-   :meth:`__missing__` must be a method; it cannot be an instance variable. For
-   an example, see :class:`collections.defaultdict`.
+      Return the item of *d* with key *key*.  Raises a :exc:`KeyError` if *key* is
+      not in the map.
+      
+      If a subclass of dict defines a method :meth:`__missing__`, if the key *key*
+      is not present, the ``d[key]`` operation calls that method with the key *key*
+      as argument.  The ``d[key]`` operation then returns or raises whatever is
+      returned or raised by the ``__missing__(key)`` call if the key is not
+      present. No other operations or methods invoke :meth:`__missing__`. If
+      :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
+      :meth:`__missing__` must be a method; it cannot be an instance variable. For
+      an example, see :class:`collections.defaultdict`.
 
-.. describe:: d[key] = value
+   .. describe:: d[key] = value
 
-   Set ``d[key]`` to *value*.
+      Set ``d[key]`` to *value*.
 
-.. describe:: del d[key]
+   .. describe:: del d[key]
 
-   Remove ``d[key]`` from *d*.  Raises a :exc:`KeyError` if *key* is not in the
-   map.
+      Remove ``d[key]`` from *d*.  Raises a :exc:`KeyError` if *key* is not in the
+      map.
 
-.. describe:: key in d
+   .. describe:: key in d
 
-   Return ``True`` if *d* has a key *key*, else ``False``.
+      Return ``True`` if *d* has a key *key*, else ``False``.
 
-.. describe:: key not in d
+   .. describe:: key not in d
 
-   Equivalent to ``not key in d``.
+      Equivalent to ``not key in d``.
 
-.. method:: dict.clear()
+   .. method:: clear()
 
-   Remove all items from the dictionary.
+      Remove all items from the dictionary.
 
-.. method:: dict.copy()
+   .. method:: copy()
 
-   Return a shallow copy of the dictionary.
+      Return a shallow copy of the dictionary.
 
-.. method:: dict.fromkeys(seq[, value])
+   .. method:: fromkeys(seq[, value])
 
-   Create a new dictionary with keys from *seq* and values set to *value*.
+      Create a new dictionary with keys from *seq* and values set to *value*.
 
-   :func:`fromkeys` is a class method that returns a new dictionary. *value*
-   defaults to ``None``.
+      :meth:`fromkeys` is a class method that returns a new dictionary. *value*
+      defaults to ``None``.
 
-.. method:: dict.get(key[, default])
+   .. method:: get(key[, default])
 
-   Return the value for *key* if *key* is in the dictionary, else *default*.  If
-   *default* is not given, it defaults to ``None``, so that this method never
-   raises a :exc:`KeyError`.
+      Return the value for *key* if *key* is in the dictionary, else *default*.
+      If *default* is not given, it defaults to ``None``, so that this method
+      never raises a :exc:`KeyError`.
 
-.. method:: dict.items()
+   .. method:: items()
 
-   Return a new view of the dictionary's items (``(key, value)`` pairs).  See
-   below for documentation of view objects.
+      Return a new view of the dictionary's items (``(key, value)`` pairs).  See
+      below for documentation of view objects.
 
-.. method:: dict.keys()
+   .. method:: keys()
 
-   Return a new view of the dictionary's keys.  See below for documentation of
-   view objects.
+      Return a new view of the dictionary's keys.  See below for documentation of
+      view objects.
 
-.. method:: dict.pop(key[, default])
+   .. method:: pop(key[, default])
 
-   If *key* is in the dictionary, remove it and return its value, else return
-   *default*.  If *default* is not given and *key* is not in the dictionary, a
-   :exc:`KeyError` is raised.
+      If *key* is in the dictionary, remove it and return its value, else return
+      *default*.  If *default* is not given and *key* is not in the dictionary,
+      a :exc:`KeyError` is raised.
 
-.. method:: dict.popitem()
+   .. method:: popitem()
 
-   Remove and return an arbitrary ``(key, value)`` pair from the dictionary.
+      Remove and return an arbitrary ``(key, value)`` pair from the dictionary.
 
-   :func:`popitem` is useful to destructively iterate over a dictionary, as
-   often used in set algorithms.  If the dictionary is empty, calling
-   :func:`popitem` raises a :exc:`KeyError`.
+      :meth:`popitem` is useful to destructively iterate over a dictionary, as
+      often used in set algorithms.  If the dictionary is empty, calling
+      :meth:`popitem` raises a :exc:`KeyError`.
 
-.. method:: dict.setdefault(key[, default])
+   .. method:: setdefault(key[, default])
 
-   If *key* is in the dictionary, return its value.  If not, insert *key* with
-   a value of *default* and return *default*.  *default* defaults to ``None``.
+      If *key* is in the dictionary, return its value.  If not, insert *key*
+      with a value of *default* and return *default*.  *default* defaults to
+      ``None``.
 
-.. method:: dict.update([other])
+   .. method:: update([other])
 
-   Update the dictionary with the key/value pairs from *other*, overwriting
-   existing keys.  Return ``None``.
+     Update the dictionary with the key/value pairs from *other*, overwriting
+     existing keys.  Return ``None``.
 
-   :func:`update` accepts either another dictionary object or an iterable of
-   key/value pairs (as a tuple or other iterable of length two).  If keyword
-   arguments are specified, the dictionary is then is updated with those
-   key/value pairs: ``d.update(red=1, blue=2)``.
+      :meth:`update` accepts either another dictionary object or an iterable of
+      key/value pairs (as a tuple or other iterable of length two).  If keyword
+      arguments are specified, the dictionary is then is updated with those
+      key/value pairs: ``d.update(red=1, blue=2)``.
 
-.. method:: dict.values()
+   .. method:: values()
 
-   Return a new view of the dictionary's values.  See below for documentation of
-   view objects.
+      Return a new view of the dictionary's values.  See below for documentation of
+      view objects.
 
 
 Dictionary view objects
