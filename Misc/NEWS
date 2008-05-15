@@ -32,6 +32,8 @@ Extension Modules
 Library
 -------
 
+- The readcd module from IRIX has been deprecated for removal in Python 3.0.
+
 - The panelparser module from IRIX has been deprecated for removal in
   Python 3.0.
 
