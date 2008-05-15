@@ -106,6 +106,13 @@ In most cases Python programmers do not use this facility since it introduces
 an unknown set of names into the interpreter, possibly hiding some things 
 you have already defined.
 
+.. note::
+
+   For efficiency reasons, each module is only imported once per interpreter
+   session.  Therefore, if you change your modules, you must restart the
+   interpreter -- or, if it's just one module you want to test interactively,
+   use :func:`reload`, e.g. ``reload('modulename')``.
+
 
 .. _tut-modulesasscripts:
 
