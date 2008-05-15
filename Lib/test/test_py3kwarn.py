@@ -134,7 +134,7 @@ class TestStdlibRemovals(unittest.TestCase):
     inclusive_platforms = {'irix' : ('pure', 'AL', 'al', 'CD', 'cd', 'cddb',
                                      'cdplayer', 'CL', 'cl', 'DEVICE', 'GL',
                                      'gl', 'ERRNO', 'FILE', 'FL', 'flp', 'fl',
-                                     'fm', 'GET', 'GLWS', 'imgfile'),
+                                     'fm', 'GET', 'GLWS', 'imgfile', 'IN'),
                           'darwin' : ('autoGIL', 'Carbon', 'OSATerminology',
                                       'icglue', 'Nav', 'MacOS', 'aepack',
                                       'aetools', 'aetypes', 'applesingle',
