@@ -4,9 +4,10 @@
    Roger E. Masse
 """
 
-from test.test_support import verbose, unlink, findfile
+from test.test_support import verbose, unlink, findfile, import_module
 
-import imgfile, uu
+imgfile = import_module('imgfile', deprecated=True)
+import uu
 
 
 def testimage(name):
