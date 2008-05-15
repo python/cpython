@@ -359,7 +359,7 @@ Common commands: (see '--help-commands' for more)
 
     def parse_config_files (self, filenames=None):
 
-        from configparser import ConfigParser
+        from ConfigParser import ConfigParser
 
         if filenames is None:
             filenames = self.find_config_files()

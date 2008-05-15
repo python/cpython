@@ -5,7 +5,7 @@ that uses .pypirc in the distutils.command package.
 """
 import os
 import sys
-from configparser import ConfigParser
+from ConfigParser import ConfigParser
 
 from distutils.core import Command
 
