@@ -3,6 +3,9 @@
 # with some manual changes to cope with imperfections in h2py.py.
 # The applicability on other systems is not clear; especially non-SYSV
 # systems may have a totally different set of ioctls.
+from warnings import warnpy3k
+warnpy3k("the IOCTL module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 IOCTYPE = 0xff00
 LIOC = (ord('l')<<8)
