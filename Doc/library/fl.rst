@@ -5,6 +5,11 @@
 .. module:: fl
    :platform: IRIX
    :synopsis: FORMS library for applications with graphical user interfaces.
+   :deprecated:
+   
+   
+.. deprecated:: 2.6
+    The :mod:`fl` module has been deprecated for removal in Python 3.0.
 
 
 .. index::
@@ -478,6 +483,11 @@ FORMS objects have these data attributes; see the FORMS documentation:
 .. module:: FL
    :platform: IRIX
    :synopsis: Constants used with the fl module.
+   :deprecated:
+   
+   
+.. deprecated:: 2.6
+    The :mod:`FL` module has been deprecated for removal in Python 3.0.
 
 
 This module defines symbolic constants needed to use the built-in module
@@ -495,6 +505,11 @@ source for a complete list of the defined names.  Suggested use::
 .. module:: flp
    :platform: IRIX
    :synopsis: Functions for loading stored FORMS designs.
+   :deprecated:
+   
+   
+.. deprecated:: 2.6
+    The :mod:`flp` module has been deprecated for removal in Python 3.0.
 
 
 This module defines functions that can read form definitions created by the

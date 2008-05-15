@@ -5,6 +5,11 @@
 .. module:: jpeg
    :platform: IRIX
    :synopsis: Read and write image files in compressed JPEG format.
+   :deprecated:
+   
+.. deprecated:: 2.6
+   The :mod:`jpeg` module has been deprecated for removal in Python 3.0.
+
 
 
 .. index:: single: Independent JPEG Group

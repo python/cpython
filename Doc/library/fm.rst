@@ -5,6 +5,11 @@
 .. module:: fm
    :platform: IRIX
    :synopsis: Font Manager interface for SGI workstations.
+   :deprecated:
+   
+.. deprecated:: 2.6
+   The :mod:`fm` module has been deprecated for removal in Python 3.0.
+
 
 
 .. index::
