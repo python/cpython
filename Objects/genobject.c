@@ -281,6 +281,36 @@ gen_iternext(PyGenObject *gen)
 }
 
 
+static PyObject *
+gen_repr(PyGenObject *gen)
+{
+	char *code_name;
+	code_name = PyString_AsString(((PyCodeObject *)gen->gi_code)->co_name);
+	if (code_name == NULL)
+		return NULL;
+	return PyString_FromFormat("<%.200s generator object at %p>",
+				   code_name, gen);
+}
+
+
+static PyObject *
+gen_get_name(PyGenObject *gen)
+{
+	PyObject *name = ((PyCodeObject *)gen->gi_code)->co_name;
+	Py_INCREF(name);
+	return name;
+}
+
+
+PyDoc_STRVAR(gen__name__doc__,
+"Return the name of the generator's associated code object.");
+
+static PyGetSetDef gen_getsetlist[] = {
+	{"__name__", (getter)gen_get_name, NULL, NULL, gen__name__doc__},
+	{NULL}
+};
+
+
 static PyMemberDef gen_memberlist[] = {
 	{"gi_frame",	T_OBJECT, offsetof(PyGenObject, gi_frame),	RO},
 	{"gi_running",	T_INT,    offsetof(PyGenObject, gi_running),	RO},
@@ -306,7 +336,7 @@ PyTypeObject PyGen_Type = {
 	0, 					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
-	0,					/* tp_repr */
+	(reprfunc)gen_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
@@ -326,7 +356,7 @@ PyTypeObject PyGen_Type = {
 	(iternextfunc)gen_iternext,		/* tp_iternext */
 	gen_methods,				/* tp_methods */
 	gen_memberlist,				/* tp_members */
-	0,					/* tp_getset */
+	gen_getsetlist,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 

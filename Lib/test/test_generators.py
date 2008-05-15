@@ -917,6 +917,17 @@ StopIteration
 >>> g.gi_code is f.func_code
 True
 
+
+Test the __name__ attribute and the repr()
+
+>>> def f():
+...    yield 5
+...
+>>> g = f()
+>>> g.__name__
+'f'
+>>> repr(g)  # doctest: +ELLIPSIS
+'<f generator object at ...>'
 """
 
 # conjoin is a simple backtracking generator, named in honor of Icon's

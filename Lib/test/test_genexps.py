@@ -92,7 +92,7 @@ Verify that parenthesis are required when used as a keyword argument value
 Verify that parenthesis are required when used as a keyword argument value
 
     >>> dict(a = (i for i in xrange(10))) #doctest: +ELLIPSIS
-    {'a': <generator object at ...>}
+    {'a': <<genexp> generator object at ...>}
 
 Verify early binding for the outermost for-expression
 
