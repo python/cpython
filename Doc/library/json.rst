@@ -19,13 +19,13 @@ Encoding basic Python object hierarchies::
     '["foo", {"bar": ["baz", null, 1.0, 2]}]'
     >>> print(json.dumps("\"foo\bar"))
     "\"foo\bar"
-    >>> print(json.dumps(u'\u1234'))
+    >>> print(json.dumps('\u1234'))
     "\u1234"
     >>> print(json.dumps('\\'))
     "\\"
     >>> print(json.dumps({"c": 0, "b": 0, "a": 0}, sort_keys=True))
     {"a": 0, "b": 0, "c": 0}
-    >>> from StringIO import StringIO
+    >>> from io import StringIO
     >>> io = StringIO()
     >>> json.dump(['streaming API'], io)
     >>> io.getvalue()
@@ -50,13 +50,13 @@ Decoding JSON::
     
     >>> import json
     >>> json.loads('["foo", {"bar":["baz", null, 1.0, 2]}]')
-    [u'foo', {u'bar': [u'baz', None, 1.0, 2]}]
+    ['foo', {'bar': ['baz', None, 1.0, 2]}]
     >>> json.loads('"\\"foo\\bar"')
-    u'"foo\x08ar'
-    >>> from StringIO import StringIO
+    '"foo\x08ar'
+    >>> from io import StringIO
     >>> io = StringIO('["streaming API"]')
     >>> json.load(io)
-    [u'streaming API']
+    ['streaming API']
 
 Specializing JSON object decoding::
 
@@ -65,7 +65,7 @@ Specializing JSON object decoding::
     ...     if '__complex__' in dct:
     ...         return complex(dct['real'], dct['imag'])
     ...     return dct
-    ... 
+    ...
     >>> json.loads('{"__complex__": true, "real": 1, "imag": 2}',
     ...     object_hook=as_complex)
     (1+2j)
@@ -81,7 +81,7 @@ Extending :class:`JSONEncoder`::
     ...         if isinstance(obj, complex):
     ...             return [obj.real, obj.imag]
     ...         return json.JSONEncoder.default(self, obj)
-    ... 
+    ...
     >>> dumps(2 + 1j, cls=ComplexEncoder)
     '[2.0, 1.0]'
     >>> ComplexEncoder().encode(2 + 1j)
