@@ -1,3 +1,7 @@
+from warnings import warnpy3k
+warnpy3k("the GLWS module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+
 NOERROR = 0
 NOCONTEXT = -1
 NODISPLAY = -2

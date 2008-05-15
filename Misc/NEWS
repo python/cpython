@@ -32,7 +32,9 @@ Extension Modules
 Library
 -------
 
-- The GET module from IRIX has been deprecate for removal in Python 3.0.
+- The GLWS module from IRIX has been deprecated for removal in Python 3.0.
+
+- The GET module from IRIX has been deprecated for removal in Python 3.0.
 
 - The fm module from IRIX has been deprecated for removal in Python 3.0.
 
