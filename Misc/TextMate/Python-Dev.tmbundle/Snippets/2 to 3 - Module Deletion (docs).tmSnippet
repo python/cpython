@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>content</key>
+	<string>.. deprecated:: 2.6
+   The :mod:\`${1}\` module has been deprecated for removal in Python 3.0.
+${0}</string>
+	<key>name</key>
+	<string>2 to 3 - Module Deletion (docs)</string>
+	<key>tabTrigger</key>
+	<string>2to3docdel</string>
+	<key>uuid</key>
+	<string>0568410D-EAF1-4AF3-B6DE-8AF133A91821</string>
+</dict>
+</plist>
