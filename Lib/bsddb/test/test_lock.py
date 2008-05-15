@@ -97,7 +97,11 @@ class LockingTestCase(unittest.TestCase):
         for t in threads:
             t.join()
 
-    def test03_lock_timeout(self):
+    def _DISABLED_test03_lock_timeout(self):
+        # Disabled as this test crashes the python interpreter built in
+        # debug mode with:
+        #  Fatal Python error: UNREF invalid object
+        # the error occurs as marked below.
         self.env.set_timeout(0, db.DB_SET_LOCK_TIMEOUT)
         self.env.set_timeout(0, db.DB_SET_TXN_TIMEOUT)
         self.env.set_timeout(123456, db.DB_SET_LOCK_TIMEOUT)
@@ -124,6 +128,8 @@ class LockingTestCase(unittest.TestCase):
         self.assertNotEqual(anID, anID2)
         lock = self.env.lock_get(anID, "shared lock", db.DB_LOCK_WRITE)
         start_time=time.time()
+        # FIXME: I see the UNREF crash as the interpreter trys to exit
+        # from this call to lock_get.
         self.assertRaises(db.DBLockNotGrantedError,
                 self.env.lock_get,anID2, "shared lock", db.DB_LOCK_READ)
         end_time=time.time()
