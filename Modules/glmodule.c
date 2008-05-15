@@ -7624,5 +7624,10 @@ static struct PyMethodDef gl_methods[] = {
 void
 initgl(void)
 {
+    
+    if (PyErr_WarnPy3k("the gl module has been removed in "
+                       "Python 3.0", 2) < 0)
+        return;
+    
 	(void) Py_InitModule("gl", gl_methods);
 }

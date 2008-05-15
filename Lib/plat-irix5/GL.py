@@ -1,3 +1,7 @@
+from warnings import warnpy3k
+warnpy3k("the GL module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+
 NULL = 0
 FALSE = 0
 TRUE = 1
