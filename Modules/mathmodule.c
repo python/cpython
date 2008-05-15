@@ -425,23 +425,65 @@ static PyObject *
 math_ldexp(PyObject *self, PyObject *args)
 {
 	double x, r;
-	int exp;
-	if (! PyArg_ParseTuple(args, "di:ldexp", &x, &exp))
+	PyObject *oexp;
+	long exp;
+	if (! PyArg_ParseTuple(args, "dO:ldexp", &x, &oexp))
 		return NULL;
-	errno = 0;
-	PyFPE_START_PROTECT("in math_ldexp", return 0)
-	r = ldexp(x, exp);
-	PyFPE_END_PROTECT(r)
-	if (Py_IS_FINITE(x) && Py_IS_INFINITY(r))
-		errno = ERANGE;
-	/* Windows MSVC8 sets errno = EDOM on ldexp(NaN, i);
-	   we unset it to avoid raising a ValueError here. */
-	if (errno == EDOM)
+
+	if (PyLong_Check(oexp)) {
+		/* on overflow, replace exponent with either LONG_MAX
+		   or LONG_MIN, depending on the sign. */
+		exp = PyLong_AsLong(oexp);
+		if (exp == -1 && PyErr_Occurred()) {
+			if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+				if (Py_SIZE(oexp) < 0) {
+					exp = LONG_MIN;
+				}
+				else {
+					exp = LONG_MAX;
+				}
+				PyErr_Clear();
+			}
+			else {
+				/* propagate any unexpected exception */
+				return NULL;
+			}
+		}
+	}
+	else if (PyLong_Check(oexp)) {
+		exp = PyLong_AS_LONG(oexp);
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"Expected an int or long as second argument "
+				"to ldexp.");
+		return NULL;
+	}
+
+	if (x == 0. || !Py_IS_FINITE(x)) {
+		/* NaNs, zeros and infinities are returned unchanged */
+		r = x;
 		errno = 0;
+	} else if (exp > INT_MAX) {
+		/* overflow */
+		r = copysign(Py_HUGE_VAL, x);
+		errno = ERANGE;
+	} else if (exp < INT_MIN) {
+		/* underflow to +-0 */
+		r = copysign(0., x);
+		errno = 0;
+	} else {
+		errno = 0;
+		PyFPE_START_PROTECT("in math_ldexp", return 0);
+		r = ldexp(x, (int)exp);
+		PyFPE_END_PROTECT(r);
+		if (Py_IS_INFINITY(r))
+			errno = ERANGE;
+	}
+
 	if (errno && is_error(r))
 		return NULL;
-	else
-		return PyFloat_FromDouble(r);
+	return PyFloat_FromDouble(r);
 }
 
 PyDoc_STRVAR(math_ldexp_doc,

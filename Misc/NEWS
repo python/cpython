@@ -30,6 +30,11 @@ Library
 
 - The ConfigParser module has been renamed to configparser.
 
+- Issue #2487: change the semantics of math.ldexp(x, n) when n is too
+  large to fit in a C long.  ldexp(x, n) now returns a zero (with
+  suitable sign) if n is large and negative; previously, it raised
+  OverflowError.
+
 - Issue 2865: webbrowser.open() works again in a KDE environment.
 
 - The multifile module has been removed.

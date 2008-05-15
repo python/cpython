@@ -43,6 +43,9 @@ fine-tuning parameters.
       second edition of the book no longer covers Python at all, but the first
       edition covered writing good regular expression patterns in great detail.
 
+   `Kodos <http://kodos.sf.net/>`_
+      is a graphical regular expression debugger written in Python.
+
 
 .. _re-syntax:
 
