@@ -5,6 +5,11 @@
 .. module:: gl
    :platform: IRIX
    :synopsis: Functions from the Silicon Graphics Graphics Library.
+   :deprecated:
+   
+   
+.. deprecated:: 2.6
+    The :mod:`gl` module has been deprecated for removal in Python 3.0.
 
 
 This module provides access to the Silicon Graphics *Graphics Library*. It is
@@ -160,6 +165,11 @@ Here is a tiny but complete example GL program in Python::
 .. module:: DEVICE
    :platform: IRIX
    :synopsis: Constants used with the gl module.
+   :deprecated:
+   
+   
+.. deprecated:: 2.6
+    The :mod:`DEVICE` module has been deprecated for removal in Python 3.0.
 
 
 This modules defines the constants used by the Silicon Graphics *Graphics
@@ -173,7 +183,11 @@ module source file for details.
 .. module:: GL
    :platform: IRIX
    :synopsis: Constants used with the gl module.
-
+   :deprecated:
+   
+   
+.. deprecated:: 2.6
+    The :mod:`GL` module has been deprecated for removal in Python 3.0.
 
 This module contains constants used by the Silicon Graphics *Graphics Library*
 from the C header file ``<gl/gl.h>``. Read the module source file for details.
