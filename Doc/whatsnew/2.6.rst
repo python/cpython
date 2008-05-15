@@ -1471,13 +1471,18 @@ complete list of changes, or look through the CVS logs for all the details.
   library; many outdated modules are  being dropped,
   and some modules are being renamed or moved into packages. 
   Python 2.6 running in 3.0-warning mode will warn about these modules 
-  when they are improved.
-
-  The list of deprecated modules that are removed in Python 3.0 is:
+  when they are imported.
+  The list of deprecated modules is:
   :mod:`audiodev`, 
   :mod:`Canvas`,
   :mod:`compiler`,
   :mod:`dircache`,
+  :mod:`cd`,
+  :mod:`cddb`,
+  :mod:`cdplayer`,
+  :mod:`CL` and :mod:`cl`,
+  :mod:`cd`,
+  :mod:`cd`,
   :mod:`dl`,
   :mod:`fpformat`,
   :mod:`ihooks`,
@@ -1494,6 +1499,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
   The modules that have been renamed are:
 
+  * :mod:`ConfigParser` has become :mod:`configparser`.
   * :mod:`copy_reg` has become :mod:`copyreg`.
   * :mod:`SocketServer` has become :mod:`socketserver`.
   * :mod:`Queue` has become :mod:`queue`.
