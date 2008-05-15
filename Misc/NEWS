@@ -12,6 +12,11 @@ What's New in Python 2.6 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #2863: generators now have a ``gen.__name__`` attribute that equals
+  ``gen.gi_code.co_name``, like ``func.__name___`` that equals
+  ``func.func_code.co_name``.  The repr() of a generator now also contains
+  this name.
+
 - Issue #2831: enumerate() now has a ``start`` argument.
 
 - Issue #2801: fix bug in the float.is_integer method where a ValueError
