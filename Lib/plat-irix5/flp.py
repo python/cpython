@@ -3,6 +3,10 @@
 #
 # Jack Jansen, December 1991
 #
+from warnings import warnpy3k
+warnpy3k("the flp module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+
 import string
 import os
 import sys
