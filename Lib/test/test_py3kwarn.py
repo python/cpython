@@ -136,7 +136,7 @@ class TestStdlibRemovals(unittest.TestCase):
                                      'gl', 'ERRNO', 'FILE', 'FL', 'flp', 'fl',
                                      'fm', 'GET', 'GLWS', 'imgfile', 'IN',
                                      'IOCTL', 'jpeg', 'panel', 'panelparser',
-                                     'readcd', 'SV', 'torgb'),
+                                     'readcd', 'SV', 'torgb', 'WAIT'),
                           'darwin' : ('autoGIL', 'Carbon', 'OSATerminology',
                                       'icglue', 'Nav', 'MacOS', 'aepack',
                                       'aetools', 'aetypes', 'applesingle',
