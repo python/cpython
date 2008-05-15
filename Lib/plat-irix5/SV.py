@@ -1,3 +1,7 @@
+from warnings import warnpy3k
+warnpy3k("the SV module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+
 NTSC_XMAX = 640
 NTSC_YMAX = 480
 PAL_XMAX = 768
