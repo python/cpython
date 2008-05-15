@@ -135,7 +135,7 @@ class TestStdlibRemovals(unittest.TestCase):
                                      'cdplayer', 'CL', 'cl', 'DEVICE', 'GL',
                                      'gl', 'ERRNO', 'FILE', 'FL', 'flp', 'fl',
                                      'fm', 'GET', 'GLWS', 'imgfile', 'IN',
-                                     'IOCTL', 'jpeg'),
+                                     'IOCTL', 'jpeg', 'panel'),
                           'darwin' : ('autoGIL', 'Carbon', 'OSATerminology',
                                       'icglue', 'Nav', 'MacOS', 'aepack',
                                       'aetools', 'aetypes', 'applesingle',

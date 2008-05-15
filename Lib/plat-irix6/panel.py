@@ -6,6 +6,9 @@
 # most 'pnl' functions are transparently exported by 'panel',
 # but dopanel() is overridden and you have to use this version
 # if you want to use callbacks.
+from warnings import warnpy3k
+warnpy3k("the panel module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 
 import pnl

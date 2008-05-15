@@ -32,6 +32,8 @@ Extension Modules
 Library
 -------
 
+-The panel module from IRIX has been deprecate for removal in Python 3.0.
+
 - The jpeg module from IRIX has been deprecated for removal in Python 3.0.
 
 - The IOCTL module from IRIX has been deprecated for removal in Python 3.0.
