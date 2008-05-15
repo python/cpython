@@ -32,6 +32,8 @@ Extension Modules
 Library
 -------
 
+- The ERRNO module on IRIX has been deprecated for removal in Python 3.0.
+
 - The DEVICE, GL, gl, and cgen modules (which indirectly includes cgensupport)
   have been deprecated for removal in Python 3.0.
 

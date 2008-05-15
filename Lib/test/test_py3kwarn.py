@@ -133,7 +133,7 @@ class TestStdlibRemovals(unittest.TestCase):
                         'ihooks', 'mhlib')
     inclusive_platforms = {'irix' : ('pure', 'AL', 'al', 'CD', 'cd', 'cddb',
                                      'cdplayer', 'CL', 'cl', 'DEVICE', 'GL',
-                                     'gl'),
+                                     'gl', 'ERRNO'),
                           'darwin' : ('autoGIL', 'Carbon', 'OSATerminology',
                                       'icglue', 'Nav', 'MacOS', 'aepack',
                                       'aetools', 'aetypes', 'applesingle',
