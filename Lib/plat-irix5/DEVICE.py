@@ -1,3 +1,7 @@
+from warnings import warnpy3k
+warnpy3k("the DEVICE module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
+
 NULLDEV = 0
 BUTOFFSET = 1
 VALOFFSET = 256

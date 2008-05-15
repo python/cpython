@@ -17,6 +17,9 @@
 #
 # XXX BUG return arrays generate wrong code
 # XXX need to change error returns into gotos to free mallocked arrays
+from warnings import warnpy3k
+warnpy3k("the cgen module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 
 import string
