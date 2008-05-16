@@ -8,42 +8,34 @@ Implements the Distutils 'register' command (register with the repository).
 __revision__ = "$Id$"
 
 import os, string, urllib2, getpass, urlparse
-import io, configparser
+import io
 
-from distutils.core import Command
+from distutils.core import PyPIRCCommand
 from distutils.errors import *
+from distutils import log
 
 def raw_input(prompt):
     sys.stdout.write(prompt)
     sys.stdout.flush()
     return sys.stdin.readline()
 
-class register(Command):
+class register(PyPIRCCommand):
 
     description = ("register the distribution with the Python package index")
-
-    DEFAULT_REPOSITORY = 'http://pypi.python.org/pypi'
-
-    user_options = [
-        ('repository=', 'r',
-         "url of repository [default: %s]"%DEFAULT_REPOSITORY),
+    user_options = PyPIRCCommand.user_options + [
         ('list-classifiers', None,
          'list the valid Trove classifiers'),
-        ('show-response', None,
-         'display full response text from server'),
         ]
-    boolean_options = ['verify', 'show-response', 'list-classifiers']
+    boolean_options = PyPIRCCommand.boolean_options + [
+        'verify', 'list-classifiers']
 
     def initialize_options(self):
-        self.repository = None
-        self.show_response = 0
+        PyPIRCCommand.initialize_options(self)
         self.list_classifiers = 0
 
-    def finalize_options(self):
-        if self.repository is None:
-            self.repository = self.DEFAULT_REPOSITORY
-
     def run(self):
+        self.finalize_options()
+        self._set_config()
         self.check_metadata()
         if self.dry_run:
             self.verify_metadata()
@@ -82,6 +74,23 @@ class register(Command):
                       "or (maintainer and maintainer_email) " +
                       "must be supplied")
 
+    def _set_config(self):
+        ''' Reads the configuration file and set attributes.
+        '''
+        config = self._read_pypirc()
+        if config != {}:
+            self.username = config['username']
+            self.password = config['password']
+            self.repository = config['repository']
+            self.realm = config['realm']
+            self.has_config = True
+        else:
+            if self.repository not in ('pypi', self.DEFAULT_REPOSITORY):
+                raise ValueError('%s not found in .pypirc' % self.repository)
+            if self.repository == 'pypi':
+                self.repository = self.DEFAULT_REPOSITORY
+            self.has_config = False
+
     def classifiers(self):
         ''' Fetch the list of classifiers from the server.
         '''
@@ -95,6 +104,7 @@ class register(Command):
         (code, result) = self.post_to_server(self.build_post_data('verify'))
         print('Server response (%s): %s'%(code, result))
 
+
     def send_metadata(self):
         ''' Send the metadata to the package index server.
 
@@ -104,10 +114,14 @@ class register(Command):
 
             First we try to read the username/password from $HOME/.pypirc,
             which is a ConfigParser-formatted file with a section
-            [server-login] containing username and password entries (both
+            [distutils] containing username and password entries (both
             in clear text). Eg:
 
-                [server-login]
+                [distutils]
+                index-servers =
+                    pypi
+
+                [pypi]
                 username: fred
                 password: sekrit
 
@@ -119,21 +133,15 @@ class register(Command):
              3. set the password to a random string and email the user.
 
         '''
-        choice = 'x'
-        username = password = ''
-
         # see if we can short-cut and get the username/password from the
         # config
-        config = None
-        if 'HOME' in os.environ:
-            rc = os.path.join(os.environ['HOME'], '.pypirc')
-            if os.path.exists(rc):
-                print('Using PyPI login from %s'%rc)
-                config = ConfigParser.ConfigParser()
-                config.read(rc)
-                username = config.get('server-login', 'username')
-                password = config.get('server-login', 'password')
-                choice = '1'
+        if self.has_config:
+            choice = '1'
+            username = self.username
+            password = self.password
+        else:
+            choice = 'x'
+            username = password = ''
 
         # get the user's login info
         choices = '1 2 3 4'.split()
@@ -160,32 +168,24 @@ Your selection [default 1]: ''', end=' ')
             # set up the authentication
             auth = urllib2.HTTPPasswordMgr()
             host = urlparse.urlparse(self.repository)[1]
-            auth.add_password('pypi', host, username, password)
-
+            auth.add_password(self.realm, host, username, password)
             # send the info to the server and report the result
             code, result = self.post_to_server(self.build_post_data('submit'),
                 auth)
             print('Server response (%s): %s'%(code, result))
 
             # possibly save the login
-            if 'HOME' in os.environ and config is None and code == 200:
-                rc = os.path.join(os.environ['HOME'], '.pypirc')
+            if not self.has_config and code == 200:
                 print('I can store your PyPI login so future submissions will be faster.')
-                print('(the login will be stored in %s)'%rc)
+                print('(the login will be stored in %s)' % self._get_rc_file())
                 choice = 'X'
                 while choice.lower() not in 'yn':
                     choice = raw_input('Save your login (y/N)?')
                     if not choice:
                         choice = 'n'
                 if choice.lower() == 'y':
-                    f = open(rc, 'w')
-                    f.write('[server-login]\nusername:%s\npassword:%s\n'%(
-                        username, password))
-                    f.close()
-                    try:
-                        os.chmod(rc, 0o600)
-                    except:
-                        pass
+                    self._store_pypirc(username, password)
+
         elif choice == '2':
             data = {':action': 'user'}
             data['name'] = data['password'] = data['email'] = ''
@@ -248,7 +248,8 @@ Your selection [default 1]: ''', end=' ')
     def post_to_server(self, data, auth=None):
         ''' Post a query to the server, and return a string response.
         '''
-
+        self.announce('Registering %s to %s' % (data['name'],
+                                                self.repository), log.INFO)
         # Build up the MIME payload for the urllib2 POST data
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
         sep_boundary = '\n--' + boundary

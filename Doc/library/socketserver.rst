@@ -155,7 +155,7 @@ Server Objects
 .. data:: address_family
 
    The family of protocols to which the server's socket belongs.
-   :const:`socket.AF_INET` and :const:`socket.AF_UNIX` are two possible values.
+   Common examples are :const:`socket.AF_INET` and :const:`socket.AF_UNIX`.
 
 
 .. data:: RequestHandlerClass
@@ -199,7 +199,7 @@ The server classes support the following class variables:
 .. data:: socket_type
 
    The type of socket used by the server; :const:`socket.SOCK_STREAM` and
-   :const:`socket.SOCK_DGRAM` are two possible values.
+   :const:`socket.SOCK_DGRAM` are two common values.
 
 .. data:: timeout
 

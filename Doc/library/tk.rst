@@ -23,7 +23,8 @@ mechanism which allows Python and Tcl to interact.
 
 :mod:`Tkinter`'s chief virtues are that it is fast, and that it usually comes
 bundled with Python. Although it has been used to create some very good
-applications, including IDLE, it has weak documentation and an outdated look and
+applications, including IDLE, its standard documentation is weak (but there
+are some good books and tutorials), and it has an outdated look and
 feel. For more modern, better documented, and much more extensive GUI
 libraries, see the :ref:`other-gui-packages` section.
 

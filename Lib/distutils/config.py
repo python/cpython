@@ -49,7 +49,7 @@ class PyPIRCCommand(Command):
         finally:
             f.close()
         try:
-            os.chmod(rc, 0600)
+            os.chmod(rc, 0o600)
         except OSError:
             # should do something better here
             pass
@@ -58,7 +58,7 @@ class PyPIRCCommand(Command):
         """Reads the .pypirc file."""
         rc = self._get_rc_file()
         if os.path.exists(rc):
-            print 'Using PyPI login from %s' % rc
+            print('Using PyPI login from %s' % rc)
             repository = self.repository or self.DEFAULT_REPOSITORY
             realm = self.realm or self.DEFAULT_REALM
 

@@ -199,6 +199,14 @@ class BugsTestCase(unittest.TestCase):
             subtyp = type('subtyp', (typ,), {})
             self.assertRaises(ValueError, marshal.dumps, subtyp())
 
+    # Issue #1792 introduced a change in how marshal increases the size of its
+    # internal buffer; this test ensures that the new code is exercised.
+    def test_large_marshal(self):
+        size = int(1e6)
+        testString = 'abc' * size
+        marshal.dumps(testString)
+
+
 def test_main():
     test_support.run_unittest(IntTestCase,
                               FloatTestCase,

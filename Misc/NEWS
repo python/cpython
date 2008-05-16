@@ -28,12 +28,14 @@ Extension Modules
 Library
 -------
 
-- The ConfigParser module has been renamed to configparser.
+- #2659: Added ``break_on_hyphens`` option to textwrap TextWrapper class.
 
 - Issue #2487: change the semantics of math.ldexp(x, n) when n is too
   large to fit in a C long.  ldexp(x, n) now returns a zero (with
   suitable sign) if n is large and negative; previously, it raised
   OverflowError.
+
+- The ConfigParser module has been renamed to configparser.
 
 - Issue 2865: webbrowser.open() works again in a KDE environment.
 
@@ -70,6 +72,8 @@ Library
 - The imputil module has been removed.
 
 - os.path.walk has been removed in favor of os.walk
+
+- pdb gained the "until" command.
 
 Build
 -----

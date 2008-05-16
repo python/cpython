@@ -207,6 +207,11 @@ The :mod:`bdb` module also defines two classes:
 
       Stop when returning from the given frame.
 
+   .. method:: set_until(frame)
+
+      Stop when the line with the line no greater than the current one is
+      reached or when returning from current frame
+
    .. method:: set_trace([frame])
 
       Start debugging from *frame*.  If *frame* is not specified, debugging

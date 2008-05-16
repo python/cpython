@@ -813,14 +813,14 @@ class _BytesIO(BufferedIOBase):
         n = len(b)
         if n == 0:
             return 0
-        newpos = self._pos + n
-        if newpos > len(self._buffer):
+        pos = self._pos
+        if pos > len(self._buffer):
             # Inserts null bytes between the current end of the file
             # and the new write position.
-            padding = b'\x00' * (newpos - len(self._buffer) - n)
-            self._buffer[self._pos:newpos - n] = padding
-        self._buffer[self._pos:newpos] = b
-        self._pos = newpos
+            padding = b'\x00' * (pos - len(self._buffer))
+            self._buffer += padding
+        self._buffer[pos:pos + n] = b
+        self._pos += n
         return n
 
     def seek(self, pos, whence=0):

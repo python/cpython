@@ -37,9 +37,7 @@ class Bdb:
         import linecache
         linecache.checkcache()
         self.botframe = None
-        self.stopframe = None
-        self.returnframe = None
-        self.quitting = 0
+        self._set_stopinfo(None, None)
 
     def trace_dispatch(self, frame, event, arg):
         if self.quitting:
@@ -100,7 +98,7 @@ class Bdb:
         # (CT) stopframe may now also be None, see dispatch_call.
         # (CT) the former test for None is therefore removed from here.
         if frame is self.stopframe:
-            return True
+            return frame.f_lineno >= self.stoplineno
         while frame is not None and frame is not self.stopframe:
             if frame is self.botframe:
                 return True
@@ -156,26 +154,31 @@ class Bdb:
         but only if we are to stop at or just below this level."""
         pass
 
+    def _set_stopinfo(self, stopframe, returnframe, stoplineno=-1):
+        self.stopframe = stopframe
+        self.returnframe = returnframe
+        self.quitting = 0
+        self.stoplineno = stoplineno
+
     # Derived classes and clients can call the following methods
     # to affect the stepping state.
 
+    def set_until(self, frame): #the name "until" is borrowed from gdb
+        """Stop when the line with the line no greater than the current one is
+        reached or when returning from current frame"""
+        self._set_stopinfo(frame, frame, frame.f_lineno+1)
+
     def set_step(self):
         """Stop after one line of code."""
-        self.stopframe = None
-        self.returnframe = None
-        self.quitting = 0
+        self._set_stopinfo(None,None)
 
     def set_next(self, frame):
         """Stop on the next line in or below the given frame."""
-        self.stopframe = frame
-        self.returnframe = None
-        self.quitting = 0
+        self._set_stopinfo(frame, None)
 
     def set_return(self, frame):
         """Stop when returning from the given frame."""
-        self.stopframe = frame.f_back
-        self.returnframe = frame
-        self.quitting = 0
+        self._set_stopinfo(frame.f_back, frame)
 
     def set_trace(self, frame=None):
         """Start debugging from `frame`.
@@ -194,9 +197,7 @@ class Bdb:
 
     def set_continue(self):
         # Don't stop except at breakpoints or when finished
-        self.stopframe = self.botframe
-        self.returnframe = None
-        self.quitting = 0
+        self._set_stopinfo(self.botframe, None)
         if not self.breaks:
             # no breakpoints; run without debugger overhead
             sys.settrace(None)

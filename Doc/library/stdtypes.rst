@@ -1114,7 +1114,7 @@ The conversion flag characters are:
 +---------+---------------------------------------------------------------------+
 
 A length modifier (``h``, ``l``, or ``L``) may be present, but is ignored as it
-is not necessary for Python.
+is not necessary for Python -- so e.g. ``%ld`` is identical to ``%d``.
 
 The conversion types are:
 
@@ -1125,13 +1125,13 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'i'``    | Signed integer decimal.                             |       |
 +------------+-----------------------------------------------------+-------+
-| ``'o'``    | Unsigned octal.                                     | \(1)  |
+| ``'o'``    | Signed octal value.                                 | \(1)  |
 +------------+-----------------------------------------------------+-------+
-| ``'u'``    | Unsigned decimal.                                   |       |
+| ``'u'``    | Obselete type -- it is identical to ``'d'``.        | \(7)  |
 +------------+-----------------------------------------------------+-------+
-| ``'x'``    | Unsigned hexadecimal (lowercase).                   | \(2)  |
+| ``'x'``    | Signed hexadecimal (lowercase).                     | \(2)  |
 +------------+-----------------------------------------------------+-------+
-| ``'X'``    | Unsigned hexadecimal (uppercase).                   | \(2)  |
+| ``'X'``    | Signed hexadecimal (uppercase).                     | \(2)  |
 +------------+-----------------------------------------------------+-------+
 | ``'e'``    | Floating point exponential format (lowercase).      | \(3)  |
 +------------+-----------------------------------------------------+-------+
@@ -1192,6 +1192,9 @@ Notes:
 (5)
    The precision determines the maximal number of characters used.
 
+
+(7)
+   See :pep:`237`.
 
 Since Python strings have an explicit length, ``%s`` conversions do not assume
 that ``'\0'`` is the end of the string.

@@ -409,6 +409,39 @@ def catch_warning(module=warnings, record=True):
         module.showwarning = original_showwarning
         module.filters = original_filters
 
+
+class CleanImport(object):
+    """Context manager to force import to return a new module reference.
+
+    This is useful for testing module-level behaviours, such as
+    the emission of a DepreciationWarning on import.
+
+    Use like this:
+
+        with CleanImport("foo"):
+            __import__("foo") # new reference
+    """
+
+    def __init__(self, *module_names):
+        self.original_modules = sys.modules.copy()
+        for module_name in module_names:
+            if module_name in sys.modules:
+                module = sys.modules[module_name]
+                # It is possible that module_name is just an alias for
+                # another module (e.g. stub for modules renamed in 3.x).
+                # In that case, we also need delete the real module to clear
+                # the import cache.
+                if module.__name__ != module_name:
+                    del sys.modules[module.__name__]
+                del sys.modules[module_name]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *ignore_exc):
+        sys.modules.update(self.original_modules)
+
+
 class EnvironmentVarGuard(object):
 
     """Class to help protect the environment variable properly.  Can be used as
