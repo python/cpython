@@ -1,5 +1,5 @@
-from test.test_support import findfile, TestFailed, TestSkipped
-import sunaudiodev
+from test.test_support import findfile, TestFailed, TestSkipped, import_module
+sunaudiodev = import_module('sunaudiodev', deprecated=True)
 import os
 
 try:

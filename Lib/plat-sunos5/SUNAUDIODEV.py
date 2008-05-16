@@ -1,6 +1,9 @@
 # Symbolic constants for use with sunaudiodev module
 # The names are the same as in audioio.h with the leading AUDIO_
 # removed.
+from warnings import warnpy3k
+warnpy3k("the SUNAUDIODEV module has been removed in Python 3.0", stacklevel=2)
+del warnpy3k
 
 # Not all values are supported on all releases of SunOS.
 
