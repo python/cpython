@@ -28,6 +28,8 @@ Extension Modules
 Library
 -------
 
+- The statvfs module has been removed.
+
 - #2250: Exceptions raised during evaluation of names in rlcompleter's
   ``Completer.complete()`` method are now caught and ignored.
 

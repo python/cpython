@@ -64,7 +64,6 @@ class TestUntestedModules(unittest.TestCase):
             import rlcompleter
             import sched
             import sndhdr
-            import statvfs
             import sunau
             import sunaudio
             import symbol

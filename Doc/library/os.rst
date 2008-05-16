@@ -1074,15 +1074,6 @@ Files and Directories
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
    :attr:`f_flag`, :attr:`f_namemax`. Availability: Unix.
 
-   .. index:: module: statvfs
-
-   For backward compatibility, the return value is also accessible as a tuple whose
-   values correspond to the attributes, in the order given above. The standard
-   module :mod:`statvfs` defines constants that are useful for extracting
-   information from a :ctype:`statvfs` structure when accessing it as a sequence;
-   this remains useful when writing code that needs to work with versions of Python
-   that don't support accessing the fields as attributes.
-
 
 .. function:: symlink(src, dst)
 

@@ -16,7 +16,6 @@ in this chapter is:
    os.path.rst
    fileinput.rst
    stat.rst
-   statvfs.rst
    filecmp.rst
    tempfile.rst
    glob.rst
