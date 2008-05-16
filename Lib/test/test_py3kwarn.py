@@ -130,7 +130,7 @@ class TestStdlibRemovals(unittest.TestCase):
     # import side-effect.
     all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new', 'rexec',
                         'Bastion', 'compiler', 'dircache', 'fpformat',
-                        'ihooks', 'mhlib')
+                        'ihooks', 'mhlib', 'statvfs')
     inclusive_platforms = {'irix' : ('pure', 'AL', 'al', 'CD', 'cd', 'cddb',
                                      'cdplayer', 'CL', 'cl', 'DEVICE', 'GL',
                                      'gl', 'ERRNO', 'FILE', 'FL', 'flp', 'fl',
