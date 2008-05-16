@@ -1937,7 +1937,7 @@ details.
   used to hold character data.
   (Contributed by Achim Gaedke; :issue:`1137`.)
 
-* The :mod:`Queue` module now provides queue classes that retrieve entries
+* The :mod:`queue` module now provides queue classes that retrieve entries
   in different orders.  The :class:`PriorityQueue` class stores 
   queued items in a heap and retrieves them in priority order, 
   and :class:`LifoQueue` retrieves the most recently added entries first,
@@ -2041,7 +2041,7 @@ details.
   and connects to it using an optional timeout value, returning 
   the connected socket object.
 
-* The base classes in the :mod:`SocketServer` module now support
+* The base classes in the :mod:`socketserver` module now support
   calling a :meth:`handle_timeout` method after a span of inactivity 
   specified by the server's :attr:`timeout` attribute.  (Contributed 
   by Michael Pomraning.)  The :meth:`serve_forever` method 

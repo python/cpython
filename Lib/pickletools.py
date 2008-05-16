@@ -136,7 +136,7 @@ this and there isn't a use case that warrants the expense of such an
 analysis.
 
 To this end, all tests for __safe_for_unpickling__ or for
-copy_reg.safe_constructors are removed from the unpickling code.
+copyreg.safe_constructors are removed from the unpickling code.
 References to these variables in the descriptions below are to be seen
 as describing unpickling in Python 2.2 and before.
 """
@@ -1525,7 +1525,7 @@ opcodes = [
       BUILD opcode to apply  __setstate__ to that argument.
 
       If type(callable) is not ClassType, REDUCE complains unless the
-      callable has been registered with the copy_reg module's
+      callable has been registered with the copyreg module's
       safe_constructors dict, or the callable has a magic
       '__safe_for_unpickling__' attribute with a true value.  I'm not sure
       why it does this, but I've sure seen this complaint often enough when
