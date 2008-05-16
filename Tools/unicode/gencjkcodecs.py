@@ -55,7 +55,7 @@ def getregentry():
 """)
 
 def gencodecs(prefix):
-    for loc, encodings in codecs.iteritems():
+    for loc, encodings in codecs.items():
         for enc in encodings:
             code = TEMPLATE.substitute(ENCODING=enc.upper(),
                                        encoding=enc.lower(),

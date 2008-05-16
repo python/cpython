@@ -205,7 +205,7 @@ def build_database():
                   schema, ProductName="Python "+full_current_version,
                   ProductCode=product_code,
                   ProductVersion=current_version,
-                  Manufacturer=u"Python Software Foundation")
+                  Manufacturer="Python Software Foundation")
     # The default sequencing of the RemoveExistingProducts action causes
     # removal of files that got just installed. Place it after
     # InstallInitialize, so we first uninstall everything, but still roll
@@ -335,7 +335,7 @@ def add_ui(db):
 
     # Bitmaps
     if not os.path.exists(srcdir+r"\PC\python_icon.exe"):
-        raise "Run icons.mak in PC directory"
+        raise RuntimeError("Run icons.mak in PC directory")
     add_data(db, "Binary",
              [("PythonWin", msilib.Binary(r"%s\PCbuild\installer.bmp" % srcdir)), # 152x328 pixels
               ("py.ico",msilib.Binary(srcdir+r"\PC\py.ico")),
@@ -349,7 +349,7 @@ def add_ui(db):
     # the installed/uninstalled state according to both the
     # Extensions and TclTk features.
     if os.system("nmake /nologo /c /f msisupport.mak") != 0:
-        raise "'nmake /f msisupport.mak' failed"
+        raise RuntimeError("'nmake /f msisupport.mak' failed")
     add_data(db, "Binary", [("Script", msilib.Binary("msisupport.dll"))])
     # See "Custom Action Type 1"
     if msilib.Win64:
@@ -845,7 +845,7 @@ class PyDirectory(Directory):
     """By default, all components in the Python installer
     can run from source."""
     def __init__(self, *args, **kw):
-        if not kw.has_key("componentflags"):
+        if "componentflags" not in kw:
             kw['componentflags'] = 2 #msidbComponentAttributesOptional
         Directory.__init__(self, *args, **kw)
 

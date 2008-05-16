@@ -25,7 +25,7 @@ def parse(s):
     The parser is very restricted in what it will accept.
     """
 
-    lines = filter(None, s.split("\n")) # get non-empty lines
+    lines = [_f for _f in s.split("\n") if _f] # get non-empty lines
     assert lines[0].strip() == "typedef struct {"
     pyhead = lines[1].strip()
     assert (pyhead.startswith("PyObject") and

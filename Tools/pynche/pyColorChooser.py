@@ -28,7 +28,7 @@ class Chooser:
         dbfile = options.get('databasefile', self.__databasefile)
         # load the database file
         colordb = None
-        if dbfile <> self.__databasefile:
+        if dbfile != self.__databasefile:
             colordb = ColorDB.get_colordb(dbfile)
         if not self.__master:
             from Tkinter import Tk

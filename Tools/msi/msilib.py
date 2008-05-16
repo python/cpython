@@ -7,11 +7,6 @@ import pythoncom, pywintypes
 from win32com.client import constants
 import re, string, os, sets, glob, subprocess, sys, _winreg, struct
 
-try:
-    basestring
-except NameError:
-    basestring = (str, unicode)
-
 # Partially taken from Wine
 datasizemask=      0x00ff
 type_valid=        0x0100
@@ -173,14 +168,14 @@ def gen_schema(destpath, schemapath):
         r = v.Fetch()
         if not r:break
         # Table, Column, Nullable
-        f.write("(%s,%s,%s," %
-                (`r.StringData(1)`, `r.StringData(2)`, `r.StringData(3)`))
+        f.write("(%r,%r,%r," %
+                (r.StringData(1), r.StringData(2), r.StringData(3)))
         def put_int(i):
             if r.IsNull(i):f.write("None, ")
             else:f.write("%d," % r.IntegerData(i))
         def put_str(i):
             if r.IsNull(i):f.write("None, ")
-            else:f.write("%s," % `r.StringData(i)`)
+            else:f.write("%r," % r.StringData(i))
         put_int(4) # MinValue
         put_int(5) # MaxValue
         put_str(6) # KeyTable
@@ -235,12 +230,12 @@ def gen_sequence(destpath, msipath):
                     else:
                         rec.append(bytes)
                 else:
-                    raise "Unsupported column type", info.StringData(i)
+                    raise ValueError("Unsupported column type", info.StringData(i))
             f.write(repr(tuple(rec))+",\n")
         v1.Close()
         f.write("]\n\n")
     v.Close()
-    f.write("tables=%s\n" % repr(map(str,tables)))
+    f.write("tables=%s\n" % repr(list(map(str,tables))))
     f.close()
 
 class _Unspecified:pass
@@ -265,9 +260,9 @@ def add_data(db, table, values):
         assert len(value) == count, value
         for i in range(count):
             field = value[i]
-            if isinstance(field, (int, long)):
+            if isinstance(field, int):
                 r.SetIntegerData(i+1,field)
-            elif isinstance(field, basestring):
+            elif isinstance(field, str):
                 r.SetStringData(i+1,field)
             elif field is None:
                 pass
@@ -522,7 +517,7 @@ class Directory:
             file = os.path.basename(file)
         absolute = os.path.join(self.absolute, src)
         assert not re.search(r'[\?|><:/*]"', file) # restrictions on long names
-        if self.keyfiles.has_key(file):
+        if file in self.keyfiles:
             logical = self.keyfiles[file]
         else:
             logical = None

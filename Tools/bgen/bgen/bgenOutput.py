@@ -182,7 +182,7 @@ def Out(text):
             line = line[n:]
         else:
             for c in indent:
-                if line[:1] <> c: break
+                if line[:1] != c: break
                 line = line[1:]
         VaOutput("%s", line)
 

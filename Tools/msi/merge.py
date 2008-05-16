@@ -19,23 +19,23 @@ def merge(msi, feature, rootdir, modules):
     # Step 1: Merge databases, extract cabfiles
     m = msilib.MakeMerge2()
     m.OpenLog("merge.log")
-    print "Opened Log"
+    print("Opened Log")
     m.OpenDatabase(msi)
-    print "Opened DB"
+    print("Opened DB")
     for module in modules:
-        print module
+        print(module)
         m.OpenModule(module,0)
-        print "Opened Module",module
+        print("Opened Module",module)
         m.Merge(feature, rootdir)
-        print "Errors:"
+        print("Errors:")
         for e in m.Errors:
-            print e.Type, e.ModuleTable, e.DatabaseTable
-            print "   Modkeys:",
-            for s in e.ModuleKeys: print s,
-            print
-            print "   DBKeys:",
-            for s in e.DatabaseKeys: print s,
-            print
+            print(e.Type, e.ModuleTable, e.DatabaseTable)
+            print("   Modkeys:", end=' ')
+            for s in e.ModuleKeys: print(s, end=' ')
+            print()
+            print("   DBKeys:", end=' ')
+            for s in e.DatabaseKeys: print(s, end=' ')
+            print()
         cabname = tempfile.mktemp(suffix=".cab")
         m.ExtractCAB(cabname)
         cab_and_filecount.append((cabname, len(m.ModuleFiles)))
@@ -56,7 +56,7 @@ def merge(msi, feature, rootdir, modules):
         seq = r.IntegerData(1)
         if seq > maxmedia:
             maxmedia = seq
-    print "Start of Media", maxmedia
+    print("Start of Media", maxmedia)
 
     for cabname, count in cab_and_filecount:
         stream = "merged%d" % maxmedia

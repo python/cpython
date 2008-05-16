@@ -17,7 +17,7 @@
 #
 
 import sys, os
-if os.name <> 'mac':
+if os.name != 'mac':
     sys.path.append(os.path.join(os.environ['HOME'],
                                  'src/python/Tools/modulator'))
 

@@ -71,7 +71,7 @@ def maketables(trace=0):
                           EASTASIAN_WIDTH % version,
                           DERIVED_CORE_PROPERTIES % version)
 
-    print(len(list(filter(None, unicode.table))), "characters")
+    print(len(filter(None, unicode.table)), "characters")
 
     for version in old_versions:
         print("--- Reading", UNICODE_DATA % ("-"+version), "...")
@@ -79,7 +79,7 @@ def maketables(trace=0):
                                   COMPOSITION_EXCLUSIONS % ("-"+version),
                                   EASTASIAN_WIDTH % ("-"+version),
                                   DERIVED_CORE_PROPERTIES % ("-"+version))
-        print(len(list(filter(None, old_unicode.table))), "characters")
+        print(len(filter(None, old_unicode.table)), "characters")
         merge_old_version(version, unicode, old_unicode)
 
     makeunicodename(unicode, trace)
@@ -152,8 +152,7 @@ def makeunicodedata(unicode, trace):
                 prefix = i
                 assert prefix < 256
                 # content
-                decomp = [prefix + (len(decomp)<<8)] +\
-                         list(map(lambda s: int(s, 16), decomp))
+                decomp = [prefix + (len(decomp)<<8)] + [int(s, 16) for s in decomp]
                 # Collect NFC pairs
                 if not prefix and len(decomp) == 3 and \
                    char not in unicode.exclusions and \
@@ -466,7 +465,7 @@ def makeunicodename(unicode, trace):
             if name and name[0] != "<":
                 names[char] = name + chr(0)
 
-    print(len(list(filter(lambda n: n is not None, names))), "distinct names")
+    print(len(n for n in names if n is not None), "distinct names")
 
     # collect unique words from names (note that we differ between
     # words inside a sentence, and words ending a sentence.  the
@@ -740,7 +739,7 @@ class UnicodeData:
         # public attributes
         self.filename = filename
         self.table = table
-        self.chars = range(0x110000) # unicode 3.2
+        self.chars = list(range(0x110000)) # unicode 3.2
 
         file = open(exclusions)
         self.exclusions = {}
@@ -763,7 +762,7 @@ class UnicodeData:
             s = s.split()[0].split(';')
             if '..' in s[0]:
                 first, last = [int(c, 16) for c in s[0].split('..')]
-                chars = range(first, last+1)
+                chars = list(range(first, last+1))
             else:
                 chars = [int(s[0], 16)]
             for char in chars:
@@ -785,7 +784,7 @@ class UnicodeData:
             p = p.strip()
             if ".." in r:
                 first, last = [int(c, 16) for c in r.split('..')]
-                chars = range(first, last+1)
+                chars = list(range(first, last+1))
             else:
                 chars = [int(r, 16)]
             for char in chars:
@@ -796,7 +795,7 @@ class UnicodeData:
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1
-        self.chars = range(256)
+        self.chars = list(range(256))
 
 # hash table tools
 

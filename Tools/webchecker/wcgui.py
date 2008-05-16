@@ -257,20 +257,20 @@ class CheckerWindow(webchecker.Checker):
         d = self.__details
         d.clear()
         d.put("URL:    %s\n" % self.format_url(url))
-        if self.bad.has_key(url):
+        if url in self.bad:
             d.put("Error:  %s\n" % str(self.bad[url]))
         if url in self.roots:
             d.put("Note:   This is a root URL\n")
-        if self.done.has_key(url):
+        if url in self.done:
             d.put("Status: checked\n")
             o = self.done[url]
-        elif self.todo.has_key(url):
+        elif url in self.todo:
             d.put("Status: to check\n")
             o = self.todo[url]
         else:
             d.put("Status: unknown (!)\n")
             o = []
-        if (not url[1]) and self.errors.has_key(url[0]):
+        if (not url[1]) and url[0] in self.errors:
             d.put("Bad links from this page:\n")
             for triple in self.errors[url[0]]:
                 link, rawlink, msg = triple
@@ -298,9 +298,9 @@ class CheckerWindow(webchecker.Checker):
 
     def newlink(self, url, origin):
         webchecker.Checker.newlink(self, url, origin)
-        if self.done.has_key(url):
+        if url in self.done:
             self.__done.insert(url)
-        elif self.todo.has_key(url):
+        elif url in self.todo:
             self.__todo.insert(url)
         self.newstatus()
 
@@ -351,7 +351,7 @@ class ListPanel:
     def selectedindices(self):
         l = self.list.curselection()
         if not l: return []
-        return map(int, l)
+        return list(map(int, l))
 
     def insert(self, url):
         if url not in self.items:

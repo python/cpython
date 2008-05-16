@@ -126,23 +126,20 @@ class Scanner:
         self.usedtypes = {}
 
     def typeused(self, type, mode):
-        if not self.usedtypes.has_key(type):
+        if type not in self.usedtypes:
             self.usedtypes[type] = {}
         self.usedtypes[type][mode] = None
 
     def reportusedtypes(self):
-        types = self.usedtypes.keys()
-        types.sort()
+        types = sorted(self.usedtypes.keys())
         for type in types:
-            modes = self.usedtypes[type].keys()
-            modes.sort()
+            modes = sorted(self.usedtypes[type].keys())
             self.report("%s %s", type, " ".join(modes))
 
     def gentypetest(self, file):
         fp = open(file, "w")
         fp.write("types=[\n")
-        types = self.usedtypes.keys()
-        types.sort()
+        types = sorted(self.usedtypes.keys())
         for type in types:
             fp.write("\t'%s',\n"%type)
         fp.write("]\n")
@@ -236,7 +233,7 @@ if missing: raise "Missing Types"
             if i >= 0: line = line[:i]
             words = [s.strip() for s in line.split(':')]
             if words == ['']: continue
-            if len(words) <> 3:
+            if len(words) != 3:
                 print("Line", startlineno, end=' ')
                 print(": bad line (not 3 colon-separated fields)")
                 print(repr(line))
@@ -703,7 +700,7 @@ if missing: raise "Missing Types"
         return arglist
 
     def matcharg(self, patarg, arg):
-        return len(filter(None, map(fnmatch.fnmatchcase, arg, patarg))) == 3
+        return len(f for f in map(fnmatch.fnmatchcase, arg, patarg) if f) == 3
 
     def substituteargs(self, pattern, replacement, old):
         new = []
@@ -739,7 +736,7 @@ if missing: raise "Missing Types"
             self.typeused(atype, amode)
             self.specfile.write("    (%s, %r, %s),\n" %
                                 (atype, aname, amode))
-        if self.greydictnames.has_key(name):
+        if name in self.greydictnames:
             self.specfile.write("    condition=%r,\n"%(self.greydictnames[name],))
         self.generatemodifiers(classname, name, modifiers)
         self.specfile.write(")\n")

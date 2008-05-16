@@ -5,12 +5,12 @@ if sys.maxunicode == 65535:
 
 def gen_category(cats):
     for i in range(0, 0x110000):
-        if unicodedata.category(unichr(i)) in cats:
+        if unicodedata.category(chr(i)) in cats:
             yield(i)
 
 def gen_bidirectional(cats):
     for i in range(0, 0x110000):
-        if unicodedata.bidirectional(unichr(i)) in cats:
+        if unicodedata.bidirectional(chr(i)) in cats:
             yield(i)
 
 def compact_set(l):
@@ -63,14 +63,14 @@ for l in data:
     if m:
         if m.group(1) == "Start":
             if curname:
-                raise "Double Start",(curname, l)
+                raise RuntimeError("Double Start", (curname, l))
             curname = m.group(2)
             table = {}
             tables.append((curname, table))
             continue
         else:
             if not curname:
-                raise "End without start", l
+                raise RuntimeError("End without start", l)
             curname = None
             continue
     if not curname:
@@ -87,7 +87,7 @@ for l in data:
             try:
                 start, end = fields
             except ValueError:
-                raise "Unpacking problem", l
+                raise RuntimeError("Unpacking problem", l)
         else:
             start = end = fields[0]
         start = int(start, 16)
@@ -146,8 +146,7 @@ def in_table_a1(code):
 name, table = tables[0]
 del tables[0]
 assert name == "B.1"
-table = table.keys()
-table.sort()
+table = sorted(table.keys())
 print("""
 b1_set = """ + compact_set(table) + """
 def in_table_b1(code):
@@ -177,8 +176,7 @@ for k,v in table_b2.items():
     if map(ord, unichr(k).lower()) != v:
         b3_exceptions[k] = u"".join(map(unichr,v))
 
-b3 = b3_exceptions.items()
-b3.sort()
+b3 = sorted(b3_exceptions.items())
 
 print("""
 b3_exceptions = {""")
@@ -207,7 +205,7 @@ def map_table_b3(code):
 def map_table_b2(a):
     al = map_table_b3(a)
     b = unicodedata.normalize("NFKC", al)
-    bl = u"".join([map_table_b3(ch) for ch in b])
+    bl = "".join([map_table_b3(ch) for ch in b])
     c = unicodedata.normalize("NFKC", bl)
     if b != c:
         return c
@@ -216,7 +214,7 @@ def map_table_b2(a):
 
 specials = {}
 for k,v in table_b2.items():
-    if map(ord, map_table_b2(unichr(k))) != v:
+    if list(map(ord, map_table_b2(chr(k)))) != v:
         specials[k] = v
 
 # B.3 should not add any additional special cases
@@ -321,9 +319,9 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.4"
 
-nonchar = set(range(0xFDD0,0xFDF0) +
-              range(0xFFFE,0x110000,0x10000) +
-              range(0xFFFF,0x110000,0x10000))
+nonchar = set(range(0xFDD0,0xFDF0))
+nonchar.update(range(0xFFFE,0x110000,0x10000))
+nonchar.update(range(0xFFFF,0x110000,0x10000))
 table = set(table.keys())
 assert table == nonchar
 
@@ -353,8 +351,7 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.6"
 
-table = table.keys()
-table.sort()
+table = sorted(table.keys())
 
 print("""
 c6_set = """ + compact_set(table) + """
@@ -367,8 +364,7 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.7"
 
-table = table.keys()
-table.sort()
+table = sorted(table.keys())
 
 print("""
 c7_set = """ + compact_set(table) + """
@@ -381,8 +377,7 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.8"
 
-table = table.keys()
-table.sort()
+table = sorted(table.keys())
 
 print("""
 c8_set = """ + compact_set(table) + """
@@ -395,8 +390,7 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.9"
 
-table = table.keys()
-table.sort()
+table = sorted(table.keys())
 
 print("""
 c9_set = """ + compact_set(table) + """
