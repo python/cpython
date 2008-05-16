@@ -15,7 +15,7 @@
 # - optimize tree redraw after expand of subnode
 
 import os
-from Tkinter import *
+from tkinter import *
 import imp
 
 import ZoomHeight

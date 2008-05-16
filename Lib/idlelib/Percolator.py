@@ -81,5 +81,5 @@ def main():
     root.mainloop()
 
 if __name__ == "__main__":
-    from Tkinter import *
+    from tkinter import *
     main()

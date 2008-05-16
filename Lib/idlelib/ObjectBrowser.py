@@ -136,7 +136,7 @@ def make_objecttreeitem(labeltext, object, setfunction=None):
 
 def _test():
     import sys
-    from Tkinter import Tk
+    from tkinter import Tk
     root = Tk()
     root.configure(bd=0, bg="yellow")
     root.focus_set()
