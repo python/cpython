@@ -224,7 +224,10 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *seq;
 	reversedobject *ro;
 
-	if (!PyArg_UnpackTuple(args, "reversed", 1, 1, &seq))
+	if (type == &PyReversed_Type && !_PyArg_NoKeywords("reversed()", kwds))
+		return NULL;
+
+	if (!PyArg_UnpackTuple(args, "reversed", 1, 1, &seq) )
 		return NULL;
 
 	if (PyObject_HasAttrString(seq, "__reversed__"))
