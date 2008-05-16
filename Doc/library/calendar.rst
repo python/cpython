@@ -37,7 +37,7 @@ it's the base calendar for all computations.
    :class:`Calendar` instances have the following methods:
 
 
-   .. method:: iterweekdays(weekday)
+   .. method:: iterweekdays()
 
       Return an iterator for the week day numbers that will be used for one
       week.  The first value from the iterator will be the same as the value of
