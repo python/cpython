@@ -34,10 +34,6 @@ import os as _os
 import errno as _errno
 from random import Random as _Random
 
-if _os.name == 'mac':
-    import Carbon.Folder as _Folder
-    import Carbon.Folders as _Folders
-
 try:
     import fcntl as _fcntl
 except ImportError:
@@ -149,15 +145,7 @@ def _candidate_tempdir_list():
         if dirname: dirlist.append(dirname)
 
     # Failing that, try OS-specific locations.
-    if _os.name == 'mac':
-        try:
-            fsr = _Folder.FSFindFolder(_Folders.kOnSystemDisk,
-                                              _Folders.kTemporaryFolderType, 1)
-            dirname = fsr.as_pathname()
-            dirlist.append(dirname)
-        except _Folder.error:
-            pass
-    elif _os.name == 'nt':
+    if _os.name == 'nt':
         dirlist.extend([ r'c:\temp', r'c:\tmp', r'\temp', r'\tmp' ])
     else:
         dirlist.extend([ '/tmp', '/var/tmp', '/usr/tmp' ])

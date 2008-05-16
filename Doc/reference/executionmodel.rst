@@ -198,10 +198,10 @@ the code block where the error occurred.
 The Python interpreter raises an exception when it detects a run-time error
 (such as division by zero).  A Python program can also explicitly raise an
 exception with the :keyword:`raise` statement. Exception handlers are specified
-with the :keyword:`try` ... :keyword:`except` statement.  The :keyword:`try` ...
-:keyword:`finally` statement specifies cleanup code which does not handle the
-exception, but is executed whether an exception occurred or not in the preceding
-code.
+with the :keyword:`try` ... :keyword:`except` statement.  The :keyword:`finally`
+clause of such a statement can be used to specify cleanup code which does not
+handle the exception, but is executed whether an exception occurred or not in
+the preceding code.
 
 .. index:: single: termination model
 

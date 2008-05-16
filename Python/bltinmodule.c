@@ -861,9 +861,13 @@ builtin_hasattr(PyObject *self, PyObject *args)
 	}
 	v = PyObject_GetAttr(v, name);
 	if (v == NULL) {
-		PyErr_Clear();
-		Py_INCREF(Py_False);
-		return Py_False;
+		if (!PyErr_ExceptionMatches(PyExc_Exception))
+			return NULL;
+		else {
+			PyErr_Clear();
+			Py_INCREF(Py_False);
+			return Py_False;
+		}
 	}
 	Py_DECREF(v);
 	Py_INCREF(Py_True);

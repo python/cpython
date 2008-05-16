@@ -627,9 +627,9 @@ docs), but here's a sample::
         'g' - General format. This prints the number as a fixed-point
               number, unless the number is too large, in which case
               it switches to 'e' exponent notation.
-        'n' - Number. This is the same as 'g', except that it uses the
-              current locale setting to insert the appropriate
-              number separator characters.
+        'n' - Number. This is the same as 'g' (for floats) or 'd' (for
+              integers), except that it uses the current locale setting to
+              insert the appropriate number separator characters.
         '%' - Percentage. Multiplies the number by 100 and displays
               in fixed ('f') format, followed by a percent sign.
 
