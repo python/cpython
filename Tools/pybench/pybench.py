@@ -107,15 +107,13 @@ def get_machine_details():
     buildno, builddate = platform.python_build()
     python = platform.python_version()
     try:
-        unichr(100000)
+        chr(100000)
     except ValueError:
         # UCS2 build (standard)
-        unicode = 'UCS2'
-    except NameError:
-        unicode = None
+        unitype = 'UCS2'
     else:
         # UCS4 build (most recent Linux distros)
-        unicode = 'UCS4'
+        unitype = 'UCS4'
     bits, linkage = platform.architecture()
     return {
         'platform': platform.platform(),
@@ -127,7 +125,7 @@ def get_machine_details():
         'compiler': platform.python_compiler(),
         'buildno': buildno,
         'builddate': builddate,
-        'unicode': unicode,
+        'unicode': unitype,
         'bits': bits,
         }
 

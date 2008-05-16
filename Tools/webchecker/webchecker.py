@@ -265,7 +265,7 @@ class Checker:
         self.reset()
 
     def setflags(self, **kw):
-        for key in kw.keys():
+        for key in kw:
             if key not in self.validflags:
                 raise NameError("invalid keyword argument: %s" % str(key))
         for key, value in kw.items():
@@ -307,7 +307,7 @@ class Checker:
         (self.roots, self.todo, self.done, self.bad, self.round) = state
         for root in self.roots:
             self.addrobot(root)
-        for url in self.bad.keys():
+        for url in self.bad:
             self.markerror(url)
 
     def addroot(self, root, add_to_do = 1):
@@ -327,7 +327,7 @@ class Checker:
 
     def addrobot(self, root):
         root = urlparse.urljoin(root, "/")
-        if self.robots.has_key(root): return
+        if root in self.robots: return
         url = urlparse.urljoin(root, "/robots.txt")
         self.robots[root] = rp = robotparser.RobotFileParser()
         self.note(2, "Parsing %s", url)
@@ -342,8 +342,7 @@ class Checker:
         while self.todo:
             self.round = self.round + 1
             self.note(0, "\nRound %d (%s)\n", self.round, self.status())
-            urls = self.todo.keys()
-            urls.sort()
+            urls = sorted(self.todo.keys())
             del urls[self.roundsize:]
             for url in urls:
                 self.dopage(url)
@@ -366,8 +365,7 @@ class Checker:
             self.message("\nNo errors")
             return
         self.message("\nError Report:")
-        sources = self.errors.keys()
-        sources.sort()
+        sources = sorted(self.errors.keys())
         for source in sources:
             triples = self.errors[source]
             self.message("")
@@ -432,7 +430,7 @@ class Checker:
         self.markdone(url_pair)
 
     def newlink(self, url, origin):
-        if self.done.has_key(url):
+        if url in self.done:
             self.newdonelink(url, origin)
         else:
             self.newtodolink(url, origin)
@@ -446,7 +444,7 @@ class Checker:
         self.note(3, "  Done link %s", self.format_url(url))
 
         # Make sure that if it's bad, that the origin gets added.
-        if self.bad.has_key(url):
+        if url in self.bad:
             source, rawlink = origin
             triple = url, rawlink, self.bad[url]
             self.seterror(source, triple)
@@ -454,7 +452,7 @@ class Checker:
     def newtodolink(self, url, origin):
         # Call self.format_url(), since the URL here
         # is now a (URL, fragment) pair.
-        if self.todo.has_key(url):
+        if url in self.todo:
             if origin not in self.todo[url]:
                 self.todo[url].append(origin)
             self.note(3, "  Seen todo link %s", self.format_url(url))
@@ -486,7 +484,7 @@ class Checker:
         # Incoming argument name is a (URL, fragment) pair.
         # The page may have been cached in the name_table variable.
         url, fragment = url_pair
-        if self.name_table.has_key(url):
+        if url in self.name_table:
             return self.name_table[url]
 
         scheme, path = urllib.splittype(url)
@@ -550,7 +548,7 @@ class Checker:
             return None
 
     def checkforhtml(self, info, url):
-        if info.has_key('content-type'):
+        if 'content-type' in info:
             ctype = cgi.parse_header(info['content-type'])[0].lower()
             if ';' in ctype:
                 # handle content-type: text/html; charset=iso8859-1 :
@@ -566,13 +564,13 @@ class Checker:
             return 0
 
     def setgood(self, url):
-        if self.bad.has_key(url):
+        if url in self.bad:
             del self.bad[url]
             self.changed = 1
             self.note(0, "(Clear previously seen error)")
 
     def setbad(self, url, msg):
-        if self.bad.has_key(url) and self.bad[url] == msg:
+        if url in self.bad and self.bad[url] == msg:
             self.note(0, "(Seen this error before)")
             return
         self.bad[url] = msg
@@ -882,7 +880,7 @@ class MyHTMLParser(sgmllib.SGMLParser):
         self.check_name_id(attributes)
 
     def getlinks(self):
-        return self.links.keys()
+        return list(self.links.keys())
 
     def getbase(self):
         return self.base

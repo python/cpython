@@ -88,7 +88,7 @@ def stringify(str):
     res = '"'
     map = _stringify_map
     for c in str:
-        if map.has_key(c): res = res + map[c]
+        if c in map: res = res + map[c]
         elif ' ' <= c <= '~': res = res + c
         else: res = res + '\\%03o' % ord(c)
     res = res + '"'

@@ -40,7 +40,7 @@ class writer:
 
     def makesubst(self):
         if not self._subst:
-            if not self.__dict__.has_key('abbrev'):
+            if 'abbrev' not in self.__dict__:
                 self.abbrev = self.name
             self.Abbrev = self.abbrev[0].upper()+self.abbrev[1:]
             subst = varsubst.Varsubst(self.__dict__)

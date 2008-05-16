@@ -23,8 +23,7 @@ def clockres(timer):
             break
         for i in spin_loops:
             d[timer()] = 1
-    values = d.keys()
-    values.sort()
+    values = sorted(d.keys())
     min_diff = TEST_TIME
     for i in range(len(values) - 1):
         diff = values[i+1] - values[i]

@@ -19,7 +19,7 @@ class ScrolledListbox(Listbox):
         fcnf = {}
         vcnf = {'name': 'vbar',
             Pack: {'side': 'right', 'fill': 'y'},}
-        for k in cnf.keys():
+        for k in list(cnf.keys()):
             if type(k) == ClassType or k == 'name':
                 fcnf[k] = cnf[k]
                 del cnf[k]
@@ -32,6 +32,6 @@ class ScrolledListbox(Listbox):
         self.vbar['command'] = (self, 'yview')
 
         # Copy Pack methods of self.frame -- hack!
-        for m in Pack.__dict__.keys():
+        for m in Pack.__dict__:
             if m[0] != '_' and m != 'config':
                 setattr(self, m, getattr(self.frame, m))

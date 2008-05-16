@@ -265,7 +265,7 @@ def containsAny(str, set):
 def _visit_pyfiles(list, dirname, names):
     """Helper for getFilesForName()."""
     # get extension for python source files
-    if not globals().has_key('_py_ext'):
+    if '_py_ext' not in globals():
         global _py_ext
         _py_ext = [triple[0] for triple in imp.get_suffixes()
                    if triple[2] == imp.PY_SOURCE][0]

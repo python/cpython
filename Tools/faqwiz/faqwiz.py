@@ -120,7 +120,7 @@ def log(text):
         logfile.close()
 
 def load_cookies():
-    if not os.environ.has_key('HTTP_COOKIE'):
+    if 'HTTP_COOKIE' not in os.environ:
         return {}
     raw = os.environ['HTTP_COOKIE']
     words = [s.strip() for s in raw.split(';')]
@@ -359,7 +359,7 @@ class FaqDir:
         self.open(file).show(edit=edit)
 
     def new(self, section):
-        if not SECTION_TITLES.has_key(section):
+        if section not in SECTION_TITLES:
             raise NoSuchSection(section)
         maxnum = 0
         for file in self.list():
@@ -426,11 +426,11 @@ class FaqWizard:
             query = re.escape(query)
             queries = [query]
         elif self.ui.querytype in ('anykeywords', 'allkeywords'):
-            words = filter(None, re.split('\W+', query))
+            words = [_f for _f in re.split('\W+', query) if _f]
             if not words:
                 self.error("No keywords specified!")
                 return
-            words = map(lambda w: r'\b%s\b' % w, words)
+            words = [r'\b%s\b' % w for w in words]
             if self.ui.querytype[:3] == 'any':
                 queries = ['|'.join(words)]
             else:
@@ -577,7 +577,7 @@ class FaqWizard:
             emit(ONE_RECENT, period=period)
         else:
             emit(SOME_RECENT, period=period, count=len(list))
-        self.format_all(map(lambda (mtime, file): file, list), headers=0)
+        self.format_all([mtime_file[1] for mtime_file in list], headers=0)
         emit(TAIL_RECENT)
 
     def do_roulette(self):
@@ -603,8 +603,7 @@ class FaqWizard:
     def do_add(self):
         self.prologue(T_ADD)
         emit(ADD_HEAD)
-        sections = SECTION_TITLES.items()
-        sections.sort()
+        sections = sorted(SECTION_TITLES.items())
         for section, title in sections:
             emit(ADD_SECTION, section=section, title=title)
         emit(ADD_TAIL)

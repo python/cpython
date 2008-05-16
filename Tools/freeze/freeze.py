@@ -460,7 +460,7 @@ def main():
     somevars = {}
     if os.path.exists(makefile_in):
         makevars = parsesetup.getmakevars(makefile_in)
-        for key in makevars.keys():
+        for key in makevars:
             somevars[key] = makevars[key]
 
     somevars['CFLAGS'] = ' '.join(cflags) # override

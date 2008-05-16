@@ -66,7 +66,7 @@ class ColorDB:
             # version the `name', or the CapitalizedVersion, etc.
             key = (red, green, blue)
             foundname, aliases = self.__byrgb.get(key, (name, []))
-            if foundname <> name and foundname not in aliases:
+            if foundname != name and foundname not in aliases:
                 aliases.append(name)
             self.__byrgb[key] = (foundname, aliases)
             # add to byname lookup
@@ -122,7 +122,7 @@ class ColorDB:
             self.__allnames = []
             for name, aliases in self.__byrgb.values():
                 self.__allnames.append(name)
-            self.__allnames.sort(key=unicode.lower)
+            self.__allnames.sort(key=str.lower)
         return self.__allnames
 
     def aliases_of(self, red, green, blue):
@@ -209,7 +209,7 @@ def rrggbb_to_triplet(color):
     """Converts a #rrggbb color to the tuple (red, green, blue)."""
     rgbtuple = _namedict.get(color)
     if rgbtuple is None:
-        if color[0] <> '#':
+        if color[0] != '#':
             raise BadColor(color)
         red = color[1:3]
         green = color[3:5]
@@ -232,7 +232,7 @@ def triplet_to_rrggbb(rgbtuple):
 
 _maxtuple = (256.0,) * 3
 def triplet_to_fractional_rgb(rgbtuple):
-    return map(operator.__div__, rgbtuple, _maxtuple)
+    return list(map(operator.__div__, rgbtuple, _maxtuple))
 
 
 def triplet_to_brightness(rgbtuple):

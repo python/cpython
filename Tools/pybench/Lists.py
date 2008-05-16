@@ -157,8 +157,8 @@ class ListSlicing(Test):
 
     def calibrate(self):
 
-        n = range(100)
-        r = range(25)
+        n = list(range(100))
+        r = list(range(25))
 
         for i in range(self.rounds):
             for j in r:

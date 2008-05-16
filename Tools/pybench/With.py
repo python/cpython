@@ -17,7 +17,7 @@ class WithFinally(Test):
 
         cm = self.ContextManager()
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             with cm: pass
             with cm: pass
             with cm: pass
@@ -43,7 +43,7 @@ class WithFinally(Test):
 
         cm = self.ContextManager()
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -65,7 +65,7 @@ class TryFinally(Test):
 
         cm = self.ContextManager()
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             cm.__enter__()
             try: pass
             finally: cm.__exit__()
@@ -150,7 +150,7 @@ class TryFinally(Test):
 
         cm = self.ContextManager()
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -171,12 +171,12 @@ class WithRaiseExcept(Test):
         error = ValueError
         be = self.BlockExceptions()
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             with be: raise error
             with be: raise error
-            with be: raise error,"something"
-            with be: raise error,"something"
-            with be: raise error,"something"
+            with be: raise error("something")
+            with be: raise error("something")
+            with be: raise error("something")
             with be: raise error("something")
             with be: raise error("something")
             with be: raise error("something")
@@ -186,5 +186,5 @@ class WithRaiseExcept(Test):
         error = ValueError
         be = self.BlockExceptions()
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass

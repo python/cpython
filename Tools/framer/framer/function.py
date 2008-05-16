@@ -45,7 +45,7 @@ class _ArgumentList(object):
     fmt = None
 
     def __init__(self, args):
-        self.args = map(Argument, args)
+        self.args = list(map(Argument, args))
 
     def __len__(self):
         return len(self.args)
@@ -99,15 +99,15 @@ class VarArgs(_ArgumentList):
             print("        %s" % a.decl(), file=f)
 
 def ArgumentList(func, method):
-    code = func.func_code
+    code = func.__code__
     args = code.co_varnames[:code.co_argcount]
     if method:
         args = args[1:]
     pyarg = getattr(func, "pyarg", None)
     if pyarg is not None:
         args = VarArgs(args, pyarg)
-        if func.func_defaults:
-            L = list(func.func_defaults)
+        if func.__defaults__:
+            L = list(func.__defaults__)
             ndefault = len(L)
             i = len(args) - ndefault
             while L:

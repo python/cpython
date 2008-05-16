@@ -45,18 +45,14 @@ def parse(filename):
     return data
 
 def pprint(data):
-
-    items = data.items()
-    items.sort()
-    for k,v in items:
+    items = sorted(data.items())
+    for k, v in items:
         print('    %-40s%r,' % ('%r:' % k, v))
 
 def print_differences(data, olddata):
-
-    items = olddata.items()
-    items.sort()
+    items = sorted(olddata.items())
     for k, v in items:
-        if not data.has_key(k):
+        if k not in data:
             print('#    removed %r' % k)
         elif olddata[k] != data[k]:
             print('#    updated %r -> %r to %r' % \

@@ -10,11 +10,6 @@ from framer.util import cstring, unindent
 
 from types import FunctionType
 
-def sortitems(dict):
-    L = dict.items()
-    L.sort()
-    return L
-
 # The Module and Type classes are implemented using metaclasses,
 # because most of the methods are class methods.  It is easier to use
 # metaclasses than the cumbersome classmethod() builtin.  They have
@@ -32,7 +27,7 @@ class BaseMetaclass(type):
         if not functions:
             return
         p(template.methoddef_start)
-        for name, func in sortitems(functions):
+        for name, func in sorted(functions.items()):
             if func.__doc__:
                 p(template.methoddef_def_doc, func.vars)
             else:
@@ -55,7 +50,7 @@ class ModuleMetaclass(BaseMetaclass):
         self.__types = {}
         self.__members = False
 
-        for name, obj in self.__dict__.iteritems():
+        for name, obj in self.__dict__.items():
             if isinstance(obj, FunctionType):
                 self.__functions[name] = Function(obj, self)
             elif isinstance(obj, TypeMetaclass):
@@ -87,16 +82,16 @@ class ModuleMetaclass(BaseMetaclass):
         if self.__doc__:
             p(template.module_doc)
 
-        for name, type in sortitems(self.__types):
+        for name, type in sorted(self.__types.items()):
             type.dump(f)
 
-        for name, func  in sortitems(self.__functions):
+        for name, func  in sorted(self.__functions.items()):
             func.dump(f)
 
         self.dump_methoddef(f, self.__functions, self.__vars)
 
         p(template.module_init_start)
-        for name, type in sortitems(self.__types):
+        for name, type in sorted(self.__types.items()):
             type.dump_init(f)
 
         p("}")
@@ -119,7 +114,7 @@ class TypeMetaclass(BaseMetaclass):
         if self.__doc__:
             p(template.docstring)
 
-        for name, func in sortitems(self.__methods):
+        for name, func in sorted(self.__methods.items()):
             func.dump(f)
 
         self.dump_methoddef(f, self.__methods, self.__vars)
@@ -143,7 +138,7 @@ class TypeMetaclass(BaseMetaclass):
         self.__methods = {}
         self.__members = {}
         for cls in self.__mro__:
-            for k, v in cls.__dict__.iteritems():
+            for k, v in cls.__dict__.items():
                 if isinstance(v, FunctionType):
                     self.__methods[k] = Method(v, self)
                 if isinstance(v, member):
@@ -190,7 +185,7 @@ class TypeMetaclass(BaseMetaclass):
         if not self.__members:
             return
         p(template.memberdef_start)
-        for name, slot in sortitems(self.__members):
+        for name, slot in sorted(self.__members.items()):
             slot.dump(f)
         p(template.memberdef_end)
 

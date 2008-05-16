@@ -28,7 +28,7 @@ class Varsubst:
                 s = s[2:]
                 continue
             name = m.group(1)
-            if not self.dict.has_key(name):
+            if name not in self.dict:
                 raise error('No such variable: '+name)
             value = self.dict[name]
             if self.do_useindent and '\n' in value:

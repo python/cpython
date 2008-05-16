@@ -56,9 +56,8 @@ def add(id, str, fuzzy):
 def generate():
     "Return the generated output."
     global MESSAGES
-    keys = MESSAGES.keys()
     # the keys are sorted in the .mo file
-    keys.sort()
+    keys = sorted(MESSAGES.keys())
     offsets = []
     ids = strs = ''
     for id in keys:

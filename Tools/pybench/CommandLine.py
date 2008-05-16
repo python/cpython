@@ -537,9 +537,9 @@ class Application:
         if not options:
             print('  None')
             return
-        long = filter(lambda x: x.prefix == '--', options)
-        short = filter(lambda x: x.prefix == '-', options)
-        items = short + long
+        int = [x for x in options if x.prefix == '--']
+        short = [x for x in options if x.prefix == '-']
+        items = short + int
         for o in options:
             print(' ',o)
         print()
