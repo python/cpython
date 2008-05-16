@@ -1,13 +1,13 @@
 
-:mod:`repr` --- Alternate :func:`repr` implementation
+:mod:`reprlib` --- Alternate :func:`repr` implementation
 =====================================================
 
-.. module:: repr
+.. module:: reprlib
    :synopsis: Alternate repr() implementation with size limits.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-The :mod:`repr` module provides a means for producing object representations
+The :mod:`reprlib` module provides a means for producing object representations
 with limits on the size of the resulting strings. This is used in the Python
 debugger and may be useful in other contexts as well.
 
@@ -62,10 +62,13 @@ which format specific object types.
    default is ``4`` for :attr:`maxdict`, ``5`` for :attr:`maxarray`, and  ``6`` for
    the others.
 
+   .. versionadded:: 2.4
+      :attr:`maxset`, :attr:`maxfrozenset`, and :attr:`set`.
+
 
 .. attribute:: Repr.maxlong
 
-   Maximum number of characters in the representation for an integer.  Digits
+   Maximum number of characters in the representation for a long integer.  Digits
    are dropped from the middle.  The default is ``40``.
 
 
@@ -129,5 +132,5 @@ for file objects could be added::
                return `obj`
 
    aRepr = MyRepr()
-   print(aRepr.repr(sys.stdin))          # prints '<stdin>'
+   print aRepr.repr(sys.stdin)          # prints '<stdin>'
 

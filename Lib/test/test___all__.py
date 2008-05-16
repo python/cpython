@@ -114,7 +114,7 @@ class AllTest(unittest.TestCase):
         self.check_all("quopri")
         self.check_all("random")
         self.check_all("re")
-        self.check_all("repr")
+        self.check_all("reprlib")
         self.check_all("rfc822")
         self.check_all("rlcompleter")
         self.check_all("robotparser")

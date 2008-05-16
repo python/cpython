@@ -53,7 +53,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     path will be displayed.
 
 import sys, imp, os, re, inspect, builtins, pkgutil
-from repr import Repr
+from reprlib import Repr
 try:
     from collections import deque
 except ImportError:
