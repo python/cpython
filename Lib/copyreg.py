@@ -13,7 +13,7 @@ dispatch_table = {}
 
 def pickle(ob_type, pickle_function, constructor_ob=None):
     if type(ob_type) is _ClassType:
-        raise TypeError("copy_reg is not intended for use with classes")
+        raise TypeError("copyreg is not intended for use with classes")
 
     if not hasattr(pickle_function, '__call__'):
         raise TypeError("reduction functions must be callable")

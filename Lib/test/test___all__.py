@@ -40,7 +40,7 @@ class AllTest(unittest.TestCase):
         self.check_all("configparser")
         self.check_all("Cookie")
         self.check_all("MimeWriter")
-        self.check_all("Queue")
+        self.check_all("queue")
         self.check_all("SimpleHTTPServer")
         self.check_all("socketserver")
         self.check_all("StringIO")

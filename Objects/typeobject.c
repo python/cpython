@@ -3108,7 +3108,7 @@ slotnames(PyObject *cls)
 	    !PyList_Check(slotnames))
 	{
 		PyErr_SetString(PyExc_TypeError,
-			"copy_reg._slotnames didn't return a list or None");
+			"copyreg._slotnames didn't return a list or None");
 		Py_DECREF(slotnames);
 		slotnames = NULL;
 	}

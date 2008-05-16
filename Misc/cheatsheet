@@ -1862,9 +1862,9 @@ codecs           Lookup existing Unicode encodings and register new ones.
 colorsys         Conversion functions between RGB and other color systems.
 commands         Tools for executing UNIX commands .
 compileall       Force "compilation" of all .py files in a directory.
-ConfigParser     Configuration file parser (much like windows .ini files)
+configparser     Configuration file parser (much like windows .ini files)
 copy             Generic shallow and deep copying operations.
-copy_reg         Helper to provide extensibility for pickle/cPickle.
+copyreg          Helper to provide extensibility for pickle/cPickle.
 csv              Read and write files with comma separated values.
 dbhash           (g)dbm-compatible interface to bsdhash.hashopen.
 dircache         Sorted list of files in a dir, using a cache.
@@ -1952,7 +1952,7 @@ pty              Pseudo terminal utilities.
 pyexpat          Interface to the Expay XML parser.
 py_compile       Routine to "compile" a .py file to a .pyc file.
 pyclbr           Parse a Python file and retrieve classes and methods.
-Queue            A multi-producer, multi-consumer queue.
+queue            A multi-producer, multi-consumer queue.
 quopri           Conversions to/from quoted-printable transport encoding.
 rand             Don't use unless you want compatibility with C's rand().
 random           Random variable generators
