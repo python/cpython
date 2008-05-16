@@ -41,6 +41,11 @@ Extension Modules
 Library
 -------
 
+- Issue 1793: Function ctypes.util.find_msvcrt() added that returns
+  the name of the C runtime library that Python uses.
+  ctypes.util.find_library(name) now call this function when name is
+  'm' or 'c'.
+
 - The Tkinter module has been made a package and renamed 'tkinter'.  All
   Tkinter-related modules (like Tix, ScrolledText, turtle etc.) are now
   submodules of that package and have been renamed to conform to PEP 8
