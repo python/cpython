@@ -209,6 +209,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             z.close()
 
             zi = zipimport.zipimporter(TEMP_ZIP)
+            self.assertEquals(zi.archive, TEMP_ZIP)
             self.assertEquals(zi.is_package(TESTPACK), True)
             zi.load_module(TESTPACK)
 
@@ -225,6 +226,37 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             zi2 = zipimport.zipimporter(TEMP_ZIP + os.sep + TESTPACK)
             self.assertEquals(zi2.archive, TEMP_ZIP)
             self.assertEquals(zi2.prefix, TESTPACK + os.sep)
+        finally:
+            z.close()
+            os.remove(TEMP_ZIP)
+
+    def testZipImporterMethodsInSubDirectory(self):
+        packdir = TESTPACK + os.sep
+        packdir2 = packdir + TESTPACK2 + os.sep
+        files = {packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
+                 packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
+
+        z = ZipFile(TEMP_ZIP, "w")
+        try:
+            for name, (mtime, data) in files.items():
+                zinfo = ZipInfo(name, time.localtime(mtime))
+                zinfo.compress_type = self.compression
+                z.writestr(zinfo, data)
+            z.close()
+
+            zi = zipimport.zipimporter(TEMP_ZIP + os.sep + packdir)
+            self.assertEquals(zi.archive, TEMP_ZIP)
+            self.assertEquals(zi.prefix, packdir)
+            self.assertEquals(zi.is_package(TESTPACK2), True)
+            zi.load_module(TESTPACK2)
+
+            self.assertEquals(zi.is_package(TESTPACK2 + os.sep + '__init__'), False)
+            self.assertEquals(zi.is_package(TESTPACK2 + os.sep + TESTMOD), False)
+
+            mod_name = TESTPACK2 + os.sep + TESTMOD
+            mod = __import__(module_path_to_dotted_name(mod_name))
+            self.assertEquals(zi.get_source(TESTPACK2), None)
+            self.assertEquals(zi.get_source(mod_name), None)
         finally:
             z.close()
             os.remove(TEMP_ZIP)

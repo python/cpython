@@ -59,16 +59,13 @@ zipimporter Objects
 
 .. class:: zipimporter(archivepath)
 
-   Create a new zipimporter instance. *archivepath* must be a path to a ZIP file.
+   Create a new zipimporter instance. *archivepath* must be a path to a ZIP
+   file, or to a specific path within a ZIP file.  For example, an *archivepath*
+   of :file:`foo/bar.zip/lib` will look for modules in the :file:`lib` directory
+   inside the ZIP file :file:`foo/bar.zip` (provided that it exists).
+
    :exc:`ZipImportError` is raised if *archivepath* doesn't point to a valid ZIP
    archive.
-
-   *archivepath* can also contain a path within the ZIP file -- the importer
-   object will then look under that path instead of the ZIP file root.  For
-   example, an *archivepath* of :file:`foo/bar.zip/lib` will look for modules
-   in the :file:`lib` directory inside the ZIP file :file:`foo/bar.zip`
-   (provided that it exists).
-
 
    .. method:: find_module(fullname[, path])
 
@@ -114,13 +111,19 @@ zipimporter Objects
 
    .. attribute:: archive
 
-      The file name of the importer's associated ZIP file.
+      The file name of the importer's associated ZIP file, without a possible
+      subpath.
 
 
    .. attribute:: prefix
 
-      The path within the ZIP file where modules are searched; see
-      :class:`zipimporter` for details.
+      The subpath within the ZIP file where modules are searched.  This is the
+      empty string for zipimporter objects which point to the root of the ZIP
+      file.
+
+   The :attr:`archive` and :attr:`prefix` attributes, when combined with a
+   slash, equal the original *archivepath* argument given to the
+   :class:`zipimporter` constructor.
 
 
 .. _zipimport-examples:

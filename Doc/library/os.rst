@@ -274,7 +274,8 @@ process and user.
 .. function:: strerror(code)
 
    Return the error message corresponding to the error code in *code*.
-   Availability: Unix, Windows.
+   On platforms where :cfunc:`strerror` returns ``NULL`` when given an unknown
+   error number, :exc:`ValueError` is raised.  Availability: Unix, Windows.
 
 
 .. function:: umask(mask)

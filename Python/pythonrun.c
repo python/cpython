@@ -1690,10 +1690,10 @@ err_input(perrdetail *err)
 		msg = "invalid token";
 		break;
 	case E_EOFS:
-		msg = "EOF while scanning triple-quoted string";
+		msg = "EOF while scanning triple-quoted string literal";
 		break;
 	case E_EOLS:
-		msg = "EOL while scanning single-quoted string";
+		msg = "EOL while scanning string literal";
 		break;
 	case E_INTR:
 		if (!PyErr_Occurred())
