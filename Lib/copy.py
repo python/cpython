@@ -354,17 +354,16 @@ def _test():
     print(l2)
     l.append({l[1]: l, 'xyz': l[2]})
     l3 = copy(l)
-    import repr
-    print(map(repr.repr, l))
-    print(map(repr.repr, l1))
-    print(map(repr.repr, l2))
-    print(map(repr.repr, l3))
+    import reprlib
+    print(map(reprlib.repr, l))
+    print(map(reprlib.repr, l1))
+    print(map(reprlib.repr, l2))
+    print(map(reprlib.repr, l3))
     l3 = deepcopy(l)
-    import repr
-    print(map(repr.repr, l))
-    print(map(repr.repr, l1))
-    print(map(repr.repr, l2))
-    print(map(repr.repr, l3))
+    print(map(reprlib.repr, l))
+    print(map(reprlib.repr, l1))
+    print(map(reprlib.repr, l2))
+    print(map(reprlib.repr, l3))
 
 if __name__ == '__main__':
     _test()

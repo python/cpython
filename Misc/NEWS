@@ -42,6 +42,8 @@ Extension Modules
 Library
 -------
 
+- The repr module has been renamed to reprlib.
+
 - The statvfs module has been removed.
 
 - #1713041: fix pprint's handling of maximum depth.
