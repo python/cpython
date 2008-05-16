@@ -325,9 +325,9 @@ are always available.  They are listed here in alphabetical order.
    < abs(b)``.
 
 
-.. function:: enumerate(sequence[, start=0])
+.. function:: enumerate(iterable[, start=0])
 
-   Return an enumerate object. *sequence* must be a sequence, an
+   Return an enumerate object. *iterable* must be a sequence, an
    :term:`iterator`, or some other object which supports iteration.  The
    :meth:`__next__` method of the iterator returned by :func:`enumerate` returns a
    tuple containing a count (from *start* which defaults to 0) and the

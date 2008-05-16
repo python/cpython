@@ -369,9 +369,9 @@ filter_next(filterobject *lz)
 }
 
 PyDoc_STRVAR(filter_doc,
-"filter(function or None, sequence) --> filter object\n\
+"filter(function or None, iterable) --> filter object\n\
 \n\
-Return an iterator yielding those items of sequence for which function(item)\n\
+Return an iterator yielding those items of iterable for which function(item)\n\
 is true. If function is None, return the items that are true.");
 
 PyTypeObject PyFilter_Type = {
@@ -1174,7 +1174,7 @@ builtin_iter(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(iter_doc,
-"iter(collection) -> iterator\n\
+"iter(iterable) -> iterator\n\
 iter(callable, sentinel) -> iterator\n\
 \n\
 Get an iterator from an object.  In the first form, the argument must\n\
@@ -1942,10 +1942,10 @@ builtin_sum(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(sum_doc,
-"sum(sequence[, start]) -> value\n\
+"sum(iterable[, start]) -> value\n\
 \n\
-Returns the sum of a sequence of numbers (NOT strings) plus the value\n\
-of parameter 'start' (which defaults to 0).  When the sequence is\n\
+Returns the sum of an iterable of numbers (NOT strings) plus the value\n\
+of parameter 'start' (which defaults to 0).  When the iterable is\n\
 empty, returns start.");
 
 
