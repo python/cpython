@@ -5,7 +5,50 @@ import sys, os
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
+
+    def _get_build_version():
+        """Return the version of MSVC that was used to build Python.
+
+        For Python 2.3 and up, the version number is included in
+        sys.version.  For earlier versions, assume the compiler is MSVC 6.
+        """
+        # This function was copied from Lib/distutils/msvccompiler.py
+        prefix = "MSC v."
+        i = sys.version.find(prefix)
+        if i == -1:
+            return 6
+        i = i + len(prefix)
+        s, rest = sys.version[i:].split(" ", 1)
+        majorVersion = int(s[:-2]) - 6
+        minorVersion = int(s[2:3]) / 10.0
+        # I don't think paths are affected by minor version in version 6
+        if majorVersion == 6:
+            minorVersion = 0
+        if majorVersion >= 6:
+            return majorVersion + minorVersion
+        # else we don't know what version of the compiler this is
+        return None
+
+    def find_msvcrt():
+        """Return the name of the VC runtime dll"""
+        version = _get_build_version()
+        if version is None:
+            # better be safe than sorry
+            return None
+        if version <= 6:
+            clibname = 'msvcrt'
+        else:
+            clibname = 'msvcr%d' % (version * 10)
+
+        # If python was built with in debug mode
+        import imp
+        if imp.get_suffixes()[0][0] == '_d.pyd':
+            clibname += 'd'
+        return clibname+'.dll'
+
     def find_library(name):
+        if name in ('c', 'm'):
+            return find_msvcrt()
         # See MSDN for the REAL search order.
         for directory in os.environ['PATH'].split(os.pathsep):
             fname = os.path.join(directory, name)
