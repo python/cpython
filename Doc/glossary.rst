@@ -388,9 +388,10 @@ Glossary
       definition), or pass several arguments as a list to a function.  See
       :term:`argument`.
 
-   Python 3000
-      Nickname for the next major Python version, 3.0 (coined long ago when the
-      release of version 3 was something in the distant future.)
+   Python 3000 
+      Nickname for the next major Python version, 3.0 (coined long ago
+      when the release of version 3 was something in the distant future.)  This
+      is also abbreviated "Py3k".
 
    Pythonic
       An idea or piece of code which closely follows the most common idioms of
