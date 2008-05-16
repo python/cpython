@@ -220,7 +220,6 @@ class StatAttributeTests(unittest.TestCase):
         if not hasattr(os, "statvfs"):
             return
 
-        import statvfs
         try:
             result = os.statvfs(self.fname)
         except OSError, e:
@@ -230,16 +229,13 @@ class StatAttributeTests(unittest.TestCase):
                 return
 
         # Make sure direct access works
-        self.assertEquals(result.f_bfree, result[statvfs.F_BFREE])
+        self.assertEquals(result.f_bfree, result[3])
 
-        # Make sure all the attributes are there
-        members = dir(result)
-        for name in dir(statvfs):
-            if name[:2] == 'F_':
-                attr = name.lower()
-                self.assertEquals(getattr(result, attr),
-                                  result[getattr(statvfs, name)])
-                self.assert_(attr in members)
+        # Make sure all the attributes are there.
+        members = ('bsize', 'frsize', 'blocks', 'bfree', 'bavail', 'files',
+                    'ffree', 'favail', 'flag', 'namemax')
+        for value, member in enumerate(members):
+            self.assertEquals(getattr(result, 'f_' + member), result[value])
 
         # Make sure that assignment really fails
         try:
