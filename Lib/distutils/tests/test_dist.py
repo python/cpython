@@ -213,9 +213,10 @@ class MetadataTestCase(unittest.TestCase):
             # win32-style
             if sys.platform == 'win32':
                 # home drive should be found
-                os.environ['HOMEPATH'] = curdir
+                os.environ['HOME'] = curdir
                 files = dist.find_config_files()
-                self.assert_(user_filename in files)
+                self.assert_(user_filename in files,
+                             '%r not found in %r' % (user_filename, files))
         finally:
             for key, value in old.items():
                 if value is None:

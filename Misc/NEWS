@@ -28,6 +28,9 @@ Extension Modules
 Library
 -------
 
+- #2250: Exceptions raised during evaluation of names in rlcompleter's
+  ``Completer.complete()`` method are now caught and ignored.
+
 - #2659: Added ``break_on_hyphens`` option to textwrap TextWrapper class.
 
 - Issue #2487: change the semantics of math.ldexp(x, n) when n is too
