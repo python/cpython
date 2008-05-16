@@ -213,9 +213,9 @@ The module :mod:`socket` exports the following constants and functions:
    service name (like ``'http'``), a numeric port number or ``None``.
 
    The rest of the arguments are optional and must be numeric if specified.  For
-   *host* and *port*, by passing either an empty string or ``None``, you can pass
-   ``NULL`` to the C API.  The :func:`getaddrinfo` function returns a list of
-   5-tuples with the following structure:
+   *host* and *port*, by passing ``None``, you can pass ``NULL`` to the C API.
+   The :func:`getaddrinfo` function returns a list of 5-tuples with the following
+   structure:
 
    ``(family, socktype, proto, canonname, sockaddr)``
 
@@ -785,7 +785,7 @@ sends traffic to the first one connected successfully. ::
    import socket
    import sys
 
-   HOST = ''                 # Symbolic name meaning all available interfaces
+   HOST = None               # Symbolic name meaning all available interfaces
    PORT = 50007              # Arbitrary non-privileged port
    s = None
    for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
@@ -847,7 +847,7 @@ sends traffic to the first one connected successfully. ::
 
    
 The last example shows how to write a very simple network sniffer with raw
-sockets on Windows. The example requires administrator priviliges to modify
+sockets on Windows. The example requires administrator privileges to modify
 the interface::
 
    import socket

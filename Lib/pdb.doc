@@ -128,6 +128,10 @@ n(ext)
         Continue execution until the next line in the current function
         is reached or it returns.
 
+unt(il)
+        Continue execution until the line with a number greater than the 
+        current one is reached or until the current frame returns.
+
 r(eturn)
         Continue execution until the current function returns.
 

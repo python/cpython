@@ -1134,8 +1134,8 @@ PyDoc_STRVAR(split__doc__,
 "B.split([sep[, maxsplit]]) -> list of bytes\n\
 \n\
 Return a list of the sections in B, using sep as the delimiter.\n\
-If sep is not given, B is split on ASCII whitespace characters\n\
-(space, tab, return, newline, formfeed, vertical tab).\n\
+If sep is not specified or is None, B is split on ASCII whitespace\n\
+characters (space, tab, return, newline, formfeed, vertical tab).\n\
 If maxsplit is given, at most maxsplit splits are done.");
 
 static PyObject *
