@@ -114,7 +114,8 @@ class HTMLNode:
         self.lines = []
 
     def write(self, *lines):
-        map(self.lines.append, lines)
+        for line in lines:
+            self.lines.append(line)
 
     def flush(self):
         fp = open(self.dirname + '/' + makefile(self.name), 'w')
@@ -173,7 +174,7 @@ class HTMLNode:
         self.link('  Next', self.next, rel='Next')
         self.link('  Prev', self.prev, rel='Previous')
         self.link('  Up', self.up, rel='Up')
-        if self.name <> self.topname:
+        if self.name != self.topname:
             self.link('  Top', self.topname)
 
 
@@ -256,7 +257,7 @@ class TexinfoParser:
         while line and (line[0] == '%' or blprog.match(line)):
             line = fp.readline()
             lineno = lineno + 1
-        if line[:len(MAGIC)] <> MAGIC:
+        if line[:len(MAGIC)] != MAGIC:
             raise SyntaxError('file does not begin with %r' % (MAGIC,))
         self.parserest(fp, lineno)
 
@@ -318,7 +319,7 @@ class TexinfoParser:
 
     # Start saving text in a buffer instead of writing it to a file
     def startsaving(self):
-        if self.savetext <> None:
+        if self.savetext != None:
             self.savestack.append(self.savetext)
             # print '*** Recursively saving text, expect trouble'
         self.savetext = ''
@@ -340,7 +341,7 @@ class TexinfoParser:
         except:
             print(args)
             raise TypeError
-        if self.savetext <> None:
+        if self.savetext != None:
             self.savetext = self.savetext + text
         elif self.nodefp:
             self.nodefp.write(text)
@@ -349,7 +350,7 @@ class TexinfoParser:
 
     # Complete the current node -- write footnotes and close file
     def endnode(self):
-        if self.savetext <> None:
+        if self.savetext != None:
             print('*** Still saving text at end of node')
             dummy = self.collectsavings()
         if self.footnotes:
@@ -361,7 +362,7 @@ class TexinfoParser:
                 self.link('Next', next)
                 self.link('Prev', prev)
                 self.link('Up', up)
-                if self.nodename <> self.topname:
+                if self.nodename != self.topname:
                     self.link('Top', self.topname)
                 self.write('<HR>\n')
             self.write('</BODY>\n')
@@ -473,7 +474,7 @@ class TexinfoParser:
                     continue
                 method()
                 continue
-            if c <> '@':
+            if c != '@':
                 # Cannot happen unless spprog is changed
                 raise RuntimeError('unexpected funny %r' % c)
             start = i
@@ -517,7 +518,7 @@ class TexinfoParser:
         print('*** No open func for @' + cmd + '{...}')
         cmd = cmd + '{'
         self.write('@', cmd)
-        if not self.unknown.has_key(cmd):
+        if cmd not in self.unknown:
             self.unknown[cmd] = 1
         else:
             self.unknown[cmd] = self.unknown[cmd] + 1
@@ -526,7 +527,7 @@ class TexinfoParser:
         print('*** No close func for @' + cmd + '{...}')
         cmd = '}' + cmd
         self.write('}')
-        if not self.unknown.has_key(cmd):
+        if cmd not in self.unknown:
             self.unknown[cmd] = 1
         else:
             self.unknown[cmd] = self.unknown[cmd] + 1
@@ -534,7 +535,7 @@ class TexinfoParser:
     def unknown_handle(self, cmd):
         print('*** No handler for @' + cmd)
         self.write('@', cmd)
-        if not self.unknown.has_key(cmd):
+        if cmd not in self.unknown:
             self.unknown[cmd] = 1
         else:
             self.unknown[cmd] = self.unknown[cmd] + 1
@@ -891,7 +892,7 @@ class TexinfoParser:
 
     def unknown_cmd(self, cmd, args):
         print('*** unknown', '@' + cmd, args)
-        if not self.unknown.has_key(cmd):
+        if cmd not in self.unknown:
             self.unknown[cmd] = 1
         else:
             self.unknown[cmd] = self.unknown[cmd] + 1
@@ -902,7 +903,7 @@ class TexinfoParser:
             print('*** @end w/o args')
         else:
             cmd = words[0]
-            if not self.stack or self.stack[-1] <> cmd:
+            if not self.stack or self.stack[-1] != cmd:
                 print('*** @end', cmd, 'unexpected')
             else:
                 del self.stack[-1]
@@ -916,7 +917,7 @@ class TexinfoParser:
     def unknown_end(self, cmd):
         cmd = 'end ' + cmd
         print('*** unknown', '@' + cmd)
-        if not self.unknown.has_key(cmd):
+        if cmd not in self.unknown:
             self.unknown[cmd] = 1
         else:
             self.unknown[cmd] = self.unknown[cmd] + 1
@@ -953,8 +954,7 @@ class TexinfoParser:
         self.values[args] = None
 
     def bgn_ifset(self, args):
-        if args not in self.values.keys() \
-           or self.values[args] is None:
+        if args not in self.values or self.values[args] is None:
             self.skip = self.skip + 1
             self.stackinfo[len(self.stack)] = 1
         else:
@@ -968,8 +968,7 @@ class TexinfoParser:
             print('*** end_ifset: KeyError :', len(self.stack) + 1)
 
     def bgn_ifclear(self, args):
-        if args in self.values.keys() \
-           and self.values[args] is not None:
+        if args in self.values and self.values[args] is not None:
             self.skip = self.skip + 1
             self.stackinfo[len(self.stack)] = 1
         else:
@@ -987,7 +986,7 @@ class TexinfoParser:
 
     def close_value(self):
         key = self.collectsavings()
-        if key in self.values.keys():
+        if key in self.values:
             self.write(self.values[key])
         else:
             print('*** Undefined value: ', key)
@@ -1051,7 +1050,7 @@ class TexinfoParser:
         self.nodelinks = parts
         [name, next, prev, up] = parts[:4]
         file = self.dirname + '/' + makefile(name)
-        if self.filenames.has_key(file):
+        if file in self.filenames:
             print('*** Filename already in use: ', file)
         else:
             if self.debugging: print('!'*self.debugging, '--- writing', file)
@@ -1443,7 +1442,7 @@ class TexinfoParser:
             else:
                 # some other character, e.g. '-'
                 args = self.itemarg + ' ' + args
-        if self.itemnumber <> None:
+        if self.itemnumber != None:
             args = self.itemnumber + '. ' + args
             self.itemnumber = increment(self.itemnumber)
         if self.stack and self.stack[-1] == 'table':
@@ -1542,11 +1541,11 @@ class TexinfoParser:
         self.indextitle['vr'] = 'Variable'
         #
         self.whichindex = {}
-        for name in self.indextitle.keys():
+        for name in self.indextitle:
             self.whichindex[name] = []
 
     def user_index(self, name, args):
-        if self.whichindex.has_key(name):
+        if name in self.whichindex:
             self.index(name, args)
         else:
             print('*** No index named', repr(name))
@@ -1564,15 +1563,15 @@ class TexinfoParser:
 
     def do_synindex(self, args):
         words = args.split()
-        if len(words) <> 2:
+        if len(words) != 2:
             print('*** bad @synindex', args)
             return
         [old, new] = words
-        if not self.whichindex.has_key(old) or \
-                  not self.whichindex.has_key(new):
+        if old not in self.whichindex or \
+                  new not in self.whichindex:
             print('*** bad key(s) in @synindex', args)
             return
-        if old <> new and \
+        if old != new and \
                   self.whichindex[old] is not self.whichindex[new]:
             inew = self.whichindex[new]
             inew[len(inew):] = self.whichindex[old]
@@ -1582,7 +1581,7 @@ class TexinfoParser:
     def do_printindex(self, args):
         words = args.split()
         for name in words:
-            if self.whichindex.has_key(name):
+            if name in self.whichindex:
                 self.prindex(name)
             else:
                 print('*** No index named', repr(name))
@@ -1630,8 +1629,7 @@ class TexinfoParser:
     def report(self):
         if self.unknown:
             print('--- Unrecognized commands ---')
-            cmds = self.unknown.keys()
-            cmds.sort()
+            cmds = sorted(self.unknown.keys())
             for cmd in cmds:
                 print(cmd.ljust(20), self.unknown[cmd])
 
@@ -1849,8 +1847,7 @@ class HTMLHelp:
             sys.exit(1)
 
     def dumpfiles(self, outfile=sys.stdout):
-        filelist = self.filenames.values()
-        filelist.sort()
+        filelist = sorted(self.filenames.values())
         for filename in filelist:
             print(filename, file=outfile)
 
@@ -1872,7 +1869,7 @@ class HTMLHelp:
             self.current = nodename
 
             # Have we been dumped already?
-            if self.dumped.has_key(nodename):
+            if nodename in self.dumped:
                 return
             self.dumped[nodename] = 1
 
@@ -2040,7 +2037,7 @@ def test():
     if sys.argv[1] == '-H':
         helpbase = sys.argv[2]
         del sys.argv[1:3]
-    if len(sys.argv) <> 3:
+    if len(sys.argv) != 3:
         print('usage: texi2hh [-d [-d]] [-p] [-c] [-3] [-H htmlhelp]', \
               'inputfile outputdirectory')
         sys.exit(2)

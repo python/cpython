@@ -92,7 +92,7 @@ def process(filename, table):
 # Compute closure (this is in fact totally general)
 #
 def closure(table):
-    modules = table.keys()
+    modules = list(table.keys())
     #
     # Initialize reach with a copy of table
     #
@@ -135,7 +135,7 @@ def inverse(table):
 # If there is no list for the key yet, it is created.
 #
 def store(dict, key, item):
-    if dict.has_key(key):
+    if key in dict:
         dict[key].append(item)
     else:
         dict[key] = [item]
@@ -144,13 +144,11 @@ def store(dict, key, item):
 # Tabulate results neatly
 #
 def printresults(table):
-    modules = table.keys()
+    modules = sorted(table.keys())
     maxlen = 0
     for mod in modules: maxlen = max(maxlen, len(mod))
-    modules.sort()
     for mod in modules:
-        list = table[mod]
-        list.sort()
+        list = sorted(table[mod])
         print(mod.ljust(maxlen), ':', end=' ')
         if mod in list:
             print('(*)', end=' ')

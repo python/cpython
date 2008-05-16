@@ -42,7 +42,7 @@ def get_declaration(line):
 
 def has_correct_encoding(text, codec):
     try:
-        unicode(text, codec)
+        str(text, codec)
     except UnicodeDecodeError:
         return False
     else:

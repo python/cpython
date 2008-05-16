@@ -101,7 +101,7 @@ def pytify(body):
         m = p_hex.search(body, start)
         if not m: break
         s,e = m.span()
-        val = long(body[slice(*m.span(1))], 16)
+        val = int(body[slice(*m.span(1))], 16)
         if val > sys.maxsize:
             val -= UMAX
             body = body[:s] + "(" + str(val) + ")" + body[e:]
@@ -150,9 +150,9 @@ def process(fp, outfp, env = {}):
             regs = match.regs
             a, b = regs[1]
             filename = line[a:b]
-            if importable.has_key(filename):
+            if filename in importable:
                 outfp.write('from %s import *\n' % importable[filename])
-            elif not filedict.has_key(filename):
+            elif filename not in filedict:
                 filedict[filename] = None
                 inclfp = None
                 for dir in searchdirs:

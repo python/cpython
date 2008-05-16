@@ -110,7 +110,7 @@ def raw_input(prompt):
     return sys.stdin.readline()
 
 def askyesno(prompt):
-    s = raw_input(prompt)
+    s = input(prompt)
     return s in ['y', 'yes']
 
 if __name__ == '__main__':

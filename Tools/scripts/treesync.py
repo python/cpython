@@ -195,7 +195,7 @@ def raw_input(prompt):
 def okay(prompt, answer='ask'):
     answer = answer.strip().lower()
     if not answer or answer[0] not in 'ny':
-        answer = raw_input(prompt)
+        answer = input(prompt)
         answer = answer.strip().lower()
         if not answer:
             answer = default_answer

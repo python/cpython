@@ -39,7 +39,7 @@ matcher = re.compile('(.*):\t?........ (.) (.*)$')
 # If there is no list for the key yet, it is created.
 #
 def store(dict, key, item):
-    if dict.has_key(key):
+    if key in dict:
         dict[key].append(item)
     else:
         dict[key] = [item]
@@ -86,8 +86,7 @@ def readinput(fp):
 # defined.
 #
 def printcallee():
-    flist = file2undef.keys()
-    flist.sort()
+    flist = sorted(file2undef.keys())
     for filename in flist:
         print(filename + ':')
         elist = file2undef[filename]
@@ -97,7 +96,7 @@ def printcallee():
                 tabs = '\t'
             else:
                 tabs = '\t\t'
-            if not def2file.has_key(ext):
+            if ext not in def2file:
                 print('\t' + ext + tabs + ' *undefined')
             else:
                 print('\t' + ext + tabs + flat(def2file[ext]))
@@ -105,19 +104,18 @@ def printcallee():
 # Print for each module the names of the other modules that use it.
 #
 def printcaller():
-    files = file2def.keys()
-    files.sort()
+    files = sorted(file2def.keys())
     for filename in files:
         callers = []
         for label in file2def[filename]:
-            if undef2file.has_key(label):
+            if label in undef2file:
                 callers = callers + undef2file[label]
         if callers:
             callers.sort()
             print(filename + ':')
             lastfn = ''
             for fn in callers:
-                if fn <> lastfn:
+                if fn != lastfn:
                     print('\t' + fn)
                 lastfn = fn
         else:
@@ -127,16 +125,14 @@ def printcaller():
 #
 def printundef():
     undefs = {}
-    for filename in file2undef.keys():
+    for filename in list(file2undef.keys()):
         for ext in file2undef[filename]:
-            if not def2file.has_key(ext):
+            if ext not in def2file:
                 store(undefs, ext, filename)
-    elist = undefs.keys()
-    elist.sort()
+    elist = sorted(undefs.keys())
     for ext in elist:
         print(ext + ':')
-        flist = undefs[ext]
-        flist.sort()
+        flist = sorted(undefs[ext])
         for filename in flist:
             print('\t' + filename)
 
@@ -145,8 +141,7 @@ def printundef():
 def warndups():
     savestdout = sys.stdout
     sys.stdout = sys.stderr
-    names = def2file.keys()
-    names.sort()
+    names = sorted(def2file.keys())
     for name in names:
         if len(def2file[name]) > 1:
             print('warning:', name, 'multiply defined:', end=' ')

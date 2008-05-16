@@ -240,7 +240,7 @@ def fixline(line):
             elif found == '*/':
                 Program = OutsideCommentProgram
         n = len(found)
-        if Dict.has_key(found):
+        if found in Dict:
             subst = Dict[found]
             if Program is InsideCommentProgram:
                 if not Docomments:
@@ -304,7 +304,7 @@ def addsubst(substfile):
         if key[0] == '*':
             key = key[1:]
             NotInComment[key] = value
-        if Dict.has_key(key):
+        if key in Dict:
             err('%s:%r: warning: overriding: %r %r\n' % (substfile, lineno, key, value))
             err('%s:%r: warning: previous: %r\n' % (substfile, lineno, Dict[key]))
         Dict[key] = value

@@ -128,7 +128,7 @@ def main(args):
         sys.stderr.write("Check for format or version mismatch.\n")
         return 1
     else:
-        for k in db.keys():
+        for k in list(db.keys()):
             del db[k]
 
     while 1:

@@ -163,7 +163,7 @@ def parsedir(dir, modify):
     nok = nwarn = nbad = 0
 
     # find all numeric file names and sort them
-    files = filter(lambda fn, pat=pat: pat.match(fn) is not None, os.listdir('.'))
+    files = list(filter(lambda fn, pat=pat: pat.match(fn) is not None, os.listdir('.')))
     files.sort(sort_numeric)
 
     for fn in files:
@@ -198,7 +198,7 @@ def parsedir(dir, modify):
                 date = '%s %02d' % (calendar.month_abbr[mm], dd)
             except:
                 date = '??????'
-            if not errordict.has_key(e):
+            if e not in errordict:
                 errordict[e] = 1
                 errorfirst[e] = '%s (%s)' % (fn, date)
             else:

@@ -158,7 +158,7 @@ def main():
     warnings = readwarnings(args[0])
     if warnings is None:
         return 1
-    files = warnings.keys()
+    files = list(warnings.keys())
     if not files:
         print("No classic division warnings read from", args[0])
         return

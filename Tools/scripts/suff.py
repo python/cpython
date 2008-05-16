@@ -11,11 +11,10 @@ def main():
     suffixes = {}
     for filename in files:
         suff = getsuffix(filename)
-        if not suffixes.has_key(suff):
+        if suff not in suffixes:
             suffixes[suff] = []
         suffixes[suff].append(filename)
-    keys = suffixes.keys()
-    keys.sort()
+    keys = sorted(suffixes.keys())
     for suff in keys:
         print(repr(suff), len(suffixes[suff]))
 

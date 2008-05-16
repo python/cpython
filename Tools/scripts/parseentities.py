@@ -35,9 +35,8 @@ def parse(text,pos=0,endpos=None):
 def writefile(f,defs):
 
     f.write("entitydefs = {\n")
-    items = defs.items()
-    items.sort()
-    for name,(charcode,comment) in items:
+    items = sorted(defs.items())
+    for name, (charcode,comment) in items:
         if charcode[:2] == '&#':
             code = int(charcode[2:-1])
             if code < 256:
