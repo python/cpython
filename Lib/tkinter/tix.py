@@ -26,8 +26,8 @@
 # appreciate the advantages.
 #
 
-from Tkinter import *
-from Tkinter import _flatten, _cnfmerge, _default_root
+from tkinter import *
+from tkinter import _flatten, _cnfmerge, _default_root
 
 # WARNING - TkVersion is a limited precision floating point number
 if TkVersion < 3.999:
@@ -57,7 +57,7 @@ TCL_ALL_EVENTS    = 0
 # BEWARE - this is implemented by copying some code from the Widget class
 #          in Tkinter (to override Widget initialization) and is therefore
 #          liable to break.
-import Tkinter, os
+import tkinter, os
 
 # Could probably add this to Tkinter.Misc
 class tixCommand:
@@ -192,11 +192,11 @@ class tixCommand:
         else:
             return self.tk.call('tix', 'resetoptions', newScheme, newFontSet)
 
-class Tk(Tkinter.Tk, tixCommand):
+class Tk(tkinter.Tk, tixCommand):
     """Toplevel widget of Tix which represents mostly the main window
     of an application. It has an associated Tcl interpreter."""
     def __init__(self, screenName=None, baseName=None, className='Tix'):
-        Tkinter.Tk.__init__(self, screenName, baseName, className)
+        tkinter.Tk.__init__(self, screenName, baseName, className)
         tixlib = os.environ.get('TIX_LIBRARY')
         self.tk.eval('global auto_path; lappend auto_path [file dir [info nameof]]')
         if tixlib is not None:
@@ -212,7 +212,7 @@ class Tk(Tkinter.Tk, tixCommand):
     def destroy(self):
         # For safety, remove an delete_window binding before destroy
         self.protocol("WM_DELETE_WINDOW", "")
-        Tkinter.Tk.destroy(self)
+        tkinter.Tk.destroy(self)
 
 # The Tix 'tixForm' geometry manager
 class Form:
@@ -260,9 +260,9 @@ class Form:
 
 
 
-Tkinter.Widget.__bases__ = Tkinter.Widget.__bases__ + (Form,)
+tkinter.Widget.__bases__ = tkinter.Widget.__bases__ + (Form,)
 
-class TixWidget(Tkinter.Widget):
+class TixWidget(tkinter.Widget):
     """A TixWidget class is used to package all (or most) Tix widgets.
 
     Widget initialization is extended in two ways:
@@ -383,7 +383,7 @@ class TixWidget(Tkinter.Widget):
     # These are missing from Tkinter
     def image_create(self, imgtype, cnf={}, master=None, **kw):
         if not master:
-            master = Tkinter._default_root
+            master = tkinter._default_root
             if not master:
                 raise RuntimeError, 'Too early to create image'
         if kw and cnf: cnf = _cnfmerge((cnf, kw))

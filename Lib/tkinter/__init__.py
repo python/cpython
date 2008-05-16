@@ -18,14 +18,14 @@ Actions are bound to events by resources (e.g. keyword argument
 command) or with the method bind.
 
 Example (Hello, World):
-import Tkinter
-from Tkconstants import *
-tk = Tkinter.Tk()
-frame = Tkinter.Frame(tk, relief=RIDGE, borderwidth=2)
+import tkinter
+from tkinter.constants import *
+tk = tkinter.Tk()
+frame = tkinter.Frame(tk, relief=RIDGE, borderwidth=2)
 frame.pack(fill=BOTH,expand=1)
-label = Tkinter.Label(frame, text="Hello, World")
+label = tkinter.Label(frame, text="Hello, World")
 label.pack(fill=X, expand=1)
-button = Tkinter.Button(frame,text="Exit",command=tk.destroy)
+button = tkinter.Button(frame,text="Exit",command=tk.destroy)
 button.pack(side=BOTTOM)
 tk.mainloop()
 """
@@ -34,12 +34,13 @@ __version__ = "$Revision$"
 
 import sys
 if sys.platform == "win32":
-    import FixTk # Attempt to configure Tcl/Tk without requiring PATH
+    # Attempt to configure Tcl/Tk without requiring PATH
+    from tkinter import _fix
 import _tkinter # If this fails your Python may not be configured for Tk
 tkinter = _tkinter # b/w compat for export
 TclError = _tkinter.TclError
 from types import *
-from Tkconstants import *
+from tkinter.constants import *
 try:
     import MacOS; _MacOS = MacOS; del MacOS
 except ImportError:
@@ -1696,7 +1697,7 @@ class Tk(Misc, Wm):
         base_tcl = os.path.join(home, '.%s.tcl' % baseName)
         base_py = os.path.join(home, '.%s.py' % baseName)
         dir = {'self': self}
-        exec 'from Tkinter import *' in dir
+        exec 'from tkinter import *' in dir
         if os.path.isfile(class_tcl):
             self.tk.call('source', class_tcl)
         if os.path.isfile(class_py):
