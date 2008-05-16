@@ -8,8 +8,8 @@ Classes:
 
 """
 
-from Tkinter import *
-from Dialog import Dialog
+from tkinter import *
+from tkinter.dialog import Dialog
 
 import os
 import fnmatch

@@ -19,7 +19,7 @@
 # - title: dialog title
 #
 
-from tkCommonDialog import Dialog
+from tkinter.commondialog import Dialog
 
 
 #
