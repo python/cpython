@@ -7212,6 +7212,11 @@ all_ins(PyObject *d)
 #endif
 
 /* GNU extensions. */
+#ifdef O_ASYNC
+        /* Send a SIGIO signal whenever input or output 
+           becomes available on file descriptor */
+        if (ins(d, "O_ASYNC", (long)O_ASYNC)) return -1;
+#endif
 #ifdef O_DIRECT
         /* Direct disk access. */
         if (ins(d, "O_DIRECT", (long)O_DIRECT)) return -1;

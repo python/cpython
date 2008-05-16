@@ -927,7 +927,7 @@ Test the __name__ attribute and the repr()
 >>> g.__name__
 'f'
 >>> repr(g)  # doctest: +ELLIPSIS
-'<f generator object at ...>'
+'<generator object f at ...>'
 """
 
 # conjoin is a simple backtracking generator, named in honor of Icon's

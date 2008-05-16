@@ -613,7 +613,8 @@ platforms.  For descriptions of their availability and use, consult
    combined using the bitwise OR operator ``|``. Availability: Windows.
 
 
-.. data:: O_DIRECT
+.. data:: O_ASYNC
+          O_DIRECT
           O_DIRECTORY
           O_NOFOLLOW
           O_NOATIME

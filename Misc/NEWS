@@ -39,7 +39,11 @@ Core and Builtins
 Extension Modules
 -----------------
 
-- Support for Windows9x has been removed from the winsound module.
+- Support os.O_ASYNC and fcntl.FASYNC if the constants exist on the platform.
+
+- Support for Windows 9x has been removed from the winsound module.
+
+- Fixed #2870: cmathmodule.c compile error
 
 Library
 -------

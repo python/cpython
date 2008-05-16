@@ -920,7 +920,7 @@ cmath_phase(PyObject *self, PyObject *args)
 	errno = 0;
 	PyFPE_START_PROTECT("arg function", return 0)
 	phi = c_atan2(z);
-	PyFPE_END_PROTECT(r)
+	PyFPE_END_PROTECT(phi)
 	if (errno != 0)
 		return math_error();
 	else
