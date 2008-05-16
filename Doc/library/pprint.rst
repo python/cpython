@@ -60,8 +60,7 @@ The :mod:`pprint` module defines one class:
       ... ('parrot', ('fresh fruit',))))))))
       >>> pp = pprint.PrettyPrinter(depth=6)
       >>> pp.pprint(tup)
-      ('spam',
-       ('eggs', ('lumberjack', ('knights', ('ni', ('dead', ('parrot', (...,))))))))
+      ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
 The :class:`PrettyPrinter` class supports several derivative functions:
 
@@ -208,7 +207,7 @@ This example demonstrates several uses of the :func:`pprint` function and its pa
     ['cccccccccccccccccccc', 'dddddddddddddddddddd']]
    >>> pprint.pprint(stuff, depth=3)
    ['aaaaaaaaaa',
-    ('spam', ('eggs', ('lumberjack', (...)))),
+    ('spam', ('eggs', (...))),
     ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'],
     ['cccccccccccccccccccc', 'dddddddddddddddddddd']]
    >>> pprint.pprint(stuff, width=60)

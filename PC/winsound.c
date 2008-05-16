@@ -38,9 +38,6 @@
 #include <Python.h>
 #include <windows.h>
 #include <mmsystem.h>
-#ifdef HAVE_CONIO_H
-#include <conio.h>	/* port functions on Win9x */
-#endif
 
 PyDoc_STRVAR(sound_playsound_doc,
 "PlaySound(sound, flags) - a wrapper around the Windows PlaySound API\n"
@@ -53,10 +50,7 @@ PyDoc_STRVAR(sound_beep_doc,
 "\n"
 "The frequency argument specifies frequency, in hertz, of the sound.\n"
 "This parameter must be in the range 37 through 32,767.\n"
-"The duration argument specifies the number of milliseconds.\n"
-"On WinNT and 2000, the platform Beep API is used directly.  Else funky\n"
-"code doing direct port manipulation is used; it's unknown whether that\n"
-"will work on all systems.");
+"The duration argument specifies the number of milliseconds.\n");
 
 PyDoc_STRVAR(sound_msgbeep_doc,
 "MessageBeep(x) - call Windows MessageBeep(x). x defaults to MB_OK.");
@@ -107,14 +101,12 @@ sound_playsound(PyObject *s, PyObject *args)
     return Py_None;
 }
 
-enum OSType {Win9X, WinNT2000};
-static enum OSType whichOS;	/* set by module init */
-
 static PyObject *
 sound_beep(PyObject *self, PyObject *args)
 {
 	int freq;
 	int dur;
+	BOOL ok;
 
 	if (!PyArg_ParseTuple(args, "ii:Beep", &freq,  &dur))
 		return NULL;
@@ -125,57 +117,14 @@ sound_beep(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	/* On NT and 2000, the SDK Beep() function does the whole job.
-	 * But while Beep() exists before NT, it ignores its arguments and
-	 * plays the system default sound.  Sheesh ...
-	 * The Win9X code is mondo bizarre.  I (Tim) pieced it together from
-	 * crap all over the web.  The original IBM PC used some particular
-	 * pieces of hardware (Intel 8255 and 8254 chips) hardwired to
-	 * particular port addresses and running at particular clock speeds,
-	 * and the poor sound card folks have been forced to emulate that in
-	 * all particulars ever since.  But NT and 2000 don't support port
-	 * manipulation.  Don't know about WinME; guessing it's like 98.
-	 */
+	Py_BEGIN_ALLOW_THREADS
+	ok = Beep(freq, dur);
+	Py_END_ALLOW_THREADS
+	if (!ok) {
+		PyErr_SetString(PyExc_RuntimeError,"Failed to beep");
+		return NULL;
+	}
 
-	if (whichOS == WinNT2000) {
-		BOOL ok;
-		Py_BEGIN_ALLOW_THREADS
-		ok = Beep(freq, dur);
-		Py_END_ALLOW_THREADS
-		if (!ok) {
-			PyErr_SetString(PyExc_RuntimeError,"Failed to beep");
-			return NULL;
-		}
-	}
-#if defined(_M_IX86) && defined(HAVE_CONIO_H)
-	else if (whichOS == Win9X) {
-		int speaker_state;
-		/* Force timer into oscillator mode via timer control port. */
-		_outp(0x43, 0xb6);
-		/* Compute ratio of ancient hardcoded timer frequency to
-		 * frequency we want.  Then feed that ratio (lowest byte
-		 * first) into timer data port.
-		 */
-		freq = 1193180 / freq;
-		_outp(0x42, freq & 0xff);
-		_outp(0x42, (freq >> 8) & 0xff);
-		/* Get speaker control state. */
-		speaker_state = _inp(0x61);
-		/* Turn the speaker on (bit 1)
-		 * and drive speaker from timer (bit 0).
-		 */
-		_outp(0x61, speaker_state | 0x3);
-		/* Let it blast in peace for the duration. */
-		Py_BEGIN_ALLOW_THREADS
-		Sleep(dur);
-		Py_END_ALLOW_THREADS
-		/* Restore speaker control to original state. */
-		_outp(0x61, speaker_state);
-	}
-#endif /* _M_IX86 && HAVE_CONIO_H */
-	else {
-		assert(!"winsound's whichOS has insane value");
-	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -217,8 +166,6 @@ add_define(PyObject *dict, const char *key, long value)
 PyMODINIT_FUNC
 initwinsound(void)
 {
-	OSVERSIONINFO version;
-
 	PyObject *dict;
 	PyObject *module = Py_InitModule3("winsound",
 					  sound_methods,
@@ -243,11 +190,4 @@ initwinsound(void)
 	ADD_DEFINE(MB_ICONEXCLAMATION);
 	ADD_DEFINE(MB_ICONHAND);
 	ADD_DEFINE(MB_ICONQUESTION);
-
-	version.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	GetVersionEx(&version);
-	whichOS = Win9X;
-	if (version.dwPlatformId != VER_PLATFORM_WIN32s &&
-	    version.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
-		whichOS = WinNT2000;
 }

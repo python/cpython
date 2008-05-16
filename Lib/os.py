@@ -1,9 +1,9 @@
 r"""OS routines for Mac, NT, or Posix depending on what system we're on.
 
 This exports:
-  - all functions from posix, nt, os2, mac, or ce, e.g. unlink, stat, etc.
-  - os.path is one of the modules posixpath, ntpath, or macpath
-  - os.name is 'posix', 'nt', 'os2', 'mac' or 'ce'
+  - all functions from posix, nt, os2, or ce, e.g. unlink, stat, etc.
+  - os.path is either posixpath or ntpath
+  - os.name is either 'posix', 'nt', 'os2' or 'ce'.
   - os.curdir is a string representing the current directory ('.' or ':')
   - os.pardir is a string representing the parent directory ('..' or '::')
   - os.sep is the (or a most common) pathname separator ('/' or ':' or '\\')
@@ -82,20 +82,6 @@ elif 'os2' in _names:
     import os2
     __all__.extend(_get_exports_list(os2))
     del os2
-
-elif 'mac' in _names:
-    name = 'mac'
-    linesep = '\r'
-    from mac import *
-    try:
-        from mac import _exit
-    except ImportError:
-        pass
-    import macpath as path
-
-    import mac
-    __all__.extend(_get_exports_list(mac))
-    del mac
 
 elif 'ce' in _names:
     name = 'ce'

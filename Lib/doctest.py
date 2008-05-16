@@ -2137,7 +2137,7 @@ class DocTestCase(unittest.TestCase):
         self.setUp()
         runner = DebugRunner(optionflags=self._dt_optionflags,
                              checker=self._dt_checker, verbose=False)
-        runner.run(self._dt_test)
+        runner.run(self._dt_test, clear_globs=False)
         self.tearDown()
 
     def id(self):
@@ -2194,8 +2194,6 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
 
     module = _normalize_module(module)
     tests = test_finder.find(module, globs=globs, extraglobs=extraglobs)
-    if globs is None:
-        globs = module.__dict__
     if not tests:
         # Why do we want to do this? Because it reveals a bug that might
         # otherwise be hidden.
