@@ -2,9 +2,16 @@
 :mod:`reprlib` --- Alternate :func:`repr` implementation
 =====================================================
 
+.. module:: repr
+   :synopsis: Old name for the reprlib module.
 .. module:: reprlib
    :synopsis: Alternate repr() implementation with size limits.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
+
+.. note::
+   The :mod:`repr` module has been renamed to :mod:`reprlib` in
+   Python 3.0.  It is importable under both names in Python 2.6
+   and the rest of the 2.x series.
 
 
 The :mod:`reprlib` module provides a means for producing object representations
