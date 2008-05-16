@@ -1,16 +1,26 @@
-:mod:`Tkinter` --- Python interface to Tcl/Tk
+:mod:`tkinter` --- Python interface to Tcl/Tk
 =============================================
 
 .. module:: Tkinter
+   :synopsis: Old name for the tkinter module.
+
+.. module:: tkinter
    :synopsis: Interface to Tcl/Tk for graphical user interfaces
 .. moduleauthor:: Guido van Rossum <guido@Python.org>
 
 
-The :mod:`Tkinter` module ("Tk interface") is the standard Python interface to
-the Tk GUI toolkit.  Both Tk and :mod:`Tkinter` are available on most Unix
+The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
+the Tk GUI toolkit.  Both Tk and :mod:`tkinter` are available on most Unix
 platforms, as well as on Windows and Macintosh systems.  (Tk itself is not part
 of Python; it is maintained at ActiveState.)
 
+.. note::
+   The :mod:`Tkinter` module has been renamed to a :mod:`tkinter` package in
+   Python 3.0.  All other Tkinter-related modules have been moved to submodules
+   within that package (see their individual descriptions).
+
+   All modules are importable under both names in Python 2.6 and the rest of the
+   2.x series.
 
 .. seealso::
 
@@ -34,23 +44,23 @@ of Python; it is maintained at ActiveState.)
 Tkinter Modules
 ---------------
 
-Most of the time, the :mod:`Tkinter` module is all you really need, but a number
+Most of the time, the :mod:`tkinter` is all you really need, but a number
 of additional modules are available as well.  The Tk interface is located in a
 binary module named :mod:`_tkinter`. This module contains the low-level
 interface to Tk, and should never be used directly by application programmers.
 It is usually a shared library (or DLL), but might in some cases be statically
 linked with the Python interpreter.
 
-In addition to the Tk interface module, :mod:`Tkinter` includes a number of
-Python modules. The two most important modules are the :mod:`Tkinter` module
-itself, and a module called :mod:`Tkconstants`. The former automatically imports
-the latter, so to use Tkinter, all you need to do is to import one module::
+In addition to the Tk interface module, :mod:`tkinter` includes a number of
+Python modules, :mod:`tkinter.constants` being one of the most important. 
+Importing :mod:`tkinter` will automatically import :mod:`tkinter.constants`,
+so, usually, to use Tkinter all you need is a simple import statement::
 
-   import Tkinter
+   import tkinter
 
 Or, more often::
 
-   from Tkinter import *
+   from tkinter import *
 
 
 .. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1)
@@ -79,40 +89,66 @@ Or, more often::
 
 Other modules that provide Tk support include:
 
-:mod:`ScrolledText`
+:mod:`tkinter.scrolledtext`
    Text widget with a vertical scroll bar built in.
 
-:mod:`tkColorChooser`
+   .. versionchanged:: 2.6
+      Renamed from ``ScrolledText``.
+
+:mod:`tkinter.colorchooser`
    Dialog to let the user choose a color.
 
-:mod:`tkCommonDialog`
+   .. versionchanged:: 2.6
+      Renamed from ``tkColorChooser``.
+
+:mod:`commondialog`
    Base class for the dialogs defined in the other modules listed here.
 
-:mod:`tkFileDialog`
+   .. versionchanged:: 2.6
+      Renamed from ``tkCommonDialog``.
+
+:mod:`filedialog`
    Common dialogs to allow the user to specify a file to open or save.
 
-:mod:`tkFont`
+   .. versionchanged:: 2.6
+      Renamed from ``tkFileDialog``.
+
+:mod:`tkinter.font`
    Utilities to help work with fonts.
 
-:mod:`tkMessageBox`
+   .. versionchanged:: 2.6
+      Renamed from ``tkFont``.
+
+:mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
 
-:mod:`tkSimpleDialog`
+   .. versionchanged:: 2.6
+      Renamed from ``tkMessageBox``.
+
+:mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
 
-:mod:`Tkdnd`
-   Drag-and-drop support for :mod:`Tkinter`. This is experimental and should become
-   deprecated when it is replaced  with the Tk DND.
+   .. versionchanged:: 2.6
+      Renamed from ``tkSimpleDialog``.
 
-:mod:`turtle`
+:mod:`tkinter.dnd`
+   Drag-and-drop support for :mod:`tkinter`. This is experimental and should 
+   become deprecated when it is replaced  with the Tk DND.
+
+   .. versionchanged:: 2.6
+      Renamed from ``Tkdnd``.
+
+:mod:`tkinter.turtle`
    Turtle graphics in a Tk window.
+
+   .. versionchanged:: 2.6
+      Renamed from ``turtle``.
 
 
 Tkinter Life Preserver
 ----------------------
 
 .. sectionauthor:: Matt Conway
-
 
 This section is not designed to be an exhaustive tutorial on either Tk or
 Tkinter.  Rather, it is intended as a stop gap, providing some introductory
@@ -145,7 +181,7 @@ handy reference.
 
 When trying to answer questions of the form "how do I do blah", it is often best
 to find out how to do"blah" in straight Tk, and then convert this back into the
-corresponding :mod:`Tkinter` call. Python programmers can often guess at the
+corresponding :mod:`tkinter` call. Python programmers can often guess at the
 correct Python command by looking at the Tk documentation. This means that in
 order to use Tkinter, you will have to know a little bit about Tk. This document
 can't fulfill that role, so the best we can do is point you to the best
@@ -161,8 +197,8 @@ documentation that exists. Here are some hints:
   the novice.  The book is not exhaustive, and for many details it defers to the
   man pages.
 
-* :file:`Tkinter.py` is a last resort for most, but can be a good place to go
-  when nothing else makes sense.
+* :file:`tkinter/__init__.py` is a last resort for most, but can be a good 
+  place to go when nothing else makes sense.
 
 
 .. seealso::
@@ -182,7 +218,7 @@ A Simple Hello World Program
 
 ::
 
-   from Tkinter import *
+   from tkinter import *
 
    class Application(Frame):
        def say_hi(self):
@@ -236,7 +272,7 @@ Notes:
 To make use of this reference material, there will be times when you will need
 to know how to read short passages of Tk and how to identify the various parts
 of a Tk command.   (See section :ref:`tkinter-basic-mapping` for the
-:mod:`Tkinter` equivalents of what's below.)
+:mod:`tkinter` equivalents of what's below.)
 
 Tk scripts are Tcl programs.  Like all Tcl programs, Tk scripts are just lists
 of tokens separated by spaces.  A Tk widget is just its *class*, the *options*
@@ -324,9 +360,9 @@ module. ::
 To give a widget to the packer (geometry manager), you call pack with optional
 arguments.  In Tkinter, the Pack class holds all this functionality, and the
 various forms of the pack command are implemented as methods.  All widgets in
-:mod:`Tkinter` are subclassed from the Packer, and so inherit all the packing
-methods. See the :mod:`Tix` module documentation for additional information on
-the Form geometry manager. ::
+:mod:`tkinter` are subclassed from the Packer, and so inherit all the packing
+methods. See the :mod:`tkinter.tix` module documentation for additional 
+information on the Form geometry manager. ::
 
    pack .fred -side left       =====>  fred.pack(side = "left")
 
@@ -337,11 +373,11 @@ How Tk and Tkinter are Related
 From the top down:
 
 Your App Here (Python)
-   A Python application makes a :mod:`Tkinter` call.
+   A Python application makes a :mod:`tkinter` call.
 
-Tkinter (Python Module)
+tkinter (Python Package)
    This call (say, for example, creating a button widget), is implemented in the
-   *Tkinter* module, which is written in Python.  This Python function will parse
+   *tkinter* package, which is written in Python.  This Python function will parse
    the commands and the arguments and convert them into a form that makes them look
    as if they had come from a Tk script instead of a Python script.
 
@@ -353,8 +389,8 @@ Tk Widgets (C and Tcl)
    This C function is able to make calls into other C modules, including the C
    functions that make up the Tk library.  Tk is implemented in C and some Tcl.
    The Tcl part of the Tk widgets is used to bind certain default behaviors to
-   widgets, and is executed once at the point where the Python :mod:`Tkinter`
-   module is imported. (The user never sees this stage).
+   widgets, and is executed once at the point where the Python :mod:`tkinter`
+   package is imported. (The user never sees this stage).
 
 Tk (C)
    The Tk part of the Tk Widgets implement the final mapping to ...
@@ -510,11 +546,11 @@ options are ``variable``, ``textvariable``, ``onvalue``, ``offvalue``, and
 ``value``.  This connection works both ways: if the variable changes for any
 reason, the widget it's connected to will be updated to reflect the new value.
 
-Unfortunately, in the current implementation of :mod:`Tkinter` it is not
+Unfortunately, in the current implementation of :mod:`tkinter` it is not
 possible to hand over an arbitrary Python variable to a widget through a
 ``variable`` or ``textvariable`` option.  The only kinds of variables for which
 this works are variables that are subclassed from a class called Variable,
-defined in the :mod:`Tkinter` module.
+defined in the :mod:`tkinter`.
 
 There are many useful subclasses of Variable already defined:
 :class:`StringVar`, :class:`IntVar`, :class:`DoubleVar`, and
@@ -558,7 +594,7 @@ The Window Manager
 
 In Tk, there is a utility command, ``wm``, for interacting with the window
 manager.  Options to the ``wm`` command allow you to control things like titles,
-placement, icon bitmaps, and the like.  In :mod:`Tkinter`, these commands have
+placement, icon bitmaps, and the like.  In :mod:`tkinter`, these commands have
 been implemented as methods on the :class:`Wm` class.  Toplevel widgets are
 subclassed from the :class:`Wm` class, and so can call the :class:`Wm` methods
 directly.
@@ -572,7 +608,7 @@ part of the implementation, and not an interface to Tk functionality.
 
 Here are some examples of typical usage::
 
-   from Tkinter import *
+   from tkinter import *
    class App(Frame):
        def __init__(self, master=None):
            Frame.__init__(self, master)
@@ -733,7 +769,7 @@ Entry widget, or to particular menu items in a Menu widget.
 
 Entry widget indexes (index, view index, etc.)
    Entry widgets have options that refer to character positions in the text being
-   displayed.  You can use these :mod:`Tkinter` functions to access these special
+   displayed.  You can use these :mod:`tkinter` functions to access these special
    points in text widgets:
 
    AtEnd()
@@ -785,7 +821,7 @@ Images
 ^^^^^^
 
 Bitmap/Pixelmap images can be created through the subclasses of
-:class:`Tkinter.Image`:
+:class:`tkinter.Image`:
 
 * :class:`BitmapImage` can be used for X11 bitmap data.
 

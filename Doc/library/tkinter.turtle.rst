@@ -1,24 +1,34 @@
-
-:mod:`turtle` --- Turtle graphics for Tk
-========================================
+:mod:`tkinter.turtle` --- Turtle graphics for Tk
+================================================
 
 .. module:: turtle
+   :synopsis: Old name for the tkinter.turtle module.
+
+.. module:: tkinter.turtle
    :platform: Tk
    :synopsis: An environment for turtle graphics.
 .. moduleauthor:: Guido van Rossum <guido@python.org>
+
+.. note::
+   The :mod:`turtle` module has been renamed to :mod:`tkinter.turtle` in Python
+   3.0.  It is importable under both names in Python 2.6 and the rest of the 2.x
+   series.
 
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 
-The :mod:`turtle` module provides turtle graphics primitives, in both an
-object-oriented and procedure-oriented ways. Because it uses :mod:`Tkinter` for
+The :mod:`tkinter.turtle` module provides turtle graphics primitives, in both an
+object-oriented and procedure-oriented ways. Because it uses :mod:`tkinter` for
 the underlying graphics, it needs a version of python installed with Tk support.
+
+.. versionchanged:: 2.6
+   Renamed from ``turtle``.
 
 The procedural interface uses a pen and a canvas which are automagically created
 when any of the functions are called.
 
-The :mod:`turtle` module defines the following functions:
+The :mod:`tkinter.turtle` module defines the following functions:
 
 
 .. function:: degrees()
