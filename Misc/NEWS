@@ -12,6 +12,8 @@ What's new in Python 3.0b1?
 Core and Builtins
 -----------------
 
+- Issue 2895: Don't crash when given bytes objects as keyword names.
+
 - Issue 2798: When parsing arguments with PyArg_ParseTuple, the "s" code now
   allows any unicode string and returns a utf-8 encoded buffer, just like the
   "s#" code already does.  The "z" code was corrected as well.

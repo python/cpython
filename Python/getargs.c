@@ -1532,7 +1532,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 		while (PyDict_Next(keywords, &pos, &key, &value)) {
 			int match = 0;
 			char *ks;
-			if (!PyString_Check(key) && !PyUnicode_Check(key)) {
+			if (!PyUnicode_Check(key)) {
 				PyErr_SetString(PyExc_TypeError,
 					        "keywords must be strings");
 				return cleanreturn(0, freelist);
