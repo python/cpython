@@ -142,7 +142,7 @@ class LockingTestCase(unittest.TestCase):
         if db.version() >= (4,6):
             self.assertTrue(deadlock_detection.count>0)
 
-    def theThread(self, lockType):
+    def theThread(self, sleepTime, lockType):
         name = currentThread().getName()
         if lockType ==  db.DB_LOCK_WRITE:
             lt = "write"
