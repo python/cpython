@@ -2984,7 +2984,7 @@ compiler_genexp(struct compiler *c, expr_ty e)
 {
 	static identifier name;
 	if (!name) {
-		name = PyUnicode_FromString("<genexp>");
+		name = PyUnicode_FromString("<genexpr>");
 		if (!name)
 			return 0;
 	}

@@ -408,8 +408,10 @@ warn_explicit(PyObject *category, PyObject *message,
                 /* A proper implementation of warnings.showwarning() should
                     have at least two default arguments. */
                 if ((defaults == NULL) || (PyTuple_Size(defaults) < 2)) {
-                    if (PyErr_WarnEx(PyExc_DeprecationWarning, msg, 1) < 0)
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning, msg, 1) < 0) {
+                        Py_DECREF(show_fxn);
                         goto cleanup;
+                    }
                 }
                 res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
                                                     filename, lineno_obj,
