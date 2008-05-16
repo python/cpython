@@ -1,9 +1,9 @@
-
 :mod:`reprlib` --- Alternate :func:`repr` implementation
-=====================================================
+========================================================
 
 .. module:: repr
    :synopsis: Old name for the reprlib module.
+
 .. module:: reprlib
    :synopsis: Alternate repr() implementation with size limits.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
