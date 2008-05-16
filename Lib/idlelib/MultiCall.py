@@ -32,7 +32,7 @@ Each function will be called at most once for each event.
 import sys
 import string
 import re
-import Tkinter
+import tkinter
 
 # the event type constants, which define the meaning of mc_type
 MC_KEYPRESS=0; MC_KEYRELEASE=1; MC_BUTTONPRESS=2; MC_BUTTONRELEASE=3;
@@ -292,7 +292,7 @@ def MultiCallCreator(widget):
         return _multicall_dict[widget]
 
     class MultiCall (widget):
-        assert issubclass(widget, Tkinter.Misc)
+        assert issubclass(widget, tkinter.Misc)
 
         def __init__(self, *args, **kwargs):
             apply(widget.__init__, (self,)+args, kwargs)
@@ -382,8 +382,8 @@ def MultiCallCreator(widget):
 
 if __name__ == "__main__":
     # Test
-    root = Tkinter.Tk()
-    text = MultiCallCreator(Tkinter.Text)(root)
+    root = tkinter.Tk()
+    text = MultiCallCreator(tkinter.Text)(root)
     text.pack()
     def bindseq(seq, n=[0]):
         def handler(event):

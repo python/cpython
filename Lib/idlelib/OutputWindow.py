@@ -1,7 +1,7 @@
-from Tkinter import *
+from tkinter import *
 from EditorWindow import EditorWindow
 import re
-import tkMessageBox
+import tkinter.messagebox as tkMessageBox
 import IOBinding
 
 class OutputWindow(EditorWindow):

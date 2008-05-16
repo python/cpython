@@ -212,6 +212,21 @@ class TestStdlibRenames(unittest.TestCase):
                'SocketServer': 'socketserver',
                'ConfigParser': 'configparser',
                'repr': 'reprlib',
+               'FileDialog': 'tkinter.filedialog',
+               'FixTk': 'tkinter._fix',
+               'ScrolledText': 'tkinter.scrolledtext',
+               'SimpleDialog': 'tkinter.simpledialog',
+               'Tix': 'tkinter.tix',
+               'tkColorChooser': 'tkinter.colorchooser',
+               'tkCommonDialog': 'tkinter.commondialog',
+               'Tkconstants': 'tkinter.constants',
+               'Tkdnd': 'tkinter.dnd',
+               'tkFileDialog': 'tkinter.filedialog',
+               'tkFont': 'tkinter.font',
+               'Tkinter': 'tkinter',
+               'tkMessageBox': 'tkinter.messagebox',
+               'tkSimpleDialog': 'tkinter.simpledialog',
+               'turtle': 'tkinter.turtle'
                }
 
     def check_rename(self, module_name, new_module_name):
