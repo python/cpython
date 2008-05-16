@@ -37,6 +37,9 @@ Extension Modules
 Library
 -------
 
+- The repr module has been renamed 'reprlib'.  The old name is now
+  deprecated.
+
 - The statvfs module has been deprecated for removal in Python 3.0.
 
 - The sunaudiodev and SUNAUDIODEV modules have been deprecated for removal in
