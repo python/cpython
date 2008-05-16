@@ -138,6 +138,8 @@ class TestReversed(unittest.TestCase):
         for data in 'abc', range(5), tuple(enumerate('abc')), A(), xrange(1,17,5):
             self.assertEqual(list(data)[::-1], list(reversed(data)))
         self.assertRaises(TypeError, reversed, {})
+        # don't allow keyword arguments
+        self.assertRaises(TypeError, reversed, [], a=1)
 
     def test_xrange_optimization(self):
         x = xrange(1)
