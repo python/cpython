@@ -6,7 +6,7 @@ from ctypes.test import is_resource_enabled
 
 libc_name = None
 if os.name == "nt":
-    libc_name = "msvcrt"
+    libc_name = find_library("c")
 elif os.name == "ce":
     libc_name = "coredll"
 elif sys.platform == "cygwin":
@@ -43,6 +43,7 @@ class LoaderTest(unittest.TestCase):
 
     if os.name in ("nt", "ce"):
         def test_load_library(self):
+            self.failIf(libc_name is None)
             if is_resource_enabled("printing"):
                 print find_library("kernel32")
                 print find_library("user32")
