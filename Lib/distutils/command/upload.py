@@ -10,11 +10,16 @@ from hashlib import md5
 import os
 import socket
 import platform
-import ConfigParser
 import httplib
 import base64
 import urlparse
 import cStringIO as StringIO
+try:
+    from configparser import ConfigParser
+except ImportError:
+    # For backward-compatibility with Python versions < 2.6.
+    from ConfigParser import ConfigParser
+
 
 class upload(PyPIRCCommand):
 
