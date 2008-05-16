@@ -15,18 +15,29 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	enumobject *en;
 	PyObject *seq = NULL;
-	static char *kwlist[] = {"sequence", 0};
+	PyObject *start = NULL;
+	static char *kwlist[] = {"sequence", "start", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:enumerate", kwlist,
-					 &seq))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:enumerate", kwlist,
+					 &seq, &start))
 		return NULL;
 
 	en = (enumobject *)type->tp_alloc(type, 0);
 	if (en == NULL)
 		return NULL;
-	en->en_index = 0;
+	if (start) {
+		start = PyNumber_Index(start);
+		if (start == NULL) {
+			Py_DECREF(en);
+			return NULL;
+		}
+		en->en_index = LONG_MAX;
+		en->en_longindex = start;
+	} else {
+		en->en_index = 0;
+		en->en_longindex = NULL;
+	}
 	en->en_sit = PyObject_GetIter(seq);
-	en->en_longindex = NULL;
 	if (en->en_sit == NULL) {
 		Py_DECREF(en);
 		return NULL;

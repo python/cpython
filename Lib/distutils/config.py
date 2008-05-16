@@ -7,7 +7,7 @@ import os
 import sys
 from configparser import ConfigParser
 
-from distutils.core import Command
+from distutils.cmd import Command
 
 DEFAULT_PYPIRC = """\
 [pypirc]

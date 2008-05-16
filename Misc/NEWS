@@ -17,6 +17,15 @@ Core and Builtins
   "s#" code already does.  The "z" code was corrected as well.
 
 - Issue 2801: fix bug in the float.is_integer method where a ValueError
+
+- Issue #2863: generators now have a ``gen.__name__`` attribute that equals
+  ``gen.gi_code.co_name``, like ``func.__name___`` that equals
+  ``func.func_code.co_name``.  The repr() of a generator now also contains
+  this name.
+
+- Issue #2831: enumerate() now has a ``start`` argument.
+
+- Issue #2801: fix bug in the float.is_integer method where a ValueError
   was sometimes incorrectly raised.
 
 - The --with-toolbox-glue option (and the associated pymactoolbox.h) have been

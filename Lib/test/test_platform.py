@@ -1,6 +1,8 @@
+import sys
 import unittest
-from test import test_support
 import platform
+
+from test import test_support
 
 class PlatformTest(unittest.TestCase):
     def test_architecture(self):
@@ -49,26 +51,35 @@ class PlatformTest(unittest.TestCase):
 
     def test_uname(self):
         res = platform.uname()
+        self.assert_(any(res))
 
     def test_java_ver(self):
         res = platform.java_ver()
+        if sys.platform == 'java':
+            self.assert_(all(res))
 
     def test_win32_ver(self):
         res = platform.win32_ver()
 
     def test_mac_ver(self):
         res = platform.mac_ver()
+        try:
+            import gestalt
+        except ImportError: pass
+        else:
+            if sys.platform == 'darwin':
+                self.assert_(all(res))
 
     def test_dist(self):
         res = platform.dist()
 
     def test_libc_ver(self):
-        from sys import executable
         import os
-        if os.path.isdir(executable) and os.path.exists(executable+'.exe'):
+        if os.path.isdir(sys.executable) and \
+           os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
             executable = executable + '.exe'
-        res = platform.libc_ver(executable)
+        res = platform.libc_ver(sys.executable)
 
 def test_main():
     test_support.run_unittest(
