@@ -265,6 +265,14 @@ class GrammarTests(unittest.TestCase):
         d22v(*(1, 2, 3, 4))
         d22v(1, 2, *(3, 4, 5))
         d22v(1, *(2, 3), **{'d': 4})
+
+        # keyword argument type tests
+        try:
+            str('x', **{b'foo':1 })
+        except TypeError:
+            pass
+        else:
+            self.fail('Bytes should not work as keyword argument names')
         # keyword only argument tests
         def pos0key1(*, key): return key
         pos0key1(key=100)
