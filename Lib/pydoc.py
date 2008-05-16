@@ -53,7 +53,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     path will be displayed.
 
 import sys, imp, os, re, types, inspect, __builtin__, pkgutil
-from repr import Repr
+from reprlib import Repr
 from string import expandtabs, find, join, lower, split, strip, rfind, rstrip
 try:
     from collections import deque

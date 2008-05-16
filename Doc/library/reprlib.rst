@@ -1,13 +1,13 @@
 
-:mod:`repr` --- Alternate :func:`repr` implementation
+:mod:`reprlib` --- Alternate :func:`repr` implementation
 =====================================================
 
-.. module:: repr
+.. module:: reprlib
    :synopsis: Alternate repr() implementation with size limits.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-The :mod:`repr` module provides a means for producing object representations
+The :mod:`reprlib` module provides a means for producing object representations
 with limits on the size of the resulting strings. This is used in the Python
 debugger and may be useful in other contexts as well.
 
