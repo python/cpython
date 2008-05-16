@@ -3,6 +3,12 @@
 
 .. module:: statvfs
    :synopsis: Constants for interpreting the result of os.statvfs().
+   :deprecated:
+   
+.. deprecated:: 2.6
+   The :mod:`statvfs` module has been deprecated for removal in Python 3.0.
+
+
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 
