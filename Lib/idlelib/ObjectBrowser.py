@@ -11,7 +11,7 @@
 
 from TreeWidget import TreeItem, TreeNode, ScrolledCanvas
 
-from repr import Repr
+from reprlib import Repr
 
 myrepr = Repr()
 myrepr.maxstring = 100
