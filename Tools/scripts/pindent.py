@@ -188,7 +188,7 @@ class PythonIndenter:
                     stack.append((kw, kw))
                     continue
                 # end if
-                if next.has_key(kw) and stack:
+                if kw in next and stack:
                     self.putline(line, len(stack)-1)
                     kwa, kwb = stack[-1]
                     stack[-1] = kwa, kw
@@ -254,7 +254,7 @@ class PythonIndenter:
                 m = self.kwprog.match(line)
                 if m:
                     thiskw = m.group('kw')
-                    if not next.has_key(thiskw):
+                    if thiskw not in next:
                         thiskw = ''
                     # end if
                     if thiskw in ('def', 'class'):

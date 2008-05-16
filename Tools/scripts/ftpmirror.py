@@ -169,7 +169,7 @@ def mirrorsubdir(f, localdir):
             subdirs.append(filename)
             continue
         filesfound.append(filename)
-        if info.has_key(filename) and info[filename] == infostuff:
+        if filename in info and info[filename] == infostuff:
             if verbose > 1:
                 print('Already have this version of',repr(filename))
             continue
@@ -178,7 +178,7 @@ def mirrorsubdir(f, localdir):
         if interactive:
             doit = askabout('file', filename, pwd)
             if not doit:
-                if not info.has_key(filename):
+                if filename not in info:
                     info[filename] = 'Not retrieved'
                 continue
         try:
@@ -241,7 +241,7 @@ def mirrorsubdir(f, localdir):
     #
     # Remove files from info that are no longer remote
     deletions = 0
-    for filename in info.keys():
+    for filename in list(info.keys()):
         if filename not in filesfound:
             if verbose:
                 print("Removing obsolete info entry for", end=' ')
@@ -258,7 +258,7 @@ def mirrorsubdir(f, localdir):
     except os.error:
         names = []
     for name in names:
-        if name[0] == '.' or info.has_key(name) or name in subdirs:
+        if name[0] == '.' or name in info or name in subdirs:
             continue
         skip = 0
         for pat in skippats:

@@ -46,19 +46,19 @@ def main():
                 magic_str = f.read(4)
                 mtime_str = f.read(4)
                 f.close()
-                if magic_str <> MAGIC:
+                if magic_str != MAGIC:
                     print('Bad MAGIC word in ".pyc" file', end=' ')
                     print(repr(name_c))
                     continue
                 mtime = get_long(mtime_str)
                 if mtime == 0 or mtime == -1:
                     print('Bad ".pyc" file', repr(name_c))
-                elif mtime <> st[ST_MTIME]:
+                elif mtime != st[ST_MTIME]:
                     print('Out-of-date ".pyc" file', end=' ')
                     print(repr(name_c))
 
 def get_long(s):
-    if len(s) <> 4:
+    if len(s) != 4:
         return -1
     return ord(s[0]) + (ord(s[1])<<8) + (ord(s[2])<<16) + (ord(s[3])<<24)
 

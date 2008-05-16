@@ -17,7 +17,7 @@ def process(filename):
         return
     data = f.read()
     f.close()
-    if data[:2] <> '/*':
+    if data[:2] != '/*':
         sys.stderr.write('%s does not begin with C comment\n' % filename)
         return
     try:

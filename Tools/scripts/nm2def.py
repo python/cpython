@@ -84,7 +84,7 @@ SPECIALS = (
 
 def filter_Python(symbols,specials=SPECIALS):
 
-    for name in symbols.keys():
+    for name in list(symbols.keys()):
         if name[:2] == 'Py' or name[:3] == '_Py':
             pass
         elif name not in specials:
