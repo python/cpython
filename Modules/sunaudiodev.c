@@ -452,6 +452,10 @@ void
 initsunaudiodev(void)
 {
 	PyObject *m, *d;
+	
+	if (PyErr_WarnPy3k("the sunaudiodev module has been removed in "
+	                   "Python 3.0", 2) < 0)
+	    return;
 
 	m = Py_InitModule("sunaudiodev", sunaudiodev_methods);
 	if (m == NULL)

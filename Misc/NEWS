@@ -37,6 +37,9 @@ Extension Modules
 Library
 -------
 
+- The sunaudiodev and SUNAUDIODEV modules have been deprecated for removal in
+  Python 3.0.
+
 - The WAIT module from IRIX has been deprecated for removal in Python 3.0.
 
 - The torgb module from IRIX has been deprecated for removal in Python 3.0.

@@ -151,7 +151,9 @@ class TestStdlibRemovals(unittest.TestCase):
                                       'Explorer', 'Finder', 'Netscape',
                                       'StdSuites', 'SystemEvents', 'Terminal',
                                       'cfmfile', 'bundlebuilder', 'buildtools',
-                                      'ColorPicker')}
+                                      'ColorPicker'),
+                           'sunos5' : ('sunaudiodev', 'SUNAUDIODEV'),
+                          }
     optional_modules = ('bsddb185', 'Canvas', 'dl', 'linuxaudiodev', 'imageop',
                         'sv')
 
