@@ -73,8 +73,9 @@ copying and removal. For operations on individual files, see also the
 
 .. function:: copy2(src, dst)
 
-   Similar to :func:`copy`, but last access time and last modification time are
-   copied as well.  This is similar to the Unix command :program:`cp -p`.
+   Similar to :func:`copy`, but metadata is copied as well -- in fact, this is just
+   :func:`copy` followed by :func:`copystat`.  This is similar to the
+   Unix command :program:`cp -p`.
 
 
 .. function:: copytree(src, dst[, symlinks])
