@@ -285,7 +285,7 @@ gen_iternext(PyGenObject *gen)
 static PyObject *
 gen_repr(PyGenObject *gen)
 {
-	return PyUnicode_FromFormat("<%S generator object at %p>",
+	return PyUnicode_FromFormat("<generator object %S at %p>",
 				    ((PyCodeObject *)gen->gi_code)->co_name,
 				    gen);
 }

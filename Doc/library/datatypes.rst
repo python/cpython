@@ -31,4 +31,4 @@ The following modules are documented in this chapter:
    types.rst
    copy.rst
    pprint.rst
-   repr.rst
+   reprlib.rst
