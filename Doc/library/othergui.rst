@@ -3,13 +3,13 @@
 Other Graphical User Interface Packages
 =======================================
 
-There are an number of extension widget sets to :mod:`Tkinter`.
+There are an number of extension widget sets to :mod:`tkinter`.
 
 .. seealso::
 
    `Python megawidgets <http://pmw.sourceforge.net/>`_
       is a toolkit for building high-level compound widgets in Python using the
-      :mod:`Tkinter` module.  It consists of a set of base classes and a library of
+      :mod:`tkinter` package.  It consists of a set of base classes and a library of
       flexible and extensible megawidgets built on this foundation. These megawidgets
       include notebooks, comboboxes, selection widgets, paned widgets, scrolled
       widgets, dialog windows, etc.  Also, with the Pmw.Blt interface to BLT, the

@@ -10,11 +10,11 @@ IDLE
    single: Python Editor
    single: Integrated Development Environment
 
-IDLE is the Python IDE built with the :mod:`Tkinter` GUI toolkit.
+IDLE is the Python IDE built with the :mod:`tkinter` GUI toolkit.
 
 IDLE has the following features:
 
-* coded in 100% pure Python, using the :mod:`Tkinter` GUI toolkit
+* coded in 100% pure Python, using the :mod:`tkinter` GUI toolkit
 
 * cross-platform: works on Windows and Unix (on Mac OS, there are currently
   problems with Tcl/Tk)
