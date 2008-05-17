@@ -77,12 +77,12 @@ The module defines a parser class and an exception:
       Interface definition for transforming an abstract flow of formatting events into
       specific output events on writer objects.
 
-   Module :mod:`HTMLParser`
+   Module :mod:`html.parser`
       Alternate HTML parser that offers a slightly lower-level view of the input, but
       is designed to work with XHTML, and does not implement some of the SGML syntax
       not used in "HTML as deployed" and which isn't legal for XHTML.
 
-   Module :mod:`htmlentitydefs`
+   Module :mod:`html.entities`
       Definition of replacement text for XHTML 1.0  entities.
 
    Module :mod:`sgmllib`
@@ -149,10 +149,10 @@ additional methods and instance variables for use within tag methods.
    :meth:`save_bgn` will raise a :exc:`TypeError` exception.
 
 
-:mod:`htmlentitydefs` --- Definitions of HTML general entities
-==============================================================
+:mod:`html.entities` --- Definitions of HTML general entities
+=============================================================
 
-.. module:: htmlentitydefs
+.. module:: html.entities
    :synopsis: Definitions of HTML general entities.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
