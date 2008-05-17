@@ -2048,6 +2048,14 @@ end
 item: Remark
 end
 item: Install File
+  Source=..\lib\tkinter\*.py
+  Destination=%MAINDIR%\Lib\tkinter
+  Description=Tkinter related library modules
+  Flags=0000000000000010
+end
+item: Remark
+end
+item: Install File
   Source=..\lib\logging\*.py
   Destination=%MAINDIR%\Lib\logging
   Description=Logging package
