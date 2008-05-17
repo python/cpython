@@ -152,9 +152,17 @@ additional methods and instance variables for use within tag methods.
 :mod:`html.entities` --- Definitions of HTML general entities
 =============================================================
 
+.. module:: htmlentitydefs
+   :synopsis: Old name for the :mod:`html.entities` module.
+
 .. module:: html.entities
    :synopsis: Definitions of HTML general entities.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
+
+.. note::
+   The :mod:`htmlentitydefs` module has been renamed to
+   :mod:`html.entities` in Python 3.0.  It is importable under both names
+   in Python 2.6 and the rest of the 2.x series.
 
 
 This module defines three dictionaries, ``name2codepoint``, ``codepoint2name``,
