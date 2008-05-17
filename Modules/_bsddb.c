@@ -903,7 +903,7 @@ newDBObject(DBEnvObject* arg, int flags)
             Py_DECREF(self->myenvobj);
             self->myenvobj = NULL;
         }
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
     return self;
@@ -1010,7 +1010,7 @@ newDBEnvObject(int flags)
     err = db_env_create(&self->db_env, flags);
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
     else {
@@ -1050,20 +1050,27 @@ static DBTxnObject*
 newDBTxnObject(DBEnvObject* myenv, DBTxnObject *parent, DB_TXN *txn, int flags)
 {
     int err;
-    DB_TXN *parent_txn=NULL;
+    DB_TXN *parent_txn = NULL;
 
     DBTxnObject* self = PyObject_New(DBTxnObject, &DBTxn_Type);
     if (self == NULL)
         return NULL;
 
     self->in_weakreflist = NULL;
+    self->children_txns = NULL;
+    self->children_dbs = NULL;
+    self->children_cursors = NULL;
+    self->children_sequences = NULL;
+    self->flag_prepare = 0;
+    self->parent_txn = NULL;
+    self->env = NULL;
 
     if (parent && ((PyObject *)parent!=Py_None)) {
-        parent_txn=parent->txn;
+        parent_txn = parent->txn;
     }
 
     if (txn) {
-        self->txn=txn;
+        self->txn = txn;
     } else {
         MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 40)
@@ -1074,28 +1081,23 @@ newDBTxnObject(DBEnvObject* myenv, DBTxnObject *parent, DB_TXN *txn, int flags)
         MYDB_END_ALLOW_THREADS;
 
         if (makeDBError(err)) {
-            PyObject_Del(self);
+            Py_DECREF(self);
             return NULL;
         }
     }
 
-    if (parent_txn) { /* Can't use 'parent' because could be 'parent==Py_None' */
-        self->parent_txn=parent;
+    /* Can't use 'parent' because could be 'parent==Py_None' */
+    if (parent_txn) {
+        self->parent_txn = parent;
         Py_INCREF(parent);
         self->env = NULL;
-        INSERT_IN_DOUBLE_LINKED_LIST(parent->children_txns,self);
+        INSERT_IN_DOUBLE_LINKED_LIST(parent->children_txns, self);
     } else {
-        self->parent_txn=NULL;
+        self->parent_txn = NULL;
         Py_INCREF(myenv);
         self->env = myenv;
-        INSERT_IN_DOUBLE_LINKED_LIST(myenv->children_txns,self);
+        INSERT_IN_DOUBLE_LINKED_LIST(myenv->children_txns, self);
     }
-
-    self->children_txns=NULL;
-    self->children_dbs=NULL;
-    self->children_cursors=NULL;
-    self->children_sequences=NULL;
-    self->flag_prepare=0;
 
     return self;
 }
@@ -1151,7 +1153,7 @@ newDBLockObject(DBEnvObject* myenv, u_int32_t locker, DBT* obj,
 #endif
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
 
@@ -1183,7 +1185,7 @@ newDBSequenceObject(DBObject* mydb,  int flags)
     self->mydb = mydb;
 
     INSERT_IN_DOUBLE_LINKED_LIST(self->mydb->children_sequences,self);
-    self->txn=NULL;
+    self->txn = NULL;
 
     self->in_weakreflist = NULL;
 
@@ -1191,8 +1193,7 @@ newDBSequenceObject(DBObject* mydb,  int flags)
     err = db_sequence_create(&self->sequence, self->mydb->db, flags);
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
-        Py_DECREF(self->mydb);
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
 
