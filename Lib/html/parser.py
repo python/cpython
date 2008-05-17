@@ -372,16 +372,17 @@ class HTMLParser(markupbase.ParserBase):
                     c = int(s)
                 return unichr(c)
             else:
-                # Cannot use name2codepoint directly, because HTMLParser supports apos,
-                # which is not part of HTML 4
-                import htmlentitydefs
+                # Cannot use name2codepoint directly, because HTMLParser
+                # supports apos, which is not part of HTML 4
+                import html.entities
                 if HTMLParser.entitydefs is None:
                     entitydefs = HTMLParser.entitydefs = {'apos':u"'"}
-                    for k, v in htmlentitydefs.name2codepoint.iteritems():
+                    for k, v in html.entities.name2codepoint.iteritems():
                         entitydefs[k] = unichr(v)
                 try:
                     return self.entitydefs[s]
                 except KeyError:
                     return '&'+s+';'
 
-        return re.sub(r"&(#?[xX]?(?:[0-9a-fA-F]+|\w{1,8}));", replaceEntities, s)
+        return re.sub(r"&(#?[xX]?(?:[0-9a-fA-F]+|\w{1,8}));",
+                      replaceEntities, s)

@@ -1,8 +1,8 @@
 
-:mod:`HTMLParser` --- Simple HTML and XHTML parser
-==================================================
+:mod:`html.parser` --- Simple HTML and XHTML parser
+===================================================
 
-.. module:: HTMLParser
+.. module:: html.parser
    :synopsis: A simple parser that can handle HTML and XHTML.
 
 
@@ -22,7 +22,7 @@ in :mod:`sgmllib`.
 
    The :class:`HTMLParser` class is instantiated without arguments.
 
-   An HTMLParser instance is fed HTML data and calls handler functions when tags
+   An :class:`HTMLParser` instance is fed HTML data and calls handler functions when tags
    begin and end.  The :class:`HTMLParser` class is meant to be overridden by the
    user to provide a desired behavior.
 
@@ -92,8 +92,8 @@ An exception is defined as well:
    ``handle_starttag('a', [('href', 'http://www.cwi.nl/')])``.
 
    .. versionchanged:: 2.6
-      All entity references from htmlentitydefs are now replaced in the attribute
-      values.
+      All entity references from :mod:`html.entities` are now replaced in the
+      attribute values.
 
 
 .. method:: HTMLParser.handle_startendtag(tag, attrs)
@@ -171,7 +171,7 @@ Example HTML Parser Application
 As a basic example, below is a very basic HTML parser that uses the
 :class:`HTMLParser` class to print out tags as they are encountered::
 
-   from HTMLParser import HTMLParser
+   from html.parser import HTMLParser
 
    class MyHTMLParser(HTMLParser):
 

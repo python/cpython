@@ -50,7 +50,7 @@ class TestUntestedModules(unittest.TestCase):
             import encodings
             import formatter
             import getpass
-            import htmlentitydefs
+            import html.entities
             import ihooks
             import imghdr
             import imputil
