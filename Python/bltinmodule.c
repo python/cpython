@@ -1181,29 +1181,22 @@ builtin_hex(PyObject *self, PyObject *v)
 {
 	PyNumberMethods *nb;
 	PyObject *res;
-	
-	nb = Py_TYPE(v)->tp_as_number;
-	
-	if (nb != NULL && nb->nb_hex != NULL) {
-		if (PyErr_WarnPy3k("In 3.x, hex() converts "
-				   "the result of __index__ to hexadecimal.",
-				   1) < 0)
-			return NULL;
-		res = (*nb->nb_hex)(v);
-		if (res && !PyString_Check(res)) {
-			PyErr_Format(PyExc_TypeError,
-				     "__hex__ returned non-string (type %.200s)",
-				     res->ob_type->tp_name);
-			Py_DECREF(res);
-			return NULL;
-		}
-		return res;
+
+	if ((nb = v->ob_type->tp_as_number) == NULL ||
+	    nb->nb_hex == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+			   "hex() argument can't be converted to hex");
+		return NULL;
 	}
-	else if (PyIndex_Check(v))
-		return PyNumber_ToBase(v, 16);
-	PyErr_SetString(PyExc_TypeError,
-			"hex() argument can't be converted to hex");
-	return NULL;
+	res = (*nb->nb_hex)(v);
+	if (res && !PyString_Check(res)) {
+		PyErr_Format(PyExc_TypeError,
+			     "__hex__ returned non-string (type %.200s)",
+			     res->ob_type->tp_name);
+		Py_DECREF(res);
+		return NULL;
+	}
+	return res;
 }
 
 PyDoc_STRVAR(hex_doc,
@@ -1463,11 +1456,6 @@ builtin_oct(PyObject *self, PyObject *v)
 			   "oct() argument can't be converted to oct");
 		return NULL;
 	}
-	if (PyErr_WarnPy3k("In 3.x, oct() converts the result of __index__ to octal; "
-			   "Use future_builtins.oct for this behavior. "
-                            "Also, note the returned format is different.",
-                           1) < 0)
-		return NULL;
 	res = (*nb->nb_oct)(v);
 	if (res && !PyString_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
