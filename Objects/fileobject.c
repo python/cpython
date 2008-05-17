@@ -1736,6 +1736,15 @@ file_self(PyFileObject *f)
 }
 
 static PyObject *
+file_xreadlines(PyFileObject *f)
+{
+	if (PyErr_WarnPy3k("f.xreadlines() not supported in 3.x, "
+			   "try 'for line in f' instead", 1) < 0)
+	       return NULL;
+	return file_self(f);
+}
+
+static PyObject *
 file_exit(PyObject *f, PyObject *args)
 {
 	PyObject *ret = PyObject_CallMethod(f, "close", NULL);
@@ -1850,9 +1859,9 @@ static PyMethodDef file_methods[] = {
 #endif
 	{"tell",      (PyCFunction)file_tell,     METH_NOARGS,  tell_doc},
 	{"readinto",  (PyCFunction)file_readinto, METH_VARARGS, readinto_doc},
-	{"readlines", (PyCFunction)file_readlines,METH_VARARGS, readlines_doc},
-	{"xreadlines",(PyCFunction)file_self,     METH_NOARGS, xreadlines_doc},
-	{"writelines",(PyCFunction)file_writelines, METH_O,    writelines_doc},
+	{"readlines", (PyCFunction)file_readlines, METH_VARARGS, readlines_doc},
+	{"xreadlines",(PyCFunction)file_xreadlines, METH_NOARGS, xreadlines_doc},
+	{"writelines",(PyCFunction)file_writelines, METH_O,     writelines_doc},
 	{"flush",     (PyCFunction)file_flush,    METH_NOARGS,  flush_doc},
 	{"close",     (PyCFunction)file_close,    METH_NOARGS,  close_doc},
 	{"isatty",    (PyCFunction)file_isatty,   METH_NOARGS,  isatty_doc},

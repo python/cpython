@@ -123,6 +123,13 @@ class TestPy3KWarnings(unittest.TestCase):
         with catch_warning() as w:
             self.assertWarning(buffer('a'), w, expected)
 
+    def test_file_xreadlines(self):
+        expected = ("f.xreadlines() not supported in 3.x, "
+                    "try 'for line in f' instead")
+        with file(__file__) as f:
+            with catch_warning() as w:
+                self.assertWarning(f.xreadlines(), w, expected)
+
 
 class TestStdlibRemovals(unittest.TestCase):
 
