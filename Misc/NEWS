@@ -44,6 +44,8 @@ Extension Modules
 Library
 -------
 
+- Issue #961805: Fix Text.edit_modified() in Tkinter.
+
 - Issue 1793: Function ctypes.util.find_msvcrt() added that returns
   the name of the C runtime library that Python uses.
   ctypes.util.find_library(name) now call this function when name is
