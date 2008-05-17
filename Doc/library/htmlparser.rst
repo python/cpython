@@ -2,8 +2,16 @@
 :mod:`html.parser` --- Simple HTML and XHTML parser
 ===================================================
 
+.. module:: HTMLParser
+   :synopsis: Old name for the :mod:`html.parser` module.
+
 .. module:: html.parser
    :synopsis: A simple parser that can handle HTML and XHTML.
+
+.. note::
+   The :mod:`HTMLParser` module has been renamed to
+   :mod:`html.parser` in Python 3.0.  It is importable under both names
+   in Python 2.6 and the rest of the 2.x series.
 
 
 .. versionadded:: 2.2
