@@ -52,7 +52,7 @@ class Percolator:
             filter.setdelegate(None)
 
 def main():
-    import Tkinter as Tk
+    import tkinter as Tk
     class Tracer(Delegator):
         def __init__(self, name):
             self.name = name

@@ -2,7 +2,7 @@
 
 """
 
-from Tkinter import *
+from tkinter import *
 import os
 
 from idlelib import textView

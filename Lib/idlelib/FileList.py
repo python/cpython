@@ -1,6 +1,6 @@
 import os
-from Tkinter import *
-import tkMessageBox
+from tkinter import *
+import tkinter.messagebox as tkMessageBox
 
 
 class FileList:

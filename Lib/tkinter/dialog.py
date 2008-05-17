@@ -1,7 +1,7 @@
-# Dialog.py -- Tkinter interface to the tk_dialog script.
+# dialog.py -- Tkinter interface to the tk_dialog script.
 
-from Tkinter import *
-from Tkinter import _cnfmerge
+from tkinter import *
+from tkinter import _cnfmerge
 
 if TkVersion <= 3.6:
     DIALOG_ICON = 'warning'

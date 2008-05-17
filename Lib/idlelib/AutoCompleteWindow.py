@@ -1,7 +1,7 @@
 """
 An auto-completion window for IDLE, used by the AutoComplete extension
 """
-from Tkinter import *
+from tkinter import *
 from idlelib.MultiCall import MC_SHIFT
 from idlelib.AutoComplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
 

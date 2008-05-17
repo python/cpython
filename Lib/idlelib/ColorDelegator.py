@@ -2,7 +2,7 @@ import time
 import re
 import keyword
 import builtins
-from Tkinter import *
+from tkinter import *
 from idlelib.Delegator import Delegator
 from idlelib.configHandler import idleConf
 
