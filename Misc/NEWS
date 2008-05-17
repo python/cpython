@@ -48,6 +48,10 @@ Extension Modules
 Library
 -------
 
+- Issue #2882: The htmlentitydefs module has been renamed to 'html.entities'
+  and HTMLParser has been renamed to 'html.parser'; the old names have been
+  deprecated and will be removed in Python 3.0.
+
 - Issue #961805: Fix Text.edit_modified() in Tkinter.
 
 - Issue #1793: Function ctypes.util.find_msvcrt() added that returns

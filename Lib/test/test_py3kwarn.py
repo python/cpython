@@ -209,11 +209,13 @@ class TestStdlibRemovals(unittest.TestCase):
 class TestStdlibRenames(unittest.TestCase):
 
     renames = {'copy_reg': 'copyreg', 'Queue': 'queue',
+               'htmlentitydefs': 'html.entities',
                'SocketServer': 'socketserver',
                'ConfigParser': 'configparser',
                'repr': 'reprlib',
                'FileDialog': 'tkinter.filedialog',
                'FixTk': 'tkinter._fix',
+               'HTMLParser': 'html.parser',
                'ScrolledText': 'tkinter.scrolledtext',
                'SimpleDialog': 'tkinter.simpledialog',
                'Tix': 'tkinter.tix',
