@@ -254,8 +254,8 @@ class _QueryDialog(Dialog):
                  parent = None):
 
         if not parent:
-            import Tkinter
-            parent = Tkinter._default_root
+            import tkinter
+            parent = tkinter._default_root
 
         self.prompt   = prompt
         self.minvalue = minvalue
@@ -285,12 +285,12 @@ class _QueryDialog(Dialog):
 
     def validate(self):
 
-        import tkMessageBox
+        from tkinter import messagebox
 
         try:
             result = self.getresult()
         except ValueError:
-            tkMessageBox.showwarning(
+            messagebox.showwarning(
                 "Illegal value",
                 self.errormessage + "\nPlease try again",
                 parent = self
@@ -298,7 +298,7 @@ class _QueryDialog(Dialog):
             return 0
 
         if self.minvalue is not None and result < self.minvalue:
-            tkMessageBox.showwarning(
+            messagebox.showwarning(
                 "Too small",
                 "The allowed minimum value is %s. "
                 "Please try again." % self.minvalue,
@@ -307,7 +307,7 @@ class _QueryDialog(Dialog):
             return 0
 
         if self.maxvalue is not None and result > self.maxvalue:
-            tkMessageBox.showwarning(
+            messagebox.showwarning(
                 "Too large",
                 "The allowed maximum value is %s. "
                 "Please try again." % self.maxvalue,
