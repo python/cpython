@@ -74,7 +74,7 @@ class TestBase:
         if self.has_iso10646:
             return
 
-        from htmlentitydefs import codepoint2name
+        from html.entities import codepoint2name
 
         def xmlcharnamereplace(exc):
             if not isinstance(exc, UnicodeEncodeError):
