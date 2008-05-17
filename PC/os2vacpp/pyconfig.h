@@ -66,7 +66,7 @@
 #define PYCC_VACPP  /* Define Indicator of C Compiler */
 
   /* Platform Filesystem */
-#define PYTHONPATH  ".;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
+#define PYTHONPATH  ".;.\\lib;.\\lib\\plat-win"
 #define DOSFILESYS  /* OS/2 Uses the DOS File Naming Conventions */
 /* #define IMPORT_8x3_NAMES (let's move up to long filenames) */
 

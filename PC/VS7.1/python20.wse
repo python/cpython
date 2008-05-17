@@ -2040,8 +2040,8 @@ end
 item: Remark
 end
 item: Install File
-  Source=..\lib\lib-tk\*.py
-  Destination=%MAINDIR%\Lib\lib-tk
+  Source=..\lib\tkinter\*.py
+  Destination=%MAINDIR%\Lib\tkinter
   Description=Tkinter related library modules
   Flags=0000000000000010
 end
@@ -2726,7 +2726,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\PythonPath
-  New Value=%MAINDIR%\Lib;%MAINDIR%\DLLs;%MAINDIR%\Lib\lib-tk
+  New Value=%MAINDIR%\Lib;%MAINDIR%\DLLs
   New Value=
   Root=2
 end
@@ -2764,7 +2764,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\PythonPath
-  New Value=%MAINDIR%\Lib;%MAINDIR%\DLLs;%MAINDIR%\Lib\lib-tk
+  New Value=%MAINDIR%\Lib;%MAINDIR%\DLLs
   New Value=
   Root=1
 end
