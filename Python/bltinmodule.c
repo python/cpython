@@ -1186,7 +1186,7 @@ builtin_hex(PyObject *self, PyObject *v)
 	
 	if (nb != NULL && nb->nb_hex != NULL) {
 		if (PyErr_WarnPy3k("In 3.x, hex() converts "
-				   "the result of __index__ to hexidecimal.",
+				   "the result of __index__ to hexadecimal.",
 				   1) < 0)
 			return NULL;
 		res = (*nb->nb_hex)(v);
