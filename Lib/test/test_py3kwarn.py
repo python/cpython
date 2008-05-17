@@ -133,7 +133,7 @@ class TestPy3KWarnings(unittest.TestCase):
                    'Also, note the returned format is different.'
         with catch_warning() as w:
             self.assertWarning(oct(Spam()), w, expected)
-        expected = 'In 3.x, hex() converts the result of __index__ to hexidecimal.'
+        expected = 'In 3.x, hex() converts the result of __index__ to hexadecimal.'
         with catch_warning() as w:
             self.assertWarning(hex(Spam()), w, expected)
 
