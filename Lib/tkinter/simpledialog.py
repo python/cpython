@@ -24,6 +24,9 @@ askstring -- get a string from the user
 """
 
 from tkinter import *
+from tkinter import messagebox
+
+import tkinter # used at _QueryDialog for tkinter._default_root
 
 class SimpleDialog:
 
@@ -254,7 +257,6 @@ class _QueryDialog(Dialog):
                  parent = None):
 
         if not parent:
-            import tkinter
             parent = tkinter._default_root
 
         self.prompt   = prompt
@@ -284,9 +286,6 @@ class _QueryDialog(Dialog):
         return self.entry
 
     def validate(self):
-
-        from tkinter import messagebox
-
         try:
             result = self.getresult()
         except ValueError:
