@@ -1,8 +1,8 @@
 """
 Dialog for building Tkinter accelerator key bindings
 """
-from Tkinter import *
-import tkMessageBox
+from tkinter import *
+import tkinter.messagebox as tkMessageBox
 import string
 
 class GetKeysDialog(Toplevel):

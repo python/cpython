@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 from idlelib import SearchEngine
 from idlelib.SearchDialogBase import SearchDialogBase

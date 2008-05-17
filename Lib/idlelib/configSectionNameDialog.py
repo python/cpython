@@ -2,8 +2,8 @@
 Dialog that allows user to specify a new config file section name.
 Used to get new highlight theme and keybinding set names.
 """
-from Tkinter import *
-import tkMessageBox
+from tkinter import *
+import tkinter.messagebox as tkMessageBox
 
 class GetCfgSectionNameDialog(Toplevel):
     def __init__(self,parent,title,message,usedNames):

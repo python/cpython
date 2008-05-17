@@ -2018,20 +2018,20 @@ def gui():
             self.server = None
             self.scanner = None
 
-            import Tkinter
-            self.server_frm = Tkinter.Frame(window)
-            self.title_lbl = Tkinter.Label(self.server_frm,
+            import tkinter
+            self.server_frm = tkinter.Frame(window)
+            self.title_lbl = tkinter.Label(self.server_frm,
                 text='Starting server...\n ')
-            self.open_btn = Tkinter.Button(self.server_frm,
+            self.open_btn = tkinter.Button(self.server_frm,
                 text='open browser', command=self.open, state='disabled')
-            self.quit_btn = Tkinter.Button(self.server_frm,
+            self.quit_btn = tkinter.Button(self.server_frm,
                 text='quit serving', command=self.quit, state='disabled')
 
-            self.search_frm = Tkinter.Frame(window)
-            self.search_lbl = Tkinter.Label(self.search_frm, text='Search for')
-            self.search_ent = Tkinter.Entry(self.search_frm)
+            self.search_frm = tkinter.Frame(window)
+            self.search_lbl = tkinter.Label(self.search_frm, text='Search for')
+            self.search_ent = tkinter.Entry(self.search_frm)
             self.search_ent.bind('<Return>', self.search)
-            self.stop_btn = Tkinter.Button(self.search_frm,
+            self.stop_btn = tkinter.Button(self.search_frm,
                 text='stop', pady=0, command=self.stop, state='disabled')
             if sys.platform == 'win32':
                 # Trying to hide and show this button crashes under Windows.
@@ -2050,17 +2050,17 @@ def gui():
             self.search_ent.focus_set()
 
             font = ('helvetica', sys.platform == 'win32' and 8 or 10)
-            self.result_lst = Tkinter.Listbox(window, font=font, height=6)
+            self.result_lst = tkinter.Listbox(window, font=font, height=6)
             self.result_lst.bind('<Button-1>', self.select)
             self.result_lst.bind('<Double-Button-1>', self.goto)
-            self.result_scr = Tkinter.Scrollbar(window,
+            self.result_scr = tkinter.Scrollbar(window,
                 orient='vertical', command=self.result_lst.yview)
             self.result_lst.config(yscrollcommand=self.result_scr.set)
 
-            self.result_frm = Tkinter.Frame(window)
-            self.goto_btn = Tkinter.Button(self.result_frm,
+            self.result_frm = tkinter.Frame(window)
+            self.goto_btn = tkinter.Button(self.result_frm,
                 text='go to selected', command=self.goto)
-            self.hide_btn = Tkinter.Button(self.result_frm,
+            self.hide_btn = tkinter.Button(self.result_frm,
                 text='hide results', command=self.hide)
             self.goto_btn.pack(side='left', fill='x', expand=1)
             self.hide_btn.pack(side='right', fill='x', expand=1)
@@ -2180,9 +2180,9 @@ def gui():
             self.stop()
             self.collapse()
 
-    import Tkinter
+    import tkinter
     try:
-        root = Tkinter.Tk()
+        root = tkinter.Tk()
         # Tk will crash if pythonw.exe has an XP .manifest
         # file and the root has is not destroyed explicitly.
         # If the problem is ever fixed in Tk, the explicit

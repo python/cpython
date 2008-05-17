@@ -3,9 +3,9 @@
 import os
 import sys
 
-from Tkinter import *
-import tkMessageBox
-import tkFileDialog
+from tkinter import *
+import tkinter.messagebox as tkMessageBox
+import tkinter.filedialog as tkFileDialog
 
 class GetHelpSourceDialog(Toplevel):
     def __init__(self, parent, title, menuItem='', filePath=''):

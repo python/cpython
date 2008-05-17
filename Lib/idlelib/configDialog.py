@@ -9,8 +9,10 @@ Note that tab width in IDLE is currently fixed at eight due to Tk issues.
 Refer to comments in EditorWindow autoindent code for details.
 
 """
-from Tkinter import *
-import tkMessageBox, tkColorChooser, tkFont
+from tkinter import *
+import tkinter.messagebox as tkMessageBox
+import tkinter.colorchooser as tkColorChooser
+import tkinter.font as tkFont
 import copy
 
 from idlelib.configHandler import idleConf

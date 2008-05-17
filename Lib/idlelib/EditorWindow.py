@@ -4,9 +4,9 @@ import re
 import string
 import imp
 from itertools import count
-from Tkinter import *
-import tkSimpleDialog
-import tkMessageBox
+from tkinter import *
+import tkinter.simpledialog as tkSimpleDialog
+import tkinter.messagebox as tkMessageBox
 import traceback
 import webbrowser
 

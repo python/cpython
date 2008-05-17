@@ -7,7 +7,7 @@ from idlelib.ObjectBrowser import ObjectTreeItem, make_objecttreeitem
 
 def StackBrowser(root, flist=None, tb=None, top=None):
     if top is None:
-        from Tkinter import Toplevel
+        from tkinter import Toplevel
         top = Toplevel(root)
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
