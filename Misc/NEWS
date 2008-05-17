@@ -89,6 +89,9 @@ Extension Modules
 - zlib.decompressobj().flush(value) no longer crashes the interpreter when
   passed a value less than or equal to zero.
 
+- issue2858: Fix potential memory corruption when bsddb.db.DBEnv.lock_get
+  and other bsddb.db object constructors raised an exception.
+
 Tests
 -----
 

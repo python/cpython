@@ -834,7 +834,7 @@ newDBObject(DBEnvObject* arg, int flags)
             Py_DECREF(self->myenvobj);
             self->myenvobj = NULL;
         }
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
     return self;
@@ -955,7 +955,7 @@ newDBEnvObject(int flags)
     err = db_env_create(&self->db_env, flags);
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
     else {
@@ -1004,8 +1004,7 @@ newDBTxnObject(DBEnvObject* myenv, DB_TXN *parent, int flags)
 #endif
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
-        Py_DECREF(self->env);
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
     return self;
@@ -1062,7 +1061,7 @@ newDBLockObject(DBEnvObject* myenv, u_int32_t locker, DBT* obj,
 #endif
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
 
@@ -1103,8 +1102,7 @@ newDBSequenceObject(DBObject* mydb,  int flags)
     err = db_sequence_create(&self->sequence, self->mydb->db, flags);
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
-        Py_DECREF(self->mydb);
-        PyObject_Del(self);
+        Py_DECREF(self);
         self = NULL;
     }
 
