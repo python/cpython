@@ -377,6 +377,7 @@ rm -f mainpkg.files tools.files
 %files tkinter
 %defattr(-,root,root)
 %{__prefix}/%{libdirname}/python%{libvers}/lib-tk
+%{__prefix}/%{libdirname}/python%{libvers}/tkinter
 %{__prefix}/%{libdirname}/python%{libvers}/lib-dynload/_tkinter.so*
 %endif
 
