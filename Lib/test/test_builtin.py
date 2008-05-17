@@ -632,6 +632,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(hex(-16L), '-0x10L')
         self.assertRaises(TypeError, hex, {})
 
+        class Spam(object):
+            def __index__(self): return 23
+        self.assertEqual(hex(Spam()), "0x17")
+
     def test_id(self):
         id(None)
         id(1)

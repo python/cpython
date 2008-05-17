@@ -123,6 +123,20 @@ class TestPy3KWarnings(unittest.TestCase):
         with catch_warning() as w:
             self.assertWarning(buffer('a'), w, expected)
 
+    def test_hex_and_oct(self):
+        class Spam(object):
+            def __hex__(self): return "0x17"
+            def __oct__(self): return "07"
+
+        expected = 'In 3.x, oct() converts the result of __index__ to octal; ' \
+                   'Use future_builtins.oct for this behavior. ' \
+                   'Also, note the returned format is different.'
+        with catch_warning() as w:
+            self.assertWarning(oct(Spam()), w, expected)
+        expected = 'In 3.x, hex() converts the result of __index__ to hexidecimal.'
+        with catch_warning() as w:
+            self.assertWarning(hex(Spam()), w, expected)
+
 
 class TestStdlibRemovals(unittest.TestCase):
 
