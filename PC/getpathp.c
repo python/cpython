@@ -25,7 +25,7 @@
      is set, we believe it.  Otherwise, we use the path of our host .EXE's
      to try and locate our "landmark" (lib\\os.py) and deduce our home.
      - If we DO have a Python Home: The relevant sub-directories (Lib, 
-       plat-win, lib-tk, etc) are based on the Python Home
+       plat-win, etc) are based on the Python Home
      - If we DO NOT have a Python Home, the core Python Path is
        loaded from the registry.  This is the main PythonPath key, 
        and both HKLM and HKCU are combined to form the path)

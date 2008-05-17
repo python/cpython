@@ -910,14 +910,14 @@ def add_files(db):
         print("WARNING: _ctypes.pyd not found, ctypes will not be included")
         extensions.remove("_ctypes.pyd")
 
-    # Add all .py files in Lib, except lib-tk, test
+    # Add all .py files in Lib, except tkinter, test
     dirs={}
     pydirs = [(root,"Lib")]
     while pydirs:
         parent, dir = pydirs.pop()
         if dir == ".svn" or dir.startswith("plat-"):
             continue
-        elif dir in ["lib-tk", "idlelib", "Icons"]:
+        elif dir in ["tkinter", "idlelib", "Icons"]:
             if not have_tcl:
                 continue
             tcltk.set_current()
@@ -1186,7 +1186,7 @@ def add_registry(db):
               ("InstallGroup", -1, prefix+r"\InstallPath\InstallGroup", "",
                "Python %s" % short_version, "REGISTRY"),
               ("PythonPath", -1, prefix+r"\PythonPath", "",
-               r"[TARGETDIR]Lib;[TARGETDIR]DLLs;[TARGETDIR]Lib\lib-tk", "REGISTRY"),
+               r"[TARGETDIR]Lib;[TARGETDIR]DLLs", "REGISTRY"),
               ("Documentation", -1, prefix+r"\Help\Main Python Documentation", "",
                "[TARGETDIR]Doc\\"+docfile , "REGISTRY.doc"),
               ("Modules", -1, prefix+r"\Modules", "+", None, "REGISTRY"),
