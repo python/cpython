@@ -41,7 +41,10 @@ class WeakSet:
 
     def pop(self):
         while True:
-            itemref = self.data.pop()
+            try:
+                itemref = self.data.pop()
+            except KeyError:
+                raise KeyError('pop from empty WeakSet')
             item = itemref()
             if item is not None:
                 return item
@@ -107,5 +110,5 @@ class WeakSet:
     __ixor__ = symmetric_difference_update
 
     def union(self, other):
-        self._apply_mutate(other, self.data.union)
+        return self._apply(other, self.data.union)
     __or__ = union
