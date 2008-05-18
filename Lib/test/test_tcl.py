@@ -3,7 +3,7 @@
 import unittest
 import os
 from test import test_support
-from Tkinter import Tcl
+from tkinter import Tcl
 from _tkinter import TclError
 
 class TclTest(unittest.TestCase):
