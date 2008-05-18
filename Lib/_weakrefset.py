@@ -23,6 +23,9 @@ class WeakSet:
             if item is not None:
                 yield item
 
+    def __len__(self):
+        return sum(x() is not None for x in self.data)
+
     def __contains__(self, item):
         return ref(item) in self.data
 
@@ -61,7 +64,9 @@ class WeakSet:
         else:
             for element in other:
                 self.add(element)
-    __ior__ = update
+    def __ior__(self, other):
+        self.update(other)
+        return self
 
     # Helper functions for simple delegating methods.
     def _apply(self, other, method):
@@ -72,43 +77,68 @@ class WeakSet:
         newset.data = newdata
         return newset
 
-    def _apply_mutate(self, other, method):
-        if not isinstance(other, self.__class__):
-            other = self.__class__(other)
-        method(other)
-
     def difference(self, other):
         return self._apply(other, self.data.difference)
     __sub__ = difference
 
     def difference_update(self, other):
-        self._apply_mutate(self, self.data.difference_update)
-    __isub__ = difference_update
+        if self is other:
+            self.data.clear()
+        else:
+            self.data.difference_update(ref(item) for item in other)
+    def __isub__(self, other):
+        if self is other:
+            self.data.clear()
+        else:
+            self.data.difference_update(ref(item) for item in other)
+        return self
 
     def intersection(self, other):
         return self._apply(other, self.data.intersection)
     __and__ = intersection
 
     def intersection_update(self, other):
-        self._apply_mutate(self, self.data.intersection_update)
-    __iand__ = intersection_update
+        self.data.intersection_update(ref(item) for item in other)
+    def __iand__(self, other):
+        self.data.intersection_update(ref(item) for item in other)
+        return self
 
     def issubset(self, other):
         return self.data.issubset(ref(item) for item in other)
     __lt__ = issubset
 
+    def __le__(self, other):
+        return self.data <= set(ref(item) for item in other)
+
     def issuperset(self, other):
         return self.data.issuperset(ref(item) for item in other)
     __gt__ = issuperset
+
+    def __ge__(self, other):
+        return self.data >= set(ref(item) for item in other)
+
+    def __eq__(self, other):
+        return self.data == set(ref(item) for item in other)
 
     def symmetric_difference(self, other):
         return self._apply(other, self.data.symmetric_difference)
     __xor__ = symmetric_difference
 
     def symmetric_difference_update(self, other):
-        self._apply_mutate(other, self.data.symmetric_difference_update)
-    __ixor__ = symmetric_difference_update
+        if self is other:
+            self.data.clear()
+        else:
+            self.data.symmetric_difference_update(ref(item) for item in other)
+    def __ixor__(self, other):
+        if self is other:
+            self.data.clear()
+        else:
+            self.data.symmetric_difference_update(ref(item) for item in other)
+        return self
 
     def union(self, other):
         return self._apply(other, self.data.union)
     __or__ = union
+
+    def isdisjoint(self, other):
+        return len(self.intersection(other)) == 0
