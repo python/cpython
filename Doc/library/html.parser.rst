@@ -1,4 +1,3 @@
-
 :mod:`html.parser` --- Simple HTML and XHTML parser
 ===================================================
 
@@ -6,7 +5,9 @@
    :synopsis: A simple parser that can handle HTML and XHTML.
 
 
-.. index:: HTML, XHTML
+.. index::
+   single: HTML
+   single: XHTML
 
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
@@ -87,8 +88,8 @@ An exception is defined as well:
    HREF="http://www.cwi.nl/">``, this method would be called as
    ``handle_starttag('a', [('href', 'http://www.cwi.nl/')])``.
 
-   All entity references from :mod:`html.entities` are replaced in the
-   attribute values.
+   All entity references from :mod:`html.entities` are replaced in the attribute
+   values.
 
 
 .. method:: HTMLParser.handle_startendtag(tag, attrs)
@@ -171,8 +172,8 @@ As a basic example, below is a very basic HTML parser that uses the
    class MyHTMLParser(HTMLParser):
 
        def handle_starttag(self, tag, attrs):
-           print("Encountered the beginning of a %s tag" % tag)
+           print "Encountered the beginning of a %s tag" % tag
 
        def handle_endtag(self, tag):
-           print("Encountered the end of a %s tag" % tag)
+           print "Encountered the end of a %s tag" % tag
 
