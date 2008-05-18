@@ -33,7 +33,8 @@ class TestWeakSet(unittest.TestCase):
         for method in dir(set):
             if method.startswith('_'):
                 continue
-            self.assert_(method in weaksetmethods)
+            self.assert_(method in weaksetmethods,
+                         "WeakSet missing method " + method)
 
     def test_new_or_init(self):
         self.assertRaises(TypeError, WeakSet, [], 2)
