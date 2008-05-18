@@ -917,6 +917,26 @@ libraries.  The Makefile/Setup mechanism can be used to compile and
 link most extension modules statically.
 
 
+Coverage checking
+-----------------
+
+For C coverage checking using gcov, run "make coverage".  This will
+build a Python binary with profiling activated, and a ".gcno" and
+".gcda" file for every source file compiled with that option.  With
+the built binary, now run the code whose coverage you want to check.
+Then, you can see coverage statistics for each individual source file
+by running gcov, e.g.
+
+    gcov -o Modules zlibmodule
+
+This will create a "zlibmodule.c.gcov" file in the current directory
+containing coverage info for that source file.
+
+This works only for source files statically compiled into the
+executable; use the Makefile/Setup mechanism to compile and link
+extension modules you want to coverage-check statically.
+
+
 Testing
 -------
 

@@ -375,6 +375,12 @@ run_profile_task:
 build_all_use_profile:
 	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-use"
 
+coverage:
+	@echo "Building with support for coverage checking:"
+	$(MAKE) clean
+	$(MAKE) all CFLAGS="$(CFLAGS) -O0 -pg -fprofile-arcs -ftest-coverage" LIBS="$(LIBS) -lgcov"
+
+
 # Build the interpreter
 $(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ \
