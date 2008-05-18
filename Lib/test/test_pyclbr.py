@@ -166,6 +166,7 @@ class PyclbrTest(TestCase):
         cm('cgi', ignore=('log',))      # set with = in module
         cm('urllib', ignore=('_CFNumberToInt32',
                              '_CStringFromCFString',
+                             '_CFSetup',
                              'getproxies_registry',
                              'proxy_bypass_registry',
                              'proxy_bypass_macosx_sysconf',
