@@ -5,6 +5,7 @@ import re
 import pydoc
 import unittest
 import test.test_support
+
 from test import pydoc_mod
 
 expected_text_pattern = \
@@ -201,16 +202,6 @@ def get_mod_file(module):
     return mod_file if mod_file.endswith("py") else mod_file[:-3] + "py"
 
 
-class CLINotHereTest(unittest.TestCase):
-
-    def test_not_here(self):
-        missing_module = "test.i_am_not_here"
-        result = run_pydoc(missing_module)
-        expected = missing_pattern % missing_module
-        self.assertEqual(expected, result,
-            "documentation for missing module found")
-
-
 class PyDocDocTest(unittest.TestCase):
 
     def test_html_doc(self):
@@ -228,35 +219,42 @@ class PyDocDocTest(unittest.TestCase):
             print_diffs(result, expected_text)
             self.fail("outputs are not equal, see diff above")
 
+    def test_not_here(self):
+        missing_module = "test.i_am_not_here"
+        result = run_pydoc(missing_module)
+        expected = missing_pattern % missing_module
+        self.assertEqual(expected, result,
+            "documentation for missing module found")
+
 
 class TestDescriptions(unittest.TestCase):
+
     def test_module(self):
         # Check that pydocfodder module can be described
         from test import pydocfodder
         doc = pydoc.render_doc(pydocfodder)
-        assert "pydocfodder" in doc
+        self.assert_("pydocfodder" in doc)
 
     def test_classic_class(self):
         class C: "Classic class"
         c = C()
-        self.failUnlessEqual(pydoc.describe(C), 'class C')
-        self.failUnlessEqual(pydoc.describe(c), 'instance of C')
-        self.failUnless('instance of C in module test.test_pydoc'
+        self.assertEqual(pydoc.describe(C), 'class C')
+        self.assertEqual(pydoc.describe(c), 'instance of C')
+        self.assert_('instance of C in module test.test_pydoc'
                         in pydoc.render_doc(c))
 
     def test_class(self):
         class C(object): "New-style class"
         c = C()
 
-        self.failUnlessEqual(pydoc.describe(C), 'class C')
-        self.failUnlessEqual(pydoc.describe(c), 'C')
-        self.failUnless('C in module test.test_pydoc object'
+        self.assertEqual(pydoc.describe(C), 'class C')
+        self.assertEqual(pydoc.describe(c), 'C')
+        self.assert_('C in module test.test_pydoc object'
                         in pydoc.render_doc(c))
 
 
 def test_main():
-    test.test_support.run_unittest(CLINotHereTest,
-                                   PyDocDocTest,
+    test.test_support.run_unittest(PyDocDocTest,
                                    TestDescriptions)
 
 if __name__ == "__main__":
