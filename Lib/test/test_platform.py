@@ -63,12 +63,29 @@ class PlatformTest(unittest.TestCase):
 
     def test_mac_ver(self):
         res = platform.mac_ver()
-        try:
-            import gestalt
-        except ImportError: pass
-        else:
-            if sys.platform == 'darwin':
-                self.assert_(all(res))
+
+        if os.uname()[0] == 'Darwin':
+            # We're on a MacOSX system, check that
+            # the right version information is returned
+            fd = os.popen('sw_vers', 'r')
+            real_ver = None
+            for ln in fd:
+                if ln.startswith('ProductVersion:'):
+                    real_ver = ln.strip().split()[-1]
+                    break
+            fd.close()
+            self.failIf(real_ver is None)
+            self.assertEquals(res[0], real_ver)
+
+            # res[1] claims to contain
+            # (version, dev_stage, non_release_version)
+            # That information is no longer available
+            self.assertEquals(res[1], ('', '', ''))
+
+            if sys.byteorder == 'little':
+                self.assertEquals(res[2], 'i386')
+            else:
+                self.assertEquals(res[2], 'PowerPC')
 
     def test_dist(self):
         res = platform.dist()
