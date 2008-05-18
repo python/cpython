@@ -1377,22 +1377,22 @@ if sys.platform == 'darwin':
             return {}
 
 
-        kSCPropNetProxiesHTTPEnable = sc.CFStringCreateWithCString(0, "HTTPEnable", 0)
-        kSCPropNetProxiesHTTPProxy = sc.CFStringCreateWithCString(0, "HTTPProxy", 0)
-        kSCPropNetProxiesHTTPPort = sc.CFStringCreateWithCString(0, "HTTPPort", 0)
+        kSCPropNetProxiesHTTPEnable = sc.CFStringCreateWithCString(0, b"HTTPEnable", 0)
+        kSCPropNetProxiesHTTPProxy = sc.CFStringCreateWithCString(0, b"HTTPProxy", 0)
+        kSCPropNetProxiesHTTPPort = sc.CFStringCreateWithCString(0, b"HTTPPort", 0)
 
-        kSCPropNetProxiesHTTPSEnable = sc.CFStringCreateWithCString(0, "HTTPSEnable", 0)
-        kSCPropNetProxiesHTTPSProxy = sc.CFStringCreateWithCString(0, "HTTPSProxy", 0)
-        kSCPropNetProxiesHTTPSPort = sc.CFStringCreateWithCString(0, "HTTPSPort", 0)
+        kSCPropNetProxiesHTTPSEnable = sc.CFStringCreateWithCString(0, b"HTTPSEnable", 0)
+        kSCPropNetProxiesHTTPSProxy = sc.CFStringCreateWithCString(0, b"HTTPSProxy", 0)
+        kSCPropNetProxiesHTTPSPort = sc.CFStringCreateWithCString(0, b"HTTPSPort", 0)
 
-        kSCPropNetProxiesFTPEnable = sc.CFStringCreateWithCString(0, "FTPEnable", 0)
-        kSCPropNetProxiesFTPPassive = sc.CFStringCreateWithCString(0, "FTPPassive", 0)
-        kSCPropNetProxiesFTPPort = sc.CFStringCreateWithCString(0, "FTPPort", 0)
-        kSCPropNetProxiesFTPProxy = sc.CFStringCreateWithCString(0, "FTPProxy", 0)
+        kSCPropNetProxiesFTPEnable = sc.CFStringCreateWithCString(0, b"FTPEnable", 0)
+        kSCPropNetProxiesFTPPassive = sc.CFStringCreateWithCString(0, b"FTPPassive", 0)
+        kSCPropNetProxiesFTPPort = sc.CFStringCreateWithCString(0, b"FTPPort", 0)
+        kSCPropNetProxiesFTPProxy = sc.CFStringCreateWithCString(0, b"FTPProxy", 0)
 
-        kSCPropNetProxiesGopherEnable = sc.CFStringCreateWithCString(0, "GopherEnable", 0)
-        kSCPropNetProxiesGopherPort = sc.CFStringCreateWithCString(0, "GopherPort", 0)
-        kSCPropNetProxiesGopherProxy = sc.CFStringCreateWithCString(0, "GopherProxy", 0)
+        kSCPropNetProxiesGopherEnable = sc.CFStringCreateWithCString(0, b"GopherEnable", 0)
+        kSCPropNetProxiesGopherPort = sc.CFStringCreateWithCString(0, b"GopherPort", 0)
+        kSCPropNetProxiesGopherProxy = sc.CFStringCreateWithCString(0, b"GopherProxy", 0)
 
         proxies = {}
         proxyDict = sc.SCDynamicStoreCopyProxies(None)
