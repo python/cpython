@@ -115,15 +115,11 @@ class DBSequenceTest(unittest.TestCase):
             d.close()
 
     def test_64bits(self) :
-        value_plus=(1L<<63)-1
-        self.assertEquals(9223372036854775807L,value_plus)
-        value_minus=-1L<<63  # Two complement
-        self.assertEquals(-9223372036854775808L,value_minus)
-        if db.version() < (4,4):
-            # We don't use both extremes because it is
-            # problematic in Berkeley DB 4.3.
-            value_plus-=1
-            value_minus+=1
+        # We don't use both extremes because they are problematic
+        value_plus=(1L<<63)-2
+        self.assertEquals(9223372036854775806L,value_plus)
+        value_minus=(-1L<<63)+1  # Two complement
+        self.assertEquals(-9223372036854775807L,value_minus)
         self.seq = db.DBSequence(self.d, flags=0)
         self.assertEquals(None, self.seq.init_value(value_plus-1))
         self.assertEquals(None, self.seq.open(key='id', txn=None,
