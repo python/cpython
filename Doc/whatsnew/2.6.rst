@@ -1510,7 +1510,7 @@ details.
   :mod:`test.testall`,
   :mod:`toaiff`.
 
-  Various MacOS 9 modules have been removed:
+  Various MacOS modules have been removed:
   :mod:`_builtinSuites`,
   :mod:`aepack`,
   :mod:`aetools`,
