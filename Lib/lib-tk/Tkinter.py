@@ -1196,7 +1196,6 @@ class Misc:
     config = configure
     def cget(self, key):
         """Return the resource value for a KEY given as string."""
-        print key
         return self.tk.call(self._w, 'cget', '-' + key)
     __getitem__ = cget
     def __setitem__(self, key, value):
