@@ -23,8 +23,7 @@ definition of the Python bindings for the DOM and SAX interfaces.
 
 .. toctree::
 
-   html.parser.rst
-   html.entities.rst
+   htmlparser.rst
    sgmllib.rst
    htmllib.rst
    pyexpat.rst

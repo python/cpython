@@ -24,7 +24,7 @@ class HTMLParser(sgmllib.SGMLParser):
 
     """
 
-    from html.entities import entitydefs
+    from htmlentitydefs import entitydefs
 
     def __init__(self, formatter, verbose=0):
         """Creates an instance of the HTMLParser class.

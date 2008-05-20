@@ -1,16 +1,13 @@
-:mod:`html.parser` --- Simple HTML and XHTML parser
-===================================================
+
+:mod:`HTMLParser` --- Simple HTML and XHTML parser
+==================================================
 
 .. module:: HTMLParser
-   :synopsis: Old name for the html.parser module.
-
-.. module:: html.parser
    :synopsis: A simple parser that can handle HTML and XHTML.
 
 .. note::
-   The :mod:`HTMLParser` module has been renamed to :mod:`html.parser` in Python
-   3.0.  It is importable under both names in Python 2.6 and the rest of the 2.x
-   series.
+   The :mod:`HTMLParser` module has been renamed to
+   :mod:`html.parser` in Python 3.0.
 
 
 .. versionadded:: 2.2
@@ -99,8 +96,8 @@ An exception is defined as well:
    ``handle_starttag('a', [('href', 'http://www.cwi.nl/')])``.
 
    .. versionchanged:: 2.6
-      All entity references from :mod:`html.entities` are now replaced in the
-      attribute values.
+      All entity references from :mod:`htmlentitydefs` are now replaced in the attribute
+      values.
 
 
 .. method:: HTMLParser.handle_startendtag(tag, attrs)
@@ -178,7 +175,7 @@ Example HTML Parser Application
 As a basic example, below is a very basic HTML parser that uses the
 :class:`HTMLParser` class to print out tags as they are encountered::
 
-   from html.parser import HTMLParser
+   from HTMLParser import HTMLParser
 
    class MyHTMLParser(HTMLParser):
 
