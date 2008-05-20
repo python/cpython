@@ -36,6 +36,9 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- Issue #2592: delegate nb_index and the floor/truediv slots in
+  weakref.proxy.
+
 - Support os.O_ASYNC and fcntl.FASYNC if the constants exist on the
   platform.
 

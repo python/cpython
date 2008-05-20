@@ -3,6 +3,7 @@ import sys
 import unittest
 import UserList
 import weakref
+import operator
 
 from test import test_support
 
@@ -186,6 +187,26 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(L3[5:], p3[5:])
         self.assertEqual(L3[:5], p3[:5])
         self.assertEqual(L3[2:5], p3[2:5])
+
+    def test_proxy_index(self):
+        class C:
+            def __index__(self):
+                return 10
+        o = C()
+        p = weakref.proxy(o)
+        self.assertEqual(operator.index(p), 10)
+
+    def test_proxy_div(self):
+        class C:
+            def __floordiv__(self, other):
+                return 42
+            def __ifloordiv__(self, other):
+                return 21
+        o = C()
+        p = weakref.proxy(o)
+        self.assertEqual(p // 5, 42)
+        p //= 5
+        self.assertEqual(p, 21)
 
     # The PyWeakref_* C API is documented as allowing either NULL or
     # None as the value for the callback, where either means "no
@@ -1059,7 +1080,7 @@ class WeakKeyDictionaryTestCase(mapping_tests.BasicTestMappingProtocol):
     def _reference(self):
         return self.__ref.copy()
 
-libreftest = """ Doctest for examples in the library reference: libweakref.tex
+libreftest = """ Doctest for examples in the library reference: weakref.rst
 
 >>> import weakref
 >>> class Dict(dict):
