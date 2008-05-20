@@ -215,7 +215,7 @@ class TestStdlibRemovals(unittest.TestCase):
 
 class TestStdlibRenames(unittest.TestCase):
 
-    renames = {'copy_reg': 'copyreg', 'Queue': 'queue',
+    renames = {'Queue': 'queue',
                'SocketServer': 'socketserver',
                'ConfigParser': 'configparser',
                'repr': 'reprlib'}

@@ -97,7 +97,7 @@ Sample output (may vary depending on the architecture)::
 
     Loaded modules:
     _types:
-    copyreg:  _inverted_registry,_slotnames,__all__
+    copy_reg:  _inverted_registry,_slotnames,__all__
     sre_compile:  isstring,_sre,_optimize_unicode
     _sre:
     sre_constants:  REPEAT_ONE,makedict,AT_END_LINE

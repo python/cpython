@@ -37,7 +37,7 @@ import cPickle as pickle
 import threading
 import queue
 import traceback
-import copyreg
+import copy_reg
 import types
 import marshal
 
@@ -60,8 +60,8 @@ def pickle_code(co):
 #      assert isinstance(fn, type.FunctionType)
 #      return repr(fn)
 
-copyreg.pickle(types.CodeType, pickle_code, unpickle_code)
-# copyreg.pickle(types.FunctionType, pickle_function, unpickle_function)
+copy_reg.pickle(types.CodeType, pickle_code, unpickle_code)
+# copy_reg.pickle(types.FunctionType, pickle_function, unpickle_function)
 
 BUFSIZE = 8*1024
 LOCALHOST = '127.0.0.1'

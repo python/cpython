@@ -2,7 +2,7 @@ import unittest
 import pickle
 import cPickle
 import pickletools
-import copyreg
+import copy_reg
 
 from test.test_support import TestFailed, have_unicode, TESTFN, \
                               run_with_locale
@@ -44,21 +44,21 @@ class ExtensionSaver:
     # there is one).
     def __init__(self, code):
         self.code = code
-        if code in copyreg._inverted_registry:
-            self.pair = copyreg._inverted_registry[code]
-            copyreg.remove_extension(self.pair[0], self.pair[1], code)
+        if code in copy_reg._inverted_registry:
+            self.pair = copy_reg._inverted_registry[code]
+            copy_reg.remove_extension(self.pair[0], self.pair[1], code)
         else:
             self.pair = None
 
     # Restore previous registration for code.
     def restore(self):
         code = self.code
-        curpair = copyreg._inverted_registry.get(code)
+        curpair = copy_reg._inverted_registry.get(code)
         if curpair is not None:
-            copyreg.remove_extension(curpair[0], curpair[1], code)
+            copy_reg.remove_extension(curpair[0], curpair[1], code)
         pair = self.pair
         if pair is not None:
-            copyreg.add_extension(pair[0], pair[1], code)
+            copy_reg.add_extension(pair[0], pair[1], code)
 
 class C:
     def __cmp__(self, other):
@@ -690,14 +690,14 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assertEqual(B(x), B(y), detail)
                 self.assertEqual(x.__dict__, y.__dict__, detail)
 
-    # Register a type with copyreg, with extension code extcode.  Pickle
+    # Register a type with copy_reg, with extension code extcode.  Pickle
     # an object of that type.  Check that the resulting pickle uses opcode
     # (EXT[124]) under proto 2, and not in proto 1.
 
     def produce_global_ext(self, extcode, opcode):
         e = ExtensionSaver(extcode)
         try:
-            copyreg.add_extension(__name__, "MyList", extcode)
+            copy_reg.add_extension(__name__, "MyList", extcode)
             x = MyList([1, 2, 3])
             x.foo = 42
             x.bar = "hello"

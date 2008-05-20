@@ -1,23 +1,20 @@
-:mod:`copyreg` --- Register :mod:`pickle` support functions
-===========================================================
+:mod:`copy_reg` --- Register :mod:`pickle` support functions
+============================================================
 
 .. module:: copy_reg
-   :synopsis: Old name for the copyreg module.
-
-.. module:: copyreg
    :synopsis: Register pickle support functions.
 
 .. note::
    The :mod:`copy_reg` module has been renamed to :mod:`copyreg` in Python 3.0.
-   It is importable under both names in Python 2.6 and the rest of the 2.x
-   series.
+   The :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0.
 
 .. index::
    module: pickle
    module: cPickle
    module: copy
 
-The :mod:`copyreg` module provides support for the :mod:`pickle` and
+The :mod:`copy_reg` module provides support for the :mod:`pickle` and
 :mod:`cPickle` modules.  The :mod:`copy` module is likely to use this in the
 future as well.  It provides configuration information about object constructors
 which are not classes.  Such constructors may be factory functions or class

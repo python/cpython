@@ -715,7 +715,7 @@ if _exists("fork"):
             return p.stdin, p.stdout
         __all__.append("popen4")
 
-import copyreg as _copy_reg
+import copy_reg as _copy_reg
 
 def _make_stat_result(tup, dict):
     return stat_result(tup, dict)
