@@ -1,17 +1,17 @@
 """Tests for HTMLParser.py."""
 
-import html.parser
+import HTMLParser
 import pprint
 import unittest
 from test import test_support
 
 
-class EventCollector(html.parser.HTMLParser):
+class EventCollector(HTMLParser.HTMLParser):
 
     def __init__(self):
         self.events = []
         self.append = self.events.append
-        html.parser.HTMLParser.__init__(self)
+        HTMLParser.HTMLParser.__init__(self)
 
     def get_events(self):
         # Normalize the list of events so that buffer artefacts don't
@@ -88,10 +88,10 @@ class TestCaseBase(unittest.TestCase):
 
     def _parse_error(self, source):
         def parse(source=source):
-            parser = html.parser.HTMLParser()
+            parser = HTMLParser.HTMLParser()
             parser.feed(source)
             parser.close()
-        self.assertRaises(html.parser.HTMLParseError, parse)
+        self.assertRaises(HTMLParser.HTMLParseError, parse)
 
 
 class HTMLParserTestCase(TestCaseBase):
