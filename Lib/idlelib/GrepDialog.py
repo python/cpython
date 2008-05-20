@@ -1,7 +1,7 @@
 import os
 import fnmatch
 import sys
-from tkinter import *
+from Tkinter import *
 import SearchEngine
 from SearchDialogBase import SearchDialogBase
 

@@ -1,6 +1,6 @@
 import re
-from tkinter import *
-import tkinter.messagebox as tkMessageBox
+from Tkinter import *
+import tkMessageBox
 
 def get(root):
     if not hasattr(root, "_searchengine"):

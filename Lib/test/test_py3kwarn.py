@@ -218,23 +218,7 @@ class TestStdlibRenames(unittest.TestCase):
     renames = {'copy_reg': 'copyreg', 'Queue': 'queue',
                'SocketServer': 'socketserver',
                'ConfigParser': 'configparser',
-               'repr': 'reprlib',
-               'FileDialog': 'tkinter.filedialog',
-               'FixTk': 'tkinter._fix',
-               'ScrolledText': 'tkinter.scrolledtext',
-               'SimpleDialog': 'tkinter.simpledialog',
-               'Tix': 'tkinter.tix',
-               'tkColorChooser': 'tkinter.colorchooser',
-               'tkCommonDialog': 'tkinter.commondialog',
-               'Tkconstants': 'tkinter.constants',
-               'Tkdnd': 'tkinter.dnd',
-               'tkFileDialog': 'tkinter.filedialog',
-               'tkFont': 'tkinter.font',
-               'Tkinter': 'tkinter',
-               'tkMessageBox': 'tkinter.messagebox',
-               'tkSimpleDialog': 'tkinter.simpledialog',
-               'turtle': 'tkinter.turtle'
-               }
+               'repr': 'reprlib'}
 
     def check_rename(self, module_name, new_module_name):
         """Make sure that:

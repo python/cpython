@@ -17,12 +17,12 @@ import linecache
 from code import InteractiveInterpreter
 
 try:
-    from tkinter import *
+    from Tkinter import *
 except ImportError:
-    print>>sys.__stderr__, "** IDLE can't import tkinter.  " \
+    print>>sys.__stderr__, "** IDLE can't import Tkinter.  " \
                            "Your Python may not be configured for Tk. **"
     sys.exit(1)
-import tkinter.messagebox as tkMessageBox
+import tkMessageBox
 
 from EditorWindow import EditorWindow, fixwordbreaks
 from FileList import FileList
@@ -992,8 +992,8 @@ class PyShell(OutputWindow):
                    (sys.version, sys.platform, self.COPYRIGHT,
                     self.firewallmessage, idlever.IDLE_VERSION, nosub))
         self.showprompt()
-        import tkinter
-        tkinter._default_root = None # 03Jan04 KBK What's this?
+        import Tkinter
+        Tkinter._default_root = None # 03Jan04 KBK What's this?
         return True
 
     def readline(self):

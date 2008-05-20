@@ -8,7 +8,7 @@
 
 __version__ = "0.9"
 
-import tkinter
+import Tkinter
 
 # weight/slant
 NORMAL = "normal"
@@ -31,7 +31,7 @@ class Font:
     name -- name to use for this font configuration (defaults to a unique name)
     exists -- does a named font by this name already exist?
        Creates a new named font if False, points to the existing font if True.
-       Raises _tkinter.TclError if the assertion is false.
+       Raises _Tkinter.TclError if the assertion is false.
 
        the following are ignored if font is specified:
 
@@ -65,7 +65,7 @@ class Font:
 
     def __init__(self, root=None, font=None, name=None, exists=False, **options):
         if not root:
-            root = tkinter._default_root
+            root = Tkinter._default_root
         if font:
             # get actual settings corresponding to the given font
             font = root.tk.splitlist(root.tk.call("font", "actual", font))
@@ -79,7 +79,7 @@ class Font:
             self.delete_font = False
             # confirm font exists
             if self.name not in root.tk.call("font", "names"):
-                raise tkinter._tkinter.TclError, "named font %s does not already exist" % (self.name,)
+                raise Tkinter._tkinter.TclError, "named font %s does not already exist" % (self.name,)
             # if font config info supplied, apply it
             if font:
                 root.tk.call("font", "configure", self.name, *font)
@@ -166,13 +166,13 @@ class Font:
 def families(root=None):
     "Get font families (as a tuple)"
     if not root:
-        root = tkinter._default_root
+        root = Tkinter._default_root
     return root.tk.splitlist(root.tk.call("font", "families"))
 
 def names(root=None):
     "Get names of defined fonts (as a tuple)"
     if not root:
-        root = tkinter._default_root
+        root = Tkinter._default_root
     return root.tk.splitlist(root.tk.call("font", "names"))
 
 # --------------------------------------------------------------------
@@ -180,7 +180,7 @@ def names(root=None):
 
 if __name__ == "__main__":
 
-    root = tkinter.Tk()
+    root = Tkinter.Tk()
 
     # create a font
     f = Font(family="times", size=30, weight=NORMAL)
@@ -202,10 +202,10 @@ if __name__ == "__main__":
     f = Font(font=("Courier", 20, "bold"))
     print f.measure("hello"), f.metrics("linespace")
 
-    w = tkinter.Label(root, text="Hello, world", font=f)
+    w = Tkinter.Label(root, text="Hello, world", font=f)
     w.pack()
 
-    w = tkinter.Button(root, text="Quit!", command=root.destroy)
+    w = Tkinter.Button(root, text="Quit!", command=root.destroy)
     w.pack()
 
     fb = Font(font=w["font"]).copy()
@@ -213,4 +213,4 @@ if __name__ == "__main__":
 
     w.config(font=fb)
 
-    tkinter.mainloop()
+    Tkinter.mainloop()

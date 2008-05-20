@@ -10,11 +10,11 @@ import types
 import sys
 import codecs
 import tempfile
-import tkinter.filedialog as tkFileDialog
-import tkinter.messagebox as tkMessageBox
+import tkFileDialog
+import tkMessageBox
 import re
-from tkinter import *
-from tkinter.simpledialog import SimpleDialog
+from Tkinter import *
+from SimpleDialog import SimpleDialog
 
 from configHandler import idleConf
 
