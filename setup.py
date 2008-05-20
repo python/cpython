@@ -1580,6 +1580,9 @@ class PyBuildExt(build_ext):
             # finding some -z option for the Sun compiler.
             extra_link_args.append('-mimpure-text')
 
+        elif sys.platform.startswith('hpux'):
+            extra_link_args.append('-fPIC')
+
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,
                         extra_compile_args=extra_compile_args,
