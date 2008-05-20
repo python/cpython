@@ -1200,6 +1200,8 @@ class Misc:
     __getitem__ = cget
     def __setitem__(self, key, value):
         self.configure({key: value})
+    def __contains__(self, key):
+        raise TypeError("Tkinter objects don't support 'in' tests.")
     def keys(self):
         """Return a list of all resource names of this widget."""
         return map(lambda x: x[0][1:],
