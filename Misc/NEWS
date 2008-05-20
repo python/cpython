@@ -55,6 +55,12 @@ Extension Modules
 Library
 -------
 
+- Issue #2914: TimedRotatingFileHandler now takes an optional keyword
+  argument "utc" to use UTC time rather than local time.
+
+- Issue #2929: TimedRotatingFileHandler was using the wrong path when
+  deleting old log files (filename only instead of full path).
+
 - Issue #1775025: You can now specify zipfile members to open(),
   read() or extract() via a ZipInfo instance.  This allows handling
   duplicate filenames in zipfiles.
