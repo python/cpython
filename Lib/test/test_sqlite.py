@@ -1,4 +1,4 @@
-from test.test_support import run_unittest, TestSkipped
+from test.support import run_unittest, TestSkipped
 
 try:
     import _sqlite3

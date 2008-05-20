@@ -1,7 +1,7 @@
 """Tests for binary operators on subtypes of built-in types."""
 
 import unittest
-from test import test_support
+from test import support
 
 def gcd(a, b):
     """Greatest common divisor using Euclid's algorithm."""
@@ -317,7 +317,7 @@ self.assertEqual(eval('1/2'), 0.5)
 """
 
 def test_main():
-    test_support.run_unittest(RatTestCase)
+    support.run_unittest(RatTestCase)
 
 
 if __name__ == "__main__":

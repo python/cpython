@@ -2,7 +2,7 @@ import pprint
 import sys
 import unittest
 
-from test import test_support
+from test import support
 
 class TestGetProfile(unittest.TestCase):
     def setUp(self):
@@ -357,7 +357,7 @@ def capture_events(callable, p=None):
     except TypeError:
         pass
     else:
-        raise test_support.TestFailed(
+        raise support.TestFailed(
             'sys.setprofile() did not raise TypeError')
 
     if p is None:
@@ -374,7 +374,7 @@ def show_events(callable):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         TestGetProfile,
         ProfileHookTestCase,
         ProfileSimulatorTestCase

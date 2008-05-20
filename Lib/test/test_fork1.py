@@ -4,7 +4,7 @@
 import os
 import time
 from test.fork_wait import ForkWait
-from test.test_support import TestSkipped, run_unittest, reap_children
+from test.support import TestSkipped, run_unittest, reap_children
 
 try:
     os.fork

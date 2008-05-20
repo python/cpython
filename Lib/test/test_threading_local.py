@@ -1,6 +1,6 @@
 import unittest
 from doctest import DocTestSuite
-from test import test_support
+from test import support
 import threading
 import weakref
 import gc
@@ -62,7 +62,7 @@ def test_main():
                                    setUp=setUp, tearDown=tearDown)
                       )
 
-    test_support.run_unittest(suite)
+    support.run_unittest(suite)
 
 if __name__ == '__main__':
     test_main()

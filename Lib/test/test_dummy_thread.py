@@ -10,7 +10,7 @@ import time
 import queue
 import random
 import unittest
-from test import test_support
+from test import support
 
 DELAY = 0 # Set > 0 when testing a module other than dummy_thread, such as
           # the 'thread' module.
@@ -71,13 +71,13 @@ class LockTests(unittest.TestCase):
         self.lock.acquire()
         start_time = int(time.time())
         _thread.start_new_thread(delay_unlock,(self.lock, DELAY))
-        if test_support.verbose:
+        if support.verbose:
             print()
             print("*** Waiting for thread to release the lock "\
             "(approx. %s sec.) ***" % DELAY)
         self.lock.acquire()
         end_time = int(time.time())
-        if test_support.verbose:
+        if support.verbose:
             print("done")
         self.failUnless((end_time - start_time) >= DELAY,
                         "Blocking by unconditional acquiring failed.")
@@ -149,7 +149,7 @@ class ThreadTests(unittest.TestCase):
 
         thread_count = 5
         testing_queue = queue.Queue(thread_count)
-        if test_support.verbose:
+        if support.verbose:
             print()
             print("*** Testing multiple thread creation "\
             "(will take approx. %s to %s sec.) ***" % (DELAY, thread_count))
@@ -161,7 +161,7 @@ class ThreadTests(unittest.TestCase):
             _thread.start_new_thread(queue_mark,
                                      (testing_queue, local_delay))
         time.sleep(DELAY)
-        if test_support.verbose:
+        if support.verbose:
             print('done')
         self.failUnless(testing_queue.qsize() == thread_count,
                         "Not all %s threads executed properly after %s sec." %
@@ -172,10 +172,10 @@ def test_main(imported_module=None):
     if imported_module:
         _thread = imported_module
         DELAY = 2
-    if test_support.verbose:
+    if support.verbose:
         print()
         print("*** Using %s as _thread module ***" % _thread)
-    test_support.run_unittest(LockTests, MiscTests, ThreadTests)
+    support.run_unittest(LockTests, MiscTests, ThreadTests)
 
 if __name__ == '__main__':
     test_main()

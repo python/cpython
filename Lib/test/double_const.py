@@ -1,4 +1,4 @@
-from test.test_support import TestFailed
+from test.support import TestFailed
 
 # A test for SF bug 422177:  manifest float constants varied way too much in
 # precision depending on whether Python was loading a module for the first

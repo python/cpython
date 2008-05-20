@@ -1,13 +1,13 @@
 
 import os, filecmp, shutil, tempfile, shutil
 import unittest
-from test import test_support
+from test import support
 
 class FileCompareTestCase(unittest.TestCase):
     def setUp(self):
-        self.name = test_support.TESTFN
-        self.name_same = test_support.TESTFN + '-same'
-        self.name_diff = test_support.TESTFN + '-diff'
+        self.name = support.TESTFN
+        self.name_same = support.TESTFN + '-same'
+        self.name_diff = support.TESTFN + '-diff'
         data = 'Contents of file go here.\n'
         for name in [self.name, self.name_same, self.name_diff]:
             output = open(name, 'w')
@@ -128,7 +128,7 @@ class DirCompareTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(FileCompareTestCase, DirCompareTestCase)
+    support.run_unittest(FileCompareTestCase, DirCompareTestCase)
 
 if __name__ == "__main__":
     test_main()

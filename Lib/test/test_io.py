@@ -6,7 +6,7 @@ import time
 import array
 import unittest
 from itertools import chain
-from test import test_support
+from test import support
 
 import codecs
 import io  # The module under test
@@ -80,10 +80,10 @@ class MockNonBlockWriterIO(io.RawIOBase):
 class IOTest(unittest.TestCase):
 
     def setUp(self):
-        test_support.unlink(test_support.TESTFN)
+        support.unlink(support.TESTFN)
 
     def tearDown(self):
-        test_support.unlink(test_support.TESTFN)
+        support.unlink(support.TESTFN)
 
     def write_ops(self, f):
         self.assertEqual(f.write(b"blah."), 5)
@@ -149,13 +149,13 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.read(2), b"x")
 
     def test_raw_file_io(self):
-        f = io.open(test_support.TESTFN, "wb", buffering=0)
+        f = io.open(support.TESTFN, "wb", buffering=0)
         self.assertEqual(f.readable(), False)
         self.assertEqual(f.writable(), True)
         self.assertEqual(f.seekable(), True)
         self.write_ops(f)
         f.close()
-        f = io.open(test_support.TESTFN, "rb", buffering=0)
+        f = io.open(support.TESTFN, "rb", buffering=0)
         self.assertEqual(f.readable(), True)
         self.assertEqual(f.writable(), False)
         self.assertEqual(f.seekable(), True)
@@ -163,13 +163,13 @@ class IOTest(unittest.TestCase):
         f.close()
 
     def test_buffered_file_io(self):
-        f = io.open(test_support.TESTFN, "wb")
+        f = io.open(support.TESTFN, "wb")
         self.assertEqual(f.readable(), False)
         self.assertEqual(f.writable(), True)
         self.assertEqual(f.seekable(), True)
         self.write_ops(f)
         f.close()
-        f = io.open(test_support.TESTFN, "rb")
+        f = io.open(support.TESTFN, "rb")
         self.assertEqual(f.readable(), True)
         self.assertEqual(f.writable(), False)
         self.assertEqual(f.seekable(), True)
@@ -177,10 +177,10 @@ class IOTest(unittest.TestCase):
         f.close()
 
     def test_readline(self):
-        f = io.open(test_support.TESTFN, "wb")
+        f = io.open(support.TESTFN, "wb")
         f.write(b"abc\ndef\nxyzzy\nfoo")
         f.close()
-        f = io.open(test_support.TESTFN, "rb")
+        f = io.open(support.TESTFN, "rb")
         self.assertEqual(f.readline(), b"abc\n")
         self.assertEqual(f.readline(10), b"def\n")
         self.assertEqual(f.readline(2), b"xy")
@@ -201,7 +201,7 @@ class IOTest(unittest.TestCase):
         # a long time to build the >2GB file and takes >2GB of disk space
         # therefore the resource must be enabled to run this test.
         if sys.platform[:3] == 'win' or sys.platform == 'darwin':
-            if not test_support.is_resource_enabled("largefile"):
+            if not support.is_resource_enabled("largefile"):
                 print("\nTesting large file ops skipped on %s." % sys.platform,
                       file=sys.stderr)
                 print("It requires %d bytes and a long time." % self.LARGE,
@@ -209,22 +209,22 @@ class IOTest(unittest.TestCase):
                 print("Use 'regrtest.py -u largefile test_io' to run it.",
                       file=sys.stderr)
                 return
-        f = io.open(test_support.TESTFN, "w+b", 0)
+        f = io.open(support.TESTFN, "w+b", 0)
         self.large_file_ops(f)
         f.close()
-        f = io.open(test_support.TESTFN, "w+b")
+        f = io.open(support.TESTFN, "w+b")
         self.large_file_ops(f)
         f.close()
 
     def test_with_open(self):
         for bufsize in (0, 1, 100):
             f = None
-            with open(test_support.TESTFN, "wb", bufsize) as f:
+            with open(support.TESTFN, "wb", bufsize) as f:
                 f.write(b"xxx")
             self.assertEqual(f.closed, True)
             f = None
             try:
-                with open(test_support.TESTFN, "wb", bufsize) as f:
+                with open(support.TESTFN, "wb", bufsize) as f:
                     1/0
             except ZeroDivisionError:
                 self.assertEqual(f.closed, True)
@@ -243,31 +243,31 @@ class IOTest(unittest.TestCase):
             def flush(self):
                 record.append(3)
                 io.FileIO.flush(self)
-        f = MyFileIO(test_support.TESTFN, "w")
+        f = MyFileIO(support.TESTFN, "w")
         f.write("xxx")
         del f
         self.assertEqual(record, [1, 2, 3])
 
     def test_close_flushes(self):
-        f = io.open(test_support.TESTFN, "wb")
+        f = io.open(support.TESTFN, "wb")
         f.write(b"xxx")
         f.close()
-        f = io.open(test_support.TESTFN, "rb")
+        f = io.open(support.TESTFN, "rb")
         self.assertEqual(f.read(), b"xxx")
         f.close()
 
     def test_array_writes(self):
         a = array.array('i', range(10))
         n = len(memoryview(a))
-        f = io.open(test_support.TESTFN, "wb", 0)
+        f = io.open(support.TESTFN, "wb", 0)
         self.assertEqual(f.write(a), n)
         f.close()
-        f = io.open(test_support.TESTFN, "wb")
+        f = io.open(support.TESTFN, "wb")
         self.assertEqual(f.write(a), n)
         f.close()
 
     def test_closefd(self):
-        self.assertRaises(ValueError, io.open, test_support.TESTFN, 'w',
+        self.assertRaises(ValueError, io.open, support.TESTFN, 'w',
                           closefd=False)
 
 class MemorySeekTestMixin:
@@ -638,10 +638,10 @@ class TextIOWrapperTest(unittest.TestCase):
     def setUp(self):
         self.testdata = b"AAA\r\nBBB\rCCC\r\nDDD\nEEE\r\n"
         self.normalized = b"AAA\nBBB\nCCC\nDDD\nEEE\n".decode("ascii")
-        test_support.unlink(test_support.TESTFN)
+        support.unlink(support.TESTFN)
 
     def tearDown(self):
-        test_support.unlink(test_support.TESTFN)
+        support.unlink(support.TESTFN)
 
     def testLineBuffering(self):
         r = io.BytesIO()
@@ -818,11 +818,11 @@ class TextIOWrapperTest(unittest.TestCase):
     def testBasicIO(self):
         for chunksize in (1, 2, 3, 4, 5, 15, 16, 17, 31, 32, 33, 63, 64, 65):
             for enc in "ascii", "latin1", "utf8" :# , "utf-16-be", "utf-16-le":
-                f = io.open(test_support.TESTFN, "w+", encoding=enc)
+                f = io.open(support.TESTFN, "w+", encoding=enc)
                 f._CHUNK_SIZE = chunksize
                 self.assertEquals(f.write("abc"), 3)
                 f.close()
-                f = io.open(test_support.TESTFN, "r+", encoding=enc)
+                f = io.open(support.TESTFN, "r+", encoding=enc)
                 f._CHUNK_SIZE = chunksize
                 self.assertEquals(f.tell(), 0)
                 self.assertEquals(f.read(), "abc")
@@ -865,7 +865,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEquals(rlines, wlines)
 
     def testTelling(self):
-        f = io.open(test_support.TESTFN, "w+", encoding="utf8")
+        f = io.open(support.TESTFN, "w+", encoding="utf8")
         p0 = f.tell()
         f.write("\xff\n")
         p1 = f.tell()
@@ -893,10 +893,10 @@ class TextIOWrapperTest(unittest.TestCase):
         u_suffix = "\u8888\n"
         suffix = bytes(u_suffix.encode("utf-8"))
         line = prefix + suffix
-        f = io.open(test_support.TESTFN, "wb")
+        f = io.open(support.TESTFN, "wb")
         f.write(line*2)
         f.close()
-        f = io.open(test_support.TESTFN, "r", encoding="utf-8")
+        f = io.open(support.TESTFN, "r", encoding="utf-8")
         s = f.read(prefix_size)
         self.assertEquals(s, str(prefix, "ascii"))
         self.assertEquals(f.tell(), prefix_size)
@@ -905,10 +905,10 @@ class TextIOWrapperTest(unittest.TestCase):
     def testSeekingToo(self):
         # Regression test for a specific bug
         data = b'\xe0\xbf\xbf\n'
-        f = io.open(test_support.TESTFN, "wb")
+        f = io.open(support.TESTFN, "wb")
         f.write(data)
         f.close()
-        f = io.open(test_support.TESTFN, "r", encoding="utf-8")
+        f = io.open(support.TESTFN, "r", encoding="utf-8")
         f._CHUNK_SIZE  # Just test that it exists
         f._CHUNK_SIZE = 2
         f.readline()
@@ -920,16 +920,16 @@ class TextIOWrapperTest(unittest.TestCase):
         def testSeekAndTellWithData(data, min_pos=0):
             """Tell/seek to various points within a data stream and ensure
             that the decoded data returned by read() is consistent."""
-            f = io.open(test_support.TESTFN, 'wb')
+            f = io.open(support.TESTFN, 'wb')
             f.write(data)
             f.close()
-            f = io.open(test_support.TESTFN, encoding='test_decoder')
+            f = io.open(support.TESTFN, encoding='test_decoder')
             decoded = f.read()
             f.close()
 
             for i in range(min_pos, len(decoded) + 1): # seek positions
                 for j in [1, 5, len(decoded) - i]: # read lengths
-                    f = io.open(test_support.TESTFN, encoding='test_decoder')
+                    f = io.open(support.TESTFN, encoding='test_decoder')
                     self.assertEquals(f.read(i), decoded[:i])
                     cookie = f.tell()
                     self.assertEquals(f.read(j), decoded[i:i + j])
@@ -985,7 +985,7 @@ class TextIOWrapperTest(unittest.TestCase):
         nchars = len(line)
         nbytes = len(line.encode(enc))
         for chunk_size in (32, 64, 128, 256):
-            f = io.open(test_support.TESTFN, "w+", encoding=enc)
+            f = io.open(support.TESTFN, "w+", encoding=enc)
             f._CHUNK_SIZE = chunk_size
             t0 = timer()
             for i in range(nlines):
@@ -1005,7 +1005,7 @@ class TextIOWrapperTest(unittest.TestCase):
                 f.tell()
             t4 = timer()
             f.close()
-            if test_support.verbose:
+            if support.verbose:
                 print("\nTiming test: %d lines of %d characters (%d bytes)" %
                       (nlines, nchars, nbytes))
                 print("File chunk size:          %6s" % f._CHUNK_SIZE)
@@ -1162,7 +1162,7 @@ class MiscIOTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(IOTest, BytesIOTest, StringIOTest,
+    support.run_unittest(IOTest, BytesIOTest, StringIOTest,
                               BufferedReaderTest, BufferedWriterTest,
                               BufferedRWPairTest, BufferedRandomTest,
                               StatefulIncrementalDecoderTest,

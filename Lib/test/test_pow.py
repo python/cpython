@@ -1,4 +1,4 @@
-import test.test_support, unittest
+import test.support, unittest
 
 class PowTest(unittest.TestCase):
 
@@ -123,7 +123,7 @@ class PowTest(unittest.TestCase):
         eq(expected, 1.0)   # else we didn't push fiveto to evenness
 
 def test_main():
-    test.test_support.run_unittest(PowTest)
+    test.support.run_unittest(PowTest)
 
 if __name__ == "__main__":
     test_main()

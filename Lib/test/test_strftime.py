@@ -6,7 +6,7 @@ import calendar
 import sys
 import os
 import re
-from test import test_support
+from test import support
 import time
 import unittest
 
@@ -68,7 +68,7 @@ class StrftimeTest(unittest.TestCase):
         self.strftest1(now)
         self.strftest2(now)
 
-        if test_support.verbose:
+        if support.verbose:
             print("Strftime test, platform: %s, Python version: %s" % \
                   (sys.platform, sys.version.split()[0]))
 
@@ -80,7 +80,7 @@ class StrftimeTest(unittest.TestCase):
                 self.strftest2(arg)
 
     def strftest1(self, now):
-        if test_support.verbose:
+        if support.verbose:
             print("strftime test for", time.ctime(now))
         now = self.now
         # Make sure any characters that could be taken as regex syntax is
@@ -162,24 +162,24 @@ class StrftimeTest(unittest.TestCase):
             except ValueError as result:
                 msg = "Error for nonstandard '%s' format (%s): %s" % \
                       (e[0], e[2], str(result))
-                if test_support.verbose:
+                if support.verbose:
                     print(msg)
                 continue
             if re.match(escapestr(e[1], self.ampm), result):
-                if test_support.verbose:
+                if support.verbose:
                     print("Supports nonstandard '%s' format (%s)" % (e[0], e[2]))
             elif not result or result[0] == '%':
-                if test_support.verbose:
+                if support.verbose:
                     print("Does not appear to support '%s' format (%s)" % \
                            (e[0], e[2]))
             else:
-                if test_support.verbose:
+                if support.verbose:
                     print("Conflict for nonstandard '%s' format (%s):" % \
                            (e[0], e[2]))
                     print("  Expected %s, but got %s" % (e[1], result))
 
 def test_main():
-    test_support.run_unittest(StrftimeTest)
+    support.run_unittest(StrftimeTest)
 
 if __name__ == '__main__':
     test_main()

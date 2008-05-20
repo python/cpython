@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 import unittest
 
 import xdrlib
@@ -50,7 +50,7 @@ class XDRTest(unittest.TestCase):
         self.assertRaises(EOFError, up.unpack_uint)
 
 def test_main():
-    test_support.run_unittest(XDRTest)
+    support.run_unittest(XDRTest)
 
 if __name__ == "__main__":
     test_main()

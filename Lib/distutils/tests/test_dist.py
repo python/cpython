@@ -7,7 +7,7 @@ import io
 import sys
 import unittest
 
-from test.test_support import TESTFN
+from test.support import TESTFN
 
 
 class test_dist(distutils.cmd.Command):

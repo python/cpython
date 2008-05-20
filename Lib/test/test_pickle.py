@@ -1,7 +1,7 @@
 import pickle
 import io
 
-from test import test_support
+from test import support
 
 from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
@@ -55,12 +55,12 @@ class PersPicklerTests(AbstractPersistentPicklerTests):
         return u.load()
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         PickleTests,
         PicklerTests,
         PersPicklerTests
     )
-    test_support.run_doctest(pickle)
+    support.run_doctest(pickle)
 
 if __name__ == "__main__":
     test_main()

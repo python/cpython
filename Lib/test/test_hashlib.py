@@ -8,7 +8,7 @@
 
 import hashlib
 import unittest
-from test import test_support
+from test import support
 
 
 def hexstr(s):
@@ -186,7 +186,7 @@ class HashLibTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(HashLibTestCase)
+    support.run_unittest(HashLibTestCase)
 
 
 if __name__ == "__main__":

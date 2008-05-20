@@ -3,7 +3,7 @@ import unittest
 import warnings
 
 from copy import deepcopy
-from test import test_support
+from test import support
 
 
 class OperatorsTest(unittest.TestCase):
@@ -2449,12 +2449,12 @@ order (MRO) for bases """
         ##             self.ateof = 1
         ##        return s
         ##
-        ## f = file(name=test_support.TESTFN, mode='w')
+        ## f = file(name=support.TESTFN, mode='w')
         ## lines = ['a\n', 'b\n', 'c\n']
         ## try:
         ##     f.writelines(lines)
         ##     f.close()
-        ##     f = CountedInput(test_support.TESTFN)
+        ##     f = CountedInput(support.TESTFN)
         ##     for (i, expected) in zip(range(1, 5) + [4], lines + 2 * [""]):
         ##         got = f.readline()
         ##         self.assertEqual(expected, got)
@@ -2466,7 +2466,7 @@ order (MRO) for bases """
         ##         f.close()
         ##     except:
         ##         pass
-        ##     test_support.unlink(test_support.TESTFN)
+        ##     support.unlink(support.TESTFN)
 
     def test_keywords(self):
         # Testing keyword args to basic type constructors ...
@@ -4093,7 +4093,7 @@ class PTypesLongInitTest(unittest.TestCase):
 
 def test_main():
     # Run all local test cases, with PTypesLongInitTest first.
-    test_support.run_unittest(PTypesLongInitTest, OperatorsTest,
+    support.run_unittest(PTypesLongInitTest, OperatorsTest,
                               ClassPropertiesAndMethods, DictProxyTests)
 
 if __name__ == "__main__":

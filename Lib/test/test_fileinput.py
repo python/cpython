@@ -4,8 +4,8 @@ Nick Mathewson
 '''
 
 import unittest
-from test.test_support import verbose, TESTFN, run_unittest
-from test.test_support import unlink as safe_unlink
+from test.support import verbose, TESTFN, run_unittest
+from test.support import unlink as safe_unlink
 import sys, re
 from io import StringIO
 from fileinput import FileInput, hook_encoded

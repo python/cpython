@@ -30,7 +30,7 @@ import os, sys
 import pickle, copy
 import unittest
 from decimal import *
-from test.test_support import (TestSkipped, run_unittest, run_doctest,
+from test.support import (TestSkipped, run_unittest, run_doctest,
                                is_resource_enabled)
 import random
 try:

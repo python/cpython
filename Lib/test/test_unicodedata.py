@@ -5,7 +5,7 @@
     (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-import unittest, test.test_support
+import unittest, test.support
 import hashlib
 
 encoding = 'utf-8'
@@ -219,7 +219,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertEquals(self.db.lookup("GOTHIC LETTER FAIHU"), '\U00010346')
 
 def test_main():
-    test.test_support.run_unittest(
+    test.support.run_unittest(
         UnicodeMiscTest,
         UnicodeMethodsTest,
         UnicodeFunctionsTest

@@ -13,7 +13,7 @@ from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
 from xml.sax.expatreader import create_parser
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import StringIO
-from test.test_support import findfile, run_unittest
+from test.support import findfile, run_unittest
 import unittest
 import os
 

@@ -7,9 +7,9 @@ import os
 import unittest
 import anydbm
 import glob
-from test import test_support
+from test import support
 
-_fname = test_support.TESTFN
+_fname = support.TESTFN
 
 _all_modules = []
 
@@ -121,7 +121,7 @@ class AnyDBMTestCase(unittest.TestCase):
 def test_main():
     try:
         for module in dbm_iterator():
-            test_support.run_unittest(AnyDBMTestCase)
+            support.run_unittest(AnyDBMTestCase)
     finally:
         delete_files()
 

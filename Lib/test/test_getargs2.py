@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 from _testcapi import getargs_keywords
 
 import warnings
@@ -306,7 +306,7 @@ def test_main():
         pass # PY_LONG_LONG not available
     else:
         tests.append(LongLong_TestCase)
-    test_support.run_unittest(*tests)
+    support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main()

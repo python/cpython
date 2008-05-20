@@ -3,7 +3,7 @@ import unittest
 import os, sys, io
 import shlex
 
-from test import test_support
+from test import support
 
 
 # The original test data set was from shellwords, by Hartmut Goebel.
@@ -181,7 +181,7 @@ if not getattr(shlex, "split", None):
             delattr(ShlexTest, methname)
 
 def test_main():
-    test_support.run_unittest(ShlexTest)
+    support.run_unittest(ShlexTest)
 
 if __name__ == "__main__":
     test_main()

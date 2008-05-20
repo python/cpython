@@ -4,7 +4,7 @@ import unittest
 import os
 import os.path
 import sys
-import test.test_support
+import test.support
 import tempfile
 import subprocess
 import py_compile
@@ -12,9 +12,9 @@ import contextlib
 import shutil
 import zipfile
 
-verbose = test.test_support.verbose
+verbose = test.support.verbose
 
-# XXX ncoghlan: Should we consider moving these to test_support?
+# XXX ncoghlan: Should we consider moving these to support?
 from test.test_cmd_line import _spawn_python, _kill_python
 
 def _run_python(*args):
@@ -176,8 +176,8 @@ class CmdLineTest(unittest.TestCase):
 
 
 def test_main():
-    test.test_support.run_unittest(CmdLineTest)
-    test.test_support.reap_children()
+    test.support.run_unittest(CmdLineTest)
+    test.support.reap_children()
 
 if __name__ == '__main__':
     test_main()

@@ -6,7 +6,7 @@ import unittest
 from array import array
 from weakref import proxy
 
-from test.test_support import TESTFN, findfile, run_unittest
+from test.support import TESTFN, findfile, run_unittest
 from collections import UserList
 
 import _fileio

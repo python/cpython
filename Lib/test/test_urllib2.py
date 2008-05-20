@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 import os
 import io
@@ -588,7 +588,7 @@ class HandlerTests(unittest.TestCase):
         h = urllib2.FileHandler()
         o = h.parent = MockOpener()
 
-        TESTFN = test_support.TESTFN
+        TESTFN = support.TESTFN
         urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = b"hello, world\n"
         urls = [
@@ -1075,13 +1075,13 @@ class MiscTests(unittest.TestCase):
 
 def test_main(verbose=None):
     from test import test_urllib2
-    test_support.run_doctest(test_urllib2, verbose)
-    test_support.run_doctest(urllib2, verbose)
+    support.run_doctest(test_urllib2, verbose)
+    support.run_doctest(urllib2, verbose)
     tests = (TrivialTests,
              OpenerDirectorTests,
              HandlerTests,
              MiscTests)
-    test_support.run_unittest(*tests)
+    support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main(verbose=True)

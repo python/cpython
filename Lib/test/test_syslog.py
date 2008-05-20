@@ -1,7 +1,7 @@
 
 import syslog
 import unittest
-from test import test_support
+from test import support
 
 # XXX(nnorwitz): This test sucks.  I don't know of a platform independent way
 # to verify that the messages were really logged.
@@ -31,7 +31,7 @@ class Test(unittest.TestCase):
         syslog.LOG_UPTO(syslog.LOG_INFO)
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

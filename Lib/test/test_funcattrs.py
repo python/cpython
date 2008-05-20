@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 import types
 import unittest
 
@@ -225,7 +225,7 @@ class FunctionDocstringTest(FuncAttrsTest):
         self.assertEqual(self.b.__doc__, None)
 
 def test_main():
-    test_support.run_unittest(FunctionPropertiesTest, ImplicitReferencesTest,
+    support.run_unittest(FunctionPropertiesTest, ImplicitReferencesTest,
                               ArbitraryFunctionAttrTest, FunctionDictsTest,
                               FunctionDocstringTest)
 

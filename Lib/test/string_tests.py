@@ -3,7 +3,7 @@ Common tests shared by test_str, test_unicode, test_userstring and test_string.
 """
 
 import unittest, string, sys, struct
-from test import test_support
+from test import support
 from collections import UserList
 
 class Sequence:

@@ -3,7 +3,7 @@
 #
 
 import unittest
-from test import test_support
+from test import support
 
 
 class HashEqualityTestCase(unittest.TestCase):
@@ -38,7 +38,7 @@ class HashEqualityTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(HashEqualityTestCase)
+    support.run_unittest(HashEqualityTestCase)
 
 
 if __name__ == "__main__":

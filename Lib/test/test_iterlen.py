@@ -42,7 +42,7 @@ enumerate(iter('abc')).
 """
 
 import unittest
-from test import test_support
+from test import support
 from itertools import repeat
 from collections import deque
 from builtins import len as _len
@@ -211,7 +211,7 @@ def test_main():
         TestList,
         TestListReversed,
     ]
-    test_support.run_unittest(*unittests)
+    support.run_unittest(*unittests)
 
 if __name__ == "__main__":
     test_main()

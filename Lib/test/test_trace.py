@@ -1,6 +1,6 @@
 # Testing the line trace facility.
 
-from test import test_support
+from test import support
 import unittest
 import sys
 import difflib
@@ -742,7 +742,7 @@ class JumpTestCase(unittest.TestCase):
         no_jump_without_trace_function()
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         TraceTestCase,
         RaisingTraceFuncTestCase,
         JumpTestCase

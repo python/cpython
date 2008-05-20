@@ -476,7 +476,7 @@ import re
 import unittest
 import warnings
 
-from test import test_support
+from test import support
 
 class SyntaxTestCase(unittest.TestCase):
 
@@ -548,9 +548,9 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("int(base=10, '2')", "non-keyword arg")
 
 def test_main():
-    test_support.run_unittest(SyntaxTestCase)
+    support.run_unittest(SyntaxTestCase)
     from test import test_syntax
-    test_support.run_doctest(test_syntax, verbosity=True)
+    support.run_doctest(test_syntax, verbosity=True)
 
 if __name__ == "__main__":
     test_main()

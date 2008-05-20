@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import unittest
-from test import test_support
+from test import support
 
 def test_main():
     pass

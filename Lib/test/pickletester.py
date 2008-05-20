@@ -3,7 +3,7 @@ import pickle
 import pickletools
 import copyreg
 
-from test.test_support import TestFailed, TESTFN, run_with_locale
+from test.support import TestFailed, TESTFN, run_with_locale
 
 from pickle import bytes_types
 

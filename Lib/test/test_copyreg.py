@@ -1,7 +1,7 @@
 import copyreg
 import unittest
 
-from test import test_support
+from test import support
 from test.pickletester import ExtensionSaver
 
 class C:
@@ -114,7 +114,7 @@ class CopyRegTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(CopyRegTestCase)
+    support.run_unittest(CopyRegTestCase)
 
 
 if __name__ == "__main__":

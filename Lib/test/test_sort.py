@@ -1,9 +1,9 @@
-from test import test_support
+from test import support
 import random
 import sys
 import unittest
 
-verbose = test_support.verbose
+verbose = support.verbose
 nerrors = 0
 
 def CmpToKey(mycmp):
@@ -261,14 +261,14 @@ def test_main(verbose=None):
         TestBugs,
     )
 
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(*test_classes)
+            support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)

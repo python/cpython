@@ -4,9 +4,9 @@
 #   Unit test for multibytecodec itself
 #
 
-from test import test_support
+from test import support
 from test import test_multibytecodec_support
-from test.test_support import TESTFN
+from test.support import TESTFN
 import unittest, io, codecs, sys, os
 
 ALL_CJKENCODINGS = [
@@ -51,7 +51,7 @@ class Test_MultibyteCodec(unittest.TestCase):
                 print('# coding:', enc, file=io.open(TESTFN, 'w'))
                 exec(open(TESTFN).read())
         finally:
-            test_support.unlink(TESTFN)
+            support.unlink(TESTFN)
 
 class Test_IncrementalEncoder(unittest.TestCase):
 
@@ -151,7 +151,7 @@ class Test_StreamReader(unittest.TestCase):
             finally:
                 f.close()
         finally:
-            test_support.unlink(TESTFN)
+            support.unlink(TESTFN)
 
 class Test_StreamWriter(unittest.TestCase):
     if len('\U00012345') == 2: # UCS2
@@ -235,7 +235,7 @@ class Test_ISO2022(unittest.TestCase):
             myunichr(x).encode('iso_2022_jp', 'ignore')
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

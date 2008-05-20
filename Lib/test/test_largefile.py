@@ -5,7 +5,7 @@ import os
 import stat
 import sys
 import unittest
-from test.test_support import run_unittest, TESTFN, verbose, requires, \
+from test.support import run_unittest, TESTFN, verbose, requires, \
                               TestSkipped, unlink
 
 try:

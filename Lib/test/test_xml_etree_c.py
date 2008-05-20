@@ -3,7 +3,7 @@
 import doctest
 import sys
 
-from test import test_support
+from test import support
 
 from xml.etree import cElementTree as ET
 
@@ -214,7 +214,7 @@ def bug_1534630():
 
 def test_main():
     from test import test_xml_etree_c
-    test_support.run_doctest(test_xml_etree_c, verbosity=True)
+    support.run_doctest(test_xml_etree_c, verbosity=True)
 
 if __name__ == '__main__':
     test_main()

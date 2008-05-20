@@ -9,7 +9,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import test.test_support, unittest
+import test.support, unittest
 
 import codecs
 
@@ -50,7 +50,7 @@ class CharmapCodecTest(unittest.TestCase):
         self.assertRaises(UnicodeError, str, b'abc\001', codecname)
 
 def test_main():
-    test.test_support.run_unittest(CharmapCodecTest)
+    test.support.run_unittest(CharmapCodecTest)
 
 if __name__ == "__main__":
     test_main()

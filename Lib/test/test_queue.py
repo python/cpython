@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 import unittest
-from test import test_support
+from test import support
 
 QUEUE_SIZE = 5
 
@@ -318,7 +318,7 @@ class FailingQueueTest(unittest.TestCase, BlockingTestMixin):
 
 
 def test_main():
-    test_support.run_unittest(QueueTest, LifoQueueTest, PriorityQueueTest,
+    support.run_unittest(QueueTest, LifoQueueTest, PriorityQueueTest,
                               FailingQueueTest)
 
 

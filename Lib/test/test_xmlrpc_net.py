@@ -4,7 +4,7 @@ import errno
 import socket
 import sys
 import unittest
-from test import test_support
+from test import support
 
 import xmlrpclib
 
@@ -37,8 +37,8 @@ class CurrentTimeTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.requires("network")
-    test_support.run_unittest(CurrentTimeTest)
+    support.requires("network")
+    support.run_unittest(CurrentTimeTest)
 
 if __name__ == "__main__":
     test_main()

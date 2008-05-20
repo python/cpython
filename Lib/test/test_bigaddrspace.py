@@ -1,5 +1,5 @@
-from test import test_support
-from test.test_support import bigaddrspacetest, MAX_Py_ssize_t
+from test import support
+from test.support import bigaddrspacetest, MAX_Py_ssize_t
 
 import unittest
 import operator
@@ -38,9 +38,9 @@ class StrTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(StrTest)
+    support.run_unittest(StrTest)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        test_support.set_memlimit(sys.argv[1])
+        support.set_memlimit(sys.argv[1])
     test_main()

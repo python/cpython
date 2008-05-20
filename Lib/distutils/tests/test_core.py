@@ -5,7 +5,7 @@ import distutils.core
 import os
 import shutil
 import sys
-import test.test_support
+import test.support
 import unittest
 
 
@@ -39,13 +39,13 @@ class CoreTestCase(unittest.TestCase):
         self.cleanup_testfn()
 
     def cleanup_testfn(self):
-        path = test.test_support.TESTFN
+        path = test.support.TESTFN
         if os.path.isfile(path):
             os.remove(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
 
-    def write_setup(self, text, path=test.test_support.TESTFN):
+    def write_setup(self, text, path=test.support.TESTFN):
         open(path, "w").write(text)
         return path
 
@@ -63,8 +63,8 @@ class CoreTestCase(unittest.TestCase):
         cwd = os.getcwd()
 
         # Create a directory and write the setup.py file there:
-        os.mkdir(test.test_support.TESTFN)
-        setup_py = os.path.join(test.test_support.TESTFN, "setup.py")
+        os.mkdir(test.support.TESTFN)
+        setup_py = os.path.join(test.support.TESTFN, "setup.py")
         distutils.core.run_setup(
             self.write_setup(setup_prints_cwd, path=setup_py))
 

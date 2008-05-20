@@ -4,7 +4,7 @@ from __future__ import division
 # trick just part of test_long into using future division.
 
 import unittest
-from test.test_support import run_unittest
+from test.support import run_unittest
 
 class TrueDivisionTests(unittest.TestCase):
     def test(self):

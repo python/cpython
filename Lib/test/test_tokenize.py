@@ -60,7 +60,7 @@ two trailing blanks apparent in the expected output.
     ...           "  print(x)\\n")
     True
 
-    >>> f = test_support.findfile("tokenize_tests.txt")
+    >>> f = support.findfile("tokenize_tests.txt")
     >>> roundtrip(open(f, 'rb'))
     True
 
@@ -522,7 +522,7 @@ pass the '-ucompiler' option to process the full directory.
     >>> tempdir = os.path.dirname(f) or os.curdir
     >>> testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
 
-    >>> if not test_support.is_resource_enabled("compiler"):
+    >>> if not support.is_resource_enabled("compiler"):
     ...     testfiles = random.sample(testfiles, 10)
     ...
     >>> for testfile in testfiles:
@@ -533,7 +533,7 @@ pass the '-ucompiler' option to process the full directory.
     True
 """
 
-from test import test_support
+from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, tok_name, detect_encoding)
 from io import BytesIO
@@ -842,11 +842,11 @@ __test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
 def test_main():
     from test import test_tokenize
-    test_support.run_doctest(test_tokenize, True)
-    test_support.run_unittest(TestTokenizerAdheresToPep0263)
-    test_support.run_unittest(Test_Tokenize)
-    test_support.run_unittest(TestDetectEncoding)
-    test_support.run_unittest(TestTokenize)
+    support.run_doctest(test_tokenize, True)
+    support.run_unittest(TestTokenizerAdheresToPep0263)
+    support.run_unittest(Test_Tokenize)
+    support.run_unittest(TestDetectEncoding)
+    support.run_unittest(TestTokenize)
 
 if __name__ == "__main__":
     test_main()

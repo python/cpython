@@ -4,9 +4,9 @@ import thread # If this fails, we can't test this module
 import asyncore, asynchat, socket, threading, time
 import unittest
 import sys
-from test import test_support
+from test import support
 
-HOST = test_support.HOST
+HOST = support.HOST
 SERVER_QUIT = b'QUIT\n'
 
 class echo_server(threading.Thread):
@@ -18,7 +18,7 @@ class echo_server(threading.Thread):
         threading.Thread.__init__(self)
         self.event = event
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.port = test_support.bind_port(self.sock)
+        self.port = support.bind_port(self.sock)
 
     def run(self):
         self.sock.listen(1)
@@ -248,7 +248,7 @@ class TestFifo(unittest.TestCase):
 
 
 def test_main(verbose=None):
-    test_support.run_unittest(TestAsynchat, TestAsynchat_WithPoll,
+    support.run_unittest(TestAsynchat, TestAsynchat_WithPoll,
                               TestHelperFunctions, TestFifo)
 
 if __name__ == "__main__":

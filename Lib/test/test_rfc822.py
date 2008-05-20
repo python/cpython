@@ -1,6 +1,6 @@
 import rfc822
 import unittest
-from test import test_support
+from test import support
 
 try:
     from io import StringIO
@@ -249,7 +249,7 @@ A test message.
 
 
 def test_main():
-    test_support.run_unittest(MessageTestCase)
+    support.run_unittest(MessageTestCase)
 
 
 if __name__ == "__main__":

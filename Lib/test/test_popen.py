@@ -5,7 +5,7 @@
 """
 
 import unittest
-from test import test_support
+from test import support
 import os, sys
 
 # Test that command-lines get down as we expect.
@@ -40,10 +40,10 @@ class PopenTest(unittest.TestCase):
             'foo "a \\"quoted\\" arg" bar',
             ["foo", 'a "quoted" arg', "bar"]
         )
-        test_support.reap_children()
+        support.reap_children()
 
 def test_main():
-    test_support.run_unittest(PopenTest)
+    support.run_unittest(PopenTest)
 
 if __name__ == "__main__":
     test_main()

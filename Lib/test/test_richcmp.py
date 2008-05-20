@@ -1,7 +1,7 @@
 # Tests for rich comparisons
 
 import unittest
-from test import test_support
+from test import support
 
 import operator
 
@@ -29,7 +29,7 @@ class Number:
         return self.x >= other
 
     def __cmp__(self, other):
-        raise test_support.TestFailed("Number.__cmp__() should not be called")
+        raise support.TestFailed("Number.__cmp__() should not be called")
 
     def __repr__(self):
         return "Number(%r)" % (self.x, )
@@ -55,7 +55,7 @@ class Vector:
         raise TypeError("Vectors cannot be used in Boolean contexts")
 
     def __cmp__(self, other):
-        raise test_support.TestFailed("Vector.__cmp__() should not be called")
+        raise support.TestFailed("Vector.__cmp__() should not be called")
 
     def __repr__(self):
         return "Vector(%r)" % (self.data, )
@@ -387,11 +387,11 @@ class HashableTest(unittest.TestCase):
             self.assertEquals(str(e),
                               "unhashable type: 'DumbEqualityWithoutHash'")
         else:
-            raise test_support.TestFailed("Should not be here")
+            raise support.TestFailed("Should not be here")
 
 
 def test_main():
-    test_support.run_unittest(VectorTest, NumberTest, MiscTest, DictTest, ListTest, HashableTest)
+    support.run_unittest(VectorTest, NumberTest, MiscTest, DictTest, ListTest, HashableTest)
 
 if __name__ == "__main__":
     test_main()

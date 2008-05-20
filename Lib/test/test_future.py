@@ -1,7 +1,7 @@
 # Test various flavors of legal and illegal future statements
 
 import unittest
-from test import test_support
+from test import support
 import re
 
 rx = re.compile('\((\S+).py, line (\d+)')
@@ -13,17 +13,17 @@ def get_error_location(msg):
 class FutureTest(unittest.TestCase):
 
     def test_future1(self):
-        test_support.unload('test_future1')
+        support.unload('test_future1')
         from test import test_future1
         self.assertEqual(test_future1.result, 6)
 
     def test_future2(self):
-        test_support.unload('test_future2')
+        support.unload('test_future2')
         from test import test_future2
         self.assertEqual(test_future2.result, 6)
 
     def test_future3(self):
-        test_support.unload('test_future3')
+        support.unload('test_future3')
         from test import test_future3
 
     def test_badfuture3(self):
@@ -104,7 +104,7 @@ class FutureTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(FutureTest)
+    support.run_unittest(FutureTest)
 
 if __name__ == "__main__":
     test_main()

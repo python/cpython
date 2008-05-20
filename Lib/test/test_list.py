@@ -1,5 +1,5 @@
 import sys
-from test import test_support, list_tests
+from test import support, list_tests
 
 class ListTest(list_tests.CommonTest):
     type2test = list
@@ -43,7 +43,7 @@ class ListTest(list_tests.CommonTest):
         self.assertRaises((MemoryError, OverflowError), imul, lst, n)
 
 def test_main(verbose=None):
-    test_support.run_unittest(ListTest)
+    support.run_unittest(ListTest)
 
     # verify reference counting
     import sys
@@ -51,7 +51,7 @@ def test_main(verbose=None):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(ListTest)
+            support.run_unittest(ListTest)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)

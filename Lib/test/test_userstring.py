@@ -3,7 +3,7 @@
 # UserString instances should behave similar to builtin string objects.
 
 import string
-from test import test_support, string_tests
+from test import support, string_tests
 
 from collections import UserString
 
@@ -43,7 +43,7 @@ class UserStringTest(
 
 
 def test_main():
-    test_support.run_unittest(UserStringTest)
+    support.run_unittest(UserStringTest)
 
 if __name__ == "__main__":
     test_main()

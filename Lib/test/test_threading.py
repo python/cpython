@@ -1,7 +1,7 @@
 # Very rudimentary test of threading module
 
-import test.test_support
-from test.test_support import verbose
+import test.support
+from test.support import verbose
 import random
 import sys
 import threading
@@ -356,7 +356,7 @@ class ThreadingExceptionTests(unittest.TestCase):
 
 
 def test_main():
-    test.test_support.run_unittest(ThreadTests,
+    test.support.run_unittest(ThreadTests,
                                    ThreadingExceptionTests)
 
 if __name__ == "__main__":

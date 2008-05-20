@@ -11,7 +11,7 @@ import struct
 import sys
 import unittest
 import warnings
-from test import test_support, string_tests
+from test import support, string_tests
 
 # Error handling (bad decoder return)
 def search_function(encoding):
@@ -671,7 +671,7 @@ class UnicodeTest(
                 return '\u1234'
         self.assertEqual('%s' % Wrapper(), '\u1234')
 
-    @test_support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
         self.assertEqual('1.0', '%.1f' % 1.0)
@@ -1077,7 +1077,7 @@ class UnicodeTest(
 
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

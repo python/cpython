@@ -7,18 +7,18 @@
 import binhex
 import os
 import unittest
-from test import test_support
+from test import support
 
 
 class BinHexTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.fname1 = test_support.TESTFN + "1"
-        self.fname2 = test_support.TESTFN + "2"
+        self.fname1 = support.TESTFN + "1"
+        self.fname2 = support.TESTFN + "2"
 
     def tearDown(self):
-        test_support.unlink(self.fname1)
-        test_support.unlink(self.fname2)
+        support.unlink(self.fname1)
+        support.unlink(self.fname2)
 
     DATA = b'Jack is my hero'
 
@@ -39,7 +39,7 @@ class BinHexTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(BinHexTestCase)
+    support.run_unittest(BinHexTestCase)
 
 
 if __name__ == "__main__":

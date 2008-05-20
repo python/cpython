@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 import unittest
 import codecs
 import sys, _testcapi, io
@@ -1032,7 +1032,7 @@ class NameprepTest(unittest.TestCase):
                 try:
                     self.assertEquals(nameprep(orig), prepped)
                 except Exception as e:
-                    raise test_support.TestFailed("Test 3.%d: %s" % (pos+1, str(e)))
+                    raise support.TestFailed("Test 3.%d: %s" % (pos+1, str(e)))
 
 class IDNACodecTest(unittest.TestCase):
     def test_builtin_decode(self):
@@ -1477,7 +1477,7 @@ class WithStmtTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         UTF32Test,
         UTF32LETest,
         UTF32BETest,

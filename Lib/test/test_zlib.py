@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 import zlib
 import binascii
 import random
@@ -460,7 +460,7 @@ LAERTES
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         ChecksumTestCase,
         ExceptionTestCase,
         CompressTestCase,

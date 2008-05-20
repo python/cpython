@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from test import test_support
+from test import support
 import unittest
 import urlparse
 
@@ -311,7 +311,7 @@ class UrlParseTestCase(unittest.TestCase):
                          ('http', 'example.com', '', '', 'blahblah=/foo', ''))
 
 def test_main():
-    test_support.run_unittest(UrlParseTestCase)
+    support.run_unittest(UrlParseTestCase)
 
 if __name__ == "__main__":
     test_main()

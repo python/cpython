@@ -2,7 +2,7 @@ import sys
 import unittest
 import platform
 
-from test import test_support
+from test import support
 
 class PlatformTest(unittest.TestCase):
     def test_architecture(self):
@@ -82,7 +82,7 @@ class PlatformTest(unittest.TestCase):
         res = platform.libc_ver(sys.executable)
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         PlatformTest
     )
 

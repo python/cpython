@@ -5,7 +5,7 @@
 import doctest
 import sys
 
-from test import test_support
+from test import support
 
 SAMPLE_XML = """
 <body>
@@ -345,7 +345,7 @@ def xinclude():
 
 def test_main():
     from test import test_xml_etree
-    test_support.run_doctest(test_xml_etree, verbosity=True)
+    support.run_doctest(test_xml_etree, verbosity=True)
 
 if __name__ == '__main__':
     test_main()

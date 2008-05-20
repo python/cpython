@@ -1,8 +1,8 @@
 # Ridiculously simple test of the winsound module for Windows.
 
 import unittest
-from test import test_support
-test_support.requires('audio')
+from test import support
+support.requires('audio')
 import winsound, time
 import os
 import subprocess
@@ -226,7 +226,7 @@ def _have_soundcard():
 
 
 def test_main():
-    test_support.run_unittest(BeepTest, MessageBeepTest, PlaySoundTest)
+    support.run_unittest(BeepTest, MessageBeepTest, PlaySoundTest)
 
 if __name__=="__main__":
     test_main()

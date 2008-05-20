@@ -1,7 +1,7 @@
 # Test properties of bool promised by PEP 285
 
 import unittest
-from test import test_support
+from test import support
 
 import os
 
@@ -26,14 +26,14 @@ class BoolTest(unittest.TestCase):
 
     def test_print(self):
         try:
-            fo = open(test_support.TESTFN, "w")
+            fo = open(support.TESTFN, "w")
             print(False, True, file=fo)
             fo.close()
-            fo = open(test_support.TESTFN, "r")
+            fo = open(support.TESTFN, "r")
             self.assertEqual(fo.read(), 'False True\n')
         finally:
             fo.close()
-            os.remove(test_support.TESTFN)
+            os.remove(support.TESTFN)
 
     def test_repr(self):
         self.assertEqual(repr(False), 'False')
@@ -234,12 +234,12 @@ class BoolTest(unittest.TestCase):
 
     def test_fileclosed(self):
         try:
-            f = open(test_support.TESTFN, "w")
+            f = open(support.TESTFN, "w")
             self.assertIs(f.closed, False)
             f.close()
             self.assertIs(f.closed, True)
         finally:
-            os.remove(test_support.TESTFN)
+            os.remove(support.TESTFN)
 
     def test_operator(self):
         import operator
@@ -331,7 +331,7 @@ class BoolTest(unittest.TestCase):
                     self.assertEqual(str(e_bool), str(e_len))
 
 def test_main():
-    test_support.run_unittest(BoolTest)
+    support.run_unittest(BoolTest)
 
 if __name__ == "__main__":
     test_main()

@@ -10,7 +10,7 @@ import errno
 import unittest
 import tarfile
 
-from test import test_support
+from test import support
 
 # Check for our compression modules.
 try:
@@ -27,7 +27,7 @@ def md5sum(data):
     return md5(data).hexdigest()
 
 def path(path):
-    return test_support.findfile(path)
+    return support.findfile(path)
 
 TEMPDIR = os.path.join(tempfile.gettempdir(), "test_tarfile_tmp")
 tarname = path("testtar.tar")
@@ -1171,7 +1171,7 @@ def test_main():
         ]
 
     try:
-        test_support.run_unittest(*tests)
+        support.run_unittest(*tests)
     finally:
         if os.path.exists(TEMPDIR):
             shutil.rmtree(TEMPDIR)

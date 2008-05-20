@@ -1,6 +1,6 @@
 import unittest
 
-from test.test_support import run_unittest
+from test.support import run_unittest
 import ctypes.test
 
 def test_main():

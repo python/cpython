@@ -11,10 +11,10 @@ We're defining four helper functions
     ...     print(a, b)
 
     >>> def f(*a, **k):
-    ...     print(a, test_support.sortdict(k))
+    ...     print(a, support.sortdict(k))
 
     >>> def g(x, *y, **z):
-    ...     print(x, y, test_support.sortdict(z))
+    ...     print(x, y, support.sortdict(z))
 
     >>> def h(j=1, a=2, h=3):
     ...     print(j, a, h)
@@ -245,11 +245,11 @@ TypeError if te dictionary is not empty
 
 """
 
-from test import test_support
+from test import support
 
 def test_main():
     from test import test_extcall # self import
-    test_support.run_doctest(test_extcall, True)
+    support.run_doctest(test_extcall, True)
 
 if __name__ == '__main__':
     test_main()

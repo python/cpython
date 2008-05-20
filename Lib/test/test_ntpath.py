@@ -1,7 +1,7 @@
 import ntpath
 import os
-from test.test_support import verbose, TestFailed
-import test.test_support as test_support
+from test.support import verbose, TestFailed
+import test.support as support
 import unittest
 
 
@@ -180,7 +180,7 @@ class TestNtpath(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestNtpath)
+    support.run_unittest(TestNtpath)
 
 
 if __name__ == "__main__":

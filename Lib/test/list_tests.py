@@ -5,7 +5,7 @@ Tests common to list and UserList.UserList
 import sys
 import os
 
-from test import test_support, seq_tests
+from test import support, seq_tests
 
 def CmpToKey(mycmp):
     'Convert a cmp= function into a key= function'
@@ -66,14 +66,14 @@ class CommonTest(seq_tests.CommonTest):
         d.append(d)
         d.append(400)
         try:
-            fo = open(test_support.TESTFN, "w")
+            fo = open(support.TESTFN, "w")
             fo.write(str(d))
             fo.close()
-            fo = open(test_support.TESTFN, "r")
+            fo = open(support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(d))
         finally:
             fo.close()
-            os.remove(test_support.TESTFN)
+            os.remove(support.TESTFN)
 
     def test_set_subscript(self):
         a = self.type2test(range(20))

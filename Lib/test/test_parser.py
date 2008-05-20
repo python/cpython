@@ -1,7 +1,7 @@
 import parser
 import unittest
 import sys
-from test import test_support
+from test import support
 
 #
 #  First, we test that we can generate trees from valid source fragments,
@@ -471,7 +471,7 @@ class ParserStackLimitTestCase(unittest.TestCase):
         self.assertRaises(MemoryError, parser.expr, e)
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         RoundtripLegalSyntaxTestCase,
         IllegalSyntaxTestCase,
         CompileTestCase,

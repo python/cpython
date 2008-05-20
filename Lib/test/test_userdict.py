@@ -1,6 +1,6 @@
 # Check every path through every method of UserDict
 
-from test import test_support, mapping_tests
+from test import support, mapping_tests
 import collections
 
 d0 = {}
@@ -190,7 +190,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         UserDictTest,
     )
 

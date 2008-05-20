@@ -1,7 +1,7 @@
 """Unit tests for __instancecheck__ and __subclasscheck__."""
 
 import unittest
-from test import test_support
+from test import support
 
 
 class ABC(type):
@@ -56,7 +56,7 @@ class TypeChecksTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TypeChecksTest)
+    support.run_unittest(TypeChecksTest)
 
 
 if __name__ == "__main__":

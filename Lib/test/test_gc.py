@@ -1,5 +1,5 @@
 import unittest
-from test.test_support import verbose, run_unittest
+from test.support import verbose, run_unittest
 import sys
 import gc
 import weakref

@@ -7,7 +7,7 @@ import sys
 import tempfile
 import time
 import unittest
-from test.test_support import requires, verbose, run_unittest, unlink, rmtree
+from test.support import requires, verbose, run_unittest, unlink, rmtree
 
 # When running as a script instead of within the regrtest framework, skip the
 # requires test, since it's obvious we want to run them.

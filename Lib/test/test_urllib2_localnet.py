@@ -7,7 +7,7 @@ import urllib2
 import BaseHTTPServer
 import unittest
 import hashlib
-from test import test_support
+from test import support
 
 # Loopback http server infrastructure
 
@@ -481,10 +481,10 @@ def test_main():
     # (Lib/test/regrtest.py -u network) since all tests here are only
     # localhost.  However, if this is a bad rationale, then uncomment
     # the next line.
-    #test_support.requires("network")
+    #support.requires("network")
 
-    test_support.run_unittest(ProxyAuthTests)
-    test_support.run_unittest(TestUrlopen)
+    support.run_unittest(ProxyAuthTests)
+    support.run_unittest(TestUrlopen)
 
 if __name__ == "__main__":
     test_main()

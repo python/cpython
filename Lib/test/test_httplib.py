@@ -4,9 +4,9 @@ import socket
 
 from unittest import TestCase
 
-from test import test_support
+from test import support
 
-HOST = test_support.HOST
+HOST = support.HOST
 
 class FakeSocket:
     def __init__(self, text, fileclass=io.BytesIO):
@@ -206,7 +206,7 @@ class TimeoutTest(TestCase):
 
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        TimeoutTest.PORT = test_support.bind_port(self.serv)
+        TimeoutTest.PORT = support.bind_port(self.serv)
         self.serv.listen(5)
 
     def tearDown(self):
@@ -252,7 +252,7 @@ class HTTPSTimeoutTest(TestCase):
             self.assertEqual(h.timeout, 30)
 
 def test_main(verbose=None):
-    test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
+    support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
                               HTTPSTimeoutTest)
 
 if __name__ == '__main__':

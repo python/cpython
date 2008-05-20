@@ -4,7 +4,7 @@ from _testcapi import traceback_print
 from io import StringIO
 import sys
 import unittest
-from test.test_support import run_unittest, is_jython, Error
+from test.support import run_unittest, is_jython, Error
 
 import traceback
 

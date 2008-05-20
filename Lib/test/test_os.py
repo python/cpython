@@ -6,22 +6,22 @@ import os
 import unittest
 import warnings
 import sys
-from test import test_support
+from test import support
 
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
     def setUp(self):
-        if os.path.exists(test_support.TESTFN):
-            os.unlink(test_support.TESTFN)
+        if os.path.exists(support.TESTFN):
+            os.unlink(support.TESTFN)
     tearDown = setUp
 
     def test_access(self):
-        f = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
+        f = os.open(support.TESTFN, os.O_CREAT|os.O_RDWR)
         os.close(f)
-        self.assert_(os.access(test_support.TESTFN, os.W_OK))
+        self.assert_(os.access(support.TESTFN, os.W_OK))
 
     def test_closerange(self):
-        f = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
+        f = os.open(support.TESTFN, os.O_CREAT|os.O_RDWR)
         # close a fd that is open, and one that isn't
         os.closerange(f, f+2)
         self.assertRaises(OSError, os.write, f, "a")
@@ -29,12 +29,12 @@ class FileTests(unittest.TestCase):
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
         self.files = []
-        os.mkdir(test_support.TESTFN)
+        os.mkdir(support.TESTFN)
 
     def tearDown(self):
         for name in self.files:
             os.unlink(name)
-        os.rmdir(test_support.TESTFN)
+        os.rmdir(support.TESTFN)
 
     def check_tempfile(self, name):
         # make sure it doesn't already exist:
@@ -51,10 +51,10 @@ class TemporaryFileTests(unittest.TestCase):
                                 r"test_os$")
         self.check_tempfile(os.tempnam())
 
-        name = os.tempnam(test_support.TESTFN)
+        name = os.tempnam(support.TESTFN)
         self.check_tempfile(name)
 
-        name = os.tempnam(test_support.TESTFN, "pfx")
+        name = os.tempnam(support.TESTFN, "pfx")
         self.assert_(os.path.basename(name)[:3] == "pfx")
         self.check_tempfile(name)
 
@@ -137,15 +137,15 @@ class TemporaryFileTests(unittest.TestCase):
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
     def setUp(self):
-        os.mkdir(test_support.TESTFN)
-        self.fname = os.path.join(test_support.TESTFN, "f1")
+        os.mkdir(support.TESTFN)
+        self.fname = os.path.join(support.TESTFN, "f1")
         f = open(self.fname, 'wb')
         f.write(b"ABC")
         f.close()
 
     def tearDown(self):
         os.unlink(self.fname)
-        os.rmdir(test_support.TESTFN)
+        os.rmdir(support.TESTFN)
 
     def test_stat_attributes(self):
         if not hasattr(os, "stat"):
@@ -261,11 +261,11 @@ class StatAttributeTests(unittest.TestCase):
 
     def test_utime_dir(self):
         delta = 1000000
-        st = os.stat(test_support.TESTFN)
+        st = os.stat(support.TESTFN)
         # round to int, because some systems may support sub-second
         # time stamps in stat, but not in utime.
-        os.utime(test_support.TESTFN, (st.st_atime, int(st.st_mtime-delta)))
-        st2 = os.stat(test_support.TESTFN)
+        os.utime(support.TESTFN, (st.st_atime, int(st.st_mtime-delta)))
+        st2 = os.stat(support.TESTFN)
         self.assertEquals(st2.st_mtime, int(st.st_mtime-delta))
 
     # Restrict test to Win32, since there is no guarantee other
@@ -280,7 +280,7 @@ class StatAttributeTests(unittest.TestCase):
             if kernel32.GetVolumeInformationA(root, None, 0, None, None, None, buf, len(buf)):
                 return buf.value
 
-        if get_file_system(test_support.TESTFN) == "NTFS":
+        if get_file_system(support.TESTFN) == "NTFS":
             def test_1565150(self):
                 t1 = 1159195039.25
                 os.utime(self.fname, (t1, t1))
@@ -364,7 +364,7 @@ class WalkTests(unittest.TestCase):
         #           link/           a symlink to TESTFN.2
         #       TEST2/
         #         tmp4              a lone file
-        walk_path = join(test_support.TESTFN, "TEST1")
+        walk_path = join(support.TESTFN, "TEST1")
         sub1_path = join(walk_path, "SUB1")
         sub11_path = join(sub1_path, "SUB11")
         sub2_path = join(walk_path, "SUB2")
@@ -372,8 +372,8 @@ class WalkTests(unittest.TestCase):
         tmp2_path = join(sub1_path, "tmp2")
         tmp3_path = join(sub2_path, "tmp3")
         link_path = join(sub2_path, "link")
-        t2_path = join(test_support.TESTFN, "TEST2")
-        tmp4_path = join(test_support.TESTFN, "TEST2", "tmp4")
+        t2_path = join(support.TESTFN, "TEST2")
+        tmp4_path = join(support.TESTFN, "TEST2", "tmp4")
 
         # Create stuff.
         os.makedirs(sub11_path)
@@ -442,7 +442,7 @@ class WalkTests(unittest.TestCase):
         # Windows, which doesn't have a recursive delete command.  The
         # (not so) subtlety is that rmdir will fail unless the dir's
         # kids are removed first, so bottom up is essential.
-        for root, dirs, files in os.walk(test_support.TESTFN, topdown=False):
+        for root, dirs, files in os.walk(support.TESTFN, topdown=False):
             for name in files:
                 os.remove(os.path.join(root, name))
             for name in dirs:
@@ -451,14 +451,14 @@ class WalkTests(unittest.TestCase):
                     os.rmdir(dirname)
                 else:
                     os.remove(dirname)
-        os.rmdir(test_support.TESTFN)
+        os.rmdir(support.TESTFN)
 
 class MakedirTests(unittest.TestCase):
     def setUp(self):
-        os.mkdir(test_support.TESTFN)
+        os.mkdir(support.TESTFN)
 
     def test_makedir(self):
-        base = test_support.TESTFN
+        base = support.TESTFN
         path = os.path.join(base, 'dir1', 'dir2', 'dir3')
         os.makedirs(path)             # Should work
         path = os.path.join(base, 'dir1', 'dir2', 'dir3', 'dir4')
@@ -473,12 +473,12 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(path)
 
     def tearDown(self):
-        path = os.path.join(test_support.TESTFN, 'dir1', 'dir2', 'dir3',
+        path = os.path.join(support.TESTFN, 'dir1', 'dir2', 'dir3',
                             'dir4', 'dir5', 'dir6')
         # If the tests failed, the bottom-most directory ('../dir6')
         # may not have been created, so we look for the outermost directory
         # that exists.
-        while not os.path.exists(path) and path != test_support.TESTFN:
+        while not os.path.exists(path) and path != support.TESTFN:
             path = os.path.dirname(path)
 
         os.removedirs(path)
@@ -511,32 +511,32 @@ class ExecTests(unittest.TestCase):
 
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
-        self.assertRaises(WindowsError, os.rename, test_support.TESTFN, test_support.TESTFN+".bak")
+        self.assertRaises(WindowsError, os.rename, support.TESTFN, support.TESTFN+".bak")
 
     def test_remove(self):
-        self.assertRaises(WindowsError, os.remove, test_support.TESTFN)
+        self.assertRaises(WindowsError, os.remove, support.TESTFN)
 
     def test_chdir(self):
-        self.assertRaises(WindowsError, os.chdir, test_support.TESTFN)
+        self.assertRaises(WindowsError, os.chdir, support.TESTFN)
 
     def test_mkdir(self):
-        self.assertRaises(WindowsError, os.chdir, test_support.TESTFN)
+        self.assertRaises(WindowsError, os.chdir, support.TESTFN)
 
     def test_utime(self):
-        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, None)
+        self.assertRaises(WindowsError, os.utime, support.TESTFN, None)
 
     def test_access(self):
-        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
+        self.assertRaises(WindowsError, os.utime, support.TESTFN, 0)
 
     def test_chmod(self):
-        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
+        self.assertRaises(WindowsError, os.utime, support.TESTFN, 0)
 
 if sys.platform != 'win32':
     class Win32ErrorTests(unittest.TestCase):
         pass
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         FileTests,
         StatAttributeTests,
         EnvironTests,

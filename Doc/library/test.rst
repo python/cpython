@@ -179,14 +179,14 @@ at the top-level directory where Python was built. On Windows, executing
 tests.
 
 
-:mod:`test.test_support` --- Utility functions for tests
+:mod:`test.support` --- Utility functions for tests
 ========================================================
 
-.. module:: test.test_support
+.. module:: test.support
    :synopsis: Support for Python regression tests.
 
 
-The :mod:`test.test_support` module provides support for Python's regression
+The :mod:`test.support` module provides support for Python's regression
 tests.
 
 This module defines the following exceptions:
@@ -236,7 +236,7 @@ The :mod:`test.test_support` module defines the following constants:
    Set to the path that a temporary file may be created at. Any temporary that is
    created should be closed and unlinked (removed).
 
-The :mod:`test.test_support` module defines the following functions:
+The :mod:`test.support` module defines the following functions:
 
 
 .. function:: forget(module_name)
@@ -311,7 +311,7 @@ The :mod:`test.test_support` module defines the following functions:
       assert s.getvalue() == "hello"
 
 
-The :mod:`test.test_support` module defines the following classes:
+The :mod:`test.support` module defines the following classes:
 
 .. class:: TransientResource(exc[, **kwargs])
 

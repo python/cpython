@@ -4,7 +4,7 @@ XXX We need more tests! Some tests are in test_bytes
 """
 
 import unittest
-import test.test_support
+import test.support
 
 class MemoryviewTest(unittest.TestCase):
 
@@ -18,7 +18,7 @@ class MemoryviewTest(unittest.TestCase):
         self.assertRaises(TypeError, memoryview, ob, argument=True)
 
 def test_main():
-    test.test_support.run_unittest(MemoryviewTest)
+    test.support.run_unittest(MemoryviewTest)
 
 
 if __name__ == "__main__":

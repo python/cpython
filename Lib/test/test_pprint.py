@@ -1,5 +1,5 @@
 import pprint
-import test.test_support
+import test.support
 import unittest
 import test.test_set
 
@@ -411,7 +411,7 @@ class DottedPrettyPrinter(pprint.PrettyPrinter):
 
 
 def test_main():
-    test.test_support.run_unittest(QueryTestCase)
+    test.support.run_unittest(QueryTestCase)
 
 
 if __name__ == "__main__":

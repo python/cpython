@@ -1,5 +1,5 @@
 import unittest
-from test.test_support import run_unittest, TESTFN
+from test.support import run_unittest, TESTFN
 import glob
 import os
 import shutil

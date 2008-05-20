@@ -1,5 +1,5 @@
-from test import test_support
-from test.test_support import bigmemtest, _1G, _2G
+from test import support
+from test.support import bigmemtest, _1G, _2G
 
 import unittest
 import operator
@@ -957,9 +957,9 @@ class ListTest(unittest.TestCase):
         self.assertEquals(l[-10:], [5] * 10)
 
 def test_main():
-    test_support.run_unittest(StrTest, TupleTest, ListTest)
+    support.run_unittest(StrTest, TupleTest, ListTest)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        test_support.set_memlimit(sys.argv[1])
+        support.set_memlimit(sys.argv[1])
     test_main()

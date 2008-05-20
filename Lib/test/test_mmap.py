@@ -1,4 +1,4 @@
-from test.test_support import TESTFN, run_unittest
+from test.support import TESTFN, run_unittest
 import mmap
 import unittest
 import os, re

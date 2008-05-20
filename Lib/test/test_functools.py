@@ -1,6 +1,6 @@
 import functools
 import unittest
-from test import test_support
+from test import support
 from weakref import proxy
 
 @staticmethod
@@ -347,14 +347,14 @@ def test_main(verbose=None):
         TestWraps,
         TestReduce
     )
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(*test_classes)
+            support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)

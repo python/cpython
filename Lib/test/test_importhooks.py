@@ -2,7 +2,7 @@ import sys
 import imp
 import os
 import unittest
-from test import test_support
+from test import support
 
 
 test_src = """\
@@ -265,7 +265,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
             pass
 
 def test_main():
-    test_support.run_unittest(ImportHooksTestCase)
+    support.run_unittest(ImportHooksTestCase)
 
 if __name__ == "__main__":
     test_main()

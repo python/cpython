@@ -235,9 +235,9 @@ Make sure it works with subclassing.
 __test__ = {'doctests' : doctests}
 
 def test_main(verbose=False):
-    from test import test_support
+    from test import support
     from test import test_metaclass
-    test_support.run_doctest(test_metaclass, verbose)
+    support.run_doctest(test_metaclass, verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)

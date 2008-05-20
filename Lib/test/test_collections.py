@@ -1,7 +1,7 @@
 """Unit tests for collections.py."""
 
 import unittest, doctest
-from test import test_support
+from test import support
 from collections import namedtuple
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
@@ -321,8 +321,8 @@ import doctest, collections
 def test_main(verbose=None):
     NamedTupleDocs = doctest.DocTestSuite(module=collections)
     test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs, TestCollectionABCs]
-    test_support.run_unittest(*test_classes)
-    test_support.run_doctest(collections, verbose)
+    support.run_unittest(*test_classes)
+    support.run_doctest(collections, verbose)
 
 
 if __name__ == "__main__":

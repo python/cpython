@@ -1,4 +1,4 @@
-from test.test_support import TESTFN, run_unittest, catch_warning
+from test.support import TESTFN, run_unittest, catch_warning
 
 import unittest
 import os
@@ -8,7 +8,7 @@ import sys
 import py_compile
 import warnings
 import imp
-from test.test_support import unlink, TESTFN, unload
+from test.support import unlink, TESTFN, unload
 
 
 def remove_files(name):
@@ -146,13 +146,13 @@ class ImportTest(unittest.TestCase):
     def test_import_name_binding(self):
         # import x.y.z binds x in the current namespace
         import test as x
-        import test.test_support
+        import test.support
         self.assert_(x is test, x.__name__)
-        self.assert_(hasattr(test.test_support, "__file__"))
+        self.assert_(hasattr(test.support, "__file__"))
 
         # import x.y.z as w binds z as w
-        import test.test_support as y
-        self.assert_(y is test.test_support, y.__name__)
+        import test.support as y
+        self.assert_(y is test.support, y.__name__)
 
     def test_import_initless_directory_warning(self):
         with catch_warning():

@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-1 -*-
-import unittest, test.test_support
+import unittest, test.support
 import sys, io
 
 class SysModuleTest(unittest.TestCase):
@@ -350,7 +350,7 @@ class SysModuleTest(unittest.TestCase):
         #self.assert_(r[0][2] > 100, r[0][2])
 
 def test_main():
-    test.test_support.run_unittest(SysModuleTest)
+    test.support.run_unittest(SysModuleTest)
 
 if __name__ == "__main__":
     test_main()

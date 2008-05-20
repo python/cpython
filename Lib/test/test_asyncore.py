@@ -7,12 +7,12 @@ import threading
 import sys
 import time
 
-from test import test_support
-from test.test_support import TESTFN, run_unittest, unlink
+from test import support
+from test.support import TESTFN, run_unittest, unlink
 from io import BytesIO
 from io import StringIO
 
-HOST = test_support.HOST
+HOST = support.HOST
 
 class dummysocket:
     def __init__(self):
@@ -334,7 +334,7 @@ class DispatcherWithSendTests(unittest.TestCase):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(3)
-        self.port = test_support.bind_port(self.sock)
+        self.port = support.bind_port(self.sock)
 
         cap = BytesIO()
         args = (self.evt, cap, self.sock)

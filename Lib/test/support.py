@@ -1,7 +1,7 @@
 """Supporting definitions for the Python regression tests."""
 
-if __name__ != 'test.test_support':
-    raise ImportError('test_support must be imported from the test package')
+if __name__ != 'test.support':
+    raise ImportError('support must be imported from the test package')
 
 import contextlib
 import errno
@@ -700,7 +700,7 @@ def run_doctest(module, verbosity=None):
     """Run doctest on the given module.  Return (#failures, #tests).
 
     If optional argument verbosity is not specified (or is None), pass
-    test_support's belief about verbosity on to doctest.  Else doctest's
+    support's belief about verbosity on to doctest.  Else doctest's
     usual behavior is used (it searches sys.argv for -v).
     """
 

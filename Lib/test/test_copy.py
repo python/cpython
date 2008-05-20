@@ -4,7 +4,7 @@ import copy
 import copyreg
 
 import unittest
-from test import test_support
+from test import support
 
 class TestCopy(unittest.TestCase):
 
@@ -50,7 +50,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 return ""
             def __reduce__(self):
-                raise test_support.TestFailed("shouldn't call this")
+                raise support.TestFailed("shouldn't call this")
         x = C()
         y = copy.copy(x)
         self.assert_(y is x)
@@ -223,7 +223,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 return ""
             def __reduce__(self):
-                raise test_support.TestFailed("shouldn't call this")
+                raise support.TestFailed("shouldn't call this")
         x = C()
         y = copy.deepcopy(x)
         self.assert_(y is x)
@@ -584,7 +584,7 @@ class TestCopy(unittest.TestCase):
 def global_foo(x, y): return x+y
 
 def test_main():
-    test_support.run_unittest(TestCopy)
+    support.run_unittest(TestCopy)
 
 if __name__ == "__main__":
     test_main()

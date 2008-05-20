@@ -1,5 +1,5 @@
 import unittest
-from test.test_support import check_syntax_error, run_unittest
+from test.support import check_syntax_error, run_unittest
 
 import warnings
 warnings.filterwarnings("ignore", r"import \*", SyntaxWarning, "<test string>")

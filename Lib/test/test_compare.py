@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 class Empty:
     def __repr__(self):
@@ -61,7 +61,7 @@ class ComparisonTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(ComparisonTest)
+    support.run_unittest(ComparisonTest)
 
 if __name__ == '__main__':
     test_main()

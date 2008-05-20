@@ -4,7 +4,7 @@ import shutil
 import gettext
 import unittest
 
-from test import test_support
+from test import support
 
 
 # TODO:
@@ -338,7 +338,7 @@ class WeirdMetadataTest(GettextBaseTest):
 
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == '__main__':
     test_main()

@@ -1,12 +1,12 @@
 import unittest
-from test import test_support
+from test import support
 from itertools import *
 from weakref import proxy
 import sys
 import operator
 import random
 from functools import reduce
-maxsize = test_support.MAX_Py_ssize_t
+maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
 def lzip(*args):
@@ -1391,20 +1391,20 @@ def test_main(verbose=None):
     test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
                     RegressionTests, LengthTransparency,
                     SubclassWithKwargsTest, TestExamples)
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(*test_classes)
+            support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)
 
     # doctest the examples in the library reference
-    test_support.run_doctest(sys.modules[__name__], verbose)
+    support.run_doctest(sys.modules[__name__], verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)

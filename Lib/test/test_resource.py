@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 import resource
 import time
@@ -47,7 +47,7 @@ class ResourceTest(unittest.TestCase):
                     limit_set = True
                 except ValueError:
                     limit_set = False
-                f = open(test_support.TESTFN, "wb")
+                f = open(support.TESTFN, "wb")
                 try:
                     f.write(b"X" * 1024)
                     try:
@@ -73,7 +73,7 @@ class ResourceTest(unittest.TestCase):
             finally:
                 if limit_set:
                     resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
-                test_support.unlink(test_support.TESTFN)
+                support.unlink(support.TESTFN)
 
     def test_fsize_toobig(self):
         # Be sure that setrlimit is checking for really large values
@@ -104,7 +104,7 @@ class ResourceTest(unittest.TestCase):
             pass
 
 def test_main(verbose=None):
-    test_support.run_unittest(ResourceTest)
+    support.run_unittest(ResourceTest)
 
 if __name__ == "__main__":
     test_main()

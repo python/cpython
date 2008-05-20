@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 class DictSetTest(unittest.TestCase):
 
@@ -70,7 +70,7 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(len(values), 2)
 
 def test_main():
-    test_support.run_unittest(DictSetTest)
+    support.run_unittest(DictSetTest)
 
 if __name__ == "__main__":
     test_main()

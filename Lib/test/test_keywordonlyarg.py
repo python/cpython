@@ -6,7 +6,7 @@ __author__ = "Jiwon Seo"
 __email__ = "seojiwon at gmail dot com"
 
 import unittest
-from test.test_support import run_unittest
+from test.support import run_unittest
 
 def posonly_sum(pos_arg1, *arg, **kwarg):
     return pos_arg1 + sum(arg) + sum(kwarg.values())

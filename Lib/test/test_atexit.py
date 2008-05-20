@@ -2,7 +2,7 @@ import sys
 import unittest
 import io
 import atexit
-from test import test_support
+from test import support
 
 ### helpers
 def h1():
@@ -109,7 +109,7 @@ class TestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestCase)
+    support.run_unittest(TestCase)
 
 if __name__ == "__main__":
     test_main()

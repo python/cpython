@@ -1,6 +1,6 @@
 from collections import deque
 import unittest
-from test import test_support, seq_tests
+from test import support, seq_tests
 from weakref import proxy
 import copy
 import pickle
@@ -64,28 +64,28 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), [7, 8, 9])
         d = deque(range(200), maxlen=10)
         d.append(d)
-        test_support.unlink(test_support.TESTFN)
-        fo = open(test_support.TESTFN, "w")
+        support.unlink(support.TESTFN)
+        fo = open(support.TESTFN, "w")
         try:
             fo.write(str(d))
             fo.close()
-            fo = open(test_support.TESTFN, "r")
+            fo = open(support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(d))
         finally:
             fo.close()
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
         d = deque(range(10), maxlen=None)
         self.assertEqual(repr(d), 'deque([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])')
-        fo = open(test_support.TESTFN, "w")
+        fo = open(support.TESTFN, "w")
         try:
             fo.write(str(d))
             fo.close()
-            fo = open(test_support.TESTFN, "r")
+            fo = open(support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(d))
         finally:
             fo.close()
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
     def test_comparisons(self):
         d = deque('xabc'); d.popleft()
@@ -284,15 +284,15 @@ class TestBasic(unittest.TestCase):
         d = deque(range(200))
         d.append(d)
         try:
-            test_support.unlink(test_support.TESTFN)
-            fo = open(test_support.TESTFN, "w")
+            support.unlink(support.TESTFN)
+            fo = open(support.TESTFN, "w")
             print(d, file=fo, end='')
             fo.close()
-            fo = open(test_support.TESTFN, "r")
+            fo = open(support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(d))
         finally:
             fo.close()
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
     def test_init(self):
         self.assertRaises(TypeError, deque, 'abc', 2, 3);
@@ -670,21 +670,21 @@ def test_main(verbose=None):
         TestSubclassWithKwargs,
     )
 
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(*test_classes)
+            support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)
 
     # doctests
     from test import test_deque
-    test_support.run_doctest(test_deque, verbose)
+    support.run_doctest(test_deque, verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)

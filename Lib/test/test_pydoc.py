@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 import unittest
 import pydoc
 
@@ -19,7 +19,7 @@ class TestDescriptions(unittest.TestCase):
                         in pydoc.render_doc(c))
 
 def test_main():
-    test_support.run_unittest(TestDescriptions)
+    support.run_unittest(TestDescriptions)
 
 if __name__ == "__main__":
     unittest.main()

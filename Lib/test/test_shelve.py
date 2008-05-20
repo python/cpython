@@ -1,7 +1,7 @@
 import unittest
 import shelve
 import glob
-from test import test_support
+from test import support
 from collections import MutableMapping
 from test.test_anydbm import dbm_iterator
 
@@ -45,7 +45,7 @@ class TestCase(unittest.TestCase):
 
     def tearDown(self):
         for f in glob.glob(self.fn+"*"):
-            test_support.unlink(f)
+            support.unlink(f)
 
     def test_ascii_file_shelf(self):
         s = shelve.open(self.fn, protocol=0)
@@ -133,7 +133,7 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
         self._db = []
         if not self._in_mem:
             for f in glob.glob(self.fn+"*"):
-                test_support.unlink(f)
+                support.unlink(f)
 
 class TestAsciiFileShelve(TestShelveBase):
     _args={'protocol':0}
@@ -156,7 +156,7 @@ class TestProto2MemShelve(TestShelveBase):
 
 def test_main():
     for module in dbm_iterator():
-        test_support.run_unittest(
+        support.run_unittest(
             TestAsciiFileShelve,
             TestBinaryFileShelve,
             TestProto2FileShelve,

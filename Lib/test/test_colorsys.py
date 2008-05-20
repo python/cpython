@@ -1,4 +1,4 @@
-import unittest, test.test_support
+import unittest, test.support
 import colorsys
 
 def frange(start, stop, step):
@@ -70,7 +70,7 @@ class ColorsysTest(unittest.TestCase):
             self.assertTripleEqual(rgb, colorsys.hls_to_rgb(*hls))
 
 def test_main():
-    test.test_support.run_unittest(ColorsysTest)
+    test.support.run_unittest(ColorsysTest)
 
 if __name__ == "__main__":
     test_main()

@@ -34,7 +34,7 @@ from email import iterators
 from email import base64mime
 from email import quoprimime
 
-from test.test_support import findfile, run_unittest
+from test.support import findfile, run_unittest
 from email.test import __file__ as landmark
 
 

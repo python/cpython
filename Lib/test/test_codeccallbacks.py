@@ -1,4 +1,4 @@
-import test.test_support, unittest
+import test.support, unittest
 import sys, codecs, html.entities, unicodedata
 
 class PosReturn:
@@ -843,7 +843,7 @@ class CodecCallbackTest(unittest.TestCase):
             self.assertRaises(TypeError, data.decode, encoding, "test.replacing")
 
 def test_main():
-    test.test_support.run_unittest(CodecCallbackTest)
+    test.support.run_unittest(CodecCallbackTest)
 
 if __name__ == "__main__":
     test_main()

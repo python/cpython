@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 import unittest
-from test import test_support
+from test import support
 import __future__
 
 GOOD_SERIALS = ("alpha", "beta", "candidate", "final")
@@ -57,7 +57,7 @@ class FutureTest(unittest.TestCase):
                    ".compiler_flag isn't int")
 
 def test_main():
-    test_support.run_unittest(FutureTest)
+    support.run_unittest(FutureTest)
 
 if __name__ == "__main__":
     test_main()

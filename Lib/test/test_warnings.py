@@ -4,7 +4,7 @@ import os
 from io import StringIO
 import sys
 import unittest
-from test import test_support
+from test import support
 
 from test import warning_tests
 
@@ -72,21 +72,21 @@ class FilterTests(object):
     """Testing the filtering functionality."""
 
     def test_error(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("error", category=UserWarning)
             self.assertRaises(UserWarning, self.module.warn,
                                 "FilterTests.test_error")
 
     def test_ignore(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("ignore", category=UserWarning)
             self.module.warn("FilterTests.test_ignore", UserWarning)
             self.assert_(not w.message)
 
     def test_always(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
             message = "FilterTests.test_always"
@@ -97,7 +97,7 @@ class FilterTests(object):
             self.assert_(w.message, message)
 
     def test_default(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("default", category=UserWarning)
             message = UserWarning("FilterTests.test_default")
@@ -112,7 +112,7 @@ class FilterTests(object):
                     raise ValueError("loop variant unhandled")
 
     def test_module(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("module", category=UserWarning)
             message = UserWarning("FilterTests.test_module")
@@ -123,7 +123,7 @@ class FilterTests(object):
             self.assert_(not w.message, "unexpected message: " + str(w))
 
     def test_once(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("once", category=UserWarning)
             message = UserWarning("FilterTests.test_once")
@@ -139,14 +139,14 @@ class FilterTests(object):
             self.assert_(not w.message)
 
     def test_inheritance(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("error", category=Warning)
             self.assertRaises(UserWarning, self.module.warn,
                                 "FilterTests.test_inheritance", UserWarning)
 
     def test_ordering(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("ignore", category=UserWarning)
             self.module.filterwarnings("error", category=UserWarning,
@@ -161,7 +161,7 @@ class FilterTests(object):
     def test_filterwarnings(self):
         # Test filterwarnings().
         # Implicitly also tests resetwarnings().
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.filterwarnings("error", "", Warning, "", 0)
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
 
@@ -196,7 +196,7 @@ class WarnTests(unittest.TestCase):
     """Test warnings.warn() and warnings.warn_explicit()."""
 
     def test_message(self):
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             for i in range(4):
                 text = 'multi %d' %i  # Different text on each call.
                 self.module.warn(text)
@@ -205,7 +205,7 @@ class WarnTests(unittest.TestCase):
 
     def test_filename(self):
         with warnings_state(self.module):
-            with test_support.catch_warning(self.module) as w:
+            with support.catch_warning(self.module) as w:
                 warning_tests.inner("spam1")
                 self.assertEqual(os.path.basename(w.filename), "warning_tests.py")
                 warning_tests.outer("spam2")
@@ -215,7 +215,7 @@ class WarnTests(unittest.TestCase):
         # Test stacklevel argument
         # make sure all messages are different, so the warning won't be skipped
         with warnings_state(self.module):
-            with test_support.catch_warning(self.module) as w:
+            with support.catch_warning(self.module) as w:
                 warning_tests.inner("spam3", stacklevel=1)
                 self.assertEqual(os.path.basename(w.filename), "warning_tests.py")
                 warning_tests.outer("spam4", stacklevel=1)
@@ -238,7 +238,7 @@ class WarnTests(unittest.TestCase):
         try:
             del warning_tests.__file__
             with warnings_state(self.module):
-                with test_support.catch_warning(self.module) as w:
+                with support.catch_warning(self.module) as w:
                     warning_tests.inner("spam8", stacklevel=1)
                     self.assertEqual(w.filename, warning_tests.__name__)
         finally:
@@ -255,7 +255,7 @@ class WarnTests(unittest.TestCase):
             del warning_tests.__file__
             warning_tests.__name__ = '__main__'
             with warnings_state(self.module):
-                with test_support.catch_warning(self.module) as w:
+                with support.catch_warning(self.module) as w:
                     warning_tests.inner('spam9', stacklevel=1)
                     self.assertEqual(w.filename, sys.argv[0])
         finally:
@@ -273,7 +273,7 @@ class WarnTests(unittest.TestCase):
             warning_tests.__name__ = '__main__'
             del sys.argv
             with warnings_state(self.module):
-                with test_support.catch_warning(self.module) as w:
+                with support.catch_warning(self.module) as w:
                     warning_tests.inner('spam10', stacklevel=1)
                     self.assertEqual(w.filename, '__main__')
         finally:
@@ -293,7 +293,7 @@ class WarnTests(unittest.TestCase):
             warning_tests.__name__ = '__main__'
             sys.argv = ['']
             with warnings_state(self.module):
-                with test_support.catch_warning(self.module) as w:
+                with support.catch_warning(self.module) as w:
                     warning_tests.inner('spam11', stacklevel=1)
                     self.assertEqual(w.filename, '__main__')
         finally:
@@ -315,7 +315,7 @@ class WCmdLineTests(unittest.TestCase):
     def test_improper_input(self):
         # Uses the private _setoption() function to test the parsing
         # of command-line warning arguments
-        with test_support.catch_warning(self.module):
+        with support.catch_warning(self.module):
             self.assertRaises(self.module._OptionError,
                               self.module._setoption, '1:2:3:4:5:6')
             self.assertRaises(self.module._OptionError,
@@ -340,7 +340,7 @@ class _WarningsTests(BaseTest):
 
     def test_filter(self):
         # Everything should function even if 'filters' is not in warnings.
-        with test_support.catch_warning(self.module) as w:
+        with support.catch_warning(self.module) as w:
             self.module.filterwarnings("error", "", Warning, "", 0)
             self.assertRaises(UserWarning, self.module.warn,
                                 'convert to error')
@@ -355,7 +355,7 @@ class _WarningsTests(BaseTest):
         try:
             original_registry = self.module.onceregistry
             __warningregistry__ = {}
-            with test_support.catch_warning(self.module) as w:
+            with support.catch_warning(self.module) as w:
                 self.module.resetwarnings()
                 self.module.filterwarnings("once", category=UserWarning)
                 self.module.warn_explicit(message, UserWarning, "file", 42)
@@ -380,10 +380,10 @@ class _WarningsTests(BaseTest):
     def test_showwarning_missing(self):
         # Test that showwarning() missing is okay.
         text = 'del showwarning test'
-        with test_support.catch_warning(self.module):
+        with support.catch_warning(self.module):
             self.module.filterwarnings("always", category=UserWarning)
             del self.module.showwarning
-            with test_support.captured_output('stderr') as stream:
+            with support.captured_output('stderr') as stream:
                 self.module.warn(text)
                 result = stream.getvalue()
         self.failUnless(text in result)
@@ -401,10 +401,10 @@ class _WarningsTests(BaseTest):
     def test_show_warning_output(self):
         # With showarning() missing, make sure that output is okay.
         text = 'test show_warning'
-        with test_support.catch_warning(self.module):
+        with support.catch_warning(self.module):
             self.module.filterwarnings("always", category=UserWarning)
             del self.module.showwarning
-            with test_support.captured_output('stderr') as stream:
+            with support.captured_output('stderr') as stream:
                 warning_tests.inner(text)
                 result = stream.getvalue()
         self.failUnlessEqual(result.count('\n'), 2,
@@ -476,7 +476,7 @@ class PyWarningsDisplayTests(BaseTest, WarningsDisplayTests):
 def test_main():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
-    test_support.run_unittest(CFilterTests,
+    support.run_unittest(CFilterTests,
                                 PyFilterTests,
                                 CWarnTests,
                                 PyWarnTests,

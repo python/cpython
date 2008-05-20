@@ -2,7 +2,7 @@
 # more tests are in test_descr
 
 import unittest
-from test.test_support import run_unittest
+from test.support import run_unittest
 
 class PropertyBase(Exception):
     pass

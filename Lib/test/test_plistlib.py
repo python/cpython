@@ -4,7 +4,7 @@ import unittest
 import plistlib
 import os
 import datetime
-from test import test_support
+from test import support
 
 
 # This test data was generated through Cocoa's NSDictionary class
@@ -91,7 +91,7 @@ class TestPlistlib(unittest.TestCase):
 
     def tearDown(self):
         try:
-            os.unlink(test_support.TESTFN)
+            os.unlink(support.TESTFN)
         except:
             pass
 
@@ -123,8 +123,8 @@ class TestPlistlib(unittest.TestCase):
 
     def test_io(self):
         pl = self._create()
-        plistlib.writePlist(pl, test_support.TESTFN)
-        pl2 = plistlib.readPlist(test_support.TESTFN)
+        plistlib.writePlist(pl, support.TESTFN)
+        pl2 = plistlib.readPlist(support.TESTFN)
         self.assertEqual(dict(pl), dict(pl2))
 
     def test_bytes(self):
@@ -177,7 +177,7 @@ class TestPlistlib(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestPlistlib)
+    support.run_unittest(TestPlistlib)
 
 
 if __name__ == '__main__':

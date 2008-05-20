@@ -4,7 +4,7 @@ import pty
 import os
 import sys
 import signal
-from test.test_support import verbose, TestSkipped, run_unittest
+from test.support import verbose, TestSkipped, run_unittest
 import unittest
 
 TEST_STRING_1 = "I wish to buy a fish license.\n"

@@ -2,7 +2,7 @@
 # Since we don't have them, this test checks only a few codepoints.
 
 import unittest
-from test import test_support
+from test import support
 
 from stringprep import *
 
@@ -90,7 +90,7 @@ class StringprepTests(unittest.TestCase):
         #     print p, h.hexdigest()
 
 def test_main():
-    test_support.run_unittest(StringprepTests)
+    support.run_unittest(StringprepTests)
 
 if __name__ == '__main__':
     test_main()

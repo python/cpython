@@ -8,7 +8,7 @@ import os
 import struct
 import sys
 import unittest
-from test.test_support import verbose, TESTFN, unlink, run_unittest
+from test.support import verbose, TESTFN, unlink, run_unittest
 
 # TODO - Write tests for flock() and lockf().
 

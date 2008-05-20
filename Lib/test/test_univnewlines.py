@@ -2,10 +2,10 @@
 import unittest
 import os
 import sys
-from test import test_support
+from test import support
 
 if not hasattr(sys.stdin, 'newlines'):
-    raise test_support.TestSkipped(
+    raise support.TestSkipped(
                        "This Python does not have universal newline support")
 
 FATX = 'x' * (2**14)
@@ -35,7 +35,7 @@ class TestGenericUnivNewlines(unittest.TestCase):
     WRITEMODE = 'wb'
 
     def setUp(self):
-        fp = open(test_support.TESTFN, self.WRITEMODE)
+        fp = open(support.TESTFN, self.WRITEMODE)
         data = self.DATA
         if "b" in self.WRITEMODE:
             data = data.encode("ascii")
@@ -44,24 +44,24 @@ class TestGenericUnivNewlines(unittest.TestCase):
 
     def tearDown(self):
         try:
-            os.unlink(test_support.TESTFN)
+            os.unlink(support.TESTFN)
         except:
             pass
 
     def test_read(self):
-        fp = open(test_support.TESTFN, self.READMODE)
+        fp = open(support.TESTFN, self.READMODE)
         data = fp.read()
         self.assertEqual(data, DATA_LF)
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_readlines(self):
-        fp = open(test_support.TESTFN, self.READMODE)
+        fp = open(support.TESTFN, self.READMODE)
         data = fp.readlines()
         self.assertEqual(data, DATA_SPLIT)
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_readline(self):
-        fp = open(test_support.TESTFN, self.READMODE)
+        fp = open(support.TESTFN, self.READMODE)
         data = []
         d = fp.readline()
         while d:
@@ -71,7 +71,7 @@ class TestGenericUnivNewlines(unittest.TestCase):
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_seek(self):
-        fp = open(test_support.TESTFN, self.READMODE)
+        fp = open(support.TESTFN, self.READMODE)
         fp.readline()
         pos = fp.tell()
         data = fp.readlines()
@@ -94,7 +94,7 @@ class TestCRLFNewlines(TestGenericUnivNewlines):
     DATA = DATA_CRLF
 
     def test_tell(self):
-        fp = open(test_support.TESTFN, self.READMODE)
+        fp = open(support.TESTFN, self.READMODE)
         self.assertEqual(repr(fp.newlines), repr(None))
         data = fp.readline()
         pos = fp.tell()
@@ -106,7 +106,7 @@ class TestMixedNewlines(TestGenericUnivNewlines):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         TestCRNewlines,
         TestLFNewlines,
         TestCRLFNewlines,
