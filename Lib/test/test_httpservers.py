@@ -193,18 +193,19 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
     def setUp(self):
         BaseTestCase.setUp(self)
-        os.chdir(tempfile.gettempdir())
+        self.cwd = os.getcwd()
+        basetempdir = tempfile.gettempdir()
+        os.chdir(basetempdir)
         self.data = 'We are the knights who say Ni!'
-        self.tempdir = tempfile.mkdtemp(dir=tempfile.gettempdir())
+        self.tempdir = tempfile.mkdtemp(dir=basetempdir)
         self.tempdir_name = os.path.basename(self.tempdir)
-        self.tempfile = tempfile.NamedTemporaryFile(dir=self.tempdir)
-        self.tempfile.file.write(self.data)
-        self.tempfile.file.flush()
-        self.tempfile_name = os.path.basename(self.tempfile.name)
+        temp = open(os.path.join(self.tempdir, 'test'), 'wb')
+        temp.write(self.data)
+        temp.close()
 
     def tearDown(self):
         try:
-            self.tempfile.close()
+            os.chdir(self.cwd)
             try:
                 shutil.rmtree(self.tempdir)
             except:
@@ -222,7 +223,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
-        response = self.request(self.tempdir_name + '/' + self.tempfile_name)
+        response = self.request(self.tempdir_name + '/test')
         self.check_status_and_reason(response, 200, data=self.data)
         response = self.request(self.tempdir_name + '/')
         self.check_status_and_reason(response, 200)
@@ -244,7 +245,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
     def test_head(self):
         response = self.request(
-            self.tempdir_name + '/'+ self.tempfile_name, method='HEAD')
+            self.tempdir_name + '/test', method='HEAD')
         self.check_status_and_reason(response, 200)
         self.assertEqual(response.getheader('content-length'),
                          str(len(self.data)))
@@ -301,10 +302,12 @@ class CGIHTTPServerTestCase(BaseTestCase):
             file2.write(cgi_file2 % sys.executable)
         os.chmod(self.file2_path, 0777)
 
+        self.cwd = os.getcwd()
         os.chdir(self.parent_dir)
 
     def tearDown(self):
         try:
+            os.chdir(self.cwd)
             os.remove(self.file1_path)
             os.remove(self.file2_path)
             os.rmdir(self.cgi_dir)
