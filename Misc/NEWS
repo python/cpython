@@ -52,6 +52,10 @@ Extension Modules
 Library
 -------
 
+- Issue #1775025: You can now specify zipfile members to open(),
+  read() or extract() via a ZipInfo instance.  This allows handling
+  duplicate filenames in zipfiles.
+
 - Issue #961805: Fix Text.edit_modified() in Tkinter.
 
 - Issue #1793: Function ctypes.util.find_msvcrt() added that returns

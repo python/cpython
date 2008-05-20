@@ -776,10 +776,13 @@ class ZipFile:
         else:
             zef_file = open(self.filename, 'rb')
 
-        # Get info object for name
-        zinfo = self.getinfo(name)
-
-        filepos = zef_file.tell()
+        # Make sure we have an info object
+        if isinstance(name, ZipInfo):
+            # 'name' is already an info object
+            zinfo = name
+        else:
+            # Get info object for name
+            zinfo = self.getinfo(name)
 
         zef_file.seek(zinfo.header_offset, 0)
 
@@ -884,7 +887,7 @@ class ZipFile:
         if upperdirs and not os.path.exists(upperdirs):
             os.makedirs(upperdirs)
 
-        source = self.open(member.filename, pwd=pwd)
+        source = self.open(member, pwd=pwd)
         target = file(targetpath, "wb")
         shutil.copyfileobj(source, target)
         source.close()
