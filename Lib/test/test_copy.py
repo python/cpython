@@ -1,7 +1,7 @@
 """Unit tests for the copy module."""
 
 import copy
-import copyreg
+import copy_reg
 
 import unittest
 from test import test_support
@@ -42,7 +42,7 @@ class TestCopy(unittest.TestCase):
             return (C, (obj.foo,))
         x = C(42)
         self.assertRaises(TypeError, copy.copy, x)
-        copyreg.pickle(C, pickle_C, C)
+        copy_reg.pickle(C, pickle_C, C)
         y = copy.copy(x)
 
     def test_copy_reduce_ex(self):
@@ -215,7 +215,7 @@ class TestCopy(unittest.TestCase):
             return (C, (obj.foo,))
         x = C(42)
         self.assertRaises(TypeError, copy.deepcopy, x)
-        copyreg.pickle(C, pickle_C, C)
+        copy_reg.pickle(C, pickle_C, C)
         y = copy.deepcopy(x)
 
     def test_deepcopy_reduce_ex(self):

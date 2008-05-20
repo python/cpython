@@ -105,18 +105,18 @@ static PyObject *BadPickleGet;
 /* As the name says, an empty tuple. */
 static PyObject *empty_tuple;
 
-/* copyreg.dispatch_table, {type_object: pickling_function} */
+/* copy_reg.dispatch_table, {type_object: pickling_function} */
 static PyObject *dispatch_table;
 
 /* For EXT[124] opcodes. */
-/* copyreg._extension_registry, {(module_name, function_name): code} */
+/* copy_reg._extension_registry, {(module_name, function_name): code} */
 static PyObject *extension_registry;
-/* copyreg._inverted_registry, {code: (module_name, function_name)} */
+/* copy_reg._inverted_registry, {code: (module_name, function_name)} */
 static PyObject *inverted_registry;
-/* copyreg._extension_cache, {code: object} */
+/* copy_reg._extension_cache, {code: object} */
 static PyObject *extension_cache;
 
-/* For looking up name pairs in copyreg._extension_registry. */
+/* For looking up name pairs in copy_reg._extension_registry. */
 static PyObject *two_tuple;
 
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
@@ -2477,7 +2477,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 	}
 
 	/* Get a reduction callable, and call it.  This may come from
-	 * copyreg.dispatch_table, the object's __reduce_ex__ method,
+	 * copy_reg.dispatch_table, the object's __reduce_ex__ method,
 	 * or the object's __reduce__ method.
 	 */
 	__reduce__ = PyDict_GetItem(dispatch_table, (PyObject *)type);
@@ -5591,7 +5591,7 @@ init_stuff(PyObject *module_dict)
 	INIT_STR(copyreg);
 	INIT_STR(dispatch_table);
 
-	if (!( copyreg = PyImport_ImportModule("copyreg")))
+	if (!( copyreg = PyImport_ImportModule("copy_reg")))
 		return -1;
 
 	/* This is special because we want to use a different

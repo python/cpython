@@ -1864,7 +1864,7 @@ commands         Tools for executing UNIX commands .
 compileall       Force "compilation" of all .py files in a directory.
 configparser     Configuration file parser (much like windows .ini files)
 copy             Generic shallow and deep copying operations.
-copyreg          Helper to provide extensibility for pickle/cPickle.
+copy_reg         Helper to provide extensibility for pickle/cPickle.
 csv              Read and write files with comma separated values.
 dbhash           (g)dbm-compatible interface to bsdhash.hashopen.
 dircache         Sorted list of files in a dir, using a cache.

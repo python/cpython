@@ -3058,7 +3058,7 @@ static PyGetSetDef object_getsets[] = {
 
 
 /* Stuff to implement __reduce_ex__ for pickle protocols >= 2.
-   We fall back to helpers in copyreg for:
+   We fall back to helpers in copy_reg for:
    - pickle protocols < 2
    - calculating the list of slot names (done only once per class)
    - the __newobj__ function (which is used as a token but never called)
@@ -3070,7 +3070,7 @@ import_copyreg(void)
 	static PyObject *copyreg_str;
 
 	if (!copyreg_str) {
-		copyreg_str = PyString_InternFromString("copyreg");
+		copyreg_str = PyString_InternFromString("copy_reg");
 		if (copyreg_str == NULL)
 			return NULL;
 	}
@@ -3108,7 +3108,7 @@ slotnames(PyObject *cls)
 	    !PyList_Check(slotnames))
 	{
 		PyErr_SetString(PyExc_TypeError,
-			"copyreg._slotnames didn't return a list or None");
+			"copy_reg._slotnames didn't return a list or None");
 		Py_DECREF(slotnames);
 		slotnames = NULL;
 	}

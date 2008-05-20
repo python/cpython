@@ -19,7 +19,7 @@ The list of modules described in this chapter is:
 .. toctree::
 
    pickle.rst
-   copyreg.rst
+   copy_reg.rst
    shelve.rst
    marshal.rst
    anydbm.rst
