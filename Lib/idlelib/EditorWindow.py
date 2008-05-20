@@ -3,9 +3,9 @@ import os
 import re
 import imp
 from itertools import count
-from tkinter import *
-import tkinter.simpledialog as tkSimpleDialog
-import tkinter.messagebox as tkMessageBox
+from Tkinter import *
+import tkSimpleDialog
+import tkMessageBox
 from MultiCall import MultiCallCreator
 
 import webbrowser
@@ -45,7 +45,7 @@ class EditorWindow(object):
     from UndoDelegator import UndoDelegator
     from IOBinding import IOBinding, filesystemencoding, encoding
     import Bindings
-    from tkinter import Toplevel
+    from Tkinter import Toplevel
     from MultiStatusBar import MultiStatusBar
 
     help_url = None

@@ -3,7 +3,7 @@
 # may be useful for some purposes in (or almost in ;) the current project scope
 # Ideas gleaned from PySol
 
-from tkinter import *
+from Tkinter import *
 
 class ToolTipBase:
 

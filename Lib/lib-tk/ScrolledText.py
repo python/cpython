@@ -10,8 +10,8 @@
 # Most methods calls are inherited from the Text widget; Pack methods
 # are redirected to the Frame widget however.
 
-from tkinter import *
-from tkinter import _cnfmerge
+from Tkinter import *
+from Tkinter import _cnfmerge
 
 class ScrolledText(Text):
     def __init__(self, master=None, cnf=None, **kw):

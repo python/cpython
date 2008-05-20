@@ -180,7 +180,6 @@ Source: Lib\lib-old\*.*; DestDir: {app}\Lib\lib-old; CopyMode: alwaysoverwrite; 
 Source: Lib\xml\*.*; DestDir: {app}\Lib\xml; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
 Source: Lib\hotshot\*.*; DestDir: {app}\Lib\hotshot; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
 Source: Lib\test\*.*; DestDir: {app}\Lib\test; CopyMode: alwaysoverwrite; Components: test; Flags: recursesubdirs
-Source: Lib\tkinter\*.py; DestDir: {app}\Lib\tkinter; CopyMode: alwaysoverwrite; Components: tk; Flags: recursesubdirs
 
 Source: Lib\site-packages\README.txt; DestDir: {app}\Lib\site-packages; CopyMode: alwaysoverwrite; Components: main
 
@@ -298,9 +297,6 @@ Name: {app}\Lib\lib-old; Type: dirifempty
 Name: {app}\Lib\lib-tk\*.pyc; Type: files
 Name: {app}\Lib\lib-tk\*.pyo; Type: files
 Name: {app}\Lib\lib-tk; Type: dirifempty
-Name: {app}\Lib\tkinter\*.pyc; Type: files
-Name: {app}\Lib\tkinter\*.pyo; Type: files
-Name: {app}\Lib\tkinter; Type: dirifempty
 Name: {app}\Lib\test\*.pyc; Type: files
 Name: {app}\Lib\test\*.pyo; Type: files
 Name: {app}\Lib\test; Type: dirifempty

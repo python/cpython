@@ -7,7 +7,7 @@ from ObjectBrowser import ObjectTreeItem, make_objecttreeitem
 
 def StackBrowser(root, flist=None, tb=None, top=None):
     if top is None:
-        from tkinter import Toplevel
+        from Tkinter import Toplevel
         top = Toplevel(root)
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
@@ -128,7 +128,7 @@ def _test():
         reload(testcode)
     except:
         sys.last_type, sys.last_value, sys.last_traceback = sys.exc_info()
-    from tkinter import Tk
+    from Tkinter import Tk
     root = Tk()
     StackBrowser(None, top=root)
     root.mainloop()

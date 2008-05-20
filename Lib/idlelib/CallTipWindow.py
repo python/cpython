@@ -4,7 +4,7 @@ After ToolTip.py, which uses ideas gleaned from PySol
 Used by the CallTips IDLE extension.
 
 """
-from tkinter import *
+from Tkinter import *
 
 HIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")

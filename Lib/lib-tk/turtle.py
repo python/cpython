@@ -16,7 +16,7 @@ pictures can easily be drawn.
 
 from math import * # Also for export
 from time import sleep
-import tkinter
+import Tkinter
 
 speeds = ['fastest', 'fast', 'normal', 'slow', 'slowest']
 
@@ -238,7 +238,7 @@ class RawPen:
                 # Test the color first
                 try:
                     id = self._canvas.create_line(0, 0, 0, 0, fill=color)
-                except tkinter.TclError:
+                except Tkinter.TclError:
                     raise Error, "bad color string: %r" % (color,)
                 self._set_color(color)
                 return
@@ -554,7 +554,7 @@ class RawPen:
                     # in case nhops==0
                     self._canvas.coords(item, x0, y0, x1, y1)
                     self._canvas.itemconfigure(item, arrow="none")
-                except tkinter.TclError:
+                except Tkinter.TclError:
                     # Probably the window was closed!
                     return
             else:
@@ -638,13 +638,13 @@ class Pen(RawPen):
     def __init__(self):
         global _root, _canvas
         if _root is None:
-            _root = tkinter.Tk()
+            _root = Tkinter.Tk()
             _root.wm_protocol("WM_DELETE_WINDOW", self._destroy)
             _root.title(_title)
 
         if _canvas is None:
             # XXX Should have scroll bars
-            _canvas = tkinter.Canvas(_root, background="white")
+            _canvas = Tkinter.Canvas(_root, background="white")
             _canvas.pack(expand=1, fill="both")
 
             setup(width=_width, height= _height, startx=_startx, starty=_starty)

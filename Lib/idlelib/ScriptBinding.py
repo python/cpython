@@ -22,7 +22,7 @@ import re
 import string
 import tabnanny
 import tokenize
-import tkinter.messagebox as tkMessageBox
+import tkMessageBox
 import PyShell
 
 from configHandler import idleConf

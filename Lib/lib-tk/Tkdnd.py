@@ -100,7 +100,7 @@ active; it will never call dnd_commit().
 """
 
 
-import tkinter
+import Tkinter
 
 
 # The factory function
@@ -219,7 +219,7 @@ class Icon:
             self.detach()
         if not canvas:
             return
-        label = tkinter.Label(canvas, text=self.name,
+        label = Tkinter.Label(canvas, text=self.name,
                               borderwidth=2, relief="raised")
         id = canvas.create_window(x, y, window=label, anchor="nw")
         self.canvas = canvas
@@ -268,8 +268,8 @@ class Icon:
 class Tester:
 
     def __init__(self, root):
-        self.top = tkinter.Toplevel(root)
-        self.canvas = tkinter.Canvas(self.top, width=100, height=100)
+        self.top = Tkinter.Toplevel(root)
+        self.canvas = Tkinter.Canvas(self.top, width=100, height=100)
         self.canvas.pack(fill="both", expand=1)
         self.canvas.dnd_accept = self.dnd_accept
 
@@ -300,9 +300,9 @@ class Tester:
         source.attach(self.canvas, x, y)
 
 def test():
-    root = tkinter.Tk()
+    root = Tkinter.Tk()
     root.geometry("+1+1")
-    tkinter.Button(command=root.quit, text="Quit").pack()
+    Tkinter.Button(command=root.quit, text="Quit").pack()
     t1 = Tester(root)
     t1.top.geometry("+1+60")
     t2 = Tester(root)

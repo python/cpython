@@ -1,34 +1,27 @@
-:mod:`tkinter.tix` --- Extension widgets for Tk
-===============================================
+:mod:`Tix` --- Extension widgets for Tk
+=======================================
 
 .. module:: Tix
-   :synopsis: Old name for the tkinter.tix module.
-
-.. module:: tkinter.tix
    :synopsis: Tk Extension Widgets for Tkinter
 .. sectionauthor:: Mike Clarkson <mikeclarkson@users.sourceforge.net>
 
-.. note::
-   The :mod:`Tix` module has been renamed to :mod:`tkinter.tix` in Python 3.0.
-   It is importable under both names in Python 2.6 and the rest of the 2.x
-   series.
 
 .. index:: single: Tix
 
-The :mod:`tkinter.tix` (Tk Interface Extension) module provides an additional 
-rich set of widgets. Although the standard Tk library has many useful widgets, 
-they are far from complete. The :mod:`tkinter.tix` library provides most of the
-commonly needed widgets that are missing from standard Tk: :class:`HList`, 
-:class:`ComboBox`, :class:`Control` (a.k.a. SpinBox) and an assortment of 
-scrollable widgets. 
-:mod:`tkinter.tix` also includes many more widgets that are generally useful in
-a wide range of applications: :class:`NoteBook`, :class:`FileEntry`,
+The :mod:`Tix` (Tk Interface Extension) module provides an additional rich set
+of widgets. Although the standard Tk library has many useful widgets, they are
+far from complete. The :mod:`Tix` library provides most of the commonly needed
+widgets that are missing from standard Tk: :class:`HList`, :class:`ComboBox`,
+:class:`Control` (a.k.a. SpinBox) and an assortment of scrollable widgets.
+:mod:`Tix` also includes many more widgets that are generally useful in a wide
+range of applications: :class:`NoteBook`, :class:`FileEntry`,
 :class:`PanedWindow`, etc; there are more than 40 of them.
 
 With all these new widgets, you can introduce new interaction techniques into
 applications, creating more useful and more intuitive user interfaces. You can
 design your application by choosing the most appropriate widgets to match the
 special needs of your application and users.
+
 
 .. seealso::
 
@@ -57,27 +50,27 @@ Using Tix
    Toplevel widget of Tix which represents mostly the main window of an
    application. It has an associated Tcl interpreter.
 
-   Classes in the :mod:`tkinter.tix` module subclasses the classes in the 
-   :mod:`tkinter`. The former imports the latter, so to use :mod:`tkinter.tix` 
-   with Tkinter, all you need to do is to import one module. In general, you 
-   can just import :mod:`tkinter.tix`, and replace the toplevel call to 
-   :class:`tkinter.Tk` with :class:`tix.Tk`::
+   Classes in the :mod:`Tix` module subclasses the classes in the :mod:`Tkinter`
+   module. The former imports the latter, so to use :mod:`Tix` with Tkinter, all
+   you need to do is to import one module. In general, you can just import
+   :mod:`Tix`, and replace the toplevel call to :class:`Tkinter.Tk` with
+   :class:`Tix.Tk`::
 
-      from tkinter import tix
-      from tkinter.constants import *
-      root = tix.Tk()
+      import Tix
+      from Tkconstants import *
+      root = Tix.Tk()
 
-To use :mod:`tkinter.tix`, you must have the Tix widgets installed, usually
+To use :mod:`Tix`, you must have the :mod:`Tix` widgets installed, usually
 alongside your installation of the Tk widgets. To test your installation, try
 the following::
 
-   from tkinter import tix
-   root = tix.Tk()
+   import Tix
+   root = Tix.Tk()
    root.tk.eval('package require Tix')
 
 If this fails, you have a Tk installation problem which must be resolved before
 proceeding. Use the environment variable :envvar:`TIX_LIBRARY` to point to the
-installed Tix library directory, and make sure you have the dynamic
+installed :mod:`Tix` library directory, and make sure you have the dynamic
 object library (:file:`tix8183.dll` or :file:`libtix8183.so`) in  the same
 directory that contains your Tk dynamic object library (:file:`tk8183.dll` or
 :file:`libtk8183.so`). The directory with the dynamic object library should also
@@ -92,8 +85,8 @@ Tix Widgets
 
 `Tix <http://tix.sourceforge.net/dist/current/man/html/TixCmd/TixIntro.htm>`_
 introduces over 40 widget classes to the :mod:`Tkinter`  repertoire.  There is a
-demo of all the :mod:`tkinter.tix` widgets in the :file:`Demo/tix` directory of
-the standard distribution.
+demo of all the :mod:`Tix` widgets in the :file:`Demo/tix` directory of the
+standard distribution.
 
 .. The Python sample code is still being added to Python, hence commented out
 
@@ -441,11 +434,11 @@ Manager Widgets
 Image Types
 ^^^^^^^^^^^
 
-The :mod:`tkinter.tix` module adds:
+The :mod:`Tix` module adds:
 
 * `pixmap <http://tix.sourceforge.net/dist/current/man/html/TixCmd/pixmap.htm>`_
-  capabilities to all :mod:`tkinter.tix` and :mod:`tkinter` widgets to create 
-  color images from XPM files.
+  capabilities to all :mod:`Tix` and :mod:`Tkinter` widgets to create color images
+  from XPM files.
 
   .. Python Demo of:
   .. \ulink{XPM Image In Button}{http://tix.sourceforge.net/dist/current/demos/samples/Xpm.tcl}
@@ -485,7 +478,7 @@ Miscellaneous Widgets
 Form Geometry Manager
 ^^^^^^^^^^^^^^^^^^^^^
 
-In addition, :mod:`tkinter.tix` augments :mod:`tkinter` by providing:
+In addition, :mod:`Tix` augments :mod:`Tkinter` by providing:
 
 
 .. class:: Form()

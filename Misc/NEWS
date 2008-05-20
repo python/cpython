@@ -57,11 +57,6 @@ Library
   ctypes.util.find_library(name) now call this function when name is
   'm' or 'c'.
 
-- The Tkinter module has been made a package and renamed 'tkinter'.
-  All Tkinter-related modules (like Tix, ScrolledText, turtle etc.)
-  are now submodules of that package and have been renamed to conform
-  to PEP 8 standards.
-
 - The repr module has been renamed 'reprlib'.  The old name is now
   deprecated.
 

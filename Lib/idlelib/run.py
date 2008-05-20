@@ -127,9 +127,9 @@ def manage_socket(address):
     server.handle_request() # A single request only
 
 def show_socket_error(err, address):
-    import tkinter
-    import tkinter.messagebox as tkMessageBox
-    root = tkinter.Tk()
+    import Tkinter
+    import tkMessageBox
+    root = Tkinter.Tk()
     root.withdraw()
     if err[0] == 61: # connection refused
         msg = "IDLE's subprocess can't connect to %s:%d.  This may be due "\

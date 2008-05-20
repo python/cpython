@@ -916,7 +916,7 @@ def add_files(db):
         parent, dir = pydirs.pop()
         if dir == ".svn" or dir.startswith("plat-"):
             continue
-        elif dir in ["lib-tk", "tkinter", "idlelib", "Icons"]:
+        elif dir in ["lib-tk", "idlelib", "Icons"]:
             if not have_tcl:
                 continue
             tcltk.set_current()

@@ -1,7 +1,7 @@
 import os
 import bdb
 import types
-from tkinter import *
+from Tkinter import *
 from WindowList import ListedToplevel
 from ScrolledList import ScrolledList
 import macosxSupport

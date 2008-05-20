@@ -1,5 +1,5 @@
 import string
-from tkinter import *
+from Tkinter import *
 from Delegator import Delegator
 
 #$ event <<redo>>
