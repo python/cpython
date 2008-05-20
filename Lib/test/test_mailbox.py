@@ -7,7 +7,7 @@ import email
 import email.message
 import re
 import io
-from test import test_support
+from test import support
 import unittest
 import mailbox
 import glob
@@ -52,7 +52,7 @@ class TestMailbox(TestBase):
     _template = 'From: foo\n\n%s'
 
     def setUp(self):
-        self._path = test_support.TESTFN
+        self._path = support.TESTFN
         self._delete_recursively(self._path)
         self._box = self._factory(self._path)
 
@@ -715,7 +715,7 @@ class _TestMboxMMDF(TestMailbox):
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
-            test_support.unlink(lock_remnant)
+            support.unlink(lock_remnant)
 
     def test_add_from_string(self):
         # Add a string starting with 'From ' to the mailbox
@@ -938,7 +938,7 @@ class TestBabyl(TestMailbox):
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
-            test_support.unlink(lock_remnant)
+            support.unlink(lock_remnant)
 
     def test_labels(self):
         # Get labels from the mailbox
@@ -964,7 +964,7 @@ class TestMessage(TestBase):
     _factory = mailbox.Message      # Overridden by subclasses to reuse tests
 
     def setUp(self):
-        self._path = test_support.TESTFN
+        self._path = support.TESTFN
 
     def tearDown(self):
         self._delete_recursively(self._path)
@@ -1580,7 +1580,7 @@ class TestProxyFileBase(TestBase):
 class TestProxyFile(TestProxyFileBase):
 
     def setUp(self):
-        self._path = test_support.TESTFN
+        self._path = support.TESTFN
         self._file = open(self._path, 'wb+')
 
     def tearDown(self):
@@ -1629,7 +1629,7 @@ class TestProxyFile(TestProxyFileBase):
 class TestPartialFile(TestProxyFileBase):
 
     def setUp(self):
-        self._path = test_support.TESTFN
+        self._path = support.TESTFN
         self._file = open(self._path, 'wb+')
 
     def tearDown(self):
@@ -1692,7 +1692,7 @@ class MaildirTestCase(unittest.TestCase):
 
     def setUp(self):
         # create a new maildir mailbox to work with:
-        self._dir = test_support.TESTFN
+        self._dir = support.TESTFN
         os.mkdir(self._dir)
         os.mkdir(os.path.join(self._dir, "cur"))
         os.mkdir(os.path.join(self._dir, "tmp"))
@@ -1733,7 +1733,7 @@ class MaildirTestCase(unittest.TestCase):
         """Test an empty maildir mailbox"""
         # Test for regression on bug #117490:
         # Make sure the boxes attribute actually gets set.
-        self.mbox = mailbox.Maildir(test_support.TESTFN)
+        self.mbox = mailbox.Maildir(support.TESTFN)
         #self.assert_(hasattr(self.mbox, "boxes"))
         #self.assertEqual(len(self.mbox.boxes), 0)
         self.assert_(self.mbox.next() is None)
@@ -1741,7 +1741,7 @@ class MaildirTestCase(unittest.TestCase):
 
     def test_nonempty_maildir_cur(self):
         self.createMessage("cur")
-        self.mbox = mailbox.Maildir(test_support.TESTFN)
+        self.mbox = mailbox.Maildir(support.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 1)
         self.assert_(self.mbox.next() is not None)
         self.assert_(self.mbox.next() is None)
@@ -1749,7 +1749,7 @@ class MaildirTestCase(unittest.TestCase):
 
     def test_nonempty_maildir_new(self):
         self.createMessage("new")
-        self.mbox = mailbox.Maildir(test_support.TESTFN)
+        self.mbox = mailbox.Maildir(support.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 1)
         self.assert_(self.mbox.next() is not None)
         self.assert_(self.mbox.next() is None)
@@ -1758,7 +1758,7 @@ class MaildirTestCase(unittest.TestCase):
     def test_nonempty_maildir_both(self):
         self.createMessage("cur")
         self.createMessage("new")
-        self.mbox = mailbox.Maildir(test_support.TESTFN)
+        self.mbox = mailbox.Maildir(support.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 2)
         self.assert_(self.mbox.next() is not None)
         self.assert_(self.mbox.next() is not None)
@@ -1856,8 +1856,8 @@ def test_main():
              TestMHMessage, TestBabylMessage, TestMMDFMessage,
              TestMessageConversion, TestProxyFile, TestPartialFile,
              MaildirTestCase)
-    test_support.run_unittest(*tests)
-    test_support.reap_children()
+    support.run_unittest(*tests)
+    support.reap_children()
 
 
 if __name__ == '__main__':

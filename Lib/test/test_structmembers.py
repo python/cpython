@@ -6,7 +6,7 @@ from _testcapi import test_structmembersType, \
     LLONG_MAX, LLONG_MIN, ULLONG_MAX
 
 import warnings, unittest, sys
-from test import test_support
+from test import support
 
 ts=test_structmembersType(False, 1, 2, 3, 4, 5, 6, 7, 8,
                           9.99999, 10.1010101010)
@@ -69,39 +69,39 @@ class TestWarnings(unittest.TestCase):
         self.assertEqual(w.category, RuntimeWarning)
 
     def test_byte_max(self):
-        with test_support.catch_warning() as w:
+        with support.catch_warning() as w:
             ts.T_BYTE = CHAR_MAX+1
             self.has_warned(w)
 
     def test_byte_min(self):
-        with test_support.catch_warning() as w:
+        with support.catch_warning() as w:
             ts.T_BYTE = CHAR_MIN-1
             self.has_warned(w)
 
     def test_ubyte_max(self):
-        with test_support.catch_warning() as w:
+        with support.catch_warning() as w:
             ts.T_UBYTE = UCHAR_MAX+1
             self.has_warned(w)
 
     def test_short_max(self):
-        with test_support.catch_warning() as w:
+        with support.catch_warning() as w:
             ts.T_SHORT = SHRT_MAX+1
             self.has_warned(w)
 
     def test_short_min(self):
-        with test_support.catch_warning() as w:
+        with support.catch_warning() as w:
             ts.T_SHORT = SHRT_MIN-1
             self.has_warned(w)
 
     def test_ushort_max(self):
-        with test_support.catch_warning() as w:
+        with support.catch_warning() as w:
             ts.T_USHORT = USHRT_MAX+1
             self.has_warned(w)
 
 
 
 def test_main(verbose=None):
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main(verbose=True)

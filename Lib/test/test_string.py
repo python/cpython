@@ -1,5 +1,5 @@
 import unittest, string
-from test import test_support
+from test import support
 
 
 class ModuleTest(unittest.TestCase):
@@ -110,7 +110,7 @@ class ModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, string.maketrans, 'abc', 'def')
 
 def test_main():
-    test_support.run_unittest(ModuleTest)
+    support.run_unittest(ModuleTest)
 
 if __name__ == "__main__":
     test_main()

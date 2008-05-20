@@ -104,6 +104,8 @@ Library
 
 - pdb gained the "until" command.
 
+- test.test_support has been renamed test.support
+
 Build
 -----
 

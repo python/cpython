@@ -8,7 +8,7 @@ import unittest
 import pyexpat
 from xml.parsers import expat
 
-from test.test_support import sortdict, run_unittest
+from test.support import sortdict, run_unittest
 
 
 class SetAttributeTest(unittest.TestCase):

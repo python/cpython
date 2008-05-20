@@ -4,7 +4,7 @@
 """
 
 import errno
-from test import test_support
+from test import support
 import unittest
 
 std_c_errors = frozenset(['EDOM', 'ERANGE'])
@@ -33,7 +33,7 @@ class ErrorcodeTests(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(ErrnoAttributeTests, ErrorcodeTests)
+    support.run_unittest(ErrnoAttributeTests, ErrorcodeTests)
 
 
 if __name__ == '__main__':

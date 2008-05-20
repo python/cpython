@@ -2,7 +2,7 @@
 
 import unittest
 import os
-from test import test_support
+from test import support
 from Tkinter import Tcl
 from _tkinter import TclError
 
@@ -151,7 +151,7 @@ class TclTest(unittest.TestCase):
                 os.environ['DISPLAY'] = old_display
 
 def test_main():
-    test_support.run_unittest(TclTest)
+    support.run_unittest(TclTest)
 
 if __name__ == "__main__":
     test_main()

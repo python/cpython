@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 import pstats
 
 
@@ -17,7 +17,7 @@ class AddCallersTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         AddCallersTestCase
     )
 

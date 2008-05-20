@@ -4,7 +4,7 @@ BytesIO -- for bytes
 """
 
 import unittest
-from test import test_support
+from test import support
 
 import io
 import sys
@@ -408,7 +408,7 @@ def test_main():
     tests = [PyBytesIOTest, PyStringIOTest]
     if has_c_implementation:
         tests.extend([CBytesIOTest])
-    test_support.run_unittest(*tests)
+    support.run_unittest(*tests)
 
 if __name__ == '__main__':
     test_main()

@@ -1,4 +1,4 @@
-from test.test_support import verbose, TestSkipped
+from test.support import verbose, TestSkipped
 import locale
 import sys
 

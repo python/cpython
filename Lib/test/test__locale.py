@@ -1,4 +1,4 @@
-from test.test_support import verbose, TestSkipped, run_unittest
+from test.support import verbose, TestSkipped, run_unittest
 from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, RADIXCHAR, THOUSEP, nl_langinfo,
                     localeconv, Error)
 import unittest

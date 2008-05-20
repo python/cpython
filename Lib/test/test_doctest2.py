@@ -12,7 +12,7 @@ the example.  It should be ignored:
 
 """
 
-from test import test_support
+from test import support
 
 class C(object):
     """Class C.
@@ -107,9 +107,9 @@ class C(object):
 def test_main():
     from test import test_doctest2
     EXPECTED = 19
-    f, t = test_support.run_doctest(test_doctest2)
+    f, t = support.run_doctest(test_doctest2)
     if t != EXPECTED:
-        raise test_support.TestFailed("expected %d tests to run, not %d" %
+        raise support.TestFailed("expected %d tests to run, not %d" %
                                       (EXPECTED, t))
 
 # Pollute the namespace with a bunch of imported functions and classes,

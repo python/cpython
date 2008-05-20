@@ -1,6 +1,6 @@
 # Test audioop.
 import audioop
-from test.test_support import verbose
+from test.support import verbose
 
 def gendata1():
     return b'\0\1\2'

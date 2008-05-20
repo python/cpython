@@ -9,7 +9,7 @@
 #
 
 import unittest
-from test import test_support
+from test import support
 
 from textwrap import TextWrapper, wrap, fill, dedent
 
@@ -579,7 +579,7 @@ def foo():
 
 
 def test_main():
-    test_support.run_unittest(WrapTestCase,
+    support.run_unittest(WrapTestCase,
                               LongWordTestCase,
                               IndentTestCases,
                               DedentTestCase)

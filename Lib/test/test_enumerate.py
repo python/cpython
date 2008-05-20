@@ -1,7 +1,7 @@
 import unittest
 import sys
 
-from test import test_support
+from test import support
 
 class G:
     'Sequence using __getitem__'
@@ -215,14 +215,14 @@ class TestLongStart(EnumerateTestCase):
 def test_main(verbose=None):
     testclasses = (EnumerateTestCase, SubclassTestCase, TestEmpty, TestBig,
                    TestReversed)
-    test_support.run_unittest(*testclasses)
+    support.run_unittest(*testclasses)
 
     # verify reference counting
     import sys
     if verbose and hasattr(sys, "gettotalrefcount"):
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(*testclasses)
+            support.run_unittest(*testclasses)
             counts[i] = sys.gettotalrefcount()
         print(counts)
 

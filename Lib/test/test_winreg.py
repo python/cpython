@@ -6,7 +6,7 @@ from _winreg import *
 import os, sys
 import unittest
 
-from test import test_support
+from test import support
 
 test_key_name = "SOFTWARE\\Python Registry Test Key - Delete Me"
 
@@ -161,7 +161,7 @@ class WinregTests(unittest.TestCase):
         self.assertEqual(r, os.environ["windir"] + "\\test")
 
 def test_main():
-    test_support.run_unittest(WinregTests)
+    support.run_unittest(WinregTests)
 
 if __name__ == "__main__":
     try:

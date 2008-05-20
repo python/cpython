@@ -8,7 +8,7 @@ import unittest
 
 import zlib # implied prerequisite
 from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
-from test import test_support
+from test import support
 from test.test_importhooks import ImportHooksBaseTestCase, test_src, test_co
 
 import zipimport
@@ -385,12 +385,12 @@ class BadFileZipImportTestCase(unittest.TestCase):
         self.assertZipFailure('A' * 33000)
 
     def testEmptyFile(self):
-        test_support.unlink(TESTMOD)
+        support.unlink(TESTMOD)
         open(TESTMOD, 'w+').close()
         self.assertZipFailure(TESTMOD)
 
     def testFileUnreadable(self):
-        test_support.unlink(TESTMOD)
+        support.unlink(TESTMOD)
         fd = os.open(TESTMOD, os.O_CREAT, 000)
         try:
             os.close(fd)
@@ -399,10 +399,10 @@ class BadFileZipImportTestCase(unittest.TestCase):
             # If we leave "the read-only bit" set on Windows, nothing can
             # delete TESTMOD, and later tests suffer bogus failures.
             os.chmod(TESTMOD, 0o666)
-            test_support.unlink(TESTMOD)
+            support.unlink(TESTMOD)
 
     def testNotZipFile(self):
-        test_support.unlink(TESTMOD)
+        support.unlink(TESTMOD)
         fp = open(TESTMOD, 'w+')
         fp.write('a' * 22)
         fp.close()
@@ -410,7 +410,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
     # XXX: disabled until this works on Big-endian machines
     def _testBogusZipFile(self):
-        test_support.unlink(TESTMOD)
+        support.unlink(TESTMOD)
         fp = open(TESTMOD, 'w+')
         fp.write(struct.pack('=I', 0x06054B50))
         fp.write('a' * 18)
@@ -451,13 +451,13 @@ def cleanup():
 def test_main():
     cleanup()
     try:
-        test_support.run_unittest(
+        support.run_unittest(
               UncompressedZipImportTestCase,
               CompressedZipImportTestCase,
               BadFileZipImportTestCase,
             )
     finally:
-        test_support.unlink(TESTMOD)
+        support.unlink(TESTMOD)
 
 if __name__ == "__main__":
     test_main()

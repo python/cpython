@@ -1,4 +1,4 @@
-from test.test_support import run_unittest, open_urlresource
+from test.support import run_unittest, open_urlresource
 import unittest
 
 import sys

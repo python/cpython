@@ -10,7 +10,7 @@ import mimetools
 import httplib
 import socket
 import os
-from test import test_support
+from test import support
 
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
@@ -546,20 +546,20 @@ class CGIHandlerTestCase(unittest.TestCase):
         # if the method is GET and no request_text is given, it runs handle_get
         # get sysout output
         tmp = sys.stdout
-        sys.stdout = open(test_support.TESTFN, "w")
+        sys.stdout = open(support.TESTFN, "w")
         self.cgi.handle_request()
         sys.stdout.close()
         sys.stdout = tmp
 
         # parse Status header
-        handle = open(test_support.TESTFN, "r").read()
+        handle = open(support.TESTFN, "r").read()
         status = handle.split()[1]
         message = ' '.join(handle.split()[2:4])
 
         self.assertEqual(status, '400')
         self.assertEqual(message, 'Bad Request')
 
-        os.remove(test_support.TESTFN)
+        os.remove(support.TESTFN)
         os.environ['REQUEST_METHOD'] = ''
 
     def test_cgi_xmlrpc_response(self):
@@ -581,7 +581,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         tmp2 = sys.stdout
 
         sys.stdin = open("xmldata.txt", "r")
-        sys.stdout = open(test_support.TESTFN, "w")
+        sys.stdout = open(support.TESTFN, "w")
 
         self.cgi.handle_request()
 
@@ -591,13 +591,13 @@ class CGIHandlerTestCase(unittest.TestCase):
         sys.stdout = tmp2
 
         # will respond exception, if so, our goal is achieved ;)
-        handle = open(test_support.TESTFN, "r").read()
+        handle = open(support.TESTFN, "r").read()
 
         # start with 44th char so as not to get http header, we just need only xml
         self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, handle[44:])
 
         os.remove("xmldata.txt")
-        os.remove(test_support.TESTFN)
+        os.remove(support.TESTFN)
 
 def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
@@ -612,7 +612,7 @@ def test_main():
         xmlrpc_tests.append(FailingServerTestCase)
         xmlrpc_tests.append(CGIHandlerTestCase)
 
-    test_support.run_unittest(*xmlrpc_tests)
+    support.run_unittest(*xmlrpc_tests)
 
 if __name__ == "__main__":
     test_main()

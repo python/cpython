@@ -4,7 +4,7 @@ import os
 import os.path
 import sys
 import tempfile
-from test.test_support import verbose, run_unittest, forget
+from test.support import verbose, run_unittest, forget
 from runpy import _run_code, _run_module_code, run_module
 
 # Note: This module can't safely test _run_module_as_main as it

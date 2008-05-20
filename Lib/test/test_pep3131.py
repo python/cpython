@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
-from test import test_support
+from test import support
 
 class PEP3131Test(unittest.TestCase):
 
@@ -23,7 +23,7 @@ class PEP3131Test(unittest.TestCase):
             self.fail("expected exception didn't occur")
 
 def test_main():
-    test_support.run_unittest(PEP3131Test)
+    support.run_unittest(PEP3131Test)
 
 if __name__=="__main__":
     test_main()

@@ -10,9 +10,9 @@ import time
 import select
 
 from unittest import TestCase
-from test import test_support
+from test import support
 
-HOST = test_support.HOST
+HOST = support.HOST
 
 def server(evt, buf, serv):
     serv.listen(5)
@@ -42,7 +42,7 @@ class GeneralTests(TestCase):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(15)
-        self.port = test_support.bind_port(self.sock)
+        self.port = support.bind_port(self.sock)
         servargs = (self.evt, b"220 Hola mundo\n", self.sock)
         threading.Thread(target=server, args=servargs).start()
         self.evt.wait()
@@ -142,7 +142,7 @@ class DebuggingServerTests(TestCase):
 
         self.serv_evt = threading.Event()
         self.client_evt = threading.Event()
-        self.port = test_support.find_unused_port()
+        self.port = support.find_unused_port()
         self.serv = smtpd.DebuggingServer((HOST, self.port), ('nowhere', -1))
         serv_args = (self.serv, self.serv_evt, self.client_evt)
         threading.Thread(target=debugging_server, args=serv_args).start()
@@ -250,7 +250,7 @@ class BadHELOServerTests(TestCase):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(15)
-        self.port = test_support.bind_port(self.sock)
+        self.port = support.bind_port(self.sock)
         servargs = (self.evt, b"199 no hello for you!\n", self.sock)
         threading.Thread(target=server, args=servargs).start()
         self.evt.wait()
@@ -327,7 +327,7 @@ class SMTPSimTests(TestCase):
     def setUp(self):
         self.serv_evt = threading.Event()
         self.client_evt = threading.Event()
-        self.port = test_support.find_unused_port()
+        self.port = support.find_unused_port()
         self.serv = SimSMTPServer((HOST, self.port), ('nowhere', -1))
         serv_args = (self.serv, self.serv_evt, self.client_evt)
         threading.Thread(target=debugging_server, args=serv_args).start()
@@ -401,7 +401,7 @@ class SMTPSimTests(TestCase):
 
 
 def test_main(verbose=None):
-    test_support.run_unittest(GeneralTests, DebuggingServerTests,
+    support.run_unittest(GeneralTests, DebuggingServerTests,
                               NonConnectingTests,
                               BadHELOServerTests, SMTPSimTests)
 

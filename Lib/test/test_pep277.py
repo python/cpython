@@ -1,9 +1,9 @@
 # Test the Unicode versions of normal file functions
 # open, os.open, os.stat. os.listdir, os.rename, os.remove, os.mkdir, os.chdir, os.rmdir
 import sys, os, unittest
-from test import test_support
+from test import support
 if not os.path.supports_unicode_filenames:
-    raise test_support.TestSkipped("test works only on NT+")
+    raise support.TestSkipped("test works only on NT+")
 
 filenames = [
     'abc',
@@ -28,11 +28,11 @@ def deltree(dirname):
         os.rmdir(dirname)
 
 class UnicodeFileTests(unittest.TestCase):
-    files = [os.path.join(test_support.TESTFN, f) for f in filenames]
+    files = [os.path.join(support.TESTFN, f) for f in filenames]
 
     def setUp(self):
         try:
-            os.mkdir(test_support.TESTFN)
+            os.mkdir(support.TESTFN)
         except OSError:
             pass
         for name in self.files:
@@ -42,17 +42,17 @@ class UnicodeFileTests(unittest.TestCase):
             os.stat(name)
 
     def tearDown(self):
-        deltree(test_support.TESTFN)
+        deltree(support.TESTFN)
 
     def _apply_failure(self, fn, filename, expected_exception,
                        check_fn_in_exception = True):
         try:
             fn(filename)
-            raise test_support.TestFailed("Expected to fail calling '%s(%r)'"
+            raise support.TestFailed("Expected to fail calling '%s(%r)'"
                              % (fn.__name__, filename))
         except expected_exception as details:
             if check_fn_in_exception and details.filename != filename:
-                raise test_support.TestFailed("Function '%s(%r) failed with "
+                raise support.TestFailed("Function '%s(%r) failed with "
                                  "bad filename in the exception: %r"
                                  % (fn.__name__, filename,
                                     details.filename))
@@ -77,10 +77,10 @@ class UnicodeFileTests(unittest.TestCase):
             os.stat(name)
 
     def test_listdir(self):
-        f1 = os.listdir(test_support.TESTFN)
-        f2 = os.listdir(str(test_support.TESTFN.encode("utf-8"),
+        f1 = os.listdir(support.TESTFN)
+        f2 = os.listdir(str(support.TESTFN.encode("utf-8"),
                                 sys.getfilesystemencoding()))
-        sf2 = set("\\".join((str(test_support.TESTFN), f))
+        sf2 = set("\\".join((str(support.TESTFN), f))
                   for f in f2)
         self.failUnlessEqual(len(f1), len(self.files))
         self.failUnlessEqual(sf2, set(self.files))
@@ -91,7 +91,7 @@ class UnicodeFileTests(unittest.TestCase):
             os.rename("tmp",name)
 
     def test_directory(self):
-        dirname = os.path.join(test_support.TESTFN,'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
+        dirname = os.path.join(support.TESTFN,'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
         filename = '\xdf-\u66e8\u66e9\u66eb'
         oldwd = os.getcwd()
         os.mkdir(dirname)
@@ -106,9 +106,9 @@ class UnicodeFileTests(unittest.TestCase):
 
 def test_main():
     try:
-        test_support.run_unittest(UnicodeFileTests)
+        support.run_unittest(UnicodeFileTests)
     finally:
-        deltree(test_support.TESTFN)
+        deltree(support.TESTFN)
 
 if __name__ == "__main__":
     test_main()

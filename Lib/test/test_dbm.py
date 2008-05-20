@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 import unittest
 import os
 import random
@@ -8,13 +8,13 @@ from dbm import error
 class DbmTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.filename = test_support.TESTFN
+        self.filename = support.TESTFN
         self.d = dbm.open(self.filename, 'c')
         self.d.close()
 
     def tearDown(self):
         for suffix in ['', '.pag', '.dir', '.db']:
-            test_support.unlink(self.filename + suffix)
+            support.unlink(self.filename + suffix)
 
     def test_keys(self):
         self.d = dbm.open(self.filename, 'c')
@@ -34,7 +34,7 @@ class DbmTestCase(unittest.TestCase):
                 self.fail()
 
 def test_main():
-    test_support.run_unittest(DbmTestCase)
+    support.run_unittest(DbmTestCase)
 
 if __name__ == '__main__':
     test_main()

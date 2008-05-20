@@ -1,6 +1,6 @@
 #!/usr/bin/python
-from test import test_support
-from test.test_support import TESTFN
+from test import support
+from test.support import TESTFN
 
 import unittest
 from io import BytesIO
@@ -333,13 +333,13 @@ class FuncTest(BaseTest):
         self.assertRaises(ValueError, bz2.decompress, self.DATA[:-10])
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         BZ2FileTest,
         BZ2CompressorTest,
         BZ2DecompressorTest,
         FuncTest
     )
-    test_support.reap_children()
+    support.reap_children()
 
 if __name__ == '__main__':
     test_main()

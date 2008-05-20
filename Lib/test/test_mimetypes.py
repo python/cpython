@@ -2,7 +2,7 @@ import mimetypes
 import io
 import unittest
 
-from test import test_support
+from test import support
 
 # Tell it we don't know about external files:
 mimetypes.knownfiles = []
@@ -63,7 +63,7 @@ class MimeTypesTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(MimeTypesTestCase)
+    support.run_unittest(MimeTypesTestCase)
 
 
 if __name__ == "__main__":

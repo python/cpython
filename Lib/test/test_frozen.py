@@ -1,6 +1,6 @@
 # Test the frozen module defined in frozen.c.
 
-from test.test_support import captured_stdout, run_unittest
+from test.support import captured_stdout, run_unittest
 import unittest
 import sys, os
 

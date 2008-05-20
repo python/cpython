@@ -1,7 +1,7 @@
 
 import unittest, struct
 import os
-from test import test_support
+from test import support
 import math
 from math import isinf, isnan
 import operator
@@ -28,7 +28,7 @@ class GeneralFloatCases(unittest.TestCase):
             # Implementation limitation in PyFloat_FromString()
             self.assertRaises(ValueError, float, unicode("1"*10000))
 
-    @test_support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
+    @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
         # float must not accept the locale specific decimal point but
@@ -361,7 +361,7 @@ class InfNanTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         FormatFunctionsTestCase,
         UnknownFormatTestCase,
         IEEEFormatTestCase,

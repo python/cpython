@@ -1,6 +1,6 @@
 import pickle
 import pickletools
-from test import test_support
+from test import support
 from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
 
@@ -16,8 +16,8 @@ class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
     error = KeyError
 
 def test_main():
-    test_support.run_unittest(OptimizedPickleTests)
-    test_support.run_doctest(pickletools)
+    support.run_unittest(OptimizedPickleTests)
+    support.run_doctest(pickletools)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 #   Codec mapping tests for Japanese encodings
 #
 
-from test import test_support
+from test import support
 from test import test_multibytecodec_support
 import unittest
 
@@ -61,7 +61,7 @@ class TestSJISX0213Map(test_multibytecodec_support.TestBase_Mapping,
 
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

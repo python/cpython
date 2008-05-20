@@ -1,5 +1,5 @@
 from unittest import TestCase
-from test import test_support
+from test import support
 import uuid
 
 def importable(name):
@@ -462,7 +462,7 @@ class TestUUID(TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestUUID)
+    support.run_unittest(TestUUID)
 
 if __name__ == '__main__':
     test_main()

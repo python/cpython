@@ -1,7 +1,7 @@
 # Check every path through every method of UserList
 
 from collections import UserList
-from test import test_support, list_tests
+from test import support, list_tests
 
 class UserListTest(list_tests.CommonTest):
     type2test = UserList
@@ -53,7 +53,7 @@ class UserListTest(list_tests.CommonTest):
         self.assertEqual(next(iter(T((1,2)))), "0!!!")
 
 def test_main():
-    test_support.run_unittest(UserListTest)
+    support.run_unittest(UserListTest)
 
 if __name__ == "__main__":
     test_main()

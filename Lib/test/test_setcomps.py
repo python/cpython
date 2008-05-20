@@ -133,16 +133,16 @@ __test__ = {'doctests' : doctests}
 
 def test_main(verbose=None):
     import sys
-    from test import test_support
+    from test import support
     from test import test_setcomps
-    test_support.run_doctest(test_setcomps, verbose)
+    support.run_doctest(test_setcomps, verbose)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_doctest(test_setcomps, verbose)
+            support.run_doctest(test_setcomps, verbose)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)

@@ -1,7 +1,7 @@
 # This file is marked as binary in the CVS, to prevent MacCVS from recoding it.
 
 import unittest
-from test import test_support
+from test import support
 
 class PEP3120Test(unittest.TestCase):
 
@@ -24,7 +24,7 @@ class PEP3120Test(unittest.TestCase):
             self.fail("expected exception didn't occur")
 
 def test_main():
-    test_support.run_unittest(PEP3120Test)
+    support.run_unittest(PEP3120Test)
 
 if __name__=="__main__":
     test_main()

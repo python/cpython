@@ -2,7 +2,7 @@
 
 import random
 import unittest
-from test import test_support
+from test import support
 import sys
 
 # We do a bit of trickery here to be able to test both the C implementation
@@ -353,14 +353,14 @@ def test_main(verbose=None):
     from types import BuiltinFunctionType
 
     test_classes = [TestHeapPython, TestHeapC, TestErrorHandling]
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(*test_classes)
+            support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)

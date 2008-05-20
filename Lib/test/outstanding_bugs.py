@@ -7,7 +7,7 @@
 #
 
 import unittest
-from test import test_support
+from test import support
 
 #
 # One test case for outstanding bugs at the moment:
@@ -22,7 +22,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.normalized = b"AAA\nBBB\nCCC\nDDD\nEEE\n".decode("ASCII")
 
     def tearDown(self):
-        test_support.unlink(test_support.TESTFN)
+        support.unlink(support.TESTFN)
 
 
     def test_issue1395_1(self):
@@ -81,7 +81,7 @@ class TextIOWrapperTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         TextIOWrapperTest)
 
 if __name__ == "__main__":

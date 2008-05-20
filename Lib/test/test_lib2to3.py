@@ -2,7 +2,7 @@
 # because of running
 from lib2to3.tests import test_fixers, test_pytree, test_util
 import unittest
-from test.test_support import run_unittest
+from test.support import run_unittest
 
 def suite():
     tests = unittest.TestSuite()

@@ -1,5 +1,5 @@
 import unittest
-from test.test_support import TestSkipped, run_unittest
+from test.support import TestSkipped, run_unittest
 import os, struct
 try:
     import fcntl, termios

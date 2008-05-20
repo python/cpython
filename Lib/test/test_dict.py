@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 import sys, collections, random, string
 
@@ -651,7 +651,7 @@ class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = Dict
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         DictTest,
         GeneralMappingTests,
         SubclassMappingTests,

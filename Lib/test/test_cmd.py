@@ -167,8 +167,8 @@ class samplecmdclass(cmd.Cmd):
         return True
 
 def test_main(verbose=None):
-    from test import test_support, test_cmd
-    test_support.run_doctest(test_cmd, verbose)
+    from test import support, test_cmd
+    support.run_doctest(test_cmd, verbose)
 
 def test_coverage(coverdir):
     tracer=trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],

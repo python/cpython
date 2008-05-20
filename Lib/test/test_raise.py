@@ -3,7 +3,7 @@
 
 """Tests for the raise statement."""
 
-from test import test_support
+from test import support
 import sys
 import types
 import unittest
@@ -156,7 +156,7 @@ class TestRemovedFunctionality(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 
 if __name__ == "__main__":

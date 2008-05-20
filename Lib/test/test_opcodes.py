@@ -1,6 +1,6 @@
 # Python test set -- part 2, opcodes
 
-from test.test_support import run_unittest
+from test.support import run_unittest
 import unittest
 
 class OpcodeTest(unittest.TestCase):

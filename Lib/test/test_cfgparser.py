@@ -3,7 +3,7 @@ import io
 import unittest
 import collections
 
-from test import test_support
+from test import support
 
 class SortedDict(collections.UserDict):
     def items(self):
@@ -251,7 +251,7 @@ class TestCaseBase(unittest.TestCase):
         cf.set("sect", "option2", "splat")
 
     def test_read_returns_file_list(self):
-        file1 = test_support.findfile("cfgparser.1")
+        file1 = support.findfile("cfgparser.1")
         # check when we pass a mix of readable and non-readable files:
         cf = self.newconfig()
         parsed_files = cf.read([file1, "nonexistant-file"])
@@ -469,7 +469,7 @@ class SortedTestCase(RawConfigParserTestCase):
                           "o4 = 1\n\n")
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         ConfigParserTestCase,
         RawConfigParserTestCase,
         SafeConfigParserTestCase,

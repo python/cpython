@@ -1,7 +1,7 @@
-from test import test_support
-test_support.requires('audio')
+from test import support
+support.requires('audio')
 
-from test.test_support import findfile, TestSkipped
+from test.support import findfile, TestSkipped
 
 import errno
 import ossaudiodev
@@ -167,7 +167,7 @@ def test_main():
             raise TestSkipped(msg)
         raise
     dsp.close()
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

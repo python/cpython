@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 import sys
 
 import random
@@ -771,7 +771,7 @@ class LongTest(unittest.TestCase):
         self.assertRaises(OverflowError, int, float('nan'))
 
 def test_main():
-    test_support.run_unittest(LongTest)
+    support.run_unittest(LongTest)
 
 if __name__ == "__main__":
     test_main()

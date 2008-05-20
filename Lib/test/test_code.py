@@ -119,7 +119,7 @@ def dump(co):
     print("consts:", tuple(consts(co.co_consts)))
 
 def test_main(verbose=None):
-    from test.test_support import run_doctest
+    from test.support import run_doctest
     from test import test_code
     run_doctest(test_code, verbose)
 

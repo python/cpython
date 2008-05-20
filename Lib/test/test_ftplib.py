@@ -4,9 +4,9 @@ import ftplib
 import time
 
 from unittest import TestCase
-from test import test_support
+from test import support
 
-HOST = test_support.HOST
+HOST = support.HOST
 
 # This function sets the evt 3 times:
 #  1) when the connection is ready to be accepted.
@@ -37,7 +37,7 @@ class GeneralTests(TestCase):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(3)
-        self.port = test_support.bind_port(self.sock)
+        self.port = support.bind_port(self.sock)
         threading.Thread(target=server, args=(self.evt,self.sock)).start()
         # Wait for the server to be ready.
         self.evt.wait()
@@ -106,7 +106,7 @@ class GeneralTests(TestCase):
 
 
 def test_main(verbose=None):
-    test_support.run_unittest(GeneralTests)
+    support.run_unittest(GeneralTests)
 
 if __name__ == '__main__':
     test_main()

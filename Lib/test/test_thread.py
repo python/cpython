@@ -1,7 +1,7 @@
 import os
 import unittest
 import random
-from test import test_support
+from test import support
 import thread
 import time
 
@@ -13,7 +13,7 @@ _print_mutex = thread.allocate_lock()
 
 def verbose_print(arg):
     """Helper function for printing out debugging output."""
-    if test_support.verbose:
+    if support.verbose:
         with _print_mutex:
             print(arg)
 
@@ -159,7 +159,7 @@ class BarrierTest(BasicThreadTest):
             self.done_mutex.release()
 
 def test_main():
-    test_support.run_unittest(ThreadRunningTests, BarrierTest)
+    support.run_unittest(ThreadRunningTests, BarrierTest)
 
 if __name__ == "__main__":
     test_main()

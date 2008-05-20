@@ -4,7 +4,7 @@ Nick Mathewson
 """
 
 import unittest
-from test import test_support
+from test import support
 
 import sys, os
 import uu
@@ -111,8 +111,8 @@ class UUFileTest(unittest.TestCase):
             pass
 
     def setUp(self):
-        self.tmpin  = test_support.TESTFN + "i"
-        self.tmpout = test_support.TESTFN + "o"
+        self.tmpin  = support.TESTFN + "i"
+        self.tmpout = support.TESTFN + "o"
 
     def tearDown(self):
         del self.tmpin
@@ -121,7 +121,7 @@ class UUFileTest(unittest.TestCase):
     def test_encode(self):
         fin = fout = None
         try:
-            test_support.unlink(self.tmpin)
+            support.unlink(self.tmpin)
             fin = open(self.tmpin, 'wb')
             fin.write(plaintext)
             fin.close()
@@ -151,7 +151,7 @@ class UUFileTest(unittest.TestCase):
     def test_decode(self):
         f = None
         try:
-            test_support.unlink(self.tmpin)
+            support.unlink(self.tmpin)
             f = open(self.tmpin, 'wb')
             f.write(encodedtextwrapped(0o644, self.tmpout))
             f.close()
@@ -185,7 +185,7 @@ class UUFileTest(unittest.TestCase):
             self._kill(f)
 
 def test_main():
-    test_support.run_unittest(UUTest,
+    support.run_unittest(UUTest,
                               UUStdIOTest,
                               UUFileTest,
                               )

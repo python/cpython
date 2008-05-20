@@ -185,9 +185,9 @@ class TestTemplate(unittest.TestCase):
 
 
 def test_main():
-    from test import test_support
+    from test import support
     test_classes = [TestTemplate,]
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@
 """
 
 import unittest
-from test import test_support
+from test import support
 from weakref import proxy
 import array, io, math
 from pickle import loads, dumps
@@ -162,13 +162,13 @@ class BaseTest(unittest.TestCase):
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
-        test_support.unlink(test_support.TESTFN)
-        f = open(test_support.TESTFN, 'wb')
+        support.unlink(support.TESTFN)
+        f = open(support.TESTFN, 'wb')
         try:
             a.tofile(f)
             f.close()
             b = array.array(self.typecode)
-            f = open(test_support.TESTFN, 'rb')
+            f = open(support.TESTFN, 'rb')
             self.assertRaises(TypeError, b.fromfile)
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
@@ -180,7 +180,7 @@ class BaseTest(unittest.TestCase):
         finally:
             if not f.closed:
                 f.close()
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)
@@ -967,14 +967,14 @@ tests.append(DoubleTest)
 def test_main(verbose=None):
     import sys
 
-    test_support.run_unittest(*tests)
+    support.run_unittest(*tests)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(*tests)
+            support.run_unittest(*tests)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)

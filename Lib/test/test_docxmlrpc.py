@@ -1,6 +1,6 @@
 from DocXMLRPCServer import DocXMLRPCServer
 import httplib
-from test import test_support
+from test import support
 import threading
 import time
 import unittest
@@ -145,7 +145,7 @@ b"""<dl><dt><a name="-system.methodHelp"><strong>system.methodHelp</strong></a>(
             response.read())
 
 def test_main():
-    test_support.run_unittest(DocXMLRPCHTTPGETServer)
+    support.run_unittest(DocXMLRPCHTTPGETServer)
 
 if __name__ == '__main__':
     test_main()

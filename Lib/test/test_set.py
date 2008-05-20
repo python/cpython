@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 from weakref import proxy
 import operator
 import copy
@@ -288,14 +288,14 @@ class TestJointOps(unittest.TestCase):
         s = self.thetype([w])
         w.value = s
         try:
-            fo = open(test_support.TESTFN, "w")
+            fo = open(support.TESTFN, "w")
             fo.write(str(s))
             fo.close()
-            fo = open(test_support.TESTFN, "r")
+            fo = open(support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(s))
         finally:
             fo.close()
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
     def test_do_not_rehash_dict_keys(self):
         n = 10
@@ -672,14 +672,14 @@ class TestBasicOps(unittest.TestCase):
 
     def test_print(self):
         try:
-            fo = open(test_support.TESTFN, "w")
+            fo = open(support.TESTFN, "w")
             fo.write(str(self.set))
             fo.close()
-            fo = open(test_support.TESTFN, "r")
+            fo = open(support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(self.set))
         finally:
             fo.close()
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
     def test_length(self):
         self.assertEqual(len(self.set), self.length)
@@ -1752,14 +1752,14 @@ def test_main(verbose=None):
         TestGraphs,
         )
 
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            test_support.run_unittest(*test_classes)
+            support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)

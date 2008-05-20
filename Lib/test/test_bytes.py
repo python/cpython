@@ -13,7 +13,7 @@ import pickle
 import tempfile
 import unittest
 import warnings
-import test.test_support
+import test.support
 import test.string_tests
 import test.buffer_tests
 
@@ -969,13 +969,13 @@ class ByteArraySubclassTest(unittest.TestCase):
 
 
 def test_main():
-    test.test_support.run_unittest(BytesTest)
-    test.test_support.run_unittest(ByteArrayTest)
-    test.test_support.run_unittest(AssortedBytesTest)
-    test.test_support.run_unittest(BytesAsStringTest)
-    test.test_support.run_unittest(ByteArrayAsStringTest)
-    test.test_support.run_unittest(ByteArraySubclassTest)
-    test.test_support.run_unittest(BytearrayPEP3137Test)
+    test.support.run_unittest(BytesTest)
+    test.support.run_unittest(ByteArrayTest)
+    test.support.run_unittest(AssortedBytesTest)
+    test.support.run_unittest(BytesAsStringTest)
+    test.support.run_unittest(ByteArrayAsStringTest)
+    test.support.run_unittest(ByteArraySubclassTest)
+    test.support.run_unittest(BytearrayPEP3137Test)
 
 if __name__ == "__main__":
     test_main()

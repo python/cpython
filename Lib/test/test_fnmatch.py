@@ -1,6 +1,6 @@
 """Test cases for the fnmatch module."""
 
-from test import test_support
+from test import support
 import unittest
 
 from fnmatch import fnmatch, fnmatchcase
@@ -39,7 +39,7 @@ class FnmatchTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(FnmatchTestCase)
+    support.run_unittest(FnmatchTestCase)
 
 
 if __name__ == "__main__":

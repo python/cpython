@@ -1,6 +1,6 @@
 
-import test.test_support, unittest
-from test.test_support import TESTFN, unlink
+import test.support, unittest
+from test.support import TESTFN, unlink
 import os, sys
 
 class CodingTest(unittest.TestCase):
@@ -50,7 +50,7 @@ class CodingTest(unittest.TestCase):
             sys.path.pop(0)
 
 def test_main():
-    test.test_support.run_unittest(CodingTest)
+    test.support.run_unittest(CodingTest)
 
 if __name__ == "__main__":
     test_main()

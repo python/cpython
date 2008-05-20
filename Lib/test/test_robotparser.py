@@ -1,6 +1,6 @@
 import unittest, robotparser
 import io
-from test import test_support
+from test import support
 
 class RobotTestCase(unittest.TestCase):
     def __init__(self, index, parser, url, good, agent):
@@ -137,7 +137,7 @@ RobotTest(7, doc, good, bad)
 
 class TestCase(unittest.TestCase):
     def runTest(self):
-        test_support.requires('network')
+        support.requires('network')
         # whole site is password-protected.
         url = 'http://mueblesmoraleda.com'
         parser = robotparser.RobotFileParser()
@@ -146,9 +146,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
 
 def test_main():
-    test_support.run_unittest(tests)
+    support.run_unittest(tests)
     TestCase().run()
 
 if __name__=='__main__':
-    test_support.Verbose = 1
+    support.Verbose = 1
     test_main()

@@ -10,7 +10,7 @@ import sys
 import unittest
 from collections import deque
 from contextlib import GeneratorContextManager, contextmanager
-from test.test_support import run_unittest
+from test.support import run_unittest
 
 
 class MockContextManager(GeneratorContextManager):

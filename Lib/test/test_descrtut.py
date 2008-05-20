@@ -8,7 +8,7 @@
 # of much interest anymore), and a few were fiddled to make the output
 # deterministic.
 
-from test.test_support import sortdict
+from test.support import sortdict
 import pprint
 
 class defaultdict(dict):
@@ -473,8 +473,8 @@ def test_main(verbose=None):
     # into the doctest examples, and unless the full test.test_descrtut
     # business is used the name can change depending on how the test is
     # invoked.
-    from test import test_support, test_descrtut
-    test_support.run_doctest(test_descrtut, verbose)
+    from test import support, test_descrtut
+    support.run_doctest(test_descrtut, verbose)
 
 # This part isn't needed for regrtest, but for running the test directly.
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from test.test_support import verbose, TESTFN
+from test.support import verbose, TESTFN
 import random
 import os
 

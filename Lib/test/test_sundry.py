@@ -1,13 +1,13 @@
 """Do a minimal test of all the modules that aren't otherwise tested."""
 
-from test import test_support
+from test import support
 import sys
 import unittest
 import warnings
 
 class TestUntestedModules(unittest.TestCase):
     def test_at_least_import_untested_modules(self):
-        with test_support.catch_warning():
+        with support.catch_warning():
             import CGIHTTPServer
             import aifc
             import bdb
@@ -73,14 +73,14 @@ class TestUntestedModules(unittest.TestCase):
             try:
                 import tty     # not available on Windows
             except ImportError:
-                if test_support.verbose:
+                if support.verbose:
                     print("skipping tty")
             import webbrowser
             import xml
 
 
 def test_main():
-    test_support.run_unittest(TestUntestedModules)
+    support.run_unittest(TestUntestedModules)
 
 if __name__ == "__main__":
     test_main()

@@ -6,7 +6,7 @@ import datetime
 import collections
 from os.path import normcase
 
-from test.test_support import TESTFN, run_unittest
+from test.support import TESTFN, run_unittest
 
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2

@@ -5,7 +5,7 @@
 import unittest
 import os, tempfile, re
 
-from test.test_support import TestSkipped, run_unittest, reap_children
+from test.support import TestSkipped, run_unittest, reap_children
 from commands import *
 
 # The module says:

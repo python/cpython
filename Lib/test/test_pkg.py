@@ -5,7 +5,7 @@ import os
 import tempfile
 import textwrap
 import unittest
-from test import test_support
+from test import support
 
 
 # Helpers to create and destroy hierarchies.
@@ -280,7 +280,7 @@ class TestPkg(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 
 if __name__ == "__main__":

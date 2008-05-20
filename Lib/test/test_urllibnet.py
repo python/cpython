@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-from test import test_support
+from test import support
 
 import socket
 import urllib
@@ -166,8 +166,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
     def test_specified_path(self):
         # Make sure that specifying the location of the file to write to works.
         file_location,info = self.urlretrieve("http://www.python.org/",
-                                              test_support.TESTFN)
-        self.assertEqual(file_location, test_support.TESTFN)
+                                              support.TESTFN)
+        self.assertEqual(file_location, support.TESTFN)
         self.assert_(os.path.exists(file_location))
         FILE = open(file_location, errors='ignore')
         try:
@@ -186,8 +186,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
 
 def test_main():
-    test_support.requires('network')
-    test_support.run_unittest(URLTimeoutTest,
+    support.requires('network')
+    support.run_unittest(URLTimeoutTest,
                               urlopenNetworkTests,
                               urlretrieveNetworkTests)
 

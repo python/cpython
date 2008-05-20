@@ -3,7 +3,7 @@
 """
 
 import unittest
-from test import test_support
+from test import support
 import os
 import gzip
 
@@ -22,13 +22,13 @@ data2 = b"""/* zlibmodule.c -- gzip-compatible data compression */
 
 
 class TestGzip(unittest.TestCase):
-    filename = test_support.TESTFN
+    filename = support.TESTFN
 
     def setUp (self):
-        test_support.unlink(self.filename)
+        support.unlink(self.filename)
 
     def tearDown (self):
-        test_support.unlink(self.filename)
+        support.unlink(self.filename)
 
 
     def test_write (self):
@@ -158,7 +158,7 @@ class TestGzip(unittest.TestCase):
             f.close()
 
 def test_main(verbose=None):
-    test_support.run_unittest(TestGzip)
+    support.run_unittest(TestGzip)
 
 if __name__ == "__main__":
     test_main(verbose=True)

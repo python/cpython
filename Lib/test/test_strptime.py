@@ -5,7 +5,7 @@ import time
 import locale
 import re
 import sys
-from test import test_support
+from test import support
 from datetime import date as datetime_date
 
 import _strptime
@@ -551,7 +551,7 @@ class CacheTests(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         getlang_Tests,
         LocaleTime_Tests,
         TimeRETests,

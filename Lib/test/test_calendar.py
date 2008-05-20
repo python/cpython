@@ -1,7 +1,7 @@
 import calendar
 import unittest
 
-from test import test_support
+from test import support
 
 
 result_2004_text = """
@@ -383,7 +383,7 @@ class SundayTestCase(MonthCalendarTestCase):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         OutputTestCase,
         CalendarTestCase,
         MondayTestCase,

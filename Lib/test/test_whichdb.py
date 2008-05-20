@@ -4,14 +4,14 @@
 """
 
 import os
-import test.test_support
+import test.support
 import unittest
 import whichdb
 import anydbm
 import glob
 from test.test_anydbm import delete_files, dbm_iterator
 
-_fname = test.test_support.TESTFN
+_fname = test.support.TESTFN
 
 class WhichDBTestCase(unittest.TestCase):
     # Actual test methods are added to namespace
@@ -27,7 +27,7 @@ class WhichDBTestCase(unittest.TestCase):
             name = module.__name__
             if name == 'dumbdbm':
                 continue   # whichdb can't support dumbdbm
-            test.test_support.unlink(_fname)
+            test.support.unlink(_fname)
             f = module.open(_fname, 'c')
             f.close()
             self.assertEqual(name, whichdb.whichdb(_fname))
@@ -50,7 +50,7 @@ class WhichDBTestCase(unittest.TestCase):
 
 def test_main():
     try:
-        test.test_support.run_unittest(WhichDBTestCase)
+        test.support.run_unittest(WhichDBTestCase)
     finally:
         delete_files()
 

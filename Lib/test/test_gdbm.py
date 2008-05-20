@@ -1,7 +1,7 @@
 import gdbm
 import unittest
 import os
-from test.test_support import verbose, TESTFN, run_unittest, unlink
+from test.support import verbose, TESTFN, run_unittest, unlink
 
 
 filename = TESTFN

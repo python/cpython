@@ -6,7 +6,7 @@
 from __future__ import print_function
 
 import unittest
-from test import test_support
+from test import support
 
 import sys
 try:
@@ -62,7 +62,7 @@ class TestPrint(unittest.TestCase):
                        end is not NotDefined,
                        file is not NotDefined)]
 
-        with test_support.captured_stdout() as t:
+        with support.captured_stdout() as t:
             fn(args, sep, end, file)
 
         self.assertEqual(t.getvalue(), expected)
@@ -113,7 +113,7 @@ class TestPrint(unittest.TestCase):
         self.assertRaises(AttributeError, print, '', file='')
 
 def test_main():
-    test_support.run_unittest(TestPrint)
+    support.run_unittest(TestPrint)
 
 if __name__ == "__main__":
     test_main()

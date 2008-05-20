@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 import time
 import unittest
 
@@ -219,7 +219,7 @@ class TimeTestCase(unittest.TestCase):
         self.assert_(0 <= (t1-t0) < 0.2)
 
 def test_main():
-    test_support.run_unittest(TimeTestCase)
+    support.run_unittest(TimeTestCase)
 
 
 if __name__ == "__main__":

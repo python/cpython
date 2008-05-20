@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 # Simple test to ensure that optimizations in fileobject.c deliver
 # the expected results.  For best testing, run this under a debug-build
@@ -14,18 +14,18 @@ class BufferSizeTest(unittest.TestCase):
         # .readline()s deliver what we wrote.
 
         # Ensure we can open TESTFN for writing.
-        test_support.unlink(test_support.TESTFN)
+        support.unlink(support.TESTFN)
 
         # Since C doesn't guarantee we can write/read arbitrary bytes in text
         # files, use binary mode.
-        f = open(test_support.TESTFN, "wb")
+        f = open(support.TESTFN, "wb")
         try:
             # write once with \n and once without
             f.write(s)
             f.write(b"\n")
             f.write(s)
             f.close()
-            f = open(test_support.TESTFN, "rb")
+            f = open(support.TESTFN, "rb")
             line = f.readline()
             self.assertEqual(line, s + b"\n")
             line = f.readline()
@@ -34,7 +34,7 @@ class BufferSizeTest(unittest.TestCase):
             self.assert_(not line) # Must be at EOF
             f.close()
         finally:
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
     def drive_one(self, pattern):
         for length in lengths:
@@ -59,7 +59,7 @@ class BufferSizeTest(unittest.TestCase):
         self.drive_one(bytes(1000))
 
 def test_main():
-    test_support.run_unittest(BufferSizeTest)
+    support.run_unittest(BufferSizeTest)
 
 if __name__ == "__main__":
     test_main()

@@ -16,7 +16,7 @@ import curses.panel
 # 'curses' resource be given on the regrtest command line using the -u
 # option.  If not available, nothing after this line will be executed.
 
-from test.test_support import requires, TestSkipped
+from test.support import requires, TestSkipped
 requires('curses')
 
 # XXX: if newterm was supported we could use it instead of initscr and not exit

@@ -2,7 +2,7 @@ import pprint
 import re
 import sgmllib
 import unittest
-from test import test_support
+from test import support
 
 
 class EventCollector(sgmllib.SGMLParser):
@@ -365,7 +365,7 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
         # Just verify this code doesn't cause a hang.
         CHUNK = 1024  # increasing this to 8212 makes the problem go away
 
-        f = open(test_support.findfile('sgml_input.html'), encoding="latin-1")
+        f = open(support.findfile('sgml_input.html'), encoding="latin-1")
         fp = sgmllib.SGMLParser()
         while 1:
             data = f.read(CHUNK)
@@ -431,7 +431,7 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
 
 
 def test_main():
-    test_support.run_unittest(SGMLParserTestCase)
+    support.run_unittest(SGMLParserTestCase)
 
 
 if __name__ == "__main__":

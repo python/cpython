@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 import time
 
@@ -114,7 +114,7 @@ class StructSeqTest(unittest.TestCase):
                                      L[start:stop:step])
 
 def test_main():
-    test_support.run_unittest(StructSeqTest)
+    support.run_unittest(StructSeqTest)
 
 if __name__ == "__main__":
     test_main()

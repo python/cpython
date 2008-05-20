@@ -20,7 +20,7 @@ import thread # If this fails, we can't test this module
 import threading
 import tempfile
 
-from test.test_support import threading_setup, threading_cleanup, run_unittest
+from test.support import threading_setup, threading_cleanup, run_unittest
 import unittest
 import io
 from traceback import print_exc

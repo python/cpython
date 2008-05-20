@@ -166,9 +166,9 @@ __test__ = {'doctests' : doctests}
 
 def test_main(verbose=False):
     import sys
-    from test import test_support
+    from test import support
     from test import test_unpack_ex
-    test_support.run_doctest(test_unpack_ex, verbose)
+    support.run_doctest(test_unpack_ex, verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)

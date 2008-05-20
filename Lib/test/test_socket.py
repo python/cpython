@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-from test import test_support
+from test import support
 
 import errno
 import socket
@@ -16,14 +16,14 @@ import array
 from weakref import proxy
 import signal
 
-HOST = test_support.HOST
+HOST = support.HOST
 MSG = b'Michael Gilfix was here\n'
 
 class SocketTCPTest(unittest.TestCase):
 
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.port = test_support.bind_port(self.serv)
+        self.port = support.bind_port(self.serv)
         self.serv.listen(1)
 
     def tearDown(self):
@@ -34,7 +34,7 @@ class SocketUDPTest(unittest.TestCase):
 
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.port = test_support.bind_port(self.serv)
+        self.port = support.bind_port(self.serv)
 
     def tearDown(self):
         self.serv.close()
@@ -898,7 +898,7 @@ class BasicTCPTest2(NetworkConnectionTest, BasicTCPTest):
 class NetworkConnectionNoServer(unittest.TestCase):
 
     def testWithoutServer(self):
-        port = test_support.find_unused_port()
+        port = support.find_unused_port()
         self.failUnlessRaises(
             socket.error,
             lambda: socket.create_connection((HOST, port))
@@ -1145,7 +1145,7 @@ def isTipcAvailable():
         for line in f:
             if line.startswith("tipc "):
                 return True
-    if test_support.verbose:
+    if support.verbose:
         print("TIPC module is not loaded, please 'sudo modprobe tipc'")
     return False
 
@@ -1229,9 +1229,9 @@ def test_main():
         tests.append(TIPCTest)
         tests.append(TIPCThreadableTest)
 
-    thread_info = test_support.threading_setup()
-    test_support.run_unittest(*tests)
-    test_support.threading_cleanup(*thread_info)
+    thread_info = support.threading_setup()
+    support.run_unittest(*tests)
+    support.threading_cleanup(*thread_info)
 
 if __name__ == "__main__":
     test_main()

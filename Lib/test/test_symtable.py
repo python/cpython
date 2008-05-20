@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 
 import symtable
 import unittest
@@ -38,7 +38,7 @@ class SymtableTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(SymtableTest)
+    support.run_unittest(SymtableTest)
 
 if __name__ == '__main__':
     test_main()

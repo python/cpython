@@ -1,7 +1,7 @@
 import unittest
 import sys
 import _ast
-from test import test_support
+from test import support
 
 class TestSpecifics(unittest.TestCase):
 
@@ -444,7 +444,7 @@ if 1:
 
 
 def test_main():
-    test_support.run_unittest(TestSpecifics)
+    support.run_unittest(TestSpecifics)
 
 if __name__ == "__main__":
     test_main()

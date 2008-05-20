@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 import subprocess
 import sys
 import signal
@@ -31,14 +31,14 @@ class ProcessTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
         # doesn't crash on some buildbots (Alphas in particular).
-        if hasattr(test_support, "reap_children"):
-            test_support.reap_children()
+        if hasattr(support, "reap_children"):
+            support.reap_children()
 
     def tearDown(self):
         # Try to minimize the number of children we have so this test
         # doesn't crash on some buildbots (Alphas in particular).
-        if hasattr(test_support, "reap_children"):
-            test_support.reap_children()
+        if hasattr(support, "reap_children"):
+            support.reap_children()
 
     def mkstemp(self):
         """wrapper for mkstemp, calling mktemp if mkstemp is not available"""
@@ -392,8 +392,8 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_no_leaking(self):
         # Make sure we leak no resources
-        if (not hasattr(test_support, "is_resource_enabled") or
-            test_support.is_resource_enabled("subprocess") and not mswindows):
+        if (not hasattr(support, "is_resource_enabled") or
+            support.is_resource_enabled("subprocess") and not mswindows):
             max_handles = 1026 # too much for most UNIX systems
         else:
             max_handles = 65
@@ -703,9 +703,9 @@ class ProcessTestCase(unittest.TestCase):
             self.assertNotEqual(p.wait(), 0)
 
 def test_main():
-    test_support.run_unittest(ProcessTestCase)
-    if hasattr(test_support, "reap_children"):
-        test_support.reap_children()
+    support.run_unittest(ProcessTestCase)
+    if hasattr(support, "reap_children"):
+        support.reap_children()
 
 if __name__ == "__main__":
     unittest.main()  # XXX test_main()

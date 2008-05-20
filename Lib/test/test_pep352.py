@@ -1,7 +1,7 @@
 import unittest
 import builtins
 import warnings
-from test.test_support import run_unittest
+from test.support import run_unittest
 import os
 from platform import system as platform_system
 

@@ -10,7 +10,7 @@ from io import StringIO, BytesIO
 from tempfile import TemporaryFile
 import csv
 import gc
-from test import test_support
+from test import support
 
 class Test_Csv(unittest.TestCase):
     """
@@ -790,7 +790,7 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         self.assertEqual(dialect.quotechar, "'")
 
 if not hasattr(sys, "gettotalrefcount"):
-    if test_support.verbose: print("*** skipping leakage tests ***")
+    if support.verbose: print("*** skipping leakage tests ***")
 else:
     class NUL:
         def write(s, *args):
@@ -891,7 +891,7 @@ class TestUnicode(unittest.TestCase):
 
 def test_main():
     mod = sys.modules[__name__]
-    test_support.run_unittest(
+    support.run_unittest(
         *[getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
     )
 

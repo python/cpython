@@ -6,7 +6,7 @@
 
 import sys, codecs
 import unittest, re
-from test import test_support
+from test import support
 from io import BytesIO
 
 class TestBase:
@@ -279,10 +279,10 @@ class TestBase_Mapping(unittest.TestCase):
         try:
             self.open_mapping_file() # test it to report the error early
         except IOError:
-            raise test_support.TestSkipped("Could not retrieve "+self.mapfileurl)
+            raise support.TestSkipped("Could not retrieve "+self.mapfileurl)
 
     def open_mapping_file(self):
-        return test_support.open_urlresource(self.mapfileurl)
+        return support.open_urlresource(self.mapfileurl)
 
     def test_mapping_file(self):
         if self.mapfileurl.endswith('.xml'):

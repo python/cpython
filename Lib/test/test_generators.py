@@ -1885,8 +1885,8 @@ __test__ = {"tut":      tutorial_tests,
 # Note that doctest and regrtest both look in sys.argv for a "-v" argument,
 # so this works as expected in both ways of running regrtest.
 def test_main(verbose=None):
-    from test import test_support, test_generators
-    test_support.run_doctest(test_generators, verbose)
+    from test import support, test_generators
+    support.run_doctest(test_generators, verbose)
 
 # This part isn't needed for regrtest, but for running the test directly.
 if __name__ == "__main__":

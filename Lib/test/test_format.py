@@ -1,9 +1,9 @@
-from test.test_support import verbose, TestFailed
+from test.support import verbose, TestFailed
 import sys
-import test.test_support as test_support
+import test.support as support
 import unittest
 
-maxsize = test_support.MAX_Py_ssize_t
+maxsize = support.MAX_Py_ssize_t
 
 # test string formatting operator (I am not sure if this is being tested
 # elsewhere but, surely, some of the given cases are *not* tested because
@@ -256,7 +256,7 @@ class FormatTest(unittest.TestCase):
                 raise TestFailed('"%*d"%(maxsize, -127) should fail')
 
 def test_main():
-    test_support.run_unittest(FormatTest)
+    support.run_unittest(FormatTest)
 
 
 if __name__ == "__main__":

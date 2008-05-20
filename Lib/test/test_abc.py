@@ -4,7 +4,7 @@
 """Unit tests for abc.py."""
 
 import unittest
-from test import test_support
+from test import support
 
 import abc
 from inspect import isabstract
@@ -170,7 +170,7 @@ class TestABC(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestABC)
+    support.run_unittest(TestABC)
 
 
 if __name__ == "__main__":

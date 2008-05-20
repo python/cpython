@@ -2,7 +2,7 @@ import hmac
 import hashlib
 import unittest
 import warnings
-from test import test_support
+from test import support
 
 class TestVectorsTestCase(unittest.TestCase):
 
@@ -211,7 +211,7 @@ class TestVectorsTestCase(unittest.TestCase):
             def digest(self):
                 return self._x.digest()
 
-        with test_support.catch_warning():
+        with support.catch_warning():
             warnings.simplefilter('error', RuntimeWarning)
             try:
                 hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
@@ -309,7 +309,7 @@ class CopyTestCase(unittest.TestCase):
             "Hexdigest of copy doesn't match original hexdigest.")
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         TestVectorsTestCase,
         ConstructorTestCase,
         SanityTestCase,

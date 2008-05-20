@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 from weakref import proxy, ref, WeakSet
 import operator
 import copy
@@ -306,7 +306,7 @@ class TestWeakSet(unittest.TestCase):
 
 
 def test_main(verbose=None):
-    test_support.run_unittest(TestWeakSet)
+    support.run_unittest(TestWeakSet)
 
 if __name__ == "__main__":
     test_main(verbose=True)

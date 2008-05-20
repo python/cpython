@@ -2,7 +2,7 @@
    Test cases for pyclbr.py
    Nick Mathewson
 '''
-from test.test_support import run_unittest
+from test.support import run_unittest
 import sys
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr

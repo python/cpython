@@ -6,7 +6,7 @@ import unittest
 import pickle
 import weakref
 
-from test.test_support import TESTFN, unlink, run_unittest
+from test.support import TESTFN, unlink, run_unittest
 
 # XXX This is not really enough, each *operation* should be tested!
 

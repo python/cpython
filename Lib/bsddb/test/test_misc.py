@@ -17,7 +17,7 @@ except ImportError:
 try:
     from bsddb3 import test_support
 except ImportError:
-    from test import test_support
+    from test import support as test_support
 
 #----------------------------------------------------------------------
 

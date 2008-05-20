@@ -7,7 +7,7 @@ import errno
 import warnings
 
 import unittest
-from test import test_support
+from test import support
 
 warnings.filterwarnings("ignore",
                         category=RuntimeWarning,
@@ -116,7 +116,7 @@ class test__RandomNameSequence(TC):
             self.failIf(s in dict)
             dict[s] = 1
 
-    def test_supports_iter(self):
+    def supports_iter(self):
         # _RandomNameSequence supports the iterator protocol
 
         i = 0
@@ -276,7 +276,7 @@ class test__mkstemp_inner(TC):
         if not has_spawnl:
             return            # ugh, can't use TestSkipped.
 
-        if test_support.verbose:
+        if support.verbose:
             v="v"
         else:
             v="q"
@@ -881,7 +881,7 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
     test_classes.append(test_TemporaryFile)
 
 def test_main():
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
 if __name__ == "__main__":
     test_main()

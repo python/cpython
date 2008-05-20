@@ -1,6 +1,6 @@
 # Simple test suite for Cookie.py
 
-from test.test_support import run_unittest, run_doctest
+from test.support import run_unittest, run_doctest
 import unittest
 import Cookie
 

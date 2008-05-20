@@ -7,7 +7,7 @@ import copy
 import bsddb
 import dbhash # Just so we know it's imported
 import unittest
-from test import test_support
+from test import support
 
 class TestBSDDB(unittest.TestCase):
     openflag = 'c'
@@ -274,7 +274,7 @@ class TestBSDDB(unittest.TestCase):
         self.assertEqual(list(self.f), keys)
 
 class TestBTree(TestBSDDB):
-    fname = test_support.TESTFN
+    fname = support.TESTFN
     openmethod = [bsddb.btopen]
 
 class TestBTree_InMemory(TestBSDDB):
@@ -287,7 +287,7 @@ class TestBTree_InMemory_Truncate(TestBSDDB):
     openmethod = [bsddb.btopen]
 
 class TestHashTable(TestBSDDB):
-    fname = test_support.TESTFN
+    fname = support.TESTFN
     openmethod = [bsddb.hashopen]
 
 class TestHashTable_InMemory(TestBSDDB):
@@ -299,7 +299,7 @@ class TestHashTable_InMemory(TestBSDDB):
 ##         #                                   Solaris Intel - rmasse 1/97
 
 def test_main(verbose=None):
-    test_support.run_unittest(
+    support.run_unittest(
         TestBTree,
         TestHashTable,
         TestBTree_InMemory,

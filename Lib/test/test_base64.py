@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 import base64
 import binascii
 
@@ -209,7 +209,7 @@ class BaseXYTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == '__main__':
     test_main()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-from test import test_support
+from test import support
 from test.test_urllib2 import sanepathname2url
 
 import socket
@@ -105,7 +105,7 @@ class OtherNetworkTests(unittest.TestCase):
         self._test_urls(urls, self._extra_handlers())
 
     def test_file(self):
-        TESTFN = test_support.TESTFN
+        TESTFN = support.TESTFN
         f = open(TESTFN, 'w')
         try:
             f.write('hi there\n')
@@ -169,7 +169,7 @@ class OtherNetworkTests(unittest.TestCase):
                            (expected_err, url, req, type(err), err))
                     self.assert_(isinstance(err, expected_err), msg)
             else:
-                with test_support.transient_internet():
+                with support.transient_internet():
                     buf = f.read()
                 f.close()
                 debug("read %d bytes" % len(buf))
@@ -233,8 +233,8 @@ class TimeoutTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.requires("network")
-    test_support.run_unittest(AuthTests,
+    support.requires("network")
+    support.run_unittest(AuthTests,
                               OtherNetworkTests,
                               CloseSocketTest,
                               TimeoutTest,

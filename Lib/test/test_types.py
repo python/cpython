@@ -1,6 +1,6 @@
 # Python test set -- part 6, built-in types
 
-from test.test_support import run_unittest, run_with_locale
+from test.support import run_unittest, run_with_locale
 import unittest
 import sys
 import locale

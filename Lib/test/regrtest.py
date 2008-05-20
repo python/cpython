@@ -171,7 +171,7 @@ if sys.platform == 'darwin':
         newsoft = min(hard, max(soft, 1024*2048))
         resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
 
-from test import test_support
+from test import support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
                   'decimal', 'compiler', 'subprocess', 'urlfetch')
@@ -209,7 +209,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     values that would normally be set by flags on the command line.
     """
 
-    test_support.record_original_stdout(sys.stdout)
+    support.record_original_stdout(sys.stdout)
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsSrf:lu:t:TD:NLR:wM:n',
                                    ['help', 'verbose', 'quiet', 'exclude',
@@ -284,7 +284,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             # stringobject.c filling slowly with random data
             warm_char_cache()
         elif o in ('-M', '--memlimit'):
-            test_support.set_memlimit(a)
+            support.set_memlimit(a)
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
@@ -390,8 +390,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
                              trace=False, count=True)
     test_times = []
-    test_support.verbose = verbose      # Tell tests to be moderately quiet
-    test_support.use_resources = use_resources
+    support.verbose = verbose      # Tell tests to be moderately quiet
+    support.use_resources = use_resources
     save_modules = sys.modules.keys()
     for test in tests:
         if not quiet:
@@ -433,7 +433,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         # Unload the newly imported modules (best effort finalization)
         for module in sys.modules.keys():
             if module not in save_modules and module.startswith("test."):
-                test_support.unload(module)
+                support.unload(module)
 
     # The lists won't be sorted if running with -r
     good.sort()
@@ -479,7 +479,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             print("Re-running test %r in verbose mode" % test)
             sys.stdout.flush()
             try:
-                test_support.verbose = True
+                support.verbose = True
                 ok = runtest(test, generate, True, quiet, test_times, testdir,
                              huntrleaks, debug)
             except KeyboardInterrupt:
@@ -526,7 +526,6 @@ STDTESTS = [
 ]
 
 NOTTESTS = {
-    'test_support',
     'test_future1',
     'test_future2',
 }
@@ -572,7 +571,7 @@ def runtest(test, generate, verbose, quiet, test_times,
 
 def runtest_inner(test, generate, verbose, quiet, test_times,
                   testdir=None, huntrleaks=False, debug=False):
-    test_support.unload(test)
+    support.unload(test)
     if not testdir:
         testdir = findtestdir()
     if verbose:
@@ -606,19 +605,19 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
             test_times.append((test_time, test))
         finally:
             sys.stdout = save_stdout
-    except test_support.ResourceDenied as msg:
+    except support.ResourceDenied as msg:
         if not quiet:
             print(test, "skipped --", msg)
             sys.stdout.flush()
         return -2
-    except (ImportError, test_support.TestSkipped) as msg:
+    except (ImportError, support.TestSkipped) as msg:
         if not quiet:
             print(test, "skipped --", msg)
             sys.stdout.flush()
         return -1
     except KeyboardInterrupt:
         raise
-    except test_support.TestFailed as msg:
+    except support.TestFailed as msg:
         print("test", test, "failed --", msg)
         sys.stdout.flush()
         return 0
@@ -652,7 +651,7 @@ def cleanup_test_droppings(testname, verbose):
     # since if a test leaves a file open, it cannot be deleted by name (while
     # there's nothing we can do about that here either, we can display the
     # name of the offending test, which is a real help).
-    for name in (test_support.TESTFN,
+    for name in (support.TESTFN,
                  "db_home",
                 ):
         if not os.path.exists(name):
@@ -1206,10 +1205,10 @@ class _ExpectedSkips:
 if __name__ == '__main__':
     # Remove regrtest.py's own directory from the module search path.  This
     # prevents relative imports from working, and relative imports will screw
-    # up the testing framework.  E.g. if both test.test_support and
-    # test_support are imported, they will not contain the same globals, and
+    # up the testing framework.  E.g. if both test.support and
+    # support are imported, they will not contain the same globals, and
     # much of the testing framework relies on the globals in the
-    # test.test_support module.
+    # test.support module.
     mydir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
     i = pathlen = len(sys.path)
     while i >= 0:

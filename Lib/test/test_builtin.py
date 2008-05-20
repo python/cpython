@@ -1,7 +1,7 @@
 # Python test set -- built-in functions
 
-import test.test_support, unittest
-from test.test_support import fcmp, TESTFN, unlink,  run_unittest, \
+import test.support, unittest
+from test.support import fcmp, TESTFN, unlink,  run_unittest, \
                               run_with_locale
 from operator import neg
 

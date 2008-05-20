@@ -2,7 +2,7 @@
 
 import grp
 import unittest
-from test import test_support
+from test import support
 
 class GroupDatabaseTestCase(unittest.TestCase):
 
@@ -86,7 +86,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
         self.assertRaises(KeyError, grp.getgrgid, fakegid)
 
 def test_main():
-    test_support.run_unittest(GroupDatabaseTestCase)
+    support.run_unittest(GroupDatabaseTestCase)
 
 if __name__ == "__main__":
     test_main()

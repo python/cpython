@@ -1,7 +1,7 @@
 import unittest
-from test import test_support
+from test import support
 import operator
-maxsize = test_support.MAX_Py_ssize_t
+maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
 class oldstyle:
@@ -193,7 +193,7 @@ class OverflowTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         BaseTestCase,
         ListTestCase,
         TupleTestCase,

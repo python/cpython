@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from test import test_support
+from test import support
 import marshal
 import sys
 import unittest
@@ -11,19 +11,19 @@ class HelperMixin:
         new = marshal.loads(marshal.dumps(sample, *extra))
         self.assertEqual(sample, new)
         try:
-            f = open(test_support.TESTFN, "wb")
+            f = open(support.TESTFN, "wb")
             try:
                 marshal.dump(sample, f, *extra)
             finally:
                 f.close()
-            f = open(test_support.TESTFN, "rb")
+            f = open(support.TESTFN, "rb")
             try:
                 new = marshal.load(f)
             finally:
                 f.close()
             self.assertEqual(sample, new)
         finally:
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
 class IntTestCase(unittest.TestCase, HelperMixin):
     def test_ints(self):
@@ -208,7 +208,7 @@ class BugsTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(IntTestCase,
+    support.run_unittest(IntTestCase,
                               FloatTestCase,
                               StringTestCase,
                               CodeTestCase,

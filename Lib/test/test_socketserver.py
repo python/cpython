@@ -15,14 +15,14 @@ import time
 import unittest
 import socketserver
 
-import test.test_support
-from test.test_support import reap_children, verbose, TestSkipped
-from test.test_support import TESTFN as TEST_FILE
+import test.support
+from test.support import reap_children, verbose, TestSkipped
+from test.support import TESTFN as TEST_FILE
 
-test.test_support.requires("network")
+test.support.requires("network")
 
 TEST_STR = b"hello world\n"
-HOST = test.test_support.HOST
+HOST = test.support.HOST
 
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 HAVE_FORKING = hasattr(os, "fork") and os.name != "os2"
@@ -249,7 +249,7 @@ def test_main():
         # If the import lock is held, the threads will hang
         raise TestSkipped("can't run when import lock is held")
 
-    test.test_support.run_unittest(SocketServerTest)
+    test.support.run_unittest(SocketServerTest)
 
 if __name__ == "__main__":
     test_main()

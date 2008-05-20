@@ -6,7 +6,7 @@ import pstats
 import unittest
 from difflib import unified_diff
 from io import StringIO
-from test.test_support import run_unittest
+from test.support import run_unittest
 
 import profile
 from test.profilee import testfunc, timer

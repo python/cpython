@@ -7,8 +7,8 @@ import sys
 import stat
 import os
 import os.path
-from test import test_support
-from test.test_support import TESTFN
+from test import support
+from test.support import TESTFN
 
 class TestShutil(unittest.TestCase):
     def test_rmtree_errors(self):
@@ -267,7 +267,7 @@ class TestMove(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestShutil, TestMove)
+    support.run_unittest(TestShutil, TestMove)
 
 if __name__ == '__main__':
     test_main()

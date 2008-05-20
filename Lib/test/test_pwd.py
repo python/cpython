@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 import pwd
 
@@ -91,7 +91,7 @@ class PwdTest(unittest.TestCase):
         self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
 
 def test_main():
-    test_support.run_unittest(PwdTest)
+    support.run_unittest(PwdTest)
 
 if __name__ == "__main__":
     test_main()

@@ -122,9 +122,9 @@ error)
 __test__ = {'doctests' : doctests}
 
 def test_main(verbose=False):
-    from test import test_support
+    from test import support
     from test import test_unpack
-    test_support.run_doctest(test_unpack, verbose)
+    support.run_doctest(test_unpack, verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)

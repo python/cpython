@@ -1,5 +1,5 @@
 import sys, unittest
-from test import test_support
+from test import support
 import _ast
 
 def to_tuple(t):
@@ -176,7 +176,7 @@ class AST_Tests(unittest.TestCase):
                     self.assertEquals(to_tuple(ast2), to_tuple(ast))
 
 def test_main():
-    test_support.run_unittest(AST_Tests)
+    support.run_unittest(AST_Tests)
 
 def main():
     if __name__ != '__main__':

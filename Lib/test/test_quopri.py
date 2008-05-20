@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 import unittest
 
 import sys, os, io, subprocess
@@ -199,7 +199,7 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         self.assertEqual(cout.splitlines(), p.splitlines())
 
 def test_main():
-    test_support.run_unittest(QuopriTestCase)
+    support.run_unittest(QuopriTestCase)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 # Test to see if openpty works. (But don't worry if it isn't available.)
 
 import os, unittest
-from test.test_support import run_unittest, TestSkipped
+from test.support import run_unittest, TestSkipped
 
 if not hasattr(os, "openpty"):
     raise TestSkipped("No openpty() available.")

@@ -2,7 +2,7 @@ import formatter
 import htmllib
 import unittest
 
-from test import test_support
+from test import support
 
 
 class AnchorCollector(htmllib.HTMLParser):
@@ -62,7 +62,7 @@ class HTMLParserTestCase(unittest.TestCase):
                            ])
 
 def test_main():
-    test_support.run_unittest(HTMLParserTestCase)
+    support.run_unittest(HTMLParserTestCase)
 
 
 if __name__ == "__main__":

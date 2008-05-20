@@ -7,9 +7,9 @@ import io
 import os
 import unittest
 import dumbdbm
-from test import test_support
+from test import support
 
-_fname = test_support.TESTFN
+_fname = support.TESTFN
 
 def _delete_files():
     for ext in [".dir", ".dat", ".bak"]:
@@ -177,7 +177,7 @@ class DumbDBMTestCase(unittest.TestCase):
 
 def test_main():
     try:
-        test_support.run_unittest(DumbDBMTestCase)
+        support.run_unittest(DumbDBMTestCase)
     finally:
         _delete_files()
 

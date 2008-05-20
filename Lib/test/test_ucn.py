@@ -9,7 +9,7 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 
 import unittest
 
-from test import test_support
+from test import support
 
 class UnicodeNamesTest(unittest.TestCase):
 
@@ -138,7 +138,7 @@ class UnicodeNamesTest(unittest.TestCase):
         )
 
 def test_main():
-    test_support.run_unittest(UnicodeNamesTest)
+    support.run_unittest(UnicodeNamesTest)
 
 if __name__ == "__main__":
     test_main()

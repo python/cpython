@@ -4,7 +4,7 @@ import os
 import copy
 import tempfile
 import unittest
-from test import test_support
+from test import support
 
 from collections import defaultdict
 
@@ -166,7 +166,7 @@ class TestDefaultDict(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestDefaultDict)
+    support.run_unittest(TestDefaultDict)
 
 if __name__ == "__main__":
     test_main()

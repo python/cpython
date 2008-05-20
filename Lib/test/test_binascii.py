@@ -1,6 +1,6 @@
 """Test the binascii C module."""
 
-from test import test_support
+from test import support
 import unittest
 import binascii
 
@@ -169,7 +169,7 @@ class BinASCIITest(unittest.TestCase):
         binascii.crc_hqx('', 0)
 
 def test_main():
-    test_support.run_unittest(BinASCIITest)
+    support.run_unittest(BinASCIITest)
 
 if __name__ == "__main__":
     test_main()

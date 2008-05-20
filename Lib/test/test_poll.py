@@ -1,7 +1,7 @@
 # Test case for the os.poll() function
 
 import os, select, random, unittest
-from test.test_support import TestSkipped, TESTFN, run_unittest
+from test.support import TestSkipped, TESTFN, run_unittest
 
 try:
     select.poll

@@ -5,7 +5,7 @@ import operator
 import unittest
 from numbers import Complex, Real, Rational, Integral
 from numbers import Number
-from test import test_support
+from test import support
 
 class TestNumbers(unittest.TestCase):
     def test_int(self):
@@ -40,7 +40,7 @@ class TestNumbers(unittest.TestCase):
         self.assertRaises(TypeError, int, c1)
 
 def test_main():
-    test_support.run_unittest(TestNumbers)
+    support.run_unittest(TestNumbers)
 
 
 if __name__ == "__main__":

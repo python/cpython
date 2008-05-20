@@ -1,5 +1,5 @@
 import unittest, os
-from test import test_support
+from test import support
 
 from random import random
 from math import atan2
@@ -339,16 +339,16 @@ class ComplexTest(unittest.TestCase):
 
         fo = None
         try:
-            fo = open(test_support.TESTFN, "w")
+            fo = open(support.TESTFN, "w")
             print(a, b, file=fo)
             fo.close()
-            fo = open(test_support.TESTFN, "r")
+            fo = open(support.TESTFN, "r")
             self.assertEqual(fo.read(), ("%s %s\n" % (a, b)))
         finally:
             if (fo is not None) and (not fo.closed):
                 fo.close()
             try:
-                os.remove(test_support.TESTFN)
+                os.remove(support.TESTFN)
             except (OSError, IOError):
                 pass
 
@@ -360,7 +360,7 @@ class ComplexTest(unittest.TestCase):
             self.assertEquals(atan2(z2.imag, -1.), atan2(-0., -1.))
 
 def test_main():
-    test_support.run_unittest(ComplexTest)
+    support.run_unittest(ComplexTest)
 
 if __name__ == "__main__":
     test_main()

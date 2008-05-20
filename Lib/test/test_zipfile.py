@@ -8,8 +8,8 @@ import zipfile, os, unittest, sys, shutil, struct, io
 from tempfile import TemporaryFile
 from random import randint, random
 
-import test.test_support as support
-from test.test_support import TESTFN, run_unittest
+import test.support as support
+from test.support import TESTFN, run_unittest
 
 TESTFN2 = TESTFN + "2"
 FIXEDTEST_SIZE = 1000

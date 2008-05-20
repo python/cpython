@@ -3,7 +3,7 @@
 import HTMLParser
 import pprint
 import unittest
-from test import test_support
+from test import support
 
 
 class EventCollector(HTMLParser.HTMLParser):
@@ -315,7 +315,7 @@ DOCTYPE html [
 
 
 def test_main():
-    test_support.run_unittest(HTMLParserTestCase)
+    support.run_unittest(HTMLParserTestCase)
 
 
 if __name__ == "__main__":

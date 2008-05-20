@@ -4,7 +4,7 @@ import unittest
 import collections
 import weakref
 
-from test import test_support
+from test import support
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -1145,13 +1145,13 @@ OK
 __test__ = {'libreftest' : libreftest}
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         ReferencesTestCase,
         MappingTestCase,
         WeakValueDictionaryTestCase,
         WeakKeyDictionaryTestCase,
         )
-    test_support.run_doctest(sys.modules[__name__])
+    support.run_doctest(sys.modules[__name__])
 
 
 if __name__ == "__main__":

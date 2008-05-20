@@ -1,4 +1,4 @@
-from test import test_support
+from test import support
 import unittest
 import dummy_threading as _threading
 import time
@@ -15,20 +15,20 @@ class DummyThreadingTestCase(unittest.TestCase):
             # module.
             #delay = random.random() * 2
             delay = 0
-            if test_support.verbose:
+            if support.verbose:
                 print('task', self.getName(), 'will run for', delay, 'sec')
             sema.acquire()
             mutex.acquire()
             running += 1
-            if test_support.verbose:
+            if support.verbose:
                 print(running, 'tasks are running')
             mutex.release()
             time.sleep(delay)
-            if test_support.verbose:
+            if support.verbose:
                 print('task', self.getName(), 'done')
             mutex.acquire()
             running -= 1
-            if test_support.verbose:
+            if support.verbose:
                 print(self.getName(), 'is finished.', running, 'tasks are running')
             mutex.release()
             sema.release()
@@ -49,15 +49,15 @@ class DummyThreadingTestCase(unittest.TestCase):
             self.threads.append(t)
             t.start()
 
-        if test_support.verbose:
+        if support.verbose:
             print('waiting for all tasks to complete')
         for t in self.threads:
             t.join()
-        if test_support.verbose:
+        if support.verbose:
             print('all tasks done')
 
 def test_main():
-    test_support.run_unittest(DummyThreadingTestCase)
+    support.run_unittest(DummyThreadingTestCase)
 
 
 if __name__ == '__main__':

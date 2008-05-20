@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 import string, mimetools
 import io
@@ -70,7 +70,7 @@ class MimeToolsTest(unittest.TestCase):
         self.assertEqual(msg.getencoding(), "8bit")
 
 def test_main():
-    test_support.run_unittest(MimeToolsTest)
+    support.run_unittest(MimeToolsTest)
 
 if __name__=="__main__":
     test_main()

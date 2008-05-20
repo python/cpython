@@ -1,11 +1,11 @@
 # Tests of the full ZIP64 functionality of zipfile
-# The test_support.requires call is the only reason for keeping this separate
+# The support.requires call is the only reason for keeping this separate
 # from test_zipfile
-from test import test_support
+from test import support
 # XXX(nnorwitz): disable this test by looking for extra largfile resource
 # which doesn't exist.  This test takes over 30 minutes to run in general
 # and requires more disk space than most of the buildbots.
-test_support.requires(
+support.requires(
         'extralargefile',
         'test requires loads of disk-space bytes and a long time to run'
     )
@@ -23,7 +23,7 @@ import sys
 from io import StringIO
 from tempfile import TemporaryFile
 
-from test.test_support import TESTFN, run_unittest
+from test.support import TESTFN, run_unittest
 
 TESTFN2 = TESTFN + "2"
 

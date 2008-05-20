@@ -4,7 +4,7 @@ import unittest
 import distutils.dir_util
 import tempfile
 
-from test import test_support
+from test import support
 
 try: set
 except NameError: from sets import Set as set
@@ -258,7 +258,7 @@ class ModuleFinderTest(unittest.TestCase):
 
 def test_main():
     distutils.log.set_threshold(distutils.log.WARN)
-    test_support.run_unittest(ModuleFinderTest)
+    support.run_unittest(ModuleFinderTest)
 
 if __name__ == "__main__":
     unittest.main()

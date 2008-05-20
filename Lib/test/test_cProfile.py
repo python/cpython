@@ -121,7 +121,7 @@ class C:
 
 
 def test_main():
-    from test.test_support import TestSkipped
+    from test.support import TestSkipped
     raise TestSkipped('test_cProfile test is current broken')
 
 

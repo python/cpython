@@ -2,7 +2,7 @@
 Test script for doctest.
 """
 
-from test import test_support
+from test import support
 import doctest
 import warnings
 
@@ -2291,10 +2291,10 @@ using the optional keyword argument `encoding`:
 
 def test_main():
     # Check the doctest cases in doctest itself:
-    test_support.run_doctest(doctest, verbosity=True)
+    support.run_doctest(doctest, verbosity=True)
     # Check the doctest cases defined here:
     from test import test_doctest
-    test_support.run_doctest(test_doctest, verbosity=True)
+    support.run_doctest(test_doctest, verbosity=True)
 
 import trace, sys, re, io
 def test_coverage(coverdir):

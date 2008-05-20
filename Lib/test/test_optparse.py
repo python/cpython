@@ -15,7 +15,7 @@ import copy
 import unittest
 
 from io import StringIO
-from test import test_support
+from test import support
 
 
 from optparse import make_option, Option, IndentedHelpFormatter, \
@@ -1004,10 +1004,10 @@ class TestExtendAddTypes(BaseTest):
         self.parser.add_option("-f", "--file", type="file", dest="file")
 
     def tearDown(self):
-        if os.path.isdir(test_support.TESTFN):
-            os.rmdir(test_support.TESTFN)
-        elif os.path.isfile(test_support.TESTFN):
-            os.unlink(test_support.TESTFN)
+        if os.path.isdir(support.TESTFN):
+            os.rmdir(support.TESTFN)
+        elif os.path.isfile(support.TESTFN):
+            os.unlink(support.TESTFN)
 
     class MyOption (Option):
         def check_file(option, opt, value):
@@ -1022,21 +1022,21 @@ class TestExtendAddTypes(BaseTest):
         TYPE_CHECKER["file"] = check_file
 
     def test_filetype_ok(self):
-        open(test_support.TESTFN, "w").close()
-        self.assertParseOK(["--file", test_support.TESTFN, "-afoo"],
-                           {'file': test_support.TESTFN, 'a': 'foo'},
+        open(support.TESTFN, "w").close()
+        self.assertParseOK(["--file", support.TESTFN, "-afoo"],
+                           {'file': support.TESTFN, 'a': 'foo'},
                            [])
 
     def test_filetype_noexist(self):
-        self.assertParseFail(["--file", test_support.TESTFN, "-afoo"],
+        self.assertParseFail(["--file", support.TESTFN, "-afoo"],
                              "%s: file does not exist" %
-                             test_support.TESTFN)
+                             support.TESTFN)
 
     def test_filetype_notfile(self):
-        os.mkdir(test_support.TESTFN)
-        self.assertParseFail(["--file", test_support.TESTFN, "-afoo"],
+        os.mkdir(support.TESTFN)
+        self.assertParseFail(["--file", support.TESTFN, "-afoo"],
                              "%s: not a regular file" %
-                             test_support.TESTFN)
+                             support.TESTFN)
 
 
 class TestExtendAddActions(BaseTest):
@@ -1611,7 +1611,7 @@ class TestParseNumber(BaseTest):
 
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == '__main__':
     test_main()

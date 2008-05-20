@@ -1,6 +1,6 @@
 # Python test set -- built-in functions
 
-import test.test_support, unittest
+import test.support, unittest
 import sys
 
 import warnings
@@ -62,7 +62,7 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(repr(range(1, 2, 3)), 'range(1, 2, 3)')
 
 def test_main():
-    test.test_support.run_unittest(RangeTest)
+    test.support.run_unittest(RangeTest)
 
 if __name__ == "__main__":
     test_main()

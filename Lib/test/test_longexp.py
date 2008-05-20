@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 
 class LongExpText(unittest.TestCase):
     def test_longexp(self):
@@ -8,7 +8,7 @@ class LongExpText(unittest.TestCase):
         self.assertEqual(len(l), REPS)
 
 def test_main():
-    test_support.run_unittest(LongExpText)
+    support.run_unittest(LongExpText)
 
 if __name__=="__main__":
     test_main()

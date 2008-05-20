@@ -1,5 +1,5 @@
 import unittest
-from test.test_support import run_unittest, catch_warning
+from test.support import run_unittest, catch_warning
 import sys
 import warnings
 
