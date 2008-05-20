@@ -450,9 +450,6 @@ math_ldexp(PyObject *self, PyObject *args)
 			}
 		}
 	}
-	else if (PyLong_Check(oexp)) {
-		exp = PyLong_AS_LONG(oexp);
-	}
 	else {
 		PyErr_SetString(PyExc_TypeError,
 				"Expected an int or long as second argument "
