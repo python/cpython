@@ -3,6 +3,7 @@ import difflib
 import subprocess
 import re
 import pydoc
+import inspect
 import unittest
 import test.test_support
 
@@ -196,17 +197,12 @@ def print_diffs(text1, text2):
                                  tofile='got')
     print '\n' + ''.join(diffs)
 
-def get_mod_file(module):
-    """Returns the name of the .py file if the module is compiled"""
-    mod_file = module.__file__
-    return mod_file if mod_file.endswith("py") else mod_file[:-3] + "py"
-
 
 class PyDocDocTest(unittest.TestCase):
 
     def test_html_doc(self):
         result = get_pydoc_html(pydoc_mod)
-        mod_file = get_mod_file(pydoc_mod)
+        mod_file = inspect.getabsfile(pydoc_mod)
         expected_html = expected_html_pattern % (mod_file, mod_file)
         if result != expected_html:
             print_diffs(expected_html, result)
@@ -214,7 +210,7 @@ class PyDocDocTest(unittest.TestCase):
 
     def test_text_doc(self):
         result = get_pydoc_text(pydoc_mod)
-        expected_text = expected_text_pattern % get_mod_file(pydoc_mod)
+        expected_text = expected_text_pattern % inspect.getabsfile(pydoc_mod)
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
