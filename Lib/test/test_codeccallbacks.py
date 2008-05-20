@@ -1,5 +1,5 @@
 import test.test_support, unittest
-import sys, codecs, html.entities, unicodedata
+import sys, codecs, htmlentitydefs, unicodedata
 
 class PosReturn:
     # this can be used for configurable callbacks
@@ -86,7 +86,7 @@ class CodecCallbackTest(unittest.TestCase):
             l = []
             for c in exc.object[exc.start:exc.end]:
                 try:
-                    l.append(u"&%s;" % html.entities.codepoint2name[ord(c)])
+                    l.append(u"&%s;" % htmlentitydefs.codepoint2name[ord(c)])
                 except KeyError:
                     l.append(u"&#%d;" % ord(c))
             return (u"".join(l), exc.end)
