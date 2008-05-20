@@ -15,7 +15,7 @@ them from this module, like this::
 
    ... code using Python 3-style map and filter ...
 
-The :program:`2to3` tool that ports Python 2 code to Python 3 will recognize
+The :term:`2to3` tool that ports Python 2 code to Python 3 will recognize
 this usage and leave the new builtins alone.
 
 .. note::
