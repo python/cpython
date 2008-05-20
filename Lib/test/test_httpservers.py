@@ -277,7 +277,7 @@ print "Content-type: text/html"
 print
 
 form = cgi.FieldStorage()
-print "%%s, %%s, %%s" % (form.getfirst("spam"), form.getfirst("eggs"),\
+print "%%s, %%s, %%s" %% (form.getfirst("spam"), form.getfirst("eggs"),\
               form.getfirst("bacon"))
 """
 
@@ -341,8 +341,8 @@ def test_main(verbose=None):
     try:
         cwd = os.getcwd()
         test_support.run_unittest(BaseHTTPServerTestCase,
-                                  #SimpleHTTPServerTestCase,
-                                  #CGIHTTPServerTestCase
+                                  SimpleHTTPServerTestCase,
+                                  CGIHTTPServerTestCase
                                   )
     finally:
         os.chdir(cwd)
