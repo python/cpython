@@ -992,6 +992,7 @@ PyDoc_STR(
 Static objects:\n\
 \n\
 maxint -- the largest supported integer (the smallest is -maxint-1)\n\
+maxsize -- the largest supported length of containers.\n\
 maxunicode -- the largest supported character\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
 version -- the version of this interpreter as a string\n\
@@ -1345,6 +1346,8 @@ _PySys_Init(void)
 			    PyString_FromString(Py_GetPrefix()));
 	SET_SYS_FROM_STRING("exec_prefix",
 		   	    PyString_FromString(Py_GetExecPrefix()));
+	SET_SYS_FROM_STRING("maxsize",
+			    PyInt_FromSsize_t(PY_SSIZE_T_MAX));
 	SET_SYS_FROM_STRING("maxint",
 			    PyInt_FromLong(PyInt_GetMax()));
 	SET_SYS_FROM_STRING("py3kwarning",

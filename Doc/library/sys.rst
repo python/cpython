@@ -521,6 +521,11 @@ always available.
    is at least 2\*\*31-1.  The largest negative integer is ``-maxint-1`` --- the
    asymmetry results from the use of 2's complement binary arithmetic.
 
+.. data:: maxsize
+
+   The largest positive integer supported by the platform's Py_ssize_t type,
+   and thus the maximum size lists, strings, dicts, and many other containers
+   can have.
 
 .. data:: maxunicode
 
