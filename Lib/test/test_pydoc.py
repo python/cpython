@@ -190,11 +190,11 @@ def get_pydoc_text(module):
 
 def print_diffs(text1, text2):
     "Prints unified diffs for two texts"
-    lines1 = text1.splitlines()
-    lines2 = text2.splitlines()
-    diffs = difflib.unified_diff(lines1, lines2, n=0)
-    diffs = list(diffs) # its a generator
-    print '\n'.join(diffs)
+    lines1 = text1.splitlines(True)
+    lines2 = text2.splitlines(True)
+    diffs = difflib.unified_diff(lines1, lines2, n=0, fromfile='expected',
+                                 tofile='got')
+    print '\n' + ''.join(diffs)
 
 def get_mod_file(module):
     """Returns the name of the .py file if the module is compiled"""
@@ -209,14 +209,14 @@ class PyDocDocTest(unittest.TestCase):
         mod_file = get_mod_file(pydoc_mod)
         expected_html = expected_html_pattern % (mod_file, mod_file)
         if result != expected_html:
-            print_diffs(result, expected_html)
+            print_diffs(expected_html, result)
             self.fail("outputs are not equal, see diff above")
 
     def test_text_doc(self):
         result = get_pydoc_text(pydoc_mod)
         expected_text = expected_text_pattern % get_mod_file(pydoc_mod)
         if result != expected_text:
-            print_diffs(result, expected_text)
+            print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
 
     def test_not_here(self):
