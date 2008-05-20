@@ -11,6 +11,11 @@ the Tk GUI toolkit.  Both Tk and :mod:`Tkinter` are available on most Unix
 platforms, as well as on Windows and Macintosh systems.  (Tk itself is not part
 of Python; it is maintained at ActiveState.)
 
+.. note::
+
+   :mod:`Tkinter` has been renamed to :mod:`tkinter` in Python 3.0.  The
+   :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0.
 
 .. seealso::
 
@@ -106,6 +111,9 @@ Other modules that provide Tk support include:
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
+
+These have been renamed as well in Python 3.0; they were all made submodules of
+the new ``tkinter`` package.
 
 
 Tkinter Life Preserver

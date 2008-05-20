@@ -22,6 +22,11 @@ applications, creating more useful and more intuitive user interfaces. You can
 design your application by choosing the most appropriate widgets to match the
 special needs of your application and users.
 
+.. note::
+
+   :mod:`Tix` has been renamed to :mod:`tkinter.tix` in Python 3.0.  The
+   :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0.
 
 .. seealso::
 
