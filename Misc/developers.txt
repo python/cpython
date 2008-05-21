@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Robert Schuppenies was given SVN access on 21 May 2008 by MvL,
+  for GSoC contributions.
+
 - Rodrigo Bernardo Pimentel was given SVN access on 29 April 2008 by MvL,
   for GSoC contributions.
 
