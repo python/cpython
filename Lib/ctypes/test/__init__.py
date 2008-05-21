@@ -50,7 +50,7 @@ def find_package_modules(package, mask):
             if fnmatch.fnmatchcase(fnm, mask):
                 yield "%s.%s" % (package.__name__, os.path.splitext(fnm)[0])
 
-def get_tests(package, mask, verbosity, exclude):
+def get_tests(package, mask, verbosity, exclude=()):
     """Return a list of skipped test modules, and a list of test cases."""
     tests = []
     skipped = []

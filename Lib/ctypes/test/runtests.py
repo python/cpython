@@ -8,6 +8,8 @@ Command line flags:
          Add resources to the lits of allowed resources. '*' allows all
          resources.
   -v     verbose mode: print the test currently executed
+  -x<test1[,test2...]>
+         Exclude specified tests.
   mask   mask to select filenames containing testcases, wildcards allowed
 """
 import sys
