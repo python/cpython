@@ -378,7 +378,7 @@ class HTMLParser(_markupbase.ParserBase):
                 if HTMLParser.entitydefs is None:
                     entitydefs = HTMLParser.entitydefs = {'apos':"'"}
                     for k, v in html.entities.name2codepoint.items():
-                        entitydefs[k] = unichr(v)
+                        entitydefs[k] = chr(v)
                 try:
                     return self.entitydefs[s]
                 except KeyError:
