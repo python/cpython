@@ -11,7 +11,6 @@ import test.test_support
 
 def test_main():
     test.test_support.run_unittest(json.tests.test_suite())
-    test.test_support.run_doctest(json)
 
 
 if __name__ == "__main__":
