@@ -1,4 +1,5 @@
 import sys
+import os
 import difflib
 import subprocess
 import re
@@ -16,7 +17,7 @@ NAME
 
 FILE
     %s
-
+%s
 CLASSES
     __builtin__.object
         B
@@ -76,7 +77,7 @@ expected_html_pattern = \
 <td valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="test.html"><font color="#ffffff">test</font></a>.pydoc_mod</strong></big></big> (version 1.2.3.4)</font></td
 ><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:%s">%s</a></font></td></tr></table>
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:%s">%s</a>%s</font></td></tr></table>
     <p><tt>This&nbsp;is&nbsp;a&nbsp;test&nbsp;module&nbsp;for&nbsp;test_pydoc</tt></p>
 <p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -163,6 +164,7 @@ war</tt></dd></dl>
 <td width="100%%">Nobody</td></tr></table>
 """.strip()
 
+
 # output pattern for missing module
 missing_pattern = "no Python documentation found for '%s'"
 
@@ -177,17 +179,26 @@ def run_pydoc(module_name, *args):
 
 def get_pydoc_html(module):
     "Returns pydoc generated output as html"
-    output = pydoc.HTMLDoc().docmodule(module)
-    return output.strip()
+    doc = pydoc.HTMLDoc()
+    output = doc.docmodule(module)
+    loc = doc.getdocloc(pydoc_mod) or ""
+    if loc:
+        loc = "<br><a href=\"" + loc + "\">Module Docs</a>"
+    return output.strip(), loc
 
 def get_pydoc_text(module):
     "Returns pydoc generated output as text"
-    output = pydoc.TextDoc().docmodule(module)
+    doc = pydoc.TextDoc()
+    loc = doc.getdocloc(pydoc_mod) or ""
+    if loc:
+        loc = "\nMODULE DOCS\n    " + loc + "\n"
+
+    output = doc.docmodule(module)
 
     # cleanup the extra text formatting that pydoc preforms
     patt = re.compile('\b.')
     output = patt.sub('', output)
-    return output.strip()
+    return output.strip(), loc
 
 def print_diffs(text1, text2):
     "Prints unified diffs for two texts"
@@ -201,16 +212,17 @@ def print_diffs(text1, text2):
 class PyDocDocTest(unittest.TestCase):
 
     def test_html_doc(self):
-        result = get_pydoc_html(pydoc_mod)
+        result, doc_loc = get_pydoc_html(pydoc_mod)
         mod_file = inspect.getabsfile(pydoc_mod)
-        expected_html = expected_html_pattern % (mod_file, mod_file)
+        expected_html = expected_html_pattern % (mod_file, mod_file, doc_loc)
         if result != expected_html:
             print_diffs(expected_html, result)
             self.fail("outputs are not equal, see diff above")
 
     def test_text_doc(self):
-        result = get_pydoc_text(pydoc_mod)
-        expected_text = expected_text_pattern % inspect.getabsfile(pydoc_mod)
+        result, doc_loc = get_pydoc_text(pydoc_mod)
+        expected_text = expected_text_pattern % \
+                        (inspect.getabsfile(pydoc_mod), doc_loc)
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
@@ -236,8 +248,8 @@ class TestDescriptions(unittest.TestCase):
         c = C()
         self.assertEqual(pydoc.describe(C), 'class C')
         self.assertEqual(pydoc.describe(c), 'instance of C')
-        self.assert_('instance of C in module test.test_pydoc'
-                        in pydoc.render_doc(c))
+        expected = 'instance of C in module %s' % __name__
+        self.assert_(expected in pydoc.render_doc(c))
 
     def test_class(self):
         class C(object): "New-style class"
@@ -245,8 +257,8 @@ class TestDescriptions(unittest.TestCase):
 
         self.assertEqual(pydoc.describe(C), 'class C')
         self.assertEqual(pydoc.describe(c), 'C')
-        self.assert_('C in module test.test_pydoc object'
-                        in pydoc.render_doc(c))
+        expected = 'C in module %s object' % __name__
+        self.assert_(expected in pydoc.render_doc(c))
 
 
 def test_main():
