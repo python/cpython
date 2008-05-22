@@ -50,7 +50,7 @@
  *
  * Gregory P. Smith <greg@krypto.org> was once again the maintainer.
  *
- * Since January 2008, new maintainer is Jesus Cea <jcea@argo.es>.
+ * Since January 2008, new maintainer is Jesus Cea <jcea@jcea.es>.
  * Jesus Cea licenses this code to PSF under a Contributor Agreement.
  *
  * Use the pybsddb-users@lists.sf.net mailing list for all questions.
@@ -4129,6 +4129,26 @@ DBEnv_set_flags(DBEnvObject* self, PyObject* args)
 }
 
 
+#if (DBVER >= 47)
+static PyObject*
+DBEnv_log_set_config(DBEnvObject* self, PyObject* args)
+{
+    int err, flags, onoff;
+
+    if (!PyArg_ParseTuple(args, "ii:log_set_config",
+                          &flags, &onoff))
+        return NULL;
+    CHECK_ENV_NOT_CLOSED(self);
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db_env->log_set_config(self->db_env, flags, onoff);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+#endif /* DBVER >= 47 */
+
+
 static PyObject*
 DBEnv_set_data_dir(DBEnvObject* self, PyObject* args)
 {
@@ -4779,8 +4799,13 @@ DBEnv_lock_stat(DBEnvObject* self, PyObject* args)
     MAKE_ENTRY(objs_nowait);
     MAKE_ENTRY(lockers_wait);
     MAKE_ENTRY(lockers_nowait);
+#if (DBVER >= 47)
+    MAKE_ENTRY(lock_wait);
+    MAKE_ENTRY(lock_nowait);
+#else
     MAKE_ENTRY(locks_wait);
     MAKE_ENTRY(locks_nowait);
+#endif
     MAKE_ENTRY(hash_len);
 #endif
     MAKE_ENTRY(regsize);
@@ -4945,6 +4970,30 @@ DBEnv_set_get_returns_none(DBEnvObject* self, PyObject* args)
 
 #if (DBVER >= 40)
 static PyObject*
+DBEnv_set_rpc_server(DBEnvObject* self, PyObject* args, PyObject* kwargs)
+{
+    int err;
+    char *host;
+    long cl_timeout=0, sv_timeout=0;
+
+    static char* kwnames[] = { "host", "cl_timeout", "sv_timeout", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ll:set_rpc_server", kwnames,
+                                     &host, &cl_timeout, &sv_timeout))
+        return NULL;
+    CHECK_ENV_NOT_CLOSED(self);
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db_env->set_rpc_server(self->db_env, NULL, host, cl_timeout,
+            sv_timeout, 0);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+#endif
+
+#if (DBVER >= 40)
+static PyObject*
 DBEnv_set_verbose(DBEnvObject* self, PyObject* args)
 {
     int err;
@@ -5075,7 +5124,11 @@ static PyObject*
 DBEnv_rep_get_nsites(DBEnvObject* self, PyObject* args)
 {
     int err;
+#if (DBVER >= 47)
+    u_int32_t nsites;
+#else
     int nsites;
+#endif
 
     if (!PyArg_ParseTuple(args, ":rep_get_nsites")) {
         return NULL;
@@ -5109,7 +5162,11 @@ static PyObject*
 DBEnv_rep_get_priority(DBEnvObject* self, PyObject* args)
 {
     int err;
+#if (DBVER >= 47)
+    u_int32_t priority;
+#else
     int priority;
+#endif
 
     if (!PyArg_ParseTuple(args, ":rep_get_priority")) {
         return NULL;
@@ -6094,6 +6151,9 @@ static PyMethodDef DBEnv_methods[] = {
     {"set_cachesize",   (PyCFunction)DBEnv_set_cachesize,    METH_VARARGS},
     {"set_data_dir",    (PyCFunction)DBEnv_set_data_dir,     METH_VARARGS},
     {"set_flags",       (PyCFunction)DBEnv_set_flags,        METH_VARARGS},
+#if (DBVER >= 47)
+    {"log_set_config",  (PyCFunction)DBEnv_log_set_config,   METH_VARARGS},
+#endif
     {"set_lg_bsize",    (PyCFunction)DBEnv_set_lg_bsize,     METH_VARARGS},
     {"set_lg_dir",      (PyCFunction)DBEnv_set_lg_dir,       METH_VARARGS},
     {"set_lg_max",      (PyCFunction)DBEnv_set_lg_max,       METH_VARARGS},
@@ -6138,6 +6198,10 @@ static PyMethodDef DBEnv_methods[] = {
     {"set_get_returns_none",(PyCFunction)DBEnv_set_get_returns_none, METH_VARARGS},
 #if (DBVER >= 40)
     {"txn_recover",     (PyCFunction)DBEnv_txn_recover,       METH_VARARGS},
+#endif
+#if (DBVER >= 40)
+    {"set_rpc_server",  (PyCFunction)DBEnv_set_rpc_server,
+        METH_VARARGS||METH_KEYWORDS},
 #endif
 #if (DBVER >= 40)
     {"set_verbose",     (PyCFunction)DBEnv_set_verbose,       METH_VARARGS},
@@ -6760,6 +6824,7 @@ DL_EXPORT(void) init_bsddb(void)
 #if (DBVER < 45)
     ADD_INT(d, DB_CACHED_COUNTS);
 #endif
+
 #if (DBVER >= 41)
     _addIntToDict(d, "DB_CHECKPOINT", 0);
 #else
@@ -6858,12 +6923,23 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_TIME_NOTGRANTED);
     ADD_INT(d, DB_TXN_NOT_DURABLE);
     ADD_INT(d, DB_TXN_WRITE_NOSYNC);
-    ADD_INT(d, DB_LOG_AUTOREMOVE);
-    ADD_INT(d, DB_DIRECT_LOG);
     ADD_INT(d, DB_DIRECT_DB);
     ADD_INT(d, DB_INIT_REP);
     ADD_INT(d, DB_ENCRYPT);
     ADD_INT(d, DB_CHKSUM);
+#endif
+
+#if (DBVER >= 42) && (DBVER < 47)
+    ADD_INT(d, DB_LOG_AUTOREMOVE);
+    ADD_INT(d, DB_DIRECT_LOG);
+#endif
+
+#if (DBVER >= 47)
+    ADD_INT(d, DB_LOG_DIRECT);
+    ADD_INT(d, DB_LOG_DSYNC);
+    ADD_INT(d, DB_LOG_IN_MEMORY);
+    ADD_INT(d, DB_LOG_AUTO_REMOVE);
+    ADD_INT(d, DB_LOG_ZERO);
 #endif
 
 #if (DBVER >= 44)
@@ -6935,12 +7011,15 @@ DL_EXPORT(void) init_bsddb(void)
 #endif
 
 #if (DBVER >= 43)
-    ADD_INT(d, DB_DSYNC_LOG);
-    ADD_INT(d, DB_LOG_INMEMORY);
     ADD_INT(d, DB_BUFFER_SMALL);
     ADD_INT(d, DB_SEQ_DEC);
     ADD_INT(d, DB_SEQ_INC);
     ADD_INT(d, DB_SEQ_WRAP);
+#endif
+
+#if (DBVER >= 43) && (DBVER < 47)
+    ADD_INT(d, DB_LOG_INMEMORY);
+    ADD_INT(d, DB_DSYNC_LOG);
 #endif
 
 #if (DBVER >= 41)

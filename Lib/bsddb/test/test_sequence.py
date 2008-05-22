@@ -110,7 +110,7 @@ class DBSequenceTest(unittest.TestCase):
             self.assertRaises(db.DBNotFoundError, seq.open,
                     key='id', txn=None, flags=0)
 
-            self.assertRaises(db.DBNotFoundError, seq.stat)
+            self.assertRaises(db.DBInvalidArgError, seq.stat)
 
             d.close()
 
