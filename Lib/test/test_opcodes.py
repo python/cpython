@@ -48,12 +48,12 @@ class OpcodeTest(unittest.TestCase):
 
         try: raise AClass, b
         except BClass, v:
-            if v != b: self.fail("v!=b")
+            self.assertEqual(v, b)
         else: self.fail("no exception")
 
         try: raise b
         except AClass, v:
-            if v != b: self.fail("v!=b AClass")
+            self.assertEqual(v, b)
         else:
             self.fail("no exception")
 
@@ -72,35 +72,35 @@ class OpcodeTest(unittest.TestCase):
 
         f = eval('lambda: None')
         g = eval('lambda: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a: a')
         g = eval('lambda a: a')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a=1: a')
         g = eval('lambda a=1: a')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda: 0')
         g = eval('lambda: 1')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda: None')
         g = eval('lambda a: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a: None')
         g = eval('lambda b: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a: None')
         g = eval('lambda a=None: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a=0: None')
         g = eval('lambda a=1: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
 
 def test_main():
