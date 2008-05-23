@@ -902,6 +902,10 @@ class MathTests(unittest.TestCase):
                 message = ("Unexpected ValueError in " +
                            "test %s:%s(%r)\n" % (id, fn, ar))
                 self.fail(message)
+            except OverflowError:
+                message = ("Unexpected OverflowError in " +
+                           "test %s:%s(%r)\n" % (id, fn, ar))
+                self.fail(message)
             self.ftest("%s:%s(%r)" % (id, fn, ar), result, er)
 
 def test_main():
