@@ -50,11 +50,16 @@ def find_package_modules(package, mask):
             if fnmatch.fnmatchcase(fnm, mask):
                 yield "%s.%s" % (package.__name__, os.path.splitext(fnm)[0])
 
-def get_tests(package, mask, verbosity):
+def get_tests(package, mask, verbosity, exclude=()):
     """Return a list of skipped test modules, and a list of test cases."""
     tests = []
     skipped = []
     for modname in find_package_modules(package, mask):
+        if modname.split(".")[-1] in exclude:
+            skipped.append(modname)
+            if verbosity > 1:
+                print >> sys.stderr, "Skipped %s: excluded" % modname
+            continue
         try:
             mod = __import__(modname, globals(), locals(), ['*'])
         except ResourceDenied as detail:
@@ -151,12 +156,13 @@ class TestRunner(unittest.TextTestRunner):
 
 def main(*packages):
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "rqvu:")
+        opts, args = getopt.getopt(sys.argv[1:], "rqvu:x:")
     except getopt.error:
         return usage()
 
     verbosity = 1
     search_leaks = False
+    exclude = []
     for flag, value in opts:
         if flag == "-q":
             verbosity -= 1
@@ -171,17 +177,19 @@ def main(*packages):
             search_leaks = True
         elif flag == "-u":
             use_resources.extend(value.split(","))
+        elif flag == "-x":
+            exclude.append(value.split(","))
 
     mask = "test_*.py"
     if args:
         mask = args[0]
 
     for package in packages:
-        run_tests(package, mask, verbosity, search_leaks)
+        run_tests(package, mask, verbosity, search_leaks, exclude)
 
 
-def run_tests(package, mask, verbosity, search_leaks):
-    skipped, testcases = get_tests(package, mask, verbosity)
+def run_tests(package, mask, verbosity, search_leaks, exclude):
+    skipped, testcases = get_tests(package, mask, verbosity, exclude)
     runner = TestRunner(verbosity=verbosity)
 
     suites = [unittest.makeSuite(o) for o in testcases]
