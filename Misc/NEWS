@@ -86,6 +86,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #2111: Avoid mmap segfault when modifying a PROT_READ block.
+
 - zlib.decompressobj().flush(value) no longer crashes the interpreter when
   passed a value less than or equal to zero.
 

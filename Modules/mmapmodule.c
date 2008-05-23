@@ -881,6 +881,10 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 				    "mmap invalid access parameter.");
 	}
 
+    if (prot == PROT_READ) {
+        access = ACCESS_READ;
+    }
+
 #ifdef HAVE_FSTAT
 #  ifdef __VMS
 	/* on OpenVMS we must ensure that all bytes are written to the file */
