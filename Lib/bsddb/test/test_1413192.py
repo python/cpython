@@ -5,7 +5,7 @@
 
 import shutil
 import tempfile
-from test.test_support import catch_warning
+from test.support import catch_warning
 import warnings
 
 try:
