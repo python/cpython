@@ -380,6 +380,23 @@ def test_both():
     finally:
         os.unlink(TESTFN)
 
+    # Test that setting access to PROT_READ gives exception
+    # rather than crashing
+    if hasattr(mmap, "PROT_READ"):
+        try:
+            mapsize = 10
+            open(TESTFN, "wb").write("a"*mapsize)
+            f = open(TESTFN, "rb")
+            m = mmap.mmap(f.fileno(), mapsize, prot=mmap.PROT_READ)
+            try:
+                m.write("foo")
+            except TypeError:
+                pass
+            else:
+                verify(0, "PROT_READ is not working")
+        finally:
+            os.unlink(TESTFN)
+
 def test_anon():
     print "  anonymous mmap.mmap(-1, PAGESIZE)..."
     m = mmap.mmap(-1, PAGESIZE)
