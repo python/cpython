@@ -350,6 +350,17 @@ AC_MSG_CHECKING(machine type as reported by uname -m)
 ac_sys_machine=`uname -m`
 AC_MSG_RESULT($ac_sys_machine)
 
+# temporary check to find out which exact processor
+# is in the Debian/alpha buildbot.
+case $ac_sys_system in
+    Linux*)
+        case $ac_sys_machine in alpha*)
+            cat /proc/cpuinfo
+            ;;
+        esac
+    ;;
+esac
+
 # checks for alternative programs
 
 # compiler flags are generated in two sets, BASECFLAGS and OPT.  OPT is just
