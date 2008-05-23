@@ -36,4 +36,4 @@ The following modules are documented in this chapter:
    new.rst
    copy.rst
    pprint.rst
-   reprlib.rst
+   repr.rst

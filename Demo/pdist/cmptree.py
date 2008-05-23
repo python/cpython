@@ -1,7 +1,7 @@
 """Compare local and remote dictionaries and transfer differing files -- like rdist."""
 
 import sys
-from reprlib import repr
+from repr import repr
 import FSProxy
 import time
 import os
