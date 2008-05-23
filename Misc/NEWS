@@ -36,6 +36,9 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- Issue #2819: add full-precision summation function to math module,
+  based on Hettinger's ASPN Python Cookbook recipe.
+
 - Issue #2592: delegate nb_index and the floor/truediv slots in
   weakref.proxy.
 
