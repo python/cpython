@@ -59,6 +59,9 @@ Extension Modules
 Library
 -------
 
+- Issue #1390: Raise ValueError in toxml when an invalid comment would
+  otherwise be produced.
+
 - Issue #2914: TimedRotatingFileHandler now takes an optional keyword
   argument "utc" to use UTC time rather than local time.
 
