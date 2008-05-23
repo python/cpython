@@ -86,6 +86,9 @@ case "$host" in
   i?86-*-solaris2.1[[0-9]]*)
 	TARGET=X86_64; TARGETDIR=x86
 	;;
+  i*86-*-nto-qnx*) 
+        TARGET=X86; TARGETDIR=x86
+        ;;
   i?86-*-*)
 	TARGET=X86; TARGETDIR=x86
 	;;

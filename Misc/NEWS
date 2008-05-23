@@ -224,6 +224,8 @@ Library
 Build
 -----
 
+- Patch #1722225: Support QNX 6.
+
 - ``Lib/lib-old`` is now added to sys.path.
 
 
