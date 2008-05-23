@@ -4,7 +4,7 @@ import sys
 import socket
 import pickle
 from fnmatch import fnmatch
-from reprlib import repr
+from repr import repr
 
 
 # Default verbosity (0 = silent, 1 = print connections, 2 = print requests too)

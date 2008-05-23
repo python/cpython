@@ -9,8 +9,8 @@ import shutil
 import unittest
 
 from test.test_support import run_unittest
-from reprlib import repr as r # Don't shadow builtin repr
-from reprlib import Repr
+from repr import repr as r # Don't shadow builtin repr
+from repr import Repr
 
 
 def nestedTuple(nesting):

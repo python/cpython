@@ -413,8 +413,8 @@ class NamespaceViewer:
             height = 20*len(dict) # XXX 20 == observed height of Entry widget
         self.master = master
         self.title = title
-        import reprlib
-        self.repr = reprlib.Repr()
+        import repr
+        self.repr = repr.Repr()
         self.repr.maxstring = 60
         self.repr.maxother = 60
         self.frame = frame = Frame(master)

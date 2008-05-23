@@ -13,11 +13,11 @@ programming needs.  These modules rarely occur in small scripts.
 Output Formatting
 =================
 
-The :mod:`reprlib` module provides a version of :func:`repr` customized for
+The :mod:`repr` module provides a version of :func:`repr` customized for
 abbreviated displays of large or deeply nested containers::
 
-   >>> import reprlib
-   >>> reprlib.repr(set('supercalifragilisticexpialidocious'))
+   >>> import repr   
+   >>> repr.repr(set('supercalifragilisticexpialidocious'))
    "set(['a', 'c', 'd', 'e', 'f', 'g', ...])"
 
 The :mod:`pprint` module offers more sophisticated control over printing both

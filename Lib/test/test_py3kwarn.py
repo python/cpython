@@ -218,7 +218,7 @@ class TestStdlibRenames(unittest.TestCase):
     renames = {'Queue': 'queue',
                'SocketServer': 'socketserver',
                'ConfigParser': 'configparser',
-               'repr': 'reprlib'}
+              }
 
     def check_rename(self, module_name, new_module_name):
         """Make sure that:

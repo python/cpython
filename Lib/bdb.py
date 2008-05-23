@@ -325,7 +325,7 @@ class Bdb:
     #
 
     def format_stack_entry(self, frame_lineno, lprefix=': '):
-        import linecache, reprlib
+        import linecache, repr
         frame, lineno = frame_lineno
         filename = self.canonic(frame.f_code.co_filename)
         s = '%s(%r)' % (filename, lineno)
@@ -338,13 +338,13 @@ class Bdb:
         else:
             args = None
         if args:
-            s = s + reprlib.repr(args)
+            s = s + repr.repr(args)
         else:
             s = s + '()'
         if '__return__' in frame.f_locals:
             rv = frame.f_locals['__return__']
             s = s + '->'
-            s = s + reprlib.repr(rv)
+            s = s + repr.repr(rv)
         line = linecache.getline(filename, lineno)
         if line: s = s + lprefix + line.strip()
         return s

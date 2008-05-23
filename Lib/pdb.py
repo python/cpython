@@ -8,7 +8,7 @@ import sys
 import linecache
 import cmd
 import bdb
-from reprlib import Repr
+from repr import Repr
 import os
 import re
 import pprint
