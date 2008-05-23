@@ -454,6 +454,13 @@ int shutdown( int, int );
 extern char * _getpty(int *, int, mode_t, int);
 #endif
 
+/* On QNX 6, struct termio must be declared by including sys/termio.h
+   if TCGETA, TCSETA, TCSETAW, or TCSETAF are used.  sys/termio.h must
+   be included before termios.h or it will generate an error. */
+#ifdef HAVE_SYS_TERMIO_H
+#include <sys/termio.h>
+#endif
+
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY)
 #if !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H)
 /* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
