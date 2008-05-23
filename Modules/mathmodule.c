@@ -311,61 +311,36 @@ FUNC1(tanh, tanh, 0,
    <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/393090>,
    enhanced with the exact partials sum and roundoff from Mark
    Dickinson's post at <http://bugs.python.org/file10357/msum4.py>.
+   See those links for more details, proofs and other references.
 
-   See both of those for more details, proofs and other references.
+   Note 1: IEEE 754R floating point semantics are assumed,
+   but the current implementation does not re-establish special
+   value semantics across iterations (i.e. handling -Inf + Inf).
 
-   Note 1: IEEE 754 floating point format and semantics are assumed, but not
-   explicitly maintained.  The following rules may not apply:
+   Note 2:  No provision is made for intermediate overflow handling;
+   therefore, sum([1e+308, 1e-308, 1e+308]) returns result 1e+308 while
+   sum([1e+308, 1e+308, 1e-308]) raises an OverflowError due to the
+   overflow of the first partial sum.
 
-   1. if the summands include a NaN, return a NaN,
+   Note 3: Aggressively optimizing compilers can potentially eliminate the
+   residual values needed for accurate summation. For instance, the statements
+   "hi = x + y; lo = y - (hi - x);" could be mis-transformed to
+   "hi = x + y; lo = 0.0;" which defeats the computation of residuals.
 
-   2. if the summands include infinities of both signs, raise ValueError,
+   Note 4: A similar implementation is in Modules/cmathmodule.c.
+   Be sure to update both when making changes.
 
-   3. if the summands include infinities of only one sign, return infinity
-      with that sign,
-
-   4. otherwise (all summands are finite) if the result is infinite, raise
-      OverflowError.  The result can never be a NaN if all summands are
-      finite.
-
-   Note 2: the implementation below not include the intermediate overflow
-   handling from Mark Dickinson's msum().  Therefore, sum([1e+308, 1e-308,
-   1e+308]) returns result 1e+308, however sum([1e+308, 1e+308, 1e-308])
-   raises an OverflowError due to intermediate overflow of the first
-   partial sum.
-
-   Note 3: aggressively optimizing compilers may eliminate the roundoff
-   expressions critical for accurate summation.  For example, the compiler
-   may optimize the following expressions
-
-       hi = x + y;
-       lo = y - (hi - x);
-   to
-       hi = x + y;
-       lo = 0.0;
-
-   defeating the whole purpose.  Using volatile variables and/or explicit
-   assignment of critical subexpressions to a volatile variable should
-   remedy the problem
-
-       volatile double v;  // Deter compiler from algebraically optimizing
-                           // this critical, intermediate value away
-       hi = x + y;
-       v = hi - x;
-       lo = y - v;
-
-   by forcing the compiler to compute the value for v.  This may also help
-   when subexpression are not computed with the full double precision.
-
-   Note 4. the same summation functions may be in ./cmathmodule.c.  Make
-   sure to update both when making changes.
+   Note 5: The signature of math.sum() differs from __builtin__.sum()
+   because the start argument doesn't make sense in the context of
+   accurate summation.  Since the partials table is collapsed before
+   returning a result, sum(seq2, start=sum(seq1)) may not equal the
+   accurate result returned by sum(itertools.chain(seq1, seq2)).
 */
 
 #define NUM_PARTIALS  32  /* initial partials array size, on stack */
 
-/* Extend the partials array p[] by doubling its size.
- */
-static int  /* non-zero on error */
+/* Extend the partials array p[] by doubling its size. */
+static int                          /* non-zero on error */
 _sum_realloc(double **p_ptr, Py_ssize_t  n,
              double  *ps,    Py_ssize_t *m_ptr)
 {
@@ -383,7 +358,7 @@ _sum_realloc(double **p_ptr, Py_ssize_t  n,
 		else
 			v = PyMem_Realloc(p, sizeof(double) * m);
 	}
-	if (v == NULL) {  /* size overflow or no memory */
+	if (v == NULL) {        /* size overflow or no memory */
 		PyErr_SetString(PyExc_MemoryError, "math sum partials");
 		return 1;
 	}
@@ -419,8 +394,9 @@ _sum_realloc(double **p_ptr, Py_ssize_t  n,
    non-zero, non-special, non-overlapping and strictly increasing in
    magnitude, but possibly not all having the same sign.
 
-   Depends on IEEE 754 arithmetic guarantees.
- */
+   Depends on IEEE 754 arithmetic guarantees and half-even rounding.
+*/
+
 static PyObject*
 math_sum(PyObject *self, PyObject *seq)
 {
@@ -434,8 +410,7 @@ math_sum(PyObject *self, PyObject *seq)
 
 	PyFPE_START_PROTECT("sum", Py_DECREF(iter); return NULL)
 
-	for(;;) {  /* for x in iterable */
-		/* some invariants */
+	for(;;) {           /* for x in iterable */
 		assert(0 <= n && n <= m);
 		assert((m == NUM_PARTIALS && p == ps) ||
 		       (m >  NUM_PARTIALS && p != NULL));
@@ -444,28 +419,27 @@ math_sum(PyObject *self, PyObject *seq)
 		if (item == NULL) {
 			if (PyErr_Occurred())
 				goto _sum_error;
-			else
-				break;
+			break;
 		}
 		x = PyFloat_AsDouble(item);
 		Py_DECREF(item);
 		if (PyErr_Occurred())
 			goto _sum_error;
 
-		for (i = j = 0; j < n; j++) {  /* for y in partials */
+		for (i = j = 0; j < n; j++) {       /* for y in partials */
 			y = p[j];
 			hi = x + y;
 			lo = fabs(x) < fabs(y)
-			   ? x - (hi - y)   /* volatile */
-			   : y - (hi - x);  /* volatile */
+			   ? x - (hi - y)
+			   : y - (hi - x);
 			if (lo != 0.0)
 				p[i++] = lo;
 			x = hi;
 		}
-		/* ps[i:] = [x] */
-		n = i;
+		
+		n = i;                              /* ps[i:] = [x] */                   
 		if (x != 0.0) {
-			/* if non-finite, reset partials, effectively
+			/* If non-finite, reset partials, effectively
 			   adding subsequent items without roundoff
 			   and yielding correct non-finite results,
 			   provided IEEE 754 rules are observed */
@@ -476,27 +450,27 @@ math_sum(PyObject *self, PyObject *seq)
 			p[n++] = x;
 		}
 	}
-	assert(n <= m);
 
 	if (n > 0) {
 		hi = p[--n];
 		if (Py_IS_FINITE(hi)) {
-			/* sum_exact(ps, hi) from the top, stop
-			   as soon as the sum becomes inexact */
+			/* sum_exact(ps, hi) from the top, stop when the sum becomes inexact. */
 			while (n > 0) {
 				x = p[--n];
 				y = hi;
 				hi = x + y;
 				assert(fabs(x) < fabs(y));
-				lo = x - (hi - y);  /* volatile */
+				lo = x - (hi - y);
 				if (lo != 0.0)
 					break;
 			}
-			/* round correctly if necessary */
+			/* Little dance to allow half-even rounding across multiple partials.
+                           Needed so that sum([1e-16, 1, 1e16]) will round-up to two instead
+                           of down to zero (the 1e16 makes the 1 slightly closer to two). */
 			if (n > 0 && ((lo < 0.0 && p[n-1] < 0.0) ||
 			              (lo > 0.0 && p[n-1] > 0.0))) {
 				y = lo * 2.0;
-				x = hi + y;  /* volatile */
+				x = hi + y;
 				if (y == (x - hi))
 					hi = x;
 			}
@@ -513,7 +487,6 @@ math_sum(PyObject *self, PyObject *seq)
 
 _sum_error:
 	PyFPE_END_PROTECT(hi)
-
 	Py_DECREF(iter);
 	if (p != ps)
 		PyMem_Free(p);
@@ -523,11 +496,9 @@ _sum_error:
 #undef NUM_PARTIALS
 
 PyDoc_STRVAR(math_sum_doc,
-"sum(sequence)\n\n\
-Return the full precision sum of a sequence of numbers.\n\
-When the sequence is empty, return zero.\n\n\
-For accurate results, IEEE 754 floating point format\n\
-and semantics and floating point radix 2 are required.");
+"sum(iterable)\n\n\
+Return an accurate floating point sum of values in the iterable.\n\
+Assumes IEEE-754 floating point arithmetic.");
 
 static PyObject *
 math_trunc(PyObject *self, PyObject *number)
