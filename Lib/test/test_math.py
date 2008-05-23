@@ -631,6 +631,22 @@ class MathTests(unittest.TestCase):
         self.assert_(math.isnan(math.sqrt(NAN)))
 
     def testSum(self):
+        # math.sum relies on exact rounding for correct operation.
+        # There's a known problem with IA32 floating-point that causes
+        # inexact rounding in some situations, and will cause the
+        # math.sum tests below to fail; see issue #2937.  On non IEEE
+        # 754 platforms, and on IEEE 754 platforms that exhibit the
+        # problem described in issue #2937, we simply skip the whole
+        # test.
+
+        if not float.__getformat__("double").startswith("IEEE"):
+            return
+
+        # on IEEE 754 compliant machines, both of the expressions
+        # below should round to 10000000000000002.0.
+        if 1e16+2.999 != 1e16+2.9999:
+            return
+
         # Python version of math.sum algorithm, for comparison
         def msum(iterable):
             """Full precision sum of values in iterable.  Returns the value of
