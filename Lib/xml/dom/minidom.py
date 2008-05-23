@@ -1128,6 +1128,8 @@ class Comment(Childless, CharacterData):
         self.data = self.nodeValue = data
 
     def writexml(self, writer, indent="", addindent="", newl=""):
+        if "--" in self.data:
+            raise ValueError("'--' is not allowed in a comment node")
         writer.write("%s<!--%s-->%s" % (indent, self.data, newl))
 
 
