@@ -5,7 +5,7 @@ connect to the Idle process, which listens for the connection.  Since Idle has
 has only one client per server, this was not a limitation.
 
    +---------------------------------+ +-------------+
-   | socketserver.BaseRequestHandler | | SocketIO    |
+   | SocketServer.BaseRequestHandler | | SocketIO    |
    +---------------------------------+ +-------------+
                    ^                   | register()  |
                    |                   | unregister()|
@@ -31,7 +31,7 @@ import sys
 import os
 import socket
 import select
-import socketserver
+import SocketServer
 import struct
 import cPickle as pickle
 import threading
@@ -66,12 +66,12 @@ copy_reg.pickle(types.CodeType, pickle_code, unpickle_code)
 BUFSIZE = 8*1024
 LOCALHOST = '127.0.0.1'
 
-class RPCServer(socketserver.TCPServer):
+class RPCServer(SocketServer.TCPServer):
 
     def __init__(self, addr, handlerclass=None):
         if handlerclass is None:
             handlerclass = RPCHandler
-        socketserver.TCPServer.__init__(self, addr, handlerclass)
+        SocketServer.TCPServer.__init__(self, addr, handlerclass)
 
     def server_bind(self):
         "Override TCPServer method, no bind() phase for connecting entity"
@@ -492,7 +492,7 @@ class RemoteProxy(object):
     def __init__(self, oid):
         self.oid = oid
 
-class RPCHandler(socketserver.BaseRequestHandler, SocketIO):
+class RPCHandler(SocketServer.BaseRequestHandler, SocketIO):
 
     debugging = False
     location = "#S"  # Server
@@ -500,10 +500,10 @@ class RPCHandler(socketserver.BaseRequestHandler, SocketIO):
     def __init__(self, sock, addr, svr):
         svr.current_handler = self ## cgt xxx
         SocketIO.__init__(self, sock)
-        socketserver.BaseRequestHandler.__init__(self, sock, addr, svr)
+        SocketServer.BaseRequestHandler.__init__(self, sock, addr, svr)
 
     def handle(self):
-        "handle() method required by socketserver"
+        "handle() method required by SocketServer"
         self.mainloop()
 
     def get_remote_proxy(self, oid):

@@ -1973,7 +1973,7 @@ site             Append module search paths for third-party packages to
                  sys.path.
 smtplib          SMTP Client class (RFC 821)
 sndhdr           Several routines that help recognizing sound.
-socketserver     Generic socket server classes.
+SocketServer     Generic socket server classes.
 stat             Constants and functions for interpreting stat/lstat struct.
 statcache        Maintain a cache of file stats.
 statvfs          Constants for interpreting statvfs struct as returned by

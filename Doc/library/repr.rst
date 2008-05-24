@@ -7,8 +7,9 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 .. note::
-   The :mod:`repr` module has been renamed to :mod:`reprlib` in
-   Python 3.0.
+   The :mod:`repr` module has been renamed to :mod:`reprlib` in Python 3.0.  The
+   :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0.
 
 The :mod:`repr` module provides a means for producing object representations
 with limits on the size of the resulting strings. This is used in the Python

@@ -42,7 +42,7 @@ class AllTest(unittest.TestCase):
         self.check_all("MimeWriter")
         self.check_all("queue")
         self.check_all("SimpleHTTPServer")
-        self.check_all("socketserver")
+        self.check_all("SocketServer")
         self.check_all("StringIO")
         self.check_all("UserString")
         self.check_all("aifc")
