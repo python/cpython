@@ -101,7 +101,7 @@ server.handle_request()
 
 import xmlrpclib
 from xmlrpclib import Fault
-import socketserver
+import SocketServer
 import BaseHTTPServer
 import sys
 import os
@@ -512,7 +512,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if self.server.logRequests:
             BaseHTTPServer.BaseHTTPRequestHandler.log_request(self, code, size)
 
-class SimpleXMLRPCServer(socketserver.TCPServer,
+class SimpleXMLRPCServer(SocketServer.TCPServer,
                          SimpleXMLRPCDispatcher):
     """Simple XML-RPC server.
 
@@ -536,7 +536,7 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
         self.logRequests = logRequests
 
         SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
-        socketserver.TCPServer.__init__(self, addr, requestHandler, bind_and_activate)
+        SocketServer.TCPServer.__init__(self, addr, requestHandler, bind_and_activate)
 
         # [Bug #1222790] If possible, set close-on-exec flag; if a
         # method spawns a subprocess, the subprocess shouldn't have

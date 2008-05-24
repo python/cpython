@@ -35,7 +35,7 @@ try:
 except ImportError:
     thread = None
 
-from socketserver import ThreadingTCPServer, StreamRequestHandler
+from SocketServer import ThreadingTCPServer, StreamRequestHandler
 
 
 DEFAULT_LOGGING_CONFIG_PORT = 9030

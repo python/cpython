@@ -8,7 +8,7 @@ from wsgiref.validate import validator
 from wsgiref.simple_server import WSGIServer, WSGIRequestHandler, demo_app
 from wsgiref.simple_server import make_server
 from StringIO import StringIO
-from socketserver import BaseServer
+from SocketServer import BaseServer
 import re, sys
 
 from test import test_support

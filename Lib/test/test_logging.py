@@ -33,7 +33,7 @@ import os
 import re
 import select
 import socket
-from socketserver import ThreadingTCPServer, StreamRequestHandler
+from SocketServer import ThreadingTCPServer, StreamRequestHandler
 import string
 import struct
 import sys
