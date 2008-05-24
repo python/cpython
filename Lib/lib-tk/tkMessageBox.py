@@ -22,7 +22,7 @@
 # - type: dialog type; that is, which buttons to display (see below)
 #
 
-from Tkinter.commondialog import Dialog
+from tkCommonDialog import Dialog
 
 #
 # constants
