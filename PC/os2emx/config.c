@@ -39,7 +39,7 @@ PERFORMANCE OF THIS SOFTWARE.
 extern void initos2();
 extern void initsignal();
 #ifdef WITH_THREAD
-extern void initthread();
+extern void init_thread();
 #endif
 extern void init_codecs();
 extern void init_csv();
@@ -99,7 +99,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"os2", initos2},
 	{"signal", initsignal},
 #ifdef WITH_THREAD
-	{"thread", initthread},
+	{"_thread", init_thread},
 #endif
 	{"_codecs", init_codecs},
 	{"_csv", init_csv},

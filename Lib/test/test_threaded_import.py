@@ -5,7 +5,7 @@
 # complains several times about module random having no attribute
 # randrange, and then Python hangs.
 
-import thread
+import _thread as thread
 from test.support import verbose, TestSkipped, TestFailed
 
 critical_section = thread.allocate_lock()

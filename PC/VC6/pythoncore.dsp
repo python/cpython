@@ -679,7 +679,7 @@ SOURCE=..\..\Python\thread.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\threadmodule.c
+SOURCE=..\..\Modules\_threadmodule.c
 # End Source File
 # Begin Source File
 

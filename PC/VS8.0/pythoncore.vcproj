@@ -1127,7 +1127,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\threadmodule.c"
+				RelativePath="..\..\Modules\_threadmodule.c"
 				>
 			</File>
 			<File

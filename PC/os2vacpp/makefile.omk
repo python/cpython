@@ -630,7 +630,7 @@ termios.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
 	 traceback.h tupleobject.h
 
-threadmodule.obj: abstract.h ceval.h classobject.h cobject.h \
+_threadmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
 	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
 	 longobject.h methodobject.h modsupport.h moduleobject.h mymalloc.h \

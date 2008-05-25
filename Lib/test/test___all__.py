@@ -63,7 +63,7 @@ class AllTest(unittest.TestCase):
         self.check_all("dircache")
         self.check_all("dis")
         self.check_all("doctest")
-        self.check_all("dummy_thread")
+        self.check_all("_dummy_thread")
         self.check_all("dummy_threading")
         self.check_all("filecmp")
         self.check_all("fileinput")

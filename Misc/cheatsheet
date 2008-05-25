@@ -1988,8 +1988,8 @@ zipfile          Read & write PK zipped files.
             re                  Functions useful for working with regular expressions
             string              Useful string and characters functions and exceptions
             random              Mersenne Twister pseudo-random number generator
-            thread              Low-level primitives for working with process threads
-            threading           idem, new recommanded interface.
+            _thread             Low-level primitives for working with process threads
+            threading           idem, new recommended interface.
 
 * Unix/Posix *
 

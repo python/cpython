@@ -120,7 +120,7 @@ PyAPI_DATA(int) _Py_CheckInterval;
    Py_END_ALLOW_THREADS!!!
 
    The function PyEval_InitThreads() should be called only from
-   initthread() in "threadmodule.c".
+   init_thread() in "_threadmodule.c".
 
    Note that not yet all candidates have been converted to use this
    mechanism!

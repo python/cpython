@@ -1,12 +1,7 @@
 """Thread module emulating a subset of Java's threading model."""
 
 import sys as _sys
-
-try:
-    import thread
-except ImportError:
-    del _sys.modules[__name__]
-    raise
+import _thread
 
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
@@ -17,11 +12,11 @@ __all__ = ['activeCount', 'Condition', 'currentThread', 'enumerate', 'Event',
            'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Timer', 'setprofile', 'settrace', 'local', 'stack_size']
 
-_start_new_thread = thread.start_new_thread
-_allocate_lock = thread.allocate_lock
-_get_ident = thread.get_ident
-ThreadError = thread.error
-del thread
+_start_new_thread = _thread.start_new_thread
+_allocate_lock = _thread.allocate_lock
+_get_ident = _thread.get_ident
+ThreadError = _thread.error
+del _thread
 
 
 # Debug support (adapted from ihooks.py).
@@ -556,18 +551,18 @@ class Thread(_Verbose):
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
 
-        # Notes about running with dummy_thread:
+        # Notes about running with _dummy_thread:
         #
-        # Must take care to not raise an exception if dummy_thread is being
+        # Must take care to not raise an exception if _dummy_thread is being
         # used (and thus this module is being used as an instance of
-        # dummy_threading).  dummy_thread.get_ident() always returns -1 since
-        # there is only one thread if dummy_thread is being used.  Thus
+        # dummy_threading).  _dummy_thread.get_ident() always returns -1 since
+        # there is only one thread if _dummy_thread is being used.  Thus
         # len(_active) is always <= 1 here, and any Thread instance created
         # overwrites the (if any) thread currently registered in _active.
         #
         # An instance of _MainThread is always created by 'threading'.  This
         # gets overwritten the instant an instance of Thread is created; both
-        # threads return -1 from dummy_thread.get_ident() and thus have the
+        # threads return -1 from _dummy_thread.get_ident() and thus have the
         # same key in the dict.  So when the _MainThread instance created by
         # 'threading' tries to clean itself up when atexit calls this method
         # it gets a KeyError if another Thread instance was created.
@@ -763,7 +758,7 @@ def enumerate():
     _active_limbo_lock.release()
     return active
 
-from thread import stack_size
+from _thread import stack_size
 
 # Create the main thread object,
 # and make it available for the interpreter
@@ -775,7 +770,7 @@ _shutdown = _MainThread()._exitfunc
 # module, or from the python fallback
 
 try:
-    from thread import _local as local
+    from _thread import _local as local
 except ImportError:
     from _threading_local import local
 

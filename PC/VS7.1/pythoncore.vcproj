@@ -768,7 +768,7 @@
 			RelativePath="..\..\Python\thread.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\threadmodule.c">
+			RelativePath="..\..\Modules\_threadmodule.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\timemodule.c">

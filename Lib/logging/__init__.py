@@ -35,7 +35,7 @@ except ImportError:
     codecs = None
 
 try:
-    import thread
+    import _thread as thread
     import threading
 except ImportError:
     thread = None

@@ -4,7 +4,7 @@
 # based on configure-time options.
 
 # Threading
-@USE_THREAD_MODULE@thread threadmodule.c
+@USE_THREAD_MODULE@_thread _threadmodule.c
 
 # The signal module
 @USE_SIGNAL_MODULE@signal signalmodule.c

@@ -488,7 +488,7 @@ type objects) *must* have the :attr:`ob_size` field.
    reference cycles. A typical implementation of a :attr:`tp_traverse` function
    simply calls :cfunc:`Py_VISIT` on each of the instance's members that are Python
    objects.  For example, this is function :cfunc:`local_traverse` from the
-   :mod:`thread` extension module::
+   :mod:`_thread` extension module::
 
       static int
       local_traverse(localobject *self, visitproc visit, void *arg)

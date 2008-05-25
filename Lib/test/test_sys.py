@@ -191,7 +191,7 @@ class SysModuleTest(unittest.TestCase):
     def test_current_frames(self):
         have_threads = True
         try:
-            import thread
+            import _thread
         except ImportError:
             have_threads = False
 
@@ -202,7 +202,7 @@ class SysModuleTest(unittest.TestCase):
 
     # Test sys._current_frames() in a WITH_THREADS build.
     def current_frames_with_threads(self):
-        import threading, thread
+        import threading, _thread
         import traceback
 
         # Spawn a thread that blocks at a known place.  Then the main
@@ -216,7 +216,7 @@ class SysModuleTest(unittest.TestCase):
             g456()
 
         def g456():
-            thread_info.append(thread.get_ident())
+            thread_info.append(_thread.get_ident())
             entered_g.set()
             leave_g.wait()
 
@@ -232,7 +232,7 @@ class SysModuleTest(unittest.TestCase):
 
         d = sys._current_frames()
 
-        main_id = thread.get_ident()
+        main_id = _thread.get_ident()
         self.assert_(main_id in d)
         self.assert_(thread_id in d)
 

@@ -5,15 +5,15 @@ to be used, test_main() can be called with the module to use as the thread
 implementation as its sole argument.
 
 """
-import dummy_thread as _thread
+import _dummy_thread as _thread
 import time
 import queue
 import random
 import unittest
 from test import support
 
-DELAY = 0 # Set > 0 when testing a module other than dummy_thread, such as
-          # the 'thread' module.
+DELAY = 0 # Set > 0 when testing a module other than _dummy_thread, such as
+          # the '_thread' module.
 
 class LockTests(unittest.TestCase):
     """Test lock objects."""

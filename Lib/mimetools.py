@@ -96,11 +96,11 @@ class Message(rfc822.Message):
 # -----------------
 
 try:
-    import thread
+    import _thread
 except ImportError:
-    import dummy_thread as thread
-_counter_lock = thread.allocate_lock()
-del thread
+    import _dummy_thread as _thread
+_counter_lock = _thread.allocate_lock()
+del _thread
 
 _counter = 0
 def _get_next_counter():

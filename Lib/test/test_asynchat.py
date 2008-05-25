@@ -1,6 +1,6 @@
 # test asynchat -- requires threading
 
-import thread # If this fails, we can't test this module
+import _thread as thread # If this fails, we can't test this module
 import asyncore, asynchat, socket, threading, time
 import unittest
 import sys

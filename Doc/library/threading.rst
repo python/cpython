@@ -6,12 +6,11 @@
    :synopsis: Higher-level threading interface.
 
 
-This module constructs higher-level threading interfaces on top of the  lower
-level :mod:`thread` module.
-See also the :mod:`queue` module.
+This module constructs higher-level threading interfaces on top of the lower
+level :mod:`_thread` module.  See also the :mod:`queue` module.
 
 The :mod:`dummy_threading` module is provided for situations where
-:mod:`threading` cannot be used because :mod:`thread` is missing.
+:mod:`threading` cannot be used because :mod:`_thread` is missing.
 
 This module defines the following functions and objects:
 
@@ -170,7 +169,7 @@ Lock Objects
 
 A primitive lock is a synchronization primitive that is not owned by a
 particular thread when locked.  In Python, it is currently the lowest level
-synchronization primitive available, implemented directly by the :mod:`thread`
+synchronization primitive available, implemented directly by the :mod:`_thread`
 extension module.
 
 A primitive lock is in one of two states, "locked" or "unlocked". It is created

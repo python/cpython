@@ -4,7 +4,7 @@ This metaclass  makes it possible to declare synchronized methods.
 
 """
 
-import thread
+import _thread as thread
 
 # First we need to define a reentrant lock.
 # This is generally useful and should probably be in a standard Python

@@ -526,8 +526,8 @@ def _checkflag(flag, file):
 # BerkeleyDB was too.
 
 try:
-    import thread
-    del thread
+    import _thread
+    del _thread
     if db.version() < (3, 3, 0):
         db.DB_THREAD = 0
 except ImportError:

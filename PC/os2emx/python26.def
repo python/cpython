@@ -1194,8 +1194,8 @@ EXPORTS
 ; From python26_s.lib(posixmodule)
 ;  "initos2"
 
-; From python26_s.lib(threadmodule)
-;  "initthread"
+; From python26_s.lib(_threadmodule)
+;  "init_thread"
 
 ; From python26_s.lib(arraymodule)
 ;  "initarray"

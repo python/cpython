@@ -1,9 +1,8 @@
+:mod:`_thread` --- Low-level threading API
+==========================================
 
-:mod:`thread` --- Multiple threads of control
-=============================================
-
-.. module:: thread
-   :synopsis: Create multiple threads of control within one interpreter.
+.. module:: _thread
+   :synopsis: Low-level threading API.
 
 
 .. index::
@@ -25,8 +24,8 @@ threading API built on top of this module.
 
 The module is optional.  It is supported on Windows, Linux, SGI IRIX, Solaris
 2.x, as well as on systems that have a POSIX thread (a.k.a. "pthread")
-implementation.  For systems lacking the :mod:`thread` module, the
-:mod:`dummy_thread` module is available. It duplicates this module's interface
+implementation.  For systems lacking the :mod:`_thread` module, the
+:mod:`_dummy_thread` module is available. It duplicates this module's interface
 and can be used as a drop-in replacement.
 
 It defines the following constant and functions:
@@ -132,9 +131,9 @@ Lock objects have the following methods:
 In addition to these methods, lock objects can also be used via the
 :keyword:`with` statement, e.g.::
 
-   import thread
+   import _thread
 
-   a_lock = thread.allocate_lock()
+   a_lock = _thread.allocate_lock()
 
    with a_lock:
        print("a_lock is locked while this executes")

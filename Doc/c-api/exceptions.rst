@@ -351,7 +351,7 @@ in various ways.  There is a separate error indicator for each thread.
    be raised.  It may be called without holding the interpreter lock.
 
    .. % XXX This was described as obsolete, but is used in
-   .. % thread.interrupt_main() (used from IDLE), so it's still needed.
+   .. % _thread.interrupt_main() (used from IDLE), so it's still needed.
 
 
 .. cfunction:: int PySignal_SetWakeupFd(int fd)

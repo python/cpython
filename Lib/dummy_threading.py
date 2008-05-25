@@ -3,12 +3,12 @@
 The module ``_dummy_threading`` is added to ``sys.modules`` in order
 to not have ``threading`` considered imported.  Had ``threading`` been
 directly imported it would have made all subsequent imports succeed
-regardless of whether ``thread`` was available which is not desired.
+regardless of whether ``_thread`` was available which is not desired.
 
 """
 from sys import modules as sys_modules
 
-import dummy_thread
+import _dummy_thread
 
 # Declaring now so as to not have to nest ``try``s to get proper clean-up.
 holding_thread = False
@@ -16,15 +16,15 @@ holding_threading = False
 holding__threading_local = False
 
 try:
-    # Could have checked if ``thread`` was not in sys.modules and gone
+    # Could have checked if ``_thread`` was not in sys.modules and gone
     # a different route, but decided to mirror technique used with
     # ``threading`` below.
-    if 'thread' in sys_modules:
-        held_thread = sys_modules['thread']
+    if '_thread' in sys_modules:
+        held_thread = sys_modules['_thread']
         holding_thread = True
-    # Must have some module named ``thread`` that implements its API
+    # Must have some module named ``_thread`` that implements its API
     # in order to initially import ``threading``.
-    sys_modules['thread'] = sys_modules['dummy_thread']
+    sys_modules['_thread'] = sys_modules['_dummy_thread']
 
     if 'threading' in sys_modules:
         # If ``threading`` is already imported, might as well prevent
@@ -68,11 +68,11 @@ finally:
 
     # Put back ``thread`` if we overwrote, else del the entry we made
     if holding_thread:
-        sys_modules['thread'] = held_thread
+        sys_modules['_thread'] = held_thread
         del held_thread
     else:
-        del sys_modules['thread']
+        del sys_modules['_thread']
     del holding_thread
 
-    del dummy_thread
+    del _dummy_thread
     del sys_modules
