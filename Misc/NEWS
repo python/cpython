@@ -54,6 +54,10 @@ Extension Modules
   bsddb.db.DBEnv.lock_get and other bsddb.db object constructors
   raised an exception.
 
+- Issue #2669: bsddb/__init__.py iteration no longer silently fails when
+  the database has changed size during iteration.  It now raises a
+  RuntimeError in the same manner as a dictionary.
+
 - Issue #2870: cmathmodule.c compile error.
 
 Library
