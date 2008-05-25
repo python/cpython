@@ -529,9 +529,9 @@ def _win32_getvalue(key,name,default=''):
         # Use win32api if available
         from win32api import RegQueryValueEx
     except ImportError:
-        # On Python 2.0 and later, emulate using _winreg
-        import _winreg
-        RegQueryValueEx = _winreg.QueryValueEx
+        # On Python 2.0 and later, emulate using winreg
+        import winreg
+        RegQueryValueEx = winreg.QueryValueEx
     try:
         return RegQueryValueEx(key,name)
     except:
@@ -579,14 +579,14 @@ def win32_ver(release='',version='',csd='',ptype=''):
             # No emulation possible, so return the defaults...
             return release,version,csd,ptype
         else:
-            # Emulation using _winreg (added in Python 2.0) and
+            # Emulation using winreg (added in Python 2.0) and
             # sys.getwindowsversion() (added in Python 2.3)
-            import _winreg
+            import winreg
             GetVersionEx = sys.getwindowsversion
-            RegQueryValueEx = _winreg.QueryValueEx
-            RegOpenKeyEx = _winreg.OpenKeyEx
-            RegCloseKey = _winreg.CloseKey
-            HKEY_LOCAL_MACHINE = _winreg.HKEY_LOCAL_MACHINE
+            RegQueryValueEx = winreg.QueryValueEx
+            RegOpenKeyEx = winreg.OpenKeyEx
+            RegCloseKey = winreg.CloseKey
+            HKEY_LOCAL_MACHINE = winreg.HKEY_LOCAL_MACHINE
             VER_PLATFORM_WIN32_WINDOWS = 1
             VER_PLATFORM_WIN32_NT = 2
             VER_NT_WORKSTATION = 1

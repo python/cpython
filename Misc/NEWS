@@ -39,11 +39,13 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- Renamed ``_winreg`` module to ``winreg``.
+
 - Support os.O_ASYNC and fcntl.FASYNC if the constants exist on the platform.
 
 - Support for Windows 9x has been removed from the winsound module.
 
-- Fixed #2870: cmathmodule.c compile error
+- Fixed #2870: cmathmodule.c compile error.
 
 Library
 -------

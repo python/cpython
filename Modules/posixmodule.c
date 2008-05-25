@@ -476,7 +476,7 @@ static PyObject *
 win32_error(char* function, char* filename)
 {
 	/* XXX We should pass the function name along in the future.
-	   (_winreg.c also wants to pass the function name.)
+	   (winreg.c also wants to pass the function name.)
 	   This would however require an additional param to the
 	   Windows error object, which is non-trivial.
 	*/

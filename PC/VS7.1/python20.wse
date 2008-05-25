@@ -1713,8 +1713,8 @@ item: Remark
   Text=Extension module DLLs (.pyd); keep in synch with libs directory next
 end
 item: Install File
-  Source=.\_winreg.pyd
-  Destination=%MAINDIR%\DLLs\_winreg.pyd
+  Source=.\winreg.pyd
+  Destination=%MAINDIR%\DLLs\winreg.pyd
   Description=Extension modules
   Flags=0000000000000010
 end
@@ -1809,8 +1809,8 @@ item: Remark
   Text=Link libraries (.lib); keep in synch with DLLs above, except that the Python lib lives here.
 end
 item: Install File
-  Source=.\_winreg.lib
-  Destination=%MAINDIR%\libs\_winreg.lib
+  Source=.\winreg.lib
+  Destination=%MAINDIR%\libs\winreg.lib
   Description=Link library files
   Flags=0000000000000010
 end

@@ -1563,7 +1563,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\PC\_winreg.c"
+				RelativePath="..\PC\winreg.c"
 				>
 			</File>
 			<File

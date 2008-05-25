@@ -1,8 +1,7 @@
-
-:mod:`_winreg` -- Windows registry access
+:mod:`winreg` -- Windows registry access
 =========================================
 
-.. module:: _winreg
+.. module:: winreg
    :platform: Windows
    :synopsis: Routines and objects for manipulating the Windows registry.
 .. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>

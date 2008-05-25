@@ -11,5 +11,5 @@ This chapter describes modules that are only available on MS Windows platforms.
 
    msilib.rst
    msvcrt.rst
-   _winreg.rst
+   winreg.rst
    winsound.rst

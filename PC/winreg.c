@@ -1,5 +1,5 @@
 /*
-  _winreg.c
+  winreg.c
 
   Windows Registry access module for Python.
 
@@ -1355,7 +1355,7 @@ PySetValue(PyObject *self, PyObject *args)
 		return NULL;
 	if (typ != REG_SZ) {
 		PyErr_SetString(PyExc_TypeError,
-				"Type must be _winreg.REG_SZ");
+				"Type must be winreg.REG_SZ");
 		return NULL;
 	}
 
@@ -1565,10 +1565,10 @@ inskey(PyObject * d, char * name, HKEY key)
 
 #define ADD_KEY(val) inskey(d, #val, val)
 
-PyMODINIT_FUNC init_winreg(void)
+PyMODINIT_FUNC initwinreg(void)
 {
 	PyObject *m, *d;
-	m = Py_InitModule3("_winreg", winreg_methods, module_doc);
+	m = Py_InitModule3("winreg", winreg_methods, module_doc);
 	if (m == NULL)
 		return;
 	d = PyModule_GetDict(m);

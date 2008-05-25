@@ -42,7 +42,7 @@ extern void initmmap(void);
 extern void init_csv(void);
 extern void init_sre(void);
 extern void initparser(void);
-extern void init_winreg(void);
+extern void initwinreg(void);
 extern void init_struct(void);
 extern void initdatetime(void);
 extern void init_functools(void);
@@ -116,7 +116,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_csv", init_csv},
 	{"_sre", init_sre},
 	{"parser", initparser},
-	{"_winreg", init_winreg},
+	{"winreg", initwinreg},
 	{"_struct", init_struct},
 	{"datetime", initdatetime},
 	{"_functools", init_functools},
