@@ -48,61 +48,29 @@ class TimingCheck(unittest.TestCase):
             sys.__stdout__.flush()
 
 
-def suite():
-    test_modules = [
-        'test_associate',
-        'test_basics',
-        'test_compare',
-        'test_compat',
-        'test_cursor_pget_bug',
-        'test_dbobj',
-        'test_dbshelve',
-        'test_dbtables',
-        'test_distributed_transactions',
-        'test_early_close',
-        'test_get_none',
-        'test_join',
-        'test_lock',
-        'test_misc',
-        'test_pickle',
-        'test_queue',
-        'test_recno',
-        'test_replication',
-        'test_sequence',
-        'test_thread',
-        ]
-
-    alltests = unittest.TestSuite()
-    for name in test_modules:
-        module = __import__("bsddb.test."+name, globals(), locals(), name)
-        #print module,name
-        alltests.addTest(module.test_suite())
-        alltests.addTest(unittest.makeSuite(TimingCheck))
-    return alltests
-
-
 # For invocation through regrtest
 def test_main():
-    run_unittest(suite())
-    db_home = os.path.join(tempfile.gettempdir(), 'db_home')
-    # The only reason to remove db_home is in case if there is an old
-    # one lying around.  This might be by a different user, so just
-    # ignore errors.  We should always make a unique name now.
-    try:
-        rmtree(db_home)
-    except:
-        pass
-    rmtree('db_home%d' % os.getpid())
-
-# For invocation as a script
-if __name__ == '__main__':
     from bsddb import db
-    print '-=' * 38
-    print db.DB_VERSION_STRING
-    print 'bsddb.db.version():   %s' % (db.version(),)
-    print 'bsddb.db.__version__: %s' % db.__version__
-    print 'bsddb.db.cvsid:       %s' % db.cvsid
-    print 'python version:        %s' % sys.version
-    print '-=' * 38
+    from bsddb.test import test_all
+    test_all.get_new_path.prefix = os.path.join(tempfile.gettempdir(),
+                                                'z-test_bsddb3-%s' %
+                                                 os.getpid())
+    # Please leave this print in, having this show up in the buildbots
+    # makes diagnosing problems a lot easier.
+    print >>sys.stderr, db.DB_VERSION_STRING
+    print >>sys.stderr, 'Test path prefix:  ', test_all.get_new_path.prefix
+    try:
+        run_unittest(test_all.suite(module_prefix='bsddb.test.',
+                                    timing_check=TimingCheck))
+    finally:
+        # The only reason to remove db_home is in case if there is an old
+        # one lying around.  This might be by a different user, so just
+        # ignore errors.  We should always make a unique name now.
+        try:
+            rmtree(test_all.get_new_path.prefix)
+        except:
+            pass
 
+
+if __name__ == '__main__':
     test_main()
