@@ -67,6 +67,8 @@ def get_new_database_path() :
     return path
 
 
+# NOTE: This path is overridden by a unique one and cleaned up
+# afterwards when run under regrtest via Lib/test/test_bsddb3.py.
 get_new_path.prefix="/tmp/z-Berkeley_DB"
 get_new_path.num=0
 
@@ -97,7 +99,7 @@ import test_all
 test_all.verbose = verbose
 
 
-def suite():
+def suite(module_prefix='', timing_check=None):
     try:
         # this is special, it used to segfault the interpreter
         import test_1413192
@@ -107,14 +109,14 @@ def suite():
     test_modules = [
         'test_associate',
         'test_basics',
-        'test_compat',
         'test_compare',
+        'test_compat',
+        'test_cursor_pget_bug',
         'test_dbobj',
         'test_dbshelve',
         'test_dbtables',
-        'test_early_close',
         'test_distributed_transactions',
-        'test_replication',
+        'test_early_close',
         'test_get_none',
         'test_join',
         'test_lock',
@@ -122,15 +124,21 @@ def suite():
         'test_pickle',
         'test_queue',
         'test_recno',
-        'test_thread',
+        'test_replication',
         'test_sequence',
-        'test_cursor_pget_bug',
+        'test_thread',
         ]
 
     alltests = unittest.TestSuite()
     for name in test_modules:
-        module = __import__(name)
+        #module = __import__(name)
+        # Do it this way so that suite may be called externally via
+        # python's Lib/test/test_bsddb3.
+        module = __import__(module_prefix+name, globals(), locals(), name)
+
         alltests.addTest(module.test_suite())
+        if timing_check:
+            alltests.addTest(unittest.makeSuite(timing_check))
     return alltests
 
 
