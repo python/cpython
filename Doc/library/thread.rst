@@ -1,9 +1,14 @@
-
 :mod:`thread` --- Multiple threads of control
 =============================================
 
 .. module:: thread
    :synopsis: Create multiple threads of control within one interpreter.
+
+.. note::
+   The :mod:`thread` module has been renamed to :mod:`_thread` in Python 3.0.
+   The :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0; however, you should consider using the high-lever
+   :mod:`threading` module instead.
 
 
 .. index::

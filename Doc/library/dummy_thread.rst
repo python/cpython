@@ -1,9 +1,14 @@
-
 :mod:`dummy_thread` --- Drop-in replacement for the :mod:`thread` module
 ========================================================================
 
 .. module:: dummy_thread
    :synopsis: Drop-in replacement for the thread module.
+
+.. note::
+   The :mod:`dummy_thread` module has been renamed to :mod:`_dummy_thread` in
+   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to 3.0; however, you should consider using the
+   high-lever :mod:`dummy_threading` module instead.
 
 
 This module provides a duplicate interface to the :mod:`thread` module.  It is
