@@ -501,8 +501,10 @@ instancemethod_call(PyObject *self, PyObject *arg, PyObject *kw)
 static PyObject *
 instancemethod_descr_get(PyObject *descr, PyObject *obj, PyObject *type) {
 	register PyObject *func = PyInstanceMethod_GET_FUNCTION(descr);
-	if (obj == NULL)
+	if (obj == NULL) {
+		Py_INCREF(func);
 		return func;
+	}
 	else
 		return PyMethod_New(func, obj);
 }

@@ -12,6 +12,8 @@ What's new in Python 3.0b1?
 Core and Builtins
 -----------------
 
+- Issue #2964: fix a missing INCREF in instancemethod_descr_get.
+
 - Issue 2895: Don't crash when given bytes objects as keyword names.
 
 - Issue 2798: When parsing arguments with PyArg_ParseTuple, the "s" code now
