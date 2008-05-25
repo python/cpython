@@ -1044,7 +1044,7 @@ str(object)         printablerepresentation of an object. Class overridable
 super(type)         Create an unbound super object.  Used to call cooperative
                     superclass methods.
 sum(sequence,       Add the values in the sequence and return the sum.
-    [start]) 
+    [start])
 tuple(sequence)     Creates a tuple with same elements as sequence. If already
                     a tuple, return itself (not a copy).
                     Returns a type object [see module types] representing
@@ -1952,7 +1952,7 @@ pty              Pseudo terminal utilities.
 pyexpat          Interface to the Expay XML parser.
 py_compile       Routine to "compile" a .py file to a .pyc file.
 pyclbr           Parse a Python file and retrieve classes and methods.
-queue            A multi-producer, multi-consumer queue.
+Queue            A multi-producer, multi-consumer queue.
 quopri           Conversions to/from quoted-printable transport encoding.
 rand             Don't use unless you want compatibility with C's rand().
 random           Random variable generators

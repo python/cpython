@@ -16,7 +16,7 @@ Output Formatting
 The :mod:`repr` module provides a version of :func:`repr` customized for
 abbreviated displays of large or deeply nested containers::
 
-   >>> import repr   
+   >>> import repr
    >>> repr.repr(set('supercalifragilisticexpialidocious'))
    "set(['a', 'c', 'd', 'e', 'f', 'g', ...])"
 
@@ -174,7 +174,7 @@ tasks in background while the main program continues to run::
 
    class AsyncZip(threading.Thread):
        def __init__(self, infile, outfile):
-           threading.Thread.__init__(self)        
+           threading.Thread.__init__(self)
            self.infile = infile
            self.outfile = outfile
        def run(self):
@@ -198,9 +198,9 @@ variables, and semaphores.
 While those tools are powerful, minor design errors can result in problems that
 are difficult to reproduce.  So, the preferred approach to task coordination is
 to concentrate all access to a resource in a single thread and then use the
-:mod:`queue` module to feed that thread with requests from other threads.
-Applications using :class:`Queue` objects for inter-thread communication and
-coordination are easier to design, more readable, and more reliable.
+:mod:`Queue` module to feed that thread with requests from other threads.
+Applications using :class:`Queue.Queue` objects for inter-thread communication
+and coordination are easier to design, more readable, and more reliable.
 
 
 .. _tut-logging:
@@ -358,11 +358,11 @@ For example, calculating a 5% tax on a 70 cent phone charge gives different
 results in decimal floating point and binary floating point. The difference
 becomes significant if the results are rounded to the nearest cent::
 
-   >>> from decimal import *       
+   >>> from decimal import *
    >>> Decimal('0.70') * Decimal('1.05')
    Decimal("0.7350")
    >>> .70 * 1.05
-   0.73499999999999999       
+   0.73499999999999999
 
 The :class:`Decimal` result keeps a trailing zero, automatically inferring four
 place significance from multiplicands with two place significance.  Decimal
@@ -380,7 +380,7 @@ calculations and equality tests that are unsuitable for binary floating point::
    >>> sum([Decimal('0.1')]*10) == Decimal('1.0')
    True
    >>> sum([0.1]*10) == 1.0
-   False      
+   False
 
 The :mod:`decimal` module provides arithmetic with as much precision as needed::
 

@@ -1965,7 +1965,7 @@ details.
   used to hold character data.
   (Contributed by Achim Gaedke; :issue:`1137`.)
 
-* The :mod:`queue` module now provides queue classes that retrieve entries
+* The :mod:`Queue` module now provides queue classes that retrieve entries
   in different orders.  The :class:`PriorityQueue` class stores
   queued items in a heap and retrieves them in priority order,
   and :class:`LifoQueue` retrieves the most recently added entries first,

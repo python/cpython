@@ -9,7 +9,7 @@ import select
 import thread, threading
 import time
 import traceback
-import queue
+import Queue
 import sys
 import os
 import array
@@ -96,7 +96,7 @@ class ThreadableTest:
         self.server_ready = threading.Event()
         self.client_ready = threading.Event()
         self.done = threading.Event()
-        self.queue = queue.Queue(1)
+        self.queue = Queue.Queue(1)
 
         # Do some munging to start the client test.
         methodname = self.id()
