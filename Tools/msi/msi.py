@@ -840,6 +840,26 @@ def extract_msvcr90():
         result.append((f, kw))
     return result
 
+def generate_license():
+    import shutil, glob
+    out = open("LICENSE.txt", "w")
+    shutil.copyfileobj(open(os.path.join(srcdir, "LICENSE")), out)
+    for dir, file in (("bzip2","LICENSE"),
+                      ("db", "LICENSE"),
+                      ("openssl", "LICENSE"),
+                      ("tcl", "license.terms"),
+                      ("tk", "license.terms")):
+        out.write("\nThis copy of Python includes a copy of %s, which is licensed under the following terms:\n\n" % dir)
+        dirs = glob.glob(srcdir+"/../"+dir+"-*")
+        if not dirs:
+            raise ValueError, "Could not find "+srcdir+"/../"+dir+"-*"
+        if len(dirs) > 2:
+            raise ValueError, "Multiple copies of "+dir
+        dir = dirs[0]
+        shutil.copyfileobj(open(os.path.join(dir, file)), out)
+    out.close()
+
+
 class PyDirectory(Directory):
     """By default, all components in the Python installer
     can run from source."""
@@ -860,7 +880,8 @@ def add_files(db):
         root.add_file("%s/w9xpopen.exe" % PCBUILD)
     root.add_file("README.txt", src="README")
     root.add_file("NEWS.txt", src="Misc/NEWS")
-    root.add_file("LICENSE.txt", src="LICENSE")
+    generate_license()
+    root.add_file("LICENSE.txt", src=os.path.abspath("LICENSE.txt"))
     root.start_component("python.exe", keyfile="python.exe")
     root.add_file("%s/python.exe" % PCBUILD)
     root.start_component("pythonw.exe", keyfile="pythonw.exe")
