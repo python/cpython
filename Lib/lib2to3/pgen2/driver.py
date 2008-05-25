@@ -126,7 +126,10 @@ def load_grammar(gt="Grammar.txt", gp=None,
         g = pgen.generate_grammar(gt)
         if save:
             logger.info("Writing grammar tables to %s", gp)
-            g.dump(gp)
+            try:
+                g.dump(gp)
+            except IOError as e:
+                logger.info("Writing failed:"+str(e))
     else:
         g = grammar.Grammar()
         g.load(gp)
