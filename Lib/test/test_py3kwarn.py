@@ -213,48 +213,9 @@ class TestStdlibRemovals(unittest.TestCase):
             self.assertEquals(str(w.message), msg)
 
 
-class TestStdlibRenames(unittest.TestCase):
-
-    renames = {'ConfigParser': 'configparser'}
-
-    def check_rename(self, module_name, new_module_name):
-        """Make sure that:
-        - A DeprecationWarning is raised when importing using the
-          old 2.x module name.
-        - The module can be imported using the new 3.x name.
-        - The warning message specify both names.
-        """
-        with CleanImport(module_name):
-            with catch_warning(record=False) as w:
-                warnings.filterwarnings("error", ".+ renamed to",
-                                        DeprecationWarning)
-                try:
-                    __import__(module_name, level=0)
-                except DeprecationWarning as exc:
-                    self.assert_(module_name in exc.args[0])
-                    self.assert_(new_module_name in exc.args[0])
-                else:
-                    self.fail("DeprecationWarning not raised for %s" %
-                              module_name)
-        with CleanImport(new_module_name):
-            try:
-                __import__(new_module_name, level=0)
-            except ImportError:
-                self.fail("cannot import %s with its 3.x name, %s" %
-                          module_name, new_module_name)
-            except DeprecationWarning:
-                self.fail("unexpected DeprecationWarning raised for %s" %
-                          module_name)
-
-    def test_module_renames(self):
-        for module_name, new_module_name in self.renames.items():
-            self.check_rename(module_name, new_module_name)
-
-
 def test_main():
     run_unittest(TestPy3KWarnings,
-                 TestStdlibRemovals,
-                 TestStdlibRenames)
+                 TestStdlibRemovals)
 
 if __name__ == '__main__':
     test_main()

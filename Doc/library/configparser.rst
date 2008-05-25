@@ -1,10 +1,7 @@
-:mod:`configparser` --- Configuration file parser
+:mod:`ConfigParser` --- Configuration file parser
 =================================================
 
 .. module:: ConfigParser
-   :synopsis: Old name for the configparser module.
-
-.. module:: configparser
    :synopsis: Configuration file parser.
 
 .. moduleauthor:: Ken Manheimer <klm@zope.com>
@@ -13,9 +10,10 @@
 .. sectionauthor:: Christopher G. Petrilli <petrilli@amber.org>
 
 .. note::
-   The :mod:`ConfigParser` module has been renamed to :mod:`configparser` in
-   Python 3.0.  It is importable under both names in Python 2.6 and the rest of
-   the 2.x series.
+
+   The :mod:`ConfigParser` module has been renamed to `configparser` in Python
+   3.0.  The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to 3.0.
 
 .. index::
    pair: .ini; file
@@ -233,9 +231,9 @@ RawConfigParser Objects
    load the required file or files using :meth:`readfp` before calling :meth:`read`
    for any optional files::
 
-      import configparser, os
+      import ConfigParser, os
 
-      config = configparser.ConfigParser()
+      config = ConfigParser.ConfigParser()
       config.readfp(open('defaults.cfg'))
       config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
 
@@ -375,10 +373,10 @@ Examples
 
 An example of writing to a configuration file::
 
-   import configparser
+   import ConfigParser
 
-   config = configparser.RawConfigParser()
-   
+   config = ConfigParser.RawConfigParser()
+
    # When adding sections or items, add them in the reverse order of
    # how you want them to be displayed in the actual file.
    # In addition, please note that using RawConfigParser's and the raw
@@ -393,16 +391,16 @@ An example of writing to a configuration file::
    config.set('Section1', 'baz', 'fun')
    config.set('Section1', 'bar', 'Python')
    config.set('Section1', 'foo', '%(bar)s is %(baz)s!')
-   
+
    # Writing our configuration file to 'example.cfg'
    with open('example.cfg', 'wb') as configfile:
        config.write(configfile)
 
 An example of reading the configuration file again::
 
-   import configparser
+   import ConfigParser
 
-   config = configparser.RawConfigParser()
+   config = ConfigParser.RawConfigParser()
    config.read('example.cfg')
 
    # getfloat() raises an exception if the value is not a float
@@ -419,9 +417,9 @@ An example of reading the configuration file again::
 To get interpolation, you will need to use a :class:`ConfigParser` or
 :class:`SafeConfigParser`::
 
-   import configparser
+   import ConfigParser
 
-   config = configparser.ConfigParser()
+   config = ConfigParser.ConfigParser()
    config.read('example.cfg')
 
    # Set the third, optional argument of get to 1 if you wish to use raw mode.
@@ -433,15 +431,15 @@ To get interpolation, you will need to use a :class:`ConfigParser` or
    print config.get('Section1', 'foo', 0, {'bar': 'Documentation',
                                            'baz': 'evil'})
 
-Defaults are available in all three types of ConfigParsers. They are used in 
+Defaults are available in all three types of ConfigParsers. They are used in
 interpolation if an option used is not defined elsewhere. ::
 
-   import configparser
+   import ConfigParser
 
    # New instance with 'bar' and 'baz' defaulting to 'Life' and 'hard' each
-   config = configparser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
+   config = ConfigParser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
    config.read('example.cfg')
-   
+
    print config.get('Section1', 'foo') # -> "Python is fun!"
    config.remove_option('Section1', 'bar')
    config.remove_option('Section1', 'baz')
@@ -452,7 +450,7 @@ The function ``opt_move`` below can be used to move options between sections::
    def opt_move(config, section1, section2, option):
        try:
            config.set(section2, option, config.get(section1, option, 1))
-       except configparser.NoSectionError:
+       except ConfigParser.NoSectionError:
            # Create non-existent section
            config.add_section(section2)
            opt_move(config, section1, section2, option)

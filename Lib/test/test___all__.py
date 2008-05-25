@@ -37,7 +37,7 @@ class AllTest(unittest.TestCase):
         self.check_all("BaseHTTPServer")
         self.check_all("Bastion")
         self.check_all("CGIHTTPServer")
-        self.check_all("configparser")
+        self.check_all("ConfigParser")
         self.check_all("Cookie")
         self.check_all("MimeWriter")
         self.check_all("Queue")

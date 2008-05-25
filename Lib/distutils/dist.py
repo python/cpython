@@ -358,11 +358,7 @@ Common commands: (see '--help-commands' for more)
 
 
     def parse_config_files (self, filenames=None):
-        try:
-            from configparser import ConfigParser
-        except ImportError:
-            # For backward-compatibility with Python versions < 2.6.
-            from ConfigParser import ConfigParser
+        from ConfigParser import ConfigParser
 
         if filenames is None:
             filenames = self.find_config_files()

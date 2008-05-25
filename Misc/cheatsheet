@@ -1862,7 +1862,7 @@ codecs           Lookup existing Unicode encodings and register new ones.
 colorsys         Conversion functions between RGB and other color systems.
 commands         Tools for executing UNIX commands .
 compileall       Force "compilation" of all .py files in a directory.
-configparser     Configuration file parser (much like windows .ini files)
+ConfigParser     Configuration file parser (much like windows .ini files)
 copy             Generic shallow and deep copying operations.
 copy_reg         Helper to provide extensibility for pickle/cPickle.
 csv              Read and write files with comma separated values.
