@@ -47,7 +47,7 @@ class EditorWindow(object):
     from idlelib.UndoDelegator import UndoDelegator
     from idlelib.IOBinding import IOBinding, filesystemencoding, encoding
     from idlelib import Bindings
-    from Tkinter import Toplevel
+    from tkinter import Toplevel
     from idlelib.MultiStatusBar import MultiStatusBar
 
     help_url = None
