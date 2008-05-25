@@ -103,16 +103,16 @@ The constants defined in this module are:
    :func:`strip` and :func:`split` is undefined.
 
 
-.. _string-formatting:
+.. _new-string-formatting:
 
 String Formatting
 -----------------
 
 Starting in Python 2.6, the built-in str and unicode classes provide the ability
-to do complex variable substitutions and value formatting via the :func:`format`
-method described in :pep:`3101`.  The :class:`Formatter` class in the
-:mod:`string` module allows you to create and customize your own string
-formatting behaviors using the same implementation as the built-in
+to do complex variable substitutions and value formatting via the
+:meth:`str.format` method described in :pep:`3101`.  The :class:`Formatter`
+class in the :mod:`string` module allows you to create and customize your own
+string formatting behaviors using the same implementation as the built-in
 :meth:`format` method.
 
 .. class:: Formatter
