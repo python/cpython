@@ -20,10 +20,10 @@
 		 >> (8*sizeof(unsigned int) - MCACHE_SIZE_EXP))
 #define MCACHE_HASH_METHOD(type, name)                                  \
 		MCACHE_HASH((type)->tp_version_tag,                     \
-		            ((PyStringObject *)(name))->ob_shash)
+		            ((PyUnicodeObject *)(name))->hash)
 #define MCACHE_CACHEABLE_NAME(name)                                     \
-		PyString_CheckExact(name) &&                            \
-		PyString_GET_SIZE(name) <= MCACHE_MAX_ATTR_SIZE
+		PyUnicode_CheckExact(name) &&                            \
+		PyUnicode_GET_SIZE(name) <= MCACHE_MAX_ATTR_SIZE
 
 struct method_cache_entry {
 	unsigned int version;
