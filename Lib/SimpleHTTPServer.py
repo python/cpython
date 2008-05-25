@@ -11,13 +11,14 @@ __version__ = "0.6"
 __all__ = ["SimpleHTTPRequestHandler"]
 
 import os
+import sys
 import posixpath
 import BaseHTTPServer
 import urllib
 import cgi
 import shutil
 import mimetypes
-from io import StringIO
+from io import BytesIO
 
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -76,12 +77,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             else:
                 return self.list_directory(path)
         ctype = self.guess_type(path)
-        if ctype.startswith('text/'):
-            mode = 'r'
-        else:
-            mode = 'rb'
         try:
-            f = open(path, mode)
+            f = open(path, 'rb')
         except IOError:
             self.send_error(404, "File not found")
             return None
@@ -107,12 +104,12 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(404, "No permission to list directory")
             return None
         list.sort(key=lambda a: a.lower())
-        f = StringIO()
+        r = []
         displaypath = cgi.escape(urllib.unquote(self.path))
-        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
-        f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
-        f.write("<hr>\n<ul>\n")
+        r.append('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
+        r.append("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
+        r.append("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
+        r.append("<hr>\n<ul>\n")
         for name in list:
             fullname = os.path.join(path, name)
             displayname = linkname = name
@@ -123,14 +120,17 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if os.path.islink(fullname):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
-            f.write('<li><a href="%s">%s</a>\n'
+            r.append('<li><a href="%s">%s</a>\n'
                     % (urllib.quote(linkname), cgi.escape(displayname)))
-        f.write("</ul>\n<hr>\n</body>\n</html>\n")
-        length = f.tell()
+        r.append("</ul>\n<hr>\n</body>\n</html>\n")
+        enc = sys.getfilesystemencoding()
+        encoded = ''.join(r).encode(enc)
+        f = BytesIO()
+        f.write(encoded)
         f.seek(0)
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.send_header("Content-Length", str(length))
+        self.send_header("Content-type", "text/html; charset=%s" % enc)
+        self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         return f
 

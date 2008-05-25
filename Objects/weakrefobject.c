@@ -474,6 +474,8 @@ proxy_richcompare(PyObject *proxy, PyObject *v, int op)
 WRAP_BINARY(proxy_add, PyNumber_Add)
 WRAP_BINARY(proxy_sub, PyNumber_Subtract)
 WRAP_BINARY(proxy_mul, PyNumber_Multiply)
+WRAP_BINARY(proxy_floor_div, PyNumber_FloorDivide)
+WRAP_BINARY(proxy_true_div, PyNumber_TrueDivide)
 WRAP_BINARY(proxy_mod, PyNumber_Remainder)
 WRAP_BINARY(proxy_divmod, PyNumber_Divmod)
 WRAP_TERNARY(proxy_pow, PyNumber_Power)
@@ -492,6 +494,8 @@ WRAP_UNARY(proxy_float, PyNumber_Float)
 WRAP_BINARY(proxy_iadd, PyNumber_InPlaceAdd)
 WRAP_BINARY(proxy_isub, PyNumber_InPlaceSubtract)
 WRAP_BINARY(proxy_imul, PyNumber_InPlaceMultiply)
+WRAP_BINARY(proxy_ifloor_div, PyNumber_InPlaceFloorDivide)
+WRAP_BINARY(proxy_itrue_div, PyNumber_InPlaceTrueDivide)
 WRAP_BINARY(proxy_imod, PyNumber_InPlaceRemainder)
 WRAP_TERNARY(proxy_ipow, PyNumber_InPlacePower)
 WRAP_BINARY(proxy_ilshift, PyNumber_InPlaceLshift)
@@ -499,6 +503,7 @@ WRAP_BINARY(proxy_irshift, PyNumber_InPlaceRshift)
 WRAP_BINARY(proxy_iand, PyNumber_InPlaceAnd)
 WRAP_BINARY(proxy_ixor, PyNumber_InPlaceXor)
 WRAP_BINARY(proxy_ior, PyNumber_InPlaceOr)
+WRAP_UNARY(proxy_index, PyNumber_Index)
 
 static int
 proxy_bool(PyWeakReference *proxy)
@@ -605,6 +610,11 @@ static PyNumberMethods proxy_as_number = {
     proxy_iand,             /*nb_inplace_and*/
     proxy_ixor,             /*nb_inplace_xor*/
     proxy_ior,              /*nb_inplace_or*/
+    proxy_floor_div,        /*nb_floor_divide*/
+    proxy_true_div,         /*nb_true_divide*/
+    proxy_ifloor_div,       /*nb_inplace_floor_divide*/
+    proxy_itrue_div,        /*nb_inplace_true_divide*/
+    proxy_index,            /*nb_index*/
 };
 
 static PySequenceMethods proxy_as_sequence = {

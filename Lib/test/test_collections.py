@@ -114,7 +114,9 @@ class TestNamedTuple(unittest.TestCase):
         # n = 10000
         n = 254 # SyntaxError: more than 255 arguments:
         import string, random
-        names = [''.join([random.choice(string.ascii_letters) for j in range(10)]) for i in range(n)]
+        names = list(set(''.join([random.choice(string.ascii_letters)
+                                  for j in range(10)]) for i in range(n)))
+        n = len(names)
         Big = namedtuple('Big', names)
         b = Big(*range(n))
         self.assertEqual(b, tuple(range(n)))

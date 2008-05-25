@@ -150,11 +150,11 @@ ZipFile Objects
 .. method:: ZipFile.open(name[, mode[, pwd]])
 
    Extract a member from the archive as a file-like object (ZipExtFile). *name* is
-   the name of the file in the archive. The *mode* parameter, if included, must be
-   one of the following: ``'r'`` (the  default), ``'U'``, or ``'rU'``. Choosing
-   ``'U'`` or  ``'rU'`` will enable universal newline support in the read-only
-   object. *pwd* is the password used for encrypted files.  Calling  :meth:`open`
-   on a closed ZipFile will raise a  :exc:`RuntimeError`.
+   the name of the file in the archive, or a :class:`ZipInfo` object. The *mode*
+   parameter, if included, must be one of the following: ``'r'`` (the  default),
+   ``'U'``, or ``'rU'``. Choosing ``'U'`` or  ``'rU'`` will enable universal newline
+   support in the read-only object. *pwd* is the password used for encrypted files.
+   Calling  :meth:`open` on a closed ZipFile will raise a  :exc:`RuntimeError`.
 
    .. note::
 
@@ -173,14 +173,20 @@ ZipFile Objects
       create a new file object that will be held by the ZipExtFile, allowing it to
       operate independently of the  ZipFile.
 
+   .. note::
+
+      The :meth:`open`, :meth:`read` and :meth:`extract` methods can take a filename
+      or a :class:`ZipInfo` object.  You will appreciate this when trying to read a
+      ZIP file that contains members with duplicate names.
+
 
 .. method:: ZipFile.extract(member[, path[, pwd]])
 
-   Extract a member from the archive to the current working directory, using its
-   full name.  Its file information is extracted as accurately as possible.
-   *path* specifies a different directory to extract to.   *member* can be a
-   filename or a :class:`ZipInfo` object.  *pwd* is the password used for
-   encrypted files.
+   Extract a member from the archive to the current working directory; *member*
+   must be its full name or a :class:`ZipInfo` object).  Its file information is
+   extracted as accurately as possible.  *path* specifies a different directory
+   to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
+   *pwd* is the password used for encrypted files.
 
 
 .. method:: ZipFile.extractall([path[, members[, pwd]]])
@@ -203,9 +209,10 @@ ZipFile Objects
 
 .. method:: ZipFile.read(name[, pwd])
 
-   Return the bytes of the file in the archive.  The archive must be open for read
-   or append. *pwd* is the password used for encrypted  files and, if specified, it
-   will override the default password set with :meth:`setpassword`.  Calling
+   Return the bytes of the file *name* in the archive.  *name* is the name of the
+   file in the archive, or a :class:`ZipInfo` object.  The archive must be open for
+   read or append. *pwd* is the password used for encrypted  files and, if specified,
+   it will override the default password set with :meth:`setpassword`.  Calling
    :meth:`read` on a closed ZipFile  will raise a :exc:`RuntimeError`.
 
 
