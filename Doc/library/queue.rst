@@ -2,17 +2,15 @@
 ===========================================
 
 .. module:: Queue
-   :synopsis: Old name for the queue module.
-
-.. module:: queue
    :synopsis: A synchronized queue class.
 
 .. note::
-   The :mod:`Queue` module has been renamed to :mod:`queue` in Python 3.0.  It
-   is importable under both names in Python 2.6 and the rest of the 2.x series.
+   The :mod:`Queue` module has been renamed to :mod:`queue` in Python 3.0.  The
+   :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0.
 
 
-The :mod:`queue` module implements multi-producer, multi-consumer queues.
+The :mod:`Queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
 exchanged safely between multiple threads.  The :class:`Queue` class in this
 module implements all the required locking semantics.  It depends on the
@@ -26,7 +24,7 @@ the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
 lowest valued entry is retrieved first.
 
-The :mod:`queue` module defines the following classes and exceptions:
+The :mod:`Queue` module defines the following classes and exceptions:
 
 .. class:: Queue(maxsize)
 
@@ -75,7 +73,7 @@ Queue Objects
 -------------
 
 Queue objects (:class:`Queue`, :class:`LifoQueue`, or :class:`PriorityQueue`)
-provide the public methods described below.  
+provide the public methods described below.
 
 
 .. method:: Queue.qsize()
@@ -170,20 +168,20 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
-   def worker(): 
-       while True: 
-           item = q.get() 
-           do_work(item) 
-           q.task_done() 
+   def worker():
+       while True:
+           item = q.get()
+           do_work(item)
+           q.task_done()
 
-   q = Queue() 
-   for i in range(num_worker_threads): 
+   q = Queue()
+   for i in range(num_worker_threads):
         t = Thread(target=worker)
         t.setDaemon(True)
-        t.start() 
+        t.start()
 
    for item in source():
-       q.put(item) 
+       q.put(item)
 
    q.join()       # block until all tasks are done
 

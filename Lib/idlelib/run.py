@@ -5,7 +5,7 @@ import socket
 import traceback
 import thread
 import threading
-import queue
+import Queue
 
 import CallTips
 import AutoComplete
@@ -85,7 +85,7 @@ def main(del_exitfunc=False):
                     continue
             try:
                 seq, request = rpc.request_queue.get(block=True, timeout=0.05)
-            except queue.Empty:
+            except Queue.Empty:
                 continue
             method, args, kwargs = request
             ret = method(*args, **kwargs)

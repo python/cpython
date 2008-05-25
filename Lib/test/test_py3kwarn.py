@@ -215,9 +215,7 @@ class TestStdlibRemovals(unittest.TestCase):
 
 class TestStdlibRenames(unittest.TestCase):
 
-    renames = {'Queue': 'queue',
-               'ConfigParser': 'configparser',
-              }
+    renames = {'ConfigParser': 'configparser'}
 
     def check_rename(self, module_name, new_module_name):
         """Make sure that:
