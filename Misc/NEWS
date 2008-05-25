@@ -135,9 +135,6 @@ Library
 - The DEVICE, GL, gl, and cgen modules (which indirectly includes
   cgensupport) have been deprecated for removal in Python 3.0.
 
-- The ConfigParser module has been renamed 'configparser'.  The old
-  name is now deprecated.
-
 - The CL, CL_old, and cl modules for IRIX have been deprecated for
   removal in Python 3.0.
 
@@ -1904,13 +1901,13 @@ Library
 Extension Modules
 -----------------
 
-- Patch #1657: added select.epoll and select.kqueue
+- Patch #1657: added select.epoll and select.kqueue.
 
 - Patch #1506171: added operator.methodcaller().
 
 - Patch #1826: operator.attrgetter() now supports dotted attribute paths.
 
-- Patch #1957: syslogmodule: Release GIL when calling syslog(3)
+- Patch #1957: syslogmodule: Release GIL when calling syslog(3).
 
 - Bug #2112: mmap.error is now a subclass of EnvironmentError and not
   a direct EnvironmentError.

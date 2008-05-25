@@ -21,7 +21,7 @@ import os
 import sys
 import string
 import macosxSupport
-from configparser import ConfigParser, NoOptionError, NoSectionError
+from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
