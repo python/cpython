@@ -2,6 +2,7 @@
 """
 
 import os
+import time
 import unittest
 
 try:
@@ -57,10 +58,12 @@ class DBReplicationManager(unittest.TestCase):
         self.dbenvMaster.set_event_notify(confirmed_master)
         self.dbenvClient.set_event_notify(client_startupdone)
 
-        self.dbenvMaster.repmgr_set_local_site("127.0.0.1",46117)
-        self.dbenvClient.repmgr_set_local_site("127.0.0.1",46118)
-        self.dbenvMaster.repmgr_add_remote_site("127.0.0.1",46118)
-        self.dbenvClient.repmgr_add_remote_site("127.0.0.1",46117)
+        master_port = test_support.find_unused_port()
+        self.dbenvMaster.repmgr_set_local_site("127.0.0.1", master_port)
+        client_port = test_support.find_unused_port()
+        self.dbenvClient.repmgr_set_local_site("127.0.0.1", client_port)
+        self.dbenvMaster.repmgr_add_remote_site("127.0.0.1", client_port)
+        self.dbenvClient.repmgr_add_remote_site("127.0.0.1", master_port)
         self.dbenvMaster.rep_set_nsites(2)
         self.dbenvClient.rep_set_nsites(2)
         self.dbenvMaster.rep_set_priority(10)
@@ -91,10 +94,9 @@ class DBReplicationManager(unittest.TestCase):
         # The timeout is necessary in BDB 4.5, since DB_EVENT_REP_STARTUPDONE
         # is not generated if the master has no new transactions.
         # This is solved in BDB 4.6 (#15542).
-        import time
         timeout = time.time()+2
         while (time.time()<timeout) and not (self.confirmed_master and self.client_startupdone) :
-            time.sleep(0.001)
+            time.sleep(0.02)
         if db.version() >= (4,6) :
             self.assertTrue(time.time()<timeout)
         else :
@@ -103,14 +105,14 @@ class DBReplicationManager(unittest.TestCase):
         d = self.dbenvMaster.repmgr_site_list()
         self.assertEquals(len(d), 1)
         self.assertEquals(d[0][0], "127.0.0.1")
-        self.assertEquals(d[0][1], 46118)
+        self.assertEquals(d[0][1], client_port)
         self.assertTrue((d[0][2]==db.DB_REPMGR_CONNECTED) or \
                 (d[0][2]==db.DB_REPMGR_DISCONNECTED))
 
         d = self.dbenvClient.repmgr_site_list()
         self.assertEquals(len(d), 1)
         self.assertEquals(d[0][0], "127.0.0.1")
-        self.assertEquals(d[0][1], 46117)
+        self.assertEquals(d[0][1], master_port)
         self.assertTrue((d[0][2]==db.DB_REPMGR_CONNECTED) or \
                 (d[0][2]==db.DB_REPMGR_DISCONNECTED))
 
