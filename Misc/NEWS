@@ -59,6 +59,10 @@ Extension Modules
 Library
 -------
 
+- Issue #2959: For consistency with other file-like objects, gzip's
+  GzipFile.close() can now be called multiple times without raising
+  an exception.
+
 - Issue #1390: Raise ValueError in toxml when an invalid comment would
   otherwise be produced.
 

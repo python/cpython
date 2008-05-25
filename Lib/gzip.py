@@ -306,6 +306,8 @@ class GzipFile:
             raise IOError, "Incorrect length of data produced"
 
     def close(self):
+        if self.fileobj is None:
+            return
         if self.mode == WRITE:
             self.fileobj.write(self.compress.flush())
             write32u(self.fileobj, self.crc)
