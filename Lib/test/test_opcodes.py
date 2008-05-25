@@ -68,35 +68,35 @@ class OpcodeTest(unittest.TestCase):
 
         f = eval('lambda: None')
         g = eval('lambda: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a: a')
         g = eval('lambda a: a')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a=1: a')
         g = eval('lambda a=1: a')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda: 0')
         g = eval('lambda: 1')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda: None')
         g = eval('lambda a: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a: None')
         g = eval('lambda b: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a: None')
         g = eval('lambda a=None: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
         f = eval('lambda a=0: None')
         g = eval('lambda a=1: None')
-        self.failIf(f == g)
+        self.assertNotEquals(f, g)
 
 
 def test_main():

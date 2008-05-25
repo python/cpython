@@ -222,6 +222,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     error_message_format = DEFAULT_ERROR_MESSAGE
     error_content_type = DEFAULT_ERROR_CONTENT_TYPE
 
+    # The default request version.  This only affects responses up until
+    # the point where the request line is parsed, so it mainly decides what
+    # the client gets back when sending a malformed request line.
+    # Most web servers default to HTTP 0.9, i.e. don't send a status line.
+    default_request_version = "HTTP/0.9"
+
     def parse_request(self):
         """Parse a request (internal).
 
@@ -234,7 +240,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         """
         self.command = None  # set in case of error on the first line
-        self.request_version = version = "HTTP/0.9" # Default
+        self.request_version = version = self.default_request_version
         self.close_connection = 1
         requestline = str(self.raw_requestline, 'iso-8859-1')
         if requestline[-2:] == '\r\n':

@@ -125,6 +125,25 @@ class TestsWithSourceFile(unittest.TestCase):
         for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
             self.zipOpenTest(f, zipfile.ZIP_STORED)
 
+    def testOpenViaZipInfo(self):
+        # Create the ZIP archive
+        zipfp = zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED)
+        zipfp.writestr("name", "foo")
+        zipfp.writestr("name", "bar")
+        zipfp.close()
+
+        zipfp = zipfile.ZipFile(TESTFN2, "r")
+        infos = zipfp.infolist()
+        data = b""
+        for info in infos:
+            data += zipfp.open(info).read()
+        self.assert_(data == b"foobar" or data == b"barfoo")
+        data = b""
+        for info in infos:
+            data += zipfp.read(info)
+        self.assert_(data == b"foobar" or data == b"barfoo")
+        zipfp.close()
+
     def zipRandomOpenTest(self, f, compression):
         self.makeTestArchive(f, compression)
 
