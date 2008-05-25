@@ -12,7 +12,7 @@ can log in on your machine.  Use with caution!
 
 """
 
-import sys, os, string, getopt, thread, socket, traceback
+import sys, os, string, getopt, _thread, socket, traceback
 
 PORT = 4000                             # Default port
 
@@ -52,17 +52,17 @@ def main_thread(port):
             conn.close()
             print("Refusing connection from non-local host", addr[0], ".")
             continue
-        thread.start_new_thread(service_thread, (conn, addr))
+        _thread.start_new_thread(service_thread, (conn, addr))
         del conn, addr
 
 def service_thread(conn, addr):
     (caddr, cport) = addr
-    print("Thread %s has connection from %s.\n" % (str(thread.get_ident()),
+    print("Thread %s has connection from %s.\n" % (str(_thread.get_ident()),
                                                    caddr), end=' ')
     stdin = conn.makefile("r")
     stdout = conn.makefile("w", 0)
     run_interpreter(stdin, stdout)
-    print("Thread %s is done.\n" % str(thread.get_ident()), end=' ')
+    print("Thread %s is done.\n" % str(_thread.get_ident()), end=' ')
 
 def run_interpreter(stdin, stdout):
     globals = {}

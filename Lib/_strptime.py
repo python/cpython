@@ -18,9 +18,9 @@ from re import IGNORECASE
 from re import escape as re_escape
 from datetime import date as datetime_date
 try:
-    from thread import allocate_lock as _thread_allocate_lock
+    from _thread import allocate_lock as _thread_allocate_lock
 except:
-    from dummy_thread import allocate_lock as _thread_allocate_lock
+    from _dummy_thread import allocate_lock as _thread_allocate_lock
 
 __all__ = []
 

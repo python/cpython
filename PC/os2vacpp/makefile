@@ -868,7 +868,7 @@ termios.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h $(PY_INCLUDE)\classo
 	 $(PY_INCLUDE)\sliceobject.h $(PY_INCLUDE)\stringobject.h \
 	 $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h $(PY_INCLUDE)\tupleobject.h
 
-threadmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h \
+_threadmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h \
 	 $(PY_INCLUDE)\classobject.h $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h \
 	 pyconfig.h $(PY_INCLUDE)\dictobject.h $(PY_INCLUDE)\fileobject.h \
 	 $(PY_INCLUDE)\floatobject.h $(PY_INCLUDE)\funcobject.h $(PY_INCLUDE)\import.h \

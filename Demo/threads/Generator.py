@@ -1,6 +1,6 @@
 # Generator implementation using threads
 
-import thread
+import _thread as thread
 
 Killed = 'Generator.Killed'
 

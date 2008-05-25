@@ -539,7 +539,7 @@ supports the creation of additional interpreters (using
    This is a no-op when called for a second time.  It is safe to call this function
    before calling :cfunc:`Py_Initialize`.
 
-   .. index:: module: thread
+   .. index:: module: _thread
 
    When only the main thread exists, no lock operations are needed. This is a
    common situation (most Python programs do not use threads), and the lock
@@ -547,7 +547,7 @@ supports the creation of additional interpreters (using
    initially.  This situation is equivalent to having acquired the lock:  when
    there is only a single thread, all object accesses are safe.  Therefore, when
    this function initializes the lock, it also acquires it.  Before the Python
-   :mod:`thread` module creates a new thread, knowing that either it has the lock
+   :mod:`_thread` module creates a new thread, knowing that either it has the lock
    or the lock hasn't been created yet, it calls :cfunc:`PyEval_InitThreads`.  When
    this call returns, it is guaranteed that the lock has been created and that the
    calling thread has acquired it.

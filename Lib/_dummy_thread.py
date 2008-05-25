@@ -6,9 +6,9 @@ not need to be rewritten for when the thread module is not present.
 Suggested usage is::
 
     try:
-        import thread
+        import _thread
     except ImportError:
-        import dummy_thread as thread
+        import _dummy_thread as _thread
 
 """
 # Exports only things specified by thread documentation;
@@ -20,17 +20,17 @@ import traceback as _traceback
 import warnings
 
 class error(Exception):
-    """Dummy implementation of thread.error."""
+    """Dummy implementation of _thread.error."""
 
     def __init__(self, *args):
         self.args = args
 
 def start_new_thread(function, args, kwargs={}):
-    """Dummy implementation of thread.start_new_thread().
+    """Dummy implementation of _thread.start_new_thread().
 
     Compatibility is maintained by making sure that ``args`` is a
     tuple and ``kwargs`` is a dictionary.  If an exception is raised
-    and it is SystemExit (which can be done by thread.exit()) it is
+    and it is SystemExit (which can be done by _thread.exit()) it is
     caught and nothing is done; all other exceptions are printed out
     by using traceback.print_exc().
 
@@ -57,34 +57,34 @@ def start_new_thread(function, args, kwargs={}):
         raise KeyboardInterrupt
 
 def exit():
-    """Dummy implementation of thread.exit()."""
+    """Dummy implementation of _thread.exit()."""
     raise SystemExit
 
 def get_ident():
-    """Dummy implementation of thread.get_ident().
+    """Dummy implementation of _thread.get_ident().
 
-    Since this module should only be used when threadmodule is not
+    Since this module should only be used when _threadmodule is not
     available, it is safe to assume that the current process is the
     only thread.  Thus a constant can be safely returned.
     """
     return -1
 
 def allocate_lock():
-    """Dummy implementation of thread.allocate_lock()."""
+    """Dummy implementation of _thread.allocate_lock()."""
     return LockType()
 
 def stack_size(size=None):
-    """Dummy implementation of thread.stack_size()."""
+    """Dummy implementation of _thread.stack_size()."""
     if size is not None:
         raise error("setting thread stack size not supported")
     return 0
 
 class LockType(object):
-    """Class implementing dummy implementation of thread.LockType.
+    """Class implementing dummy implementation of _thread.LockType.
 
     Compatibility is maintained by maintaining self.locked_status
     which is a boolean that stores the state of the lock.  Pickling of
-    the lock, though, should not be done since if the thread module is
+    the lock, though, should not be done since if the _thread module is
     then used with an unpickled ``lock()`` from here problems could
     occur from this class not having atomic methods.
 

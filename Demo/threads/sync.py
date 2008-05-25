@@ -268,7 +268,7 @@
 #      if there are are no threads waiting to write.  (This is a
 #      weakness of the interface!)
 
-import thread
+import _thread as thread
 
 class condition:
     def __init__(self, lock=None):

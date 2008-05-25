@@ -1,7 +1,7 @@
 """PyUnit testing that threads honor our signal semantics"""
 
 import unittest
-import thread
+import _thread as thread
 import signal
 import os
 import sys

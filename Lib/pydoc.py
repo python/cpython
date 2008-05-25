@@ -347,7 +347,7 @@ class Doc:
         if (isinstance(object, type(os)) and
             (object.__name__ in ('errno', 'exceptions', 'gc', 'imp',
                                  'marshal', 'posix', 'signal', 'sys',
-                                 'thread', 'zipimport') or
+                                 '_thread', 'zipimport') or
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages'))))):
             if docloc.startswith("http://"):

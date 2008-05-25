@@ -20,7 +20,7 @@ import getopt
 import time
 import os
 from stat import *
-import thread
+import _thread as thread
 
 
 # Work queue class.  Usage:

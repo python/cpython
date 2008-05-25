@@ -66,7 +66,7 @@
 #    current implementation consumes a thread for each coroutine that
 #    may be resumed.
 
-import thread
+import _thread as thread
 import sync
 
 class _CoEvent:

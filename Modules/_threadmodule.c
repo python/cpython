@@ -688,7 +688,7 @@ unlock it.  A thread attempting to lock a lock that it has already locked\n\
 will block until another thread unlocks it.  Deadlocks may ensue.");
 
 PyMODINIT_FUNC
-initthread(void)
+init_thread(void)
 {
 	PyObject *m, *d;
 	
@@ -699,13 +699,13 @@ initthread(void)
 		return;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule3("thread", thread_methods, thread_doc);
+	m = Py_InitModule3("_thread", thread_methods, thread_doc);
 	if (m == NULL)
 		return;
 
 	/* Add a symbolic constant */
 	d = PyModule_GetDict(m);
-	ThreadError = PyErr_NewException("thread.error", NULL, NULL);
+	ThreadError = PyErr_NewException("_thread.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ThreadError);
 	Locktype.tp_doc = lock_doc;
 	Py_INCREF(&Locktype);

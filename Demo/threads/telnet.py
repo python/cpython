@@ -15,7 +15,7 @@
 
 import sys, os, time
 from socket import *
-import thread
+import _thread as thread
 
 BUFSIZE = 8*1024
 

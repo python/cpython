@@ -27,7 +27,7 @@ To use, simply 'import logging' and log away!
 import sys, logging, logging.handlers, socket, struct, os, traceback
 
 try:
-    import thread
+    import _thread as thread
     import threading
 except ImportError:
     thread = None

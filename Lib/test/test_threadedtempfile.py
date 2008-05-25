@@ -16,7 +16,7 @@ provoking a 2.0 failure under Linux.
 NUM_THREADS = 20
 FILES_PER_THREAD = 50
 
-import thread # If this fails, we can't test this module
+import _thread as thread # If this fails, we can't test this module
 import threading
 import tempfile
 

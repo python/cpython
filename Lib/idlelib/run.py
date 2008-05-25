@@ -3,7 +3,7 @@ import linecache
 import time
 import socket
 import traceback
-import thread
+import _thread as thread
 import threading
 import queue
 

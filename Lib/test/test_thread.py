@@ -2,7 +2,7 @@ import os
 import unittest
 import random
 from test import support
-import thread
+import _thread as thread
 import time
 
 

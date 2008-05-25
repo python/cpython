@@ -6,7 +6,8 @@ from test import support
 import errno
 import socket
 import select
-import thread, threading
+import _thread as thread
+import threading
 import time
 import traceback
 import queue

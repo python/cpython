@@ -6,9 +6,9 @@
 # http://bugs.python.org/issue595601
 # http://bugs.python.org/issue815646
 
-import thread
+import _thread
 
 while 1:
     f = open("multithreaded_close.tmp", "w")
-    thread.start_new_thread(f.close, ())
+    _thread.start_new_thread(f.close, ())
     f.close()

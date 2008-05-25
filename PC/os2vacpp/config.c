@@ -33,7 +33,7 @@ extern void initselect(void);
 extern void init_socket(void);
 extern void initstruct(void);
 extern void inittime(void);
-extern void initthread(void);
+extern void init_thread(void);
 extern void initcStringIO(void);
 extern void initpcre(void);
 #ifdef WIN32
@@ -76,7 +76,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"struct", initstruct},
         {"time", inittime},
 #ifdef WITH_THREAD
-        {"thread", initthread},
+        {"_thread", init_thread},
 #endif
         {"cStringIO", initcStringIO},
         {"pcre", initpcre},

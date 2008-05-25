@@ -281,7 +281,7 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/gcmodule.c \
 		Modules/signalmodule.c \
 		Modules/posixmodule.c \
-		Modules/threadmodule.c \
+		Modules/_threadmodule.c \
 		Modules/arraymodule.c \
 		Modules/binascii.c \
 		Modules/cmathmodule.c \

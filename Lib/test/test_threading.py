@@ -5,7 +5,7 @@ from test.support import verbose
 import random
 import sys
 import threading
-import thread
+import _thread
 import time
 import unittest
 import weakref
@@ -88,7 +88,7 @@ class ThreadTests(unittest.TestCase):
             print('with 256kB thread stack size...')
         try:
             threading.stack_size(262144)
-        except thread.error:
+        except _thread.error:
             if verbose:
                 print('platform does not support changing thread stack size')
             return
@@ -101,7 +101,7 @@ class ThreadTests(unittest.TestCase):
             print('with 1MB thread stack size...')
         try:
             threading.stack_size(0x100000)
-        except thread.error:
+        except _thread.error:
             if verbose:
                 print('platform does not support changing thread stack size')
             return
@@ -120,7 +120,7 @@ class ThreadTests(unittest.TestCase):
 
         mutex = threading.Lock()
         mutex.acquire()
-        tid = thread.start_new_thread(f, (mutex,))
+        tid = _thread.start_new_thread(f, (mutex,))
         # Wait for the thread to finish.
         mutex.acquire()
         self.assert_(tid in threading._active)
@@ -154,7 +154,7 @@ class ThreadTests(unittest.TestCase):
 
         class Worker(threading.Thread):
             def run(self):
-                self.id = thread.get_ident()
+                self.id = _thread.get_ident()
                 self.finished = False
 
                 try:
@@ -211,10 +211,10 @@ class ThreadTests(unittest.TestCase):
 
         import subprocess
         rc = subprocess.call([sys.executable, "-c", """if 1:
-            import ctypes, sys, time, thread
+            import ctypes, sys, time, _thread
 
             # This lock is used as a simple event variable.
-            ready = thread.allocate_lock()
+            ready = _thread.allocate_lock()
             ready.acquire()
 
             # Module globals are cleared before __del__ is run
@@ -231,7 +231,7 @@ class ThreadTests(unittest.TestCase):
                 ready.release()
                 time.sleep(100)
 
-            thread.start_new_thread(waitingThread, ())
+            _thread.start_new_thread(waitingThread, ())
             ready.acquire()  # Be sure the other thread is waiting.
             sys.exit(42)
             """])
@@ -357,7 +357,7 @@ class ThreadingExceptionTests(unittest.TestCase):
 
 def test_main():
     test.support.run_unittest(ThreadTests,
-                                   ThreadingExceptionTests)
+                              ThreadingExceptionTests)
 
 if __name__ == "__main__":
     test_main()

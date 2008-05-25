@@ -52,9 +52,9 @@ else:
 
 
 try:
-    import thread as _thread
+    import _thread
 except ImportError:
-    import dummy_thread as _thread
+    import _dummy_thread as _thread
 _allocate_lock = _thread.allocate_lock
 
 _text_openflags = _os.O_RDWR | _os.O_CREAT | _os.O_EXCL
