@@ -10,9 +10,9 @@ Licensed to PSF under a Contributor Agreement.
 import sys
 import site
 import os
-import _winreg
+import winreg
 
-HKCU = _winreg.HKEY_CURRENT_USER
+HKCU = winreg.HKEY_CURRENT_USER
 ENV = "Environment"
 PATH = "PATH"
 DEFAULT = u"%PATH%"
@@ -27,9 +27,9 @@ def modify():
     else:
         userscripts = None
 
-    with _winreg.CreateKey(HKCU, ENV) as key:
+    with winreg.CreateKey(HKCU, ENV) as key:
         try:
-            envpath = _winreg.QueryValueEx(key, PATH)[0]
+            envpath = winreg.QueryValueEx(key, PATH)[0]
         except WindowsError:
             envpath = DEFAULT
 
@@ -39,7 +39,7 @@ def modify():
                 paths.append(path)
 
         envpath = os.pathsep.join(paths)
-        _winreg.SetValueEx(key, PATH, 0, _winreg.REG_EXPAND_SZ, envpath)
+        winreg.SetValueEx(key, PATH, 0, winreg.REG_EXPAND_SZ, envpath)
         return paths, envpath
 
 def main():
@@ -51,7 +51,7 @@ def main():
         print "No path was added"
     print "\nPATH is now:\n%s\n" % envpath
     print "Expanded:"
-    print _winreg.ExpandEnvironmentStrings(envpath)
+    print winreg.ExpandEnvironmentStrings(envpath)
 
 if __name__ == '__main__':
     main()

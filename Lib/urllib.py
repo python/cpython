@@ -1489,19 +1489,19 @@ elif os.name == 'nt':
         """
         proxies = {}
         try:
-            import _winreg
+            import winreg
         except ImportError:
             # Std module, so should be around - but you never know!
             return proxies
         try:
-            internetSettings = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER,
+            internetSettings = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                 r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
-            proxyEnable = _winreg.QueryValueEx(internetSettings,
-                                               'ProxyEnable')[0]
+            proxyEnable = winreg.QueryValueEx(internetSettings,
+                                              'ProxyEnable')[0]
             if proxyEnable:
                 # Returned as Unicode but problems if not converted to ASCII
-                proxyServer = str(_winreg.QueryValueEx(internetSettings,
-                                                       'ProxyServer')[0])
+                proxyServer = str(winreg.QueryValueEx(internetSettings,
+                                                      'ProxyServer')[0])
                 if '=' in proxyServer:
                     # Per-protocol settings
                     for p in proxyServer.split(';'):
@@ -1537,18 +1537,18 @@ elif os.name == 'nt':
 
     def proxy_bypass_registry(host):
         try:
-            import _winreg
+            import winreg
             import re
         except ImportError:
             # Std modules, so should be around - but you never know!
             return 0
         try:
-            internetSettings = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER,
+            internetSettings = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                 r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
-            proxyEnable = _winreg.QueryValueEx(internetSettings,
-                                               'ProxyEnable')[0]
-            proxyOverride = str(_winreg.QueryValueEx(internetSettings,
-                                                     'ProxyOverride')[0])
+            proxyEnable = winreg.QueryValueEx(internetSettings,
+                                              'ProxyEnable')[0]
+            proxyOverride = str(winreg.QueryValueEx(internetSettings,
+                                                    'ProxyOverride')[0])
             # ^^^^ Returned as Unicode but problems if not converted to ASCII
         except WindowsError:
             return 0

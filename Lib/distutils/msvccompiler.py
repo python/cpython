@@ -20,15 +20,15 @@ from distutils import log
 
 _can_read_reg = False
 try:
-    import _winreg
+    import winreg
 
     _can_read_reg = True
-    hkey_mod = _winreg
+    hkey_mod = winreg
 
-    RegOpenKeyEx = _winreg.OpenKeyEx
-    RegEnumKey = _winreg.EnumKey
-    RegEnumValue = _winreg.EnumValue
-    RegError = _winreg.error
+    RegOpenKeyEx = winreg.OpenKeyEx
+    RegEnumKey = winreg.EnumKey
+    RegEnumValue = winreg.EnumValue
+    RegError = winreg.error
 
 except ImportError:
     try:
@@ -44,7 +44,7 @@ except ImportError:
     except ImportError:
         log.info("Warning: Can't read registry to find the "
                  "necessary compiler setting\n"
-                 "Make sure that Python modules _winreg, "
+                 "Make sure that Python modules winreg, "
                  "win32api or win32con are installed.")
         pass
 

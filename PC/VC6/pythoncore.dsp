@@ -177,7 +177,7 @@ SOURCE=..\..\Modules\_weakref.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\_winreg.c
+SOURCE=..\winreg.c
 # End Source File
 # Begin Source File
 

@@ -401,7 +401,7 @@
 			RelativePath="..\..\Modules\_weakref.c">
 		</File>
 		<File
-			RelativePath="..\..\Pc\_winreg.c">
+			RelativePath="..\..\Pc\winreg.c">
 		</File>
 		<File
 			RelativePath="..\..\Objects\abstract.c">

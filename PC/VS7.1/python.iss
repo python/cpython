@@ -155,8 +155,8 @@ Source: libs\select.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Compone
 Source: DLLs\unicodedata.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
 Source: libs\unicodedata.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: DLLs\_winreg.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
-Source: libs\_winreg.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\winreg.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\winreg.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
 Source: DLLs\winsound.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
 Source: libs\winsound.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
