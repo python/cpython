@@ -33,7 +33,7 @@
 #----------------------------------------------------------------------
 
 
-"""Support for Berkeley DB 3.3 through 4.6 with a simple interface.
+"""Support for Berkeley DB 4.x with a simple interface.
 
 For the full featured object oriented interface use the bsddb.db module
 instead.  It mirrors the Oracle Berkeley DB C API.
@@ -66,13 +66,8 @@ error = db.DBError  # So bsddb.error will mean something...
 
 import sys, os
 
-# for backwards compatibility with python versions older than 2.3, the
-# iterator interface is dynamically defined and added using a mixin
-# class.  old python can't tokenize it due to the yield keyword.
-if sys.version >= '2.3':
-    import UserDict
-    from weakref import ref
-    exec """
+import UserDict
+from weakref import ref
 class _iter_mixin(UserDict.DictMixin):
     def _make_iter_cursor(self):
         cur = _DeadlockWrap(self.db.cursor)
@@ -87,67 +82,80 @@ class _iter_mixin(UserDict.DictMixin):
         return lambda ref: self._cursor_refs.pop(key, None)
 
     def __iter__(self):
+        self._kill_iteration = False
+        self._in_iter += 1
         try:
-            cur = self._make_iter_cursor()
+            try:
+                cur = self._make_iter_cursor()
 
-            # FIXME-20031102-greg: race condition.  cursor could
-            # be closed by another thread before this call.
+                # FIXME-20031102-greg: race condition.  cursor could
+                # be closed by another thread before this call.
 
-            # since we're only returning keys, we call the cursor
-            # methods with flags=0, dlen=0, dofs=0
-            key = _DeadlockWrap(cur.first, 0,0,0)[0]
-            yield key
+                # since we're only returning keys, we call the cursor
+                # methods with flags=0, dlen=0, dofs=0
+                key = _DeadlockWrap(cur.first, 0,0,0)[0]
+                yield key
 
-            next = cur.next
-            while 1:
-                try:
-                    key = _DeadlockWrap(next, 0,0,0)[0]
-                    yield key
-                except _bsddb.DBCursorClosedError:
-                    cur = self._make_iter_cursor()
-                    # FIXME-20031101-greg: race condition.  cursor could
-                    # be closed by another thread before this call.
-                    _DeadlockWrap(cur.set, key,0,0,0)
-                    next = cur.next
-        except _bsddb.DBNotFoundError:
-            return
-        except _bsddb.DBCursorClosedError:
-            # the database was modified during iteration.  abort.
-            return
+                next = cur.next
+                while 1:
+                    try:
+                        key = _DeadlockWrap(next, 0,0,0)[0]
+                        yield key
+                    except _bsddb.DBCursorClosedError:
+                        if self._kill_iteration:
+                            raise RuntimeError('Database changed size '
+                                               'during iteration.')
+                        cur = self._make_iter_cursor()
+                        # FIXME-20031101-greg: race condition.  cursor could
+                        # be closed by another thread before this call.
+                        _DeadlockWrap(cur.set, key,0,0,0)
+                        next = cur.next
+            except _bsddb.DBNotFoundError:
+                pass
+            except _bsddb.DBCursorClosedError:
+                # the database was modified during iteration.  abort.
+                pass
+        finally:
+            self._in_iter -= 1
 
     def iteritems(self):
         if not self.db:
             return
+        self._kill_iteration = False
+        self._in_iter += 1
         try:
-            cur = self._make_iter_cursor()
+            try:
+                cur = self._make_iter_cursor()
 
-            # FIXME-20031102-greg: race condition.  cursor could
-            # be closed by another thread before this call.
+                # FIXME-20031102-greg: race condition.  cursor could
+                # be closed by another thread before this call.
 
-            kv = _DeadlockWrap(cur.first)
-            key = kv[0]
-            yield kv
+                kv = _DeadlockWrap(cur.first)
+                key = kv[0]
+                yield kv
 
-            next = cur.next
-            while 1:
-                try:
-                    kv = _DeadlockWrap(next)
-                    key = kv[0]
-                    yield kv
-                except _bsddb.DBCursorClosedError:
-                    cur = self._make_iter_cursor()
-                    # FIXME-20031101-greg: race condition.  cursor could
-                    # be closed by another thread before this call.
-                    _DeadlockWrap(cur.set, key,0,0,0)
-                    next = cur.next
-        except _bsddb.DBNotFoundError:
-            return
-        except _bsddb.DBCursorClosedError:
-            # the database was modified during iteration.  abort.
-            return
-"""
-else:
-    class _iter_mixin: pass
+                next = cur.next
+                while 1:
+                    try:
+                        kv = _DeadlockWrap(next)
+                        key = kv[0]
+                        yield kv
+                    except _bsddb.DBCursorClosedError:
+                        if self._kill_iteration:
+                            raise RuntimeError('Database changed size '
+                                               'during iteration.')
+                        cur = self._make_iter_cursor()
+                        # FIXME-20031101-greg: race condition.  cursor could
+                        # be closed by another thread before this call.
+                        _DeadlockWrap(cur.set, key,0,0,0)
+                        next = cur.next
+            except _bsddb.DBNotFoundError:
+                pass
+            except _bsddb.DBCursorClosedError:
+                # the database was modified during iteration.  abort.
+                pass
+        finally:
+            self._in_iter -= 1
 
 
 class _DBWithCursor(_iter_mixin):
@@ -176,6 +184,8 @@ class _DBWithCursor(_iter_mixin):
         # a collection of all DBCursor objects currently allocated
         # by the _iter_mixin interface.
         self._cursor_refs = {}
+        self._in_iter = 0
+        self._kill_iteration = False
 
     def __del__(self):
         self.close()
@@ -225,6 +235,8 @@ class _DBWithCursor(_iter_mixin):
     def __setitem__(self, key, value):
         self._checkOpen()
         self._closeCursors()
+        if self._in_iter and key not in self:
+            self._kill_iteration = True
         def wrapF():
             self.db[key] = value
         _DeadlockWrap(wrapF)  # self.db[key] = value
@@ -232,6 +244,8 @@ class _DBWithCursor(_iter_mixin):
     def __delitem__(self, key):
         self._checkOpen()
         self._closeCursors()
+        if self._in_iter and key in self:
+            self._kill_iteration = True
         def wrapF():
             del self.db[key]
         _DeadlockWrap(wrapF)  # del self.db[key]
