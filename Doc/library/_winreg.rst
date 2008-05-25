@@ -7,6 +7,11 @@
    :synopsis: Routines and objects for manipulating the Windows registry.
 .. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>
 
+.. note::
+   The :mod:`_winreg` module has been renamed to :mod:`winreg` in Python 3.0.
+   The :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0.
+
 
 .. versionadded:: 2.0
 
