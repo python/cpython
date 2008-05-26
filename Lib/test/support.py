@@ -17,14 +17,14 @@ __all__ = ["Error", "TestFailed", "TestSkipped", "ResourceDenied", "import_modul
            "verbose", "use_resources", "max_memuse", "record_original_stdout",
            "get_original_stdout", "unload", "unlink", "rmtree", "forget",
            "is_resource_enabled", "requires", "find_unused_port", "bind_port",
-           "fcmp", "have_unicode", "is_jython", "TESTFN", "HOST", "FUZZ",
-           "findfile", "verify", "vereq", "sortdict", "check_syntax_error",
-           "open_urlresource", "WarningMessage", "catch_warning", "CleanImport",
-           "EnvironmentVarGuard", "TransientResource", "captured_output",
-           "captured_stdout", "TransientResource", "transient_internet",
-           "run_with_locale", "set_memlimit", "bigmemtest", "bigaddrspacetest",
-           "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
-           "threading_cleanup", "reap_children"]
+           "fcmp", "is_jython", "TESTFN", "HOST", "FUZZ", "findfile", "verify",
+           "vereq", "sortdict", "check_syntax_error", "open_urlresource",
+           "WarningMessage", "catch_warning", "CleanImport", "EnvironmentVarGuard",
+           "TransientResource", "captured_output", "captured_stdout",
+           "TransientResource", "transient_internet", "run_with_locale",
+           "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
+           "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
+           "reap_children"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -242,12 +242,6 @@ def fcmp(x, y): # fuzzy comparison function
                 return outcome
         return (len(x) > len(y)) - (len(x) < len(y))
     return (x > y) - (x < y)
-
-try:
-    str
-    have_unicode = True
-except NameError:
-    have_unicode = False
 
 is_jython = sys.platform.startswith('java')
 

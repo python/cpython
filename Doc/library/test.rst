@@ -221,11 +221,6 @@ The :mod:`test.test_support` module defines the following constants:
    :mod:`test.regrtest`.
 
 
-.. data:: have_unicode
-
-   :const:`True` when Unicode support is available.
-
-
 .. data:: is_jython
 
    :const:`True` if the running interpreter is Jython.

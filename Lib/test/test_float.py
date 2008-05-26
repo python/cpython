@@ -22,11 +22,10 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "+-3.14")
         self.assertRaises(ValueError, float, "-+3.14")
         self.assertRaises(ValueError, float, "--3.14")
-        if have_unicode:
-            self.assertEqual(float(unicode("  3.14  ")), 3.14)
-            self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
-            # Implementation limitation in PyFloat_FromString()
-            self.assertRaises(ValueError, float, unicode("1"*10000))
+        self.assertEqual(float(unicode("  3.14  ")), 3.14)
+        self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
+        # Implementation limitation in PyFloat_FromString()
+        self.assertRaises(ValueError, float, unicode("1"*10000))
 
     @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):

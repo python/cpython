@@ -355,8 +355,6 @@ test_support provides the following useful objects:
       mode, and it raises ``TestFailed`` on failure instead of
       ``AssertionError``.
 
-    * ``have_unicode`` - true if Unicode is available, false otherwise.
-
     * ``is_jython`` - true if the interpreter is Jython, false otherwise.
 
     * ``TESTFN`` - a string that should always be used as the filename when
