@@ -409,8 +409,7 @@ C API
   which provide the functions through their libm. The files also
   contains several helpers and constants for math.
 
-- Added a new convenience function, PyErr_WarnPy3k, for issuing Py3k
-  warnings.
+- Added a new convenience macro, PyErr_WarnPy3k, for issuing Py3k warnings.
 
 
 What's New in Python 2.6 alpha 2?
