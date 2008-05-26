@@ -64,7 +64,7 @@ def getstatusoutput(cmd):
 #
 def mk2arg(head, x):
     from warnings import warnpy3k
-    warnpy3k("In 3.x, mk2arg is removed.")
+    warnpy3k("In 3.x, mk2arg has been removed.")
     import os
     return mkarg(os.path.join(head, x))
 
@@ -78,7 +78,7 @@ def mk2arg(head, x):
 #
 def mkarg(x):
     from warnings import warnpy3k
-    warnpy3k("in 3.x, mkarg is remove.")
+    warnpy3k("in 3.x, mkarg has been removed.")
     if '\'' not in x:
         return ' \'' + x + '\''
     s = ' "'

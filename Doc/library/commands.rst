@@ -16,6 +16,12 @@ The :mod:`subprocess` module provides more powerful facilities for spawning new
 processes and retrieving their results.  Using the :mod:`subprocess` module is
 preferable to using the :mod:`commands` module.
 
+.. warning::
+
+   In 3.x, :func:`getstatus` and two undocumented functions (:func:`mk2arg` and
+   :func:`mkarg`) have been removed.  Also, :func:`getstatusoutput` and
+   :func:`getoutput` have been moved to the :mod:`subprocess` module.
+
 The :mod:`commands` module defines the following functions:
 
 
@@ -42,12 +48,7 @@ The :mod:`commands` module defines the following functions:
 
    .. deprecated:: 2.6
       This function is nonobvious and useless, also the name is misleading in the
-      presence of :func:`getstatusoutput`.  It is removed in 3.x.
-
-.. warning::
-
-   Two undocumented functions in this module, :func:`mk2arg` and :func:`mkargs`
-   are removed in 3.x.
+      presence of :func:`getstatusoutput`.
 
 
 Example::
