@@ -818,7 +818,7 @@ LIBSUBDIRS=	tkinter site-packages test test/output test/data \
 		test/decimaltestdata \
 		encodings \
 		email email/mime email/test email/test/data \
-		json json/tests \
+		html json json/tests \
 		sqlite3 sqlite3/test \
 		logging bsddb bsddb/test csv wsgiref \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \

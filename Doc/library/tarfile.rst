@@ -30,10 +30,8 @@ Some facts and figures:
   character devices and block devices and is able to acquire and restore file
   information like timestamp, access permissions and owner.
 
-* can handle tape devices.
 
-
-.. function:: open(name[, mode[, fileobj[, bufsize]]], **kwargs)
+.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
 
    Return a :class:`TarFile` object for the pathname *name*. For detailed
    information on :class:`TarFile` objects and the keyword arguments that are
@@ -74,7 +72,7 @@ Some facts and figures:
    for *name*. It is supposed to be at position 0.
 
    For special purposes, there is a second format for *mode*:
-   ``'filemode|[compression]'``.  :func:`open` will return a :class:`TarFile`
+   ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
    be done on the file. If given, *fileobj* may be any object that has a
    :meth:`read` or :meth:`write` method (depending on the *mode*). *bufsize*
@@ -112,7 +110,7 @@ Some facts and figures:
 .. class:: TarFile
 
    Class for reading and writing tar archives. Do not use this class directly,
-   better use :func:`open` instead. See :ref:`tarfile-objects`.
+   better use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.
 
 
 .. function:: is_tarfile(name)
@@ -121,7 +119,7 @@ Some facts and figures:
    module can read.
 
 
-.. class:: TarFileCompat(filename[, mode[, compression]])
+.. class:: TarFileCompat(filename, mode='r', compression=TAR_PLAIN)
 
    Class for limited access to tar archives with a :mod:`zipfile`\ -like interface.
    Please consult the documentation of the :mod:`zipfile` module for more details.
@@ -163,13 +161,14 @@ Some facts and figures:
 
 .. exception:: ExtractError
 
-   Is raised for *non-fatal* errors when using :meth:`extract`, but only if
+   Is raised for *non-fatal* errors when using :meth:`TarFile.extract`, but only if
    :attr:`TarFile.errorlevel`\ ``== 2``.
 
 
 .. exception:: HeaderError
 
-   Is raised by :meth:`frombuf` if the buffer it gets is invalid.
+   Is raised by :meth:`TarInfo.frombuf` if the buffer it gets is invalid.
+
 
 
 Each of the following constants defines a tar archive format that the
@@ -197,12 +196,21 @@ details.
    The default format for creating archives. This is currently :const:`GNU_FORMAT`.
 
 
+The following variables are available on module level:
+
+
+.. data:: ENCODING
+
+   The default character encoding i.e. the value from either
+   :func:`sys.getfilesystemencoding` or :func:`sys.getdefaultencoding`.
+
+
 .. seealso::
 
    Module :mod:`zipfile`
       Documentation of the :mod:`zipfile` standard module.
 
-   `GNU tar manual, Basic Tar Format <http://www.gnu.org/software/tar/manual/html_node/tar_134.html#SEC134>`_
+   `GNU tar manual, Basic Tar Format <http://www.gnu.org/software/tar/manual/html_node/Standard.html>`_
       Documentation for tar archive files, including GNU tar extensions.
 
 
@@ -218,7 +226,7 @@ archive several times. Each archive member is represented by a :class:`TarInfo`
 object, see :ref:`tarinfo-objects` for details.
 
 
-.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=None, errors=None, pax_headers=None, debug=0, errorlevel=0)
+.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors=None, pax_headers=None, debug=0, errorlevel=0)
 
    All following arguments are optional and can be accessed as instance attributes
    as well.
@@ -245,18 +253,18 @@ object, see :ref:`tarinfo-objects` for details.
    The *tarinfo* argument can be used to replace the default :class:`TarInfo` class
    with a different one.
 
-   If *dereference* is ``False``, add symbolic and hard links to the archive. If it
-   is ``True``, add the content of the target files to the archive. This has no
+   If *dereference* is :const:`False`, add symbolic and hard links to the archive. If it
+   is :const:`True`, add the content of the target files to the archive. This has no
    effect on systems that do not support symbolic links.
 
-   If *ignore_zeros* is ``False``, treat an empty block as the end of the archive.
-   If it is *True*, skip empty (and invalid) blocks and try to get as many members
+   If *ignore_zeros* is :const:`False`, treat an empty block as the end of the archive.
+   If it is :const:`True`, skip empty (and invalid) blocks and try to get as many members
    as possible. This is only useful for reading concatenated or damaged archives.
 
    *debug* can be set from ``0`` (no debug messages) up to ``3`` (all debug
    messages). The messages are written to ``sys.stderr``.
 
-   If *errorlevel* is ``0``, all errors are ignored when using :meth:`extract`.
+   If *errorlevel* is ``0``, all errors are ignored when using :meth:`TarFile.extract`.
    Nevertheless, they appear as error messages in the debug output, when debugging
    is enabled.  If ``1``, all *fatal* errors are raised as :exc:`OSError` or
    :exc:`IOError` exceptions. If ``2``, all *non-fatal* errors are raised as
@@ -273,8 +281,8 @@ object, see :ref:`tarinfo-objects` for details.
 
 .. method:: TarFile.open(...)
 
-   Alternative constructor. The :func:`open` function on module level is actually a
-   shortcut to this classmethod. See section :ref:`tarfile-mod` for details.
+   Alternative constructor. The :func:`tarfile.open` function is actually a
+   shortcut to this classmethod.
 
 
 .. method:: TarFile.getmember(name)
@@ -310,11 +318,11 @@ object, see :ref:`tarinfo-objects` for details.
 .. method:: TarFile.next()
 
    Return the next member of the archive as a :class:`TarInfo` object, when
-   :class:`TarFile` is opened for reading. Return ``None`` if there is no more
+   :class:`TarFile` is opened for reading. Return :const:`None` if there is no more
    available.
 
 
-.. method:: TarFile.extractall([path[, members]])
+.. method:: TarFile.extractall(path=".", members=None)
 
    Extract all members from the archive to the current working directory or
    directory *path*. If optional *members* is given, it must be a subset of the
@@ -332,7 +340,7 @@ object, see :ref:`tarinfo-objects` for details.
       dots ``".."``.
 
 
-.. method:: TarFile.extract(member[, path])
+.. method:: TarFile.extract(member, path="")
 
    Extract a member from the archive to the current working directory, using its
    full name. Its file information is extracted as accurately as possible. *member*
@@ -341,9 +349,8 @@ object, see :ref:`tarinfo-objects` for details.
 
    .. note::
 
-      Because the :meth:`extract` method allows random access to a tar archive there
-      are some issues you must take care of yourself. See the description for
-      :meth:`extractall` above.
+      The :meth:`extract` method does not take care of several extraction issues.
+      In most cases you should consider using the :meth:`extractall` method.
 
    .. warning::
 
@@ -355,7 +362,7 @@ object, see :ref:`tarinfo-objects` for details.
    Extract a member from the archive as a file object. *member* may be a filename
    or a :class:`TarInfo` object. If *member* is a regular file, a file-like object
    is returned. If *member* is a link, a file-like object is constructed from the
-   link's target. If *member* is none of the above, ``None`` is returned.
+   link's target. If *member* is none of the above, :const:`None` is returned.
 
    .. note::
 
@@ -363,7 +370,7 @@ object, see :ref:`tarinfo-objects` for details.
       :meth:`read`, :meth:`readline`, :meth:`readlines`, :meth:`seek`, :meth:`tell`.
 
 
-.. method:: TarFile.add(name[, arcname[, recursive[, exclude]]])
+.. method:: TarFile.add(name, arcname=None, recursive=True, exclude=None)
 
    Add the file *name* to the archive. *name* may be any type of file (directory,
    fifo, symbolic link, etc.). If given, *arcname* specifies an alternative name
@@ -374,7 +381,7 @@ object, see :ref:`tarinfo-objects` for details.
    (:const:`True`) or added (:const:`False`).
 
 
-.. method:: TarFile.addfile(tarinfo[, fileobj])
+.. method:: TarFile.addfile(tarinfo, fileobj=None)
 
    Add the :class:`TarInfo` object *tarinfo* to the archive. If *fileobj* is given,
    ``tarinfo.size`` bytes are read from it and added to the archive.  You can
@@ -386,7 +393,7 @@ object, see :ref:`tarinfo-objects` for details.
       avoid irritation about the file size.
 
 
-.. method:: TarFile.gettarinfo([name[, arcname[, fileobj]]])
+.. method:: TarFile.gettarinfo(name=None, arcname=None, fileobj=None)
 
    Create a :class:`TarInfo` object for either the file *name* or the file object
    *fileobj* (using :func:`os.fstat` on its file descriptor).  You can modify some
@@ -432,7 +439,7 @@ It does *not* contain the file's data itself.
 :meth:`getmember`, :meth:`getmembers` and :meth:`gettarinfo`.
 
 
-.. class:: TarInfo([name])
+.. class:: TarInfo(name="")
 
    Create a :class:`TarInfo` object.
 
@@ -450,7 +457,7 @@ It does *not* contain the file's data itself.
    a :class:`TarInfo` object.
 
 
-.. method:: TarInfo.tobuf([format[, encoding [, errors]]])
+.. method:: TarInfo.tobuf(format=DEFAULT_FORMAT, encoding=ENCODING, errors='strict')
 
    Create a string buffer from a :class:`TarInfo` object. For information on the
    arguments see the constructor of the :class:`TarFile` class.
@@ -579,6 +586,21 @@ How to extract an entire tar archive to the current working directory::
    tar.extractall()
    tar.close()
 
+How to extract a subset of a tar archive with :meth:`TarFile.extractall` using
+a generator function instead of a list::
+
+   import os
+   import tarfile
+
+   def py_files(members):
+       for tarinfo in members:
+           if os.path.splitext(tarinfo.name)[1] == ".py":
+               yield tarinfo
+
+   tar = tarfile.open("sample.tar.gz")
+   tar.extractall(members=py_files(tar))
+   tar.close()
+
 How to create an uncompressed tar archive from a list of filenames::
 
    import tarfile
@@ -599,28 +621,6 @@ How to read a gzip compressed tar archive and display some member information::
            print("a directory.")
        else:
            print("something else.")
-   tar.close()
-
-How to create a tar archive with faked information::
-
-   import tarfile
-   tar = tarfile.open("sample.tar.gz", "w:gz")
-   for name in namelist:
-       tarinfo = tar.gettarinfo(name, "fakeproj-1.0/" + name)
-       tarinfo.uid = 123
-       tarinfo.gid = 456
-       tarinfo.uname = "johndoe"
-       tarinfo.gname = "fake"
-       tar.addfile(tarinfo, file(name))
-   tar.close()
-
-The *only* way to extract an uncompressed tar stream from ``sys.stdin``::
-
-   import sys
-   import tarfile
-   tar = tarfile.open(mode="r|", fileobj=sys.stdin)
-   for tarinfo in tar:
-       tar.extract(tarinfo)
    tar.close()
 
 

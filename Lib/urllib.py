@@ -1271,6 +1271,24 @@ def proxy_bypass_environment(host):
 
 
 if sys.platform == 'darwin':
+
+    def _CFSetup(sc):
+        from ctypes import c_int32, c_void_p, c_char_p, c_int
+        sc.CFStringCreateWithCString.argtypes = [ c_void_p, c_char_p, c_int32 ]
+        sc.CFStringCreateWithCString.restype = c_void_p
+        sc.SCDynamicStoreCopyProxies.argtypes = [ c_void_p ]
+        sc.SCDynamicStoreCopyProxies.restype = c_void_p
+        sc.CFDictionaryGetValue.argtypes = [ c_void_p, c_void_p ]
+        sc.CFDictionaryGetValue.restype = c_void_p
+        sc.CFStringGetLength.argtypes = [ c_void_p ]
+        sc.CFStringGetLength.restype = c_int32
+        sc.CFStringGetCString.argtypes = [ c_void_p, c_char_p, c_int32, c_int32 ]
+        sc.CFStringGetCString.restype = c_int32
+        sc.CFNumberGetValue.argtypes = [ c_void_p, c_int, c_void_p ]
+        sc.CFNumberGetValue.restype = c_int32
+        sc.CFRelease.argtypes = [ c_void_p ]
+        sc.CFRelease.restype = None
+
     def _CStringFromCFString(sc, value):
         from ctypes import create_string_buffer
         length = sc.CFStringGetLength(value) + 1
@@ -1307,6 +1325,7 @@ if sys.platform == 'darwin':
             return (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]
 
         sc = cdll.LoadLibrary(find_library("SystemConfiguration"))
+        _CFSetup(sc)
 
         hostIP = None
 
@@ -1319,6 +1338,8 @@ if sys.platform == 'darwin':
 
 
         proxyDict = sc.SCDynamicStoreCopyProxies(None)
+        if proxyDict is None:
+            return False
 
         try:
             # Check for simple host names:
@@ -1372,10 +1393,10 @@ if sys.platform == 'darwin':
         from ctypes.util import find_library
 
         sc = cdll.LoadLibrary(find_library("SystemConfiguration"))
+        _CFSetup(sc)
 
         if not sc:
             return {}
-
 
         kSCPropNetProxiesHTTPEnable = sc.CFStringCreateWithCString(0, b"HTTPEnable", 0)
         kSCPropNetProxiesHTTPProxy = sc.CFStringCreateWithCString(0, b"HTTPProxy", 0)

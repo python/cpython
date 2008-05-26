@@ -240,7 +240,7 @@ class POP3:
 
 
     def rset(self):
-        """Not sure what this does."""
+        """Unmark all messages marked for deletion."""
         return self._shortcmd('RSET')
 
 
