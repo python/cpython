@@ -1,10 +1,14 @@
-
 :mod:`anydbm` --- Generic access to DBM-style databases
 =======================================================
 
 .. module:: anydbm
    :synopsis: Generic interface to DBM-style database modules.
 
+
+.. note::
+   The :mod:`anydbm` module has been renamed to :mod:`dbm` in Python 3.0.  The
+   :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0.
 
 .. index::
    module: dbhash
