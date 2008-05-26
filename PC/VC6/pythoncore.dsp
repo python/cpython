@@ -237,6 +237,10 @@ SOURCE=..\..\Objects\bufferobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Objects\bytearrayobject.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Objects\bytesobject.c
 # End Source File
 # Begin Source File
@@ -640,10 +644,6 @@ SOURCE=..\..\Modules\signalmodule.c
 # Begin Source File
 
 SOURCE=..\..\Objects\sliceobject.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Objects\stringobject.c
 # End Source File
 # Begin Source File
 
