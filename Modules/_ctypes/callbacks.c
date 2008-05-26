@@ -110,7 +110,7 @@ void _AddTraceback(char *funcname, char *filename, int lineno)
 	if (!py_globals) goto bad;
 	empty_tuple = PyTuple_New(0);
 	if (!empty_tuple) goto bad;
-	empty_string = PyString_FromString("");
+	empty_string = PyBytes_FromString("");
 	if (!empty_string) goto bad;
 	py_code = PyCode_New(
 		0,            /*int argcount,*/

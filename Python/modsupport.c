@@ -498,7 +498,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 					}
 					n = (Py_ssize_t)m;
 				}
-				v = PyString_FromStringAndSize(str, n);
+				v = PyBytes_FromStringAndSize(str, n);
 			}
 			return v;
 		}

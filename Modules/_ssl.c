@@ -599,8 +599,8 @@ _create_tuple_for_X509_NAME (X509_NAME *xname)
                 /*
                 fprintf(stderr, "RDN level %d, attribute %s: %s\n",
                         entry->set,
-                        PyString_AS_STRING(PyTuple_GET_ITEM(attr, 0)),
-                        PyString_AS_STRING(PyTuple_GET_ITEM(attr, 1)));
+                        PyBytes_AS_STRING(PyTuple_GET_ITEM(attr, 0)),
+                        PyBytes_AS_STRING(PyTuple_GET_ITEM(attr, 1)));
                 */
 		if (attr == NULL)
 			goto fail1;
@@ -987,7 +987,7 @@ PySSL_peercert(PySSLObject *self, PyObject *args)
 			return NULL;
 		}
                 /* this is actually an immutable bytes sequence */
-		retval = PyString_FromStringAndSize
+		retval = PyBytes_FromStringAndSize
                   ((const char *) bytes_buf, len);
 		OPENSSL_free(bytes_buf);
 		return retval;
@@ -1356,7 +1356,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	}
   done:
 	if (!buf_passed) {
-		PyObject *res = PyString_FromStringAndSize(
+		PyObject *res = PyBytes_FromStringAndSize(
 			PyByteArray_AS_STRING(buf), count);
 		Py_DECREF(buf);
 		return res;

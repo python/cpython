@@ -161,12 +161,12 @@ Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno)
 					PyErr_Clear();
 					break;
 				}
-				if (PyString_Check(v)) {
+				if (PyBytes_Check(v)) {
 					size_t len;
-					len = PyString_GET_SIZE(v);
+					len = PyBytes_GET_SIZE(v);
 					if (len + 1 + taillen >= MAXPATHLEN)
 						continue; /* Too long */
-					strcpy(namebuf, PyString_AsString(v));
+					strcpy(namebuf, PyBytes_AsString(v));
 					if (strlen(namebuf) != len)
 						continue; /* v contains '\0' */
 					if (len > 0 && namebuf[len-1] != SEP)

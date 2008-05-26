@@ -91,7 +91,7 @@ termios_tcgetattr(PyObject *self, PyObject *args)
 		return NULL;
 	for (i = 0; i < NCCS; i++) {
 		ch = (char)mode.c_cc[i];
-		v = PyString_FromStringAndSize(&ch, 1);
+		v = PyBytes_FromStringAndSize(&ch, 1);
 		if (v == NULL)
 			goto err;
 		PyList_SetItem(cc, i, v);
@@ -183,8 +183,8 @@ termios_tcsetattr(PyObject *self, PyObject *args)
 	for (i = 0; i < NCCS; i++) {
 		v = PyList_GetItem(cc, i);
 
-		if (PyString_Check(v) && PyString_Size(v) == 1)
-			mode.c_cc[i] = (cc_t) * PyString_AsString(v);
+		if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
+			mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
 		else if (PyLong_Check(v))
 			mode.c_cc[i] = (cc_t) PyLong_AsLong(v);
 		else {

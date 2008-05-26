@@ -70,11 +70,11 @@ ascii_escape_unicode(PyObject *pystr)
     input_unicode = PyUnicode_AS_UNICODE(pystr);
     /* One char input can be up to 6 chars output, estimate 4 of these */
     output_size = 2 + (MIN_EXPANSION * 4) + input_chars;
-    rval = PyString_FromStringAndSize(NULL, output_size);
+    rval = PyBytes_FromStringAndSize(NULL, output_size);
     if (rval == NULL) {
         return NULL;
     }
-    output = PyString_AS_STRING(rval);
+    output = PyBytes_AS_STRING(rval);
     chars = 0;
     output[chars++] = '"';
     for (i = 0; i < input_chars; i++) {
@@ -92,14 +92,14 @@ ascii_escape_unicode(PyObject *pystr)
             if (output_size > 2 + (input_chars * MAX_EXPANSION)) {
                 output_size = 2 + (input_chars * MAX_EXPANSION);
             }
-            if (_PyString_Resize(&rval, output_size) == -1) {
+            if (_PyBytes_Resize(&rval, output_size) == -1) {
                 return NULL;
             }
-            output = PyString_AS_STRING(rval);
+            output = PyBytes_AS_STRING(rval);
         }
     }
     output[chars++] = '"';
-    if (_PyString_Resize(&rval, chars) == -1) {
+    if (_PyBytes_Resize(&rval, chars) == -1) {
         return NULL;
     }
     return rval;
@@ -116,15 +116,15 @@ ascii_escape_str(PyObject *pystr)
     char *output;
     char *input_str;
 
-    input_chars = PyString_GET_SIZE(pystr);
-    input_str = PyString_AS_STRING(pystr);
+    input_chars = PyBytes_GET_SIZE(pystr);
+    input_str = PyBytes_AS_STRING(pystr);
     /* One char input can be up to 6 chars output, estimate 4 of these */
     output_size = 2 + (MIN_EXPANSION * 4) + input_chars;
-    rval = PyString_FromStringAndSize(NULL, output_size);
+    rval = PyBytes_FromStringAndSize(NULL, output_size);
     if (rval == NULL) {
         return NULL;
     }
-    output = PyString_AS_STRING(rval);
+    output = PyBytes_AS_STRING(rval);
     chars = 0;
     output[chars++] = '"';
     for (i = 0; i < input_chars; i++) {
@@ -154,14 +154,14 @@ ascii_escape_str(PyObject *pystr)
             if (output_size > 2 + (input_chars * MIN_EXPANSION)) {
                 output_size = 2 + (input_chars * MIN_EXPANSION);
             }
-            if (_PyString_Resize(&rval, output_size) == -1) {
+            if (_PyBytes_Resize(&rval, output_size) == -1) {
                 return NULL;
             }
-            output = PyString_AS_STRING(rval);
+            output = PyBytes_AS_STRING(rval);
         }
     }
     output[chars++] = '"';
-    if (_PyString_Resize(&rval, chars) == -1) {
+    if (_PyBytes_Resize(&rval, chars) == -1) {
         return NULL;
     }
     return rval;
@@ -227,10 +227,10 @@ static PyObject *
 scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
 {
     PyObject *rval;
-    Py_ssize_t len = PyString_GET_SIZE(pystr);
+    Py_ssize_t len = PyBytes_GET_SIZE(pystr);
     Py_ssize_t begin = end - 1;
     Py_ssize_t next = begin;
-    char *buf = PyString_AS_STRING(pystr);
+    char *buf = PyBytes_AS_STRING(pystr);
     Py_buffer info;
     PyObject *chunks = PyList_New(0);
     if (chunks == NULL) {
@@ -560,7 +560,7 @@ py_scanstring(PyObject* self, PyObject *args)
     if (encoding == NULL) {
         encoding = DEFAULT_ENCODING;
     }
-    if (PyString_Check(pystr)) {
+    if (PyBytes_Check(pystr)) {
         return scanstring_str(pystr, end, encoding, strict);
     }
     else if (PyUnicode_Check(pystr)) {
@@ -582,7 +582,7 @@ py_encode_basestring_ascii(PyObject* self, PyObject *pystr)
 {
     PyObject *rval;
     /* METH_O */
-    if (PyString_Check(pystr)) {
+    if (PyBytes_Check(pystr)) {
         rval = ascii_escape_str(pystr);
     }
     else if (PyUnicode_Check(pystr)) {
@@ -594,8 +594,8 @@ py_encode_basestring_ascii(PyObject* self, PyObject *pystr)
                      Py_TYPE(pystr)->tp_name);
         return NULL;
     }
-    if (PyString_Check(rval)) {
-        PyObject *urval = PyUnicode_DecodeASCII(PyString_AS_STRING(rval), PyString_GET_SIZE(rval), NULL);
+    if (PyBytes_Check(rval)) {
+        PyObject *urval = PyUnicode_DecodeASCII(PyBytes_AS_STRING(rval), PyBytes_GET_SIZE(rval), NULL);
         Py_DECREF(rval);
         return urval;
     }

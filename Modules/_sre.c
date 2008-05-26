@@ -1714,7 +1714,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     /* determine character size */
     size = PyObject_Size(string);
 
-    if (PyString_Check(string) || bytes == size)
+    if (PyBytes_Check(string) || bytes == size)
         charsize = 1;
 #if defined(HAVE_UNICODE)
     else if (bytes == (Py_ssize_t) (size * sizeof(Py_UNICODE))) 

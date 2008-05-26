@@ -67,18 +67,18 @@ w_more(int c, WFILE *p)
 	Py_ssize_t size, newsize;
 	if (p->str == NULL)
 		return; /* An error already occurred */
-	size = PyString_Size(p->str);
+	size = PyBytes_Size(p->str);
 	newsize = size + size + 1024;
 	if (newsize > 32*1024*1024) {
 		newsize = size + 1024*1024;
 	}
-	if (_PyString_Resize(&p->str, newsize) != 0) {
+	if (_PyBytes_Resize(&p->str, newsize) != 0) {
 		p->ptr = p->end = NULL;
 	}
 	else {
-		p->ptr = PyString_AS_STRING((PyStringObject *)p->str) + size;
+		p->ptr = PyBytes_AS_STRING((PyBytesObject *)p->str) + size;
 		p->end =
-			PyString_AS_STRING((PyStringObject *)p->str) + newsize;
+			PyBytes_AS_STRING((PyBytesObject *)p->str) + newsize;
 		*p->ptr++ = Py_SAFE_DOWNCAST(c, int, char);
 	}
 }
@@ -231,9 +231,9 @@ w_object(PyObject *v, WFILE *p)
 		}
 	}
 #endif
-	else if (PyString_CheckExact(v)) {
+	else if (PyBytes_CheckExact(v)) {
 		w_byte(TYPE_STRING, p);
-		n = PyString_GET_SIZE(v);
+		n = PyBytes_GET_SIZE(v);
 		if (n > INT_MAX) {
 			/* huge strings are not supported */
 			p->depth--;
@@ -241,7 +241,7 @@ w_object(PyObject *v, WFILE *p)
 			return;
 		}
 		w_long((long)n, p);
-		w_string(PyString_AS_STRING(v), (int)n, p);
+		w_string(PyBytes_AS_STRING(v), (int)n, p);
 	}
 	else if (PyUnicode_CheckExact(v)) {
 	        PyObject *utf8;
@@ -252,14 +252,14 @@ w_object(PyObject *v, WFILE *p)
 			return;
 		}
 		w_byte(TYPE_UNICODE, p);
-		n = PyString_GET_SIZE(utf8);
+		n = PyBytes_GET_SIZE(utf8);
 		if (n > INT_MAX) {
 			p->depth--;
 			p->error = 1;
 			return;
 		}
 		w_long((long)n, p);
-		w_string(PyString_AS_STRING(utf8), (int)n, p);
+		w_string(PyBytes_AS_STRING(utf8), (int)n, p);
 		Py_DECREF(utf8);
 	}
 	else if (PyTuple_CheckExact(v)) {
@@ -686,12 +686,12 @@ r_object(RFILE *p)
 			retval = NULL;
 			break;
 		}
-		v = PyString_FromStringAndSize((char *)NULL, n);
+		v = PyBytes_FromStringAndSize((char *)NULL, n);
 		if (v == NULL) {
 			retval = NULL;
 			break;
 		}
-		if (r_string(PyString_AS_STRING(v), (int)n, p) != n) {
+		if (r_string(PyBytes_AS_STRING(v), (int)n, p) != n) {
 			Py_DECREF(v);
 			PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
@@ -1064,11 +1064,11 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 	PyObject *res = NULL;
 
 	wf.fp = NULL;
-	wf.str = PyString_FromStringAndSize((char *)NULL, 50);
+	wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
 	if (wf.str == NULL)
 		return NULL;
-	wf.ptr = PyString_AS_STRING((PyStringObject *)wf.str);
-	wf.end = wf.ptr + PyString_Size(wf.str);
+	wf.ptr = PyBytes_AS_STRING((PyBytesObject *)wf.str);
+	wf.end = wf.ptr + PyBytes_Size(wf.str);
 	wf.error = 0;
 	wf.depth = 0;
 	wf.version = version;
@@ -1076,14 +1076,14 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 	w_object(x, &wf);
 	Py_XDECREF(wf.strings);
 	if (wf.str != NULL) {
-		char *base = PyString_AS_STRING((PyStringObject *)wf.str);
+		char *base = PyBytes_AS_STRING((PyBytesObject *)wf.str);
 		if (wf.ptr - base > PY_SSIZE_T_MAX) {
 			Py_DECREF(wf.str);
 			PyErr_SetString(PyExc_OverflowError,
 					"too much marshal data for a string");
 			return NULL;
 		}
-		if (_PyString_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
+		if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
 			return NULL;
 	}
 	if (wf.error) {
@@ -1132,9 +1132,9 @@ marshal_load(PyObject *self, PyObject *f)
 	if (data == NULL)
 		return NULL;
 	rf.fp = NULL;
-	if (PyString_Check(data)) {
-		rf.ptr = PyString_AS_STRING(data);
-		rf.end = rf.ptr + PyString_GET_SIZE(data);
+	if (PyBytes_Check(data)) {
+		rf.ptr = PyBytes_AS_STRING(data);
+		rf.end = rf.ptr + PyBytes_GET_SIZE(data);
 	}
 	else if (PyByteArray_Check(data)) {
 		rf.ptr = PyByteArray_AS_STRING(data);

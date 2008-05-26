@@ -644,7 +644,7 @@ decode_str(const char *str, struct tok_state *tok)
 		utf8 = translate_into_utf8(str, tok->enc);
 		if (utf8 == NULL)
 			return error_ret(tok);
-		str = PyString_AsString(utf8);
+		str = PyBytes_AsString(utf8);
 	}
 	for (s = str;; s++) {
 		if (*s == '\0') break;
@@ -675,7 +675,7 @@ decode_str(const char *str, struct tok_state *tok)
 				"unknown encoding: %s", tok->enc);
 			return error_ret(tok);
 		}
-		str = PyString_AS_STRING(utf8);
+		str = PyBytes_AS_STRING(utf8);
 	}
 	assert(tok->decoding_buffer == NULL);
 	tok->decoding_buffer = utf8; /* CAUTION */
@@ -794,8 +794,8 @@ tok_nextc(register struct tok_state *tok)
 					tok->done = E_DECODE;
 					return EOF;
 				}
-				buflen = PyString_GET_SIZE(u);
-				buf = PyString_AS_STRING(u);
+				buflen = PyBytes_GET_SIZE(u);
+				buf = PyBytes_AS_STRING(u);
 				if (!buf) {
 					Py_DECREF(u);
 					tok->done = E_DECODE;

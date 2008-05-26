@@ -154,7 +154,7 @@ escape_decode(PyObject *self,
     if (!PyArg_ParseTuple(args, "s#|z:escape_decode",
 			  &data, &size, &errors))
 	return NULL;
-    return codec_tuple(PyString_DecodeEscape(data, size, errors, 0, NULL),
+    return codec_tuple(PyBytes_DecodeEscape(data, size, errors, 0, NULL),
 		       size);
 }
 
@@ -170,17 +170,17 @@ escape_encode(PyObject *self,
 	PyObject *v;
 
 	if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
-			      &PyString_Type, &str, &errors))
+			      &PyBytes_Type, &str, &errors))
 		return NULL;
 
-	size = PyString_GET_SIZE(str);
+	size = PyBytes_GET_SIZE(str);
 	newsize = 4*size;
 	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != size) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too large to encode");
 			return NULL;
 	}
-	v = PyString_FromStringAndSize(NULL, newsize);
+	v = PyBytes_FromStringAndSize(NULL, newsize);
 
 	if (v == NULL) {
 		return NULL;
@@ -188,12 +188,12 @@ escape_encode(PyObject *self,
 	else {
 		register Py_ssize_t i;
 		register char c;
-		register char *p = PyString_AS_STRING(v);
+		register char *p = PyBytes_AS_STRING(v);
 
 		for (i = 0; i < size; i++) {
 			/* There's at least enough room for a hex escape */
-			assert(newsize - (p - PyString_AS_STRING(v)) >= 4);
-			c = PyString_AS_STRING(str)[i];
+			assert(newsize - (p - PyBytes_AS_STRING(v)) >= 4);
+			c = PyBytes_AS_STRING(str)[i];
 			if (c == '\'' || c == '\\')
 				*p++ = '\\', *p++ = c;
 			else if (c == '\t')
@@ -212,12 +212,12 @@ escape_encode(PyObject *self,
 				*p++ = c;
 		}
 		*p = '\0';
-		if (_PyString_Resize(&v, (p - PyString_AS_STRING(v)))) {
+		if (_PyBytes_Resize(&v, (p - PyBytes_AS_STRING(v)))) {
 			return NULL;
 		}
 	}
 	
-	return codec_tuple(v, PyString_Size(v));
+	return codec_tuple(v, PyBytes_Size(v));
 }
 
 /* --- Decoder ------------------------------------------------------------ */
@@ -660,7 +660,7 @@ readbuffer_encode(PyObject *self,
 			  &data, &size, &errors))
 	return NULL;
 
-    return codec_tuple(PyString_FromStringAndSize(data, size), size);
+    return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
 }
 
 static PyObject *
@@ -675,7 +675,7 @@ charbuffer_encode(PyObject *self,
 			  &data, &size, &errors))
 	return NULL;
 
-    return codec_tuple(PyString_FromStringAndSize(data, size), size);
+    return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
 }
 
 static PyObject *
@@ -694,12 +694,12 @@ unicode_internal_encode(PyObject *self,
     if (PyUnicode_Check(obj)) {
 	data = PyUnicode_AS_DATA(obj);
 	size = PyUnicode_GET_DATA_SIZE(obj);
-	return codec_tuple(PyString_FromStringAndSize(data, size), size);
+	return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
     }
     else {
 	if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
 	    return NULL;
-	return codec_tuple(PyString_FromStringAndSize(data, size), size);
+	return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
     }
 }
 

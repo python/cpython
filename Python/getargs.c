@@ -418,7 +418,7 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			n++;
 	}
 
-	if (!PySequence_Check(arg) || PyString_Check(arg)) {
+	if (!PySequence_Check(arg) || PyBytes_Check(arg)) {
 		levels[0] = 0;
 		PyOS_snprintf(msgbuf, bufsize,
 			      toplevel ? "expected %d arguments, not %.50s" :
@@ -762,8 +762,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
 	case 'c': {/* char */
 		char *p = va_arg(*p_va, char *);
-		if (PyString_Check(arg) && PyString_Size(arg) == 1)
-			*p = PyString_AS_STRING(arg)[0];
+		if (PyBytes_Check(arg) && PyBytes_Size(arg) == 1)
+			*p = PyBytes_AS_STRING(arg)[0];
 		else if (PyUnicode_Check(arg) &&
 			 PyUnicode_GET_SIZE(arg) == 1 &&
 			 PyUnicode_AS_UNICODE(arg)[0] < 256)
@@ -775,8 +775,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
 	case 'C': {/* unicode char */
 		int *p = va_arg(*p_va, int *);
-		if (PyString_Check(arg) && PyString_Size(arg) == 1)
-			*p = PyString_AS_STRING(arg)[0];
+		if (PyBytes_Check(arg) && PyBytes_Size(arg) == 1)
+			*p = PyBytes_AS_STRING(arg)[0];
 		else if (PyUnicode_Check(arg) &&
 			 PyUnicode_GET_SIZE(arg) == 1)
 			*p = PyUnicode_AS_UNICODE(arg)[0];
@@ -798,8 +798,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				if (uarg == NULL)
 					return converterr(CONV_UNICODE,
 							  arg, msgbuf, bufsize);
-				*p = PyString_AS_STRING(uarg);
-				STORE_SIZE(PyString_GET_SIZE(uarg));
+				*p = PyBytes_AS_STRING(uarg);
+				STORE_SIZE(PyBytes_GET_SIZE(uarg));
 			}
 			else { /* any buffer-like object */
 				/* XXX Really? */
@@ -818,11 +818,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				if (uarg == NULL)
 					return converterr(CONV_UNICODE,
 							  arg, msgbuf, bufsize);
-				*p = PyString_AS_STRING(uarg);
+				*p = PyBytes_AS_STRING(uarg);
 			}
 			else
 				return converterr("string", arg, msgbuf, bufsize);
-			if ((Py_ssize_t) strlen(*p) != PyString_GET_SIZE(uarg))
+			if ((Py_ssize_t) strlen(*p) != PyBytes_GET_SIZE(uarg))
 				return converterr("string without null bytes",
 						  arg, msgbuf, bufsize);
 		}
@@ -857,8 +857,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				if (uarg == NULL)
 					return converterr(CONV_UNICODE,
 							  arg, msgbuf, bufsize);
-				*p = PyString_AS_STRING(uarg);
-				STORE_SIZE(PyString_GET_SIZE(uarg));
+				*p = PyBytes_AS_STRING(uarg);
+				STORE_SIZE(PyBytes_GET_SIZE(uarg));
 			}
 			else { /* any buffer-like object */
 				/* XXX Really? */
@@ -875,17 +875,17 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
 			if (arg == Py_None)
 				*p = 0;
-			else if (PyString_Check(arg)) {
+			else if (PyBytes_Check(arg)) {
 				/* Enable null byte check below */
 				uarg = arg;
-				*p = PyString_AS_STRING(arg);
+				*p = PyBytes_AS_STRING(arg);
 			}
 			else if (PyUnicode_Check(arg)) {
 				uarg = UNICODE_DEFAULT_ENCODING(arg);
 				if (uarg == NULL)
 					return converterr(CONV_UNICODE,
 							  arg, msgbuf, bufsize);
-				*p = PyString_AS_STRING(uarg);
+				*p = PyBytes_AS_STRING(uarg);
 			}
 			else
 				return converterr("string or None",
@@ -897,12 +897,12 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 					STORE_SIZE(0);
 				}
 				else {
-					STORE_SIZE(PyString_Size(arg));
+					STORE_SIZE(PyBytes_Size(arg));
 				}
 				format++;
 			}
 			else if (*p != NULL && uarg != NULL &&
-				(Py_ssize_t) strlen(*p) != PyString_GET_SIZE(uarg))
+				(Py_ssize_t) strlen(*p) != PyBytes_GET_SIZE(uarg))
 				return converterr(
 					"string without null bytes or None",
 					arg, msgbuf, bufsize);
@@ -971,7 +971,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
 		/* Encode object */
 		if (!recode_strings &&
-                    (PyString_Check(arg) || PyByteArray_Check(arg))) {
+                    (PyBytes_Check(arg) || PyByteArray_Check(arg))) {
 			s = arg;
 			Py_INCREF(s);
                         if (PyObject_AsCharBuffer(s, &ptr, &size) < 0)
@@ -996,14 +996,14 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			if (s == NULL)
 				return converterr("(encoding failed)",
 						  arg, msgbuf, bufsize);
-			if (!PyString_Check(s)) {
+			if (!PyBytes_Check(s)) {
 				Py_DECREF(s);
 				return converterr(
 					"(encoder failed to return bytes)",
 					arg, msgbuf, bufsize);
 			}
-			size = PyString_GET_SIZE(s);
-			ptr = PyString_AS_STRING(s);
+			size = PyBytes_GET_SIZE(s);
+			ptr = PyBytes_AS_STRING(s);
 			if (ptr == NULL)
 				ptr = "";
 		}
@@ -1114,9 +1114,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		break;
 	}
 
-	case 'S': { /* PyString object */
+	case 'S': { /* PyBytes object */
 		PyObject **p = va_arg(*p_va, PyObject **);
-		if (PyString_Check(arg))
+		if (PyBytes_Check(arg))
 			*p = arg;
 		else
 			return converterr("bytes", arg, msgbuf, bufsize);

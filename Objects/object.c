@@ -291,9 +291,9 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 				s = PyObject_Repr(op);
 			if (s == NULL)
 				ret = -1;
-                        else if (PyString_Check(s)) {
-				fwrite(PyString_AS_STRING(s), 1,
-				       PyString_GET_SIZE(s), fp);
+                        else if (PyBytes_Check(s)) {
+				fwrite(PyBytes_AS_STRING(s), 1,
+				       PyBytes_GET_SIZE(s), fp);
 			}
 			else if (PyUnicode_Check(s)) {
 				PyObject *t;
@@ -301,8 +301,8 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 				if (t == NULL)
 					ret = 0;
 				else {
-					fwrite(PyString_AS_STRING(t), 1,
-					       PyString_GET_SIZE(t), fp);
+					fwrite(PyBytes_AS_STRING(t), 1,
+					       PyBytes_GET_SIZE(t), fp);
 				}
 			}
 			else {
@@ -1498,7 +1498,7 @@ _Py_ReadyTypes(void)
 	if (PyType_Ready(&PyByteArray_Type) < 0)
 		Py_FatalError("Can't initialize 'bytes'");
 
-	if (PyType_Ready(&PyString_Type) < 0)
+	if (PyType_Ready(&PyBytes_Type) < 0)
 		Py_FatalError("Can't initialize 'str'");
 
 	if (PyType_Ready(&PyList_Type) < 0)

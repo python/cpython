@@ -2293,10 +2293,10 @@ alias_for_import_name(struct compiling *c, const node *n)
                     /* length of string plus one for the dot */
                     len += strlen(STR(CHILD(n, i))) + 1;
                 len--; /* the last name doesn't have a dot */
-                str = PyString_FromStringAndSize(NULL, len);
+                str = PyBytes_FromStringAndSize(NULL, len);
                 if (!str)
                     return NULL;
-                s = PyString_AS_STRING(str);
+                s = PyBytes_AS_STRING(str);
                 if (!s)
                     return NULL;
                 for (i = 0; i < NCH(n); i += 2) {
@@ -2307,8 +2307,8 @@ alias_for_import_name(struct compiling *c, const node *n)
                 }
                 --s;
                 *s = '\0';
-		uni = PyUnicode_DecodeUTF8(PyString_AS_STRING(str),
-					   PyString_GET_SIZE(str), 
+		uni = PyUnicode_DecodeUTF8(PyBytes_AS_STRING(str),
+					   PyBytes_GET_SIZE(str), 
 					   NULL);
 		Py_DECREF(str);
 		if (!uni)
@@ -3146,10 +3146,10 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
         u = NULL;
     } else {
         /* "\XX" may become "\u005c\uHHLL" (12 bytes) */
-        u = PyString_FromStringAndSize((char *)NULL, len * 4);
+        u = PyBytes_FromStringAndSize((char *)NULL, len * 4);
         if (u == NULL)
             return NULL;
-        p = buf = PyString_AsString(u);
+        p = buf = PyBytes_AsString(u);
         end = s + len;
         while (s < end) {
             if (*s == '\\') {
@@ -3168,7 +3168,7 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
                     Py_DECREF(u);
                     return NULL;
                 }
-                r = PyString_AS_STRING(w);
+                r = PyBytes_AS_STRING(w);
                 rn = Py_SIZE(w);
                 assert(rn % 2 == 0);
                 for (i = 0; i < rn; i += 2) {
@@ -3264,14 +3264,14 @@ parsestr(struct compiling *c, const node *n, int *bytesmode)
             Py_DECREF(u);
             return v;
         } else if (*bytesmode) {
-            return PyString_FromStringAndSize(s, len);
+            return PyBytes_FromStringAndSize(s, len);
         } else if (strcmp(c->c_encoding, "utf-8") == 0) {
             return PyUnicode_FromStringAndSize(s, len);
 	} else {
             return PyUnicode_DecodeLatin1(s, len, NULL);
         }
     }
-    return PyString_DecodeEscape(s, len, NULL, 1,
+    return PyBytes_DecodeEscape(s, len, NULL, 1,
                                  need_encoding ? c->c_encoding : NULL);
 }
 
@@ -3298,8 +3298,8 @@ parsestrplus(struct compiling *c, const node *n, int *bytesmode)
                 ast_error(n, "cannot mix bytes and nonbytes literals");
                 goto onError;
             }
-            if (PyString_Check(v) && PyString_Check(s)) {
-                PyString_ConcatAndDel(&v, s);
+            if (PyBytes_Check(v) && PyBytes_Check(s)) {
+                PyBytes_ConcatAndDel(&v, s);
                 if (v == NULL)
                     goto onError;
             }

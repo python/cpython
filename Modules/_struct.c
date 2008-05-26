@@ -439,7 +439,7 @@ _range_error(const formatdef *f, int is_unsigned)
 static PyObject *
 nu_char(const char *p, const formatdef *f)
 {
-	return PyString_FromStringAndSize(p, 1);
+	return PyBytes_FromStringAndSize(p, 1);
 }
 
 static PyObject *
@@ -608,12 +608,12 @@ np_char(char *p, PyObject *v, const formatdef *f)
 		if (v == NULL)
 			return -1;
 	}
-	if (!PyString_Check(v) || PyString_Size(v) != 1) {
+	if (!PyBytes_Check(v) || PyBytes_Size(v) != 1) {
 		PyErr_SetString(StructError,
 				"char format requires string of length 1");
 		return -1;
 	}
-	*p = *PyString_AsString(v);
+	*p = *PyBytes_AsString(v);
 	return 0;
 }
 
@@ -1333,7 +1333,7 @@ prepare_s(PyStructObject *self)
 	char c;
 	Py_ssize_t size, len, num, itemsize, x;
 
-	fmt = PyString_AS_STRING(self->s_format);
+	fmt = PyBytes_AS_STRING(self->s_format);
 
 	f = whichtable((char **)&fmt);
 
@@ -1478,7 +1478,7 @@ s_init(PyObject *self, PyObject *args, PyObject *kwds)
 		Py_INCREF(o_format);
 	}
 
-	if (!PyString_Check(o_format)) {
+	if (!PyBytes_Check(o_format)) {
 		Py_DECREF(o_format);
 		PyErr_Format(PyExc_TypeError,
 			     "Struct() argument 1 must be bytes, not %.200s",
@@ -1518,12 +1518,12 @@ s_unpack_internal(PyStructObject *soself, char *startfrom) {
 		const formatdef *e = code->fmtdef;
 		const char *res = startfrom + code->offset;
 		if (e->format == 's') {
-			v = PyString_FromStringAndSize(res, code->size);
+			v = PyBytes_FromStringAndSize(res, code->size);
 		} else if (e->format == 'p') {
 			Py_ssize_t n = *(unsigned char*)res;
 			if (n >= code->size)
 				n = code->size - 1;
-			v = PyString_FromStringAndSize(res + 1, n);
+			v = PyBytes_FromStringAndSize(res + 1, n);
 		} else {
 			v = e->unpack(res, e);
 		}
@@ -1645,15 +1645,15 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 				if (v == NULL)
 					return -1;
 			}
-			isstring = PyString_Check(v);
+			isstring = PyBytes_Check(v);
 			if (!isstring && !PyByteArray_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 's' must be a string");
 				return -1;
 			}
 			if (isstring) {
-				n = PyString_GET_SIZE(v);
-				p = PyString_AS_STRING(v);
+				n = PyBytes_GET_SIZE(v);
+				p = PyBytes_AS_STRING(v);
 			}
 			else {
 				n = PyByteArray_GET_SIZE(v);
@@ -1671,15 +1671,15 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 				if (v == NULL)
 					return -1;
 			}
-			isstring = PyString_Check(v);
+			isstring = PyBytes_Check(v);
 			if (!isstring && !PyByteArray_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 'p' must be a string");
 				return -1;
 			}
 			if (isstring) {
-				n = PyString_GET_SIZE(v);
-				p = PyString_AS_STRING(v);
+				n = PyBytes_GET_SIZE(v);
+				p = PyBytes_AS_STRING(v);
 			}
 			else {
 				n = PyByteArray_GET_SIZE(v);
@@ -1731,12 +1731,12 @@ s_pack(PyObject *self, PyObject *args)
 	}
 
 	/* Allocate a new string */
-	result = PyString_FromStringAndSize((char *)NULL, soself->s_size);
+	result = PyBytes_FromStringAndSize((char *)NULL, soself->s_size);
 	if (result == NULL)
 		return NULL;
 
 	/* Call the guts */
-	if ( s_pack_internal(soself, args, 0, PyString_AS_STRING(result)) != 0 ) {
+	if ( s_pack_internal(soself, args, 0, PyBytes_AS_STRING(result)) != 0 ) {
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -2092,7 +2092,7 @@ init_struct(void)
 {
 	PyObject *ver, *m;
 
-	ver = PyString_FromString("0.2");
+	ver = PyBytes_FromString("0.2");
 	if (ver == NULL)
 		return;
 

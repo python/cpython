@@ -1225,8 +1225,8 @@ get_ref_type(struct compiler *c, PyObject *name)
 	    PyOS_snprintf(buf, sizeof(buf),
 			  "unknown scope for %.100s in %.100s(%s) in %s\n"
 			  "symbols: %s\nlocals: %s\nglobals: %s\n",
-			  PyString_AS_STRING(name), 
-			  PyString_AS_STRING(c->u->u_name), 
+			  PyBytes_AS_STRING(name), 
+			  PyBytes_AS_STRING(c->u->u_name), 
 			  PyObject_REPR(c->u->u_ste->ste_id),
 			  c->c_filename,
 			  PyObject_REPR(c->u->u_ste->ste_symbols),
@@ -1285,7 +1285,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, int args)
 				"lookup %s in %s %d %d\n"
 				"freevars of %s: %s\n",
 				PyObject_REPR(name), 
-				PyString_AS_STRING(c->u->u_name), 
+				PyBytes_AS_STRING(c->u->u_name), 
 				reftype, arg,
 				PyUnicode_AsString(co->co_name),
 				PyObject_REPR(co->co_freevars));
@@ -3068,7 +3068,7 @@ expr_constant(expr_ty e)
 		return PyObject_IsTrue(e->v.Str.s);
 	case Name_kind:
 		/* optimize away names that can't be reassigned */
-		id = PyString_AS_STRING(
+		id = PyBytes_AS_STRING(
                     _PyUnicode_AsDefaultEncodedString(e->v.Name.id, NULL));
 		if (strcmp(id, "True") == 0) return 1;
 		if (strcmp(id, "False") == 0) return 0;
@@ -3682,10 +3682,10 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
 {
 	memset(a, 0, sizeof(struct assembler));
 	a->a_lineno = firstlineno;
-	a->a_bytecode = PyString_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
+	a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
 	if (!a->a_bytecode)
 		return 0;
-	a->a_lnotab = PyString_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
+	a->a_lnotab = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
 	if (!a->a_lnotab)
 		return 0;
 	a->a_postorder = (basicblock **)PyObject_Malloc(
@@ -3794,17 +3794,17 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 	if (d_bytecode > 255) {
 		int j, nbytes, ncodes = d_bytecode / 255;
 		nbytes = a->a_lnotab_off + 2 * ncodes;
-		len = PyString_GET_SIZE(a->a_lnotab);
+		len = PyBytes_GET_SIZE(a->a_lnotab);
 		if (nbytes >= len) {
 			if (len * 2 < nbytes)
 				len = nbytes;
 			else
 				len *= 2;
-			if (_PyString_Resize(&a->a_lnotab, len) < 0)
+			if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
 				return 0;
 		}
 		lnotab = (unsigned char *)
-			   PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
+			   PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
 		for (j = 0; j < ncodes; j++) {
 			*lnotab++ = 255;
 			*lnotab++ = 0;
@@ -3816,17 +3816,17 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 	if (d_lineno > 255) {
 		int j, nbytes, ncodes = d_lineno / 255;
 		nbytes = a->a_lnotab_off + 2 * ncodes;
-		len = PyString_GET_SIZE(a->a_lnotab);
+		len = PyBytes_GET_SIZE(a->a_lnotab);
 		if (nbytes >= len) {
 			if (len * 2 < nbytes)
 				len = nbytes;
 			else
 				len *= 2;
-			if (_PyString_Resize(&a->a_lnotab, len) < 0)
+			if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
 				return 0;
 		}
 		lnotab = (unsigned char *)
-			   PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
+			   PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
 		*lnotab++ = d_bytecode;
 		*lnotab++ = 255;
 		d_bytecode = 0;
@@ -3838,13 +3838,13 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 		a->a_lnotab_off += ncodes * 2;
 	}
 
-	len = PyString_GET_SIZE(a->a_lnotab);
+	len = PyBytes_GET_SIZE(a->a_lnotab);
 	if (a->a_lnotab_off + 2 >= len) {
-		if (_PyString_Resize(&a->a_lnotab, len * 2) < 0)
+		if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
 			return 0;
 	}
 	lnotab = (unsigned char *)
-			PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
+			PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
 
 	a->a_lnotab_off += 2;
 	if (d_bytecode) {
@@ -3869,7 +3869,7 @@ static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
 	int size, arg = 0, ext = 0;
-	Py_ssize_t len = PyString_GET_SIZE(a->a_bytecode);
+	Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
 	char *code;
 
 	size = instrsize(i);
@@ -3880,10 +3880,10 @@ assemble_emit(struct assembler *a, struct instr *i)
 	if (i->i_lineno && !assemble_lnotab(a, i))
 		return 0;
 	if (a->a_offset + size >= len) {
-		if (_PyString_Resize(&a->a_bytecode, len * 2) < 0)
+		if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
 		    return 0;
 	}
-	code = PyString_AS_STRING(a->a_bytecode) + a->a_offset;
+	code = PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
 	a->a_offset += size;
 	if (size == 6) {
 		assert(i->i_hasarg);
@@ -4177,9 +4177,9 @@ assemble(struct compiler *c, int addNone)
 				goto error;
 	}
 
-	if (_PyString_Resize(&a.a_lnotab, a.a_lnotab_off) < 0)
+	if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0)
 		goto error;
-	if (_PyString_Resize(&a.a_bytecode, a.a_offset) < 0)
+	if (_PyBytes_Resize(&a.a_bytecode, a.a_offset) < 0)
 		goto error;
 
 	co = makecode(c, &a);

@@ -1061,7 +1061,7 @@ get_string(PyObject *attr, const char *name)
         return NULL;
     }
 
-    if (!PyString_Check(attr)) {
+    if (!PyBytes_Check(attr)) {
         PyErr_Format(PyExc_TypeError, "%.200s attribute must be bytes", name);
         return NULL;
     }
@@ -1153,7 +1153,7 @@ PyUnicodeDecodeError_GetStart(PyObject *exc, Py_ssize_t *start)
     PyObject *obj = get_string(((PyUnicodeErrorObject *)exc)->object, "object");
     if (!obj)
         return -1;
-    size = PyString_GET_SIZE(obj);
+    size = PyBytes_GET_SIZE(obj);
     *start = ((PyUnicodeErrorObject *)exc)->start;
     if (*start<0)
         *start = 0;
@@ -1221,7 +1221,7 @@ PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
     PyObject *obj = get_string(((PyUnicodeErrorObject *)exc)->object, "object");
     if (!obj)
         return -1;
-    size = PyString_GET_SIZE(obj);
+    size = PyBytes_GET_SIZE(obj);
     *end = ((PyUnicodeErrorObject *)exc)->end;
     if (*end<1)
         *end = 1;
@@ -1468,12 +1468,12 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
              return -1;
     }
 
-    if (!PyString_Check(ude->object)) {
+    if (!PyBytes_Check(ude->object)) {
         if (PyObject_AsReadBuffer(ude->object, (const void **)&data, &size)) {
             ude->encoding = ude->object = ude->reason = NULL;
             return -1;
         }
-        ude->object = PyString_FromStringAndSize(data, size);
+        ude->object = PyBytes_FromStringAndSize(data, size);
     }
     else {
         Py_INCREF(ude->object);
@@ -1491,7 +1491,7 @@ UnicodeDecodeError_str(PyObject *self)
     PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
 
     if (uself->end==uself->start+1) {
-        int byte = (int)(PyString_AS_STRING(((PyUnicodeErrorObject *)self)->object)[uself->start]&0xff);
+        int byte = (int)(PyBytes_AS_STRING(((PyUnicodeErrorObject *)self)->object)[uself->start]&0xff);
         return PyUnicode_FromFormat(
             "'%U' codec can't decode byte 0x%02x in position %zd: %U",
             ((PyUnicodeErrorObject *)self)->encoding,

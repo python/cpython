@@ -432,7 +432,7 @@ SHA256_digest(SHAobject *self, PyObject *unused)
 
     SHAcopy(self, &temp);
     sha_final(digest, &temp);
-    return PyString_FromStringAndSize((const char *)digest, self->digestsize);
+    return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
 PyDoc_STRVAR(SHA256_hexdigest__doc__,
