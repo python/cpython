@@ -12,7 +12,7 @@
 
 #ifndef PGEN
 #include "unicodeobject.h"
-#include "stringobject.h"
+#include "bytesobject.h"
 #include "fileobject.h"
 #include "codecs.h"
 #include "abstract.h"
