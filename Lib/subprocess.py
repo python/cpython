@@ -17,7 +17,6 @@ intends to replace several other, older modules and functions, like:
 
 os.system
 os.spawn*
-commands.*
 
 Information about how the subprocess module can be used to replace these
 modules and functions can be found below.
@@ -105,7 +104,7 @@ appearance of the main window and priority for the new process.
 (Windows only)
 
 
-This module also defines two shortcut functions:
+This module also defines four shortcut functions:
 
 call(*popenargs, **kwargs):
     Run command with arguments.  Wait for command to complete, then
@@ -124,6 +123,34 @@ check_call(*popenargs, **kwargs):
     The arguments are the same as for the Popen constructor.  Example:
 
     check_call(["ls", "-l"])
+
+getstatusoutput(cmd):
+    Return (status, output) of executing cmd in a shell.
+
+    Execute the string 'cmd' in a shell with os.popen() and return a 2-tuple
+    (status, output).  cmd is actually run as '{ cmd ; } 2>&1', so that the
+    returned output will contain output or error messages. A trailing newline
+    is stripped from the output. The exit status for the command can be
+    interpreted according to the rules for the C function wait().  Example:
+
+    >>> import subprocess
+    >>> subprocess.getstatusoutput('ls /bin/ls')
+    (0, '/bin/ls')
+    >>> subprocess.getstatusoutput('cat /bin/junk')
+    (256, 'cat: /bin/junk: No such file or directory')
+    >>> subprocess.getstatusoutput('/bin/junk')
+    (256, 'sh: /bin/junk: not found')
+
+getoutput(cmd):
+    Return output (stdout or stderr) of executing cmd in a shell.
+
+    Like getstatusoutput(), except the exit status is ignored and the return
+    value is a string containing the command's output.  Example:
+
+    >>> import subprocess
+    >>> subprocess.getoutput('ls /bin/ls')
+    '/bin/ls'
+
 
 Exceptions
 ----------
@@ -336,7 +363,8 @@ else:
     import fcntl
     import pickle
 
-__all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "CalledProcessError"]
+__all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
+           "getoutput", "CalledProcessError"]
 
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -456,6 +484,48 @@ def list2cmdline(seq):
             result.append('"')
 
     return ''.join(result)
+
+
+# Various tools for executing commands and looking at their output and status.
+#
+# NB This only works (and is only relevant) for UNIX.
+
+def getstatusoutput(cmd):
+    """Return (status, output) of executing cmd in a shell.
+
+    Execute the string 'cmd' in a shell with os.popen() and return a 2-tuple
+    (status, output).  cmd is actually run as '{ cmd ; } 2>&1', so that the
+    returned output will contain output or error messages.  A trailing newline
+    is stripped from the output.  The exit status for the command can be
+    interpreted according to the rules for the C function wait().  Example:
+
+    >>> import subprocess
+    >>> subprocess.getstatusoutput('ls /bin/ls')
+    (0, '/bin/ls')
+    >>> subprocess.getstatusoutput('cat /bin/junk')
+    (256, 'cat: /bin/junk: No such file or directory')
+    >>> subprocess.getstatusoutput('/bin/junk')
+    (256, 'sh: /bin/junk: not found')
+    """
+    pipe = os.popen('{ ' + cmd + '; } 2>&1', 'r')
+    text = pipe.read()
+    sts = pipe.close()
+    if sts is None: sts = 0
+    if text[-1:] == '\n': text = text[:-1]
+    return sts, text
+
+
+def getoutput(cmd):
+    """Return output (stdout or stderr) of executing cmd in a shell.
+
+    Like getstatusoutput(), except the exit status is ignored and the return
+    value is a string containing the command's output.  Example:
+
+    >>> import subprocess
+    >>> subprocess.getoutput('ls /bin/ls')
+    '/bin/ls'
+    """
+    return getstatusoutput(cmd)[1]
 
 
 class Popen(object):

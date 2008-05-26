@@ -25,4 +25,3 @@ of it.  Here's an overview:
    resource.rst
    nis.rst
    syslog.rst
-   commands.rst

@@ -14,7 +14,6 @@ replace several other, older modules and functions, such as::
 
    os.system
    os.spawn*
-   commands.*
 
 Information about how the :mod:`subprocess` module can be used to replace these
 modules and functions can be found in the following sections.
@@ -113,7 +112,7 @@ This module defines one class called :class:`Popen`:
 Convenience Functions
 ^^^^^^^^^^^^^^^^^^^^^
 
-This module also defines two shortcut functions:
+This module also defines four shortcut functions:
 
 
 .. function:: call(*popenargs, **kwargs)
@@ -136,6 +135,35 @@ This module also defines two shortcut functions:
    The arguments are the same as for the Popen constructor.  Example::
 
       check_call(["ls", "-l"])
+
+
+.. function:: getstatusoutput(cmd)
+   Return ``(status, output)`` of executing *cmd* in a shell.
+
+   Execute the string *cmd* in a shell with :func:`os.popen` and return a 2-tuple
+   ``(status, output)``.  *cmd* is actually run as ``{ cmd ; } 2>&1``, so that the
+   returned output will contain output or error messages.  A trailing newline is
+   stripped from the output.  The exit status for the command can be interpreted
+   according to the rules for the C function :cfunc:`wait`.  Example::
+
+      >>> import subprocess
+      >>> subprocess.getstatusoutput('ls /bin/ls')
+      (0, '/bin/ls')
+      >>> subprocess.getstatusoutput('cat /bin/junk')
+      (256, 'cat: /bin/junk: No such file or directory')
+      >>> subprocess.getstatusoutput('/bin/junk')
+      (256, 'sh: /bin/junk: not found')
+
+
+.. function:: getoutput(cmd)
+   Return output ``(stdout or stderr)`` of executing *cmd* in a shell.
+
+   Like :func:`getstatusoutput`, except the exit status is ignored and the return
+   value is a string containing the command's output.  Example::
+
+      >>> import subprocess
+      >>> subprocess.getoutput('ls /bin/ls')
+      '/bin/ls'
 
 
 Exceptions
