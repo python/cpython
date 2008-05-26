@@ -169,7 +169,7 @@ Py_InitializeEx(int install_sigs)
 	if (!_PyInt_Init())
 		Py_FatalError("Py_Initialize: can't init ints");
 
-	if (!PyBytes_Init())
+	if (!PyByteArray_Init())
 		Py_FatalError("Py_Initialize: can't init bytearray");
 
 	_PyFloat_Init();
@@ -451,7 +451,7 @@ Py_Finalize(void)
 	PyList_Fini();
 	PySet_Fini();
 	PyString_Fini();
-	PyBytes_Fini();
+	PyByteArray_Fini();
 	PyInt_Fini();
 	PyFloat_Fini();
 	PyDict_Fini();

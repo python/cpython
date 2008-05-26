@@ -94,6 +94,7 @@
 /* #include "memoryobject.h" */
 #include "bufferobject.h"
 #include "bytesobject.h"
+#include "bytearrayobject.h"
 #include "tupleobject.h"
 #include "listobject.h"
 #include "dictobject.h"
