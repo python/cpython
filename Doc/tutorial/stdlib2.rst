@@ -116,7 +116,7 @@ placeholders such as the current date, image sequence number, or file format::
    >>> for i, filename in enumerate(photofiles):
    ...     base, ext = os.path.splitext(filename)
    ...     newname = t.substitute(d=date, n=i, f=ext)
-   ...     print('%s --> %s' % (filename, newname))
+   ...     print('{0} --> {1}'.format(filename, newname))
 
    img_1074.jpg --> Ashley_0.jpg
    img_1076.jpg --> Ashley_1.jpg
