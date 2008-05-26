@@ -6,6 +6,11 @@
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 
+.. note::
+   The :mod:`xmlrpclib` module has been renamed to :mod:`xmlrpc.client` in
+   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to 3.0.
+
 
 .. XXX Not everything is documented yet.  It might be good to describe
    Marshaller, Unmarshaller, getparser, dumps, loads, and Transport.
