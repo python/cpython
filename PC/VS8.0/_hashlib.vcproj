@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="_elementtree"
-	ProjectGUID="{17E1E049-C309-4D79-843F-AE483C264AEA}"
-	RootNamespace="_elementtree"
+	Name="_hashlib"
+	ProjectGUID="{447F05A8-F581-4CAC-A466-5AC7936E207E}"
+	RootNamespace="_hashlib"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -27,6 +27,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,8 +43,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\expat"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				AdditionalIncludeDirectories="$(opensslDir)\inc32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -53,11 +53,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
-				BaseAddress="0x1D100000"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -89,6 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -105,8 +106,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\expat"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				AdditionalIncludeDirectories="$(opensslDir)\inc64"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -116,11 +116,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
-				BaseAddress="0x1D100000"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -153,6 +153,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -168,8 +169,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\expat"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				AdditionalIncludeDirectories="$(opensslDir)\inc32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -179,11 +179,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
-				BaseAddress="0x1D100000"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -216,6 +216,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -232,8 +233,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\expat"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				AdditionalIncludeDirectories="$(opensslDir)\inc64"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -243,11 +243,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
-				BaseAddress="0x1D100000"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -280,6 +280,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -295,8 +296,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\expat"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				AdditionalIncludeDirectories="$(opensslDir)\inc32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -306,11 +306,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
-				BaseAddress="0x1D100000"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -343,6 +343,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -359,8 +360,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\expat"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				AdditionalIncludeDirectories="$(opensslDir)\inc64"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -370,11 +370,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
-				BaseAddress="0x1D100000"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -408,6 +408,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -423,8 +424,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\expat"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				AdditionalIncludeDirectories="$(opensslDir)\inc32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -434,11 +434,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
-				BaseAddress="0x1D100000"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -471,6 +471,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -487,8 +488,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\expat"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				AdditionalIncludeDirectories="$(opensslDir)\inc64"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -498,11 +498,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbccp32.lib"
-				BaseAddress="0x1D100000"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -532,86 +532,10 @@
 	</References>
 	<Files>
 		<Filter
-			Name="Header Files"
-			>
-			<File
-				RelativePath="..\..\Modules\expat\ascii.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\asciitab.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\expat.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\expat_config.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\expat_external.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\iasciitab.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\internal.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\latin1tab.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\macconfig.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\nametab.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\pyexpatns.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\utf8tab.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\winconfig.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\xmlrole.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\xmltok.h"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\..\Modules\_elementtree.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\xmlparse.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\xmlrole.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\expat\xmltok.c"
+				RelativePath="..\..\Modules\_hashopenssl.c"
 				>
 			</File>
 		</Filter>

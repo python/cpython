@@ -443,6 +443,9 @@
 			RelativePath="..\..\Objects\bufferobject.c">
 		</File>
 		<File
+			RelativePath="..\..\Objects\bytearrayobject.c">
+		</File>
+		<File
 			RelativePath="..\..\Objects\bytesobject.c">
 		</File>
 		<File
@@ -762,9 +765,6 @@
 		</File>
 		<File
 			RelativePath="..\..\Objects\sliceobject.c">
-		</File>
-		<File
-			RelativePath="..\..\Objects\stringobject.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\stropmodule.c">

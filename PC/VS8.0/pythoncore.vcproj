@@ -58,8 +58,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; $(ConfigurationName)"
+				Description="Generate build information..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -133,8 +133,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				Description="Generate build information..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -211,8 +211,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; $(ConfigurationName)"
+				Description="Generate build information..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Debug"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -289,8 +289,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				Description="Generate build information..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Debug"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -363,8 +363,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe Release"
+				Description="Generate build information..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -438,8 +438,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				Description="Generate build information..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -513,8 +513,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe Release"
+				Description="Generate build information..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -588,8 +588,8 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				Description="Generate build information..."
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -655,11 +655,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Include\bytesobject.h"
+				RelativePath="..\..\Include\bytes_methods.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Include\bytes_methods.h"
+				RelativePath="..\..\Include\bytearrayobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Include\bytesobject.h"
 				>
 			</File>
 			<File
@@ -868,6 +872,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Include\pymactoolbox.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Include\pymath.h"
 				>
 			</File>
 			<File
@@ -1363,11 +1371,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Objects\bytesobject.c"
+				RelativePath="..\..\Objects\bytes_methods.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Objects\bytes_methods.c"
+				RelativePath="..\..\Objects\bytearrayobject.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Objects\bytesobject.c"
 				>
 			</File>
 			<File
@@ -1484,10 +1496,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Objects\sliceobject.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Objects\stringobject.c"
 				>
 			</File>
 			<File

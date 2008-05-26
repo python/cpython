@@ -10,6 +10,7 @@
 		Optimization="0"
 		InlineFunctionExpansion="0"
 		EnableIntrinsicFunctions="false"
+		PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 		RuntimeLibrary="3"
 	/>
 	<Tool
