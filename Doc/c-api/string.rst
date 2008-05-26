@@ -124,7 +124,7 @@ called with a non-string parameter.
 
 .. cfunction:: PyObject* PyString_FromFormatV(const char *format, va_list vargs)
 
-   Identical to :func:`PyString_FromFormat` except that it takes exactly two
+   Identical to :cfunc:`PyString_FromFormat` except that it takes exactly two
    arguments.
 
 
