@@ -1,4 +1,3 @@
-
 :mod:`Cookie` --- HTTP state management
 =======================================
 
@@ -6,6 +5,11 @@
    :synopsis: Support for HTTP state management (cookies).
 .. moduleauthor:: Timothy O'Malley <timo@alum.mit.edu>
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
+
+.. note::
+   The :mod:`Cookie` module has been renamed to :mod:`http.cookies` in Python
+   3.0.  The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to 3.0.
 
 
 The :mod:`Cookie` module defines classes for abstracting the concept of

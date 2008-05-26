@@ -1,4 +1,3 @@
-
 :mod:`cookielib` --- Cookie handling for HTTP clients
 =====================================================
 
@@ -6,6 +5,11 @@
    :synopsis: Classes for automatic handling of HTTP cookies.
 .. moduleauthor:: John J. Lee <jjl@pobox.com>
 .. sectionauthor:: John J. Lee <jjl@pobox.com>
+
+.. note::
+   The :mod:`cookielib` module has been renamed to :mod:`http.cookiejar` in
+   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to 3.0.
 
 
 .. versionadded:: 2.4

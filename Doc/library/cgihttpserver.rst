@@ -1,4 +1,3 @@
-
 :mod:`CGIHTTPServer` --- CGI-capable HTTP request handler
 =========================================================
 
@@ -6,6 +5,11 @@
    :synopsis: This module provides a request handler for HTTP servers which can run CGI
               scripts.
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
+
+.. note::
+   The :mod:`CGIHTTPServer` module has been merged into :mod:`http.server` in
+   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to 3.0.
 
 
 The :mod:`CGIHTTPServer` module defines a request-handler class, interface
