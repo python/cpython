@@ -132,9 +132,8 @@ that every float operation can suffer a new rounding error.
 While pathological cases do exist, for most casual use of floating-point
 arithmetic you'll see the result you expect in the end if you simply round the
 display of your final results to the number of decimal digits you expect.
-:func:`str` usually suffices, and for finer control see the discussion of
-Python's ``%`` format operator: the ``%g``, ``%f`` and ``%e`` format codes
-supply flexible and easy ways to round float results for display.
+:func:`str` usually suffices, and for finer control see the :meth:`str.format`
+method's format specifiers in :ref:`formatstrings`.
 
 
 .. _tut-fp-error:
