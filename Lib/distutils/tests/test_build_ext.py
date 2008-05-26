@@ -28,6 +28,10 @@ class BuildExtTestCase(unittest.TestCase):
         dist = Distribution({'name': 'xx', 'ext_modules': [xx_ext]})
         dist.package_dir = self.tmp_dir
         cmd = build_ext(dist)
+        if os.name == "nt":
+            # On Windows, we must build a debug version iff running
+            # a debug build of Python
+            cmd.debug = sys.executable.endswith("_d.exe")
         cmd.build_lib = self.tmp_dir
         cmd.build_temp = self.tmp_dir
 
