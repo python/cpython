@@ -89,7 +89,7 @@ f = urllib2.urlopen('http://www.python.org/')
 
 import base64
 import hashlib
-import httplib
+import http.client
 import io
 import mimetools
 import os
@@ -441,7 +441,7 @@ def build_opener(*handlers):
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
                        FTPHandler, FileHandler, HTTPErrorProcessor]
-    if hasattr(httplib, 'HTTPS'):
+    if hasattr(http.client, 'HTTPS'):
         default_classes.append(HTTPSHandler)
     skip = set()
     for klass in default_classes:
@@ -1047,7 +1047,7 @@ class AbstractHTTPHandler(BaseHandler):
     def do_open(self, http_class, req):
         """Return an addinfourl object for the request, using http_class.
 
-        http_class must implement the HTTPConnection API from httplib.
+        http_class must implement the HTTPConnection API from http.client.
         The addinfourl return value is a file-like object.  It also
         has methods and attributes including:
             - info(): return a mimetools.Message object for the headers
@@ -1082,7 +1082,7 @@ class AbstractHTTPHandler(BaseHandler):
         # object initialized properly.
 
         # XXX Should an HTTPResponse object really be passed to
-        # BufferedReader?  If so, we should change httplib to support
+        # BufferedReader?  If so, we should change http.client to support
         # this use directly.
 
         # Add some fake methods to the reader to satisfy BufferedReader.
@@ -1101,23 +1101,23 @@ class AbstractHTTPHandler(BaseHandler):
 class HTTPHandler(AbstractHTTPHandler):
 
     def http_open(self, req):
-        return self.do_open(httplib.HTTPConnection, req)
+        return self.do_open(http.client.HTTPConnection, req)
 
     http_request = AbstractHTTPHandler.do_request_
 
-if hasattr(httplib, 'HTTPS'):
+if hasattr(http.client, 'HTTPS'):
     class HTTPSHandler(AbstractHTTPHandler):
 
         def https_open(self, req):
-            return self.do_open(httplib.HTTPSConnection, req)
+            return self.do_open(http.client.HTTPSConnection, req)
 
         https_request = AbstractHTTPHandler.do_request_
 
 class HTTPCookieProcessor(BaseHandler):
     def __init__(self, cookiejar=None):
-        import cookielib
+        import http.cookiejar
         if cookiejar is None:
-            cookiejar = cookielib.CookieJar()
+            cookiejar = http.cookiejar.CookieJar()
         self.cookiejar = cookiejar
 
     def http_request(self, request):

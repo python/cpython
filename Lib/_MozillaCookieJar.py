@@ -2,8 +2,8 @@
 
 import re, time
 
-from cookielib import (_warn_unhandled_exception, FileCookieJar, LoadError,
-                       Cookie, MISSING_FILENAME_TEXT)
+from http.cookiejar import (_warn_unhandled_exception, FileCookieJar, LoadError,
+                            Cookie, MISSING_FILENAME_TEXT)
 
 class MozillaCookieJar(FileCookieJar):
     """
@@ -73,7 +73,7 @@ class MozillaCookieJar(FileCookieJar):
                 domain_specified = (domain_specified == "TRUE")
                 if name == "":
                     # cookies.txt regards 'Set-Cookie: foo' as a cookie
-                    # with no name, whereas cookielib regards it as a
+                    # with no name, whereas http.cookiejar regards it as a
                     # cookie with no value.
                     name = value
                     value = None
@@ -134,7 +134,7 @@ class MozillaCookieJar(FileCookieJar):
                     expires = ""
                 if cookie.value is None:
                     # cookies.txt regards 'Set-Cookie: foo' as a cookie
-                    # with no name, whereas cookielib regards it as a
+                    # with no name, whereas http.cookiejar regards it as a
                     # cookie with no value.
                     name = ""
                     value = cookie.name

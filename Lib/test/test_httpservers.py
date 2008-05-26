@@ -4,16 +4,15 @@ Written by Cody A.W. Somerville <cody-somerville@ubuntu.com>,
 Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
 
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from SimpleHTTPServer import SimpleHTTPRequestHandler
-from CGIHTTPServer import CGIHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer, \
+     SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 
 import os
 import sys
 import base64
 import shutil
 import urllib
-import httplib
+import http.client
 import tempfile
 import threading
 
@@ -59,7 +58,7 @@ class BaseTestCase(unittest.TestCase):
         self.thread.stop()
 
     def request(self, uri, method='GET', body=None, headers={}):
-        self.connection = httplib.HTTPConnection('localhost', self.PORT)
+        self.connection = http.client.HTTPConnection('localhost', self.PORT)
         self.connection.request(method, uri, body, headers)
         return self.connection.getresponse()
 
@@ -92,7 +91,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
     def setUp(self):
         BaseTestCase.setUp(self)
-        self.con = httplib.HTTPConnection('localhost', self.PORT)
+        self.con = http.client.HTTPConnection('localhost', self.PORT)
         self.con.connect()
 
     def test_command(self):
@@ -343,7 +342,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
 def test_main(verbose=None):
     try:
         cwd = os.getcwd()
-        support.run_unittest(#BaseHTTPServerTestCase,
+        support.run_unittest(BaseHTTPServerTestCase,
                              SimpleHTTPServerTestCase,
                              CGIHTTPServerTestCase
                              )

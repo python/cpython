@@ -11,7 +11,7 @@ import os
 import socket
 import platform
 import configparser
-import httplib
+import http.client
 import base64
 import urlparse
 
@@ -151,9 +151,9 @@ class upload(PyPIRCCommand):
             urlparse.urlparse(self.repository)
         assert not params and not query and not fragments
         if schema == 'http':
-            http = httplib.HTTPConnection(netloc)
+            http = http.client.HTTPConnection(netloc)
         elif schema == 'https':
-            http = httplib.HTTPSConnection(netloc)
+            http = http.client.HTTPSConnection(netloc)
         else:
             raise AssertionError("unsupported schema "+schema)
 

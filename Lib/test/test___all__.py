@@ -33,12 +33,10 @@ class AllTest(unittest.TestCase):
             # than an AttributeError somewhere deep in CGIHTTPServer.
             import _socket
 
-        self.check_all("BaseHTTPServer")
-        self.check_all("CGIHTTPServer")
+        self.check_all("http.server")
         self.check_all("configparser")
-        self.check_all("Cookie")
-        self.check_all("Queue")
-        self.check_all("SimpleHTTPServer")
+        self.check_all("http.cookies")
+        self.check_all("queue")
         self.check_all("socketserver")
         self.check_all("aifc")
         self.check_all("base64")
@@ -77,7 +75,7 @@ class AllTest(unittest.TestCase):
         self.check_all("gzip")
         self.check_all("heapq")
         self.check_all("htmllib")
-        self.check_all("httplib")
+        self.check_all("http.client")
         self.check_all("ihooks")
         self.check_all("imaplib")
         self.check_all("imghdr")

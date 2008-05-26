@@ -3,7 +3,7 @@ import shelve
 import glob
 from test import support
 from collections import MutableMapping
-from test.test_anydbm import dbm_iterator
+from test.test_dbm import dbm_iterator
 
 def L1(s):
     return s.decode("latin-1")

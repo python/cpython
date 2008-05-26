@@ -1,9 +1,8 @@
+:mod:`http.server` --- HTTP servers
+===================================
 
-:mod:`BaseHTTPServer` --- Basic HTTP server
-===========================================
-
-.. module:: BaseHTTPServer
-   :synopsis: Basic HTTP server (base class for SimpleHTTPServer and CGIHTTPServer).
+.. module:: http.server
+   :synopsis: HTTP server and request handlers.
 
 
 .. index::
@@ -12,21 +11,13 @@
    single: URL
    single: httpd
 
-.. index::
-   module: SimpleHTTPServer
-   module: CGIHTTPServer
+This module defines classes for implementing HTTP servers (Web servers).
 
-This module defines two classes for implementing HTTP servers (Web servers).
-Usually, this module isn't used directly, but is used as a basis for building
-functioning Web servers. See the :mod:`SimpleHTTPServer` and
-:mod:`CGIHTTPServer` modules.
+One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
+It creates and listens at the HTTP socket, dispatching the requests to a
+handler.  Code to create and run the server looks like this::
 
-The first class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer`
-subclass.  It creates and listens at the HTTP socket, dispatching the requests
-to a handler.  Code to create and run the server looks like this::
-
-   def run(server_class=BaseHTTPServer.HTTPServer,
-           handler_class=BaseHTTPServer.BaseHTTPRequestHandler):
+   def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
        server_address = ('', 8000)
        httpd = server_class(server_address, handler_class)
        httpd.serve_forever()
@@ -40,13 +31,16 @@ to a handler.  Code to create and run the server looks like this::
    through the handler's :attr:`server` instance variable.
 
 
+The :class:`HTTPServer` must be given a *RequestHandlerClass* on instantiation,
+of which this module provides three different variants:
+
 .. class:: BaseHTTPRequestHandler(request, client_address, server)
 
-   This class is used to handle the HTTP requests that arrive at the server. By
+   This class is used to handle the HTTP requests that arrive at the server.  By
    itself, it cannot respond to any actual HTTP requests; it must be subclassed
-   to handle each request method (e.g. GET or
-   POST). :class:`BaseHTTPRequestHandler` provides a number of class and
-   instance variables, and methods for use by subclasses.
+   to handle each request method (e.g. GET or POST).
+   :class:`BaseHTTPRequestHandler` provides a number of class and instance
+   variables, and methods for use by subclasses.
 
    The handler will parse the request and the headers, then call a method
    specific to the request type. The method name is constructed from the
@@ -57,27 +51,22 @@ to a handler.  Code to create and run the server looks like this::
 
    :class:`BaseHTTPRequestHandler` has the following instance variables:
 
-
    .. attribute:: client_address
 
       Contains a tuple of the form ``(host, port)`` referring to the client's
       address.
 
-
    .. attribute:: command
 
       Contains the command (request type). For example, ``'GET'``.
-
 
    .. attribute:: path
 
       Contains the request path.
 
-
    .. attribute:: request_version
 
       Contains the version string from the request. For example, ``'HTTP/1.0'``.
-
 
    .. attribute:: headers
 
@@ -85,12 +74,10 @@ to a handler.  Code to create and run the server looks like this::
       variable. This instance parses and manages the headers in the HTTP
       request.
 
-
    .. attribute:: rfile
 
       Contains an input stream, positioned at the start of the optional input
       data.
-
 
    .. attribute:: wfile
 
@@ -98,9 +85,7 @@ to a handler.  Code to create and run the server looks like this::
       client. Proper adherence to the HTTP protocol must be used when writing to
       this stream.
 
-
    :class:`BaseHTTPRequestHandler` has the following class variables:
-
 
    .. attribute:: server_version
 
@@ -108,13 +93,11 @@ to a handler.  Code to create and run the server looks like this::
       format is multiple whitespace-separated strings, where each string is of
       the form name[/version]. For example, ``'BaseHTTP/0.2'``.
 
-
    .. attribute:: sys_version
 
       Contains the Python system version, in a form usable by the
       :attr:`version_string` method and the :attr:`server_version` class
       variable. For example, ``'Python/1.4'``.
-
 
    .. attribute:: error_message_format
 
@@ -126,12 +109,10 @@ to a handler.  Code to create and run the server looks like this::
       explanation of the error code number. Default *message* and *explain*
       values can found in the *responses* class variable.
 
-
    .. attribute:: error_content_type
 
       Specifies the Content-Type HTTP header of error responses sent to the
       client.  The default value is ``'text/html'``.
-
 
    .. attribute:: protocol_version
 
@@ -141,7 +122,6 @@ to a handler.  Code to create and run the server looks like this::
       header (using :meth:`send_header`) in all of its responses to clients.
       For backwards compatibility, the setting defaults to ``'HTTP/1.0'``.
 
-
    .. attribute:: MessageClass
 
       .. index:: single: Message (in module mimetools)
@@ -149,7 +129,6 @@ to a handler.  Code to create and run the server looks like this::
       Specifies a :class:`rfc822.Message`\ -like class to parse HTTP headers.
       Typically, this is not overridden, and it defaults to
       :class:`mimetools.Message`.
-
 
    .. attribute:: responses
 
@@ -159,9 +138,7 @@ to a handler.  Code to create and run the server looks like this::
       error response, and *longmessage* as the *explain* key (see the
       :attr:`error_message_format` class variable).
 
-
    A :class:`BaseHTTPRequestHandler` instance has the following methods:
-
 
    .. method:: handle()
 
@@ -170,12 +147,10 @@ to a handler.  Code to create and run the server looks like this::
       never need to override it; instead, implement appropriate :meth:`do_\*`
       methods.
 
-
    .. method:: handle_one_request()
 
       This method will parse and dispatch the request to the appropriate
       :meth:`do_\*` method.  You should never need to override it.
-
 
    .. method:: send_error(code[, message])
 
@@ -184,7 +159,6 @@ to a handler.  Code to create and run the server looks like this::
       complete set of headers is sent, followed by text composed using the
       :attr:`error_message_format` class variable.
 
-
    .. method:: send_response(code[, message])
 
       Sends a response header and logs the accepted request. The HTTP response
@@ -192,25 +166,21 @@ to a handler.  Code to create and run the server looks like this::
       these two headers are picked up from the :meth:`version_string` and
       :meth:`date_time_string` methods, respectively.
 
-
    .. method:: send_header(keyword, value)
 
       Writes a specific HTTP header to the output stream. *keyword* should
       specify the header keyword, with *value* specifying its value.
-
 
    .. method:: end_headers()
 
       Sends a blank line, indicating the end of the HTTP headers in the
       response.
 
-
    .. method:: log_request([code[, size]])
 
       Logs an accepted (successful) request. *code* should specify the numeric
       HTTP code associated with the response. If a size of the response is
       available, then it should be passed as the *size* parameter.
-
 
    .. method:: log_error(...)
 
@@ -227,12 +197,10 @@ to a handler.  Code to create and run the server looks like this::
       :meth:`log_message` are applied as inputs to the formatting. The client
       address and current date and time are prefixed to every message logged.
 
-
    .. method:: version_string()
 
       Returns the server software's version string. This is a combination of the
       :attr:`server_version` and :attr:`sys_version` class variables.
-
 
    .. method:: date_time_string([timestamp])
 
@@ -242,11 +210,9 @@ to a handler.  Code to create and run the server looks like this::
 
       The result looks like ``'Sun, 06 Nov 1994 08:49:37 GMT'``.
 
-
    .. method:: log_date_time_string()
 
       Returns the current date and time, formatted for logging.
-
 
    .. method:: address_string()
 
@@ -254,12 +220,103 @@ to a handler.  Code to create and run the server looks like this::
       performed on the client's IP address.
 
 
-.. seealso::
+.. class:: SimpleHTTPRequestHandler(request, client_address, server)
 
-   Module :mod:`CGIHTTPServer`
-      Extended request handler that supports CGI scripts.
+   This class serves files from the current directory and below, directly
+   mapping the directory structure to HTTP requests.
 
-   Module :mod:`SimpleHTTPServer`
-      Basic request handler that limits response to files actually under the document
-      root.
+   A lot of the work, such as parsing the request, is done by the base class
+   :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
+   and :func:`do_HEAD` functions.
 
+   The following are defined as class-level attributes of
+   :class:`SimpleHTTPRequestHandler`:
+
+   .. attribute:: server_version
+
+      This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
+      defined at the module level.
+
+   .. attribute:: extensions_map
+
+      A dictionary mapping suffixes into MIME types. The default is
+      signified by an empty string, and is considered to be
+      ``application/octet-stream``. The mapping is used case-insensitively,
+      and so should contain only lower-cased keys.
+
+   The :class:`SimpleHTTPRequestHandler` class defines the following methods:
+
+   .. method:: do_HEAD()
+
+      This method serves the ``'HEAD'`` request type: it sends the headers it
+      would send for the equivalent ``GET`` request. See the :meth:`do_GET`
+      method for a more complete explanation of the possible headers.
+
+   .. method:: do_GET()
+
+      The request is mapped to a local file by interpreting the request as a
+      path relative to the current working directory.
+
+      If the request was mapped to a directory, the directory is checked for a
+      file named ``index.html`` or ``index.htm`` (in that order). If found, the
+      file's contents are returned; otherwise a directory listing is generated
+      by calling the :meth:`list_directory` method. This method uses
+      :func:`os.listdir` to scan the directory, and returns a ``404`` error
+      response if the :func:`listdir` fails.
+
+      If the request was mapped to a file, it is opened and the contents are
+      returned.  Any :exc:`IOError` exception in opening the requested file is
+      mapped to a ``404``, ``'File not found'`` error. Otherwise, the content
+      type is guessed by calling the :meth:`guess_type` method, which in turn
+      uses the *extensions_map* variable.
+
+      A ``'Content-type:'`` header with the guessed content type is output,
+      followed by a ``'Content-Length:'`` header with the file's size and a
+      ``'Last-Modified:'`` header with the file's modification time.
+
+      Then follows a blank line signifying the end of the headers, and then the
+      contents of the file are output. If the file's MIME type starts with
+      ``text/`` the file is opened in text mode; otherwise binary mode is used.
+
+      For example usage, see the implementation of the :func:`test` function.
+
+
+.. class:: CGIHTTPRequestHandler(request, client_address, server)
+
+   This class is used to serve either files or output of CGI scripts from the
+   current directory and below. Note that mapping HTTP hierarchic structure to
+   local directory structure is exactly as in :class:`SimpleHTTPRequestHandler`.
+
+   .. note::
+
+      CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot execute
+      redirects (HTTP code 302), because code 200 (script output follows) is
+      sent prior to execution of the CGI script.  This pre-empts the status
+      code.
+
+   The class will however, run the CGI script, instead of serving it as a file,
+   if it guesses it to be a CGI script.  Only directory-based CGI are used ---
+   the other common server configuration is to treat special extensions as
+   denoting CGI scripts.
+
+   The :func:`do_GET` and :func:`do_HEAD` functions are modified to run CGI scripts
+   and serve the output, instead of serving files, if the request leads to
+   somewhere below the ``cgi_directories`` path.
+
+   The :class:`CGIHTTPRequestHandler` defines the following data member:
+
+   .. attribute:: cgi_directories
+
+      This defaults to ``['/cgi-bin', '/htbin']`` and describes directories to
+      treat as containing CGI scripts.
+
+   The :class:`CGIHTTPRequestHandler` defines the following method:
+
+   .. method:: do_POST()
+
+      This method serves the ``'POST'`` request type, only allowed for CGI
+      scripts.  Error 501, "Can only POST to CGI scripts", is output when trying
+      to POST to a non-CGI url.
+
+   Note that CGI scripts will be run with UID of user nobody, for security
+   reasons.  Problems with the CGI script will be translated to error 403.

@@ -26,7 +26,7 @@ is currently supported on most popular platforms.  Here is an overview:
    wsgiref.rst
    urllib.rst
    urllib2.rst
-   httplib.rst
+   http.client.rst
    ftplib.rst
    poplib.rst
    imaplib.rst
@@ -37,10 +37,8 @@ is currently supported on most popular platforms.  Here is an overview:
    uuid.rst
    urlparse.rst
    socketserver.rst
-   basehttpserver.rst
-   simplehttpserver.rst
-   cgihttpserver.rst
-   cookielib.rst
-   cookie.rst
+   http.server.rst
+   http.cookies.rst
+   http.cookiejar.rst
    xmlrpc.client.rst
    xmlrpc.server.rst

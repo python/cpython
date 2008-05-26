@@ -1,14 +1,30 @@
-"""HTTP server base class.
+"""HTTP server classes.
 
-Note: the class in this module doesn't implement any HTTP request; see
-SimpleHTTPServer for simple implementations of GET, HEAD and POST
-(including CGI scripts).  It does, however, optionally implement HTTP/1.1
-persistent connections, as of version 0.3.
+Note: BaseHTTPRequestHandler doesn't implement any HTTP request; see
+SimpleHTTPRequestHandler for simple implementations of GET, HEAD and POST,
+and CGIHTTPRequestHandler for CGI scripts.
 
-Contents:
+It does, however, optionally implement HTTP/1.1 persistent connections,
+as of version 0.3.
 
-- BaseHTTPRequestHandler: HTTP request handler base class
-- test: test function
+Notes on CGIHTTPRequestHandler
+------------------------------
+
+This class implements GET and POST requests to cgi-bin scripts.
+
+If the os.fork() function is not present (e.g. on Windows),
+os.popen2() is used as a fallback, with slightly altered semantics; if
+that function is not present either (e.g. on Macintosh), only Python
+scripts are supported, and they are executed by the current process.
+
+In all cases, the implementation is intentionally naive -- all
+requests are executed synchronously.
+
+SECURITY WARNING: DON'T USE THIS CODE UNLESS YOU ARE INSIDE A FIREWALL
+-- it may execute arbitrary Python code or external programs.
+
+Note that status code 200 is sent prior to execution of a CGI script, so
+scripts cannot send other status codes such as 302 (redirect).
 
 XXX To do:
 
@@ -66,15 +82,22 @@ XXX To do:
 # (Actually, the latter is only true if you know the server configuration
 # at the time the request was made!)
 
-__version__ = "0.3"
+__version__ = "0.6"
 
 __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 
 import io
+import os
 import sys
+import cgi
 import time
 import socket # For gethostbyaddr()
+import shutil
+import urllib
+import select
 import mimetools
+import mimetypes
+import posixpath
 import socketserver
 
 # Default error message template
@@ -574,6 +597,521 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         }
 
 
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+
+    """Simple HTTP request handler with GET and HEAD commands.
+
+    This serves files from the current directory and any of its
+    subdirectories.  The MIME type for files is determined by
+    calling the .guess_type() method.
+
+    The GET and HEAD requests are identical except that the HEAD
+    request omits the actual contents of the file.
+
+    """
+
+    server_version = "SimpleHTTP/" + __version__
+
+    def do_GET(self):
+        """Serve a GET request."""
+        f = self.send_head()
+        if f:
+            self.copyfile(f, self.wfile)
+            f.close()
+
+    def do_HEAD(self):
+        """Serve a HEAD request."""
+        f = self.send_head()
+        if f:
+            f.close()
+
+    def send_head(self):
+        """Common code for GET and HEAD commands.
+
+        This sends the response code and MIME headers.
+
+        Return value is either a file object (which has to be copied
+        to the outputfile by the caller unless the command was HEAD,
+        and must be closed by the caller under all circumstances), or
+        None, in which case the caller has nothing further to do.
+
+        """
+        path = self.translate_path(self.path)
+        f = None
+        if os.path.isdir(path):
+            if not self.path.endswith('/'):
+                # redirect browser - doing basically what apache does
+                self.send_response(301)
+                self.send_header("Location", self.path + "/")
+                self.end_headers()
+                return None
+            for index in "index.html", "index.htm":
+                index = os.path.join(path, index)
+                if os.path.exists(index):
+                    path = index
+                    break
+            else:
+                return self.list_directory(path)
+        ctype = self.guess_type(path)
+        try:
+            f = open(path, 'rb')
+        except IOError:
+            self.send_error(404, "File not found")
+            return None
+        self.send_response(200)
+        self.send_header("Content-type", ctype)
+        fs = os.fstat(f.fileno())
+        self.send_header("Content-Length", str(fs[6]))
+        self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+        self.end_headers()
+        return f
+
+    def list_directory(self, path):
+        """Helper to produce a directory listing (absent index.html).
+
+        Return value is either a file object, or None (indicating an
+        error).  In either case, the headers are sent, making the
+        interface the same as for send_head().
+
+        """
+        try:
+            list = os.listdir(path)
+        except os.error:
+            self.send_error(404, "No permission to list directory")
+            return None
+        list.sort(key=lambda a: a.lower())
+        r = []
+        displaypath = cgi.escape(urllib.unquote(self.path))
+        r.append('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
+        r.append("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
+        r.append("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
+        r.append("<hr>\n<ul>\n")
+        for name in list:
+            fullname = os.path.join(path, name)
+            displayname = linkname = name
+            # Append / for directories or @ for symbolic links
+            if os.path.isdir(fullname):
+                displayname = name + "/"
+                linkname = name + "/"
+            if os.path.islink(fullname):
+                displayname = name + "@"
+                # Note: a link to a directory displays with @ and links with /
+            r.append('<li><a href="%s">%s</a>\n'
+                    % (urllib.quote(linkname), cgi.escape(displayname)))
+        r.append("</ul>\n<hr>\n</body>\n</html>\n")
+        enc = sys.getfilesystemencoding()
+        encoded = ''.join(r).encode(enc)
+        f = io.BytesIO()
+        f.write(encoded)
+        f.seek(0)
+        self.send_response(200)
+        self.send_header("Content-type", "text/html; charset=%s" % enc)
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        return f
+
+    def translate_path(self, path):
+        """Translate a /-separated PATH to the local filename syntax.
+
+        Components that mean special things to the local file system
+        (e.g. drive or directory names) are ignored.  (XXX They should
+        probably be diagnosed.)
+
+        """
+        # abandon query parameters
+        path = path.split('?',1)[0]
+        path = path.split('#',1)[0]
+        path = posixpath.normpath(urllib.unquote(path))
+        words = path.split('/')
+        words = filter(None, words)
+        path = os.getcwd()
+        for word in words:
+            drive, word = os.path.splitdrive(word)
+            head, word = os.path.split(word)
+            if word in (os.curdir, os.pardir): continue
+            path = os.path.join(path, word)
+        return path
+
+    def copyfile(self, source, outputfile):
+        """Copy all data between two file objects.
+
+        The SOURCE argument is a file object open for reading
+        (or anything with a read() method) and the DESTINATION
+        argument is a file object open for writing (or
+        anything with a write() method).
+
+        The only reason for overriding this would be to change
+        the block size or perhaps to replace newlines by CRLF
+        -- note however that this the default server uses this
+        to copy binary data as well.
+
+        """
+        shutil.copyfileobj(source, outputfile)
+
+    def guess_type(self, path):
+        """Guess the type of a file.
+
+        Argument is a PATH (a filename).
+
+        Return value is a string of the form type/subtype,
+        usable for a MIME Content-type header.
+
+        The default implementation looks the file's extension
+        up in the table self.extensions_map, using application/octet-stream
+        as a default; however it would be permissible (if
+        slow) to look inside the data to make a better guess.
+
+        """
+
+        base, ext = posixpath.splitext(path)
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        ext = ext.lower()
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        else:
+            return self.extensions_map['']
+
+    if not mimetypes.inited:
+        mimetypes.init() # try to read system mime.types
+    extensions_map = mimetypes.types_map.copy()
+    extensions_map.update({
+        '': 'application/octet-stream', # Default
+        '.py': 'text/plain',
+        '.c': 'text/plain',
+        '.h': 'text/plain',
+        })
+
+
+# Utilities for CGIHTTPRequestHandler
+
+nobody = None
+
+def nobody_uid():
+    """Internal routine to get nobody's uid"""
+    global nobody
+    if nobody:
+        return nobody
+    try:
+        import pwd
+    except ImportError:
+        return -1
+    try:
+        nobody = pwd.getpwnam('nobody')[2]
+    except KeyError:
+        nobody = 1 + max(map(lambda x: x[2], pwd.getpwall()))
+    return nobody
+
+
+def executable(path):
+    """Test for executable file."""
+    try:
+        st = os.stat(path)
+    except os.error:
+        return False
+    return st.st_mode & 0o111 != 0
+
+
+class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
+
+    """Complete HTTP server with GET, HEAD and POST commands.
+
+    GET and HEAD also support running CGI scripts.
+
+    The POST command is *only* implemented for CGI scripts.
+
+    """
+
+    # Determine platform specifics
+    have_fork = hasattr(os, 'fork')
+    have_popen2 = hasattr(os, 'popen2')
+    have_popen3 = hasattr(os, 'popen3')
+
+    # Make rfile unbuffered -- we need to read one line and then pass
+    # the rest to a subprocess, so we can't use buffered input.
+    rbufsize = 0
+
+    def do_POST(self):
+        """Serve a POST request.
+
+        This is only implemented for CGI scripts.
+
+        """
+
+        if self.is_cgi():
+            self.run_cgi()
+        else:
+            self.send_error(501, "Can only POST to CGI scripts")
+
+    def send_head(self):
+        """Version of send_head that support CGI scripts"""
+        if self.is_cgi():
+            return self.run_cgi()
+        else:
+            return SimpleHTTPRequestHandler.send_head(self)
+
+    def is_cgi(self):
+        """Test whether self.path corresponds to a CGI script.
+
+        Return a tuple (dir, rest) if self.path requires running a
+        CGI script, None if not.  Note that rest begins with a
+        slash if it is not empty.
+
+        The default implementation tests whether the path
+        begins with one of the strings in the list
+        self.cgi_directories (and the next character is a '/'
+        or the end of the string).
+
+        """
+
+        path = self.path
+
+        for x in self.cgi_directories:
+            i = len(x)
+            if path[:i] == x and (not path[i:] or path[i] == '/'):
+                self.cgi_info = path[:i], path[i+1:]
+                return True
+        return False
+
+    cgi_directories = ['/cgi-bin', '/htbin']
+
+    def is_executable(self, path):
+        """Test whether argument path is an executable file."""
+        return executable(path)
+
+    def is_python(self, path):
+        """Test whether argument path is a Python script."""
+        head, tail = os.path.splitext(path)
+        return tail.lower() in (".py", ".pyw")
+
+    def run_cgi(self):
+        """Execute a CGI script."""
+        path = self.path
+        dir, rest = self.cgi_info
+
+        i = path.find('/', len(dir) + 1)
+        while i >= 0:
+            nextdir = path[:i]
+            nextrest = path[i+1:]
+
+            scriptdir = self.translate_path(nextdir)
+            if os.path.isdir(scriptdir):
+                dir, rest = nextdir, nextrest
+                i = path.find('/', len(dir) + 1)
+            else:
+                break
+
+        # find an explicit query string, if present.
+        i = rest.rfind('?')
+        if i >= 0:
+            rest, query = rest[:i], rest[i+1:]
+        else:
+            query = ''
+
+        # dissect the part after the directory name into a script name &
+        # a possible additional path, to be stored in PATH_INFO.
+        i = rest.find('/')
+        if i >= 0:
+            script, rest = rest[:i], rest[i:]
+        else:
+            script, rest = rest, ''
+
+        scriptname = dir + '/' + script
+        scriptfile = self.translate_path(scriptname)
+        if not os.path.exists(scriptfile):
+            self.send_error(404, "No such CGI script (%r)" % scriptname)
+            return
+        if not os.path.isfile(scriptfile):
+            self.send_error(403, "CGI script is not a plain file (%r)" %
+                            scriptname)
+            return
+        ispy = self.is_python(scriptname)
+        if not ispy:
+            if not (self.have_fork or self.have_popen2 or self.have_popen3):
+                self.send_error(403, "CGI script is not a Python script (%r)" %
+                                scriptname)
+                return
+            if not self.is_executable(scriptfile):
+                self.send_error(403, "CGI script is not executable (%r)" %
+                                scriptname)
+                return
+
+        # Reference: http://hoohoo.ncsa.uiuc.edu/cgi/env.html
+        # XXX Much of the following could be prepared ahead of time!
+        env = {}
+        env['SERVER_SOFTWARE'] = self.version_string()
+        env['SERVER_NAME'] = self.server.server_name
+        env['GATEWAY_INTERFACE'] = 'CGI/1.1'
+        env['SERVER_PROTOCOL'] = self.protocol_version
+        env['SERVER_PORT'] = str(self.server.server_port)
+        env['REQUEST_METHOD'] = self.command
+        uqrest = urllib.unquote(rest)
+        env['PATH_INFO'] = uqrest
+        env['PATH_TRANSLATED'] = self.translate_path(uqrest)
+        env['SCRIPT_NAME'] = scriptname
+        if query:
+            env['QUERY_STRING'] = query
+        host = self.address_string()
+        if host != self.client_address[0]:
+            env['REMOTE_HOST'] = host
+        env['REMOTE_ADDR'] = self.client_address[0]
+        authorization = self.headers.getheader("authorization")
+        if authorization:
+            authorization = authorization.split()
+            if len(authorization) == 2:
+                import base64, binascii
+                env['AUTH_TYPE'] = authorization[0]
+                if authorization[0].lower() == "basic":
+                    try:
+                        authorization = authorization[1].encode('ascii')
+                        authorization = base64.decodestring(authorization).\
+                                        decode('ascii')
+                    except (binascii.Error, UnicodeError):
+                        pass
+                    else:
+                        authorization = authorization.split(':')
+                        if len(authorization) == 2:
+                            env['REMOTE_USER'] = authorization[0]
+        # XXX REMOTE_IDENT
+        if self.headers.typeheader is None:
+            env['CONTENT_TYPE'] = self.headers.type
+        else:
+            env['CONTENT_TYPE'] = self.headers.typeheader
+        length = self.headers.getheader('content-length')
+        if length:
+            env['CONTENT_LENGTH'] = length
+        referer = self.headers.getheader('referer')
+        if referer:
+            env['HTTP_REFERER'] = referer
+        accept = []
+        for line in self.headers.getallmatchingheaders('accept'):
+            if line[:1] in "\t\n\r ":
+                accept.append(line.strip())
+            else:
+                accept = accept + line[7:].split(',')
+        env['HTTP_ACCEPT'] = ','.join(accept)
+        ua = self.headers.getheader('user-agent')
+        if ua:
+            env['HTTP_USER_AGENT'] = ua
+        co = filter(None, self.headers.getheaders('cookie'))
+        if co:
+            env['HTTP_COOKIE'] = ', '.join(co)
+        # XXX Other HTTP_* headers
+        # Since we're setting the env in the parent, provide empty
+        # values to override previously set values
+        for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
+                  'HTTP_USER_AGENT', 'HTTP_COOKIE', 'HTTP_REFERER'):
+            env.setdefault(k, "")
+        os.environ.update(env)
+
+        self.send_response(200, "Script output follows")
+
+        decoded_query = query.replace('+', ' ')
+
+        if self.have_fork:
+            # Unix -- fork as we should
+            args = [script]
+            if '=' not in decoded_query:
+                args.append(decoded_query)
+            nobody = nobody_uid()
+            self.wfile.flush() # Always flush before forking
+            pid = os.fork()
+            if pid != 0:
+                # Parent
+                pid, sts = os.waitpid(pid, 0)
+                # throw away additional data [see bug #427345]
+                while select.select([self.rfile], [], [], 0)[0]:
+                    if not self.rfile.read(1):
+                        break
+                if sts:
+                    self.log_error("CGI script exit status %#x", sts)
+                return
+            # Child
+            try:
+                try:
+                    os.setuid(nobody)
+                except os.error:
+                    pass
+                os.dup2(self.rfile.fileno(), 0)
+                os.dup2(self.wfile.fileno(), 1)
+                os.execve(scriptfile, args, os.environ)
+            except:
+                self.server.handle_error(self.request, self.client_address)
+                os._exit(127)
+
+        elif self.have_popen2 or self.have_popen3:
+            # Windows -- use popen2 or popen3 to create a subprocess
+            import shutil
+            if self.have_popen3:
+                popenx = os.popen3
+            else:
+                popenx = os.popen2
+            cmdline = scriptfile
+            if self.is_python(scriptfile):
+                interp = sys.executable
+                if interp.lower().endswith("w.exe"):
+                    # On Windows, use python.exe, not pythonw.exe
+                    interp = interp[:-5] + interp[-4:]
+                cmdline = "%s -u %s" % (interp, cmdline)
+            if '=' not in query and '"' not in query:
+                cmdline = '%s "%s"' % (cmdline, query)
+            self.log_message("command: %s", cmdline)
+            try:
+                nbytes = int(length)
+            except (TypeError, ValueError):
+                nbytes = 0
+            files = popenx(cmdline, 'b')
+            fi = files[0]
+            fo = files[1]
+            if self.have_popen3:
+                fe = files[2]
+            if self.command.lower() == "post" and nbytes > 0:
+                data = self.rfile.read(nbytes)
+                fi.write(data)
+            # throw away additional data [see bug #427345]
+            while select.select([self.rfile._sock], [], [], 0)[0]:
+                if not self.rfile._sock.recv(1):
+                    break
+            fi.close()
+            shutil.copyfileobj(fo, self.wfile)
+            if self.have_popen3:
+                errors = fe.read()
+                fe.close()
+                if errors:
+                    self.log_error('%s', errors)
+            sts = fo.close()
+            if sts:
+                self.log_error("CGI script exit status %#x", sts)
+            else:
+                self.log_message("CGI script exited OK")
+
+        else:
+            # Other O.S. -- execute script in this process
+            save_argv = sys.argv
+            save_stdin = sys.stdin
+            save_stdout = sys.stdout
+            save_stderr = sys.stderr
+            try:
+                save_cwd = os.getcwd()
+                try:
+                    sys.argv = [scriptfile]
+                    if '=' not in decoded_query:
+                        sys.argv.append(decoded_query)
+                    sys.stdout = self.wfile
+                    sys.stdin = self.rfile
+                    exec(open(scriptfile).read(), {"__name__": "__main__"})
+                finally:
+                    sys.argv = save_argv
+                    sys.stdin = save_stdin
+                    sys.stdout = save_stdout
+                    sys.stderr = save_stderr
+                    os.chdir(save_cwd)
+            except SystemExit as sts:
+                self.log_error("CGI script exit status %s", str(sts))
+            else:
+                self.log_message("CGI script exited OK")
+
+
 def test(HandlerClass = BaseHTTPRequestHandler,
          ServerClass = HTTPServer, protocol="HTTP/1.0"):
     """Test the HTTP request handler class.
@@ -598,4 +1136,6 @@ def test(HandlerClass = BaseHTTPRequestHandler,
 
 
 if __name__ == '__main__':
-    test()
+    test(HandlerClass=BaseHTTPRequestHandler)
+    test(HandlerClass=SimpleHTTPRequestHandler)
+    test(HandlerClass=CGIHTTPRequestHandler)

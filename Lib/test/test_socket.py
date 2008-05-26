@@ -855,7 +855,7 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
     In this case (and in this case only), it should be possible to
     create a file object, read a line from it, create another file
     object, read another line from it, without loss of data in the
-    first file object's buffer.  Note that httplib relies on this
+    first file object's buffer.  Note that http.client relies on this
     when reading multiple requests from the same socket."""
 
     bufsize = 0 # Use unbuffered mode

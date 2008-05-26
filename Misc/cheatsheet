@@ -1795,14 +1795,10 @@ List of modules and packages in base distribution
                            Standard library modules
    Operation                                 Result
 aifc             Stuff to parse AIFF-C and AIFF files.
-dbm              Generic interface to all dbm clones. (dbm.bsd, dbm.gnu,
-                 dbm.ndbm, dbm.dumb)
 asynchat         Support for 'chat' style protocols
 asyncore         Asynchronous File I/O (in select style)
 atexit           Register functions to be called at exit of Python interpreter.
 base64           Conversions to/from base64 RFC-MIME transport encoding .
-BaseHTTPServer   Base class forhttp services.
-Bastion          "Bastionification" utility (control access to instance vars)
 bdb              A generic Python debugger base class.
 binhex           Macintosh binhex compression/decompression.
 bisect           List bisection algorithms.
@@ -1810,7 +1806,6 @@ bz2              Support for bz2 compression/decompression.
 calendar         Calendar printing functions.
 cgi              Wraps the WWW Forms Common Gateway Interface (CGI).
 cgitb            Utility for handling CGI tracebacks.
-CGIHTTPServer    CGI http services.
 cmd              A generic class to build line-oriented command interpreters.
 datetime         Basic date and time types.
 code             Utilities needed to emulate Python's interactive interpreter
@@ -1818,10 +1813,12 @@ codecs           Lookup existing Unicode encodings and register new ones.
 colorsys         Conversion functions between RGB and other color systems.
 commands         Tools for executing UNIX commands .
 compileall       Force "compilation" of all .py files in a directory.
-ConfigParser     Configuration file parser (much like windows .ini files)
+configparser     Configuration file parser (much like windows .ini files)
 copy             Generic shallow and deep copying operations.
-copy_reg         Helper to provide extensibility for pickle/cPickle.
+copyreg          Helper to provide extensibility for pickle/cPickle.
 csv              Read and write files with comma separated values.
+dbm              Generic interface to all dbm clones (dbm.bsd, dbm.gnu,
+                 dbm.ndbm, dbm.dumb).
 dircache         Sorted list of files in a dir, using a cache.
 difflib          Tool for creating delta between sequences.
 dis              Bytecode disassembler.
@@ -1844,11 +1841,11 @@ getpass          Utilities to get a password and/or the current user name.
 glob             filename globbing.
 gzip             Read & write gzipped files.
 heapq            Priority queue implemented using lists organized as heaps.
-HMAC             Keyed-Hashing for Message Authentication -- RFC 2104.
-htmlentitydefs   Proposed entity definitions for HTML.
-htmllib          HTML parsing utilities.
-HTMLParser       A parser for HTML and XHTML.
-httplib          HTTP client class.
+hmac             Keyed-Hashing for Message Authentication -- RFC 2104.
+html.entities    HTML entity definitions.
+html.parser      A parser for HTML and XHTML.
+http.client      HTTP client class.
+http.server      HTTP server services.
 ihooks           Hooks into the "import" mechanism.
 imaplib          IMAP4 client.Based on RFC 2060.
 imghdr           Recognizing image files based on their first few bytes.
@@ -1864,7 +1861,6 @@ macurl2path      Mac specific module for conversion between pathnames and URLs.
 mailbox          A class to handle a unix-style or mmdf-style mailbox.
 mailcap          Mailcap file handling (RFC 1524).
 mhlib            MH (mailbox) interface.
-mimetools        Various tools used by MIME-reading or MIME-writing programs.
 mimetypes        Guess the MIME type of a file.
 mmap             Interface to memory-mapped files - they behave like mutable
                  strings./font>
@@ -1892,13 +1888,11 @@ pty              Pseudo terminal utilities.
 pyexpat          Interface to the Expay XML parser.
 py_compile       Routine to "compile" a .py file to a .pyc file.
 pyclbr           Parse a Python file and retrieve classes and methods.
-Queue            A multi-producer, multi-consumer queue.
+queue            A multi-producer, multi-consumer queue.
 quopri           Conversions to/from quoted-printable transport encoding.
 random           Random variable generators
 re               Regular Expressions.
-repr             Redo repr() but with limits on most sizes.
-rexec            Restricted execution facilities ("safe" exec, eval, etc).
-rfc822           RFC-822 message manipulation class.
+reprlib          Redo repr() but with limits on most sizes.
 rlcompleter      Word completion for GNU readline 2.0.
 robotparser      Parse robots.txt files, useful for web spiders.
 sched            A generally useful event scheduler class.
@@ -1906,7 +1900,6 @@ sgmllib          A parser for SGML.
 shelve           Manage shelves of pickled objects.
 shlex            Lexical analyzer class for simple shell-like syntaxes.
 shutil           Utility functions usable in a shell-like program.
-SimpleHTTPServer Simple extension to base http class
 site             Append module search paths for third-party packages to
                  sys.path.
 smtplib          SMTP Client class (RFC 821)
@@ -1916,8 +1909,6 @@ stat             Constants and functions for interpreting stat/lstat struct.
 statvfs          Constants for interpreting statvfs struct as returned by
                  os.statvfs()and os.fstatvfs() (if they exist).
 string           A collection of string operations.
-StringIO         File-like objects that read/write a string buffer (a fasterC
-                 implementation exists in built-in module: cStringIO).
 sunau            Stuff to parse Sun and NeXT audio files.
 sunaudio         Interpret sun audio headers.
 symbol           Non-terminal symbols of Python grammar (from "graminit.h").
@@ -1927,7 +1918,6 @@ telnetlib        TELNET client class. Based on RFC 854.
 tempfile         Temporary file name allocation.
 textwrap         Object for wrapping and filling text.
 threading        Proposed new higher-level threading interfaces
-threading_api    (doc of the threading module)
 token            Tokens (from "token.h").
 tokenize         Compiles a regular expression that recognizes Python tokens.
 traceback        Format and print Python stack traces.
@@ -1939,17 +1929,13 @@ unicodedata      Interface to unicode properties.
 urllib           Open an arbitrary URL.
 urlparse         Parse URLs according to latest draft of standard.
 user             Hook to allow user-specified customization code to run.
-UserDict         A wrapper to allow subclassing of built-in dict class.
-UserList         A wrapper to allow subclassing of built-in list class.
-UserString       A wrapper to allow subclassing of built-in string class.
 uu               UUencode/UUdecode.
 unittest         Utilities for implementing unit testing.
 wave             Stuff to parse WAVE files.
 weakref          Tools for creating and managing weakly referenced objects.
 webbrowser       Platform independent URL launcher.
 xdrlib           Implements (a subset of) Sun XDR (eXternal Data
-                 Representation)
-xmllib           A parser for XML, using the derived class as static DTD.
+                 Representation).
 xml.dom          Classes for processing XML using the Document Object Model.
 xml.sax          Classes for processing XML using the SAX API.
 xmlrpc.client    Support for remote procedure calls using XML.

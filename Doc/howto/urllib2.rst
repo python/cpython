@@ -230,7 +230,7 @@ Because the default handlers handle redirects (codes in the 300 range), and
 codes in the 100-299 range indicate success, you will usually only see error
 codes in the 400-599 range.
 
-``BaseHTTPServer.BaseHTTPRequestHandler.responses`` is a useful dictionary of
+:attr:`http.server.BaseHTTPRequestHandler.responses` is a useful dictionary of
 response codes in that shows all the response codes used by RFC 2616. The
 dictionary is reproduced here for convenience ::
 
@@ -385,7 +385,7 @@ redirect. The URL of the page fetched may not be the same as the URL requested.
 
 **info** - this returns a dictionary-like object that describes the page
 fetched, particularly the headers sent by the server. It is currently an
-``httplib.HTTPMessage`` instance.
+``http.client.HTTPMessage`` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so on. See the
 `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_
@@ -526,13 +526,13 @@ Sockets and Layers
 ==================
 
 The Python support for fetching resources from the web is layered. urllib2 uses
-the httplib library, which in turn uses the socket library.
+the http.client library, which in turn uses the socket library.
 
 As of Python 2.3 you can specify how long a socket should wait for a response
 before timing out. This can be useful in applications which have to fetch web
 pages. By default the socket module has *no timeout* and can hang. Currently,
-the socket timeout is not exposed at the httplib or urllib2 levels.  However,
-you can set the default timeout globally for all sockets using ::
+the socket timeout is not exposed at the http.client or urllib2 levels.
+However, you can set the default timeout globally for all sockets using ::
 
     import socket
     import urllib2

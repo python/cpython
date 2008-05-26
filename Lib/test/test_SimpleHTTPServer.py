@@ -4,11 +4,11 @@ We don't want to require the 'network' resource.
 """
 
 import os, unittest
-from SimpleHTTPServer import SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler
 from test import support
 
 
-class SocketlessRequestHandler (SimpleHTTPRequestHandler):
+class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self):
         pass
 

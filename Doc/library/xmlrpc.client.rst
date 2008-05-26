@@ -506,14 +506,14 @@ transport.  The following example shows how:
 
 ::
 
-   import xmlrpc.client, httplib
+   import xmlrpc.client, http.client
 
    class ProxiedTransport(xmlrpc.client.Transport):
        def set_proxy(self, proxy):
            self.proxy = proxy
        def make_connection(self, host):
            self.realhost = host
-   	h = httplib.HTTP(self.proxy)
+   	h = http.client.HTTP(self.proxy)
    	return h
        def send_request(self, connection, handler, request_body):
            connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))

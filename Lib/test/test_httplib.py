@@ -1,4 +1,4 @@
-import httplib
+import http.client as httplib
 import io
 import socket
 
@@ -47,8 +47,6 @@ class HeaderTests(TestCase):
     def test_auto_headers(self):
         # Some headers are added automatically, but should not be added by
         # .request() if they are explicitly set.
-
-        import httplib
 
         class HeaderCountingBuffer(list):
             def __init__(self):

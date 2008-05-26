@@ -77,7 +77,7 @@ def test_request_headers_methods():
     Note the case normalization of header names here, to .capitalize()-case.
     This should be preserved for backwards-compatibility.  (In the HTTP case,
     normalization to .title()-case is done by urllib2 before sending headers to
-    httplib).
+    http.client).
 
     >>> url = "http://example.com"
     >>> r = Request(url, headers={"Spam-eggs": "blah"})
@@ -348,12 +348,12 @@ class MockHTTPHandler(urllib2.BaseHandler):
         self._count = 0
         self.requests = []
     def http_open(self, req):
-        import mimetools, httplib, copy
+        import mimetools, http.client, copy
         from io import StringIO
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
-            name = httplib.responses[self.code]
+            name = http.client.responses[self.code]
             msg = mimetools.Message(StringIO(self.headers))
             return self.parent.error(
                 "http", req, MockFile(), self.code, name, msg)
@@ -875,9 +875,8 @@ class HandlerTests(unittest.TestCase):
 
     def test_cookie_redirect(self):
         # cookies shouldn't leak into redirected requests
-        from cookielib import CookieJar
-
-        from test.test_cookielib import interact_netscape
+        from http.cookiejar import CookieJar
+        from test.test_http_cookiejar import interact_netscape
 
         cj = CookieJar()
         interact_netscape(cj, "http://www.example.com/", "spam=eggs")

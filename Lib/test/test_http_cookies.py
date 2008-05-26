@@ -1,8 +1,8 @@
-# Simple test suite for Cookie.py
+# Simple test suite for http/cookies.py
 
 from test.support import run_unittest, run_doctest
 import unittest
-import Cookie
+from http import cookies
 
 import warnings
 warnings.filterwarnings("ignore",
@@ -34,7 +34,7 @@ class CookieTests(unittest.TestCase):
         ]
 
         for case in cases:
-            C = Cookie.SimpleCookie()
+            C = cookies.SimpleCookie()
             C.load(case['data'])
             self.assertEqual(repr(C), case['repr'])
             self.assertEqual(C.output(sep='\n'), case['output'])
@@ -42,7 +42,7 @@ class CookieTests(unittest.TestCase):
                 self.assertEqual(C[k].value, v)
 
     def test_load(self):
-        C = Cookie.SimpleCookie()
+        C = cookies.SimpleCookie()
         C.load('Customer="WILE_E_COYOTE"; Version=1; Path=/acme')
 
         self.assertEqual(C['Customer'].value, 'WILE_E_COYOTE')
@@ -68,7 +68,7 @@ class CookieTests(unittest.TestCase):
 
     def test_quoted_meta(self):
         # Try cookie with quoted meta-data
-        C = Cookie.SimpleCookie()
+        C = cookies.SimpleCookie()
         C.load('Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"')
         self.assertEqual(C['Customer'].value, 'WILE_E_COYOTE')
         self.assertEqual(C['Customer']['version'], '1')
@@ -76,7 +76,7 @@ class CookieTests(unittest.TestCase):
 
 def test_main():
     run_unittest(CookieTests)
-    run_doctest(Cookie)
+    run_doctest(cookies)
 
 if __name__ == '__main__':
     test_main()

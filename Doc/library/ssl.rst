@@ -489,7 +489,7 @@ sends some bytes, and reads part of the response::
    pprint.pprint(ssl_sock.getpeercert())
    print(pprint.pformat(ssl_sock.getpeercert()))
 
-   # Set a simple HTTP request -- use httplib in actual code.
+   # Set a simple HTTP request -- use http.client in actual code.
    ssl_sock.write("""GET / HTTP/1.0\r
    Host: www.verisign.com\r\n\r\n""")
 

@@ -1,14 +1,13 @@
+:mod:`http.cookies` --- HTTP state management
+=============================================
 
-:mod:`Cookie` --- HTTP state management
-=======================================
-
-.. module:: Cookie
+.. module:: http.cookies
    :synopsis: Support for HTTP state management (cookies).
 .. moduleauthor:: Timothy O'Malley <timo@alum.mit.edu>
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 
-The :mod:`Cookie` module defines classes for abstracting the concept of
+The :mod:`http.cookies` module defines classes for abstracting the concept of
 cookies, an HTTP state management mechanism. It supports both simple string-only
 cookies, and provides an abstraction for having any serializable data-type as
 cookie value.
@@ -63,7 +62,7 @@ result, the parsing rules used are a bit less strict.
       The same security warning from :class:`SerialCookie` applies here.
 
 A further security note is warranted.  For backwards compatibility, the
-:mod:`Cookie` module exports a class named :class:`Cookie` which is just an
+:mod:`http.cookies` module exports a class named :class:`Cookie` which is just an
 alias for :class:`SmartCookie`.  This is probably a mistake and will likely be
 removed in a future version.  You should not use the :class:`Cookie` class in
 your applications, for the same reason why you should not use the
@@ -72,9 +71,9 @@ your applications, for the same reason why you should not use the
 
 .. seealso::
 
-   Module :mod:`cookielib`
-      HTTP cookie handling for web *clients*.  The :mod:`cookielib` and :mod:`Cookie`
-      modules do not depend on each other.
+   Module :mod:`http.cookiejar`
+      HTTP cookie handling for web *clients*.  The :mod:`http.cookiejar` and
+      :mod:`http.cookies` modules do not depend on each other.
 
    :rfc:`2109` - HTTP State Management Mechanism
       This is the state management specification implemented by this module.
@@ -206,15 +205,15 @@ Morsel Objects
 Example
 -------
 
-The following example demonstrates how to use the :mod:`Cookie` module.
+The following example demonstrates how to use the :mod:`http.cookies` module.
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> import Cookie
-   >>> C = Cookie.SimpleCookie()
-   >>> C = Cookie.SerialCookie()
-   >>> C = Cookie.SmartCookie()
+   >>> from http import cookies
+   >>> C = cookies.SimpleCookie()
+   >>> C = cookies.SerialCookie()
+   >>> C = cookies.SmartCookie()
    >>> C["fig"] = "newton"
    >>> C["sugar"] = "wafer"
    >>> print(C) # generate HTTP headers
@@ -223,32 +222,32 @@ The following example demonstrates how to use the :mod:`Cookie` module.
    >>> print(C.output()) # same thing
    Set-Cookie: fig=newton
    Set-Cookie: sugar=wafer
-   >>> C = Cookie.SmartCookie()
+   >>> C = cookies.SmartCookie()
    >>> C["rocky"] = "road"
    >>> C["rocky"]["path"] = "/cookie"
    >>> print(C.output(header="Cookie:"))
    Cookie: rocky=road; Path=/cookie
    >>> print(C.output(attrs=[], header="Cookie:"))
    Cookie: rocky=road
-   >>> C = Cookie.SmartCookie()
+   >>> C = cookies.SmartCookie()
    >>> C.load("chips=ahoy; vienna=finger") # load from a string (HTTP header)
    >>> print(C)
    Set-Cookie: chips=ahoy
    Set-Cookie: vienna=finger
-   >>> C = Cookie.SmartCookie()
+   >>> C = cookies.SmartCookie()
    >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
    >>> print(C)
    Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
-   >>> C = Cookie.SmartCookie()
+   >>> C = cookies.SmartCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
    >>> print(C)
    Set-Cookie: oreo=doublestuff; Path=/
-   >>> C = Cookie.SmartCookie()
+   >>> C = cookies.SmartCookie()
    >>> C["twix"] = "none for you"
    >>> C["twix"].value
    'none for you'
-   >>> C = Cookie.SimpleCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C["number"] = 7 # equivalent to C["number"] = str(7)
    >>> C["string"] = "seven"
    >>> C["number"].value
@@ -258,7 +257,7 @@ The following example demonstrates how to use the :mod:`Cookie` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
-   >>> C = Cookie.SerialCookie()
+   >>> C = cookies.SerialCookie()
    >>> C["number"] = 7
    >>> C["string"] = "seven"
    >>> C["number"].value
@@ -268,7 +267,7 @@ The following example demonstrates how to use the :mod:`Cookie` module.
    >>> print(C)
    Set-Cookie: number="I7\012."
    Set-Cookie: string="S'seven'\012p1\012."
-   >>> C = Cookie.SmartCookie()
+   >>> C = cookies.SmartCookie()
    >>> C["number"] = 7
    >>> C["string"] = "seven"
    >>> C["number"].value

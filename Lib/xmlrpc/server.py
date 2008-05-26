@@ -105,8 +105,9 @@ server.handle_request()
 # Based on code written by Fredrik Lundh.
 
 from xmlrpc.client import Fault, dumps, loads
+from http.server import BaseHTTPRequestHandler
+import http.server
 import socketserver
-import BaseHTTPServer
 import sys
 import os
 import re
@@ -408,7 +409,7 @@ class SimpleXMLRPCDispatcher:
         else:
             raise Exception('method "%s" is not supported' % method)
 
-class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
     """Simple XML-RPC request handler class.
 
     Handles all HTTP POST requests and attempts to decode them as
@@ -500,7 +501,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """Selectively log an accepted request."""
 
         if self.server.logRequests:
-            BaseHTTPServer.BaseHTTPRequestHandler.log_request(self, code, size)
+            BaseHTTPRequestHandler.log_request(self, code, size)
 
 class SimpleXMLRPCServer(socketserver.TCPServer,
                          SimpleXMLRPCDispatcher):
@@ -560,10 +561,9 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
         """
 
         code = 400
-        message, explain = \
-                 BaseHTTPServer.BaseHTTPRequestHandler.responses[code]
+        message, explain = BaseHTTPRequestHandler.responses[code]
 
-        response = BaseHTTPServer.DEFAULT_ERROR_MESSAGE % \
+        response = http.server.DEFAULT_ERROR_MESSAGE % \
             {
              'code' : code,
              'message' : message,

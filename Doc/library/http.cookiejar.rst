@@ -1,14 +1,13 @@
+:mod:`http.cookiejar` --- Cookie handling for HTTP clients
+==========================================================
 
-:mod:`cookielib` --- Cookie handling for HTTP clients
-=====================================================
-
-.. module:: cookielib
+.. module:: http.cookiejar
    :synopsis: Classes for automatic handling of HTTP cookies.
 .. moduleauthor:: John J. Lee <jjl@pobox.com>
 .. sectionauthor:: John J. Lee <jjl@pobox.com>
 
 
-The :mod:`cookielib` module defines classes for automatic handling of HTTP
+The :mod:`http.cookiejar` module defines classes for automatic handling of HTTP
 cookies.  It is useful for accessing web sites that require small pieces of data
 -- :dfn:`cookies` -- to be set on the client machine by an HTTP response from a
 web server, and then returned to the server in later HTTP requests.
@@ -18,7 +17,7 @@ Both the regular Netscape cookie protocol and the protocol defined by
 :rfc:`2109` cookies are parsed as Netscape cookies and subsequently treated
 either as Netscape or RFC 2965 cookies according to the 'policy' in effect.
 Note that the great majority of cookies on the Internet are Netscape cookies.
-:mod:`cookielib` attempts to follow the de-facto Netscape cookie protocol (which
+:mod:`http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
 differs substantially from that set out in the original Netscape specification),
 including taking note of the ``max-age`` and ``port`` cookie-attributes
 introduced with RFC 2965.
@@ -94,7 +93,7 @@ The following classes are provided:
 .. class:: Cookie()
 
    This class represents Netscape, RFC 2109 and RFC 2965 cookies.  It is not
-   expected that users of :mod:`cookielib` construct their own :class:`Cookie`
+   expected that users of :mod:`http.cookiejar` construct their own :class:`Cookie`
    instances.  Instead, if necessary, call :meth:`make_cookies` on a
    :class:`CookieJar` instance.
 
@@ -104,9 +103,10 @@ The following classes are provided:
    Module :mod:`urllib2`
       URL opening with automatic cookie handling.
 
-   Module :mod:`Cookie`
+   Module :mod:`http.cookies`
       HTTP cookie classes, principally useful for server-side code.  The
-      :mod:`cookielib` and :mod:`Cookie` modules do not depend on each other.
+      :mod:`http.cookiejar` and :mod:`http.cookies` modules do not depend on each
+      other.
 
    http://wwwsearch.sf.net/ClientCookie/
       Extensions to this module, including a class for reading Microsoft Internet
@@ -115,7 +115,7 @@ The following classes are provided:
    http://wp.netscape.com/newsref/std/cookie_spec.html
       The specification of the original Netscape cookie protocol.  Though this is
       still the dominant protocol, the 'Netscape cookie protocol' implemented by all
-      the major browsers (and :mod:`cookielib`) only bears a passing resemblance to
+      the major browsers (and :mod:`http.cookiejar`) only bears a passing resemblance to
       the one sketched out in ``cookie_spec.html``.
 
    :rfc:`2109` - HTTP State Management Mechanism
@@ -339,7 +339,7 @@ methods:
 
    Return boolean value indicating whether cookie should be accepted from server.
 
-   *cookie* is a :class:`cookielib.Cookie` instance.  *request* is an object
+   *cookie* is a :class:`Cookie` instance.  *request* is an object
    implementing the interface defined by the documentation for
    :meth:`CookieJar.extract_cookies`.
 
@@ -348,7 +348,7 @@ methods:
 
    Return boolean value indicating whether cookie should be returned to server.
 
-   *cookie* is a :class:`cookielib.Cookie` instance.  *request* is an object
+   *cookie* is a :class:`Cookie` instance.  *request* is an object
    implementing the interface defined by the documentation for
    :meth:`CookieJar.add_cookie_header`.
 
@@ -424,10 +424,10 @@ The easiest way to provide your own policy is to override this class and call
 its methods in your overridden implementations before adding your own additional
 checks::
 
-   import cookielib
-   class MyCookiePolicy(cookielib.DefaultCookiePolicy):
+   import http.cookiejar
+   class MyCookiePolicy(http.cookiejar.DefaultCookiePolicy):
        def set_ok(self, cookie, request):
-           if not cookielib.DefaultCookiePolicy.set_ok(self, cookie, request):
+           if not http.cookiejar.DefaultCookiePolicy.set_ok(self, cookie, request):
                return False
            if i_dont_want_to_store_this_cookie(cookie):
                return False
@@ -584,8 +584,6 @@ combinations of the above flags:
    Equivalent to ``DomainStrictNoDots|DomainStrictNonDomain``.
 
 
-.. _cookielib-cookie-objects:
-
 Cookie Objects
 --------------
 
@@ -594,7 +592,7 @@ standard cookie-attributes specified in the various cookie standards.  The
 correspondence is not one-to-one, because there are complicated rules for
 assigning default values, because the ``max-age`` and ``expires``
 cookie-attributes contain equivalent information, and because RFC 2109 cookies
-may be 'downgraded' by :mod:`cookielib` from version 1 to version 0 (Netscape)
+may be 'downgraded' by :mod:`http.cookiejar` from version 1 to version 0 (Netscape)
 cookies.
 
 Assignment to these attributes should not be necessary other than in rare
@@ -606,7 +604,7 @@ internal consistency, so you should know what you're doing if you do that.
 
    Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. RFC 2965 and
    RFC 2109 cookies have a ``version`` cookie-attribute of 1.  However, note that
-   :mod:`cookielib` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
+   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
    case :attr:`version` is 0.
 
 
@@ -664,7 +662,7 @@ internal consistency, so you should know what you're doing if you do that.
    True if this cookie was received as an RFC 2109 cookie (ie. the cookie
    arrived in a :mailheader:`Set-Cookie` header, and the value of the Version
    cookie-attribute in that header was 1).  This attribute is provided because
-   :mod:`cookielib` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
+   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
    which case :attr:`version` is 0.
 
 
@@ -713,23 +711,21 @@ The :class:`Cookie` class also defines the following method:
    cookie has expired at the specified time.
 
 
-.. _cookielib-examples:
-
 Examples
 --------
 
-The first example shows the most common usage of :mod:`cookielib`::
+The first example shows the most common usage of :mod:`http.cookiejar`::
 
-   import cookielib, urllib2
-   cj = cookielib.CookieJar()
+   import http.cookiejar, urllib2
+   cj = http.cookiejar.CookieJar()
    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
    r = opener.open("http://example.com/")
 
 This example illustrates how to open a URL using your Netscape, Mozilla, or Lynx
 cookies (assumes Unix/Netscape convention for location of the cookies file)::
 
-   import os, cookielib, urllib2
-   cj = cookielib.MozillaCookieJar()
+   import os, http.cookiejar, urllib2
+   cj = http.cookiejar.MozillaCookieJar()
    cj.load(os.path.join(os.environ["HOME"], ".netscape/cookies.txt"))
    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
    r = opener.open("http://example.com/")
@@ -740,7 +736,7 @@ Netscape cookies, and block some domains from setting cookies or having them
 returned::
 
    import urllib2
-   from cookielib import CookieJar, DefaultCookiePolicy
+   from http.cookiejar import CookieJar, DefaultCookiePolicy
    policy = DefaultCookiePolicy(
        rfc2965=True, strict_ns_domain=Policy.DomainStrict,
        blocked_domains=["ads.net", ".ads.net"])

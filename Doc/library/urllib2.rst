@@ -37,7 +37,7 @@ The :mod:`urllib2` module defines the following functions:
      determine if a redirect was followed
 
    * :meth:`info` --- return the meta-information of the page, such as headers, in
-     the form of an ``httplib.HTTPMessage`` instance
+     the form of an ``http.client.HTTPMessage`` instance
      (see `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
 
    Raises :exc:`URLError` on errors.
@@ -100,7 +100,7 @@ The following exceptions are raised as appropriate:
 
       An HTTP status code as defined in `RFC 2616 <http://www.faqs.org/rfcs/rfc2616.html>`_. 
       This numeric value corresponds to a value found in the dictionary of
-      codes as found in :attr:`BaseHTTPServer.BaseHTTPRequestHandler.responses`.
+      codes as found in :attr:`http.server.BaseHTTPRequestHandler.responses`.
 
 
 
@@ -133,10 +133,11 @@ The following classes are provided:
    HTTP cookies:
 
    *origin_req_host* should be the request-host of the origin transaction, as
-   defined by :rfc:`2965`.  It defaults to ``cookielib.request_host(self)``.  This
-   is the host name or IP address of the original request that was initiated by the
-   user.  For example, if the request is for an image in an HTML document, this
-   should be the request-host of the request for the page containing the image.
+   defined by :rfc:`2965`.  It defaults to ``http.cookiejar.request_host(self)``.
+   This is the host name or IP address of the original request that was
+   initiated by the user.  For example, if the request is for an image in an
+   HTML document, this should be the request-host of the request for the page
+   containing the image.
 
    *unverifiable* should indicate whether the request is unverifiable, as defined
    by RFC 2965.  It defaults to False.  An unverifiable request is one whose URL
@@ -627,7 +628,7 @@ HTTPCookieProcessor Objects
 
 .. attribute:: HTTPCookieProcessor.cookiejar
 
-   The :class:`cookielib.CookieJar` in which cookies are stored.
+   The :class:`http.cookiejar.CookieJar` in which cookies are stored.
 
 
 .. _proxy-handler:

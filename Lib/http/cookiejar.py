@@ -33,7 +33,7 @@ try:
     import threading as _threading
 except ImportError:
     import dummy_threading as _threading
-import httplib  # only for the default HTTP port
+import http.client  # only for the default HTTP port
 from calendar import timegm
 
 debug = False   # set to True to enable debugging via the logging module
@@ -45,11 +45,11 @@ def _debug(*args):
     global logger
     if not logger:
         import logging
-        logger = logging.getLogger("cookielib")
+        logger = logging.getLogger("http.cookiejar")
     return logger.debug(*args)
 
 
-DEFAULT_HTTP_PORT = str(httplib.HTTP_PORT)
+DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
 
@@ -61,7 +61,7 @@ def _warn_unhandled_exception():
     f = io.StringIO()
     traceback.print_exc(None, f)
     msg = f.getvalue()
-    warnings.warn("cookielib bug!\n%s" % msg, stacklevel=2)
+    warnings.warn("http.cookiejar bug!\n%s" % msg, stacklevel=2)
 
 
 # Date/time conversion

@@ -15,8 +15,7 @@ import shutil
 import traceback
 import asyncore
 
-from BaseHTTPServer import HTTPServer
-from SimpleHTTPServer import SimpleHTTPRequestHandler
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 # Optionally test SSL support, if we have it in the tested platform
 skip_expected = False
