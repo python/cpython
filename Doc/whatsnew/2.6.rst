@@ -526,9 +526,9 @@ environment variable.
 PEP 3101: Advanced String Formatting
 =====================================================
 
-In Python 3.0, the `%` operator is supplemented by a more powerful
-string formatting method, :meth:`format`.  Support for the
-:meth:`format` method has been backported to Python 2.6.
+In Python 3.0, the `%` operator is supplemented by a more powerful string
+formatting method, :meth:`format`.  Support for the :meth:`str.format` method
+has been backported to Python 2.6.
 
 In 2.6, both 8-bit and Unicode strings have a `.format()` method that
 treats the string as a template and takes the arguments to be formatted.
@@ -649,8 +649,11 @@ the type's :meth:`__format__` method with the provided specifier::
 
 .. seealso::
 
+   :ref:`formatstrings`
+      The reference format fields.
+
    :pep:`3101` - Advanced String Formatting
-      PEP written by Talin.
+      PEP written by Talin. Implemented by Eric Smith.
 
 .. ======================================================================
 
