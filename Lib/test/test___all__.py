@@ -50,7 +50,6 @@ class AllTest(unittest.TestCase):
         self.check_all("codecs")
         self.check_all("codeop")
         self.check_all("colorsys")
-        self.check_all("commands")
         self.check_all("compileall")
         self.check_all("copy")
         self.check_all("copyreg")

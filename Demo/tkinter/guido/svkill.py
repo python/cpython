@@ -9,7 +9,7 @@ if TkVersion < 4.0:
 
 from string import splitfields
 from string import split
-import commands
+import subprocess
 import os
 
 user = os.environ['LOGNAME']
@@ -46,7 +46,7 @@ class Kill(Frame):
     def do_update(self):
         format = self.format_list[self.format.get()][1]
         view = self.view_list[self.view.get()][1]
-        s = commands.getoutput('ps %s %s' % (view, format))
+        s = subprocess.getoutput('ps %s %s' % (view, format))
         list = splitfields(s, '\n')
         self.header.set(list[0] + '          ')
         del list[0]

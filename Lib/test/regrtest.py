@@ -868,7 +868,6 @@ _expectations = {
         """
         test__locale
         test_bsddb3
-        test_commands
         test_crypt
         test_curses
         test_dbm
@@ -910,7 +909,6 @@ _expectations = {
         test_bsddb
         test_bsddb3
         test_bz2
-        test_commands
         test_crypt
         test_curses
         test_dbm
@@ -1060,7 +1058,6 @@ _expectations = {
         """
         test_audioop
         test_bsddb3
-        test_commands
         test_curses
         test_dl
         test_epoll

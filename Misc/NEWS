@@ -56,6 +56,9 @@ Extension Modules
 Library
 -------
 
+- The ``commands`` module has been removed. Its getoutput() and
+  getstatusoutput() functions have been moved to the ``subprocess`` module.
+
 - The ``http`` package was created; it contains the old ``httplib``
   as ``http.client``, ``Cookie`` as ``http.cookies``, ``cookielib``
   as ``http.cookiejar``, and the content of the three ``HTTPServer``

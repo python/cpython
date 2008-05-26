@@ -4,7 +4,7 @@
 from Tkinter import *
 from string import splitfields
 from string import split
-import commands
+import subprocess
 import os
 
 class BarButton(Menubutton):
@@ -31,7 +31,7 @@ class Kill(Frame):
         self.do_update()
     def do_update(self):
         name, option, column = self.format_list[self.format.get()]
-        s = commands.getoutput('ps -w ' + option)
+        s = subprocess.getoutput('ps -w ' + option)
         list = splitfields(s, '\n')
         self.header.set(list[0])
         del list[0]
