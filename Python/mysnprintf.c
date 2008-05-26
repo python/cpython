@@ -98,7 +98,8 @@ PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
 	PyMem_FREE(buffer);
 #endif
 Done:
-	str[size-1] = '\0';
+	if (size > 0)
+		str[size-1] = '\0';
 	return len;
 #undef _PyOS_vsnprintf_EXTRA_SPACE
 }
