@@ -490,10 +490,10 @@ by file descriptors.
 
 .. function:: open(file, flags[, mode])
 
-   Open the file *file* and set various flags according to *flags* and possibly its
-   mode according to *mode*. The default *mode* is ``0777`` (octal), and the
-   current umask value is first masked out.  Return the file descriptor for the
-   newly opened file. Availability: Macintosh, Unix, Windows.
+   Open the file *file* and set various flags according to *flags* and possibly
+   its mode according to *mode*.  The default *mode* is ``0o777`` (octal), and
+   the current umask value is first masked out.  Return the file descriptor for
+   the newly opened file.  Availability: Macintosh, Unix, Windows.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
@@ -823,9 +823,9 @@ Files and Directories
 
 .. function:: mkfifo(path[, mode])
 
-   Create a FIFO (a named pipe) named *path* with numeric mode *mode*.  The default
-   *mode* is ``0666`` (octal).  The current umask value is first masked out from
-   the mode. Availability: Macintosh, Unix.
+   Create a FIFO (a named pipe) named *path* with numeric mode *mode*.  The
+   default *mode* is ``0o666`` (octal).  The current umask value is first masked
+   out from the mode. Availability: Macintosh, Unix.
 
    FIFOs are pipes that can be accessed like regular files.  FIFOs exist until they
    are deleted (for example with :func:`os.unlink`). Generally, FIFOs are used as
@@ -834,7 +834,7 @@ Files and Directories
    doesn't open the FIFO --- it just creates the rendezvous point.
 
 
-.. function:: mknod(filename[, mode=0600, device])
+.. function:: mknod(filename[, mode=0o600, device])
 
    Create a filesystem node (file, device special file or named pipe) named
    *filename*. *mode* specifies both the permissions to use and the type of node to
@@ -865,9 +865,10 @@ Files and Directories
 
 .. function:: mkdir(path[, mode])
 
-   Create a directory named *path* with numeric mode *mode*. The default *mode* is
-   ``0777`` (octal).  On some systems, *mode* is ignored.  Where it is used, the
-   current umask value is first masked out. Availability: Macintosh, Unix, Windows.
+   Create a directory named *path* with numeric mode *mode*. The default *mode*
+   is ``0o777`` (octal).  On some systems, *mode* is ignored.  Where it is used,
+   the current umask value is first masked out. Availability: Macintosh, Unix,
+   Windows.
 
    It is also possible to create temporary directories; see the
    :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.
@@ -880,10 +881,10 @@ Files and Directories
       single: UNC paths; and os.makedirs()
 
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
-   intermediate-level directories needed to contain the leaf directory.  Throws an
-   :exc:`error` exception if the leaf directory already exists or cannot be
-   created.  The default *mode* is ``0777`` (octal).  On some systems, *mode* is
-   ignored. Where it is used, the current umask value is first masked out.
+   intermediate-level directories needed to contain the leaf directory.  Throws
+   an :exc:`error` exception if the leaf directory already exists or cannot be
+   created.  The default *mode* is ``0o777`` (octal).  On some systems, *mode*
+   is ignored. Where it is used, the current umask value is first masked out.
 
    .. note::
 

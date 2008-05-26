@@ -242,7 +242,7 @@ supported.
    :exc:`error` is raised if an invalid flag is specified.
 
    The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0666``.
+   database has to be created.  It defaults to octal ``0o666``.
 
    In addition to the dictionary-like methods, ``gdbm`` objects have the
    following methods:
@@ -334,7 +334,7 @@ to simplify building this module.
    +---------+-------------------------------------------+
 
    The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0666`` (and will be
+   database has to be created.  It defaults to octal ``0o666`` (and will be
    modified by the prevailing umask).
 
 

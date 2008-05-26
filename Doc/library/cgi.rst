@@ -385,7 +385,7 @@ administrator to find the directory where CGI scripts should be installed;
 usually this is in a directory :file:`cgi-bin` in the server tree.
 
 Make sure that your script is readable and executable by "others"; the Unix file
-mode should be ``0755`` octal (use ``chmod 0755 filename``).  Make sure that the
+mode should be ``0o755`` octal (use ``chmod 0755 filename``).  Make sure that the
 first line of the script contains ``#!`` starting in column 1 followed by the
 pathname of the Python interpreter, for instance::
 
@@ -394,8 +394,8 @@ pathname of the Python interpreter, for instance::
 Make sure the Python interpreter exists and is executable by "others".
 
 Make sure that any files your script needs to read or write are readable or
-writable, respectively, by "others" --- their mode should be ``0644`` for
-readable and ``0666`` for writable.  This is because, for security reasons, the
+writable, respectively, by "others" --- their mode should be ``0o644`` for
+readable and ``0o666`` for writable.  This is because, for security reasons, the
 HTTP server executes your script as user "nobody", without any special
 privileges.  It can only read (write, execute) files that everybody can read
 (write, execute).  The current directory at execution time is also different (it
