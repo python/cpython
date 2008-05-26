@@ -1,0 +1,74 @@
+.. highlightlang:: c
+
+.. _bytearrayobjects:
+
+Byte Array Objects
+------------------
+
+.. index:: object: bytearray
+
+
+.. ctype:: PyByteArrayObject
+
+   This subtype of :ctype:`PyObject` represents a Python string object.
+
+
+.. cvar:: PyTypeObject PyByteArray_Type
+
+   This instance of :ctype:`PyTypeObject` represents the Python bytearray type;
+   it is the same object as ``bytearray`` in the Python layer.
+
+
+.. cfunction:: int PyByteArray_Check(PyObject *o)
+
+   Return true if the object *o* is a bytearray object or an instance of a
+   subtype of the bytearray type.
+
+
+.. cfunction:: int PyByteArray_CheckExact(PyObject *o)
+
+   Return true if the object *o* is a bytearray object, but not an instance of a
+   subtype of the bytearray type.
+
+
+.. cfunction:: PyObject* PyByteArray_FromObject(PyObject *o)
+
+   Return a new bytearray object from any object, *o*, that implements the
+   buffer protocol.
+
+
+.. cfunction:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
+
+   Create a new bytearray object from *string* and it's length, *len*.  On
+   failure, *NULL* is returned.
+
+
+.. cfunction:: Py_ssize_t PyByteArray_Size(PyObject *bytearray)
+
+   Return the size of *bytearray* after checking for a *NULL* pointer.
+
+
+.. cfunction:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)
+
+   Macro version of :cfunc:`PyByteArray_Size` that doesn't do pointer checking.
+
+
+.. cfunction:: char* PyByteArray_AsString(PyObject *bytearray)
+
+   Return the contents of *bytearray* as a char array after checking for a
+   *NULL* pointer.
+
+
+.. cfunction:: char* PyByteArray_AS_STRING(PyObject *bytearray)
+
+   Macro version of :cfunc:`PyByteArray_AsString` that doesn't check pointers.
+
+
+.. cfunction:: PyObject* PyByteArray_Concat(PyObject *a, PyObject *b)
+
+   Concat bytearrays *a* and *b* and return a new bytearray with the result.
+
+
+.. cfunction:: PyObject* PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
+
+   Resize the internal buffer of *bytearray* to *len*.
