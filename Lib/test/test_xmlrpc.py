@@ -3,8 +3,8 @@ import datetime
 import sys
 import time
 import unittest
-import xmlrpclib
-import SimpleXMLRPCServer
+import xmlrpc.client as xmlrpclib
+import xmlrpc.server
 import threading
 import mimetools
 import httplib
@@ -160,9 +160,9 @@ class FaultTestCase(unittest.TestCase):
         # this will raise AttirebuteError because code don't want us to use
         # private methods
         self.assertRaises(AttributeError,
-                          SimpleXMLRPCServer.resolve_dotted_attribute, str, '__add')
+                          xmlrpc.server.resolve_dotted_attribute, str, '__add')
 
-        self.assert_(SimpleXMLRPCServer.resolve_dotted_attribute(str, 'title'))
+        self.assert_(xmlrpc.server.resolve_dotted_attribute(str, 'title'))
 
 class DateTimeTestCase(unittest.TestCase):
     def test_default(self):
@@ -249,7 +249,7 @@ def http_server(evt, numrequests):
         '''This is my function'''
         return True
 
-    class MyXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
+    class MyXMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
         def get_request(self):
             # Ensure the socket is always non-blocking.  On Linux, socket
             # attributes are not inherited like they are on *BSD and Windows.
@@ -306,7 +306,7 @@ def is_unavailable_exception(e):
 class SimpleServerTestCase(unittest.TestCase):
     def setUp(self):
         # enable traceback reporting
-        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
+        xmlrpc.server.SimpleXMLRPCServer._send_traceback_header = True
 
         self.evt = threading.Event()
         # start server thread to handle requests
@@ -326,7 +326,7 @@ class SimpleServerTestCase(unittest.TestCase):
             raise RuntimeError("timeout reached, test has failed")
 
         # disable traceback reporting
-        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = False
+        xmlrpc.server.SimpleXMLRPCServer._send_traceback_header = False
 
     def test_simple1(self):
         try:
@@ -443,9 +443,9 @@ class SimpleServerTestCase(unittest.TestCase):
     def test_dotted_attribute(self):
         # Raises an AttributeError because private methods are not allowed.
         self.assertRaises(AttributeError,
-                          SimpleXMLRPCServer.resolve_dotted_attribute, str, '__add')
+                          xmlrpc.server.resolve_dotted_attribute, str, '__add')
 
-        self.assert_(SimpleXMLRPCServer.resolve_dotted_attribute(str, 'title'))
+        self.assert_(xmlrpc.server.resolve_dotted_attribute(str, 'title'))
         # Get the test to run faster by sending a request with test_simple1.
         # This avoids waiting for the socket timeout.
         self.test_simple1()
@@ -475,17 +475,17 @@ class FailingServerTestCase(unittest.TestCase):
         # wait on the server thread to terminate
         self.evt.wait()
         # reset flag
-        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = False
+        xmlrpc.server.SimpleXMLRPCServer._send_traceback_header = False
         # reset message class
-        SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.MessageClass = mimetools.Message
+        xmlrpc.server.SimpleXMLRPCRequestHandler.MessageClass = mimetools.Message
 
     def test_basic(self):
         # check that flag is false by default
-        flagval = SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header
+        flagval = xmlrpc.server.SimpleXMLRPCServer._send_traceback_header
         self.assertEqual(flagval, False)
 
         # enable traceback reporting
-        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
+        xmlrpc.server.SimpleXMLRPCServer._send_traceback_header = True
 
         # test a call that shouldn't fail just as a smoke test
         try:
@@ -499,7 +499,7 @@ class FailingServerTestCase(unittest.TestCase):
 
     def test_fail_no_info(self):
         # use the broken message class
-        SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
+        xmlrpc.server.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
 
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
@@ -515,11 +515,11 @@ class FailingServerTestCase(unittest.TestCase):
 
     def test_fail_with_info(self):
         # use the broken message class
-        SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
+        xmlrpc.server.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
 
         # Check that errors in the server send back exception/traceback
         # info when flag is set
-        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
+        xmlrpc.server.SimpleXMLRPCServer._send_traceback_header = True
 
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
@@ -536,7 +536,7 @@ class FailingServerTestCase(unittest.TestCase):
 
 class CGIHandlerTestCase(unittest.TestCase):
     def setUp(self):
-        self.cgi = SimpleXMLRPCServer.CGIXMLRPCRequestHandler()
+        self.cgi = xmlrpc.server.CGIXMLRPCRequestHandler()
 
     def tearDown(self):
         self.cgi = None

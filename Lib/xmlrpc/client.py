@@ -108,7 +108,6 @@ Exported classes:
   ServerProxy    Represents a logical connection to an XML-RPC server
 
   MultiCall      Executor of boxcared xmlrpc requests
-  Boolean        boolean wrapper to generate a "boolean" XML-RPC value
   DateTime       dateTime wrapper for an ISO 8601 string or time tuple or
                  localtime integer value to generate a "dateTime.iso8601"
                  XML-RPC value
@@ -127,7 +126,6 @@ Exported constants:
 
 Exported functions:
 
-  boolean        Convert any Python value to an XML-RPC boolean
   getparser      Create instance of the fastest available parser & attach
                  to an unmarshalling object
   dumps          Convert an argument tuple or a Fault instance to an XML-RPC
@@ -146,11 +144,6 @@ try:
     import datetime
 except ImportError:
     datetime = None
-
-try:
-    _bool_is_builtin = False.__class__.__name__ == "bool"
-except NameError:
-    _bool_is_builtin = 0
 
 def _decode(data, encoding, is8bit=re.compile("[\x80-\xff]").search):
     # decode non-ascii string (if possible)
@@ -265,12 +258,7 @@ class Fault(Error):
 # Special values
 
 ##
-# Wrapper for XML-RPC boolean values.  Use the xmlrpclib.True and
-# xmlrpclib.False constants, or the xmlrpclib.boolean() function, to
-# generate boolean XML-RPC values.
-#
-# @param value A boolean value.  Any true value is interpreted as True,
-#              all other values are interpreted as False.
+# Backwards compatibility
 
 boolean = Boolean = bool
 
@@ -451,25 +439,9 @@ def _binary(data):
     return value
 
 WRAPPERS = (DateTime, Binary)
-if not _bool_is_builtin:
-    WRAPPERS = WRAPPERS + (Boolean,)
 
 # --------------------------------------------------------------------
 # XML parsers
-
-try:
-    # optional xmlrpclib accelerator
-    import _xmlrpclib
-    FastParser = _xmlrpclib.Parser
-    FastUnmarshaller = _xmlrpclib.Unmarshaller
-except (AttributeError, ImportError):
-    FastParser = FastUnmarshaller = None
-
-try:
-    import _xmlrpclib
-    FastMarshaller = _xmlrpclib.Marshaller
-except (AttributeError, ImportError):
-    FastMarshaller = None
 
 #
 # the SGMLOP parser is about 15x faster than Python's builtin
@@ -640,12 +612,11 @@ class Marshaller:
         write("</int></value>\n")
     #dispatch[int] = dump_int
 
-    if _bool_is_builtin:
-        def dump_bool(self, value, write):
-            write("<value><boolean>")
-            write(value and "1" or "0")
-            write("</boolean></value>\n")
-        dispatch[bool] = dump_bool
+    def dump_bool(self, value, write):
+        write("<value><boolean>")
+        write(value and "1" or "0")
+        write("</boolean></value>\n")
+    dispatch[bool] = dump_bool
 
     def dump_long(self, value, write):
         if value > MAXINT or value < MININT:
@@ -967,6 +938,8 @@ class MultiCall:
 
 # --------------------------------------------------------------------
 # convenience functions
+
+FastMarshaller = FastParser = FastUnmarshaller = None
 
 ##
 # Create a parser object, and connect it to an unmarshalling instance.

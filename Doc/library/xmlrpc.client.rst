@@ -1,7 +1,7 @@
-:mod:`xmlrpclib` --- XML-RPC client access
-==========================================
+:mod:`xmlrpc.client` --- XML-RPC client access
+==============================================
 
-.. module:: xmlrpclib
+.. module:: xmlrpc.client
    :synopsis: XML-RPC client access.
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
@@ -86,7 +86,7 @@ between conformable Python objects and XML on the wire.
    raise a special :exc:`Fault` instance, used to signal XML-RPC server errors, or
    :exc:`ProtocolError` used to signal an error in the HTTP/HTTPS transport layer.
    Both :exc:`Fault` and :exc:`ProtocolError` derive from a base class called
-   :exc:`Error`.  Note that the xmlrpclib module currently does not marshal
+   :exc:`Error`.  Note that the xmlrpc client module currently does not marshal
    instances of subclasses of builtin types.
 
    When passing strings, characters special to XML such as ``<``, ``>``, and ``&``
@@ -169,28 +169,9 @@ grouped under the reserved :attr:`system` member:
    string may contain HTML markup.
 
 
-.. _boolean-objects:
-
-Boolean Objects
----------------
-
-This class may be initialized from any Python value; the instance returned
-depends only on its truth value.  It supports various Python operators through
-:meth:`__cmp__`, :meth:`__repr__`, :meth:`__int__`, and :meth:`__bool__`
-methods, all implemented in the obvious ways.
-
-It also has the following method, supported mainly for internal use by the
-unmarshalling code:
-
-
-.. method:: Boolean.encode(out)
-
-   Write the XML-RPC encoding of this Boolean item to the out stream object.
-
 A working example follows. The server code::
 
-   import xmlrpclib
-   from SimpleXMLRPCServer import SimpleXMLRPCServer
+   from xmlrpc.server import SimpleXMLRPCServer
 
    def is_even(n):
        return n%2 == 0
@@ -202,9 +183,9 @@ A working example follows. The server code::
 
 The client code for the preceding server::
 
-   import xmlrpclib
+   import xmlrpc.client
 
-   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+   proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
    print("3 is even: %s" % str(proxy.is_even(3)))
    print("100 is even: %s" % str(proxy.is_even(100)))
 
@@ -235,12 +216,12 @@ and :meth:`__repr__` methods.
 A working example follows. The server code::
 
    import datetime
-   from SimpleXMLRPCServer import SimpleXMLRPCServer
-   import xmlrpclib
+   from xmlrpc.server import SimpleXMLRPCServer
+   import xmlrpc.client
 
    def today():
        today = datetime.datetime.today()
-       return xmlrpclib.DateTime(today)
+       return xmlrpc.client.DateTime(today)
 
    server = SimpleXMLRPCServer(("localhost", 8000))
    print("Listening on port 8000...")
@@ -249,10 +230,10 @@ A working example follows. The server code::
 
 The client code for the preceding server::
 
-   import xmlrpclib
+   import xmlrpc.client
    import datetime
 
-   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+   proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
 
    today = proxy.today()
    # convert the ISO8601 string to a datetime object
@@ -298,12 +279,12 @@ It also supports certain of Python's built-in operators through a
 Example usage of the binary objects.  We're going to transfer an image over
 XMLRPC::
 
-   from SimpleXMLRPCServer import SimpleXMLRPCServer
-   import xmlrpclib
+   from xmlrpc.server import SimpleXMLRPCServer
+   import xmlrpc.client
 
    def python_logo():
         handle = open("python_logo.jpg")
-        return xmlrpclib.Binary(handle.read())
+        return xmlrpc.client.Binary(handle.read())
         handle.close()
 
    server = SimpleXMLRPCServer(("localhost", 8000))
@@ -314,9 +295,9 @@ XMLRPC::
 
 The client gets the image and saves it to a file::
 
-   import xmlrpclib
+   import xmlrpc.client
 
-   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+   proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
    handle = open("fetched_python_logo.jpg", "w")
    handle.write(proxy.python_logo().data)
    handle.close()
@@ -342,7 +323,7 @@ objects have the following members:
 In the following example we're going to intentionally cause a :exc:`Fault` by
 returning a complex type object.  The server code::
 
-   from SimpleXMLRPCServer import SimpleXMLRPCServer
+   from xmlrpc.server import SimpleXMLRPCServer
 
    # A marshalling error is going to occur because we're returning a
    # complex number
@@ -357,12 +338,12 @@ returning a complex type object.  The server code::
 
 The client code for the preceding server::
 
-   import xmlrpclib
+   import xmlrpc.client
 
-   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+   proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
    try:
        proxy.add(2, 5)
-   except xmlrpclib.Fault, err:
+   except xmlrpc.client.Fault, err:
        print("A fault occured")
        print("Fault code: %d" % err.faultCode)
        print("Fault string: %s" % err.faultString)
@@ -402,14 +383,14 @@ does not exist).  It has the following members:
 In the following example we're going to intentionally cause a :exc:`ProtocolError`
 by providing an invalid URI::
 
-   import xmlrpclib
+   import xmlrpc.client
 
    # create a ServerProxy with an invalid URI
-   proxy = xmlrpclib.ServerProxy("http://invalidaddress/")
+   proxy = xmlrpc.client.ServerProxy("http://invalidaddress/")
 
    try:
        proxy.some_method()
-   except xmlrpclib.ProtocolError, err:
+   except xmlrpc.client.ProtocolError, err:
        print("A protocol error occured")
        print("URL: %s" % err.url)
        print("HTTP/HTTPS headers: %s" % err.headers)
@@ -435,7 +416,7 @@ encapsulate multiple calls to a remote server into a single request.
 
 A usage example of this class follows.  The server code ::
 
-   from SimpleXMLRPCServer import SimpleXMLRPCServer
+   from xmlrpc.server import SimpleXMLRPCServer
 
    def add(x,y):
        return x+y
@@ -461,10 +442,10 @@ A usage example of this class follows.  The server code ::
 
 The client code for the preceding server::
 
-   import xmlrpclib
+   import xmlrpc.client
 
-   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
-   multicall = xmlrpclib.MultiCall(proxy)
+   proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
+   multicall = xmlrpc.client.MultiCall(proxy)
    multicall.add(7,3)
    multicall.subtract(7,3)
    multicall.multiply(7,3)
@@ -476,13 +457,6 @@ The client code for the preceding server::
 
 Convenience Functions
 ---------------------
-
-
-.. function:: boolean(value)
-
-   Convert any Python value to one of the XML-RPC Boolean constants, ``True`` or
-   ``False``.
-
 
 .. function:: dumps(params[, methodname[,  methodresponse[, encoding[, allow_none]]]])
 
@@ -513,7 +487,7 @@ Example of Client Usage
 ::
 
    # simple test program (from the XML-RPC specification)
-   from xmlrpclib import ServerProxy, Error
+   from xmlrpc.client import ServerProxy, Error
 
    # server = ServerProxy("http://localhost:8000") # local server
    server = ServerProxy("http://betty.userland.com")
@@ -532,9 +506,9 @@ transport.  The following example shows how:
 
 ::
 
-   import xmlrpclib, httplib
+   import xmlrpc.client, httplib
 
-   class ProxiedTransport(xmlrpclib.Transport):
+   class ProxiedTransport(xmlrpc.client.Transport):
        def set_proxy(self, proxy):
            self.proxy = proxy
        def make_connection(self, host):
@@ -548,7 +522,7 @@ transport.  The following example shows how:
 
    p = ProxiedTransport()
    p.set_proxy('proxy-server:8080')
-   server = xmlrpclib.Server('http://time.xmlrpc.com/RPC2', transport=p)
+   server = xmlrpc.client.Server('http://time.xmlrpc.com/RPC2', transport=p)
    print(server.currentTime.getCurrentTime())
 
 

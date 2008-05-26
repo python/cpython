@@ -1,15 +1,14 @@
+:mod:`xmlrpc.server` --- Basic XML-RPC servers
+==============================================
 
-:mod:`SimpleXMLRPCServer` --- Basic XML-RPC server
-==================================================
-
-.. module:: SimpleXMLRPCServer
-   :synopsis: Basic XML-RPC server implementation.
+.. module:: xmlrpc.server
+   :synopsis: Basic XML-RPC server implementations.
 .. moduleauthor:: Brian Quinlan <brianq@activestate.com>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-The :mod:`SimpleXMLRPCServer` module provides a basic server framework for
-XML-RPC servers written in Python.  Servers can either be free standing, using
+The :mod:`xmlrpc.server` module provides a basic server framework for XML-RPC
+servers written in Python.  Servers can either be free standing, using
 :class:`SimpleXMLRPCServer`, or embedded in a CGI environment, using
 :class:`CGIXMLRPCRequestHandler`.
 
@@ -23,7 +22,7 @@ XML-RPC servers written in Python.  Servers can either be free standing, using
    are passed to the :class:`socketserver.TCPServer` constructor.  If *logRequests*
    is true (the default), requests will be logged; setting this parameter to false
    will turn off logging.   The *allow_none* and *encoding* parameters are passed
-   on to  :mod:`xmlrpclib` and control the XML-RPC responses that will be returned
+   on to  :mod:`xmlrpc.client` and control the XML-RPC responses that will be returned
    from the server. The *bind_and_activate* parameter controls whether
    :meth:`server_bind` and :meth:`server_activate` are called immediately by the
    constructor; it defaults to true. Setting it to false allows code to manipulate
@@ -33,8 +32,8 @@ XML-RPC servers written in Python.  Servers can either be free standing, using
 .. class:: CGIXMLRPCRequestHandler([allow_none[, encoding]])
 
    Create a new instance to handle XML-RPC requests in a CGI environment.  The
-   *allow_none* and *encoding* parameters are passed on to  :mod:`xmlrpclib` and
-   control the XML-RPC responses that will be returned  from the server.
+   *allow_none* and *encoding* parameters are passed on to :mod:`xmlrpc.client`
+   and control the XML-RPC responses that will be returned from the server.
 
 
 .. class:: SimpleXMLRPCRequestHandler()
@@ -115,8 +114,8 @@ SimpleXMLRPCServer Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Server code::
 
-   from SimpleXMLRPCServer import SimpleXMLRPCServer
-   from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+   from xmlrpc.server import SimpleXMLRPCServer
+   from xmlrpc.server import SimpleXMLRPCRequestHandler
 
    # Restrict to a particular path.
    class RequestHandler(SimpleXMLRPCRequestHandler):
@@ -150,9 +149,9 @@ Server code::
 The following client code will call the methods made available by the preceding
 server::
 
-   import xmlrpclib
+   import xmlrpc.client
 
-   s = xmlrpclib.ServerProxy('http://localhost:8000')
+   s = xmlrpc.client.ServerProxy('http://localhost:8000')
    print(s.pow(2,3))  # Returns 2**3 = 8
    print(s.add(2,3))  # Returns 5
    print(s.mul(5,2))  # Returns 5*2 = 10
@@ -220,3 +219,89 @@ Example::
    handler.register_instance(MyFuncs())
    handler.handle_request()
 
+
+Documenting XMLRPC server
+-------------------------
+
+These classes extend the above classes to serve HTML documentation in response
+to HTTP GET requests.  Servers can either be free standing, using
+:class:`DocXMLRPCServer`, or embedded in a CGI environment, using
+:class:`DocCGIXMLRPCRequestHandler`.
+
+
+.. class:: DocXMLRPCServer(addr[, requestHandler[, logRequests[, allow_none[,  encoding[, bind_and_activate]]]]])
+
+   Create a new server instance. All parameters have the same meaning as for
+   :class:`SimpleXMLRPCServer`; *requestHandler* defaults to
+   :class:`DocXMLRPCRequestHandler`.
+
+
+.. class:: DocCGIXMLRPCRequestHandler()
+
+   Create a new instance to handle XML-RPC requests in a CGI environment.
+
+
+.. class:: DocXMLRPCRequestHandler()
+
+   Create a new request handler instance. This request handler supports XML-RPC
+   POST requests, documentation GET requests, and modifies logging so that the
+   *logRequests* parameter to the :class:`DocXMLRPCServer` constructor parameter is
+   honored.
+
+
+.. _doc-xmlrpc-servers:
+
+DocXMLRPCServer Objects
+-----------------------
+
+The :class:`DocXMLRPCServer` class is derived from :class:`SimpleXMLRPCServer`
+and provides a means of creating self-documenting, stand alone XML-RPC
+servers. HTTP POST requests are handled as XML-RPC method calls. HTTP GET
+requests are handled by generating pydoc-style HTML documentation. This allows a
+server to provide its own web-based documentation.
+
+
+.. method:: DocXMLRPCServer.set_server_title(server_title)
+
+   Set the title used in the generated HTML documentation. This title will be used
+   inside the HTML "title" element.
+
+
+.. method:: DocXMLRPCServer.set_server_name(server_name)
+
+   Set the name used in the generated HTML documentation. This name will appear at
+   the top of the generated documentation inside a "h1" element.
+
+
+.. method:: DocXMLRPCServer.set_server_documentation(server_documentation)
+
+   Set the description used in the generated HTML documentation. This description
+   will appear as a paragraph, below the server name, in the documentation.
+
+
+DocCGIXMLRPCRequestHandler
+--------------------------
+
+The :class:`DocCGIXMLRPCRequestHandler` class is derived from
+:class:`CGIXMLRPCRequestHandler` and provides a means of creating
+self-documenting, XML-RPC CGI scripts. HTTP POST requests are handled as XML-RPC
+method calls. HTTP GET requests are handled by generating pydoc-style HTML
+documentation. This allows a server to provide its own web-based documentation.
+
+
+.. method:: DocCGIXMLRPCRequestHandler.set_server_title(server_title)
+
+   Set the title used in the generated HTML documentation. This title will be used
+   inside the HTML "title" element.
+
+
+.. method:: DocCGIXMLRPCRequestHandler.set_server_name(server_name)
+
+   Set the name used in the generated HTML documentation. This name will appear at
+   the top of the generated documentation inside a "h1" element.
+
+
+.. method:: DocCGIXMLRPCRequestHandler.set_server_documentation(server_documentation)
+
+   Set the description used in the generated HTML documentation. This description
+   will appear as a paragraph, below the server name, in the documentation.

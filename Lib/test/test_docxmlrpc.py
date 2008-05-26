@@ -1,10 +1,9 @@
-from DocXMLRPCServer import DocXMLRPCServer
+from xmlrpc.server import DocXMLRPCServer
 import httplib
 from test import support
 import threading
 import time
 import unittest
-import xmlrpclib
 
 PORT = None
 

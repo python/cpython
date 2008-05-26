@@ -570,7 +570,7 @@ The :mod:`uu` module contains the following notice::
 XML Remote Procedure Calls
 --------------------------
 
-The :mod:`xmlrpclib` module contains the following notice::
+The :mod:`xmlrpc.client` module contains the following notice::
 
        The XML-RPC client interface is
 
