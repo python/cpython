@@ -63,6 +63,8 @@ def getstatusoutput(cmd):
 # Make command argument from directory and pathname (prefix space, add quotes).
 #
 def mk2arg(head, x):
+    from warnings import warnpy3k
+    warnpy3k("In 3.x, mk2arg is removed.")
     import os
     return mkarg(os.path.join(head, x))
 
@@ -75,6 +77,8 @@ def mk2arg(head, x):
 # with backslash.
 #
 def mkarg(x):
+    from warnings import warnpy3k
+    warnpy3k("in 3.x, mkarg is remove.")
     if '\'' not in x:
         return ' \'' + x + '\''
     s = ' "'
