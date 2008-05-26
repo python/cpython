@@ -311,7 +311,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 Py_INCREF(Py_None);
                 converted = Py_None;
             } else {
-                item = PyString_FromStringAndSize(val_str, nbytes);
+                item = PyBytes_FromStringAndSize(val_str, nbytes);
                 if (!item) {
                     return NULL;
                 }
@@ -366,8 +366,8 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                             Py_DECREF(buf_bytes);
                         }
                     }
-                } else if (self->connection->text_factory == (PyObject*)&PyString_Type) {
-                    converted = PyString_FromString(val_str);
+                } else if (self->connection->text_factory == (PyObject*)&PyBytes_Type) {
+                    converted = PyBytes_FromString(val_str);
                 } else if (self->connection->text_factory == (PyObject*)&PyByteArray_Type) {
                     converted = PyByteArray_FromStringAndSize(val_str, strlen(val_str));
                 } else {
@@ -376,7 +376,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
             } else {
                 /* coltype == SQLITE_BLOB */
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
-                buffer = PyString_FromStringAndSize(
+                buffer = PyBytes_FromStringAndSize(
                     sqlite3_column_blob(self->statement->st, i), nbytes);
                 if (!buffer) {
                     break;

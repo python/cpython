@@ -215,7 +215,7 @@ getcode(enum HandlerTypes slot, char* func_name, int lineno)
     PyObject *filename = NULL;
 
     if (handler_info[slot].tb_code == NULL) {
-        code = PyString_FromString("");
+        code = PyBytes_FromString("");
         if (code == NULL)
             goto failed;
         name = PyUnicode_FromString(func_name);
@@ -864,8 +864,8 @@ readinst(char *buf, int buf_size, PyObject *meth)
     if (str == NULL)
         goto finally;
 
-    if (PyString_Check(str))
-        ptr = PyString_AS_STRING(str);
+    if (PyBytes_Check(str))
+        ptr = PyBytes_AS_STRING(str);
     else if (PyByteArray_Check(str))
         ptr = PyByteArray_AS_STRING(str);
     else {
@@ -988,7 +988,7 @@ xmlparse_GetInputContext(xmlparseobject *self, PyObject *unused)
             = XML_GetInputContext(self->itself, &offset, &size);
 
         if (buffer != NULL)
-            return PyString_FromStringAndSize(buffer + offset,
+            return PyBytes_FromStringAndSize(buffer + offset,
                                               size - offset);
         else
             Py_RETURN_NONE;

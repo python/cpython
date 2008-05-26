@@ -63,7 +63,7 @@ PyCode_New(int argcount, int kwonlyargcount,
 	    cellvars == NULL || !PyTuple_Check(cellvars) ||
 	    name == NULL || !PyUnicode_Check(name) ||
 	    filename == NULL || !PyUnicode_Check(filename) ||
-	    lnotab == NULL || !PyString_Check(lnotab) ||
+	    lnotab == NULL || !PyBytes_Check(lnotab) ||
 	    !PyObject_CheckReadBuffer(code)) {
 		PyErr_BadInternalCall();
 		return NULL;
@@ -478,8 +478,8 @@ was actually done until 2.2) expand 300, 300 to 255, 255,  45, 45, but to
 int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
-	int size = PyString_Size(co->co_lnotab) / 2;
-	unsigned char *p = (unsigned char*)PyString_AsString(co->co_lnotab);
+	int size = PyBytes_Size(co->co_lnotab) / 2;
+	unsigned char *p = (unsigned char*)PyBytes_AsString(co->co_lnotab);
 	int line = co->co_firstlineno;
 	int addr = 0;
 	while (--size >= 0) {
@@ -574,8 +574,8 @@ PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
         int size, addr, line;
         unsigned char* p;
 
-        p = (unsigned char*)PyString_AS_STRING(co->co_lnotab);
-        size = PyString_GET_SIZE(co->co_lnotab) / 2;
+        p = (unsigned char*)PyBytes_AS_STRING(co->co_lnotab);
+        size = PyBytes_GET_SIZE(co->co_lnotab) / 2;
 
         addr = 0;
         line = co->co_firstlineno;

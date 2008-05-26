@@ -354,9 +354,9 @@ PyObject *PyCodec_Encode(PyObject *object,
             v = NULL;
             goto onError;
         }
-        v = PyString_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
+        v = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
     }
-    else if (PyString_Check(v))
+    else if (PyBytes_Check(v))
         Py_INCREF(v);
     else {
         PyErr_SetString(PyExc_TypeError,

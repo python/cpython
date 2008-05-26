@@ -1407,13 +1407,13 @@ PyNumber_Long(PyObject *o)
 	}
 	PyErr_Clear();  /* It's not an error if  o.__trunc__ doesn't exist. */
 
-	if (PyString_Check(o))
+	if (PyBytes_Check(o))
 		/* need to do extra error checking that PyLong_FromString()
 		 * doesn't do.  In particular long('9.5') must raise an
 		 * exception, not truncate the float.
 		 */
-		return long_from_string(PyString_AS_STRING(o),
-					PyString_GET_SIZE(o));
+		return long_from_string(PyBytes_AS_STRING(o),
+					PyBytes_GET_SIZE(o));
 	if (PyUnicode_Check(o))
 		/* The above check is done in PyLong_FromUnicode(). */
 		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(o),

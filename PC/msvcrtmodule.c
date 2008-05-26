@@ -142,7 +142,7 @@ msvcrt_getch(PyObject *self, PyObject *args)
 	ch = _getch();
 	Py_END_ALLOW_THREADS
 	s[0] = ch;
-	return PyString_FromStringAndSize(s, 1);
+	return PyBytes_FromStringAndSize(s, 1);
 }
 
 #if _MSC_VER >= 1300
@@ -176,7 +176,7 @@ msvcrt_getche(PyObject *self, PyObject *args)
 	ch = _getche();
 	Py_END_ALLOW_THREADS
 	s[0] = ch;
-	return PyString_FromStringAndSize(s, 1);
+	return PyBytes_FromStringAndSize(s, 1);
 }
 
 #if _MSC_VER >= 1300

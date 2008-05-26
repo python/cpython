@@ -118,7 +118,7 @@ PyDoc_STRVAR(IO_getval__doc__,
 static PyObject *
 IO_cgetval(PyObject *self) {
         if (!IO__opencheck(IOOOBJECT(self))) return NULL;
-        return PyString_FromStringAndSize(((IOobject*)self)->buf,
+        return PyBytes_FromStringAndSize(((IOobject*)self)->buf,
                                           ((IOobject*)self)->pos);
 }
 
@@ -136,7 +136,7 @@ IO_getval(IOobject *self, PyObject *args) {
         }
         else
                   s=self->string_size;
-        return PyString_FromStringAndSize(self->buf, s);
+        return PyBytes_FromStringAndSize(self->buf, s);
 }
 
 PyDoc_STRVAR(IO_isatty__doc__, "isatty(): always returns 0");
@@ -176,7 +176,7 @@ IO_read(IOobject *self, PyObject *args) {
 
         if ( (n=IO_cread((PyObject*)self,&output,n)) < 0) return NULL;
 
-        return PyString_FromStringAndSize(output, n);
+        return PyBytes_FromStringAndSize(output, n);
 }
 
 PyDoc_STRVAR(IO_readline__doc__, "readline() -- Read one line");
@@ -214,7 +214,7 @@ IO_readline(IOobject *self, PyObject *args) {
                 n -= m;
                 self->pos -= m;
         }
-        return PyString_FromStringAndSize(output, n);
+        return PyBytes_FromStringAndSize(output, n);
 }
 
 PyDoc_STRVAR(IO_readlines__doc__, "readlines() -- Read all lines");
@@ -237,7 +237,7 @@ IO_readlines(IOobject *self, PyObject *args) {
                         goto err;
 		if (n == 0)
 			break;
-		line = PyString_FromStringAndSize (output, n);
+		line = PyBytes_FromStringAndSize (output, n);
 		if (!line) 
                         goto err;
 		if (PyList_Append (result, line) == -1) {
@@ -314,7 +314,7 @@ IO_iternext(Iobject *self)
 	next = IO_readline((IOobject *)self, NULL);
 	if (!next)
 		return NULL;
-	if (!PyString_GET_SIZE(next)) {
+	if (!PyBytes_GET_SIZE(next)) {
 		Py_DECREF(next);
 		PyErr_SetNone(PyExc_StopIteration);
 		return NULL;
@@ -455,7 +455,7 @@ O_writelines(Oobject *self, PyObject *args) {
 	while ((s = PyIter_Next(it)) != NULL) {
 		Py_ssize_t n;
 		char *c;
-		if (PyString_AsStringAndSize(s, &c, &n) == -1) {
+		if (PyBytes_AsStringAndSize(s, &c, &n) == -1) {
 			Py_DECREF(it);
 			Py_DECREF(s);
 			return NULL;

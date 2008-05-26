@@ -1212,14 +1212,14 @@ array_fromfile(arrayobject *self, PyObject *args)
 	if (b == NULL)
 		return NULL;
 
-	if (!PyString_Check(b)) {
+	if (!PyBytes_Check(b)) {
 		PyErr_SetString(PyExc_TypeError,
 				"read() didn't return bytes");
 		Py_DECREF(b);
 		return NULL;
 	}
 
-	if (PyString_GET_SIZE(b) != nbytes) {
+	if (PyBytes_GET_SIZE(b) != nbytes) {
 		PyErr_SetString(PyExc_EOFError,
 				"read() didn't return enough bytes");
 		Py_DECREF(b);
@@ -1263,7 +1263,7 @@ array_tofile(arrayobject *self, PyObject *f)
 		PyObject *bytes, *res;
 		if (i*BLOCKSIZE + size > nbytes)
 			size = nbytes - i*BLOCKSIZE;
-		bytes = PyString_FromStringAndSize(ptr, size);
+		bytes = PyBytes_FromStringAndSize(ptr, size);
 		if (bytes == NULL)
 			return NULL;
 		res = PyObject_CallMethod(f, "write", "O", bytes);
@@ -1394,7 +1394,7 @@ values, as if it had been read from a file using the fromfile() method).");
 static PyObject *
 array_tostring(arrayobject *self, PyObject *unused)
 {
-	return PyString_FromStringAndSize(self->ob_item,
+	return PyBytes_FromStringAndSize(self->ob_item,
                                          Py_SIZE(self) * self->ob_descr->itemsize);
 }
 
@@ -1856,7 +1856,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (!(initial == NULL || PyList_Check(initial)
 	      || PyByteArray_Check(initial)
-	      || PyString_Check(initial)
+	      || PyBytes_Check(initial)
 	      || PyTuple_Check(initial)
 	      || ((c=='u') && PyUnicode_Check(initial)))) {
 		it = PyObject_GetIter(initial);
@@ -1902,7 +1902,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				}
 			}
 			else if (initial != NULL && (PyByteArray_Check(initial) ||
-					   PyString_Check(initial))) {
+					   PyBytes_Check(initial))) {
 				PyObject *t_initial, *v;
 				t_initial = PyTuple_Pack(1, initial);
 				if (t_initial == NULL) {

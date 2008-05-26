@@ -3518,7 +3518,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
 					  PyUnicode_GET_SIZE(x),
 					  base);
-	else if (PyByteArray_Check(x) || PyString_Check(x)) {
+	else if (PyByteArray_Check(x) || PyBytes_Check(x)) {
 		/* Since PyLong_FromString doesn't have a length parameter,
 		 * check here for possible NULs in the string. */
 		char *string;
@@ -3526,7 +3526,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (PyByteArray_Check(x))
 			string = PyByteArray_AS_STRING(x);
 		else
-			string = PyString_AS_STRING(x);
+			string = PyBytes_AS_STRING(x);
 		if (strlen(string) != size) {
 			/* We only see this if there's a null byte in x,
 			   x is a bytes or buffer, *and* a base is given. */

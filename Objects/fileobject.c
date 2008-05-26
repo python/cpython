@@ -81,7 +81,7 @@ PyFile_GetLine(PyObject *f, int n)
 		result = PyEval_CallObject(reader, args);
 		Py_DECREF(reader);
 		Py_DECREF(args);
-		if (result != NULL && !PyString_Check(result) &&
+		if (result != NULL && !PyBytes_Check(result) &&
 		    !PyUnicode_Check(result)) {
 			Py_DECREF(result);
 			result = NULL;
@@ -90,9 +90,9 @@ PyFile_GetLine(PyObject *f, int n)
 		}
 	}
 
-	if (n < 0 && result != NULL && PyString_Check(result)) {
-		char *s = PyString_AS_STRING(result);
-		Py_ssize_t len = PyString_GET_SIZE(result);
+	if (n < 0 && result != NULL && PyBytes_Check(result)) {
+		char *s = PyBytes_AS_STRING(result);
+		Py_ssize_t len = PyBytes_GET_SIZE(result);
 		if (len == 0) {
 			Py_DECREF(result);
 			result = NULL;
@@ -101,10 +101,10 @@ PyFile_GetLine(PyObject *f, int n)
 		}
 		else if (s[len-1] == '\n') {
 			if (result->ob_refcnt == 1)
-				_PyString_Resize(&result, len-1);
+				_PyBytes_Resize(&result, len-1);
 			else {
 				PyObject *v;
-				v = PyString_FromStringAndSize(s, len-1);
+				v = PyBytes_FromStringAndSize(s, len-1);
 				Py_DECREF(result);
 				result = v;
 			}

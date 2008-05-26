@@ -138,7 +138,7 @@ PyAPI_FUNC(void) PyDict_Fini(void);
 PyAPI_FUNC(void) PyTuple_Fini(void);
 PyAPI_FUNC(void) PyList_Fini(void);
 PyAPI_FUNC(void) PySet_Fini(void);
-PyAPI_FUNC(void) PyString_Fini(void);
+PyAPI_FUNC(void) PyBytes_Fini(void);
 PyAPI_FUNC(void) PyByteArray_Fini(void);
 PyAPI_FUNC(void) PyFloat_Fini(void);
 PyAPI_FUNC(void) PyOS_FiniInterrupts(void);

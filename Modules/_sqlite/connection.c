@@ -483,7 +483,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
                 break;
             case SQLITE_BLOB:
                 buflen = sqlite3_value_bytes(cur_value);
-                cur_py_value = PyString_FromStringAndSize(
+                cur_py_value = PyBytes_FromStringAndSize(
                     sqlite3_value_blob(cur_value), buflen);
                 break;
             case SQLITE_NULL:

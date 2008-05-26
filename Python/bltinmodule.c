@@ -1350,10 +1350,10 @@ builtin_ord(PyObject *self, PyObject* obj)
 	long ord;
 	Py_ssize_t size;
 
-	if (PyString_Check(obj)) {
-		size = PyString_GET_SIZE(obj);
+	if (PyBytes_Check(obj)) {
+		size = PyBytes_GET_SIZE(obj);
 		if (size == 1) {
-			ord = (long)((unsigned char)*PyString_AS_STRING(obj));
+			ord = (long)((unsigned char)*PyBytes_AS_STRING(obj));
 			return PyLong_FromLong(ord);
 		}
 	}
@@ -2267,7 +2267,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("bool",		&PyBool_Type);
 	SETBUILTIN("memoryview",        &PyMemoryView_Type);
 	SETBUILTIN("bytearray",		&PyByteArray_Type);
-	SETBUILTIN("bytes",		&PyString_Type);
+	SETBUILTIN("bytes",		&PyBytes_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
 	SETBUILTIN("complex",		&PyComplex_Type);

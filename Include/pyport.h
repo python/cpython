@@ -124,9 +124,9 @@ typedef Py_intptr_t	Py_ssize_t;
  * all platforms (Python interprets the format string itself, and does whatever
  * the platform C requires to convert a size_t/Py_ssize_t argument):
  *
- *     PyString_FromFormat
+ *     PyBytes_FromFormat
  *     PyErr_Format
- *     PyString_FromFormatV
+ *     PyBytes_FromFormatV
  *     PyUnicode_FromFormatV
  *
  * Lower-level uses require that you interpolate the correct format modifier

@@ -374,7 +374,7 @@ class Obj2ModVisitor(PickleVisitor):
         # there's really nothing more we can do if this fails ...
         self.emit("if (tmp == NULL) goto failed;", 1)
         error = "expected some sort of %s, but got %%.400s" % name
-        format = "PyErr_Format(PyExc_TypeError, \"%s\", PyString_AS_STRING(tmp));"
+        format = "PyErr_Format(PyExc_TypeError, \"%s\", PyBytes_AS_STRING(tmp));"
         self.emit(format % error, 1, reflow=False)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)
@@ -792,7 +792,7 @@ static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
         PyObject *s = PyObject_Repr(obj);
         if (s == NULL) return 1;
         PyErr_Format(PyExc_ValueError, "invalid integer value: %.400s",
-                     PyString_AS_STRING(s));
+                     PyBytes_AS_STRING(s));
         Py_DECREF(s);
         return 1;
     }
