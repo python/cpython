@@ -56,6 +56,11 @@ Extension Modules
 Library
 -------
 
+- The ``http`` package was created; it contains the old ``httplib``
+  as ``http.client``, ``Cookie`` as ``http.cookies``, ``cookielib``
+  as ``http.cookiejar``, and the content of the three ``HTTPServer``
+  modules as ``http.server``.
+
 - The ``xmlrpc`` package was created; it contains the old
   ``xmlrpclib`` module as ``xmlrpc.client`` and the content of
   the old ``SimpleXMLRPCServer`` and ``DocXMLRPCServer`` modules
