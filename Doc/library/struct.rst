@@ -216,6 +216,16 @@ end, assuming longs are aligned on 4-byte boundaries.  This only works when
 native size and alignment are in effect; standard size and alignment does not
 enforce any alignment.
 
+Unpacked fields can be named by assigning them to variables or by wrapping
+the result in a named tuple::
+
+    >>> record = 'raymond   \x32\x12\x08\x01\x08'
+    >>> name, serialnum, school, gradelevel = unpack('<10sHHb', record)
+
+    >>> from collections import namedtuple
+    >>> Student = namedtuple('Student', 'name serialnum school gradelevel')
+    >>> Student._make(unpack('<10sHHb', s))
+    Student(name='raymond   ', serialnum=4658, school=264, gradelevel=8)
 
 .. seealso::
 

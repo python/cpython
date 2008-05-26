@@ -1314,6 +1314,11 @@ class MinidomTest(unittest.TestCase):
             for i in range(len(n1.childNodes)):
                 stack.append((n1.childNodes[i], n2.childNodes[i]))
 
+    def testSerializeCommentNodeWithDoubleHyphen(self):
+        doc = create_doc_without_doctype()
+        doc.appendChild(doc.createComment("foo--bar"))
+        self.assertRaises(ValueError, doc.toxml)
+
 def test_main():
     run_unittest(MinidomTest)
 
