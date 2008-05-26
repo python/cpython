@@ -58,7 +58,6 @@ PyAPI_FUNC(PyObject *) PyBytes_Repr(PyObject *, int);
 PyAPI_FUNC(void) PyBytes_Concat(PyObject **, PyObject *);
 PyAPI_FUNC(void) PyBytes_ConcatAndDel(PyObject **, PyObject *);
 PyAPI_FUNC(int) _PyBytes_Resize(PyObject **, Py_ssize_t);
-PyAPI_FUNC(PyObject *) PyBytes_Format(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyBytes_FormatLong(PyObject*, int, int,
 						  int, char**, int*);
 PyAPI_FUNC(PyObject *) PyBytes_DecodeEscape(const char *, Py_ssize_t,
