@@ -6,7 +6,7 @@ import sys
 import unittest
 from test import support
 
-import xmlrpclib
+import xmlrpclib.client as xmlrpclib
 
 class CurrentTimeTest(unittest.TestCase):
 

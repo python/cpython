@@ -294,7 +294,7 @@ Batteries Included
 Python has a "batteries included" philosophy.  This is best seen through the
 sophisticated and robust capabilities of its larger packages. For example:
 
-* The :mod:`xmlrpclib` and :mod:`SimpleXMLRPCServer` modules make implementing
+* The :mod:`xmlrpc.client` and :mod:`xmlrpc.server` modules make implementing
   remote procedure calls into an almost trivial task.  Despite the modules
   names, no direct knowledge or handling of XML is needed.
 

@@ -1952,7 +1952,8 @@ xdrlib           Implements (a subset of) Sun XDR (eXternal Data
 xmllib           A parser for XML, using the derived class as static DTD.
 xml.dom          Classes for processing XML using the Document Object Model.
 xml.sax          Classes for processing XML using the SAX API.
-xmlrpclib        Support for remote procedure calls using XML.
+xmlrpc.client    Support for remote procedure calls using XML.
+xmlrpc.server    Create XMLRPC servers.
 zipfile          Read & write PK zipped files.
 
 

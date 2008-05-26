@@ -23,4 +23,5 @@ The list of modules described in this chapter is:
    shelve.rst
    marshal.rst
    dbm.rst
+   bsddb.rst
    sqlite3.rst

@@ -42,6 +42,5 @@ is currently supported on most popular platforms.  Here is an overview:
    cgihttpserver.rst
    cookielib.rst
    cookie.rst
-   xmlrpclib.rst
-   simplexmlrpcserver.rst
-   docxmlrpcserver.rst
+   xmlrpc.client.rst
+   xmlrpc.server.rst

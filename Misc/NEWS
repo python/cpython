@@ -56,6 +56,17 @@ Extension Modules
 Library
 -------
 
+- The ``xmlrpc`` package was created; it contains the old
+  ``xmlrpclib`` module as ``xmlrpc.client`` and the content of
+  the old ``SimpleXMLRPCServer`` and ``DocXMLRPCServer`` modules
+  as ``xmlrpc.server``.  
+
+- The ``dbm`` package was created, containing the old modules
+  ``anydbm`` and ``whichdb`` in its ``__init__.py``, and having
+  ``dbm.gnu`` (was ``gdbm``), ``dbm.bsd`` (was ``dbhash``),
+  ``dbm.ndbm`` (was ``dbm``) and ``dbm.dumb`` (was ``dumbdbm``)
+  as submodules.
+
 - The ``repr`` module has been renamed to ``reprlib``.
 
 - The ``statvfs`` module has been removed.
