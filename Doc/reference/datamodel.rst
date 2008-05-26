@@ -394,12 +394,12 @@ Mappings
       section :ref:`dict`).
 
       .. index::
-         module: dbm
-         module: gdbm
+         module: dbm.ndbm
+         module: dbm.gnu
          module: bsddb
 
-      The extension modules :mod:`dbm`, :mod:`gdbm`, and :mod:`bsddb` provide
-      additional examples of mapping types.
+      The extension modules :mod:`dbm.ndbm`, :mod:`dbm.gnu`, and :mod:`bsddb`
+      provide additional examples of mapping types.
 
 Callable types
    .. index::

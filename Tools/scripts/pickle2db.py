@@ -7,10 +7,10 @@ Read the given picklefile as a series of key/value pairs and write to a new
 database.  If the database already exists, any contents are deleted.  The
 optional flags indicate the type of the output database:
 
-    -a - open using anydbm
+    -a - open using dbm (open any supported format)
     -b - open as bsddb btree file
-    -d - open as dbm file
-    -g - open as gdbm file
+    -d - open as dbm.ndbm file
+    -g - open as dbm.gnu file
     -h - open as bsddb hash file
     -r - open as bsddb recno file
 
@@ -30,15 +30,15 @@ try:
 except ImportError:
     bsddb = None
 try:
-    import dbm
+    import dbm.ndbm as dbm
 except ImportError:
     dbm = None
 try:
-    import gdbm
+    import dbm.gnu as gdbm
 except ImportError:
     gdbm = None
 try:
-    import anydbm
+    import dbm as anydbm
 except ImportError:
     anydbm = None
 import sys
@@ -99,19 +99,19 @@ def main(args):
             try:
                 dbopen = anydbm.open
             except AttributeError:
-                sys.stderr.write("anydbm module unavailable.\n")
+                sys.stderr.write("dbm module unavailable.\n")
                 return 1
         elif opt in ("-g", "--gdbm"):
             try:
                 dbopen = gdbm.open
             except AttributeError:
-                sys.stderr.write("gdbm module unavailable.\n")
+                sys.stderr.write("dbm.gnu module unavailable.\n")
                 return 1
         elif opt in ("-d", "--dbm"):
             try:
                 dbopen = dbm.open
             except AttributeError:
-                sys.stderr.write("dbm module unavailable.\n")
+                sys.stderr.write("dbm.ndbm module unavailable.\n")
                 return 1
     if dbopen is None:
         if bsddb is None:

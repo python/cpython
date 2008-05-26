@@ -294,8 +294,8 @@ _symtable symtablemodule.c
 # Modules that provide persistent dictionary-like semantics.  You will
 # probably want to arrange for at least one of them to be available on
 # your machine, though none are defined by default because of library
-# dependencies.  The Python module anydbm.py provides an
-# implementation independent wrapper for these; dumbdbm.py provides
+# dependencies.  The Python module dbm/__init__.py provides an
+# implementation independent wrapper for these; dbm/dumb.py provides
 # similar functionality (but slower of course) implemented in Python.
 
 # The standard Unix dbm module has been moved to Setup.config so that
@@ -305,13 +305,13 @@ _symtable symtablemodule.c
 #
 # First, look at Setup.config; configure may have set this for you.
 
-#dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
+#_dbm _dbmmodule.c 	# dbm(3) may require -lndbm or similar
 
 # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
 #
 # First, look at Setup.config; configure may have set this for you.
 
-#gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
+#_gdbm _gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
 
 # Sleepycat Berkeley DB interface.

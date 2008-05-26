@@ -5,7 +5,7 @@
 import os, sys
 import copy
 import bsddb
-import dbhash # Just so we know it's imported
+import dbm.bsd # Just so we know it's imported
 import unittest
 from test import support
 

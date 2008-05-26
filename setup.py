@@ -637,8 +637,8 @@ class PyBuildExt(build_ext):
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
         # your machine, though none are defined by default because of library
-        # dependencies.  The Python module anydbm.py provides an
-        # implementation independent wrapper for these; dumbdbm.py provides
+        # dependencies.  The Python module dbm/__init__.py provides an
+        # implementation independent wrapper for these; dbm/dumb.py provides
         # similar functionality (but slower of course) implemented in Python.
 
         # Sleepycat^WOracle Berkeley DB interface.
@@ -902,16 +902,16 @@ class PyBuildExt(build_ext):
                     ndbm_libs = ['ndbm']
                 else:
                     ndbm_libs = []
-                exts.append( Extension('dbm', ['dbmmodule.c'],
+                exts.append( Extension('_dbm', ['_dbmmodule.c'],
                                        define_macros=[('HAVE_NDBM_H',None)],
                                        libraries = ndbm_libs ) )
             elif (self.compiler.find_library_file(lib_dirs, 'gdbm')
                   and find_file("gdbm/ndbm.h", inc_dirs, []) is not None):
-                exts.append( Extension('dbm', ['dbmmodule.c'],
+                exts.append( Extension('_dbm', ['_dbmmodule.c'],
                                        define_macros=[('HAVE_GDBM_NDBM_H',None)],
                                        libraries = ['gdbm'] ) )
             elif db_incs is not None:
-                exts.append( Extension('dbm', ['dbmmodule.c'],
+                exts.append( Extension('_dbm', ['_dbmmodule.c'],
                                        library_dirs=dblib_dir,
                                        runtime_library_dirs=dblib_dir,
                                        include_dirs=db_incs,
@@ -919,14 +919,14 @@ class PyBuildExt(build_ext):
                                                       ('DB_DBM_HSEARCH',None)],
                                        libraries=dblibs))
             else:
-                missing.append('dbm')
+                missing.append('_dbm')
 
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
         if (self.compiler.find_library_file(lib_dirs, 'gdbm')):
-            exts.append( Extension('gdbm', ['gdbmmodule.c'],
+            exts.append( Extension('_gdbm', ['_gdbmmodule.c'],
                                    libraries = ['gdbm'] ) )
         else:
-            missing.append('gdbm')
+            missing.append('_gdbm')
 
         # Unix-only modules
         if platform not in ['mac', 'win32']:

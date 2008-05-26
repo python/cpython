@@ -6,7 +6,7 @@ Synopsis: %(prog)s [-h|-g|-b|-r|-a] dbfile [ picklefile ]
 Convert the database file given on the command line to a pickle
 representation.  The optional flags indicate the type of the database:
 
-    -a - open using anydbm
+    -a - open using dbm (any supported format)
     -b - open as bsddb btree file
     -d - open as dbm file
     -g - open as gdbm file
@@ -25,15 +25,15 @@ try:
 except ImportError:
     bsddb = None
 try:
-    import dbm
+    import dbm.ndbm as dbm
 except ImportError:
     dbm = None
 try:
-    import gdbm
+    import dbm.gnu as gdbm
 except ImportError:
     gdbm = None
 try:
-    import anydbm
+    import dbm as anydbm
 except ImportError:
     anydbm = None
 import sys
@@ -94,19 +94,19 @@ def main(args):
             try:
                 dbopen = anydbm.open
             except AttributeError:
-                sys.stderr.write("anydbm module unavailable.\n")
+                sys.stderr.write("dbm module unavailable.\n")
                 return 1
         elif opt in ("-g", "--gdbm"):
             try:
                 dbopen = gdbm.open
             except AttributeError:
-                sys.stderr.write("gdbm module unavailable.\n")
+                sys.stderr.write("dbm.gnu module unavailable.\n")
                 return 1
         elif opt in ("-d", "--dbm"):
             try:
                 dbopen = dbm.open
             except AttributeError:
-                sys.stderr.write("dbm module unavailable.\n")
+                sys.stderr.write("dbm.ndbm module unavailable.\n")
                 return 1
     if dbopen is None:
         if bsddb is None:

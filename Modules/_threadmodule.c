@@ -127,7 +127,7 @@ lock_getattr(lockobject *self, char *name)
 
 static PyTypeObject Locktype = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"thread.lock",			/*tp_name*/
+	"_thread.lock",			/*tp_name*/
 	sizeof(lockobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -336,7 +336,7 @@ static PyObject *local_getattro(localobject *, PyObject *);
 
 static PyTypeObject localtype = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	/* tp_name           */ "thread._local",
+	/* tp_name           */ "_thread._local",
 	/* tp_basicsize      */ sizeof(localobject),
 	/* tp_itemsize       */ 0,
 	/* tp_dealloc        */ (destructor)local_dealloc,

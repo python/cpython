@@ -332,7 +332,7 @@ dbm_getattr(dbmobject *dp, char *name)
 
 static PyTypeObject Dbmtype = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"dbm.dbm",
+	"_dbm.dbm",
 	sizeof(dbmobject),
 	0,
 	(destructor)dbm_dealloc,  /*tp_dealloc*/
@@ -391,17 +391,17 @@ static PyMethodDef dbmmodule_methods[] = {
 };
 
 PyMODINIT_FUNC
-initdbm(void) {
+init_dbm(void) {
 	PyObject *m, *d, *s;
 
 	if (PyType_Ready(&Dbmtype) < 0)
 		return;
-	m = Py_InitModule("dbm", dbmmodule_methods);
+	m = Py_InitModule("_dbm", dbmmodule_methods);
 	if (m == NULL)
 		return;
 	d = PyModule_GetDict(m);
 	if (DbmError == NULL)
-		DbmError = PyErr_NewException("dbm.error", NULL, NULL);
+		DbmError = PyErr_NewException("_dbm.error", NULL, NULL);
 	s = PyUnicode_FromString(which_dbm);
 	if (s != NULL) {
 		PyDict_SetItemString(d, "library", s);

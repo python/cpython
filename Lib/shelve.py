@@ -190,15 +190,15 @@ class BsdDbShelf(Shelf):
 
 
 class DbfilenameShelf(Shelf):
-    """Shelf implementation using the "anydbm" generic dbm interface.
+    """Shelf implementation using the "dbm" generic dbm interface.
 
     This is initialized with the filename for the dbm database.
     See the module's __doc__ string for an overview of the interface.
     """
 
     def __init__(self, filename, flag='c', protocol=None, writeback=False):
-        import anydbm
-        Shelf.__init__(self, anydbm.open(filename, flag), protocol, writeback)
+        import dbm
+        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback)
 
 
 def open(filename, flag='c', protocol=None, writeback=False):
@@ -208,7 +208,7 @@ def open(filename, flag='c', protocol=None, writeback=False):
     database.  As a side-effect, an extension may be added to the
     filename and more than one file may be created.  The optional flag
     parameter has the same interpretation as the flag parameter of
-    anydbm.open(). The optional protocol parameter specifies the
+    dbm.open(). The optional protocol parameter specifies the
     version of the pickle protocol (0, 1, or 2).
 
     See the module's __doc__ string for an overview of the interface.
