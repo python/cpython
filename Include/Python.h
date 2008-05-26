@@ -65,6 +65,7 @@
 
 #include "pydebug.h"
 
+#include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
 #include "longobject.h"
@@ -75,7 +76,6 @@
 #include "complexobject.h"
 #endif
 #include "rangeobject.h"
-#include "stringobject.h"
 #include "memoryobject.h"
 #include "tupleobject.h"
 #include "listobject.h"
