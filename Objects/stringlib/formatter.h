@@ -778,7 +778,7 @@ FORMAT_STRING(PyObject* value, PyObject* args)
     /* This is to allow things like u''.format('') */
     if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
         goto done;
-    if (!(PyString_Check(format_spec) || PyUnicode_Check(format_spec))) {
+    if (!(PyBytes_Check(format_spec) || PyUnicode_Check(format_spec))) {
         PyErr_Format(PyExc_TypeError, "__format__ arg must be str "
 		     "or unicode, not %s", Py_TYPE(format_spec)->tp_name);
 	goto done;

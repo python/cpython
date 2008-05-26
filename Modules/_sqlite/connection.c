@@ -84,8 +84,8 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     Py_INCREF(&PyUnicode_Type);
     self->text_factory = (PyObject*)&PyUnicode_Type;
 
-    if (PyString_Check(database) || PyUnicode_Check(database)) {
-        if (PyString_Check(database)) {
+    if (PyBytes_Check(database) || PyUnicode_Check(database)) {
+        if (PyBytes_Check(database)) {
             database_utf8 = database;
             Py_INCREF(database_utf8);
         } else {
@@ -96,7 +96,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
         }
 
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_open(PyString_AsString(database_utf8), &self->db);
+        rc = sqlite3_open(PyBytes_AsString(database_utf8), &self->db);
         Py_END_ALLOW_THREADS
 
         Py_DECREF(database_utf8);
@@ -111,7 +111,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
         if (class_attr) {
             class_attr_str = PyObject_Str(class_attr);
             if (class_attr_str) {
-                if (strcmp(PyString_AsString(class_attr_str), "<type 'apsw.Connection'>") == 0) {
+                if (strcmp(PyBytes_AsString(class_attr_str), "<type 'apsw.Connection'>") == 0) {
                     /* In the APSW Connection object, the first entry after
                      * PyObject_HEAD is the sqlite3* we want to get hold of.
                      * Luckily, this is the same layout as we have in our
@@ -134,7 +134,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
 
     if (!isolation_level) {
-        isolation_level = PyString_FromString("");
+        isolation_level = PyBytes_FromString("");
         if (!isolation_level) {
             return -1;
         }
@@ -499,12 +499,12 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         } else {
             sqlite3_result_blob(context, buffer, buflen, SQLITE_TRANSIENT);
         }
-    } else if (PyString_Check(py_val)) {
-        sqlite3_result_text(context, PyString_AsString(py_val), -1, SQLITE_TRANSIENT);
+    } else if (PyBytes_Check(py_val)) {
+        sqlite3_result_text(context, PyBytes_AsString(py_val), -1, SQLITE_TRANSIENT);
     } else if (PyUnicode_Check(py_val)) {
         stringval = PyUnicode_AsUTF8String(py_val);
         if (stringval) {
-            sqlite3_result_text(context, PyString_AsString(stringval), -1, SQLITE_TRANSIENT);
+            sqlite3_result_text(context, PyBytes_AsString(stringval), -1, SQLITE_TRANSIENT);
             Py_DECREF(stringval);
         }
     } else {
@@ -963,21 +963,21 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
         Py_INCREF(isolation_level);
         self->isolation_level = isolation_level;
 
-        begin_statement = PyString_FromString("BEGIN ");
+        begin_statement = PyBytes_FromString("BEGIN ");
         if (!begin_statement) {
             return -1;
         }
-        PyString_Concat(&begin_statement, isolation_level);
+        PyBytes_Concat(&begin_statement, isolation_level);
         if (!begin_statement) {
             return -1;
         }
 
-        self->begin_statement = PyMem_Malloc(PyString_Size(begin_statement) + 2);
+        self->begin_statement = PyMem_Malloc(PyBytes_Size(begin_statement) + 2);
         if (!self->begin_statement) {
             return -1;
         }
 
-        strcpy(self->begin_statement, PyString_AsString(begin_statement));
+        strcpy(self->begin_statement, PyBytes_AsString(begin_statement));
         Py_DECREF(begin_statement);
     }
 
@@ -1152,8 +1152,8 @@ pysqlite_collation_callback(
         goto finally;
     }
 
-    string1 = PyString_FromStringAndSize((const char*)text1_data, text1_length);
-    string2 = PyString_FromStringAndSize((const char*)text2_data, text2_length);
+    string1 = PyBytes_FromStringAndSize((const char*)text1_data, text1_length);
+    string2 = PyBytes_FromStringAndSize((const char*)text2_data, text2_length);
 
     if (!string1 || !string2) {
         goto finally; /* failed to allocate strings */
@@ -1259,7 +1259,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    if (!PyArg_ParseTuple(args, "O!O:create_collation(name, callback)", &PyString_Type, &name, &callable)) {
+    if (!PyArg_ParseTuple(args, "O!O:create_collation(name, callback)", &PyBytes_Type, &name, &callable)) {
         goto finally;
     }
 
@@ -1268,7 +1268,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    chk = PyString_AsString(uppercase_name);
+    chk = PyBytes_AsString(uppercase_name);
     while (*chk) {
         if ((*chk >= '0' && *chk <= '9')
          || (*chk >= 'A' && *chk <= 'Z')
@@ -1293,7 +1293,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     }
 
     rc = sqlite3_create_collation(self->db,
-                                  PyString_AsString(uppercase_name),
+                                  PyBytes_AsString(uppercase_name),
                                   SQLITE_UTF8,
                                   (callable != Py_None) ? callable : NULL,
                                   (callable != Py_None) ? pysqlite_collation_callback : NULL);

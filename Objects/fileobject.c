@@ -26,7 +26,7 @@
 #include <io.h>
 #endif
 
-#define BUF(v) PyString_AS_STRING((PyStringObject *)v)
+#define BUF(v) PyBytes_AS_STRING((PyBytesObject *)v)
 
 #ifndef DONT_HAVE_ERRNO_H
 #include <errno.h>
@@ -159,7 +159,7 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
         Py_INCREF(name);
         f->f_name = name;
 
-	f->f_mode = PyString_FromString(mode);
+	f->f_mode = PyBytes_FromString(mode);
 
 	f->f_close = close;
 	f->f_softspace = 0;
@@ -367,7 +367,7 @@ PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 	PyFileObject *f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type,
 							     NULL, NULL);
 	if (f != NULL) {
-		PyObject *o_name = PyString_FromString(name);
+		PyObject *o_name = PyBytes_FromString(name);
 		if (o_name == NULL)
 			return NULL;
 		if (fill_file_fields(f, fp, o_name, mode, close) == NULL) {
@@ -441,7 +441,7 @@ int
 PyFile_SetEncoding(PyObject *f, const char *enc)
 {
 	PyFileObject *file = (PyFileObject*)f;
-	PyObject *str = PyString_FromString(enc);
+	PyObject *str = PyBytes_FromString(enc);
 
 	assert(PyFile_Check(f));
 	if (!str)
@@ -502,20 +502,20 @@ file_repr(PyFileObject *f)
 #ifdef Py_USING_UNICODE
 		PyObject *ret = NULL;
 		PyObject *name = PyUnicode_AsUnicodeEscapeString(f->f_name);
-		const char *name_str = name ? PyString_AsString(name) : "?";
-		ret = PyString_FromFormat("<%s file u'%s', mode '%s' at %p>",
+		const char *name_str = name ? PyBytes_AsString(name) : "?";
+		ret = PyBytes_FromFormat("<%s file u'%s', mode '%s' at %p>",
 				   f->f_fp == NULL ? "closed" : "open",
 				   name_str,
-				   PyString_AsString(f->f_mode),
+				   PyBytes_AsString(f->f_mode),
 				   f);
 		Py_XDECREF(name);
 		return ret;
 #endif
 	} else {
-		return PyString_FromFormat("<%s file '%s', mode '%s' at %p>",
+		return PyBytes_FromFormat("<%s file '%s', mode '%s' at %p>",
 				   f->f_fp == NULL ? "closed" : "open",
-				   PyString_AsString(f->f_name),
-				   PyString_AsString(f->f_mode),
+				   PyBytes_AsString(f->f_name),
+				   PyBytes_AsString(f->f_mode),
 				   f);
 	}
 }
@@ -935,7 +935,7 @@ file_read(PyFileObject *f, PyObject *args)
 	"requested number of bytes is more than a Python string can hold");
 		return NULL;
 	}
-	v = PyString_FromStringAndSize((char *)NULL, buffersize);
+	v = PyBytes_FromStringAndSize((char *)NULL, buffersize);
 	if (v == NULL)
 		return NULL;
 	bytesread = 0;
@@ -966,7 +966,7 @@ file_read(PyFileObject *f, PyObject *args)
 		}
 		if (bytesrequested < 0) {
 			buffersize = new_buffersize(f, buffersize);
-			if (_PyString_Resize(&v, buffersize) < 0)
+			if (_PyBytes_Resize(&v, buffersize) < 0)
 				return NULL;
 		} else {
 			/* Got what was requested. */
@@ -974,7 +974,7 @@ file_read(PyFileObject *f, PyObject *args)
 		}
 	}
 	if (bytesread != buffersize)
-		_PyString_Resize(&v, bytesread);
+		_PyBytes_Resize(&v, bytesread);
 	return v;
 }
 
@@ -1092,7 +1092,7 @@ getline_via_fgets(PyFileObject *f, FILE *fp)
 	size_t increment;	/* amount to increment the buffer */
 	size_t prev_v_size;
 
-	/* Optimize for normal case:  avoid _PyString_Resize if at all
+	/* Optimize for normal case:  avoid _PyBytes_Resize if at all
 	 * possible via first reading into stack buffer "buf".
 	 */
 	total_v_size = INITBUFSIZE;	/* start small and pray */
@@ -1110,7 +1110,7 @@ getline_via_fgets(PyFileObject *f, FILE *fp)
 			clearerr(fp);
 			if (PyErr_CheckSignals())
 				return NULL;
-			v = PyString_FromStringAndSize(buf, pvfree - buf);
+			v = PyBytes_FromStringAndSize(buf, pvfree - buf);
 			return v;
 		}
 		/* fgets read *something* */
@@ -1139,7 +1139,7 @@ getline_via_fgets(PyFileObject *f, FILE *fp)
 				assert(p > pvfree && *(p-1) == '\0');
 				--p;	/* don't include \0 from fgets */
 			}
-			v = PyString_FromStringAndSize(buf, p - buf);
+			v = PyBytes_FromStringAndSize(buf, p - buf);
 			return v;
 		}
 		/* yuck:  fgets overwrote all the newlines, i.e. the entire
@@ -1160,7 +1160,7 @@ getline_via_fgets(PyFileObject *f, FILE *fp)
 	 * into its buffer.
 	 */
 	total_v_size = MAXBUFSIZE << 1;
-	v = PyString_FromStringAndSize((char*)NULL, (int)total_v_size);
+	v = PyBytes_FromStringAndSize((char*)NULL, (int)total_v_size);
 	if (v == NULL)
 		return v;
 	/* copy over everything except the last null byte */
@@ -1215,13 +1215,13 @@ getline_via_fgets(PyFileObject *f, FILE *fp)
 			Py_DECREF(v);
 			return NULL;
 		}
-		if (_PyString_Resize(&v, (int)total_v_size) < 0)
+		if (_PyBytes_Resize(&v, (int)total_v_size) < 0)
 			return NULL;
 		/* overwrite the trailing null byte */
 		pvfree = BUF(v) + (prev_v_size - 1);
 	}
 	if (BUF(v) + total_v_size != p)
-		_PyString_Resize(&v, p - BUF(v));
+		_PyBytes_Resize(&v, p - BUF(v));
 	return v;
 #undef INITBUFSIZE
 #undef MAXBUFSIZE
@@ -1253,7 +1253,7 @@ get_line(PyFileObject *f, int n)
 		return getline_via_fgets(f, fp);
 #endif
 	total_v_size = n > 0 ? n : 100;
-	v = PyString_FromStringAndSize((char *)NULL, total_v_size);
+	v = PyBytes_FromStringAndSize((char *)NULL, total_v_size);
 	if (v == NULL)
 		return NULL;
 	buf = BUF(v);
@@ -1326,7 +1326,7 @@ get_line(PyFileObject *f, int n)
 			Py_DECREF(v);
 			return NULL;
 		}
-		if (_PyString_Resize(&v, total_v_size) < 0)
+		if (_PyBytes_Resize(&v, total_v_size) < 0)
 			return NULL;
 		buf = BUF(v) + used_v_size;
 		end = BUF(v) + total_v_size;
@@ -1334,7 +1334,7 @@ get_line(PyFileObject *f, int n)
 
 	used_v_size = buf - BUF(v);
 	if (used_v_size != total_v_size)
-		_PyString_Resize(&v, used_v_size);
+		_PyBytes_Resize(&v, used_v_size);
 	return v;
 }
 
@@ -1379,7 +1379,7 @@ PyFile_GetLine(PyObject *f, int n)
 		result = PyEval_CallObject(reader, args);
 		Py_DECREF(reader);
 		Py_DECREF(args);
-		if (result != NULL && !PyString_Check(result) &&
+		if (result != NULL && !PyBytes_Check(result) &&
 		    !PyUnicode_Check(result)) {
 			Py_DECREF(result);
 			result = NULL;
@@ -1388,9 +1388,9 @@ PyFile_GetLine(PyObject *f, int n)
 		}
 	}
 
-	if (n < 0 && result != NULL && PyString_Check(result)) {
-		char *s = PyString_AS_STRING(result);
-		Py_ssize_t len = PyString_GET_SIZE(result);
+	if (n < 0 && result != NULL && PyBytes_Check(result)) {
+		char *s = PyBytes_AS_STRING(result);
+		Py_ssize_t len = PyBytes_GET_SIZE(result);
 		if (len == 0) {
 			Py_DECREF(result);
 			result = NULL;
@@ -1399,10 +1399,10 @@ PyFile_GetLine(PyObject *f, int n)
 		}
 		else if (s[len-1] == '\n') {
 			if (result->ob_refcnt == 1)
-				_PyString_Resize(&result, len-1);
+				_PyBytes_Resize(&result, len-1);
 			else {
 				PyObject *v;
-				v = PyString_FromStringAndSize(s, len-1);
+				v = PyBytes_FromStringAndSize(s, len-1);
 				Py_DECREF(result);
 				result = v;
 			}
@@ -1450,7 +1450,7 @@ file_readline(PyFileObject *f, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|i:readline", &n))
 		return NULL;
 	if (n == 0)
-		return PyString_FromString("");
+		return PyBytes_FromString("");
 	if (n < 0)
 		n = 0;
 	return get_line(f, n);
@@ -1516,18 +1516,18 @@ file_readlines(PyFileObject *f, PyObject *args)
 			}
 			if (big_buffer == NULL) {
 				/* Create the big buffer */
-				big_buffer = PyString_FromStringAndSize(
+				big_buffer = PyBytes_FromStringAndSize(
 					NULL, buffersize);
 				if (big_buffer == NULL)
 					goto error;
-				buffer = PyString_AS_STRING(big_buffer);
+				buffer = PyBytes_AS_STRING(big_buffer);
 				memcpy(buffer, small_buffer, nfilled);
 			}
 			else {
 				/* Grow the big buffer */
-				if ( _PyString_Resize(&big_buffer, buffersize) < 0 )
+				if ( _PyBytes_Resize(&big_buffer, buffersize) < 0 )
 					goto error;
-				buffer = PyString_AS_STRING(big_buffer);
+				buffer = PyBytes_AS_STRING(big_buffer);
 			}
 			continue;
 		}
@@ -1536,7 +1536,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 		do {
 			/* Process complete lines */
 			p++;
-			line = PyString_FromStringAndSize(q, p-q);
+			line = PyBytes_FromStringAndSize(q, p-q);
 			if (line == NULL)
 				goto error;
 			err = PyList_Append(list, line);
@@ -1555,7 +1555,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 	}
 	if (nfilled != 0) {
 		/* Partial last line */
-		line = PyString_FromStringAndSize(buffer, nfilled);
+		line = PyBytes_FromStringAndSize(buffer, nfilled);
 		if (line == NULL)
 			goto error;
 		if (sizehint > 0) {
@@ -1565,7 +1565,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 				Py_DECREF(line);
 				goto error;
 			}
-			PyString_Concat(&line, rest);
+			PyBytes_Concat(&line, rest);
 			Py_DECREF(rest);
 			if (line == NULL)
 				goto error;
@@ -1672,7 +1672,7 @@ file_writelines(PyFileObject *f, PyObject *seq)
 		   could potentially execute Python code. */
 		for (i = 0; i < j; i++) {
 			PyObject *v = PyList_GET_ITEM(list, i);
-			if (!PyString_Check(v)) {
+			if (!PyBytes_Check(v)) {
 			    	const char *buffer;
 				if (((f->f_binary &&
 				      PyObject_AsReadBuffer(v,
@@ -1685,7 +1685,7 @@ file_writelines(PyFileObject *f, PyObject *seq)
 			"writelines() argument must be a sequence of strings");
 					goto error;
 				}
-				line = PyString_FromStringAndSize(buffer,
+				line = PyBytes_FromStringAndSize(buffer,
 								  len);
 				if (line == NULL)
 					goto error;
@@ -1701,8 +1701,8 @@ file_writelines(PyFileObject *f, PyObject *seq)
 		errno = 0;
 		for (i = 0; i < j; i++) {
 		    	line = PyList_GET_ITEM(list, i);
-			len = PyString_GET_SIZE(line);
-			nwritten = fwrite(PyString_AS_STRING(line),
+			len = PyBytes_GET_SIZE(line);
+			nwritten = fwrite(PyBytes_AS_STRING(line),
 					  1, len, f->f_fp);
 			if (nwritten != len) {
 				FILE_ABORT_ALLOW_THREADS(f)
@@ -1896,13 +1896,13 @@ get_newlines(PyFileObject *f, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	case NEWLINE_CR:
-		return PyString_FromString("\r");
+		return PyBytes_FromString("\r");
 	case NEWLINE_LF:
-		return PyString_FromString("\n");
+		return PyBytes_FromString("\n");
 	case NEWLINE_CR|NEWLINE_LF:
 		return Py_BuildValue("(ss)", "\r", "\n");
 	case NEWLINE_CRLF:
-		return PyString_FromString("\r\n");
+		return PyBytes_FromString("\r\n");
 	case NEWLINE_CR|NEWLINE_CRLF:
 		return Py_BuildValue("(ss)", "\r", "\r\n");
 	case NEWLINE_LF|NEWLINE_CRLF:
@@ -2004,10 +2004,10 @@ readahead(PyFileObject *f, int bufsize)
    horrified by the recursive call: maximum recursion depth is limited by
    logarithmic buffer growth to about 50 even when reading a 1gb line. */
 
-static PyStringObject *
+static PyBytesObject *
 readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
 {
-	PyStringObject* s;
+	PyBytesObject* s;
 	char *bufptr;
 	char *buf;
 	Py_ssize_t len;
@@ -2018,17 +2018,17 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
 
 	len = f->f_bufend - f->f_bufptr;
 	if (len == 0)
-		return (PyStringObject *)
-			PyString_FromStringAndSize(NULL, skip);
+		return (PyBytesObject *)
+			PyBytes_FromStringAndSize(NULL, skip);
 	bufptr = (char *)memchr(f->f_bufptr, '\n', len);
 	if (bufptr != NULL) {
 		bufptr++;			/* Count the '\n' */
 		len = bufptr - f->f_bufptr;
-		s = (PyStringObject *)
-			PyString_FromStringAndSize(NULL, skip+len);
+		s = (PyBytesObject *)
+			PyBytes_FromStringAndSize(NULL, skip+len);
 		if (s == NULL)
 			return NULL;
-		memcpy(PyString_AS_STRING(s)+skip, f->f_bufptr, len);
+		memcpy(PyBytes_AS_STRING(s)+skip, f->f_bufptr, len);
 		f->f_bufptr = bufptr;
 		if (bufptr == f->f_bufend)
 			drop_readahead(f);
@@ -2043,7 +2043,7 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
 		        PyMem_Free(buf);
 			return NULL;
 		}
-		memcpy(PyString_AS_STRING(s)+skip, bufptr, len);
+		memcpy(PyBytes_AS_STRING(s)+skip, bufptr, len);
 		PyMem_Free(buf);
 	}
 	return s;
@@ -2055,13 +2055,13 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
 static PyObject *
 file_iternext(PyFileObject *f)
 {
-	PyStringObject* l;
+	PyBytesObject* l;
 
 	if (f->f_fp == NULL)
 		return err_closed();
 
 	l = readahead_get_line_skip(f, 0, READAHEAD_BUFSIZE);
-	if (l == NULL || PyString_GET_SIZE(l) == 0) {
+	if (l == NULL || PyBytes_GET_SIZE(l) == 0) {
 		Py_XDECREF(l);
 		return NULL;
 	}
@@ -2078,7 +2078,7 @@ file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	assert(type != NULL && type->tp_alloc != NULL);
 
 	if (not_yet_string == NULL) {
-		not_yet_string = PyString_InternFromString("<uninitialized file>");
+		not_yet_string = PyBytes_InternFromString("<uninitialized file>");
 		if (not_yet_string == NULL)
 			return NULL;
 	}
@@ -2294,7 +2294,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 #ifdef Py_USING_UNICODE
                 if ((flags & Py_PRINT_RAW) &&
 		    PyUnicode_Check(v) && enc != Py_None) {
-			char *cenc = PyString_AS_STRING(enc);
+			char *cenc = PyBytes_AS_STRING(enc);
 			value = PyUnicode_AsEncodedString(v, cenc, "strict");
 			if (value == NULL)
 				return -1;
@@ -2365,7 +2365,7 @@ PyFile_WriteString(const char *s, PyObject *f)
 		return 0;
 	}
 	else if (!PyErr_Occurred()) {
-		PyObject *v = PyString_FromString(s);
+		PyObject *v = PyBytes_FromString(s);
 		int err;
 		if (v == NULL)
 			return -1;

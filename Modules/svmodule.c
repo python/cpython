@@ -47,13 +47,13 @@ svc_conversion(captureobject *self, PyObject *args, void (*function)(),	float fa
 	if (!PyArg_Parse(args, "i", &invert))
 		return NULL;
 
-	if (!(output = PyString_FromStringAndSize(
+	if (!(output = PyBytes_FromStringAndSize(
 		NULL,
 		(int)(self->ob_info.width * self->ob_info.height * factor))))
 	{
 		return NULL;
 	}
-	if (!(outstr = PyString_AsString(output))) {
+	if (!(outstr = PyBytes_AsString(output))) {
 		Py_DECREF(output);
 		return NULL;
 	}
@@ -152,9 +152,9 @@ svc_GetFields(captureobject *self, PyObject *args)
 	fieldsize = self->ob_info.width * self->ob_info.height / 2;
 	obcapture = (char*)self->ob_capture;
 	
-	if (!(f1 = PyString_FromStringAndSize(obcapture, fieldsize)))
+	if (!(f1 = PyBytes_FromStringAndSize(obcapture, fieldsize)))
 		goto finally;
-	if (!(f2 = PyString_FromStringAndSize(obcapture + fieldsize,
+	if (!(f2 = PyBytes_FromStringAndSize(obcapture + fieldsize,
 					      fieldsize)))
 		goto finally;
 	ret = PyTuple_Pack(2, f1, f2);
@@ -535,12 +535,12 @@ sv_CaptureBurst(svobject *self, PyObject *args)
 		goto finally;
 	}
 
-	if (!(videodata = PyString_FromStringAndSize(NULL, bytes)))
+	if (!(videodata = PyBytes_FromStringAndSize(NULL, bytes)))
 		goto finally;
 
 	/* XXX -- need to do something about the bitvector */
 	{
-		char* str = PyString_AsString(videodata);
+		char* str = PyBytes_AsString(videodata);
 		if (!str)
 			goto finally;
 		
@@ -615,10 +615,10 @@ sv_CaptureOneFrame(svobject *self, PyObject *args)
 	if (svQueryCaptureBufferSize(self->ob_svideo, &info, &bytes))
 		return sv_error();
 
-	if (!(videodata = PyString_FromStringAndSize(NULL, bytes)))
+	if (!(videodata = PyBytes_FromStringAndSize(NULL, bytes)))
 		return NULL;
 	
-	str = PyString_AsString(videodata);
+	str = PyBytes_AsString(videodata);
 	if (!str)
 		goto finally;
 
@@ -849,11 +849,11 @@ sv_conversion(PyObject *self, PyObject *args, void (*function)(),
 		return NULL;
 	}
 
-	if (!(output = PyString_FromStringAndSize(NULL,
+	if (!(output = PyBytes_FromStringAndSize(NULL,
 					      (int)(width * height * factor))))
 		return NULL;
 
-	str = PyString_AsString(output);
+	str = PyBytes_AsString(output);
 	if (!str) {
 		Py_DECREF(output);
 		return NULL;

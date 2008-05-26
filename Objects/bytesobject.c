@@ -41,12 +41,12 @@ _getbytevalue(PyObject* arg, int *value)
             return 0;
         }
     }
-    else if (PyString_CheckExact(arg)) {
+    else if (PyBytes_CheckExact(arg)) {
         if (Py_SIZE(arg) != 1) {
             PyErr_SetString(PyExc_ValueError, "string must be of size 1");
             return 0;
         }
-        face_value = Py_CHARMASK(((PyStringObject*)arg)->ob_sval[0]);
+        face_value = Py_CHARMASK(((PyBytesObject*)arg)->ob_sval[0]);
     }
     else {
         PyErr_Format(PyExc_TypeError, "an integer or string of size 1 is required");
@@ -768,13 +768,13 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         return 0;
     }
 
-    if (PyString_Check(arg)) {
+    if (PyBytes_Check(arg)) {
         PyObject *new, *encoded;
         if (encoding != NULL) {
             encoded = PyCodec_Encode(arg, encoding, errors);
             if (encoded == NULL)
                 return -1;
-            assert(PyString_Check(encoded));
+            assert(PyBytes_Check(encoded));
         }
         else {
             encoded = arg;
@@ -799,7 +799,7 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         encoded = PyCodec_Encode(arg, encoding, errors);
         if (encoded == NULL)
             return -1;
-        assert(PyString_Check(encoded));
+        assert(PyBytes_Check(encoded));
         new = bytes_iconcat(self, encoded);
         Py_DECREF(encoded);
         if (new == NULL)
@@ -1002,7 +1002,7 @@ bytes_str(PyObject *op)
     }
     return bytes_repr((PyByteArrayObject*)op);
 #endif
-    return PyString_FromStringAndSize(((PyByteArrayObject*)op)->ob_bytes, Py_SIZE(op));
+    return PyBytes_FromStringAndSize(((PyByteArrayObject*)op)->ob_bytes, Py_SIZE(op));
 }
 
 static PyObject *
@@ -2969,7 +2969,7 @@ bytes_join(PyByteArrayObject *self, PyObject *it)
     /* XXX Shouldn't we use _getbuffer() on these items instead? */
     for (i = 0; i < n; i++) {
         PyObject *obj = items[i];
-        if (!PyByteArray_Check(obj) && !PyString_Check(obj)) {
+        if (!PyByteArray_Check(obj) && !PyBytes_Check(obj)) {
             PyErr_Format(PyExc_TypeError,
                          "can only join an iterable of bytes "
                          "(item %ld has type '%.100s')",
@@ -2998,7 +2998,7 @@ bytes_join(PyByteArrayObject *self, PyObject *it)
         if (PyByteArray_Check(obj))
            buf = PyByteArray_AS_STRING(obj);
         else
-           buf = PyString_AS_STRING(obj);
+           buf = PyBytes_AS_STRING(obj);
         if (i) {
             memcpy(dest, self->ob_bytes, mysize);
             dest += mysize;

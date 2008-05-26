@@ -303,7 +303,7 @@ PyComplex_AsCComplex(PyObject *op)
 	cv.imag = 0.;
 
 	if (complex_str == NULL) {
-		if (!(complex_str = PyString_InternFromString("__complex__")))
+		if (!(complex_str = PyBytes_InternFromString("__complex__")))
 			return cv;
 	}
 	
@@ -421,7 +421,7 @@ complex_repr(PyComplexObject *v)
 {
 	char buf[100];
 	complex_to_buf(buf, sizeof(buf), v, PREC_REPR);
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 static PyObject *
@@ -429,7 +429,7 @@ complex_str(PyComplexObject *v)
 {
 	char buf[100];
 	complex_to_buf(buf, sizeof(buf), v, PREC_STR);
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 static long
@@ -876,9 +876,9 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 #endif
 	Py_ssize_t len;
 
-	if (PyString_Check(v)) {
-		s = PyString_AS_STRING(v);
-		len = PyString_GET_SIZE(v);
+	if (PyBytes_Check(v)) {
+		s = PyBytes_AS_STRING(v);
+		len = PyBytes_GET_SIZE(v);
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
@@ -1064,7 +1064,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_INCREF(r);
 		return r;
 	}
-	if (PyString_Check(r) || PyUnicode_Check(r)) {
+	if (PyBytes_Check(r) || PyUnicode_Check(r)) {
 		if (i != NULL) {
 			PyErr_SetString(PyExc_TypeError,
 					"complex() can't take second arg"
@@ -1073,7 +1073,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 		return complex_subtype_from_string(type, r);
 	}
-	if (i != NULL && (PyString_Check(i) || PyUnicode_Check(i))) {
+	if (i != NULL && (PyBytes_Check(i) || PyUnicode_Check(i))) {
 		PyErr_SetString(PyExc_TypeError,
 				"complex() second arg can't be a string");
 		return NULL;
@@ -1081,7 +1081,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	/* XXX Hack to support classes with __complex__ method */
 	if (complexstr == NULL) {
-		complexstr = PyString_InternFromString("__complex__");
+		complexstr = PyBytes_InternFromString("__complex__");
 		if (complexstr == NULL)
 			return NULL;
 	}

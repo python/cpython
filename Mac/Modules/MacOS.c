@@ -77,17 +77,17 @@ rf_read(rfobject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l", &n))
 		return NULL;
 		
-	v = PyString_FromStringAndSize((char *)NULL, n);
+	v = PyBytes_FromStringAndSize((char *)NULL, n);
 	if (v == NULL)
 		return NULL;
 		
-	err = FSRead(self->fRefNum, &n, PyString_AsString(v));
+	err = FSRead(self->fRefNum, &n, PyBytes_AsString(v));
 	if (err && err != eofErr) {
 		PyMac_Error(err);
 		Py_DECREF(v);
 		return NULL;
 	}
-	_PyString_Resize(&v, n);
+	_PyBytes_Resize(&v, n);
 	return v;
 }
 
@@ -301,8 +301,8 @@ MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
 		return NULL;
 	if ((err = FSpGetFInfo(&fss, &info)) != noErr)
 		return PyErr_Mac(MacOS_Error, err);
-	creator = PyString_FromStringAndSize((char *)&info.fdCreator, 4);
-	type = PyString_FromStringAndSize((char *)&info.fdType, 4);
+	creator = PyBytes_FromStringAndSize((char *)&info.fdCreator, 4);
+	type = PyBytes_FromStringAndSize((char *)&info.fdType, 4);
 	res = Py_BuildValue("OO", creator, type);
 	Py_DECREF(creator);
 	Py_DECREF(type);
@@ -623,7 +623,7 @@ initMacOS(void)
 	** some of the image and sound processing interfaces on the mac:-(
 	*/
 	{
-		PyStringObject *p = 0;
+		PyBytesObject *p = 0;
 		long off = (long)&(p->ob_sval[0]);
 		
 		if( PyDict_SetItemString(d, "string_id_to_buffer", Py_BuildValue("i", off)) != 0)

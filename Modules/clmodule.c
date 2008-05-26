@@ -111,7 +111,7 @@ cl_CompressImage(PyObject *self, PyObject *args)
 		return NULL;
 
   retry:
-	compressedBuffer = PyString_FromStringAndSize(NULL, frameBufferSize);
+	compressedBuffer = PyBytes_FromStringAndSize(NULL, frameBufferSize);
 	if (compressedBuffer == NULL)
 		return NULL;
 
@@ -120,7 +120,7 @@ cl_CompressImage(PyObject *self, PyObject *args)
 	if (clCompressImage(compressionScheme, width, height, originalFormat,
 			    compressionRatio, (void *) frameBuffer,
 			    &compressedBufferSize,
-			    (void *) PyString_AsString(compressedBuffer))
+			    (void *) PyBytes_AsString(compressedBuffer))
 	    == FAILURE || error_handler_called) {
 		Py_DECREF(compressedBuffer);
 		if (!error_handler_called)
@@ -135,7 +135,7 @@ cl_CompressImage(PyObject *self, PyObject *args)
 	}
 
 	if (compressedBufferSize < frameBufferSize)
-		_PyString_Resize(&compressedBuffer, compressedBufferSize);
+		_PyBytes_Resize(&compressedBuffer, compressedBufferSize);
 
 	return compressedBuffer;
 }
@@ -155,14 +155,14 @@ cl_DecompressImage(PyObject *self, PyObject *args)
 
 	frameBufferSize = width * height * CL_BytesPerPixel(originalFormat);
 
-	frameBuffer = PyString_FromStringAndSize(NULL, frameBufferSize);
+	frameBuffer = PyBytes_FromStringAndSize(NULL, frameBufferSize);
 	if (frameBuffer == NULL)
 		return NULL;
 
 	error_handler_called = 0;
 	if (clDecompressImage(compressionScheme, width, height, originalFormat,
 			      compressedBufferSize, compressedBuffer,
-			      (void *) PyString_AsString(frameBuffer))
+			      (void *) PyBytes_AsString(frameBuffer))
 	    == FAILURE || error_handler_called) {
 		Py_DECREF(frameBuffer);
 		if (!error_handler_called)
@@ -236,14 +236,14 @@ clm_Compress(PyObject *self, PyObject *args)
 	if (error_handler_called)
 		return NULL;
 
-	data = PyString_FromStringAndSize(NULL, size);
+	data = PyBytes_FromStringAndSize(NULL, size);
 	if (data == NULL)
 		return NULL;
 
 	error_handler_called = 0;
 	if (clCompress(SELF->ob_compressorHdl, numberOfFrames,
 		       (void *) frameBuffer, &compressedBufferSize,
-		       (void *) PyString_AsString(data)) == FAILURE ||
+		       (void *) PyBytes_AsString(data)) == FAILURE ||
 	    error_handler_called) {
 		Py_DECREF(data);
 		if (!error_handler_called)
@@ -252,7 +252,7 @@ clm_Compress(PyObject *self, PyObject *args)
 	}
 
 	if (compressedBufferSize < size)
-		if (_PyString_Resize(&data, compressedBufferSize))
+		if (_PyBytes_Resize(&data, compressedBufferSize))
 			return NULL;
 
 	if (compressedBufferSize > size) {
@@ -285,14 +285,14 @@ clm_Decompress(PyObject *self, PyObject *args)
 	if (error_handler_called)
 		return NULL;
 
-	data = PyString_FromStringAndSize(NULL, dataSize);
+	data = PyBytes_FromStringAndSize(NULL, dataSize);
 	if (data == NULL)
 		return NULL;
 
 	error_handler_called = 0;
 	if (clDecompress(SELF->ob_compressorHdl, numberOfFrames,
 			 compressedDataSize, (void *) compressedData,
-			 (void *) PyString_AsString(data)) == FAILURE ||
+			 (void *) PyBytes_AsString(data)) == FAILURE ||
 	    error_handler_called) {
 		Py_DECREF(data);
 		if (!error_handler_called)
@@ -514,7 +514,7 @@ clm_QueryParams(PyObject *self)
 			PyList_SetItem(list, i, Py_None);
 		} else
 			PyList_SetItem(list, i,
-				   PyString_FromString((char *) PVbuffer[i]));
+				   PyBytes_FromString((char *) PVbuffer[i]));
 	}
 
 	PyMem_DEL(PVbuffer);
@@ -563,7 +563,7 @@ clm_GetName(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return PyString_FromString(name);
+	return PyBytes_FromString(name);
 }
 
 static PyObject *
@@ -775,7 +775,7 @@ cl_QueryAlgorithms(PyObject *self, PyObject *args)
 			PyList_SetItem(list, i, Py_None);
 		} else
 			PyList_SetItem(list, i,
-				   PyString_FromString((char *) PVbuffer[i]));
+				   PyBytes_FromString((char *) PVbuffer[i]));
 	}
 
 	PyMem_DEL(PVbuffer);
@@ -818,7 +818,7 @@ cl_GetAlgorithmName(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return PyString_FromString(name);
+	return PyBytes_FromString(name);
 }
 
 static PyObject *

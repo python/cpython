@@ -450,7 +450,7 @@ Py_Finalize(void)
 	PyTuple_Fini();
 	PyList_Fini();
 	PySet_Fini();
-	PyString_Fini();
+	PyBytes_Fini();
 	PyByteArray_Fini();
 	PyInt_Fini();
 	PyFloat_Fini();
@@ -699,12 +699,12 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 	}
 	v = PySys_GetObject("ps1");
 	if (v == NULL) {
-		PySys_SetObject("ps1", v = PyString_FromString(">>> "));
+		PySys_SetObject("ps1", v = PyBytes_FromString(">>> "));
 		Py_XDECREF(v);
 	}
 	v = PySys_GetObject("ps2");
 	if (v == NULL) {
-		PySys_SetObject("ps2", v = PyString_FromString("... "));
+		PySys_SetObject("ps2", v = PyBytes_FromString("... "));
 		Py_XDECREF(v);
 	}
 	for (;;) {
@@ -751,16 +751,16 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 		v = PyObject_Str(v);
 		if (v == NULL)
 			PyErr_Clear();
-		else if (PyString_Check(v))
-			ps1 = PyString_AsString(v);
+		else if (PyBytes_Check(v))
+			ps1 = PyBytes_AsString(v);
 	}
 	w = PySys_GetObject("ps2");
 	if (w != NULL) {
 		w = PyObject_Str(w);
 		if (w == NULL)
 			PyErr_Clear();
-		else if (PyString_Check(w))
-			ps2 = PyString_AsString(w);
+		else if (PyBytes_Check(w))
+			ps2 = PyBytes_AsString(w);
 	}
 	arena = PyArena_New();
 	if (arena == NULL) {
@@ -853,7 +853,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 		return -1;
 	d = PyModule_GetDict(m);
 	if (PyDict_GetItemString(d, "__file__") == NULL) {
-		PyObject *f = PyString_FromString(filename);
+		PyObject *f = PyBytes_FromString(filename);
 		if (f == NULL)
 			return -1;
 		if (PyDict_SetItemString(d, "__file__", f) < 0) {
@@ -937,7 +937,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 		goto finally;
 	if (v == Py_None)
 		*filename = NULL;
-	else if (! (*filename = PyString_AsString(v)))
+	else if (! (*filename = PyBytes_AsString(v)))
 		goto finally;
 
 	Py_DECREF(v);
@@ -969,7 +969,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 		goto finally;
 	if (v == Py_None)
 		*text = NULL;
-	else if (! (*text = PyString_AsString(v)))
+	else if (! (*text = PyBytes_AsString(v)))
 		goto finally;
 	Py_DECREF(v);
 	return 1;
@@ -1192,7 +1192,7 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 			if (moduleName == NULL)
 				err = PyFile_WriteString("<unknown>", f);
 			else {
-				char* modstr = PyString_AsString(moduleName);
+				char* modstr = PyBytes_AsString(moduleName);
 				if (modstr && strcmp(modstr, "exceptions"))
 				{
 					err = PyFile_WriteString(modstr, f);
@@ -1216,8 +1216,8 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 			*/
 			if (s == NULL)
 				err = -1;
-			else if (!PyString_Check(s) ||
-				 PyString_GET_SIZE(s) != 0)
+			else if (!PyBytes_Check(s) ||
+				 PyBytes_GET_SIZE(s) != 0)
 				err = PyFile_WriteString(": ", f);
 			if (err == 0)
 			  err = PyFile_WriteObject(s, f, Py_PRINT_RAW);
@@ -1536,7 +1536,7 @@ err_input(perrdetail *err)
 		if (value != NULL) {
 			u = PyObject_Str(value);
 			if (u != NULL) {
-				msg = PyString_AsString(u);
+				msg = PyBytes_AsString(u);
 			}
 		}
 		if (msg == NULL)

@@ -146,7 +146,7 @@ PyCF_CF2Python_string(CFStringRef src) {
 int
 PyCF_Python2CF(PyObject *src, CFTypeRef *dst) {
 
-	if (PyString_Check(src) || PyUnicode_Check(src))
+	if (PyBytes_Check(src) || PyUnicode_Check(src))
 		return PyCF_Python2CF_simple(src, dst);
 	if (PySequence_Check(src))
 		return PyCF_Python2CF_sequence(src, (CFArrayRef *)dst);
@@ -249,7 +249,7 @@ PyCF_Python2CF_simple(PyObject *src, CFTypeRef *dst) {
 		return (*dst != NULL);
 	}
 #endif
-	if (PyString_Check(src) || PyUnicode_Check(src)) 
+	if (PyBytes_Check(src) || PyUnicode_Check(src)) 
 		return PyCF_Python2CF_string(src, (CFStringRef *)dst);
 	if (PyBool_Check(src)) {
 		if (src == Py_True)
@@ -281,7 +281,7 @@ PyCF_Python2CF_string(PyObject *src, CFStringRef *dst) {
 	CFIndex size;
 	UniChar *unichars;
 	
-	if (PyString_Check(src)) {
+	if (PyBytes_Check(src)) {
 		if (!PyArg_Parse(src, "es", "ascii", &chars))
 			return 0; /* This error is more descriptive than the general one below */
 		*dst = CFStringCreateWithCString((CFAllocatorRef)NULL, chars, kCFStringEncodingASCII);

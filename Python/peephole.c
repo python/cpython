@@ -300,15 +300,15 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 		goto exitUnchanged;
 
 	/* Bypass optimization when the lineno table is too complex */
-	assert(PyString_Check(lineno_obj));
-	lineno = (unsigned char*)PyString_AS_STRING(lineno_obj);
-	tabsiz = PyString_GET_SIZE(lineno_obj);
+	assert(PyBytes_Check(lineno_obj));
+	lineno = (unsigned char*)PyBytes_AS_STRING(lineno_obj);
+	tabsiz = PyBytes_GET_SIZE(lineno_obj);
 	if (memchr(lineno, 255, tabsiz) != NULL)
 		goto exitUnchanged;
 
 	/* Avoid situations where jump retargeting could overflow */
-	assert(PyString_Check(code));
-	codelen = PyString_GET_SIZE(code);
+	assert(PyBytes_Check(code));
+	codelen = PyBytes_GET_SIZE(code);
 	if (codelen > 32700)
 		goto exitUnchanged;
 
@@ -317,7 +317,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 	if (codestr == NULL)
 		goto exitUnchanged;
 	codestr = (unsigned char *)memcpy(codestr, 
-					  PyString_AS_STRING(code), codelen);
+					  PyBytes_AS_STRING(code), codelen);
 
 	/* Verify that RETURN_VALUE terminates the codestring.	This allows
 	   the various transformation patterns to look ahead several
@@ -382,7 +382,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 			case LOAD_NAME:
 			case LOAD_GLOBAL:
 				j = GETARG(codestr, i);
-				name = PyString_AsString(PyTuple_GET_ITEM(names, j));
+				name = PyBytes_AsString(PyTuple_GET_ITEM(names, j));
 				if (name == NULL  ||  strcmp(name, "None") != 0)
 					continue;
 				for (j=0 ; j < PyList_GET_SIZE(consts) ; j++) {
@@ -612,7 +612,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 	}
 	assert(h + nops == codelen);
 
-	code = PyString_FromStringAndSize((char *)codestr, h);
+	code = PyBytes_FromStringAndSize((char *)codestr, h);
 	PyMem_Free(addrmap);
 	PyMem_Free(codestr);
 	PyMem_Free(blocks);

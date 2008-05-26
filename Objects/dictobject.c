@@ -224,7 +224,7 @@ PyDict_New(void)
 {
 	register PyDictObject *mp;
 	if (dummy == NULL) { /* Auto-initialize dummy */
-		dummy = PyString_FromString("<dummy key>");
+		dummy = PyBytes_FromString("<dummy key>");
 		if (dummy == NULL)
 			return NULL;
 #ifdef SHOW_CONVERSION_COUNTS
@@ -373,7 +373,7 @@ lookdict(PyDictObject *mp, PyObject *key, register long hash)
  * this assumption allows testing for errors during PyObject_RichCompareBool()
  * to be dropped; string-string comparisons never raise exceptions.  This also
  * means we don't need to go through PyObject_RichCompareBool(); we can always
- * use _PyString_Eq() directly.
+ * use _PyBytes_Eq() directly.
  *
  * This is valuable because dicts with only string keys are very common.
  */
@@ -391,7 +391,7 @@ lookdict_string(PyDictObject *mp, PyObject *key, register long hash)
 	   including subclasses of str; e.g., one reason to subclass
 	   strings is to override __eq__, and for speed we don't cater to
 	   that here. */
-	if (!PyString_CheckExact(key)) {
+	if (!PyBytes_CheckExact(key)) {
 #ifdef SHOW_CONVERSION_COUNTS
 		++converted;
 #endif
@@ -405,7 +405,7 @@ lookdict_string(PyDictObject *mp, PyObject *key, register long hash)
 	if (ep->me_key == dummy)
 		freeslot = ep;
 	else {
-		if (ep->me_hash == hash && _PyString_Eq(ep->me_key, key))
+		if (ep->me_hash == hash && _PyBytes_Eq(ep->me_key, key))
 			return ep;
 		freeslot = NULL;
 	}
@@ -420,7 +420,7 @@ lookdict_string(PyDictObject *mp, PyObject *key, register long hash)
 		if (ep->me_key == key
 		    || (ep->me_hash == hash
 		        && ep->me_key != dummy
-			&& _PyString_Eq(ep->me_key, key)))
+			&& _PyBytes_Eq(ep->me_key, key)))
 			return ep;
 		if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
@@ -626,8 +626,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	PyThreadState *tstate;
 	if (!PyDict_Check(op))
 		return NULL;
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1)
 	{
 		hash = PyObject_Hash(key);
 		if (hash == -1) {
@@ -680,8 +680,8 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	assert(key);
 	assert(value);
 	mp = (PyDictObject *)op;
-	if (PyString_CheckExact(key)) {
-		hash = ((PyStringObject *)key)->ob_shash;
+	if (PyBytes_CheckExact(key)) {
+		hash = ((PyBytesObject *)key)->ob_shash;
 		if (hash == -1)
 			hash = PyObject_Hash(key);
 	}
@@ -728,8 +728,8 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 		return -1;
 	}
 	assert(key);
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -982,11 +982,11 @@ dict_repr(PyDictObject *mp)
 
 	i = Py_ReprEnter((PyObject *)mp);
 	if (i != 0) {
-		return i > 0 ? PyString_FromString("{...}") : NULL;
+		return i > 0 ? PyBytes_FromString("{...}") : NULL;
 	}
 
 	if (mp->ma_used == 0) {
-		result = PyString_FromString("{}");
+		result = PyBytes_FromString("{}");
 		goto Done;
 	}
 
@@ -994,7 +994,7 @@ dict_repr(PyDictObject *mp)
 	if (pieces == NULL)
 		goto Done;
 
-	colon = PyString_FromString(": ");
+	colon = PyBytes_FromString(": ");
 	if (colon == NULL)
 		goto Done;
 
@@ -1006,8 +1006,8 @@ dict_repr(PyDictObject *mp)
 		/* Prevent repr from deleting value during key format. */
 		Py_INCREF(value);
 		s = PyObject_Repr(key);
-		PyString_Concat(&s, colon);
-		PyString_ConcatAndDel(&s, PyObject_Repr(value));
+		PyBytes_Concat(&s, colon);
+		PyBytes_ConcatAndDel(&s, PyObject_Repr(value));
 		Py_DECREF(value);
 		if (s == NULL)
 			goto Done;
@@ -1019,29 +1019,29 @@ dict_repr(PyDictObject *mp)
 
 	/* Add "{}" decorations to the first and last items. */
 	assert(PyList_GET_SIZE(pieces) > 0);
-	s = PyString_FromString("{");
+	s = PyBytes_FromString("{");
 	if (s == NULL)
 		goto Done;
 	temp = PyList_GET_ITEM(pieces, 0);
-	PyString_ConcatAndDel(&s, temp);
+	PyBytes_ConcatAndDel(&s, temp);
 	PyList_SET_ITEM(pieces, 0, s);
 	if (s == NULL)
 		goto Done;
 
-	s = PyString_FromString("}");
+	s = PyBytes_FromString("}");
 	if (s == NULL)
 		goto Done;
 	temp = PyList_GET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1);
-	PyString_ConcatAndDel(&temp, s);
+	PyBytes_ConcatAndDel(&temp, s);
 	PyList_SET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1, temp);
 	if (temp == NULL)
 		goto Done;
 
 	/* Paste them all together with ", " between. */
-	s = PyString_FromString(", ");
+	s = PyBytes_FromString(", ");
 	if (s == NULL)
 		goto Done;
-	result = _PyString_Join(s, pieces);
+	result = _PyBytes_Join(s, pieces);
 	Py_DECREF(s);
 
 Done:
@@ -1064,8 +1064,8 @@ dict_subscript(PyDictObject *mp, register PyObject *key)
 	long hash;
 	PyDictEntry *ep;
 	assert(mp->ma_table != NULL);
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1081,7 +1081,7 @@ dict_subscript(PyDictObject *mp, register PyObject *key)
 			static PyObject *missing_str = NULL;
 			if (missing_str == NULL)
 				missing_str =
-				  PyString_InternFromString("__missing__");
+				  PyBytes_InternFromString("__missing__");
 			missing = _PyType_Lookup(Py_TYPE(mp), missing_str);
 			if (missing != NULL)
 				return PyObject_CallFunctionObjArgs(missing,
@@ -1794,8 +1794,8 @@ dict_contains(register PyDictObject *mp, PyObject *key)
 	long hash;
 	PyDictEntry *ep;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1827,8 +1827,8 @@ dict_get(register PyDictObject *mp, PyObject *args)
 	if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &failobj))
 		return NULL;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1856,8 +1856,8 @@ dict_setdefault(register PyDictObject *mp, PyObject *args)
 	if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &failobj))
 		return NULL;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1902,8 +1902,8 @@ dict_pop(PyDictObject *mp, PyObject *args)
 				"pop(): dictionary is empty");
 		return NULL;
 	}
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -2133,8 +2133,8 @@ PyDict_Contains(PyObject *op, PyObject *key)
 	PyDictObject *mp = (PyDictObject *)op;
 	PyDictEntry *ep;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -2260,7 +2260,7 @@ PyObject *
 PyDict_GetItemString(PyObject *v, const char *key)
 {
 	PyObject *kv, *rv;
-	kv = PyString_FromString(key);
+	kv = PyBytes_FromString(key);
 	if (kv == NULL)
 		return NULL;
 	rv = PyDict_GetItem(v, kv);
@@ -2273,10 +2273,10 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
 {
 	PyObject *kv;
 	int err;
-	kv = PyString_FromString(key);
+	kv = PyBytes_FromString(key);
 	if (kv == NULL)
 		return -1;
-	PyString_InternInPlace(&kv); /* XXX Should we really? */
+	PyBytes_InternInPlace(&kv); /* XXX Should we really? */
 	err = PyDict_SetItem(v, kv, item);
 	Py_DECREF(kv);
 	return err;
@@ -2287,7 +2287,7 @@ PyDict_DelItemString(PyObject *v, const char *key)
 {
 	PyObject *kv;
 	int err;
-	kv = PyString_FromString(key);
+	kv = PyBytes_FromString(key);
 	if (kv == NULL)
 		return -1;
 	err = PyDict_DelItem(v, kv);

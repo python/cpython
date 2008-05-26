@@ -375,12 +375,12 @@ convertenviron(void)
 		char *p = strchr(*e, '=');
 		if (p == NULL)
 			continue;
-		k = PyString_FromStringAndSize(*e, (int)(p-*e));
+		k = PyBytes_FromStringAndSize(*e, (int)(p-*e));
 		if (k == NULL) {
 			PyErr_Clear();
 			continue;
 		}
-		v = PyString_FromString(p+1);
+		v = PyBytes_FromString(p+1);
 		if (v == NULL) {
 			PyErr_Clear();
 			Py_DECREF(k);
@@ -400,13 +400,13 @@ convertenviron(void)
 
         rc = DosQueryExtLIBPATH(buffer, BEGIN_LIBPATH);
 	if (rc == NO_ERROR) { /* (not a type, envname is NOT 'BEGIN_LIBPATH') */
-            PyObject *v = PyString_FromString(buffer);
+            PyObject *v = PyBytes_FromString(buffer);
 		    PyDict_SetItemString(d, "BEGINLIBPATH", v);
             Py_DECREF(v);
         }
         rc = DosQueryExtLIBPATH(buffer, END_LIBPATH);
         if (rc == NO_ERROR) { /* (not a typo, envname is NOT 'END_LIBPATH') */
-            PyObject *v = PyString_FromString(buffer);
+            PyObject *v = PyBytes_FromString(buffer);
 		    PyDict_SetItemString(d, "ENDLIBPATH", v);
             Py_DECREF(v);
         }
@@ -1598,7 +1598,7 @@ posix_ttyname(PyObject *self, PyObject *args)
 #endif
 	if (ret == NULL)
 		return posix_error();
-	return PyString_FromString(ret);
+	return PyBytes_FromString(ret);
 }
 #endif
 
@@ -1620,7 +1620,7 @@ posix_ctermid(PyObject *self, PyObject *noargs)
 #endif
 	if (ret == NULL)
 		return posix_error();
-	return PyString_FromString(buffer);
+	return PyBytes_FromString(buffer);
 }
 #endif
 
@@ -1968,7 +1968,7 @@ posix_getcwd(PyObject *self, PyObject *noargs)
 	Py_END_ALLOW_THREADS
 	if (res == NULL)
 		return posix_error();
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 #ifdef Py_USING_UNICODE
@@ -2174,7 +2174,7 @@ posix_listdir(PyObject *self, PyObject *args)
 		/* Skip over . and .. */
 		if (strcmp(FileData.cFileName, ".") != 0 &&
 		    strcmp(FileData.cFileName, "..") != 0) {
-			v = PyString_FromString(FileData.cFileName);
+			v = PyBytes_FromString(FileData.cFileName);
 			if (v == NULL) {
 				Py_DECREF(d);
 				d = NULL;
@@ -2262,7 +2262,7 @@ posix_listdir(PyObject *self, PyObject *args)
             /* Leave Case of Name Alone -- In Native Form */
             /* (Removed Forced Lowercasing Code) */
 
-            v = PyString_FromString(namebuf);
+            v = PyBytes_FromString(namebuf);
             if (v == NULL) {
                 Py_DECREF(d);
                 d = NULL;
@@ -2312,7 +2312,7 @@ posix_listdir(PyObject *self, PyObject *args)
 		    (NAMLEN(ep) == 1 ||
 		     (ep->d_name[1] == '.' && NAMLEN(ep) == 2)))
 			continue;
-		v = PyString_FromStringAndSize(ep->d_name, NAMLEN(ep));
+		v = PyBytes_FromStringAndSize(ep->d_name, NAMLEN(ep));
 		if (v == NULL) {
 			Py_DECREF(d);
 			d = NULL;
@@ -2397,7 +2397,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 		return PyUnicode_Decode(outbuf, strlen(outbuf),
 			Py_FileSystemDefaultEncoding, NULL);
 	}
-	return PyString_FromString(outbuf);
+	return PyBytes_FromString(outbuf);
 } /* end of posix__getfullpathname */
 #endif /* MS_WINDOWS */
 
@@ -3062,7 +3062,7 @@ posix_execve(PyObject *self, PyObject *args)
         /* Omit Pseudo-Env Vars that Would Confuse Programs if Passed On */
         if (stricmp(k, "BEGINLIBPATH") != 0 && stricmp(k, "ENDLIBPATH") != 0) {
 #endif
-		len = PyString_Size(key) + PyString_Size(val) + 2;
+		len = PyBytes_Size(key) + PyBytes_Size(val) + 2;
 		p = PyMem_NEW(char, len);
 		if (p == NULL) {
 			PyErr_NoMemory();
@@ -3292,7 +3292,7 @@ posix_spawnve(PyObject *self, PyObject *args)
 		{
 			goto fail_2;
 		}
-		len = PyString_Size(key) + PyString_Size(val) + 2;
+		len = PyBytes_Size(key) + PyBytes_Size(val) + 2;
 		p = PyMem_NEW(char, len);
 		if (p == NULL) {
 			PyErr_NoMemory();
@@ -3525,7 +3525,7 @@ posix_spawnvpe(PyObject *self, PyObject *args)
 		{
 			goto fail_2;
 		}
-		len = PyString_Size(key) + PyString_Size(val) + 2;
+		len = PyBytes_Size(key) + PyBytes_Size(val) + 2;
 		p = PyMem_NEW(char, len);
 		if (p == NULL) {
 			PyErr_NoMemory();
@@ -3895,7 +3895,7 @@ posix_getlogin(PyObject *self, PyObject *noargs)
                                 "unable to determine login name");
         }
         else
-            result = PyString_FromString(name);
+            result = PyBytes_FromString(name);
         errno = old_errno;
 
     return result;
@@ -5884,7 +5884,7 @@ posix_readlink(PyObject *self, PyObject *args)
 		return posix_error_with_allocated_filename(path);
 
 	PyMem_Free(path);
-	v = PyString_FromStringAndSize(buf, n);
+	v = PyBytes_FromStringAndSize(buf, n);
 #ifdef Py_USING_UNICODE
 	if (arg_is_unicode) {
 		PyObject *w;
@@ -6289,18 +6289,18 @@ posix_read(PyObject *self, PyObject *args)
 		errno = EINVAL;
 		return posix_error();
 	}
-	buffer = PyString_FromStringAndSize((char *)NULL, size);
+	buffer = PyBytes_FromStringAndSize((char *)NULL, size);
 	if (buffer == NULL)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	n = read(fd, PyString_AsString(buffer), size);
+	n = read(fd, PyBytes_AsString(buffer), size);
 	Py_END_ALLOW_THREADS
 	if (n < 0) {
 		Py_DECREF(buffer);
 		return posix_error();
 	}
 	if (n != size)
-		_PyString_Resize(&buffer, n);
+		_PyBytes_Resize(&buffer, n);
 	return buffer;
 }
 
@@ -6647,11 +6647,11 @@ posix_putenv(PyObject *self, PyObject *args)
 	/* XXX This can leak memory -- not easy to fix :-( */
 	len = strlen(s1) + strlen(s2) + 2;
 	/* len includes space for a trailing \0; the size arg to
-	   PyString_FromStringAndSize does not count that */
-	newstr = PyString_FromStringAndSize(NULL, (int)len - 1);
+	   PyBytes_FromStringAndSize does not count that */
+	newstr = PyBytes_FromStringAndSize(NULL, (int)len - 1);
 	if (newstr == NULL)
 		return PyErr_NoMemory();
-	newenv = PyString_AS_STRING(newstr);
+	newenv = PyBytes_AS_STRING(newstr);
 	PyOS_snprintf(newenv, len, "%s=%s", s1, s2);
 	if (putenv(newenv)) {
                 Py_DECREF(newstr);
@@ -6727,7 +6727,7 @@ posix_strerror(PyObject *self, PyObject *args)
 				"strerror() argument out of range");
 		return NULL;
 	}
-	return PyString_FromString(message);
+	return PyBytes_FromString(message);
 }
 
 
@@ -7009,7 +7009,7 @@ posix_tempnam(PyObject *self, PyObject *args)
 #endif
     if (name == NULL)
         return PyErr_NoMemory();
-    result = PyString_FromString(name);
+    result = PyBytes_FromString(name);
     free(name);
     return result;
 }
@@ -7066,7 +7066,7 @@ posix_tmpnam(PyObject *self, PyObject *noargs)
 	Py_XDECREF(err);
 	return NULL;
     }
-    return PyString_FromString(buffer);
+    return PyBytes_FromString(buffer);
 }
 #endif
 
@@ -7095,13 +7095,13 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
         *valuep = PyInt_AS_LONG(arg);
         return 1;
     }
-    if (PyString_Check(arg)) {
+    if (PyBytes_Check(arg)) {
         /* look up the value in the table using a binary search */
         size_t lo = 0;
 		size_t mid;
         size_t hi = tablesize;
         int cmp;
-        char *confname = PyString_AS_STRING(arg);
+        char *confname = PyBytes_AS_STRING(arg);
         while (lo < hi) {
             mid = (lo + hi) / 2;
             cmp = strcmp(confname, table[mid].name);
@@ -7431,12 +7431,12 @@ posix_confstr(PyObject *self, PyObject *args)
         }
         else {
 	    if ((unsigned int)len >= sizeof(buffer)) {
-                result = PyString_FromStringAndSize(NULL, len-1);
+                result = PyBytes_FromStringAndSize(NULL, len-1);
                 if (result != NULL)
-                    confstr(name, PyString_AS_STRING(result), len);
+                    confstr(name, PyBytes_AS_STRING(result), len);
             }
             else
-                result = PyString_FromStringAndSize(buffer, len-1);
+                result = PyBytes_FromStringAndSize(buffer, len-1);
         }
     }
     return result;
@@ -8225,11 +8225,11 @@ win32_urandom(PyObject *self, PyObject *args)
 	}
 
 	/* Allocate bytes */
-	result = PyString_FromStringAndSize(NULL, howMany);
+	result = PyBytes_FromStringAndSize(NULL, howMany);
 	if (result != NULL) {
 		/* Get random data */
 		if (! pCryptGenRandom(hCryptProv, howMany, (unsigned char*)
-				      PyString_AS_STRING(result))) {
+				      PyBytes_AS_STRING(result))) {
 			Py_DECREF(result);
 			return win32_error("CryptGenRandom", NULL);
 		}
@@ -8259,11 +8259,11 @@ vms_urandom(PyObject *self, PyObject *args)
 				    "negative argument not allowed");
 
 	/* Allocate bytes */
-	result = PyString_FromStringAndSize(NULL, howMany);
+	result = PyBytes_FromStringAndSize(NULL, howMany);
 	if (result != NULL) {
 		/* Get random data */
 		if (RAND_pseudo_bytes((unsigned char*)
-				      PyString_AS_STRING(result),
+				      PyBytes_AS_STRING(result),
 				      howMany) < 0) {
 			Py_DECREF(result);
 			return PyErr_Format(PyExc_ValueError,

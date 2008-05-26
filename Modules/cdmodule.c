@@ -239,19 +239,19 @@ CD_readda(cdplayerobject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:readda", &numframes))
 		return NULL;
 
-	result = PyString_FromStringAndSize(NULL, numframes * sizeof(CDFRAME));
+	result = PyBytes_FromStringAndSize(NULL, numframes * sizeof(CDFRAME));
 	if (result == NULL)
 		return NULL;
 
 	n = CDreadda(self->ob_cdplayer,
-		       (CDFRAME *) PyString_AsString(result), numframes);
+		       (CDFRAME *) PyBytes_AsString(result), numframes);
 	if (n == -1) {
 		Py_DECREF(result);
 		PyErr_SetFromErrno(CdError);
 		return NULL;
 	}
 	if (n < numframes)
-		_PyString_Resize(&result, n * sizeof(CDFRAME));
+		_PyBytes_Resize(&result, n * sizeof(CDFRAME));
 
 	return result;
 }
@@ -468,7 +468,7 @@ CD_callback(void *arg, CDDATATYPES type, void *data)
 	PyTuple_SetItem(args, 1, PyInt_FromLong((long) type));
 	switch (type) {
 	case cd_audio:
-		v = PyString_FromStringAndSize(data, CDDA_DATASIZE);
+		v = PyBytes_FromStringAndSize(data, CDDA_DATASIZE);
 		break;
 	case cd_pnum:
 	case cd_index:
@@ -484,15 +484,15 @@ CD_callback(void *arg, CDDATATYPES type, void *data)
 #undef ptr
 		break;
 	case cd_catalog:
-		v = PyString_FromStringAndSize(NULL, 13);
-		p = PyString_AsString(v);
+		v = PyBytes_FromStringAndSize(NULL, 13);
+		p = PyBytes_AsString(v);
 		for (i = 0; i < 13; i++)
 			*p++ = ((char *) data)[i] + '0';
 		break;
 	case cd_ident:
 #define ptr ((struct cdident *) data)
-		v = PyString_FromStringAndSize(NULL, 12);
-		p = PyString_AsString(v);
+		v = PyBytes_FromStringAndSize(NULL, 12);
+		p = PyBytes_AsString(v);
 		CDsbtoa(p, ptr->country, 2);
 		p += 2;
 		CDsbtoa(p, ptr->owner, 3);

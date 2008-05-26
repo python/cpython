@@ -326,7 +326,7 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
             return ERR_EOF;
         }
     }
-    *pvalue = PyString_FromStringAndSize(buf, len);
+    *pvalue = PyBytes_FromStringAndSize(buf, len);
     free(buf);
     if (*pvalue == NULL) {
         return ERR_EXCEPTION;
@@ -562,7 +562,7 @@ flush_data(ProfilerObject *self)
                 self->index - written);
         self->index -= written;
         if (written == 0) {
-            char *s = PyString_AsString(self->logfilename);
+            char *s = PyBytes_AsString(self->logfilename);
             PyErr_SetFromErrnoWithFilename(PyExc_IOError, s);
             do_stop(self);
             return -1;
@@ -570,7 +570,7 @@ flush_data(ProfilerObject *self)
     }
     if (written > 0) {
         if (fflush(self->logfp)) {
-            char *s = PyString_AsString(self->logfilename);
+            char *s = PyBytes_AsString(self->logfilename);
             PyErr_SetFromErrnoWithFilename(PyExc_IOError, s);
             do_stop(self);
             return -1;
@@ -792,7 +792,7 @@ get_fileno(ProfilerObject *self, PyCodeObject *fcode)
         self->next_fileno++;
         Py_DECREF(obj);
         if (pack_define_file(self, fileno,
-                             PyString_AS_STRING(fcode->co_filename)) < 0)
+                             PyBytes_AS_STRING(fcode->co_filename)) < 0)
             return -1;
     }
     else {
@@ -810,7 +810,7 @@ get_fileno(ProfilerObject *self, PyCodeObject *fcode)
         PyObject *name = PyDict_GetItem(dict, obj);
         if (name == NULL) {
             if (pack_define_func(self, fileno, fcode->co_firstlineno,
-                                 PyString_AS_STRING(fcode->co_name)) < 0) {
+                                 PyBytes_AS_STRING(fcode->co_name)) < 0) {
                 Py_DECREF(obj);
                 return -1;
             }
@@ -1471,7 +1471,7 @@ write_header(ProfilerObject *self)
     len = PyList_GET_SIZE(temp);
     for (i = 0; i < len; ++i) {
         PyObject *item = PyList_GET_ITEM(temp, i);
-        buffer = PyString_AsString(item);
+        buffer = PyBytes_AsString(item);
         if (buffer == NULL) {
             pack_add_info(self, "sys-path-entry", "<non-string-path-entry>");
             PyErr_Clear();

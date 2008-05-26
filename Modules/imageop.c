@@ -54,7 +54,7 @@ imageop_backward_compatible(void)
 		return 1;
 	if (bcos == NULL) {
 		/* cache string object for future use */
-		bcos = PyString_FromString("backward_compatible");
+		bcos = PyBytes_FromString("backward_compatible");
 		if (bcos == NULL)
 			return 1;
 	}
@@ -97,11 +97,11 @@ imageop_crop(PyObject *self, PyObject *args)
 	xstep = (newx1 < newx2)? 1 : -1;
 	ystep = (newy1 < newy2)? 1 : -1;
     
-	rv = PyString_FromStringAndSize(NULL,
+	rv = PyBytes_FromStringAndSize(NULL,
 			     (abs(newx2-newx1)+1)*(abs(newy2-newy1)+1)*size);
 	if ( rv == 0 )
 		return 0;
-	ncp = (char *)PyString_AsString(rv);
+	ncp = (char *)PyBytes_AsString(rv);
 	nsp = (short *)ncp;
 	nlp = (Py_Int32 *)ncp;
 	newy2 += ystep;
@@ -150,10 +150,10 @@ imageop_scale(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, newx*newy*size);
+	rv = PyBytes_FromStringAndSize(NULL, newx*newy*size);
 	if ( rv == 0 )
 		return 0;
-	ncp = (char *)PyString_AsString(rv);
+	ncp = (char *)PyBytes_AsString(rv);
 	nsp = (short *)ncp;
 	nlp = (Py_Int32 *)ncp;
 	for( iy = 0; iy < newy; iy++ ) {
@@ -195,10 +195,10 @@ imageop_tovideo(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, len);
+	rv = PyBytes_FromStringAndSize(NULL, len);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	if ( width == 1 ) {
 		memcpy(ncp, cp, maxx);		/* Copy first line */
@@ -245,10 +245,10 @@ imageop_grey2mono(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, (len+7)/8);
+	rv = PyBytes_FromStringAndSize(NULL, (len+7)/8);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	bit = 0x80;
 	ovalue = 0;
@@ -286,10 +286,10 @@ imageop_grey2grey4(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, (len+1)/2);
+	rv = PyBytes_FromStringAndSize(NULL, (len+1)/2);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 	pos = 0;
 	ovalue = 0;
 	for ( i=0; i < len; i++ ) {
@@ -325,10 +325,10 @@ imageop_grey2grey2(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, (len+3)/4);
+	rv = PyBytes_FromStringAndSize(NULL, (len+3)/4);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 	pos = 0;
 	ovalue = 0;
 	for ( i=0; i < len; i++ ) {
@@ -363,10 +363,10 @@ imageop_dither2mono(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, (len+7)/8);
+	rv = PyBytes_FromStringAndSize(NULL, (len+7)/8);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	bit = 0x80;
 	ovalue = 0;
@@ -409,10 +409,10 @@ imageop_dither2grey2(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, (len+3)/4);
+	rv = PyBytes_FromStringAndSize(NULL, (len+3)/4);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 	pos = 1;
 	ovalue = 0;
 	for ( i=0; i < len; i++ ) {
@@ -449,10 +449,10 @@ imageop_mono2grey(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, nlen);
+	rv = PyBytes_FromStringAndSize(NULL, nlen);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	bit = 0x80;
 	for ( i=0; i < nlen; i++ ) {
@@ -486,10 +486,10 @@ imageop_grey22grey(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, nlen);
+	rv = PyBytes_FromStringAndSize(NULL, nlen);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	pos = 0;
 	for ( i=0; i < nlen; i++ ) {
@@ -522,10 +522,10 @@ imageop_grey42grey(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, nlen);
+	rv = PyBytes_FromStringAndSize(NULL, nlen);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	pos = 0;
 	for ( i=0; i < nlen; i++ ) {
@@ -559,10 +559,10 @@ imageop_rgb2rgb8(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, nlen);
+	rv = PyBytes_FromStringAndSize(NULL, nlen);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
 		/* Bits in source: aaaaaaaa BBbbbbbb GGGggggg RRRrrrrr */
@@ -603,10 +603,10 @@ imageop_rgb82rgb(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, nlen*4);
+	rv = PyBytes_FromStringAndSize(NULL, nlen*4);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
 		/* Bits in source: RRRBBGGG
@@ -653,10 +653,10 @@ imageop_rgb2grey(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, nlen);
+	rv = PyBytes_FromStringAndSize(NULL, nlen);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
 		if (backward_compatible) {
@@ -698,10 +698,10 @@ imageop_grey2rgb(PyObject *self, PyObject *args)
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, nlen*4);
+	rv = PyBytes_FromStringAndSize(NULL, nlen*4);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned char *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyBytes_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
 		value = *cp++;

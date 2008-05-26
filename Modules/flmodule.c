@@ -324,7 +324,7 @@ generic_getattr(genericobject *g, char *name)
 	/* "label" is an exception, getmember only works for char pointers,
 	   not for char arrays */
 	if (strcmp(name, "label") == 0)
-		return PyString_FromString(g->ob_generic->label);
+		return PyBytes_FromString(g->ob_generic->label);
 
 	return PyMember_Get((char *)g->ob_generic, generic_memberlist, name);
 }
@@ -343,12 +343,12 @@ generic_setattr(genericobject *g, char *name, PyObject *v)
 	/* "label" is an exception: setmember doesn't set strings;
 	   and FORMS wants you to call a function to set the label */
 	if (strcmp(name, "label") == 0) {
-		if (!PyString_Check(v)) {
+		if (!PyBytes_Check(v)) {
 			PyErr_SetString(PyExc_TypeError,
 					"label attr must be string");
 			return -1;
 		}
-		fl_set_object_label(g->ob_generic, PyString_AsString(v));
+		fl_set_object_label(g->ob_generic, PyBytes_AsString(v));
 		return 0;
 	}
 
@@ -369,7 +369,7 @@ generic_repr(genericobject *g)
 	char buf[100];
 	PyOS_snprintf(buf, sizeof(buf), "<FORMS_object at %p, objclass=%d>",
 		      g, g->ob_generic->objclass);
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 static PyTypeObject GenericObjecttype = {
@@ -530,7 +530,7 @@ call_forms_Rstr (char * (*func)(FL_OBJECT *), FL_OBJECT *obj)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString (str);
+	return PyBytes_FromString (str);
 }
 
 /* int func (object) */
@@ -628,7 +628,7 @@ get_browser_line(genericobject *g, PyObject *args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString (str);
+	return PyBytes_FromString (str);
 }
 
 static PyObject *
@@ -1594,7 +1594,7 @@ form_repr(formobject *f)
 	char buf[100];
 	PyOS_snprintf(buf, sizeof(buf), "<FORMS_form at %p, window=%ld>",
 		      f, f->ob_form->window);
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 static PyTypeObject Formtype = {
@@ -2027,7 +2027,7 @@ forms_show_input(PyObject *f, PyObject *args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString(str);
+	return PyBytes_FromString(str);
 }
 
 static PyObject *
@@ -2046,7 +2046,7 @@ forms_file_selector(PyObject *f, PyObject *args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString(str);
+	return PyBytes_FromString(str);
 }
 
 
@@ -2061,7 +2061,7 @@ forms_file_selector_func(PyObject *args, char *(*func)(void))
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString(str);
+	return PyBytes_FromString(str);
 }
 
 static PyObject *

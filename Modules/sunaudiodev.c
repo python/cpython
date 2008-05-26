@@ -135,11 +135,11 @@ sad_read(sadobject *self, PyObject *args)
 	
         if (!PyArg_ParseTuple(args, "i:read", &size))
 		return NULL;
-	rv = PyString_FromStringAndSize(NULL, size);
+	rv = PyBytes_FromStringAndSize(NULL, size);
 	if (rv == NULL)
 		return NULL;
 
-	if (!(cp = PyString_AsString(rv)))
+	if (!(cp = PyBytes_AsString(rv)))
 		goto finally;
 
 	count = read(self->x_fd, cp, size);

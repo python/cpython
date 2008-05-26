@@ -462,11 +462,11 @@ _Py_bytes_lower(char *result, const char *cptr, Py_ssize_t len)
 	Py_ssize_t i;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
+	newobj = PyBytes_FromStringAndSize(NULL, len);
 	if (!newobj)
 		return NULL;
 
-	s = PyString_AS_STRING(newobj);
+	s = PyBytes_AS_STRING(newobj);
         */
 
 	Py_MEMCPY(result, cptr, len);
@@ -490,11 +490,11 @@ _Py_bytes_upper(char *result, const char *cptr, Py_ssize_t len)
 	Py_ssize_t i;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
+	newobj = PyBytes_FromStringAndSize(NULL, len);
 	if (!newobj)
 		return NULL;
 
-	s = PyString_AS_STRING(newobj);
+	s = PyBytes_AS_STRING(newobj);
         */
 
 	Py_MEMCPY(result, cptr, len);
@@ -520,10 +520,10 @@ _Py_bytes_title(char *result, char *s, Py_ssize_t len)
 	int previous_is_cased = 0;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
+	newobj = PyBytes_FromStringAndSize(NULL, len);
 	if (newobj == NULL)
 		return NULL;
-	s_new = PyString_AsString(newobj);
+	s_new = PyBytes_AsString(newobj);
         */
 	for (i = 0; i < len; i++) {
 		int c = Py_CHARMASK(*s++);
@@ -553,10 +553,10 @@ _Py_bytes_capitalize(char *result, char *s, Py_ssize_t len)
 	Py_ssize_t i;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
+	newobj = PyBytes_FromStringAndSize(NULL, len);
 	if (newobj == NULL)
 		return NULL;
-	s_new = PyString_AsString(newobj);
+	s_new = PyBytes_AsString(newobj);
         */
 	if (0 < len) {
 		int c = Py_CHARMASK(*s++);
@@ -589,10 +589,10 @@ _Py_bytes_swapcase(char *result, char *s, Py_ssize_t len)
 	Py_ssize_t i;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
+	newobj = PyBytes_FromStringAndSize(NULL, len);
 	if (newobj == NULL)
 		return NULL;
-	s_new = PyString_AsString(newobj);
+	s_new = PyBytes_AsString(newobj);
         */
 	for (i = 0; i < len; i++) {
 		int c = Py_CHARMASK(*s++);

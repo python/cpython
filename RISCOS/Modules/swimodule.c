@@ -66,10 +66,10 @@ static PyObject *PyBlock_New(PyObject *self,PyObject *args)
   b->length=4*size;
   b->heap=1;
   if(init)
-  { if(PyString_Check(init))
-    { int n=PyString_Size(init);
+  { if(PyBytes_Check(init))
+    { int n=PyBytes_Size(init);
       if (n>4*size) n=4*size;
-      memcpy(b->block,PyString_AsString(init),n);
+      memcpy(b->block,PyBytes_AsString(init),n);
       memset((char*)b->block+n,0,4*size-n);
     }
     else
@@ -113,7 +113,7 @@ static PyObject *PyBlock_ToString(PyBlockObject *self,PyObject *arg)
   { PyErr_SetString(PyExc_IndexError,"block index out of range");
     return NULL;
   }
-  return PyString_FromStringAndSize((char*)self->block+s,e-s);
+  return PyBytes_FromStringAndSize((char*)self->block+s,e-s);
 }
 
 static PyObject *PyBlock_NullString(PyBlockObject *self,PyObject *arg)
@@ -125,7 +125,7 @@ static PyObject *PyBlock_NullString(PyBlockObject *self,PyObject *arg)
     return NULL;
   }
   for(i=s;i<e;i++) if(p[i]==0) break;
-  return PyString_FromStringAndSize((char*)self->block+s,i-s);
+  return PyBytes_FromStringAndSize((char*)self->block+s,i-s);
 }
 
 static PyObject *PyBlock_CtrlString(PyBlockObject *self,PyObject *arg)
@@ -137,7 +137,7 @@ static PyObject *PyBlock_CtrlString(PyBlockObject *self,PyObject *arg)
     return NULL;
   }
   for(i=s;i<e;i++) if(p[i]<32) break;
-  return PyString_FromStringAndSize((char*)self->block+s,i-s);
+  return PyBytes_FromStringAndSize((char*)self->block+s,i-s);
 }
 
 static PyObject *PyBlock_PadString(PyBlockObject *self,PyObject *arg)
@@ -296,9 +296,9 @@ static PyObject *PyBlock_GetAttr(PyBlockObject *s,char *name)
   if (!strcmp(name, "__members__"))
   { PyObject *list = PyList_New(3);
     if (list)
-    { PyList_SetItem(list, 0, PyString_FromString("length"));
-      PyList_SetItem(list, 1, PyString_FromString("start"));
-      PyList_SetItem(list, 2, PyString_FromString("end"));
+    { PyList_SetItem(list, 0, PyBytes_FromString("length"));
+      PyList_SetItem(list, 1, PyBytes_FromString("start"));
+      PyList_SetItem(list, 2, PyBytes_FromString("end"));
       if (PyErr_Occurred()) { Py_DECREF(list);list = NULL;}
     }
     return list;
@@ -402,7 +402,7 @@ static PyObject *swi_swi(PyObject *self,PyObject *args)
   for(;*fmt;fmt++)
   {  switch(*fmt)
     { case 'i':v=PyInt_FromLong((long)r.r[rno++]); break;
-      case 's':v=PyString_FromString((char*)(r.r[rno++])); break;
+      case 's':v=PyBytes_FromString((char*)(r.r[rno++])); break;
       case '.':rno++; continue;
       case '*':v=PyInt_FromLong((long)carry); break;
     }
@@ -421,7 +421,7 @@ static PyObject *swi_string(PyObject *self, PyObject *arg)
   if(!PyArg_ParseTuple(arg,"i|i",(unsigned int *)&s, &l)) return NULL;
   if (l==-1)
     l = strlen(s);
-  return PyString_FromStringAndSize((char*)s, l);
+  return PyBytes_FromStringAndSize((char*)s, l);
 }
 
 static char swi_string__doc__[] =

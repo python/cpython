@@ -46,7 +46,7 @@ static PyObject *parsestrplus(struct compiling *, const node *n);
 
 static identifier
 new_identifier(const char* n, PyArena *arena) {
-    PyObject* id = PyString_InternFromString(n);
+    PyObject* id = PyBytes_InternFromString(n);
     PyArena_AddPyObject(arena, id);
     return id;
 }
@@ -352,7 +352,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
     switch (e->kind) {
         case Attribute_kind:
             if (ctx == Store &&
-                !strcmp(PyString_AS_STRING(e->v.Attribute.attr), "None")) {
+                !strcmp(PyBytes_AS_STRING(e->v.Attribute.attr), "None")) {
                 return ast_error(n, "assignment to None");
             }
             e->v.Attribute.ctx = ctx;
@@ -362,7 +362,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
             break;
         case Name_kind:
             if (ctx == Store &&
-                !strcmp(PyString_AS_STRING(e->v.Name.id), "None")) {
+                !strcmp(PyBytes_AS_STRING(e->v.Name.id), "None")) {
                     return ast_error(n, "assignment to None");
             }
             e->v.Name.ctx = ctx;
@@ -1276,7 +1276,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 if (errstr) {
                     char *s = "";
                     char buf[128];
-                    s = PyString_AsString(errstr);
+                    s = PyBytes_AsString(errstr);
                     PyOS_snprintf(buf, sizeof(buf), "(unicode error) %s", s);
                     ast_error(n, buf);
                 } else {
@@ -1921,7 +1921,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                     return NULL;
                 }
                 key = e->v.Name.id;
-                if (!strcmp(PyString_AS_STRING(key), "None")) {
+                if (!strcmp(PyBytes_AS_STRING(key), "None")) {
                     ast_error(CHILD(ch, 0), "assignment to None");
                     return NULL;
                 }
@@ -2050,7 +2050,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
                           "expression not possible");
                 return NULL;
             case Name_kind: {
-                const char *var_name = PyString_AS_STRING(expr1->v.Name.id);
+                const char *var_name = PyBytes_AS_STRING(expr1->v.Name.id);
                 if (var_name[0] == 'N' && !strcmp(var_name, "None")) {
                     ast_error(ch, "assignment to None");
                     return NULL;
@@ -2326,10 +2326,10 @@ alias_for_import_name(struct compiling *c, const node *n)
                     /* length of string plus one for the dot */
                     len += strlen(STR(CHILD(n, i))) + 1;
                 len--; /* the last name doesn't have a dot */
-                str = PyString_FromStringAndSize(NULL, len);
+                str = PyBytes_FromStringAndSize(NULL, len);
                 if (!str)
                     return NULL;
-                s = PyString_AS_STRING(str);
+                s = PyBytes_AS_STRING(str);
                 if (!s)
                     return NULL;
                 for (i = 0; i < NCH(n); i += 2) {
@@ -2340,13 +2340,13 @@ alias_for_import_name(struct compiling *c, const node *n)
                 }
                 --s;
                 *s = '\0';
-                PyString_InternInPlace(&str);
+                PyBytes_InternInPlace(&str);
                 PyArena_AddPyObject(c->c_arena, str);
                 return alias(str, NULL, c->c_arena);
             }
             break;
         case STAR:
-            str = PyString_InternFromString("*");
+            str = PyBytes_InternFromString("*");
             PyArena_AddPyObject(c->c_arena, str);
             return alias(str, NULL, c->c_arena);
         default:
@@ -3196,10 +3196,10 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
                 u = NULL;
         } else {
                 /* "\XX" may become "\u005c\uHHLL" (12 bytes) */
-                u = PyString_FromStringAndSize((char *)NULL, len * 4);
+                u = PyBytes_FromStringAndSize((char *)NULL, len * 4);
                 if (u == NULL)
                         return NULL;
-                p = buf = PyString_AsString(u);
+                p = buf = PyBytes_AsString(u);
                 end = s + len;
                 while (s < end) {
                         if (*s == '\\') {
@@ -3218,8 +3218,8 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
                                         Py_DECREF(u);
                                         return NULL;
                                 }
-                                r = PyString_AsString(w);
-                                rn = PyString_Size(w);
+                                r = PyBytes_AsString(w);
+                                rn = PyBytes_Size(w);
                                 assert(rn % 2 == 0);
                                 for (i = 0; i < rn; i += 2) {
                                         sprintf(p, "\\u%02x%02x",
@@ -3318,11 +3318,11 @@ parsestr(struct compiling *c, const char *s)
                         return v;
 #endif
                 } else {
-                        return PyString_FromStringAndSize(s, len);
+                        return PyBytes_FromStringAndSize(s, len);
                 }
         }
 
-        return PyString_DecodeEscape(s, len, NULL, unicode,
+        return PyBytes_DecodeEscape(s, len, NULL, unicode,
                                      need_encoding ? c->c_encoding : NULL);
 }
 
@@ -3343,8 +3343,8 @@ parsestrplus(struct compiling *c, const node *n)
                         s = parsestr(c, STR(CHILD(n, i)));
                         if (s == NULL)
                                 goto onError;
-                        if (PyString_Check(v) && PyString_Check(s)) {
-                                PyString_ConcatAndDel(&v, s);
+                        if (PyBytes_Check(v) && PyBytes_Check(s)) {
+                                PyBytes_ConcatAndDel(&v, s);
                                 if (v == NULL)
                                     goto onError;
                         }

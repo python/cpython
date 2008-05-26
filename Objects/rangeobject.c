@@ -113,16 +113,16 @@ range_repr(rangeobject *r)
 	PyObject *rtn;
 
 	if (r->start == 0 && r->step == 1)
-		rtn = PyString_FromFormat("xrange(%ld)",
+		rtn = PyBytes_FromFormat("xrange(%ld)",
 					  r->start + r->len * r->step);
 
 	else if (r->step == 1)
-		rtn = PyString_FromFormat("xrange(%ld, %ld)",
+		rtn = PyBytes_FromFormat("xrange(%ld, %ld)",
 					  r->start,
 					  r->start + r->len * r->step);
 
 	else
-		rtn = PyString_FromFormat("xrange(%ld, %ld, %ld)",
+		rtn = PyBytes_FromFormat("xrange(%ld, %ld, %ld)",
 					  r->start,
 					  r->start + r->len * r->step,
 					  r->step);

@@ -668,7 +668,7 @@ deque_repr(PyObject *deque)
 	if (i != 0) {
 		if (i < 0)
 			return NULL;
-		return PyString_FromString("[...]");
+		return PyBytes_FromString("[...]");
 	}
 
 	aslist = PySequence_List(deque);
@@ -677,16 +677,16 @@ deque_repr(PyObject *deque)
 		return NULL;
 	}
 	if (((dequeobject *)deque)->maxlen != -1)
-		fmt = PyString_FromFormat("deque(%%r, maxlen=%i)", 
+		fmt = PyBytes_FromFormat("deque(%%r, maxlen=%i)", 
 					((dequeobject *)deque)->maxlen);
 	else
-		fmt = PyString_FromString("deque(%r)");  
+		fmt = PyBytes_FromString("deque(%r)");  
 	if (fmt == NULL) {
 		Py_DECREF(aslist);
 		Py_ReprLeave(deque);
 		return NULL;
 	}
-	result = PyString_Format(fmt, aslist);
+	result = PyBytes_Format(fmt, aslist);
 	Py_DECREF(fmt);
 	Py_DECREF(aslist);
 	Py_ReprLeave(deque);
@@ -1298,14 +1298,14 @@ defdict_repr(defdictobject *dd)
 	if (baserepr == NULL)
 		return NULL;
 	if (dd->default_factory == NULL)
-		defrepr = PyString_FromString("None");
+		defrepr = PyBytes_FromString("None");
 	else
 	{
 		int status = Py_ReprEnter(dd->default_factory);
 		if (status != 0) {
 			if (status < 0)
 				return NULL;
-			defrepr = PyString_FromString("...");
+			defrepr = PyBytes_FromString("...");
 		}
 		else
 			defrepr = PyObject_Repr(dd->default_factory);
@@ -1315,9 +1315,9 @@ defdict_repr(defdictobject *dd)
 		Py_DECREF(baserepr);
 		return NULL;
 	}
-	result = PyString_FromFormat("defaultdict(%s, %s)",
-				     PyString_AS_STRING(defrepr),
-				     PyString_AS_STRING(baserepr));
+	result = PyBytes_FromFormat("defaultdict(%s, %s)",
+				     PyBytes_AS_STRING(defrepr),
+				     PyBytes_AS_STRING(baserepr));
 	Py_DECREF(defrepr);
 	Py_DECREF(baserepr);
 	return result;

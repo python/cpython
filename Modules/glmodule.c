@@ -593,7 +593,7 @@ gl_lrectwrite(PyObject *self, PyObject *args)
 #if 0
 /* Don't check this, it breaks experiments with pixmode(PM_SIZE, ...) */
 	pixcount = (long)(x2+1-x1) * (long)(y2+1-y1);
-	if (!PyString_Check(s) || PyString_Size(s) != pixcount*sizeof(long)) {
+	if (!PyBytes_Check(s) || PyBytes_Size(s) != pixcount*sizeof(long)) {
 		PyErr_SetString(PyExc_RuntimeError,
 			   "string arg to lrectwrite has wrong size");
 		return NULL;
@@ -623,10 +623,10 @@ gl_lrectread(PyObject *self, PyObject *args)
 	if (!PyArg_GetShort(args, 4, 3, &y2))
 		return NULL;
 	pixcount = (long)(x2+1-x1) * (long)(y2+1-y1);
-	parray = PyString_FromStringAndSize((char *)NULL, pixcount*sizeof(long));
+	parray = PyBytes_FromStringAndSize((char *)NULL, pixcount*sizeof(long));
 	if (parray == NULL)
 		return NULL; /* No memory */
-	lrectread(x1, y1, x2, y2, (unsigned long *) PyString_AsString(parray));
+	lrectread(x1, y1, x2, y2, (unsigned long *) PyBytes_AsString(parray));
 	return parray;
 }
 
@@ -642,10 +642,10 @@ gl_readdisplay(PyObject *self, PyObject *args)
 	if ( !PyArg_Parse(args, "hhhhl", &x1, &y1, &x2, &y2, &hints) )
 	  return 0;
 	size = (long)(x2+1-x1) * (long)(y2+1-y1);
-	rv = PyString_FromStringAndSize((char *)NULL, size*sizeof(long));
+	rv = PyBytes_FromStringAndSize((char *)NULL, size*sizeof(long));
 	if ( rv == NULL )
 	  return NULL;
-	parray = (unsigned long *)PyString_AsString(rv);
+	parray = (unsigned long *)PyBytes_AsString(rv);
 	size_ret = readdisplay(x1, y1, x2, y2, parray, hints);
 	if ( size_ret != size ) {
 	    printf("gl_readdisplay: got %ld pixels, expected %ld\n",
@@ -700,16 +700,16 @@ gl_packrect(PyObject *self, PyObject *args)
 	pixcount = width*height;
 	packedcount = ((width+packfactor-1)/packfactor) *
 		((height+packfactor-1)/packfactor);
-	if (PyString_Size(unpacked) != pixcount*sizeof(long)) {
+	if (PyBytes_Size(unpacked) != pixcount*sizeof(long)) {
 		PyErr_SetString(PyExc_RuntimeError,
 			   "string arg to packrect has wrong size");
 		return NULL;
 	}
-	packed = PyString_FromStringAndSize((char *)NULL, packedcount);
+	packed = PyBytes_FromStringAndSize((char *)NULL, packedcount);
 	if (packed == NULL)
 		return NULL;
-	parray = (unsigned long *) PyString_AsString(unpacked);
-	p = (unsigned char *) PyString_AsString(packed);
+	parray = (unsigned long *) PyBytes_AsString(unpacked);
+	p = (unsigned char *) PyBytes_AsString(packed);
 	for (y = 0; y < height; y += packfactor, parray += packfactor*width) {
 		for (x = 0; x < width; x += packfactor) {
 			pixel = parray[x];
@@ -758,16 +758,16 @@ gl_unpackrect(PyObject *self, PyObject *args)
 	pixcount = width*height;
 	packedcount = ((width+packfactor-1)/packfactor) *
 		((height+packfactor-1)/packfactor);
-	if (PyString_Size(packed) != packedcount) {
+	if (PyBytes_Size(packed) != packedcount) {
 		PyErr_SetString(PyExc_RuntimeError,
 			   "string arg to unpackrect has wrong size");
 		return NULL;
 	}
-	unpacked = PyString_FromStringAndSize((char *)NULL, pixcount*sizeof(long));
+	unpacked = PyBytes_FromStringAndSize((char *)NULL, pixcount*sizeof(long));
 	if (unpacked == NULL)
 		return NULL;
-	parray = (unsigned long *) PyString_AsString(unpacked);
-	p = (unsigned char *) PyString_AsString(packed);
+	parray = (unsigned long *) PyBytes_AsString(unpacked);
+	p = (unsigned char *) PyBytes_AsString(packed);
 	if (packfactor == 1 && width*height > 0) {
 		/* Just expand bytes to longs */
 		register int x = width * height;
@@ -799,7 +799,7 @@ gl_gversion(PyObject *self, PyObject *args)
 {
 	char buf[20];
 	gversion(buf);
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 

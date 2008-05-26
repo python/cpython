@@ -1,12 +1,13 @@
 #define PyBytesObject PyStringObject
 #define PyBytes_Type PyString_Type
 
-#define PyBytes_Check PyString_Check
-#define PyBytes_CheckExact PyString_CheckExact 
-#define PyBytes_CHECK_INTERNED PyString_CHECK_INTERNED
-#define PyBytes_AS_STRING PyString_AS_STRING
-#define PyBytes_GET_SIZE PyString_GET_SIZE
-#define Py_TPFLAGS_BYTES_SUBCLASS Py_TPFLAGS_STRING_SUBCLASS
+#define PyString_Check PyBytes_Check
+#define PyString_CheckExact PyBytes_CheckExact
+#define PyString_CHECK_INTERNED PyBytes_CHECK_INTERNED
+#define PyString_AS_STRING PyBytes_AS_STRING
+#define PyString_GET_SIZE PyBytes_GET_SIZE
+
+#define Py_TPFLAGS_STRING_SUBCLASS Py_TPFLAGS_BYTES_SUBCLASS
 
 #define PyBytes_FromStringAndSize PyString_FromStringAndSize
 #define PyBytes_FromString PyString_FromString

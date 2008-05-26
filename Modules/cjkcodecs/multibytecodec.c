@@ -85,7 +85,7 @@ internal_error_callback(const char *errors)
 	else if (strcmp(errors, "replace") == 0)
 		return ERROR_REPLACE;
 	else
-		return PyString_FromString(errors);
+		return PyBytes_FromString(errors);
 }
 
 static PyObject *
@@ -93,8 +93,8 @@ call_error_callback(PyObject *errors, PyObject *exc)
 {
 	PyObject *args, *cb, *r;
 
-	assert(PyString_Check(errors));
-	cb = PyCodec_LookupError(PyString_AS_STRING(errors));
+	assert(PyBytes_Check(errors));
+	cb = PyCodec_LookupError(PyBytes_AS_STRING(errors));
 	if (cb == NULL)
 		return NULL;
 
@@ -129,7 +129,7 @@ codecctx_errors_get(MultibyteStatefulCodecContext *self)
 		return self->errors;
 	}
 
-	return PyString_FromString(errors);
+	return PyBytes_FromString(errors);
 }
 
 static int
@@ -138,12 +138,12 @@ codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
 {
 	PyObject *cb;
 
-	if (!PyString_Check(value)) {
+	if (!PyBytes_Check(value)) {
 		PyErr_SetString(PyExc_TypeError, "errors must be a string");
 		return -1;
 	}
 
-	cb = internal_error_callback(PyString_AS_STRING(value));
+	cb = internal_error_callback(PyBytes_AS_STRING(value));
 	if (cb == NULL)
 		return -1;
 
@@ -166,15 +166,15 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
 	Py_ssize_t orgpos, orgsize;
 
 	orgpos = (Py_ssize_t)((char *)buf->outbuf -
-				PyString_AS_STRING(buf->outobj));
-	orgsize = PyString_GET_SIZE(buf->outobj);
-	if (_PyString_Resize(&buf->outobj, orgsize + (
+				PyBytes_AS_STRING(buf->outobj));
+	orgsize = PyBytes_GET_SIZE(buf->outobj);
+	if (_PyBytes_Resize(&buf->outobj, orgsize + (
 	    esize < (orgsize >> 1) ? (orgsize >> 1) | 1 : esize)) == -1)
 		return -1;
 
-	buf->outbuf = (unsigned char *)PyString_AS_STRING(buf->outobj) +orgpos;
-	buf->outbuf_end = (unsigned char *)PyString_AS_STRING(buf->outobj)
-		+ PyString_GET_SIZE(buf->outobj);
+	buf->outbuf = (unsigned char *)PyBytes_AS_STRING(buf->outobj) +orgpos;
+	buf->outbuf_end = (unsigned char *)PyBytes_AS_STRING(buf->outobj)
+		+ PyBytes_GET_SIZE(buf->outobj);
 
 	return 0;
 }
@@ -322,10 +322,10 @@ multibytecodec_encerror(MultibyteCodec *codec,
 			goto errorexit;
 	}
 
-	retstrsize = PyString_GET_SIZE(retstr);
+	retstrsize = PyBytes_GET_SIZE(retstr);
 	REQUIRE_ENCODEBUFFER(buf, retstrsize);
 
-	memcpy(buf->outbuf, PyString_AS_STRING(retstr), retstrsize);
+	memcpy(buf->outbuf, PyBytes_AS_STRING(retstr), retstrsize);
 	buf->outbuf += retstrsize;
 
 	newpos = PyInt_AsSsize_t(PyTuple_GET_ITEM(retobj, 1));
@@ -468,16 +468,16 @@ multibytecodec_encode(MultibyteCodec *codec,
 	Py_ssize_t finalsize, r = 0;
 
 	if (datalen == 0)
-		return PyString_FromString("");
+		return PyBytes_FromString("");
 
 	buf.excobj = NULL;
 	buf.inbuf = buf.inbuf_top = *data;
 	buf.inbuf_end = buf.inbuf_top + datalen;
-	buf.outobj = PyString_FromStringAndSize(NULL, datalen * 2 + 16);
+	buf.outobj = PyBytes_FromStringAndSize(NULL, datalen * 2 + 16);
 	if (buf.outobj == NULL)
 		goto errorexit;
-	buf.outbuf = (unsigned char *)PyString_AS_STRING(buf.outobj);
-	buf.outbuf_end = buf.outbuf + PyString_GET_SIZE(buf.outobj);
+	buf.outbuf = (unsigned char *)PyBytes_AS_STRING(buf.outobj);
+	buf.outbuf_end = buf.outbuf + PyBytes_GET_SIZE(buf.outobj);
 
 	while (buf.inbuf < buf.inbuf_end) {
 		Py_ssize_t inleft, outleft;
@@ -512,10 +512,10 @@ multibytecodec_encode(MultibyteCodec *codec,
 		}
 
 	finalsize = (Py_ssize_t)((char *)buf.outbuf -
-				 PyString_AS_STRING(buf.outobj));
+				 PyBytes_AS_STRING(buf.outobj));
 
-	if (finalsize != PyString_GET_SIZE(buf.outobj))
-		if (_PyString_Resize(&buf.outobj, finalsize) == -1)
+	if (finalsize != PyBytes_GET_SIZE(buf.outobj))
+		if (_PyBytes_Resize(&buf.outobj, finalsize) == -1)
 			goto errorexit;
 
 	Py_XDECREF(buf.excobj);
@@ -1222,35 +1222,35 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 		if (cres == NULL)
 			goto errorexit;
 
-		if (!PyString_Check(cres)) {
+		if (!PyBytes_Check(cres)) {
 			PyErr_SetString(PyExc_TypeError,
 					"stream function returned a "
 					"non-string object");
 			goto errorexit;
 		}
 
-		endoffile = (PyString_GET_SIZE(cres) == 0);
+		endoffile = (PyBytes_GET_SIZE(cres) == 0);
 
 		if (self->pendingsize > 0) {
 			PyObject *ctr;
 			char *ctrdata;
 
-			rsize = PyString_GET_SIZE(cres) + self->pendingsize;
-			ctr = PyString_FromStringAndSize(NULL, rsize);
+			rsize = PyBytes_GET_SIZE(cres) + self->pendingsize;
+			ctr = PyBytes_FromStringAndSize(NULL, rsize);
 			if (ctr == NULL)
 				goto errorexit;
-			ctrdata = PyString_AS_STRING(ctr);
+			ctrdata = PyBytes_AS_STRING(ctr);
 			memcpy(ctrdata, self->pending, self->pendingsize);
 			memcpy(ctrdata + self->pendingsize,
-				PyString_AS_STRING(cres),
-				PyString_GET_SIZE(cres));
+				PyBytes_AS_STRING(cres),
+				PyBytes_GET_SIZE(cres));
 			Py_DECREF(cres);
 			cres = ctr;
 			self->pendingsize = 0;
 		}
 
-		rsize = PyString_GET_SIZE(cres);
-		if (decoder_prepare_buffer(&buf, PyString_AS_STRING(cres),
+		rsize = PyBytes_GET_SIZE(cres);
+		if (decoder_prepare_buffer(&buf, PyBytes_AS_STRING(cres),
 					   rsize) != 0)
 			goto errorexit;
 
@@ -1585,7 +1585,7 @@ mbstreamwriter_reset(MultibyteStreamWriterObject *self)
 	if (pwrt == NULL)
 		return NULL;
 
-	if (PyString_Size(pwrt) > 0) {
+	if (PyBytes_Size(pwrt) > 0) {
 		PyObject *wr;
 		wr = PyObject_CallMethod(self->stream, "write", "O", pwrt);
 		if (wr == NULL) {

@@ -49,7 +49,7 @@ static void
 sets(PyObject *v, int i, char* val)
 {
   if (val)
-	  PyStructSequence_SET_ITEM(v, i, PyString_FromString(val));
+	  PyStructSequence_SET_ITEM(v, i, PyBytes_FromString(val));
   else {
 	  PyStructSequence_SET_ITEM(v, i, Py_None);
 	  Py_INCREF(Py_None);

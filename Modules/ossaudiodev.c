@@ -366,10 +366,10 @@ oss_read(oss_audio_t *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "i:read", &size))
         return NULL;
-    rv = PyString_FromStringAndSize(NULL, size);
+    rv = PyBytes_FromStringAndSize(NULL, size);
     if (rv == NULL)
         return NULL;
-    cp = PyString_AS_STRING(rv);
+    cp = PyBytes_AS_STRING(rv);
 
     Py_BEGIN_ALLOW_THREADS
     count = read(self->fd, cp, size);
@@ -381,7 +381,7 @@ oss_read(oss_audio_t *self, PyObject *args)
         return NULL;
     }
     self->icount += count;
-    _PyString_Resize(&rv, count);
+    _PyBytes_Resize(&rv, count);
     return rv;
 }
 
@@ -811,20 +811,20 @@ oss_getattr(oss_audio_t *self, char *name)
         Py_INCREF(rval);
     }
     else if (strcmp(name, "name") == 0) {
-        rval = PyString_FromString(self->devicename);
+        rval = PyBytes_FromString(self->devicename);
     }
     else if (strcmp(name, "mode") == 0) {
         /* No need for a "default" in this switch: from newossobject(),
            self->mode can only be one of these three values. */
         switch(self->mode) {
             case O_RDONLY:
-                rval = PyString_FromString("r");
+                rval = PyBytes_FromString("r");
                 break;
             case O_RDWR:
-                rval = PyString_FromString("rw");
+                rval = PyBytes_FromString("rw");
                 break;
             case O_WRONLY:
-                rval = PyString_FromString("w");
+                rval = PyBytes_FromString("w");
                 break;
         }
     }
@@ -913,12 +913,12 @@ build_namelists (PyObject *module)
     if (labels == NULL || names == NULL)
         goto error2;
     for (i = 0; i < num_controls; i++) {
-        s = PyString_FromString(control_labels[i]);
+        s = PyBytes_FromString(control_labels[i]);
         if (s == NULL)
             goto error2;
         PyList_SET_ITEM(labels, i, s);
 
-        s = PyString_FromString(control_names[i]);
+        s = PyBytes_FromString(control_names[i]);
         if (s == NULL)
             goto error2;
         PyList_SET_ITEM(names, i, s);

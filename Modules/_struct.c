@@ -413,7 +413,7 @@ _range_error(const formatdef *f, int is_unsigned)
 		if (msg == NULL)
 			return -1;
 		rval = PyErr_WarnEx(PyExc_DeprecationWarning,
-				    PyString_AS_STRING(msg), 2);
+				    PyBytes_AS_STRING(msg), 2);
 		Py_DECREF(msg);
 		if (rval == 0)
 			return 0;
@@ -446,7 +446,7 @@ _range_error(const formatdef *f, int is_unsigned)
 static PyObject *
 nu_char(const char *p, const formatdef *f)
 {
-	return PyString_FromStringAndSize(p, 1);
+	return PyBytes_FromStringAndSize(p, 1);
 }
 
 static PyObject *
@@ -610,12 +610,12 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
 static int
 np_char(char *p, PyObject *v, const formatdef *f)
 {
-	if (!PyString_Check(v) || PyString_Size(v) != 1) {
+	if (!PyBytes_Check(v) || PyBytes_Size(v) != 1) {
 		PyErr_SetString(StructError,
 				"char format require string of length 1");
 		return -1;
 	}
-	*p = *PyString_AsString(v);
+	*p = *PyBytes_AsString(v);
 	return 0;
 }
 
@@ -1335,7 +1335,7 @@ prepare_s(PyStructObject *self)
 	char c;
 	Py_ssize_t size, len, num, itemsize, x;
 
-	fmt = PyString_AS_STRING(self->s_format);
+	fmt = PyBytes_AS_STRING(self->s_format);
 
 	f = whichtable((char **)&fmt);
 
@@ -1503,12 +1503,12 @@ s_unpack_internal(PyStructObject *soself, char *startfrom) {
 		const formatdef *e = code->fmtdef;
 		const char *res = startfrom + code->offset;
 		if (e->format == 's') {
-			v = PyString_FromStringAndSize(res, code->size);
+			v = PyBytes_FromStringAndSize(res, code->size);
 		} else if (e->format == 'p') {
 			Py_ssize_t n = *(unsigned char*)res;
 			if (n >= code->size)
 				n = code->size - 1;
-			v = PyString_FromStringAndSize(res + 1, n);
+			v = PyBytes_FromStringAndSize(res + 1, n);
 		} else {
 			v = e->unpack(res, e);
 		}
@@ -1542,9 +1542,9 @@ s_unpack(PyObject *self, PyObject *inputstr)
 	assert(soself->s_codes != NULL);
 	if (inputstr == NULL)
 		goto fail;
-	if (PyString_Check(inputstr) &&
-		PyString_GET_SIZE(inputstr) == soself->s_size) {
-			return s_unpack_internal(soself, PyString_AS_STRING(inputstr));
+	if (PyBytes_Check(inputstr) &&
+		PyBytes_GET_SIZE(inputstr) == soself->s_size) {
+			return s_unpack_internal(soself, PyBytes_AS_STRING(inputstr));
 	}
 	args = PyTuple_Pack(1, inputstr);
 	if (args == NULL)
@@ -1637,27 +1637,27 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 		const formatdef *e = code->fmtdef;
 		char *res = buf + code->offset;
 		if (e->format == 's') {
-			if (!PyString_Check(v)) {
+			if (!PyBytes_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 's' must be a string");
 				return -1;
 			}
-			n = PyString_GET_SIZE(v);
+			n = PyBytes_GET_SIZE(v);
 			if (n > code->size)
 				n = code->size;
 			if (n > 0)
-				memcpy(res, PyString_AS_STRING(v), n);
+				memcpy(res, PyBytes_AS_STRING(v), n);
 		} else if (e->format == 'p') {
-			if (!PyString_Check(v)) {
+			if (!PyBytes_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 'p' must be a string");
 				return -1;
 			}
-			n = PyString_GET_SIZE(v);
+			n = PyBytes_GET_SIZE(v);
 			if (n > (code->size - 1))
 				n = code->size - 1;
 			if (n > 0)
-				memcpy(res + 1, PyString_AS_STRING(v), n);
+				memcpy(res + 1, PyBytes_AS_STRING(v), n);
 			if (n > 255)
 				n = 255;
 			*res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
@@ -1700,12 +1700,12 @@ s_pack(PyObject *self, PyObject *args)
 	}
 
 	/* Allocate a new string */
-	result = PyString_FromStringAndSize((char *)NULL, soself->s_size);
+	result = PyBytes_FromStringAndSize((char *)NULL, soself->s_size);
 	if (result == NULL)
 		return NULL;
 
 	/* Call the guts */
-	if ( s_pack_internal(soself, args, 0, PyString_AS_STRING(result)) != 0 ) {
+	if ( s_pack_internal(soself, args, 0, PyBytes_AS_STRING(result)) != 0 ) {
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -2061,7 +2061,7 @@ init_struct(void)
 {
 	PyObject *ver, *m;
 
-	ver = PyString_FromString("0.2");
+	ver = PyBytes_FromString("0.2");
 	if (ver == NULL)
 		return;
 

@@ -103,7 +103,7 @@ typedef int Py_ssize_t;
 #define PyDict_CheckExact PyDict_Check
 #if (PY_VERSION_HEX < 0x02020000)
 #define PyList_CheckExact PyList_Check
-#define PyString_CheckExact PyString_Check
+#define PyBytes_CheckExact PyBytes_Check
 #if (PY_VERSION_HEX >= 0x01060000)
 #define Py_USING_UNICODE /* always enabled for 2.0 and 2.1 */
 #endif
@@ -173,7 +173,7 @@ list_join(PyObject* list)
     switch (PyList_GET_SIZE(list)) {
     case 0:
         Py_DECREF(list);
-        return PyString_FromString("");
+        return PyBytes_FromString("");
     case 1:
         result = PyList_GET_ITEM(list, 0);
         Py_INCREF(result);
@@ -748,9 +748,9 @@ checkpath(PyObject* tag)
         return 0;
     }
 #endif
-    if (PyString_Check(tag)) {
-        char *p = PyString_AS_STRING(tag);
-        for (i = 0; i < PyString_GET_SIZE(tag); i++) {
+    if (PyBytes_Check(tag)) {
+        char *p = PyBytes_AS_STRING(tag);
+        for (i = 0; i < PyBytes_GET_SIZE(tag); i++) {
             if (p[i] == '{')
                 check = 0;
             else if (p[i] == '}')
@@ -818,7 +818,7 @@ element_findtext(ElementObject* self, PyObject* args)
         if (Element_CheckExact(item) && !PyObject_Compare(item->tag, tag)) {
             PyObject* text = element_get_text(item);
             if (text == Py_None)
-                return PyString_FromString("");
+                return PyBytes_FromString("");
             Py_XINCREF(text);
             return text;
         }
@@ -1154,12 +1154,12 @@ element_repr(ElementObject* self)
     PyObject* repr;
     char buffer[100];
     
-    repr = PyString_FromString("<Element ");
+    repr = PyBytes_FromString("<Element ");
 
-    PyString_ConcatAndDel(&repr, PyObject_Repr(self->tag));
+    PyBytes_ConcatAndDel(&repr, PyObject_Repr(self->tag));
 
     sprintf(buffer, " at %p>", self);
-    PyString_ConcatAndDel(&repr, PyString_FromString(buffer));
+    PyBytes_ConcatAndDel(&repr, PyBytes_FromString(buffer));
 
     return repr;
 }
@@ -1617,14 +1617,14 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
         Py_INCREF(data); self->data = data;
     } else {
         /* more than one item; use a list to collect items */
-        if (PyString_CheckExact(self->data) && Py_REFCNT(self->data) == 1 &&
-            PyString_CheckExact(data) && PyString_GET_SIZE(data) == 1) {
+        if (PyBytes_CheckExact(self->data) && Py_REFCNT(self->data) == 1 &&
+            PyBytes_CheckExact(data) && PyBytes_GET_SIZE(data) == 1) {
             /* expat often generates single character data sections; handle
                the most common case by resizing the existing string... */
-            Py_ssize_t size = PyString_GET_SIZE(self->data);
-            if (_PyString_Resize(&self->data, size + 1) < 0)
+            Py_ssize_t size = PyBytes_GET_SIZE(self->data);
+            if (_PyBytes_Resize(&self->data, size + 1) < 0)
                 return NULL;
-            PyString_AS_STRING(self->data)[size] = PyString_AS_STRING(data)[0];
+            PyBytes_AS_STRING(self->data)[size] = PyBytes_AS_STRING(data)[0];
         } else if (PyList_CheckExact(self->data)) {
             if (PyList_Append(self->data, data) < 0)
                 return NULL;
@@ -1896,7 +1896,7 @@ makestring(const char* string, int size)
         return PyUnicode_DecodeUTF8(string, size, "strict");
 #endif
 
-    return PyString_FromStringAndSize(string, size);
+    return PyBytes_FromStringAndSize(string, size);
 }
 
 LOCAL(PyObject*)
@@ -1910,7 +1910,7 @@ makeuniversal(XMLParserObject* self, const char* string)
     PyObject* value;
 
     /* look the 'raw' name up in the names dictionary */
-    key = PyString_FromStringAndSize(string, size);
+    key = PyBytes_FromStringAndSize(string, size);
     if (!key)
         return NULL;
 
@@ -1932,8 +1932,8 @@ makeuniversal(XMLParserObject* self, const char* string)
                 break;
         if (i != size) {
             /* convert to universal name */
-            tag = PyString_FromStringAndSize(NULL, size+1);
-            p = PyString_AS_STRING(tag);
+            tag = PyBytes_FromStringAndSize(NULL, size+1);
+            p = PyBytes_AS_STRING(tag);
             p[0] = '{';
             memcpy(p+1, string, size);
             size++;
@@ -1947,7 +1947,7 @@ makeuniversal(XMLParserObject* self, const char* string)
 #if defined(Py_USING_UNICODE)
         /* inline makestring, to avoid duplicating the source string if
            it's not an utf-8 string */
-        p = PyString_AS_STRING(tag);
+        p = PyBytes_AS_STRING(tag);
         if (checkstring(p, size)) {
             value = PyUnicode_DecodeUTF8(p, size, "strict");
             Py_DECREF(tag);
@@ -2004,7 +2004,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
     } else {
         PyErr_Format(
             PyExc_SyntaxError, "undefined entity &%s;: line %ld, column %ld",
-            PyString_AS_STRING(key),
+            PyBytes_AS_STRING(key),
             EXPAT(GetErrorLineNumber)(self->parser),
             EXPAT(GetErrorColumnNumber)(self->parser)
             );
@@ -2435,13 +2435,13 @@ xmlparser_parse(XMLParserObject* self, PyObject* args)
             return NULL;
         }
 
-        if (!PyString_CheckExact(buffer) || PyString_GET_SIZE(buffer) == 0) {
+        if (!PyBytes_CheckExact(buffer) || PyBytes_GET_SIZE(buffer) == 0) {
             Py_DECREF(buffer);
             break;
         }
 
         res = expat_parse(
-            self, PyString_AS_STRING(buffer), PyString_GET_SIZE(buffer), 0
+            self, PyBytes_AS_STRING(buffer), PyBytes_GET_SIZE(buffer), 0
             );
 
         Py_DECREF(buffer);
@@ -2503,7 +2503,7 @@ xmlparser_setevents(XMLParserObject* self, PyObject* args)
 
     if (event_set == Py_None) {
         /* default is "end" only */
-        target->end_event_obj = PyString_FromString("end");
+        target->end_event_obj = PyBytes_FromString("end");
         Py_RETURN_NONE;
     }
 
@@ -2513,9 +2513,9 @@ xmlparser_setevents(XMLParserObject* self, PyObject* args)
     for (i = 0; i < PyTuple_GET_SIZE(event_set); i++) {
         PyObject* item = PyTuple_GET_ITEM(event_set, i);
         char* event;
-        if (!PyString_Check(item))
+        if (!PyBytes_Check(item))
             goto error;
-        event = PyString_AS_STRING(item);
+        event = PyBytes_AS_STRING(item);
         if (strcmp(event, "start") == 0) {
             Py_INCREF(item);
             target->start_event_obj = item;
@@ -2587,7 +2587,7 @@ xmlparser_getattr(XMLParserObject* self, char* name)
         char buffer[100];
         sprintf(buffer, "Expat %d.%d.%d", XML_MAJOR_VERSION,
                 XML_MINOR_VERSION, XML_MICRO_VERSION);
-        return PyString_FromString(buffer);
+        return PyBytes_FromString(buffer);
     } else {
         PyErr_SetString(PyExc_AttributeError, name);
         return NULL;

@@ -147,7 +147,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 
 /*
  * Hacked up version of set_lookkey which can assume keys are always strings;
- * This means we can always use _PyString_Eq directly and not have to check to
+ * This means we can always use _PyBytes_Eq directly and not have to check to
  * see if the comparison altered the table.
  */
 static setentry *
@@ -164,7 +164,7 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 	   including subclasses of str; e.g., one reason to subclass
 	   strings is to override __eq__, and for speed we don't cater to
 	   that here. */
-	if (!PyString_CheckExact(key)) {
+	if (!PyBytes_CheckExact(key)) {
 		so->lookup = set_lookkey;
 		return set_lookkey(so, key, hash);
 	}
@@ -175,7 +175,7 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 	if (entry->key == dummy)
 		freeslot = entry;
 	else {
-		if (entry->hash == hash && _PyString_Eq(entry->key, key))
+		if (entry->hash == hash && _PyBytes_Eq(entry->key, key))
 			return entry;
 		freeslot = NULL;
 	}
@@ -190,7 +190,7 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 		if (entry->key == key
 		    || (entry->hash == hash
 			&& entry->key != dummy
-			&& _PyString_Eq(entry->key, key)))
+			&& _PyBytes_Eq(entry->key, key)))
 			return entry;
 		if (entry->key == dummy && freeslot == NULL)
 			freeslot = entry;
@@ -377,8 +377,8 @@ set_add_key(register PySetObject *so, PyObject *key)
 	register long hash;
 	register Py_ssize_t n_used;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -424,8 +424,8 @@ set_discard_key(PySetObject *so, PyObject *key)
 	PyObject *old_key;
 
 	assert (PyAnySet_Check(so));
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -614,7 +614,7 @@ set_repr(PySetObject *so)
 	if (status != 0) {
 		if (status < 0)
 			return NULL;
-		return PyString_FromFormat("%s(...)", so->ob_type->tp_name);
+		return PyBytes_FromFormat("%s(...)", so->ob_type->tp_name);
 	}
 
 	keys = PySequence_List((PyObject *)so);
@@ -625,8 +625,8 @@ set_repr(PySetObject *so)
 	if (listrepr == NULL)
 		goto done;
 
-	result = PyString_FromFormat("%s(%s)", so->ob_type->tp_name,
-		PyString_AS_STRING(listrepr));
+	result = PyBytes_FromFormat("%s(%s)", so->ob_type->tp_name,
+		PyBytes_AS_STRING(listrepr));
 	Py_DECREF(listrepr);
 done:
 	Py_ReprLeave((PyObject*)so);
@@ -681,8 +681,8 @@ set_contains_key(PySetObject *so, PyObject *key)
 	long hash;
 	setentry *entry;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyBytes_CheckExact(key) ||
+	    (hash = ((PyBytesObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -979,7 +979,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	register PySetObject *so = NULL;
 
 	if (dummy == NULL) { /* Auto-initialize dummy */
-		dummy = PyString_FromString("<dummy key>");
+		dummy = PyBytes_FromString("<dummy key>");
 		if (dummy == NULL)
 			return NULL;
 	}
@@ -2318,7 +2318,7 @@ test_c_api(PySetObject *so)
 	/* Exercise direct iteration */
 	i = 0, count = 0;
 	while (_PySet_Next((PyObject *)dup, &i, &x)) {
-		s = PyString_AsString(x);
+		s = PyBytes_AsString(x);
 		assert(s && (s[0] == 'a' || s[0] == 'b' || s[0] == 'c'));
 		count++;
 	}
