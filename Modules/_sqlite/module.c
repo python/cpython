@@ -137,7 +137,7 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args, PyObjec
     /* a basic type is adapted; there's a performance optimization if that's not the case
      * (99 % of all usages) */
     if (type == &PyLong_Type || type == &PyFloat_Type
-            || type == &PyUnicode_Type || type == &PyBytes_Type) {
+            || type == &PyUnicode_Type || type == &PyByteArray_Type) {
         pysqlite_BaseTypeAdapted = 1;
     }
 

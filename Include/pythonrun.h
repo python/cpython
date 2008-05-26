@@ -126,7 +126,7 @@ PyAPI_FUNC(void) _PyExc_Init(void);
 PyAPI_FUNC(void) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFrame_Init(void);
 PyAPI_FUNC(void) _PyFloat_Init(void);
-PyAPI_FUNC(int) PyBytes_Init(void);
+PyAPI_FUNC(int) PyByteArray_Init(void);
 
 /* Various internal finalizers */
 PyAPI_FUNC(void) _PyExc_Fini(void);
@@ -139,7 +139,7 @@ PyAPI_FUNC(void) PyTuple_Fini(void);
 PyAPI_FUNC(void) PyList_Fini(void);
 PyAPI_FUNC(void) PySet_Fini(void);
 PyAPI_FUNC(void) PyString_Fini(void);
-PyAPI_FUNC(void) PyBytes_Fini(void);
+PyAPI_FUNC(void) PyByteArray_Fini(void);
 PyAPI_FUNC(void) PyFloat_Fini(void);
 PyAPI_FUNC(void) PyOS_FiniInterrupts(void);
 

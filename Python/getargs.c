@@ -971,7 +971,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
 		/* Encode object */
 		if (!recode_strings &&
-                    (PyString_Check(arg) || PyBytes_Check(arg))) {
+                    (PyString_Check(arg) || PyByteArray_Check(arg))) {
 			s = arg;
 			Py_INCREF(s);
                         if (PyObject_AsCharBuffer(s, &ptr, &size) < 0)
@@ -1123,9 +1123,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		break;
 	}
 
-	case 'Y': { /* PyBytes object */
+	case 'Y': { /* PyByteArray object */
 		PyObject **p = va_arg(*p_va, PyObject **);
-		if (PyBytes_Check(arg))
+		if (PyByteArray_Check(arg))
 			*p = arg;
 		else
 			return converterr("buffer", arg, msgbuf, bufsize);

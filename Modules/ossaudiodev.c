@@ -366,10 +366,10 @@ oss_read(oss_audio_t *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "i:read", &size))
         return NULL;
-    rv = PyBytes_FromStringAndSize(NULL, size);
+    rv = PyByteArray_FromStringAndSize(NULL, size);
     if (rv == NULL)
         return NULL;
-    cp = PyBytes_AS_STRING(rv);
+    cp = PyByteArray_AS_STRING(rv);
 
     Py_BEGIN_ALLOW_THREADS
     count = read(self->fd, cp, size);
@@ -381,7 +381,7 @@ oss_read(oss_audio_t *self, PyObject *args)
         return NULL;
     }
     self->icount += count;
-    PyBytes_Resize(rv, count);
+    PyByteArray_Resize(rv, count);
     return rv;
 }
 

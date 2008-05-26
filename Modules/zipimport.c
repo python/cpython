@@ -467,7 +467,7 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
 	toc_entry = PyDict_GetItemString(self->files, path);
 	if (toc_entry != NULL) {
 		PyObject *bytes = get_data(PyUnicode_AsString(self->archive), toc_entry);
-		PyObject *res = PyUnicode_FromString(PyBytes_AsString(bytes));
+		PyObject *res = PyUnicode_FromString(PyByteArray_AsString(bytes));
 		Py_XDECREF(bytes);
 		return res;
 	}
@@ -836,13 +836,13 @@ get_data(char *archive, PyObject *toc_entry)
 	bytes_size = compress == 0 ? data_size : data_size + 1;
 	if (bytes_size == 0)
 		bytes_size++;
-	raw_data = PyBytes_FromStringAndSize((char *)NULL, bytes_size);
+	raw_data = PyByteArray_FromStringAndSize((char *)NULL, bytes_size);
 					     
 	if (raw_data == NULL) {
 		fclose(fp);
 		return NULL;
 	}
-	buf = PyBytes_AsString(raw_data);
+	buf = PyByteArray_AsString(raw_data);
 
 	err = fseek(fp, file_offset, 0);
 	if (err == 0)
@@ -862,7 +862,7 @@ get_data(char *archive, PyObject *toc_entry)
 	buf[data_size] = '\0';
 
 	if (compress == 0) {  /* data is not compressed */
-		data = PyBytes_FromStringAndSize(buf, data_size);
+		data = PyByteArray_FromStringAndSize(buf, data_size);
 		Py_DECREF(raw_data);
 		return data;
 	}
@@ -903,8 +903,8 @@ static PyObject *
 unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 {
 	PyObject *code;
-	char *buf = PyBytes_AsString(data);
-	Py_ssize_t size = PyBytes_Size(data);
+	char *buf = PyByteArray_AsString(data);
+	Py_ssize_t size = PyByteArray_Size(data);
 
 	if (size <= 9) {
 		PyErr_SetString(ZipImportError,
@@ -949,16 +949,16 @@ unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 static PyObject *
 normalize_line_endings(PyObject *source)
 {
-	char *buf, *q, *p = PyBytes_AsString(source);
+	char *buf, *q, *p = PyByteArray_AsString(source);
 	PyObject *fixed_source;
 	int len = 0;
 
 	if (!p) {
-		return PyBytes_FromStringAndSize("\n\0", 2);
+		return PyByteArray_FromStringAndSize("\n\0", 2);
 	}
 
 	/* one char extra for trailing \n and one for terminating \0 */
-	buf = (char *)PyMem_Malloc(PyBytes_Size(source) + 2);
+	buf = (char *)PyMem_Malloc(PyByteArray_Size(source) + 2);
 	if (buf == NULL) {
 		PyErr_SetString(PyExc_MemoryError,
 				"zipimport: no memory to allocate "
@@ -978,7 +978,7 @@ normalize_line_endings(PyObject *source)
 	}
 	*q++ = '\n';  /* add trailing \n */
 	*q = '\0';
-	fixed_source = PyBytes_FromStringAndSize(buf, len + 2);
+	fixed_source = PyByteArray_FromStringAndSize(buf, len + 2);
 	PyMem_Free(buf);
 	return fixed_source;
 }
@@ -994,7 +994,7 @@ compile_source(char *pathname, PyObject *source)
 	if (fixed_source == NULL)
 		return NULL;
 
-	code = Py_CompileString(PyBytes_AsString(fixed_source), pathname,
+	code = Py_CompileString(PyByteArray_AsString(fixed_source), pathname,
 				Py_file_input);
 	Py_DECREF(fixed_source);
 	return code;

@@ -111,7 +111,7 @@ dbm_subscript(dbmobject *dp, register PyObject *key)
 		PyErr_SetString(DbmError, "");
 		return NULL;
 	}
-	return PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
+	return PyByteArray_FromStringAndSize(drec.dptr, drec.dsize);
 }
 
 static int
@@ -188,7 +188,7 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
 		return NULL;
 	for (key = dbm_firstkey(dp->di_dbm); key.dptr;
 	     key = dbm_nextkey(dp->di_dbm)) {
-		item = PyBytes_FromStringAndSize(key.dptr, key.dsize);
+		item = PyByteArray_FromStringAndSize(key.dptr, key.dsize);
 		if (item == NULL) {
 			Py_DECREF(v);
 			return NULL;
@@ -260,7 +260,7 @@ dbm_get(register dbmobject *dp, PyObject *args)
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	if (val.dptr != NULL)
-		return PyBytes_FromStringAndSize(val.dptr, val.dsize);
+		return PyByteArray_FromStringAndSize(val.dptr, val.dsize);
 	else {
 		Py_INCREF(defvalue);
 		return defvalue;
@@ -283,9 +283,9 @@ dbm_setdefault(register dbmobject *dp, PyObject *args)
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	if (val.dptr != NULL)
-		return PyBytes_FromStringAndSize(val.dptr, val.dsize);
+		return PyByteArray_FromStringAndSize(val.dptr, val.dsize);
 	if (defvalue == NULL) {
-		defvalue = PyBytes_FromStringAndSize(NULL, 0);
+		defvalue = PyByteArray_FromStringAndSize(NULL, 0);
 		if (defvalue == NULL)
 			return NULL;
 		val.dptr = NULL;

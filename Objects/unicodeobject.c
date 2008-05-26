@@ -1764,11 +1764,11 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
     if (size == 0)
        return PyString_FromStringAndSize(NULL, 0);
 
-    v = PyBytes_FromStringAndSize(NULL, cbAllocated);
+    v = PyByteArray_FromStringAndSize(NULL, cbAllocated);
     if (v == NULL)
         return NULL;
 
-    start = out = PyBytes_AS_STRING(v);
+    start = out = PyByteArray_AS_STRING(v);
     for (;i < size; ++i) {
         Py_UNICODE ch = s[i];
 
@@ -1834,7 +1834,7 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
         *out++ = '-';
     }
 
-    result = PyString_FromStringAndSize(PyBytes_AS_STRING(v), out - start);
+    result = PyString_FromStringAndSize(PyByteArray_AS_STRING(v), out - start);
     Py_DECREF(v);
     return result;
 }
@@ -2385,12 +2385,12 @@ PyUnicode_EncodeUTF32(const Py_UNICODE *s,
 	    0xDC00 <= s[i+1] && s[i+1] <= 0xDFFF)
 	    pairs++;
 #endif
-    v = PyBytes_FromStringAndSize(NULL,
+    v = PyByteArray_FromStringAndSize(NULL,
 		  4 * (size - pairs + (byteorder == 0)));
     if (v == NULL)
         return NULL;
 
-    p = (unsigned char *)PyBytes_AS_STRING(v);
+    p = (unsigned char *)PyByteArray_AS_STRING(v);
     if (byteorder == 0)
 	STORECHAR(0xFEFF);
     if (size == 0)
@@ -2427,7 +2427,7 @@ PyUnicode_EncodeUTF32(const Py_UNICODE *s,
     }
 
   done:
-    result = PyString_FromStringAndSize(PyBytes_AS_STRING(v), Py_SIZE(v));
+    result = PyString_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
     Py_DECREF(v);
     return result;
 #undef STORECHAR
@@ -2654,12 +2654,12 @@ PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 	if (s[i] >= 0x10000)
 	    pairs++;
 #endif
-    v = PyBytes_FromStringAndSize(NULL,
+    v = PyByteArray_FromStringAndSize(NULL,
 		  2 * (size + pairs + (byteorder == 0)));
     if (v == NULL)
         return NULL;
 
-    p = (unsigned char *)PyBytes_AS_STRING(v);
+    p = (unsigned char *)PyByteArray_AS_STRING(v);
     if (byteorder == 0)
 	STORECHAR(0xFEFF);
     if (size == 0)
@@ -2691,7 +2691,7 @@ PyUnicode_EncodeUTF16(const Py_UNICODE *s,
     }
 
   done:
-    result = PyString_FromStringAndSize(PyBytes_AS_STRING(v), Py_SIZE(v));
+    result = PyString_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
     Py_DECREF(v);
     return result;
 #undef STORECHAR
@@ -3004,7 +3004,7 @@ PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
        escape.
     */
 
-    repr = PyBytes_FromStringAndSize(NULL,
+    repr = PyByteArray_FromStringAndSize(NULL,
 #ifdef Py_UNICODE_WIDE
         + 10*size
 #else
@@ -3014,7 +3014,7 @@ PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
     if (repr == NULL)
         return NULL;
 
-    p = PyBytes_AS_STRING(repr);
+    p = PyByteArray_AS_STRING(repr);
 
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
@@ -3106,8 +3106,8 @@ PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
             *p++ = (char) ch;
     }
 
-    result = PyString_FromStringAndSize(PyBytes_AS_STRING(repr),
-                                        p - PyBytes_AS_STRING(repr));
+    result = PyString_FromStringAndSize(PyByteArray_AS_STRING(repr),
+                                        p - PyByteArray_AS_STRING(repr));
     Py_DECREF(repr);
     return result;
 }
@@ -3124,8 +3124,8 @@ PyObject *PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
     if (!s)
         return NULL;
-    result = PyString_FromStringAndSize(PyBytes_AS_STRING(s),
-                                        PyBytes_GET_SIZE(s));
+    result = PyString_FromStringAndSize(PyByteArray_AS_STRING(s),
+                                        PyByteArray_GET_SIZE(s));
     Py_DECREF(s);
     return result;
 }
@@ -3257,16 +3257,16 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     char *q;
 
 #ifdef Py_UNICODE_WIDE
-    repr = PyBytes_FromStringAndSize(NULL, 10 * size);
+    repr = PyByteArray_FromStringAndSize(NULL, 10 * size);
 #else
-    repr = PyBytes_FromStringAndSize(NULL, 6 * size);
+    repr = PyByteArray_FromStringAndSize(NULL, 6 * size);
 #endif
     if (repr == NULL)
         return NULL;
     if (size == 0)
         goto done;
 
-    p = q = PyBytes_AS_STRING(repr);
+    p = q = PyByteArray_AS_STRING(repr);
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
 #ifdef Py_UNICODE_WIDE
@@ -3327,7 +3327,7 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     size = p - q;
 
   done:
-    result = PyString_FromStringAndSize(PyBytes_AS_STRING(repr), size);
+    result = PyString_FromStringAndSize(PyByteArray_AS_STRING(repr), size);
     Py_DECREF(repr);
     return result;
 }
@@ -3344,8 +3344,8 @@ PyObject *PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 
     if (!s)
         return NULL;
-    result = PyString_FromStringAndSize(PyBytes_AS_STRING(s),
-                                        PyBytes_GET_SIZE(s));
+    result = PyString_FromStringAndSize(PyByteArray_AS_STRING(s),
+                                        PyByteArray_GET_SIZE(s));
     Py_DECREF(s);
     return result;
 }
@@ -3578,10 +3578,10 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
        replacements, if we need more, we'll resize */
     if (size == 0)
         return PyString_FromStringAndSize(NULL, 0);
-    res = PyBytes_FromStringAndSize(NULL, size);
+    res = PyByteArray_FromStringAndSize(NULL, size);
     if (res == NULL)
         return NULL;
-    str = PyBytes_AS_STRING(res);
+    str = PyByteArray_AS_STRING(res);
     ressize = size;
 
     while (p<endp) {
@@ -3631,7 +3631,7 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
 		    p = collend;
 		    break;
 		case 4: /* xmlcharrefreplace */
-		    respos = str - PyBytes_AS_STRING(res);
+		    respos = str - PyByteArray_AS_STRING(res);
 		    /* determine replacement size (temporarily (mis)uses p) */
 		    for (p = collstart, repsize = 0; p < collend; ++p) {
 			if (*p<10)
@@ -3658,9 +3658,9 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
 		    if (requiredsize > ressize) {
 			if (requiredsize<2*ressize)
 			    requiredsize = 2*ressize;
-			if (PyBytes_Resize(res, requiredsize))
+			if (PyByteArray_Resize(res, requiredsize))
 			    goto onError;
-			str = PyBytes_AS_STRING(res) + respos;
+			str = PyByteArray_AS_STRING(res) + respos;
 			ressize = requiredsize;
 		    }
 		    /* generate replacement (temporarily (mis)uses p) */
@@ -3678,17 +3678,17 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
 		    /* need more space? (at least enough for what we
 		       have+the replacement+the rest of the string, so
 		       we won't have to check space for encodable characters) */
-		    respos = str - PyBytes_AS_STRING(res);
+		    respos = str - PyByteArray_AS_STRING(res);
 		    repsize = PyUnicode_GET_SIZE(repunicode);
 		    requiredsize = respos+repsize+(endp-collend);
 		    if (requiredsize > ressize) {
 			if (requiredsize<2*ressize)
 			    requiredsize = 2*ressize;
-			if (PyBytes_Resize(res, requiredsize)) {
+			if (PyByteArray_Resize(res, requiredsize)) {
 			    Py_DECREF(repunicode);
 			    goto onError;
 			}
-			str = PyBytes_AS_STRING(res) + respos;
+			str = PyByteArray_AS_STRING(res) + respos;
 			ressize = requiredsize;
 		    }
 		    /* check if there is anything unencodable in the replacement
@@ -3708,8 +3708,8 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
 	    }
 	}
     }
-    result = PyString_FromStringAndSize(PyBytes_AS_STRING(res),
-                                        str - PyBytes_AS_STRING(res));
+    result = PyString_FromStringAndSize(PyByteArray_AS_STRING(res),
+                                        str - PyByteArray_AS_STRING(res));
   onError:
     Py_DECREF(res);
     Py_XDECREF(errorHandler);

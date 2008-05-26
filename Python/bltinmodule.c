@@ -1377,11 +1377,11 @@ builtin_ord(PyObject *self, PyObject* obj)
 		}
 #endif
 	}
-	else if (PyBytes_Check(obj)) {
+	else if (PyByteArray_Check(obj)) {
 		/* XXX Hopefully this is temporary */
-		size = PyBytes_GET_SIZE(obj);
+		size = PyByteArray_GET_SIZE(obj);
 		if (size == 1) {
-			ord = (long)((unsigned char)*PyBytes_AS_STRING(obj));
+			ord = (long)((unsigned char)*PyByteArray_AS_STRING(obj));
 			return PyLong_FromLong(ord);
 		}
 	}
@@ -1823,7 +1823,7 @@ builtin_sum(PyObject *self, PyObject *args)
 			Py_DECREF(iter);
 			return NULL;
 		}
-		if (PyBytes_Check(result)) {
+		if (PyByteArray_Check(result)) {
 			PyErr_SetString(PyExc_TypeError,
 				"sum() can't sum bytes [use b''.join(seq) instead]");
 			Py_DECREF(iter);
@@ -2266,7 +2266,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("True",		Py_True);
 	SETBUILTIN("bool",		&PyBool_Type);
 	SETBUILTIN("memoryview",        &PyMemoryView_Type);
-	SETBUILTIN("bytearray",		&PyBytes_Type);
+	SETBUILTIN("bytearray",		&PyByteArray_Type);
 	SETBUILTIN("bytes",		&PyString_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX

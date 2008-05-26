@@ -1263,16 +1263,16 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|Oi:read", &buf, &count))
 		return NULL;
         if ((buf == NULL) || (buf == Py_None)) {
-		if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
+		if (!(buf = PyByteArray_FromStringAndSize((char *) 0, len)))
 			return NULL;
         } else if (PyLong_Check(buf)) {
 		len = PyLong_AS_LONG(buf);
-		if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
+		if (!(buf = PyByteArray_FromStringAndSize((char *) 0, len)))
 			return NULL;
 	} else {
-		if (!PyBytes_Check(buf))
+		if (!PyByteArray_Check(buf))
 			return NULL;
-		len = PyBytes_Size(buf);
+		len = PyByteArray_Size(buf);
 		if ((count > 0) && (count <= len))
 			len = count;
 		buf_passed = 1;
@@ -1313,7 +1313,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	do {
 		err = 0;
 		PySSL_BEGIN_ALLOW_THREADS
-		count = SSL_read(self->ssl, PyBytes_AsString(buf), len);
+		count = SSL_read(self->ssl, PyByteArray_AsString(buf), len);
 		err = SSL_get_error(self->ssl, count);
 		PySSL_END_ALLOW_THREADS
 		if(PyErr_CheckSignals()) {
@@ -1357,7 +1357,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
   done:
 	if (!buf_passed) {
 		PyObject *res = PyString_FromStringAndSize(
-			PyBytes_AS_STRING(buf), count);
+			PyByteArray_AS_STRING(buf), count);
 		Py_DECREF(buf);
 		return res;
 	} else {

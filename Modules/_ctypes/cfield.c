@@ -1172,8 +1172,8 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 		*(char *)ptr = PyString_AS_STRING(value)[0];
 		_RET(value);
 	}
-	if (PyBytes_Check(value) && PyBytes_GET_SIZE(value) == 1) {
-		*(char *)ptr = PyBytes_AS_STRING(value)[0];
+	if (PyByteArray_Check(value) && PyByteArray_GET_SIZE(value) == 1) {
+		*(char *)ptr = PyByteArray_AS_STRING(value)[0];
 		_RET(value);
 	}
 	if (PyLong_Check(value))
