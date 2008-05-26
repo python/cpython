@@ -866,8 +866,8 @@ readinst(char *buf, int buf_size, PyObject *meth)
 
     if (PyString_Check(str))
         ptr = PyString_AS_STRING(str);
-    else if (PyBytes_Check(str))
-        ptr = PyBytes_AS_STRING(str);
+    else if (PyByteArray_Check(str))
+        ptr = PyByteArray_AS_STRING(str);
     else {
         PyErr_Format(PyExc_TypeError,
                      "read() did not return a bytes object (type=%.400s)",

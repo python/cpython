@@ -167,7 +167,7 @@ static int _need_adapt(PyObject* obj)
     }
 
     if (PyLong_CheckExact(obj) || PyFloat_CheckExact(obj)
-          || PyUnicode_CheckExact(obj) || PyBytes_CheckExact(obj)) {
+          || PyUnicode_CheckExact(obj) || PyByteArray_CheckExact(obj)) {
         return 0;
     } else {
         return 1;

@@ -360,7 +360,7 @@ check_bom(int get_char(struct tok_state *),
      1) NULL: need to call tok->decoding_readline to get a new line
      2) PyUnicodeObject *: decoding_feof has called tok->decoding_readline and
            stored the result in tok->decoding_buffer
-     3) PyBytesObject *: previous call to fp_readl did not have enough room
+     3) PyByteArrayObject *: previous call to fp_readl did not have enough room
            (in the s buffer) to copy entire contents of the line read
            by tok->decoding_readline.  tok->decoding_buffer has the overflow.
            In this case, fp_readl is called in a loop (with an expanded buffer)
@@ -398,17 +398,17 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	}
 	else
 	{
-		buf = PyBytes_AsString(bufobj);
+		buf = PyByteArray_AsString(bufobj);
 		if (buf == NULL) {
 			goto error;
 		}
-		buflen = PyBytes_GET_SIZE(bufobj);
+		buflen = PyByteArray_GET_SIZE(bufobj);
 	}
 
 	Py_XDECREF(tok->decoding_buffer);
 	if (buflen > size) {
 		/* Too many chars, the rest goes into tok->decoding_buffer */
-		tok->decoding_buffer = PyBytes_FromStringAndSize(buf+size,
+		tok->decoding_buffer = PyByteArray_FromStringAndSize(buf+size,
 								 buflen-size);
 		if (tok->decoding_buffer == NULL)
 			goto error;

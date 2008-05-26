@@ -1596,7 +1596,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 		return (PyObject *)parg;
 	}
 /* bytes */
-	if (PyBytes_Check(value)) {
+	if (PyByteArray_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("z");
 

@@ -345,7 +345,7 @@ PyObject *PyCodec_Encode(PyObject *object,
 	goto onError;
     }
     v = PyTuple_GET_ITEM(result, 0);
-    if (PyBytes_Check(v)) {
+    if (PyByteArray_Check(v)) {
         char msg[100];
         PyOS_snprintf(msg, sizeof(msg),
                       "encoder %s returned buffer instead of bytes",
@@ -354,7 +354,7 @@ PyObject *PyCodec_Encode(PyObject *object,
             v = NULL;
             goto onError;
         }
-        v = PyString_FromStringAndSize(PyBytes_AS_STRING(v), Py_SIZE(v));
+        v = PyString_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
     }
     else if (PyString_Check(v))
         Py_INCREF(v);

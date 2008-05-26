@@ -228,7 +228,7 @@ mmap_read_line_method(mmap_object *self,
 	else
 		++eol;		/* we're interested in the position after the
 				   newline. */
-	result = PyBytes_FromStringAndSize(start, (eol - start));
+	result = PyByteArray_FromStringAndSize(start, (eol - start));
 	self->pos += (eol - start);
 	return result;
 }
@@ -248,7 +248,7 @@ mmap_read_method(mmap_object *self,
 	if ((self->pos + num_bytes) > self->size) {
 		num_bytes -= (self->pos+num_bytes) - self->size;
 	}
-	result = PyBytes_FromStringAndSize(self->data+self->pos, num_bytes);
+	result = PyByteArray_FromStringAndSize(self->data+self->pos, num_bytes);
 	self->pos += num_bytes;
 	return result;
 }
@@ -679,7 +679,7 @@ mmap_item(mmap_object *self, Py_ssize_t i)
 		PyErr_SetString(PyExc_IndexError, "mmap index out of range");
 		return NULL;
 	}
-	return PyBytes_FromStringAndSize(self->data + i, 1);
+	return PyByteArray_FromStringAndSize(self->data + i, 1);
 }
 
 static PyObject *
@@ -769,14 +769,14 @@ mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
 				"mmap object doesn't support item deletion");
 		return -1;
 	}
-	if (! (PyBytes_Check(v) && PyBytes_Size(v)==1) ) {
+	if (! (PyByteArray_Check(v) && PyByteArray_Size(v)==1) ) {
 		PyErr_SetString(PyExc_IndexError,
 				"mmap assignment must be length-1 bytes()");
 		return -1;
 	}
 	if (!is_writable(self))
 		return -1;
-	buf = PyBytes_AsString(v);
+	buf = PyByteArray_AsString(v);
 	self->data[i] = buf[0];
 	return 0;
 }

@@ -1469,7 +1469,7 @@ string_join(PyObject *self, PyObject *orig)
 	for (i = 0; i < seqlen; i++) {
 		const size_t old_sz = sz;
 		item = PySequence_Fast_GET_ITEM(seq, i);
-		if (!PyString_Check(item) && !PyBytes_Check(item)) {
+		if (!PyString_Check(item) && !PyByteArray_Check(item)) {
 			PyErr_Format(PyExc_TypeError,
 				     "sequence item %zd: expected bytes,"
 				     " %.80s found",
@@ -1496,7 +1496,7 @@ string_join(PyObject *self, PyObject *orig)
 	}
 
 	/* Catenate everything. */
-	/* I'm not worried about a PyBytes item growing because there's
+	/* I'm not worried about a PyByteArray item growing because there's
 	   nowhere in this function where we release the GIL. */
 	p = PyString_AS_STRING(res);
 	for (i = 0; i < seqlen; ++i) {
@@ -1511,7 +1511,7 @@ string_join(PyObject *self, PyObject *orig)
                 if (PyString_Check(item))
 			q = PyString_AS_STRING(item);
 		else
-			q = PyBytes_AS_STRING(item);
+			q = PyByteArray_AS_STRING(item);
 		Py_MEMCPY(p, q, n);
 		p += n;
 	}

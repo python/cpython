@@ -1855,7 +1855,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (!(initial == NULL || PyList_Check(initial)
-	      || PyBytes_Check(initial)
+	      || PyByteArray_Check(initial)
 	      || PyString_Check(initial)
 	      || PyTuple_Check(initial)
 	      || ((c=='u') && PyUnicode_Check(initial)))) {
@@ -1901,7 +1901,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					Py_DECREF(v);
 				}
 			}
-			else if (initial != NULL && (PyBytes_Check(initial) ||
+			else if (initial != NULL && (PyByteArray_Check(initial) ||
 					   PyString_Check(initial))) {
 				PyObject *t_initial, *v;
 				t_initial = PyTuple_Pack(1, initial);

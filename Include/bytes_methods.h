@@ -2,7 +2,7 @@
 #define Py_BYTES_CTYPE_H
 
 /*
- * The internal implementation behind PyString (bytes) and PyBytes (buffer)
+ * The internal implementation behind PyBytes (bytes) and PyByteArray (bytearray)
  * methods of the given names, they operate on ASCII byte strings.
  */
 extern PyObject* _Py_bytes_isspace(const char *cptr, Py_ssize_t len);

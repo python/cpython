@@ -3518,13 +3518,13 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
 					  PyUnicode_GET_SIZE(x),
 					  base);
-	else if (PyBytes_Check(x) || PyString_Check(x)) {
+	else if (PyByteArray_Check(x) || PyString_Check(x)) {
 		/* Since PyLong_FromString doesn't have a length parameter,
 		 * check here for possible NULs in the string. */
 		char *string;
 		int size = Py_SIZE(x);
-		if (PyBytes_Check(x))
-			string = PyBytes_AS_STRING(x);
+		if (PyByteArray_Check(x))
+			string = PyByteArray_AS_STRING(x);
 		else
 			string = PyString_AS_STRING(x);
 		if (strlen(string) != size) {

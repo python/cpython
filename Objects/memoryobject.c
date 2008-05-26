@@ -254,12 +254,12 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                                 "for a non-contiguousobject.");
                 return NULL;
         }
-        bytes = PyBytes_FromStringAndSize(NULL, view->len);
+        bytes = PyByteArray_FromStringAndSize(NULL, view->len);
         if (bytes == NULL) {
                 PyObject_ReleaseBuffer(obj, view);
                 return NULL;
         }
-        dest = PyBytes_AS_STRING(bytes);
+        dest = PyByteArray_AS_STRING(bytes);
         /* different copying strategy depending on whether
            or not any pointer de-referencing is needed
         */
@@ -382,7 +382,7 @@ static PyGetSetDef memory_getsetlist[] ={
 static PyObject *
 memory_tobytes(PyMemoryViewObject *mem, PyObject *noargs)
 {
-        return PyBytes_FromObject((PyObject *)mem);
+        return PyByteArray_FromObject((PyObject *)mem);
 }
 
 static PyObject *
@@ -451,8 +451,8 @@ memory_str(PyMemoryViewObject *self)
         if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_FULL) < 0)
                 return NULL;
 
-	res = PyBytes_FromStringAndSize(NULL, view.len);
-        PyBuffer_ToContiguous(PyBytes_AS_STRING(res), &view, view.len, 'C');
+	res = PyByteArray_FromStringAndSize(NULL, view.len);
+        PyBuffer_ToContiguous(PyByteArray_AS_STRING(res), &view, view.len, 'C');
         PyObject_ReleaseBuffer((PyObject *)self, &view);
         return res;
 }
@@ -522,7 +522,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
                         {
 				ptr = *((char **)ptr) + view->suboffsets[0];
 			}
-			return PyBytes_FromStringAndSize(ptr, view->itemsize);
+			return PyByteArray_FromStringAndSize(ptr, view->itemsize);
 		}
 		else {
 			/* Return a new memory-view object */

@@ -1174,14 +1174,14 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         else if (PyLong_Check(result)) {
             retval = PyLong_AsLong(result);
         }
-        else if (PyBytes_Check(result) || PyString_Check(result)) {
+        else if (PyByteArray_Check(result) || PyString_Check(result)) {
             char* data;
             Py_ssize_t size;
 
             CLEAR_DBT(*secKey);
             size = Py_SIZE(result);
-            if (PyBytes_Check(result))
-                data = PyBytes_AS_STRING(result);
+            if (PyByteArray_Check(result))
+                data = PyByteArray_AS_STRING(result);
             else
                 data = PyString_AS_STRING(result);
             secKey->flags = DB_DBT_APPMALLOC;   /* DB will free */
