@@ -104,6 +104,17 @@ static char *rcs_id = "$Id$";
 typedef int Py_ssize_t;
 #endif
 
+#if (PY_VERSION_HEX < 0x02060000)  /* really: before python trunk r63675 */
+/* This code now uses PyBytes* API function names instead of PyString*.
+ * These #defines map to their equivalent on earlier python versions.    */
+#define PyBytes_FromStringAndSize PyString_FromStringAndSize
+#define PyBytes_FromString PyString_FromString
+#define PyBytes_AsStringAndSize PyString_AsStringAndSize
+#define PyBytes_Check PyString_Check
+#define PyBytes_GET_SIZE PyString_GET_SIZE
+#define PyBytes_AS_STRING PyString_AS_STRING
+#endif
+
 #ifdef WITH_THREAD
 
 /* These are for when calling Python --> C */
