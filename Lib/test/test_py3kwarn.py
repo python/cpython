@@ -212,6 +212,15 @@ class TestStdlibRemovals(unittest.TestCase):
                 mod.walk(".", dumbo, None)
             self.assertEquals(str(w.message), msg)
 
+    def test_commands_members(self):
+        import commands
+        members = {"mk2arg" : 2, "mkarg" : 1, "getstatus" : 1}
+        for name, arg_count in members.items():
+            with catch_warning(record=False):
+                warnings.filterwarnings("error")
+                func = getattr(commands, name)
+                self.assertRaises(DeprecationWarning, func, *([None]*arg_count))
+
 
 def test_main():
     run_unittest(TestPy3KWarnings,

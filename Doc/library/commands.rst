@@ -42,7 +42,13 @@ The :mod:`commands` module defines the following functions:
 
    .. deprecated:: 2.6
       This function is nonobvious and useless, also the name is misleading in the
-      presence of :func:`getstatusoutput`.
+      presence of :func:`getstatusoutput`.  It is removed in 3.x.
+
+.. warning::
+
+   Two undocumented functions in this module, :func:`mk2arg` and :func:`mkargs`
+   are removed in 3.x.
+
 
 Example::
 
