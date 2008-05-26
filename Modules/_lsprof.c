@@ -179,8 +179,8 @@ normalizeUserObj(PyObject *obj)
 		/* built-in function: look up the module name */
 		PyObject *mod = fn->m_module;
 		char *modname;
-		if (mod && PyString_Check(mod)) {
-			modname = PyString_AS_STRING(mod);
+		if (mod && PyBytes_Check(mod)) {
+			modname = PyBytes_AS_STRING(mod);
 		}
 		else if (mod && PyModule_Check(mod)) {
 			modname = PyModule_GetName(mod);
@@ -193,11 +193,11 @@ normalizeUserObj(PyObject *obj)
 			modname = "__builtin__";
 		}
 		if (strcmp(modname, "__builtin__") != 0)
-			return PyString_FromFormat("<%s.%s>",
+			return PyBytes_FromFormat("<%s.%s>",
 						   modname,
 						   fn->m_ml->ml_name);
 		else
-			return PyString_FromFormat("<%s>",
+			return PyBytes_FromFormat("<%s>",
 						   fn->m_ml->ml_name);
 	}
 	else {
@@ -205,7 +205,7 @@ normalizeUserObj(PyObject *obj)
 			repr(getattr(type(__self__), __name__))
 		*/
 		PyObject *self = fn->m_self;
-		PyObject *name = PyString_FromString(fn->m_ml->ml_name);
+		PyObject *name = PyBytes_FromString(fn->m_ml->ml_name);
 		if (name != NULL) {
 			PyObject *mo = _PyType_Lookup(Py_TYPE(self), name);
 			Py_XINCREF(mo);
@@ -218,7 +218,7 @@ normalizeUserObj(PyObject *obj)
 			}
 		}
 		PyErr_Clear();
-		return PyString_FromFormat("<built-in method %s>",
+		return PyBytes_FromFormat("<built-in method %s>",
 					   fn->m_ml->ml_name);
 	}
 }

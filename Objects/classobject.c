@@ -32,21 +32,21 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 	PyClassObject *op, *dummy;
 	static PyObject *docstr, *modstr, *namestr;
 	if (docstr == NULL) {
-		docstr= PyString_InternFromString("__doc__");
+		docstr= PyBytes_InternFromString("__doc__");
 		if (docstr == NULL)
 			return NULL;
 	}
 	if (modstr == NULL) {
-		modstr= PyString_InternFromString("__module__");
+		modstr= PyBytes_InternFromString("__module__");
 		if (modstr == NULL)
 			return NULL;
 	}
 	if (namestr == NULL) {
-		namestr= PyString_InternFromString("__name__");
+		namestr= PyBytes_InternFromString("__name__");
 		if (namestr == NULL)
 			return NULL;
 	}
-	if (name == NULL || !PyString_Check(name)) {
+	if (name == NULL || !PyBytes_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"PyClass_New: name must be a string");
 		return NULL;
@@ -101,13 +101,13 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 	}
 
 	if (getattrstr == NULL) {
-		getattrstr = PyString_InternFromString("__getattr__");
+		getattrstr = PyBytes_InternFromString("__getattr__");
 		if (getattrstr == NULL)
 			goto alloc_error;
-		setattrstr = PyString_InternFromString("__setattr__");
+		setattrstr = PyBytes_InternFromString("__setattr__");
 		if (setattrstr == NULL)
 			goto alloc_error;
-		delattrstr = PyString_InternFromString("__delattr__");
+		delattrstr = PyBytes_InternFromString("__delattr__");
 		if (delattrstr == NULL)
 			goto alloc_error;
 	}
@@ -222,7 +222,7 @@ static PyObject *
 class_getattr(register PyClassObject *op, PyObject *name)
 {
 	register PyObject *v;
-	register char *sname = PyString_AsString(name);
+	register char *sname = PyBytes_AsString(name);
 	PyClassObject *klass;
 	descrgetfunc f;
 
@@ -253,7 +253,7 @@ class_getattr(register PyClassObject *op, PyObject *name)
 	if (v == NULL) {
 		PyErr_Format(PyExc_AttributeError,
 			     "class %.50s has no attribute '%.400s'",
-			     PyString_AS_STRING(op->cl_name), sname);
+			     PyBytes_AS_STRING(op->cl_name), sname);
 		return NULL;
 	}
 	f = TP_DESCR_GET(v->ob_type);
@@ -316,9 +316,9 @@ set_bases(PyClassObject *c, PyObject *v)
 static char *
 set_name(PyClassObject *c, PyObject *v)
 {
-	if (v == NULL || !PyString_Check(v))
+	if (v == NULL || !PyBytes_Check(v))
 		return "__name__ must be a string object";
-	if (strlen(PyString_AS_STRING(v)) != (size_t)PyString_GET_SIZE(v))
+	if (strlen(PyBytes_AS_STRING(v)) != (size_t)PyBytes_GET_SIZE(v))
 		return "__name__ must not contain null bytes";
 	set_slot(&c->cl_name, v);
 	return "";
@@ -333,9 +333,9 @@ class_setattr(PyClassObject *op, PyObject *name, PyObject *v)
 			   "classes are read-only in restricted mode");
 		return -1;
 	}
-	sname = PyString_AsString(name);
+	sname = PyBytes_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
-		Py_ssize_t n = PyString_Size(name);
+		Py_ssize_t n = PyBytes_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			char *err = NULL;
 			if (strcmp(sname, "__dict__") == 0)
@@ -365,7 +365,7 @@ class_setattr(PyClassObject *op, PyObject *name, PyObject *v)
 		if (rv < 0)
 			PyErr_Format(PyExc_AttributeError,
 				     "class %.50s has no attribute '%.400s'",
-				     PyString_AS_STRING(op->cl_name), sname);
+				     PyBytes_AS_STRING(op->cl_name), sname);
 		return rv;
 	}
 	else
@@ -377,15 +377,15 @@ class_repr(PyClassObject *op)
 {
 	PyObject *mod = PyDict_GetItemString(op->cl_dict, "__module__");
 	char *name;
-	if (op->cl_name == NULL || !PyString_Check(op->cl_name))
+	if (op->cl_name == NULL || !PyBytes_Check(op->cl_name))
 		name = "?";
 	else
-		name = PyString_AsString(op->cl_name);
-	if (mod == NULL || !PyString_Check(mod))
-		return PyString_FromFormat("<class ?.%s at %p>", name, op);
+		name = PyBytes_AsString(op->cl_name);
+	if (mod == NULL || !PyBytes_Check(mod))
+		return PyBytes_FromFormat("<class ?.%s at %p>", name, op);
 	else
-		return PyString_FromFormat("<class %s.%s at %p>",
-					   PyString_AsString(mod),
+		return PyBytes_FromFormat("<class %s.%s at %p>",
+					   PyBytes_AsString(mod),
 					   name, op);
 }
 
@@ -397,21 +397,21 @@ class_str(PyClassObject *op)
 	PyObject *res;
 	Py_ssize_t m, n;
 
-	if (name == NULL || !PyString_Check(name))
+	if (name == NULL || !PyBytes_Check(name))
 		return class_repr(op);
-	if (mod == NULL || !PyString_Check(mod)) {
+	if (mod == NULL || !PyBytes_Check(mod)) {
 		Py_INCREF(name);
 		return name;
 	}
-	m = PyString_GET_SIZE(mod);
-	n = PyString_GET_SIZE(name);
-	res = PyString_FromStringAndSize((char *)NULL, m+1+n);
+	m = PyBytes_GET_SIZE(mod);
+	n = PyBytes_GET_SIZE(name);
+	res = PyBytes_FromStringAndSize((char *)NULL, m+1+n);
 	if (res != NULL) {
-		char *s = PyString_AS_STRING(res);
-		memcpy(s, PyString_AS_STRING(mod), m);
+		char *s = PyBytes_AS_STRING(res);
+		memcpy(s, PyBytes_AS_STRING(mod), m);
 		s += m;
 		*s++ = '.';
-		memcpy(s, PyString_AS_STRING(name), n);
+		memcpy(s, PyBytes_AS_STRING(name), n);
 	}
 	return res;
 }
@@ -541,7 +541,7 @@ PyInstance_New(PyObject *klass, PyObject *arg, PyObject *kw)
 	static PyObject *initstr;
 
 	if (initstr == NULL) {
-		initstr = PyString_InternFromString("__init__");
+		initstr = PyBytes_InternFromString("__init__");
 		if (initstr == NULL)
 			return NULL;
 	}
@@ -634,7 +634,7 @@ instance_dealloc(register PyInstanceObject *inst)
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	/* Execute __del__ method, if any. */
 	if (delstr == NULL) {
-		delstr = PyString_InternFromString("__del__");
+		delstr = PyBytes_InternFromString("__del__");
 		if (delstr == NULL)
 			PyErr_WriteUnraisable((PyObject*)inst);
 	}
@@ -696,7 +696,7 @@ static PyObject *
 instance_getattr1(register PyInstanceObject *inst, PyObject *name)
 {
 	register PyObject *v;
-	register char *sname = PyString_AsString(name);
+	register char *sname = PyBytes_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
 		if (strcmp(sname, "__dict__") == 0) {
 			if (PyEval_GetRestricted()) {
@@ -716,7 +716,7 @@ instance_getattr1(register PyInstanceObject *inst, PyObject *name)
 	if (v == NULL && !PyErr_Occurred()) {
 		PyErr_Format(PyExc_AttributeError,
 			     "%.50s instance has no attribute '%.400s'",
-			     PyString_AS_STRING(inst->in_class->cl_name), sname);
+			     PyBytes_AS_STRING(inst->in_class->cl_name), sname);
 	}
 	return v;
 }
@@ -779,7 +779,7 @@ _PyInstance_Lookup(PyObject *pinst, PyObject *name)
 	assert(PyInstance_Check(pinst));
 	inst = (PyInstanceObject *)pinst;
 
-	assert(PyString_Check(name));
+	assert(PyBytes_Check(name));
 
  	v = PyDict_GetItem(inst->in_dict, name);
 	if (v == NULL)
@@ -795,8 +795,8 @@ instance_setattr1(PyInstanceObject *inst, PyObject *name, PyObject *v)
 		if (rv < 0)
 			PyErr_Format(PyExc_AttributeError,
 				     "%.50s instance has no attribute '%.400s'",
-				     PyString_AS_STRING(inst->in_class->cl_name),
-				     PyString_AS_STRING(name));
+				     PyBytes_AS_STRING(inst->in_class->cl_name),
+				     PyBytes_AS_STRING(name));
 		return rv;
 	}
 	else
@@ -807,9 +807,9 @@ static int
 instance_setattr(PyInstanceObject *inst, PyObject *name, PyObject *v)
 {
 	PyObject *func, *args, *res, *tmp;
-	char *sname = PyString_AsString(name);
+	char *sname = PyBytes_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
-		Py_ssize_t n = PyString_Size(name);
+		Py_ssize_t n = PyBytes_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			if (strcmp(sname, "__dict__") == 0) {
 				if (PyEval_GetRestricted()) {
@@ -875,7 +875,7 @@ instance_repr(PyInstanceObject *inst)
 	static PyObject *reprstr;
 
 	if (reprstr == NULL) {
-		reprstr = PyString_InternFromString("__repr__");
+		reprstr = PyBytes_InternFromString("__repr__");
 		if (reprstr == NULL)
 			return NULL;
 	}
@@ -889,16 +889,16 @@ instance_repr(PyInstanceObject *inst)
 		classname = inst->in_class->cl_name;
 		mod = PyDict_GetItemString(inst->in_class->cl_dict,
 					   "__module__");
-		if (classname != NULL && PyString_Check(classname))
-			cname = PyString_AsString(classname);
+		if (classname != NULL && PyBytes_Check(classname))
+			cname = PyBytes_AsString(classname);
 		else
 			cname = "?";
-		if (mod == NULL || !PyString_Check(mod))
-			return PyString_FromFormat("<?.%s instance at %p>",
+		if (mod == NULL || !PyBytes_Check(mod))
+			return PyBytes_FromFormat("<?.%s instance at %p>",
 						   cname, inst);
 		else
-			return PyString_FromFormat("<%s.%s instance at %p>",
-						   PyString_AsString(mod),
+			return PyBytes_FromFormat("<%s.%s instance at %p>",
+						   PyBytes_AsString(mod),
 						   cname, inst);
 	}
 	res = PyEval_CallObject(func, (PyObject *)NULL);
@@ -914,7 +914,7 @@ instance_str(PyInstanceObject *inst)
 	static PyObject *strstr;
 
 	if (strstr == NULL) {
-		strstr = PyString_InternFromString("__str__");
+		strstr = PyBytes_InternFromString("__str__");
 		if (strstr == NULL)
 			return NULL;
 	}
@@ -939,7 +939,7 @@ instance_hash(PyInstanceObject *inst)
 	static PyObject *hashstr, *eqstr, *cmpstr;
 
 	if (hashstr == NULL) {
-		hashstr = PyString_InternFromString("__hash__");
+		hashstr = PyBytes_InternFromString("__hash__");
 		if (hashstr == NULL)
 			return -1;
 	}
@@ -952,7 +952,7 @@ instance_hash(PyInstanceObject *inst)
 		   address.  If an __eq__ or __cmp__ method exists, there must
 		   be a __hash__. */
 		if (eqstr == NULL) {
-			eqstr = PyString_InternFromString("__eq__");
+			eqstr = PyBytes_InternFromString("__eq__");
 			if (eqstr == NULL)
 				return -1;
 		}
@@ -962,7 +962,7 @@ instance_hash(PyInstanceObject *inst)
 				return -1;
 			PyErr_Clear();
 			if (cmpstr == NULL) {
-				cmpstr = PyString_InternFromString("__cmp__");
+				cmpstr = PyBytes_InternFromString("__cmp__");
 				if (cmpstr == NULL)
 					return -1;
 			}
@@ -1014,7 +1014,7 @@ instance_length(PyInstanceObject *inst)
 	Py_ssize_t outcome;
 
 	if (lenstr == NULL) {
-		lenstr = PyString_InternFromString("__len__");
+		lenstr = PyBytes_InternFromString("__len__");
 		if (lenstr == NULL)
 			return -1;
 	}
@@ -1063,7 +1063,7 @@ instance_subscript(PyInstanceObject *inst, PyObject *key)
 	PyObject *res;
 
 	if (getitemstr == NULL) {
-		getitemstr = PyString_InternFromString("__getitem__");
+		getitemstr = PyBytes_InternFromString("__getitem__");
 		if (getitemstr == NULL)
 			return NULL;
 	}
@@ -1090,7 +1090,7 @@ instance_ass_subscript(PyInstanceObject *inst, PyObject *key, PyObject *value)
 
 	if (value == NULL) {
 		if (delitemstr == NULL) {
-			delitemstr = PyString_InternFromString("__delitem__");
+			delitemstr = PyBytes_InternFromString("__delitem__");
 			if (delitemstr == NULL)
 				return -1;
 		}
@@ -1098,7 +1098,7 @@ instance_ass_subscript(PyInstanceObject *inst, PyObject *key, PyObject *value)
 	}
 	else {
 		if (setitemstr == NULL) {
-			setitemstr = PyString_InternFromString("__setitem__");
+			setitemstr = PyBytes_InternFromString("__setitem__");
 			if (setitemstr == NULL)
 				return -1;
 		}
@@ -1135,7 +1135,7 @@ instance_item(PyInstanceObject *inst, Py_ssize_t i)
 	PyObject *func, *res;
 
 	if (getitemstr == NULL) {
-		getitemstr = PyString_InternFromString("__getitem__");
+		getitemstr = PyBytes_InternFromString("__getitem__");
 		if (getitemstr == NULL)
 			return NULL;
 	}
@@ -1154,7 +1154,7 @@ instance_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j)
 	static PyObject *getslicestr;
 
 	if (getslicestr == NULL) {
-		getslicestr = PyString_InternFromString("__getslice__");
+		getslicestr = PyBytes_InternFromString("__getslice__");
 		if (getslicestr == NULL)
 			return NULL;
 	}
@@ -1166,7 +1166,7 @@ instance_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j)
 		PyErr_Clear();
 
 		if (getitemstr == NULL) {
-			getitemstr = PyString_InternFromString("__getitem__");
+			getitemstr = PyBytes_InternFromString("__getitem__");
 			if (getitemstr == NULL)
 				return NULL;
 		}
@@ -1194,7 +1194,7 @@ instance_ass_item(PyInstanceObject *inst, Py_ssize_t i, PyObject *item)
 
 	if (item == NULL) {
 		if (delitemstr == NULL) {
-			delitemstr = PyString_InternFromString("__delitem__");
+			delitemstr = PyBytes_InternFromString("__delitem__");
 			if (delitemstr == NULL)
 				return -1;
 		}
@@ -1202,7 +1202,7 @@ instance_ass_item(PyInstanceObject *inst, Py_ssize_t i, PyObject *item)
 	}
 	else {
 		if (setitemstr == NULL) {
-			setitemstr = PyString_InternFromString("__setitem__");
+			setitemstr = PyBytes_InternFromString("__setitem__");
 			if (setitemstr == NULL)
 				return -1;
 		}
@@ -1236,7 +1236,7 @@ instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject 
 	if (value == NULL) {
 		if (delslicestr == NULL) {
 			delslicestr =
-				PyString_InternFromString("__delslice__");
+				PyBytes_InternFromString("__delslice__");
 			if (delslicestr == NULL)
 				return -1;
 		}
@@ -1247,7 +1247,7 @@ instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject 
 			PyErr_Clear();
 			if (delitemstr == NULL) {
 				delitemstr =
-				    PyString_InternFromString("__delitem__");
+				    PyBytes_InternFromString("__delitem__");
 				if (delitemstr == NULL)
 					return -1;
 			}
@@ -1263,7 +1263,7 @@ instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject 
 	else {
 		if (setslicestr == NULL) {
 			setslicestr =
-				PyString_InternFromString("__setslice__");
+				PyBytes_InternFromString("__setslice__");
 			if (setslicestr == NULL)
 				return -1;
 		}
@@ -1274,7 +1274,7 @@ instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject 
 			PyErr_Clear();
 			if (setitemstr == NULL) {
 				setitemstr =
-				    PyString_InternFromString("__setitem__");
+				    PyBytes_InternFromString("__setitem__");
 				if (setitemstr == NULL)
 					return -1;
 			}
@@ -1311,7 +1311,7 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 	 */
 
 	if(__contains__ == NULL) {
-		__contains__ = PyString_InternFromString("__contains__");
+		__contains__ = PyBytes_InternFromString("__contains__");
 		if(__contains__ == NULL)
 			return -1;
 	}
@@ -1417,7 +1417,7 @@ half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 	}
 
 	if (coerce_obj == NULL) {
-		coerce_obj = PyString_InternFromString("__coerce__");
+		coerce_obj = PyBytes_InternFromString("__coerce__");
 		if (coerce_obj == NULL)
 			return NULL;
 	}
@@ -1504,7 +1504,7 @@ instance_coerce(PyObject **pv, PyObject **pw)
 	PyObject *coerced;
 
 	if (coerce_obj == NULL) {
-		coerce_obj = PyString_InternFromString("__coerce__");
+		coerce_obj = PyBytes_InternFromString("__coerce__");
 		if (coerce_obj == NULL)
 			return -1;
 	}
@@ -1552,7 +1552,7 @@ instance_coerce(PyObject **pv, PyObject **pw)
 #define UNARY(funcname, methodname) \
 static PyObject *funcname(PyInstanceObject *self) { \
 	static PyObject *o; \
-	if (o == NULL) { o = PyString_InternFromString(methodname); \
+	if (o == NULL) { o = PyBytes_InternFromString(methodname); \
 			 if (o == NULL) return NULL; } \
 	return generic_unary_op(self, o); \
 }
@@ -1561,7 +1561,7 @@ static PyObject *funcname(PyInstanceObject *self) { \
 #define UNARY_FB(funcname, methodname, funcname_fb) \
 static PyObject *funcname(PyInstanceObject *self) { \
 	static PyObject *o; \
-	if (o == NULL) { o = PyString_InternFromString(methodname); \
+	if (o == NULL) { o = PyBytes_InternFromString(methodname); \
 			 if (o == NULL) return NULL; } \
 	if (PyObject_HasAttr((PyObject*)self, o)) \
 		return generic_unary_op(self, o); \
@@ -1630,7 +1630,7 @@ half_cmp(PyObject *v, PyObject *w)
 	assert(PyInstance_Check(v));
 
 	if (cmp_obj == NULL) {
-		cmp_obj = PyString_InternFromString("__cmp__");
+		cmp_obj = PyBytes_InternFromString("__cmp__");
 		if (cmp_obj == NULL)
 			return -2;
 	}
@@ -1738,7 +1738,7 @@ instance_nonzero(PyInstanceObject *self)
 	static PyObject *nonzerostr;
 
 	if (nonzerostr == NULL) {
-		nonzerostr = PyString_InternFromString("__nonzero__");
+		nonzerostr = PyBytes_InternFromString("__nonzero__");
 		if (nonzerostr == NULL)
 			return -1;
 	}
@@ -1747,7 +1747,7 @@ instance_nonzero(PyInstanceObject *self)
 			return -1;
 		PyErr_Clear();
 		if (lenstr == NULL) {
-			lenstr = PyString_InternFromString("__len__");
+			lenstr = PyBytes_InternFromString("__len__");
 			if (lenstr == NULL)
 				return -1;
 		}
@@ -1787,7 +1787,7 @@ instance_index(PyInstanceObject *self)
 	static PyObject *indexstr = NULL;
 
 	if (indexstr == NULL) {
-		indexstr = PyString_InternFromString("__index__");
+		indexstr = PyBytes_InternFromString("__index__");
 		if (indexstr == NULL)
 			return NULL;
 	}	
@@ -1814,7 +1814,7 @@ instance_int(PyInstanceObject *self)
 	PyObject *truncated;
 	static PyObject *int_name;
 	if (int_name == NULL) {
-		int_name = PyString_InternFromString("__int__");
+		int_name = PyBytes_InternFromString("__int__");
 		if (int_name == NULL)
 			return NULL;
 	}
@@ -1929,7 +1929,7 @@ init_name_op(void)
 	if (name_op == NULL)
 		return -1;
 	for (i = 0; i < NAME_OPS; ++i) {
-		name_op[i] = PyString_InternFromString(_name_op[i]);
+		name_op[i] = PyBytes_InternFromString(_name_op[i]);
 		if (name_op[i] == NULL)
 			return -1;
 	}
@@ -2012,12 +2012,12 @@ instance_getiter(PyInstanceObject *self)
 	PyObject *func;
 
 	if (iterstr == NULL) {
-		iterstr = PyString_InternFromString("__iter__");
+		iterstr = PyBytes_InternFromString("__iter__");
 		if (iterstr == NULL)
 			return NULL;
 	}
 	if (getitemstr == NULL) {
-		getitemstr = PyString_InternFromString("__getitem__");
+		getitemstr = PyBytes_InternFromString("__getitem__");
 		if (getitemstr == NULL)
 			return NULL;
 	}
@@ -2055,7 +2055,7 @@ instance_iternext(PyInstanceObject *self)
 	PyObject *func;
 
 	if (nextstr == NULL) {
-		nextstr = PyString_InternFromString("next");
+		nextstr = PyBytes_InternFromString("next");
 		if (nextstr == NULL)
 			return NULL;
 	}
@@ -2087,7 +2087,7 @@ instance_call(PyObject *func, PyObject *arg, PyObject *kw)
 		PyErr_Clear();
 		PyErr_Format(PyExc_AttributeError,
 			     "%.200s instance has no __call__ method",
-			     PyString_AsString(inst->in_class->cl_name));
+			     PyBytes_AsString(inst->in_class->cl_name));
 		return NULL;
 	}
 	/* We must check and increment the recursion depth here. Scenario:
@@ -2261,7 +2261,7 @@ instancemethod_get_doc(PyMethodObject *im, void *context)
 {
 	static PyObject *docstr;
 	if (docstr == NULL) {
-		docstr= PyString_InternFromString("__doc__");
+		docstr= PyBytes_InternFromString("__doc__");
 		if (docstr == NULL)
 			return NULL;
 	}
@@ -2384,12 +2384,12 @@ instancemethod_repr(PyMethodObject *a)
 			return NULL;
 		PyErr_Clear();
 	}
-	else if (!PyString_Check(funcname)) {
+	else if (!PyBytes_Check(funcname)) {
 		Py_DECREF(funcname);
 		funcname = NULL;
 	}
 	else
-		sfuncname = PyString_AS_STRING(funcname);
+		sfuncname = PyBytes_AS_STRING(funcname);
 	if (klass == NULL)
 		klassname = NULL;
 	else {
@@ -2399,28 +2399,28 @@ instancemethod_repr(PyMethodObject *a)
 				return NULL;
 			PyErr_Clear();
 		}
-		else if (!PyString_Check(klassname)) {
+		else if (!PyBytes_Check(klassname)) {
 			Py_DECREF(klassname);
 			klassname = NULL;
 		}
 		else
-			sklassname = PyString_AS_STRING(klassname);
+			sklassname = PyBytes_AS_STRING(klassname);
 	}
 	if (self == NULL)
-		result = PyString_FromFormat("<unbound method %s.%s>",
+		result = PyBytes_FromFormat("<unbound method %s.%s>",
 					     sklassname, sfuncname);
 	else {
 		/* XXX Shouldn't use repr() here! */
 		PyObject *selfrepr = PyObject_Repr(self);
 		if (selfrepr == NULL)
 			goto fail;
-		if (!PyString_Check(selfrepr)) {
+		if (!PyBytes_Check(selfrepr)) {
 			Py_DECREF(selfrepr);
 			goto fail;
 		}
-		result = PyString_FromFormat("<bound method %s.%s of %s>",
+		result = PyBytes_FromFormat("<bound method %s.%s of %s>",
 					     sklassname, sfuncname,
-					     PyString_AS_STRING(selfrepr));
+					     PyBytes_AS_STRING(selfrepr));
 		Py_DECREF(selfrepr);
 	}
   fail:
@@ -2472,8 +2472,8 @@ getclassname(PyObject *klass, char *buf, int bufsize)
 		PyErr_Clear();
 		return;
 	}
-	if (PyString_Check(name)) {
-		strncpy(buf, PyString_AS_STRING(name), bufsize);
+	if (PyBytes_Check(name)) {
+		strncpy(buf, PyBytes_AS_STRING(name), bufsize);
 		buf[bufsize-1] = '\0';
 	}
 	Py_DECREF(name);

@@ -491,13 +491,13 @@ PyDoc_STRVAR(ssl_doc,
 static PyObject *
 PySSL_server(PySSLObject *self)
 {
-	return PyString_FromString(self->server);
+	return PyBytes_FromString(self->server);
 }
 
 static PyObject *
 PySSL_issuer(PySSLObject *self)
 {
-	return PyString_FromString(self->issuer);
+	return PyBytes_FromString(self->issuer);
 }
 
 static PyObject *
@@ -515,7 +515,7 @@ _create_tuple_for_attribute (ASN1_OBJECT *name, ASN1_STRING *value) {
 		_setSSLError(NULL, 0, __FILE__, __LINE__);
 		goto fail;
 	}
-	name_obj = PyString_FromStringAndSize(namebuf, buflen);
+	name_obj = PyBytes_FromStringAndSize(namebuf, buflen);
 	if (name_obj == NULL)
 		goto fail;
 	
@@ -603,8 +603,8 @@ _create_tuple_for_X509_NAME (X509_NAME *xname)
                 /*
                 fprintf(stderr, "RDN level %d, attribute %s: %s\n",
                         entry->set,
-                        PyString_AS_STRING(PyTuple_GET_ITEM(attr, 0)),
-                        PyString_AS_STRING(PyTuple_GET_ITEM(attr, 1)));                        
+                        PyBytes_AS_STRING(PyTuple_GET_ITEM(attr, 0)),
+                        PyBytes_AS_STRING(PyTuple_GET_ITEM(attr, 1)));                        
                 */
 		if (attr == NULL)
 			goto fail1;
@@ -711,7 +711,7 @@ _get_peer_alt_names (X509 *certificate) {
 					goto fail;
 				}
 
-				v = PyString_FromString("DirName");
+				v = PyBytes_FromString("DirName");
 				if (v == NULL) {
 					Py_DECREF(t);
 					goto fail;
@@ -742,13 +742,13 @@ _get_peer_alt_names (X509 *certificate) {
 				t = PyTuple_New(2);
 				if (t == NULL)
 					goto fail;
-				v = PyString_FromStringAndSize(buf, (vptr - buf));
+				v = PyBytes_FromStringAndSize(buf, (vptr - buf));
 				if (v == NULL) {
 					Py_DECREF(t);
 					goto fail;
 				}
 				PyTuple_SET_ITEM(t, 0, v);
-				v = PyString_FromStringAndSize((vptr + 1), (len - (vptr - buf + 1)));
+				v = PyBytes_FromStringAndSize((vptr + 1), (len - (vptr - buf + 1)));
 				if (v == NULL) {
 					Py_DECREF(t);
 					goto fail;
@@ -849,7 +849,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 			_setSSLError(NULL, 0, __FILE__, __LINE__);
 			goto fail1;
 		}
-		sn_obj = PyString_FromStringAndSize(buf, len);
+		sn_obj = PyBytes_FromStringAndSize(buf, len);
 		if (sn_obj == NULL)
 			goto fail1;
 		if (PyDict_SetItemString(retval, "serialNumber", sn_obj) < 0) {
@@ -866,7 +866,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 			_setSSLError(NULL, 0, __FILE__, __LINE__);
 			goto fail1;
 		}
-		pnotBefore = PyString_FromStringAndSize(buf, len);
+		pnotBefore = PyBytes_FromStringAndSize(buf, len);
 		if (pnotBefore == NULL)
 			goto fail1;
 		if (PyDict_SetItemString(retval, "notBefore", pnotBefore) < 0) {
@@ -884,7 +884,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 		_setSSLError(NULL, 0, __FILE__, __LINE__);
 		goto fail1;
 	}
-	pnotAfter = PyString_FromStringAndSize(buf, len);
+	pnotAfter = PyBytes_FromStringAndSize(buf, len);
 	if (pnotAfter == NULL)
 		goto fail1;
 	if (PyDict_SetItemString(retval, "notAfter", pnotAfter) < 0) {
@@ -981,7 +981,7 @@ PySSL_peercert(PySSLObject *self, PyObject *args)
 			PySSL_SetError(self, len, __FILE__, __LINE__);
 			return NULL;
 		}
-		retval = PyString_FromStringAndSize((const char *) bytes_buf, len);
+		retval = PyBytes_FromStringAndSize((const char *) bytes_buf, len);
 		OPENSSL_free(bytes_buf);
 		return retval;
 
@@ -1028,7 +1028,7 @@ static PyObject *PySSL_cipher (PySSLObject *self) {
 	if (cipher_name == NULL) {
 		PyTuple_SET_ITEM(retval, 0, Py_None);
 	} else {
-		v = PyString_FromString(cipher_name);
+		v = PyBytes_FromString(cipher_name);
 		if (v == NULL)
 			goto fail0;
 		PyTuple_SET_ITEM(retval, 0, v);
@@ -1037,7 +1037,7 @@ static PyObject *PySSL_cipher (PySSLObject *self) {
 	if (cipher_protocol == NULL) {
 		PyTuple_SET_ITEM(retval, 1, Py_None);
 	} else {
-		v = PyString_FromString(cipher_protocol);
+		v = PyBytes_FromString(cipher_protocol);
 		if (v == NULL)
 			goto fail0;
 		PyTuple_SET_ITEM(retval, 1, v);
@@ -1211,7 +1211,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|i:read", &len))
 		return NULL;
 
-	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
+	if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
 		return NULL;
 
 	/* first check if there are bytes ready to be read */
@@ -1233,14 +1233,14 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 			return NULL;
 		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
 			/* should contain a zero-length string */
-			_PyString_Resize(&buf, 0);
+			_PyBytes_Resize(&buf, 0);
 			return buf;
 		}
 	}
 	do {
 		err = 0;
 		PySSL_BEGIN_ALLOW_THREADS
-		count = SSL_read(self->ssl, PyString_AsString(buf), len);
+		count = SSL_read(self->ssl, PyBytes_AsString(buf), len);
 		err = SSL_get_error(self->ssl, count);
 		PySSL_END_ALLOW_THREADS
 		if(PyErr_CheckSignals()) {
@@ -1257,7 +1257,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 			   (SSL_get_shutdown(self->ssl) ==
 			    SSL_RECEIVED_SHUTDOWN))
 		{
-			_PyString_Resize(&buf, 0);
+			_PyBytes_Resize(&buf, 0);
 			return buf;
 		} else {
 			sockstate = SOCKET_OPERATION_OK;
@@ -1276,7 +1276,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		return PySSL_SetError(self, count, __FILE__, __LINE__);
 	}
 	if (count != len)
-		_PyString_Resize(&buf, count);
+		_PyBytes_Resize(&buf, count);
 	return buf;
 }
 
@@ -1362,11 +1362,11 @@ PySSL_RAND_egd(PyObject *self, PyObject *arg)
 {
     int bytes;
 
-    if (!PyString_Check(arg))
+    if (!PyBytes_Check(arg))
 	return PyErr_Format(PyExc_TypeError,
 			    "RAND_egd() expected string, found %s",
 			    Py_TYPE(arg)->tp_name);
-    bytes = RAND_egd(PyString_AS_STRING(arg));
+    bytes = RAND_egd(PyBytes_AS_STRING(arg));
     if (bytes == -1) {
 	PyErr_SetString(PySSLErrorObject,
 			"EGD connection failed or EGD did not return "

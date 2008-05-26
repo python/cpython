@@ -32,10 +32,10 @@ intern_strings(PyObject *tuple)
 
 	for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
 		PyObject *v = PyTuple_GET_ITEM(tuple, i);
-		if (v == NULL || !PyString_CheckExact(v)) {
+		if (v == NULL || !PyBytes_CheckExact(v)) {
 			Py_FatalError("non-string found in code slot");
 		}
-		PyString_InternInPlace(&PyTuple_GET_ITEM(tuple, i));
+		PyBytes_InternInPlace(&PyTuple_GET_ITEM(tuple, i));
 	}
 }
 
@@ -57,9 +57,9 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	    varnames == NULL || !PyTuple_Check(varnames) ||
 	    freevars == NULL || !PyTuple_Check(freevars) ||
 	    cellvars == NULL || !PyTuple_Check(cellvars) ||
-	    name == NULL || !PyString_Check(name) ||
-	    filename == NULL || !PyString_Check(filename) ||
-	    lnotab == NULL || !PyString_Check(lnotab) ||
+	    name == NULL || !PyBytes_Check(name) ||
+	    filename == NULL || !PyBytes_Check(filename) ||
+	    lnotab == NULL || !PyBytes_Check(lnotab) ||
 	    !PyObject_CheckReadBuffer(code)) {
 		PyErr_BadInternalCall();
 		return NULL;
@@ -71,11 +71,11 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	/* Intern selected string constants */
 	for (i = PyTuple_Size(consts); --i >= 0; ) {
 		PyObject *v = PyTuple_GetItem(consts, i);
-		if (!PyString_Check(v))
+		if (!PyBytes_Check(v))
 			continue;
-		if (!all_name_chars((unsigned char *)PyString_AS_STRING(v)))
+		if (!all_name_chars((unsigned char *)PyBytes_AS_STRING(v)))
 			continue;
-		PyString_InternInPlace(&PyTuple_GET_ITEM(consts, i));
+		PyBytes_InternInPlace(&PyTuple_GET_ITEM(consts, i));
 	}
 	co = PyObject_NEW(PyCodeObject, &PyCode_Type);
 	if (co != NULL) {
@@ -145,10 +145,10 @@ validate_and_copy_tuple(PyObject *tup)
 
 	for (i = 0; i < len; i++) {
 		item = PyTuple_GET_ITEM(tup, i);
-		if (PyString_CheckExact(item)) {
+		if (PyBytes_CheckExact(item)) {
 			Py_INCREF(item);
 		}
-		else if (!PyString_Check(item)) {
+		else if (!PyBytes_Check(item)) {
 			PyErr_Format(
 				PyExc_TypeError,
 				"name tuples must contain only "
@@ -158,9 +158,9 @@ validate_and_copy_tuple(PyObject *tup)
 			return NULL;
 		}
 		else {
-			item = PyString_FromStringAndSize(
-				PyString_AS_STRING(item),
-				PyString_GET_SIZE(item));
+			item = PyBytes_FromStringAndSize(
+				PyBytes_AS_STRING(item),
+				PyBytes_GET_SIZE(item));
 			if (item == NULL) {
 				Py_DECREF(newtuple);
 				return NULL;
@@ -281,14 +281,14 @@ code_repr(PyCodeObject *co)
 
 	if (co->co_firstlineno != 0)
 		lineno = co->co_firstlineno;
-	if (co->co_filename && PyString_Check(co->co_filename))
-		filename = PyString_AS_STRING(co->co_filename);
-	if (co->co_name && PyString_Check(co->co_name))
-		name = PyString_AS_STRING(co->co_name);
+	if (co->co_filename && PyBytes_Check(co->co_filename))
+		filename = PyBytes_AS_STRING(co->co_filename);
+	if (co->co_name && PyBytes_Check(co->co_name))
+		name = PyBytes_AS_STRING(co->co_name);
 	PyOS_snprintf(buf, sizeof(buf),
 		      "<code object %.100s at %p, file \"%.300s\", line %d>",
 		      name, co, filename, lineno);
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 static int
@@ -508,8 +508,8 @@ was actually done until 2.2) expand 300, 300 to 255, 255,  45, 45, but to
 int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
-	int size = PyString_Size(co->co_lnotab) / 2;
-	unsigned char *p = (unsigned char*)PyString_AsString(co->co_lnotab);
+	int size = PyBytes_Size(co->co_lnotab) / 2;
+	unsigned char *p = (unsigned char*)PyBytes_AsString(co->co_lnotab);
 	int line = co->co_firstlineno;
 	int addr = 0;
 	while (--size >= 0) {
@@ -604,8 +604,8 @@ PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
         int size, addr, line;
         unsigned char* p;
 
-        p = (unsigned char*)PyString_AS_STRING(co->co_lnotab);
-        size = PyString_GET_SIZE(co->co_lnotab) / 2;
+        p = (unsigned char*)PyBytes_AS_STRING(co->co_lnotab);
+        size = PyBytes_GET_SIZE(co->co_lnotab) / 2;
 
         addr = 0;
         line = co->co_firstlineno;

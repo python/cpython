@@ -684,8 +684,8 @@ StructType_setattro(PyObject *self, PyObject *key, PyObject *value)
 	if (-1 == PyType_Type.tp_setattro(self, key, value))
 		return -1;
 	
-	if (value && PyString_Check(key) &&
-	    0 == strcmp(PyString_AS_STRING(key), "_fields_"))
+	if (value && PyBytes_Check(key) &&
+	    0 == strcmp(PyBytes_AS_STRING(key), "_fields_"))
 		return StructUnionType_update_stgdict(self, value, 1);
 	return 0;
 }
@@ -698,8 +698,8 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 	if (-1 == PyObject_GenericSetAttr(self, key, value))
 		return -1;
 	
-	if (PyString_Check(key) &&
-	    0 == strcmp(PyString_AS_STRING(key), "_fields_"))
+	if (PyBytes_Check(key) &&
+	    0 == strcmp(PyBytes_AS_STRING(key), "_fields_"))
 		return StructUnionType_update_stgdict(self, value, 0);
 	return 0;
 }
@@ -1025,7 +1025,7 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 		size = Py_TYPE(value)->tp_as_buffer->bf_getreadbuffer(value, 0, (void *)&ptr);
 		if (size < 0)
 			return -1;
-	} else if (-1 == PyString_AsStringAndSize(value, &ptr, &size)) {
+	} else if (-1 == PyBytes_AsStringAndSize(value, &ptr, &size)) {
 		return -1;
 	}
 	if (size > self->b_size) {
@@ -1042,7 +1042,7 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 static PyObject *
 CharArray_get_raw(CDataObject *self)
 {
-	return PyString_FromStringAndSize(self->b_ptr, self->b_size);
+	return PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
 }
 
 static PyObject *
@@ -1053,7 +1053,7 @@ CharArray_get_value(CDataObject *self)
 	for (i = 0; i < self->b_size; ++i)
 		if (*ptr++ == '\0')
 			break;
-	return PyString_FromStringAndSize(self->b_ptr, i);
+	return PyBytes_FromStringAndSize(self->b_ptr, i);
 }
 
 static int
@@ -1074,14 +1074,14 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 						  conversion_mode_errors);
 		if (!value)
 			return -1;
-	} else if (!PyString_Check(value)) {
+	} else if (!PyBytes_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "string expected instead of %s instance",
 			     Py_TYPE(value)->tp_name);
 		return -1;
 	} else
 		Py_INCREF(value);
-	size = PyString_GET_SIZE(value);
+	size = PyBytes_GET_SIZE(value);
 	if (size > self->b_size) {
 		PyErr_SetString(PyExc_ValueError,
 				"string too long");
@@ -1089,7 +1089,7 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 		return -1;
 	}
 
-	ptr = PyString_AS_STRING(value);
+	ptr = PyBytes_AS_STRING(value);
 	memcpy(self->b_ptr, ptr, size);
 	if (size < self->b_size)
 		self->b_ptr[size] = '\0';
@@ -1128,7 +1128,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
 				"can't delete attribute");
 		return -1;
 	}
-	if (PyString_Check(value)) {
+	if (PyBytes_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
@@ -1402,7 +1402,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	if (PyUnicode_Check(value) || PyString_Check(value)) {
+	if (PyUnicode_Check(value) || PyBytes_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("Z");
 
@@ -1466,7 +1466,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	if (PyString_Check(value) || PyUnicode_Check(value)) {
+	if (PyBytes_Check(value) || PyUnicode_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("z");
 
@@ -1552,7 +1552,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 		return (PyObject *)parg;
 	}
 /* string */
-	if (PyString_Check(value)) {
+	if (PyBytes_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("z");
 
@@ -1623,10 +1623,10 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 	}
 /* c_char_p, c_wchar_p */
 	stgd = PyObject_stgdict(value);
-	if (stgd && CDataObject_Check(value) && stgd->proto && PyString_Check(stgd->proto)) {
+	if (stgd && CDataObject_Check(value) && stgd->proto && PyBytes_Check(stgd->proto)) {
 		PyCArgObject *parg;
 
-		switch (PyString_AS_STRING(stgd->proto)[0]) {
+		switch (PyBytes_AS_STRING(stgd->proto)[0]) {
 		case 'z': /* c_char_p */
 		case 'Z': /* c_wchar_p */
 			parg = new_CArgObject();
@@ -1683,13 +1683,13 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
 	if (suffix == NULL)
 #ifdef WORDS_BIGENDIAN
-		suffix = PyString_InternFromString("_le");
+		suffix = PyBytes_InternFromString("_le");
 #else
-		suffix = PyString_InternFromString("_be");
+		suffix = PyBytes_InternFromString("_be");
 #endif
 
 	Py_INCREF(name);
-	PyString_Concat(&name, suffix);
+	PyBytes_Concat(&name, suffix);
 	if (name == NULL)
 		return NULL;
 
@@ -1744,7 +1744,7 @@ SimpleType_paramfunc(CDataObject *self)
 	
 	dict = PyObject_stgdict((PyObject *)self);
 	assert(dict); /* Cannot be NULL for CDataObject instances */
-	fmt = PyString_AsString(dict->proto);
+	fmt = PyBytes_AsString(dict->proto);
 	assert(fmt);
 
 	fd = getentry(fmt);
@@ -1779,9 +1779,9 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	proto = PyObject_GetAttrString((PyObject *)result, "_type_"); /* new ref */
 	if (!proto
-	    || !PyString_Check(proto)
-	    || 1 != strlen(PyString_AS_STRING(proto))
-	    || !strchr(SIMPLE_TYPE_CHARS, PyString_AS_STRING(proto)[0])) {
+	    || !PyBytes_Check(proto)
+	    || 1 != strlen(PyBytes_AS_STRING(proto))
+	    || !strchr(SIMPLE_TYPE_CHARS, PyBytes_AS_STRING(proto)[0])) {
 		PyErr_Format(PyExc_AttributeError,
 			     "class must define a '_type_' attribute which must be\n"
 			     "a single character string containing one of '%s'.",
@@ -1790,12 +1790,12 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_DECREF(result);
 		return NULL;
 	}
-	fmt = getentry(PyString_AS_STRING(proto));
+	fmt = getentry(PyBytes_AS_STRING(proto));
 	if (fmt == NULL) {
 		Py_DECREF(result);
 		PyErr_Format(PyExc_ValueError,
 			     "_type_ '%s' not supported",
-			     PyString_AS_STRING(proto));
+			     PyBytes_AS_STRING(proto));
 		return NULL;
 	}
 
@@ -1835,7 +1835,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	   Overrides the SimpleType_from_param generic method.
 	 */
 	if (result->tp_base == &Simple_Type) {
-		switch (PyString_AS_STRING(proto)[0]) {
+		switch (PyBytes_AS_STRING(proto)[0]) {
 		case 'z': /* c_char_p */
 			ml = &c_char_p_method;
 			stgdict->flags |= TYPEFLAG_ISPOINTER;
@@ -1940,7 +1940,7 @@ SimpleType_from_param(PyObject *type, PyObject *value)
 	assert(dict);
 
 	/* I think we can rely on this being a one-character string */
-	fmt = PyString_AsString(dict->proto);
+	fmt = PyBytes_AsString(dict->proto);
 	assert(fmt);
 	
 	fd = getentry(fmt);
@@ -2290,7 +2290,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
 #endif
 		target = target->b_base;
 	}
-	return PyString_FromStringAndSize(string, cp-string);
+	return PyBytes_FromStringAndSize(string, cp-string);
 }
 
 /*
@@ -2435,7 +2435,7 @@ CData_reduce(PyObject *_self, PyObject *args)
 			     _unpickle,
 			     Py_TYPE(_self),
 			     PyObject_GetAttrString(_self, "__dict__"),
-			     PyString_FromStringAndSize(self->b_ptr, self->b_size));
+			     PyBytes_FromStringAndSize(self->b_ptr, self->b_size));
 }
 
 static PyObject *
@@ -2984,9 +2984,9 @@ _check_outarg_type(PyObject *arg, Py_ssize_t index)
 	dict = PyType_stgdict(arg);
 	if (dict
 	    /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
-	    && PyString_Check(dict->proto)
+	    && PyBytes_Check(dict->proto)
 /* We only allow c_void_p, c_char_p and c_wchar_p as a simple output parameter type */
-	    && (strchr("PzZ", PyString_AS_STRING(dict->proto)[0]))) {
+	    && (strchr("PzZ", PyBytes_AS_STRING(dict->proto)[0]))) {
 		return 1;
 	}
 
@@ -3071,8 +3071,8 @@ _get_name(PyObject *obj, char **pname)
 		return 1;
 	}
 #endif
-	if (PyString_Check(obj) || PyUnicode_Check(obj)) {
-		*pname = PyString_AsString(obj);
+	if (PyBytes_Check(obj) || PyUnicode_Check(obj)) {
+		*pname = PyBytes_AsString(obj);
 		return *pname ? 1 : 0;
 	}
 	PyErr_SetString(PyExc_TypeError,
@@ -3422,7 +3422,7 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 		/* We HAVE already checked that the tuple can be parsed with "i|zO", so... */
 		Py_ssize_t tsize = PyTuple_GET_SIZE(item);
 		flag = PyInt_AS_LONG(PyTuple_GET_ITEM(item, 0));
-		name = tsize > 1 ? PyString_AS_STRING(PyTuple_GET_ITEM(item, 1)) : NULL;
+		name = tsize > 1 ? PyBytes_AS_STRING(PyTuple_GET_ITEM(item, 1)) : NULL;
 		defval = tsize > 2 ? PyTuple_GET_ITEM(item, 2) : NULL;
 
 		switch (flag & (PARAMFLAG_FIN | PARAMFLAG_FOUT | PARAMFLAG_FLCID)) {
@@ -3476,7 +3476,7 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 					     "NULL stgdict unexpected");
 				goto error;
 			}
-			if (PyString_Check(dict->proto)) {
+			if (PyBytes_Check(dict->proto)) {
 				PyErr_Format(
 					PyExc_TypeError,
 					"%s 'out' parameter must be passed as default value",
@@ -3774,12 +3774,12 @@ CFuncPtr_repr(CFuncPtrObject *self)
 {
 #ifdef MS_WIN32
 	if (self->index)
-		return PyString_FromFormat("<COM method offset %d: %s at %p>",
+		return PyBytes_FromFormat("<COM method offset %d: %s at %p>",
 					   self->index - 0x1000,
 					   Py_TYPE(self)->tp_name,
 					   self);
 #endif
-	return PyString_FromFormat("<%s object at %p>",
+	return PyBytes_FromFormat("<%s object at %p>",
 				   Py_TYPE(self)->tp_name,
 				   self);
 }
@@ -3888,7 +3888,7 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 			}
 
 			if (kwds && PyDict_GetItem(kwds, name)) {
-				char *field = PyString_AsString(name);
+				char *field = PyBytes_AsString(name);
 				if (field == NULL) {
 					PyErr_Clear();
 					field = "???";
@@ -4090,7 +4090,7 @@ Array_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
 			     type, so this cannot be NULL */
 	if (itemdict->getfunc == getentry("c")->getfunc) {
 		char *ptr = (char *)self->b_ptr;
-		return PyString_FromStringAndSize(ptr + ilow, len);
+		return PyBytes_FromStringAndSize(ptr + ilow, len);
 #ifdef CTYPES_UNICODE
 	} else if (itemdict->getfunc == getentry("u")->getfunc) {
 		wchar_t *ptr = (wchar_t *)self->b_ptr;
@@ -4147,9 +4147,9 @@ Array_subscript(PyObject *_self, PyObject *item)
 			char *dest;
 
 			if (slicelen <= 0)
-				return PyString_FromString("");
+				return PyBytes_FromString("");
 			if (step == 1) {
-				return PyString_FromStringAndSize(ptr + start,
+				return PyBytes_FromStringAndSize(ptr + start,
 								  slicelen);
 			}
 			dest = (char *)PyMem_Malloc(slicelen);
@@ -4162,7 +4162,7 @@ Array_subscript(PyObject *_self, PyObject *item)
 				dest[i] = ptr[cur];
 			}
 
-			np = PyString_FromStringAndSize(dest, slicelen);
+			np = PyBytes_FromStringAndSize(dest, slicelen);
 			PyMem_Free(dest);
 			return np;
 		}
@@ -4572,12 +4572,12 @@ Simple_repr(CDataObject *self)
 	static PyObject *format;
 
 	if (Py_TYPE(self)->tp_base != &Simple_Type) {
-		return PyString_FromFormat("<%s object at %p>",
+		return PyBytes_FromFormat("<%s object at %p>",
 					   Py_TYPE(self)->tp_name, self);
 	}
 
 	if (format == NULL) {
-		format = PyString_InternFromString("%s(%r)");
+		format = PyBytes_InternFromString("%s(%r)");
 		if (format == NULL)
 			return NULL;
 	}
@@ -4586,7 +4586,7 @@ Simple_repr(CDataObject *self)
 	if (val == NULL)
 		return NULL;
 
-	name = PyString_FromString(Py_TYPE(self)->tp_name);
+	name = PyBytes_FromString(Py_TYPE(self)->tp_name);
 	if (name == NULL) {
 		Py_DECREF(val);
 		return NULL;
@@ -4598,7 +4598,7 @@ Simple_repr(CDataObject *self)
 	if (args == NULL)
 		return NULL;
 
-	result = PyString_Format(format, args);
+	result = PyBytes_Format(format, args);
 	Py_DECREF(args);
 	return result;
 }
@@ -4832,7 +4832,7 @@ Pointer_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
 	assert(itemdict);
 	if (itemdict->getfunc == getentry("c")->getfunc) {
 		char *ptr = *(char **)self->b_ptr;
-		return PyString_FromStringAndSize(ptr + ilow, len);
+		return PyBytes_FromStringAndSize(ptr + ilow, len);
 #ifdef CTYPES_UNICODE
 	} else if (itemdict->getfunc == getentry("u")->getfunc) {
 		wchar_t *ptr = *(wchar_t **)self->b_ptr;
@@ -4929,9 +4929,9 @@ Pointer_subscript(PyObject *_self, PyObject *item)
 			char *dest;
 			
 			if (len <= 0)
-                        	return PyString_FromString("");
+                        	return PyBytes_FromString("");
 			if (step == 1) {
-				return PyString_FromStringAndSize(ptr + start,
+				return PyBytes_FromStringAndSize(ptr + start,
 								  len);
 			}
 			dest = (char *)PyMem_Malloc(len);
@@ -4940,7 +4940,7 @@ Pointer_subscript(PyObject *_self, PyObject *item)
 			for (cur = start, i = 0; i < len; cur += step, i++) {
 				dest[i] = ptr[cur];
 			}
-			np = PyString_FromStringAndSize(dest, len);
+			np = PyBytes_FromStringAndSize(dest, len);
 			PyMem_Free(dest);
 			return np;
 		}
@@ -5140,7 +5140,7 @@ create_comerror(void)
 		++methods;
 	}
 
-	s = PyString_FromString(comerror_doc);
+	s = PyBytes_FromString(comerror_doc);
 	if (s == NULL)
 		goto error;
 	status = PyDict_SetItemString(dict, "__doc__", s);
@@ -5166,8 +5166,8 @@ static PyObject *
 string_at(const char *ptr, int size)
 {
 	if (size == -1)
-		return PyString_FromString(ptr);
-	return PyString_FromStringAndSize(ptr, size);
+		return PyBytes_FromString(ptr);
+	return PyBytes_FromStringAndSize(ptr, size);
 }
 
 static int
@@ -5181,8 +5181,8 @@ cast_check_pointertype(PyObject *arg)
 		return 1;
 	dict = PyType_stgdict(arg);
 	if (dict) {
-		if (PyString_Check(dict->proto)
-		    && (strchr("sPzUZXO", PyString_AS_STRING(dict->proto)[0]))) {
+		if (PyBytes_Check(dict->proto)
+		    && (strchr("sPzUZXO", PyBytes_AS_STRING(dict->proto)[0]))) {
 			/* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
 			return 1;
 		}

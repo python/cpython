@@ -270,7 +270,7 @@ structseq_repr(PyStructSequence *obj)
 			Py_DECREF(tup);
 			return NULL;
 		}
-		crepr = PyString_AsString(repr);
+		crepr = PyBytes_AsString(repr);
 		if (crepr == NULL) {
 			Py_DECREF(tup);
 			Py_DECREF(repr);
@@ -306,7 +306,7 @@ structseq_repr(PyStructSequence *obj)
 	*pbuf++ = ')';
 	*pbuf = '\0';
 
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 static PyObject *

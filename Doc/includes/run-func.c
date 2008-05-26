@@ -13,7 +13,7 @@ main(int argc, char *argv[])
     }
 
     Py_Initialize();
-    pName = PyString_FromString(argv[1]);
+    pName = PyBytes_FromString(argv[1]);
     /* Error checking of pName left out */
 
     pModule = PyImport_Import(pName);

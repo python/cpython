@@ -393,13 +393,13 @@ cPickle_ErrFormat(PyObject *ErrType, char *stringformat, char *format, ...)
 	if (format) args = Py_VaBuildValue(format, va);
 	va_end(va);
 	if (format && ! args) return NULL;
-	if (stringformat && !(retval=PyString_FromString(stringformat)))
+	if (stringformat && !(retval=PyBytes_FromString(stringformat)))
 		return NULL;
 
 	if (retval) {
 		if (args) {
 			PyObject *v;
-			v=PyString_Format(retval, args);
+			v=PyBytes_Format(retval, args);
 			Py_DECREF(retval);
 			Py_DECREF(args);
 			if (! v) return NULL;
@@ -477,7 +477,7 @@ write_other(Picklerobject *self, const char *s, Py_ssize_t  _n)
 	n = (int)_n;
 	if (s == NULL) {
 		if (!( self->buf_size ))  return 0;
-		py_str = PyString_FromStringAndSize(self->write_buf,
+		py_str = PyBytes_FromStringAndSize(self->write_buf,
 						    self->buf_size);
 		if (!py_str)
 			return -1;
@@ -490,7 +490,7 @@ write_other(Picklerobject *self, const char *s, Py_ssize_t  _n)
 
 		if (n > WRITE_BUF_SIZE) {
 			if (!( py_str =
-			       PyString_FromStringAndSize(s, n)))
+			       PyBytes_FromStringAndSize(s, n)))
 				return -1;
 		}
 		else {
@@ -655,7 +655,7 @@ read_other(Unpicklerobject *self, char **s, Py_ssize_t  n)
 	Py_XDECREF(self->last_string);
 	self->last_string = str;
 
-	if (! (*s = PyString_AsString(str))) return -1;
+	if (! (*s = PyBytes_AsString(str))) return -1;
 	return n;
 }
 
@@ -670,13 +670,13 @@ readline_other(Unpicklerobject *self, char **s)
 		return -1;
 	}
 
-	if ((str_size = PyString_Size(str)) < 0)
+	if ((str_size = PyBytes_Size(str)) < 0)
 		return -1;
 
 	Py_XDECREF(self->last_string);
 	self->last_string = str;
 
-	if (! (*s = PyString_AsString(str)))
+	if (! (*s = PyBytes_AsString(str)))
 		return -1;
 
 	return str_size;
@@ -1078,9 +1078,9 @@ save_long(Picklerobject *self, PyObject *args)
 				"to pickle");
 			goto finally;
 		}
-		repr = PyString_FromStringAndSize(NULL, (int)nbytes);
+		repr = PyBytes_FromStringAndSize(NULL, (int)nbytes);
 		if (repr == NULL) goto finally;
-		pdata = (unsigned char *)PyString_AS_STRING(repr);
+		pdata = (unsigned char *)PyBytes_AS_STRING(repr);
 		i = _PyLong_AsByteArray((PyLongObject *)args,
 	 			pdata, nbytes,
 				1 /* little endian */, 1 /* signed */);
@@ -1121,14 +1121,14 @@ save_long(Picklerobject *self, PyObject *args)
 	if (!( repr = PyObject_Repr(args)))
 		goto finally;
 
-	if ((size = PyString_Size(repr)) < 0)
+	if ((size = PyBytes_Size(repr)) < 0)
 		goto finally;
 
 	if (self->write_func(self, &l, 1) < 0)
 		goto finally;
 
 	if (self->write_func(self,
-			     PyString_AS_STRING((PyStringObject *)repr),
+			     PyBytes_AS_STRING((PyBytesObject *)repr),
 			     			size) < 0)
 		goto finally;
 
@@ -1177,7 +1177,7 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 	int size, len;
 	PyObject *repr=0;
 
-	if ((size = PyString_Size(args)) < 0)
+	if ((size = PyBytes_Size(args)) < 0)
 		return -1;
 
 	if (!self->bin) {
@@ -1188,9 +1188,9 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 		if (!( repr = PyObject_Repr(args)))
 			return -1;
 
-		if ((len = PyString_Size(repr)) < 0)
+		if ((len = PyBytes_Size(repr)) < 0)
 			goto err;
-		repr_str = PyString_AS_STRING((PyStringObject *)repr);
+		repr_str = PyBytes_AS_STRING((PyBytesObject *)repr);
 
 		if (self->write_func(self, &string, 1) < 0)
 			goto err;
@@ -1207,7 +1207,7 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 		int i;
 		char c_str[5];
 
-		if ((size = PyString_Size(args)) < 0)
+		if ((size = PyBytes_Size(args)) < 0)
 			return -1;
 
 		if (size < 256) {
@@ -1233,8 +1233,8 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 		}
 		else {
 			if (self->write_func(self,
-					     PyString_AS_STRING(
-					     	(PyStringObject *)args),
+					     PyBytes_AS_STRING(
+					     	(PyBytesObject *)args),
 					     size) < 0)
 				return -1;
 		}
@@ -1264,13 +1264,13 @@ modified_EncodeRawUnicodeEscape(const Py_UNICODE *s, int size)
 
 	static const char *hexdigit = "0123456789ABCDEF";
 
-	repr = PyString_FromStringAndSize(NULL, 6 * size);
+	repr = PyBytes_FromStringAndSize(NULL, 6 * size);
 	if (repr == NULL)
 		return NULL;
 	if (size == 0)
 		return repr;
 
-	p = q = PyString_AS_STRING(repr);
+	p = q = PyBytes_AS_STRING(repr);
 	while (size-- > 0) {
 		Py_UNICODE ch = *s++;
 		/* Map 16-bit characters to '\uxxxx' */
@@ -1287,7 +1287,7 @@ modified_EncodeRawUnicodeEscape(const Py_UNICODE *s, int size)
 			*p++ = (char) ch;
 	}
 	*p = '\0';
-	_PyString_Resize(&repr, p - q);
+	_PyBytes_Resize(&repr, p - q);
 	return repr;
 }
 
@@ -1310,9 +1310,9 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
 		if (!repr)
 			return -1;
 
-		if ((len = PyString_Size(repr)) < 0)
+		if ((len = PyBytes_Size(repr)) < 0)
 			goto err;
-		repr_str = PyString_AS_STRING((PyStringObject *)repr);
+		repr_str = PyBytes_AS_STRING((PyBytesObject *)repr);
 
 		if (self->write_func(self, &string, 1) < 0)
 			goto err;
@@ -1332,7 +1332,7 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
 		if (!( repr = PyUnicode_AsUTF8String(args)))
 			return -1;
 
-		if ((size = PyString_Size(repr)) < 0)
+		if ((size = PyBytes_Size(repr)) < 0)
 			goto err;
 		if (size > INT_MAX)
 			return -1;   /* string too large */
@@ -1351,7 +1351,7 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
 			PDATA_APPEND(self->file, repr, -1);
 		}
 		else {
-			if (self->write_func(self, PyString_AS_STRING(repr),
+			if (self->write_func(self, PyBytes_AS_STRING(repr),
 					     size) < 0)
 				goto err;
 		}
@@ -1861,12 +1861,12 @@ save_inst(Picklerobject *self, PyObject *args)
 			goto finally;
 
 
-		if ((module_size = PyString_Size(module)) < 0 ||
-		    (name_size = PyString_Size(name)) < 0)
+		if ((module_size = PyBytes_Size(module)) < 0 ||
+		    (name_size = PyBytes_Size(name)) < 0)
 			goto finally;
 
-		module_str = PyString_AS_STRING((PyStringObject *)module);
-		name_str   = PyString_AS_STRING((PyStringObject *)name);
+		module_str = PyBytes_AS_STRING((PyBytesObject *)module);
+		name_str   = PyBytes_AS_STRING((PyBytesObject *)name);
 
 		if (self->write_func(self, &inst, 1) < 0)
 			goto finally;
@@ -1961,12 +1961,12 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 	if (!( module = whichmodule(args, global_name)))
 		goto finally;
 
-	if ((module_size = PyString_Size(module)) < 0 ||
-	    (name_size = PyString_Size(global_name)) < 0)
+	if ((module_size = PyBytes_Size(module)) < 0 ||
+	    (name_size = PyBytes_Size(global_name)) < 0)
 		goto finally;
 
-	module_str = PyString_AS_STRING((PyStringObject *)module);
-	name_str   = PyString_AS_STRING((PyStringObject *)global_name);
+	module_str = PyBytes_AS_STRING((PyBytesObject *)module);
+	name_str   = PyBytes_AS_STRING((PyBytesObject *)global_name);
 
 	/* XXX This can be doing a relative import.  Clearly it shouldn't,
 	   but I don't know how to stop it. :-( */
@@ -2099,7 +2099,7 @@ save_pers(Picklerobject *self, PyObject *args, PyObject *f)
 
 	if (pid != Py_None) {
 		if (!self->bin) {
-			if (!PyString_Check(pid)) {
+			if (!PyBytes_Check(pid)) {
 				PyErr_SetString(PicklingError,
 						"persistent id must be string");
 				goto finally;
@@ -2108,12 +2108,12 @@ save_pers(Picklerobject *self, PyObject *args, PyObject *f)
 			if (self->write_func(self, &persid, 1) < 0)
 				goto finally;
 
-			if ((size = PyString_Size(pid)) < 0)
+			if ((size = PyBytes_Size(pid)) < 0)
 				goto finally;
 
 			if (self->write_func(self,
-					     PyString_AS_STRING(
-					     	(PyStringObject *)pid),
+					     PyBytes_AS_STRING(
+					     	(PyBytesObject *)pid),
 					     size) < 0)
 				goto finally;
 
@@ -2194,8 +2194,8 @@ save_reduce(Picklerobject *self, PyObject *args, PyObject *ob)
 			use_newobj = 0;
 		}
 		else {
-			use_newobj = PyString_Check(temp) &&
-				     strcmp(PyString_AS_STRING(temp),
+			use_newobj = PyBytes_Check(temp) &&
+				     strcmp(PyBytes_AS_STRING(temp),
 				     	    "__newobj__") == 0;
 			Py_DECREF(temp);
 		}
@@ -2362,14 +2362,14 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		break;
 
         case 's':
-		if ((type == &PyString_Type) && (PyString_GET_SIZE(args) < 2)) {
+		if ((type == &PyBytes_Type) && (PyBytes_GET_SIZE(args) < 2)) {
 			res = save_string(self, args, 0);
 			goto finally;
 		}
 
 #ifdef Py_USING_UNICODE
         case 'u':
-		if ((type == &PyUnicode_Type) && (PyString_GET_SIZE(args) < 2)) {
+		if ((type == &PyUnicode_Type) && (PyBytes_GET_SIZE(args) < 2)) {
 			res = save_unicode(self, args, 0);
 			goto finally;
 		}
@@ -2391,7 +2391,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 
 	switch (type->tp_name[0]) {
         case 's':
-		if (type == &PyString_Type) {
+		if (type == &PyBytes_Type) {
 			res = save_string(self, args, 1);
 			goto finally;
 		}
@@ -2526,7 +2526,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 	if (t == NULL)
 		goto finally;
 
-	if (PyString_Check(t)) {
+	if (PyBytes_Check(t)) {
 		res = save_global(self, args, t);
 		goto finally;
 	}
@@ -2640,8 +2640,8 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 	for (rsize = 0, i = l; --i >= 0; ) {
 		k = data->data[i];
 
-		if (PyString_Check(k))
-			rsize += PyString_GET_SIZE(k);
+		if (PyBytes_Check(k))
+			rsize += PyBytes_GET_SIZE(k);
 
 		else if (PyInt_Check(k)) { /* put */
 			ik = PyInt_AS_LONG((PyIntObject*)k);
@@ -2676,17 +2676,17 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 	}
 
 	/* Now generate the result */
-	r = PyString_FromStringAndSize(NULL, rsize);
+	r = PyBytes_FromStringAndSize(NULL, rsize);
 	if (r == NULL) goto err;
-	s = PyString_AS_STRING((PyStringObject *)r);
+	s = PyBytes_AS_STRING((PyBytesObject *)r);
 
 	for (i = 0; i < l; i++) {
 		k = data->data[i];
 
-		if (PyString_Check(k)) {
-			ssize = PyString_GET_SIZE(k);
+		if (PyBytes_Check(k)) {
+			ssize = PyBytes_GET_SIZE(k);
 			if (ssize) {
-				p=PyString_AS_STRING((PyStringObject *)k);
+				p=PyBytes_AS_STRING((PyBytesObject *)k);
 				while (--ssize >= 0)
 					*s++ = *p++;
 			}
@@ -3410,7 +3410,7 @@ load_string(Unpicklerobject *self)
 		goto insecure;
 	/********************************************/
 
-	str = PyString_DecodeEscape(p, len, NULL, 0, NULL);
+	str = PyBytes_DecodeEscape(p, len, NULL, 0, NULL);
 	free(s);
 	if (str) {
 		PDATA_PUSH(self->stack, str, -1);
@@ -3439,7 +3439,7 @@ load_binstring(Unpicklerobject *self)
 	if (self->read_func(self, &s, l) < 0)
 		return -1;
 
-	if (!( py_string = PyString_FromStringAndSize(s, l)))
+	if (!( py_string = PyBytes_FromStringAndSize(s, l)))
 		return -1;
 
 	PDATA_PUSH(self->stack, py_string, -1);
@@ -3461,7 +3461,7 @@ load_short_binstring(Unpicklerobject *self)
 
 	if (self->read_func(self, &s, l) < 0) return -1;
 
-	if (!( py_string = PyString_FromStringAndSize(s, l)))  return -1;
+	if (!( py_string = PyBytes_FromStringAndSize(s, l)))  return -1;
 
 	PDATA_PUSH(self->stack, py_string, -1);
 	return 0;
@@ -3688,12 +3688,12 @@ load_inst(Unpicklerobject *self)
 
 	if ((len = self->readline_func(self, &s)) < 0) return -1;
 	if (len < 2) return bad_readline();
-	module_name = PyString_FromStringAndSize(s, len - 1);
+	module_name = PyBytes_FromStringAndSize(s, len - 1);
 	if (!module_name)  return -1;
 
 	if ((len = self->readline_func(self, &s)) >= 0) {
 		if (len < 2) return bad_readline();
-		if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
+		if ((class_name = PyBytes_FromStringAndSize(s, len - 1))) {
 			class = find_class(module_name, class_name,
 					   self->find_class);
 			Py_DECREF(class_name);
@@ -3772,7 +3772,7 @@ load_global(Unpicklerobject *self)
 
 	if ((len = self->readline_func(self, &s)) < 0) return -1;
 	if (len < 2) return bad_readline();
-	module_name = PyString_FromStringAndSize(s, len - 1);
+	module_name = PyBytes_FromStringAndSize(s, len - 1);
 	if (!module_name)  return -1;
 
 	if ((len = self->readline_func(self, &s)) >= 0) {
@@ -3780,7 +3780,7 @@ load_global(Unpicklerobject *self)
 			Py_DECREF(module_name);
 			return bad_readline();
 		}
-		if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
+		if ((class_name = PyBytes_FromStringAndSize(s, len - 1))) {
 			class = find_class(module_name, class_name,
 					   self->find_class);
 			Py_DECREF(class_name);
@@ -3805,7 +3805,7 @@ load_persid(Unpicklerobject *self)
 		if ((len = self->readline_func(self, &s)) < 0) return -1;
 		if (len < 2) return bad_readline();
 
-		pid = PyString_FromStringAndSize(s, len - 1);
+		pid = PyBytes_FromStringAndSize(s, len - 1);
 		if (!pid)  return -1;
 
 		if (PyList_Check(self->pers_func)) {
@@ -3938,7 +3938,7 @@ load_get(Unpicklerobject *self)
 	if ((len = self->readline_func(self, &s)) < 0) return -1;
 	if (len < 2) return bad_readline();
 
-	if (!( py_str = PyString_FromStringAndSize(s, len - 1)))  return -1;
+	if (!( py_str = PyBytes_FromStringAndSize(s, len - 1)))  return -1;
 
 	value = PyDict_GetItem(self->memo, py_str);
 	if (! value) {
@@ -4064,8 +4064,8 @@ load_extension(Unpicklerobject *self, int nbytes)
 	 * confirm that pair is really a 2-tuple of strings.
 	 */
 	if (!PyTuple_Check(pair) || PyTuple_Size(pair) != 2 ||
-	    !PyString_Check(module_name = PyTuple_GET_ITEM(pair, 0)) ||
-	    !PyString_Check(class_name = PyTuple_GET_ITEM(pair, 1))) {
+	    !PyBytes_Check(module_name = PyTuple_GET_ITEM(pair, 0)) ||
+	    !PyBytes_Check(class_name = PyTuple_GET_ITEM(pair, 1))) {
 		Py_DECREF(py_code);
 		PyErr_Format(PyExc_ValueError, "_inverted_registry[%ld] "
 			     "isn't a 2-tuple of strings", code);
@@ -4098,7 +4098,7 @@ load_put(Unpicklerobject *self)
 	if ((l = self->readline_func(self, &s)) < 0) return -1;
 	if (l < 2) return bad_readline();
 	if (!( len=self->stack->length ))  return stackUnderflow();
-	if (!( py_str = PyString_FromStringAndSize(s, l - 1)))  return -1;
+	if (!( py_str = PyBytes_FromStringAndSize(s, l - 1)))  return -1;
 	value=self->stack->data[len-1];
 	l=PyDict_SetItem(self->memo, py_str, value);
 	Py_DECREF(py_str);
@@ -5568,7 +5568,7 @@ init_stuff(PyObject *module_dict)
 {
 	PyObject *copyreg, *t, *r;
 
-#define INIT_STR(S) if (!( S ## _str=PyString_InternFromString(#S)))  return -1;
+#define INIT_STR(S) if (!( S ## _str=PyBytes_InternFromString(#S)))  return -1;
 
 	if (PyType_Ready(&Unpicklertype) < 0)
 		return -1;
@@ -5736,7 +5736,7 @@ initcPickle(void)
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	v = PyString_FromString(rev);
+	v = PyBytes_FromString(rev);
 	PyDict_SetItemString(d, "__version__", v);
 	Py_XDECREF(v);
 
@@ -5755,7 +5755,7 @@ initcPickle(void)
 
 	/* These are purely informational; no code uses them. */
 	/* File format version we write. */
-	format_version = PyString_FromString("2.0");
+	format_version = PyBytes_FromString("2.0");
 	/* Format versions we can read. */
 	compatible_formats = Py_BuildValue("[sssss]",
 		"1.0",	/* Original protocol 0 */

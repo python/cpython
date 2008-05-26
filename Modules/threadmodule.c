@@ -190,7 +190,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	Py_XINCREF(kw);
 	self->kw = kw;
 	self->dict = NULL;	/* making sure */
-	self->key = PyString_FromFormat("thread.local.%p", self);
+	self->key = PyBytes_FromFormat("thread.local.%p", self);
 	if (self->key == NULL) 
 		goto err;
 

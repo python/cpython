@@ -86,13 +86,13 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
         item = PyTuple_GetItem(self->data, _idx);
         Py_XINCREF(item);
         return item;
-    } else if (PyString_Check(idx)) {
-        key = PyString_AsString(idx);
+    } else if (PyBytes_Check(idx)) {
+        key = PyBytes_AsString(idx);
 
         nitems = PyTuple_Size(self->description);
 
         for (i = 0; i < nitems; i++) {
-            compare_key = PyString_AsString(PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0));
+            compare_key = PyBytes_AsString(PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0));
             if (!compare_key) {
                 return NULL;
             }

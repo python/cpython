@@ -175,7 +175,7 @@ static PyObject *
 bytesio_getvalue(BytesIOObject *self)
 {
     CHECK_CLOSED(self);
-    return PyString_FromStringAndSize(self->buf, self->string_size);
+    return PyBytes_FromStringAndSize(self->buf, self->string_size);
 }
 
 PyDoc_STRVAR(isatty_doc,
@@ -244,7 +244,7 @@ bytesio_read(BytesIOObject *self, PyObject *args)
     output = self->buf + self->pos;
     self->pos += size;
 
-    return PyString_FromStringAndSize(output, size);
+    return PyBytes_FromStringAndSize(output, size);
 }
 
 
@@ -307,7 +307,7 @@ bytesio_readline(BytesIOObject *self, PyObject *args)
         self->pos -= size;
     }
 
-    return PyString_FromStringAndSize(output, n);
+    return PyBytes_FromStringAndSize(output, n);
 }
 
 PyDoc_STRVAR(readlines_doc,
@@ -349,7 +349,7 @@ bytesio_readlines(BytesIOObject *self, PyObject *args)
         return NULL;
 
     while ((n = get_line(self, &output)) != 0) {
-        line = PyString_FromStringAndSize(output, n);
+        line = PyBytes_FromStringAndSize(output, n);
         if (!line)
             goto on_error;
         if (PyList_Append(result, line) == -1) {
@@ -455,7 +455,7 @@ bytesio_iternext(BytesIOObject *self)
     if (!next || n == 0)
         return NULL;
 
-    return PyString_FromStringAndSize(next, n);
+    return PyBytes_FromStringAndSize(next, n);
 }
 
 PyDoc_STRVAR(seek_doc,

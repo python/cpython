@@ -103,7 +103,7 @@ EVP_digest(EVPobject *self, PyObject *unused)
     digest_size = EVP_MD_CTX_size(&temp_ctx);
     EVP_DigestFinal(&temp_ctx, digest, NULL);
 
-    retval = PyString_FromStringAndSize((const char *)digest, digest_size);
+    retval = PyBytes_FromStringAndSize((const char *)digest, digest_size);
     EVP_MD_CTX_cleanup(&temp_ctx);
     return retval;
 }
@@ -130,10 +130,10 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
     /* Create a new string */
     /* NOTE: not thread safe! modifying an already created string object */
     /* (not a problem because we hold the GIL by default) */
-    retval = PyString_FromStringAndSize(NULL, digest_size * 2);
+    retval = PyBytes_FromStringAndSize(NULL, digest_size * 2);
     if (!retval)
 	    return NULL;
-    hex_digest = PyString_AsString(retval);
+    hex_digest = PyBytes_AsString(retval);
     if (!hex_digest) {
 	    Py_DECREF(retval);
 	    return NULL;
@@ -220,8 +220,8 @@ EVP_repr(PyObject *self)
 {
     char buf[100];
     PyOS_snprintf(buf, sizeof(buf), "<%s HASH object @ %p>",
-            PyString_AsString(((EVPobject *)self)->name), self);
-    return PyString_FromString(buf);
+            PyBytes_AsString(((EVPobject *)self)->name), self);
+    return PyBytes_FromString(buf);
 }
 
 #if HASH_OBJ_CONSTRUCTOR
@@ -421,7 +421,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
 /* used in the init function to setup a constructor */
 #define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do { \
-    CONST_ ## NAME ## _name_obj = PyString_FromString(#NAME); \
+    CONST_ ## NAME ## _name_obj = PyBytes_FromString(#NAME); \
     if (EVP_get_digestbyname(#NAME)) { \
         CONST_new_ ## NAME ## _ctx_p = &CONST_new_ ## NAME ## _ctx; \
         EVP_DigestInit(CONST_new_ ## NAME ## _ctx_p, EVP_get_digestbyname(#NAME)); \

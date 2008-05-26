@@ -185,9 +185,9 @@ PyFloat_FromString(PyObject *v, char **pend)
 
 	if (pend)
 		*pend = NULL;
-	if (PyString_Check(v)) {
-		s = PyString_AS_STRING(v);
-		len = PyString_GET_SIZE(v);
+	if (PyBytes_Check(v)) {
+		s = PyBytes_AS_STRING(v);
+		len = PyBytes_GET_SIZE(v);
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
@@ -488,7 +488,7 @@ float_repr(PyFloatObject *v)
 	char buf[100];
 	format_float(buf, sizeof(buf), v, PREC_REPR);
 
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 static PyObject *
@@ -496,7 +496,7 @@ float_str(PyFloatObject *v)
 {
 	char buf[100];
 	format_float(buf, sizeof(buf), v, PREC_STR);
-	return PyString_FromString(buf);
+	return PyBytes_FromString(buf);
 }
 
 /* Comparison is pretty much a nightmare.  When comparing float to float,
@@ -1221,7 +1221,7 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return float_subtype_new(type, args, kwds); /* Wimp out */
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:float", kwlist, &x))
 		return NULL;
-	if (PyString_Check(x))
+	if (PyBytes_Check(x))
 		return PyFloat_FromString(x, NULL);
 	return PyNumber_Float(x);
 }
@@ -1272,13 +1272,13 @@ float_getformat(PyTypeObject *v, PyObject* arg)
 	char* s;
 	float_format_type r;
 
-	if (!PyString_Check(arg)) {
+	if (!PyBytes_Check(arg)) {
 		PyErr_Format(PyExc_TypeError,
 	     "__getformat__() argument must be string, not %.500s",
 			     Py_TYPE(arg)->tp_name);
 		return NULL;
 	}
-	s = PyString_AS_STRING(arg);
+	s = PyBytes_AS_STRING(arg);
 	if (strcmp(s, "double") == 0) {
 		r = double_format;
 	}
@@ -1294,11 +1294,11 @@ float_getformat(PyTypeObject *v, PyObject* arg)
 	
 	switch (r) {
 	case unknown_format:
-		return PyString_FromString("unknown");
+		return PyBytes_FromString("unknown");
 	case ieee_little_endian_format:
-		return PyString_FromString("IEEE, little-endian");
+		return PyBytes_FromString("IEEE, little-endian");
 	case ieee_big_endian_format:
-		return PyString_FromString("IEEE, big-endian");
+		return PyBytes_FromString("IEEE, big-endian");
 	default:
 		Py_FatalError("insane float_format or double_format");
 		return NULL;
@@ -1397,7 +1397,7 @@ float__format__(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
 		return NULL;
-	if (PyString_Check(format_spec))
+	if (PyBytes_Check(format_spec))
 		return string_float__format__(self, args);
 	if (PyUnicode_Check(format_spec)) {
 		/* Convert format_spec to a str */

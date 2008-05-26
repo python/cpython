@@ -166,8 +166,8 @@ weakref_repr(PyWeakReference *self)
 						   "__name__");
 	if (nameobj == NULL)
 		PyErr_Clear();
-	else if (PyString_Check(nameobj))
-		name = PyString_AS_STRING(nameobj);
+	else if (PyBytes_Check(nameobj))
+		name = PyBytes_AS_STRING(nameobj);
         PyOS_snprintf(buffer, sizeof(buffer),
 		      name ? "<weakref at %p; to '%.50s' at %p (%s)>"
 		           : "<weakref at %p; to '%.50s' at %p>",
@@ -177,7 +177,7 @@ weakref_repr(PyWeakReference *self)
 		      name);
 	Py_XDECREF(nameobj);
     }
-    return PyString_FromString(buffer);
+    return PyBytes_FromString(buffer);
 }
 
 /* Weak references only support equality, not ordering. Two weak references
@@ -448,7 +448,7 @@ proxy_repr(PyWeakReference *proxy)
 		  "<weakproxy at %p to %.100s at %p>", proxy,
 		  Py_TYPE(PyWeakref_GET_OBJECT(proxy))->tp_name,
 		  PyWeakref_GET_OBJECT(proxy));
-    return PyString_FromString(buf);
+    return PyBytes_FromString(buf);
 }
 
 

@@ -467,8 +467,8 @@ PyImport_Cleanup(void)
 		while (PyDict_Next(modules, &pos, &key, &value)) {
 			if (value->ob_refcnt != 1)
 				continue;
-			if (PyString_Check(key) && PyModule_Check(value)) {
-				name = PyString_AS_STRING(key);
+			if (PyBytes_Check(key) && PyModule_Check(value)) {
+				name = PyBytes_AS_STRING(key);
 				if (strcmp(name, "__builtin__") == 0)
 					continue;
 				if (strcmp(name, "sys") == 0)
@@ -486,8 +486,8 @@ PyImport_Cleanup(void)
 	/* Next, delete all modules (still skipping __builtin__ and sys) */
 	pos = 0;
 	while (PyDict_Next(modules, &pos, &key, &value)) {
-		if (PyString_Check(key) && PyModule_Check(value)) {
-			name = PyString_AS_STRING(key);
+		if (PyBytes_Check(key) && PyModule_Check(value)) {
+			name = PyBytes_AS_STRING(key);
 			if (strcmp(name, "__builtin__") == 0)
 				continue;
 			if (strcmp(name, "sys") == 0)
@@ -665,7 +665,7 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 	/* Remember the filename as the __file__ attribute */
 	v = NULL;
 	if (pathname != NULL) {
-		v = PyString_FromString(pathname);
+		v = PyBytes_FromString(pathname);
 		if (v == NULL)
 			PyErr_Clear();
 	}
@@ -1002,7 +1002,7 @@ load_package(char *name, char *pathname)
 		PySys_WriteStderr("import %s # directory %s\n",
 			name, pathname);
 	d = PyModule_GetDict(m);
-	file = PyString_FromString(pathname);
+	file = PyBytes_FromString(pathname);
 	if (file == NULL)
 		goto error;
 	path = Py_BuildValue("[O]", file);
@@ -1214,15 +1214,15 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		Py_DECREF(meta_path);
 	}
 
-	if (path != NULL && PyString_Check(path)) {
+	if (path != NULL && PyBytes_Check(path)) {
 		/* The only type of submodule allowed inside a "frozen"
 		   package are other frozen modules or packages. */
-		if (PyString_Size(path) + 1 + strlen(name) >= (size_t)buflen) {
+		if (PyBytes_Size(path) + 1 + strlen(name) >= (size_t)buflen) {
 			PyErr_SetString(PyExc_ImportError,
 					"full frozen module name too long");
 			return NULL;
 		}
-		strcpy(buf, PyString_AsString(path));
+		strcpy(buf, PyBytes_AsString(path));
 		strcat(buf, ".");
 		strcat(buf, name);
 		strcpy(name, buf);
@@ -1291,14 +1291,14 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		}
 		else
 #endif
-		if (!PyString_Check(v))
+		if (!PyBytes_Check(v))
 			continue;
-		len = PyString_GET_SIZE(v);
+		len = PyBytes_GET_SIZE(v);
 		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
 			Py_XDECREF(copy);
 			continue; /* Too long */
 		}
-		strcpy(buf, PyString_AS_STRING(v));
+		strcpy(buf, PyBytes_AS_STRING(v));
 		if (strlen(buf) != len) {
 			Py_XDECREF(copy);
 			continue; /* v contains '\0' */
@@ -1963,7 +1963,7 @@ PyImport_ImportFrozenModule(char *name)
 		if (m == NULL)
 			goto err_return;
 		d = PyModule_GetDict(m);
-		s = PyString_InternFromString(name);
+		s = PyBytes_InternFromString(name);
 		if (s == NULL)
 			goto err_return;
 		err = PyDict_SetItemString(d, "__path__", s);
@@ -1992,7 +1992,7 @@ PyImport_ImportModule(const char *name)
 	PyObject *pname;
 	PyObject *result;
 
-	pname = PyString_FromString(name);
+	pname = PyBytes_FromString(name);
 	if (pname == NULL)
 		return NULL;
 	result = PyImport_Import(pname);
@@ -2165,17 +2165,17 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 		return Py_None;
 
 	if (namestr == NULL) {
-		namestr = PyString_InternFromString("__name__");
+		namestr = PyBytes_InternFromString("__name__");
 		if (namestr == NULL)
 			return NULL;
 	}
 	if (pathstr == NULL) {
-		pathstr = PyString_InternFromString("__path__");
+		pathstr = PyBytes_InternFromString("__path__");
 		if (pathstr == NULL)
 			return NULL;
 	}
 	if (pkgstr == NULL) {
-		pkgstr = PyString_InternFromString("__package__");
+		pkgstr = PyBytes_InternFromString("__package__");
 		if (pkgstr == NULL)
 			return NULL;
 	}
@@ -2187,12 +2187,12 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 	if ((pkgname != NULL) && (pkgname != Py_None)) {
 		/* __package__ is set, so use it */
 		Py_ssize_t len;
-		if (!PyString_Check(pkgname)) {
+		if (!PyBytes_Check(pkgname)) {
 			PyErr_SetString(PyExc_ValueError,
 					"__package__ set to non-string");
 			return NULL;
 		}
-		len = PyString_GET_SIZE(pkgname);
+		len = PyBytes_GET_SIZE(pkgname);
 		if (len == 0) {
 			if (level > 0) {
 				PyErr_SetString(PyExc_ValueError,
@@ -2206,24 +2206,24 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 					"Package name too long");
 			return NULL;
 		}
-		strcpy(buf, PyString_AS_STRING(pkgname));
+		strcpy(buf, PyBytes_AS_STRING(pkgname));
 	} else {
 		/* __package__ not set, so figure it out and set it */
 		modname = PyDict_GetItem(globals, namestr);
-		if (modname == NULL || !PyString_Check(modname))
+		if (modname == NULL || !PyBytes_Check(modname))
 			return Py_None;
 	
 		modpath = PyDict_GetItem(globals, pathstr);
 		if (modpath != NULL) {
 			/* __path__ is set, so modname is already the package name */
-			Py_ssize_t len = PyString_GET_SIZE(modname);
+			Py_ssize_t len = PyBytes_GET_SIZE(modname);
 			int error;
 			if (len > MAXPATHLEN) {
 				PyErr_SetString(PyExc_ValueError,
 						"Module name too long");
 				return NULL;
 			}
-			strcpy(buf, PyString_AS_STRING(modname));
+			strcpy(buf, PyBytes_AS_STRING(modname));
 			error = PyDict_SetItem(globals, pkgstr, modname);
 			if (error) {
 				PyErr_SetString(PyExc_ValueError,
@@ -2232,7 +2232,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 			}
 		} else {
 			/* Normal module, so work out the package name if any */
-			char *start = PyString_AS_STRING(modname);
+			char *start = PyBytes_AS_STRING(modname);
 			char *lastdot = strrchr(start, '.');
 			size_t len;
 			int error;
@@ -2258,7 +2258,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 			}
 			strncpy(buf, start, len);
 			buf[len] = '\0';
-			pkgname = PyString_FromString(buf);
+			pkgname = PyBytes_FromString(buf);
 			if (pkgname == NULL) {
 				return NULL;
 			}
@@ -2394,13 +2394,13 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
 			}
 			return 0;
 		}
-		if (!PyString_Check(item)) {
+		if (!PyBytes_Check(item)) {
 			PyErr_SetString(PyExc_TypeError,
 					"Item in ``from list'' not a string");
 			Py_DECREF(item);
 			return 0;
 		}
-		if (PyString_AS_STRING(item)[0] == '*') {
+		if (PyBytes_AS_STRING(item)[0] == '*') {
 			PyObject *all;
 			Py_DECREF(item);
 			/* See if the package defines __all__ */
@@ -2419,7 +2419,7 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
 		}
 		hasit = PyObject_HasAttr(mod, item);
 		if (!hasit) {
-			char *subname = PyString_AS_STRING(item);
+			char *subname = PyBytes_AS_STRING(item);
 			PyObject *submod;
 			char *p;
 			if (buflen + strlen(subname) >= MAXPATHLEN) {
@@ -2585,7 +2585,7 @@ PyImport_ReloadModule(PyObject *m)
 		subname = name;
 	else {
 		PyObject *parentname, *parent;
-		parentname = PyString_FromStringAndSize(name, (subname-name));
+		parentname = PyBytes_FromStringAndSize(name, (subname-name));
 		if (parentname == NULL) {
 			imp_modules_reloading_clear();
 			return NULL;
@@ -2594,7 +2594,7 @@ PyImport_ReloadModule(PyObject *m)
 		if (parent == NULL) {
 			PyErr_Format(PyExc_ImportError,
 			    "reload(): parent %.200s not in sys.modules",
-			    PyString_AS_STRING(parentname));
+			    PyBytes_AS_STRING(parentname));
 			Py_DECREF(parentname);
 			imp_modules_reloading_clear();
 			return NULL;
@@ -2639,7 +2639,7 @@ PyImport_ReloadModule(PyObject *m)
    done using whatever import hooks are installed in the current
    environment, e.g. by "rexec".
    A dummy list ["__doc__"] is passed as the 4th argument so that
-   e.g. PyImport_Import(PyString_FromString("win32com.client.gencache"))
+   e.g. PyImport_Import(PyBytes_FromString("win32com.client.gencache"))
    will return <module "gencache"> instead of <module "win32com">. */
 
 PyObject *
@@ -2655,10 +2655,10 @@ PyImport_Import(PyObject *module_name)
 
 	/* Initialize constant string objects */
 	if (silly_list == NULL) {
-		import_str = PyString_InternFromString("__import__");
+		import_str = PyBytes_InternFromString("__import__");
 		if (import_str == NULL)
 			return NULL;
-		builtins_str = PyString_InternFromString("__builtins__");
+		builtins_str = PyBytes_InternFromString("__builtins__");
 		if (builtins_str == NULL)
 			return NULL;
 		silly_list = Py_BuildValue("[s]", "__doc__");
@@ -2726,7 +2726,7 @@ imp_get_magic(PyObject *self, PyObject *noargs)
 	buf[2] = (char) ((pyc_magic >> 16) & 0xff);
 	buf[3] = (char) ((pyc_magic >> 24) & 0xff);
 
-	return PyString_FromStringAndSize(buf, 4);
+	return PyBytes_FromStringAndSize(buf, 4);
 }
 
 static PyObject *

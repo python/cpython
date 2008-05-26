@@ -421,7 +421,7 @@ add a line to the history buffer");
 static PyObject *
 get_completer_delims(PyObject *self, PyObject *noarg)
 {
-	return PyString_FromString(rl_completer_word_break_characters);
+	return PyBytes_FromString(rl_completer_word_break_characters);
 }
 
 PyDoc_STRVAR(doc_get_completer_delims,
@@ -471,7 +471,7 @@ get_history_item(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:index", &idx))
 		return NULL;
 	if ((hist_ent = history_get(idx)))
-		return PyString_FromString(hist_ent->line);
+		return PyBytes_FromString(hist_ent->line);
 	else {
 		Py_RETURN_NONE;
 	}
@@ -503,7 +503,7 @@ return the current (not the maximum) length of history.");
 static PyObject *
 get_line_buffer(PyObject *self, PyObject *noarg)
 {
-	return PyString_FromString(rl_line_buffer);
+	return PyBytes_FromString(rl_line_buffer);
 }
 
 PyDoc_STRVAR(doc_get_line_buffer,
@@ -676,7 +676,7 @@ on_completion_display_matches_hook(char **matches,
 	if (m == NULL)
 		goto error;
 	for (i = 0; i < num_matches; i++) {
-		s = PyString_FromString(matches[i+1]);
+		s = PyBytes_FromString(matches[i+1]);
 		if (s == NULL)
 			goto error;
 		if (PyList_SetItem(m, i, s) == -1)
@@ -725,7 +725,7 @@ on_completion(const char *text, int state)
 			result = NULL;
 		}
 		else {
-			char *s = PyString_AsString(r);
+			char *s = PyBytes_AsString(r);
 			if (s == NULL)
 				goto error;
 			result = strdup(s);

@@ -375,7 +375,7 @@ class Obj2ModVisitor(PickleVisitor):
         # there's really nothing more we can do if this fails ...
         self.emit("if (tmp == NULL) goto failed;", 1)
         error = "expected some sort of %s, but got %%.400s" % name
-        format = "PyErr_Format(PyExc_TypeError, \"%s\", PyString_AS_STRING(tmp));"
+        format = "PyErr_Format(PyExc_TypeError, \"%s\", PyBytes_AS_STRING(tmp));"
         self.emit(format % error, 1, reflow=False)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)
@@ -704,7 +704,7 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
     fnames = PyTuple_New(num_fields);
     if (!fnames) return NULL;
     for (i = 0; i < num_fields; i++) {
-        PyObject *field = PyString_FromString(fields[i]);
+        PyObject *field = PyBytes_FromString(fields[i]);
         if (!field) {
             Py_DECREF(fnames);
             return NULL;
@@ -723,7 +723,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
     PyObject *s, *l = PyTuple_New(num_fields);
     if (!l) return 0;
     for(i = 0; i < num_fields; i++) {
-        s = PyString_FromString(attrs[i]);
+        s = PyBytes_FromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
             return 0;
@@ -797,7 +797,7 @@ static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
         PyObject *s = PyObject_Repr(obj);
         if (s == NULL) return 1;
         PyErr_Format(PyExc_ValueError, "invalid integer value: %.400s",
-                     PyString_AS_STRING(s));
+                     PyBytes_AS_STRING(s));
         Py_DECREF(s);
         return 1;
     }
@@ -815,7 +815,7 @@ static int obj2ast_bool(PyObject* obj, bool* out, PyArena* arena)
         PyObject *s = PyObject_Repr(obj);
         if (s == NULL) return 1;
         PyErr_Format(PyExc_ValueError, "invalid boolean value: %.400s",
-                     PyString_AS_STRING(s));
+                     PyBytes_AS_STRING(s));
         Py_DECREF(s);
         return 1;
     }

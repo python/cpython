@@ -1715,7 +1715,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     size = PyObject_Length(string);
 #endif
 
-    if (PyString_Check(string) || bytes == size)
+    if (PyBytes_Check(string) || bytes == size)
         charsize = 1;
 #if defined(HAVE_UNICODE)
     else if (bytes == (Py_ssize_t) (size * sizeof(Py_UNICODE)))
@@ -1949,7 +1949,7 @@ call(char* module, char* function, PyObject* args)
 
     if (!args)
         return NULL;
-    name = PyString_FromString(module);
+    name = PyBytes_FromString(module);
     if (!name)
         return NULL;
     mod = PyImport_Import(name);
@@ -3416,7 +3416,7 @@ PyMODINIT_FUNC init_sre(void)
         Py_DECREF(x);
     }
 
-    x = PyString_FromString(copyright);
+    x = PyBytes_FromString(copyright);
     if (x) {
         PyDict_SetItemString(d, "copyright", x);
         Py_DECREF(x);

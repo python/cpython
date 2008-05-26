@@ -398,7 +398,7 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
         /* no need to do anything, the structure has already been zeroed */
     }
 
-    else if (PyString_Check(keyobj)) {
+    else if (PyBytes_Check(keyobj)) {
         /* verify access method type */
         type = _DB_get_type(self);
         if (type == -1)
@@ -417,15 +417,15 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
          * the code check for DB_THREAD and forceably set DBT_MALLOC
          * when we otherwise would leave flags 0 to indicate that.
          */
-        key->data = malloc(PyString_GET_SIZE(keyobj));
+        key->data = malloc(PyBytes_GET_SIZE(keyobj));
         if (key->data == NULL) {
             PyErr_SetString(PyExc_MemoryError, "Key memory allocation failed");
             return 0;
         }
-        memcpy(key->data, PyString_AS_STRING(keyobj),
-               PyString_GET_SIZE(keyobj));
+        memcpy(key->data, PyBytes_AS_STRING(keyobj),
+               PyBytes_GET_SIZE(keyobj));
         key->flags = DB_DBT_REALLOC;
-        key->size = PyString_GET_SIZE(keyobj);
+        key->size = PyBytes_GET_SIZE(keyobj);
     }
 
     else if (PyInt_Check(keyobj)) {
@@ -535,7 +535,7 @@ static PyObject *Build_PyString(const char *p,int s)
     p=DummyString;
     assert(s==0);
   }
-  return PyString_FromStringAndSize(p,s);
+  return PyBytes_FromStringAndSize(p,s);
 }
 
 static PyObject *BuildValue_S(const void *p,int s)
@@ -1291,12 +1291,12 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         else if (PyInt_Check(result)) {
             retval = PyInt_AsLong(result);
         }
-        else if (PyString_Check(result)) {
+        else if (PyBytes_Check(result)) {
             char* data;
             Py_ssize_t size;
 
             CLEAR_DBT(*secKey);
-            PyString_AsStringAndSize(result, &data, &size);
+            PyBytes_AsStringAndSize(result, &data, &size);
             secKey->flags = DB_DBT_APPMALLOC;   /* DB will free */
             secKey->data = malloc(size);        /* TODO, check this */
 	    if (secKey->data) {
@@ -4412,7 +4412,7 @@ DBEnv_txn_recover(DBEnvObject* self, PyObject* args)
         if (!retp) break;
         flags=DB_NEXT;  /* Prepare for next loop pass */
         for (i=0; i<retp; i++) {
-            gid=PyString_FromStringAndSize((char *)(preplist[i].gid),
+            gid=PyBytes_FromStringAndSize((char *)(preplist[i].gid),
                                 DB_XIDDATASIZE);
             if (!gid) {
                 Py_DECREF(list);
@@ -4870,7 +4870,7 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
     if (log_list) {
         char **log_list_start;
         for (log_list_start = log_list; *log_list != NULL; ++log_list) {
-            item = PyString_FromString (*log_list);
+            item = PyBytes_FromString (*log_list);
             if (item == NULL) {
                 Py_DECREF(list);
                 list = NULL;
@@ -6296,7 +6296,7 @@ DBEnv_getattr(DBEnvObject* self, char *name)
       if (home == NULL) {
           RETURN_NONE();
       }
-      return PyString_FromString(home);
+      return PyBytes_FromString(home);
     }
 
     return Py_FindMethod(DBEnv_methods, (PyObject* )self, name);
@@ -6612,9 +6612,9 @@ DL_EXPORT(void) init_bsddb(void)
 {
     PyObject* m;
     PyObject* d;
-    PyObject* pybsddb_version_s = PyString_FromString( PY_BSDDB_VERSION );
-    PyObject* db_version_s = PyString_FromString( DB_VERSION_STRING );
-    PyObject* cvsid_s = PyString_FromString( rcs_id );
+    PyObject* pybsddb_version_s = PyBytes_FromString( PY_BSDDB_VERSION );
+    PyObject* db_version_s = PyBytes_FromString( DB_VERSION_STRING );
+    PyObject* cvsid_s = PyBytes_FromString( rcs_id );
     PyObject* py_api;
 
     /* Initialize the type of the new type objects here; doing it here

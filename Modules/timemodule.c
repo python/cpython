@@ -488,7 +488,7 @@ time_strftime(PyObject *self, PyObject *args)
 			   e.g. an empty format, or %Z when the timezone
 			   is unknown. */
 			PyObject *ret;
-			ret = PyString_FromStringAndSize(outbuf, buflen);
+			ret = PyBytes_FromStringAndSize(outbuf, buflen);
 			free(outbuf);
 			return ret;
 		}
@@ -548,7 +548,7 @@ time_asctime(PyObject *self, PyObject *args)
 	p = asctime(&buf);
 	if (p[24] == '\n')
 		p[24] = '\0';
-	return PyString_FromString(p);
+	return PyBytes_FromString(p);
 }
 
 PyDoc_STRVAR(asctime_doc,
@@ -584,7 +584,7 @@ time_ctime(PyObject *self, PyObject *args)
 	}
 	if (p[24] == '\n')
 		p[24] = '\0';
-	return PyString_FromString(p);
+	return PyBytes_FromString(p);
 }
 
 PyDoc_STRVAR(ctime_doc,

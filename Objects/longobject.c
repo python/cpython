@@ -1200,7 +1200,7 @@ PyAPI_FUNC(PyObject *)
 _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 {
 	register PyLongObject *a = (PyLongObject *)aa;
-	PyStringObject *str;
+	PyBytesObject *str;
 	Py_ssize_t i, j, sz;
 	Py_ssize_t size_a;
 	char *p;
@@ -1229,10 +1229,10 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 				"long is too large to format");
 		return NULL;
 	}
-	str = (PyStringObject *) PyString_FromStringAndSize((char *)0, sz);
+	str = (PyBytesObject *) PyBytes_FromStringAndSize((char *)0, sz);
 	if (str == NULL)
 		return NULL;
-	p = PyString_AS_STRING(str) + sz;
+	p = PyBytes_AS_STRING(str) + sz;
 	*p = '\0';
         if (addL)
                 *--p = 'L';
@@ -1258,7 +1258,7 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 			do {
 				char cdigit = (char)(accum & (base - 1));
 				cdigit += (cdigit < 10) ? '0' : 'a'-10;
-				assert(p > PyString_AS_STRING(str));
+				assert(p > PyBytes_AS_STRING(str));
 				*--p = cdigit;
 				accumbits -= basebits;
 				accum >>= basebits;
@@ -1310,7 +1310,7 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 			do {
 				digit nextrem = (digit)(rem / base);
 				char c = (char)(rem - nextrem * base);
-				assert(p > PyString_AS_STRING(str));
+				assert(p > PyBytes_AS_STRING(str));
 				c += (c < 10) ? '0' : 'a'-10;
 				*--p = c;
 				rem = nextrem;
@@ -1348,14 +1348,14 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 	}
 	if (sign)
 		*--p = sign;
-	if (p != PyString_AS_STRING(str)) {
-		char *q = PyString_AS_STRING(str);
+	if (p != PyBytes_AS_STRING(str)) {
+		char *q = PyBytes_AS_STRING(str);
 		assert(p > q);
 		do {
 		} while ((*q++ = *p++) != '\0');
 		q--;
-		_PyString_Resize((PyObject **)&str,
-				 (Py_ssize_t) (q - PyString_AS_STRING(str)));
+		_PyBytes_Resize((PyObject **)&str,
+				 (Py_ssize_t) (q - PyBytes_AS_STRING(str)));
 	}
 	return (PyObject *)str;
 }
@@ -1719,7 +1719,7 @@ digit beyond the first.
  onError:
 	Py_XDECREF(z);
 	slen = strlen(orig_str) < 200 ? strlen(orig_str) : 200;
-	strobj = PyString_FromStringAndSize(orig_str, slen);
+	strobj = PyBytes_FromStringAndSize(orig_str, slen);
 	if (strobj == NULL)
 		return NULL;
 	strrepr = PyObject_Repr(strobj);
@@ -1728,7 +1728,7 @@ digit beyond the first.
 		return NULL;
 	PyErr_Format(PyExc_ValueError,
 		     "invalid literal for long() with base %d: %s",
-		     base, PyString_AS_STRING(strrepr));
+		     base, PyBytes_AS_STRING(strrepr));
 	Py_DECREF(strrepr);
 	return NULL;
 }
@@ -3332,11 +3332,11 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return PyLong_FromLong(0L);
 	if (base == -909)
 		return PyNumber_Long(x);
-	else if (PyString_Check(x)) {
+	else if (PyBytes_Check(x)) {
 		/* Since PyLong_FromString doesn't have a length parameter,
 		 * check here for possible NULs in the string. */
-		char *string = PyString_AS_STRING(x);
-		if (strlen(string) != PyString_Size(x)) {
+		char *string = PyBytes_AS_STRING(x);
+		if (strlen(string) != PyBytes_Size(x)) {
 			/* create a repr() of the input string,
 			 * just like PyLong_FromString does. */
 			PyObject *srepr;
@@ -3345,11 +3345,11 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				return NULL;
 			PyErr_Format(PyExc_ValueError,
 			     "invalid literal for long() with base %d: %s",
-			     base, PyString_AS_STRING(srepr));
+			     base, PyBytes_AS_STRING(srepr));
 			Py_DECREF(srepr);
 			return NULL;
 		}
-		return PyLong_FromString(PyString_AS_STRING(x), NULL, base);
+		return PyLong_FromString(PyBytes_AS_STRING(x), NULL, base);
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(x))
@@ -3414,7 +3414,7 @@ long__format__(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
 		return NULL;
-	if (PyString_Check(format_spec))
+	if (PyBytes_Check(format_spec))
 		return string_long__format__(self, args);
 	if (PyUnicode_Check(format_spec)) {
 		/* Convert format_spec to a str */

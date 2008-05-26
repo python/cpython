@@ -155,12 +155,12 @@ Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno)
 					PyErr_Clear();
 					break;
 				}
-				if (PyString_Check(v)) {
+				if (PyBytes_Check(v)) {
 					size_t len;
-					len = PyString_GET_SIZE(v);
+					len = PyBytes_GET_SIZE(v);
 					if (len + 1 + taillen >= MAXPATHLEN)
 						continue; /* Too long */
-					strcpy(namebuf, PyString_AsString(v));
+					strcpy(namebuf, PyBytes_AsString(v));
 					if (strlen(namebuf) != len)
 						continue; /* v contains '\0' */
 					if (len > 0 && namebuf[len-1] != SEP)
@@ -238,10 +238,10 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
 	while (tb != NULL && err == 0) {
 		if (depth <= limit) {
 			err = tb_displayline(f,
-			    PyString_AsString(
+			    PyBytes_AsString(
 				    tb->tb_frame->f_code->co_filename),
 			    tb->tb_lineno,
-			    PyString_AsString(tb->tb_frame->f_code->co_name));
+			    PyBytes_AsString(tb->tb_frame->f_code->co_name));
 		}
 		depth--;
 		tb = tb->tb_next;

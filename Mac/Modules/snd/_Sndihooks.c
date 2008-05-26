@@ -500,7 +500,7 @@ init_Sndihooks()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ErrorObject = PyString_FromString("Sndihooks.error");
+	ErrorObject = PyBytes_FromString("Sndihooks.error");
 	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* XXXX Add constants here */

@@ -176,7 +176,7 @@ get_nullchar_as_None(char c)
                 return Py_None;
         }
         else
-                return PyString_FromStringAndSize((char*)&c, 1);
+                return PyBytes_FromStringAndSize((char*)&c, 1);
 }
 
 static PyObject *
@@ -235,16 +235,16 @@ _set_char(const char *name, char *target, PyObject *src, char dflt)
 	if (src == NULL)
 		*target = dflt;
 	else {
-		if (src == Py_None || PyString_Size(src) == 0)
+		if (src == Py_None || PyBytes_Size(src) == 0)
 			*target = '\0';
-		else if (!PyString_Check(src) || PyString_Size(src) != 1) {
+		else if (!PyBytes_Check(src) || PyBytes_Size(src) != 1) {
 			PyErr_Format(PyExc_TypeError, 
 				     "\"%s\" must be an 1-character string", 
 				     name);
 			return -1;
 		}
 		else {
-			char *s = PyString_AsString(src);
+			char *s = PyBytes_AsString(src);
 			if (s == NULL)
 				return -1;
 			*target = s[0];
@@ -257,7 +257,7 @@ static int
 _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 {
 	if (src == NULL)
-		*target = PyString_FromString(dflt);
+		*target = PyBytes_FromString(dflt);
 	else {
 		if (src == Py_None)
 			*target = NULL;
@@ -528,7 +528,7 @@ parse_save_field(ReaderObj *self)
 {
 	PyObject *field;
 
-	field = PyString_FromStringAndSize(self->field, self->field_len);
+	field = PyBytes_FromStringAndSize(self->field, self->field_len);
 	if (field == NULL)
 		return -1;
 	self->field_len = 0;
@@ -787,8 +787,8 @@ Reader_iternext(ReaderObj *self)
                 }
 		++self->line_num;
 
-                line = PyString_AsString(lineobj);
-		linelen = PyString_Size(lineobj);
+                line = PyBytes_AsString(lineobj);
+		linelen = PyBytes_Size(lineobj);
 
                 if (line == NULL || linelen < 0) {
                         Py_DECREF(lineobj);
@@ -976,7 +976,7 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
 		rec_len++;\
 	} while(0)
 
-	lineterm = PyString_AsString(dialect->lineterminator);
+	lineterm = PyBytes_AsString(dialect->lineterminator);
 	if (lineterm == NULL)
 		return -1;
 
@@ -1101,7 +1101,7 @@ join_append_lineterminator(WriterObj *self)
 	int terminator_len;
 	char *terminator;
 
-	terminator_len = PyString_Size(self->dialect->lineterminator);
+	terminator_len = PyBytes_Size(self->dialect->lineterminator);
 	if (terminator_len == -1)
 		return 0;
 
@@ -1109,7 +1109,7 @@ join_append_lineterminator(WriterObj *self)
 	if (!join_check_rec_size(self, self->rec_len + terminator_len))
 		return 0;
 
-	terminator = PyString_AsString(self->dialect->lineterminator); 
+	terminator = PyBytes_AsString(self->dialect->lineterminator); 
 	if (terminator == NULL)
 		return 0;
 	memmove(self->rec + self->rec_len, terminator, terminator_len);
@@ -1161,9 +1161,9 @@ csv_writerow(WriterObj *self, PyObject *seq)
 			break;
 		}
 
-		if (PyString_Check(field)) {
+		if (PyBytes_Check(field)) {
 			append_ok = join_append(self,
-						PyString_AS_STRING(field),
+						PyBytes_AS_STRING(field),
                                                 &quoted, len == 1);
 			Py_DECREF(field);
 		}
@@ -1179,7 +1179,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
 			if (str == NULL)
 				return NULL;
 
-			append_ok = join_append(self, PyString_AS_STRING(str), 
+			append_ok = join_append(self, PyBytes_AS_STRING(str), 
                                                 &quoted, len == 1);
 			Py_DECREF(str);
 		}
