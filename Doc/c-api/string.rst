@@ -2,11 +2,15 @@
 
 .. _stringobjects:
 
-String Objects
---------------
+String/Bytes Objects
+--------------------
 
 These functions raise :exc:`TypeError` when expecting a string parameter and are
 called with a non-string parameter.
+
+.. note::
+   These functions have been renamed to PyBytes_* in Python 3.x. The PyBytes
+   names are also available in 2.6.
 
 .. index:: object: string
 
