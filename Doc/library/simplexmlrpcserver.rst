@@ -1,4 +1,3 @@
-
 :mod:`SimpleXMLRPCServer` --- Basic XML-RPC server
 ==================================================
 
@@ -6,6 +5,11 @@
    :synopsis: Basic XML-RPC server implementation.
 .. moduleauthor:: Brian Quinlan <brianq@activestate.com>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
+
+.. note::
+   The :mod:`SimpleXMLRPCServer` module has been merged into
+   :mod:`xmlrpc.server` in Python 3.0.  The :term:`2to3` tool will automatically
+   adapt imports when converting your sources to 3.0.
 
 
 .. versionadded:: 2.2
