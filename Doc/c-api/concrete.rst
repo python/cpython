@@ -64,6 +64,7 @@ intrinsic to the Python language.
 
 .. toctree::
 
+   bytearray.rst
    string.rst
    unicode.rst
    buffer.rst
