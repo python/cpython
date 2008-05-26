@@ -1,9 +1,13 @@
-
 :mod:`BaseHTTPServer` --- Basic HTTP server
 ===========================================
 
 .. module:: BaseHTTPServer
    :synopsis: Basic HTTP server (base class for SimpleHTTPServer and CGIHTTPServer).
+
+.. note::
+   The :mod:`BaseHTTPServer` module has been merged into :mod:`http.server` in
+   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to 3.0.
 
 
 .. index::
