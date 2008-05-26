@@ -22,7 +22,7 @@ used to query various info about the object, if available.
 (mimetools.Message objects are queried with the getheader() method.)
 """
 
-import httplib
+import http.client
 import os
 import socket
 import sys
@@ -352,7 +352,7 @@ class URLopener:
 
         try:
             response = http_conn.getresponse()
-        except httplib.BadStatusLine:
+        except http.client.BadStatusLine:
             # something went wrong with the HTTP status line
             raise IOError('http protocol error', 0,
                           'got a bad status line', None)
@@ -369,7 +369,7 @@ class URLopener:
 
     def open_http(self, url, data=None):
         """Use HTTP protocol."""
-        return self._open_generic_http(httplib.HTTPConnection, url, data)
+        return self._open_generic_http(http.client.HTTPConnection, url, data)
 
     def http_error(self, url, fp, errcode, errmsg, headers, data=None):
         """Handle http errors.
@@ -395,9 +395,9 @@ class URLopener:
 
     if _have_ssl:
         def _https_connection(self, host):
-            return httplib.HTTPSConnection(host,
-                                           key_file=self.key_file,
-                                           cert_file=self.cert_file)
+            return http.client.HTTPSConnection(host,
+                                               key_file=self.key_file,
+                                               cert_file=self.cert_file)
 
         def open_https(self, url, data=None):
             """Use HTTPS protocol."""

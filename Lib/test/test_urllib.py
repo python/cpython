@@ -1,7 +1,7 @@
 """Regresssion tests for urllib"""
 
 import urllib
-import httplib
+import http.client
 import io
 import unittest
 from test import support
@@ -107,14 +107,14 @@ class urlopen_HttpTests(unittest.TestCase):
             def readline(self, length=None):
                 if self.closed: return b""
                 return io.BytesIO.readline(self, length)
-        class FakeHTTPConnection(httplib.HTTPConnection):
+        class FakeHTTPConnection(http.client.HTTPConnection):
             def connect(self):
                 self.sock = FakeSocket(fakedata)
-        self._connection_class = httplib.HTTPConnection
-        httplib.HTTPConnection = FakeHTTPConnection
+        self._connection_class = http.client.HTTPConnection
+        http.client.HTTPConnection = FakeHTTPConnection
 
     def unfakehttp(self):
-        httplib.HTTPConnection = self._connection_class
+        http.client.HTTPConnection = self._connection_class
 
     def test_read(self):
         self.fakehttp(b"Hello!")

@@ -1,5 +1,5 @@
 from xmlrpc.server import DocXMLRPCServer
-import httplib
+import http.client
 from test import support
 import threading
 import time
@@ -65,7 +65,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
             time.sleep(0.001)
             n -= 1
 
-        self.client = httplib.HTTPConnection("localhost:%d" % PORT)
+        self.client = http.client.HTTPConnection("localhost:%d" % PORT)
 
     def tearDown(self):
         self.client.close()

@@ -4,29 +4,29 @@ import mimetools
 import threading
 import urlparse
 import urllib2
-import BaseHTTPServer
+import http.server
 import unittest
 import hashlib
 from test import support
 
 # Loopback http server infrastructure
 
-class LoopbackHttpServer(BaseHTTPServer.HTTPServer):
+class LoopbackHttpServer(http.server.HTTPServer):
     """HTTP server w/ a few modifications that make it useful for
     loopback testing purposes.
     """
 
     def __init__(self, server_address, RequestHandlerClass):
-        BaseHTTPServer.HTTPServer.__init__(self,
-                                           server_address,
-                                           RequestHandlerClass)
+        http.server.HTTPServer.__init__(self,
+                                        server_address,
+                                        RequestHandlerClass)
 
         # Set the timeout of our listening socket really low so
         # that we can stop the server easily.
         self.socket.settimeout(1.0)
 
     def get_request(self):
-        """BaseHTTPServer method, overridden."""
+        """HTTPServer method, overridden."""
 
         request, client_address = self.socket.accept()
 
@@ -188,7 +188,7 @@ class DigestAuthHandler:
 
 # Proxy test infrastructure
 
-class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
     """This is a 'fake proxy' that makes it look like the entire
     internet has gone down due to a sudden zombie invasion.  It main
     utility is in providing us with authentication support for
@@ -283,7 +283,7 @@ class ProxyAuthTests(unittest.TestCase):
 
 def GetRequestHandler(responses):
 
-    class FakeHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    class FakeHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
         server_version = "TestHTTP/"
         requests = []

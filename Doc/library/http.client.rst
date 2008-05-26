@@ -1,14 +1,13 @@
+:mod:`http.client` --- HTTP protocol client
+===========================================
 
-:mod:`httplib` --- HTTP protocol client
-=======================================
-
-.. module:: httplib
+.. module:: http.client
    :synopsis: HTTP and HTTPS protocol client (requires sockets).
 
 
 .. index::
    pair: HTTP; protocol
-   single: HTTP; httplib (standard module)
+   single: HTTP; http.client (standard module)
 
 .. index:: module: urllib
 
@@ -39,10 +38,10 @@ The module provides the following classes:
    For example, the following calls all create instances that connect to the server
    at the same host and port::
 
-      >>> h1 = httplib.HTTPConnection('www.cwi.nl')
-      >>> h2 = httplib.HTTPConnection('www.cwi.nl:80')
-      >>> h3 = httplib.HTTPConnection('www.cwi.nl', 80)
-      >>> h3 = httplib.HTTPConnection('www.cwi.nl', 80, timeout=10)
+      >>> h1 = http.client.HTTPConnection('www.cwi.nl')
+      >>> h2 = http.client.HTTPConnection('www.cwi.nl:80')
+      >>> h3 = http.client.HTTPConnection('www.cwi.nl', 80)
+      >>> h3 = http.client.HTTPConnection('www.cwi.nl', 80, timeout=10)
 
 
 .. class:: HTTPSConnection(host[, port[, key_file[, cert_file[, strict[, timeout]]]]])
@@ -338,7 +337,7 @@ and also the following constants for integer status codes:
 
    This dictionary maps the HTTP 1.1 status codes to the W3C names.
 
-   Example: ``httplib.responses[httplib.NOT_FOUND]`` is ``'Not Found'``.
+   Example: ``http.client.responses[http.client.NOT_FOUND]`` is ``'Not Found'``.
 
 
 .. _httpconnection-objects:
@@ -464,15 +463,13 @@ HTTPResponse Objects
    Reason phrase returned by server.
 
 
-.. _httplib-examples:
-
 Examples
 --------
 
 Here is an example session that uses the ``GET`` method::
 
-   >>> import httplib
-   >>> conn = httplib.HTTPConnection("www.python.org")
+   >>> import http.client
+   >>> conn = http.client.HTTPConnection("www.python.org")
    >>> conn.request("GET", "/index.html")
    >>> r1 = conn.getresponse()
    >>> print(r1.status, r1.reason)
@@ -487,11 +484,11 @@ Here is an example session that uses the ``GET`` method::
 
 Here is an example session that shows how to ``POST`` requests::
 
-   >>> import httplib, urllib
+   >>> import http.client, urllib
    >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> headers = {"Content-type": "application/x-www-form-urlencoded",
    ...            "Accept": "text/plain"}
-   >>> conn = httplib.HTTPConnection("musi-cal.mojam.com:80")
+   >>> conn = http.client.HTTPConnection("musi-cal.mojam.com:80")
    >>> conn.request("POST", "/cgi-bin/query", params, headers)
    >>> response = conn.getresponse()
    >>> print(response.status, response.reason)

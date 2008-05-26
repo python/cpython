@@ -7,7 +7,7 @@ import xmlrpc.client as xmlrpclib
 import xmlrpc.server
 import threading
 import mimetools
-import httplib
+import http.client
 import socket
 import os
 from test import support
@@ -340,9 +340,9 @@ class SimpleServerTestCase(unittest.TestCase):
 
     # [ch] The test 404 is causing lots of false alarms.
     def XXXtest_404(self):
-        # send POST with httplib, it should return 404 header and
+        # send POST with http.client, it should return 404 header and
         # 'Not Found' message.
-        conn = httplib.HTTPConnection('localhost', PORT)
+        conn = http.client.HTTPConnection('localhost', PORT)
         conn.request('POST', '/this-is-not-valid')
         response = conn.getresponse()
         conn.close()

@@ -33,7 +33,7 @@ class AuthTests(unittest.TestCase):
 ## could be used to HTTP authentication.
 #
 #    def test_basic_auth(self):
-#        import httplib
+#        import http.client
 #
 #        test_url = "http://www.python.org/test/test_urllib2/basic_auth"
 #        test_hostport = "www.python.org"
@@ -61,14 +61,14 @@ class AuthTests(unittest.TestCase):
 #        # reasons, let's not implement it!  (it's already implemented for proxy
 #        # specification strings (that is, URLs or authorities specifying a
 #        # proxy), so we must keep that)
-#        self.assertRaises(httplib.InvalidURL,
+#        self.assertRaises(http.client.InvalidURL,
 #                          urllib2.urlopen, "http://evil:thing@example.com")
 
 
 class CloseSocketTest(unittest.TestCase):
 
     def test_close(self):
-        import socket, httplib, gc
+        import socket, http.client, gc
 
         # calling .close() on urllib2's response objects should close the
         # underlying socket
@@ -77,7 +77,7 @@ class CloseSocketTest(unittest.TestCase):
         response = _urlopen_with_retry("http://www.python.org/")
         abused_fileobject = response.fp
         httpresponse = abused_fileobject.raw
-        self.assert_(httpresponse.__class__ is httplib.HTTPResponse)
+        self.assert_(httpresponse.__class__ is http.client.HTTPResponse)
         fileobject = httpresponse.fp
 
         self.assert_(not fileobject.closed)

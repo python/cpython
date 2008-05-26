@@ -168,7 +168,6 @@ class PyclbrTest(TestCase):
                              'getproxies_internetconfig',)) # not on all platforms
         cm('pickle')
         cm('aifc', ignore=('openfp',))  # set with = in module
-        cm('Cookie', ignore=('Cookie',)) # Cookie is an alias for SmartCookie
         cm('sre_parse', ignore=('dump',)) # from sre_constants import *
         cm('pdb')
         cm('pydoc')

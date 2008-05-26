@@ -135,7 +135,7 @@ Exported functions:
 """
 
 import re, time, operator
-import httplib
+import http.client
 
 # --------------------------------------------------------------------
 # Internal stuff
@@ -1196,7 +1196,7 @@ class Transport:
 
     def send_request(self, host, handler, request_body, debug):
         host, extra_headers, x509 = self.get_host_info(host)
-        connection = httplib.HTTPConnection(host)
+        connection = http.client.HTTPConnection(host)
         if debug:
             connection.set_debuglevel(1)
         headers = {}
@@ -1261,10 +1261,10 @@ class SafeTransport(Transport):
         import socket
         if not hasattr(socket, "ssl"):
             raise NotImplementedError(
-                "your version of httplib doesn't support HTTPS")
+                "your version of http.client doesn't support HTTPS")
 
         host, extra_headers, x509 = self.get_host_info(host)
-        connection = httplib.HTTPSConnection(host, None, **(x509 or {}))
+        connection = http.client.HTTPSConnection(host, None, **(x509 or {}))
         if debug:
             connection.set_debuglevel(1)
         headers = {}

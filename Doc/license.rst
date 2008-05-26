@@ -449,7 +449,7 @@ The :mod:`asynchat` and :mod:`asyncore` modules contain the following notice::
 Cookie management
 -----------------
 
-The :mod:`Cookie` module contains the following notice::
+The :mod:`http.cookies` module contains the following notice::
 
    Copyright 2000 by Timothy O'Malley <timo@alum.mit.edu>
 

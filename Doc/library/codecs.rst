@@ -1159,8 +1159,8 @@ convert between Unicode and the ACE. Furthermore, the :mod:`socket` module
 transparently converts Unicode host names to ACE, so that applications need not
 be concerned about converting host names themselves when they pass them to the
 socket module. On top of that, modules that have host names as function
-parameters, such as :mod:`httplib` and :mod:`ftplib`, accept Unicode host names
-(:mod:`httplib` then also transparently sends an IDNA hostname in the
+parameters, such as :mod:`http.client` and :mod:`ftplib`, accept Unicode host
+names (:mod:`http.client` then also transparently sends an IDNA hostname in the
 :mailheader:`Host` field if it sends that field at all).
 
 When receiving host names from the wire (such as in reverse name lookup), no
