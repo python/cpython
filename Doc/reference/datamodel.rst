@@ -1554,26 +1554,25 @@ either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or slice objects, which define a
 range of items.  It is also recommended that mappings provide the methods
-:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`,
-:meth:`clear`, :meth:`setdefault`,
-:meth:`pop`, :meth:`popitem`, :meth:`copy`, and
+:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
+:meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`copy`, and
 :meth:`update` behaving similar to those for Python's standard dictionary
-objects.  The :mod:`UserDict` module provides a :class:`DictMixin` class to help
-create those methods from a base set of :meth:`__getitem__`,
-:meth:`__setitem__`, :meth:`__delitem__`, and :meth:`keys`. Mutable sequences
-should provide methods :meth:`append`, :meth:`count`, :meth:`index`,
-:meth:`extend`, :meth:`insert`, :meth:`pop`, :meth:`remove`, :meth:`reverse` and
-:meth:`sort`, like Python standard list objects.  Finally, sequence types should
-implement addition (meaning concatenation) and multiplication (meaning
-repetition) by defining the methods :meth:`__add__`, :meth:`__radd__`,
-:meth:`__iadd__`, :meth:`__mul__`, :meth:`__rmul__` and :meth:`__imul__`
-described below; they should not define other numerical operators.  It is
-recommended that both mappings and sequences implement the :meth:`__contains__`
-method to allow efficient use of the ``in`` operator; for mappings, ``in``
-should search the mapping's keys; for sequences, it should search
-through the values.  It is further recommended that both mappings and sequences
-implement the :meth:`__iter__` method to allow efficient iteration through the
-container; for mappings, :meth:`__iter__` should be the same as
+objects.  The :mod:`collections` module provides a :class:`MutableMapping`
+abstract base class to help create those methods from a base set of
+:meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__`, and :meth:`keys`.
+Mutable sequences should provide methods :meth:`append`, :meth:`count`,
+:meth:`index`, :meth:`extend`, :meth:`insert`, :meth:`pop`, :meth:`remove`,
+:meth:`reverse` and :meth:`sort`, like Python standard list objects.  Finally,
+sequence types should implement addition (meaning concatenation) and
+multiplication (meaning repetition) by defining the methods :meth:`__add__`,
+:meth:`__radd__`, :meth:`__iadd__`, :meth:`__mul__`, :meth:`__rmul__` and
+:meth:`__imul__` described below; they should not define other numerical
+operators.  It is recommended that both mappings and sequences implement the
+:meth:`__contains__` method to allow efficient use of the ``in`` operator; for
+mappings, ``in`` should search the mapping's keys; for sequences, it should
+search through the values.  It is further recommended that both mappings and
+sequences implement the :meth:`__iter__` method to allow efficient iteration
+through the container; for mappings, :meth:`__iter__` should be the same as
 :meth:`keys`; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
