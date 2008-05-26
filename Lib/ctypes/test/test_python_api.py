@@ -17,21 +17,21 @@ else:
 
 class PythonAPITestCase(unittest.TestCase):
 
-    def test_PyString_FromStringAndSize(self):
-        PyString_FromStringAndSize = pythonapi.PyString_FromStringAndSize
+    def test_PyBytes_FromStringAndSize(self):
+        PyBytes_FromStringAndSize = pythonapi.PyBytes_FromStringAndSize
 
-        PyString_FromStringAndSize.restype = py_object
-        PyString_FromStringAndSize.argtypes = c_char_p, c_py_ssize_t
+        PyBytes_FromStringAndSize.restype = py_object
+        PyBytes_FromStringAndSize.argtypes = c_char_p, c_py_ssize_t
 
-        self.failUnlessEqual(PyString_FromStringAndSize(b"abcdefghi", 3), b"abc")
+        self.failUnlessEqual(PyBytes_FromStringAndSize(b"abcdefghi", 3), b"abc")
 
     def test_PyString_FromString(self):
-        pythonapi.PyString_FromString.restype = py_object
-        pythonapi.PyString_FromString.argtypes = (c_char_p,)
+        pythonapi.PyBytes_FromString.restype = py_object
+        pythonapi.PyBytes_FromString.argtypes = (c_char_p,)
 
         s = b"abc"
         refcnt = grc(s)
-        pyob = pythonapi.PyString_FromString(s)
+        pyob = pythonapi.PyBytes_FromString(s)
         self.failUnlessEqual(grc(s), refcnt)
         self.failUnlessEqual(s, pyob)
         del pyob
