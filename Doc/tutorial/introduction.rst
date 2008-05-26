@@ -372,9 +372,13 @@ The built-in function :func:`len` returns the length of a string::
       Both strings and Unicode strings support a large number of methods for
       basic transformations and searching.
 
+   :ref:`new-string-formatting`
+      Information about string formatting with :meth:`str.format` is described
+      here.
+
    :ref:`string-formatting`
-      The formatting operations invoked when strings and Unicode strings are the
-      left operand of the ``%`` operator are described in more detail here.
+      The old formatting operations invoked when strings and Unicode strings are
+      the left operand of the ``%`` operator are described in more detail here.
 
 
 .. _tut-unicodestrings:

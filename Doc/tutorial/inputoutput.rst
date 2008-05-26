@@ -27,16 +27,13 @@ first way is to do all the string handling yourself; using string slicing and
 concatenation operations you can create any layout you can imagine.  The
 standard module :mod:`string` contains some useful operations for padding
 strings to a given column width; these will be discussed shortly.  The second
-way is to use the ``%`` operator with a string as the left argument.  The ``%``
-operator interprets the left argument much like a :cfunc:`sprintf`\ -style
-format string to be applied to the right argument, and returns the string
-resulting from this formatting operation.
+way is to use the :meth:`str.format` method.
 
 One question remains, of course: how do you convert values to strings? Luckily,
 Python has ways to convert any value to a string: pass it to the :func:`repr`
 or :func:`str` functions.  Reverse quotes (``````) are equivalent to
-:func:`repr`, but they are no longer used in modern Python code and will likely
-not be in future versions of the language.
+:func:`repr`, but they are no longer used in modern Python code and are removed
+in future versions of the language.
 
 The :func:`str` function is meant to return representations of values which are
 fairly human-readable, while :func:`repr` is meant to generate representations
@@ -94,7 +91,7 @@ Here are two ways to write a table of squares and cubes::
    10 100 1000
 
    >>> for x in range(1,11):
-   ...     print '%2d %3d %4d' % (x, x*x, x*x*x)
+   ...     print '{0:2d} {1:3d} {2:4d}'.format(x, x*x, x*x*x)
    ... 
     1   1    1
     2   4    8
@@ -129,41 +126,90 @@ with zeros.  It understands about plus and minus signs::
    >>> '3.14159265359'.zfill(5)
    '3.14159265359'
 
-Using the ``%`` operator looks like this::
+Basic usage of the :meth:`str.format` method looks like this::
+
+   >>> print 'We are the {0} who say "{1}!"'.format('knights', 'Ni')
+   We are the knights who say "Ni!"
+
+The brackets and characters within them (called format fields) are replaced with
+the objects passed into the format method.  The number in the brackets refers to
+the position of the object passed into the format method. ::
+
+   >>> print '{0} and {1}'.format('spam', 'eggs')
+   spam and eggs
+   >>> print '{1} and {0}'.format('spam', 'eggs')
+   eggs and spam
+
+If keyword arguments are used in the format method, their values are referred to
+by using the name of the argument. ::
+
+   >>> print 'This {food} is {adjective}.'.format(food='spam', adjective='absolutely horrible')
+   This spam is absolutely horrible.
+
+Positional and keyword arguments can be arbitrarily combined::
+
+   >>> print 'The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred', other='Georg')
+   The story of Bill, Manfred, and Georg.
+
+An optional ``':``` and format specifier can follow the field name. This also
+greater control over how the value is formatted.  The following example
+truncates the Pi to three places after the decimal.
 
    >>> import math
-   >>> print 'The value of PI is approximately %5.3f.' % math.pi
+   >>> print 'The value of PI is approximately {0:.3f}.'.format(math.pi)
    The value of PI is approximately 3.142.
 
-If there is more than one format in the string, you need to pass a tuple as
-right operand, as in this example::
+Passing an integer after the ``':'`` will cause that field to be a minimum
+number of characters wide.  This is useful for making tables pretty.::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 7678}
    >>> for name, phone in table.items():
-   ...     print '%-10s ==> %10d' % (name, phone)
+   ...     print '{0:10} ==> {1:10d}'.format(name, phone)
    ... 
    Jack       ==>       4098
    Dcab       ==>       7678
    Sjoerd     ==>       4127
 
-Most formats work exactly as in C and require that you pass the proper type;
-however, if you don't you get an exception, not a core dump. The ``%s`` format
-is more relaxed: if the corresponding argument is not a string object, it is
-converted to string using the :func:`str` built-in function.  Using ``*`` to
-pass the width or precision in as a separate (integer) argument is supported.
-The C formats ``%n`` and ``%p`` are not supported.
-
 If you have a really long format string that you don't want to split up, it
 would be nice if you could reference the variables to be formatted by name
-instead of by position.  This can be done by using form ``%(name)format``, as
-shown here::
+instead of by position.  This can be done by simply passing the dict and using
+square brackets ``'[]'`` to access the keys ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
-   >>> print 'Jack: %(Jack)d; Sjoerd: %(Sjoerd)d; Dcab: %(Dcab)d' % table
+   >>> print 'Jack: {0[Jack]:d}; Sjoerd: {0[Sjoerd]:d}; Dcab: {0[Dcab]:d}'.format(table)
+   Jack: 4098; Sjoerd: 4127; Dcab: 8637678
+
+This could also be done by passing the table as keyword arguments with the '**'
+notation.::
+
+   >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
+   >>> print 'Jack: {Jack:d}; Sjoerd: {Sjoerd:d}; Dcab: {Dcab:d}'.format(**table)
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
 This is particularly useful in combination with the new built-in :func:`vars`
 function, which returns a dictionary containing all local variables.
+
+For a complete overview of string formating with :meth:`str.format`, see
+:ref:`formatstrings`.
+
+
+Old string formatting
+---------------------
+
+The ``%`` operator can also be used for string formatting. It interprets the
+left argument much like a :cfunc:`sprintf`\ -style format string to be applied
+to the right argument, and returns the string resulting from this formatting
+operation. For example::
+
+   >>> import math
+   >>> print 'The value of PI is approximately %5.3f.' % math.pi
+   The value of PI is approximately 3.142.
+
+Since :meth:`str.format` is quite new, a lot of Python code still uses the ``%``
+operator. However, because this old style of formatting will eventually removed
+from the language :meth:`str.format` should generally be used.
+
+More information can be found in the :ref:`string-formatting` section.
 
 
 .. _tut-files:
