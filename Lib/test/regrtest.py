@@ -875,7 +875,7 @@ _expectations = {
         test_fcntl
         test_fork1
         test_epoll
-        test_gdbm
+        test_dbm_gnu
         test_grp
         test_ioctl
         test_largefile
@@ -989,7 +989,7 @@ _expectations = {
         test_bsddb3
         test_curses
         test_epoll
-        test_gdbm
+        test_dbm_gnu
         test_largefile
         test_locale
         test_minidom
@@ -1003,7 +1003,7 @@ _expectations = {
         test_dbm
         test_epoll
         test_kqueue
-        test_gdbm
+        test_dbm_gnu
         test_gzip
         test_openpty
         test_zipfile
@@ -1015,7 +1015,7 @@ _expectations = {
         test_curses
         test_dl
         test_epoll
-        test_gdbm
+        test_dbm_gnu
         test_gzip
         test_largefile
         test_locale
@@ -1031,7 +1031,7 @@ _expectations = {
         """
         test_curses
         test_dl
-        test_gdbm
+        test_dbm_gnu
         test_epoll
         test_largefile
         test_locale
@@ -1076,7 +1076,7 @@ _expectations = {
         test_bsddb
         test_bsddb3
         test_epoll
-        test_gdbm
+        test_dbm_gnu
         test_locale
         test_ossaudiodev
         test_pep277
@@ -1093,7 +1093,7 @@ _expectations = {
         test_bz2
         test_dl
         test_epoll
-        test_gdbm
+        test_dbm_gnu
         test_gzip
         test_kqueue
         test_ossaudiodev
@@ -1108,7 +1108,7 @@ _expectations = {
         test_ctypes
         test_dl
         test_epoll
-        test_gdbm
+        test_dbm_gnu
         test_locale
         test_normalization
         test_ossaudiodev
@@ -1123,7 +1123,7 @@ _expectations = {
         test_curses
         test_dl
         test_epoll
-        test_gdbm
+        test_dbm_gnu
         test_locale
         test_ossaudiodev
         test_pep277
