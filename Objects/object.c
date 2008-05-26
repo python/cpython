@@ -1986,7 +1986,7 @@ _Py_ReadyTypes(void)
 	if (PyType_Ready(&PyString_Type) < 0)
 		Py_FatalError("Can't initialize 'str'");
 
-	if (PyType_Ready(&PyBytes_Type) < 0)
+	if (PyType_Ready(&PyByteArray_Type) < 0)
 		Py_FatalError("Can't initialize 'bytes'");
 
 	if (PyType_Ready(&PyList_Type) < 0)
