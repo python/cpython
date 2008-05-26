@@ -144,6 +144,7 @@ class AllTest(unittest.TestCase):
         self.check_all("tarfile")
         self.check_all("telnetlib")
         self.check_all("tempfile")
+        self.check_all("test.test_support")
         self.check_all("textwrap")
         self.check_all("threading")
         self.check_all("timeit")
