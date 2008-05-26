@@ -371,8 +371,9 @@ Glossary
       :term:`argument`.
 
    Python 3000
-      Nickname for the Python 3.x release line (coined long ago when the
-      release of version 3 was something in the distant future.)
+      Nickname for the Python 3.x release line (coined long ago when the release
+      of version 3 was something in the distant future.)  This is also
+      abbreviated "Py3k".
 
    Pythonic
       An idea or piece of code which closely follows the most common idioms of
