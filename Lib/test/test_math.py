@@ -626,6 +626,158 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.sqrt, NINF)
         self.assert_(math.isnan(math.sqrt(NAN)))
 
+    def testSum(self):
+        # math.sum relies on exact rounding for correct operation.
+        # There's a known problem with IA32 floating-point that causes
+        # inexact rounding in some situations, and will cause the
+        # math.sum tests below to fail; see issue #2937.  On non IEEE
+        # 754 platforms, and on IEEE 754 platforms that exhibit the
+        # problem described in issue #2937, we simply skip the whole
+        # test.
+
+        if not float.__getformat__("double").startswith("IEEE"):
+            return
+
+        # on IEEE 754 compliant machines, both of the expressions
+        # below should round to 10000000000000002.0.
+        if 1e16+2.999 != 1e16+2.9999:
+            return
+
+        # Python version of math.sum algorithm, for comparison
+        def msum(iterable):
+            """Full precision sum of values in iterable.  Returns the value of
+            the sum, rounded to the nearest representable floating-point number
+            using the round-half-to-even rule.
+
+            """
+            # Stage 1: accumulate partials
+            partials = []
+            for x in iterable:
+                i = 0
+                for y in partials:
+                    if abs(x) < abs(y):
+                        x, y = y, x
+                    hi = x + y
+                    lo = y - (hi - x)
+                    if lo:
+                        partials[i] = lo
+                        i += 1
+                    x = hi
+                partials[i:] = [x] if x else []
+
+            # Stage 2: sum partials
+            if not partials:
+                return 0.0
+
+            # sum from the top, stopping as soon as the sum is inexact.
+            total = partials.pop()
+            while partials:
+                x = partials.pop()
+                old_total, total = total, total + x
+                error = x - (total - old_total)
+                if error != 0.0:
+                    # adjust for correct rounding if necessary
+                    if partials and (partials[-1] > 0.0) == (error > 0.0) and \
+                            total + 2*error - total == 2*error:
+                        total += 2*error
+                    break
+            return total
+
+        from sys import float_info
+        maxfloat = float_info.max
+        twopow = 2.**(float_info.max_exp - 1)
+
+        test_values = [
+            ([], 0.0),
+            ([0.0], 0.0),
+            ([1e100, 1.0, -1e100, 1e-100, 1e50, -1.0, -1e50], 1e-100),
+            ([1e308, 1e308, -1e308], OverflowError),
+            ([-1e308, 1e308, 1e308], 1e308),
+            ([1e308, -1e308, 1e308], 1e308),
+            ([2.0**1023, 2.0**1023, -2.0**1000], OverflowError),
+            ([twopow, twopow, twopow, twopow, -twopow, -twopow, -twopow],
+             OverflowError),
+            ([2.0**53, -0.5, -2.0**-54], 2.0**53-1.0),
+            ([2.0**53, 1.0, 2.0**-100], 2.0**53+2.0),
+            ([2.0**53+10.0, 1.0, 2.0**-100], 2.0**53+12.0),
+
+            ([2.0**53-4.0, 0.5, 2.0**-54], 2.0**53-3.0),
+            ([2.0**1023-2.0**970, -1.0, 2.0**1023], OverflowError),
+            ([maxfloat, maxfloat*2.**-54], maxfloat),
+            ([maxfloat, maxfloat*2.**-53], OverflowError),
+            ([1./n for n in range(1, 1001)], 7.4854708605503451),
+            ([(-1.)**n/n for n in range(1, 1001)], -0.69264743055982025),
+            ([1.7**(i+1)-1.7**i for i in range(1000)] + [-1.7**1000], -1.0),
+            ([INF, -INF, NAN], ValueError),
+            ([NAN, INF, -INF], ValueError),
+            ([INF, NAN, INF], ValueError),
+
+            ([INF, INF], OverflowError),
+            ([INF, -INF], ValueError),
+            ([-INF, 1e308, 1e308, -INF], OverflowError),
+            ([2.0**1023-2.0**970, 0.0, 2.0**1023], OverflowError),
+            ([2.0**1023-2.0**970, 1.0, 2.0**1023], OverflowError),
+            ([2.0**1023, 2.0**1023], OverflowError),
+            ([2.0**1023, 2.0**1023, -1.0], OverflowError),
+            ([twopow, twopow, twopow, twopow, -twopow, -twopow],
+             OverflowError),
+            ([twopow, twopow, twopow, twopow, -twopow, twopow], OverflowError),
+            ([-twopow, -twopow, -twopow, -twopow], OverflowError),
+
+            ([2.**1023, 2.**1023, -2.**971], OverflowError),
+            ([2.**1023, 2.**1023, -2.**970], OverflowError),
+            ([-2.**970,  2.**1023,  2.**1023, -2.**-1074], OverflowError),
+            ([ 2.**1023, 2.**1023, -2.**970,   2.**-1074], OverflowError),
+            ([-2.**1023,  2.**971, -2.**1023], -maxfloat),
+            ([-2.**1023, -2.**1023, 2.**970],   OverflowError),
+            ([-2.**1023,  -2.**1023,  2.**970,  2.**-1074], OverflowError),
+            ([-2.**-1074, -2.**1023, -2.**1023, 2.**970], OverflowError),
+            ([2.**930, -2.**980, 2.**1023, 2.**1023, twopow, -twopow],
+             OverflowError),
+            ([2.**1023, 2.**1023, -1e307], OverflowError),
+            ([1e16, 1., 1e-16], 10000000000000002.0),
+            ([1e16-2., 1.-2.**53, -(1e16-2.), -(1.-2.**53)], 0.0),
+        ]
+
+        for i, (vals, s) in enumerate(test_values):
+            if isinstance(s, type) and issubclass(s, Exception):
+                try:
+                    m = math.sum(vals)
+                except s:
+                    pass
+                else:
+                    self.fail("test %d failed: got %r, expected %r "
+                              "for math.sum(%.100r)" %
+                              (i, m, s.__name__, vals))
+            else:
+                try:
+                    self.assertEqual(math.sum(vals), s)
+                except OverflowError:
+                    self.fail("test %d failed: got OverflowError, expected %r "
+                              "for math.sum(%.100r)" % (i, s, vals))
+                except ValueError:
+                    self.fail("test %d failed: got ValueError, expected %r "
+                              "for math.sum(%.100r)" % (i, s, vals))
+
+                # compare with output of msum above, but only when
+                # result isn't an IEEE special or an exception
+                if not math.isinf(s) and not math.isnan(s):
+                    self.assertEqual(msum(vals), s)
+
+        from random import random, gauss, shuffle
+        for j in range(1000):
+            vals = [7, 1e100, -7, -1e100, -9e-20, 8e-20] * 10
+            s = 0
+            for i in range(200):
+                v = gauss(0, random()) ** 7 - s
+                s += v
+                vals.append(v)
+            shuffle(vals)
+
+            s = msum(vals)
+            self.assertEqual(msum(vals), math.sum(vals))
+
+
     def testTan(self):
         self.assertRaises(TypeError, math.tan)
         self.ftest('tan(0)', math.tan(0), 0)
@@ -762,6 +914,10 @@ class MathTests(unittest.TestCase):
             except ValueError as exc:
                 message = (("Unexpected ValueError: %s\n        " +
                            "in test %s:%s(%r)\n") % (exc.args[0], id, fn, ar))
+                self.fail(message)
+            except OverflowError:
+                message = ("Unexpected OverflowError in " +
+                           "test %s:%s(%r)\n" % (id, fn, ar))
                 self.fail(message)
             self.ftest("%s:%s(%r)" % (id, fn, ar), result, er)
 

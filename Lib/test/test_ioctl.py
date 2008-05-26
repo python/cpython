@@ -52,13 +52,10 @@ class IoctlTests(unittest.TestCase):
                 set_winsz_opcode_maybe_neg, = struct.unpack("i",
                         struct.pack("I", termios.TIOCSWINSZ))
 
-            # We're just testing that these calls do not raise exceptions.
-            saved_winsz = fcntl.ioctl(mfd, termios.TIOCGWINSZ, "\0"*8)
             our_winsz = struct.pack("HHHH",80,25,0,0)
             # test both with a positive and potentially negative ioctl code
             new_winsz = fcntl.ioctl(mfd, set_winsz_opcode_pos, our_winsz)
             new_winsz = fcntl.ioctl(mfd, set_winsz_opcode_maybe_neg, our_winsz)
-            fcntl.ioctl(mfd, set_winsz_opcode_maybe_neg, saved_winsz)
         finally:
             os.close(mfd)
             os.close(sfd)
