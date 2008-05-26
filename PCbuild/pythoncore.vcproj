@@ -659,6 +659,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\bytearrayobject.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\bytesobject.h"
 				>
 			</File>
@@ -1371,6 +1375,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Objects\bytearrayobject.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Objects\bytesobject.c"
 				>
 			</File>
@@ -1488,10 +1496,6 @@
 			</File>
 			<File
 				RelativePath="..\Objects\sliceobject.c"
-				>
-			</File>
-			<File
-				RelativePath="..\Objects\stringobject.c"
 				>
 			</File>
 			<File
