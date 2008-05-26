@@ -1477,7 +1477,44 @@ details.
   and some modules are being renamed or moved into packages. 
   Python 2.6 running in 3.0-warning mode will warn about these modules 
   when they are imported.
+
+  The modules that have been renamed are:
+
+  * :mod:`ConfigParser` has become :mod:`configparser`.
+  * :mod:`copy_reg` has become :mod:`copyreg`.
+  * :mod:`htmlentitydefs` has become :mod:`html.entities`.
+  * :mod:`HTMLParser` has become :mod:`html.parser`.
+  * :mod:`repr` (the module) has become :mod:`reprlib`.
+  * :mod:`SocketServer` has become :mod:`socketserver`.
+  * :mod:`Tkinter` has become the :mod:`tkinter` package.
+  * :mod:`Queue` has become :mod:`queue`.
+
   The list of deprecated modules is:
+  :mod:`audiodev`,
+  :mod:`bgenlocations`,
+  :mod:`buildtools`,
+  :mod:`bundlebuilder`,
+  :mod:`Canvas`,
+  :mod:`compiler`,
+  :mod:`dircache`,
+  :mod:`dl`,
+  :mod:`fpformat`,
+  :mod:`gensuitemodule`,
+  :mod:`ihooks`,
+  :mod:`imageop`,
+  :mod:`imgfile`,
+  :mod:`linuxaudiodev`,
+  :mod:`mhlib`,
+  :mod:`multifile`,
+  :mod:`new`,
+  :mod:`popen2`,
+  :mod:`pure`,
+  :mod:`statvfs`,
+  :mod:`sunaudiodev`,
+  :mod:`test.testall`,
+  :mod:`toaiff`.
+
+  Various MacOS modules have been removed:
   :mod:`_builtinSuites`,
   :mod:`aepack`,
   :mod:`aetools`,
@@ -1487,68 +1524,57 @@ details.
   :mod:`appletrunner`,
   :mod:`argvemulator`,
   :mod:`Audio_mac`,
-  :mod:`audiodev`,
   :mod:`autoGIL`,
-  :mod:`bgenlocations`,
-  :mod:`buildtools`,
-  :mod:`bundlebuilder`,
-  :mod:`Canvas`,
   :mod:`Carbon`,
   :mod:`cfmfile`,
   :mod:`CodeWarrior`,
   :mod:`ColorPicker`,
-  :mod:`compiler`,
-  :mod:`cd`,
-  :mod:`cddb`,
-  :mod:`cdplayer`,
-  :mod:`CL` and :mod:`cl`,
-  :mod:`cd`,
-  :mod:`cd`,
-  :mod:`dircache`,
-  :mod:`dl`,
   :mod:`EasyDialogs`,
   :mod:`Explorer`,
   :mod:`Finder`,
   :mod:`FrameWork`,
   :mod:`findertools`,
-  :mod:`fpformat`,
-  :mod:`gensuitemodule`,
   :mod:`ic`,
   :mod:`icglue`,
   :mod:`icopen`,
-  :mod:`ihooks`,
-  :mod:`imageop`,
-  :mod:`linuxaudiodev`,
   :mod:`macerrors`,
   :mod:`MacOS`,
   :mod:`macostools`,
   :mod:`macresource`,
-  :mod:`mhlib`,
   :mod:`MiniAEFrame`,
-  :mod:`multifile`,
   :mod:`Nav`,
   :mod:`Netscape`,
-  :mod:`new`,
   :mod:`OSATerminology`,
   :mod:`pimp`,
   :mod:`PixMapWrapper`,
-  :mod:`popen2`,
-  :mod:`pure`,
   :mod:`StdSuites`,
-  :mod:`sv`,
   :mod:`SystemEvents`,
   :mod:`Terminal`,
-  :mod:`terminalcommand`,
-  :mod:`test.testall`,
-  :mod:`toaiff`,
-  :mod:`videoreader`.
+  :mod:`terminalcommand`.
 
-  The modules that have been renamed are:
-
-  * :mod:`ConfigParser` has become :mod:`configparser`.
-  * :mod:`copy_reg` has become :mod:`copyreg`.
-  * :mod:`SocketServer` has become :mod:`socketserver`.
-  * :mod:`Queue` has become :mod:`queue`.
+  A number of old IRIX-specific modules were deprecated:
+  :mod:`cd`,
+  :mod:`cddb`,
+  :mod:`cdplayer`,
+  :mod:`CL` and :mod:`cl`,
+  :mod:`DEVICE`,
+  :mod:`ERRNO`,
+  :mod:`FILE`,
+  :mod:`FL` and :mod:`fl`,
+  :mod:`flp`,
+  :mod:`fm`,
+  :mod:`GET`,
+  :mod:`GLWS`,
+  :mod:`GL` and :mod:`gl`,
+  :mod:`IN`,
+  :mod:`IOCTL`,
+  :mod:`jpeg`,
+  :mod:`panelparser`,
+  :mod:`readcd`,
+  :mod:`SV` and :mod:`sv`,
+  :mod:`torgb`,
+  :mod:`videoreader`,
+  :mod:`WAIT`.
 
 * The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.

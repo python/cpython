@@ -534,7 +534,7 @@ class ProcessTestCase(unittest.TestCase):
             # args is a string
             f, fname = self.mkstemp()
             os.write(f, "#!/bin/sh\n")
-            os.write(f, "exec %s -c 'import sys; sys.exit(47)'\n" %
+            os.write(f, "exec '%s' -c 'import sys; sys.exit(47)'\n" %
                         sys.executable)
             os.close(f)
             os.chmod(fname, 0o700)
@@ -576,7 +576,7 @@ class ProcessTestCase(unittest.TestCase):
             # call() function with string argument on UNIX
             f, fname = self.mkstemp()
             os.write(f, "#!/bin/sh\n")
-            os.write(f, "exec %s -c 'import sys; sys.exit(47)'\n" %
+            os.write(f, "exec '%s' -c 'import sys; sys.exit(47)'\n" %
                         sys.executable)
             os.close(f)
             os.chmod(fname, 0o700)

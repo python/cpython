@@ -96,6 +96,12 @@ Number-theoretic and representation functions:
    Return the fractional and integer parts of *x*.  Both results carry the sign of
    *x*, and both are floats.
 
+.. function:: sum(iterable)
+
+   Return an accurate floating point sum of values in the iterable.  Avoids
+   loss of precision by tracking multiple intermediate partial sums.  The
+   algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
+   typical case where the rounding mode is half-even.
 
 .. function:: trunc(x)
 
