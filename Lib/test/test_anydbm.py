@@ -1,50 +1,34 @@
 #! /usr/bin/env python
-"""Test script for the anydbm module
-   based on testdumbdbm.py
-"""
+"""Test script for the dbm.open function based on testdumbdbm.py"""
 
 import os
 import unittest
-import anydbm
+import dbm
 import glob
-from test import support
+import test.support
 
-_fname = support.TESTFN
-
-_all_modules = []
-
-for _name in anydbm._names:
-    try:
-        _module = __import__(_name)
-    except ImportError:
-        continue
-    _all_modules.append(_module)
-
+_fname = test.support.TESTFN
 
 #
-# Iterates over every database module supported by anydbm
-# currently available, setting anydbm to use each in turn,
-# and yielding that module
+# Iterates over every database module supported by dbm currently available,
+# setting dbm to use each in turn, and yielding that module
 #
 def dbm_iterator():
-    old_default = anydbm._defaultmod
-    for module in _all_modules:
-        anydbm._defaultmod = module
+    old_default = dbm._defaultmod
+    for module in dbm._modules.values():
+        dbm._defaultmod = module
         yield module
-    anydbm._defaultmod = old_default
+    dbm._defaultmod = old_default
 
 #
-# Clean up all scratch databases we might have created
-# during testing
+# Clean up all scratch databases we might have created during testing
 #
 def delete_files():
     # we don't know the precise name the underlying database uses
     # so we use glob to locate all names
     for f in glob.glob(_fname + "*"):
-        try:
-            os.unlink(f)
-        except OSError:
-            pass
+        test.support.unlink(f)
+
 
 class AnyDBMTestCase(unittest.TestCase):
     _dict = {'0': b'',
@@ -60,7 +44,7 @@ class AnyDBMTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, *args)
 
     def test_anydbm_creation(self):
-        f = anydbm.open(_fname, 'c')
+        f = dbm.open(_fname, 'c')
         self.assertEqual(list(f.keys()), [])
         for key in self._dict:
             f[key.encode("ascii")] = self._dict[key]
@@ -69,26 +53,26 @@ class AnyDBMTestCase(unittest.TestCase):
 
     def test_anydbm_modification(self):
         self.init_db()
-        f = anydbm.open(_fname, 'c')
+        f = dbm.open(_fname, 'c')
         self._dict['g'] = f[b'g'] = b"indented"
         self.read_helper(f)
         f.close()
 
     def test_anydbm_read(self):
         self.init_db()
-        f = anydbm.open(_fname, 'r')
+        f = dbm.open(_fname, 'r')
         self.read_helper(f)
         f.close()
 
     def test_anydbm_keys(self):
         self.init_db()
-        f = anydbm.open(_fname, 'r')
+        f = dbm.open(_fname, 'r')
         keys = self.keys_helper(f)
         f.close()
 
     def test_anydbm_access(self):
         self.init_db()
-        f = anydbm.open(_fname, 'r')
+        f = dbm.open(_fname, 'r')
         key = "a".encode("ascii")
         assert(key in f)
         assert(f[key] == b"Python:")
@@ -100,7 +84,7 @@ class AnyDBMTestCase(unittest.TestCase):
             self.assertEqual(self._dict[key], f[key.encode("ascii")])
 
     def init_db(self):
-        f = anydbm.open(_fname, 'n')
+        f = dbm.open(_fname, 'n')
         for k in self._dict:
             f[k.encode("ascii")] = self._dict[k]
         f.close()
@@ -118,10 +102,44 @@ class AnyDBMTestCase(unittest.TestCase):
         delete_files()
 
 
+class WhichDBTestCase(unittest.TestCase):
+    # Actual test methods are added to namespace after class definition.
+    def __init__(self, *args):
+        unittest.TestCase.__init__(self, *args)
+
+    def test_whichdb(self):
+        for module in dbm_iterator():
+            # Check whether whichdb correctly guesses module name
+            # for databases opened with "module" module.
+            # Try with empty files first
+            name = module.__name__
+            if name == 'dbm.dumb':
+                continue   # whichdb can't support dbm.dumb
+            test.support.unlink(_fname)
+            f = module.open(_fname, 'c')
+            f.close()
+            self.assertEqual(name, dbm.whichdb(_fname))
+            # Now add a key
+            f = module.open(_fname, 'w')
+            f[b"1"] = b"1"
+            # and test that we can find it
+            self.assertTrue(b"1" in f)
+            # and read it
+            self.assertTrue(f[b"1"] == b"1")
+            f.close()
+            self.assertEqual(name, dbm.whichdb(_fname))
+
+    def tearDown(self):
+        delete_files()
+
+    def setUp(self):
+        delete_files()
+
+
 def test_main():
     try:
         for module in dbm_iterator():
-            support.run_unittest(AnyDBMTestCase)
+            test.support.run_unittest(AnyDBMTestCase, WhichDBTestCase)
     finally:
         delete_files()
 

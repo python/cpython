@@ -1,4 +1,4 @@
-import gdbm
+import dbm.gnu as gdbm
 import unittest
 import os
 from test.support import verbose, TESTFN, run_unittest, unlink

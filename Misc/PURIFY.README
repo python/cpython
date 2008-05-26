@@ -57,8 +57,8 @@ following in your .purify file:
 
     suppress umr ...; "socketmodule.c"
     suppress umr ...; time_strftime
-    suppress umr ...; "dbmmodule.c"
-    suppress umr ...; "gdbmmodule.c"
+    suppress umr ...; "_dbmmodule.c"
+    suppress umr ...; "_gdbmmodule.c"
     suppress umr ...; "grpmodule.c"
     suppress umr ...; "nismodule.c"
     suppress umr ...; "pwdmodule.c"

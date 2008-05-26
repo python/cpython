@@ -464,7 +464,7 @@ ifeq ($(HAVE_NCURSES),yes)
   HARDEXTMODULES+=	_curses_
 endif
 ifeq ($(HAVE_GDBM),yes)
-  HARDEXTMODULES+=	gdbm dbm
+  HARDEXTMODULES+=	_gdbm _dbm
 endif
 ifeq ($(HAVE_BZ2),yes)
   HARDEXTMODULES+=	bz2
@@ -626,10 +626,10 @@ _curses_panel$(MODULE.EXT): $(OUT)_curses_panel$O $(OUT)_curses_panel_m.def $(PY
 _curses_$(MODULE.EXT): _curses_panel$(MODULE.EXT)
 	cp $^ $@
 
-dbm$(MODULE.EXT): $(OUT)dbmmodule$O $(OUT)dbm_m.def $(PYTHON.IMPLIB)
+_dbm$(MODULE.EXT): $(OUT)_dbmmodule$O $(OUT)dbm_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lgdbm
 
-gdbm$(MODULE.EXT): $(OUT)gdbmmodule$O $(OUT)gdbm_m.def $(PYTHON.IMPLIB)
+_gdbm$(MODULE.EXT): $(OUT)_gdbmmodule$O $(OUT)gdbm_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lgdbm
 
 

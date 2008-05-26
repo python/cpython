@@ -1795,8 +1795,8 @@ List of modules and packages in base distribution
                            Standard library modules
    Operation                                 Result
 aifc             Stuff to parse AIFF-C and AIFF files.
-anydbm           Generic interface to all dbm clones. (dbhash, gdbm,
-                 dbm,dumbdbm)
+dbm              Generic interface to all dbm clones. (dbm.bsd, dbm.gnu,
+                 dbm.ndbm, dbm.dumb)
 asynchat         Support for 'chat' style protocols
 asyncore         Asynchronous File I/O (in select style)
 atexit           Register functions to be called at exit of Python interpreter.
@@ -1822,21 +1822,16 @@ ConfigParser     Configuration file parser (much like windows .ini files)
 copy             Generic shallow and deep copying operations.
 copy_reg         Helper to provide extensibility for pickle/cPickle.
 csv              Read and write files with comma separated values.
-dbhash           (g)dbm-compatible interface to bsdhash.hashopen.
 dircache         Sorted list of files in a dir, using a cache.
-[DEL:dircmp:DEL] [DEL:Defines a class to build directory diff tools on.:DEL]
 difflib          Tool for creating delta between sequences.
 dis              Bytecode disassembler.
 distutils        Package installation system.
 doctest          Tool for running and verifying tests inside doc strings.
 dospath          Common operations on DOS pathnames.
-dumbdbm          A dumb and slow but simple dbm clone.
-[DEL:dump:DEL]   [DEL:Print python code that reconstructs a variable.:DEL]
 email            Comprehensive support for internet email.
 filecmp          File comparison.
 fileinput        Helper class to quickly write a loop over all standard input
                  files.
-[DEL:find:DEL]   [DEL:Find files directory hierarchy matching a pattern.:DEL]
 fnmatch          Filename matching with shell patterns.
 formatter        A test formatter.
 fpformat         General floating point formatting functions.
@@ -1847,7 +1842,6 @@ getopt           Standard command line processing. See also ftp://
                  www.pauahtun.org/pub/getargspy.zip
 getpass          Utilities to get a password and/or the current user name.
 glob             filename globbing.
-[DEL:grep:DEL]   [DEL:'grep' utilities.:DEL]
 gzip             Read & write gzipped files.
 heapq            Priority queue implemented using lists organized as heaps.
 HMAC             Keyed-Hashing for Message Authentication -- RFC 2104.
@@ -1882,8 +1876,6 @@ ntpath           Common operations on DOS pathnames.
 nturl2path       Mac specific module for conversion between pathnames and URLs.
 optparse         A comprehensive tool for processing command line options.
 os               Either mac, dos or posix depending system.
-[DEL:packmail:   [DEL:Create a self-unpacking shell archive.:DEL]
-DEL]
 pdb              A Python debugger.
 pickle           Pickling (save and restore) of Python objects (a faster
                  Cimplementation exists in built-in module: cPickle).
@@ -1929,7 +1921,7 @@ StringIO         File-like objects that read/write a string buffer (a fasterC
 sunau            Stuff to parse Sun and NeXT audio files.
 sunaudio         Interpret sun audio headers.
 symbol           Non-terminal symbols of Python grammar (from "graminit.h").
-tabnanny,/font>  Check Python source for ambiguous indentation.
+tabnanny         Check Python source for ambiguous indentation.
 tarfile          Facility for reading and writing to the *nix tarfile format.
 telnetlib        TELNET client class. Based on RFC 854.
 tempfile         Temporary file name allocation.
@@ -1950,15 +1942,11 @@ user             Hook to allow user-specified customization code to run.
 UserDict         A wrapper to allow subclassing of built-in dict class.
 UserList         A wrapper to allow subclassing of built-in list class.
 UserString       A wrapper to allow subclassing of built-in string class.
-[DEL:util:DEL]   [DEL:some useful functions that don't fit elsewhere !!:DEL]
 uu               UUencode/UUdecode.
 unittest         Utilities for implementing unit testing.
 wave             Stuff to parse WAVE files.
 weakref          Tools for creating and managing weakly referenced objects.
 webbrowser       Platform independent URL launcher.
-[DEL:whatsound:  [DEL:Several routines that help recognizing sound files.:DEL]
-DEL]
-whichdb          Guess which db package to use to open a db file.
 xdrlib           Implements (a subset of) Sun XDR (eXternal Data
                  Representation)
 xmllib           A parser for XML, using the derived class as static DTD.
@@ -1966,7 +1954,6 @@ xml.dom          Classes for processing XML using the Document Object Model.
 xml.sax          Classes for processing XML using the SAX API.
 xmlrpclib        Support for remote procedure calls using XML.
 zipfile          Read & write PK zipped files.
-[DEL:zmod:DEL]   [DEL:Demonstration of abstruse mathematical concepts.:DEL]
 
 
 
@@ -1993,7 +1980,7 @@ zipfile          Read & write PK zipped files.
 
 * Unix/Posix *
 
-            dbm                 Interface to Unix ndbm database library
+            dbm                 Interface to Unix dbm databases
             grp                 Interface to Unix group database
             posix               OS functionality standardized by C and POSIX standards
             posixpath           POSIX pathname functions

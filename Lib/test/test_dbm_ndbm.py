@@ -2,14 +2,14 @@ from test import support
 import unittest
 import os
 import random
-import dbm
-from dbm import error
+import dbm.ndbm
+from dbm.ndbm import error
 
 class DbmTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = support.TESTFN
-        self.d = dbm.open(self.filename, 'c')
+        self.d = dbm.ndbm.open(self.filename, 'c')
         self.d.close()
 
     def tearDown(self):
@@ -17,7 +17,7 @@ class DbmTestCase(unittest.TestCase):
             support.unlink(self.filename + suffix)
 
     def test_keys(self):
-        self.d = dbm.open(self.filename, 'c')
+        self.d = dbm.ndbm.open(self.filename, 'c')
         self.assert_(self.d.keys() == [])
         self.d['a'] = 'b'
         self.d['12345678910'] = '019237410982340912840198242'
@@ -28,9 +28,9 @@ class DbmTestCase(unittest.TestCase):
     def test_modes(self):
         for mode in ['r', 'rw', 'w', 'n']:
             try:
-                self.d = dbm.open(self.filename, mode)
+                self.d = dbm.ndbm.open(self.filename, mode)
                 self.d.close()
-            except dbm.error:
+            except error:
                 self.fail()
 
 def test_main():

@@ -21,7 +21,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    the underlying database.  As a side-effect, an extension may be added to the
    filename and more than one file may be created.  By default, the underlying
    database file is opened for reading and writing.  The optional *flag* parameter
-   has the same interpretation as the *flag* parameter of :func:`anydbm.open`.
+   has the same interpretation as the *flag* parameter of :func:`dbm.open`.
 
    By default, version 0 pickles are used to serialize values.  The version of the
    pickle protocol can be specified with the *protocol* parameter.
@@ -53,12 +53,12 @@ Restrictions
 ------------
 
   .. index::
-     module: dbm
-     module: gdbm
+     module: dbm.ndbm
+     module: dbm.gnu
      module: bsddb
 
-* The choice of which database package will be used (such as :mod:`dbm`,
-  :mod:`gdbm` or :mod:`bsddb`) depends on which interface is available.  Therefore
+* The choice of which database package will be used (such as :mod:`dbm.ndbm`,
+  :mod:`dbm.gnu` or :mod:`bsddb`) depends on which interface is available.  Therefore
   it is not safe to open the database directly using :mod:`dbm`.  The database is
   also (unfortunately) subject to the limitations of :mod:`dbm`, if it is used ---
   this means that (the pickled representation of) the objects stored in the
@@ -107,7 +107,7 @@ Restrictions
 .. class:: DbfilenameShelf(filename[, flag='c'[, protocol=None[, writeback=False]]])
 
    A subclass of :class:`Shelf` which accepts a *filename* instead of a dict-like
-   object.  The underlying file will be opened using :func:`anydbm.open`.  By
+   object.  The underlying file will be opened using :func:`dbm.open`.  By
    default, the file will be created and opened for both read and write.  The
    optional *flag* parameter has the same interpretation as for the :func:`open`
    function.  The optional *protocol* and *writeback* parameters have the same
@@ -152,24 +152,11 @@ object)::
 
 .. seealso::
 
-   Module :mod:`anydbm`
-      Generic interface to ``dbm``\ -style databases.
+   Module :mod:`dbm`
+      Generic interface to ``dbm``-style databases.
 
    Module :mod:`bsddb`
       BSD ``db`` database interface.
-
-   Module :mod:`dbhash`
-      Thin layer around the :mod:`bsddb` which provides an :func:`open` function like
-      the other database modules.
-
-   Module :mod:`dbm`
-      Standard Unix database interface.
-
-   Module :mod:`dumbdbm`
-      Portable implementation of the ``dbm`` interface.
-
-   Module :mod:`gdbm`
-      GNU database interface, based on the ``dbm`` interface.
 
    Module :mod:`pickle`
       Object serialization used by :mod:`shelve`.

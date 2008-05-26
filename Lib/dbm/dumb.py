@@ -25,9 +25,11 @@ import io as _io
 import os as _os
 import collections
 
+__all__ = ["error", "open"]
+
 _BLOCKSIZE = 512
 
-error = IOError                         # For anydbm
+error = IOError
 
 class _Database(collections.MutableMapping):
 
@@ -231,7 +233,7 @@ def open(file, flag=None, mode=0o666):
     """Open the database file, filename, and return corresponding object.
 
     The flag argument, used to control how the database is opened in the
-    other DBM implementations, is ignored in the dumbdbm module; the
+    other DBM implementations, is ignored in the dbm.dumb module; the
     database is always opened for update, and will be created if it does
     not exist.
 

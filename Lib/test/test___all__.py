@@ -57,7 +57,7 @@ class AllTest(unittest.TestCase):
         self.check_all("copy")
         self.check_all("copyreg")
         self.check_all("csv")
-        self.check_all("dbhash")
+        self.check_all("dbm.bsd")
         self.check_all("decimal")
         self.check_all("difflib")
         self.check_all("dircache")

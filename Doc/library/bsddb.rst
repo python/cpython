@@ -92,7 +92,7 @@ arguments should be used in most instances.
 
 .. seealso::
 
-   Module :mod:`dbhash`
+   Module :mod:`dbm.bsd`
       DBM-style interface to the :mod:`bsddb`
 
 

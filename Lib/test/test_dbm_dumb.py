@@ -6,7 +6,7 @@
 import io
 import os
 import unittest
-import dumbdbm
+import dbm.dumb as dumbdbm
 from test import support
 
 _fname = support.TESTFN

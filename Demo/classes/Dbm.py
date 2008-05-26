@@ -7,8 +7,8 @@
 class Dbm:
 
     def __init__(self, filename, mode, perm):
-        import dbm
-        self.db = dbm.open(filename, mode, perm)
+        import dbm.ndbm
+        self.db = dbm.ndbm.open(filename, mode, perm)
 
     def __repr__(self):
         s = ''

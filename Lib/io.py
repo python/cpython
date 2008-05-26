@@ -270,7 +270,7 @@ class OpenWrapper:
     """Wrapper for builtins.open
 
     Trick so that open won't become a bound method when stored
-    as a class variable (as dumbdbm does).
+    as a class variable (as dbm.dumb does).
 
     See initstdio() in Python/pythonrun.c.
     """
