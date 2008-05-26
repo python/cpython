@@ -1,4 +1,3 @@
-
 :mod:`dbhash` --- DBM-style interface to the BSD database library
 =================================================================
 
@@ -6,6 +5,10 @@
    :synopsis: DBM-style interface to the BSD database library.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+.. note::
+   The :mod:`dbhash` module has been renamed to :mod:`dbm.bsd` in Python 3.0.
+   The :term:`2to3` tool will automatically adapt imports when converting your
+   sources to 3.0.
 
 .. index:: module: bsddb
 

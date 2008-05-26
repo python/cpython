@@ -1,9 +1,13 @@
-
 :mod:`whichdb` --- Guess which DBM module created a database
 ============================================================
 
 .. module:: whichdb
    :synopsis: Guess which DBM-style module created a given database.
+
+.. note::
+   The :mod:`whichdb` module's only function has been put into the :mod:`dbm`
+   module in Python 3.0.  The :term:`2to3` tool will automatically adapt imports
+   when converting your sources to 3.0.
 
 
 The single function in this module attempts to guess which of the several simple
