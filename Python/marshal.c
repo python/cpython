@@ -913,8 +913,6 @@ r_object(RFILE *p)
 			Py_XDECREF(filename);
 			Py_XDECREF(name);
 			Py_XDECREF(lnotab);
-
-			return v;
 		}
 		retval = v;
 		break;

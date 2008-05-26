@@ -113,6 +113,12 @@ class CodeTestCase(unittest.TestCase):
         new = marshal.loads(marshal.dumps(co))
         self.assertEqual(co, new)
 
+    def test_many_codeobjects(self):
+        # Issue2957: bad recursion count on code objects
+        count = 5000    # more than MAX_MARSHAL_STACK_DEPTH
+        codes = (ExceptionTestCase.test_exceptions.__code__,) * count
+        marshal.loads(marshal.dumps(codes))
+
 class ContainerTestCase(unittest.TestCase, HelperMixin):
     d = {'astring': 'foo@bar.baz.spam',
          'afloat': 7283.43,
