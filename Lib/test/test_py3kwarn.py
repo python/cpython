@@ -207,9 +207,7 @@ class TestStdlibRemovals(unittest.TestCase):
         for path_mod in ("ntpath", "macpath", "os2emxpath", "posixpath"):
             mod = __import__(path_mod)
             with catch_warning() as w:
-                # Since os3exmpath just imports it from ntpath
-                warnings.simplefilter("always")
-                mod.walk(".", dumbo, None)
+                mod.walk("crashers", dumbo, None)
             self.assertEquals(str(w.message), msg)
 
     def test_commands_members(self):
@@ -223,8 +221,10 @@ class TestStdlibRemovals(unittest.TestCase):
 
 
 def test_main():
-    run_unittest(TestPy3KWarnings,
-                 TestStdlibRemovals)
+    with catch_warning(record=True):
+        warnings.simplefilter("always")
+        run_unittest(TestPy3KWarnings,
+                     TestStdlibRemovals)
 
 if __name__ == '__main__':
     test_main()
