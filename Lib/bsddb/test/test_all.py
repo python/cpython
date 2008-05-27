@@ -67,10 +67,19 @@ def get_new_database_path() :
     return path
 
 
-# NOTE: This path is overridden by a unique one and cleaned up
-# afterwards when run under regrtest via Lib/test/test_bsddb3.py.
-get_new_path.prefix="/tmp/z-Berkeley_DB"
+# This path can be overriden via "set_test_path_prefix()".
+import os, os.path
+get_new_path.prefix=os.path.join(os.sep,"tmp","z-Berkeley_DB")
 get_new_path.num=0
+
+def get_test_path_prefix() :
+    return get_new_path.prefix
+
+def set_test_path_prefix(path) :
+    get_new_path.prefix=path
+
+def remove_test_path_directory() :
+    test_support.rmtree(get_new_path.prefix)
 
 try :
     import threading
@@ -100,12 +109,6 @@ test_all.verbose = verbose
 
 
 def suite(module_prefix='', timing_check=None):
-    try:
-        # this is special, it used to segfault the interpreter
-        import test_1413192
-    except:
-        pass
-
     test_modules = [
         'test_associate',
         'test_basics',
