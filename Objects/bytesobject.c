@@ -1,7 +1,4 @@
-/* String object implementation */
-
-/* XXX This is now called 'bytes' as far as the user is concerned.
-   Many docstrings and error messages need to be cleaned up. */
+/* bytes object implementation */
 
 #define PY_SSIZE_T_CLEAN
 
@@ -116,7 +113,7 @@ PyBytes_FromString(const char *str)
 	size = strlen(str);
 	if (size > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
-			"string is too long for a Python string");
+			"byte string is too long");
 		return NULL;
 	}
 	if (size == 0 && (op = nullstring) != NULL) {
@@ -735,7 +732,7 @@ string_repeat(register PyBytesObject *a, register Py_ssize_t n)
 	size = Py_SIZE(a) * n;
 	if (n && size / n != Py_SIZE(a)) {
 		PyErr_SetString(PyExc_OverflowError,
-			"repeated string is too long");
+			"repeated bytes are too long");
 		return NULL;
 	}
 	if (size == Py_SIZE(a) && PyBytes_CheckExact(a)) {
@@ -745,7 +742,7 @@ string_repeat(register PyBytesObject *a, register Py_ssize_t n)
 	nbytes = (size_t)size;
 	if (nbytes + sizeof(PyBytesObject) <= nbytes) {
 		PyErr_SetString(PyExc_OverflowError,
-			"repeated string is too long");
+			"repeated bytes are too long");
 		return NULL;
 	}
 	op = (PyBytesObject *)
@@ -799,7 +796,7 @@ static PyObject *
 string_item(PyBytesObject *a, register Py_ssize_t i)
 {
 	if (i < 0 || i >= Py_SIZE(a)) {
-		PyErr_SetString(PyExc_IndexError, "string index out of range");
+		PyErr_SetString(PyExc_IndexError, "index out of range");
 		return NULL;
 	}
 	return PyLong_FromLong((unsigned char)a->ob_sval[i]);
@@ -908,7 +905,7 @@ string_subscript(PyBytesObject* self, PyObject* item)
 			i += PyBytes_GET_SIZE(self);
 		if (i < 0 || i >= PyBytes_GET_SIZE(self)) {
 			PyErr_SetString(PyExc_IndexError,
-					"string index out of range");
+					"index out of range");
 			return NULL;
 		}
 		return PyLong_FromLong((unsigned char)self->ob_sval[i]);
@@ -958,7 +955,7 @@ string_subscript(PyBytesObject* self, PyObject* item)
 	}
 	else {
 		PyErr_Format(PyExc_TypeError,
-			     "string indices must be integers, not %.200s",
+			     "byte indices must be integers, not %.200s",
 			     Py_TYPE(item)->tp_name);
 		return NULL;
 	}
@@ -1348,7 +1345,7 @@ rsplit_char(PyBytesObject *self, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 }
 
 PyDoc_STRVAR(rsplit__doc__,
-"B.rsplit([sep[, maxsplit]]) -> list of strings\n\
+"B.rsplit([sep[, maxsplit]]) -> list of bytes\n\
 \n\
 Return a list of the sections in B, using sep as the delimiter,\n\
 starting at the end of B and working to the front.\n\
@@ -1482,7 +1479,7 @@ string_join(PyObject *self, PyObject *orig)
 			sz += seplen;
 		if (sz < old_sz || sz > PY_SSIZE_T_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
-			    "join() result is too long for a Python string");
+			    "join() result is too long for bytes");
 			Py_DECREF(seq);
 			return NULL;
 		}
@@ -2091,13 +2088,13 @@ replace_interleave(PyBytesObject *self,
 	product = count * to_len;
 	if (product / to_len != count) {
 		PyErr_SetString(PyExc_OverflowError,
-				"replace string is too long");
+				"replacement bytes are too long");
 		return NULL;
 	}
 	result_len = product + self_len;
 	if (result_len < 0) {
 		PyErr_SetString(PyExc_OverflowError,
-				"replace string is too long");
+				"replacement bytes are too long");
 		return NULL;
 	}
 
@@ -2346,13 +2343,13 @@ replace_single_character(PyBytesObject *self,
 	product = count * (to_len-1);
 	if (product / (to_len-1) != count) {
 		PyErr_SetString(PyExc_OverflowError,
-				"replace string is too long");
+				"replacement bytes are too long");
 		return NULL;
 	}
 	result_len = self_len + product;
 	if (result_len < 0) {
 		PyErr_SetString(PyExc_OverflowError,
-				"replace string is too long");
+				"replacment bytes are too long");
 		return NULL;
 	}
 
@@ -2416,13 +2413,13 @@ replace_substring(PyBytesObject *self,
 	product = count * (to_len-from_len);
 	if (product / (to_len-from_len) != count) {
 		PyErr_SetString(PyExc_OverflowError,
-				"replace string is too long");
+				"replacement bytes are too long");
 		return NULL;
 	}
 	result_len = self_len + product;
 	if (result_len < 0) {
 		PyErr_SetString(PyExc_OverflowError,
-				"replace string is too long");
+				"replacement bytes are too long");
 		return NULL;
 	}
 
@@ -2620,7 +2617,7 @@ PyDoc_STRVAR(startswith__doc__,
 Return True if B starts with the specified prefix, False otherwise.\n\
 With optional start, test B beginning at that position.\n\
 With optional end, stop comparing B at that position.\n\
-prefix can also be a tuple of strings to try.");
+prefix can also be a tuple of bytes to try.");
 
 static PyObject *
 string_startswith(PyBytesObject *self, PyObject *args)
@@ -2661,7 +2658,7 @@ PyDoc_STRVAR(endswith__doc__,
 Return True if B ends with the specified suffix, False otherwise.\n\
 With optional start, test B beginning at that position.\n\
 With optional end, stop comparing B at that position.\n\
-suffix can also be a tuple of strings to try.");
+suffix can also be a tuple of bytes to try.");
 
 static PyObject *
 string_endswith(PyBytesObject *self, PyObject *args)
@@ -3310,7 +3307,7 @@ PyBytes_Fini(void)
 	nullstring = NULL;
 }
 
-/*********************** Str Iterator ****************************/
+/*********************** Bytes Iterator ****************************/
 
 typedef struct {
 	PyObject_HEAD
