@@ -440,7 +440,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(a[100:200], (100,200))
 
     def test_metaclass(self):
-        # Testing __metaclass__...
+        # Testing metaclasses...
         class C(metaclass=type):
             def __init__(self):
                 self.__state = 0

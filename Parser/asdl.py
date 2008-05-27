@@ -10,8 +10,6 @@ browser.
 Changes for Python: Add support for module versions
 """
 
-#__metaclass__ = type
-
 import os
 import sys
 import traceback
