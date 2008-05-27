@@ -5,6 +5,7 @@ __version__ = "$Revision$"
 
 import sys, os, imp, re, optparse
 from glob import glob
+from platform import machine as platform_machine
 
 from distutils import log
 from distutils import sysconfig
@@ -691,6 +692,35 @@ class PyBuildExt(build_ext):
         min_db_ver = (3, 3)
         db_setup_debug = False   # verbose debug prints from this script?
 
+        def allow_db_ver(db_ver):
+            """Returns a boolean if the given BerkeleyDB version is acceptable.
+
+            Args:
+              db_ver: A tuple of the version to verify.
+            """
+            if not (min_db_ver <= db_ver <= max_db_ver):
+                return False
+            # Use this function to filter out known bad configurations.
+            if (4, 6) == db_ver[:2]:
+                # BerkeleyDB 4.6.x is not stable on many architectures.
+                arch = platform_machine()
+                if arch not in ('i386', 'i486', 'i586', 'i686',
+                                'x86_64', 'ia64'):
+                    return False
+            return True
+
+        def gen_db_minor_ver_nums(major):
+            if major == 4:
+                for x in range(max_db_ver[1]+1):
+                    if allow_db_ver((4, x)):
+                        yield x
+            elif major == 3:
+                for x in (3,):
+                    if allow_db_ver((3, x)):
+                        yield x
+            else:
+                raise ValueError("unknown major BerkeleyDB version", major)
+
         # construct a list of paths to look for the header file in on
         # top of the normal inc_dirs.
         db_inc_paths = [
@@ -705,7 +735,7 @@ class PyBuildExt(build_ext):
             '/sw/include/db3',
         ]
         # 4.x minor number specific paths
-        for x in range(max_db_ver[1]+1):
+        for x in gen_db_minor_ver_nums(4):
             db_inc_paths.append('/usr/include/db4%d' % x)
             db_inc_paths.append('/usr/include/db4.%d' % x)
             db_inc_paths.append('/usr/local/BerkeleyDB.4.%d/include' % x)
@@ -715,7 +745,7 @@ class PyBuildExt(build_ext):
             # MacPorts default (http://www.macports.org/)
             db_inc_paths.append('/opt/local/include/db4%d' % x)
         # 3.x minor number specific paths
-        for x in (3,):
+        for x in gen_db_minor_ver_nums(3):
             db_inc_paths.append('/usr/include/db3%d' % x)
             db_inc_paths.append('/usr/local/BerkeleyDB.3.%d/include' % x)
             db_inc_paths.append('/usr/local/include/db3%d' % x)
@@ -730,10 +760,10 @@ class PyBuildExt(build_ext):
         for dn in inc_dirs:
             std_variants.append(os.path.join(dn, 'db3'))
             std_variants.append(os.path.join(dn, 'db4'))
-            for x in range(max_db_ver[1]+1):
+            for x in gen_db_minor_ver_nums(4):
                 std_variants.append(os.path.join(dn, "db4%d"%x))
                 std_variants.append(os.path.join(dn, "db4.%d"%x))
-            for x in (3,):
+            for x in gen_db_minor_ver_nums(3):
                 std_variants.append(os.path.join(dn, "db3%d"%x))
                 std_variants.append(os.path.join(dn, "db3.%d"%x))
 
@@ -768,7 +798,7 @@ class PyBuildExt(build_ext):
                                 continue
 
                         if ( (not db_ver_inc_map.has_key(db_ver)) and
-                           (db_ver <= max_db_ver and db_ver >= min_db_ver) ):
+                            allow_db_ver(db_ver) ):
                             # save the include directory with the db.h version
                             # (first occurrence only)
                             db_ver_inc_map[db_ver] = d
