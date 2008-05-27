@@ -85,8 +85,8 @@ class EiffelMetaClass2(EiffelBaseMetaClass):
     make_eiffel_method = EiffelDescriptor
 
 def _test(metaclass):
-    class Eiffel:
-        __metaclass__ = metaclass
+    class Eiffel(metaclass=metaclass):
+        pass
 
     class Test(Eiffel):
 

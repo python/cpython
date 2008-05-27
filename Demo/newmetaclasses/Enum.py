@@ -82,11 +82,11 @@ class EnumInstance(int):
     def __str__(self):
         return "%s.%s" % (self.__classname, self.__enumname)
 
-class Enum:
-    __metaclass__ = EnumMetaclass
+class Enum(metaclass=EnumMetaclass):
+    pass
 
-class FullEnum:
-    __metaclass__ = FullEnumMetaclass
+class FullEnum(metaclass=FullEnumMetaclass):
+    pass
 
 def _test():
 

@@ -96,8 +96,8 @@ class ModuleMetaclass(BaseMetaclass):
 
         p("}")
 
-class Module:
-    __metaclass__ = ModuleMetaclass
+class Module(metaclass=ModuleMetaclass):
+    pass
 
 class TypeMetaclass(BaseMetaclass):
 
@@ -211,5 +211,5 @@ class TypeMetaclass(BaseMetaclass):
         p(template.type_init_type)
         p(template.module_add_type)
 
-class Type:
-    __metaclass__ = TypeMetaclass
+class Type(metaclass=TypeMetaclass):
+    pass
