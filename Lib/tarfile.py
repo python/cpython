@@ -692,7 +692,6 @@ class _BZ2Proxy(object):
         if self.mode == "w":
             raw = self.bz2obj.flush()
             self.fileobj.write(raw)
-        self.fileobj.close()
 # class _BZ2Proxy
 
 #------------------------

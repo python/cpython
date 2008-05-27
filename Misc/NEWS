@@ -63,6 +63,9 @@ Extension Modules
 Library
 -------
 
+- Do not close external file objects passed to tarfile.open(mode='w:bz2')
+  when the TarFile is closed.
+
 - Issue #2959: For consistency with other file-like objects, gzip's
   GzipFile.close() can now be called multiple times without raising
   an exception.
