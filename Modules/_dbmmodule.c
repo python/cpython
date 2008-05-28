@@ -401,7 +401,8 @@ init_dbm(void) {
 		return;
 	d = PyModule_GetDict(m);
 	if (DbmError == NULL)
-		DbmError = PyErr_NewException("_dbm.error", NULL, NULL);
+		DbmError = PyErr_NewException("_dbm.error",
+					      PyExc_IOError, NULL);
 	s = PyUnicode_FromString(which_dbm);
 	if (s != NULL) {
 		PyDict_SetItemString(d, "library", s);

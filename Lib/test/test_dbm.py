@@ -14,11 +14,13 @@ _fname = test.support.TESTFN
 # setting dbm to use each in turn, and yielding that module
 #
 def dbm_iterator():
-    old_default = dbm._defaultmod
-    for module in dbm._modules.values():
-        dbm._defaultmod = module
-        yield module
-    dbm._defaultmod = old_default
+    for name in dbm._names:
+        try:
+            mod = __import__(name, fromlist=['open'])
+        except ImportError:
+            continue
+        dbm._modules[name] = mod
+        yield mod
 
 #
 # Clean up all scratch databases we might have created during testing
@@ -40,8 +42,20 @@ class AnyDBMTestCase(unittest.TestCase):
              'g': b'intended',
              }
 
-    def __init__(self, *args):
-        unittest.TestCase.__init__(self, *args)
+    def init_db(self):
+        f = dbm.open(_fname, 'n')
+        for k in self._dict:
+            f[k.encode("ascii")] = self._dict[k]
+        f.close()
+
+    def keys_helper(self, f):
+        keys = sorted(k.decode("ascii") for k in f.keys())
+        dkeys = sorted(self._dict.keys())
+        self.assertEqual(keys, dkeys)
+        return keys
+
+    def test_error(self):
+        self.assert_(issubclass(self.module.error, IOError))
 
     def test_anydbm_creation(self):
         f = dbm.open(_fname, 'c')
@@ -83,22 +97,11 @@ class AnyDBMTestCase(unittest.TestCase):
         for key in self._dict:
             self.assertEqual(self._dict[key], f[key.encode("ascii")])
 
-    def init_db(self):
-        f = dbm.open(_fname, 'n')
-        for k in self._dict:
-            f[k.encode("ascii")] = self._dict[k]
-        f.close()
-
-    def keys_helper(self, f):
-        keys = sorted(k.decode("ascii") for k in f.keys())
-        dkeys = sorted(self._dict.keys())
-        self.assertEqual(keys, dkeys)
-        return keys
-
     def tearDown(self):
         delete_files()
 
     def setUp(self):
+        dbm._defaultmod = self.module
         delete_files()
 
 
@@ -137,11 +140,11 @@ class WhichDBTestCase(unittest.TestCase):
 
 
 def test_main():
-    try:
-        for module in dbm_iterator():
-            test.support.run_unittest(AnyDBMTestCase, WhichDBTestCase)
-    finally:
-        delete_files()
+    classes = [WhichDBTestCase]
+    for mod in dbm_iterator():
+        classes.append(type("TestCase-" + mod.__name__, (AnyDBMTestCase,),
+                            {'module': mod}))
+    test.support.run_unittest(*classes)
 
 if __name__ == "__main__":
     test_main()

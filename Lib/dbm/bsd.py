@@ -4,7 +4,8 @@ import bsddb
 
 __all__ = ["error", "open"]
 
-error = bsddb.error
+class error(bsddb.error, IOError):
+    pass
 
 def open(file, flag = 'r', mode=0o666):
     return bsddb.hashopen(file, flag, mode)
