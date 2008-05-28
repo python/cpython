@@ -147,7 +147,7 @@ assign_version_tag(PyTypeObject *type)
 	   cannot be done, 1 if Py_TPFLAGS_VALID_VERSION_TAG.
 	*/
 	Py_ssize_t i, n;
-	PyObject *bases;
+	PyObject *bases, *tmp;
 
 	if (PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
 		return 1;
@@ -166,9 +166,10 @@ assign_version_tag(PyTypeObject *type)
 		   are borrowed reference */
 		for (i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
 			method_cache[i].value = NULL;
-			Py_XDECREF(method_cache[i].name);
-			method_cache[i].name = Py_None;
+			tmp = method_cache[i].name;
 			Py_INCREF(Py_None);
+			method_cache[i].name = Py_None;
+			Py_XDECREF(tmp);
 		}
 		/* mark all version tags as invalid */
 		PyType_Modified(&PyBaseObject_Type);
@@ -2413,7 +2414,7 @@ PyObject *
 _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
 	Py_ssize_t i, n;
-	PyObject *mro, *res, *base, *dict;
+	PyObject *mro, *res, *base, *dict, *tmp;
 	unsigned int h;
 
 	if (MCACHE_CACHEABLE_NAME(name) &&
@@ -2455,9 +2456,10 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 		h = MCACHE_HASH_METHOD(type, name);
 		method_cache[h].version = type->tp_version_tag;
 		method_cache[h].value = res;  /* borrowed */
+		tmp = method_cache[h].name;
 		Py_INCREF(name);
-		Py_DECREF(method_cache[h].name);
 		method_cache[h].name = name;
+		Py_DECREF(tmp);
 	}
 	return res;
 }
