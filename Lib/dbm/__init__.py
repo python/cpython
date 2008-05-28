@@ -48,27 +48,26 @@ class error(Exception):
     pass
 
 _names = ['dbm.bsd', 'dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
-_errors = [error]
 _defaultmod = None
 _modules = {}
 
-for _name in _names:
-    try:
-        _mod = __import__(_name, fromlist=['open'])
-    except ImportError:
-        continue
-    if not _defaultmod:
-        _defaultmod = _mod
-    _modules[_name] = _mod
-    _errors.append(_mod.error)
-
-if not _defaultmod:
-    raise ImportError("no dbm clone found; tried %s" % _names)
-
-error = tuple(_errors)
+error = (error, IOError)
 
 
 def open(file, flag = 'r', mode = 0o666):
+    global _defaultmod
+    if _defaultmod is None:
+        for name in _names:
+            try:
+                mod = __import__(name, fromlist=['open'])
+            except ImportError:
+                continue
+            if not _defaultmod:
+                _defaultmod = mod
+            _modules[name] = mod
+        if not _defaultmod:
+            raise ImportError("no dbm clone found; tried %s" % _names)
+
     # guess the type of an existing database
     result = whichdb(file)
     if result is None:
@@ -81,18 +80,13 @@ def open(file, flag = 'r', mode = 0o666):
     elif result == "":
         # db type cannot be determined
         raise error("db type could not be determined")
+    elif result not in _modules:
+        raise error("db type is {0}, but the module is not "
+                    "available".format(result))
     else:
         mod = _modules[result]
     return mod.open(file, flag, mode)
 
-
-try:
-    from dbm import ndbm
-    _dbmerror = ndbm.error
-except ImportError:
-    ndbm = None
-    # just some sort of valid exception which might be raised in the ndbm test
-    _dbmerror = IOError
 
 def whichdb(filename):
     """Guess which db package to use to open a db file.
@@ -129,7 +123,7 @@ def whichdb(filename):
                 d = ndbm.open(filename)
                 d.close()
                 return "dbm.ndbm"
-        except (IOError, _dbmerror):
+        except IOError:
             pass
 
     # Check for dumbdbm next -- this has a .dir and a .dat file

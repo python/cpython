@@ -523,7 +523,7 @@ init_gdbm(void) {
     if (m == NULL)
 	return;
     d = PyModule_GetDict(m);
-    DbmError = PyErr_NewException("_gdbm.error", NULL, NULL);
+    DbmError = PyErr_NewException("_gdbm.error", PyExc_IOError, NULL);
     if (DbmError != NULL) {
         PyDict_SetItemString(d, "error", DbmError);
         s = PyUnicode_FromString(dbmmodule_open_flags);
