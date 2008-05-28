@@ -239,7 +239,9 @@ Build
 C API
 -----
 
-- The PyBytes functions have been renamed to PyByteArray
+- Add ``PyType_Modified()`` as a public API to clear the type cache.
+
+- The PyBytes functions have been renamed to PyByteArray.
 
 - The PyString functions have been renamed to PyBytes. A batch of
   defines were added so that the linker still sees the original
