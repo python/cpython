@@ -50,23 +50,14 @@ Importing is easy..
 
    >>> from http import cookies
 
-Most of the time you start by creating a cookie.  Cookies come in
-three flavors, each with slightly different encoding semantics, but
-more on that later.
+Most of the time you start by creating a cookie.
 
    >>> C = cookies.SimpleCookie()
-   >>> C = cookies.SerialCookie()
-   >>> C = cookies.SmartCookie()
-
-[Note: Long-time users of cookies.py will remember using
-cookies.Cookie() to create an Cookie object.  Although deprecated, it
-is still supported by the code.  See the Backward Compatibility notes
-for more information.]
 
 Once you've created your Cookie, you can add values just as if it were
 a dictionary.
 
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C["fig"] = "newton"
    >>> C["sugar"] = "wafer"
    >>> C.output()
@@ -77,7 +68,7 @@ appropriate format for a Set-Cookie: header.  This is the
 default behavior.  You can change the header and printed
 attributes by using the .output() function
 
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C["rocky"] = "road"
    >>> C["rocky"]["path"] = "/cookie"
    >>> print(C.output(header="Cookie:"))
@@ -89,7 +80,7 @@ The load() method of a Cookie extracts cookies from a string.  In a
 CGI script, you would use this method to extract the cookies from the
 HTTP_COOKIE environment variable.
 
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C.load("chips=ahoy; vienna=finger")
    >>> C.output()
    'Set-Cookie: chips=ahoy\r\nSet-Cookie: vienna=finger'
@@ -98,7 +89,7 @@ The load() method is darn-tootin smart about identifying cookies
 within a string.  Escaped quotation marks, nested semicolons, and other
 such trickeries do not confuse it.
 
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
    >>> print(C)
    Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
@@ -107,7 +98,7 @@ Each element of the Cookie also supports all of the RFC 2109
 Cookie attributes.  Here's an example which sets the Path
 attribute.
 
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
    >>> print(C)
@@ -116,20 +107,10 @@ attribute.
 Each dictionary element has a 'value' attribute, which gives you
 back the value associated with the key.
 
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C["twix"] = "none for you"
    >>> C["twix"].value
    'none for you'
-
-
-A Bit More Advanced
--------------------
-
-As mentioned before, there are three different flavors of Cookie
-objects, each with different encoding/decoding semantics.  This
-section briefly discusses the differences.
-
-SimpleCookie
 
 The SimpleCookie expects that all values should be standard strings.
 Just to be sure, SimpleCookie invokes the str() builtin to convert
@@ -145,62 +126,6 @@ the value to a string, when the values are set dictionary-style.
    >>> C.output()
    'Set-Cookie: number=7\r\nSet-Cookie: string=seven'
 
-
-SerialCookie
-
-The SerialCookie expects that all values should be serialized using
-pickle.  As a result of serializing, SerialCookie can save almost any
-Python object to a value, and recover the exact same object when the
-cookie has been returned.  (SerialCookie can yield some
-strange-looking cookie values, however.)
-
-   >>> C = cookies.SerialCookie()
-   >>> C["number"] = 7
-   >>> C["string"] = "seven"
-   >>> C["number"].value
-   7
-   >>> C["string"].value
-   'seven'
-   >>> C.output()
-   'Set-Cookie: number="L7\\012."\r\nSet-Cookie: string="Vseven\\012p0\\012."'
-
-Be warned, however, if SerialCookie cannot de-serialize a value (because
-it isn't a valid pickle'd object), IT WILL RAISE AN EXCEPTION.
-
-
-SmartCookie
-
-The SmartCookie combines aspects of each of the other two flavors.
-When setting a value in a dictionary-fashion, the SmartCookie will
-serialize (ala pickle) the value *if and only if* it isn't a
-Python string.  String objects are *not* serialized.  Similarly,
-when the load() method parses out values, it attempts to de-serialize
-the value.  If it fails, then it fallsback to treating the value
-as a string.
-
-   >>> C = cookies.SmartCookie()
-   >>> C["number"] = 7
-   >>> C["string"] = "seven"
-   >>> C["number"].value
-   7
-   >>> C["string"].value
-   'seven'
-   >>> C.output()
-   'Set-Cookie: number="L7\\012."\r\nSet-Cookie: string=seven'
-
-
-Backwards Compatibility
------------------------
-
-In order to keep compatibilty with earlier versions of Cookie.py,
-it is still possible to use cookies.Cookie() to create a Cookie.  In
-fact, this simply returns a SmartCookie.
-
-   >>> C = cookies.Cookie()
-   >>> print(C.__class__.__name__)
-   SmartCookie
-
-
 Finis.
 """  #"
 #     ^
@@ -215,8 +140,7 @@ from pickle import dumps, loads
 
 import re, warnings
 
-__all__ = ["CookieError","BaseCookie","SimpleCookie","SerialCookie",
-           "SmartCookie","Cookie"]
+__all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
 
 _nulljoin = ''.join
 _semispacejoin = '; '.join
@@ -653,70 +577,6 @@ class SimpleCookie(BaseCookie):
         return strval, _quote( strval )
 # end SimpleCookie
 
-class SerialCookie(BaseCookie):
-    """SerialCookie
-    SerialCookie supports arbitrary objects as cookie values. All
-    values are serialized (using pickle) before being sent to the
-    client.  All incoming values are assumed to be valid Pickle
-    representations.  IF AN INCOMING VALUE IS NOT IN A VALID PICKLE
-    FORMAT, THEN AN EXCEPTION WILL BE RAISED.
-
-    Note: Large cookie values add overhead because they must be
-    retransmitted on every HTTP transaction.
-
-    Note: HTTP has a 2k limit on the size of a cookie.  This class
-    does not check for this limit, so be careful!!!
-    """
-    def __init__(self, input=None):
-        warnings.warn("SerialCookie class is insecure; do not use it",
-                      DeprecationWarning)
-        BaseCookie.__init__(self, input)
-    # end __init__
-    def value_decode(self, val):
-        # This could raise an exception!
-        return loads( _unquote(val).encode('latin-1') ), val
-    def value_encode(self, val):
-        return val, _quote( dumps(val, 0).decode('latin-1') )
-# end SerialCookie
-
-class SmartCookie(BaseCookie):
-    """SmartCookie
-    SmartCookie supports arbitrary objects as cookie values.  If the
-    object is a string, then it is quoted.  If the object is not a
-    string, however, then SmartCookie will use pickle to serialize
-    the object into a string representation.
-
-    Note: Large cookie values add overhead because they must be
-    retransmitted on every HTTP transaction.
-
-    Note: HTTP has a 2k limit on the size of a cookie.  This class
-    does not check for this limit, so be careful!!!
-    """
-    def __init__(self, input=None):
-        warnings.warn("Cookie/SmartCookie class is insecure; do not use it",
-                      DeprecationWarning)
-        BaseCookie.__init__(self, input)
-    # end __init__
-    def value_decode(self, val):
-        strval = _unquote(val)
-        try:
-            return loads(strval.encode('latin-1')), val
-        except:
-            return strval, val
-    def value_encode(self, val):
-        if isinstance(val, str):
-            return val, _quote(val)
-        else:
-            return val, _quote( dumps(val, 0).decode('latin-1') )
-# end SmartCookie
-
-
-###########################################################
-# Backwards Compatibility:  Don't break any existing code!
-
-# We provide Cookie() as an alias for SmartCookie()
-Cookie = SmartCookie
-
 #
 ###########################################################
 
@@ -726,8 +586,3 @@ def _test():
 
 if __name__ == "__main__":
     _test()
-
-
-#Local Variables:
-#tab-width: 4
-#end:

@@ -60,6 +60,9 @@ Extension Modules
 Library
 -------
 
+- The deprecated ``SmartCookie`` and ``SimpleCookie`` classes have
+  been removed from ``http.cookies``.
+
 - The ``commands`` module has been removed. Its getoutput() and
   getstatusoutput() functions have been moved to the ``subprocess`` module.
 
