@@ -10,7 +10,6 @@ warnings.filterwarnings("ignore",
                         DeprecationWarning)
 
 class CookieTests(unittest.TestCase):
-    # Currently this only tests SimpleCookie
     def test_basic(self):
         cases = [
             { 'data': 'chips=ahoy; vienna=finger',

@@ -39,36 +39,6 @@ result, the parsing rules used are a bit less strict.
    and :meth:`value_encode` to be the identity and :func:`str` respectively.
 
 
-.. class:: SerialCookie([input])
-
-   This class derives from :class:`BaseCookie` and overrides :meth:`value_decode`
-   and :meth:`value_encode` to be the :func:`pickle.loads` and
-   :func:`pickle.dumps`.
-
-   .. deprecated:: 2.3
-      Reading pickled values from untrusted cookie data is a huge security hole, as
-      pickle strings can be crafted to cause arbitrary code to execute on your server.
-      It is supported for backwards compatibility only, and may eventually go away.
-
-
-.. class:: SmartCookie([input])
-
-   This class derives from :class:`BaseCookie`. It overrides :meth:`value_decode`
-   to be :func:`pickle.loads` if it is a valid pickle, and otherwise the value
-   itself. It overrides :meth:`value_encode` to be :func:`pickle.dumps` unless it
-   is a string, in which case it returns the value itself.
-
-   .. deprecated:: 2.3
-      The same security warning from :class:`SerialCookie` applies here.
-
-A further security note is warranted.  For backwards compatibility, the
-:mod:`http.cookies` module exports a class named :class:`Cookie` which is just an
-alias for :class:`SmartCookie`.  This is probably a mistake and will likely be
-removed in a future version.  You should not use the :class:`Cookie` class in
-your applications, for the same reason why you should not use the
-:class:`SerialCookie` class.
-
-
 .. seealso::
 
    Module :mod:`http.cookiejar`
@@ -212,8 +182,6 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
 
    >>> from http import cookies
    >>> C = cookies.SimpleCookie()
-   >>> C = cookies.SerialCookie()
-   >>> C = cookies.SmartCookie()
    >>> C["fig"] = "newton"
    >>> C["sugar"] = "wafer"
    >>> print(C) # generate HTTP headers
@@ -222,28 +190,28 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C.output()) # same thing
    Set-Cookie: fig=newton
    Set-Cookie: sugar=wafer
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C["rocky"] = "road"
    >>> C["rocky"]["path"] = "/cookie"
    >>> print(C.output(header="Cookie:"))
    Cookie: rocky=road; Path=/cookie
    >>> print(C.output(attrs=[], header="Cookie:"))
    Cookie: rocky=road
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C.load("chips=ahoy; vienna=finger") # load from a string (HTTP header)
    >>> print(C)
    Set-Cookie: chips=ahoy
    Set-Cookie: vienna=finger
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
    >>> print(C)
    Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
    >>> print(C)
    Set-Cookie: oreo=doublestuff; Path=/
-   >>> C = cookies.SmartCookie()
+   >>> C = cookies.SimpleCookie()
    >>> C["twix"] = "none for you"
    >>> C["twix"].value
    'none for you'
@@ -257,24 +225,3 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
-   >>> C = cookies.SerialCookie()
-   >>> C["number"] = 7
-   >>> C["string"] = "seven"
-   >>> C["number"].value
-   7
-   >>> C["string"].value
-   'seven'
-   >>> print(C)
-   Set-Cookie: number="I7\012."
-   Set-Cookie: string="S'seven'\012p1\012."
-   >>> C = cookies.SmartCookie()
-   >>> C["number"] = 7
-   >>> C["string"] = "seven"
-   >>> C["number"].value
-   7
-   >>> C["string"].value
-   'seven'
-   >>> print(C)
-   Set-Cookie: number="I7\012."
-   Set-Cookie: string=seven
-
