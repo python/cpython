@@ -29,8 +29,8 @@ A single class is provided by the :mod:`poplib` module:
    This class implements the actual POP3 protocol.  The connection is created when
    the instance is initialized. If *port* is omitted, the standard POP3 port (110)
    is used. The optional *timeout* parameter specifies a timeout in seconds for the
-   connection attempt (if not specified, or passed as None, the global default
-   timeout setting will be used).
+   connection attempt (if not specified, the global default timeout setting will
+   be used).
 
    .. versionchanged:: 2.6
       *timeout* was added.

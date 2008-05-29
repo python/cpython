@@ -44,7 +44,7 @@ The module provides the following classes:
    be raised if the status line can't be parsed as a valid HTTP/1.0 or 1.1
    status line.  If the optional *timeout* parameter is given, blocking
    operations (like connection attempts) will timeout after that many seconds
-   (if it is not given or ``None``, the global default timeout setting is used).
+   (if it is not given, the global default timeout setting is used).
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
