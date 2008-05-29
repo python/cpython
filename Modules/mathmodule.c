@@ -318,7 +318,7 @@ FUNC1(tanh, tanh, 0,
    value semantics across iterations (i.e. handling -Inf + Inf).
 
    Note 2:  No provision is made for intermediate overflow handling;
-   therefore, sum([1e+308, 1e-308, 1e+308]) returns result 1e+308 while
+   therefore, sum([1e+308, 1e-308, 1e+308]) returns 1e+308 while
    sum([1e+308, 1e+308, 1e-308]) raises an OverflowError due to the
    overflow of the first partial sum.
 
@@ -466,7 +466,7 @@ math_sum(PyObject *self, PyObject *seq)
 			}
 			/* Little dance to allow half-even rounding across multiple partials.
                            Needed so that sum([1e-16, 1, 1e16]) will round-up to two instead
-                           of down to zero (the 1e16 makes the 1 slightly closer to two). */
+                           of down to zero (the 1e-16 makes the 1 slightly closer to two). */
 			if (n > 0 && ((lo < 0.0 && p[n-1] < 0.0) ||
 			              (lo > 0.0 && p[n-1] > 0.0))) {
 				y = lo * 2.0;
