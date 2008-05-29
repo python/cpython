@@ -1118,6 +1118,14 @@ class PyBuildExt(build_ext):
         else:
             missing.append('ossaudiodev')
 
+        if sys.platform == 'darwin':
+            exts.append(
+                       Extension('_gestalt', ['_gestalt.c'],
+                       extra_link_args=['-framework', 'Carbon'])
+                       )
+        else:
+            missing.append('_gestalt')
+
         self.extensions.extend(exts)
 
         # Call the method for detecting whether _tkinter can be compiled

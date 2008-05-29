@@ -676,14 +676,13 @@ def win32_ver(release='',version='',csd='',ptype=''):
 
 def _mac_ver_lookup(selectors,default=None):
 
-    from gestalt import gestalt
-    import MacOS
+    from _gestalt import gestalt
     l = []
     append = l.append
     for selector in selectors:
         try:
             append(gestalt(selector))
-        except (RuntimeError, MacOS.Error):
+        except (RuntimeError, OSError):
             append(default)
     return l
 
@@ -709,8 +708,7 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
     """
     # Check whether the version info module is available
     try:
-        import gestalt
-        import MacOS
+        import _gestalt
     except ImportError:
         return release,versioninfo,machine
     # Get the infos
