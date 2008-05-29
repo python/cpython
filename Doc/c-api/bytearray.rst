@@ -7,10 +7,12 @@ Byte Array Objects
 
 .. index:: object: bytearray
 
+.. versionadded:: 2.6
+
 
 .. ctype:: PyByteArrayObject
 
-   This subtype of :ctype:`PyObject` represents a Python string object.
+   This subtype of :ctype:`PyObject` represents a Python bytearray object.
 
 
 .. cvar:: PyTypeObject PyByteArray_Type
@@ -35,6 +37,8 @@ Byte Array Objects
 
    Return a new bytearray object from any object, *o*, that implements the
    buffer protocol.
+
+   .. XXX expand about the buffer protocol, at least somewhere
 
 
 .. cfunction:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
