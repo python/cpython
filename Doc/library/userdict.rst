@@ -100,6 +100,12 @@ The :mod:`UserList` module defines the :class:`UserList` class:
    defaulting to the empty list ``[]``.  *list* can be any iterable, e.g. a
    real Python list or a :class:`UserList` object.
 
+   .. note::
+      The :class:`UserList` class has been moved to the :mod:`collections`
+      module in Python 3.0. The :term:`2to3` tool will automatically adapt
+      imports when converting your sources to 3.0.
+
+
 In addition to supporting the methods and operations of mutable sequences (see
 section :ref:`typesseq`), :class:`UserList` instances provide the following
 attribute:
@@ -166,6 +172,12 @@ The :mod:`UserString` module defines the following classes:
    be either a regular Python string or Unicode string, an instance of
    :class:`UserString` (or a subclass) or an arbitrary sequence which can be
    converted into a string using the built-in :func:`str` function.
+
+   .. note::
+      The :class:`UserString` class has been moved to the :mod:`collections`
+      module in Python 3.0. The :term:`2to3` tool will automatically adapt
+      imports when converting your sources to 3.0.
+
 
 
 .. class:: MutableString([sequence])
