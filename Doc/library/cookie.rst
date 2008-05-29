@@ -22,6 +22,12 @@ The module formerly strictly applied the parsing rules described in the
 MSIE 3.0x doesn't follow the character rules outlined in those specs.  As a
 result, the parsing rules used are a bit less strict.
 
+.. note::
+
+   On encountering an invalid cookie, :exc:`CookieError` is raised, so if your
+   cookie data comes from a browser you should always prepare for invalid data
+   and catch :exc:`CookieError` on parsing.
+
 
 .. exception:: CookieError
 
