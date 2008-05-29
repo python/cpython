@@ -729,7 +729,11 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
             release = '%i.%i.%i' %(major, minor, patch)
         else:
             release = '%s.%i.%i' % (_bcd2str(major),minor,patch)
+
     if sysu:
+        # NOTE: this block is left as documentation of the
+        # intention of this function, the 'sysu' gestalt is no
+        # longer available and there are no alternatives.
         major =  int((sysu & 0xFF000000) >> 24)
         minor =  (sysu & 0x00F00000) >> 20
         bugfix = (sysu & 0x000F0000) >> 16
@@ -742,6 +746,8 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
                  0x60:'beta',
                  0x80:'final'}.get(stage,'')
         versioninfo = (version,stage,nonrel)
+
+
     if sysa:
         machine = {0x1: '68k',
                    0x2: 'PowerPC',
