@@ -63,6 +63,9 @@ Extension Modules
 Library
 -------
 
+- Issue #1797 (partial fix): ctypes NULL function pointers have a
+  False boolean value now.
+
 - Issue #2985: Allow 64-bit integer responses (``<i8>``) in XMLRPC
   transfers.
 

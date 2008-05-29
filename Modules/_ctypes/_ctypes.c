@@ -3784,6 +3784,26 @@ CFuncPtr_repr(CFuncPtrObject *self)
 				   self);
 }
 
+static int
+Pointer_nonzero(CDataObject *self)
+{
+	return *(void **)self->b_ptr != NULL;
+}
+
+static PyNumberMethods Pointer_as_number = {
+	0, /* nb_add */
+	0, /* nb_subtract */
+	0, /* nb_multiply */
+	0, /* nb_divide */
+	0, /* nb_remainder */
+	0, /* nb_divmod */
+	0, /* nb_power */
+	0, /* nb_negative */
+	0, /* nb_positive */
+	0, /* nb_absolute */
+	(inquiry)Pointer_nonzero, /* nb_nonzero */
+};
+
 PyTypeObject CFuncPtr_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.CFuncPtr",
@@ -3795,7 +3815,7 @@ PyTypeObject CFuncPtr_Type = {
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	(reprfunc)CFuncPtr_repr,		/* tp_repr */
-	0,					/* tp_as_number */
+	&Pointer_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
@@ -5001,26 +5021,6 @@ static PySequenceMethods Pointer_as_sequence = {
 static PyMappingMethods Pointer_as_mapping = {
 	0,
 	Pointer_subscript,
-};
-
-static int
-Pointer_nonzero(CDataObject *self)
-{
-	return *(void **)self->b_ptr != NULL;
-}
-
-static PyNumberMethods Pointer_as_number = {
-	0, /* nb_add */
-	0, /* nb_subtract */
-	0, /* nb_multiply */
-	0, /* nb_divide */
-	0, /* nb_remainder */
-	0, /* nb_divmod */
-	0, /* nb_power */
-	0, /* nb_negative */
-	0, /* nb_positive */
-	0, /* nb_absolute */
-	(inquiry)Pointer_nonzero, /* nb_nonzero */
 };
 
 PyTypeObject Pointer_Type = {
