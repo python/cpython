@@ -842,8 +842,9 @@ class PyBuildExt(build_ext):
                         if db_setup_debug: print "db lib: ", dblib, "not found"
 
         except db_found:
-            print "bsddb using BerkeleyDB lib:", db_ver, dblib
-            print "bsddb lib dir:", dblib_dir, " inc dir:", db_incdir
+            if db_setup_debug:
+                print "bsddb using BerkeleyDB lib:", db_ver, dblib
+                print "bsddb lib dir:", dblib_dir, " inc dir:", db_incdir
             db_incs = [db_incdir]
             dblibs = [dblib]
             # We add the runtime_library_dirs argument because the
