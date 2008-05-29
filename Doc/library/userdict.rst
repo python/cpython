@@ -178,6 +178,9 @@ The :mod:`UserString` module defines the following classes:
    mutable object as dictionary key, which would be otherwise very error prone and
    hard to track down.
 
+   .. deprecated:: 2.6
+      The :class:`MutableString` class has been removed in Python 3.0.
+
 In addition to supporting the methods and operations of string and Unicode
 objects (see section :ref:`string-methods`), :class:`UserString` instances
 provide the following attribute:

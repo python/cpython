@@ -219,6 +219,14 @@ class TestStdlibRemovals(unittest.TestCase):
                 func = getattr(commands, name)
                 self.assertRaises(DeprecationWarning, func, *([None]*arg_count))
 
+    def test_mutablestring_removal(self):
+        # UserString.MutableString has been removed in 3.0.
+        import UserString
+        with catch_warning(record=False):
+            warnings.filterwarnings("error", ".*MutableString",
+                                    DeprecationWarning)
+            self.assertRaises(DeprecationWarning, UserString.MutableString)
+
 
 def test_main():
     with catch_warning(record=True):
