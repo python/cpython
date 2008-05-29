@@ -901,8 +901,25 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     testTimeoutDefault = _justAccept
     def _testTimeoutDefault(self):
-        self.cli = socket.create_connection((HOST, self.port))
-        self.assertTrue(self.cli.gettimeout() is None)
+        # passing no explicit timeout uses socket's global default
+        self.assert_(socket.getdefaulttimeout() is None)
+        socket.setdefaulttimeout(42)
+        try:
+            self.cli = socket.create_connection((HOST, self.port))
+        finally:
+            socket.setdefaulttimeout(None)
+        self.assertEquals(self.cli.gettimeout(), 42)
+
+    testTimeoutNone = _justAccept
+    def _testTimeoutNone(self):
+        # None timeout means the same as sock.settimeout(None)
+        self.assert_(socket.getdefaulttimeout() is None)
+        socket.setdefaulttimeout(30)
+        try:
+            self.cli = socket.create_connection((HOST, self.port), timeout=None)
+        finally:
+            socket.setdefaulttimeout(None)
+        self.assertEqual(self.cli.gettimeout(), None)
 
     testTimeoutValueNamed = _justAccept
     def _testTimeoutValueNamed(self):
@@ -913,17 +930,6 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
     def _testTimeoutValueNonamed(self):
         self.cli = socket.create_connection((HOST, self.port), 30)
         self.assertEqual(self.cli.gettimeout(), 30)
-
-    testTimeoutNone = _justAccept
-    def _testTimeoutNone(self):
-        previous = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(30)
-        try:
-            self.cli = socket.create_connection((HOST, self.port), timeout=None)
-        finally:
-            socket.setdefaulttimeout(previous)
-        self.assertEqual(self.cli.gettimeout(), 30)
-
 
 class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
 

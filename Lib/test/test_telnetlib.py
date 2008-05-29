@@ -40,34 +40,36 @@ class GeneralTests(TestCase):
         telnet.sock.close()
 
     def testTimeoutDefault(self):
-        # default
-        telnet = telnetlib.Telnet(HOST, self.port)
-        self.assertTrue(telnet.sock.gettimeout() is None)
-        telnet.sock.close()
-
-    def testTimeoutValue(self):
-        # a value
-        telnet = telnetlib.Telnet(HOST, self.port, timeout=30)
-        self.assertEqual(telnet.sock.gettimeout(), 30)
-        telnet.sock.close()
-
-    def testTimeoutDifferentOrder(self):
-        telnet = telnetlib.Telnet(timeout=30)
-        telnet.open(HOST, self.port)
+        self.assertTrue(socket.getdefaulttimeout() is None)
+        socket.setdefaulttimeout(30)
+        try:
+            telnet = telnetlib.Telnet("localhost", self.port)
+        finally:
+            socket.setdefaulttimeout(None)
         self.assertEqual(telnet.sock.gettimeout(), 30)
         telnet.sock.close()
 
     def testTimeoutNone(self):
         # None, having other default
-        previous = socket.getdefaulttimeout()
+        self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
             telnet = telnetlib.Telnet(HOST, self.port, timeout=None)
         finally:
-            socket.setdefaulttimeout(previous)
+            socket.setdefaulttimeout(None)
+        self.assertTrue(telnet.sock.gettimeout() is None)
+        telnet.sock.close()
+
+    def testTimeoutValue(self):
+        telnet = telnetlib.Telnet("localhost", self.port, timeout=30)
         self.assertEqual(telnet.sock.gettimeout(), 30)
         telnet.sock.close()
 
+    def testTimeoutOpen(self):
+        telnet = telnetlib.Telnet()
+        telnet.open("localhost", self.port, timeout=30)
+        self.assertEqual(telnet.sock.gettimeout(), 30)
+        telnet.sock.close()
 
 
 def test_main(verbose=None):

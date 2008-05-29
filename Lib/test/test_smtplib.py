@@ -54,41 +54,43 @@ class GeneralTests(TestCase):
     def testBasic1(self):
         # connects
         smtp = smtplib.SMTP(HOST, self.port)
-        smtp.sock.close()
+        smtp.close()
 
     def testBasic2(self):
         # connects, include port in host name
         smtp = smtplib.SMTP("%s:%s" % (HOST, self.port))
-        smtp.sock.close()
+        smtp.close()
 
     def testLocalHostName(self):
         # check that supplied local_hostname is used
         smtp = smtplib.SMTP(HOST, self.port, local_hostname="testhost")
         self.assertEqual(smtp.local_hostname, "testhost")
-        smtp.sock.close()
+        smtp.close()
 
     def testTimeoutDefault(self):
-        # default
-        smtp = smtplib.SMTP(HOST, self.port)
-        self.assertTrue(smtp.sock.gettimeout() is None)
-        smtp.sock.close()
-
-    def testTimeoutValue(self):
-        # a value
-        smtp = smtplib.SMTP(HOST, self.port, timeout=30)
+        self.assertTrue(socket.getdefaulttimeout() is None)
+        socket.setdefaulttimeout(30)
+        try:
+            smtp = smtplib.SMTP(HOST, self.port)
+        finally:
+            socket.setdefaulttimeout(None)
         self.assertEqual(smtp.sock.gettimeout(), 30)
-        smtp.sock.close()
+        smtp.close()
 
     def testTimeoutNone(self):
-        # None, having other default
-        previous = socket.getdefaulttimeout()
+        self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
             smtp = smtplib.SMTP(HOST, self.port, timeout=None)
         finally:
-            socket.setdefaulttimeout(previous)
+            socket.setdefaulttimeout(None)
+        self.assertTrue(smtp.sock.gettimeout() is None)
+        smtp.close()
+
+    def testTimeoutValue(self):
+        smtp = smtplib.SMTP(HOST, self.port, timeout=30)
         self.assertEqual(smtp.sock.gettimeout(), 30)
-        smtp.sock.close()
+        smtp.close()
 
 
 # Test server thread using the specified SMTP server class

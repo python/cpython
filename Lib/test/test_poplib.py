@@ -40,28 +40,29 @@ class GeneralTests(TestCase):
         pop.sock.close()
 
     def testTimeoutDefault(self):
-        # default
-        pop = poplib.POP3(HOST, self.port)
-        self.assertTrue(pop.sock.gettimeout() is None)
-        pop.sock.close()
-
-    def testTimeoutValue(self):
-        # a value
-        pop = poplib.POP3(HOST, self.port, timeout=30)
+        self.assertTrue(socket.getdefaulttimeout() is None)
+        socket.setdefaulttimeout(30)
+        try:
+            pop = poplib.POP3("localhost", self.port)
+        finally:
+            socket.setdefaulttimeout(None)
         self.assertEqual(pop.sock.gettimeout(), 30)
         pop.sock.close()
 
     def testTimeoutNone(self):
-        # None, having other default
-        previous = socket.getdefaulttimeout()
+        self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
             pop = poplib.POP3(HOST, self.port, timeout=None)
         finally:
-            socket.setdefaulttimeout(previous)
-        self.assertEqual(pop.sock.gettimeout(), 30)
+            socket.setdefaulttimeout(None)
+        self.assertTrue(pop.sock.gettimeout() is None)
         pop.sock.close()
 
+    def testTimeoutValue(self):
+        pop = poplib.POP3("localhost", self.port, timeout=30)
+        self.assertEqual(pop.sock.gettimeout(), 30)
+        pop.sock.close()
 
 
 def test_main(verbose=None):

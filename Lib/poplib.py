@@ -76,7 +76,8 @@ class POP3:
     """
 
 
-    def __init__(self, host, port=POP3_PORT, timeout=None):
+    def __init__(self, host, port=POP3_PORT,
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         self.host = host
         self.port = port
         self.sock = socket.create_connection((host, port), timeout)
