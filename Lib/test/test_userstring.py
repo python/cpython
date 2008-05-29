@@ -4,8 +4,8 @@
 
 import string
 from test import test_support, string_tests
-
 from UserString import UserString, MutableString
+import warnings
 
 class UserStringTest(
     string_tests.CommonTest,
@@ -135,7 +135,10 @@ class MutableStringTest(UserStringTest):
         self.assertEqual(s, "")
 
 def test_main():
-    test_support.run_unittest(UserStringTest, MutableStringTest)
+    with test_support.catch_warning(record=False):
+        warnings.filterwarnings("ignore", ".*MutableString",
+                                DeprecationWarning)
+        test_support.run_unittest(UserStringTest, MutableStringTest)
 
 if __name__ == "__main__":
     test_main()

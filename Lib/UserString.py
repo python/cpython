@@ -146,6 +146,9 @@ class MutableString(UserString, collections.MutableSequence):
 
     A faster and better solution is to rewrite your program using lists."""
     def __init__(self, string=""):
+        from warnings import warnpy3k
+        warnpy3k('the class UserString.MutableString has been removed in '
+                    'Python 3.0', stacklevel=2)
         self.data = string
     def __hash__(self):
         raise TypeError, "unhashable type (it is mutable)"
