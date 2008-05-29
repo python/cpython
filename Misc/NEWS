@@ -63,8 +63,11 @@ Extension Modules
 Library
 -------
 
-Issue #2877 - The UserString.MutableString class has been removed in
-			  Python 3.0.
+- Issue #2985: Allow 64-bit integer responses (``<i8>``) in XMLRPC
+  transfers.
+
+- Issue #2877: The UserString.MutableString class has been removed in
+  Python 3.0.
 
 - Do not close external file objects passed to tarfile.open(mode='w:bz2')
   when the TarFile is closed.
