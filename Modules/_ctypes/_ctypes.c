@@ -477,7 +477,7 @@ GenericCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static PyObject *
 CDataType_from_buffer_copy(PyObject *type, PyObject *args)
 {
-	void *buffer;
+	const void *buffer;
 	Py_ssize_t buffer_len;
 	Py_ssize_t offset = 0;
 	PyObject *obj, *result;
