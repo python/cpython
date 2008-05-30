@@ -1053,7 +1053,7 @@ class Misc:
                     v = self._register(v)
                 elif isinstance(v, (tuple, list)):
                     for item in v:
-                        if not isinstance(item, (basestring, int)):
+                        if not isinstance(item, (str, int)):
                             break
                     else:
                         v = ' '.join(map(str, v))
