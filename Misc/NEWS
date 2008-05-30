@@ -63,6 +63,9 @@ Extension Modules
 Library
 -------
 
+- Issue #3011: locale module alias table was updated to the latest version
+  from the X.org locale.alias file
+
 - Issue #1797 (partial fix): ctypes NULL function pointers have a
   False boolean value now.
 
