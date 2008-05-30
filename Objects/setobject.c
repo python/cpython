@@ -94,7 +94,9 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	else {
 		if (entry->hash == hash) {
 			startkey = entry->key;
+			Py_INCREF(startkey);
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+			Py_DECREF(startkey);
 			if (cmp < 0)
 				return NULL;
 			if (table == so->table && entry->key == startkey) {
@@ -125,7 +127,9 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 			break;
 		if (entry->hash == hash && entry->key != dummy) {
 			startkey = entry->key;
+			Py_INCREF(startkey);
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+			Py_DECREF(startkey);
 			if (cmp < 0)
 				return NULL;
 			if (table == so->table && entry->key == startkey) {
