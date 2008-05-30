@@ -832,6 +832,11 @@ class AssortedBytesTest(unittest.TestCase):
     def test_rsplit_bytearray(self):
         self.assertEqual(b'a b'.rsplit(memoryview(b' ')), [b'a', b'b'])
 
+    def test_return_self(self):
+        # bytearray.replace must always return a new bytearray
+        b = bytearray()
+        self.failIf(b.replace(b'', b'') is b)
+
     # Optimizations:
     # __iter__? (optimization)
     # __reversed__? (optimization)
