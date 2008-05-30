@@ -2031,7 +2031,7 @@ Miscellaneous System Information
 
    Return the number of processes in the system run queue averaged over the last
    1, 5, and 15 minutes or raises :exc:`OSError` if the load average was
-   unobtainable.
+   unobtainable.  Availability: Unix.
 
    .. versionadded:: 2.3
 
