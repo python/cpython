@@ -43,7 +43,7 @@ Byte Array Objects
 
 .. cfunction:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
-   Create a new bytearray object from *string* and it's length, *len*.  On
+   Create a new bytearray object from *string* and its length, *len*.  On
    failure, *NULL* is returned.
 
 
