@@ -7318,11 +7318,11 @@ PyObject *PyUnicode_Replace(PyObject *obj,
 }
 
 PyDoc_STRVAR(replace__doc__,
-"S.replace (old, new[, maxsplit]) -> unicode\n\
+"S.replace (old, new[, count]) -> unicode\n\
 \n\
 Return a copy of S with all occurrences of substring\n\
-old replaced by new.  If the optional argument maxsplit is\n\
-given, only the first maxsplit occurrences are replaced.");
+old replaced by new.  If the optional argument count is\n\
+given, only the first count occurrences are replaced.");
 
 static PyObject*
 unicode_replace(PyUnicodeObject *self, PyObject *args)
