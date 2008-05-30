@@ -596,7 +596,6 @@ PYTHON_HEADERS= \
 		Include/eval.h \
 		Include/fileobject.h \
 		Include/floatobject.h \
-		Include/formatter_unicode.h \
 		Include/frameobject.h \
 		Include/funcobject.h \
 		Include/genobject.h \

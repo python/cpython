@@ -3,11 +3,11 @@
    of int.__float__, etc., that take and return unicode objects */
 
 #include "Python.h"
-#include "formatter_unicode.h"
-
 #include "../Objects/stringlib/unicodedefs.h"
 
-#define FORMAT_STRING unicode_unicode__format__
-#define FORMAT_LONG   unicode_long__format__
-#define FORMAT_FLOAT  unicode_float__format__
+
+#define FORMAT_STRING _PyUnicode_FormatAdvanced
+#define FORMAT_LONG   _PyLong_FormatAdvanced
+#define FORMAT_FLOAT  _PyFloat_FormatAdvanced
+
 #include "../Objects/stringlib/formatter.h"
