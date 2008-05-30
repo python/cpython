@@ -127,6 +127,12 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
    appending a base prefix of 0[box] if base is 2, 8 or 16. */
 PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *aa, int base);
 
+/* Format the object based on the format_spec, as defined in PEP 3101
+   (Advanced String Formatting). */
+PyAPI_FUNC(PyObject *) _PyLong_FormatAdvanced(PyObject *obj,
+					      Py_UNICODE *format_spec,
+					      Py_ssize_t format_spec_len);
+
 /* These aren't really part of the long object, but they're handy. The
    functions are in Python/mystrtoul.c.
  */

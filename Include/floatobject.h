@@ -105,6 +105,12 @@ PyAPI_FUNC(double) _PyFloat_Unpack8(const unsigned char *p, int le);
 /* free list api */
 PyAPI_FUNC(void) PyFloat_CompactFreeList(size_t *, size_t *, size_t *);
 
+/* Format the object based on the format_spec, as defined in PEP 3101
+   (Advanced String Formatting). */
+PyAPI_FUNC(PyObject *) _PyFloat_FormatAdvanced(PyObject *obj,
+					       Py_UNICODE *format_spec,
+					       Py_ssize_t format_spec_len);
+
 #ifdef __cplusplus
 }
 #endif

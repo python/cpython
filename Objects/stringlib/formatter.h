@@ -102,12 +102,13 @@ typedef struct {
   if failure, sets the exception
 */
 static int
-parse_internal_render_format_spec(PyObject *format_spec,
+parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
+				  Py_ssize_t format_spec_len,
                                   InternalFormatSpec *format,
                                   char default_type)
 {
-    STRINGLIB_CHAR *ptr = STRINGLIB_STR(format_spec);
-    STRINGLIB_CHAR *end = ptr + STRINGLIB_LEN(format_spec);
+    STRINGLIB_CHAR *ptr = format_spec;
+    STRINGLIB_CHAR *end = format_spec + format_spec_len;
 
     /* end-ptr is used throughout this code to specify the length of
        the input string */
@@ -756,56 +757,31 @@ done:
 /************************************************************************/
 /*********** built in formatters ****************************************/
 /************************************************************************/
-#ifdef FORMAT_STRING
 PyObject *
-FORMAT_STRING(PyObject* value, PyObject* args)
+FORMAT_STRING(PyObject *obj,
+	      STRINGLIB_CHAR *format_spec,
+	      Py_ssize_t format_spec_len)
 {
-    PyObject *format_spec;
-    PyObject *result = NULL;
-#if PY_VERSION_HEX < 0x03000000
-    PyObject *tmp = NULL;
-#endif
     InternalFormatSpec format;
-
-    /* If 2.x, we accept either str or unicode, and try to convert it
-       to the right type.  In 3.x, we insist on only unicode */
-#if PY_VERSION_HEX >= 0x03000000
-    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__",
-			  &format_spec))
-        goto done;
-#else
-    /* If 2.x, convert format_spec to the same type as value */
-    /* This is to allow things like u''.format('') */
-    if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
-        goto done;
-    if (!(PyBytes_Check(format_spec) || PyUnicode_Check(format_spec))) {
-        PyErr_Format(PyExc_TypeError, "__format__ arg must be str "
-		     "or unicode, not %s", Py_TYPE(format_spec)->tp_name);
-	goto done;
-    }
-    tmp = STRINGLIB_TOSTR(format_spec);
-    if (tmp == NULL)
-        goto done;
-    format_spec = tmp;
-#endif
+    PyObject *result = NULL;
 
     /* check for the special case of zero length format spec, make
-       it equivalent to str(value) */
-    if (STRINGLIB_LEN(format_spec) == 0) {
-        result = STRINGLIB_TOSTR(value);
+       it equivalent to str(obj) */
+    if (format_spec_len == 0) {
+        result = STRINGLIB_TOSTR(obj);
         goto done;
     }
 
-
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, &format, 's'))
+    if (!parse_internal_render_format_spec(format_spec, format_spec_len,
+					   &format, 's'))
         goto done;
 
     /* type conversion? */
     switch (format.type) {
     case 's':
         /* no type conversion needed, already a string.  do the formatting */
-        result = format_string_internal(value, &format);
+        result = format_string_internal(obj, &format);
         break;
     default:
         /* unknown */
@@ -826,35 +802,31 @@ FORMAT_STRING(PyObject* value, PyObject* args)
     }
 
 done:
-#if PY_VERSION_HEX < 0x03000000
-    Py_XDECREF(tmp);
-#endif
     return result;
 }
-#endif /* FORMAT_STRING */
 
 #if defined FORMAT_LONG || defined FORMAT_INT
 static PyObject*
-format_int_or_long(PyObject* value, PyObject* args, IntOrLongToString tostring)
+format_int_or_long(PyObject* obj,
+		   STRINGLIB_CHAR *format_spec,
+		   Py_ssize_t format_spec_len,
+		   IntOrLongToString tostring)
 {
-    PyObject *format_spec;
     PyObject *result = NULL;
     PyObject *tmp = NULL;
     InternalFormatSpec format;
 
-    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__",
-			  &format_spec))
-        goto done;
-
     /* check for the special case of zero length format spec, make
-       it equivalent to str(value) */
-    if (STRINGLIB_LEN(format_spec) == 0) {
-        result = STRINGLIB_TOSTR(value);
+       it equivalent to str(obj) */
+    if (format_spec_len == 0) {
+        result = STRINGLIB_TOSTR(obj);
         goto done;
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, &format, 'd'))
+    if (!parse_internal_render_format_spec(format_spec,
+					   format_spec_len,
+					   &format, 'd'))
         goto done;
 
     /* type conversion? */
@@ -868,7 +840,7 @@ format_int_or_long(PyObject* value, PyObject* args, IntOrLongToString tostring)
     case 'n':
         /* no type conversion needed, already an int (or long).  do
 	   the formatting */
-	    result = format_int_or_long_internal(value, &format, tostring);
+	    result = format_int_or_long_internal(obj, &format, tostring);
         break;
 
     case 'e':
@@ -879,10 +851,10 @@ format_int_or_long(PyObject* value, PyObject* args, IntOrLongToString tostring)
     case 'G':
     case '%':
         /* convert to float */
-        tmp = PyNumber_Float(value);
+        tmp = PyNumber_Float(obj);
         if (tmp == NULL)
             goto done;
-        result = format_float_internal(value, &format);
+        result = format_float_internal(obj, &format);
         break;
 
     default:
@@ -917,9 +889,12 @@ long_format(PyObject* value, int base)
 #endif
 
 PyObject *
-FORMAT_LONG(PyObject* value, PyObject* args)
+FORMAT_LONG(PyObject *obj,
+	    STRINGLIB_CHAR *format_spec,
+	    Py_ssize_t format_spec_len)
 {
-    return format_int_or_long(value, args, long_format);
+    return format_int_or_long(obj, format_spec, format_spec_len,
+			      long_format);
 }
 #endif /* FORMAT_LONG */
 
@@ -935,32 +910,35 @@ int_format(PyObject* value, int base)
 }
 
 PyObject *
-FORMAT_INT(PyObject* value, PyObject* args)
+FORMAT_INT(PyObject *obj,
+	   STRINGLIB_CHAR *format_spec,
+	   Py_ssize_t format_spec_len)
 {
-    return format_int_or_long(value, args, int_format);
+    return format_int_or_long(obj, format_spec, format_spec_len,
+			      int_format);
 }
 #endif /* FORMAT_INT */
 
 #ifdef FORMAT_FLOAT
 PyObject *
-FORMAT_FLOAT(PyObject *value, PyObject *args)
+FORMAT_FLOAT(PyObject *obj,
+	     STRINGLIB_CHAR *format_spec,
+	     Py_ssize_t format_spec_len)
 {
-    PyObject *format_spec;
     PyObject *result = NULL;
     InternalFormatSpec format;
 
-    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__", &format_spec))
-        goto done;
-
     /* check for the special case of zero length format spec, make
-       it equivalent to str(value) */
-    if (STRINGLIB_LEN(format_spec) == 0) {
-        result = STRINGLIB_TOSTR(value);
+       it equivalent to str(obj) */
+    if (format_spec_len == 0) {
+        result = STRINGLIB_TOSTR(obj);
         goto done;
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, &format, '\0'))
+    if (!parse_internal_render_format_spec(format_spec,
+					   format_spec_len,
+					   &format, '\0'))
         goto done;
 
     /* type conversion? */
@@ -979,7 +957,7 @@ FORMAT_FLOAT(PyObject *value, PyObject *args)
     case 'n':
     case '%':
         /* no conversion, already a float.  do the formatting */
-        result = format_float_internal(value, &format);
+        result = format_float_internal(obj, &format);
         break;
 
     default:

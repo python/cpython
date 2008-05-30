@@ -46,8 +46,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "unicodeobject.h"
 #include "ucnhash.h"
 
-#include "formatter_unicode.h"
-
 #ifdef MS_WINDOWS
 #include <windows.h>
 #endif
@@ -8202,6 +8200,19 @@ PyDoc_STRVAR(format__doc__,
 \n\
 ");
 
+static PyObject *
+unicode__format__(PyObject* self, PyObject* args)
+{
+    PyObject *format_spec;
+
+    if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
+        return NULL;
+
+    return _PyUnicode_FormatAdvanced(self,
+                                     PyUnicode_AS_UNICODE(format_spec),
+                                     PyUnicode_GET_SIZE(format_spec));
+}
+
 PyDoc_STRVAR(p_format__doc__,
 "S.__format__(format_spec) -> str\n\
 \n\
@@ -8259,7 +8270,7 @@ static PyMethodDef unicode_methods[] = {
     {"isidentifier", (PyCFunction) unicode_isidentifier, METH_NOARGS, isidentifier__doc__},
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
     {"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
-    {"__format__", (PyCFunction) unicode_unicode__format__, METH_VARARGS, p_format__doc__},
+    {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
     {"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
     {"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
     {"maketrans", (PyCFunction) unicode_maketrans,

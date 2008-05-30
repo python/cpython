@@ -7,8 +7,6 @@
 #include "Python.h"
 #include "structseq.h"
 
-#include "formatter_unicode.h"
-
 #include <ctype.h>
 #include <float.h>
 
@@ -1303,10 +1301,13 @@ float_getzero(PyObject *v, void *closure)
 static PyObject *
 float__format__(PyObject *self, PyObject *args)
 {
-    /* when back porting this to 2.6, check type of the format_spec
-       and call either unicode_long__format__ or
-       string_long__format__ */
-    return unicode_float__format__(self, args);
+	PyObject *format_spec;
+
+	if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
+		return NULL;
+	return _PyFloat_FormatAdvanced(self,
+				       PyUnicode_AS_UNICODE(format_spec),
+				       PyUnicode_GET_SIZE(format_spec));
 }
 
 PyDoc_STRVAR(float__format__doc,
