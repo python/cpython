@@ -6,7 +6,6 @@
 
 #include "Python.h"
 #include "longintrepr.h"
-#include "formatter_string.h"
 
 #include <ctype.h>
 
@@ -3415,26 +3414,22 @@ long__format__(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
 		return NULL;
 	if (PyBytes_Check(format_spec))
-		return string_long__format__(self, args);
+		return _PyLong_FormatAdvanced(self,
+					      PyBytes_AS_STRING(format_spec),
+					      PyBytes_GET_SIZE(format_spec));
 	if (PyUnicode_Check(format_spec)) {
 		/* Convert format_spec to a str */
-		PyObject *result = NULL;
-		PyObject *newargs = NULL;
-		PyObject *string_format_spec = NULL;
+		PyObject *result;
+		PyObject *str_spec = PyObject_Str(format_spec);
 
-		string_format_spec = PyObject_Str(format_spec);
-		if (string_format_spec == NULL)
-			goto done;
+		if (str_spec == NULL)
+			return NULL;
 
-		newargs = Py_BuildValue("(O)", string_format_spec);
-		if (newargs == NULL)
-			goto done;
+		result = _PyLong_FormatAdvanced(self,
+						PyBytes_AS_STRING(str_spec),
+						PyBytes_GET_SIZE(str_spec));
 
-		result = string_long__format__(self, newargs);
-
-		done:
-		Py_XDECREF(string_format_spec);
-		Py_XDECREF(newargs);
+		Py_DECREF(str_spec);
 		return result;
 	}
 	PyErr_SetString(PyExc_TypeError, "__format__ requires str or unicode");

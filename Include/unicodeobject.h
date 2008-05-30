@@ -553,6 +553,12 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromObject(
 PyAPI_FUNC(PyObject *) PyUnicode_FromFormatV(const char*, va_list);
 PyAPI_FUNC(PyObject *) PyUnicode_FromFormat(const char*, ...);
 
+/* Format the object based on the format_spec, as defined in PEP 3101
+   (Advanced String Formatting). */
+PyAPI_FUNC(PyObject *) _PyUnicode_FormatAdvanced(PyObject *obj,
+						 Py_UNICODE *format_spec,
+						 Py_ssize_t format_spec_len);
+
 /* --- wchar_t support for platforms which support it --------------------- */
 
 #ifdef HAVE_WCHAR_H

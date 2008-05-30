@@ -188,6 +188,12 @@ PyAPI_FUNC(int) _PyBytes_InsertThousandsGrouping(char *buffer,
 						  Py_ssize_t *count,
 						  int append_zero_char);
 
+/* Format the object based on the format_spec, as defined in PEP 3101
+   (Advanced String Formatting). */
+PyAPI_FUNC(PyObject *) _PyBytes_FormatAdvanced(PyObject *obj,
+					       char *format_spec,
+					       Py_ssize_t format_spec_len);
+
 #ifdef __cplusplus
 }
 #endif

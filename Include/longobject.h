@@ -119,6 +119,12 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
    a leading "0", instead of the prefix "0o" */
 PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *aa, int base, int addL, int newstyle);
 
+/* Format the object based on the format_spec, as defined in PEP 3101
+   (Advanced String Formatting). */
+PyAPI_FUNC(PyObject *) _PyLong_FormatAdvanced(PyObject *obj,
+					      char *format_spec,
+					      Py_ssize_t format_spec_len);
+
 #ifdef __cplusplus
 }
 #endif
