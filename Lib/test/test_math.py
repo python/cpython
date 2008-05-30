@@ -740,7 +740,7 @@ class MathTests(unittest.TestCase):
              OverflowError),
             ([2.**1023, 2.**1023, -1e307], OverflowError),
             ([1e16, 1., 1e-16], 10000000000000002.0),
-            ([1e16-2., 1.-2.**53, -(1e16-2.), -(1.-2.**53)], 0.0),
+            ([1e16-2., 1.-2.**-53, -(1e16-2.), -(1.-2.**-53)], 0.0),
         ]
 
         for i, (vals, s) in enumerate(test_values):
