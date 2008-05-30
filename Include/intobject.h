@@ -68,6 +68,12 @@ PyAPI_FUNC(void) PyInt_CompactFreeList(size_t *, size_t *, size_t *);
    a leading "0" */
 PyAPI_FUNC(PyObject*) _PyInt_Format(PyIntObject* v, int base, int newstyle);
 
+/* Format the object based on the format_spec, as defined in PEP 3101
+   (Advanced String Formatting). */
+PyAPI_FUNC(PyObject *) _PyInt_FormatAdvanced(PyObject *obj,
+					     char *format_spec,
+					     Py_ssize_t format_spec_len);
+
 #ifdef __cplusplus
 }
 #endif

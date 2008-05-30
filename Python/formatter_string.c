@@ -4,12 +4,11 @@
    of int.__float__, etc., that take and return string objects */
 
 #include "Python.h"
-#include "formatter_string.h"
-
 #include "../Objects/stringlib/stringdefs.h"
 
-#define FORMAT_STRING string__format__
-#define FORMAT_LONG   string_long__format__
-#define FORMAT_INT    string_int__format__
-#define FORMAT_FLOAT  string_float__format__
+#define FORMAT_STRING _PyBytes_FormatAdvanced
+#define FORMAT_LONG   _PyLong_FormatAdvanced
+#define FORMAT_INT    _PyInt_FormatAdvanced
+#define FORMAT_FLOAT  _PyFloat_FormatAdvanced
+
 #include "../Objects/stringlib/formatter.h"
