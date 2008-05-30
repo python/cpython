@@ -322,10 +322,16 @@ FUNC1(tanh, tanh, 0,
    sum([1e+308, 1e+308, 1e-308]) raises an OverflowError due to the
    overflow of the first partial sum.
 
-   Note 3: Aggressively optimizing compilers can potentially eliminate the
-   residual values needed for accurate summation. For instance, the statements
-   "hi = x + y; lo = y - (hi - x);" could be mis-transformed to
-   "hi = x + y; lo = 0.0;" which defeats the computation of residuals.
+   Note 3: The itermediate values lo, yr, and hi are declared volatile so
+   aggressive compilers won't algebraicly reduce lo to always be exactly 0.0.
+   Also, the volatile declaration forces the values to be stored in memory as
+   regular doubles instead of extended long precision (80-bit) values.  This
+   prevents double rounding because any addition or substraction of two doubles
+   can be resolved exactly into double-sized hi and lo values.  As long as the 
+   hi value gets forced into a double before yr and lo are computed, the extra
+   bits in downstream extended precision operations (x87 for example) will be
+   exactly zero and therefore can be losslessly stored back into a double,
+   thereby preventing double rounding.
 
    Note 4: A similar implementation is in Modules/cmathmodule.c.
    Be sure to update both when making changes.
@@ -402,7 +408,8 @@ math_sum(PyObject *self, PyObject *seq)
 {
 	PyObject *item, *iter, *sum = NULL;
 	Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
-	double x, y, hi, lo=0.0, ps[NUM_PARTIALS], *p = ps;
+	double x, y, t, ps[NUM_PARTIALS], *p = ps;
+	volatile double hi, yr, lo;
 
 	iter = PyObject_GetIter(seq);
 	if (iter == NULL)
@@ -428,10 +435,12 @@ math_sum(PyObject *self, PyObject *seq)
 
 		for (i = j = 0; j < n; j++) {       /* for y in partials */
 			y = p[j];
+			if (fabs(x) < fabs(y)) {
+					t = x; x = y; y = t;
+			}
 			hi = x + y;
-			lo = fabs(x) < fabs(y)
-			   ? x - (hi - y)
-			   : y - (hi - x);
+			yr = hi - x;
+			lo = y - yr;
 			if (lo != 0.0)
 				p[i++] = lo;
 			x = hi;
@@ -451,38 +460,41 @@ math_sum(PyObject *self, PyObject *seq)
 		}
 	}
 
+	hi = 0.0;
 	if (n > 0) {
 		hi = p[--n];
 		if (Py_IS_FINITE(hi)) {
 			/* sum_exact(ps, hi) from the top, stop when the sum becomes inexact. */
 			while (n > 0) {
-				x = p[--n];
-				y = hi;
+				x = hi;
+				y = p[--n];
+				assert(fabs(y) < fabs(x));
 				hi = x + y;
-				assert(fabs(x) < fabs(y));
-				lo = x - (hi - y);
+				yr = hi - x;
+				lo = y - yr;
 				if (lo != 0.0)
 					break;
 			}
-			/* Little dance to allow half-even rounding across multiple partials.
-                           Needed so that sum([1e-16, 1, 1e16]) will round-up to two instead
-                           of down to zero (the 1e-16 makes the 1 slightly closer to two). */
+			/* Make half-even rounding work across multiple partials.  Needed 
+			   so that sum([1e-16, 1, 1e16]) will round-up the last digit to 
+			   two instead of down to zero (the 1e-16 makes the 1 slightly 
+			   closer to two).  With a potential 1 ULP rounding error fixed-up,
+			   math.sum() can guarantee commutativity. */
 			if (n > 0 && ((lo < 0.0 && p[n-1] < 0.0) ||
 			              (lo > 0.0 && p[n-1] > 0.0))) {
 				y = lo * 2.0;
 				x = hi + y;
-				if (y == (x - hi))
+				yr = x - hi;
+				if (y == yr)
 					hi = x;
 			}
 		}
-		else {  /* raise corresponding error */
+		else {  /* raise exception corresponding to a special value */
 			errno = Py_IS_NAN(hi) ? EDOM : ERANGE;
 			if (is_error(hi))
 				goto _sum_error;
 		}
 	}
-	else  /* default */
-		hi = 0.0;
 	sum = PyFloat_FromDouble(hi);
 
 _sum_error:
