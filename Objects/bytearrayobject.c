@@ -1459,10 +1459,7 @@ done:
 Py_LOCAL(PyByteArrayObject *)
 return_self(PyByteArrayObject *self)
 {
-    if (PyByteArray_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyByteArrayObject *)self;
-    }
+    /* always return a new bytearray */
     return (PyByteArrayObject *)PyByteArray_FromStringAndSize(
             PyByteArray_AS_STRING(self),
             PyByteArray_GET_SIZE(self));
