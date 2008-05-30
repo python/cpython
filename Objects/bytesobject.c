@@ -1208,7 +1208,7 @@ string_split(PyBytesObject *self, PyObject *args)
 PyDoc_STRVAR(partition__doc__,
 "B.partition(sep) -> (head, sep, tail)\n\
 \n\
-Searches for the separator sep in B, and returns the part before it,\n\
+Search for the separator sep in B, and return the part before it,\n\
 the separator itself, and the part after it.  If the separator is not\n\
 found, returns B and two empty bytes objects.");
 
@@ -1235,8 +1235,8 @@ string_partition(PyBytesObject *self, PyObject *sep_obj)
 PyDoc_STRVAR(rpartition__doc__,
 "B.rpartition(sep) -> (tail, sep, head)\n\
 \n\
-Searches for the separator sep in B, starting at the end of B,\n\
-and returns the part before it, the separator itself, and the\n\
+Search for the separator sep in B, starting at the end of B,\n\
+and return the part before it, the separator itself, and the\n\
 part after it.  If the separator is not found, returns two empty\n\
 bytes objects and B.");
 
@@ -1423,7 +1423,7 @@ onError:
 PyDoc_STRVAR(join__doc__,
 "B.join(iterable_of_bytes) -> bytes\n\
 \n\
-Concatenates any number of bytes objects, with B in between each pair.\n\
+Concatenate any number of bytes objects, with B in between each pair.\n\
 Example: b'.'.join([b'ab', b'pq', b'rs']) -> b'ab.pq.rs'.");
 
 static PyObject *
@@ -1583,7 +1583,7 @@ string_find_internal(PyBytesObject *self, PyObject *args, int dir)
 
 
 PyDoc_STRVAR(find__doc__,
-"B.find(sub [,start [,end]]) -> int\n\
+"B.find(sub[, start[, end]]) -> int\n\
 \n\
 Return the lowest index in S where substring sub is found,\n\
 such that sub is contained within s[start:end].  Optional\n\
@@ -1602,7 +1602,7 @@ string_find(PyBytesObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(index__doc__,
-"B.index(sub [,start [,end]]) -> int\n\
+"B.index(sub[, start[, end]]) -> int\n\
 \n\
 Like B.find() but raise ValueError when the substring is not found.");
 
@@ -1622,7 +1622,7 @@ string_index(PyBytesObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(rfind__doc__,
-"B.rfind(sub [,start [,end]]) -> int\n\
+"B.rfind(sub[, start[, end]]) -> int\n\
 \n\
 Return the highest index in B where substring sub is found,\n\
 such that sub is contained within s[start:end].  Optional\n\
@@ -1641,7 +1641,7 @@ string_rfind(PyBytesObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(rindex__doc__,
-"B.rindex(sub [,start [,end]]) -> int\n\
+"B.rindex(sub[, start[, end]]) -> int\n\
 \n\
 Like B.rfind() but raise ValueError when the substring is not found.");
 
@@ -1792,7 +1792,7 @@ string_rstrip(PyBytesObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(count__doc__,
-"B.count(sub [,start [,end]]) -> int\n\
+"B.count(sub[, start[, end]]) -> int\n\
 \n\
 Return the number of non-overlapping occurrences of substring sub in\n\
 string S[start:end].  Optional arguments start and end are interpreted\n\
@@ -2494,7 +2494,7 @@ replace(PyBytesObject *self,
 	}
 
 	if (to_len == 0) {
-		/* delete all occurances of 'from' string */
+		/* delete all occurrences of 'from' string */
 		if (from_len == 1) {
 			return replace_delete_single_character(
 				self, from_s[0], maxcount);
@@ -2612,7 +2612,7 @@ _string_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
 
 
 PyDoc_STRVAR(startswith__doc__,
-"B.startswith(prefix [,start [,end]]) -> bool\n\
+"B.startswith(prefix[, start[, end]]) -> bool\n\
 \n\
 Return True if B starts with the specified prefix, False otherwise.\n\
 With optional start, test B beginning at that position.\n\
@@ -2653,7 +2653,7 @@ string_startswith(PyBytesObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(endswith__doc__,
-"B.endswith(suffix [,start [,end]]) -> bool\n\
+"B.endswith(suffix[, start[, end]]) -> bool\n\
 \n\
 Return True if B ends with the specified suffix, False otherwise.\n\
 With optional start, test B beginning at that position.\n\
@@ -2694,9 +2694,9 @@ string_endswith(PyBytesObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(decode__doc__,
-"B.decode([encoding[, errors]]) -> object\n\
+"B.decode([encoding[, errors]]) -> str\n\
 \n\
-Decodes S using the codec registered for encoding. encoding defaults\n\
+Decode S using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme.  Default is 'strict' meaning that encoding errors raise\n\
 a UnicodeDecodeError.  Other possible values are 'ignore' and 'replace'\n\
@@ -3027,10 +3027,10 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(string_doc,
-"bytes(iterable_of_ints) -> bytes.\n\
+"bytes(iterable_of_ints) -> bytes\n\
 bytes(string, encoding[, errors]) -> bytes\n\
-bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer.\n\
-bytes(memory_view) -> bytes.\n\
+bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer\n\
+bytes(memory_view) -> bytes\n\
 \n\
 Construct an immutable array of bytes from:\n\
   - an iterable yielding integers in range(256)\n\

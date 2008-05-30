@@ -6167,7 +6167,7 @@ nothing:
 /* --- Unicode Object Methods --------------------------------------------- */
 
 PyDoc_STRVAR(title__doc__,
-"S.title() -> unicode\n\
+"S.title() -> str\n\
 \n\
 Return a titlecased version of S, i.e. words start with title case\n\
 characters, all remaining cased characters have lower case.");
@@ -6179,7 +6179,7 @@ unicode_title(PyUnicodeObject *self)
 }
 
 PyDoc_STRVAR(capitalize__doc__,
-"S.capitalize() -> unicode\n\
+"S.capitalize() -> str\n\
 \n\
 Return a capitalized version of S, i.e. make the first character\n\
 have upper case.");
@@ -6192,7 +6192,7 @@ unicode_capitalize(PyUnicodeObject *self)
 
 #if 0
 PyDoc_STRVAR(capwords__doc__,
-"S.capwords() -> unicode\n\
+"S.capwords() -> str\n\
 \n\
 Apply .capitalize() to all words in S and return the result with\n\
 normalized whitespace (all whitespace strings are replaced by ' ').");
@@ -6256,7 +6256,7 @@ convert_uc(PyObject *obj, void *addr)
 }
 
 PyDoc_STRVAR(center__doc__,
-"S.center(width[, fillchar]) -> unicode\n\
+"S.center(width[, fillchar]) -> str\n\
 \n\
 Return S centered in a Unicode string of length width. Padding is\n\
 done using the specified fill character (default is a space)");
@@ -6601,9 +6601,9 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(encode__doc__,
-"S.encode([encoding[,errors]]) -> string or unicode\n\
+"S.encode([encoding[, errors]]) -> bytes\n\
 \n\
-Encodes S using the codec registered for encoding. encoding defaults\n\
+Encode S using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme. Default is 'strict' meaning that encoding errors raise\n\
 a UnicodeEncodeError. Other possible values are 'ignore', 'replace' and\n\
@@ -6637,7 +6637,7 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(expandtabs__doc__,
-"S.expandtabs([tabsize]) -> unicode\n\
+"S.expandtabs([tabsize]) -> str\n\
 \n\
 Return a copy of S where all tab characters are expanded using spaces.\n\
 If tabsize is not given, a tab size of 8 characters is assumed.");
@@ -6724,7 +6724,7 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(find__doc__,
-"S.find(sub [,start [,end]]) -> int\n\
+"S.find(sub[, start[, end]]) -> int\n\
 \n\
 Return the lowest index in S where substring sub is found,\n\
 such that sub is contained within s[start:end].  Optional\n\
@@ -6789,7 +6789,7 @@ unicode_hash(PyUnicodeObject *self)
 }
 
 PyDoc_STRVAR(index__doc__,
-"S.index(sub [,start [,end]]) -> int\n\
+"S.index(sub[, start[, end]]) -> int\n\
 \n\
 Like S.find() but raise ValueError when the substring is not found.");
 
@@ -7152,7 +7152,7 @@ unicode_isidentifier(PyObject *self)
 }
 
 PyDoc_STRVAR(join__doc__,
-"S.join(sequence) -> unicode\n\
+"S.join(sequence) -> str\n\
 \n\
 Return a string which is the concatenation of the strings in the\n\
 sequence.  The separator between elements is S.");
@@ -7170,7 +7170,7 @@ unicode_length(PyUnicodeObject *self)
 }
 
 PyDoc_STRVAR(ljust__doc__,
-"S.ljust(width[, fillchar]) -> int\n\
+"S.ljust(width[, fillchar]) -> str\n\
 \n\
 Return S left justified in a Unicode string of length width. Padding is\n\
 done using the specified fill character (default is a space).");
@@ -7193,7 +7193,7 @@ unicode_ljust(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(lower__doc__,
-"S.lower() -> unicode\n\
+"S.lower() -> str\n\
 \n\
 Return a copy of the string S converted to lowercase.");
 
@@ -7302,7 +7302,7 @@ do_argstrip(PyUnicodeObject *self, int striptype, PyObject *args)
 
 
 PyDoc_STRVAR(strip__doc__,
-"S.strip([chars]) -> unicode\n\
+"S.strip([chars]) -> str\n\
 \n\
 Return a copy of the string S with leading and trailing\n\
 whitespace removed.\n\
@@ -7320,7 +7320,7 @@ unicode_strip(PyUnicodeObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(lstrip__doc__,
-"S.lstrip([chars]) -> unicode\n\
+"S.lstrip([chars]) -> str\n\
 \n\
 Return a copy of the string S with leading whitespace removed.\n\
 If chars is given and not None, remove characters in chars instead.\n\
@@ -7337,7 +7337,7 @@ unicode_lstrip(PyUnicodeObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(rstrip__doc__,
-"S.rstrip([chars]) -> unicode\n\
+"S.rstrip([chars]) -> str\n\
 \n\
 Return a copy of the string S with trailing whitespace removed.\n\
 If chars is given and not None, remove characters in chars instead.\n\
@@ -7444,7 +7444,7 @@ PyObject *PyUnicode_Replace(PyObject *obj,
 }
 
 PyDoc_STRVAR(replace__doc__,
-"S.replace (old, new[, maxsplit]) -> unicode\n\
+"S.replace (old, new[, maxsplit]) -> str\n\
 \n\
 Return a copy of S with all occurrences of substring\n\
 old replaced by new.  If the optional argument maxsplit is\n\
@@ -7616,7 +7616,7 @@ PyObject *unicode_repr(PyObject *unicode)
 }
 
 PyDoc_STRVAR(rfind__doc__,
-"S.rfind(sub [,start [,end]]) -> int\n\
+"S.rfind(sub[, start[, end]]) -> int\n\
 \n\
 Return the highest index in S where substring sub is found,\n\
 such that sub is contained within s[start:end].  Optional\n\
@@ -7647,7 +7647,7 @@ unicode_rfind(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(rindex__doc__,
-"S.rindex(sub [,start [,end]]) -> int\n\
+"S.rindex(sub[, start[, end]]) -> int\n\
 \n\
 Like S.rfind() but raise ValueError when the substring is not found.");
 
@@ -7678,7 +7678,7 @@ unicode_rindex(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(rjust__doc__,
-"S.rjust(width[, fillchar]) -> unicode\n\
+"S.rjust(width[, fillchar]) -> str\n\
 \n\
 Return S right justified in a Unicode string of length width. Padding is\n\
 done using the specified fill character (default is a space).");
@@ -7725,7 +7725,7 @@ PyObject *PyUnicode_Split(PyObject *s,
 }
 
 PyDoc_STRVAR(split__doc__,
-"S.split([sep [,maxsplit]]) -> list of strings\n\
+"S.split([sep[, maxsplit]]) -> list of strings\n\
 \n\
 Return a list of the words in S, using sep as the\n\
 delimiter string.  If maxsplit is given, at most maxsplit\n\
@@ -7808,7 +7808,7 @@ PyUnicode_RPartition(PyObject *str_in, PyObject *sep_in)
 PyDoc_STRVAR(partition__doc__,
 "S.partition(sep) -> (head, sep, tail)\n\
 \n\
-Searches for the separator sep in S, and returns the part before it,\n\
+Search for the separator sep in S, and return the part before it,\n\
 the separator itself, and the part after it.  If the separator is not\n\
 found, returns S and two empty strings.");
 
@@ -7821,7 +7821,7 @@ unicode_partition(PyUnicodeObject *self, PyObject *separator)
 PyDoc_STRVAR(rpartition__doc__,
 "S.rpartition(sep) -> (tail, sep, head)\n\
 \n\
-Searches for the separator sep in S, starting at the end of S, and returns\n\
+Search for the separator sep in S, starting at the end of S, and return\n\
 the part before it, the separator itself, and the part after it.  If the\n\
 separator is not found, returns two empty strings and S.");
 
@@ -7856,7 +7856,7 @@ PyObject *PyUnicode_RSplit(PyObject *s,
 }
 
 PyDoc_STRVAR(rsplit__doc__,
-"S.rsplit([sep [,maxsplit]]) -> list of strings\n\
+"S.rsplit([sep[, maxsplit]]) -> list of strings\n\
 \n\
 Return a list of the words in S, using sep as the\n\
 delimiter string, starting at the end of the string and\n\
@@ -7912,7 +7912,7 @@ PyObject *unicode_str(PyObject *self)
 }
 
 PyDoc_STRVAR(swapcase__doc__,
-"S.swapcase() -> unicode\n\
+"S.swapcase() -> str\n\
 \n\
 Return a copy of S with uppercase characters converted to lowercase\n\
 and vice versa.");
@@ -8027,7 +8027,7 @@ unicode_maketrans(PyUnicodeObject *null, PyObject *args)
 }
 
 PyDoc_STRVAR(translate__doc__,
-"S.translate(table) -> unicode\n\
+"S.translate(table) -> str\n\
 \n\
 Return a copy of the string S, where all characters have been mapped\n\
 through the given translation table, which must be a mapping of\n\
@@ -8042,7 +8042,7 @@ unicode_translate(PyUnicodeObject *self, PyObject *table)
 }
 
 PyDoc_STRVAR(upper__doc__,
-"S.upper() -> unicode\n\
+"S.upper() -> str\n\
 \n\
 Return a copy of S converted to uppercase.");
 
@@ -8053,7 +8053,7 @@ unicode_upper(PyUnicodeObject *self)
 }
 
 PyDoc_STRVAR(zfill__doc__,
-"S.zfill(width) -> unicode\n\
+"S.zfill(width) -> str\n\
 \n\
 Pad a numeric string x with zeros on the left, to fill a field\n\
 of the specified width. The string x is never truncated.");
@@ -8198,12 +8198,12 @@ unicode_endswith(PyUnicodeObject *self,
 #include "stringlib/string_format.h"
 
 PyDoc_STRVAR(format__doc__,
-"S.format(*args, **kwargs) -> unicode\n\
+"S.format(*args, **kwargs) -> str\n\
 \n\
 ");
 
 PyDoc_STRVAR(p_format__doc__,
-"S.__format__(format_spec) -> unicode\n\
+"S.__format__(format_spec) -> str\n\
 \n\
 ");
 
@@ -9108,7 +9108,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(unicode_doc,
-"str(string [, encoding[, errors]]) -> object\n\
+"str(string[, encoding[, errors]]) -> str\n\
 \n\
 Create a new string object from the given encoded string.\n\
 encoding defaults to the current default string encoding.\n\
