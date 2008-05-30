@@ -1081,7 +1081,7 @@ bytes_find_internal(PyByteArrayObject *self, PyObject *args, int dir)
 }
 
 PyDoc_STRVAR(find__doc__,
-"B.find(sub [,start [,end]]) -> int\n\
+"B.find(sub[, start[, end]]) -> int\n\
 \n\
 Return the lowest index in B where subsection sub is found,\n\
 such that sub is contained within s[start,end].  Optional\n\
@@ -1099,7 +1099,7 @@ bytes_find(PyByteArrayObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(count__doc__,
-"B.count(sub [,start [,end]]) -> int\n\
+"B.count(sub[, start[, end]]) -> int\n\
 \n\
 Return the number of non-overlapping occurrences of subsection sub in\n\
 bytes B[start:end].  Optional arguments start and end are interpreted\n\
@@ -1132,7 +1132,7 @@ bytes_count(PyByteArrayObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(index__doc__,
-"B.index(sub [,start [,end]]) -> int\n\
+"B.index(sub[, start[, end]]) -> int\n\
 \n\
 Like B.find() but raise ValueError when the subsection is not found.");
 
@@ -1152,7 +1152,7 @@ bytes_index(PyByteArrayObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(rfind__doc__,
-"B.rfind(sub [,start [,end]]) -> int\n\
+"B.rfind(sub[, start[, end]]) -> int\n\
 \n\
 Return the highest index in B where subsection sub is found,\n\
 such that sub is contained within s[start,end].  Optional\n\
@@ -1171,7 +1171,7 @@ bytes_rfind(PyByteArrayObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(rindex__doc__,
-"B.rindex(sub [,start [,end]]) -> int\n\
+"B.rindex(sub[, start[, end]]) -> int\n\
 \n\
 Like B.rfind() but raise ValueError when the subsection is not found.");
 
@@ -1258,7 +1258,7 @@ done:
 
 
 PyDoc_STRVAR(startswith__doc__,
-"B.startswith(prefix [,start [,end]]) -> bool\n\
+"B.startswith(prefix[, start[, end]]) -> bool\n\
 \n\
 Return True if B starts with the specified prefix, False otherwise.\n\
 With optional start, test B beginning at that position.\n\
@@ -1298,7 +1298,7 @@ bytes_startswith(PyByteArrayObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(endswith__doc__,
-"B.endswith(suffix [,start [,end]]) -> bool\n\
+"B.endswith(suffix[, start[, end]]) -> bool\n\
 \n\
 Return True if B ends with the specified suffix, False otherwise.\n\
 With optional start, test B beginning at that position.\n\
@@ -2001,7 +2001,7 @@ replace(PyByteArrayObject *self,
     }
 
     if (to_len == 0) {
-        /* delete all occurances of 'from' bytes */
+        /* delete all occurrences of 'from' bytes */
         if (from_len == 1) {
             return replace_delete_single_character(
                     self, from_s[0], maxcount);
@@ -2037,7 +2037,7 @@ replace(PyByteArrayObject *self,
 
 
 PyDoc_STRVAR(replace__doc__,
-"B.replace(old, new[, count]) -> bytes\n\
+"B.replace(old, new[, count]) -> bytearray\n\
 \n\
 Return a copy of B with all occurrences of subsection\n\
 old replaced by new.  If the optional argument count is\n\
@@ -2187,7 +2187,7 @@ split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
 }
 
 PyDoc_STRVAR(split__doc__,
-"B.split([sep[, maxsplit]]) -> list of bytearray\n\
+"B.split([sep[, maxsplit]]) -> list of bytearrays\n\
 \n\
 Return a list of the sections in B, using sep as the delimiter.\n\
 If sep is not given, B is split on ASCII whitespace characters\n\
@@ -2294,7 +2294,7 @@ make_nullbytes_unique(PyObject *result)
 PyDoc_STRVAR(partition__doc__,
 "B.partition(sep) -> (head, sep, tail)\n\
 \n\
-Searches for the separator sep in B, and returns the part before it,\n\
+Search for the separator sep in B, and return the part before it,\n\
 the separator itself, and the part after it.  If the separator is not\n\
 found, returns B and two empty bytearray objects.");
 
@@ -2321,8 +2321,8 @@ bytes_partition(PyByteArrayObject *self, PyObject *sep_obj)
 PyDoc_STRVAR(rpartition__doc__,
 "B.rpartition(sep) -> (tail, sep, head)\n\
 \n\
-Searches for the separator sep in B, starting at the end of B,\n\
-and returns the part before it, the separator itself, and the\n\
+Search for the separator sep in B, starting at the end of B,\n\
+and return the part before it, the separator itself, and the\n\
 part after it.  If the separator is not found, returns two empty\n\
 bytearray objects and B.");
 
@@ -2421,7 +2421,7 @@ rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
 }
 
 PyDoc_STRVAR(rsplit__doc__,
-"B.rsplit(sep[, maxsplit]) -> list of bytearray\n\
+"B.rsplit(sep[, maxsplit]) -> list of bytearrays\n\
 \n\
 Return a list of the sections in B, using sep as the delimiter,\n\
 starting at the end of B and working to the front.\n\
@@ -2578,7 +2578,7 @@ bytes_append(PyByteArrayObject *self, PyObject *arg)
 }
 
 PyDoc_STRVAR(extend__doc__,
-"B.extend(iterable int) -> None\n\
+"B.extend(iterable_of_ints) -> None\n\
 \n\
 Append all the elements from the iterator or sequence to the\n\
 end of B.");
@@ -2684,7 +2684,7 @@ bytes_pop(PyByteArrayObject *self, PyObject *args)
 PyDoc_STRVAR(remove__doc__,
 "B.remove(int) -> None\n\
 \n\
-Remove the first occurance of a value in B.");
+Remove the first occurrence of a value in B.");
 static PyObject *
 bytes_remove(PyByteArrayObject *self, PyObject *arg)
 {
@@ -2735,7 +2735,8 @@ rstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
 PyDoc_STRVAR(strip__doc__,
 "B.strip([bytes]) -> bytearray\n\
 \n\
-Strip leading and trailing bytes contained in the argument.\n\
+Strip leading and trailing bytes contained in the argument\n\
+and return the result as a new bytearray.\n\
 If the argument is omitted, strip ASCII whitespace.");
 static PyObject *
 bytes_strip(PyByteArrayObject *self, PyObject *args)
@@ -2771,7 +2772,8 @@ bytes_strip(PyByteArrayObject *self, PyObject *args)
 PyDoc_STRVAR(lstrip__doc__,
 "B.lstrip([bytes]) -> bytearray\n\
 \n\
-Strip leading bytes contained in the argument.\n\
+Strip leading bytes contained in the argument\n\
+and return the result as a new bytearray.\n\
 If the argument is omitted, strip leading ASCII whitespace.");
 static PyObject *
 bytes_lstrip(PyByteArrayObject *self, PyObject *args)
@@ -2804,7 +2806,8 @@ bytes_lstrip(PyByteArrayObject *self, PyObject *args)
 PyDoc_STRVAR(rstrip__doc__,
 "B.rstrip([bytes]) -> bytearray\n\
 \n\
-Strip trailing bytes contained in the argument.\n\
+Strip trailing bytes contained in the argument\n\
+and return the result as a new bytearray.\n\
 If the argument is omitted, strip trailing ASCII whitespace.");
 static PyObject *
 bytes_rstrip(PyByteArrayObject *self, PyObject *args)
@@ -2835,9 +2838,9 @@ bytes_rstrip(PyByteArrayObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(decode_doc,
-"B.decode([encoding[, errors]]) -> unicode object.\n\
+"B.decode([encoding[, errors]]) -> str\n\
 \n\
-Decodes B using the codec registered for encoding. encoding defaults\n\
+Decode B using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme.  Default is 'strict' meaning that encoding errors raise\n\
 a UnicodeDecodeError.  Other possible values are 'ignore' and 'replace'\n\
@@ -2860,7 +2863,7 @@ bytes_decode(PyObject *self, PyObject *args)
 PyDoc_STRVAR(alloc_doc,
 "B.__alloc__() -> int\n\
 \n\
-Returns the number of bytes actually allocated.");
+Return the number of bytes actually allocated.");
 
 static PyObject *
 bytes_alloc(PyByteArrayObject *self)
@@ -2869,9 +2872,10 @@ bytes_alloc(PyByteArrayObject *self)
 }
 
 PyDoc_STRVAR(join_doc,
-"B.join(iterable_of_bytes) -> bytes\n\
+"B.join(iterable_of_bytes) -> bytearray\n\
 \n\
-Concatenates any number of bytearray objects, with B in between each pair.");
+Concatenate any number of bytes/bytearray objects, with B\n\
+in between each pair, and return the result as a new bytearray.");
 
 static PyObject *
 bytes_join(PyByteArrayObject *self, PyObject *it)
@@ -2944,7 +2948,7 @@ bytes_join(PyByteArrayObject *self, PyObject *it)
 }
 
 PyDoc_STRVAR(fromhex_doc,
-"bytearray.fromhex(string) -> bytearray\n\
+"bytearray.fromhex(string) -> bytearray (static method)\n\
 \n\
 Create a bytearray object from a string of hexadecimal numbers.\n\
 Spaces between two numbers are accepted.\n\
@@ -3121,10 +3125,10 @@ bytes_methods[] = {
 };
 
 PyDoc_STRVAR(bytes_doc,
-"bytearray(iterable_of_ints) -> bytearray.\n\
-bytearray(string, encoding[, errors]) -> bytearray.\n\
-bytearray(bytes_or_bytearray) -> mutable copy of bytes_or_bytearray.\n\
-bytearray(memory_view) -> bytearray.\n\
+"bytearray(iterable_of_ints) -> bytearray\n\
+bytearray(string, encoding[, errors]) -> bytearray\n\
+bytearray(bytes_or_bytearray) -> mutable copy of bytes_or_bytearray\n\
+bytearray(memory_view) -> bytearray\n\
 \n\
 Construct an mutable bytearray object from:\n\
   - an iterable yielding integers in range(256)\n\
@@ -3132,7 +3136,7 @@ Construct an mutable bytearray object from:\n\
   - a bytes or a bytearray object\n\
   - any object implementing the buffer API.\n\
 \n\
-bytearray(int) -> bytearray.\n\
+bytearray(int) -> bytearray\n\
 \n\
 Construct a zero-initialized bytearray of the given length.");
 
