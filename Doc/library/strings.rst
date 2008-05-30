@@ -21,7 +21,6 @@ string functions based on regular expressions.
    re.rst
    struct.rst
    difflib.rst
-   stringio.rst
    textwrap.rst
    codecs.rst
    unicodedata.rst
