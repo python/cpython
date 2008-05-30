@@ -2305,14 +2305,14 @@ builtin_sum(PyObject *self, PyObject *args)
     				return PyFloat_FromDouble(f_result);
 			}
         		if (PyFloat_CheckExact(item)) {
-				PyFPE_START_PROTECT("add", return 0)
+				PyFPE_START_PROTECT("add", Py_DECREF(item); Py_DECREF(iter); return 0)
 				f_result += PyFloat_AS_DOUBLE(item);
 				PyFPE_END_PROTECT(f_result)
 				Py_DECREF(item);
 				continue;
 			}
         		if (PyInt_CheckExact(item)) {
-				PyFPE_START_PROTECT("add", return 0)
+				PyFPE_START_PROTECT("add", Py_DECREF(item); Py_DECREF(iter); return 0)
 				f_result += (double)PyInt_AS_LONG(item);
 				PyFPE_END_PROTECT(f_result)
 				Py_DECREF(item);
