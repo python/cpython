@@ -167,7 +167,7 @@ def heapreplace(heap, item):
 
 def heappushpop(heap, item):
     """Fast version of a heappush followed by a heappop."""
-    if heap and item > heap[0]:
+    if heap and heap[0] < item:
         item, heap[0] = heap[0], item
         _siftup(heap, 0)
     return item
@@ -240,10 +240,11 @@ def _siftdown(heap, startpos, pos):
     while pos > startpos:
         parentpos = (pos - 1) >> 1
         parent = heap[parentpos]
-        if parent <= newitem:
-            break
-        heap[pos] = parent
-        pos = parentpos
+        if newitem < parent:
+            heap[pos] = parent
+            pos = parentpos
+            continue
+        break
     heap[pos] = newitem
 
 # The child indices of heap index pos are already heaps, and we want to make
@@ -294,7 +295,7 @@ def _siftup(heap, pos):
     while childpos < endpos:
         # Set childpos to index of smaller child.
         rightpos = childpos + 1
-        if rightpos < endpos and heap[rightpos] <= heap[childpos]:
+        if rightpos < endpos and not heap[childpos] < heap[rightpos]:
             childpos = rightpos
         # Move the smaller child up.
         heap[pos] = heap[childpos]
