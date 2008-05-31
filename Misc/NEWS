@@ -36,6 +36,9 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- The heapq module does comparisons using LT instead of LE.  This
+  makes its implementation match that used by list.sort().
+
 - Issue #2819: add full-precision summation function to math module,
   based on Hettinger's ASPN Python Cookbook recipe.
 

@@ -28,12 +28,12 @@ _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 	while (pos > startpos){
 		parentpos = (pos - 1) >> 1;
 		parent = PyList_GET_ITEM(heap, parentpos);
-		cmp = PyObject_RichCompareBool(parent, newitem, Py_LE);
+		cmp = PyObject_RichCompareBool(newitem, parent, Py_LT);
 		if (cmp == -1) {
 			Py_DECREF(newitem);
 			return -1;
 		}
-		if (cmp == 1)
+		if (cmp == 0)
 			break;
 		Py_INCREF(parent);
 		Py_DECREF(PyList_GET_ITEM(heap, pos));
@@ -69,14 +69,14 @@ _siftup(PyListObject *heap, Py_ssize_t pos)
 		rightpos = childpos + 1;
 		if (rightpos < endpos) {
 			cmp = PyObject_RichCompareBool(
-				PyList_GET_ITEM(heap, rightpos),
 				PyList_GET_ITEM(heap, childpos),
-				Py_LE);
+				PyList_GET_ITEM(heap, rightpos),
+				Py_LT);
 			if (cmp == -1) {
 				Py_DECREF(newitem);
 				return -1;
 			}
-			if (cmp == 1)
+			if (cmp == 0)
 				childpos = rightpos;
 		}
 		/* Move the smaller child up. */
@@ -214,10 +214,10 @@ heappushpop(PyObject *self, PyObject *args)
 		return item;
 	}
 
-	cmp = PyObject_RichCompareBool(item, PyList_GET_ITEM(heap, 0), Py_LE);
+	cmp = PyObject_RichCompareBool(PyList_GET_ITEM(heap, 0), item, Py_LT);
 	if (cmp == -1)
 		return NULL;
-	if (cmp == 1) {
+	if (cmp == 0) {
 		Py_INCREF(item);
 		return item;
 	}
@@ -270,6 +270,7 @@ nlargest(PyObject *self, PyObject *args)
 {
 	PyObject *heap=NULL, *elem, *iterable, *sol, *it, *oldelem;
 	Py_ssize_t i, n;
+	int cmp;
 
 	if (!PyArg_ParseTuple(args, "nO:nlargest", &n, &iterable))
 		return NULL;
@@ -312,7 +313,12 @@ nlargest(PyObject *self, PyObject *args)
 			else
 				goto sortit;
 		}
-		if (PyObject_RichCompareBool(elem, sol, Py_LE)) {
+		cmp = PyObject_RichCompareBool(sol, elem, Py_LT);
+		if (cmp == -1) {
+			Py_DECREF(elem);
+			goto fail;
+		}
+		if (cmp == 0) {
 			Py_DECREF(elem);
 			continue;
 		}
@@ -362,12 +368,12 @@ _siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 	while (pos > startpos){
 		parentpos = (pos - 1) >> 1;
 		parent = PyList_GET_ITEM(heap, parentpos);
-		cmp = PyObject_RichCompareBool(newitem, parent, Py_LE);
+		cmp = PyObject_RichCompareBool(parent, newitem, Py_LT);
 		if (cmp == -1) {
 			Py_DECREF(newitem);
 			return -1;
 		}
-		if (cmp == 1)
+		if (cmp == 0)
 			break;
 		Py_INCREF(parent);
 		Py_DECREF(PyList_GET_ITEM(heap, pos));
@@ -403,14 +409,14 @@ _siftupmax(PyListObject *heap, Py_ssize_t pos)
 		rightpos = childpos + 1;
 		if (rightpos < endpos) {
 			cmp = PyObject_RichCompareBool(
-				PyList_GET_ITEM(heap, childpos),
 				PyList_GET_ITEM(heap, rightpos),
-				Py_LE);
+				PyList_GET_ITEM(heap, childpos),
+				Py_LT);
 			if (cmp == -1) {
 				Py_DECREF(newitem);
 				return -1;
 			}
-			if (cmp == 1)
+			if (cmp == 0)
 				childpos = rightpos;
 		}
 		/* Move the smaller child up. */
@@ -434,6 +440,7 @@ nsmallest(PyObject *self, PyObject *args)
 {
 	PyObject *heap=NULL, *elem, *iterable, *los, *it, *oldelem;
 	Py_ssize_t i, n;
+	int cmp;
 
 	if (!PyArg_ParseTuple(args, "nO:nsmallest", &n, &iterable))
 		return NULL;
@@ -477,7 +484,12 @@ nsmallest(PyObject *self, PyObject *args)
 			else
 				goto sortit;
 		}
-		if (PyObject_RichCompareBool(los, elem, Py_LE)) {
+		cmp = PyObject_RichCompareBool(elem, los, Py_LT);
+		if (cmp == -1) {
+			Py_DECREF(elem);
+			goto fail;
+		}
+		if (cmp == 0) {
 			Py_DECREF(elem);
 			continue;
 		}
