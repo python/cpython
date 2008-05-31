@@ -181,6 +181,12 @@ The special characters are:
    ``[^5]`` will match any character except ``'5'``, and ``[^^]`` will match any
    character except ``'^'``.
 
+   Note that inside ``[]`` the special forms and special characters lose
+   their meanings and only the syntaxes described here are valid. For
+   example, ``+``, ``*``, ``(``, ``)``, and so on are treated as
+   literals inside ``[]``, and backreferences cannot be used inside
+   ``[]``.
+
 ``'|'``
    ``A|B``, where A and B can be arbitrary REs, creates a regular expression that
    will match either A or B.  An arbitrary number of REs can be separated by the
