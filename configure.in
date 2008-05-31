@@ -322,25 +322,6 @@ then
 fi
 AC_MSG_RESULT($MACHDEP)
 
-# And add extra plat-mac for darwin
-AC_SUBST(EXTRAPLATDIR)
-AC_SUBST(EXTRAMACHDEPPATH)
-AC_MSG_CHECKING(EXTRAPLATDIR)
-if test -z "$EXTRAPLATDIR"
-then
-	case $MACHDEP in
-	darwin)	
-		EXTRAPLATDIR="\$(PLATMACDIRS)"
-		EXTRAMACHDEPPATH="\$(PLATMACPATH)"
-		;;
-	*) 
-		EXTRAPLATDIR=""
-		EXTRAMACHDEPPATH=""
-		;;
-	esac
-fi
-AC_MSG_RESULT($EXTRAPLATDIR)
-
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils
 # needs to check it

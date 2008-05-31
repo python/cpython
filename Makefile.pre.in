@@ -803,16 +803,6 @@ EXTRAPLATDIR= @EXTRAPLATDIR@
 EXTRAMACHDEPPATH=@EXTRAMACHDEPPATH@
 MACHDEPS=	$(PLATDIR) $(EXTRAPLATDIR)
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
-PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
-	plat-mac/lib-scriptpackages/_builtinSuites \
-	plat-mac/lib-scriptpackages/CodeWarrior \
-	plat-mac/lib-scriptpackages/Explorer \
-	plat-mac/lib-scriptpackages/Finder \
-	plat-mac/lib-scriptpackages/Netscape \
-	plat-mac/lib-scriptpackages/StdSuites \
-	plat-mac/lib-scriptpackages/SystemEvents \
-	plat-mac/lib-scriptpackages/Terminal 
-PLATMACPATH=:plat-mac:plat-mac/lib-scriptpackages
 LIBSUBDIRS=	tkinter site-packages test test/output test/data \
 		test/decimaltestdata \
 		encodings \
