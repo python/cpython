@@ -9,10 +9,12 @@
 
 
 The :mod:`EasyDialogs` module contains some simple dialogs for the Macintosh.
-All routines take an optional resource ID parameter *id* with which one can
-override the :const:`DLOG` resource used for the dialog, provided that the
-dialog items correspond (both type and item number) to those in the default
-:const:`DLOG` resource. See source code for details.
+The dialogs get launched in a separate application which appears in the dock and
+must be clicked on for the dialogs be displayed.  All routines take an optional
+resource ID parameter *id* with which one can override the :const:`DLOG`
+resource used for the dialog, provided that the dialog items correspond (both
+type and item number) to those in the default :const:`DLOG` resource. See source
+code for details.
 
 .. warning::
 
