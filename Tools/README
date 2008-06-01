@@ -9,7 +9,7 @@ audiopy		Audiopy is a program to control the Solaris audio
 
 bgen		Generate complete extension modules from a
 		description.  Still under development!
-                WARNING: bgen has been removed in 3.0
+		WARNING: bgen has been removed in 3.0.
 
 compiler	Tools used to maintain the compiler package in the
 		standard library.
