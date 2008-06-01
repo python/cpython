@@ -143,6 +143,8 @@ Library
 
 - The test.test_support module has been renamed to test.support.
 
+- The bgen tool has been removed
+
 Build
 -----
 
