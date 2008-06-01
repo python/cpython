@@ -301,7 +301,7 @@ Py_InitializeEx(int install_sigs)
 #ifdef MS_WINDOWS
 	if (!overridden) {
 		icodeset = ibuf;
-		encoding = buf;
+		codeset = buf;
 		sprintf(ibuf, "cp%d", GetConsoleCP());
 		sprintf(buf, "cp%d", GetConsoleOutputCP());
 	}
