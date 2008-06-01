@@ -60,6 +60,8 @@ Extension Modules
 Library
 -------
 
+- Removed the ``htmllib`` and ``sgmllib`` modules.
+
 - The deprecated ``SmartCookie`` and ``SimpleCookie`` classes have
   been removed from ``http.cookies``.
 

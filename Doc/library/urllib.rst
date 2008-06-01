@@ -389,14 +389,13 @@ URL Opener objects
   .. index::
      single: HTML
      pair: HTTP; protocol
-     module: htmllib
 
 * The data returned by :func:`urlopen` or :func:`urlretrieve` is the raw data
   returned by the server.  This may be binary data (such as an image), plain text
   or (for example) HTML.  The HTTP protocol provides type information in the reply
   header, which can be inspected by looking at the :mailheader:`Content-Type`
-  header.  If the returned data is HTML, you can use the module :mod:`htmllib` to
-  parse it.
+  header.  If the returned data is HTML, you can use the module
+  :mod:`html.parser` to parse it.
 
   .. index:: single: FTP
 

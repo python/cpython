@@ -1,4 +1,3 @@
-
 :mod:`formatter` --- Generic output formatting
 ==============================================
 
@@ -6,12 +5,9 @@
    :synopsis: Generic output formatter and device interface.
 
 
-.. index:: single: HTMLParser (class in htmllib)
-
 This module supports two interface definitions, each with multiple
-implementations.  The *formatter* interface is used by the :class:`HTMLParser`
-class of the :mod:`htmllib` module, and the *writer* interface is required by
-the formatter interface.
+implementations: The *formatter* interface, and the *writer* interface which is
+required by the formatter interface.
 
 Formatter objects transform an abstract flow of formatting events into specific
 output events on writer objects.  Formatters manage several stack structures to

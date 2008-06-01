@@ -23,8 +23,6 @@ definition of the Python bindings for the DOM and SAX interfaces.
 
    html.parser.rst
    html.entities.rst
-   sgmllib.rst
-   htmllib.rst
    pyexpat.rst
    xml.dom.rst
    xml.dom.minidom.rst

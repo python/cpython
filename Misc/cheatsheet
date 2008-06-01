@@ -1895,7 +1895,6 @@ reprlib          Redo repr() but with limits on most sizes.
 rlcompleter      Word completion for GNU readline 2.0.
 robotparser      Parse robots.txt files, useful for web spiders.
 sched            A generally useful event scheduler class.
-sgmllib          A parser for SGML.
 shelve           Manage shelves of pickled objects.
 shlex            Lexical analyzer class for simple shell-like syntaxes.
 shutil           Utility functions usable in a shell-like program.
