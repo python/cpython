@@ -1,8 +1,8 @@
 import formatter
-import htmllib
 import unittest
 
 from test import test_support
+htmllib = test_support.import_module('htmllib', deprecated=True)
 
 
 class AnchorCollector(htmllib.HTMLParser):

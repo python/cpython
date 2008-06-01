@@ -70,8 +70,11 @@ Extension Modules
 Library
 -------
 
-- Issue #3011: locale module alias table was updated to the latest version
-  from the X.org locale.alias file
+- The sgmllib and htmllib modules have been deprecated for removal
+  in Python 3.0.
+
+- Issue #3011: locale module alias table was updated to the latest
+  version from the X.org locale.alias file.
 
 - Issue #1797 (partial fix): ctypes NULL function pointers have a
   False boolean value now.

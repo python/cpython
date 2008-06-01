@@ -1,10 +1,12 @@
-
 :mod:`sgmllib` --- Simple SGML parser
 =====================================
 
 .. module:: sgmllib
    :synopsis: Only as much of an SGML parser as needed to parse HTML.
-
+   :deprecated:
+   
+.. deprecated:: 2.6
+    The :mod:`sgmllib` module has been removed in Python 3.0.
 
 .. index:: single: SGML
 

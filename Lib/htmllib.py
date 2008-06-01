@@ -4,6 +4,11 @@ See the HTML 2.0 specification:
 http://www.w3.org/hypertext/WWW/MarkUp/html-spec/html-spec_toc.html
 """
 
+from warnings import warnpy3k
+warnpy3k("the htmllib module has been removed in Python 3.0",
+         stacklevel=2)
+del warnpy3k
+
 import sgmllib
 
 from formatter import AS_IS
