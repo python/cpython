@@ -98,6 +98,12 @@ Dictionary Objects
    Return the object from dictionary *p* which has a key *key*.  Return *NULL* if
    the key *key* is not present, but *without* setting an exception.
 
+.. cfunction:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
+
+   Variant of :cfunc:`PyDict_GetItem` that does not suppress
+   exceptions. Return *NULL* **with** an exception set if an exception
+   occurred.  Return *NULL* **without** an exception set if the key
+   wasn't present.
 
 .. cfunction:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
 
