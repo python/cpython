@@ -11,9 +11,6 @@
 
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
-Unlike the parser in :mod:`htmllib`, this parser is not based on the SGML parser
-in :mod:`sgmllib`.
-
 
 .. class:: HTMLParser()
 
@@ -23,9 +20,8 @@ in :mod:`sgmllib`.
    begin and end.  The :class:`HTMLParser` class is meant to be overridden by the
    user to provide a desired behavior.
 
-   Unlike the parser in :mod:`htmllib`, this parser does not check that end tags
-   match start tags or call the end-tag handler for elements which are closed
-   implicitly by closing an outer element.
+   This parser does not check that end tags match start tags or call the end-tag
+   handler for elements which are closed implicitly by closing an outer element.
 
 An exception is defined as well:
 
