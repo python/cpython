@@ -155,6 +155,7 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 	Py_DECREF(f->f_name);
 	Py_DECREF(f->f_mode);
 	Py_DECREF(f->f_encoding);
+	Py_DECREF(f->f_errors);
 
         Py_INCREF(name);
         f->f_name = name;
@@ -170,6 +171,8 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 	f->f_skipnextlf = 0;
 	Py_INCREF(Py_None);
 	f->f_encoding = Py_None;
+	Py_INCREF(Py_None);
+	f->f_errors = Py_None;
 
 	if (f->f_mode == NULL)
 		return NULL;
@@ -435,19 +438,38 @@ PyFile_SetBufSize(PyObject *f, int bufsize)
 }
 
 /* Set the encoding used to output Unicode strings.
-   Returh 1 on success, 0 on failure. */
+   Return 1 on success, 0 on failure. */
 
 int
 PyFile_SetEncoding(PyObject *f, const char *enc)
 {
+	return PyFile_SetEncodingAndErrors(f, enc, NULL);
+}
+
+int
+PyFile_SetEncodingAndErrors(PyObject *f, const char *enc, char* errors)
+{
 	PyFileObject *file = (PyFileObject*)f;
-	PyObject *str = PyBytes_FromString(enc);
+	PyObject *str, *oerrors;
 
 	assert(PyFile_Check(f));
+	str = PyBytes_FromString(enc);
 	if (!str)
 		return 0;
+	if (errors) {
+		oerrors = PyString_FromString(errors);
+		if (!oerrors) {
+			Py_DECREF(str);
+			return 0;
+		}
+	} else {
+		oerrors = Py_None;
+		Py_INCREF(Py_None);
+	}
 	Py_DECREF(file->f_encoding);
 	file->f_encoding = str;
+	Py_DECREF(file->f_errors);
+	file->f_errors = oerrors;
 	return 1;
 }
 
@@ -491,6 +513,7 @@ file_dealloc(PyFileObject *f)
 	Py_XDECREF(f->f_name);
 	Py_XDECREF(f->f_mode);
 	Py_XDECREF(f->f_encoding);
+	Py_XDECREF(f->f_errors);
 	drop_readahead(f);
 	Py_TYPE(f)->tp_free((PyObject *)f);
 }
@@ -1879,6 +1902,8 @@ static PyMemberDef file_memberlist[] = {
 	 "file name"},
 	{"encoding",	T_OBJECT,	OFF(f_encoding),	RO,
 	 "file encoding"},
+	{"errors",	T_OBJECT,	OFF(f_errors),	RO,
+	 "Unicode error handler"},
 	/* getattr(f, "closed") is implemented without this table */
 	{NULL}	/* Sentinel */
 };
@@ -2093,6 +2118,8 @@ file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		((PyFileObject *)self)->f_mode = not_yet_string;
 		Py_INCREF(Py_None);
 		((PyFileObject *)self)->f_encoding = Py_None;
+		Py_INCREF(Py_None);
+		((PyFileObject *)self)->f_errors = Py_None;
 		((PyFileObject *)self)->weakreflist = NULL;
 		((PyFileObject *)self)->unlocked_count = 0;
 	}
@@ -2295,7 +2322,9 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
                 if ((flags & Py_PRINT_RAW) &&
 		    PyUnicode_Check(v) && enc != Py_None) {
 			char *cenc = PyBytes_AS_STRING(enc);
-			value = PyUnicode_AsEncodedString(v, cenc, "strict");
+			char *errors = fobj->f_errors == Py_None ? 
+			  "strict" : PyBytes_AS_STRING(fobj->f_errors);
+			value = PyUnicode_AsEncodedString(v, cenc, errors);
 			if (value == NULL)
 				return -1;
 		} else {

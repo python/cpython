@@ -1232,9 +1232,6 @@ _PySys_Init(void)
 	PyObject *m, *v, *sysdict;
 	PyObject *sysin, *sysout, *syserr;
 	char *s;
-#ifdef MS_WINDOWS
-	char buf[128];
-#endif
 
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
 	if (m == NULL)
@@ -1272,23 +1269,6 @@ _PySys_Init(void)
 	syserr = PyFile_FromFile(stderr, "<stderr>", "w", _check_and_flush);
 	if (PyErr_Occurred())
 		return NULL;
-#ifdef MS_WINDOWS
-	if(isatty(_fileno(stdin)) && PyFile_Check(sysin)) {
-		sprintf(buf, "cp%d", GetConsoleCP());
-		if (!PyFile_SetEncoding(sysin, buf))
-			return NULL;
-	}
-	if(isatty(_fileno(stdout)) && PyFile_Check(sysout)) {
-		sprintf(buf, "cp%d", GetConsoleOutputCP());
-		if (!PyFile_SetEncoding(sysout, buf))
-			return NULL;
-	}
-	if(isatty(_fileno(stderr)) && PyFile_Check(syserr)) {
-		sprintf(buf, "cp%d", GetConsoleOutputCP());
-		if (!PyFile_SetEncoding(syserr, buf))
-			return NULL;
-	}
-#endif
 
 	PyDict_SetItemString(sysdict, "stdin", sysin);
 	PyDict_SetItemString(sysdict, "stdout", sysout);
