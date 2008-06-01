@@ -1,8 +1,8 @@
 import pprint
 import re
-import sgmllib
 import unittest
 from test import test_support
+sgmllib = test_support.import_module('sgmllib', deprecated=True)
 
 
 class EventCollector(sgmllib.SGMLParser):
