@@ -12,6 +12,8 @@ What's New in Python 2.6 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #2898: Added sys.getsizeof() to retrieve size of objects in bytes.
+
 - New environment variable PYTHONIOENCODING.
 
 - Patch #2488: Add sys.maxsize.

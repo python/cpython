@@ -3436,6 +3436,17 @@ long__format__(PyObject *self, PyObject *args)
 	return NULL;
 }
 
+static PyObject *
+long_sizeof(PyLongObject *v)
+{
+	Py_ssize_t res;
+
+	res = sizeof(PyLongObject) + abs(v->ob_size) * sizeof(digit);
+        if (v->ob_size != 0)
+		res -=  sizeof(digit);
+	return PyInt_FromSsize_t(res);
+}
+
 #if 0
 static PyObject *
 long_is_finite(PyObject *v)
@@ -3455,6 +3466,8 @@ static PyMethodDef long_methods[] = {
          "Truncating an Integral returns itself."},
 	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
         {"__format__", (PyCFunction)long__format__, METH_VARARGS},
+	{"__sizeof__",	(PyCFunction)long_sizeof, METH_NOARGS,
+	 "Returns size in bytes"},
 	{NULL,		NULL}		/* sentinel */
 };
 
