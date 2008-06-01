@@ -664,9 +664,9 @@ sys_getsizeof(PyObject *self, PyObject *args)
 		return PyObject_CallFunctionObjArgs(method, args, NULL);
 	} 
 	/* Instance of old-style classes */
-	else if(PyInstance_Check(args))
+	else if (PyInstance_Check(args))
 		return PyInt_FromSsize_t(PyInstance_Type.tp_basicsize);
-	/* Old-style class */
+	/* Old-style classes */
 	else if (PyClass_Check(args))
 		return PyInt_FromSsize_t(PyClass_Type.tp_basicsize);
 	else

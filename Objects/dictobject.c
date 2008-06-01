@@ -2052,7 +2052,7 @@ PyDoc_STRVAR(contains__doc__,
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 
 PyDoc_STRVAR(sizeof__doc__,
-"D.__sizeof__() -> size of D in bytes");
+"D.__sizeof__() -> size of D in memory, in bytes");
 
 PyDoc_STRVAR(get__doc__,
 "D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.");

@@ -3467,7 +3467,7 @@ static PyMethodDef long_methods[] = {
 	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
         {"__format__", (PyCFunction)long__format__, METH_VARARGS},
 	{"__sizeof__",	(PyCFunction)long_sizeof, METH_NOARGS,
-	 "Returns size in bytes"},
+	 "Returns size in memory, in bytes"},
 	{NULL,		NULL}		/* sentinel */
 };
 
