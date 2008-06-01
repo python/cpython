@@ -3917,6 +3917,17 @@ string_splitlines(PyBytesObject *self, PyObject *args)
     return NULL;
 }
 
+PyDoc_STRVAR(sizeof__doc__,
+"S.__sizeof__() -> size of S in bytes");
+
+static PyObject *
+string_sizeof(PyBytesObject *v)
+{
+	Py_ssize_t res;
+	res = sizeof(PyBytesObject) + v->ob_size * v->ob_type->tp_itemsize;
+	return PyInt_FromSsize_t(res);
+}
+
 #undef SPLIT_APPEND
 #undef SPLIT_ADD
 #undef MAX_PREALLOC
@@ -4024,6 +4035,8 @@ string_methods[] = {
 	 expandtabs__doc__},
 	{"splitlines", (PyCFunction)string_splitlines, METH_VARARGS,
 	 splitlines__doc__},
+	{"__sizeof__", (PyCFunction)string_sizeof, METH_NOARGS,
+	 sizeof__doc__},
 	{"__getnewargs__",	(PyCFunction)string_getnewargs,	METH_NOARGS},
 	{NULL,     NULL}		     /* sentinel */
 };

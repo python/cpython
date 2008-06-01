@@ -640,6 +640,45 @@ sys_mdebug(PyObject *self, PyObject *args)
 #endif /* USE_MALLOPT */
 
 static PyObject *
+sys_getsizeof(PyObject *self, PyObject *args)
+{
+	static PyObject * str__sizeof__ = NULL;
+
+	/* Initialize static variable needed by _PyType_Lookup */
+	if (str__sizeof__ == NULL) {
+		str__sizeof__ = PyString_InternFromString("__sizeof__");
+		if (str__sizeof__ == NULL)
+			return NULL;
+	}
+
+	/* Type objects */
+	if (PyType_Check(args)){
+		PyObject *method = _PyType_Lookup(Py_TYPE(args),
+						  str__sizeof__);
+		if (method == NULL) {
+			PyErr_Format(PyExc_TypeError,
+				     "Type %.100s doesn't define __sizeof__",
+				     Py_TYPE(args)->tp_name);
+			return NULL;
+		}
+		return PyObject_CallFunctionObjArgs(method, args, NULL);
+	} 
+	/* Instance of old-style classes */
+	else if(PyInstance_Check(args))
+		return PyInt_FromSsize_t(PyInstance_Type.tp_basicsize);
+	/* Old-style class */
+	else if (PyClass_Check(args))
+		return PyInt_FromSsize_t(PyClass_Type.tp_basicsize);
+	else
+		return PyObject_CallMethod(args, "__sizeof__", NULL);
+}
+
+PyDoc_STRVAR(getsizeof_doc,
+"getsizeof(object) -> int\n\
+\n\
+Return the size of object in bytes.");
+
+static PyObject *
 sys_getrefcount(PyObject *self, PyObject *arg)
 {
 	return PyInt_FromSsize_t(arg->ob_refcnt);
@@ -850,6 +889,7 @@ static PyMethodDef sys_methods[] = {
 	{"getrefcount",	(PyCFunction)sys_getrefcount, METH_O, getrefcount_doc},
 	{"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS,
 	 getrecursionlimit_doc},
+ 	{"getsizeof",	sys_getsizeof,  METH_O, getsizeof_doc},
 	{"_getframe", sys_getframe, METH_VARARGS, getframe_doc},
 #ifdef MS_WINDOWS
 	{"getwindowsversion", (PyCFunction)sys_getwindowsversion, METH_NOARGS,
@@ -1031,6 +1071,7 @@ getdlopenflags() -- returns flags to be used for dlopen() calls\n\
 getprofile() -- get the global profiling function\n\
 getrefcount() -- return the reference count for an object (plus one :-)\n\
 getrecursionlimit() -- return the max recursion depth for the interpreter\n\
+getsizeof() -- return the size of an object in bytes\n\
 gettrace() -- get the global debug tracing function\n\
 setcheckinterval() -- control how often the interpreter checks for events\n\
 setdlopenflags() -- set the flags to be used for dlopen() calls\n\
