@@ -138,9 +138,9 @@ Py_InitializeEx(int install_sigs)
 	char *errors = NULL;
 	int free_codeset = 0;
 	int overridden = 0;
+	PyObject *sys_stream, *sys_isatty;
 #if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
 	char *saved_locale, *loc_codeset;
-	PyObject *sys_stream, *sys_isatty;
 #endif
 #ifdef MS_WINDOWS
 	char ibuf[128];
