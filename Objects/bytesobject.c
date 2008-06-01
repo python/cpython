@@ -3918,7 +3918,7 @@ string_splitlines(PyBytesObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(sizeof__doc__,
-"S.__sizeof__() -> size of S in bytes");
+"S.__sizeof__() -> size of S in memory, in bytes");
 
 static PyObject *
 string_sizeof(PyBytesObject *v)

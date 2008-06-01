@@ -2437,7 +2437,7 @@ PyDoc_STRVAR(getitem_doc,
 PyDoc_STRVAR(reversed_doc,
 "L.__reversed__() -- return a reverse iterator over the list");
 PyDoc_STRVAR(sizeof_doc,
-"L.__sizeof__() -- size of L in bytes");
+"L.__sizeof__() -- size of L in memory, in bytes");
 PyDoc_STRVAR(append_doc,
 "L.append(object) -- append object to end");
 PyDoc_STRVAR(extend_doc,

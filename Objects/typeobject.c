@@ -3421,7 +3421,7 @@ static PyMethodDef object_methods[] = {
         {"__format__", object_format, METH_VARARGS,
          PyDoc_STR("default object formatter")},
         {"__sizeof__", object_sizeof, METH_NOARGS,
-         PyDoc_STR("__sizeof__() -> size of object in bytes")},
+         PyDoc_STR("__sizeof__() -> size of object in memory, in bytes")},
 	{0}
 };
 

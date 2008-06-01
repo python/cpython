@@ -419,7 +419,7 @@ class SizeofTest(unittest.TestCase):
 
     def tearDown(self):
         self.file.close()
-        os.remove(test.test_support.TESTFN)
+        test.test_support.unlink(test.test_support.TESTFN)
 
     def check_sizeof(self, o, size):
         result = sys.getsizeof(o)
@@ -435,13 +435,13 @@ class SizeofTest(unittest.TestCase):
             return value
 
     def test_align(self):
-        self.assertTrue( (self.align(0) % self.p) == 0 )
-        self.assertTrue( (self.align(1) % self.p) == 0 )
-        self.assertTrue( (self.align(3) % self.p) == 0 )
-        self.assertTrue( (self.align(4) % self.p) == 0 )
-        self.assertTrue( (self.align(7) % self.p) == 0 )
-        self.assertTrue( (self.align(8) % self.p) == 0 )
-        self.assertTrue( (self.align(9) % self.p) == 0 )
+        self.assertEqual(self.align(0) % self.p, 0)
+        self.assertEqual(self.align(1) % self.p, 0)
+        self.assertEqual(self.align(3) % self.p, 0)
+        self.assertEqual(self.align(4) % self.p, 0)
+        self.assertEqual(self.align(7) % self.p, 0)
+        self.assertEqual(self.align(8) % self.p, 0)
+        self.assertEqual(self.align(9) % self.p, 0)
 
     def test_standardtypes(self):
         i = self.i
@@ -507,7 +507,7 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(abs, h + 3*p)
         # module
         self.check_sizeof(unittest, h + p)
-        # xange
+        # xrange
         self.check_sizeof(xrange(1), h + 3*p)
         # slice
         self.check_sizeof(slice(0), h + 3*p)
@@ -520,8 +520,8 @@ class SizeofTest(unittest.TestCase):
         # type (PyTypeObject + PyNumberMethods +  PyMappingMethods +
         #       PySequenceMethods +  PyBufferProcs)
         len_typeobject = p + 2*l + 15*p + l + 4*p + l + 9*p + l + 11*p
-        self.check_sizeof(class_newstyle, h + \
-                              len_typeobject + 42*p + 10*p + 3*p + 6*p)
+        self.check_sizeof(class_newstyle,
+                          h + len_typeobject + 42*p + 10*p + 3*p + 6*p)
 
 
     def test_specialtypes(self):
