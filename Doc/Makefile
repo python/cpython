@@ -93,6 +93,11 @@ doctest: build
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in build/doctest/output.txt"
 
+pydoc-topics: BUILDER = pydoc-topics
+pydoc-topics: build
+	@echo "Building finished; now copy build/pydoc-topics/pydoc_topics.py " \
+	      "into the Lib/ directory"
+
 clean:
 	-rm -rf build/*
 	-rm -rf tools/sphinx

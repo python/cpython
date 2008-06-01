@@ -67,6 +67,11 @@ Available make targets are:
  * "coverage", which builds a coverage overview for standard library modules
    and C API.
 
+ * "pydoc-topics", which builds a Python module containing a dictionary
+   with plain text documentation for the labels defined in
+   `tools/sphinxext/pyspecific.py` -- pydoc needs these to show topic
+   and keyword help.
+
 A "make update" updates the Subversion checkouts in `tools/`.
 
 
