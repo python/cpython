@@ -452,8 +452,6 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(True, h + l)
         # buffer
         self.check_sizeof(buffer(''), h + 2*p + 2*l + self.align(i) +l)
-        # bytearray
-        self.check_sizeof(bytes(), h + self.align(i) + l + p)
         # cell
         def get_cell():
             x = 42
