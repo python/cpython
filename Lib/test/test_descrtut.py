@@ -208,6 +208,7 @@ Instead, you can get the same information from the list type:
      '__setattr__',
      '__setitem__',
      '__setslice__',
+     '__sizeof__',
      '__str__',
      '__subclasshook__',
      'append',
