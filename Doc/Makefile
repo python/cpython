@@ -21,6 +21,7 @@ help:
 	@echo "  web       to make file usable by Sphinx.web"
 	@echo "  htmlhelp  to make HTML files and a HTML help project"
 	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  text      to make plain text files"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 	@echo "  coverage  to check documentation coverage for library and C API"
@@ -74,6 +75,10 @@ latex: build
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."
+
+text: BUILDER = text
+text: build
+	@echo "Build finished; the text files are in build/text."
 
 changes: BUILDER = changes
 changes: build
