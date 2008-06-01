@@ -82,6 +82,10 @@ Library
 - Bug #1433694: minidom's .normalize() failed to set .nextSibling for
   last child element.
 
+- Issue #2791: subprocess.Popen.communicate explicitly closes its
+  stdout and stderr fds rather than leaving them open until the
+  instance is destroyed.
+
 
 Extension Modules
 -----------------
