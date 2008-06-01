@@ -132,10 +132,19 @@ Py_InitializeEx(int install_sigs)
 	PyThreadState *tstate;
 	PyObject *bimod, *sysmod;
 	char *p;
+	char *icodeset; /* On Windows, input codeset may theoretically 
+			   differ from output codeset. */
+	char *codeset = NULL;
+	char *errors = NULL;
+	int free_codeset = 0;
+	int overridden = 0;
 #if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
-	char *codeset;
-	char *saved_locale;
+	char *saved_locale, *loc_codeset;
 	PyObject *sys_stream, *sys_isatty;
+#endif
+#ifdef MS_WINDOWS
+	char ibuf[128];
+	char buf[128];
 #endif
 	extern void _Py_ReadyTypes(void);
 
@@ -238,38 +247,75 @@ Py_InitializeEx(int install_sigs)
 	_PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
 
+	if ((p = Py_GETENV("PYTHONIOENCODING")) && *p != '\0') {
+		p = icodeset = codeset = strdup(p);
+		free_codeset = 1;
+		errors = strchr(p, ':');
+		if (errors) {
+			*errors = '\0';
+			errors++;
+		}
+		overridden = 1;
+	}
+
 #if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
 	/* On Unix, set the file system encoding according to the
 	   user's preference, if the CODESET names a well-known
 	   Python codec, and Py_FileSystemDefaultEncoding isn't
 	   initialized by other means. Also set the encoding of
-	   stdin and stdout if these are terminals.  */
+	   stdin and stdout if these are terminals, unless overridden.  */
 
-	saved_locale = strdup(setlocale(LC_CTYPE, NULL));
-	setlocale(LC_CTYPE, "");
-	codeset = nl_langinfo(CODESET);
-	if (codeset && *codeset) {
-		PyObject *enc = PyCodec_Encoder(codeset);
-		if (enc) {
-			codeset = strdup(codeset);
-			Py_DECREF(enc);
-		} else {
-			codeset = NULL;
-			PyErr_Clear();
+	if (!overridden || !Py_FileSystemDefaultEncoding) {
+		saved_locale = strdup(setlocale(LC_CTYPE, NULL));
+		setlocale(LC_CTYPE, "");
+		loc_codeset = nl_langinfo(CODESET);
+		if (loc_codeset && *loc_codeset) {
+			PyObject *enc = PyCodec_Encoder(loc_codeset);
+			if (enc) {
+				loc_codeset = strdup(loc_codeset);
+				Py_DECREF(enc);
+			} else {
+				loc_codeset = NULL;
+				PyErr_Clear();
+			}
+		} else
+			loc_codeset = NULL;
+		setlocale(LC_CTYPE, saved_locale);
+		free(saved_locale);
+
+		if (!overridden) {
+			codeset = icodeset = loc_codeset;
+			free_codeset = 1;
 		}
-	} else
-		codeset = NULL;
-	setlocale(LC_CTYPE, saved_locale);
-	free(saved_locale);
+
+		/* Initialize Py_FileSystemDefaultEncoding from
+		   locale even if PYTHONIOENCODING is set. */
+		if (!Py_FileSystemDefaultEncoding) {
+			Py_FileSystemDefaultEncoding = loc_codeset;
+			if (!overridden)
+				free_codeset = 0;
+		}
+	}
+#endif
+
+#ifdef MS_WINDOWS
+	if (!overridden) {
+		icodeset = ibuf;
+		encoding = buf;
+		sprintf(ibuf, "cp%d", GetConsoleCP());
+		sprintf(buf, "cp%d", GetConsoleOutputCP());
+	}
+#endif
 
 	if (codeset) {
 		sys_stream = PySys_GetObject("stdin");
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
-		if(sys_isatty && PyObject_IsTrue(sys_isatty) &&
+		if ((overridden ||
+		     (sys_isatty && PyObject_IsTrue(sys_isatty))) &&
 		   PyFile_Check(sys_stream)) {
-			if (!PyFile_SetEncoding(sys_stream, codeset))
+			if (!PyFile_SetEncodingAndErrors(sys_stream, icodeset, errors))
 				Py_FatalError("Cannot set codeset of stdin");
 		}
 		Py_XDECREF(sys_isatty);
@@ -278,9 +324,10 @@ Py_InitializeEx(int install_sigs)
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
-		if(sys_isatty && PyObject_IsTrue(sys_isatty) &&
+		if ((overridden || 
+		     (sys_isatty && PyObject_IsTrue(sys_isatty))) &&
 		   PyFile_Check(sys_stream)) {
-			if (!PyFile_SetEncoding(sys_stream, codeset))
+			if (!PyFile_SetEncodingAndErrors(sys_stream, codeset, errors))
 				Py_FatalError("Cannot set codeset of stdout");
 		}
 		Py_XDECREF(sys_isatty);
@@ -289,19 +336,17 @@ Py_InitializeEx(int install_sigs)
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
-		if(sys_isatty && PyObject_IsTrue(sys_isatty) &&
+		if((overridden || 
+		    (sys_isatty && PyObject_IsTrue(sys_isatty))) &&
 		   PyFile_Check(sys_stream)) {
-			if (!PyFile_SetEncoding(sys_stream, codeset))
+			if (!PyFile_SetEncodingAndErrors(sys_stream, codeset, errors))
 				Py_FatalError("Cannot set codeset of stderr");
 		}
 		Py_XDECREF(sys_isatty);
 
-		if (!Py_FileSystemDefaultEncoding)
-			Py_FileSystemDefaultEncoding = codeset;
-		else
+		if (free_codeset)
 			free(codeset);
 	}
-#endif
 }
 
 void

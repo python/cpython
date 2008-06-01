@@ -12,6 +12,8 @@ What's New in Python 2.6 beta 1?
 Core and Builtins
 -----------------
 
+- New environment variable PYTHONIOENCODING.
+
 - Patch #2488: Add sys.maxsize.
 
 - Issue #2353: file.xreadlines() now emits a Py3k warning.

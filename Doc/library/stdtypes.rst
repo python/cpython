@@ -2165,6 +2165,13 @@ the particular object.
    .. versionadded:: 2.3
 
 
+.. attribute:: file.errors
+
+   The Unicode error handler used to along with the encoding.
+
+   .. versionadded:: 2.6
+
+
 .. attribute:: file.mode
 
    The I/O mode for the file.  If the file was created using the :func:`open`

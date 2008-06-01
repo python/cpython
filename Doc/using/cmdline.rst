@@ -481,6 +481,13 @@ These environment variables influence Python's behavior.
 
    .. versionadded:: 2.6
 
+.. envvar:: PYTHONIOENCODING
+
+   Overrides the encoding used for stdin/stdout/stderr, in the syntax
+   encodingname:errorhandler, with the :errors part being optional.
+
+   .. versionadded:: 2.6
+
 
 .. envvar:: PYTHONNOUSERSITE
 

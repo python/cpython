@@ -385,6 +385,26 @@ class SysModuleTest(unittest.TestCase):
 ##        self.assert_(r[0][2] > 100, r[0][2])
 ##        self.assert_(r[1][2] > 100, r[1][2])
 
+    def test_ioencoding(self):
+        import subprocess,os
+        env = dict(os.environ)
+
+        # Test character: cent sign, encoded as 0x4A (ASCII J) in CP424,
+        # not representable in ASCII.
+
+        env["PYTHONIOENCODING"] = "cp424"
+        p = subprocess.Popen([sys.executable, "-c", 'print unichr(0xa2)'],
+                             stdout = subprocess.PIPE, env=env)
+        out = p.stdout.read().strip()
+        self.assertEqual(out, unichr(0xa2).encode("cp424"))
+
+        env["PYTHONIOENCODING"] = "ascii:replace"
+        p = subprocess.Popen([sys.executable, "-c", 'print unichr(0xa2)'],
+                             stdout = subprocess.PIPE, env=env)
+        out = p.stdout.read().strip()
+        self.assertEqual(out, '?')
+
+
 def test_main():
     test.test_support.run_unittest(SysModuleTest)
 

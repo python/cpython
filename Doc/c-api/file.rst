@@ -130,6 +130,14 @@ change in future releases of Python.
    .. versionadded:: 2.3
 
 
+.. cfunction:: int PyFile_SetEncodingAndErrors(PyFileObject *p, const char *enc, *errors)
+
+   Set the file's encoding for Unicode output to *enc*, and its error
+   mode to *err*. Return 1 on success and 0 on failure.
+
+   .. versionadded:: 2.6
+
+
 .. cfunction:: int PyFile_SoftSpace(PyObject *p, int newflag)
 
    .. index:: single: softspace (file attribute)
