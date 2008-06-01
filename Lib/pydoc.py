@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: Latin-1 -*-
+# -*- coding: latin-1 -*-
 """Generate Python documentation in HTML or text for interactive use.
 
 In the Python interpreter, do "from pydoc import help" to provide online
@@ -1523,142 +1523,149 @@ def writedocs(dir, pkgpath='', done=None):
     return
 
 class Helper:
+
+    # These dictionaries map a topic name to either an alias, or a tuple
+    # (label, seealso-items).  The "label" is the label of the corresponding
+    # section in the .rst file under Doc/ and an index into the dictionary
+    # in pydoc_topics.py.
+    #
+    # CAUTION: if you change one of these dictionaries, be sure to adapt the
+    #          list of needed labels in Doc/tools/sphinxext/pyspecific.py and
+    #          regenerate the pydoc_topics.py file by running
+    #              make pydoc-topics
+    #          in Doc/ and copying the output file into the Lib/ directory.
+
     keywords = {
         'and': 'BOOLEAN',
         'as': 'with',
-        'assert': ('ref/assert', ''),
-        'break': ('ref/break', 'while for'),
-        'class': ('ref/class', 'CLASSES SPECIALMETHODS'),
-        'continue': ('ref/continue', 'while for'),
-        'def': ('ref/function', ''),
-        'del': ('ref/del', 'BASICMETHODS'),
+        'assert': ('assert', ''),
+        'break': ('break', 'while for'),
+        'class': ('class', 'CLASSES SPECIALMETHODS'),
+        'continue': ('continue', 'while for'),
+        'def': ('function', ''),
+        'del': ('del', 'BASICMETHODS'),
         'elif': 'if',
-        'else': ('ref/if', 'while for'),
-        'except': 'try',
-        'exec': ('ref/exec', ''),
-        'finally': 'try',
-        'for': ('ref/for', 'break continue while'),
-        'from': 'import',
-        'global': ('ref/global', 'NAMESPACES'),
-        'if': ('ref/if', 'TRUTHVALUE'),
-        'import': ('ref/import', 'MODULES'),
-        'in': ('ref/comparisons', 'SEQUENCEMETHODS2'),
+        'else': ('else', 'while for'),
+        'except': 'except',
+        'exec': ('exec', ''),
+        'finally': 'finally',
+        'for': ('for', 'break continue while'),
+        'from': 'from',
+        'global': ('global', 'NAMESPACES'),
+        'if': ('if', 'TRUTHVALUE'),
+        'import': ('import', 'MODULES'),
+        'in': ('in', 'SEQUENCEMETHODS2'),
         'is': 'COMPARISON',
-        'lambda': ('ref/lambdas', 'FUNCTIONS'),
+        'lambda': ('lambda', 'FUNCTIONS'),
         'not': 'BOOLEAN',
         'or': 'BOOLEAN',
-        'pass': ('ref/pass', ''),
-        'print': ('ref/print', ''),
-        'raise': ('ref/raise', 'EXCEPTIONS'),
-        'return': ('ref/return', 'FUNCTIONS'),
-        'try': ('ref/try', 'EXCEPTIONS'),
-        'while': ('ref/while', 'break continue if TRUTHVALUE'),
-        'with': ('ref/with', 'CONTEXTMANAGERS EXCEPTIONS yield'),
-        'yield': ('ref/yield', ''),
+        'pass': ('pass', ''),
+        'print': ('print', ''),
+        'raise': ('raise', 'EXCEPTIONS'),
+        'return': ('return', 'FUNCTIONS'),
+        'try': ('try', 'EXCEPTIONS'),
+        'while': ('while', 'break continue if TRUTHVALUE'),
+        'with': ('with', 'CONTEXTMANAGERS EXCEPTIONS yield'),
+        'yield': ('yield', ''),
     }
 
     topics = {
-        'TYPES': ('ref/types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS FUNCTIONS CLASSES MODULES FILES inspect'),
-        'STRINGS': ('ref/strings', 'str UNICODE SEQUENCES STRINGMETHODS FORMATTING TYPES'),
-        'STRINGMETHODS': ('lib/string-methods', 'STRINGS FORMATTING'),
-        'FORMATTING': ('lib/typesseq-strings', 'OPERATORS'),
-        'UNICODE': ('ref/strings', 'encodings unicode SEQUENCES STRINGMETHODS FORMATTING TYPES'),
-        'NUMBERS': ('ref/numbers', 'INTEGER FLOAT COMPLEX TYPES'),
-        'INTEGER': ('ref/integers', 'int range'),
-        'FLOAT': ('ref/floating', 'float math'),
-        'COMPLEX': ('ref/imaginary', 'complex cmath'),
-        'SEQUENCES': ('lib/typesseq', 'STRINGMETHODS FORMATTING xrange LISTS'),
+        'TYPES': ('types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS '
+                  'FUNCTIONS CLASSES MODULES FILES inspect'),
+        'STRINGS': ('strings', 'str UNICODE SEQUENCES STRINGMETHODS FORMATTING '
+                    'TYPES'),
+        'STRINGMETHODS': ('string-methods', 'STRINGS FORMATTING'),
+        'FORMATTING': ('formatstrings', 'OPERATORS'),
+        'UNICODE': ('strings', 'encodings unicode SEQUENCES STRINGMETHODS '
+                    'FORMATTING TYPES'),
+        'NUMBERS': ('numbers', 'INTEGER FLOAT COMPLEX TYPES'),
+        'INTEGER': ('integers', 'int range'),
+        'FLOAT': ('floating', 'float math'),
+        'COMPLEX': ('imaginary', 'complex cmath'),
+        'SEQUENCES': ('typesseq', 'STRINGMETHODS FORMATTING xrange LISTS'),
         'MAPPINGS': 'DICTIONARIES',
-        'FUNCTIONS': ('lib/typesfunctions', 'def TYPES'),
-        'METHODS': ('lib/typesmethods', 'class def CLASSES TYPES'),
-        'CODEOBJECTS': ('lib/bltin-code-objects', 'compile FUNCTIONS TYPES'),
-        'TYPEOBJECTS': ('lib/bltin-type-objects', 'types TYPES'),
+        'FUNCTIONS': ('typesfunctions', 'def TYPES'),
+        'METHODS': ('typesmethods', 'class def CLASSES TYPES'),
+        'CODEOBJECTS': ('bltin-code-objects', 'compile FUNCTIONS TYPES'),
+        'TYPEOBJECTS': ('bltin-type-objects', 'types TYPES'),
         'FRAMEOBJECTS': 'TYPES',
         'TRACEBACKS': 'TYPES',
-        'NONE': ('lib/bltin-null-object', ''),
-        'ELLIPSIS': ('lib/bltin-ellipsis-object', 'SLICINGS'),
-        'FILES': ('lib/bltin-file-objects', ''),
-        'SPECIALATTRIBUTES': ('lib/specialattrs', ''),
-        'CLASSES': ('ref/types', 'class SPECIALMETHODS PRIVATENAMES'),
-        'MODULES': ('lib/typesmodules', 'import'),
+        'NONE': ('bltin-null-object', ''),
+        'ELLIPSIS': ('bltin-ellipsis-object', 'SLICINGS'),
+        'FILES': ('bltin-file-objects', ''),
+        'SPECIALATTRIBUTES': ('specialattrs', ''),
+        'CLASSES': ('types', 'class SPECIALMETHODS PRIVATENAMES'),
+        'MODULES': ('typesmodules', 'import'),
         'PACKAGES': 'import',
-        'EXPRESSIONS': ('ref/summary', 'lambda or and not in is BOOLEAN COMPARISON BITWISE SHIFTING BINARY FORMATTING POWER UNARY ATTRIBUTES SUBSCRIPTS SLICINGS CALLS TUPLES LISTS DICTIONARIES BACKQUOTES'),
+        'EXPRESSIONS': ('operator-summary', 'lambda or and not in is BOOLEAN '
+                        'COMPARISON BITWISE SHIFTING BINARY FORMATTING POWER '
+                        'UNARY ATTRIBUTES SUBSCRIPTS SLICINGS CALLS TUPLES '
+                        'LISTS DICTIONARIES BACKQUOTES'),
         'OPERATORS': 'EXPRESSIONS',
         'PRECEDENCE': 'EXPRESSIONS',
-        'OBJECTS': ('ref/objects', 'TYPES'),
-        'SPECIALMETHODS': ('ref/specialnames', 'BASICMETHODS ATTRIBUTEMETHODS CALLABLEMETHODS SEQUENCEMETHODS1 MAPPINGMETHODS SEQUENCEMETHODS2 NUMBERMETHODS CLASSES'),
-        'BASICMETHODS': ('ref/customization', 'cmp hash repr str SPECIALMETHODS'),
-        'ATTRIBUTEMETHODS': ('ref/attribute-access', 'ATTRIBUTES SPECIALMETHODS'),
-        'CALLABLEMETHODS': ('ref/callable-types', 'CALLS SPECIALMETHODS'),
-        'SEQUENCEMETHODS1': ('ref/sequence-types', 'SEQUENCES SEQUENCEMETHODS2 SPECIALMETHODS'),
-        'SEQUENCEMETHODS2': ('ref/sequence-methods', 'SEQUENCES SEQUENCEMETHODS1 SPECIALMETHODS'),
-        'MAPPINGMETHODS': ('ref/sequence-types', 'MAPPINGS SPECIALMETHODS'),
-        'NUMBERMETHODS': ('ref/numeric-types', 'NUMBERS AUGMENTEDASSIGNMENT SPECIALMETHODS'),
-        'EXECUTION': ('ref/execmodel', 'NAMESPACES DYNAMICFEATURES EXCEPTIONS'),
-        'NAMESPACES': ('ref/naming', 'global ASSIGNMENT DELETION DYNAMICFEATURES'),
-        'DYNAMICFEATURES': ('ref/dynamic-features', ''),
+        'OBJECTS': ('objects', 'TYPES'),
+        'SPECIALMETHODS': ('specialnames', 'BASICMETHODS ATTRIBUTEMETHODS '
+                           'CALLABLEMETHODS SEQUENCEMETHODS1 MAPPINGMETHODS '
+                           'SEQUENCEMETHODS2 NUMBERMETHODS CLASSES'),
+        'BASICMETHODS': ('customization', 'cmp hash repr str SPECIALMETHODS'),
+        'ATTRIBUTEMETHODS': ('attribute-access', 'ATTRIBUTES SPECIALMETHODS'),
+        'CALLABLEMETHODS': ('callable-types', 'CALLS SPECIALMETHODS'),
+        'SEQUENCEMETHODS1': ('sequence-types', 'SEQUENCES SEQUENCEMETHODS2 '
+                             'SPECIALMETHODS'),
+        'SEQUENCEMETHODS2': ('sequence-methods', 'SEQUENCES SEQUENCEMETHODS1 '
+                             'SPECIALMETHODS'),
+        'MAPPINGMETHODS': ('sequence-types', 'MAPPINGS SPECIALMETHODS'),
+        'NUMBERMETHODS': ('numeric-types', 'NUMBERS AUGMENTEDASSIGNMENT '
+                          'SPECIALMETHODS'),
+        'EXECUTION': ('execmodel', 'NAMESPACES DYNAMICFEATURES EXCEPTIONS'),
+        'NAMESPACES': ('naming', 'global ASSIGNMENT DELETION DYNAMICFEATURES'),
+        'DYNAMICFEATURES': ('dynamic-features', ''),
         'SCOPING': 'NAMESPACES',
         'FRAMES': 'NAMESPACES',
-        'EXCEPTIONS': ('ref/exceptions', 'try except finally raise'),
-        'COERCIONS': ('ref/coercion-rules','CONVERSIONS'),
-        'CONVERSIONS': ('ref/conversions', 'COERCIONS'),
-        'IDENTIFIERS': ('ref/identifiers', 'keywords SPECIALIDENTIFIERS'),
-        'SPECIALIDENTIFIERS': ('ref/id-classes', ''),
-        'PRIVATENAMES': ('ref/atom-identifiers', ''),
-        'LITERALS': ('ref/atom-literals', 'STRINGS BACKQUOTES NUMBERS TUPLELITERALS LISTLITERALS DICTIONARYLITERALS'),
+        'EXCEPTIONS': ('exceptions', 'try except finally raise'),
+        'COERCIONS': ('coercion-rules','CONVERSIONS'),
+        'CONVERSIONS': ('conversions', 'COERCIONS'),
+        'IDENTIFIERS': ('identifiers', 'keywords SPECIALIDENTIFIERS'),
+        'SPECIALIDENTIFIERS': ('id-classes', ''),
+        'PRIVATENAMES': ('atom-identifiers', ''),
+        'LITERALS': ('atom-literals', 'STRINGS BACKQUOTES NUMBERS '
+                     'TUPLELITERALS LISTLITERALS DICTIONARYLITERALS'),
         'TUPLES': 'SEQUENCES',
-        'TUPLELITERALS': ('ref/exprlists', 'TUPLES LITERALS'),
-        'LISTS': ('lib/typesseq-mutable', 'LISTLITERALS'),
-        'LISTLITERALS': ('ref/lists', 'LISTS LITERALS'),
-        'DICTIONARIES': ('lib/typesmapping', 'DICTIONARYLITERALS'),
-        'DICTIONARYLITERALS': ('ref/dict', 'DICTIONARIES LITERALS'),
-        'BACKQUOTES': ('ref/string-conversions', 'repr str STRINGS LITERALS'),
-        'ATTRIBUTES': ('ref/attribute-references', 'getattr hasattr setattr ATTRIBUTEMETHODS'),
-        'SUBSCRIPTS': ('ref/subscriptions', 'SEQUENCEMETHODS1'),
-        'SLICINGS': ('ref/slicings', 'SEQUENCEMETHODS2'),
-        'CALLS': ('ref/calls', 'EXPRESSIONS'),
-        'POWER': ('ref/power', 'EXPRESSIONS'),
-        'UNARY': ('ref/unary', 'EXPRESSIONS'),
-        'BINARY': ('ref/binary', 'EXPRESSIONS'),
-        'SHIFTING': ('ref/shifting', 'EXPRESSIONS'),
-        'BITWISE': ('ref/bitwise', 'EXPRESSIONS'),
-        'COMPARISON': ('ref/comparisons', 'EXPRESSIONS BASICMETHODS'),
-        'BOOLEAN': ('ref/Booleans', 'EXPRESSIONS TRUTHVALUE'),
+        'TUPLELITERALS': ('exprlists', 'TUPLES LITERALS'),
+        'LISTS': ('typesseq-mutable', 'LISTLITERALS'),
+        'LISTLITERALS': ('lists', 'LISTS LITERALS'),
+        'DICTIONARIES': ('typesmapping', 'DICTIONARYLITERALS'),
+        'DICTIONARYLITERALS': ('dict', 'DICTIONARIES LITERALS'),
+        'BACKQUOTES': ('string-conversions', 'repr str STRINGS LITERALS'),
+        'ATTRIBUTES': ('attribute-references', 'getattr hasattr setattr '
+                       'ATTRIBUTEMETHODS'),
+        'SUBSCRIPTS': ('subscriptions', 'SEQUENCEMETHODS1'),
+        'SLICINGS': ('slicings', 'SEQUENCEMETHODS2'),
+        'CALLS': ('calls', 'EXPRESSIONS'),
+        'POWER': ('power', 'EXPRESSIONS'),
+        'UNARY': ('unary', 'EXPRESSIONS'),
+        'BINARY': ('binary', 'EXPRESSIONS'),
+        'SHIFTING': ('shifting', 'EXPRESSIONS'),
+        'BITWISE': ('bitwise', 'EXPRESSIONS'),
+        'COMPARISON': ('comparisons', 'EXPRESSIONS BASICMETHODS'),
+        'BOOLEAN': ('booleans', 'EXPRESSIONS TRUTHVALUE'),
         'ASSERTION': 'assert',
-        'ASSIGNMENT': ('ref/assignment', 'AUGMENTEDASSIGNMENT'),
-        'AUGMENTEDASSIGNMENT': ('ref/augassign', 'NUMBERMETHODS'),
+        'ASSIGNMENT': ('assignment', 'AUGMENTEDASSIGNMENT'),
+        'AUGMENTEDASSIGNMENT': ('augassign', 'NUMBERMETHODS'),
         'DELETION': 'del',
         'PRINTING': 'print',
         'RETURNING': 'return',
         'IMPORTING': 'import',
         'CONDITIONAL': 'if',
-        'LOOPING': ('ref/compound', 'for while break continue'),
-        'TRUTHVALUE': ('lib/truth', 'if while and or not BASICMETHODS'),
-        'DEBUGGING': ('lib/module-pdb', 'pdb'),
-        'CONTEXTMANAGERS': ('ref/context-managers', 'with'),
+        'LOOPING': ('compound', 'for while break continue'),
+        'TRUTHVALUE': ('truth', 'if while and or not BASICMETHODS'),
+        'DEBUGGING': ('debugger', 'pdb'),
+        'CONTEXTMANAGERS': ('context-managers', 'with'),
     }
 
     def __init__(self, input, output):
         self.input = input
         self.output = output
-        self.docdir = None
-        execdir = os.path.dirname(sys.executable)
-        homedir = os.environ.get('PYTHONHOME')
-        join = os.path.join
-        for dir in [os.environ.get('PYTHONDOCS'),
-                    homedir and os.path.join(homedir, 'doc'),
-                    join(execdir, 'doc'), # for Windows
-                    join(sys.prefix, 'doc/python-docs-' + split(sys.version)[0]),
-                    join(sys.prefix, 'doc/python-' + split(sys.version)[0]),
-                    join(sys.prefix, 'doc/python-docs-' + sys.version[:3]),
-                    join(sys.prefix, 'doc/python-' + sys.version[:3]),
-                    join(sys.prefix, 'Resources/English.lproj/Documentation')]:
-            if dir and os.path.isdir(join(dir, 'lib')):
-                self.docdir = dir
-                break
-            if dir and os.path.isdir(join(dir, 'html', 'lib')):
-                self.docdir = join(dir, 'html')
-                break
 
     def __repr__(self):
         if inspect.stack()[1][3] == '?':
@@ -1761,14 +1768,12 @@ Here is a list of available topics.  Enter any topic name to get more help.
         self.list(self.topics.keys())
 
     def showtopic(self, topic):
-        if not self.docdir:
+        try:
+            import pydoc_topics
+        except ImportError:
             self.output.write('''
-Sorry, topic and keyword documentation is not available because the Python
-HTML documentation files could not be found.  If you have installed them,
-please set the environment variable PYTHONDOCS to indicate their location.
-
-On the Microsoft Windows operating system, the files can be built by
-running "hh -decompile . PythonNN.chm" in the C:\PythonNN\Doc> directory.
+Sorry, topic and keyword documentation is not available because the
+module "pydoc_topics" could not be found.
 ''')
             return
         target = self.topics.get(topic, self.keywords.get(topic))
@@ -1778,31 +1783,15 @@ running "hh -decompile . PythonNN.chm" in the C:\PythonNN\Doc> directory.
         if type(target) is type(''):
             return self.showtopic(target)
 
-        filename, xrefs = target
-        filename = self.docdir + '/' + filename + '.html'
+        label, xrefs = target
         try:
-            file = open(filename)
-        except:
-            self.output.write('could not read docs from %s\n' % filename)
+            doc = pydoc_topics.topics[label]
+        except KeyError:
+            self.output.write('no documentation found for %s\n' % repr(topic))
             return
-
-        divpat = re.compile('<div[^>]*navigat.*?</div.*?>', re.I | re.S)
-        addrpat = re.compile('<address.*?>.*?</address.*?>', re.I | re.S)
-        document = re.sub(addrpat, '', re.sub(divpat, '', file.read()))
-        file.close()
-
-        import htmllib, formatter, StringIO
-        buffer = StringIO.StringIO()
-        parser = htmllib.HTMLParser(
-            formatter.AbstractFormatter(formatter.DumbWriter(buffer)))
-        parser.start_table = parser.do_p
-        parser.end_table = lambda parser=parser: parser.do_p({})
-        parser.start_tr = parser.do_br
-        parser.start_td = parser.start_th = lambda a, b=buffer: b.write('\t')
-        parser.feed(document)
-        buffer = replace(buffer.getvalue(), '\xa0', ' ', '\n', '\n  ')
-        pager('  ' + strip(buffer) + '\n')
+        pager(strip(doc) + '\n')
         if xrefs:
+            import StringIO, formatter
             buffer = StringIO.StringIO()
             formatter.DumbWriter(buffer).send_flowing_data(
                 'Related help topics: ' + join(split(xrefs), ', ') + '\n')
