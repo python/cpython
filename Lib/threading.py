@@ -414,6 +414,7 @@ class Thread(_Verbose):
         self.__args = args
         self.__kwargs = kwargs
         self.__daemonic = self._set_daemon()
+        self.__ident = None
         self.__started = Event()
         self.__stopped = False
         self.__block = Condition(Lock())
@@ -434,7 +435,9 @@ class Thread(_Verbose):
         if self.__stopped:
             status = "stopped"
         if self.__daemonic:
-            status = status + " daemon"
+            status += " daemon"
+        if self.__ident is not None:
+            status += " %s" % self.__ident
         return "<%s(%s, %s)>" % (self.__class__.__name__, self.__name, status)
 
     def start(self):
@@ -481,9 +484,10 @@ class Thread(_Verbose):
 
     def __bootstrap_inner(self):
         try:
+            self.__ident = _get_ident()
             self.__started.set()
             _active_limbo_lock.acquire()
-            _active[_get_ident()] = self
+            _active[self.__ident] = self
             del _limbo[self]
             _active_limbo_lock.release()
             if __debug__:
@@ -634,6 +638,10 @@ class Thread(_Verbose):
     def setName(self, name):
         assert self.__initialized, "Thread.__init__() not called"
         self.__name = str(name)
+
+    def getIdent(self):
+        assert self.__initialized, "Thread.__init__() not called"
+        return self.__ident
 
     def isAlive(self):
         assert self.__initialized, "Thread.__init__() not called"

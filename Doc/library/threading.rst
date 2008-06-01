@@ -651,6 +651,17 @@ impossible to detect the termination of alien threads.
    constructor.
 
 
+.. method:: Thread.getIdent()
+
+   Return the 'thread identifier' of this thread or None if the thread has not
+   been started.  This is a nonzero integer.  See the :mod:`thread` module's
+   :func:`get_ident()` function.  Thread identifiers may be recycled when a
+   thread exits and another thread is created.  The identifier is returned
+   even after the thread has exited.
+
+   .. versionadded:: 2.6
+
+
 .. method:: Thread.isAlive()
 
    Return whether the thread is alive.
