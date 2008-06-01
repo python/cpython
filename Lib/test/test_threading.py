@@ -3,6 +3,7 @@
 import test.test_support
 from test.test_support import verbose
 import random
+import re
 import sys
 import threading
 import thread
@@ -72,6 +73,8 @@ class ThreadTests(unittest.TestCase):
         for i in range(NUMTASKS):
             t = TestThread("<thread %d>"%i, self, sema, mutex, numrunning)
             threads.append(t)
+            self.failUnlessEqual(t.getIdent(), None)
+            self.assert_(re.match('<TestThread\(.*, initial\)>', repr(t)))
             t.start()
 
         if verbose:
@@ -79,6 +82,8 @@ class ThreadTests(unittest.TestCase):
         for t in threads:
             t.join(NUMTASKS)
             self.assert_(not t.isAlive())
+            self.failIfEqual(t.getIdent(), 0)
+            self.assert_(re.match('<TestThread\(.*, \w+ -?\d+\)>', repr(t)))
         if verbose:
             print 'all tasks done'
         self.assertEqual(numrunning.get(), 0)
