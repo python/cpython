@@ -25,7 +25,7 @@ ffi_platforms = {
     'SH64': ['src/sh64/sysv.S', 'src/sh64/ffi.c'],
     'PA': ['src/pa/linux.S', 'src/pa/ffi.c'],
     'PA_LINUX': ['src/pa/linux.S', 'src/pa/ffi.c'],
-    'PA_HPUX': ['src/pa/hpux32.s', 'src/pa/ffi.c'],
+    'PA_HPUX': ['src/pa/hpux32.S', 'src/pa/ffi.c'],
 }
 
 ffi_srcdir = '@srcdir@'
