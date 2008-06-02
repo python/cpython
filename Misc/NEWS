@@ -41,6 +41,9 @@ Core and builtins
   less than zero will now raise a SystemError and return NULL to indicate a
   bug in the calling C code.
 
+- Issue #2588, #2589: Fix potential integer underflow and overflow
+  conditions in the PyOS_vsnprintf C API function.
+
 
 Library
 -------
