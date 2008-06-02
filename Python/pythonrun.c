@@ -732,6 +732,7 @@ initstdio(void)
 	}
 
 	encoding = Py_GETENV("PYTHONIOENCODING");
+	errors = NULL;
 	if (encoding) {
 		encoding = strdup(encoding);
 		errors = strchr(encoding, ':');
@@ -825,6 +826,8 @@ initstdio(void)
 		status = -1;
 	}
 
+	if (encoding)
+		free(encoding);
 	Py_XDECREF(bimod);
 	Py_XDECREF(iomod);
 	return status;
