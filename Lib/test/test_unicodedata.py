@@ -103,6 +103,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.digit(u'9'), 9)
         self.assertEqual(self.db.digit(u'\u215b', None), None)
         self.assertEqual(self.db.digit(u'\u2468'), 9)
+        self.assertEqual(self.db.digit(u'\U00020000', None), None)
 
         self.assertRaises(TypeError, self.db.digit)
         self.assertRaises(TypeError, self.db.digit, u'xx')
@@ -113,6 +114,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.numeric(u'9'), 9)
         self.assertEqual(self.db.numeric(u'\u215b'), 0.125)
         self.assertEqual(self.db.numeric(u'\u2468'), 9.0)
+        self.assertEqual(self.db.numeric(u'\U00020000', None), None)
 
         self.assertRaises(TypeError, self.db.numeric)
         self.assertRaises(TypeError, self.db.numeric, u'xx')
@@ -123,6 +125,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.decimal(u'9'), 9)
         self.assertEqual(self.db.decimal(u'\u215b', None), None)
         self.assertEqual(self.db.decimal(u'\u2468', None), None)
+        self.assertEqual(self.db.decimal(u'\U00020000', None), None)
 
         self.assertRaises(TypeError, self.db.decimal)
         self.assertRaises(TypeError, self.db.decimal, u'xx')
@@ -132,6 +135,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.category(u'\uFFFE'), 'Cn')
         self.assertEqual(self.db.category(u'a'), 'Ll')
         self.assertEqual(self.db.category(u'A'), 'Lu')
+        self.assertEqual(self.db.category(u'\U00020000'), 'Lo')
 
         self.assertRaises(TypeError, self.db.category)
         self.assertRaises(TypeError, self.db.category, u'xx')
@@ -140,6 +144,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.bidirectional(u'\uFFFE'), '')
         self.assertEqual(self.db.bidirectional(u' '), 'WS')
         self.assertEqual(self.db.bidirectional(u'A'), 'L')
+        self.assertEqual(self.db.bidirectional(u'\U00020000'), 'L')
 
         self.assertRaises(TypeError, self.db.bidirectional)
         self.assertRaises(TypeError, self.db.bidirectional, u'xx')
@@ -155,6 +160,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.mirrored(u'\uFFFE'), 0)
         self.assertEqual(self.db.mirrored(u'a'), 0)
         self.assertEqual(self.db.mirrored(u'\u2201'), 1)
+        self.assertEqual(self.db.mirrored(u'\U00020000'), 0)
 
         self.assertRaises(TypeError, self.db.mirrored)
         self.assertRaises(TypeError, self.db.mirrored, u'xx')
@@ -163,6 +169,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.combining(u'\uFFFE'), 0)
         self.assertEqual(self.db.combining(u'a'), 0)
         self.assertEqual(self.db.combining(u'\u20e1'), 230)
+        self.assertEqual(self.db.combining(u'\U00020000'), 0)
 
         self.assertRaises(TypeError, self.db.combining)
         self.assertRaises(TypeError, self.db.combining, u'xx')
@@ -185,6 +192,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(eaw(u'\uFF66'), 'H')
         self.assertEqual(eaw(u'\uFF1F'), 'F')
         self.assertEqual(eaw(u'\u2010'), 'A')
+        self.assertEqual(eaw(u'\U00020000'), 'W')
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
 
