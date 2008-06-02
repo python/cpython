@@ -72,6 +72,9 @@ Extension Modules
 Library
 -------
 
+- Patch #2125: Add GetInteger and GetString methods for 
+  msilib.Record objects.
+
 - Issue #2782: The datetime module's strftime methods now accept
   unicode format strings just as time.strftime always has.
 

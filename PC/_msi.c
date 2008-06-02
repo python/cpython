@@ -339,6 +339,49 @@ record_getfieldcount(msiobj* record, PyObject* args)
 }
 
 static PyObject*
+record_getinteger(msiobj* record, PyObject* args)
+{
+    unsigned int field;
+    int status;
+    
+    if (!PyArg_ParseTuple(args, "I:GetInteger", &field))
+        return NULL;
+    status = MsiRecordGetInteger(record->h, field);
+    if (status == MSI_NULL_INTEGER){
+        PyErr_SetString(MSIError, "could not convert record field to integer");
+        return NULL;
+    }
+    return PyInt_FromLong((long) status);
+}
+
+static PyObject*
+record_getstring(msiobj* record, PyObject* args)
+{
+    unsigned int field;
+    unsigned int status;
+    char buf[2000];
+    char *res = buf;
+    DWORD size = sizeof(buf);
+    PyObject* string;
+    
+    if (!PyArg_ParseTuple(args, "I:GetString", &field))
+        return NULL;
+    status = MsiRecordGetString(record->h, field, res, &size);
+    if (status == ERROR_MORE_DATA) {
+        res = (char*) malloc(size + 1);
+        if (res == NULL)
+            return PyErr_NoMemory();
+        status = MsiRecordGetString(record->h, field, res, &size);
+    }
+    if (status != ERROR_SUCCESS)
+        return msierror((int) status);
+    string = PyString_FromString(res);
+    if (buf != res)
+        free(res);
+    return string;
+}
+
+static PyObject*
 record_cleardata(msiobj* record, PyObject *args)
 {
     int status = MsiRecordClearData(record->h);
@@ -405,6 +448,10 @@ record_setinteger(msiobj* record, PyObject *args)
 static PyMethodDef record_methods[] = {
     { "GetFieldCount", (PyCFunction)record_getfieldcount, METH_NOARGS, 
 	PyDoc_STR("GetFieldCount() -> int\nWraps MsiRecordGetFieldCount")},
+    { "GetInteger", (PyCFunction)record_getinteger, METH_VARARGS,
+    PyDoc_STR("GetInteger(field) -> int\nWraps MsiRecordGetInteger")},
+    { "GetString", (PyCFunction)record_getstring, METH_VARARGS,
+    PyDoc_STR("GetString(field) -> string\nWraps MsiRecordGetString")},
     { "SetString", (PyCFunction)record_setstring, METH_VARARGS, 
 	PyDoc_STR("SetString(field,str) -> None\nWraps MsiRecordSetString")},
     { "SetStream", (PyCFunction)record_setstream, METH_VARARGS, 
