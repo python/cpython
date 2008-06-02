@@ -383,6 +383,7 @@ def add_ui(db):
              ])
 
     compileargs = r'-Wi "[TARGETDIR]Lib\compileall.py" -f -x bad_coding|badsyntax|site-packages|py2_ "[TARGETDIR]Lib"'
+    lib2to3args = r'-c "import lib2to3.pygram, lib2to3.patcomp;lib2to3.patcomp.PatternCompiler()"'
     # See "CustomAction Table"
     add_data(db, "CustomAction", [
         # msidbCustomActionTypeFirstSequence + msidbCustomActionTypeTextData + msidbCustomActionTypeProperty
@@ -396,6 +397,7 @@ def add_ui(db):
         # See "Custom Action Type 18"
         ("CompilePyc", 18, "python.exe", compileargs),
         ("CompilePyo", 18, "python.exe", "-O "+compileargs),
+        ("CompileGrammar", 18, "python.exe", lib2to3args),
         ])
 
     # UI Sequences, see "InstallUISequence Table", "Using a Sequence Table"
@@ -425,12 +427,14 @@ def add_ui(db):
              ("UpdateEditIDLE", None, 1050),
              ("CompilePyc", "COMPILEALL", 6800),
              ("CompilePyo", "COMPILEALL", 6801),
+             ("CompileGrammar", "COMPILEALL", 6802),
             ])
     add_data(db, "AdminExecuteSequence",
             [("InitialTargetDir", 'TARGETDIR=""', 750),
              ("SetDLLDirToTarget", 'DLLDIR=""', 751),
              ("CompilePyc", "COMPILEALL", 6800),
              ("CompilePyo", "COMPILEALL", 6801),
+             ("CompileGrammar", "COMPILEALL", 6802),
             ])
 
     #####################################################################
@@ -841,6 +845,26 @@ def extract_msvcr90():
         result.append((f, kw))
     return result
 
+def generate_license():
+    import shutil, glob
+    out = open("LICENSE.txt", "w")
+    shutil.copyfileobj(open(os.path.join(srcdir, "LICENSE")), out)
+    for dir, file in (("bzip2","LICENSE"),
+                      ("db", "LICENSE"),
+                      ("openssl", "LICENSE"),
+                      ("tcl", "license.terms"),
+                      ("tk", "license.terms")):
+        out.write("\nThis copy of Python includes a copy of %s, which is licensed under the following terms:\n\n" % dir)
+        dirs = glob.glob(srcdir+"/../"+dir+"-*")
+        if not dirs:
+            raise ValueError, "Could not find "+srcdir+"/../"+dir+"-*"
+        if len(dirs) > 2:
+            raise ValueError, "Multiple copies of "+dir
+        dir = dirs[0]
+        shutil.copyfileobj(open(os.path.join(dir, file)), out)
+    out.close()
+
+
 class PyDirectory(Directory):
     """By default, all components in the Python installer
     can run from source."""
@@ -861,7 +885,8 @@ def add_files(db):
         root.add_file("%s/w9xpopen.exe" % PCBUILD)
     root.add_file("README.txt", src="README")
     root.add_file("NEWS.txt", src="Misc/NEWS")
-    root.add_file("LICENSE.txt", src="LICENSE")
+    generate_license()
+    root.add_file("LICENSE.txt", src=os.path.abspath("LICENSE.txt"))
     root.start_component("python.exe", keyfile="python.exe")
     root.add_file("%s/python.exe" % PCBUILD)
     root.start_component("pythonw.exe", keyfile="pythonw.exe")
@@ -979,6 +1004,8 @@ def add_files(db):
         if dir=="setuptools":
             lib.add_file("cli.exe")
             lib.add_file("gui.exe")
+        if dir=="lib2to3":
+            lib.removefile("pickle", "*.pickle")
         if dir=="data" and parent.physical=="test" and parent.basedir.physical=="email":
             # This should contain all non-.svn files listed in subversion
             for f in os.listdir(lib.absolute):
