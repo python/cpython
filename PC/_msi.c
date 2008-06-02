@@ -351,7 +351,7 @@ record_getinteger(msiobj* record, PyObject* args)
         PyErr_SetString(MSIError, "could not convert record field to integer");
         return NULL;
     }
-    return PyInt_FromLong((long) status);
+    return PyLong_FromLong((long) status);
 }
 
 static PyObject*
@@ -375,7 +375,7 @@ record_getstring(msiobj* record, PyObject* args)
     }
     if (status != ERROR_SUCCESS)
         return msierror((int) status);
-    string = PyString_FromString(res);
+    string = PyUnicode_FromString(res);
     if (buf != res)
         free(res);
     return string;
