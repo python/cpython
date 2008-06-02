@@ -72,6 +72,9 @@ Extension Modules
 Library
 -------
 
+- Issue #2782: The datetime module's strftime methods now accept
+  unicode format strings just as time.strftime always has.
+
 - The sgmllib and htmllib modules have been deprecated for removal
   in Python 3.0.
 
