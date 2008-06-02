@@ -484,7 +484,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
     int ok = 0;
     PyObject *result = NULL;
     PyObject *format_spec_object = NULL;
-
+    PyObject *(*formatter)(PyObject *, STRINGLIB_CHAR *, Py_ssize_t) = NULL;
     STRINGLIB_CHAR* format_spec_start = format_spec->ptr ?
 	    format_spec->ptr : NULL;
     Py_ssize_t format_spec_len = format_spec->ptr ?
@@ -493,14 +493,20 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
     /* If we know the type exactly, skip the lookup of __format__ and just
        call the formatter directly. */
     if (PyUnicode_CheckExact(fieldobj))
-	result = _PyUnicode_FormatAdvanced(fieldobj, format_spec_start,
-					format_spec_len);
+	formatter = _PyUnicode_FormatAdvanced;
     else if (PyLong_CheckExact(fieldobj))
-	result = _PyLong_FormatAdvanced(fieldobj, format_spec_start,
-					format_spec_len);
+	formatter =_PyLong_FormatAdvanced;
     else if (PyFloat_CheckExact(fieldobj))
-	result = _PyFloat_FormatAdvanced(fieldobj, format_spec_start,
-					 format_spec_len);
+	formatter = _PyFloat_FormatAdvanced;
+
+    /* XXX: for 2.6, convert format_spec to the appropriate type
+       (unicode, str) */
+
+    if (formatter) {
+	/* we know exactly which formatter will be called when __format__ is
+	   looked up, so call it directly, instead. */
+	result = formatter(fieldobj, format_spec_start, format_spec_len);
+    }
     else {
 	/* We need to create an object out of the pointers we have, because
 	   __format__ takes a string/unicode object for format_spec. */
