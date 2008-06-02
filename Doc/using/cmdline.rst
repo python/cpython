@@ -467,6 +467,13 @@ if Python was configured with the :option:`--with-pydebug` build option.
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
 
+.. envvar:: PYTHONIOENCODING
+
+   Overrides the encoding used for stdin/stdout/stderr, in the syntax
+   encodingname:errorhandler, with the :errors part being optional.
+
+   .. versionadded:: 2.6
+
 
 .. envvar:: PYTHONMALLOCSTATS
 

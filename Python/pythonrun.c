@@ -701,6 +701,7 @@ initstdio(void)
 	PyObject *std = NULL;
 	int status = 0, fd;
 	PyObject * encoding_attr;
+	char *encoding, *errors;
 
 	/* Hack to avoid a nasty recursion issue when Python is invoked
 	   in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -730,6 +731,16 @@ initstdio(void)
 		goto error;
 	}
 
+	encoding = Py_GETENV("PYTHONIOENCODING");
+	if (encoding) {
+		encoding = strdup(encoding);
+		errors = strchr(encoding, ':');
+		if (errors) {
+			*errors = '\0';
+			errors++;
+		}
+	}
+
 	/* Set sys.stdin */
 	fd = fileno(stdin);
 	/* Under some conditions stdin, stdout and stderr may not be connected
@@ -745,8 +756,8 @@ initstdio(void)
 #endif
 	}
 	else {
-		if (!(std = PyFile_FromFd(fd, "<stdin>", "r", -1, NULL, NULL,
-					  "\n", 0))) {
+		if (!(std = PyFile_FromFd(fd, "<stdin>", "r", -1, encoding, 
+					  errors, "\n", 0))) {
 			goto error;
 		}
 	} /* if (fd < 0) */
@@ -765,8 +776,8 @@ initstdio(void)
 #endif
 	}
 	else {
-		if (!(std = PyFile_FromFd(fd, "<stdout>", "w", -1, NULL, NULL,
-					  "\n", 0))) {
+		if (!(std = PyFile_FromFd(fd, "<stdout>", "w", -1, encoding, 
+					  errors, "\n", 0))) {
 			goto error;
 		}
 	} /* if (fd < 0) */
@@ -786,8 +797,8 @@ initstdio(void)
 #endif
 	}
 	else {
-		if (!(std = PyFile_FromFd(fd, "<stderr>", "w", -1, NULL, NULL,
-					  "\n", 0))) {
+		if (!(std = PyFile_FromFd(fd, "<stderr>", "w", -1, encoding,
+					  errors, "\n", 0))) {
 			goto error;
 		}
 	} /* if (fd < 0) */
