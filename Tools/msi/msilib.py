@@ -566,6 +566,11 @@ class Directory:
                  [(self.component+"c", self.component, "*.pyc", self.logical, 2),
                   (self.component+"o", self.component, "*.pyo", self.logical, 2)])
 
+    def removefile(self, key, pattern):
+        "Add a RemoveFile entry"
+        add_data(self.db, "RemoveFile", [(self.component+key, self.component, pattern, self.logical, 2)])
+
+
 class Feature:
     def __init__(self, db, id, title, desc, display, level = 1,
                  parent=None, directory = None, attributes=0):
