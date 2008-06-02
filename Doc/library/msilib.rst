@@ -262,6 +262,18 @@ Record Objects
    :cfunc:`MsiRecordGetFieldCount`.
 
 
+.. method:: Record.GetInteger(field)
+
+   Return the value of *field* as an integer where possible.  *field* must
+   be an integer.
+
+
+.. method:: Record.GetString(field)
+
+   Return the value of *field* as a string where possible.  *field* must
+   be an integer.
+
+
 .. method:: Record.SetString(field, value)
 
    Set *field* to *value* through :cfunc:`MsiRecordSetString`. *field* must be an
@@ -540,4 +552,5 @@ definitions. Currently, these definitions are based on MSI version 2.0.
 
    This module contains definitions for the UIText and ActionText tables, for the
    standard installer actions.
+
 
