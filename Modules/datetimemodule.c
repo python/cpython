@@ -2,6 +2,8 @@
  *  http://www.zope.org/Members/fdrake/DateTimeWiki/FrontPage
  */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "modsupport.h"
 #include "structmember.h"
@@ -1152,8 +1154,8 @@ make_freplacement(PyObject *object)
  * needed.
  */
 static PyObject *
-wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
-	      PyObject *tzinfoarg)
+wrap_strftime(PyObject *object, const char *format, size_t format_len,
+		PyObject *timetuple, PyObject *tzinfoarg)
 {
 	PyObject *result = NULL;	/* guilty until proved innocent */
 
@@ -1161,20 +1163,19 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	PyObject *Zreplacement = NULL;	/* py string, replacement for %Z */
 	PyObject *freplacement = NULL;	/* py string, replacement for %f */
 
-	char *pin;	/* pointer to next char in input format */
-	char ch;	/* next char in input format */
+	const char *pin;	/* pointer to next char in input format */
+	char ch;		/* next char in input format */
 
 	PyObject *newfmt = NULL;	/* py string, the output format */
 	char *pnew;	/* pointer to available byte in output format */
-	int totalnew;	/* number bytes total in output format buffer,
-			   exclusive of trailing \0 */
-	int usednew;	/* number bytes used so far in output format buffer */
+	size_t totalnew;	/* number bytes total in output format buffer,
+				   exclusive of trailing \0 */
+	size_t usednew;	/* number bytes used so far in output format buffer */
 
-	char *ptoappend; /* pointer to string to append to output buffer */
-	int ntoappend;	/* # of bytes to append to output buffer */
+	const char *ptoappend;	/* ptr to string to append to output buffer */
+	size_t ntoappend;	/* # of bytes to append to output buffer */
 
 	assert(object && format && timetuple);
-	assert(PyBytes_Check(format));
 
 	/* Give up if the year is before 1900.
 	 * Python strftime() plays games with the year, and different
@@ -1205,13 +1206,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	 * a new format.  Since computing the replacements for those codes
 	 * is expensive, don't unless they're actually used.
 	 */
-	totalnew = PyBytes_Size(format) + 1;	/* realistic if no %z/%Z/%f */
+	totalnew = format_len + 1;	/* realistic if no %z/%Z/%f */
 	newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
 	if (newfmt == NULL) goto Done;
 	pnew = PyBytes_AsString(newfmt);
 	usednew = 0;
 
-	pin = PyBytes_AsString(format);
+	pin = format;
 	while ((ch = *pin++) != '\0') {
 		if (ch != '%') {
 			ptoappend = pin - 1;
@@ -1313,7 +1314,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  		if (ntoappend == 0)
  			continue;
  		while (usednew + ntoappend > totalnew) {
- 			int bigger = totalnew << 1;
+ 			size_t bigger = totalnew << 1;
  			if ((bigger >> 1) != totalnew) { /* overflow */
  				PyErr_NoMemory();
  				goto Done;
@@ -2480,18 +2481,19 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	 * timetuple() method appropriate to self's class.
 	 */
 	PyObject *result;
-	PyObject *format;
 	PyObject *tuple;
+	const char *format;
+	Py_ssize_t format_len;
 	static char *keywords[] = {"format", NULL};
 
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:strftime", keywords,
-					  &PyBytes_Type, &format))
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "s#:strftime", keywords,
+					  &format, &format_len))
 		return NULL;
 
 	tuple = PyObject_CallMethod((PyObject *)self, "timetuple", "()");
 	if (tuple == NULL)
 		return NULL;
-	result = wrap_strftime((PyObject *)self, format, tuple,
+	result = wrap_strftime((PyObject *)self, format, format_len, tuple,
 			       (PyObject *)self);
 	Py_DECREF(tuple);
 	return result;
@@ -3256,12 +3258,13 @@ static PyObject *
 time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
 	PyObject *result;
-	PyObject *format;
 	PyObject *tuple;
+	const char *format;
+	Py_ssize_t format_len;
 	static char *keywords[] = {"format", NULL};
 
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:strftime", keywords,
-					  &PyBytes_Type, &format))
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "s#:strftime", keywords,
+					  &format, &format_len))
 		return NULL;
 
 	/* Python's strftime does insane things with the year part of the
@@ -3277,7 +3280,8 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	if (tuple == NULL)
 		return NULL;
 	assert(PyTuple_Size(tuple) == 9);
-	result = wrap_strftime((PyObject *)self, format, tuple, Py_None);
+	result = wrap_strftime((PyObject *)self, format, format_len, tuple,
+			       Py_None);
 	Py_DECREF(tuple);
 	return result;
 }
