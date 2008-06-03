@@ -1052,11 +1052,16 @@ class Misc:
                 if hasattr(v, '__call__'):
                     v = self._register(v)
                 elif isinstance(v, (tuple, list)):
+                    nv = []
                     for item in v:
-                        if not isinstance(item, (str, int)):
+                        if isinstance(item, int):
+                            nv.append(str(item))
+                        elif isinstance(item, str):
+                            nv.append(('{%s}' if ' ' in item else '%s') % item)
+                        else:
                             break
                     else:
-                        v = ' '.join(map(str, v))
+                        v = ' '.join(nv)
                 res = res + ('-'+k, v)
         return res
     def nametowidget(self, name):
