@@ -54,12 +54,6 @@ _getrecord_ex(Py_UCS4 code)
     return &_PyUnicode_Database_Records[index];
 }
 
-static const _PyUnicode_DatabaseRecord*
-_getrecord(PyUnicodeObject* v)
-{
-    return _getrecord_ex(*PyUnicode_AS_UNICODE(v));
-}
-
 /* ------------- Previous-version API ------------------------------------- */
 typedef struct previous_version {
     PyObject_HEAD
@@ -92,6 +86,24 @@ new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4)
 	return (PyObject*)self;
 }
 
+
+static Py_UCS4 getuchar(PyUnicodeObject *obj)
+{
+    Py_UNICODE *v = PyUnicode_AS_UNICODE(obj);
+
+    if (PyUnicode_GET_SIZE(obj) == 1)
+	return *v;
+#ifndef Py_UNICODE_WIDE
+    else if ((PyUnicode_GET_SIZE(obj) == 2) &&
+             (0xD800 <= v[0] && v[0] <= 0xDBFF) &&
+             (0xDC00 <= v[1] && v[1] <= 0xDFFF))
+	return (((v[0] & 0x3FF)<<10) | (v[1] & 0x3FF)) + 0x10000;
+#endif
+    PyErr_SetString(PyExc_TypeError,
+                    "need a single Unicode character as parameter");
+    return (Py_UCS4)-1;
+}
+
 /* --- Module API --------------------------------------------------------- */
 
 PyDoc_STRVAR(unicodedata_decimal__doc__,
@@ -108,17 +120,16 @@ unicodedata_decimal(PyObject *self, PyObject *args)
     PyObject *defobj = NULL;
     int have_old = 0;
     long rc;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!|O:decimal", &PyUnicode_Type, &v, &defobj))
         return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
         return NULL;
-    }
 
     if (self) {
-        const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
+        const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0) {
             /* unassigned */
             have_old = 1;
@@ -131,7 +142,7 @@ unicodedata_decimal(PyObject *self, PyObject *args)
     }
 
     if (!have_old)
-        rc = Py_UNICODE_TODECIMAL(*PyUnicode_AS_UNICODE(v));
+        rc = Py_UNICODE_TODECIMAL(c);
     if (rc < 0) {
 	if (defobj == NULL) {
 	    PyErr_SetString(PyExc_ValueError,
@@ -159,15 +170,14 @@ unicodedata_digit(PyObject *self, PyObject *args)
     PyUnicodeObject *v;
     PyObject *defobj = NULL;
     long rc;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!|O:digit", &PyUnicode_Type, &v, &defobj))
         return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
         return NULL;
-    }
-    rc = Py_UNICODE_TODIGIT(*PyUnicode_AS_UNICODE(v));
+    rc = Py_UNICODE_TODIGIT(c);
     if (rc < 0) {
 	if (defobj == NULL) {
 	    PyErr_SetString(PyExc_ValueError, "not a digit");
@@ -195,17 +205,16 @@ unicodedata_numeric(PyObject *self, PyObject *args)
     PyObject *defobj = NULL;
     int have_old = 0;
     double rc;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!|O:numeric", &PyUnicode_Type, &v, &defobj))
         return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
-	return NULL;
-    }
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
+        return NULL;
 
     if (self) {
-        const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
+        const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0) {
             /* unassigned */
             have_old = 1;
@@ -218,7 +227,7 @@ unicodedata_numeric(PyObject *self, PyObject *args)
     }
 
     if (!have_old)
-        rc = Py_UNICODE_TONUMERIC(*PyUnicode_AS_UNICODE(v));
+        rc = Py_UNICODE_TONUMERIC(c);
     if (rc == -1.0) {
 	if (defobj == NULL) {
 	    PyErr_SetString(PyExc_ValueError, "not a numeric character");
@@ -243,18 +252,17 @@ unicodedata_category(PyObject *self, PyObject *args)
 {
     PyUnicodeObject *v;
     int index;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!:category",
 			  &PyUnicode_Type, &v))
 	return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
-	return NULL;
-    }
-    index = (int) _getrecord(v)->category;
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
+        return NULL;
+    index = (int) _getrecord_ex(c)->category;
     if (self) {
-        const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
+        const change_record *old = get_old_record(self, c);
         if (old->category_changed != 0xFF)
             index = old->category_changed;
     }
@@ -273,18 +281,17 @@ unicodedata_bidirectional(PyObject *self, PyObject *args)
 {
     PyUnicodeObject *v;
     int index;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!:bidirectional",
 			  &PyUnicode_Type, &v))
 	return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
-	return NULL;
-    }
-    index = (int) _getrecord(v)->bidirectional;
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
+        return NULL;
+    index = (int) _getrecord_ex(c)->bidirectional;
     if (self) {
-        const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
+        const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
         else if (old->bidir_changed != 0xFF)
@@ -305,18 +312,17 @@ unicodedata_combining(PyObject *self, PyObject *args)
 {
     PyUnicodeObject *v;
     int index;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!:combining",
 			  &PyUnicode_Type, &v))
 	return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
-	return NULL;
-    }
-    index = (int) _getrecord(v)->combining;
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
+        return NULL;
+    index = (int) _getrecord_ex(c)->combining;
     if (self) {
-        const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
+        const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
     }
@@ -335,18 +341,17 @@ unicodedata_mirrored(PyObject *self, PyObject *args)
 {
     PyUnicodeObject *v;
     int index;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!:mirrored",
 			  &PyUnicode_Type, &v))
 	return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
-	return NULL;
-    }
-    index = (int) _getrecord(v)->mirrored;
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
+        return NULL;
+    index = (int) _getrecord_ex(c)->mirrored;
     if (self) {
-        const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
+        const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
     }
@@ -364,18 +369,17 @@ unicodedata_east_asian_width(PyObject *self, PyObject *args)
 {
     PyUnicodeObject *v;
     int index;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!:east_asian_width",
 			  &PyUnicode_Type, &v))
 	return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
-	return NULL;
-    }
-    index = (int) _getrecord(v)->east_asian_width;
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
+        return NULL;
+    index = (int) _getrecord_ex(c)->east_asian_width;
     if (self) {
-        const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
+        const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
     }
@@ -396,20 +400,19 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     char decomp[256];
     int code, index, count, i;
     unsigned int prefix_index;
+    Py_UCS4 c;
 
     if (!PyArg_ParseTuple(args, "O!:decomposition",
 			  &PyUnicode_Type, &v))
 	return NULL;
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
-	return NULL;
-    }
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
+        return NULL;
 
-    code = (int) *PyUnicode_AS_UNICODE(v);
+    code = (int)c;
 
     if (self) {
-        const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
+        const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             return PyUnicode_FromString(""); /* unassigned */
     }
@@ -1039,20 +1042,18 @@ static PyObject *
 unicodedata_name(PyObject* self, PyObject* args)
 {
     char name[NAME_MAXLEN];
+    Py_UCS4 c;
 
     PyUnicodeObject* v;
     PyObject* defobj = NULL;
     if (!PyArg_ParseTuple(args, "O!|O:name", &PyUnicode_Type, &v, &defobj))
         return NULL;
 
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-			"need a single Unicode character as parameter");
-	return NULL;
-    }
+    c = getuchar(v);
+    if (c == (Py_UCS4)-1)
+        return NULL;
 
-    if (!_getucname(self, (Py_UCS4) *PyUnicode_AS_UNICODE(v),
-                    name, sizeof(name))) {
+    if (!_getucname(self, c, name, sizeof(name))) {
 	if (defobj == NULL) {
 	    PyErr_SetString(PyExc_ValueError, "no such name");
             return NULL;
