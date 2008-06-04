@@ -3625,6 +3625,17 @@ long_round(PyObject *self, PyObject *args)
 #undef UNDEF_NDIGITS
 }
 
+static PyObject *
+long_sizeof(PyLongObject *v)
+{
+	Py_ssize_t res;
+
+	res = sizeof(PyLongObject) + abs(Py_SIZE(v)) * sizeof(digit);
+        if (Py_SIZE(v) != 0)
+		res -=  sizeof(digit);
+	return PyLong_FromSsize_t(res);
+}
+
 #if 0
 static PyObject *
 long_is_finite(PyObject *v)
@@ -3651,6 +3662,8 @@ static PyMethodDef long_methods[] = {
 	 "Rounding with an ndigits arguments defers to float.__round__."},
 	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
         {"__format__", (PyCFunction)long__format__, METH_VARARGS},
+	{"__sizeof__",	(PyCFunction)long_sizeof, METH_NOARGS,
+	 "Returns size in memory, in bytes"},
 	{NULL,		NULL}		/* sentinel */
 };
 
