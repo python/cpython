@@ -822,7 +822,8 @@ PyDoc_STRVAR(complex_conjugate_doc,
 static PyObject *
 complex_getnewargs(PyComplexObject *v)
 {
-	return Py_BuildValue("(D)", &v->cval);
+	Py_complex c = v->cval;
+	return Py_BuildValue("(dd)", c.real, c.imag);
 }
 
 #if 0
