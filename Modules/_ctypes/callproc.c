@@ -83,6 +83,131 @@
 #define DONT_USE_SEH
 #endif
 
+/*
+  ctypes maintains a module-global, but thread-local, variable that contains
+  an error number; called 'ctypes_errno' for this discussion.  This variable
+  is a private copy of the systems 'errno' value; the copy is swapped with the
+  'errno' variable on several occasions.
+
+  Foreign functions created with CDLL(..., use_errno=True), when called, swap
+  the values just before the actual function call, and swapped again
+  immediately afterwards.  The 'use_errno' parameter defaults to False, in
+  this case 'ctypes_errno' is not touched.
+
+  The values are also swapped immeditately before and after ctypes callback
+  functions are called, if the callbacks are constructed using the new
+  optional use_errno parameter set to True: CFUNCTYPE(..., use_errno=TRUE) or
+  WINFUNCTYPE(..., use_errno=True).
+
+  Two new ctypes functions are provided to access the 'ctypes_errno' value
+  from Python:
+
+  - ctypes.set_errno(value) sets ctypes_errno to 'value', the previous
+    ctypes_errno value is returned.
+
+  - ctypes.get_errno() returns the current ctypes_errno value.
+
+  ---
+
+  On Windows, the same scheme is implemented for the error value which is
+  managed by the GetLastError() and SetLastError() windows api calls.
+
+  The ctypes functions are 'ctypes.set_last_error(value)' and
+  'ctypes.get_last_error()', the CDLL and WinDLL optional parameter is named
+  'use_last_error', defaults to False.
+
+  ---
+
+  On Windows, TlsSetValue and TlsGetValue calls are used to provide thread
+  local storage for the variables; ctypes compiled with __GNUC__ uses __thread
+  variables.
+*/
+
+#if defined(MS_WIN32)
+DWORD dwTlsIndex_LastError;
+DWORD dwTlsIndex_errno;
+
+void
+_swap_last_error(void)
+{
+	DWORD temp = GetLastError();
+	SetLastError((DWORD)TlsGetValue(dwTlsIndex_LastError));
+	TlsSetValue(dwTlsIndex_LastError, (void *)temp);
+}
+
+static PyObject *
+get_last_error(PyObject *self, PyObject *args)
+{
+	return PyInt_FromLong((DWORD)TlsGetValue(dwTlsIndex_LastError));
+}
+
+static PyObject *
+set_last_error(PyObject *self, PyObject *args)
+{
+	DWORD new_value, prev_value;
+	if (!PyArg_ParseTuple(args, "i", &new_value))
+		return NULL;
+	prev_value = (DWORD)TlsGetValue(dwTlsIndex_LastError);
+	TlsSetValue(dwTlsIndex_LastError, (void *)new_value);
+	return PyInt_FromLong(prev_value);
+}
+
+void
+_swap_errno(void)
+{
+	int temp = errno;
+	errno = (int)TlsGetValue(dwTlsIndex_errno);
+	TlsSetValue(dwTlsIndex_errno, (void *)temp);
+}
+
+static PyObject *
+get_errno(PyObject *self, PyObject *args)
+{
+	return PyInt_FromLong((int)TlsGetValue(dwTlsIndex_errno));
+}
+
+static PyObject *
+set_errno(PyObject *self, PyObject *args)
+{
+	int new_value, prev_value;
+	if (!PyArg_ParseTuple(args, "i", &new_value))
+		return NULL;
+	prev_value = (int)TlsGetValue(dwTlsIndex_errno);
+	TlsSetValue(dwTlsIndex_errno, (void *)new_value);
+	return PyInt_FromLong(prev_value);
+}
+
+#elif defined(__GNUC__)
+static __thread int ctypes_errno;
+
+void
+_swap_errno(void)
+{
+	int temp = errno;
+	errno = ctypes_errno;
+	ctypes_errno = temp;
+}
+
+static PyObject *
+get_errno(PyObject *self, PyObject *args)
+{
+	return PyInt_FromLong(ctypes_errno);
+}
+
+static PyObject *
+set_errno(PyObject *self, PyObject *args)
+{
+	int new_errno;
+	if (!PyArg_ParseTuple(args, "i", &new_errno))
+		return NULL;
+	return PyInt_FromLong(_save_errno(new_errno));
+}
+#else
+
+#error "TLS not implemented in this configuration"
+
+#endif
+
 #ifdef MS_WIN32
 PyObject *ComError;
 
@@ -660,7 +785,11 @@ static int _call_function_pointer(int flags,
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_UNBLOCK_THREADS
 #endif
+	if (flags & FUNCFLAG_USE_ERRNO)
+		_swap_errno();
 #ifdef MS_WIN32
+	if (flags & FUNCFLAG_USE_LASTERROR)
+		_swap_last_error();
 #ifndef DONT_USE_SEH
 	__try {
 #endif
@@ -675,7 +804,11 @@ static int _call_function_pointer(int flags,
 		;
 	}
 #endif
+	if (flags & FUNCFLAG_USE_LASTERROR)
+		_swap_last_error();
 #endif
+	if (flags & FUNCFLAG_USE_ERRNO)
+		_swap_errno();
 #ifdef WITH_THREAD
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_BLOCK_THREADS
@@ -1667,6 +1800,8 @@ pointer(PyObject *self, PyObject *arg)
 }
 
 PyMethodDef module_methods[] = {
+	{"get_errno", get_errno, METH_NOARGS},
+	{"set_errno", set_errno, METH_VARARGS},
 	{"POINTER", POINTER, METH_O },
 	{"pointer", pointer, METH_O },
 	{"_unpickle", unpickle, METH_VARARGS },
@@ -1675,6 +1810,8 @@ PyMethodDef module_methods[] = {
 	{"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},
 #endif
 #ifdef MS_WIN32
+	{"get_last_error", get_last_error, METH_NOARGS},
+	{"set_last_error", set_last_error, METH_VARARGS},
 	{"CopyComPointer", copy_com_pointer, METH_VARARGS, copy_com_pointer_doc},
 	{"FormatError", format_error, METH_VARARGS, format_error_doc},
 	{"LoadLibrary", load_library, METH_VARARGS, load_library_doc},

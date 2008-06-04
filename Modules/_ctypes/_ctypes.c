@@ -3271,7 +3271,7 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	thunk = AllocFunctionCallback(callable,
 				      dict->argtypes,
 				      dict->restype,
-				      dict->flags & FUNCFLAG_CDECL);
+				      dict->flags);
 	if (!thunk)
 		return NULL;
 
@@ -5273,6 +5273,17 @@ init_ctypes(void)
 	if (!m)
 		return;
 
+#ifdef MS_WIN32
+	dwTlsIndex_LastError = TlsAlloc();
+	dwTlsIndex_errno = TlsAlloc();
+	if (dwTlsIndex_LastError == TLS_OUT_OF_INDEXES
+	    || dwTlsIndex_errno == TLS_OUT_OF_INDEXES) {
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not allocate TLSIndex for LastError value");
+		return;
+	}
+#endif
+
 	_pointer_type_cache = PyDict_New();
 	if (_pointer_type_cache == NULL)
 		return;
@@ -5394,6 +5405,8 @@ init_ctypes(void)
 	PyModule_AddObject(m, "FUNCFLAG_STDCALL", PyInt_FromLong(FUNCFLAG_STDCALL));
 #endif
 	PyModule_AddObject(m, "FUNCFLAG_CDECL", PyInt_FromLong(FUNCFLAG_CDECL));
+	PyModule_AddObject(m, "FUNCFLAG_USE_ERRNO", PyInt_FromLong(FUNCFLAG_USE_ERRNO));
+	PyModule_AddObject(m, "FUNCFLAG_USE_LASTERROR", PyInt_FromLong(FUNCFLAG_USE_LASTERROR));
 	PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyInt_FromLong(FUNCFLAG_PYTHONAPI));
 	PyModule_AddStringConstant(m, "__version__", "1.1.0");
 
