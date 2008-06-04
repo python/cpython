@@ -1100,7 +1100,6 @@ static PyStructSequence_Field flags_fields[] = {
 	{"no_user_site",	"-s"},
 	{"no_site",		"-S"},
 	{"ignore_environment",	"-E"},
-	{"tabcheck",		"-t or -tt"},
 	{"verbose",		"-v"},
 #ifdef RISCOS
 	{"riscos_wimp",		"???"},
@@ -1116,9 +1115,9 @@ static PyStructSequence_Desc flags_desc = {
 	flags__doc__,	/* doc */
 	flags_fields,	/* fields */
 #ifdef RISCOS
-	12
-#else
 	11
+#else
+	10
 #endif
 };
 
@@ -1144,7 +1143,6 @@ make_flags(void)
 	SetFlag(Py_NoUserSiteDirectory);
 	SetFlag(Py_NoSiteFlag);
 	SetFlag(Py_IgnoreEnvironmentFlag);
-	SetFlag(Py_TabcheckFlag);
 	SetFlag(Py_VerboseFlag);
 #ifdef RISCOS
 	SetFlag(Py_RISCOSWimpFlag);
