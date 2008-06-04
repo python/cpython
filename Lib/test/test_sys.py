@@ -324,7 +324,7 @@ class SysModuleTest(unittest.TestCase):
         self.failUnless(sys.flags)
         attrs = ("debug", "division_warning",
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
-                 "no_site", "ignore_environment", "tabcheck", "verbose",
+                 "no_site", "ignore_environment", "verbose",
                  "bytes_warning")
         for attr in attrs:
             self.assert_(hasattr(sys.flags, attr), attr)
