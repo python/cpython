@@ -1851,9 +1851,6 @@ dict_sizeof(PyDictObject *mp)
 	return PyLong_FromSsize_t(res);
 }
 
-PyDoc_STRVAR(has_key__doc__,
-"D.has_key(k) -> True if D has a key k, else False");
-
 PyDoc_STRVAR(contains__doc__,
 "D.__contains__(k) -> True if D has a key k, else False");
 
