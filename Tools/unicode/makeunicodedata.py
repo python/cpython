@@ -60,6 +60,7 @@ TITLE_MASK = 0x40
 UPPER_MASK = 0x80
 XID_START_MASK = 0x100
 XID_CONTINUE_MASK = 0x200
+NONPRINTABLE_MASK = 0x400
 
 def maketables(trace=0):
 
@@ -71,7 +72,7 @@ def maketables(trace=0):
                           EASTASIAN_WIDTH % version,
                           DERIVED_CORE_PROPERTIES % version)
 
-    print(len(filter(None, unicode.table)), "characters")
+    print(len(list(filter(None, unicode.table))), "characters")
 
     for version in old_versions:
         print("--- Reading", UNICODE_DATA % ("-"+version), "...")
@@ -79,7 +80,7 @@ def maketables(trace=0):
                                   COMPOSITION_EXCLUSIONS % ("-"+version),
                                   EASTASIAN_WIDTH % ("-"+version),
                                   DERIVED_CORE_PROPERTIES % ("-"+version))
-        print(len(filter(None, old_unicode.table)), "characters")
+        print(len(list(filter(None, old_unicode.table))), "characters")
         merge_old_version(version, unicode, old_unicode)
 
     makeunicodename(unicode, trace)
@@ -371,6 +372,10 @@ def makeunicodetype(unicode, trace):
                 flags |= TITLE_MASK
             if category == "Lu":
                 flags |= UPPER_MASK
+            if category[0] == "C":
+                flags |= NONPRINTABLE_MASK
+            if category[0] == "Z" and char != " ":
+                flags |= NONPRINTABLE_MASK
             if "XID_Start" in properties:
                 flags |= XID_START_MASK
             if "XID_Continue" in properties:
@@ -465,7 +470,7 @@ def makeunicodename(unicode, trace):
             if name and name[0] != "<":
                 names[char] = name + chr(0)
 
-    print(len(n for n in names if n is not None), "distinct names")
+    print(len(list(n for n in names if n is not None)), "distinct names")
 
     # collect unique words from names (note that we differ between
     # words inside a sentence, and words ending a sentence.  the

@@ -91,6 +91,14 @@ are always available.  They are listed here in alphabetical order.
           return False
 
 
+.. function:: ascii(object)
+
+   As :func:`repr`, return a string containing a printable
+   representation of an object. But unlike :func:`repr`, the non-ASCII
+   characters in the string returned by :func:`ascii`() are hex-escaped
+   to generate a same string as :func:`repr` in Python 2.
+
+
 .. function:: bin(x)
 
    Convert an integer number to a binary string. The result is a valid Python

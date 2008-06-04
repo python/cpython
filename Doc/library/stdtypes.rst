@@ -774,6 +774,14 @@ functions based on regular expressions.
    least one cased character, false otherwise.
 
 
+.. method:: str.isprintable()
+
+   Return true if all characters in the string are printable and there is at
+   least one character, false otherwise. Characters defined in the Unicode 
+   character database as "Other" or "Separator" other than ASCII space(0x20) are 
+   not considered printable.
+
+
 .. method:: str.isspace()
 
    Return true if there are only whitespace characters in the string and there is

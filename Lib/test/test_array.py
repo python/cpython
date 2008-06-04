@@ -768,7 +768,7 @@ class UnicodeTest(StringTest):
         a = array.array('u', s)
         self.assertEqual(
             repr(a),
-            "array('u', '\\x00=\"\\'a\\\\b\\x80\\xff\\x00\\x01\\u1234')")
+            "array('u', '\\x00=\"\\'a\\\\b\\x80\xff\\x00\\x01\u1234')")
 
         self.assertRaises(TypeError, a.fromunicode)
 
