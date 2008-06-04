@@ -331,6 +331,16 @@ always available.
    :func:`setrecursionlimit`.
 
 
+.. function:: getsizeof(object)
+
+   Return the size of an object in bytes. The object can be any type of
+   object. All built-in objects will return correct results, but this
+   does not have to hold true for third-party extensions as it is implementation 
+   specific.
+
+   .. versionadded:: 2.6
+
+
 .. function:: _getframe([depth])
 
    Return a frame object from the call stack.  If optional integer *depth* is

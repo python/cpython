@@ -1,6 +1,6 @@
 # -*- coding: iso-8859-1 -*-
 import unittest, test.support
-import sys, io
+import sys, io, os
 
 class SysModuleTest(unittest.TestCase):
 
@@ -369,8 +369,141 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'?')
 
 
+class SizeofTest(unittest.TestCase):
+
+    def setUp(self):
+        import struct
+        self.i = len(struct.pack('i', 0))
+        self.l = len(struct.pack('l', 0))
+        self.p = len(struct.pack('P', 0))
+        self.headersize = self.l + self.p
+        if hasattr(sys, "gettotalrefcount"):
+            self.headersize += 2 * self.p
+        self.file = open(test.support.TESTFN, 'wb')
+
+    def tearDown(self):
+        self.file.close()
+        test.support.unlink(test.support.TESTFN)
+
+    def check_sizeof(self, o, size):
+        result = sys.getsizeof(o)
+        msg = 'wrong size for %s: got %d, expected %d' \
+            % (type(o), result, size)
+        self.assertEqual(result, size, msg)
+
+    def align(self, value):
+        mod = value % self.p
+        if mod != 0:
+            return value - mod + self.p
+        else:
+            return value
+
+    def test_align(self):
+        self.assertEqual(self.align(0) % self.p, 0)
+        self.assertEqual(self.align(1) % self.p, 0)
+        self.assertEqual(self.align(3) % self.p, 0)
+        self.assertEqual(self.align(4) % self.p, 0)
+        self.assertEqual(self.align(7) % self.p, 0)
+        self.assertEqual(self.align(8) % self.p, 0)
+        self.assertEqual(self.align(9) % self.p, 0)
+
+    def test_standardtypes(self):
+        i = self.i
+        l = self.l
+        p = self.p
+        h = self.headersize
+        # bool
+        self.check_sizeof(True, h + 2*l)
+        # bytearray
+        self.check_sizeof(bytes(), h + self.align(i) + l + p)
+        # cell
+        def get_cell():
+            x = 42
+            def inner():
+                return x
+            return inner
+        self.check_sizeof(get_cell().__closure__[0], h + p)
+        # code XXX wrong size
+        # self.check_sizeof(get_cell().__code__, h + self.align(4*i) + 8*p +\
+        #                    self.align(i) + 2*p)
+        # complex
+        self.check_sizeof(complex(0,1), h + 2*8)
+        # enumerate
+        self.check_sizeof(enumerate([]), h + l + 3*p)
+        # reverse
+        self.check_sizeof(reversed(''), h + l + p )
+        # file XXX wrong size
+        #self.check_sizeof(self.file, h + 4*p + self.align(2*i) + 4*p +\
+        #                    self.align(3*i) + 3*p + self.align(i))
+        # float
+        self.check_sizeof(float(0), h + 8)
+        # function
+        def func(): pass
+        self.check_sizeof(func, h + 11 * p)
+        class c():
+            @staticmethod
+            def foo():
+                pass
+            @classmethod
+            def bar(cls):
+                pass
+            # staticmethod
+            self.check_sizeof(foo, h + l)
+            # classmethod
+            self.check_sizeof(bar, h + l)
+        # generator
+        def get_gen(): yield 1
+        self.check_sizeof(get_gen(), h + p + self.align(i) + 2*p)
+        # builtin_function_or_method
+        self.check_sizeof(abs, h + 3*p)
+        # module
+        self.check_sizeof(unittest, h + p)
+        # range
+        self.check_sizeof(range(1), h + 3*p)
+        # slice
+        self.check_sizeof(slice(0), h + 3*p)
+
+        h += l
+        # new-style class
+        class class_newstyle(object):
+            def method():
+                pass
+        # type (PyTypeObject + PyNumberMethods +  PyMappingMethods +
+        #       PySequenceMethods +  PyBufferProcs)
+        # XXX wrong size
+        # len_typeobject = p + 2*l + 15*p + l + 4*p + l + 9*p + l + 11*p
+        # self.check_sizeof(class_newstyle,
+        #                  h + len_typeobject + 42*p + 10*p + 3*p + 6*p)
+
+
+    def test_specialtypes(self):
+        i = self.i
+        l = self.l
+        p = self.p
+        h = self.headersize
+        # dict
+        self.check_sizeof({}, h + 3*l + 3*p + 8*(l + 2*p))
+        longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
+        self.check_sizeof(longdict, h + 3*l + 3*p + 8*(l + 2*p) + 16*(l + 2*p))
+        # list
+        self.check_sizeof([], h + l + p + l)
+        self.check_sizeof([1, 2, 3], h + l + p + l + 3*l)
+
+        h += l
+        # long
+        self.check_sizeof(0, h + self.align(2))
+        self.check_sizeof(1, h + self.align(2))
+        self.check_sizeof(-1, h + self.align(2))
+        self.check_sizeof(32768, h + self.align(2) + 2)
+        self.check_sizeof(32768*32768-1, h + self.align(2) + 2)
+        self.check_sizeof(32768*32768, h + self.align(2) + 4)
+        # XXX add Unicode support
+        # self.check_sizeof('', h + l + self.align(i + 1))
+        # self.check_sizeof('abc', h + l + self.align(i + 1) + 3)
+
+
 def test_main():
-    test.support.run_unittest(SysModuleTest)
+    test.support.run_unittest(SysModuleTest, SizeofTest)
 
 if __name__ == "__main__":
     test_main()

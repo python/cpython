@@ -195,6 +195,7 @@ You can get the information from the list type:
      '__rmul__',
      '__setattr__',
      '__setitem__',
+     '__sizeof__',
      '__str__',
      '__subclasshook__',
      'append',

@@ -2247,6 +2247,15 @@ list_init(PyListObject *self, PyObject *args, PyObject *kw)
 	return 0;
 }
 
+static PyObject *
+list_sizeof(PyListObject *self)
+{
+	Py_ssize_t res;
+
+	res = sizeof(PyListObject) + self->allocated * sizeof(void*);
+	return PyLong_FromSsize_t(res);
+}
+
 static PyObject *list_iter(PyObject *seq);
 static PyObject *list_reversed(PyListObject* seq, PyObject* unused);
 
@@ -2254,6 +2263,8 @@ PyDoc_STRVAR(getitem_doc,
 "x.__getitem__(y) <==> x[y]");
 PyDoc_STRVAR(reversed_doc,
 "L.__reversed__() -- return a reverse iterator over the list");
+PyDoc_STRVAR(sizeof_doc,
+"L.__sizeof__() -- size of L in memory, in bytes");
 PyDoc_STRVAR(append_doc,
 "L.append(object) -- append object to end");
 PyDoc_STRVAR(extend_doc,
@@ -2279,6 +2290,7 @@ static PyObject *list_subscript(PyListObject*, PyObject*);
 static PyMethodDef list_methods[] = {
 	{"__getitem__", (PyCFunction)list_subscript, METH_O|METH_COEXIST, getitem_doc},
 	{"__reversed__",(PyCFunction)list_reversed, METH_NOARGS, reversed_doc},
+	{"__sizeof__",  (PyCFunction)list_sizeof, METH_NOARGS, sizeof_doc},
 	{"append",	(PyCFunction)listappend,  METH_O, append_doc},
 	{"insert",	(PyCFunction)listinsert,  METH_VARARGS, insert_doc},
 	{"extend",      (PyCFunction)listextend,  METH_O, extend_doc},

@@ -1840,10 +1840,27 @@ dict_tp_clear(PyObject *op)
 
 static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
 
+static PyObject *
+dict_sizeof(PyDictObject *mp)
+{
+	Py_ssize_t res;
+
+	res = sizeof(PyDictObject) + sizeof(mp->ma_table);
+	if (mp->ma_table != mp->ma_smalltable)
+		res = res + (mp->ma_mask + 1) * sizeof(PyDictEntry);
+	return PyLong_FromSsize_t(res);
+}
+
+PyDoc_STRVAR(has_key__doc__,
+"D.has_key(k) -> True if D has a key k, else False");
+
 PyDoc_STRVAR(contains__doc__,
 "D.__contains__(k) -> True if D has a key k, else False");
 
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
+
+PyDoc_STRVAR(sizeof__doc__,
+"D.__sizeof__() -> size of D in memory, in bytes");
 
 PyDoc_STRVAR(get__doc__,
 "D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.");
@@ -1890,6 +1907,8 @@ static PyMethodDef mapp_methods[] = {
 	 contains__doc__},
 	{"__getitem__", (PyCFunction)dict_subscript,	METH_O | METH_COEXIST,
 	 getitem__doc__},
+	{"__sizeof__",	(PyCFunction)dict_sizeof,	METH_NOARGS,
+	 sizeof__doc__},
 	{"get",         (PyCFunction)dict_get,          METH_VARARGS,
 	 get__doc__},
 	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS,
