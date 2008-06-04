@@ -818,7 +818,7 @@ string_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 		    PyObject_IsInstance((PyObject*)b,
 					 (PyObject*)&PyUnicode_Type))) {
 			if (PyErr_WarnEx(PyExc_BytesWarning,
-				    "Comparsion between bytes and string", 1))
+				    "Comparison between bytes and string", 1))
 				return NULL;
 		}
 		result = Py_NotImplemented;

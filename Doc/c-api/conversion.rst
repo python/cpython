@@ -83,11 +83,11 @@ The following functions provide locale-independent string to number conversions.
    
 .. cfunction:: char * PyOS_stricmp(char *s1, char *s2)
 
-   Case insensitive comparsion of strings. The functions works almost
+   Case insensitive comparison of strings. The functions works almost
    identical to :cfunc:`strcmp` except that it ignores the case.
 
 
 .. cfunction:: char * PyOS_strnicmp(char *s1, char *s2, Py_ssize_t  size)
 
-   Case insensitive comparsion of strings. The functions works almost
+   Case insensitive comparison of strings. The functions works almost
    identical to :cfunc:`strncmp` except that it ignores the case.
