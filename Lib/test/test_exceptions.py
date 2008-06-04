@@ -80,10 +80,10 @@ class ExceptionTests(unittest.TestCase):
         self.raise_catch(IndentationError, "IndentationError")
 
         self.raise_catch(TabError, "TabError")
-        try: compile("try:\n\t1/0\n    \t1/0\nfinally:\n pass\n",
-                     '<string>', 'exec')
-        except TabError: pass
-        else: self.fail("TabError not raised")
+        # can only be tested under -tt, and is the only test for -tt
+        #try: compile("try:\n\t1/0\n    \t1/0\nfinally:\n pass\n", '<string>', 'exec')
+        #except TabError: pass
+        #else: self.fail("TabError not raised")
 
         self.raise_catch(SystemError, "SystemError")
 

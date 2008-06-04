@@ -666,7 +666,7 @@ _ssl$(MODULE.EXT): $(OUT)_ssl$O $(OUT)_ssl_m.def $(PYTHON.IMPLIB)
 # the test target
 test:
 	-find ../../Lib -name "*.py[co]" -exec rm {} ";"
-	-./python -E ../../lib/test/regrtest.py -l -u "network"
-	./python -E ../../lib/test/regrtest.py -l -u "network"
+	-./python -E -tt ../../lib/test/regrtest.py -l -u "network"
+	./python -E -tt ../../lib/test/regrtest.py -l -u "network"
 
 -include $(OUTBASE)python.dep

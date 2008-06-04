@@ -144,13 +144,6 @@ the Python configuration.
 
    Return 1 or 0 depending on whether *ch* is an alphanumeric character.
 
-.. cfunction:: int Py_UNICODE_ISPRINTABLE(Py_UNICODE ch)
-
-   Return 1 or 0 depending on whether *ch* is a printable character.
-   Characters defined in the Unicode character database as "Other"
-   or "Separator" other than ASCII space(0x20) are not considered
-   printable.
-
 These APIs can be used for fast direct character conversions:
 
 
@@ -234,9 +227,6 @@ APIs:
    | Format Characters | Type                | Comment                        |
    +===================+=====================+================================+
    | :attr:`%%`        | *n/a*               | The literal % character.       |
-   +-------------------+---------------------+--------------------------------+
-   | :attr:`%a`        | PyObject\*          | The result of calling          |
-   |                   |                     | :func:`ascii`.                 |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%c`        | int                 | A single character,            |
    |                   |                     | represented as an C int.       |
