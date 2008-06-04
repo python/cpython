@@ -35,7 +35,7 @@ def dis(x=None):
                 print()
     elif hasattr(x, 'co_code'):
         disassemble(x)
-    elif isinstance(x, str):
+    elif isinstance(x, (bytes, bytearray)):
         disassemble_string(x)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
