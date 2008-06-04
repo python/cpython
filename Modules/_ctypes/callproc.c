@@ -197,10 +197,12 @@ get_errno(PyObject *self, PyObject *args)
 static PyObject *
 set_errno(PyObject *self, PyObject *args)
 {
-	int new_errno;
+	int new_errno, prev_errno;
 	if (!PyArg_ParseTuple(args, "i", &new_errno))
 		return NULL;
-	return PyInt_FromLong(_save_errno(new_errno));
+	prev_errno = ctypes_errno;
+	ctypes_errno = new_errno;
+	return PyInt_FromLong(prev_errno);
 }
 #else
 
