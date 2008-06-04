@@ -46,7 +46,6 @@ Option                                  Effect
 -OO     remove doc-strings in addition to the -O optimizations
 -Q arg  division options: -Qold (default), -Qwarn, -Qwarnall, -Qnew
 -S      Don't perform 'import site' on initialization
--t      Issue warnings about inconsistent tab usage (-tt: issue errors)
 -u      Unbuffered binary stdout and stderr (also PYTHONUNBUFFERED=x).
 -v      Verbose (trace import statements) (also PYTHONVERBOSE=x)
 -W arg : warning control (arg is action:message:category:module:lineno)

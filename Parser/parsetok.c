@@ -10,8 +10,6 @@
 #include "errcode.h"
 #include "graminit.h"
 
-int Py_TabcheckFlag;
-
 
 /* Forward */
 static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int *);
@@ -57,9 +55,6 @@ PyParser_ParseStringFlagsFilenameEx(const char *s, const char *filename,
 	}
 
         tok->filename = filename ? filename : "<string>";
-	if (Py_TabcheckFlag >= 3)
-		tok->alterror = 0;
-
 	return parsetok(tok, g, start, err_ret, flags);
 }
 
@@ -97,9 +92,6 @@ PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
 		return NULL;
 	}
 	tok->filename = filename;
-	if (Py_TabcheckFlag >= 3)
-		tok->alterror = 0;
-
 	return parsetok(tok, g, start, err_ret, flags);
 }
 
