@@ -33,9 +33,7 @@ if _os.name == "posix" and _sys.platform == "darwin":
         DEFAULT_MODE = RTLD_GLOBAL
 
 from _ctypes import FUNCFLAG_CDECL as _FUNCFLAG_CDECL, \
-     FUNCFLAG_PYTHONAPI as _FUNCFLAG_PYTHONAPI, \
-     FUNCFLAG_USE_ERRNO as _FUNCFLAG_USE_ERRNO, \
-     FUNCFLAG_USE_LASTERROR as _FUNCFLAG_USE_LASTERROR
+     FUNCFLAG_PYTHONAPI as _FUNCFLAG_PYTHONAPI
 
 """
 WINOLEAPI -> HRESULT
@@ -75,9 +73,8 @@ def c_buffer(init, size=None):
     return create_string_buffer(init, size)
 
 _c_functype_cache = {}
-def CFUNCTYPE(restype, *argtypes, **kw):
-    """CFUNCTYPE(restype, *argtypes,
-                 use_errno=False, use_last_error=False) -> function prototype.
+def CFUNCTYPE(restype, *argtypes):
+    """CFUNCTYPE(restype, *argtypes) -> function prototype.
 
     restype: the result type
     argtypes: a sequence specifying the argument types
@@ -91,21 +88,14 @@ def CFUNCTYPE(restype, *argtypes, **kw):
     prototype((ordinal number, dll object)[, paramflags]) -> foreign function exported by ordinal
     prototype((function name, dll object)[, paramflags]) -> foreign function exported by name
     """
-    flags = _FUNCFLAG_CDECL
-    if kw.pop("use_errno", False):
-        flags |= _FUNCFLAG_USE_ERRNO
-    if kw.pop("use_last_error", False):
-        flags |= _FUNCFLAG_USE_LASTERROR
-    if kw:
-        raise ValueError("unexpected keyword argument(s) %s" % kw.keys())
     try:
-        return _c_functype_cache[(restype, argtypes, flags)]
+        return _c_functype_cache[(restype, argtypes)]
     except KeyError:
         class CFunctionType(_CFuncPtr):
             _argtypes_ = argtypes
             _restype_ = restype
-            _flags_ = flags
-        _c_functype_cache[(restype, argtypes, flags)] = CFunctionType
+            _flags_ = _FUNCFLAG_CDECL
+        _c_functype_cache[(restype, argtypes)] = CFunctionType
         return CFunctionType
 
 if _os.name in ("nt", "ce"):
@@ -116,23 +106,16 @@ if _os.name in ("nt", "ce"):
         _FUNCFLAG_STDCALL = _FUNCFLAG_CDECL
 
     _win_functype_cache = {}
-    def WINFUNCTYPE(restype, *argtypes, **kw):
+    def WINFUNCTYPE(restype, *argtypes):
         # docstring set later (very similar to CFUNCTYPE.__doc__)
-        flags = _FUNCFLAG_STDCALL
-        if kw.pop("use_errno", False):
-            flags |= _FUNCFLAG_USE_ERRNO
-        if kw.pop("use_last_error", False):
-            flags |= _FUNCFLAG_USE_LASTERROR
-        if kw:
-            raise ValueError("unexpected keyword argument(s) %s" % kw.keys())
         try:
-            return _win_functype_cache[(restype, argtypes, flags)]
+            return _win_functype_cache[(restype, argtypes)]
         except KeyError:
             class WinFunctionType(_CFuncPtr):
                 _argtypes_ = argtypes
                 _restype_ = restype
-                _flags_ = flags
-            _win_functype_cache[(restype, argtypes, flags)] = WinFunctionType
+                _flags_ = _FUNCFLAG_STDCALL
+            _win_functype_cache[(restype, argtypes)] = WinFunctionType
             return WinFunctionType
     if WINFUNCTYPE.__doc__:
         WINFUNCTYPE.__doc__ = CFUNCTYPE.__doc__.replace("CFUNCTYPE", "WINFUNCTYPE")
@@ -141,7 +124,6 @@ elif _os.name == "posix":
     from _ctypes import dlopen as _dlopen
 
 from _ctypes import sizeof, byref, addressof, alignment, resize
-from _ctypes import get_errno, set_errno
 from _ctypes import _SimpleCData
 
 def _check_size(typ, typecode=None):
@@ -331,24 +313,12 @@ class CDLL(object):
     Calling the functions releases the Python GIL during the call and
     reacquires it afterwards.
     """
-    _func_flags_ = _FUNCFLAG_CDECL
-    _func_restype_ = c_int
+    class _FuncPtr(_CFuncPtr):
+        _flags_ = _FUNCFLAG_CDECL
+        _restype_ = c_int # default, can be overridden in instances
 
-    def __init__(self, name, mode=DEFAULT_MODE, handle=None,
-                 use_errno=False,
-                 use_last_error=False):
+    def __init__(self, name, mode=DEFAULT_MODE, handle=None):
         self._name = name
-        flags = self._func_flags_
-        if use_errno:
-            flags |= _FUNCFLAG_USE_ERRNO
-        if use_last_error:
-            flags |= _FUNCFLAG_USE_LASTERROR
-
-        class _FuncPtr(_CFuncPtr):
-            _flags_ = flags
-            _restype_ = self._func_restype_
-        self._FuncPtr = _FuncPtr
-
         if handle is None:
             self._handle = _dlopen(self._name, mode)
         else:
@@ -378,7 +348,9 @@ class PyDLL(CDLL):
     access Python API functions.  The GIL is not released, and
     Python exceptions are handled correctly.
     """
-    _func_flags_ = _FUNCFLAG_CDECL | _FUNCFLAG_PYTHONAPI
+    class _FuncPtr(_CFuncPtr):
+        _flags_ = _FUNCFLAG_CDECL | _FUNCFLAG_PYTHONAPI
+        _restype_ = c_int # default, can be overridden in instances
 
 if _os.name in ("nt", "ce"):
 
@@ -386,7 +358,9 @@ if _os.name in ("nt", "ce"):
         """This class represents a dll exporting functions using the
         Windows stdcall calling convention.
         """
-        _func_flags_ = _FUNCFLAG_STDCALL
+        class _FuncPtr(_CFuncPtr):
+            _flags_ = _FUNCFLAG_STDCALL
+            _restype_ = c_int # default, can be overridden in instances
 
     # XXX Hm, what about HRESULT as normal parameter?
     # Mustn't it derive from c_long then?
@@ -410,8 +384,9 @@ if _os.name in ("nt", "ce"):
         HRESULT error values are automatically raised as WindowsError
         exceptions.
         """
-        _func_flags_ = _FUNCFLAG_STDCALL
-        _func_restype_ = HRESULT
+        class _FuncPtr(_CFuncPtr):
+            _flags_ = _FUNCFLAG_STDCALL
+            _restype_ = HRESULT
 
 class LibraryLoader(object):
     def __init__(self, dlltype):
@@ -449,7 +424,6 @@ if _os.name in ("nt", "ce"):
         GetLastError = windll.kernel32.GetLastError
     else:
         GetLastError = windll.coredll.GetLastError
-    from _ctypes import get_last_error, set_last_error
 
     def WinError(code=None, descr=None):
         if code is None:

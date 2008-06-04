@@ -72,9 +72,6 @@ Extension Modules
 Library
 -------
 
-- Issue #1798: Add ctypes calling convention that allows safe access
-  to errno.
-
 - Patch #2125: Add GetInteger and GetString methods for 
   msilib.Record objects.
 

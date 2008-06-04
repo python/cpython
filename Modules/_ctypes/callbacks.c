@@ -189,7 +189,6 @@ static void _CallPythonObject(void *mem,
 			      SETFUNC setfunc,
 			      PyObject *callable,
 			      PyObject *converters,
-			      int flags,
 			      void **pArgs)
 {
 	Py_ssize_t i;
@@ -272,22 +271,8 @@ static void _CallPythonObject(void *mem,
 #define CHECK(what, x) \
 if (x == NULL) _AddTraceback(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_Print()
 
-	if (flags & FUNCFLAG_USE_ERRNO)
-		_swap_errno();
-#ifdef MS_WIN32
-	if (flags & FUNCFLAG_USE_LASTERROR)
-		_swap_last_error();
-#endif
-
 	result = PyObject_CallObject(callable, arglist);
 	CHECK("'calling callback function'", result);
-
-#ifdef MS_WIN32
-	if (flags & FUNCFLAG_USE_LASTERROR)
-		_swap_last_error();
-#endif
-	if (flags & FUNCFLAG_USE_ERRNO)
-		_swap_errno();
 	if ((restype != &ffi_type_void) && result) {
 		PyObject *keep;
 		assert(setfunc);
@@ -337,7 +322,6 @@ static void closure_fcn(ffi_cif *cif,
 			  p->setfunc,
 			  p->callable,
 			  p->converters,
-			  p->flags,
 			  args);
 }
 
@@ -367,7 +351,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 CThunkObject *AllocFunctionCallback(PyObject *callable,
 				    PyObject *converters,
 				    PyObject *restype,
-				    int flags)
+				    int is_cdecl)
 {
 	int result;
 	CThunkObject *p;
@@ -387,7 +371,6 @@ CThunkObject *AllocFunctionCallback(PyObject *callable,
 		goto error;
 	}
 
-	p->flags = flags;
 	for (i = 0; i < nArgs; ++i) {
 		PyObject *cnv = PySequence_GetItem(converters, i);
 		if (cnv == NULL)
@@ -415,7 +398,7 @@ CThunkObject *AllocFunctionCallback(PyObject *callable,
 
 	cc = FFI_DEFAULT_ABI;
 #if defined(MS_WIN32) && !defined(_WIN32_WCE) && !defined(MS_WIN64)
-	if ((flags & FUNCFLAG_CDECL) == 0)
+	if (is_cdecl == 0)
 		cc = FFI_STDCALL;
 #endif
 	result = ffi_prep_cif(&p->cif, cc,
