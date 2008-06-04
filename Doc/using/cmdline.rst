@@ -222,6 +222,13 @@ Miscellaneous options
    manipulations of :data:`sys.path` that it entails.
 
 
+.. cmdoption:: -t
+
+   Issue a warning when a source file mixes tabs and spaces for indentation in a
+   way that makes it depend on the worth of a tab expressed in spaces.  Issue an
+   error when the option is given twice (:option:`-tt`).
+
+
 .. cmdoption:: -u
    
    Force stdin, stdout and stderr to be totally unbuffered.  On systems where it

@@ -34,7 +34,7 @@ if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
 if "%1"=="-q" (set qmode=yes)    & shift & goto CheckOpts
 if "%1"=="-d" (set exe=python_d) & shift & goto CheckOpts
 
-set cmd=%exe% %dashO% -E ../../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
+set cmd=%exe% %dashO% -E -tt ../../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 if defined qmode goto Qmode
 
 echo Deleting .pyc/.pyo files ...

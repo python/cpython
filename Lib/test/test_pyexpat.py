@@ -131,7 +131,7 @@ class ParseTest(unittest.TestCase):
         self.assertEquals(op[1], "Comment: ' comment data '")
         self.assertEquals(op[2], "Notation declared: ('notation', None, 'notation.jpeg', None)")
         self.assertEquals(op[3], "Unparsed entity decl: ('unparsed_entity', None, 'entity.file', None, 'notation')")
-        self.assertEquals(op[4], "Start element: 'root' {'attr1': 'value1', 'attr2': 'value2\u1f40'}")
+        self.assertEquals(op[4], "Start element: 'root' {'attr1': 'value1', 'attr2': 'value2\\u1f40'}")
         self.assertEquals(op[5], "NS decl: 'myns' 'http://www.python.org/namespace'")
         self.assertEquals(op[6], "Start element: 'http://www.python.org/namespace!subelement' {}")
         self.assertEquals(op[7], "Character data: 'Contents of subelements'")

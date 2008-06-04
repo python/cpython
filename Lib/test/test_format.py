@@ -216,8 +216,6 @@ class FormatTest(unittest.TestCase):
         testformat("%o", 0o42, "42")
         testformat("%o", -0o42, "-42")
         testformat("%o", float(0o42), "42")
-        testformat("%r", "\u0370", "'\u0370'")
-        testformat("%a", "\u0370", "'\\u0370'")
         # Test exception for unknown format characters
         if verbose:
             print('Testing exceptions')
@@ -237,8 +235,8 @@ class FormatTest(unittest.TestCase):
                 raise
             else:
                 raise TestFailed('did not get expected exception: %s' % excmsg)
-        test_exc('abc %b', 1, ValueError,
-                 "unsupported format character 'b' (0x62) at index 5")
+        test_exc('abc %a', 1, ValueError,
+                 "unsupported format character 'a' (0x61) at index 5")
         #test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
         #         "unsupported format character '?' (0x3000) at index 5")
         test_exc('%d', '1', TypeError, "%d format: a number is required, not str")

@@ -265,38 +265,6 @@ PyDoc_STRVAR(any_doc,
 \n\
 Return True if bool(x) is True for any x in the iterable.");
 
-static PyObject *
-builtin_ascii(PyObject *self, PyObject *v)
-{
-	PyObject *repr, *bytes, *ascii;
-	repr = PyObject_Repr(v);
-	if (!repr)
-	    return NULL;
-
-        bytes = PyUnicode_EncodeASCII(
-		PyUnicode_AS_UNICODE(repr),
-		PyUnicode_GET_SIZE(repr),
-		"backslashreplace");
-
-	Py_DECREF(repr);
-	if (bytes == NULL) 
-	    return NULL;
-
-	ascii = PyUnicode_FromEncodedObject(bytes, 
-		    "ASCII", NULL);
-	Py_DECREF(bytes);
-	if (ascii == NULL)
-	    return NULL;
-
-	return ascii;
-}
-
-PyDoc_STRVAR(ascii_doc,
-"ascii(object) -> string\n\
-\n\
-Return the canonical string representation of the object as repr(),\n\
-but non-ASCII characters in the string are hex-escaped");
-
 
 static PyObject *
 builtin_bin(PyObject *self, PyObject *v)
@@ -2220,7 +2188,6 @@ static PyMethodDef builtin_methods[] = {
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
- 	{"ascii",	builtin_ascii,      METH_O, ascii_doc},
 	{"bin",		builtin_bin,	    METH_O, bin_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},

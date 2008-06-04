@@ -49,6 +49,7 @@ EXPORTS
   "PyParser_Delete"
 
 ; From python26_s.lib(parsetok)
+  "Py_TabcheckFlag"
   "PyParser_ParseString"
   "PyParser_ParseStringFlagsFilename"
   "PyParser_ParseFile"
