@@ -947,7 +947,7 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
         PyObject_IsInstance(other, (PyObject*)&PyUnicode_Type)) {
         if (Py_BytesWarningFlag && op == Py_EQ) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
-                            "Comparsion between bytearray and string", 1))
+                            "Comparison between bytearray and string", 1))
                 return NULL;
         }
 
