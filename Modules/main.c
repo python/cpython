@@ -72,7 +72,6 @@ static char *usage_2 = "\
 -OO    : remove doc-strings in addition to the -O optimizations\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
 -S     : don't imply 'import site' on initialization\n\
--t     : issue warnings about inconsistent tab usage (-tt: issue errors)\n\
 ";
 static char *usage_3 = "\
 -u     : unbuffered binary stdout and stderr; also PYTHONUNBUFFERED=x\n\
@@ -370,7 +369,7 @@ Py_Main(int argc, wchar_t **argv)
 			break;
 
 		case 't':
-			Py_TabcheckFlag++;
+			/* ignored for backwards compatibility */
 			break;
 
 		case 'u':

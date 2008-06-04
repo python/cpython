@@ -159,6 +159,9 @@ class BuiltinTest(unittest.TestCase):
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
 
+    def test_ascii(self):
+        self.assertEqual(ascii("\u0370"), "'\\u0370'")
+
     def test_neg(self):
         x = -sys.maxsize-1
         self.assert_(isinstance(x, int))

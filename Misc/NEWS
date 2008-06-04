@@ -12,6 +12,8 @@ What's new in Python 3.0b1?
 Core and Builtins
 -----------------
 
+- Removed the already-defunct ``-t`` option.
+
 - Issue #2957: Corrected a ValueError "recursion limit exceeded", when
   unmarshalling many code objects, which happens when importing a
   large .pyc file (~1000 functions).

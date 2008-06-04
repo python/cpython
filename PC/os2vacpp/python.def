@@ -61,7 +61,6 @@ EXPORTS
                Py_InteractiveFlag
                Py_NoSiteFlag
                Py_OptimizeFlag
-               Py_TabcheckFlag
                Py_UseClassExceptionsFlag
                Py_VerboseFlag
                _PyImport_Filetab

@@ -1441,6 +1441,13 @@ class OutputChecker:
     and returns true if they match; and `output_difference`, which
     returns a string describing the differences between two outputs.
     """
+
+    def _toAscii(self, s):
+        """
+        Convert string to hex-escaped ASCII string.
+        """
+        return str(s.encode('ASCII', 'backslashreplace'), "ASCII")
+
     def check_output(self, want, got, optionflags):
         """
         Return True iff the actual output from an example (`got`)
@@ -1451,6 +1458,15 @@ class OutputChecker:
         documentation for `TestRunner` for more information about
         option flags.
         """
+
+        # If `want` contains hex-escaped character such as "\u1234",
+        # then `want` is a string of six characters(e.g. [\,u,1,2,3,4]).
+        # On the other hand, `got` could be an another sequence of
+        # characters such as [\u1234], so `want` and `got` should
+        # be folded to hex-escaped ASCII string to compare.
+        got = self._toAscii(got)
+        want = self._toAscii(want)
+
         # Handle the common case first, for efficiency:
         # if they're string-identical, always return true.
         if got == want:

@@ -21,6 +21,7 @@
 #define UPPER_MASK 0x80
 #define XID_START_MASK 0x100
 #define XID_CONTINUE_MASK 0x200
+#define NONPRINTABLE_MASK 0x400
 
 typedef struct {
     const Py_UNICODE upper;
@@ -673,6 +674,26 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
 int _PyUnicode_IsNumeric(Py_UNICODE ch)
 {
     return _PyUnicode_ToNumeric(ch) != -1.0;
+}
+
+/* Returns 1 for Unicode characters to be hex-escaped when repr()ed,
+   0 otherwise.
+   Characters defined in the Unicode character database as following
+   categories are not considered printable.
+      * Cc (Other, Control)
+      * Cf (Other, Format)
+      * Cs (Other, Surrogate)
+      * Co (Other, Private Use)
+      * Cn (Other, Not Assigned)
+      * Zl Separator, Line ('\u2028', LINE SEPARATOR)
+      * Zp Separator, Paragraph ('\u2029', PARAGRAPH SEPARATOR)
+      * Zs (Separator, Space) other than ASCII space('\x20').
+*/
+int _PyUnicode_IsPrintable(Py_UNICODE ch)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    return (ctype->flags & NONPRINTABLE_MASK) == 0;
 }
 
 #ifndef WANT_WCTYPE_FUNCTIONS
