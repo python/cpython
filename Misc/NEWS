@@ -72,6 +72,8 @@ Extension Modules
 Library
 -------
 
+- Issue #2404: ctypes objects support the new pep3118 buffer interface
+
 - Patch #2125: Add GetInteger and GetString methods for 
   msilib.Record objects.
 
