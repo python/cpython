@@ -337,7 +337,7 @@ def _tokenize(readline, encoding):
 
     if encoding is not None:
         yield (ENCODING, encoding, (0, 0), (0, 0), '')
-    while 1:                                   # loop over lines in stream
+    while True:             # loop over lines in stream
         try:
             line = readline()
         except StopIteration:
