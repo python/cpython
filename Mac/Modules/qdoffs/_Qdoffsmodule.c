@@ -4,6 +4,7 @@
 #include "Python.h"
 
 
+#ifndef __LP64__
 
 #include "pymactoolbox.h"
 
@@ -630,8 +631,10 @@ static PyObject *Qdoffs_PutPixMapBytes(PyObject *_self, PyObject *_args)
 	return _res;
 
 }
+#endif /* __LP64__ */
 
 static PyMethodDef Qdoffs_methods[] = {
+#ifndef __LP64__
 	{"NewGWorld", (PyCFunction)Qdoffs_NewGWorld, 1,
 	 PyDoc_STR("(short PixelDepth, Rect boundsRect, CTabHandle cTable, GDHandle aGDevice, GWorldFlags flags) -> (GWorldPtr offscreenGWorld)")},
 	{"LockPixels", (PyCFunction)Qdoffs_LockPixels, 1,
@@ -678,6 +681,7 @@ static PyMethodDef Qdoffs_methods[] = {
 	 PyDoc_STR("(pixmap, int start, int size) -> string. Return bytes from the pixmap")},
 	{"PutPixMapBytes", (PyCFunction)Qdoffs_PutPixMapBytes, 1,
 	 PyDoc_STR("(pixmap, int start, string data). Store bytes into the pixmap")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -687,6 +691,7 @@ static PyMethodDef Qdoffs_methods[] = {
 void init_Qdoffs(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
 
 
@@ -694,8 +699,10 @@ void init_Qdoffs(void)
 	        PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldPtr, GWorldObj_New);
 	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldPtr, GWorldObj_Convert);
 
+#endif /* __LP64__ */
 
 	m = Py_InitModule("_Qdoffs", Qdoffs_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Qdoffs_Error = PyMac_GetOSErrException();
 	if (Qdoffs_Error == NULL ||
@@ -708,6 +715,7 @@ void init_Qdoffs(void)
 	/* Backward-compatible name */
 	Py_INCREF(&GWorld_Type);
 	PyModule_AddObject(m, "GWorldType", (PyObject *)&GWorld_Type);
+#endif /* __LP64__ */
 }
 
 /* ======================= End module _Qdoffs ======================= */

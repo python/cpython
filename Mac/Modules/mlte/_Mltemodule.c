@@ -3,6 +3,7 @@
 
 #include "Python.h"
 
+#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -1622,7 +1623,10 @@ static PyObject *Mlte_TXNInitTextension(PyObject *_self, PyObject *_args)
 
 }
 
+#endif /* __LP64__ */
+
 static PyMethodDef Mlte_methods[] = {
+#ifndef __LP64__
 	{"TXNNewObject", (PyCFunction)Mlte_TXNNewObject, 1,
 	 PyDoc_STR("(FSSpec * iFileSpec, WindowPtr iWindow, Rect iFrame, TXNFrameOptions iFrameOptions, TXNFrameType iFrameType, TXNFileType iFileType, TXNPermanentTextEncodingType iPermanentEncoding) -> (TXNObject oTXNObject, TXNFrameID oTXNFrameID)")},
 	{"TXNTerminateTextension", (PyCFunction)Mlte_TXNTerminateTextension, 1,
@@ -1639,6 +1643,7 @@ static PyMethodDef Mlte_methods[] = {
 	 PyDoc_STR("() -> (TXNVersionValue _rv, TXNFeatureBits oFeatureFlags)")},
 	{"TXNInitTextension", (PyCFunction)Mlte_TXNInitTextension, 1,
 	 PyDoc_STR("(TXNInitOptions) -> None")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -1648,14 +1653,17 @@ static PyMethodDef Mlte_methods[] = {
 void init_Mlte(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
 
 
 
 	//      PyMac_INIT_TOOLBOX_OBJECT_NEW(xxxx);
 
+#endif /* __LP64__ */
 
 	m = Py_InitModule("_Mlte", Mlte_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Mlte_Error = PyMac_GetOSErrException();
 	if (Mlte_Error == NULL ||
@@ -1675,6 +1683,7 @@ void init_Mlte(void)
 	/* Backward-compatible name */
 	Py_INCREF(&TXNFontMenuObject_Type);
 	PyModule_AddObject(m, "TXNFontMenuObjectType", (PyObject *)&TXNFontMenuObject_Type);
+#endif /* __LP64__ */
 }
 
 /* ======================== End module _Mlte ======================== */

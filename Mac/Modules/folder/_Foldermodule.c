@@ -27,8 +27,8 @@ static PyObject *Folder_FindFolder(PyObject *_self, PyObject *_args)
 	short vRefNum;
 	OSType folderType;
 	Boolean createFolder;
-	short foundVRefNum;
-	long foundDirID;
+	FSVolumeRefNum  foundVRefNum;
+	SInt32 foundDirID;
 	if (!PyArg_ParseTuple(_args, "hO&b",
 	                      &vRefNum,
 	                      PyMac_GetOSType, &folderType,
@@ -158,6 +158,7 @@ static PyObject *Folder_RemoveFolderDescriptor(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+#ifndef __LP64__
 static PyObject *Folder_GetFolderName(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -248,6 +249,7 @@ static PyObject *Folder_FindFolderRouting(PyObject *_self, PyObject *_args)
 	                     flags);
 	return _res;
 }
+#endif /* !__LP64__ */
 
 static PyObject *Folder_InvalidateFolderDescriptorCache(PyObject *_self, PyObject *_args)
 {
@@ -300,6 +302,7 @@ static PyMethodDef Folder_methods[] = {
 	 PyDoc_STR("(UInt32 requestedTypeCount) -> (UInt32 totalTypeCount, FolderType theTypes)")},
 	{"RemoveFolderDescriptor", (PyCFunction)Folder_RemoveFolderDescriptor, 1,
 	 PyDoc_STR("(FolderType foldType) -> None")},
+#ifndef __LP64__
 	{"GetFolderName", (PyCFunction)Folder_GetFolderName, 1,
 	 PyDoc_STR("(short vRefNum, OSType foldType, Str255 name) -> (short foundVRefNum)")},
 	{"AddFolderRouting", (PyCFunction)Folder_AddFolderRouting, 1,
@@ -308,6 +311,7 @@ static PyMethodDef Folder_methods[] = {
 	 PyDoc_STR("(OSType fileType, FolderType routeFromFolder) -> None")},
 	{"FindFolderRouting", (PyCFunction)Folder_FindFolderRouting, 1,
 	 PyDoc_STR("(OSType fileType, FolderType routeFromFolder) -> (FolderType routeToFolder, RoutingFlags flags)")},
+#endif /* !__LP64__ */
 	{"InvalidateFolderDescriptorCache", (PyCFunction)Folder_InvalidateFolderDescriptorCache, 1,
 	 PyDoc_STR("(short vRefNum, long dirID) -> None")},
 	{"IdentifyFolder", (PyCFunction)Folder_IdentifyFolder, 1,

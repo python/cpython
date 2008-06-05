@@ -3,7 +3,7 @@
 
 #include "Python.h"
 
-
+#ifndef __LP64__
 
 #include "pymactoolbox.h"
 
@@ -2141,20 +2141,28 @@ static PyMethodDef CarbonEvents_methods[] = {
 	{NULL, NULL, 0}
 };
 
+#else /* __LP64__ */
+
+static PyMethodDef CarbonEvents_methods[] = {
+	{NULL, NULL, 0}
+};
+
+#endif /* __LP64__ */
 
 
 
 void init_CarbonEvt(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
-
-
-
-	myEventHandlerUPP = NewEventHandlerUPP(myEventHandler);
+#endif /* !__LP64__ */
 
 
 	m = Py_InitModule("_CarbonEvt", CarbonEvents_methods);
+
+#ifndef __LP64__
+	myEventHandlerUPP = NewEventHandlerUPP(myEventHandler);
 	d = PyModule_GetDict(m);
 	CarbonEvents_Error = PyMac_GetOSErrException();
 	if (CarbonEvents_Error == NULL ||
@@ -2216,6 +2224,7 @@ void init_CarbonEvt(void)
 	/* Backward-compatible name */
 	Py_INCREF(&EventHotKeyRef_Type);
 	PyModule_AddObject(m, "EventHotKeyRefType", (PyObject *)&EventHotKeyRef_Type);
+#endif /* !__LP64__ */
 }
 
 /* ===================== End module _CarbonEvt ====================== */

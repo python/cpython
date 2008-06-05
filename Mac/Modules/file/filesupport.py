@@ -6,6 +6,13 @@
 # XXXX TO DO:
 # - Implement correct missing FSSpec handling for Alias methods
 # - Implement FInfo
+#
+# WARNING WARNING WARNING
+#   The file _Filemodule.c was modified manually, don't run this script
+#   unless you really know what you're doing.
+
+import sys
+sys.exit(42)
 
 import string
 
@@ -199,6 +206,7 @@ PyMac_BuildHFSUniStr255(HFSUniStr255 *itself)
         return Py_BuildValue("u#", itself->unicode, itself->length);
 }
 
+#ifndef __LP64__
 /*
 ** Get pathname for a given FSSpec
 */
@@ -244,10 +252,13 @@ _PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
         }
         return 0;
 }
+#endif /* !__LP64__ */
 
 """
 
 finalstuff = finalstuff + """
+
+#ifndef __LP64__
 int
 PyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 {
@@ -286,6 +297,8 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *spec)
         return 0;
 }
 
+#endif /* !__LP64__ */
+
 int
 PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
@@ -309,6 +322,7 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
         }
         /* XXXX Should try unicode here too */
         /* Otherwise we try to go via an FSSpec */
+#ifndef __LP64__
         if (FSSpec_Check(v)) {
                 fss = ((FSSpecObject *)v)->ob_itself;
                 if ((err=FSpMakeFSRef(&fss, fsr)) == 0)
@@ -317,14 +331,19 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
                 return 0;
         }
         PyErr_SetString(PyExc_TypeError, "FSRef, FSSpec or pathname required");
+#else /* __LP64__ */
+        PyErr_SetString(PyExc_TypeError, "FSRef or pathname required");
+#endif /* __LP64__ */
         return 0;
 }
 
+#ifndef __LP64__
 extern PyObject *
 PyMac_BuildFSSpec(FSSpec *spec)
 {
         return FSSpec_New(spec);
 }
+#endif /* __LP64__ */
 
 extern PyObject *
 PyMac_BuildFSRef(FSRef *spec)
@@ -334,9 +353,11 @@ PyMac_BuildFSRef(FSRef *spec)
 """
 
 initstuff = initstuff + """
+#ifndef __LP64__
 PyMac_INIT_TOOLBOX_OBJECT_NEW(FSSpec *, PyMac_BuildFSSpec);
-PyMac_INIT_TOOLBOX_OBJECT_NEW(FSRef *, PyMac_BuildFSRef);
 PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSSpec, PyMac_GetFSSpec);
+#endif /* !__LP64__*/
+PyMac_INIT_TOOLBOX_OBJECT_NEW(FSRef *, PyMac_BuildFSRef);
 PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSRef, PyMac_GetFSRef);
 """
 

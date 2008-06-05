@@ -178,6 +178,7 @@ static PyObject *CmpInstObj_SetComponentInstanceStorage(ComponentInstanceObject 
 	return _res;
 }
 
+#ifndef __LP64__
 static PyObject *CmpInstObj_ComponentFunctionImplemented(ComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -228,6 +229,7 @@ static PyObject *CmpInstObj_ComponentSetTarget(ComponentInstanceObject *_self, P
 	                     _rv);
 	return _res;
 }
+#endif /* !__LP64__*/
 
 static PyMethodDef CmpInstObj_methods[] = {
 	{"CloseComponent", (PyCFunction)CmpInstObj_CloseComponent, 1,
@@ -240,12 +242,14 @@ static PyMethodDef CmpInstObj_methods[] = {
 	 PyDoc_STR("() -> (Handle _rv)")},
 	{"SetComponentInstanceStorage", (PyCFunction)CmpInstObj_SetComponentInstanceStorage, 1,
 	 PyDoc_STR("(Handle theStorage) -> None")},
+#ifndef __LP64__
 	{"ComponentFunctionImplemented", (PyCFunction)CmpInstObj_ComponentFunctionImplemented, 1,
 	 PyDoc_STR("(short ftnNumber) -> (long _rv)")},
 	{"GetComponentVersion", (PyCFunction)CmpInstObj_GetComponentVersion, 1,
 	 PyDoc_STR("() -> (long _rv)")},
 	{"ComponentSetTarget", (PyCFunction)CmpInstObj_ComponentSetTarget, 1,
 	 PyDoc_STR("(ComponentInstance target) -> (long _rv)")},
+#endif /* !__LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -631,6 +635,7 @@ static PyObject *CmpObj_UncaptureComponent(ComponentObject *_self, PyObject *_ar
 	return _res;
 }
 
+#ifndef __LP64__
 static PyObject *CmpObj_GetComponentIconSuite(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -648,6 +653,7 @@ static PyObject *CmpObj_GetComponentIconSuite(ComponentObject *_self, PyObject *
 	                     ResObj_New, iconSuite);
 	return _res;
 }
+#endif /* !__LP64__ */
 
 static PyMethodDef CmpObj_methods[] = {
 	{"UnregisterComponent", (PyCFunction)CmpObj_UnregisterComponent, 1,
@@ -678,8 +684,10 @@ static PyMethodDef CmpObj_methods[] = {
 	 PyDoc_STR("(Component capturingComponent) -> (Component _rv)")},
 	{"UncaptureComponent", (PyCFunction)CmpObj_UncaptureComponent, 1,
 	 PyDoc_STR("() -> None")},
+#ifndef __LP64__
 	{"GetComponentIconSuite", (PyCFunction)CmpObj_GetComponentIconSuite, 1,
 	 PyDoc_STR("() -> (Handle iconSuite)")},
+#endif /* !__LP64__ */
 	{NULL, NULL, 0}
 };
 

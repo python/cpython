@@ -3,6 +3,8 @@
 
 #include "Python.h"
 
+#ifndef __LP64__
+	/* Carbon GUI stuff, not available in 64-bit mode */
 
 
 #include "pymactoolbox.h"
@@ -18,7 +20,7 @@
 #include <Carbon/Carbon.h>
 
 
-int ThemeButtonDrawInfo_Convert(PyObject *v, ThemeButtonDrawInfo *p_itself)
+static int ThemeButtonDrawInfo_Convert(PyObject *v, ThemeButtonDrawInfo *p_itself)
 {
         return PyArg_Parse(v, "(iHH)", &p_itself->state, &p_itself->value, &p_itself->adornment);
 }
@@ -1792,17 +1794,25 @@ static PyMethodDef App_methods[] = {
 };
 
 
+#else  	/* __LP64__ */
+
+static PyMethodDef App_methods[] = {
+	{NULL, NULL, 0}
+};
+
+#endif /* __LP64__ */
 
 
 void init_App(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
-
-
+#endif /* !__LP64__ */
 
 
 	m = Py_InitModule("_App", App_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	App_Error = PyMac_GetOSErrException();
 	if (App_Error == NULL ||
@@ -1815,6 +1825,7 @@ void init_App(void)
 	/* Backward-compatible name */
 	Py_INCREF(&ThemeDrawingState_Type);
 	PyModule_AddObject(m, "ThemeDrawingStateType", (PyObject *)&ThemeDrawingState_Type);
+#endif /* __LP64__ */
 }
 
 /* ======================== End module _App ========================= */

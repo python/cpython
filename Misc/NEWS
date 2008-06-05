@@ -259,12 +259,37 @@ Library
 - The Mac Modules (including Carbon) have been deprecated for removal
   in Python 3.0.
 
+- Library: on MacOS X you can now set ``ARCHFLAGS`` in the shell 
+  environment to control the '-arch' flags that are used to build
+  an extension. This was added for compatibility with Apple's build
+  of Python.
+
+- The bundled OSX-specific copy of libbffi is now in sync with the version
+  shipped with PyObjC 2.0 and includes support for x86_64 and ppc64 platforms.
+
 Build
 -----
 
 - Patch #1722225: Support QNX 6.
 
 - ``Lib/lib-old`` is now added to sys.path.
+
+- On MacOS X it is now possible to install the framework in 64-bit
+  mode or even as a 4-way universal binary (that is, PPC, i386,
+  PPC64 and x86_64 support in one binary)
+
+  This is controlled by the configure argument ``--with-universal-archs``:
+
+  - ``--with-universal-archs=all``: install 4-way universal
+
+  - ``--with-universal-archs=32-bit``: install 2-way universal, 32-bit (the default)
+
+  - ``--with-universal-archs=64-bit``: install 2-way universal, 64-bit
+
+  This option should be used in combination with ``--enable-universalsdk=``.
+
+  NOTE: 64-bit and 4-way builds are only suppported on Mac OS X 10.5 (or later).
+
 
 C API
 -----

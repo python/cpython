@@ -3,6 +3,7 @@
 
 #include "Python.h"
 
+#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -335,23 +336,32 @@ static PyMethodDef Fm_methods[] = {
 	{NULL, NULL, 0}
 };
 
+#else  /* __LP64__ */
 
+static PyMethodDef Fm_methods[] = {
+	{NULL, NULL, 0}
+};
 
+#endif  /* __LP64__ */
 
 void init_Fm(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
+#endif  /* __LP64__ */
 
 
 
 
 	m = Py_InitModule("_Fm", Fm_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Fm_Error = PyMac_GetOSErrException();
 	if (Fm_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Fm_Error) != 0)
 		return;
+#endif  /* __LP64__ */
 }
 
 /* ========================= End module _Fm ========================= */

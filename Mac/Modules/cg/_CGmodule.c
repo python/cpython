@@ -1025,6 +1025,7 @@ static PyObject *CGContextRefObj_CGContextSetShouldAntialias(CGContextRefObject 
 	return _res;
 }
 
+#ifndef __LP64__
 static PyObject *CGContextRefObj_SyncCGContextOriginWithPort(CGContextRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1055,6 +1056,7 @@ static PyObject *CGContextRefObj_ClipCGContextToRegion(CGContextRefObject *_self
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyMethodDef CGContextRefObj_methods[] = {
 	{"CGContextSaveGState", (PyCFunction)CGContextRefObj_CGContextSaveGState, 1,
@@ -1173,10 +1175,12 @@ static PyMethodDef CGContextRefObj_methods[] = {
 	 PyDoc_STR("() -> None")},
 	{"CGContextSetShouldAntialias", (PyCFunction)CGContextRefObj_CGContextSetShouldAntialias, 1,
 	 PyDoc_STR("(int shouldAntialias) -> None")},
+#ifndef __LP64__
 	{"SyncCGContextOriginWithPort", (PyCFunction)CGContextRefObj_SyncCGContextOriginWithPort, 1,
 	 PyDoc_STR("(CGrafPtr port) -> None")},
 	{"ClipCGContextToRegion", (PyCFunction)CGContextRefObj_ClipCGContextToRegion, 1,
 	 PyDoc_STR("(Rect portRect, RgnHandle region) -> None")},
+#endif
 	{NULL, NULL, 0}
 };
 
@@ -1254,6 +1258,7 @@ PyTypeObject CGContextRef_Type = {
 /* ------------------ End object type CGContextRef ------------------ */
 
 
+#ifndef __LP64__
 static PyObject *CG_CreateCGContextForPort(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1271,10 +1276,13 @@ static PyObject *CG_CreateCGContextForPort(PyObject *_self, PyObject *_args)
 	return _res;
 
 }
+#endif
 
 static PyMethodDef CG_methods[] = {
+#ifndef __LP64__
 	{"CreateCGContextForPort", (PyCFunction)CG_CreateCGContextForPort, 1,
 	 PyDoc_STR("(CGrafPtr) -> CGContextRef")},
+#endif
 	{NULL, NULL, 0}
 };
 

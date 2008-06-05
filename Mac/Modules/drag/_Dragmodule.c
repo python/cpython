@@ -3,6 +3,7 @@
 
 #include "Python.h"
 
+#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -1106,21 +1107,28 @@ dragglue_Drawing(xxxx
     return 0;
 }
 #endif
-
+#else /* __LP64__ */
+static PyMethodDef Drag_methods[] = {
+	{NULL, NULL, 0}
+};
+#endif /* __LP64__ */
 
 
 void init_Drag(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
 
 
 
 	        PyMac_INIT_TOOLBOX_OBJECT_NEW(DragRef, DragObj_New);
 	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(DragRef, DragObj_Convert);
+#endif /* !__LP64__ */
 
 
 	m = Py_InitModule("_Drag", Drag_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Drag_Error = PyMac_GetOSErrException();
 	if (Drag_Error == NULL ||
@@ -1142,6 +1150,7 @@ void init_Drag(void)
 	dragglue_DrawingUPP = NewDragDrawingUPP(dragglue_Drawing);
 #endif
 
+#endif /* !__LP64__ */
 
 }
 

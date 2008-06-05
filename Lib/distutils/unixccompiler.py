@@ -64,7 +64,7 @@ def _darwin_compiler_fixup(compiler_so, cc_args):
         stripArch = '-arch' in cc_args
         stripSysroot = '-isysroot' in cc_args
 
-    if stripArch:
+    if stripArch or 'ARCHFLAGS' in os.environ:
         while 1:
             try:
                 index = compiler_so.index('-arch')
@@ -72,6 +72,12 @@ def _darwin_compiler_fixup(compiler_so, cc_args):
                 del compiler_so[index:index+2]
             except ValueError:
                 break
+
+    if 'ARCHFLAGS' in os.environ and not stripArch:
+        # User specified different -arch flags in the environ,
+        # see also distutils.sysconfig
+        compiler_so = compiler_so + ' ' + os.environ['ARCHFLAGS']
+
 
     if stripSysroot:
         try:
