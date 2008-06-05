@@ -3,6 +3,7 @@
 
 #include "Python.h"
 
+#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -1564,10 +1565,19 @@ DlgObj_WhichDialog(DialogPtr d)
         return it;
 }
 
+#else /* __LP64__ */
+
+static PyMethodDef Dlg_methods[] = {
+	{NULL, NULL, 0}
+};
+
+#endif /* __LP64__ */
+
 
 void init_Dlg(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
 
 
@@ -1575,9 +1585,11 @@ void init_Dlg(void)
 	        PyMac_INIT_TOOLBOX_OBJECT_NEW(DialogPtr, DlgObj_New);
 	        PyMac_INIT_TOOLBOX_OBJECT_NEW(DialogPtr, DlgObj_WhichDialog);
 	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(DialogPtr, DlgObj_Convert);
-
+#endif /* !__LP64__ */
 
 	m = Py_InitModule("_Dlg", Dlg_methods);
+
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Dlg_Error = PyMac_GetOSErrException();
 	if (Dlg_Error == NULL ||
@@ -1590,6 +1602,7 @@ void init_Dlg(void)
 	/* Backward-compatible name */
 	Py_INCREF(&Dialog_Type);
 	PyModule_AddObject(m, "DialogType", (PyObject *)&Dialog_Type);
+#endif /* !__LP64__ */
 }
 
 /* ======================== End module _Dlg ========================= */

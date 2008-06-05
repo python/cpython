@@ -58,10 +58,18 @@ Note the capitalization of the module name; this is a historical artifact.
    elaborate functionality was available), but it provides a convenient location to
    attach a breakpoint in a low-level debugger like :program:`gdb`.
 
+   .. note::
+
+      Not available in 64-bit mode.
+
 
 .. function:: SysBeep()
 
    Ring the bell.
+
+   .. note::
+
+      Not available in 64-bit mode.
 
 
 .. function:: GetTicks()
@@ -74,6 +82,10 @@ Note the capitalization of the module name; this is a historical artifact.
    Return the file creator and file type as two four-character strings. The *file*
    parameter can be a pathname or an ``FSSpec`` or  ``FSRef`` object.
 
+   .. note::
+      
+      It is not possible to use an ``FSSpec`` in 64-bit mode.
+
 
 .. function:: SetCreatorAndType(file, creator, type)
 
@@ -81,6 +93,9 @@ Note the capitalization of the module name; this is a historical artifact.
    ``FSSpec`` or  ``FSRef`` object. *creator* and *type* must be four character
    strings.
 
+   .. note::
+      
+      It is not possible to use an ``FSSpec`` in 64-bit mode.
 
 .. function:: openrf(name [, mode])
 
@@ -97,4 +112,13 @@ Note the capitalization of the module name; this is a historical artifact.
    interpreter is not running from a fullblown application bundle. A script runs
    from an application bundle either when it has been started with
    :program:`pythonw` instead of :program:`python` or when running  as an applet.
+
+.. function:: splash([resourceid])
+
+   Opens a splash screen by resource id. Use resourceid ``0`` to close
+   the splash screen.
+
+   .. note::
+
+      Not available in 64-bit mode.
 

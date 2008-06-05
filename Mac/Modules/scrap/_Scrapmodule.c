@@ -4,6 +4,7 @@
 #include "Python.h"
 
 
+#ifndef __LP64__
 
 #include "pymactoolbox.h"
 
@@ -315,8 +316,10 @@ static PyObject *Scrap_CallInScrapPromises(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
+#endif /* __LP64__ */
 
 static PyMethodDef Scrap_methods[] = {
+#ifndef __LP64__
 	{"LoadScrap", (PyCFunction)Scrap_LoadScrap, 1,
 	 PyDoc_STR("() -> None")},
 	{"UnloadScrap", (PyCFunction)Scrap_UnloadScrap, 1,
@@ -327,6 +330,7 @@ static PyMethodDef Scrap_methods[] = {
 	 PyDoc_STR("() -> None")},
 	{"CallInScrapPromises", (PyCFunction)Scrap_CallInScrapPromises, 1,
 	 PyDoc_STR("() -> None")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -336,12 +340,15 @@ static PyMethodDef Scrap_methods[] = {
 void init_Scrap(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
+#endif /* __LP64__ */
 
 
 
 
 	m = Py_InitModule("_Scrap", Scrap_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Scrap_Error = PyMac_GetOSErrException();
 	if (Scrap_Error == NULL ||
@@ -351,6 +358,7 @@ void init_Scrap(void)
 	Py_INCREF(&Scrap_Type);
 	if (PyDict_SetItemString(d, "ScrapType", (PyObject *)&Scrap_Type) != 0)
 		Py_FatalError("can't initialize ScrapType");
+#endif /* __LP64__ */
 }
 
 /* ======================= End module _Scrap ======================== */

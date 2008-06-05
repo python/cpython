@@ -4,6 +4,7 @@
 #include "Python.h"
 
 
+#ifndef __LP64__
 
 #include "pymactoolbox.h"
 
@@ -26294,8 +26295,10 @@ static PyObject *Qt_MoviesTask(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
+#endif /* __LP64__ */
 
 static PyMethodDef Qt_methods[] = {
+#ifndef __LP64__
 	{"EnterMovies", (PyCFunction)Qt_EnterMovies, 1,
 	 PyDoc_STR("() -> None")},
 	{"ExitMovies", (PyCFunction)Qt_ExitMovies, 1,
@@ -27988,6 +27991,7 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(WindowPtr wp, Point startPt, Rect boundsRect) -> None")},
 	{"MoviesTask", (PyCFunction)Qt_MoviesTask, 1,
 	 PyDoc_STR("(long maxMilliSecToUse) -> None")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -27997,6 +28001,7 @@ static PyMethodDef Qt_methods[] = {
 void init_Qt(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
 
 
@@ -28013,9 +28018,11 @@ void init_Qt(void)
 	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(UserData, UserDataObj_Convert);
 	        PyMac_INIT_TOOLBOX_OBJECT_NEW(Media, MediaObj_New);
 	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Media, MediaObj_Convert);
+#endif /* __LP64__ */
 
 
 	m = Py_InitModule("_Qt", Qt_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Qt_Error = PyMac_GetOSErrException();
 	if (Qt_Error == NULL ||
@@ -28077,6 +28084,7 @@ void init_Qt(void)
 	/* Backward-compatible name */
 	Py_INCREF(&SGOutput_Type);
 	PyModule_AddObject(m, "SGOutputType", (PyObject *)&SGOutput_Type);
+#endif /* __LP64__ */
 }
 
 /* ========================= End module _Qt ========================= */

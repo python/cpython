@@ -3,6 +3,7 @@
 
 #include "Python.h"
 
+#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -3347,8 +3348,10 @@ static PyObject *Menu_RemoveMenuCommandProperty(PyObject *_self, PyObject *_args
 	_res = Py_None;
 	return _res;
 }
+#endif /* __LP64__ */
 
 static PyMethodDef Menu_methods[] = {
+#ifndef __LP64__
 	{"NewMenu", (PyCFunction)Menu_NewMenu, 1,
 	 PyDoc_STR("(MenuID menuID, Str255 menuTitle) -> (MenuHandle _rv)")},
 	{"MacGetMenu", (PyCFunction)Menu_MacGetMenu, 1,
@@ -3433,6 +3436,7 @@ static PyMethodDef Menu_methods[] = {
 	 PyDoc_STR("(MenuHandle inMenu, MenuCommand inCommandID, OSType inPropertyCreator, OSType inPropertyTag) -> (ByteCount outSize)")},
 	{"RemoveMenuCommandProperty", (PyCFunction)Menu_RemoveMenuCommandProperty, 1,
 	 PyDoc_STR("(MenuHandle inMenu, MenuCommand inCommandID, OSType inPropertyCreator, OSType inPropertyTag) -> None")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -3442,15 +3446,18 @@ static PyMethodDef Menu_methods[] = {
 void init_Menu(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
 
 
 
 	        PyMac_INIT_TOOLBOX_OBJECT_NEW(MenuHandle, MenuObj_New);
 	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuHandle, MenuObj_Convert);
+#endif /* __LP64__ */
 
 
 	m = Py_InitModule("_Menu", Menu_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Menu_Error = PyMac_GetOSErrException();
 	if (Menu_Error == NULL ||
@@ -3463,6 +3470,7 @@ void init_Menu(void)
 	/* Backward-compatible name */
 	Py_INCREF(&Menu_Type);
 	PyModule_AddObject(m, "MenuType", (PyObject *)&Menu_Type);
+#endif /* __LP64__ */
 }
 
 /* ======================== End module _Menu ======================== */

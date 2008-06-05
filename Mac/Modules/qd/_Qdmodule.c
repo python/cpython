@@ -4,6 +4,7 @@
 #include "Python.h"
 
 
+#ifndef __LP64__
 
 #include "pymactoolbox.h"
 
@@ -6544,8 +6545,10 @@ static PyObject *Qd_RawBitMap(PyObject *_self, PyObject *_args)
 	return _res;
 
 }
+#endif /* __LP64__ */
 
 static PyMethodDef Qd_methods[] = {
+#ifndef __LP64__
 	{"GetPort", (PyCFunction)Qd_GetPort, 1,
 	 PyDoc_STR("() -> (GrafPtr port)")},
 	{"GrafDevice", (PyCFunction)Qd_GrafDevice, 1,
@@ -7080,10 +7083,12 @@ static PyMethodDef Qd_methods[] = {
 	 PyDoc_STR("Take (string, int, Rect) argument and create BitMap")},
 	{"RawBitMap", (PyCFunction)Qd_RawBitMap, 1,
 	 PyDoc_STR("Take string BitMap and turn into BitMap object")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
 
+#ifndef __LP64__
 
 /* Like BMObj_New, but the original bitmap data structure is copied (and
 ** released when the object is released)
@@ -7101,11 +7106,13 @@ PyObject *BMObj_NewCopied(BitMapPtr itself)
         return (PyObject *)it;
 }
 
+#endif /* __LP64__ */
 
 
 void init_Qd(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
 
 
@@ -7117,8 +7124,10 @@ void init_Qd(void)
 	        PyMac_INIT_TOOLBOX_OBJECT_NEW(RGBColorPtr, QdRGB_New);
 	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(RGBColor, QdRGB_Convert);
 
+#endif /* __LP64__ */
 
 	m = Py_InitModule("_Qd", Qd_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Qd_Error = PyMac_GetOSErrException();
 	if (Qd_Error == NULL ||
@@ -7138,6 +7147,7 @@ void init_Qd(void)
 	/* Backward-compatible name */
 	Py_INCREF(&BitMap_Type);
 	PyModule_AddObject(m, "BitMapType", (PyObject *)&BitMap_Type);
+#endif /* __LP64__ */
 }
 
 /* ========================= End module _Qd ========================= */

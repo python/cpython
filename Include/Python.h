@@ -1,11 +1,11 @@
-#ifndef Py_PYTHON_H
-#define Py_PYTHON_H
+#ifndef Py_PYTHON_H #define Py_PYTHON_H
 /* Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" { */
 
 /* Include nearly all Python header files */
 
 #include "patchlevel.h"
 #include "pyconfig.h"
+#include "pymacconfig.h"
 
 /* Cyclic gc is always enabled, starting with release 2.3a1.  Supply the
  * old symbol for the benefit of extension modules written before then

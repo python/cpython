@@ -179,7 +179,6 @@ epilogue:
         movl %ebp,%esp
         popl %ebp
         ret
-.LFE1:
 .ffi_call_SYSV_end:
 #if 0
         .size    ffi_call_SYSV,.ffi_call_SYSV_end-ffi_call_SYSV
@@ -220,7 +219,7 @@ epilogue:
 #else
 	.long	.LFB1	/* FDE initial location */
 #endif
-	.long	.LFE1-.LFB1	/* FDE address range */
+	.long	.ffi_call_SYSV_end-.LFB1	/* FDE address range */
 #ifdef __PIC__
 	.byte	0x0	/* .uleb128 0x0; Augmentation size */
 #endif

@@ -50,6 +50,7 @@ OptCFStringRefObj_New(CFStringRef it)
 PyObject *
 LSItemInfoRecord_New(LSItemInfoRecord *it)
 {
+#ifndef __LP64__
         return Py_BuildValue("{s:is:O&s:O&s:O&s:O&s:i}",
                 "flags", it->flags,
                 "filetype", PyMac_BuildOSType, it->filetype,
@@ -57,6 +58,13 @@ LSItemInfoRecord_New(LSItemInfoRecord *it)
                 "extension", OptCFStringRefObj_New, it->extension,
                 "iconFileName", OptCFStringRefObj_New, it->iconFileName,
                 "kindID", it->kindID);
+#else
+        return Py_BuildValue("{s:is:O&s:O&s:O&}",
+                "flags", it->flags,
+                "filetype", PyMac_BuildOSType, it->filetype,
+                "creator", PyMac_BuildOSType, it->creator,
+                "extension", OptCFStringRefObj_New, it->extension);
+#endif
 }
 
 static PyObject *Launch_Error;

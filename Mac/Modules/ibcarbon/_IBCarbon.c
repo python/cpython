@@ -4,6 +4,7 @@
 #include "Python.h"
 
 
+#ifndef __LP64__
 
 #include <Carbon/Carbon.h>
 #include "pymactoolbox.h"
@@ -224,10 +225,13 @@ static PyObject *IBCarbon_CreateNibReference(PyObject *_self, PyObject *_args)
 	                     IBNibRefObj_New, outNibRef);
 	return _res;
 }
+#endif /* __LP64__ */
 
 static PyMethodDef IBCarbon_methods[] = {
+#ifndef __LP64__
 	{"CreateNibReference", (PyCFunction)IBCarbon_CreateNibReference, 1,
 	 PyDoc_STR("(CFStringRef inNibName) -> (IBNibRef outNibRef)")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -237,13 +241,16 @@ static PyMethodDef IBCarbon_methods[] = {
 void init_IBCarbon(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
+#endif /* __LP64__ */
 
 
 
 
 
 	m = Py_InitModule("_IBCarbon", IBCarbon_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	IBCarbon_Error = PyMac_GetOSErrException();
 	if (IBCarbon_Error == NULL ||
@@ -256,6 +263,7 @@ void init_IBCarbon(void)
 	/* Backward-compatible name */
 	Py_INCREF(&IBNibRef_Type);
 	PyModule_AddObject(m, "IBNibRefType", (PyObject *)&IBNibRef_Type);
+#endif /* __LP64__ */
 }
 
 /* ====================== End module _IBCarbon ====================== */

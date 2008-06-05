@@ -3,6 +3,7 @@
 
 #include "Python.h"
 
+#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -526,22 +527,32 @@ static PyMethodDef Evt_methods[] = {
 };
 
 
+#else /* __LP64__ */
+
+static PyMethodDef Evt_methods[] = {
+	{NULL, NULL, 0}
+};
+#endif /* __LP64__ */
 
 
 void init_Evt(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
+#endif /* __LP64__ */
 
 
 
 
 	m = Py_InitModule("_Evt", Evt_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Evt_Error = PyMac_GetOSErrException();
 	if (Evt_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Evt_Error) != 0)
 		return;
+#endif /* __LP64__ */
 }
 
 /* ======================== End module _Evt ========================= */

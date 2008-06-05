@@ -4,6 +4,7 @@
 #include "Python.h"
 
 
+#ifndef __LP64__
 
 #include "pymactoolbox.h"
 
@@ -1447,8 +1448,10 @@ static PyObject *Icn_WriteIconFile(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
+#endif /* __LP64__ */
 
 static PyMethodDef Icn_methods[] = {
+#ifndef __LP64__
 	{"GetCIcon", (PyCFunction)Icn_GetCIcon, 1,
 	 PyDoc_STR("(SInt16 iconID) -> (CIconHandle _rv)")},
 	{"PlotCIcon", (PyCFunction)Icn_PlotCIcon, 1,
@@ -1573,6 +1576,7 @@ static PyMethodDef Icn_methods[] = {
 	 PyDoc_STR("(FSRef ref) -> (IconFamilyHandle iconFamily)")},
 	{"WriteIconFile", (PyCFunction)Icn_WriteIconFile, 1,
 	 PyDoc_STR("(IconFamilyHandle iconFamily, FSSpec iconFile) -> None")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -1582,17 +1586,21 @@ static PyMethodDef Icn_methods[] = {
 void init_Icn(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
+#endif /* __LP64__ */
 
 
 
 
 	m = Py_InitModule("_Icn", Icn_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Icn_Error = PyMac_GetOSErrException();
 	if (Icn_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Icn_Error) != 0)
 		return;
+#endif /* __LP64__ */
 }
 
 /* ======================== End module _Icn ========================= */

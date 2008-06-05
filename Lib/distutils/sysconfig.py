@@ -539,6 +539,26 @@ def get_config_vars(*args):
                     flags = re.sub('-isysroot [^ \t]*', ' ', flags)
                     _config_vars[key] = flags
 
+            else:
+
+                # Allow the user to override the architecture flags using
+                # an environment variable.
+                # NOTE: This name was introduced by Apple in OSX 10.5 and
+                # is used by several scripting languages distributed with
+                # that OS release.
+
+                if 'ARCHFLAGS' in os.environ:
+                    arch = os.environ['ARCHFLAGS']
+                    for key in ('LDFLAGS', 'BASECFLAGS',
+                        # a number of derived variables. These need to be
+                        # patched up as well.
+                        'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
+
+                        flags = _config_vars[key]
+                        flags = re.sub('-arch\s+\w+\s', ' ', flags)
+                        flags = flags + ' ' + arch
+                        _config_vars[key] = flags
+
     if args:
         vals = []
         for name in args:

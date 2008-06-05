@@ -3,6 +3,7 @@
 
 #include "Python.h"
 
+#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -981,8 +982,10 @@ static PyObject *Snd_SPBBytesToMilliseconds(PyObject *_self, PyObject *_args)
 	                     byteCount);
 	return _res;
 }
+#endif /* __LP64__ */
 
 static PyMethodDef Snd_methods[] = {
+#ifndef __LP64__
 	{"SPB", (PyCFunction)Snd_SPB, 1,
 	 PyDoc_STR(NULL)},
 	{"SysBeep", (PyCFunction)Snd_SysBeep, 1,
@@ -1047,10 +1050,12 @@ static PyMethodDef Snd_methods[] = {
 	 PyDoc_STR("(long inRefNum) -> (long milliseconds)")},
 	{"SPBBytesToMilliseconds", (PyCFunction)Snd_SPBBytesToMilliseconds, 1,
 	 PyDoc_STR("(long inRefNum) -> (long byteCount)")},
+#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
 
+#ifndef __LP64__
 
 /* Routine passed to Py_AddPendingCall -- call the Python callback */
 static int
@@ -1113,19 +1118,23 @@ SPB_completion(SPBPtr my_spb)
                 SetA5(A5);
         }
 }
+#endif /* __LP64__ */
 
 
 
 void init_Snd(void)
 {
 	PyObject *m;
+#ifndef __LP64__
 	PyObject *d;
+#endif /* __LP64__ */
 
 
 
 
 
 	m = Py_InitModule("_Snd", Snd_methods);
+#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Snd_Error = PyMac_GetOSErrException();
 	if (Snd_Error == NULL ||
@@ -1145,6 +1154,7 @@ void init_Snd(void)
 	/* Backward-compatible name */
 	Py_INCREF(&SPB_Type);
 	PyModule_AddObject(m, "SPBType", (PyObject *)&SPB_Type);
+#endif /* __LP64__ */
 }
 
 /* ======================== End module _Snd ========================= */

@@ -683,7 +683,8 @@ static PyObject *AEDesc_AEResumeTheCurrentEvent(AEDescObject *_self, PyObject *_
 		return NULL;
 	_err = AEResumeTheCurrentEvent(&_self->ob_itself,
 	                               &reply,
-	                               dispatcher__proc__, (long)dispatcher);
+	                               dispatcher__proc__, 
+				       (SRefCon)dispatcher);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -1154,7 +1155,7 @@ static PyObject *AE_AEInstallEventHandler(PyObject *_self, PyObject *_args)
 		return NULL;
 	_err = AEInstallEventHandler(theAEEventClass,
 	                             theAEEventID,
-	                             handler__proc__, (long)handler,
+	                             handler__proc__, (SRefCon)handler,
 	                             0);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
@@ -1203,7 +1204,7 @@ static PyObject *AE_AEGetEventHandler(PyObject *_self, PyObject *_args)
 		return NULL;
 	_err = AEGetEventHandler(theAEEventClass,
 	                         theAEEventID,
-	                         &handler__proc__, (long *)&handler,
+	                         &handler__proc__, (SRefCon *)&handler,
 	                         0);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O",

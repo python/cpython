@@ -57,6 +57,12 @@ AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features]
 # u_int on Irix 5.3. Defining _BSD_TYPES brings it back.
 AC_DEFINE(_BSD_TYPES, 1, [Define on Irix to enable u_int])
 
+# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
+# them.
+AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
+
+
 define_xopen_source=yes
 
 # Arguments passed to configure.
@@ -85,6 +91,20 @@ AC_ARG_ENABLE(universalsdk,
 	enable_universalsdk=
 ])
 AC_SUBST(UNIVERSALSDK)
+
+UNIVERSAL_ARCHS="32-bit"
+AC_MSG_CHECKING(for --with-universal-archs)
+AC_ARG_WITH(universal-archs,
+    AC_HELP_STRING(--with-universal-archs=ARCH, select architectures for universal build ("32-bit", "64-bit" or "all")),
+[
+	AC_MSG_RESULT($withval)
+	UNIVERSAL_ARCHS="$withval"
+],
+[
+ 	AC_MSG_RESULT(32-bit)
+])
+
+
 
 AC_ARG_WITH(framework-name,
               AC_HELP_STRING(--with-framework-name=FRAMEWORK, 
@@ -127,9 +147,14 @@ AC_ARG_ENABLE(framework,
 		PYTHONFRAMEWORKPREFIX=$enableval
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
-		FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
-		FRAMEWORKALTINSTALLFIRST="${FRAMEWORKINSTALLFIRST} bininstall maninstall"
-		FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
+		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure bininstall maninstall"
+		if test "$UNIVERSAL_ARCHS" = "all"
+		then
+			FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps4way frameworkinstallunixtools4way"
+		else
+			FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
+		fi
+
 		if test "x${prefix}" = "xNONE" ; then
 			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
 		else
@@ -160,6 +185,12 @@ AC_ARG_ENABLE(framework,
 		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
 	fi
 	enable_framework=
+
+	if test "$UNIVERSAL_ARCHS" = "all" 
+	then
+		FRAMEWORKINSTALLLAST=update4wayuniversal
+		FRAMEWORKALTINSTALLLAST=update4wayuniversal
+	fi
 ])
 AC_SUBST(PYTHONFRAMEWORK)
 AC_SUBST(PYTHONFRAMEWORKIDENTIFIER)
@@ -827,6 +858,11 @@ then
 fi
 
 AC_SUBST(BASECFLAGS)
+
+# The -arch flags for universal builds on OSX
+UNIVERSAL_ARCH_FLAGS=
+AC_SUBST(UNIVERSAL_ARCH_FLAGS)
+
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
@@ -865,7 +901,23 @@ yes)
 	    # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
 	    # used to be here, but non-Apple gcc doesn't accept them.
 	    if test "${enable_universalsdk}"; then
-		BASECFLAGS="-arch ppc -arch i386 -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
+		UNIVERSAL_ARCH_FLAGS=""
+	        if test "$UNIVERSAL_ARCHS" = "32-bit" ; then
+		   UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
+
+	         elif test "$UNIVERSAL_ARCHS" = "64-bit" ; then
+		   UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
+
+	         elif test "$UNIVERSAL_ARCHS" = "all" ; then
+		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
+
+		 else
+	           AC_MSG_ERROR([proper usage is --with-universalarch=32-bit|64-bit|all])
+
+		 fi
+
+
+		BASECFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
 	    fi
 
 	    ;;
@@ -1558,6 +1610,12 @@ then
 		if test ${cur_target} '>' 10.2; then
 			cur_target=10.3
 		fi
+		if test "${UNIVERSAL_ARCHS}" = "all"; then
+			# Ensure that the default platform for a 4-way
+			# universal build is OSX 10.5, that's the first
+			# OS release where 4-way builds make sense.
+			cur_target='10.5'
+		fi
 		CONFIGURE_MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET-${cur_target}}
 
 		# Make sure that MACOSX_DEPLOYMENT_TARGET is set in the 
@@ -1568,10 +1626,10 @@ then
 		export MACOSX_DEPLOYMENT_TARGET
 
 		EXPORT_MACOSX_DEPLOYMENT_TARGET=''
-		if test ${MACOSX_DEPLOYMENT_TARGET-${cur_target}} '>' 10.2
+		if test ${MACOSX_DEPLOYMENT_TARGET} '>' 10.2
 		then
 			if test "${enable_universalsdk}"; then
-				LDFLAGS="-arch i386 -arch ppc -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
+				LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
 			fi
 			LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
@@ -3191,23 +3249,6 @@ fi
 
 # check for endianness
 AC_C_BIGENDIAN
-AH_VERBATIM([WORDS_BIGENDIAN],
-[
- /* Define to 1 if your processor stores words with the most significant byte
-    first (like Motorola and SPARC, unlike Intel and VAX). 
-
-    The block below does compile-time checking for endianness on platforms
-    that use GCC and therefore allows compiling fat binaries on OSX by using 
-    '-arch ppc -arch i386' as the compile flags. The phrasing was choosen
-    such that the configure-result is used on systems that don't use GCC.
-  */
-#ifdef __BIG_ENDIAN__
-#define WORDS_BIGENDIAN 1
-#else
-#ifndef __LITTLE_ENDIAN__
-#undef WORDS_BIGENDIAN
-#endif
-#endif])
 
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
