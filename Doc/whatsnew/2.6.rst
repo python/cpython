@@ -647,6 +647,7 @@ the type's :meth:`__format__` method with the provided specifier::
     >>> format(75.6564, '.2f')
     '75.66'
 
+
 .. seealso::
 
    :ref:`formatstrings`
@@ -1251,6 +1252,11 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   (Contributed by Alexander Belopolsky; :issue:`1686487`.)
 
+* A new built-in, ``next(*iterator*, [*default*])`` returns the next item
+  from the specified iterator.  If the *default* argument is supplied,
+  it will be returned if *iterator* has been exhausted; otherwise,
+  the :exc:`StopIteration` exception will be raised.  (:issue:`2719`)
+
 * Tuples now have an :meth:`index` method matching the list type's
   :meth:`index` method::
 
@@ -1554,6 +1560,7 @@ details.
   :mod:`terminalcommand`.
 
   A number of old IRIX-specific modules were deprecated:
+  :mod:`al` and :mod:`AL`,
   :mod:`cd`,
   :mod:`cddb`,
   :mod:`cdplayer`,
@@ -1734,6 +1741,13 @@ details.
   to drop the built-in in the 2.x series.  (Patched by
   Christian Heimes; :issue:`1739906`.)
 
+* When possible, the :mod:`getpass` module will now use
+  :file:`/dev/tty` (when available) to print
+  a prompting message and read the password, falling back to using
+  standard error and standard input.    If the password may be echoed to 
+  the terminal, a warning is printed before the prompt is displayed.
+  (Contributed by Gregory P. Smith.)
+
 * The :func:`glob.glob` function can now return Unicode filenames if
   a Unicode path was used and Unicode filenames are matched within the
   directory.  (:issue:`1001604`)
@@ -1753,6 +1767,10 @@ details.
   This is more efficient than making a call to :func:`heappush` and then
   :func:`heappop`.
 
+  :mod:`heapq` is now implemented to only use less-than comparison,
+  instead of the less-than-or-equal comparison it previously used.
+  This makes :mod:`heapq`'s usage of a type match that of the 
+  :meth:`list.sort` method.
   (Contributed by Raymond Hettinger.)
 
 * An optional ``timeout`` parameter was added to the
@@ -1846,6 +1864,11 @@ details.
   have an optional *delay* parameter to its constructor.  If *delay*
   is true, opening of the log file is deferred until the first
   :meth:`emit` call is made.  (Contributed by Vinay Sajip.)
+
+  :class:`TimedRotatingFileHandler` also has a *utc* constructor 
+  parameter.  If the argument is true, UTC time will be used 
+  in determining when midnight occurs and in generating filenames;
+  otherwise local time will be used.
 
 * The :mod:`macfs` module has been removed.  This in turn required the
   :func:`macostools.touched` function to be removed because it depended on the
@@ -2114,11 +2137,19 @@ details.
   (Contributed by Neal Norwitz and Georg Brandl.)
 
   Information about the command-line arguments supplied to the Python
-  interpreter are available as attributes of a ``sys.flags`` named
-  tuple.  For example, the :attr:`verbose` attribute is true if Python
+  interpreter is available by reading attributes of a named
+  tuple available as ``sys.flags``.  For example, the :attr:`verbose`
+  attribute is true if Python
   was executed in verbose mode, :attr:`debug` is true in debugging mode, etc.
   These attributes are all read-only.
   (Contributed by Christian Heimes.)
+
+  A new function, :func:`getsizeof`, takes a Python object and returns 
+  the amount of memory used by the object, measured in bytes.  Built-in
+  objects return correct results; third-party extensions may not,
+  but can define a :meth:`__sizeof__` method to return the 
+  object's size.
+  (Contributed by Robert Schuppenies; :issue:`2898`.)
 
   It's now possible to determine the current profiler and tracer functions
   by calling :func:`sys.getprofile` and :func:`sys.gettrace`.
@@ -2205,6 +2236,10 @@ details.
 
   (Contributed by Dwayne Bailey; :issue:`1581073`.)
 
+* The :mod:`threading` module's :class:`Thread` objects 
+  gained a :meth:`getIdent` method that returns the thread's 
+  identifier, a nonzero integer.  (Contributed by XXX; :issue:`2871`.)
+
 * The :mod:`timeit` module now accepts callables as well as strings
   for the statement being timed and for the setup code.
   Two convenience functions were added for creating
@@ -2213,6 +2248,24 @@ details.
   ``timeit(stmt, setup, time, number)`` create an instance and call
   the corresponding method. (Contributed by Erik Demaine;
   :issue:`1533909`.)
+
+* The :mod:`turtle` module for turtle graphics was greatly enhanced by
+  Gregor Lingl.  New features in the module include:
+
+  * Better animation of turtle movement and rotation.
+  * Control over turtle movement using the new delay(), 
+    tracer(), and speed() methods.
+  * The ability to set new shapes for the turtle, and to 
+    define a new coordinate system.
+  * Turtles now have an undo() method that can roll back actions.
+  * Simple support for reacting to input events such as mouse and keyboard
+    activity, making it possible to write simple games.
+  * A :file:`turtle.cfg` file can be used to customize the starting appearance 
+    of the turtle's screen.
+  * The module's docstrings can be replaced by new docstrings that have been
+    translated into another language.
+  
+  (:issue:`1513695`)
 
 * An optional ``timeout`` parameter was added to the
   :func:`urllib.urlopen` function and the
@@ -2256,8 +2309,10 @@ details.
   not necessarily correct for all applications.  Code using
   :mod:`xmlrpclib` should convert :class:`date` and :class:`time`
   instances. (:issue:`1330538`)  The code can also handle
-  dates before 1900.  (Contributed by Ralf Schmitt; :issue:`2014`.)
-
+  dates before 1900 (contributed by Ralf Schmitt; :issue:`2014`)
+  and 64-bit integers represented by using ``<i8>`` in XML-RPC responses
+  (contributed by XXX; :issue:`2985`).
+  
 * The :mod:`zipfile` module's :class:`ZipFile` class now has
   :meth:`extract` and :meth:`extractall` methods that will unpack
   a single file or all the files in the archive to the current directory, or
@@ -2273,9 +2328,14 @@ details.
 
   (Contributed by Alan McIntyre; :issue:`467924`.)
 
-  Also, :mod:`zipfile` now supports using Unicode filenames
-  for archived files.  (Contributed by Alexey Borzenkov; :issue:`1734346`.)
+  The :meth:`open`, :meth:`read` and :meth:`extract` methods can now 
+  take either a filename or a :class:`ZipInfo` object.  This is useful when an
+  archive accidentally contains a duplicated filename.
+  (Contributed by Graham Horler; :issue:`1775025`.)
 
+  Finally, :mod:`zipfile` now supports using Unicode filenames
+  for archived files.  (Contributed by Alexey Borzenkov; :issue:`1734346`.)
+  
 .. ======================================================================
 .. whole new modules get described in subsections here
 
@@ -2470,9 +2530,7 @@ Changes to Python's build process and to the C API include:
   results, and then compiles using these results for optimization.
   (Contributed by Gregory P. Smith.)
 
-
 .. ======================================================================
-
 
 Port-Specific Changes: Windows
 -----------------------------------
@@ -2515,6 +2573,16 @@ Port-Specific Changes: Windows
   (PGO). PGO builds are roughly 10% faster than normal builds.
   (Contributed by Christian Heimes with help from Amaury Forgeot d'Arc and
   Martin von Loewis.)
+
+.. ======================================================================
+
+Port-Specific Changes: MacOS X
+-----------------------------------
+
+* When compiling a framework build of Python, you can now specify the 
+  framework name to be used by providing the 
+  :option:`--with-framework-name=` option to the 
+  :program:`configure` script.
 
 .. ======================================================================
 
