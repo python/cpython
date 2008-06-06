@@ -178,7 +178,7 @@ def main(*packages):
         elif flag == "-u":
             use_resources.extend(value.split(","))
         elif flag == "-x":
-            exclude.append(value.split(","))
+            exclude.extend(value.split(","))
 
     mask = "test_*.py"
     if args:
