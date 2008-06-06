@@ -324,12 +324,13 @@ class SysModuleTest(unittest.TestCase):
         self.failUnless(sys.flags)
         attrs = ("debug", "division_warning",
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
-                 "no_site", "ignore_environment", "verbose",
+                 "no_user_site", "no_site", "ignore_environment", "verbose",
                  "bytes_warning")
         for attr in attrs:
             self.assert_(hasattr(sys.flags, attr), attr)
             self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
         self.assert_(repr(sys.flags))
+        self.assertEqual(len(sys.flags), len(attrs))
 
     def test_clear_type_cache(self):
         sys._clear_type_cache()
