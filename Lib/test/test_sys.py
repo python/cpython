@@ -424,18 +424,15 @@ class SizeofTest(unittest.TestCase):
                 return x
             return inner
         self.check_sizeof(get_cell().__closure__[0], h + p)
-        # code XXX wrong size
-        # self.check_sizeof(get_cell().__code__, h + self.align(4*i) + 8*p +\
-        #                    self.align(i) + 2*p)
+        # code
+        self.check_sizeof(get_cell().__code__, h + self.align(5*i) + 8*p +\
+                           self.align(i) + 2*p)
         # complex
         self.check_sizeof(complex(0,1), h + 2*8)
         # enumerate
         self.check_sizeof(enumerate([]), h + l + 3*p)
         # reverse
         self.check_sizeof(reversed(''), h + l + p )
-        # file XXX wrong size
-        #self.check_sizeof(self.file, h + 4*p + self.align(2*i) + 4*p +\
-        #                    self.align(3*i) + 3*p + self.align(i))
         # float
         self.check_sizeof(float(0), h + 8)
         # function
@@ -469,13 +466,13 @@ class SizeofTest(unittest.TestCase):
         class class_newstyle(object):
             def method():
                 pass
-        # type (PyTypeObject + PyNumberMethods +  PyMappingMethods +
-        #       PySequenceMethods +  PyBufferProcs)
-        # XXX wrong size
-        # len_typeobject = p + 2*l + 15*p + l + 4*p + l + 9*p + l + 11*p
-        # self.check_sizeof(class_newstyle,
-        #                  h + len_typeobject + 42*p + 10*p + 3*p + 6*p)
-
+        # type (PyTypeObject + PyNumberMethods + PyMappingMethods +
+        #       PySequenceMethods + PyBufferProcs)
+        self.check_sizeof(class_newstyle, h +\
+                          p + 2*l + 15*p + l + 4*p + l + 9*p + l + 11*p +\
+                              self.align(4) +\
+                          16*p + self.align(i) + 20*p +\
+                          10*p + 3*p + 2*p + 2*p);
 
     def test_specialtypes(self):
         i = self.i
