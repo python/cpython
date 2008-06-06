@@ -56,6 +56,7 @@ typedef struct {
 	PyObject_VAR_HEAD
 	ffi_closure *pcl; /* the C callable */
 	ffi_cif cif;
+	int flags;
 	PyObject *converters;
 	PyObject *callable;
 	PyObject *restype;
@@ -154,7 +155,7 @@ extern PyMethodDef module_methods[];
 extern CThunkObject *AllocFunctionCallback(PyObject *callable,
 					   PyObject *converters,
 					   PyObject *restype,
-					   int stdcall);
+					   int flags);
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
 	char code;
@@ -280,6 +281,8 @@ PyObject *_CallProc(PPROC pProc,
 #define FUNCFLAG_CDECL   0x1
 #define FUNCFLAG_HRESULT 0x2
 #define FUNCFLAG_PYTHONAPI 0x4
+#define FUNCFLAG_USE_ERRNO 0x8
+#define FUNCFLAG_USE_LASTERROR 0x10
 
 #define TYPEFLAG_ISPOINTER 0x100
 #define TYPEFLAG_HASPOINTER 0x200
@@ -356,6 +359,7 @@ extern char *alloc_format_string(const char *prefix, const char *suffix);
 extern int IsSimpleSubType(PyObject *obj);
 
 extern PyObject *_pointer_type_cache;
+PyObject *get_error_object(int **pspace);
 
 #ifdef MS_WIN32
 extern PyObject *ComError;
