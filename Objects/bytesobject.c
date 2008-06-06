@@ -2713,7 +2713,7 @@ string_decode(PyObject *self, PyObject *args)
 		return NULL;
 	if (encoding == NULL)
 		encoding = PyUnicode_GetDefaultEncoding();
-	return PyCodec_Decode(self, encoding, errors);
+	return PyUnicode_FromEncodedObject(self, encoding, errors);
 }
 
 
@@ -2899,7 +2899,7 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					"string argument without an encoding");
 			return NULL;
 		}
-		new = PyCodec_Encode(x, encoding, errors);
+		new = PyUnicode_AsEncodedString(x, encoding, errors);
 		if (new == NULL)
 			return NULL;
 		assert(PyBytes_Check(new));

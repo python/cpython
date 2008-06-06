@@ -261,14 +261,10 @@ Py_InitializeEx(int install_sigs)
 
 	codeset = nl_langinfo(CODESET);
 	if (codeset && *codeset) {
-		PyObject *enc = PyCodec_Encoder(codeset);
-		if (enc) {
-			codeset = strdup(codeset);
-			Py_DECREF(enc);
-		} else {
-			codeset = NULL;
-			PyErr_Clear();
-		}
+	    if (PyCodec_KnownEncoding(codeset))
+		codeset = strdup(codeset);
+	    else
+		codeset = NULL;
 	} else
 		codeset = NULL;
 
