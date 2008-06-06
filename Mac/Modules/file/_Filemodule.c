@@ -7,6 +7,10 @@
 
 #include "pymactoolbox.h"
 
+#ifndef HAVE_MACOS105_SDK
+typedef SInt16	FSIORefNum;
+#endif
+
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
         PyErr_SetString(PyExc_NotImplementedError, \
@@ -193,10 +197,6 @@ static int FSCatalogInfo_Convert(PyObject *v, FSCatalogInfo *p_itself)
 static void FSCatalogInfo_dealloc(FSCatalogInfoObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	FSPermissionInfo* info = (FSPermissionInfo*)&(self->ob_itself.permissions);
-	if (info->fileSec != NULL) {
-		CFRelease(info->fileSec);
-	}
 	self->ob_type->tp_free((PyObject *)self);
 }
 
