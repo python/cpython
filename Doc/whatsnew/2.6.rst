@@ -1672,6 +1672,10 @@ details.
 
   (Contributed by Raymond Hettinger.)
 
+* XXX Describe the new ctypes calling convention that allows safe
+  access to errno.
+  (Implemented by Thomas Heller; :issue:`1798`.)
+
 * The :mod:`ctypes` module now supports a :class:`c_bool` datatype
   that represents the C99 ``bool`` type.  (Contributed by David Remahl;
   :issue:`1649190`.)
