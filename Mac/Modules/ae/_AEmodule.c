@@ -7,6 +7,10 @@
 
 #include "pymactoolbox.h"
 
+#ifndef HAVE_OSX105_SDK
+typedef SInt32 SRefCon;
+#endif
+
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
         PyErr_SetString(PyExc_NotImplementedError, \
