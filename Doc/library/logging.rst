@@ -1653,7 +1653,7 @@ timed intervals.
    *interval*.
 
    You can use the *when* to specify the type of *interval*. The list of possible
-   values is below.  Note that they are not case sensitive. :
+   values is below.  Note that they are not case sensitive.
 
    +----------------+-----------------------+
    | Value          | Type of interval      |
@@ -1675,7 +1675,7 @@ timed intervals.
    The extensions are date-and-time based, using the strftime format
    ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the
    rollover interval. 
-   If the 'utc' argument was true, times in UTC will be used; otherwise
+   If the *utc* argument is true, times in UTC will be used; otherwise
    local time is used.
 
    If *backupCount* is nonzero, at most *backupCount* files
