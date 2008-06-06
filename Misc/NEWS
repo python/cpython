@@ -72,6 +72,9 @@ Extension Modules
 Library
 -------
 
+- Issue #1798: Add ctypes calling convention that allows safe access
+  to errno.
+
 - Issue #2404: ctypes objects support the new pep3118 buffer interface
 
 - Patch #2125: Add GetInteger and GetString methods for 
