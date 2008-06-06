@@ -189,12 +189,15 @@ static void _CallPythonObject(void *mem,
 			      SETFUNC setfunc,
 			      PyObject *callable,
 			      PyObject *converters,
+			      int flags,
 			      void **pArgs)
 {
 	Py_ssize_t i;
 	PyObject *result;
 	PyObject *arglist = NULL;
 	Py_ssize_t nArgs;
+	PyObject *error_object = NULL;
+	int *space;
 #ifdef WITH_THREAD
 	PyGILState_STATE state = PyGILState_Ensure();
 #endif
@@ -271,8 +274,41 @@ static void _CallPythonObject(void *mem,
 #define CHECK(what, x) \
 if (x == NULL) _AddTraceback(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_Print()
 
+	if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
+		error_object = get_error_object(&space);
+		if (error_object == NULL)
+			goto Done;
+		if (flags & FUNCFLAG_USE_ERRNO) {
+			int temp = space[0];
+			space[0] = errno;
+			errno = temp;
+		}
+#ifdef MS_WIN32
+		if (flags & FUNCFLAG_USE_LASTERROR) {
+			int temp = space[1];
+			space[1] = GetLastError();
+			SetLastError(temp);
+		}
+#endif
+	}
+
 	result = PyObject_CallObject(callable, arglist);
 	CHECK("'calling callback function'", result);
+
+#ifdef MS_WIN32
+	if (flags & FUNCFLAG_USE_LASTERROR) {
+		int temp = space[1];
+		space[1] = GetLastError();
+		SetLastError(temp);
+	}
+#endif
+	if (flags & FUNCFLAG_USE_ERRNO) {
+		int temp = space[0];
+		space[0] = errno;
+		errno = temp;
+	}
+	Py_XDECREF(error_object);
+
 	if ((restype != &ffi_type_void) && result) {
 		PyObject *keep;
 		assert(setfunc);
@@ -322,6 +358,7 @@ static void closure_fcn(ffi_cif *cif,
 			  p->setfunc,
 			  p->callable,
 			  p->converters,
+			  p->flags,
 			  args);
 }
 
@@ -351,7 +388,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 CThunkObject *AllocFunctionCallback(PyObject *callable,
 				    PyObject *converters,
 				    PyObject *restype,
-				    int is_cdecl)
+				    int flags)
 {
 	int result;
 	CThunkObject *p;
@@ -371,6 +408,7 @@ CThunkObject *AllocFunctionCallback(PyObject *callable,
 		goto error;
 	}
 
+	p->flags = flags;
 	for (i = 0; i < nArgs; ++i) {
 		PyObject *cnv = PySequence_GetItem(converters, i);
 		if (cnv == NULL)
@@ -398,7 +436,7 @@ CThunkObject *AllocFunctionCallback(PyObject *callable,
 
 	cc = FFI_DEFAULT_ABI;
 #if defined(MS_WIN32) && !defined(_WIN32_WCE) && !defined(MS_WIN64)
-	if (is_cdecl == 0)
+	if ((flags & FUNCFLAG_CDECL) == 0)
 		cc = FFI_STDCALL;
 #endif
 	result = ffi_prep_cif(&p->cif, cc,

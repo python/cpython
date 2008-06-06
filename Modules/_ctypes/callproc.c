@@ -83,7 +83,129 @@
 #define DONT_USE_SEH
 #endif
 
+/*
+  ctypes maintains thread-local storage that has space for two error numbers:
+  private copies of the system 'errno' value and, on Windows, the system error code
+  accessed by the GetLastError() and SetLastError() api functions.
+  
+  Foreign functions created with CDLL(..., use_errno=True), when called, swap
+  the system 'errno' value with the private copy just before the actual
+  function call, and swapped again immediately afterwards.  The 'use_errno'
+  parameter defaults to False, in this case 'ctypes_errno' is not touched.
+
+  On Windows, foreign functions created with CDLL(..., use_last_error=True) or
+  WinDLL(..., use_last_error=True) swap the system LastError value with the
+  ctypes private copy.
+
+  The values are also swapped immeditately before and after ctypes callback
+  functions are called, if the callbacks are constructed using the new
+  optional use_errno parameter set to True: CFUNCTYPE(..., use_errno=TRUE) or
+  WINFUNCTYPE(..., use_errno=True).
+
+  New ctypes functions are provided to access the ctypes private copies from
+  Python:
+
+  - ctypes.set_errno(value) and ctypes.set_last_error(value) store 'value' in
+    the private copy and returns the previous value.
+
+  - ctypes.get_errno() and ctypes.get_last_error() returns the current ctypes
+    private copies value.
+*/
+
+/*
+  This function creates and returns a thread-local Python object that has
+  space to store two integer error numbers; once created the Python object is
+  kept alive in the thread state dictionary as long as the thread itself.
+*/
+PyObject *
+get_error_object(int **pspace)
+{
+	PyObject *dict = PyThreadState_GetDict();
+	PyObject *errobj;
+	if (dict == 0) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"cannot get thread state");
+		return NULL;
+	}
+	errobj = PyDict_GetItemString(dict, "ctypes.error_object");
+	if (errobj)
+		Py_INCREF(errobj);
+	else {
+		void *space = PyMem_Malloc(sizeof(int) * 2);
+		if (space == NULL)
+			return NULL;
+		memset(space, 0, sizeof(int) * 2);
+		errobj = PyCObject_FromVoidPtr(space, PyMem_Free);
+		if (errobj == NULL)
+			return NULL;
+		if (-1 == PyDict_SetItemString(dict, "ctypes.error_object",
+					       errobj)) {
+			Py_DECREF(errobj);
+			return NULL;
+		}
+	}
+	*pspace = (int *)PyCObject_AsVoidPtr(errobj);
+	return errobj;
+}
+
+static PyObject *
+get_error_internal(PyObject *self, PyObject *args, int index)
+{
+	int *space;
+	PyObject *errobj = get_error_object(&space);
+	PyObject *result;
+
+	if (errobj == NULL)
+		return NULL;
+	result = PyInt_FromLong(space[index]);
+	Py_DECREF(errobj);
+	return result;
+}
+
+static PyObject *
+set_error_internal(PyObject *self, PyObject *args, int index)
+{
+	int new_errno, old_errno;
+	PyObject *errobj;
+	int *space;
+
+	if (!PyArg_ParseTuple(args, "i", &new_errno))
+		return NULL;
+	errobj = get_error_object(&space);
+	if (errobj == NULL)
+		return NULL;
+	old_errno = space[index];
+	space[index] = new_errno;
+	Py_DECREF(errobj);
+	return PyInt_FromLong(old_errno);
+}
+
+static PyObject *
+get_errno(PyObject *self, PyObject *args)
+{
+	return get_error_internal(self, args, 0);
+}
+
+static PyObject *
+set_errno(PyObject *self, PyObject *args)
+{
+	return set_error_internal(self, args, 0);
+}
+
 #ifdef MS_WIN32
+
+static PyObject *
+get_last_error(PyObject *self, PyObject *args)
+{
+	return get_error_internal(self, args, 1);
+}
+
+static PyObject *
+set_last_error(PyObject *self, PyObject *args)
+{
+	return set_error_internal(self, args, 1);
+}
+
 PyObject *ComError;
 
 static TCHAR *FormatError(DWORD code)
@@ -625,6 +747,8 @@ static int _call_function_pointer(int flags,
 #ifdef WITH_THREAD
 	PyThreadState *_save = NULL; /* For Py_BLOCK_THREADS and Py_UNBLOCK_THREADS */
 #endif
+	PyObject *error_object = NULL;
+	int *space;
 	ffi_cif cif;
 	int cc;
 #ifdef MS_WIN32
@@ -656,11 +780,26 @@ static int _call_function_pointer(int flags,
 		return -1;
 	}
 
+	if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
+		error_object = get_error_object(&space);
+		if (error_object == NULL)
+			return -1;
+	}
 #ifdef WITH_THREAD
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_UNBLOCK_THREADS
 #endif
+	if (flags & FUNCFLAG_USE_ERRNO) {
+		int temp = space[0];
+		space[0] = errno;
+		errno = temp;
+	}
 #ifdef MS_WIN32
+	if (flags & FUNCFLAG_USE_LASTERROR) {
+		int temp = space[1];
+		space[1] = GetLastError();
+		SetLastError(temp);
+	}
 #ifndef DONT_USE_SEH
 	__try {
 #endif
@@ -675,7 +814,18 @@ static int _call_function_pointer(int flags,
 		;
 	}
 #endif
+	if (flags & FUNCFLAG_USE_LASTERROR) {
+		int temp = space[1];
+		space[1] = GetLastError();
+		SetLastError(temp);
+	}
 #endif
+	if (flags & FUNCFLAG_USE_ERRNO) {
+		int temp = space[0];
+		space[0] = errno;
+		errno = temp;
+	}
+	Py_XDECREF(error_object);
 #ifdef WITH_THREAD
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_BLOCK_THREADS
@@ -1692,6 +1842,8 @@ buffer_info(PyObject *self, PyObject *arg)
 }
 
 PyMethodDef module_methods[] = {
+	{"get_errno", get_errno, METH_NOARGS},
+	{"set_errno", set_errno, METH_VARARGS},
 	{"POINTER", POINTER, METH_O },
 	{"pointer", pointer, METH_O },
 	{"_unpickle", unpickle, METH_VARARGS },
@@ -1702,6 +1854,8 @@ PyMethodDef module_methods[] = {
 	{"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},
 #endif
 #ifdef MS_WIN32
+	{"get_last_error", get_last_error, METH_NOARGS},
+	{"set_last_error", set_last_error, METH_VARARGS},
 	{"CopyComPointer", copy_com_pointer, METH_VARARGS, copy_com_pointer_doc},
 	{"FormatError", format_error, METH_VARARGS, format_error_doc},
 	{"LoadLibrary", load_library, METH_VARARGS, load_library_doc},
