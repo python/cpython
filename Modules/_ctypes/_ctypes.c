@@ -2502,11 +2502,6 @@ static int CData_NewGetBuffer(PyObject *_self, Py_buffer *view, int flags)
 	Py_ssize_t i;
 
 	if (view == NULL) return 0;
-	if (((flags & PyBUF_LOCK) == PyBUF_LOCK)) {
-		PyErr_SetString(PyExc_BufferError,
-				"Cannot lock this object.");
-		return -1;
-	}
 
 	view->buf = self->b_ptr;
 	view->len = self->b_size;
