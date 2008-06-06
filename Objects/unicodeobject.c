@@ -1099,14 +1099,18 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 
     /* Coerce object */
     if (PyBytes_Check(obj)) {
-	    s = PyBytes_AS_STRING(obj);
-	    len = PyBytes_GET_SIZE(obj);
-	    }
+        s = PyBytes_AS_STRING(obj);
+        len = PyBytes_GET_SIZE(obj);
+    }
+    else if (PyByteArray_Check(obj)) {
+        s = PyByteArray_AS_STRING(obj);
+        len = PyByteArray_GET_SIZE(obj);
+    }
     else if (PyObject_AsCharBuffer(obj, &s, &len)) {
 	/* Overwrite the error message with something more useful in
 	   case of a TypeError. */
 	if (PyErr_ExceptionMatches(PyExc_TypeError))
-	PyErr_Format(PyExc_TypeError,
+            PyErr_Format(PyExc_TypeError,
 			 "coercing to Unicode: need string or buffer, "
 			 "%.80s found",
 		     Py_TYPE(obj)->tp_name);
@@ -1188,7 +1192,7 @@ PyObject *PyUnicode_Decode(const char *s,
         goto onError;
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError,
-                     "decoder did not return an unicode object (type=%.400s)",
+                     "decoder did not return a unicode object (type=%.400s)",
                      Py_TYPE(unicode)->tp_name);
         Py_DECREF(unicode);
         goto onError;
@@ -1219,6 +1223,37 @@ PyObject *PyUnicode_AsDecodedObject(PyObject *unicode,
     v = PyCodec_Decode(unicode, encoding, errors);
     if (v == NULL)
         goto onError;
+    return v;
+
+ onError:
+    return NULL;
+}
+
+PyObject *PyUnicode_AsDecodedUnicode(PyObject *unicode,
+                                     const char *encoding,
+                                     const char *errors)
+{
+    PyObject *v;
+
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        goto onError;
+    }
+
+    if (encoding == NULL)
+	encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Decode via the codec registry */
+    v = PyCodec_Decode(unicode, encoding, errors);
+    if (v == NULL)
+        goto onError;
+    if (!PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "decoder did not return a unicode object (type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        Py_DECREF(v);
+        goto onError;
+    }
     return v;
 
  onError:
@@ -1296,7 +1331,54 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     v = PyCodec_Encode(unicode, encoding, errors);
     if (v == NULL)
         goto onError;
-    assert(PyBytes_Check(v));
+    if (PyByteArray_Check(v)) {
+        char msg[100];
+        PyOS_snprintf(msg, sizeof(msg),
+                      "encoder %s returned buffer instead of bytes",
+                      encoding);
+        if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0) {
+            v = NULL;
+            goto onError;
+        }
+        v = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
+    }
+    else if (!PyBytes_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encoder did not return a bytes object (type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        v = NULL;
+    }
+    return v;
+
+ onError:
+    return NULL;
+}
+
+PyObject *PyUnicode_AsEncodedUnicode(PyObject *unicode,
+                                     const char *encoding,
+                                     const char *errors)
+{
+    PyObject *v;
+
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        goto onError;
+    }
+
+    if (encoding == NULL)
+	encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Encode via the codec registry */
+    v = PyCodec_Encode(unicode, encoding, errors);
+    if (v == NULL)
+        goto onError;
+    if (!PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encoder did not return an unicode object (type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        Py_DECREF(v);
+        goto onError;
+    }
     return v;
 
  onError:
@@ -6617,7 +6699,7 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "|ss:encode", &encoding, &errors))
         return NULL;
-    v = PyUnicode_AsEncodedObject((PyObject *)self, encoding, errors);
+    v = PyUnicode_AsEncodedString((PyObject *)self, encoding, errors);
     if (v == NULL)
         goto onError;
     if (!PyBytes_Check(v)) {

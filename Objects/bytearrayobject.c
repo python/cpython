@@ -725,7 +725,7 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
                             "string argument without an encoding");
             return -1;
         }
-        encoded = PyCodec_Encode(arg, encoding, errors);
+        encoded = PyUnicode_AsEncodedString(arg, encoding, errors);
         if (encoded == NULL)
             return -1;
         assert(PyBytes_Check(encoded));
@@ -2854,7 +2854,7 @@ bytes_decode(PyObject *self, PyObject *args)
         return NULL;
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
-    return PyCodec_Decode(self, encoding, errors);
+    return PyUnicode_FromEncodedObject(self, encoding, errors);
 }
 
 PyDoc_STRVAR(alloc_doc,

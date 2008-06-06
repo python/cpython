@@ -183,6 +183,23 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     return NULL;
 }
 
+/* Codec registry encoding check API. */
+
+int PyCodec_KnownEncoding(const char *encoding)
+{
+    PyObject *codecs;
+    
+    codecs = _PyCodec_Lookup(encoding);
+    if (!codecs) {
+	PyErr_Clear();
+	return 0;
+    }
+    else {
+	Py_DECREF(codecs);
+	return 1;
+    }
+}
+
 static
 PyObject *args_tuple(PyObject *object,
 		     const char *errors)
@@ -344,32 +361,20 @@ PyObject *PyCodec_Encode(PyObject *object,
 			"encoder must return a tuple (object, integer)");
 	goto onError;
     }
-    v = PyTuple_GET_ITEM(result, 0);
-    if (PyByteArray_Check(v)) {
-        char msg[100];
-        PyOS_snprintf(msg, sizeof(msg),
-                      "encoder %s returned buffer instead of bytes",
-                      encoding);
-        if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0) {
-            v = NULL;
-            goto onError;
-        }
-        v = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
-    }
-    else if (PyBytes_Check(v))
-        Py_INCREF(v);
-    else {
-        PyErr_SetString(PyExc_TypeError,
-                        "encoding must return a tuple(bytes, integer)");
-        v = NULL;
-    }
+    v = PyTuple_GET_ITEM(result,0);
+    Py_INCREF(v);
     /* We don't check or use the second (integer) entry. */
 
+    Py_DECREF(args);
+    Py_DECREF(encoder);
+    Py_DECREF(result);
+    return v;
+	
  onError:
     Py_XDECREF(result);
     Py_XDECREF(args);
     Py_XDECREF(encoder);
-    return v;
+    return NULL;
 }
 
 /* Decode an object (usually a Python string) using the given encoding

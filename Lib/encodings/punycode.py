@@ -183,6 +183,8 @@ def insertion_sort(base, extended, errors):
 def punycode_decode(text, errors):
     if isinstance(text, str):
         text = text.encode("ascii")
+    if isinstance(text, memoryview):
+        text = bytes(text)
     pos = text.rfind(b"-")
     if pos == -1:
         base = ""
