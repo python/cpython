@@ -1779,11 +1779,6 @@ static const void *emptybuf = "";
 static int
 array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
 {
-        if ((flags & PyBUF_LOCK)) {
-                PyErr_SetString(PyExc_BufferError,
-                                "Cannot lock data");
-                return -1;
-        }
         if (view==NULL) goto finish;
 
         view->buf = (void *)self->ob_item;

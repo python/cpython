@@ -230,9 +230,6 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         case PyBUF_WRITE:
                 flags = PyBUF_FULL;
                 break;
-        case PyBUF_SHADOW:
-                flags = PyBUF_FULL_XLCK;
-                break;
         }
 
         if (PyObject_GetBuffer(obj, view, flags) != 0) {
