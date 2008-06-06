@@ -375,8 +375,8 @@ The :keyword:`print` statement
 .. index:: statement: print
 
 .. productionlist::
-   print_stmt: "print" ([`expression` ("," `expression`)* [","]
-             : | ">>" `expression` [("," `expression`)+ [","])
+   print_stmt: "print" ([`expression` ("," `expression`)* [","]]
+             : | ">>" `expression` [("," `expression`)+ [","]])
 
 :keyword:`print` evaluates each expression in turn and writes the resulting
 object to standard output (see below).  If an object is not a string, it is
