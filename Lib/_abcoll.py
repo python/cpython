@@ -329,14 +329,25 @@ class Mapping(Sized, Iterable, Container):
         else:
             return True
 
+    def iterkeys(self):
+        return iter(self)
+
+    def itervalues(self):
+        for key in self:
+            yield self[key]
+
+    def iteritems(self):
+        for key in self:
+            yield (key, self[key])
+
     def keys(self):
-        return KeysView(self)
+        return list(self)
 
     def items(self):
-        return ItemsView(self)
+        return [(key, self[key]) for key in self]
 
     def values(self):
-        return ValuesView(self)
+        return [self[key] for key in self]
 
     def __eq__(self, other):
         return isinstance(other, Mapping) and \
@@ -363,8 +374,6 @@ class KeysView(MappingView, Set):
         for key in self._mapping:
             yield key
 
-KeysView.register(type({}.keys()))
-
 
 class ItemsView(MappingView, Set):
 
@@ -381,8 +390,6 @@ class ItemsView(MappingView, Set):
         for key in self._mapping:
             yield (key, self._mapping[key])
 
-ItemsView.register(type({}.items()))
-
 
 class ValuesView(MappingView):
 
@@ -395,8 +402,6 @@ class ValuesView(MappingView):
     def __iter__(self):
         for key in self._mapping:
             yield self._mapping[key]
-
-ValuesView.register(type({}.values()))
 
 
 class MutableMapping(Mapping):
