@@ -11,18 +11,24 @@ import os
 import mimetools
 
 
-def _urlopen_with_retry(host, *args, **kwargs):
-    # Connecting to remote hosts is flaky.  Make it more robust
-    # by retrying the connection several times.
+def _retry_thrice(func, exc, *args, **kwargs):
     for i in range(3):
         try:
-            return urllib2.urlopen(host, *args, **kwargs)
-        except urllib2.URLError, last_exc:
+            return func(*args, **kwargs)
+        except exc, last_exc:
             continue
         except:
             raise
     raise last_exc
 
+def _wrap_with_retry_thrice(func, exc):
+    def wrapped(*args, **kwargs):
+        return _retry_thrice(func, exc, *args, **kwargs)
+    return wrapped
+
+# Connecting to remote hosts is flaky.  Make it more robust by retrying
+# the connection several times.
+_urlopen_with_retry = _wrap_with_retry_thrice(urllib2.urlopen, urllib2.URLError)
 
 
 class AuthTests(unittest.TestCase):
@@ -115,7 +121,7 @@ class OtherNetworkTests(unittest.TestCase):
                 'file:'+sanepathname2url(os.path.abspath(TESTFN)),
                 ('file:///nonsensename/etc/passwd', None, urllib2.URLError),
                 ]
-            self._test_urls(urls, self._extra_handlers(), urllib2.urlopen)
+            self._test_urls(urls, self._extra_handlers(), retry=True)
         finally:
             os.remove(TESTFN)
 
@@ -147,13 +153,15 @@ class OtherNetworkTests(unittest.TestCase):
 
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
-    def _test_urls(self, urls, handlers, urlopen=_urlopen_with_retry):
+    def _test_urls(self, urls, handlers, retry=True):
         import socket
         import time
         import logging
         debug = logging.getLogger("test_urllib2").debug
 
-        urllib2.install_opener(urllib2.build_opener(*handlers))
+        urlopen = urllib2.build_opener(*handlers).open
+        if retry:
+            urlopen = _wrap_with_retry_thrice(urlopen, urllib2.URLError)
 
         for url in urls:
             if isinstance(url, tuple):
