@@ -78,7 +78,7 @@ Abstract Grammar
 ----------------
 
 The module defines a string constant ``__version__`` which is the decimal
-subversion revision number of the file shown below.
+Subversion revision number of the file shown below.
 
 The abstract grammar is currently defined as follows:
 
