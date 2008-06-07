@@ -72,6 +72,9 @@ Extension Modules
 Library
 -------
 
+- Factored out the indentation cleaning from inspect.getdoc() into
+  inspect.cleandoc() to ease standalone use.
+
 - Issue #1798: Add ctypes calling convention that allows safe access
   to errno.
 

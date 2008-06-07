@@ -368,6 +368,13 @@ def getdoc(object):
         return None
     if not isinstance(doc, types.StringTypes):
         return None
+    return cleandoc(doc)
+
+def cleandoc(doc):
+    """Clean up indentation from docstrings.
+
+    Any whitespace that can be uniformly removed from the second line
+    onwards is removed."""
     try:
         lines = string.split(string.expandtabs(doc), '\n')
     except UnicodeError:
