@@ -10,9 +10,9 @@
 .. versionadded:: 2.6
 
 This module provides the infrastructure for defining abstract base classes
-(ABCs) in Python, as outlined in :pep:`3119`; see the PEP for why this
-was added to Python. (See also, :pep:`3141` regarding a type hierarchy
-for numbers based on ABCs.)
+(ABCs) in Python, as outlined in :pep:`3119`; see the PEP for why this was added
+to Python. (See also :pep:`3141` and the :mod:`numbers` module regarding a type
+hierarchy for numbers based on ABCs.)
 
 The :mod:`collections` module has some concrete classes that derive from
 ABCs; these can, of course, be further derived. In addition the
