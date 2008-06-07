@@ -79,6 +79,10 @@ class IterableUserDict(UserDict):
     def __iter__(self):
         return iter(self.data)
 
+import _abcoll
+_abcoll.MutableMapping.register(IterableUserDict)
+
+
 class DictMixin:
     # Mixin defining all dictionary methods for classes that already have
     # a minimum dictionary interface including getitem, setitem, delitem,
