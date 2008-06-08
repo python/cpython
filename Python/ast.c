@@ -1364,7 +1364,7 @@ ast_for_atom(struct compiling *c, const node *n)
     case BACKQUOTE: { /* repr */
         expr_ty expression;
         if (Py_Py3kWarningFlag) {
-            if (PyErr_WarnExplicit(PyExc_DeprecationWarning,
+            if (PyErr_WarnExplicit(PyExc_SyntaxWarning,
                                    "backquote not supported in 3.x; use repr()",
                                    c->c_filename, LINENO(n),
                                    NULL, NULL)) {
