@@ -10,6 +10,12 @@ if not sys.py3kwarning:
 
 class TestPy3KWarnings(unittest.TestCase):
 
+    def test_backquote(self):
+        expected = 'backquote not supported in 3.x; use repr()'
+        with catch_warning() as w:
+            exec "`2`" in {}
+        self.assertWarning(None, w, expected)
+
     def test_type_inequality_comparisons(self):
         expected = 'type inequality comparisons not supported in 3.x'
         with catch_warning() as w:
