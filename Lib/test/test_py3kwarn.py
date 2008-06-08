@@ -173,6 +173,12 @@ class TestPy3KWarnings(unittest.TestCase):
             with catch_warning() as w:
                 self.assertWarning(set(), w, expected)
 
+    def test_tuple_parameter_unpacking(self):
+        expected = "tuple parameter unpacking has been removed in 3.x"
+        with catch_warning() as w:
+            exec "def f((a, b)): pass"
+            self.assertWarning(None, w, expected)
+
     def test_buffer(self):
         expected = 'buffer() not supported in 3.x; use memoryview()'
         with catch_warning() as w:

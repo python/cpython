@@ -701,6 +701,9 @@ ast_for_arguments(struct compiling *c, const node *n)
                     /* def foo((x)): is not complex, special case. */
                     if (NCH(ch) != 1) {
                         /* We have complex arguments, setup for unpacking. */
+                        if (Py_Py3kWarningFlag && !ast_warn(c, ch,
+                            "tuple parameter unpacking has been removed in 3.x"))
+                            goto error;
                         asdl_seq_SET(args, k++, compiler_complex_args(c, ch));
                         if (!asdl_seq_GET(args, k-1))
                                 goto error;
