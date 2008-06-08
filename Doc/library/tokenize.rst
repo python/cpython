@@ -27,8 +27,8 @@ The primary entry point is a :term:`generator`:
    string; a 2-tuple ``(srow, scol)`` of ints specifying the row and column
    where the token begins in the source; a 2-tuple ``(erow, ecol)`` of ints
    specifying the row and column where the token ends in the source; and the
-   line on which the token was found.  The line passed is the *physical* line,
-   that is, continuation lines are not handled specially.
+   line on which the token was found.  The line passed (the last tuple item) is
+   the *logical* line; continuation lines are included.
 
    .. versionadded:: 2.2
 
