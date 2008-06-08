@@ -126,6 +126,17 @@ ast_warn(struct compiling *c, const node *n, char *msg)
     return 1;
 }
 
+static int
+forbidden_check(struct compiling *c, const node *n, const char *x)
+{
+    if (!strcmp(x, "None"))
+        return ast_error(n, "assignment to None");
+    if (Py_Py3kWarningFlag && !(strcmp(x, "True") && strcmp(x, "False")) &&
+        !ast_warn(c, n, "assignment to True or False is forbidden in 3.x"))
+        return 0;
+    return 1;
+}
+
 /* num_stmts() returns number of contained statements.
 
    Use this routine to determine how big a sequence is needed for
@@ -364,20 +375,18 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
 
     switch (e->kind) {
         case Attribute_kind:
-            if (ctx == Store &&
-                !strcmp(PyBytes_AS_STRING(e->v.Attribute.attr), "None")) {
-                return ast_error(n, "assignment to None");
-            }
+            if (ctx == Store && !forbidden_check(c, n,
+                                PyBytes_AS_STRING(e->v.Attribute.attr)))
+                    return 0;
             e->v.Attribute.ctx = ctx;
             break;
         case Subscript_kind:
             e->v.Subscript.ctx = ctx;
             break;
         case Name_kind:
-            if (ctx == Store &&
-                !strcmp(PyBytes_AS_STRING(e->v.Name.id), "None")) {
-                    return ast_error(n, "assignment to None");
-            }
+            if (ctx == Store && !forbidden_check(c, n,
+                                PyBytes_AS_STRING(e->v.Name.id)))
+                    return 0;
             e->v.Name.ctx = ctx;
             break;
         case List_kind:
@@ -595,10 +604,8 @@ set_name:
         /* fpdef_node is either a NAME or an fplist */
         child = CHILD(fpdef_node, 0);
         if (TYPE(child) == NAME) {
-            if (!strcmp(STR(child), "None")) {
-                ast_error(child, "assignment to None");
-                return NULL;
-            }   
+            if (!forbidden_check(c, n, STR(child)))
+                return NULL;  
             arg = Name(NEW_IDENTIFIER(child), Store, LINENO(child),
                        child->n_col_offset, c->c_arena);
         }
@@ -708,10 +715,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                 }
                 if (TYPE(CHILD(ch, 0)) == NAME) {
                     expr_ty name;
-                    if (!strcmp(STR(CHILD(ch, 0)), "None")) {
-                        ast_error(CHILD(ch, 0), "assignment to None");
+                    if (!forbidden_check(c, n, STR(CHILD(ch, 0))))
                         goto error;
-                    }
                     name = Name(NEW_IDENTIFIER(CHILD(ch, 0)),
                                 Param, LINENO(ch), ch->n_col_offset,
                                 c->c_arena);
@@ -723,18 +728,14 @@ ast_for_arguments(struct compiling *c, const node *n)
                 i += 2; /* the name and the comma */
                 break;
             case STAR:
-                if (!strcmp(STR(CHILD(n, i+1)), "None")) {
-                    ast_error(CHILD(n, i+1), "assignment to None");
+                if (!forbidden_check(c, CHILD(n, i+1), STR(CHILD(n, i+1))))
                     goto error;
-                }
                 vararg = NEW_IDENTIFIER(CHILD(n, i+1));
                 i += 3;
                 break;
             case DOUBLESTAR:
-                if (!strcmp(STR(CHILD(n, i+1)), "None")) {
-                    ast_error(CHILD(n, i+1), "assignment to None");
+                if (!forbidden_check(c, CHILD(n, i+1), STR(CHILD(n, i+1))))
                     goto error;
-                }
                 kwarg = NEW_IDENTIFIER(CHILD(n, i+1));
                 i += 3;
                 break;
@@ -857,10 +858,8 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     name = NEW_IDENTIFIER(CHILD(n, name_i));
     if (!name)
         return NULL;
-    else if (!strcmp(STR(CHILD(n, name_i)), "None")) {
-        ast_error(CHILD(n, name_i), "assignment to None");
+    else if (!forbidden_check(c, CHILD(n, name_i), STR(CHILD(n, name_i))))
         return NULL;
-    }
     args = ast_for_arguments(c, CHILD(n, name_i + 1));
     if (!args)
         return NULL;
@@ -1929,10 +1928,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                     return NULL;
                 }
                 key = e->v.Name.id;
-                if (!strcmp(PyBytes_AS_STRING(key), "None")) {
-                    ast_error(CHILD(ch, 0), "assignment to None");
+                if (!forbidden_check(c, CHILD(ch, 0), PyBytes_AS_STRING(key)))
                     return NULL;
-                }
                 e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
                     return NULL;
@@ -2059,10 +2056,9 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
                 return NULL;
             case Name_kind: {
                 const char *var_name = PyBytes_AS_STRING(expr1->v.Name.id);
-                if (var_name[0] == 'N' && !strcmp(var_name, "None")) {
-                    ast_error(ch, "assignment to None");
+                if ((var_name[0] == 'N' || var_name[0] == 'T' || var_name[0] == 'F') &&
+                    !forbidden_check(c, ch, var_name))
                     return NULL;
-                }
                 break;
             }
             case Attribute_kind:
@@ -3005,10 +3001,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     
     REQ(n, classdef);
 
-    if (!strcmp(STR(CHILD(n, 1)), "None")) {
-            ast_error(n, "assignment to None");
+    if (!forbidden_check(c, n, STR(CHILD(n, 1))))
             return NULL;
-    }
 
     if (NCH(n) == 4) {
         s = ast_for_suite(c, CHILD(n, 3));
