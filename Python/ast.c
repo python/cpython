@@ -113,6 +113,19 @@ ast_error_finish(const char *filename)
     PyErr_Restore(type, value, tback);
 }
 
+static int
+ast_warn(struct compiling *c, const node *n, char *msg)
+{
+    if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, c->c_filename, LINENO(n),
+                           NULL, NULL) < 0) {
+        /* if -Werr, change it to a SyntaxError */
+        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_SyntaxWarning))
+            ast_error(n, msg);
+        return 0;
+    }
+    return 1;
+}
+
 /* num_stmts() returns number of contained statements.
 
    Use this routine to determine how big a sequence is needed for
@@ -1363,14 +1376,9 @@ ast_for_atom(struct compiling *c, const node *n)
     }
     case BACKQUOTE: { /* repr */
         expr_ty expression;
-        if (Py_Py3kWarningFlag) {
-            if (PyErr_WarnExplicit(PyExc_SyntaxWarning,
-                                   "backquote not supported in 3.x; use repr()",
-                                   c->c_filename, LINENO(n),
-                                   NULL, NULL)) {
+        if (Py_Py3kWarningFlag &&
+            !ast_warn(c, n, "backquote not supported in 3.x; use repr()"))
             return NULL;
-            }
-        }
         expression = ast_for_testlist(c, CHILD(n, 1));
         if (!expression)
             return NULL;
