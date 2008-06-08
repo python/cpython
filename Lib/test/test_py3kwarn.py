@@ -16,6 +16,55 @@ class TestPy3KWarnings(unittest.TestCase):
             exec "`2`" in {}
         self.assertWarning(None, w, expected)
 
+    def test_bool_assign(self):
+        # So we don't screw up our globals
+        def safe_exec(expr):
+            def f(**kwargs): pass
+            exec expr in {'f' : f}
+
+        expected = "assignment to True or False is forbidden in 3.x"
+        with catch_warning() as w:
+            safe_exec("True = False")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("False = True")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            try:
+                safe_exec("obj.False = True")
+            except NameError: pass
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            try:
+                safe_exec("obj.True = False")
+            except NameError: pass
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("def False(): pass")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("def True(): pass")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("class False: pass")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("class True: pass")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("def f(True=43): pass")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("def f(False=None): pass")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("f(False=True)")
+            self.assertWarning(None, w, expected)
+        with catch_warning() as w:
+            safe_exec("f(True=1)")
+            self.assertWarning(None, w, expected)
+
+
     def test_type_inequality_comparisons(self):
         expected = 'type inequality comparisons not supported in 3.x'
         with catch_warning() as w:
