@@ -481,13 +481,13 @@ class HTMLCalendar(Calendar):
         return ''.join(v).encode(encoding, "xmlcharrefreplace")
 
 
-class TimeEncoding:
+class different_locale:
     def __init__(self, locale):
         self.locale = locale
 
     def __enter__(self):
         self.oldlocale = _locale.setlocale(_locale.LC_TIME, self.locale)
-        return _locale.getlocale(_locale.LC_TIME)[1]
+        #return _locale.getlocale(_locale.LC_TIME)[1]
 
     def __exit__(self, *args):
         _locale.setlocale(_locale.LC_TIME, self.oldlocale)
@@ -508,21 +508,17 @@ class LocaleTextCalendar(TextCalendar):
         self.locale = locale
 
     def formatweekday(self, day, width):
-        with TimeEncoding(self.locale) as encoding:
+        with different_locale(self.locale):
             if width >= 9:
                 names = day_name
             else:
                 names = day_abbr
             name = names[day]
-            if encoding is not None:
-                name = name.decode(encoding)
             return name[:width].center(width)
 
     def formatmonthname(self, theyear, themonth, width, withyear=True):
-        with TimeEncoding(self.locale) as encoding:
+        with different_locale(self.locale):
             s = month_name[themonth]
-            if encoding is not None:
-                s = s.decode(encoding)
             if withyear:
                 s = "%s %r" % (s, theyear)
             return s.center(width)
@@ -542,17 +538,13 @@ class LocaleHTMLCalendar(HTMLCalendar):
         self.locale = locale
 
     def formatweekday(self, day):
-        with TimeEncoding(self.locale) as encoding:
+        with different_locale(self.locale):
             s = day_abbr[day]
-            if encoding is not None:
-                s = s.decode(encoding)
             return '<th class="%s">%s</th>' % (self.cssclasses[day], s)
 
     def formatmonthname(self, theyear, themonth, withyear=True):
-        with TimeEncoding(self.locale) as encoding:
+        with different_locale(self.locale):
             s = month_name[themonth]
-            if encoding is not None:
-                s = s.decode(encoding)
             if withyear:
                 s = '%s %s' % (s, theyear)
             return '<tr><th colspan="7" class="month">%s</th></tr>' % s
