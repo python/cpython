@@ -15,21 +15,20 @@ for on-screen displays.
 
 The primary entry point is a :term:`generator`:
 
-
 .. function:: generate_tokens(readline)
 
-   The :func:`generate_tokens` generator requires one argument, *readline*, which
-   must be a callable object which provides the same interface as the
+   The :func:`generate_tokens` generator requires one argument, *readline*,
+   which must be a callable object which provides the same interface as the
    :meth:`readline` method of built-in file objects (see section
-   :ref:`bltin-file-objects`).  Each call to the function should return one line of
-   input as a string.
+   :ref:`bltin-file-objects`).  Each call to the function should return one line
+   of input as a string.
 
    The generator produces 5-tuples with these members: the token type; the token
-   string; a 2-tuple ``(srow, scol)`` of ints specifying the row and column where
-   the token begins in the source; a 2-tuple ``(erow, ecol)`` of ints specifying
-   the row and column where the token ends in the source; and the line on which the
-   token was found. The line passed is the *logical* line; continuation lines are
-   included.
+   string; a 2-tuple ``(srow, scol)`` of ints specifying the row and column
+   where the token begins in the source; a 2-tuple ``(erow, ecol)`` of ints
+   specifying the row and column where the token ends in the source; and the
+   line on which the token was found.  The line passed is the *physical* line,
+   that is, continuation lines are not handled specially.
 
    .. versionadded:: 2.2
 
