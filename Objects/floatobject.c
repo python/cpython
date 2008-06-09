@@ -182,9 +182,9 @@ PyFloat_FromString(PyObject *v, char **pend)
 
 	if (pend)
 		*pend = NULL;
-	if (PyBytes_Check(v)) {
-		s = PyBytes_AS_STRING(v);
-		len = PyBytes_GET_SIZE(v);
+	if (PyString_Check(v)) {
+		s = PyString_AS_STRING(v);
+		len = PyString_GET_SIZE(v);
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
@@ -485,7 +485,7 @@ float_repr(PyFloatObject *v)
 	char buf[100];
 	format_float(buf, sizeof(buf), v, PREC_REPR);
 
-	return PyBytes_FromString(buf);
+	return PyString_FromString(buf);
 }
 
 static PyObject *
@@ -493,7 +493,7 @@ float_str(PyFloatObject *v)
 {
 	char buf[100];
 	format_float(buf, sizeof(buf), v, PREC_STR);
-	return PyBytes_FromString(buf);
+	return PyString_FromString(buf);
 }
 
 /* Comparison is pretty much a nightmare.  When comparing float to float,
@@ -1218,7 +1218,7 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return float_subtype_new(type, args, kwds); /* Wimp out */
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:float", kwlist, &x))
 		return NULL;
-	if (PyBytes_Check(x))
+	if (PyString_Check(x))
 		return PyFloat_FromString(x, NULL);
 	return PyNumber_Float(x);
 }
@@ -1269,13 +1269,13 @@ float_getformat(PyTypeObject *v, PyObject* arg)
 	char* s;
 	float_format_type r;
 
-	if (!PyBytes_Check(arg)) {
+	if (!PyString_Check(arg)) {
 		PyErr_Format(PyExc_TypeError,
 	     "__getformat__() argument must be string, not %.500s",
 			     Py_TYPE(arg)->tp_name);
 		return NULL;
 	}
-	s = PyBytes_AS_STRING(arg);
+	s = PyString_AS_STRING(arg);
 	if (strcmp(s, "double") == 0) {
 		r = double_format;
 	}
@@ -1291,11 +1291,11 @@ float_getformat(PyTypeObject *v, PyObject* arg)
 	
 	switch (r) {
 	case unknown_format:
-		return PyBytes_FromString("unknown");
+		return PyString_FromString("unknown");
 	case ieee_little_endian_format:
-		return PyBytes_FromString("IEEE, little-endian");
+		return PyString_FromString("IEEE, little-endian");
 	case ieee_big_endian_format:
-		return PyBytes_FromString("IEEE, big-endian");
+		return PyString_FromString("IEEE, big-endian");
 	default:
 		Py_FatalError("insane float_format or double_format");
 		return NULL;

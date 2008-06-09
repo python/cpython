@@ -19,7 +19,7 @@ this type and there is exactly one in existence.
 static PyObject *
 ellipsis_repr(PyObject *op)
 {
-	return PyBytes_FromString("Ellipsis");
+	return PyString_FromString("Ellipsis");
 }
 
 static PyTypeObject PyEllipsis_Type = {
@@ -228,14 +228,14 @@ slice_repr(PySliceObject *r)
 {
 	PyObject *s, *comma;
 
-	s = PyBytes_FromString("slice(");
-	comma = PyBytes_FromString(", ");
-	PyBytes_ConcatAndDel(&s, PyObject_Repr(r->start));
-	PyBytes_Concat(&s, comma);
-	PyBytes_ConcatAndDel(&s, PyObject_Repr(r->stop));
-	PyBytes_Concat(&s, comma);
-	PyBytes_ConcatAndDel(&s, PyObject_Repr(r->step));
-	PyBytes_ConcatAndDel(&s, PyBytes_FromString(")"));
+	s = PyString_FromString("slice(");
+	comma = PyString_FromString(", ");
+	PyString_ConcatAndDel(&s, PyObject_Repr(r->start));
+	PyString_Concat(&s, comma);
+	PyString_ConcatAndDel(&s, PyObject_Repr(r->stop));
+	PyString_Concat(&s, comma);
+	PyString_ConcatAndDel(&s, PyObject_Repr(r->step));
+	PyString_ConcatAndDel(&s, PyString_FromString(")"));
 	Py_DECREF(comma);
 	return s;
 }

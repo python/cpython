@@ -80,7 +80,7 @@ md5_digest(md5object *self)
 	mdContext = self->md5;
 	md5_finish(&mdContext, aDigest);
 
-	return PyBytes_FromStringAndSize((char *)aDigest, 16);
+	return PyString_FromStringAndSize((char *)aDigest, 16);
 }
 
 PyDoc_STRVAR(digest_doc,
@@ -113,7 +113,7 @@ md5_hexdigest(md5object *self)
 		c = (c>9) ? c+'a'-10 : c + '0';
 		hexdigest[j++] = c;
 	}
-	return PyBytes_FromStringAndSize((char*)hexdigest, 32);
+	return PyString_FromStringAndSize((char*)hexdigest, 32);
 }
 
 
@@ -165,7 +165,7 @@ md5_get_digest_size(PyObject *self, void *closure)
 static PyObject *
 md5_get_name(PyObject *self, void *closure)
 {
-    return PyBytes_FromStringAndSize("MD5", 3);
+    return PyString_FromStringAndSize("MD5", 3);
 }
 
 static PyGetSetDef md5_getseters[] = {

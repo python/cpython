@@ -16,7 +16,7 @@ listmembers(struct memberlist *mlist)
 	if (v != NULL) {
 		for (i = 0; i < n; i++)
 			PyList_SetItem(v, i,
-				       PyBytes_FromString(mlist[i].name));
+				       PyString_FromString(mlist[i].name));
 		if (PyErr_Occurred()) {
 			Py_DECREF(v);
 			v = NULL;
@@ -103,13 +103,13 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
 			v = Py_None;
 		}
 		else
-			v = PyBytes_FromString(*(char**)addr);
+			v = PyString_FromString(*(char**)addr);
 		break;
 	case T_STRING_INPLACE:
-		v = PyBytes_FromString((char*)addr);
+		v = PyString_FromString((char*)addr);
 		break;
 	case T_CHAR:
-		v = PyBytes_FromStringAndSize((char*)addr, 1);
+		v = PyString_FromStringAndSize((char*)addr, 1);
 		break;
 	case T_OBJECT:
 		v = *(PyObject **)addr;
@@ -310,8 +310,8 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		Py_XDECREF(oldv);
 		break;
 	case T_CHAR:
-		if (PyBytes_Check(v) && PyBytes_Size(v) == 1) {
-			*(char*)addr = PyBytes_AsString(v)[0];
+		if (PyString_Check(v) && PyString_Size(v) == 1) {
+			*(char*)addr = PyString_AsString(v)[0];
 		}
 		else {
 			PyErr_BadArgument();

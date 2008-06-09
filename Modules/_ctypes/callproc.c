@@ -498,7 +498,7 @@ PyCArg_repr(PyCArgObject *self)
 			self->tag, self);
 		break;
 	}
-	return PyBytes_FromString(buffer);
+	return PyString_FromString(buffer);
 }
 
 static PyMemberDef PyCArgType_members[] = {
@@ -646,9 +646,9 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 		return 0;
 	}
 
-	if (PyBytes_Check(obj)) {
+	if (PyString_Check(obj)) {
 		pa->ffi_type = &ffi_type_pointer;
-		pa->value.p = PyBytes_AS_STRING(obj);
+		pa->value.p = PyString_AS_STRING(obj);
 		Py_INCREF(obj);
 		pa->keep = obj;
 		return 0;
@@ -937,7 +937,7 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 	PyObject *tp, *v, *tb, *s, *cls_str, *msg_str;
 
 	va_start(vargs, fmt);
-	s = PyBytes_FromFormatV(fmt, vargs);
+	s = PyString_FromFormatV(fmt, vargs);
 	va_end(vargs);
 	if (!s)
 		return;
@@ -946,18 +946,18 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 	PyErr_NormalizeException(&tp, &v, &tb);
 	cls_str = PyObject_Str(tp);
 	if (cls_str) {
-		PyBytes_ConcatAndDel(&s, cls_str);
-		PyBytes_ConcatAndDel(&s, PyBytes_FromString(": "));
+		PyString_ConcatAndDel(&s, cls_str);
+		PyString_ConcatAndDel(&s, PyString_FromString(": "));
 		if (s == NULL)
 			goto error;
 	} else
 		PyErr_Clear();
 	msg_str = PyObject_Str(v);
 	if (msg_str)
-		PyBytes_ConcatAndDel(&s, msg_str);
+		PyString_ConcatAndDel(&s, msg_str);
 	else {
 		PyErr_Clear();
-		PyBytes_ConcatAndDel(&s, PyBytes_FromString("???"));
+		PyString_ConcatAndDel(&s, PyString_FromString("???"));
 		if (s == NULL)
 			goto error;
 	}
@@ -1261,7 +1261,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O|O:LoadLibrary", &nameobj, &ignored))
 		return NULL;
 #ifdef _UNICODE
-	name = alloca((PyBytes_Size(nameobj) + 1) * sizeof(WCHAR));
+	name = alloca((PyString_Size(nameobj) + 1) * sizeof(WCHAR));
 	if (!name) {
 		PyErr_NoMemory();
 		return NULL;
@@ -1269,14 +1269,14 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 
 	{
 		int r;
-		char *aname = PyBytes_AsString(nameobj);
+		char *aname = PyString_AsString(nameobj);
 		if(!aname)
 			return NULL;
-		r = MultiByteToWideChar(CP_ACP, 0, aname, -1, name, PyBytes_Size(nameobj) + 1);
+		r = MultiByteToWideChar(CP_ACP, 0, aname, -1, name, PyString_Size(nameobj) + 1);
 		name[r] = 0;
 	}
 #else
-	name = PyBytes_AsString(nameobj);
+	name = PyString_AsString(nameobj);
 	if(!name)
 		return NULL;
 #endif
@@ -1769,9 +1769,9 @@ POINTER(PyObject *self, PyObject *cls)
 		Py_INCREF(result);
 		return result;
 	}
-	if (PyBytes_CheckExact(cls)) {
-		buf = alloca(strlen(PyBytes_AS_STRING(cls)) + 3 + 1);
-		sprintf(buf, "LP_%s", PyBytes_AS_STRING(cls));
+	if (PyString_CheckExact(cls)) {
+		buf = alloca(strlen(PyString_AS_STRING(cls)) + 3 + 1);
+		sprintf(buf, "LP_%s", PyString_AS_STRING(cls));
 		result = PyObject_CallFunction((PyObject *)Py_TYPE(&Pointer_Type),
 					       "s(O){}",
 					       buf,

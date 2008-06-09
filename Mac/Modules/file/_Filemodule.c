@@ -961,7 +961,7 @@ static PyObject *Alias_get_data(AliasObject *self, void *closure)
 
 	                    size = GetHandleSize((Handle)self->ob_itself);
 	                    HLock((Handle)self->ob_itself);
-	                    rv = PyBytes_FromStringAndSize(*(Handle)self->ob_itself, size);
+	                    rv = PyString_FromStringAndSize(*(Handle)self->ob_itself, size);
 	                    HUnlock((Handle)self->ob_itself);
 	                    return rv;
 	            
@@ -1362,7 +1362,7 @@ static PyObject *FSSpec_as_pathname(FSSpecObject *_self, PyObject *_args)
 	        PyMac_Error(err);
 	        return NULL;
 	}
-	_res = PyBytes_FromString(strbuf);
+	_res = PyString_FromString(strbuf);
 	return _res;
 
 }
@@ -1419,7 +1419,7 @@ static PyMethodDef FSSpec_methods[] = {
 
 static PyObject *FSSpec_get_data(FSSpecObject *self, void *closure)
 {
-	return PyBytes_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));
+	return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));
 }
 
 #define FSSpec_set_data NULL
@@ -1440,7 +1440,7 @@ static PyObject * FSSpec_repr(FSSpecObject *self)
 	        self->ob_itself.vRefNum,
 	        self->ob_itself.parID,
 	        self->ob_itself.name[0], self->ob_itself.name+1);
-	return PyBytes_FromString(buf);
+	return PyString_FromString(buf);
 }
 
 #define FSSpec_hash NULL
@@ -2015,7 +2015,7 @@ static PyMethodDef FSRef_methods[] = {
 
 static PyObject *FSRef_get_data(FSRefObject *self, void *closure)
 {
-	return PyBytes_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));
+	return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));
 }
 
 #define FSRef_set_data NULL
@@ -3131,7 +3131,7 @@ static PyObject *File_pathname(PyObject *_self, PyObject *_args)
 
 	if (!PyArg_ParseTuple(_args, "O", &obj))
 	        return NULL;
-	if (PyBytes_Check(obj)) {
+	if (PyString_Check(obj)) {
 	        Py_INCREF(obj);
 	        return obj;
 	}
@@ -3301,7 +3301,7 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
         }
 
         /* On OSX we now try a pathname */
-        if ( PyBytes_Check(v) || PyUnicode_Check(v)) {
+        if ( PyString_Check(v) || PyUnicode_Check(v)) {
                 char *path = NULL;
                 if (!PyArg_Parse(v, "et", Py_FileSystemDefaultEncoding, &path))
                         return 0;

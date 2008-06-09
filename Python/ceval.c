@@ -739,7 +739,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	consts = co->co_consts;
 	fastlocals = f->f_localsplus;
 	freevars = f->f_localsplus + co->co_nlocals;
-	first_instr = (unsigned char*) PyBytes_AS_STRING(co->co_code);
+	first_instr = (unsigned char*) PyString_AS_STRING(co->co_code);
 	/* An explanation is in order for the next line.
 
 	   f->f_lasti now refers to the index of the last instruction
@@ -766,7 +766,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
 #endif
 #if defined(Py_DEBUG) || defined(LLTRACE)
-	filename = PyBytes_AsString(co->co_filename);
+	filename = PyString_AsString(co->co_filename);
 #endif
 
 	why = WHY_NOT;
@@ -1147,8 +1147,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					goto slow_add;
 				x = PyInt_FromLong(i);
 			}
-			else if (PyBytes_CheckExact(v) &&
-				 PyBytes_CheckExact(w)) {
+			else if (PyString_CheckExact(v) &&
+				 PyString_CheckExact(w)) {
 				x = string_concatenate(v, w, f, next_instr);
 				/* string_concatenate consumed the ref to v */
 				goto skip_decref_vx;
@@ -1349,8 +1349,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					goto slow_iadd;
 				x = PyInt_FromLong(i);
 			}
-			else if (PyBytes_CheckExact(v) &&
-				 PyBytes_CheckExact(w)) {
+			else if (PyString_CheckExact(v) &&
+				 PyString_CheckExact(w)) {
 				x = string_concatenate(v, w, f, next_instr);
 				/* string_concatenate consumed the ref to v */
 				goto skip_decref_v;
@@ -1576,9 +1576,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				err = PyFile_WriteObject(v, w, Py_PRINT_RAW);
 			if (err == 0) {
 			    /* XXX move into writeobject() ? */
-			    if (PyBytes_Check(v)) {
-				char *s = PyBytes_AS_STRING(v);
-				Py_ssize_t len = PyBytes_GET_SIZE(v);
+			    if (PyString_Check(v)) {
+				char *s = PyString_AS_STRING(v);
+				Py_ssize_t len = PyString_GET_SIZE(v);
 				if (len == 0 ||
 				    !isspace(Py_CHARMASK(s[len-1])) ||
 				    s[len-1] == ' ')
@@ -1705,7 +1705,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					retval = POP();
 			}
 			else if (PyExceptionClass_Check(v) ||
-			         PyBytes_Check(v)) {
+			         PyString_Check(v)) {
 				w = POP();
 				u = POP();
 				PyErr_Restore(v, w, u);
@@ -1869,11 +1869,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case LOAD_GLOBAL:
 			w = GETITEM(names, oparg);
-			if (PyBytes_CheckExact(w)) {
+			if (PyString_CheckExact(w)) {
 				/* Inline the PyDict_GetItem() calls.
 				   WARNING: this is an extreme speed hack.
 				   Do not try this at home. */
-				long hash = ((PyBytesObject *)w)->ob_shash;
+				long hash = ((PyStringObject *)w)->ob_shash;
 				if (hash != -1) {
 					PyDictObject *d;
 					PyDictEntry *e;
@@ -2726,7 +2726,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				PyErr_Format(PyExc_TypeError,
 				    "%.200s() takes %s %d "
 				    "%sargument%s (%d given)",
-				    PyBytes_AsString(co->co_name),
+				    PyString_AsString(co->co_name),
 				    defcount ? "at most" : "exactly",
 				    co->co_argcount,
 				    kwcount ? "non-keyword " : "",
@@ -2756,10 +2756,10 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PyObject *keyword = kws[2*i];
 			PyObject *value = kws[2*i + 1];
 			int j;
-			if (keyword == NULL || !PyBytes_Check(keyword)) {
+			if (keyword == NULL || !PyString_Check(keyword)) {
 				PyErr_Format(PyExc_TypeError,
 				    "%.200s() keywords must be strings",
-				    PyBytes_AsString(co->co_name));
+				    PyString_AsString(co->co_name));
 				goto fail;
 			}
 			/* XXX slow -- speed up using dictionary? */
@@ -2781,8 +2781,8 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					PyErr_Format(PyExc_TypeError,
 					    "%.200s() got an unexpected "
 					    "keyword argument '%.400s'",
-					    PyBytes_AsString(co->co_name),
-					    PyBytes_AsString(keyword));
+					    PyString_AsString(co->co_name),
+					    PyString_AsString(keyword));
 					goto fail;
 				}
 				PyDict_SetItem(kwdict, keyword, value);
@@ -2793,8 +2793,8 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					     "%.200s() got multiple "
 					     "values for keyword "
 					     "argument '%.400s'",
-					     PyBytes_AsString(co->co_name),
-					     PyBytes_AsString(keyword));
+					     PyString_AsString(co->co_name),
+					     PyString_AsString(keyword));
 					goto fail;
 				}
 				Py_INCREF(value);
@@ -2808,7 +2808,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					PyErr_Format(PyExc_TypeError,
 					    "%.200s() takes %s %d "
 					    "%sargument%s (%d given)",
-					    PyBytes_AsString(co->co_name),
+					    PyString_AsString(co->co_name),
 					    ((co->co_flags & CO_VARARGS) ||
 					     defcount) ? "at least"
 						       : "exactly",
@@ -2834,7 +2834,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		if (argcount > 0 || kwcount > 0) {
 			PyErr_Format(PyExc_TypeError,
 				     "%.200s() takes no arguments (%d given)",
-				     PyBytes_AsString(co->co_name),
+				     PyString_AsString(co->co_name),
 				     argcount + kwcount);
 			goto fail;
 		}
@@ -2860,11 +2860,11 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		   list so that we can march over it more efficiently?
 		*/
 		for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
-			cellname = PyBytes_AS_STRING(
+			cellname = PyString_AS_STRING(
 				PyTuple_GET_ITEM(co->co_cellvars, i));
 			found = 0;
 			for (j = 0; j < nargs; j++) {
-				argname = PyBytes_AS_STRING(
+				argname = PyString_AS_STRING(
 					PyTuple_GET_ITEM(co->co_varnames, j));
 				if (strcmp(cellname, argname) == 0) {
 					c = PyCell_New(GETLOCAL(j));
@@ -3522,13 +3522,13 @@ PyEval_GetFuncName(PyObject *func)
 	if (PyMethod_Check(func))
 		return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
 	else if (PyFunction_Check(func))
-		return PyBytes_AsString(((PyFunctionObject*)func)->func_name);
+		return PyString_AsString(((PyFunctionObject*)func)->func_name);
 	else if (PyCFunction_Check(func))
 		return ((PyCFunctionObject*)func)->m_ml->ml_name;
 	else if (PyClass_Check(func))
-		return PyBytes_AsString(((PyClassObject*)func)->cl_name);
+		return PyString_AsString(((PyClassObject*)func)->cl_name);
 	else if (PyInstance_Check(func)) {
-		return PyBytes_AsString(
+		return PyString_AsString(
 			((PyInstanceObject*)func)->in_class->cl_name);
 	} else {
 		return func->ob_type->tp_name;
@@ -3767,7 +3767,7 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
 				     "for keyword argument '%.200s'",
 				     PyEval_GetFuncName(func),
 				     PyEval_GetFuncDesc(func),
-				     PyBytes_AsString(key));
+				     PyString_AsString(key));
 			Py_DECREF(key);
 			Py_DECREF(value);
 			Py_DECREF(kwdict);
@@ -4086,7 +4086,7 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 			length = PyTuple_Size(w);
 			for (i = 0; i < length; i += 1) {
 				PyObject *exc = PyTuple_GET_ITEM(w, i);
-				if (PyBytes_Check(exc)) {
+				if (PyString_Check(exc)) {
 					int ret_val;
 					ret_val = PyErr_WarnEx(
 						PyExc_DeprecationWarning,
@@ -4109,7 +4109,7 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 			}
 		}
 		else {
-			if (PyBytes_Check(w)) {
+			if (PyString_Check(w)) {
 				int ret_val;
 				ret_val = PyErr_WarnEx(
 						PyExc_DeprecationWarning,
@@ -4149,7 +4149,7 @@ import_from(PyObject *v, PyObject *name)
 	if (x == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
 		PyErr_Format(PyExc_ImportError,
 			     "cannot import name %.230s",
-			     PyBytes_AsString(name));
+			     PyString_AsString(name));
 	}
 	return x;
 }
@@ -4191,8 +4191,8 @@ import_all_from(PyObject *locals, PyObject *v)
 			break;
 		}
 		if (skip_leading_underscores &&
-		    PyBytes_Check(name) &&
-		    PyBytes_AS_STRING(name)[0] == '_')
+		    PyString_Check(name) &&
+		    PyString_AS_STRING(name)[0] == '_')
 		{
 			Py_DECREF(name);
 			continue;
@@ -4251,12 +4251,12 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 		PyObject *ptype, *pvalue, *ptraceback;
 
 		PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-		if (PyBytes_Check(pvalue)) {
+		if (PyString_Check(pvalue)) {
 			PyObject *newmsg;
-			newmsg = PyBytes_FromFormat(
+			newmsg = PyString_FromFormat(
 				"Error when calling the metaclass bases\n"
 				"    %s",
-				PyBytes_AS_STRING(pvalue));
+				PyString_AS_STRING(pvalue));
 			if (newmsg != NULL) {
 				Py_DECREF(pvalue);
 				pvalue = newmsg;
@@ -4297,7 +4297,7 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	}
 	else if (locals == Py_None)
 		locals = globals;
-	if (!PyBytes_Check(prog) &&
+	if (!PyString_Check(prog) &&
 	    !PyUnicode_Check(prog) &&
 	    !PyCode_Check(prog) &&
 	    !PyFile_Check(prog)) {
@@ -4327,7 +4327,7 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	}
 	else if (PyFile_Check(prog)) {
 		FILE *fp = PyFile_AsFile(prog);
-		char *name = PyBytes_AsString(PyFile_Name(prog));
+		char *name = PyString_AsString(PyFile_Name(prog));
 		PyCompilerFlags cf;
 		if (name == NULL)
 			return -1;
@@ -4353,7 +4353,7 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 			cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
 		}
 #endif
-		if (PyBytes_AsStringAndSize(prog, &str, NULL))
+		if (PyString_AsStringAndSize(prog, &str, NULL))
 			return -1;
 		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_StringFlags(str, Py_file_input, globals,
@@ -4378,7 +4378,7 @@ format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
 	if (!obj)
 		return;
 
-	obj_str = PyBytes_AsString(obj);
+	obj_str = PyString_AsString(obj);
 	if (!obj_str)
 		return;
 
@@ -4391,8 +4391,8 @@ string_concatenate(PyObject *v, PyObject *w,
 {
 	/* This function implements 'variable += expr' when both arguments
 	   are strings. */
-	Py_ssize_t v_len = PyBytes_GET_SIZE(v);
-	Py_ssize_t w_len = PyBytes_GET_SIZE(w);
+	Py_ssize_t v_len = PyString_GET_SIZE(v);
+	Py_ssize_t w_len = PyString_GET_SIZE(w);
 	Py_ssize_t new_len = v_len + w_len;
 	if (new_len < 0) {
 		PyErr_SetString(PyExc_OverflowError,
@@ -4441,12 +4441,12 @@ string_concatenate(PyObject *v, PyObject *w,
 		}
 	}
 
-	if (v->ob_refcnt == 1 && !PyBytes_CHECK_INTERNED(v)) {
+	if (v->ob_refcnt == 1 && !PyString_CHECK_INTERNED(v)) {
 		/* Now we own the last reference to 'v', so we can resize it
 		 * in-place.
 		 */
-		if (_PyBytes_Resize(&v, new_len) != 0) {
-			/* XXX if _PyBytes_Resize() fails, 'v' has been
+		if (_PyString_Resize(&v, new_len) != 0) {
+			/* XXX if _PyString_Resize() fails, 'v' has been
 			 * deallocated so it cannot be put back into
 			 * 'variable'.  The MemoryError is raised when there
 			 * is no value in 'variable', which might (very
@@ -4455,13 +4455,13 @@ string_concatenate(PyObject *v, PyObject *w,
 			return NULL;
 		}
 		/* copy 'w' into the newly allocated area of 'v' */
-		memcpy(PyBytes_AS_STRING(v) + v_len,
-		       PyBytes_AS_STRING(w), w_len);
+		memcpy(PyString_AS_STRING(v) + v_len,
+		       PyString_AS_STRING(w), w_len);
 		return v;
 	}
 	else {
 		/* When in-place resizing is not an option. */
-		PyBytes_Concat(&v, w);
+		PyString_Concat(&v, w);
 		return v;
 	}
 }

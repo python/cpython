@@ -71,7 +71,7 @@ syslog_openlog(PyObject * self, PyObject * args)
 	S_ident_o = new_S_ident_o;
 	Py_INCREF(S_ident_o);
 
-	openlog(PyBytes_AsString(S_ident_o), logopt, facility);
+	openlog(PyString_AsString(S_ident_o), logopt, facility);
 
 	Py_INCREF(Py_None);
 	return Py_None;

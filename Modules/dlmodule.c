@@ -58,8 +58,8 @@ dl_sym(dlobject *xp, PyObject *args)
 {
 	char *name;
 	PyUnivPtr *func;
-	if (PyBytes_Check(args)) {
-		name = PyBytes_AS_STRING(args);
+	if (PyString_Check(args)) {
+		name = PyString_AS_STRING(args);
 	} else {
 		PyErr_Format(PyExc_TypeError, "expected string, found %.200s",
 			     Py_TYPE(args)->tp_name);
@@ -88,14 +88,14 @@ dl_call(dlobject *xp, PyObject *args)
 		return NULL;
 	}
 	name = PyTuple_GetItem(args, 0);
-	if (!PyBytes_Check(name)) {
+	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"function name must be a string");
 		return NULL;
 	}
 	func = (long (*)(long, long, long, long, long, 
                          long, long, long, long, long)) 
-          dlsym(xp->dl_handle, PyBytes_AsString(name));
+          dlsym(xp->dl_handle, PyString_AsString(name));
 	if (func == NULL) {
 		PyErr_SetString(PyExc_ValueError, dlerror());
 		return NULL;
@@ -109,8 +109,8 @@ dl_call(dlobject *xp, PyObject *args)
 		PyObject *v = PyTuple_GetItem(args, i);
 		if (PyInt_Check(v))
 			alist[i-1] = PyInt_AsLong(v);
-		else if (PyBytes_Check(v))
-			alist[i-1] = (long)PyBytes_AsString(v);
+		else if (PyString_Check(v))
+			alist[i-1] = (long)PyString_AsString(v);
 		else if (v == Py_None)
 			alist[i-1] = (long) ((char *)NULL);
 		else {

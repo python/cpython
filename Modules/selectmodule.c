@@ -1219,7 +1219,7 @@ kqueue_event_repr(kqueue_event_Object *s)
 		"data=0x%lx udata=%p>",
 		(unsigned long)(s->e.ident), s->e.filter, s->e.flags,
 		s->e.fflags, (long)(s->e.data), s->e.udata);
-	return PyBytes_FromString(buf);
+	return PyString_FromString(buf);
 }
 
 static int

@@ -333,7 +333,7 @@ static PyObject *DrawF_FontTable(PyDrawFObject *self,PyObject *arg)
   char *dtable;
   if(!PyArg_ParseTuple(arg,"O!",&PyDict_Type,&d)) return NULL;
   while(PyDict_Next(d,&n,&key,&value))
-  { int m=PyBytes_Size(value);
+  { int m=PyString_Size(value);
     if(m<0||!PyInt_Check(key)) return NULL;
     size+=m+2;
   }
@@ -350,9 +350,9 @@ static PyObject *DrawF_FontTable(PyDrawFObject *self,PyObject *arg)
   memset(dtable,0,size-8);
   n=0;
   while(PyDict_Next(d,&n,&key,&value))
-  { int m=PyBytes_Size(value);
+  { int m=PyString_Size(value);
     *dtable=(char)PyInt_AsLong(key);
-    strcpy(dtable+1,PyBytes_AsString(value));
+    strcpy(dtable+1,PyString_AsString(value));
     dtable+=m+2;
   }
   Py_INCREF(Py_None);return Py_None;
@@ -609,8 +609,8 @@ static PyObject *PyDrawF_GetAttr(PyDrawFObject *s,char *name)
   if (!strcmp(name, "__members__"))
   { PyObject *list = PyList_New(2);
     if (list)
-    { PyList_SetItem(list, 0, PyBytes_FromString("size"));
-      PyList_SetItem(list, 1, PyBytes_FromString("start"));
+    { PyList_SetItem(list, 0, PyString_FromString("size"));
+      PyList_SetItem(list, 1, PyString_FromString("start"));
       if (PyErr_Occurred()) { Py_DECREF(list);list = NULL;}
     }
     return list;
@@ -659,6 +659,6 @@ void initdrawf()
 { PyObject *m, *d;
   m = Py_InitModule("drawf", DrawFMethods);
   d = PyModule_GetDict(m);
-  DrawFError=PyBytes_FromString("drawf.error");
+  DrawFError=PyString_FromString("drawf.error");
   PyDict_SetItemString(d,"error",DrawFError);
 }

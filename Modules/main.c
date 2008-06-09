@@ -196,7 +196,7 @@ static int RunMainFromImporter(char *filename)
 {
 	PyObject *argv0 = NULL, *importer = NULL;
 
-	if ((argv0 = PyBytes_FromString(filename)) && 
+	if ((argv0 = PyString_FromString(filename)) && 
 	    (importer = PyImport_GetImporter(argv0)) &&
 	    (importer->ob_type != &PyNullImporter_Type))
 	{

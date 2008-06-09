@@ -266,7 +266,7 @@ unicodedata_category(PyObject *self, PyObject *args)
         if (old->category_changed != 0xFF)
             index = old->category_changed;
     }
-    return PyBytes_FromString(_PyUnicode_CategoryNames[index]);
+    return PyString_FromString(_PyUnicode_CategoryNames[index]);
 }
 
 PyDoc_STRVAR(unicodedata_bidirectional__doc__,
@@ -297,7 +297,7 @@ unicodedata_bidirectional(PyObject *self, PyObject *args)
         else if (old->bidir_changed != 0xFF)
             index = old->bidir_changed;
     }
-    return PyBytes_FromString(_PyUnicode_BidirectionalNames[index]);
+    return PyString_FromString(_PyUnicode_BidirectionalNames[index]);
 }
 
 PyDoc_STRVAR(unicodedata_combining__doc__,
@@ -383,7 +383,7 @@ unicodedata_east_asian_width(PyObject *self, PyObject *args)
         if (old->category_changed == 0)
             index = 0; /* unassigned */
     }
-    return PyBytes_FromString(_PyUnicode_EastAsianWidthNames[index]);
+    return PyString_FromString(_PyUnicode_EastAsianWidthNames[index]);
 }
 
 PyDoc_STRVAR(unicodedata_decomposition__doc__,
@@ -414,7 +414,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     if (self) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
-            return PyBytes_FromString(""); /* unassigned */
+            return PyString_FromString(""); /* unassigned */
     }
 
     if (code < 0 || code >= 0x110000)
@@ -453,7 +453,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     
     decomp[i] = '\0';
 
-    return PyBytes_FromString(decomp);
+    return PyString_FromString(decomp);
 }
 
 static void
@@ -518,7 +518,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
             /* Hangul Decomposition adds three characters in
                a single step, so we need atleast that much room. */
             if (space < 3) {
-                Py_ssize_t newsize = PyBytes_GET_SIZE(result) + 10;
+                Py_ssize_t newsize = PyString_GET_SIZE(result) + 10;
                 space += 10;
                 if (PyUnicode_Resize(&result, newsize) == -1)
                     return NULL;

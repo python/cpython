@@ -367,7 +367,7 @@ PyInt_FromString(char *s, char **pend, int base)
 	if (*end != '\0') {
   bad:
 		slen = strlen(s) < 200 ? strlen(s) : 200;
-		sobj = PyBytes_FromStringAndSize(s, slen);
+		sobj = PyString_FromStringAndSize(s, slen);
 		if (sobj == NULL)
 			return NULL;
 		srepr = PyObject_Repr(sobj);
@@ -376,7 +376,7 @@ PyInt_FromString(char *s, char **pend, int base)
 			return NULL;
 		PyErr_Format(PyExc_ValueError,
 			     "invalid literal for int() with base %d: %s",
-			     base, PyBytes_AS_STRING(srepr));
+			     base, PyString_AS_STRING(srepr));
 		Py_DECREF(srepr);
 		return NULL;
 	}
@@ -964,11 +964,11 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return PyInt_FromLong(0L);
 	if (base == -909)
 		return PyNumber_Int(x);
-	if (PyBytes_Check(x)) {
+	if (PyString_Check(x)) {
 		/* Since PyInt_FromString doesn't have a length parameter,
 		 * check here for possible NULs in the string. */
-		char *string = PyBytes_AS_STRING(x);
-		if (strlen(string) != PyBytes_Size(x)) {
+		char *string = PyString_AS_STRING(x);
+		if (strlen(string) != PyString_Size(x)) {
 			/* create a repr() of the input string,
 			 * just like PyInt_FromString does */
 			PyObject *srepr;
@@ -977,7 +977,7 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				return NULL;
 			PyErr_Format(PyExc_ValueError,
 			     "invalid literal for int() with base %d: %s",
-			     base, PyBytes_AS_STRING(srepr));
+			     base, PyString_AS_STRING(srepr));
 			Py_DECREF(srepr);
 			return NULL;
 		}
@@ -1105,7 +1105,7 @@ _PyInt_Format(PyIntObject *v, int base, int newstyle)
 	if (negative)
 		*--p = '-';
 
-	return PyBytes_FromStringAndSize(p, &buf[sizeof(buf)] - p);
+	return PyString_FromStringAndSize(p, &buf[sizeof(buf)] - p);
 }
 
 static PyObject *

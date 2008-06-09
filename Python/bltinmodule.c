@@ -247,7 +247,7 @@ builtin_filter(PyObject *self, PyObject *args)
 		return NULL;
 
 	/* Strings and tuples return a result of the same type. */
-	if (PyBytes_Check(seq))
+	if (PyString_Check(seq))
 		return filterstring(func, seq);
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(seq))
@@ -381,7 +381,7 @@ builtin_chr(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	s[0] = (char)x;
-	return PyBytes_FromStringAndSize(s, 1);
+	return PyString_FromStringAndSize(s, 1);
 }
 
 PyDoc_STRVAR(chr_doc,
@@ -652,7 +652,7 @@ builtin_eval(PyObject *self, PyObject *args)
 		return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
 	}
 
-	if (!PyBytes_Check(cmd) &&
+	if (!PyString_Check(cmd) &&
 	    !PyUnicode_Check(cmd)) {
 		PyErr_SetString(PyExc_TypeError,
 			   "eval() arg 1 must be a string or code object");
@@ -669,7 +669,7 @@ builtin_eval(PyObject *self, PyObject *args)
 		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
 	}
 #endif
-	if (PyBytes_AsStringAndSize(cmd, &str, NULL)) {
+	if (PyString_AsStringAndSize(cmd, &str, NULL)) {
 		Py_XDECREF(tmp);
 		return NULL;
 	}
@@ -814,7 +814,7 @@ builtin_getattr(PyObject *self, PyObject *args)
 	}
 #endif
 
-	if (!PyBytes_Check(name)) {
+	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"getattr(): attribute name must be string");
 		return NULL;
@@ -870,7 +870,7 @@ builtin_hasattr(PyObject *self, PyObject *args)
 	}
 #endif
 
-	if (!PyBytes_Check(name)) {
+	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"hasattr(): attribute name must be string");
 		return NULL;
@@ -1189,7 +1189,7 @@ builtin_hex(PyObject *self, PyObject *v)
 		return NULL;
 	}
 	res = (*nb->nb_hex)(v);
-	if (res && !PyBytes_Check(res)) {
+	if (res && !PyString_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__hex__ returned non-string (type %.200s)",
 			     res->ob_type->tp_name);
@@ -1249,13 +1249,13 @@ builtin_intern(PyObject *self, PyObject *args)
 	PyObject *s;
 	if (!PyArg_ParseTuple(args, "S:intern", &s))
 		return NULL;
-	if (!PyBytes_CheckExact(s)) {
+	if (!PyString_CheckExact(s)) {
 		PyErr_SetString(PyExc_TypeError,
 				"can't intern subclass of string");
 		return NULL;
 	}
 	Py_INCREF(s);
-	PyBytes_InternInPlace(&s);
+	PyString_InternInPlace(&s);
 	return s;
 }
 
@@ -1457,7 +1457,7 @@ builtin_oct(PyObject *self, PyObject *v)
 		return NULL;
 	}
 	res = (*nb->nb_oct)(v);
-	if (res && !PyBytes_Check(res)) {
+	if (res && !PyString_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__oct__ returned non-string (type %.200s)",
 			     res->ob_type->tp_name);
@@ -1492,10 +1492,10 @@ builtin_ord(PyObject *self, PyObject* obj)
 	long ord;
 	Py_ssize_t size;
 
-	if (PyBytes_Check(obj)) {
-		size = PyBytes_GET_SIZE(obj);
+	if (PyString_Check(obj)) {
+		size = PyString_GET_SIZE(obj);
 		if (size == 1) {
-			ord = (long)((unsigned char)*PyBytes_AS_STRING(obj));
+			ord = (long)((unsigned char)*PyString_AS_STRING(obj));
 			return PyInt_FromLong(ord);
 		}
 	} else if (PyByteArray_Check(obj)) {
@@ -1572,14 +1572,14 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 			Py_RETURN_NONE;
 	}
 
-	if (sep && sep != Py_None && !PyBytes_Check(sep) &&
+	if (sep && sep != Py_None && !PyString_Check(sep) &&
             !PyUnicode_Check(sep)) {
 		PyErr_Format(PyExc_TypeError,
 			     "sep must be None, str or unicode, not %.200s",
 			     sep->ob_type->tp_name);
 		return NULL;
 	}
-	if (end && end != Py_None && !PyBytes_Check(end) &&
+	if (end && end != Py_None && !PyString_Check(end) &&
 	    !PyUnicode_Check(end)) {
 		PyErr_Format(PyExc_TypeError,
 			     "end must be None, str or unicode, not %.200s",
@@ -1948,7 +1948,7 @@ builtin_raw_input(PyObject *self, PyObject *args)
 			po = PyObject_Str(v);
 			if (po == NULL)
 				return NULL;
-			prompt = PyBytes_AsString(po);
+			prompt = PyString_AsString(po);
 			if (prompt == NULL)
 				return NULL;
 		}
@@ -1976,7 +1976,7 @@ builtin_raw_input(PyObject *self, PyObject *args)
 				result = NULL;
 			}
 			else {
-				result = PyBytes_FromStringAndSize(s, len-1);
+				result = PyString_FromStringAndSize(s, len-1);
 			}
 		}
 		PyMem_FREE(s);
@@ -2619,7 +2619,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("bool",		&PyBool_Type);
 	/*	SETBUILTIN("memoryview",        &PyMemoryView_Type); */
 	SETBUILTIN("bytearray",		&PyByteArray_Type);
-	SETBUILTIN("bytes",		&PyBytes_Type);
+	SETBUILTIN("bytes",		&PyString_Type);
 	SETBUILTIN("buffer",		&PyBuffer_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
@@ -2639,7 +2639,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("set",		&PySet_Type);
 	SETBUILTIN("slice",		&PySlice_Type);
 	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
-	SETBUILTIN("str",		&PyBytes_Type);
+	SETBUILTIN("str",		&PyString_Type);
 	SETBUILTIN("super",		&PySuper_Type);
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);
@@ -2737,7 +2737,7 @@ filterstring(PyObject *func, PyObject *strobj)
 {
 	PyObject *result;
 	Py_ssize_t i, j;
-	Py_ssize_t len = PyBytes_Size(strobj);
+	Py_ssize_t len = PyString_Size(strobj);
 	Py_ssize_t outlen = len;
 
 	if (func == Py_None) {
@@ -2745,12 +2745,12 @@ filterstring(PyObject *func, PyObject *strobj)
 		 * as no character is ever false and __getitem__
 		 * does return this character. If it's a subclass
 		 * we must go through the __getitem__ loop */
-		if (PyBytes_CheckExact(strobj)) {
+		if (PyString_CheckExact(strobj)) {
 			Py_INCREF(strobj);
 			return strobj;
 		}
 	}
-	if ((result = PyBytes_FromStringAndSize(NULL, len)) == NULL)
+	if ((result = PyString_FromStringAndSize(NULL, len)) == NULL)
 		return NULL;
 
 	for (i = j = 0; i < len; ++i) {
@@ -2780,16 +2780,16 @@ filterstring(PyObject *func, PyObject *strobj)
 		}
 		if (ok) {
 			Py_ssize_t reslen;
-			if (!PyBytes_Check(item)) {
+			if (!PyString_Check(item)) {
 				PyErr_SetString(PyExc_TypeError, "can't filter str to str:"
 					" __getitem__ returned different type");
 				Py_DECREF(item);
 				goto Fail_1;
 			}
-			reslen = PyBytes_GET_SIZE(item);
+			reslen = PyString_GET_SIZE(item);
 			if (reslen == 1) {
-				PyBytes_AS_STRING(result)[j++] =
-					PyBytes_AS_STRING(item)[0];
+				PyString_AS_STRING(result)[j++] =
+					PyString_AS_STRING(item)[0];
 			} else {
 				/* do we need more space? */
 				Py_ssize_t need = j + reslen + len-i-1;
@@ -2797,15 +2797,15 @@ filterstring(PyObject *func, PyObject *strobj)
 					/* overallocate, to avoid reallocations */
 					if (need<2*outlen)
 						need = 2*outlen;
-					if (_PyBytes_Resize(&result, need)) {
+					if (_PyString_Resize(&result, need)) {
 						Py_DECREF(item);
 						return NULL;
 					}
 					outlen = need;
 				}
 				memcpy(
-					PyBytes_AS_STRING(result) + j,
-					PyBytes_AS_STRING(item),
+					PyString_AS_STRING(result) + j,
+					PyString_AS_STRING(item),
 					reslen
 				);
 				j += reslen;
@@ -2815,7 +2815,7 @@ filterstring(PyObject *func, PyObject *strobj)
 	}
 
 	if (j < outlen)
-		_PyBytes_Resize(&result, j);
+		_PyString_Resize(&result, j);
 
 	return result;
 

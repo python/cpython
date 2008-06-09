@@ -114,7 +114,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 
 	/* Find the bytecode offset for the start of the given line, or the
 	 * first code-owning line after it. */
-	PyBytes_AsStringAndSize(f->f_code->co_lnotab, &lnotab, &lnotab_len);
+	PyString_AsStringAndSize(f->f_code->co_lnotab, &lnotab, &lnotab_len);
 	addr = 0;
 	line = f->f_code->co_firstlineno;
 	new_lasti = -1;
@@ -137,7 +137,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	}
 
 	/* We're now ready to look at the bytecode. */
-	PyBytes_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
+	PyString_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
 	min_addr = MIN(new_lasti, f->f_lasti);
 	max_addr = MAX(new_lasti, f->f_lasti);
 
@@ -548,7 +548,7 @@ static PyObject *builtin_object;
 
 int _PyFrame_Init()
 {
-	builtin_object = PyBytes_InternFromString("__builtins__");
+	builtin_object = PyString_InternFromString("__builtins__");
 	return (builtin_object != NULL);
 }
 
@@ -728,7 +728,7 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = values[j];
-		assert(PyBytes_Check(key));
+		assert(PyString_Check(key));
 		if (deref) {
 			assert(PyCell_Check(value));
 			value = PyCell_GET(value);
@@ -776,7 +776,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = PyObject_GetItem(dict, key);
-		assert(PyBytes_Check(key));
+		assert(PyString_Check(key));
 		/* We only care about NULLs if clear is true. */
 		if (value == NULL) {
 			PyErr_Clear();

@@ -60,7 +60,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     self->st = NULL;
     self->in_use = 0;
 
-    if (PyBytes_Check(sql)) {
+    if (PyString_Check(sql)) {
         sql_str = sql;
         Py_INCREF(sql_str);
     } else if (PyUnicode_Check(sql)) {
@@ -77,7 +77,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     self->in_weakreflist = NULL;
     self->sql = sql_str;
 
-    sql_cstr = PyBytes_AsString(sql_str);
+    sql_cstr = PyString_AsString(sql_str);
 
     rc = sqlite3_prepare(connection->db,
                          sql_cstr,
@@ -119,7 +119,7 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
         paramtype = TYPE_LONG;
     } else if (PyFloat_CheckExact(parameter)) {
         paramtype = TYPE_FLOAT;
-    } else if (PyBytes_CheckExact(parameter)) {
+    } else if (PyString_CheckExact(parameter)) {
         paramtype = TYPE_STRING;
     } else if (PyUnicode_CheckExact(parameter)) {
         paramtype = TYPE_UNICODE;
@@ -131,7 +131,7 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
         paramtype = TYPE_LONG;
     } else if (PyFloat_Check(parameter)) {
         paramtype = TYPE_FLOAT;
-    } else if (PyBytes_Check(parameter)) {
+    } else if (PyString_Check(parameter)) {
         paramtype = TYPE_STRING;
     } else if (PyUnicode_Check(parameter)) {
         paramtype = TYPE_UNICODE;
@@ -140,7 +140,7 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
     }
 
     if (paramtype == TYPE_STRING && !allow_8bit_chars) {
-        string = PyBytes_AS_STRING(parameter);
+        string = PyString_AS_STRING(parameter);
         for (c = string; *c != 0; c++) {
             if (*c & 0x80) {
                 PyErr_SetString(pysqlite_ProgrammingError, "You must not use 8-bit bytestrings unless you use a text_factory that can interpret 8-bit bytestrings (like text_factory = str). It is highly recommended that you instead just switch your application to Unicode strings.");
@@ -164,12 +164,12 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
             rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));
             break;
         case TYPE_STRING:
-            string = PyBytes_AS_STRING(parameter);
+            string = PyString_AS_STRING(parameter);
             rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
             break;
         case TYPE_UNICODE:
             stringval = PyUnicode_AsUTF8String(parameter);
-            string = PyBytes_AsString(stringval);
+            string = PyString_AsString(stringval);
             rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
             Py_DECREF(stringval);
             break;
@@ -197,7 +197,7 @@ static int _need_adapt(PyObject* obj)
     }
 
     if (PyInt_CheckExact(obj) || PyLong_CheckExact(obj) 
-            || PyFloat_CheckExact(obj) || PyBytes_CheckExact(obj)
+            || PyFloat_CheckExact(obj) || PyString_CheckExact(obj)
             || PyUnicode_CheckExact(obj) || PyBuffer_Check(obj)) {
         return 0;
     } else {
@@ -326,7 +326,7 @@ int pysqlite_statement_recompile(pysqlite_Statement* self, PyObject* params)
     char* sql_cstr;
     sqlite3_stmt* new_st;
 
-    sql_cstr = PyBytes_AsString(self->sql);
+    sql_cstr = PyString_AsString(self->sql);
 
     rc = sqlite3_prepare(self->db,
                          sql_cstr,

@@ -84,7 +84,7 @@ param2python(int resource, int param, ALvalue value, ALparamInfo *pinfo)
 			Py_INCREF(Py_None);
 			return Py_None;
 		}
-		return PyBytes_FromString((char *) value.ptr);
+		return PyString_FromString((char *) value.ptr);
 	default:
 		PyErr_SetString(ErrorObject, "unknown element type");
 		return NULL;
@@ -149,12 +149,12 @@ python2param(int resource, ALpv *param, PyObject *value, ALparamInfo *pinfo)
 			PyErr_SetString(ErrorObject, "unknown element type");
 			return -1;
 		}
-		if (!PyBytes_Check(value)) {
+		if (!PyString_Check(value)) {
 			PyErr_BadArgument();
 			return -1;
 		}
-		param->value.ptr = PyBytes_AS_STRING(value);
-		param->sizeIn = PyBytes_GET_SIZE(value)+1; /*account for NUL*/
+		param->value.ptr = PyString_AS_STRING(value);
+		param->sizeIn = PyString_GET_SIZE(value)+1; /*account for NUL*/
 		break;
 	case AL_SET_VAL:
 	case AL_VECTOR_VAL:
@@ -765,12 +765,12 @@ alp_ReadFrames(alpobject *self, PyObject *args)
 		return NULL;
 	}
 	size *= ch;
-	v = PyBytes_FromStringAndSize((char *) NULL, size * framecount);
+	v = PyString_FromStringAndSize((char *) NULL, size * framecount);
 	if (v == NULL)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	alReadFrames(self->port, (void *) PyBytes_AS_STRING(v), framecount);
+	alReadFrames(self->port, (void *) PyString_AS_STRING(v), framecount);
 	Py_END_ALLOW_THREADS
 
 	return v;
@@ -1068,12 +1068,12 @@ alp_readsamps(alpobject *self, PyObject *args)
 	width = ALgetwidth(c);
 #endif /* AL_405 */
 	ALfreeconfig(c);
-	v = PyBytes_FromStringAndSize((char *)NULL, width * count);
+	v = PyString_FromStringAndSize((char *)NULL, width * count);
 	if (v == NULL)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	ret = ALreadsamps(self->port, (void *) PyBytes_AsString(v), count);
+	ret = ALreadsamps(self->port, (void *) PyString_AsString(v), count);
 	Py_END_ALLOW_THREADS
 	if (ret == -1) {
 		Py_DECREF(v);
@@ -1498,7 +1498,7 @@ al_GetParams(PyObject *self, PyObject *args)
 			Py_INCREF(item);
 			break;
 		case AL_STRING_VAL:
-			item = PyBytes_FromString(pvs[i].value.ptr);
+			item = PyString_FromString(pvs[i].value.ptr);
 			PyMem_DEL(pvs[i].value.ptr);
 			break;
 		case AL_MATRIX_VAL:
@@ -1725,7 +1725,7 @@ al_GetParamInfo(PyObject *self, PyObject *args)
 	PyDict_SetItemString(v, "elementType", item);
 	Py_DECREF(item);
 
-	item = PyBytes_FromString(pinfo.name);
+	item = PyString_FromString(pinfo.name);
 	PyDict_SetItemString(v, "name", item);
 	Py_DECREF(item);
 
@@ -1920,7 +1920,7 @@ al_getname(PyObject *self, PyObject *args)
 		return NULL;
 	if ((name = ALgetname(device, descriptor)) == NULL)
 		return NULL;
-	return PyBytes_FromString(name);
+	return PyString_FromString(name);
 }
 
 static PyObject *

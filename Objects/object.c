@@ -357,9 +357,9 @@ PyObject_Repr(PyObject *v)
 	}
 #endif
 	if (v == NULL)
-		return PyBytes_FromString("<NULL>");
+		return PyString_FromString("<NULL>");
 	else if (Py_TYPE(v)->tp_repr == NULL)
-		return PyBytes_FromFormat("<%s object at %p>",
+		return PyString_FromFormat("<%s object at %p>",
 					   Py_TYPE(v)->tp_name, v);
 	else {
 		PyObject *res;
@@ -377,7 +377,7 @@ PyObject_Repr(PyObject *v)
 				return NULL;
 		}
 #endif
-		if (!PyBytes_Check(res)) {
+		if (!PyString_Check(res)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__repr__ returned non-string (type %.200s)",
 				     Py_TYPE(res)->tp_name);
@@ -394,8 +394,8 @@ _PyObject_Str(PyObject *v)
 	PyObject *res;
 	int type_ok;
 	if (v == NULL)
-		return PyBytes_FromString("<NULL>");
-	if (PyBytes_CheckExact(v)) {
+		return PyString_FromString("<NULL>");
+	if (PyString_CheckExact(v)) {
 		Py_INCREF(v);
 		return v;
 	}
@@ -416,7 +416,7 @@ _PyObject_Str(PyObject *v)
 	Py_LeaveRecursiveCall();
 	if (res == NULL)
 		return NULL;
-	type_ok = PyBytes_Check(res);
+	type_ok = PyString_Check(res);
 #ifdef Py_USING_UNICODE
 	type_ok = type_ok || PyUnicode_Check(res);
 #endif
@@ -447,7 +447,7 @@ PyObject_Str(PyObject *v)
 		    	return NULL;
 	}
 #endif
-	assert(PyBytes_Check(res));
+	assert(PyString_Check(res));
 	return res;
 }
 
@@ -461,7 +461,7 @@ PyObject_Unicode(PyObject *v)
 	static PyObject *unicodestr;
 
 	if (v == NULL) {
-		res = PyBytes_FromString("<NULL>");
+		res = PyString_FromString("<NULL>");
 		if (res == NULL)
 			return NULL;
 		str = PyUnicode_FromEncodedObject(res, NULL, "strict");
@@ -475,7 +475,7 @@ PyObject_Unicode(PyObject *v)
 	   check this before trying the __unicode__
 	   method. */
 	if (unicodestr == NULL) {
-		unicodestr= PyBytes_InternFromString("__unicode__");
+		unicodestr= PyString_InternFromString("__unicode__");
 		if (unicodestr == NULL)
 			return NULL;
 	}
@@ -492,7 +492,7 @@ PyObject_Unicode(PyObject *v)
 			return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(v),
 			                             PyUnicode_GET_SIZE(v));
 		}
-		if (PyBytes_CheckExact(v)) {
+		if (PyString_CheckExact(v)) {
 			Py_INCREF(v);
 			res = v;
 		}
@@ -1084,7 +1084,7 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 
 	if (Py_TYPE(v)->tp_getattr != NULL)
 		return (*Py_TYPE(v)->tp_getattr)(v, (char*)name);
-	w = PyBytes_InternFromString(name);
+	w = PyString_InternFromString(name);
 	if (w == NULL)
 		return NULL;
 	res = PyObject_GetAttr(v, w);
@@ -1112,7 +1112,7 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 
 	if (Py_TYPE(v)->tp_setattr != NULL)
 		return (*Py_TYPE(v)->tp_setattr)(v, (char*)name, w);
-	s = PyBytes_InternFromString(name);
+	s = PyString_InternFromString(name);
 	if (s == NULL)
 		return -1;
 	res = PyObject_SetAttr(v, s, w);
@@ -1125,7 +1125,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 {
 	PyTypeObject *tp = Py_TYPE(v);
 
-	if (!PyBytes_Check(name)) {
+	if (!PyString_Check(name)) {
 #ifdef Py_USING_UNICODE
 		/* The Unicode to string conversion is done here because the
 		   existing tp_getattro slots expect a string object as name
@@ -1147,10 +1147,10 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 	if (tp->tp_getattro != NULL)
 		return (*tp->tp_getattro)(v, name);
 	if (tp->tp_getattr != NULL)
-		return (*tp->tp_getattr)(v, PyBytes_AS_STRING(name));
+		return (*tp->tp_getattr)(v, PyString_AS_STRING(name));
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object has no attribute '%.400s'",
-		     tp->tp_name, PyBytes_AS_STRING(name));
+		     tp->tp_name, PyString_AS_STRING(name));
 	return NULL;
 }
 
@@ -1172,7 +1172,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 	PyTypeObject *tp = Py_TYPE(v);
 	int err;
 
-	if (!PyBytes_Check(name)){
+	if (!PyString_Check(name)){
 #ifdef Py_USING_UNICODE
 		/* The Unicode to string conversion is done here because the
 		   existing tp_setattro slots expect a string object as name
@@ -1194,14 +1194,14 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 	else
 		Py_INCREF(name);
 
-	PyBytes_InternInPlace(&name);
+	PyString_InternInPlace(&name);
 	if (tp->tp_setattro != NULL) {
 		err = (*tp->tp_setattro)(v, name, value);
 		Py_DECREF(name);
 		return err;
 	}
 	if (tp->tp_setattr != NULL) {
-		err = (*tp->tp_setattr)(v, PyBytes_AS_STRING(name), value);
+		err = (*tp->tp_setattr)(v, PyString_AS_STRING(name), value);
 		Py_DECREF(name);
 		return err;
 	}
@@ -1212,14 +1212,14 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 			     "(%s .%.100s)",
 			     tp->tp_name,
 			     value==NULL ? "del" : "assign to",
-			     PyBytes_AS_STRING(name));
+			     PyString_AS_STRING(name));
 	else
 		PyErr_Format(PyExc_TypeError,
 			     "'%.100s' object has only read-only attributes "
 			     "(%s .%.100s)",
 			     tp->tp_name,
 			     value==NULL ? "del" : "assign to",
-			     PyBytes_AS_STRING(name));
+			     PyString_AS_STRING(name));
 	return -1;
 }
 
@@ -1271,7 +1271,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	Py_ssize_t dictoffset;
 	PyObject **dictptr;
 
-	if (!PyBytes_Check(name)){
+	if (!PyString_Check(name)){
 #ifdef Py_USING_UNICODE
 		/* The Unicode to string conversion is done here because the
 		   existing tp_setattro slots expect a string object as name
@@ -1386,7 +1386,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object has no attribute '%.400s'",
-		     tp->tp_name, PyBytes_AS_STRING(name));
+		     tp->tp_name, PyString_AS_STRING(name));
   done:
 	Py_DECREF(name);
 	return res;
@@ -1401,7 +1401,7 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 	PyObject **dictptr;
 	int res = -1;
 
-	if (!PyBytes_Check(name)){
+	if (!PyString_Check(name)){
 #ifdef Py_USING_UNICODE
 		/* The Unicode to string conversion is done here because the
 		   existing tp_setattro slots expect a string object as name
@@ -1469,13 +1469,13 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 	if (descr == NULL) {
 		PyErr_Format(PyExc_AttributeError,
 			     "'%.100s' object has no attribute '%.200s'",
-			     tp->tp_name, PyBytes_AS_STRING(name));
+			     tp->tp_name, PyString_AS_STRING(name));
 		goto done;
 	}
 
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object attribute '%.400s' is read-only",
-		     tp->tp_name, PyBytes_AS_STRING(name));
+		     tp->tp_name, PyString_AS_STRING(name));
   done:
 	Py_DECREF(name);
 	return res;
@@ -1682,7 +1682,7 @@ merge_list_attr(PyObject* dict, PyObject* obj, const char *attrname)
 		int i;
 		for (i = 0; i < PyList_GET_SIZE(list); ++i) {
 			PyObject *item = PyList_GET_ITEM(list, i);
-			if (PyBytes_Check(item)) {
+			if (PyString_Check(item)) {
 				result = PyDict_SetItem(dict, item, Py_None);
 				if (result < 0)
 					break;
@@ -1904,7 +1904,7 @@ so there is exactly one (which is indestructible, by the way).
 static PyObject *
 none_repr(PyObject *op)
 {
-	return PyBytes_FromString("None");
+	return PyString_FromString("None");
 }
 
 /* ARGUSED */
@@ -1946,7 +1946,7 @@ PyObject _Py_NoneStruct = {
 static PyObject *
 NotImplemented_repr(PyObject *op)
 {
-	return PyBytes_FromString("NotImplemented");
+	return PyString_FromString("NotImplemented");
 }
 
 static PyTypeObject PyNotImplemented_Type = {
@@ -1983,7 +1983,7 @@ _Py_ReadyTypes(void)
 	if (PyType_Ready(&PyBool_Type) < 0)
 		Py_FatalError("Can't initialize 'bool'");
 
-	if (PyType_Ready(&PyBytes_Type) < 0)
+	if (PyType_Ready(&PyString_Type) < 0)
 		Py_FatalError("Can't initialize 'str'");
 
 	if (PyType_Ready(&PyByteArray_Type) < 0)

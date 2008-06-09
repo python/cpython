@@ -304,42 +304,42 @@ getenvironment(PyObject* environment)
 	if (!keys || !values)
 		goto error;
 
-	out = PyBytes_FromStringAndSize(NULL, 2048);
+	out = PyString_FromStringAndSize(NULL, 2048);
 	if (! out)
 		goto error;
 
-	p = PyBytes_AS_STRING(out);
+	p = PyString_AS_STRING(out);
 
 	for (i = 0; i < envsize; i++) {
 		int ksize, vsize, totalsize;
 		PyObject* key = PyList_GET_ITEM(keys, i);
 		PyObject* value = PyList_GET_ITEM(values, i);
 
-		if (! PyBytes_Check(key) || ! PyBytes_Check(value)) {
+		if (! PyString_Check(key) || ! PyString_Check(value)) {
 			PyErr_SetString(PyExc_TypeError,
 				"environment can only contain strings");
 			goto error;
 		}
-		ksize = PyBytes_GET_SIZE(key);
-		vsize = PyBytes_GET_SIZE(value);
-		totalsize = (p - PyBytes_AS_STRING(out)) + ksize + 1 +
+		ksize = PyString_GET_SIZE(key);
+		vsize = PyString_GET_SIZE(value);
+		totalsize = (p - PyString_AS_STRING(out)) + ksize + 1 +
 							     vsize + 1 + 1;
-		if (totalsize > PyBytes_GET_SIZE(out)) {
-			int offset = p - PyBytes_AS_STRING(out);
-			_PyBytes_Resize(&out, totalsize + 1024);
-			p = PyBytes_AS_STRING(out) + offset;
+		if (totalsize > PyString_GET_SIZE(out)) {
+			int offset = p - PyString_AS_STRING(out);
+			_PyString_Resize(&out, totalsize + 1024);
+			p = PyString_AS_STRING(out) + offset;
 		}
-		memcpy(p, PyBytes_AS_STRING(key), ksize);
+		memcpy(p, PyString_AS_STRING(key), ksize);
 		p += ksize;
 		*p++ = '=';
-		memcpy(p, PyBytes_AS_STRING(value), vsize);
+		memcpy(p, PyString_AS_STRING(value), vsize);
 		p += vsize;
 		*p++ = '\0';
 	}
 
 	/* add trailing null byte */
 	*p++ = '\0';
-	_PyBytes_Resize(&out, p - PyBytes_AS_STRING(out));
+	_PyString_Resize(&out, p - PyString_AS_STRING(out));
 
 	/* PyObject_Print(out, stdout, 0); */
 
@@ -413,7 +413,7 @@ sp_CreateProcess(PyObject* self, PyObject* args)
 			       NULL,
 			       inherit_handles,
 			       creation_flags,
-			       environment ? PyBytes_AS_STRING(environment) : NULL,
+			       environment ? PyString_AS_STRING(environment) : NULL,
 			       current_directory,
 			       &si,
 			       &pi);
@@ -516,7 +516,7 @@ sp_GetModuleFileName(PyObject* self, PyObject* args)
 	if (! result)
 		return PyErr_SetFromWindowsErr(GetLastError());
 
-	return PyBytes_FromString(filename);
+	return PyString_FromString(filename);
 }
 
 static PyMethodDef sp_functions[] = {

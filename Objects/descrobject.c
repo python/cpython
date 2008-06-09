@@ -15,8 +15,8 @@ descr_dealloc(PyDescrObject *descr)
 static char *
 descr_name(PyDescrObject *descr)
 {
-	if (descr->d_name != NULL && PyBytes_Check(descr->d_name))
-		return PyBytes_AS_STRING(descr->d_name);
+	if (descr->d_name != NULL && PyString_Check(descr->d_name))
+		return PyString_AS_STRING(descr->d_name);
 	else
 		return "?";
 }
@@ -24,7 +24,7 @@ descr_name(PyDescrObject *descr)
 static PyObject *
 descr_repr(PyDescrObject *descr, char *format)
 {
-	return PyBytes_FromFormat(format, descr_name(descr),
+	return PyString_FromFormat(format, descr_name(descr),
 				   descr->d_type->tp_name);
 }
 
@@ -314,7 +314,7 @@ method_get_doc(PyMethodDescrObject *descr, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyBytes_FromString(descr->d_method->ml_doc);
+	return PyString_FromString(descr->d_method->ml_doc);
 }
 
 static PyMemberDef descr_members[] = {
@@ -335,7 +335,7 @@ member_get_doc(PyMemberDescrObject *descr, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyBytes_FromString(descr->d_member->doc);
+	return PyString_FromString(descr->d_member->doc);
 }
 
 static PyGetSetDef member_getset[] = {
@@ -350,7 +350,7 @@ getset_get_doc(PyGetSetDescrObject *descr, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyBytes_FromString(descr->d_getset->doc);
+	return PyString_FromString(descr->d_getset->doc);
 }
 
 static PyGetSetDef getset_getset[] = {
@@ -365,7 +365,7 @@ wrapperdescr_get_doc(PyWrapperDescrObject *descr, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyBytes_FromString(descr->d_base->doc);
+	return PyString_FromString(descr->d_base->doc);
 }
 
 static PyGetSetDef wrapperdescr_getset[] = {
@@ -576,7 +576,7 @@ descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
 	if (descr != NULL) {
 		Py_XINCREF(type);
 		descr->d_type = type;
-		descr->d_name = PyBytes_InternFromString(name);
+		descr->d_name = PyString_InternFromString(name);
 		if (descr->d_name == NULL) {
 			Py_DECREF(descr);
 			descr = NULL;
@@ -922,7 +922,7 @@ wrapper_hash(wrapperobject *wp)
 static PyObject *
 wrapper_repr(wrapperobject *wp)
 {
-	return PyBytes_FromFormat("<method-wrapper '%s' of %s object at %p>",
+	return PyString_FromFormat("<method-wrapper '%s' of %s object at %p>",
 				   wp->descr->d_base->name,
 				   wp->self->ob_type->tp_name,
 				   wp->self);
@@ -947,7 +947,7 @@ wrapper_name(wrapperobject *wp)
 {
 	char *s = wp->descr->d_base->name;
 
-	return PyBytes_FromString(s);
+	return PyString_FromString(s);
 }
 
 static PyObject *
@@ -960,7 +960,7 @@ wrapper_doc(wrapperobject *wp)
 		return Py_None;
 	}
 	else {
-		return PyBytes_FromString(s);
+		return PyString_FromString(s);
 	}
 }
 

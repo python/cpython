@@ -137,7 +137,7 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args, PyObjec
     /* a basic type is adapted; there's a performance optimization if that's not the case
      * (99 % of all usages) */
     if (type == &PyInt_Type || type == &PyLong_Type || type == &PyFloat_Type
-            || type == &PyBytes_Type || type == &PyUnicode_Type || type == &PyBuffer_Type) {
+            || type == &PyString_Type || type == &PyUnicode_Type || type == &PyBuffer_Type) {
         pysqlite_BaseTypeAdapted = 1;
     }
 
@@ -367,13 +367,13 @@ PyMODINIT_FUNC init_sqlite3(void)
         Py_DECREF(tmp_obj);
     }
 
-    if (!(tmp_obj = PyBytes_FromString(PYSQLITE_VERSION))) {
+    if (!(tmp_obj = PyString_FromString(PYSQLITE_VERSION))) {
         goto error;
     }
     PyDict_SetItemString(dict, "version", tmp_obj);
     Py_DECREF(tmp_obj);
 
-    if (!(tmp_obj = PyBytes_FromString(sqlite3_libversion()))) {
+    if (!(tmp_obj = PyString_FromString(sqlite3_libversion()))) {
         goto error;
     }
     PyDict_SetItemString(dict, "sqlite_version", tmp_obj);

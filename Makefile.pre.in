@@ -584,7 +584,6 @@ PYTHON_HEADERS= \
 		Include/bitset.h \
 		Include/boolobject.h \
 		Include/bytes_methods.h \
-		Include/bytearrayobject.h \
 		Include/bytesobject.h \
 		Include/bufferobject.h \
 		Include/cellobject.h \

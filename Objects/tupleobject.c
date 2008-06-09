@@ -218,7 +218,7 @@ tuplerepr(PyTupleObject *v)
 
 	n = Py_SIZE(v);
 	if (n == 0)
-		return PyBytes_FromString("()");
+		return PyString_FromString("()");
 
 	/* While not mutable, it is still possible to end up with a cycle in a
 	   tuple through an object that stores itself within a tuple (and thus
@@ -226,7 +226,7 @@ tuplerepr(PyTupleObject *v)
 	   possible within a type. */
 	i = Py_ReprEnter((PyObject *)v);
 	if (i != 0) {
-		return i > 0 ? PyBytes_FromString("(...)") : NULL;
+		return i > 0 ? PyString_FromString("(...)") : NULL;
 	}
 
 	pieces = PyTuple_New(n);
@@ -246,29 +246,29 @@ tuplerepr(PyTupleObject *v)
 
 	/* Add "()" decorations to the first and last items. */
 	assert(n > 0);
-	s = PyBytes_FromString("(");
+	s = PyString_FromString("(");
 	if (s == NULL)
 		goto Done;
 	temp = PyTuple_GET_ITEM(pieces, 0);
-	PyBytes_ConcatAndDel(&s, temp);
+	PyString_ConcatAndDel(&s, temp);
 	PyTuple_SET_ITEM(pieces, 0, s);
 	if (s == NULL)
 		goto Done;
 
-	s = PyBytes_FromString(n == 1 ? ",)" : ")");
+	s = PyString_FromString(n == 1 ? ",)" : ")");
 	if (s == NULL)
 		goto Done;
 	temp = PyTuple_GET_ITEM(pieces, n-1);
-	PyBytes_ConcatAndDel(&temp, s);
+	PyString_ConcatAndDel(&temp, s);
 	PyTuple_SET_ITEM(pieces, n-1, temp);
 	if (temp == NULL)
 		goto Done;
 
 	/* Paste them all together with ", " between. */
-	s = PyBytes_FromString(", ");
+	s = PyString_FromString(", ");
 	if (s == NULL)
 		goto Done;
-	result = _PyBytes_Join(s, pieces);
+	result = _PyString_Join(s, pieces);
 	Py_DECREF(s);	
 
 Done:

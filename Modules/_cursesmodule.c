@@ -198,9 +198,9 @@ PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
 {
   if (PyInt_Check(obj)) {
     *ch = (chtype) PyInt_AsLong(obj);
-  } else if(PyBytes_Check(obj) 
-	    && (PyBytes_Size(obj) == 1)) {
-    *ch = (chtype) *PyBytes_AsString(obj);
+  } else if(PyString_Check(obj) 
+	    && (PyString_Size(obj) == 1)) {
+    *ch = (chtype) *PyString_AsString(obj);
   } else {
     return 0;
   }
@@ -886,9 +886,9 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
     return Py_BuildValue("c", rtn);
   else
 #if defined(__NetBSD__)
-    return PyBytes_FromString(unctrl(rtn));
+    return PyString_FromString(unctrl(rtn));
 #else
-    return PyBytes_FromString((char *)keyname(rtn));
+    return PyString_FromString((char *)keyname(rtn));
 #endif
 }
 
@@ -943,7 +943,7 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
   }
   if (rtn2 == ERR)
     rtn[0] = 0;
-  return PyBytes_FromString(rtn);
+  return PyString_FromString(rtn);
 }
 
 static PyObject *
@@ -1095,7 +1095,7 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
   }
   if (rtn2 == ERR)
     rtn[0] = 0;
-  return PyBytes_FromString(rtn);
+  return PyString_FromString(rtn);
 }
 
 static PyObject *
@@ -1757,7 +1757,7 @@ PyCurses_EraseChar(PyObject *self)
 
   ch = erasechar();
 
-  return PyBytes_FromStringAndSize(&ch, 1);
+  return PyString_FromStringAndSize(&ch, 1);
 }
 
 static PyObject *
@@ -2114,7 +2114,7 @@ PyCurses_KeyName(PyObject *self, PyObject *args)
   }
   knp = keyname(ch);
 
-  return PyBytes_FromString((knp == NULL) ? "" : (char *)knp);
+  return PyString_FromString((knp == NULL) ? "" : (char *)knp);
 }
 #endif
 
@@ -2125,7 +2125,7 @@ PyCurses_KillChar(PyObject *self)
 
   ch = killchar();  
 
-  return PyBytes_FromStringAndSize(&ch, 1);  
+  return PyString_FromStringAndSize(&ch, 1);  
 }  
 
 static PyObject *
@@ -2496,7 +2496,7 @@ PyCurses_tigetstr(PyObject *self, PyObject *args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyBytes_FromString( capname );
+	return PyString_FromString( capname );
 }
 
 static PyObject *
@@ -2520,7 +2520,7 @@ PyCurses_tparm(PyObject *self, PyObject *args)
   		return NULL;
 	}
 
-	return PyBytes_FromString(result);
+	return PyString_FromString(result);
 }
 
 static PyObject *
@@ -2547,14 +2547,14 @@ PyCurses_UnCtrl(PyObject *self, PyObject *args)
 
   if (PyInt_Check(temp))
     ch = (chtype) PyInt_AsLong(temp);
-  else if (PyBytes_Check(temp))
-    ch = (chtype) *PyBytes_AsString(temp);
+  else if (PyString_Check(temp))
+    ch = (chtype) *PyString_AsString(temp);
   else {
     PyErr_SetString(PyExc_TypeError, "argument must be a ch or an int");
     return NULL;
   }
 
-  return PyBytes_FromString(unctrl(ch));
+  return PyString_FromString(unctrl(ch));
 }
 
 static PyObject *
@@ -2569,8 +2569,8 @@ PyCurses_UngetCh(PyObject *self, PyObject *args)
 
   if (PyInt_Check(temp))
     ch = (int) PyInt_AsLong(temp);
-  else if (PyBytes_Check(temp))
-    ch = (int) *PyBytes_AsString(temp);
+  else if (PyString_Check(temp))
+    ch = (int) *PyString_AsString(temp);
   else {
     PyErr_SetString(PyExc_TypeError, "argument must be a ch or an int");
     return NULL;
@@ -2753,7 +2753,7 @@ init_curses(void)
 	PyDict_SetItemString(d, "error", PyCursesError);
 
 	/* Make the version available */
-	v = PyBytes_FromString(PyCursesVersion);
+	v = PyString_FromString(PyCursesVersion);
 	PyDict_SetItemString(d, "version", v);
 	PyDict_SetItemString(d, "__version__", v);
 	Py_DECREF(v);

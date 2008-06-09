@@ -28,7 +28,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 		consts = ((PyCodeObject *)code)->co_consts;
 		if (PyTuple_Size(consts) >= 1) {
 			doc = PyTuple_GetItem(consts, 0);
-			if (!PyBytes_Check(doc) && !PyUnicode_Check(doc))
+			if (!PyString_Check(doc) && !PyUnicode_Check(doc))
 				doc = Py_None;
 		}
 		else
@@ -42,7 +42,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 		   Otherwise, use None.
 		*/
 		if (!__name__) {
-			__name__ = PyBytes_InternFromString("__name__");
+			__name__ = PyString_InternFromString("__name__");
 			if (!__name__) {
 				Py_DECREF(op);
 				return NULL;
@@ -254,7 +254,7 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 		PyErr_Format(PyExc_ValueError,
 			     "%s() requires a code object with %zd free vars,"
 			     " not %zd",
-			     PyBytes_AsString(op->func_name),
+			     PyString_AsString(op->func_name),
 			     nclosure, nfree);
 		return -1;
 	}
@@ -281,7 +281,7 @@ func_set_name(PyFunctionObject *op, PyObject *value)
 		return -1;
 	/* Not legal to del f.func_name or to set it to anything
 	 * other than a string object. */
-	if (value == NULL || !PyBytes_Check(value)) {
+	if (value == NULL || !PyString_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
 				"__name__ must be set to a string object");
 		return -1;
@@ -380,7 +380,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 			      &PyDict_Type, &globals,
 			      &name, &defaults, &closure))
 		return NULL;
-	if (name != Py_None && !PyBytes_Check(name)) {
+	if (name != Py_None && !PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"arg 3 (name) must be None or string");
 		return NULL;
@@ -409,7 +409,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 	if (nfree != nclosure)
 		return PyErr_Format(PyExc_ValueError,
 				    "%s requires closure of length %zd, not %zd",
-				    PyBytes_AS_STRING(code->co_name),
+				    PyString_AS_STRING(code->co_name),
 				    nfree, nclosure);
 	if (nclosure) {
 		Py_ssize_t i;
@@ -465,8 +465,8 @@ func_dealloc(PyFunctionObject *op)
 static PyObject*
 func_repr(PyFunctionObject *op)
 {
-	return PyBytes_FromFormat("<function %s at %p>",
-				   PyBytes_AsString(op->func_name),
+	return PyString_FromFormat("<function %s at %p>",
+				   PyString_AsString(op->func_name),
 				   op);
 }
 

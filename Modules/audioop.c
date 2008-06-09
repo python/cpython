@@ -474,7 +474,7 @@ audioop_findfit(PyObject *self, PyObject *args)
 
 	/* Passing a short** for an 's' argument is correct only
 	   if the string contents is aligned for interpretation
-	   as short[]. Due to the definition of PyBytesObject,
+	   as short[]. Due to the definition of PyStringObject,
 	   this is currently (Python 2.6) the case. */
         if ( !PyArg_ParseTuple(args, "s#s#:findfit",
 	                       (char**)&cp1, &len1, (char**)&cp2, &len2) )
@@ -759,10 +759,10 @@ audioop_mul(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len);
+        rv = PyString_FromStringAndSize(NULL, len);
         if ( rv == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(rv);
+        ncp = (signed char *)PyString_AsString(rv);
     
     
         for ( i=0; i < len; i += size ) {
@@ -801,10 +801,10 @@ audioop_tomono(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len/2);
+        rv = PyString_FromStringAndSize(NULL, len/2);
         if ( rv == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(rv);
+        ncp = (signed char *)PyString_AsString(rv);
     
     
         for ( i=0; i < len; i += size*2 ) {
@@ -846,10 +846,10 @@ audioop_tostereo(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len*2);
+        rv = PyString_FromStringAndSize(NULL, len*2);
         if ( rv == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(rv);
+        ncp = (signed char *)PyString_AsString(rv);
     
     
         for ( i=0; i < len; i += size ) {
@@ -903,10 +903,10 @@ audioop_add(PyObject *self, PyObject *args)
                 return 0;
         }
 
-        rv = PyBytes_FromStringAndSize(NULL, len1);
+        rv = PyString_FromStringAndSize(NULL, len1);
         if ( rv == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(rv);
+        ncp = (signed char *)PyString_AsString(rv);
 
         for ( i=0; i < len1; i += size ) {
                 if ( size == 1 )      val1 = (int)*CHARP(cp1, i);
@@ -949,10 +949,10 @@ audioop_bias(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len);
+        rv = PyString_FromStringAndSize(NULL, len);
         if ( rv == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(rv);
+        ncp = (signed char *)PyString_AsString(rv);
     
     
         for ( i=0; i < len; i += size ) {
@@ -985,10 +985,10 @@ audioop_reverse(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len);
+        rv = PyString_FromStringAndSize(NULL, len);
         if ( rv == 0 )
                 return 0;
-        ncp = (unsigned char *)PyBytes_AsString(rv);
+        ncp = (unsigned char *)PyString_AsString(rv);
     
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
@@ -1023,10 +1023,10 @@ audioop_lin2lin(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, (len/size)*size2);
+        rv = PyString_FromStringAndSize(NULL, (len/size)*size2);
         if ( rv == 0 )
                 return 0;
-        ncp = (unsigned char *)PyBytes_AsString(rv);
+        ncp = (unsigned char *)PyString_AsString(rv);
     
         for ( i=0, j=0; i < len; i += size, j += size2 ) {
                 if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
@@ -1157,7 +1157,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
                     nbytes / bytes_per_frame != ceiling)
                         str = NULL;
                 else
-                        str = PyBytes_FromStringAndSize(NULL, nbytes);
+                        str = PyString_FromStringAndSize(NULL, nbytes);
 
                 if (str == NULL) {
                         PyErr_SetString(PyExc_MemoryError,
@@ -1165,7 +1165,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
                         goto exit;
                 }
         }
-        ncp = PyBytes_AsString(str);
+        ncp = PyString_AsString(str);
 
         for (;;) {
                 while (d < 0) {
@@ -1182,13 +1182,13 @@ audioop_ratecv(PyObject *self, PyObject *args)
                                         goto exit;
                                 /* We have checked before that the length
                                  * of the string fits into int. */
-                                len = (int)(ncp - PyBytes_AsString(str));
+                                len = (int)(ncp - PyString_AsString(str));
                                 if (len == 0) {
                                         /*don't want to resize to zero length*/
-                                        rv = PyBytes_FromStringAndSize("", 0);
+                                        rv = PyString_FromStringAndSize("", 0);
                                         Py_DECREF(str);
                                         str = rv;
-                                } else if (_PyBytes_Resize(&str, len) < 0)
+                                } else if (_PyString_Resize(&str, len) < 0)
                                         goto exit;
                                 rv = Py_BuildValue("(O(iO))", str, d, samps);
                                 Py_DECREF(samps);
@@ -1255,10 +1255,10 @@ audioop_lin2ulaw(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len/size);
+        rv = PyString_FromStringAndSize(NULL, len/size);
         if ( rv == 0 )
                 return 0;
-        ncp = (unsigned char *)PyBytes_AsString(rv);
+        ncp = (unsigned char *)PyString_AsString(rv);
     
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
@@ -1289,10 +1289,10 @@ audioop_ulaw2lin(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len*size);
+        rv = PyString_FromStringAndSize(NULL, len*size);
         if ( rv == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(rv);
+        ncp = (signed char *)PyString_AsString(rv);
     
         for ( i=0; i < len*size; i += size ) {
                 cval = *cp++;
@@ -1323,10 +1323,10 @@ audioop_lin2alaw(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len/size);
+        rv = PyString_FromStringAndSize(NULL, len/size);
         if ( rv == 0 )
                 return 0;
-        ncp = (unsigned char *)PyBytes_AsString(rv);
+        ncp = (unsigned char *)PyString_AsString(rv);
     
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
@@ -1357,10 +1357,10 @@ audioop_alaw2lin(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        rv = PyBytes_FromStringAndSize(NULL, len*size);
+        rv = PyString_FromStringAndSize(NULL, len*size);
         if ( rv == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(rv);
+        ncp = (signed char *)PyString_AsString(rv);
     
         for ( i=0; i < len*size; i += size ) {
                 cval = *cp++;
@@ -1393,10 +1393,10 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
                 return 0;
         }
     
-        str = PyBytes_FromStringAndSize(NULL, len/(size*2));
+        str = PyString_FromStringAndSize(NULL, len/(size*2));
         if ( str == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(str);
+        ncp = (signed char *)PyString_AsString(str);
 
         /* Decode state, should have (value, step) */
         if ( state == Py_None ) {
@@ -1509,10 +1509,10 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
         } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
                 return 0;
     
-        str = PyBytes_FromStringAndSize(NULL, len*size*2);
+        str = PyString_FromStringAndSize(NULL, len*size*2);
         if ( str == 0 )
                 return 0;
-        ncp = (signed char *)PyBytes_AsString(str);
+        ncp = (signed char *)PyString_AsString(str);
 
         step = stepsizeTable[index];
         bufferstep = 0;

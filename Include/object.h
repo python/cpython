@@ -504,7 +504,7 @@ PyAPI_FUNC(long) _Py_HashDouble(double);
 PyAPI_FUNC(long) _Py_HashPointer(void*);
 
 /* Helper for passing objects to printf and the like */
-#define PyObject_REPR(obj) PyBytes_AS_STRING(PyObject_Repr(obj))
+#define PyObject_REPR(obj) PyString_AS_STRING(PyObject_Repr(obj))
 
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
@@ -598,7 +598,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_LONG_SUBCLASS	(1L<<24)
 #define Py_TPFLAGS_LIST_SUBCLASS	(1L<<25)
 #define Py_TPFLAGS_TUPLE_SUBCLASS	(1L<<26)
-#define Py_TPFLAGS_BYTES_SUBCLASS	(1L<<27)
+#define Py_TPFLAGS_STRING_SUBCLASS	(1L<<27)
 #define Py_TPFLAGS_UNICODE_SUBCLASS	(1L<<28)
 #define Py_TPFLAGS_DICT_SUBCLASS	(1L<<29)
 #define Py_TPFLAGS_BASE_EXC_SUBCLASS	(1L<<30)

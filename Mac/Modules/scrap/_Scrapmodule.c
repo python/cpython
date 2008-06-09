@@ -106,12 +106,12 @@ static PyObject *ScrapObj_GetScrapFlavorData(ScrapObject *_self, PyObject *_args
 	                          flavorType,
 	                          &byteCount);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = PyBytes_FromStringAndSize(NULL, (int)byteCount);
+	_res = PyString_FromStringAndSize(NULL, (int)byteCount);
 	if ( _res == NULL ) return NULL;
 	_err = GetScrapFlavorData(_self->ob_itself,
 	                          flavorType,
 	                          &byteCount,
-	                          PyBytes_AS_STRING(_res));
+	                          PyString_AS_STRING(_res));
 	if (_err != noErr) {
 		Py_XDECREF(_res);
 		return PyMac_Error(_err);

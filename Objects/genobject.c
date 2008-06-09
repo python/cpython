@@ -285,10 +285,10 @@ static PyObject *
 gen_repr(PyGenObject *gen)
 {
 	char *code_name;
-	code_name = PyBytes_AsString(((PyCodeObject *)gen->gi_code)->co_name);
+	code_name = PyString_AsString(((PyCodeObject *)gen->gi_code)->co_name);
 	if (code_name == NULL)
 		return NULL;
-	return PyBytes_FromFormat("<generator object %.200s at %p>",
+	return PyString_FromFormat("<generator object %.200s at %p>",
 				   code_name, gen);
 }
 

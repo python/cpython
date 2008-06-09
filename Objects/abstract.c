@@ -105,7 +105,7 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 
 	/* cache a hashed version of the attribute string */
 	if (hintstrobj == NULL) {
-		hintstrobj = PyBytes_InternFromString("__length_hint__");
+		hintstrobj = PyString_InternFromString("__length_hint__");
 		if (hintstrobj == NULL)
 			goto defaultcase;
 	}
@@ -227,7 +227,7 @@ PyObject_DelItemString(PyObject *o, char *key)
 		null_error();
 		return -1;
 	}
-	okey = PyBytes_FromString(key);
+	okey = PyString_FromString(key);
 	if (okey == NULL)
 		return -1;
 	ret = PyObject_DelItem(o, okey);
@@ -723,21 +723,21 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 	/* Initialize cached value */
 	if (str__format__ == NULL) {
 		/* Initialize static variable needed by _PyType_Lookup */
-		str__format__ = PyBytes_InternFromString("__format__");
+		str__format__ = PyString_InternFromString("__format__");
 		if (str__format__ == NULL)
 			goto done;
 	}
 
 	/* If no format_spec is provided, use an empty string */
 	if (format_spec == NULL) {
-		empty = PyBytes_FromStringAndSize(NULL, 0);
+		empty = PyString_FromStringAndSize(NULL, 0);
 		format_spec = empty;
 	}
 
 	/* Check the format_spec type, and make sure it's str or unicode */
 	if (PyUnicode_Check(format_spec))
 		spec_is_unicode = 1;
-	else if (PyBytes_Check(format_spec))
+	else if (PyString_Check(format_spec))
 		spec_is_unicode = 0;
 	else {
 		PyErr_Format(PyExc_TypeError,
@@ -817,7 +817,7 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 	/* Check the result type, and make sure it's str or unicode */
 	if (PyUnicode_Check(result))
 		result_is_unicode = 1;
-	else if (PyBytes_Check(result))
+	else if (PyString_Check(result))
 		result_is_unicode = 0;
 	else {
 		PyErr_Format(PyExc_TypeError,
@@ -1535,7 +1535,7 @@ _PyNumber_ConvertIntegralToInt(PyObject *integral, const char* error_format)
 	const char *type_name;
 	static PyObject *int_name = NULL;
 	if (int_name == NULL) {
-		int_name = PyBytes_InternFromString("__int__");
+		int_name = PyString_InternFromString("__int__");
 		if (int_name == NULL)
 			return NULL;
 	}
@@ -1561,7 +1561,7 @@ _PyNumber_ConvertIntegralToInt(PyObject *integral, const char* error_format)
 
 non_integral_error:
 	if (PyInstance_Check(integral)) {
-		type_name = PyBytes_AS_STRING(((PyInstanceObject *)integral)
+		type_name = PyString_AS_STRING(((PyInstanceObject *)integral)
 					       ->in_class->cl_name);
 	}
 	else {
@@ -1583,7 +1583,7 @@ PyNumber_Int(PyObject *o)
 	Py_ssize_t buffer_len;
 
 	if (trunc_name == NULL) {
-		trunc_name = PyBytes_InternFromString("__trunc__");
+		trunc_name = PyString_InternFromString("__trunc__");
 		if (trunc_name == NULL)
 			return NULL;
 	}
@@ -1623,9 +1623,9 @@ PyNumber_Int(PyObject *o)
 	}
 	PyErr_Clear();  /* It's not an error if  o.__trunc__ doesn't exist. */
 
-	if (PyBytes_Check(o))
-		return int_from_string(PyBytes_AS_STRING(o),
-				       PyBytes_GET_SIZE(o));
+	if (PyString_Check(o))
+		return int_from_string(PyString_AS_STRING(o),
+				       PyString_GET_SIZE(o));
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(o))
 		return PyInt_FromUnicode(PyUnicode_AS_UNICODE(o),
@@ -1668,7 +1668,7 @@ PyNumber_Long(PyObject *o)
 	Py_ssize_t buffer_len;
 
 	if (trunc_name == NULL) {
-		trunc_name = PyBytes_InternFromString("__trunc__");
+		trunc_name = PyString_InternFromString("__trunc__");
 		if (trunc_name == NULL)
 			return NULL;
 	}
@@ -1710,13 +1710,13 @@ PyNumber_Long(PyObject *o)
 	}
 	PyErr_Clear();  /* It's not an error if  o.__trunc__ doesn't exist. */
 
-	if (PyBytes_Check(o))
+	if (PyString_Check(o))
 		/* need to do extra error checking that PyLong_FromString()
 		 * doesn't do.  In particular long('9.5') must raise an
 		 * exception, not truncate the float.
 		 */
-		return long_from_string(PyBytes_AS_STRING(o),
-					PyBytes_GET_SIZE(o));
+		return long_from_string(PyString_AS_STRING(o),
+					PyString_GET_SIZE(o));
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(o))
 		/* The above check is done in PyLong_FromUnicode(). */
@@ -2407,7 +2407,7 @@ PyMapping_GetItemString(PyObject *o, char *key)
 	if (key == NULL)
 		return null_error();
 
-	okey = PyBytes_FromString(key);
+	okey = PyString_FromString(key);
 	if (okey == NULL)
 		return NULL;
 	r = PyObject_GetItem(o, okey);
@@ -2426,7 +2426,7 @@ PyMapping_SetItemString(PyObject *o, char *key, PyObject *value)
 		return -1;
 	}
 
-	okey = PyBytes_FromString(key);
+	okey = PyString_FromString(key);
 	if (okey == NULL)
 		return -1;
 	r = PyObject_SetItem(o, okey, value);
@@ -2754,7 +2754,7 @@ abstract_get_bases(PyObject *cls)
 	PyObject *bases;
 
 	if (__bases__ == NULL) {
-		__bases__ = PyBytes_InternFromString("__bases__");
+		__bases__ = PyString_InternFromString("__bases__");
 		if (__bases__ == NULL)
 			return NULL;
 	}
@@ -2832,7 +2832,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 	int retval = 0;
 
 	if (__class__ == NULL) {
-		__class__ = PyBytes_InternFromString("__class__");
+		__class__ = PyString_InternFromString("__class__");
 		if (__class__ == NULL)
 			return -1;
 	}
@@ -2908,7 +2908,7 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 		return 1;
 
 	if (name == NULL) {
-		name = PyBytes_InternFromString("__instancecheck__");
+		name = PyString_InternFromString("__instancecheck__");
 		if (name == NULL)
 			return -1;
 	}
@@ -2992,7 +2992,7 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 	PyErr_Fetch(&t, &v, &tb);
 	
 	if (name == NULL) {
-		name = PyBytes_InternFromString("__subclasscheck__");
+		name = PyString_InternFromString("__subclasscheck__");
 		if (name == NULL)
 			return -1;
 	}

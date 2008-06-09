@@ -87,13 +87,13 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
 	/* share short strings */
 	if (size == 0) {
 		PyObject *t = (PyObject *)op;
-		PyBytes_InternInPlace(&t);
+		PyString_InternInPlace(&t);
 		op = (PyBytesObject *)t;
 		nullstring = op;
 		Py_INCREF(op);
 	} else if (size == 1 && str != NULL) {
 		PyObject *t = (PyObject *)op;
-		PyBytes_InternInPlace(&t);
+		PyString_InternInPlace(&t);
 		op = (PyBytesObject *)t;
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
@@ -140,13 +140,13 @@ PyBytes_FromString(const char *str)
 	/* share short strings */
 	if (size == 0) {
 		PyObject *t = (PyObject *)op;
-		PyBytes_InternInPlace(&t);
+		PyString_InternInPlace(&t);
 		op = (PyBytesObject *)t;
 		nullstring = op;
 		Py_INCREF(op);
 	} else if (size == 1) {
 		PyObject *t = (PyObject *)op;
-		PyBytes_InternInPlace(&t);
+		PyString_InternInPlace(&t);
 		op = (PyBytesObject *)t;
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
@@ -5093,12 +5093,12 @@ PyBytes_Format(PyObject *format, PyObject *args)
 }
 
 void
-PyBytes_InternInPlace(PyObject **p)
+PyString_InternInPlace(PyObject **p)
 {
 	register PyBytesObject *s = (PyBytesObject *)(*p);
 	PyObject *t;
 	if (s == NULL || !PyBytes_Check(s))
-		Py_FatalError("PyBytes_InternInPlace: strings only please!");
+		Py_FatalError("PyString_InternInPlace: strings only please!");
 	/* If it's a string subclass, we don't really know what putting
 	   it in the interned dict might do. */
 	if (!PyBytes_CheckExact(s))
@@ -5131,9 +5131,9 @@ PyBytes_InternInPlace(PyObject **p)
 }
 
 void
-PyBytes_InternImmortal(PyObject **p)
+PyString_InternImmortal(PyObject **p)
 {
-	PyBytes_InternInPlace(p);
+	PyString_InternInPlace(p);
 	if (PyBytes_CHECK_INTERNED(*p) != SSTATE_INTERNED_IMMORTAL) {
 		PyBytes_CHECK_INTERNED(*p) = SSTATE_INTERNED_IMMORTAL;
 		Py_INCREF(*p);
@@ -5142,17 +5142,17 @@ PyBytes_InternImmortal(PyObject **p)
 
 
 PyObject *
-PyBytes_InternFromString(const char *cp)
+PyString_InternFromString(const char *cp)
 {
 	PyObject *s = PyBytes_FromString(cp);
 	if (s == NULL)
 		return NULL;
-	PyBytes_InternInPlace(&s);
+	PyString_InternInPlace(&s);
 	return s;
 }
 
 void
-PyBytes_Fini(void)
+PyString_Fini(void)
 {
 	int i;
 	for (i = 0; i < UCHAR_MAX + 1; i++) {

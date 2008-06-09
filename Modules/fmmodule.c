@@ -66,7 +66,7 @@ fh_getfontname(fhobject *self)
 		PyErr_SetString(PyExc_RuntimeError, "error in fmgetfontname");
 		return NULL;
 	}
-	return PyBytes_FromStringAndSize(fontname, len);
+	return PyString_FromStringAndSize(fontname, len);
 }
 
 static PyObject *
@@ -79,7 +79,7 @@ fh_getcomment(fhobject *self)
 		PyErr_SetString(PyExc_RuntimeError, "error in fmgetcomment");
 		return NULL;
 	}
-	return PyBytes_FromStringAndSize(comment, len);
+	return PyString_FromStringAndSize(comment, len);
 }
 
 static PyObject *
@@ -200,7 +200,7 @@ clientproc(char *fontname)
 	PyObject *v;
 	if (fontlist == NULL)
 		return;
-	v = PyBytes_FromString(fontname);
+	v = PyString_FromString(fontname);
 	if (v == NULL)
 		err = -1;
 	else {
@@ -240,7 +240,7 @@ fm_setpath(PyObject *self, PyObject *args)
 static PyObject *
 fm_fontpath(PyObject *self)
 {
-	return PyBytes_FromString(fmfontpath());
+	return PyString_FromString(fmfontpath());
 }
 
 static PyMethodDef fm_methods[] = {

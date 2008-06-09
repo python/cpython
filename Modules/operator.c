@@ -508,19 +508,19 @@ dotted_getattr(PyObject *obj, PyObject *attr)
 	}
 #endif
 	
-	if (!PyBytes_Check(attr)) {
+	if (!PyString_Check(attr)) {
 		PyErr_SetString(PyExc_TypeError,
 				"attribute name must be a string");
 		return NULL;
 	}
 
-	s = PyBytes_AS_STRING(attr);
+	s = PyString_AS_STRING(attr);
 	Py_INCREF(obj);
 	for (;;) {
 		PyObject *newobj, *str;
 		p = strchr(s, '.');
-		str = p ? PyBytes_FromStringAndSize(s, (p-s)) : 
-			  PyBytes_FromString(s);
+		str = p ? PyString_FromStringAndSize(s, (p-s)) : 
+			  PyString_FromString(s);
 		if (str == NULL) {
 			Py_DECREF(obj);
 			return NULL;
