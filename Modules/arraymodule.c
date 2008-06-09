@@ -104,7 +104,7 @@ in bounds; that's the responsibility of the caller.
 static PyObject *
 c_getitem(arrayobject *ap, Py_ssize_t i)
 {
-	return PyBytes_FromStringAndSize(&((char *)ap->ob_item)[i], 1);
+	return PyString_FromStringAndSize(&((char *)ap->ob_item)[i], 1);
 }
 
 static int
@@ -1414,7 +1414,7 @@ values,as if it had been read from a file using the fromfile() method).");
 static PyObject *
 array_tostring(arrayobject *self, PyObject *unused)
 {
-	return PyBytes_FromStringAndSize(self->ob_item,
+	return PyString_FromStringAndSize(self->ob_item,
 				    Py_SIZE(self) * self->ob_descr->itemsize);
 }
 
@@ -1494,7 +1494,7 @@ static PyObject *
 array_get_typecode(arrayobject *a, void *closure)
 {
 	char tc = a->ob_descr->typecode;
-	return PyBytes_FromStringAndSize(&tc, 1);
+	return PyString_FromStringAndSize(&tc, 1);
 }
 
 static PyObject *
@@ -1578,7 +1578,7 @@ array_repr(arrayobject *a)
 	typecode = a->ob_descr->typecode;
 	if (len == 0) {
 		PyOS_snprintf(buf, sizeof(buf), "array('%c')", typecode);
-		return PyBytes_FromString(buf);
+		return PyString_FromString(buf);
 	}
 		
 	if (typecode == 'c')
@@ -1593,9 +1593,9 @@ array_repr(arrayobject *a)
 	Py_XDECREF(v);
 
 	PyOS_snprintf(buf, sizeof(buf), "array('%c', ", typecode);
-	s = PyBytes_FromString(buf);
-	PyBytes_ConcatAndDel(&s, t);
-	PyBytes_ConcatAndDel(&s, PyBytes_FromString(")"));
+	s = PyString_FromString(buf);
+	PyString_ConcatAndDel(&s, t);
+	PyString_ConcatAndDel(&s, PyString_FromString(")"));
 	return s;
 }
 
@@ -1881,7 +1881,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (!(initial == NULL || PyList_Check(initial)
-	      || PyBytes_Check(initial) || PyTuple_Check(initial)
+	      || PyString_Check(initial) || PyTuple_Check(initial)
 	      || (c == 'u' && PyUnicode_Check(initial)))) {
 		it = PyObject_GetIter(initial);
 		if (it == NULL)
@@ -1924,7 +1924,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					}
 					Py_DECREF(v);
 				}
-			} else if (initial != NULL && PyBytes_Check(initial)) {
+			} else if (initial != NULL && PyString_Check(initial)) {
 				PyObject *t_initial, *v;
 				t_initial = PyTuple_Pack(1, initial);
 				if (t_initial == NULL) {

@@ -272,7 +272,7 @@ CField_repr(CFieldObject *self)
 	name = ((PyTypeObject *)self->proto)->tp_name;
 
 	if (bits)
-		result = PyBytes_FromFormat(
+		result = PyString_FromFormat(
 #if (PY_VERSION_HEX < 0x02050000)
 			"<Field type=%s, ofs=%d:%d, bits=%d>",
 #else
@@ -280,7 +280,7 @@ CField_repr(CFieldObject *self)
 #endif
 			name, self->offset, size, bits);
 	else
-		result = PyBytes_FromFormat(
+		result = PyString_FromFormat(
 #if (PY_VERSION_HEX < 0x02050000)
 			"<Field type=%s, ofs=%d, size=%d>",
 #else
@@ -1164,12 +1164,12 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-	if (!PyBytes_Check(value) || (1 != PyBytes_Size(value))) {
+	if (!PyString_Check(value) || (1 != PyString_Size(value))) {
 		PyErr_Format(PyExc_TypeError,
 			     "one character string expected");
 		return NULL;
 	}
-	*(char *)ptr = PyBytes_AS_STRING(value)[0];
+	*(char *)ptr = PyString_AS_STRING(value)[0];
 	_RET(value);
 }
 
@@ -1177,7 +1177,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_get(void *ptr, Py_ssize_t size)
 {
-	return PyBytes_FromStringAndSize((char *)ptr, 1);
+	return PyString_FromStringAndSize((char *)ptr, 1);
 }
 
 #ifdef CTYPES_UNICODE
@@ -1187,7 +1187,7 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
 	Py_ssize_t len;
 
-	if (PyBytes_Check(value)) {
+	if (PyString_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
@@ -1262,7 +1262,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
 	/* It's easier to calculate in characters than in bytes */
 	length /= sizeof(wchar_t);
 
-	if (PyBytes_Check(value)) {
+	if (PyString_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
@@ -1301,21 +1301,21 @@ s_get(void *ptr, Py_ssize_t size)
 	PyObject *result;
 	size_t slen;
 
-	result = PyBytes_FromString((char *)ptr);
+	result = PyString_FromString((char *)ptr);
 	if (!result)
 		return NULL;
 	/* chop off at the first NUL character, if any.
 	 * On error, result will be deallocated and set to NULL.
 	 */
-	slen = strlen(PyBytes_AS_STRING(result));
+	slen = strlen(PyString_AS_STRING(result));
 	size = min(size, (Py_ssize_t)slen);
 	if (result->ob_refcnt == 1) {
 		/* shorten the result */
-		_PyBytes_Resize(&result, size);
+		_PyString_Resize(&result, size);
 		return result;
 	} else
 		/* cannot shorten the result */
-		return PyBytes_FromStringAndSize(ptr, size);
+		return PyString_FromStringAndSize(ptr, size);
 }
 
 static PyObject *
@@ -1324,7 +1324,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
 	char *data;
 	Py_ssize_t size;
 
-	data = PyBytes_AsString(value);
+	data = PyString_AsString(value);
 	if (!data)
 		return NULL;
 	size = strlen(data);
@@ -1356,8 +1356,8 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 		Py_INCREF(value);
 		return value;
 	}
-	if (PyBytes_Check(value)) {
-		*(char **)ptr = PyBytes_AS_STRING(value);
+	if (PyString_Check(value)) {
+		*(char **)ptr = PyString_AS_STRING(value);
 		Py_INCREF(value);
 		return value;
 	} else if (PyUnicode_Check(value)) {
@@ -1366,7 +1366,7 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 							  conversion_mode_errors);
 		if (str == NULL)
 			return NULL;
-		*(char **)ptr = PyBytes_AS_STRING(str);
+		*(char **)ptr = PyString_AS_STRING(str);
 		return str;
 	} else if (PyInt_Check(value) || PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
@@ -1395,7 +1395,7 @@ z_get(void *ptr, Py_ssize_t size)
 			return NULL;
 		}
 #endif
-		return PyBytes_FromString(*(char **)ptr);
+		return PyString_FromString(*(char **)ptr);
 	} else {
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -1411,7 +1411,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 		Py_INCREF(value);
 		return value;
 	}
-	if (PyBytes_Check(value)) {
+	if (PyString_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
@@ -1502,7 +1502,7 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
 	/* convert value into a PyUnicodeObject or NULL */
 	if (Py_None == value) {
 		value = NULL;
-	} else if (PyBytes_Check(value)) {
+	} else if (PyString_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);

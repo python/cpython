@@ -261,7 +261,7 @@ getcodec(PyObject *self, PyObject *encoding)
 	const MultibyteCodec *codec;
 	const char *enc;
 
-	if (!PyBytes_Check(encoding)) {
+	if (!PyString_Check(encoding)) {
 		PyErr_SetString(PyExc_TypeError,
 				"encoding name must be a string.");
 		return NULL;
@@ -271,7 +271,7 @@ getcodec(PyObject *self, PyObject *encoding)
 	if (cofunc == NULL)
 		return NULL;
 
-	enc = PyBytes_AS_STRING(encoding);
+	enc = PyString_AS_STRING(encoding);
 	for (codec = codec_list; codec->encoding[0]; codec++)
 		if (strcmp(codec->encoding, enc) == 0)
 			break;

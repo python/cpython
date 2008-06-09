@@ -52,7 +52,7 @@ PyMac_StrError(int err)
 		buf[0] = '\0';
 	}
 	else {
-		char *input = PyBytes_AsString(rv);
+		char *input = PyString_AsString(rv);
 		if (!input) {
 			PyErr_Clear();
 			buf[0] = '\0';
@@ -125,7 +125,7 @@ PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 	if (!rv)
 		goto error;
 
-	input = PyBytes_AsString(rv);
+	input = PyString_AsString(rv);
 	if (!input)
 		goto error;
 
@@ -161,12 +161,12 @@ int
 PyMac_GetOSType(PyObject *v, OSType *pr)
 {
 	uint32_t tmp;
-	if (!PyBytes_Check(v) || PyBytes_Size(v) != 4) {
+	if (!PyString_Check(v) || PyString_Size(v) != 4) {
 		PyErr_SetString(PyExc_TypeError,
 			"OSType arg must be string of 4 chars");
 		return 0;
 	}
-	memcpy((char *)&tmp, PyBytes_AsString(v), 4);
+	memcpy((char *)&tmp, PyString_AsString(v), 4);
 	*pr = (OSType)ntohl(tmp);
 	return 1;
 }
@@ -176,7 +176,7 @@ PyObject *
 PyMac_BuildOSType(OSType t)
 {
 	uint32_t tmp = htonl((uint32_t)t);
-	return PyBytes_FromStringAndSize((char *)&tmp, 4);
+	return PyString_FromStringAndSize((char *)&tmp, 4);
 }
 
 /* Convert an NumVersion value to a 4-element tuple */
@@ -192,13 +192,13 @@ int
 PyMac_GetStr255(PyObject *v, Str255 pbuf)
 {
 	int len;
-	if (!PyBytes_Check(v) || (len = PyBytes_Size(v)) > 255) {
+	if (!PyString_Check(v) || (len = PyString_Size(v)) > 255) {
 		PyErr_SetString(PyExc_TypeError,
 			"Str255 arg must be string of at most 255 chars");
 		return 0;
 	}
 	pbuf[0] = len;
-	memcpy((char *)(pbuf+1), PyBytes_AsString(v), len);
+	memcpy((char *)(pbuf+1), PyString_AsString(v), len);
 	return 1;
 }
 
@@ -210,7 +210,7 @@ PyMac_BuildStr255(Str255 s)
 		PyErr_SetString(PyExc_SystemError, "Str255 pointer is NULL");
 		return NULL;
 	}
-	return PyBytes_FromStringAndSize((char *)&s[1], (int)s[0]);
+	return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
 }
 
 PyObject *
@@ -220,7 +220,7 @@ PyMac_BuildOptStr255(Str255 s)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyBytes_FromStringAndSize((char *)&s[1], (int)s[0]);
+	return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
 }
 
 

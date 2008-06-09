@@ -1458,7 +1458,7 @@ static PyObject *BMObj_getdata(BitMapObject *_self, PyObject *_args)
 	if ( !PyArg_ParseTuple(_args, "ii", &from, &length) )
 	        return NULL;
 	cp = _self->ob_itself->baseAddr+from;
-	_res = PyBytes_FromStringAndSize(cp, length);
+	_res = PyString_FromStringAndSize(cp, length);
 	return _res;
 
 }
@@ -1511,14 +1511,14 @@ static PyObject *BMObj_get_bounds(BitMapObject *self, void *closure)
 
 static PyObject *BMObj_get_bitmap_data(BitMapObject *self, void *closure)
 {
-	return PyBytes_FromStringAndSize((char *)self->ob_itself, sizeof(BitMap));
+	return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(BitMap));
 }
 
 #define BMObj_set_bitmap_data NULL
 
 static PyObject *BMObj_get_pixmap_data(BitMapObject *self, void *closure)
 {
-	return PyBytes_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));
+	return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));
 }
 
 #define BMObj_set_pixmap_data NULL
@@ -6501,10 +6501,10 @@ static PyObject *Qd_BitMap(PyObject *_self, PyObject *_args)
 	int rowbytes;
 	char *data;
 
-	if ( !PyArg_ParseTuple(_args, "O!iO&", &PyBytes_Type, &source, &rowbytes, PyMac_GetRect,
+	if ( !PyArg_ParseTuple(_args, "O!iO&", &PyString_Type, &source, &rowbytes, PyMac_GetRect,
 	                &bounds) )
 	        return NULL;
-	data = PyBytes_AsString(source);
+	data = PyString_AsString(source);
 	if ((ptr=(BitMap *)malloc(sizeof(BitMap))) == NULL )
 	        return PyErr_NoMemory();
 	ptr->baseAddr = (Ptr)data;
@@ -6528,15 +6528,15 @@ static PyObject *Qd_RawBitMap(PyObject *_self, PyObject *_args)
 	BitMap *ptr;
 	PyObject *source;
 
-	if ( !PyArg_ParseTuple(_args, "O!", &PyBytes_Type, &source) )
+	if ( !PyArg_ParseTuple(_args, "O!", &PyString_Type, &source) )
 	        return NULL;
-	if ( PyBytes_Size(source) != sizeof(BitMap) && PyBytes_Size(source) != sizeof(PixMap) ) {
+	if ( PyString_Size(source) != sizeof(BitMap) && PyString_Size(source) != sizeof(PixMap) ) {
 	        PyErr_Format(PyExc_TypeError,
 	                "Argument size was %ld, should be %lu (sizeof BitMap) or %lu (sizeof PixMap)",
-	                PyBytes_Size(source), sizeof(BitMap), sizeof(PixMap));
+	                PyString_Size(source), sizeof(BitMap), sizeof(PixMap));
 	        return NULL;
 	}
-	ptr = (BitMapPtr)PyBytes_AsString(source);
+	ptr = (BitMapPtr)PyString_AsString(source);
 	if ( (_res = BMObj_New(ptr)) == NULL ) {
 	        return NULL;
 	}

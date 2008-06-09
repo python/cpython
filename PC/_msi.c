@@ -35,7 +35,7 @@ uuidcreate(PyObject* obj, PyObject*args)
 	return NULL;
     }
 
-    oresult = PyBytes_FromString(cresult);
+    oresult = PyString_FromString(cresult);
     RpcStringFree(&cresult);
     return oresult;
 
@@ -136,14 +136,14 @@ static FNFCIGETNEXTCABINET(cb_getnextcabinet)
 	PyObject *result = PyObject_CallMethod(pv, "getnextcabinet", "i", pccab->iCab);
 	if (result == NULL)
 	    return -1;
-	if (!PyBytes_Check(result)) {
+	if (!PyString_Check(result)) {
 	    PyErr_Format(PyExc_TypeError, 
 		"Incorrect return type %s from getnextcabinet",
 		result->ob_type->tp_name);
 	    Py_DECREF(result);
 	    return FALSE;
 	}
-	strncpy(pccab->szCab, PyBytes_AsString(result), sizeof(pccab->szCab));
+	strncpy(pccab->szCab, PyString_AsString(result), sizeof(pccab->szCab));
 	return TRUE;
     }
     return FALSE;
@@ -554,7 +554,7 @@ summary_getproperty(msiobj* si, PyObject *args)
 	    PyErr_SetString(PyExc_NotImplementedError, "FILETIME result");
 	    return NULL;
 	case VT_LPSTR:
-	    result = PyBytes_FromStringAndSize(sval, ssize);
+	    result = PyString_FromStringAndSize(sval, ssize);
 	    if (sval != sbuf)
 		free(sval);
 	    return result;
@@ -586,9 +586,9 @@ summary_setproperty(msiobj* si, PyObject *args)
     if (!PyArg_ParseTuple(args, "iO:SetProperty", &field, &data))
 	return NULL;
 
-    if (PyBytes_Check(data)) {
+    if (PyString_Check(data)) {
 	status = MsiSummaryInfoSetProperty(si->h, field, VT_LPSTR,
-	    0, NULL, PyBytes_AsString(data));
+	    0, NULL, PyString_AsString(data));
     } else if (PyInt_Check(data)) {
 	status = MsiSummaryInfoSetProperty(si->h, field, VT_I4,
 	    PyInt_AsLong(data), NULL, NULL);

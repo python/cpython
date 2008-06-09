@@ -104,7 +104,7 @@ PyAPI_FUNC(void) PyErr_NormalizeException(PyObject**, PyObject**, PyObject**);
 
 #define PyExceptionClass_Name(x)				   \
 	(PyClass_Check((x))					   \
-	 ? PyBytes_AS_STRING(((PyClassObject*)(x))->cl_name)	   \
+	 ? PyString_AS_STRING(((PyClassObject*)(x))->cl_name)	   \
 	 : (char *)(((PyTypeObject*)(x))->tp_name))
 
 #define PyExceptionInstance_Class(x)					\

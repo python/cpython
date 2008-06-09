@@ -168,7 +168,7 @@ escape_decode(PyObject *self,
     if (!PyArg_ParseTuple(args, "s#|z:escape_decode",
 			  &data, &size, &errors))
 	return NULL;
-    return codec_tuple(PyBytes_DecodeEscape(data, size, errors, 0, NULL),
+    return codec_tuple(PyString_DecodeEscape(data, size, errors, 0, NULL),
 		       size);
 }
 
@@ -182,21 +182,21 @@ escape_encode(PyObject *self,
 	Py_ssize_t len;
 
 	if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
-			      &PyBytes_Type, &str, &errors))
+			      &PyString_Type, &str, &errors))
 		return NULL;
 
-	str = PyBytes_Repr(str, 0);
+	str = PyString_Repr(str, 0);
 	if (!str)
 		return NULL;
 
 	/* The string will be quoted. Unquote, similar to unicode-escape. */
-	buf = PyBytes_AS_STRING (str);
-	len = PyBytes_GET_SIZE (str);
+	buf = PyString_AS_STRING (str);
+	len = PyString_GET_SIZE (str);
 	memmove(buf, buf+1, len-2);
-	if (_PyBytes_Resize(&str, len-2) < 0)
+	if (_PyString_Resize(&str, len-2) < 0)
 		return NULL;
 	
-	return codec_tuple(str, PyBytes_Size(str));
+	return codec_tuple(str, PyString_Size(str));
 }
 
 #ifdef Py_USING_UNICODE
@@ -640,7 +640,7 @@ readbuffer_encode(PyObject *self,
 			  &data, &size, &errors))
 	return NULL;
 
-    return codec_tuple(PyBytes_FromStringAndSize(data, size),
+    return codec_tuple(PyString_FromStringAndSize(data, size),
 		       size);
 }
 
@@ -656,7 +656,7 @@ charbuffer_encode(PyObject *self,
 			  &data, &size, &errors))
 	return NULL;
 
-    return codec_tuple(PyBytes_FromStringAndSize(data, size),
+    return codec_tuple(PyString_FromStringAndSize(data, size),
 		       size);
 }
 
@@ -676,13 +676,13 @@ unicode_internal_encode(PyObject *self,
     if (PyUnicode_Check(obj)) {
 	data = PyUnicode_AS_DATA(obj);
 	size = PyUnicode_GET_DATA_SIZE(obj);
-	return codec_tuple(PyBytes_FromStringAndSize(data, size),
+	return codec_tuple(PyString_FromStringAndSize(data, size),
 			   size);
     }
     else {
 	if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
 	    return NULL;
-	return codec_tuple(PyBytes_FromStringAndSize(data, size),
+	return codec_tuple(PyString_FromStringAndSize(data, size),
 			   size);
     }
 }

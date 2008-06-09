@@ -287,13 +287,13 @@ buffer_repr(PyBufferObject *self)
 	const char *status = self->b_readonly ? "read-only" : "read-write";
 
 	if ( self->b_base == NULL )
-		return PyBytes_FromFormat("<%s buffer ptr %p, size %zd at %p>",
+		return PyString_FromFormat("<%s buffer ptr %p, size %zd at %p>",
 					   status,
 					   self->b_ptr,
 					   self->b_size,
 					   self);
 	else
-		return PyBytes_FromFormat(
+		return PyString_FromFormat(
 			"<%s buffer for %p, size %zd, offset %zd at %p>",
 			status,
 			self->b_base,
@@ -318,7 +318,7 @@ buffer_hash(PyBufferObject *self)
 	 * underlying memory is immutable.  b_readonly is a necessary but not
 	 * sufficient condition for a buffer to be hashable.  Perhaps it would
 	 * be better to only allow hashing if the underlying object is known to
-	 * be immutable (e.g. PyBytes_Check() is true).  Another idea would
+	 * be immutable (e.g. PyString_Check() is true).  Another idea would
 	 * be to call tp_hash on the underlying object and see if it raises
 	 * an error. */
 	if ( !self->b_readonly )
@@ -349,7 +349,7 @@ buffer_str(PyBufferObject *self)
 	Py_ssize_t size;
 	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
 		return NULL;
-	return PyBytes_FromStringAndSize((const char *)ptr, size);
+	return PyString_FromStringAndSize((const char *)ptr, size);
 }
 
 /* Sequence methods */
@@ -401,10 +401,10 @@ buffer_concat(PyBufferObject *self, PyObject *other)
 	if ( (count = (*pb->bf_getreadbuffer)(other, 0, &ptr2)) < 0 )
 		return NULL;
 
- 	ob = PyBytes_FromStringAndSize(NULL, size + count);
+ 	ob = PyString_FromStringAndSize(NULL, size + count);
 	if ( ob == NULL )
 		return NULL;
- 	p = PyBytes_AS_STRING(ob);
+ 	p = PyString_AS_STRING(ob);
  	memcpy(p, ptr1, size);
  	memcpy(p + size, ptr2, count);
 
@@ -426,11 +426,11 @@ buffer_repeat(PyBufferObject *self, Py_ssize_t count)
 		count = 0;
 	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
 		return NULL;
-	ob = PyBytes_FromStringAndSize(NULL, size * count);
+	ob = PyString_FromStringAndSize(NULL, size * count);
 	if ( ob == NULL )
 		return NULL;
 
-	p = PyBytes_AS_STRING(ob);
+	p = PyString_AS_STRING(ob);
 	while ( count-- )
 	{
 	    memcpy(p, ptr, size);
@@ -454,7 +454,7 @@ buffer_item(PyBufferObject *self, Py_ssize_t idx)
 		PyErr_SetString(PyExc_IndexError, "buffer index out of range");
 		return NULL;
 	}
-	return PyBytes_FromStringAndSize((char *)ptr + idx, 1);
+	return PyString_FromStringAndSize((char *)ptr + idx, 1);
 }
 
 static PyObject *
@@ -472,7 +472,7 @@ buffer_slice(PyBufferObject *self, Py_ssize_t left, Py_ssize_t right)
 		right = size;
 	if ( right < left )
 		right = left;
-	return PyBytes_FromStringAndSize((char *)ptr + left,
+	return PyString_FromStringAndSize((char *)ptr + left,
 					  right - left);
 }
 
@@ -501,9 +501,9 @@ buffer_subscript(PyBufferObject *self, PyObject *item)
 		}
 
 		if (slicelength <= 0)
-			return PyBytes_FromStringAndSize("", 0);
+			return PyString_FromStringAndSize("", 0);
 		else if (step == 1)
-			return PyBytes_FromStringAndSize((char *)p + start,
+			return PyString_FromStringAndSize((char *)p + start,
 							  stop - start);
 		else {
 			PyObject *result;
@@ -518,7 +518,7 @@ buffer_subscript(PyBufferObject *self, PyObject *item)
 				result_buf[i] = source_buf[cur];
 			}
 
-			result = PyBytes_FromStringAndSize(result_buf,
+			result = PyString_FromStringAndSize(result_buf,
 							    slicelength);
 			PyMem_Free(result_buf);
 			return result;

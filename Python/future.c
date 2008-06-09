@@ -20,7 +20,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 	names = s->v.ImportFrom.names;
 	for (i = 0; i < asdl_seq_LEN(names); i++) {
                 alias_ty name = (alias_ty)asdl_seq_GET(names, i);
-		const char *feature = PyBytes_AsString(name->name);
+		const char *feature = PyString_AsString(name->name);
 		if (!feature)
 			return 0;
 		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
@@ -59,7 +59,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 
 	static PyObject *future;
 	if (!future) {
-		future = PyBytes_InternFromString("__future__");
+		future = PyString_InternFromString("__future__");
 		if (!future)
 			return 0;
 	}

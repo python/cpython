@@ -149,7 +149,7 @@ meth_get__doc__(PyCFunctionObject *m, void *closure)
 	const char *doc = m->m_ml->ml_doc;
 
 	if (doc != NULL)
-		return PyBytes_FromString(doc);
+		return PyString_FromString(doc);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -157,7 +157,7 @@ meth_get__doc__(PyCFunctionObject *m, void *closure)
 static PyObject *
 meth_get__name__(PyCFunctionObject *m, void *closure)
 {
-	return PyBytes_FromString(m->m_ml->ml_name);
+	return PyString_FromString(m->m_ml->ml_name);
 }
 
 static int
@@ -202,9 +202,9 @@ static PyObject *
 meth_repr(PyCFunctionObject *m)
 {
 	if (m->m_self == NULL)
-		return PyBytes_FromFormat("<built-in function %s>",
+		return PyString_FromFormat("<built-in function %s>",
 					   m->m_ml->ml_name);
-	return PyBytes_FromFormat("<built-in method %s of %s object at %p>",
+	return PyString_FromFormat("<built-in method %s of %s object at %p>",
 				   m->m_ml->ml_name,
 				   m->m_self->ob_type->tp_name,
 				   m->m_self);
@@ -333,7 +333,7 @@ listmethodchain(PyMethodChain *chain)
 	i = 0;
 	for (c = chain; c != NULL; c = c->link) {
 		for (ml = c->methods; ml->ml_name != NULL; ml++) {
-			PyList_SetItem(v, i, PyBytes_FromString(ml->ml_name));
+			PyList_SetItem(v, i, PyString_FromString(ml->ml_name));
 			i++;
 		}
 	}
@@ -360,7 +360,7 @@ Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
 		if (strcmp(name, "__doc__") == 0) {
 			const char *doc = self->ob_type->tp_doc;
 			if (doc != NULL)
-				return PyBytes_FromString(doc);
+				return PyString_FromString(doc);
 		}
 	}
 	while (chain != NULL) {

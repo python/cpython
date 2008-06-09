@@ -79,9 +79,9 @@ canon(char *path)
   char *buf;
   e=xosfscontrol_canonicalise_path(path,0,0,0,0,&len);
   if(e) return riscos_oserror();
-  obj=PyBytes_FromStringAndSize(NULL,-len);
+  obj=PyString_FromStringAndSize(NULL,-len);
   if(obj==NULL) return NULL;
-  buf=PyBytes_AsString(obj);
+  buf=PyString_AsString(obj);
   e=xosfscontrol_canonicalise_path(path,buf,0,0,1-len,&len);
   if(len!=1) return riscos_error("Error expanding path");
   if(!e) return obj;
@@ -131,7 +131,7 @@ riscos_listdir(PyObject *self, PyObject *args)
 	  { Py_DECREF(d);return riscos_oserror();
 	  }
 	  if(count)
-	  { v=PyBytes_FromString(buf);
+	  { v=PyString_FromString(buf);
 	    if(!v) { Py_DECREF(d);return 0;}
 	    if(PyList_Append(d,v)) {Py_DECREF(d);Py_DECREF(v);return 0;}
 	  }
@@ -320,7 +320,7 @@ riscos_getenv(PyObject *self, PyObject *args)
   char *name,*value;
   if(!PyArg_ParseTuple(args,"s:getenv",&name)) return NULL;
   value=getenv(name);
-  if(value) return PyBytes_FromString(value);
+  if(value) return PyString_FromString(value);
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -371,7 +371,7 @@ riscos_getenvdict(PyObject *self, PyObject *args)
          os_VARTYPE_EXPANDED,&size,(int *)&context,0))
   { PyObject *v;
     value[size]='\0';
-    v = PyBytes_FromString(value);
+    v = PyString_FromString(value);
     if (v == NULL) continue;
     PyDict_SetItemString(dict, context, v);
     Py_DECREF(v);

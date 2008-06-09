@@ -472,7 +472,7 @@ init_curses_panel(void)
     PyDict_SetItemString(d, "error", PyCursesError);
 
     /* Make the version available */
-    v = PyBytes_FromString(PyCursesVersion);
+    v = PyString_FromString(PyCursesVersion);
     PyDict_SetItemString(d, "version", v);
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);

@@ -162,17 +162,17 @@ lad_read(lad_t *self, PyObject *args)
 	
     if (!PyArg_ParseTuple(args, "i:read", &size))
         return NULL;
-    rv = PyBytes_FromStringAndSize(NULL, size);
+    rv = PyString_FromStringAndSize(NULL, size);
     if (rv == NULL)
         return NULL;
-    cp = PyBytes_AS_STRING(rv);
+    cp = PyString_AS_STRING(rv);
     if ((count = read(self->x_fd, cp, size)) < 0) {
         PyErr_SetFromErrno(LinuxAudioError);
         Py_DECREF(rv);
         return NULL;
     }
     self->x_icount += count;
-    _PyBytes_Resize(&rv, count);
+    _PyString_Resize(&rv, count);
     return rv;
 }
 

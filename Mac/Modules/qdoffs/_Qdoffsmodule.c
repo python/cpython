@@ -609,7 +609,7 @@ static PyObject *Qdoffs_GetPixMapBytes(PyObject *_self, PyObject *_args)
 	if ( !PyArg_ParseTuple(_args, "O&ii", ResObj_Convert, &pm, &from, &length) )
 	        return NULL;
 	cp = GetPixBaseAddr(pm)+from;
-	_res = PyBytes_FromStringAndSize(cp, length);
+	_res = PyString_FromStringAndSize(cp, length);
 	return _res;
 
 }

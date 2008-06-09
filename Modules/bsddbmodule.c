@@ -312,7 +312,7 @@ bsddb_subscript(bsddbobject *dp, PyObject *key)
 		return NULL;
 	}
 
-	result = PyBytes_FromStringAndSize(data, (int)drec.size);
+	result = PyString_FromStringAndSize(data, (int)drec.size);
 	if (data != buf) free(data);
 	return result;
 }
@@ -424,7 +424,7 @@ bsddb_keys(bsddbobject *dp)
 		if (dp->di_type == DB_RECNO)
 			item = PyInt_FromLong(*((int*)data));
 		else
-			item = PyBytes_FromStringAndSize(data,
+			item = PyString_FromStringAndSize(data,
 							  (int)krec.size);
 		if (data != buf) free(data);
 		if (item == NULL) {

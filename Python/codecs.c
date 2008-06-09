@@ -61,10 +61,10 @@ PyObject *normalizestring(const char *string)
 	return NULL;
     }
 	
-    v = PyBytes_FromStringAndSize(NULL, len);
+    v = PyString_FromStringAndSize(NULL, len);
     if (v == NULL)
 	return NULL;
-    p = PyBytes_AS_STRING(v);
+    p = PyString_AS_STRING(v);
     for (i = 0; i < len; i++) {
         register char ch = string[i];
         if (ch == ' ')
@@ -112,7 +112,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     v = normalizestring(encoding);
     if (v == NULL)
 	goto onError;
-    PyBytes_InternInPlace(&v);
+    PyString_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
     result = PyDict_GetItem(interp->codec_search_cache, v);
@@ -190,7 +190,7 @@ PyObject *args_tuple(PyObject *object,
     if (errors) {
 	PyObject *v;
 	
-	v = PyBytes_FromString(errors);
+	v = PyString_FromString(errors);
 	if (v == NULL) {
 	    Py_DECREF(args);
 	    return NULL;
@@ -451,7 +451,7 @@ static void wrong_exception_type(PyObject *exc)
 	    if (string != NULL) {
 	        PyErr_Format(PyExc_TypeError,
 		    "don't know how to handle %.400s in error callback",
-		    PyBytes_AS_STRING(string));
+		    PyString_AS_STRING(string));
 	        Py_DECREF(string);
 	    }
 	}

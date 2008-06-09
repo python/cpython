@@ -73,9 +73,9 @@ static PyObject *
 cell_repr(PyCellObject *op)
 {
 	if (op->ob_ref == NULL)
-		return PyBytes_FromFormat("<cell at %p: empty>", op);
+		return PyString_FromFormat("<cell at %p: empty>", op);
 
-	return PyBytes_FromFormat("<cell at %p: %.80s object at %p>",
+	return PyString_FromFormat("<cell at %p: %.80s object at %p>",
 				   op, op->ob_ref->ob_type->tp_name,
 				   op->ob_ref);
 }

@@ -424,7 +424,7 @@ PyHKEY_strFunc(PyObject *ob)
 	PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
 	char resBuf[160];
 	wsprintf(resBuf, "<PyHKEY:%p>", pyhkey->hkey);
-	return PyBytes_FromString(resBuf);
+	return PyString_FromString(resBuf);
 }
 
 static int
@@ -767,11 +767,11 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 						return FALSE;
 					need_decref = 1;
 				}
-				if (!PyBytes_Check(value))
+				if (!PyString_Check(value))
 					return FALSE;
 				*retDataSize = 1 + strlen(
-					PyBytes_AS_STRING(
-						(PyBytesObject *)value));
+					PyString_AS_STRING(
+						(PyStringObject *)value));
 			}
 			*retDataBuf = (BYTE *)PyMem_NEW(DWORD, *retDataSize);
 			if (*retDataBuf==NULL){
@@ -782,8 +782,8 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 				strcpy((char *)*retDataBuf, "");
 			else
 				strcpy((char *)*retDataBuf,
-				       PyBytes_AS_STRING(
-				       		(PyBytesObject *)value));
+				       PyString_AS_STRING(
+				       		(PyStringObject *)value));
 			if (need_decref)
 				Py_DECREF(value);
 			break;
@@ -808,7 +808,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 					PyObject *t;
 					t = PyList_GET_ITEM(
 						(PyListObject *)value,j);
-					if (PyBytes_Check(t)) {
+					if (PyString_Check(t)) {
 						obs[j] = t;
 						Py_INCREF(t);
 					} else if (PyUnicode_Check(t)) {
@@ -821,8 +821,8 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 					} else
 						goto reg_multi_fail;
 					size += 1 + strlen(
-						PyBytes_AS_STRING(
-							(PyBytesObject *)obs[j]));
+						PyString_AS_STRING(
+							(PyStringObject *)obs[j]));
 				}
 
 				*retDataSize = size + 1;
@@ -839,11 +839,11 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 					PyObject *t;
 					t = obs[j];
 					strcpy(P,
-					       PyBytes_AS_STRING(
-					       		(PyBytesObject *)t));
+					       PyString_AS_STRING(
+					       		(PyStringObject *)t));
 					P += 1 + strlen(
-						PyBytes_AS_STRING(
-							(PyBytesObject *)t));
+						PyString_AS_STRING(
+							(PyStringObject *)t));
 					Py_DECREF(obs[j]);
 				}
 				/* And doubly-terminate the list... */
@@ -1085,7 +1085,7 @@ PyEnumKey(PyObject *self, PyObject *args)
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKeyEx");
 
-	retStr = PyBytes_FromStringAndSize(tmpbuf, len);
+	retStr = PyString_FromStringAndSize(tmpbuf, len);
 	return retStr;  /* can be NULL */
 }
 
@@ -1303,17 +1303,17 @@ PyQueryValue(PyObject *self, PyObject *args)
 	    != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValue");
-	retStr = PyBytes_FromStringAndSize(NULL, bufSize);
+	retStr = PyString_FromStringAndSize(NULL, bufSize);
 	if (retStr == NULL)
 		return NULL;
-	retBuf = PyBytes_AS_STRING(retStr);
+	retBuf = PyString_AS_STRING(retStr);
 	if ((rc = RegQueryValue(hKey, subKey, retBuf, &bufSize))
 	    != ERROR_SUCCESS) {
 		Py_DECREF(retStr);
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValue");
 	}
-	_PyBytes_Resize(&retStr, strlen(retBuf));
+	_PyString_Resize(&retStr, strlen(retBuf));
 	return retStr;
 }
 
@@ -1414,14 +1414,14 @@ PySetValue(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	/* XXX - need Unicode support */
-	str = PyBytes_AsString(obStrVal);
+	str = PyString_AsString(obStrVal);
 	if (str == NULL)
 		return NULL;
-	len = PyBytes_Size(obStrVal);
+	len = PyString_Size(obStrVal);
 	if (obSubKey == Py_None)
 		subKey = NULL;
 	else {
-		subKey = PyBytes_AsString(obSubKey);
+		subKey = PyString_AsString(obSubKey);
 		if (subKey == NULL)
 			return NULL;
 	}

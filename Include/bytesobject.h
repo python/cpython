@@ -1,5 +1,5 @@
 
-/* Bytes (String) object interface */
+/* String (Bytes) object interface */
 
 #ifndef Py_BYTESOBJECT_H
 #define Py_BYTESOBJECT_H
@@ -10,7 +10,7 @@ extern "C" {
 #include <stdarg.h>
 
 /*
-Type PyBytesObject represents a character string.  An extra zero byte is
+Type PyStringObject represents a character string.  An extra zero byte is
 reserved at the end to ensure it is zero-terminated, but a size is
 present so strings with null bytes in them can be represented.  This
 is an immutable object type.
@@ -46,61 +46,61 @@ typedef struct {
      *       'interned' dictionary; in this case the two references
      *       from 'interned' to this object are *not counted* in ob_refcnt.
      */
-} PyBytesObject;
+} PyStringObject;
 
 #define SSTATE_NOT_INTERNED 0
 #define SSTATE_INTERNED_MORTAL 1
 #define SSTATE_INTERNED_IMMORTAL 2
 
 PyAPI_DATA(PyTypeObject) PyBaseString_Type;
-PyAPI_DATA(PyTypeObject) PyBytes_Type;
+PyAPI_DATA(PyTypeObject) PyString_Type;
 
-#define PyBytes_Check(op) \
+#define PyString_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_STRING_SUBCLASS)
-#define PyBytes_CheckExact(op) (Py_TYPE(op) == &PyBytes_Type)
+#define PyString_CheckExact(op) (Py_TYPE(op) == &PyString_Type)
 
-PyAPI_FUNC(PyObject *) PyBytes_FromStringAndSize(const char *, Py_ssize_t);
-PyAPI_FUNC(PyObject *) PyBytes_FromString(const char *);
-PyAPI_FUNC(PyObject *) PyBytes_FromFormatV(const char*, va_list)
+PyAPI_FUNC(PyObject *) PyString_FromStringAndSize(const char *, Py_ssize_t);
+PyAPI_FUNC(PyObject *) PyString_FromString(const char *);
+PyAPI_FUNC(PyObject *) PyString_FromFormatV(const char*, va_list)
 				Py_GCC_ATTRIBUTE((format(printf, 1, 0)));
-PyAPI_FUNC(PyObject *) PyBytes_FromFormat(const char*, ...)
+PyAPI_FUNC(PyObject *) PyString_FromFormat(const char*, ...)
 				Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
-PyAPI_FUNC(Py_ssize_t) PyBytes_Size(PyObject *);
-PyAPI_FUNC(char *) PyBytes_AsString(PyObject *);
-PyAPI_FUNC(PyObject *) PyBytes_Repr(PyObject *, int);
-PyAPI_FUNC(void) PyBytes_Concat(PyObject **, PyObject *);
-PyAPI_FUNC(void) PyBytes_ConcatAndDel(PyObject **, PyObject *);
-PyAPI_FUNC(int) _PyBytes_Resize(PyObject **, Py_ssize_t);
-PyAPI_FUNC(int) _PyBytes_Eq(PyObject *, PyObject*);
-PyAPI_FUNC(PyObject *) PyBytes_Format(PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyBytes_FormatLong(PyObject*, int, int,
+PyAPI_FUNC(Py_ssize_t) PyString_Size(PyObject *);
+PyAPI_FUNC(char *) PyString_AsString(PyObject *);
+PyAPI_FUNC(PyObject *) PyString_Repr(PyObject *, int);
+PyAPI_FUNC(void) PyString_Concat(PyObject **, PyObject *);
+PyAPI_FUNC(void) PyString_ConcatAndDel(PyObject **, PyObject *);
+PyAPI_FUNC(int) _PyString_Resize(PyObject **, Py_ssize_t);
+PyAPI_FUNC(int) _PyString_Eq(PyObject *, PyObject*);
+PyAPI_FUNC(PyObject *) PyString_Format(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyString_FormatLong(PyObject*, int, int,
 						  int, char**, int*);
-PyAPI_FUNC(PyObject *) PyBytes_DecodeEscape(const char *, Py_ssize_t, 
+PyAPI_FUNC(PyObject *) PyString_DecodeEscape(const char *, Py_ssize_t, 
 						   const char *, Py_ssize_t,
 						   const char *);
 
-PyAPI_FUNC(void) PyBytes_InternInPlace(PyObject **);
-PyAPI_FUNC(void) PyBytes_InternImmortal(PyObject **);
-PyAPI_FUNC(PyObject *) PyBytes_InternFromString(const char *);
+PyAPI_FUNC(void) PyString_InternInPlace(PyObject **);
+PyAPI_FUNC(void) PyString_InternImmortal(PyObject **);
+PyAPI_FUNC(PyObject *) PyString_InternFromString(const char *);
 PyAPI_FUNC(void) _Py_ReleaseInternedStrings(void);
 
 /* Use only if you know it's a string */
-#define PyBytes_CHECK_INTERNED(op) (((PyBytesObject *)(op))->ob_sstate)
+#define PyString_CHECK_INTERNED(op) (((PyStringObject *)(op))->ob_sstate)
 
 /* Macro, trading safety for speed */
-#define PyBytes_AS_STRING(op) (((PyBytesObject *)(op))->ob_sval)
-#define PyBytes_GET_SIZE(op)  Py_SIZE(op)
+#define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)
+#define PyString_GET_SIZE(op)  Py_SIZE(op)
 
-/* _PyBytes_Join(sep, x) is like sep.join(x).  sep must be PyBytesObject*,
+/* _PyString_Join(sep, x) is like sep.join(x).  sep must be PyStringObject*,
    x must be an iterable object. */
-PyAPI_FUNC(PyObject *) _PyBytes_Join(PyObject *sep, PyObject *x);
+PyAPI_FUNC(PyObject *) _PyString_Join(PyObject *sep, PyObject *x);
 
 /* --- Generic Codecs ----------------------------------------------------- */
 
 /* Create an object by decoding the encoded string s of the
    given size. */
 
-PyAPI_FUNC(PyObject*) PyBytes_Decode(
+PyAPI_FUNC(PyObject*) PyString_Decode(
     const char *s,              /* encoded string */
     Py_ssize_t size,            /* size of buffer */
     const char *encoding,       /* encoding */
@@ -110,7 +110,7 @@ PyAPI_FUNC(PyObject*) PyBytes_Decode(
 /* Encodes a char buffer of the given size and returns a 
    Python object. */
 
-PyAPI_FUNC(PyObject*) PyBytes_Encode(
+PyAPI_FUNC(PyObject*) PyString_Encode(
     const char *s,              /* string char buffer */
     Py_ssize_t size,            /* number of chars to encode */
     const char *encoding,       /* encoding */
@@ -120,7 +120,7 @@ PyAPI_FUNC(PyObject*) PyBytes_Encode(
 /* Encodes a string object and returns the result as Python 
    object. */
 
-PyAPI_FUNC(PyObject*) PyBytes_AsEncodedObject(
+PyAPI_FUNC(PyObject*) PyString_AsEncodedObject(
     PyObject *str,	 	/* string object */
     const char *encoding,	/* encoding */
     const char *errors		/* error handling */
@@ -132,9 +132,9 @@ PyAPI_FUNC(PyObject*) PyBytes_AsEncodedObject(
    If the codec returns an Unicode object, the object is converted
    back to a string using the default encoding.
 
-   DEPRECATED - use PyBytes_AsEncodedObject() instead. */
+   DEPRECATED - use PyString_AsEncodedObject() instead. */
 
-PyAPI_FUNC(PyObject*) PyBytes_AsEncodedString(
+PyAPI_FUNC(PyObject*) PyString_AsEncodedString(
     PyObject *str,	 	/* string object */
     const char *encoding,	/* encoding */
     const char *errors		/* error handling */
@@ -143,7 +143,7 @@ PyAPI_FUNC(PyObject*) PyBytes_AsEncodedString(
 /* Decodes a string object and returns the result as Python 
    object. */
 
-PyAPI_FUNC(PyObject*) PyBytes_AsDecodedObject(
+PyAPI_FUNC(PyObject*) PyString_AsDecodedObject(
     PyObject *str,	 	/* string object */
     const char *encoding,	/* encoding */
     const char *errors		/* error handling */
@@ -155,9 +155,9 @@ PyAPI_FUNC(PyObject*) PyBytes_AsDecodedObject(
    If the codec returns an Unicode object, the object is converted
    back to a string using the default encoding.
 
-   DEPRECATED - use PyBytes_AsDecodedObject() instead. */
+   DEPRECATED - use PyString_AsDecodedObject() instead. */
 
-PyAPI_FUNC(PyObject*) PyBytes_AsDecodedString(
+PyAPI_FUNC(PyObject*) PyString_AsDecodedString(
     PyObject *str,	 	/* string object */
     const char *encoding,	/* encoding */
     const char *errors		/* error handling */
@@ -169,7 +169,7 @@ PyAPI_FUNC(PyObject*) PyBytes_AsDecodedString(
    0-terminated (passing a string with embedded NULL characters will
    cause an exception).  */
 
-PyAPI_FUNC(int) PyBytes_AsStringAndSize(
+PyAPI_FUNC(int) PyString_AsStringAndSize(
     register PyObject *obj,	/* string or Unicode object */
     register char **s,		/* pointer to buffer variable */
     register Py_ssize_t *len	/* pointer to length variable or NULL
@@ -181,7 +181,7 @@ PyAPI_FUNC(int) PyBytes_AsStringAndSize(
    into the string pointed to by buffer.  For the argument descriptions,
    see Objects/stringlib/localeutil.h */
 
-PyAPI_FUNC(int) _PyBytes_InsertThousandsGrouping(char *buffer,
+PyAPI_FUNC(int) _PyString_InsertThousandsGrouping(char *buffer,
 						  Py_ssize_t len,
 						  char *plast,
 						  Py_ssize_t buf_size,

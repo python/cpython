@@ -23,14 +23,14 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self = (Noddy *)type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->first = PyBytes_FromString("");
+        self->first = PyString_FromString("");
         if (self->first == NULL)
           {
             Py_DECREF(self);
             return NULL;
           }
         
-        self->last = PyBytes_FromString("");
+        self->last = PyString_FromString("");
         if (self->last == NULL)
           {
             Py_DECREF(self);
@@ -90,7 +90,7 @@ Noddy_name(Noddy* self)
     PyObject *args, *result;
 
     if (format == NULL) {
-        format = PyBytes_FromString("%s %s");
+        format = PyString_FromString("%s %s");
         if (format == NULL)
             return NULL;
     }
@@ -109,7 +109,7 @@ Noddy_name(Noddy* self)
     if (args == NULL)
         return NULL;
 
-    result = PyBytes_Format(format, args);
+    result = PyString_Format(format, args);
     Py_DECREF(args);
     
     return result;

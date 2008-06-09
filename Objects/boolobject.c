@@ -25,10 +25,10 @@ bool_repr(PyBoolObject *self)
 
 	if (self->ob_ival)
 		s = true_str ? true_str :
-			(true_str = PyBytes_InternFromString("True"));
+			(true_str = PyString_InternFromString("True"));
 	else
 		s = false_str ? false_str :
-			(false_str = PyBytes_InternFromString("False"));
+			(false_str = PyString_InternFromString("False"));
 	Py_XINCREF(s);
 	return s;
 }

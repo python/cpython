@@ -229,7 +229,7 @@ exit status will be one (i.e., failure)."
 static PyObject *
 sys_getdefaultencoding(PyObject *self)
 {
-	return PyBytes_FromString(PyUnicode_GetDefaultEncoding());
+	return PyString_FromString(PyUnicode_GetDefaultEncoding());
 }
 
 PyDoc_STRVAR(getdefaultencoding_doc,
@@ -261,7 +261,7 @@ static PyObject *
 sys_getfilesystemencoding(PyObject *self)
 {
 	if (Py_FileSystemDefaultEncoding)
-		return PyBytes_FromString(Py_FileSystemDefaultEncoding);
+		return PyString_FromString(Py_FileSystemDefaultEncoding);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -290,7 +290,7 @@ trace_init(void)
 	int i;
 	for (i = 0; i < 7; ++i) {
 		if (whatstrings[i] == NULL) {
-			name = PyBytes_InternFromString(whatnames[i]);
+			name = PyString_InternFromString(whatnames[i]);
 			if (name == NULL)
 				return -1;
 			whatstrings[i] = name;
@@ -931,7 +931,7 @@ list_builtin_module_names(void)
 	if (list == NULL)
 		return NULL;
 	for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
-		PyObject *name = PyBytes_FromString(
+		PyObject *name = PyString_FromString(
 			PyImport_Inittab[i].name);
 		if (name == NULL)
 			break;
@@ -971,7 +971,7 @@ PySys_AddWarnOption(char *s)
 		if (warnoptions == NULL)
 			return;
 	}
-	str = PyBytes_FromString(s);
+	str = PyString_FromString(s);
 	if (str != NULL) {
 		PyList_Append(warnoptions, str);
 		Py_DECREF(str);
@@ -1327,7 +1327,7 @@ _PySys_Init(void)
 	Py_XDECREF(syserr);
 
 	SET_SYS_FROM_STRING("version",
-			     PyBytes_FromString(Py_GetVersion()));
+			     PyString_FromString(Py_GetVersion()));
 	SET_SYS_FROM_STRING("hexversion",
 			     PyInt_FromLong(PY_VERSION_HEX));
 	svnversion_init();
@@ -1358,15 +1358,15 @@ _PySys_Init(void)
 	SET_SYS_FROM_STRING("api_version",
 			    PyInt_FromLong(PYTHON_API_VERSION));
 	SET_SYS_FROM_STRING("copyright",
-			    PyBytes_FromString(Py_GetCopyright()));
+			    PyString_FromString(Py_GetCopyright()));
 	SET_SYS_FROM_STRING("platform",
-			    PyBytes_FromString(Py_GetPlatform()));
+			    PyString_FromString(Py_GetPlatform()));
 	SET_SYS_FROM_STRING("executable",
-			    PyBytes_FromString(Py_GetProgramFullPath()));
+			    PyString_FromString(Py_GetProgramFullPath()));
 	SET_SYS_FROM_STRING("prefix",
-			    PyBytes_FromString(Py_GetPrefix()));
+			    PyString_FromString(Py_GetPrefix()));
 	SET_SYS_FROM_STRING("exec_prefix",
-		   	    PyBytes_FromString(Py_GetExecPrefix()));
+		   	    PyString_FromString(Py_GetExecPrefix()));
 	SET_SYS_FROM_STRING("maxsize",
 			    PyInt_FromSsize_t(PY_SSIZE_T_MAX));
 	SET_SYS_FROM_STRING("maxint",
@@ -1393,13 +1393,13 @@ _PySys_Init(void)
 		else
 			value = "little";
 		SET_SYS_FROM_STRING("byteorder",
-				    PyBytes_FromString(value));
+				    PyString_FromString(value));
 	}
 #ifdef MS_COREDLL
 	SET_SYS_FROM_STRING("dllhandle",
 			    PyLong_FromVoidPtr(PyWin_DLLhModule));
 	SET_SYS_FROM_STRING("winver",
-			    PyBytes_FromString(PyWin_DLLVersionString));
+			    PyString_FromString(PyWin_DLLVersionString));
 #endif
 	if (warnoptions == NULL) {
 		warnoptions = PyList_New(0);
@@ -1444,7 +1444,7 @@ makepathobject(char *path, int delim)
 		p = strchr(path, delim);
 		if (p == NULL)
 			p = strchr(path, '\0'); /* End of string */
-		w = PyBytes_FromStringAndSize(path, (Py_ssize_t) (p - path));
+		w = PyString_FromStringAndSize(path, (Py_ssize_t) (p - path));
 		if (w == NULL) {
 			Py_DECREF(v);
 			return NULL;
@@ -1489,14 +1489,14 @@ makeargvobject(int argc, char **argv)
 			if (i == 0) {
 				char* fn = decc$translate_vms(argv[0]);
 				if ((fn == (char *)0) || fn == (char *)-1)
-					v = PyBytes_FromString(argv[0]);
+					v = PyString_FromString(argv[0]);
 				else
-					v = PyBytes_FromString(
+					v = PyString_FromString(
 						decc$translate_vms(argv[0]));
 			} else
-				v = PyBytes_FromString(argv[i]);
+				v = PyString_FromString(argv[i]);
 #else
-			PyObject *v = PyBytes_FromString(argv[i]);
+			PyObject *v = PyString_FromString(argv[i]);
 #endif
 			if (v == NULL) {
 				Py_DECREF(av);
@@ -1600,7 +1600,7 @@ PySys_SetArgv(int argc, char **argv)
 #endif /* Unix */
 		}
 #endif /* All others */
-		a = PyBytes_FromStringAndSize(argv0, n);
+		a = PyString_FromStringAndSize(argv0, n);
 		if (a == NULL)
 			Py_FatalError("no mem for sys.path insertion");
 		if (PyList_Insert(path, 0, a) < 0)

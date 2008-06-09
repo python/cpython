@@ -380,7 +380,7 @@ SHA_digest(SHAobject *self, PyObject *unused)
 
     SHAcopy(self, &temp);
     sha_final(digest, &temp);
-    return PyBytes_FromStringAndSize((const char *)digest, sizeof(digest));
+    return PyString_FromStringAndSize((const char *)digest, sizeof(digest));
 }
 
 PyDoc_STRVAR(SHA_hexdigest__doc__,
@@ -400,10 +400,10 @@ SHA_hexdigest(SHAobject *self, PyObject *unused)
     sha_final(digest, &temp);
 
     /* Create a new string */
-    retval = PyBytes_FromStringAndSize(NULL, sizeof(digest) * 2);
+    retval = PyString_FromStringAndSize(NULL, sizeof(digest) * 2);
     if (!retval)
 	    return NULL;
-    hex_digest = PyBytes_AsString(retval);
+    hex_digest = PyString_AsString(retval);
     if (!hex_digest) {
 	    Py_DECREF(retval);
 	    return NULL;
@@ -463,7 +463,7 @@ SHA_get_digest_size(PyObject *self, void *closure)
 static PyObject *
 SHA_get_name(PyObject *self, void *closure)
 {
-    return PyBytes_FromStringAndSize("SHA1", 4);
+    return PyString_FromStringAndSize("SHA1", 4);
 }
 
 static PyGetSetDef SHA_getseters[] = {

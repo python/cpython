@@ -44,7 +44,7 @@ get_warnings_attr(const char *attr)
     int result;
 
     if (warnings_str == NULL) {
-        warnings_str = PyBytes_InternFromString("warnings");
+        warnings_str = PyString_InternFromString("warnings");
         if (warnings_str == NULL)
             return NULL;
     }
@@ -132,7 +132,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
             return NULL;
 
         if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln))
-            return PyBytes_AsString(action);
+            return PyString_AsString(action);
     }
 
     m = PyImport_ImportModule(MODULE_NAME);
@@ -144,7 +144,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         return NULL;
     action = PyDict_GetItemString(d, DEFAULT_ACTION_NAME);
     if (action != NULL)
-        return PyBytes_AsString(action);
+        return PyString_AsString(action);
 
     PyErr_SetString(PyExc_ValueError,
                     MODULE_NAME "." DEFAULT_ACTION_NAME " not found");
@@ -184,17 +184,17 @@ normalize_module(PyObject *filename)
     if (rc == -1)
         return NULL;
     else if (rc == 0)
-        return PyBytes_FromString("<unknown>");
+        return PyString_FromString("<unknown>");
 
-    mod_str = PyBytes_AsString(filename);
+    mod_str = PyString_AsString(filename);
     if (mod_str == NULL)
 	    return NULL;
-    len = PyBytes_Size(filename);
+    len = PyString_Size(filename);
     if (len < 0)
         return NULL;
     if (len >= 3 &&
 	strncmp(mod_str + (len - 3), ".py", 3) == 0) {
-        module = PyBytes_FromStringAndSize(mod_str, len-3);
+        module = PyString_FromStringAndSize(mod_str, len-3);
     }
     else {
         module = filename;
@@ -258,7 +258,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
     /* Print "  source_line\n" */
     PyFile_WriteString("  ", f_stderr);
     if (sourceline) {
-        char *source_line_str = PyBytes_AS_STRING(sourceline);
+        char *source_line_str = PyString_AS_STRING(sourceline);
         while (*source_line_str == ' ' || *source_line_str == '\t' ||
                 *source_line_str == '\014')
             source_line_str++;
@@ -267,7 +267,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
         PyFile_WriteString("\n", f_stderr);
     }
     else
-        Py_DisplaySourceLine(f_stderr, PyBytes_AS_STRING(filename), lineno);
+        Py_DisplaySourceLine(f_stderr, PyString_AS_STRING(filename), lineno);
     PyErr_Clear();
 }
 
@@ -359,7 +359,7 @@ warn_explicit(PyObject *category, PyObject *message,
             const char *err_str = "???";
 
             if (to_str != NULL)
-                err_str = PyBytes_AS_STRING(to_str);
+                err_str = PyString_AS_STRING(to_str);
             PyErr_Format(PyExc_RuntimeError,
                         "Unrecognized action (%s) in warnings.filters:\n %s",
                         action, err_str);
@@ -380,7 +380,7 @@ warn_explicit(PyObject *category, PyObject *message,
         else {
             const char *msg = "functions overriding warnings.showwarning() "
                                 "must support the 'line' argument";
-            const char *text_char = PyBytes_AS_STRING(text);
+            const char *text_char = PyString_AS_STRING(text);
 
             if (strcmp(msg, text_char) == 0) {
                 /* Prevent infinite recursion by using built-in implementation
@@ -484,7 +484,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup module. */
     *module = PyDict_GetItemString(globals, "__name__");
     if (*module == NULL) {
-        *module = PyBytes_FromString("<string>");
+        *module = PyString_FromString("<string>");
         if (*module == NULL)
             goto handle_error;
     }
@@ -494,8 +494,8 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
     if (*filename != NULL) {
-	    Py_ssize_t len = PyBytes_Size(*filename);
-        const char *file_str = PyBytes_AsString(*filename);
+	    Py_ssize_t len = PyString_Size(*filename);
+        const char *file_str = PyString_AsString(*filename);
 	    if (file_str == NULL || (len < 0 && PyErr_Occurred()))
             goto handle_error;
 
@@ -507,7 +507,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             (tolower(file_str[len-1]) == 'c' ||
                 tolower(file_str[len-1]) == 'o'))
         {
-            *filename = PyBytes_FromStringAndSize(file_str, len-1);
+            *filename = PyString_FromStringAndSize(file_str, len-1);
 	        if (*filename == NULL)
 		        goto handle_error;
 	    }
@@ -515,7 +515,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             Py_INCREF(*filename);
     }
     else {
-        const char *module_str = PyBytes_AsString(*module);
+        const char *module_str = PyString_AsString(*module);
         if (module_str && strcmp(module_str, "__main__") == 0) {
             PyObject *argv = PySys_GetObject("argv");
             if (argv != NULL && PyList_Size(argv) > 0) {
@@ -530,14 +530,14 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
                 }
                 else if (!is_true) {
                     Py_DECREF(*filename);
-                    *filename = PyBytes_FromString("__main__");
+                    *filename = PyString_FromString("__main__");
                     if (*filename == NULL)
                         goto handle_error;
                 }
             }
             else {
                 /* embedded interpreters don't have sys.argv, see bug #839151 */
-                *filename = PyBytes_FromString("__main__");
+                *filename = PyString_FromString("__main__");
 	            if (*filename == NULL)
 	                goto handle_error;
             }
@@ -649,12 +649,12 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *returned;
 
         if (get_source_name == NULL) {
-            get_source_name = PyBytes_InternFromString("get_source");
+            get_source_name = PyString_InternFromString("get_source");
             if (!get_source_name)
                 return NULL;
         }
         if (splitlines_name == NULL) {
-            splitlines_name = PyBytes_InternFromString("splitlines");
+            splitlines_name = PyString_InternFromString("splitlines");
             if (!splitlines_name)
                 return NULL;
         }
@@ -711,7 +711,7 @@ int
 PyErr_WarnEx(PyObject *category, const char *text, Py_ssize_t stack_level)
 {
     PyObject *res;
-    PyObject *message = PyBytes_FromString(text);
+    PyObject *message = PyString_FromString(text);
     if (message == NULL)
         return -1;
 
@@ -745,15 +745,15 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
                    const char *module_str, PyObject *registry)
 {
     PyObject *res;
-    PyObject *message = PyBytes_FromString(text);
-    PyObject *filename = PyBytes_FromString(filename_str);
+    PyObject *message = PyString_FromString(text);
+    PyObject *filename = PyString_FromString(filename_str);
     PyObject *module = NULL;
     int ret = -1;
 
     if (message == NULL || filename == NULL)
         goto exit;
     if (module_str != NULL) {
-        module = PyBytes_FromString(module_str);
+        module = PyString_FromString(module_str);
             if (module == NULL)
                 goto exit;
     }
@@ -803,7 +803,7 @@ create_filter(PyObject *category, const char *action)
 
     if (!strcmp(action, "ignore")) {
         if (ignore_str == NULL) {
-            ignore_str = PyBytes_InternFromString("ignore");
+            ignore_str = PyString_InternFromString("ignore");
             if (ignore_str == NULL)
                 return NULL;
         }
@@ -811,7 +811,7 @@ create_filter(PyObject *category, const char *action)
     }
     else if (!strcmp(action, "error")) {
         if (error_str == NULL) {
-            error_str = PyBytes_InternFromString("error");
+            error_str = PyString_InternFromString("error");
             if (error_str == NULL)
                 return NULL;
         }
@@ -819,7 +819,7 @@ create_filter(PyObject *category, const char *action)
     }
     else if (!strcmp(action, "default")) {
         if (default_str == NULL) {
-            default_str = PyBytes_InternFromString("default");
+            default_str = PyString_InternFromString("default");
             if (default_str == NULL)
                 return NULL;
         }
@@ -892,7 +892,7 @@ _PyWarnings_Init(void)
     if (PyModule_AddObject(m, "once_registry", _once_registry) < 0)
         return;
 
-    default_action = PyBytes_InternFromString("default");
+    default_action = PyString_InternFromString("default");
     if (default_action == NULL)
         return;
     if (PyModule_AddObject(m, DEFAULT_ACTION_NAME, default_action) < 0)

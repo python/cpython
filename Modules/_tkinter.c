@@ -335,8 +335,8 @@ WaitForMainloop(TkappObject* self)
 static char *
 AsString(PyObject *value, PyObject *tmp)
 {
-	if (PyBytes_Check(value))
-		return PyBytes_AsString(value);
+	if (PyString_Check(value))
+		return PyString_AsString(value);
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(value)) {
 		PyObject *v = PyUnicode_AsUTF8String(value);
@@ -347,7 +347,7 @@ AsString(PyObject *value, PyObject *tmp)
 			return NULL;
 		}
 		Py_DECREF(v);
-		return PyBytes_AsString(v);
+		return PyString_AsString(v);
 	}
 #endif
 	else {
@@ -359,7 +359,7 @@ AsString(PyObject *value, PyObject *tmp)
 			return NULL;
 		}
 		Py_DECREF(v);
-		return PyBytes_AsString(v);
+		return PyString_AsString(v);
 	}
 }
 
@@ -462,13 +462,13 @@ Split(char *list)
 		 * Could be a quoted string containing funnies, e.g. {"}.
 		 * Return the string itself.
 		 */
-		return PyBytes_FromString(list);
+		return PyString_FromString(list);
 	}
 
 	if (argc == 0)
-		v = PyBytes_FromString("");
+		v = PyString_FromString("");
 	else if (argc == 1)
-		v = PyBytes_FromString(argv[0]);
+		v = PyString_FromString(argv[0]);
 	else if ((v = PyTuple_New(argc)) != NULL) {
 		int i;
 		PyObject *w;
@@ -530,10 +530,10 @@ SplitObj(PyObject *arg)
 			return result;
 		/* Fall through, returning arg. */
 	}
-	else if (PyBytes_Check(arg)) {
+	else if (PyString_Check(arg)) {
 		int argc;
 		char **argv;
-		char *list = PyBytes_AsString(arg);
+		char *list = PyString_AsString(arg);
 
 		if (Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
 			Py_INCREF(arg);
@@ -541,7 +541,7 @@ SplitObj(PyObject *arg)
 		}
 		Tcl_Free(FREECAST argv);
 		if (argc > 1)
-			return Split(PyBytes_AsString(arg));
+			return Split(PyString_AsString(arg));
 		/* Fall through, returning arg. */
 	}
 	Py_INCREF(arg);
@@ -747,12 +747,12 @@ PyTclObject_dealloc(PyTclObject *self)
 static PyObject *
 PyTclObject_str(PyTclObject *self)
 {
-	if (self->string && PyBytes_Check(self->string)) {
+	if (self->string && PyString_Check(self->string)) {
 		Py_INCREF(self->string);
 		return self->string;
 	}
 	/* XXX Could cache value if it is an ASCII string. */
-	return PyBytes_FromString(Tcl_GetString(self->value));
+	return PyString_FromString(Tcl_GetString(self->value));
 }
 
 static char*
@@ -778,16 +778,16 @@ PyTclObject_string(PyTclObject *self, void *ignored)
 #ifdef Py_USING_UNICODE
 		if (i == len)
 			/* It is an ASCII string. */
-			self->string = PyBytes_FromStringAndSize(s, len);
+			self->string = PyString_FromStringAndSize(s, len);
 		else {
 			self->string = PyUnicode_DecodeUTF8(s, len, "strict");
 			if (!self->string) {
 				PyErr_Clear();
-				self->string = PyBytes_FromStringAndSize(s, len);
+				self->string = PyString_FromStringAndSize(s, len);
 			}
 		}
 #else
-		self->string = PyBytes_FromStringAndSize(s, len);
+		self->string = PyString_FromStringAndSize(s, len);
 #endif
 		if (!self->string)
 			return NULL;
@@ -820,7 +820,7 @@ PyTclObject_repr(PyTclObject *self)
 	char buf[50];
 	PyOS_snprintf(buf, 50, "<%s object at %p>",
 		      self->value->typePtr->name, self->value);
-	return PyBytes_FromString(buf);
+	return PyString_FromString(buf);
 }
 
 static int
@@ -839,7 +839,7 @@ PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
 static PyObject*
 get_typename(PyTclObject* obj, void* ignored)
 {
-	return PyBytes_FromString(obj->value->typePtr->name);
+	return PyString_FromString(obj->value->typePtr->name);
 }
 
 
@@ -908,9 +908,9 @@ AsObj(PyObject *value)
 {
 	Tcl_Obj *result;
 
-	if (PyBytes_Check(value))
-		return Tcl_NewStringObj(PyBytes_AS_STRING(value),
-					PyBytes_GET_SIZE(value));
+	if (PyString_Check(value))
+		return Tcl_NewStringObj(PyString_AS_STRING(value),
+					PyString_GET_SIZE(value));
 	else if (PyBool_Check(value))
 		return Tcl_NewBooleanObj(PyObject_IsTrue(value));
 	else if (PyInt_Check(value))
@@ -999,17 +999,17 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 		}
 
 		if (i == value->length)
-			result = PyBytes_FromStringAndSize(s, len);
+			result = PyString_FromStringAndSize(s, len);
 		else {
 			/* Convert UTF-8 to Unicode string */
 			result = PyUnicode_DecodeUTF8(s, len, "strict");
 			if (result == NULL) {
 				PyErr_Clear();
-				result = PyBytes_FromStringAndSize(s, len);
+				result = PyString_FromStringAndSize(s, len);
 			}
 		}
 #else
-		result = PyBytes_FromStringAndSize(value->bytes, value->length);
+		result = PyString_FromStringAndSize(value->bytes, value->length);
 #endif
 		return result;
 	}
@@ -1023,7 +1023,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 	if (value->typePtr == app->ByteArrayType) {
 		int size;
 		char *data = (char*)Tcl_GetByteArrayFromObj(value, &size);
-		return PyBytes_FromStringAndSize(data, size);
+		return PyString_FromStringAndSize(data, size);
 	}
 
 	if (value->typePtr == app->DoubleType) {
@@ -1092,7 +1092,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 		int size;
 		char *c;
 		c = Tcl_GetStringFromObj(value, &size);
-		return PyBytes_FromStringAndSize(c, size);
+		return PyString_FromStringAndSize(c, size);
 #endif
 	}
 
@@ -1204,19 +1204,19 @@ Tkapp_CallResult(TkappObject *self)
 		}
 
 		if (*p == '\0')
-			res = PyBytes_FromStringAndSize(s, (int)(p-s));
+			res = PyString_FromStringAndSize(s, (int)(p-s));
 		else {
 			/* Convert UTF-8 to Unicode string */
 			p = strchr(p, '\0');
 			res = PyUnicode_DecodeUTF8(s, (int)(p-s), "strict");
 			if (res == NULL) {
 				PyErr_Clear();
-				res = PyBytes_FromStringAndSize(s, (int)(p-s));
+				res = PyString_FromStringAndSize(s, (int)(p-s));
 			}
 		}
 #else
 		p = strchr(p, '\0');
-		res = PyBytes_FromStringAndSize(s, (int)(p-s));
+		res = PyString_FromStringAndSize(s, (int)(p-s));
 #endif
 	}
 	return res;
@@ -1370,7 +1370,7 @@ Tkapp_GlobalCall(PyObject *self, PyObject *args)
 		if (err == TCL_ERROR)
 			res = Tkinter_Error(self);
 		else
-			res = PyBytes_FromString(Tkapp_Result(self));
+			res = PyString_FromString(Tkapp_Result(self));
 		LEAVE_OVERLAP_TCL
 		ckfree(cmd);
 	}
@@ -1396,7 +1396,7 @@ Tkapp_Eval(PyObject *self, PyObject *args)
 	if (err == TCL_ERROR)
 		res = Tkinter_Error(self);
 	else
-		res = PyBytes_FromString(Tkapp_Result(self));
+		res = PyString_FromString(Tkapp_Result(self));
 	LEAVE_OVERLAP_TCL
 	return res;
 }
@@ -1419,7 +1419,7 @@ Tkapp_GlobalEval(PyObject *self, PyObject *args)
 	if (err == TCL_ERROR)
 		res = Tkinter_Error(self);
 	else
-		res = PyBytes_FromString(Tkapp_Result(self));
+		res = PyString_FromString(Tkapp_Result(self));
 	LEAVE_OVERLAP_TCL
 	return res;
 }
@@ -1443,7 +1443,7 @@ Tkapp_EvalFile(PyObject *self, PyObject *args)
 		res = Tkinter_Error(self);
 
 	else
-		res = PyBytes_FromString(Tkapp_Result(self));
+		res = PyString_FromString(Tkapp_Result(self));
 	LEAVE_OVERLAP_TCL
 	return res;
 }
@@ -1466,7 +1466,7 @@ Tkapp_Record(PyObject *self, PyObject *args)
 	if (err == TCL_ERROR)
 		res = Tkinter_Error(self);
 	else
-		res = PyBytes_FromString(Tkapp_Result(self));
+		res = PyString_FromString(Tkapp_Result(self));
 	LEAVE_OVERLAP_TCL
 	return res;
 }
@@ -1511,8 +1511,8 @@ static int
 varname_converter(PyObject *in, void *_out)
 {
 	char **out = (char**)_out;
-	if (PyBytes_Check(in)) {
-		*out = PyBytes_AsString(in);
+	if (PyString_Check(in)) {
+		*out = PyString_AsString(in);
 		return 1;
 	}
 	if (PyTclObject_Check(in)) {
@@ -1676,7 +1676,7 @@ GetVar(PyObject *self, PyObject *args, int flags)
 			res = FromObj(self, tres);
 		}
 		else {
-			res = PyBytes_FromString(Tcl_GetString(tres));
+			res = PyString_FromString(Tcl_GetString(tres));
 		}
 	}
 	LEAVE_OVERLAP_TCL
@@ -1920,7 +1920,7 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
 		goto finally;
 
 	for (i = 0; i < argc; i++) {
-		PyObject *s = PyBytes_FromString(argv[i]);
+		PyObject *s = PyString_FromString(argv[i]);
 		if (!s || PyTuple_SetItem(v, i, s)) {
 			Py_DECREF(v);
 			v = NULL;
@@ -1961,7 +1961,7 @@ Tkapp_Merge(PyObject *self, PyObject *args)
 	PyObject *res = NULL;
 
 	if (s) {
-		res = PyBytes_FromString(s);
+		res = PyString_FromString(s);
 		ckfree(s);
 	}
 
@@ -2011,7 +2011,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		return PythonCmd_Error(interp);
 
 	for (i = 0; i < (argc - 1); i++) {
-		PyObject *s = PyBytes_FromString(argv[i + 1]);
+		PyObject *s = PyString_FromString(argv[i + 1]);
 		if (!s || PyTuple_SetItem(arg, i, s)) {
 			Py_DECREF(arg);
 			return PythonCmd_Error(interp);
@@ -2406,7 +2406,7 @@ Tktt_Repr(PyObject *self)
 
 	PyOS_snprintf(buf, sizeof(buf), "<tktimertoken at %p%s>", v,
 	                v->func == NULL ? ", handler deleted" : "");
-	return PyBytes_FromString(buf);
+	return PyString_FromString(buf);
 }
 
 static PyObject *
@@ -3087,7 +3087,7 @@ ins_long(PyObject *d, char *name, long val)
 static void
 ins_string(PyObject *d, char *name, char *val)
 {
-	PyObject *v = PyBytes_FromString(val);
+	PyObject *v = PyString_FromString(val);
 	if (v) {
 		PyDict_SetItemString(d, name, v);
 		Py_DECREF(v);

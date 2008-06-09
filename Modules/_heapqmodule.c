@@ -687,6 +687,6 @@ init_heapq(void)
 	m = Py_InitModule3("_heapq", heapq_methods, module_doc);
 	if (m == NULL)
     		return;
-	PyModule_AddObject(m, "__about__", PyBytes_FromString(__about__));
+	PyModule_AddObject(m, "__about__", PyString_FromString(__about__));
 }
 

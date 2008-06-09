@@ -22,7 +22,7 @@ PyModule_New(const char *name)
 	m = PyObject_GC_New(PyModuleObject, &PyModule_Type);
 	if (m == NULL)
 		return NULL;
-	nameobj = PyBytes_FromString(name);
+	nameobj = PyString_FromString(name);
 	m->md_dict = PyDict_New();
 	if (m->md_dict == NULL || nameobj == NULL)
 		goto fail;
@@ -68,12 +68,12 @@ PyModule_GetName(PyObject *m)
 	d = ((PyModuleObject *)m)->md_dict;
 	if (d == NULL ||
 	    (nameobj = PyDict_GetItemString(d, "__name__")) == NULL ||
-	    !PyBytes_Check(nameobj))
+	    !PyString_Check(nameobj))
 	{
 		PyErr_SetString(PyExc_SystemError, "nameless module");
 		return NULL;
 	}
-	return PyBytes_AsString(nameobj);
+	return PyString_AsString(nameobj);
 }
 
 char *
@@ -88,12 +88,12 @@ PyModule_GetFilename(PyObject *m)
 	d = ((PyModuleObject *)m)->md_dict;
 	if (d == NULL ||
 	    (fileobj = PyDict_GetItemString(d, "__file__")) == NULL ||
-	    !PyBytes_Check(fileobj))
+	    !PyString_Check(fileobj))
 	{
 		PyErr_SetString(PyExc_SystemError, "module filename missing");
 		return NULL;
 	}
-	return PyBytes_AsString(fileobj);
+	return PyString_AsString(fileobj);
 }
 
 void
@@ -117,8 +117,8 @@ _PyModule_Clear(PyObject *m)
 	/* First, clear only names starting with a single underscore */
 	pos = 0;
 	while (PyDict_Next(d, &pos, &key, &value)) {
-		if (value != Py_None && PyBytes_Check(key)) {
-			char *s = PyBytes_AsString(key);
+		if (value != Py_None && PyString_Check(key)) {
+			char *s = PyString_AsString(key);
 			if (s[0] == '_' && s[1] != '_') {
 				if (Py_VerboseFlag > 1)
 				    PySys_WriteStderr("#   clear[1] %s\n", s);
@@ -130,8 +130,8 @@ _PyModule_Clear(PyObject *m)
 	/* Next, clear all names except for __builtins__ */
 	pos = 0;
 	while (PyDict_Next(d, &pos, &key, &value)) {
-		if (value != Py_None && PyBytes_Check(key)) {
-			char *s = PyBytes_AsString(key);
+		if (value != Py_None && PyString_Check(key)) {
+			char *s = PyString_AsString(key);
 			if (s[0] != '_' || strcmp(s, "__builtins__") != 0) {
 				if (Py_VerboseFlag > 1)
 				    PySys_WriteStderr("#   clear[2] %s\n", s);
@@ -195,9 +195,9 @@ module_repr(PyModuleObject *m)
 	filename = PyModule_GetFilename((PyObject *)m);
 	if (filename == NULL) {
 		PyErr_Clear();
-		return PyBytes_FromFormat("<module '%s' (built-in)>", name);
+		return PyString_FromFormat("<module '%s' (built-in)>", name);
 	}
-	return PyBytes_FromFormat("<module '%s' from '%s'>", name, filename);
+	return PyString_FromFormat("<module '%s' from '%s'>", name, filename);
 }
 
 /* We only need a traverse function, no clear function: If the module

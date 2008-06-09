@@ -2904,12 +2904,12 @@ count_repr(countobject *lz)
 	PyObject *result;
 
         if (lz->cnt != PY_SSIZE_T_MAX)
-		return PyBytes_FromFormat("count(%zd)", lz->cnt);
+		return PyString_FromFormat("count(%zd)", lz->cnt);
 
 	cnt_repr = PyObject_Repr(lz->long_cnt);
 	if (cnt_repr == NULL)
 		return NULL;
-	result = PyBytes_FromFormat("count(%s)", PyBytes_AS_STRING(cnt_repr));
+	result = PyString_FromFormat("count(%s)", PyString_AS_STRING(cnt_repr));
 	Py_DECREF(cnt_repr);
 	return result;
 }
@@ -3221,11 +3221,11 @@ repeat_repr(repeatobject *ro)
 		return NULL;
 
 	if (ro->cnt == -1)
-		result = PyBytes_FromFormat("repeat(%s)",
-			PyBytes_AS_STRING(objrepr));
+		result = PyString_FromFormat("repeat(%s)",
+			PyString_AS_STRING(objrepr));
 	else
-		result = PyBytes_FromFormat("repeat(%s, %zd)",
-			PyBytes_AS_STRING(objrepr), ro->cnt);
+		result = PyString_FromFormat("repeat(%s, %zd)",
+			PyString_AS_STRING(objrepr), ro->cnt);
 	Py_DECREF(objrepr);
 	return result;
 }	

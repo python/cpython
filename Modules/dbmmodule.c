@@ -104,7 +104,7 @@ dbm_subscript(dbmobject *dp, register PyObject *key)
 	drec = dbm_fetch(dp->di_dbm, krec);
 	if ( drec.dptr == 0 ) {
 		PyErr_SetString(PyExc_KeyError,
-				PyBytes_AS_STRING((PyBytesObject *)key));
+				PyString_AS_STRING((PyStringObject *)key));
 		return NULL;
 	}
 	if ( dbm_error(dp->di_dbm) ) {
@@ -112,7 +112,7 @@ dbm_subscript(dbmobject *dp, register PyObject *key)
 		PyErr_SetString(DbmError, "");
 		return NULL;
 	}
-	return PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
+	return PyString_FromStringAndSize(drec.dptr, drec.dsize);
 }
 
 static int
@@ -136,7 +136,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 		if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
 			dbm_clearerr(dp->di_dbm);
 			PyErr_SetString(PyExc_KeyError,
-				      PyBytes_AS_STRING((PyBytesObject *)v));
+				      PyString_AS_STRING((PyStringObject *)v));
 			return -1;
 		}
 	} else {
@@ -166,7 +166,7 @@ dbm_contains(register dbmobject *dp, PyObject *v)
 {
 	datum key, val;
 
-	if (PyBytes_AsStringAndSize(v, (char **)&key.dptr,
+	if (PyString_AsStringAndSize(v, (char **)&key.dptr,
 	                             (Py_ssize_t *)&key.dsize)) {
 		return -1;
 	}
@@ -222,7 +222,7 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
 		return NULL;
 	for (key = dbm_firstkey(dp->di_dbm); key.dptr;
 	     key = dbm_nextkey(dp->di_dbm)) {
-		item = PyBytes_FromStringAndSize(key.dptr, key.dsize);
+		item = PyString_FromStringAndSize(key.dptr, key.dsize);
 		if (item == NULL) {
 			Py_DECREF(v);
 			return NULL;
@@ -269,7 +269,7 @@ dbm_get(register dbmobject *dp, PyObject *args)
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	if (val.dptr != NULL)
-		return PyBytes_FromStringAndSize(val.dptr, val.dsize);
+		return PyString_FromStringAndSize(val.dptr, val.dsize);
 	else {
 		Py_INCREF(defvalue);
 		return defvalue;
@@ -292,16 +292,16 @@ dbm_setdefault(register dbmobject *dp, PyObject *args)
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	if (val.dptr != NULL)
-		return PyBytes_FromStringAndSize(val.dptr, val.dsize);
+		return PyString_FromStringAndSize(val.dptr, val.dsize);
 	if (defvalue == NULL) {
-		defvalue = PyBytes_FromStringAndSize(NULL, 0);
+		defvalue = PyString_FromStringAndSize(NULL, 0);
 		if (defvalue == NULL)
 			return NULL;
 	}
 	else
 		Py_INCREF(defvalue);
-	val.dptr = PyBytes_AS_STRING(defvalue);
-	val.dsize = PyBytes_GET_SIZE(defvalue);
+	val.dptr = PyString_AS_STRING(defvalue);
+	val.dsize = PyString_GET_SIZE(defvalue);
 	if (dbm_store(dp->di_dbm, key, val, DBM_INSERT) < 0) {
 		dbm_clearerr(dp->di_dbm);
 		PyErr_SetString(DbmError, "cannot add item to database");
@@ -404,7 +404,7 @@ initdbm(void) {
 	d = PyModule_GetDict(m);
 	if (DbmError == NULL)
 		DbmError = PyErr_NewException("dbm.error", NULL, NULL);
-	s = PyBytes_FromString(which_dbm);
+	s = PyString_FromString(which_dbm);
 	if (s != NULL) {
 		PyDict_SetItemString(d, "library", s);
 		Py_DECREF(s);

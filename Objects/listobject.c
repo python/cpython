@@ -174,7 +174,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
 	}
 	if (i < 0 || i >= Py_SIZE(op)) {
 		if (indexerr == NULL)
-			indexerr = PyBytes_FromString(
+			indexerr = PyString_FromString(
 				"list index out of range");
 		PyErr_SetObject(PyExc_IndexError, indexerr);
 		return NULL;
@@ -349,11 +349,11 @@ list_repr(PyListObject *v)
 
 	i = Py_ReprEnter((PyObject*)v);
 	if (i != 0) {
-		return i > 0 ? PyBytes_FromString("[...]") : NULL;
+		return i > 0 ? PyString_FromString("[...]") : NULL;
 	}
 
 	if (Py_SIZE(v) == 0) {
-		result = PyBytes_FromString("[]");
+		result = PyString_FromString("[]");
 		goto Done;
 	}
 
@@ -379,29 +379,29 @@ list_repr(PyListObject *v)
 
 	/* Add "[]" decorations to the first and last items. */
 	assert(PyList_GET_SIZE(pieces) > 0);
-	s = PyBytes_FromString("[");
+	s = PyString_FromString("[");
 	if (s == NULL)
 		goto Done;
 	temp = PyList_GET_ITEM(pieces, 0);
-	PyBytes_ConcatAndDel(&s, temp);
+	PyString_ConcatAndDel(&s, temp);
 	PyList_SET_ITEM(pieces, 0, s);
 	if (s == NULL)
 		goto Done;
 
-	s = PyBytes_FromString("]");
+	s = PyString_FromString("]");
 	if (s == NULL)
 		goto Done;
 	temp = PyList_GET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1);
-	PyBytes_ConcatAndDel(&temp, s);
+	PyString_ConcatAndDel(&temp, s);
 	PyList_SET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1, temp);
 	if (temp == NULL)
 		goto Done;
 
 	/* Paste them all together with ", " between. */
-	s = PyBytes_FromString(", ");
+	s = PyString_FromString(", ");
 	if (s == NULL)
 		goto Done;
-	result = _PyBytes_Join(s, pieces);
+	result = _PyString_Join(s, pieces);
 	Py_DECREF(s);
 
 Done:
@@ -433,7 +433,7 @@ list_item(PyListObject *a, Py_ssize_t i)
 {
 	if (i < 0 || i >= Py_SIZE(a)) {
 		if (indexerr == NULL)
-			indexerr = PyBytes_FromString(
+			indexerr = PyString_FromString(
 				"list index out of range");
 		PyErr_SetObject(PyExc_IndexError, indexerr);
 		return NULL;

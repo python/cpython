@@ -639,8 +639,8 @@ debug_instance(char *msg, PyInstanceObject *inst)
 	char *cname;
 	/* simple version of instance_repr */
 	PyObject *classname = inst->in_class->cl_name;
-	if (classname != NULL && PyBytes_Check(classname))
-		cname = PyBytes_AsString(classname);
+	if (classname != NULL && PyString_Check(classname))
+		cname = PyString_AsString(classname);
 	else
 		cname = "?";
 	PySys_WriteStderr("gc: %.100s <%.100s instance at %p>\n",
@@ -754,7 +754,7 @@ collect(int generation)
 	double t1 = 0.0;
 
 	if (delstr == NULL) {
-		delstr = PyBytes_InternFromString("__del__");
+		delstr = PyString_InternFromString("__del__");
 		if (delstr == NULL)
 			Py_FatalError("gc couldn't allocate \"__del__\"");
 	}
@@ -898,7 +898,7 @@ collect(int generation)
 
 	if (PyErr_Occurred()) {
 		if (gc_str == NULL)
-			gc_str = PyBytes_FromString("garbage collection");
+			gc_str = PyString_FromString("garbage collection");
 		PyErr_WriteUnraisable(gc_str);
 		Py_FatalError("unexpected exception during garbage collection");
 	}

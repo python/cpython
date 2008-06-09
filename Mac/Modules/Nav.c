@@ -139,11 +139,11 @@ filldialogoptions(PyObject *d,
 	NavGetDefaultDialogOptions(opt);
 
 	while ( PyDict_Next(d, &pos, &key, &value) ) {
-		if ( !key || !value || !PyBytes_Check(key) ) {
+		if ( !key || !value || !PyString_Check(key) ) {
 			PyErr_SetString(ErrorObject, "DialogOption has non-string key");
 			return 0;
 		}
-		keystr = PyBytes_AsString(key);
+		keystr = PyString_AsString(key);
 		if( strcmp(keystr, "defaultLocation") == 0 ) {
 			if ( (defaultLocation_storage = PyMem_NEW(AEDesc, 1)) == NULL ) {
 				PyErr_NoMemory();
@@ -963,7 +963,7 @@ initNav(void)
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ErrorObject = PyBytes_FromString("Nav.error");
+	ErrorObject = PyString_FromString("Nav.error");
 	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* XXXX Add constants here */

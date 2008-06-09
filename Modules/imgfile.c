@@ -130,12 +130,12 @@ imgfile_read(PyObject *self, PyObject *args)
 	}
 
 	if ( zsize == 3 ) zsize = 4;
-	rv = PyBytes_FromStringAndSize((char *)NULL, xsize*ysize*zsize);
+	rv = PyString_FromStringAndSize((char *)NULL, xsize*ysize*zsize);
 	if ( rv == NULL ) {
 		iclose(image);
 		return NULL;
 	}
-	cdatap = PyBytes_AsString(rv);
+	cdatap = PyString_AsString(rv);
 	idatap = (long *)cdatap;
 
 	if (top_to_bottom) {
@@ -319,7 +319,7 @@ imgfile_readscaled(PyObject *self, PyObject *args)
 	}
 
 	if ( zsize == 3 ) zsize = 4;
-	rv = PyBytes_FromStringAndSize(NULL, xwtd*ywtd*zsize);
+	rv = PyString_FromStringAndSize(NULL, xwtd*ywtd*zsize);
 	if ( rv == NULL ) {
 		iclose(image);
 		return NULL;
@@ -328,7 +328,7 @@ imgfile_readscaled(PyObject *self, PyObject *args)
 	xfac = (float)xsize/(float)xwtd;
 	yfac = (float)ysize/(float)ywtd;
 	PyFPE_END_PROTECT(yfac)
-	cdatap = PyBytes_AsString(rv);
+	cdatap = PyString_AsString(rv);
 	idatap = (long *)cdatap;
 
 	if ( extended ) {

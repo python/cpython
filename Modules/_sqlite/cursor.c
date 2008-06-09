@@ -178,7 +178,7 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
                     if (*pos == '[') {
                         type_start = pos + 1;
                     } else if (*pos == ']' && type_start != (const char*)-1) {
-                        key = PyBytes_FromStringAndSize(type_start, pos - type_start);
+                        key = PyString_FromStringAndSize(type_start, pos - type_start);
                         if (!key) {
                             /* creating a string failed, but it is too complicated
                              * to propagate the error here, we just assume there is
@@ -203,7 +203,7 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
                      * 'NUMBER(10)' to be treated as 'NUMBER', for example.
                      * In other words, it will work as people expect it to work.*/
                     if (*pos == ' ' || *pos == '(' || *pos == 0) {
-                        py_decltype = PyBytes_FromStringAndSize(decltype, pos - decltype);
+                        py_decltype = PyString_FromStringAndSize(decltype, pos - decltype);
                         if (!py_decltype) {
                             return -1;
                         }
@@ -248,7 +248,7 @@ PyObject* _pysqlite_build_column_name(const char* colname)
             if ((*pos == '[') && (pos > colname) && (*(pos-1) == ' ')) {
                 pos--;
             }
-            return PyBytes_FromStringAndSize(colname, pos - colname);
+            return PyString_FromStringAndSize(colname, pos - colname);
         }
     }
 }
@@ -273,7 +273,7 @@ PyObject* pysqlite_unicode_from_string(const char* val_str, int optimize)
     }
 
     if (is_ascii) {
-        return PyBytes_FromString(val_str);
+        return PyString_FromString(val_str);
     } else {
         return PyUnicode_DecodeUTF8(val_str, strlen(val_str), NULL);
     }
@@ -327,7 +327,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 Py_INCREF(Py_None);
                 converted = Py_None;
             } else {
-                item = PyBytes_FromStringAndSize(val_str, nbytes);
+                item = PyString_FromStringAndSize(val_str, nbytes);
                 if (!item) {
                     return NULL;
                 }
@@ -370,8 +370,8 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                                      colname , val_str);
                         PyErr_SetString(pysqlite_OperationalError, buf);
                     }
-                } else if (self->connection->text_factory == (PyObject*)&PyBytes_Type) {
-                    converted = PyBytes_FromString(val_str);
+                } else if (self->connection->text_factory == (PyObject*)&PyString_Type) {
+                    converted = PyString_FromString(val_str);
                 } else {
                     converted = PyObject_CallFunction(self->connection->text_factory, "s", val_str);
                 }
@@ -442,7 +442,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             return NULL;
         }
 
-        if (!PyBytes_Check(operation) && !PyUnicode_Check(operation)) {
+        if (!PyString_Check(operation) && !PyUnicode_Check(operation)) {
             PyErr_SetString(PyExc_ValueError, "operation parameter must be str or unicode");
             return NULL;
         }
@@ -464,7 +464,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             return NULL;
         }
 
-        if (!PyBytes_Check(operation) && !PyUnicode_Check(operation)) {
+        if (!PyString_Check(operation) && !PyUnicode_Check(operation)) {
             PyErr_SetString(PyExc_ValueError, "operation parameter must be str or unicode");
             return NULL;
         }
@@ -499,15 +499,15 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         rc = pysqlite_statement_reset(self->statement);
     }
 
-    if (PyBytes_Check(operation)) {
-        operation_cstr = PyBytes_AsString(operation);
+    if (PyString_Check(operation)) {
+        operation_cstr = PyString_AsString(operation);
     } else {
         operation_bytestr = PyUnicode_AsUTF8String(operation);
         if (!operation_bytestr) {
             goto error;
         }
 
-        operation_cstr = PyBytes_AsString(operation_bytestr);
+        operation_cstr = PyString_AsString(operation_bytestr);
     }
 
     /* reset description and rowcount */
@@ -764,15 +764,15 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
         return NULL;
     }
 
-    if (PyBytes_Check(script_obj)) {
-        script_cstr = PyBytes_AsString(script_obj);
+    if (PyString_Check(script_obj)) {
+        script_cstr = PyString_AsString(script_obj);
     } else if (PyUnicode_Check(script_obj)) {
         script_str = PyUnicode_AsUTF8String(script_obj);
         if (!script_str) {
             return NULL;
         }
 
-        script_cstr = PyBytes_AsString(script_str);
+        script_cstr = PyString_AsString(script_str);
     } else {
         PyErr_SetString(PyExc_ValueError, "script argument must be unicode or string.");
         return NULL;

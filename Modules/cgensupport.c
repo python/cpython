@@ -119,10 +119,10 @@ PyArg_GetString(PyObject *args, int nargs, int i, string *p_arg)
 	PyObject *v;
 	if (!PyArg_GetObject(args, nargs, i, &v))
 		return 0;
-	if (!PyBytes_Check(v)) {
+	if (!PyString_Check(v)) {
 		return PyErr_BadArgument();
 	}
-	*p_arg = PyBytes_AsString(v);
+	*p_arg = PyString_AsString(v);
 	return 1;
 }
 

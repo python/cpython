@@ -706,7 +706,7 @@ initMacOS(void)
 	** some of the image and sound processing interfaces on the mac:-(
 	*/
 	{
-		PyBytesObject *p = 0;
+		PyStringObject *p = 0;
 		long off = (long)&(p->ob_sval[0]);
 		
 		if( PyDict_SetItemString(d, "string_id_to_buffer", Py_BuildValue("i", off)) != 0)

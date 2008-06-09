@@ -146,7 +146,7 @@ static PyObject *PyCurses_ ## X (PyObject *self) \
 static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
   PyCursesInitialised \
-  return PyBytes_FromString(X()); }
+  return PyString_FromString(X()); }
 
 #define NoArgTrueFalseFunction(X) \
 static PyObject *PyCurses_ ## X (PyObject *self) \

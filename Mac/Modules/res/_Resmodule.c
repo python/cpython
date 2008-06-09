@@ -523,7 +523,7 @@ static PyObject *ResObj_get_data(ResourceObject *self, void *closure)
 
 	            state = HGetState(self->ob_itself);
 	            HLock(self->ob_itself);
-	            res = PyBytes_FromStringAndSize(
+	            res = PyString_FromStringAndSize(
 	                    *self->ob_itself,
 	                    GetHandleSize(self->ob_itself));
 	            HUnlock(self->ob_itself);
@@ -540,10 +540,10 @@ static int ResObj_set_data(ResourceObject *self, PyObject *v, void *closure)
 
 	            if ( v == NULL )
 	                    return -1;
-	            if ( !PyBytes_Check(v) )
+	            if ( !PyString_Check(v) )
 	                    return -1;
-	            size = PyBytes_Size(v);
-	            data = PyBytes_AsString(v);
+	            size = PyString_Size(v);
+	            data = PyString_AsString(v);
 	            /* XXXX Do I need the GetState/SetState calls? */
 	            SetHandleSize(self->ob_itself, size);
 	            if ( MemError())

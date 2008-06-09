@@ -153,7 +153,7 @@ get_handler_name(struct HandlerInfo *hinfo)
 {
     PyObject *name = hinfo->nameobj;
     if (name == NULL) {
-        name = PyBytes_FromString(hinfo->name);
+        name = PyString_FromString(hinfo->name);
         hinfo->nameobj = name;
     }
     Py_XINCREF(name);
@@ -205,7 +205,7 @@ conv_string_to_utf8(const XML_Char *str)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    return PyBytes_FromString(str);
+    return PyString_FromString(str);
 }
 
 static PyObject *
@@ -218,7 +218,7 @@ conv_string_len_to_utf8(const XML_Char *str, int len)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    return PyBytes_FromStringAndSize((const char *)str, len);
+    return PyString_FromStringAndSize((const char *)str, len);
 }
 
 /* Callback routines */
@@ -267,16 +267,16 @@ getcode(enum HandlerTypes slot, char* func_name, int lineno)
     PyObject *filename = NULL;
 
     if (handler_info[slot].tb_code == NULL) {
-        code = PyBytes_FromString("");
+        code = PyString_FromString("");
         if (code == NULL)
             goto failed;
-        name = PyBytes_FromString(func_name);
+        name = PyString_FromString(func_name);
         if (name == NULL)
             goto failed;
         nulltuple = PyTuple_New(0);
         if (nulltuple == NULL)
             goto failed;
-        filename = PyBytes_FromString(__FILE__);
+        filename = PyString_FromString(__FILE__);
         handler_info[slot].tb_code =
             PyCode_New(0,		/* argcount */
                        0,		/* nlocals */
@@ -971,13 +971,13 @@ readinst(char *buf, int buf_size, PyObject *meth)
         goto finally;
 
     /* XXX what to do if it returns a Unicode string? */
-    if (!PyBytes_Check(str)) {
+    if (!PyString_Check(str)) {
         PyErr_Format(PyExc_TypeError,
                      "read() did not return a string object (type=%.400s)",
                      Py_TYPE(str)->tp_name);
         goto finally;
     }
-    len = PyBytes_GET_SIZE(str);
+    len = PyString_GET_SIZE(str);
     if (len > buf_size) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
@@ -985,7 +985,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
                      buf_size, len);
         goto finally;
     }
-    memcpy(buf, PyBytes_AsString(str), len);
+    memcpy(buf, PyString_AsString(str), len);
 finally:
     Py_XDECREF(arg);
     Py_XDECREF(str);
@@ -1094,7 +1094,7 @@ xmlparse_GetInputContext(xmlparseobject *self, PyObject *unused)
             = XML_GetInputContext(self->itself, &offset, &size);
 
         if (buffer != NULL)
-            return PyBytes_FromStringAndSize(buffer + offset,
+            return PyString_FromStringAndSize(buffer + offset,
                                               size - offset);
         else
             Py_RETURN_NONE;
@@ -1511,7 +1511,7 @@ xmlparse_getattr(xmlparseobject *self, char *name)
 
 #define APPEND(list, str)				\
         do {						\
-                PyObject *o = PyBytes_FromString(str);	\
+                PyObject *o = PyString_FromString(str);	\
                 if (o != NULL)				\
         	        PyList_Append(list, o);		\
                 Py_XDECREF(o);				\
@@ -1862,7 +1862,7 @@ get_version_string(void)
     while (rev[i] != ' ' && rev[i] != '\0')
         ++i;
 
-    return PyBytes_FromStringAndSize(rev, i);
+    return PyString_FromStringAndSize(rev, i);
 }
 
 /* Initialization function for the module */
@@ -1889,7 +1889,7 @@ PyMODINIT_FUNC
 MODULE_INITFUNC(void)
 {
     PyObject *m, *d;
-    PyObject *errmod_name = PyBytes_FromString(MODULE_NAME ".errors");
+    PyObject *errmod_name = PyString_FromString(MODULE_NAME ".errors");
     PyObject *errors_module;
     PyObject *modelmod_name;
     PyObject *model_module;
@@ -1899,7 +1899,7 @@ MODULE_INITFUNC(void)
 
     if (errmod_name == NULL)
         return;
-    modelmod_name = PyBytes_FromString(MODULE_NAME ".model");
+    modelmod_name = PyString_FromString(MODULE_NAME ".model");
     if (modelmod_name == NULL)
         return;
 

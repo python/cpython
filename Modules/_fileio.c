@@ -392,14 +392,14 @@ fileio_readall(PyFileIOObject *self)
 	Py_ssize_t total = 0;
 	int n;
 
-	result = PyBytes_FromStringAndSize(NULL, DEFAULT_BUFFER_SIZE);
+	result = PyString_FromStringAndSize(NULL, DEFAULT_BUFFER_SIZE);
 	if (result == NULL)
 		return NULL;
 
 	while (1) {
 		Py_ssize_t newsize = total + DEFAULT_BUFFER_SIZE;
-		if (PyBytes_GET_SIZE(result) < newsize) {
-			if (_PyBytes_Resize(&result, newsize) < 0) {
+		if (PyString_GET_SIZE(result) < newsize) {
+			if (_PyString_Resize(&result, newsize) < 0) {
 				if (total == 0) {
 					Py_DECREF(result);
 					return NULL;
@@ -411,7 +411,7 @@ fileio_readall(PyFileIOObject *self)
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 		n = read(self->fd,
-			 PyBytes_AS_STRING(result) + total,
+			 PyString_AS_STRING(result) + total,
 			 newsize - total);
 		Py_END_ALLOW_THREADS
 		if (n == 0)
@@ -430,8 +430,8 @@ fileio_readall(PyFileIOObject *self)
 		total += n;
 	}
 
-	if (PyBytes_GET_SIZE(result) > total) {
-		if (_PyBytes_Resize(&result, total) < 0) {
+	if (PyString_GET_SIZE(result) > total) {
+		if (_PyString_Resize(&result, total) < 0) {
 			/* This should never happen, but just in case */
 			Py_DECREF(result);
 			return NULL;
@@ -460,10 +460,10 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 		return fileio_readall(self);
 	}
 
-	bytes = PyBytes_FromStringAndSize(NULL, size);
+	bytes = PyString_FromStringAndSize(NULL, size);
 	if (bytes == NULL)
 		return NULL;
-	ptr = PyBytes_AS_STRING(bytes);
+	ptr = PyString_AS_STRING(bytes);
 
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
@@ -478,7 +478,7 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 	}
 
 	if (n != size) {
-		if (_PyBytes_Resize(&bytes, n) < 0) {
+		if (_PyString_Resize(&bytes, n) < 0) {
 			Py_DECREF(bytes);
 			return NULL;
 		}
@@ -690,9 +690,9 @@ static PyObject *
 fileio_repr(PyFileIOObject *self)
 {
         if (self->fd < 0)
-		return PyBytes_FromFormat("_fileio._FileIO(-1)");
+		return PyString_FromFormat("_fileio._FileIO(-1)");
 
-	return PyBytes_FromFormat("_fileio._FileIO(%d, '%s')",
+	return PyString_FromFormat("_fileio._FileIO(%d, '%s')",
 				   self->fd, mode_string(self));
 }
 
@@ -816,7 +816,7 @@ get_closed(PyFileIOObject *self, void *closure)
 static PyObject *
 get_mode(PyFileIOObject *self, void *closure)
 {
-	return PyBytes_FromString(mode_string(self));
+	return PyString_FromString(mode_string(self));
 }
 
 static PyGetSetDef fileio_getsetlist[] = {

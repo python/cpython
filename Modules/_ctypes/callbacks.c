@@ -107,15 +107,15 @@ void _AddTraceback(char *funcname, char *filename, int lineno)
 	PyCodeObject *py_code = 0;
 	PyFrameObject *py_frame = 0;
     
-	py_srcfile = PyBytes_FromString(filename);
+	py_srcfile = PyString_FromString(filename);
 	if (!py_srcfile) goto bad;
-	py_funcname = PyBytes_FromString(funcname);
+	py_funcname = PyString_FromString(funcname);
 	if (!py_funcname) goto bad;
 	py_globals = PyDict_New();
 	if (!py_globals) goto bad;
 	empty_tuple = PyTuple_New(0);
 	if (!empty_tuple) goto bad;
-	empty_string = PyBytes_FromString("");
+	empty_string = PyString_FromString("");
 	if (!empty_string) goto bad;
 	py_code = PyCode_New(
 		0,            /*int argcount,*/
@@ -498,7 +498,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 	static PyObject *context;
 
 	if (context == NULL)
-		context = PyBytes_InternFromString("_ctypes.DllGetClassObject");
+		context = PyString_InternFromString("_ctypes.DllGetClassObject");
 
 	mod = PyImport_ImportModuleNoBlock("ctypes");
 	if (!mod) {
@@ -577,7 +577,7 @@ long Call_CanUnloadNow(void)
 	static PyObject *context;
 
 	if (context == NULL)
-		context = PyBytes_InternFromString("_ctypes.DllCanUnloadNow");
+		context = PyString_InternFromString("_ctypes.DllCanUnloadNow");
 
 	mod = PyImport_ImportModuleNoBlock("ctypes");
 	if (!mod) {

@@ -21,7 +21,7 @@ static PyMethodDef errno_methods[] = {
 static void
 _inscode(PyObject *d, PyObject *de, char *name, int code)
 {
-	PyObject *u = PyBytes_FromString(name);
+	PyObject *u = PyString_FromString(name);
 	PyObject *v = PyInt_FromLong((long) code);
 
 	/* Don't bother checking for errors; they'll be caught at the end
