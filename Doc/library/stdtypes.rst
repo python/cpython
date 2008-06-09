@@ -1567,10 +1567,13 @@ The constructors for both classes work the same:
       Test whether the set is a true superset of *other*, that is, ``set >=
       other and set != other``.
 
-   .. method:: union(other)
-               set | other
+   .. method:: union(other, ...)
+               set | other | ...
 
       Return a new set with elements from both sets.
+
+      .. versionchanged:: 2.6
+         Accepts multiple input iterables.
 
    .. method:: intersection(other)
                set & other
@@ -1628,10 +1631,13 @@ The constructors for both classes work the same:
    The following table lists operations available for :class:`set` that do not
    apply to immutable instances of :class:`frozenset`:
 
-   .. method:: update(other)
-               set |= other
+   .. method:: update(other, ...)
+               set |= other | ...
 
       Update the set, adding elements from *other*.
+
+      .. versionchanged:: 2.6
+         Accepts multiple input iterables.
 
    .. method:: intersection_update(other)
                set &= other

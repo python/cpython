@@ -967,15 +967,20 @@ set_update_internal(PySetObject *so, PyObject *other)
 }
 
 static PyObject *
-set_update(PySetObject *so, PyObject *other)
+set_update(PySetObject *so, PyObject *args)
 {
-	if (set_update_internal(so, other) == -1)
-		return NULL;
+	Py_ssize_t i;
+
+	for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
+		PyObject *other = PyTuple_GET_ITEM(args, i);
+		if (set_update_internal(so, other) == -1)
+			return NULL;
+	}
 	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(update_doc, 
-"Update a set with the union of itself and another.");
+"Update a set with the union of itself and others.");
 
 static PyObject *
 make_new_set(PyTypeObject *type, PyObject *iterable)
@@ -1156,9 +1161,42 @@ set_clear(PySetObject *so)
 PyDoc_STRVAR(clear_doc, "Remove all elements from this set.");
 
 static PyObject *
-set_union(PySetObject *so, PyObject *other)
+set_union(PySetObject *so, PyObject *args)
 {
 	PySetObject *result;
+	PyObject *other;
+	Py_ssize_t i;
+
+	result = (PySetObject *)set_copy(so);
+	if (result == NULL)
+		return NULL;
+
+	for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
+		other = PyTuple_GET_ITEM(args, i);
+		if ((PyObject *)so == other)
+			return (PyObject *)result;
+		if (set_update_internal(result, other) == -1) {
+			Py_DECREF(result);
+			return NULL;
+		}
+	}
+	return (PyObject *)result;
+}
+
+PyDoc_STRVAR(union_doc,
+ "Return the union of sets as a new set.\n\
+\n\
+(i.e. all elements that are in either set.)");
+
+static PyObject *
+set_or(PySetObject *so, PyObject *other)
+{
+	PySetObject *result;
+
+	if (!PyAnySet_Check(so) || !PyAnySet_Check(other)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
 
 	result = (PySetObject *)set_copy(so);
 	if (result == NULL)
@@ -1170,21 +1208,6 @@ set_union(PySetObject *so, PyObject *other)
 		return NULL;
 	}
 	return (PyObject *)result;
-}
-
-PyDoc_STRVAR(union_doc,
- "Return the union of two sets as a new set.\n\
-\n\
-(i.e. all elements that are in either set.)");
-
-static PyObject *
-set_or(PySetObject *so, PyObject *other)
-{
-	if (!PyAnySet_Check(so) || !PyAnySet_Check(other)) {
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
-	return set_union(so, other);
 }
 
 static PyObject *
@@ -1947,9 +1970,9 @@ static PyMethodDef set_methods[] = {
 	{"test_c_api",	(PyCFunction)test_c_api,	METH_NOARGS,
 	 test_c_api_doc},
 #endif
-	{"union",	(PyCFunction)set_union,		METH_O,
+	{"union",	(PyCFunction)set_union,		METH_VARARGS,
 	 union_doc},
-	{"update",	(PyCFunction)set_update,	METH_O,
+	{"update",	(PyCFunction)set_update,	METH_VARARGS,
 	 update_doc},
 	{NULL,		NULL}	/* sentinel */
 };
@@ -2062,7 +2085,7 @@ static PyMethodDef frozenset_methods[] = {
 	 reduce_doc},
 	{"symmetric_difference",(PyCFunction)set_symmetric_difference,	METH_O,
 	 symmetric_difference_doc},
-	{"union",	(PyCFunction)set_union,		METH_O,
+	{"union",	(PyCFunction)set_union,		METH_VARARGS,
 	 union_doc},
 	{NULL,		NULL}	/* sentinel */
 };
