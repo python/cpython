@@ -1,12 +1,14 @@
 import unittest, doctest
 from test import test_support
 from collections import namedtuple
+import pickle, cPickle, copy
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
 from collections import Set, MutableSet
 from collections import Mapping, MutableMapping
 from collections import Sequence, MutableSequence
 
+TestNT = namedtuple('TestNT', 'x y z')    # type used for pickle tests
 
 class TestNamedTuple(unittest.TestCase):
 
@@ -108,7 +110,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Dot(1)._replace(d=999), (999,))
         self.assertEqual(Dot(1)._fields, ('d',))
 
-        n = 10000
+        n = 5000
         import string, random
         names = list(set(''.join([random.choice(string.ascii_letters)
                                   for j in range(10)]) for i in range(n)))
@@ -129,6 +131,23 @@ class TestNamedTuple(unittest.TestCase):
         b2_expected[-5] = 42
         self.assertEqual(b2, tuple(b2_expected))
         self.assertEqual(b._fields, tuple(names))
+
+    def test_pickle(self):
+        p = TestNT(x=10, y=20, z=30)
+        for module in pickle, cPickle:
+            loads = getattr(module, 'loads')
+            dumps = getattr(module, 'dumps')
+            for protocol in -1, 0, 1, 2:
+                q = loads(dumps(p, protocol))
+                self.assertEqual(p, q)
+                self.assertEqual(p._fields, q._fields)
+
+    def test_copy(self):
+        p = TestNT(x=10, y=20, z=30)
+        for copier in copy.copy, copy.deepcopy:
+            q = copier(p)
+            self.assertEqual(p, q)
+            self.assertEqual(p._fields, q._fields)
 
 class TestOneTrickPonyABCs(unittest.TestCase):
 
