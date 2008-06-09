@@ -78,6 +78,7 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').union(C('efgfe')), set('abcefg'))
             self.assertEqual(self.thetype('abcba').union(C('ccb')), set('abc'))
             self.assertEqual(self.thetype('abcba').union(C('ef')), set('abcef'))
+            self.assertEqual(self.thetype('abcba').union(C('ef'), C('fg')), set('abcefg'))
 
     def test_or(self):
         i = self.s.union(self.otherword)
@@ -401,6 +402,12 @@ class TestSet(TestJointOps):
                 s = self.thetype('abcba')
                 self.assertEqual(s.update(C(p)), None)
                 self.assertEqual(s, set(q))
+        for p in ('cdc', 'efgfe', 'ccb', 'ef', 'abcda'):
+            q = 'ahi'
+            for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+                s = self.thetype('abcba')
+                self.assertEqual(s.update(C(p), C(q)), None)
+                self.assertEqual(s, set(s) | set(p) | set(q))
 
     def test_ior(self):
         self.s |= set(self.otherword)
