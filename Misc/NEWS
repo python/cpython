@@ -12,7 +12,8 @@ What's New in Python 2.6 beta 1?
 Core and Builtins
 -----------------
 
-- The set methods, update() and union() now accept multiple arguments.
+- Several set methods now accept multiple arguments:  update(), union(),
+  intersection() and intersection_update().
 
 - Issue #2898: Added sys.getsizeof() to retrieve size of objects in bytes.
 

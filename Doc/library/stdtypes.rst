@@ -1575,10 +1575,13 @@ The constructors for both classes work the same:
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
 
-   .. method:: intersection(other)
-               set & other
+   .. method:: intersection(other, ...)
+               set & other & ...
 
       Return a new set with elements common to both sets.
+
+      .. versionchanged:: 2.6
+         Accepts multiple input iterables.
 
    .. method:: difference(other)
                set - other
@@ -1639,10 +1642,13 @@ The constructors for both classes work the same:
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
 
-   .. method:: intersection_update(other)
-               set &= other
+   .. method:: intersection_update(other, ...)
+               set &= other & ...
 
       Update the set, keeping only elements found in it and *other*.
+
+      .. versionchanged:: 2.6
+         Accepts multiple input iterables.
 
    .. method:: difference_update(other)
                set -= other
