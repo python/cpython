@@ -1306,6 +1306,26 @@ set_intersection(PySetObject *so, PyObject *other)
 	return (PyObject *)result;
 }
 
+static PyObject *
+set_intersection_multi(PySetObject *so, PyObject *args)
+{
+	Py_ssize_t i;
+	PyObject *result = (PyObject *)so;
+
+	Py_INCREF(so);
+	for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
+		PyObject *other = PyTuple_GET_ITEM(args, i);
+		PyObject *newresult = set_intersection((PySetObject *)result, other);
+		if (newresult == NULL) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		Py_DECREF(result);
+		result = newresult;
+	}
+	return result;
+}
+
 PyDoc_STRVAR(intersection_doc,
 "Return the intersection of two sets as a new set.\n\
 \n\
@@ -1317,6 +1337,19 @@ set_intersection_update(PySetObject *so, PyObject *other)
 	PyObject *tmp;
 
 	tmp = set_intersection(so, other);
+	if (tmp == NULL)
+		return NULL;
+	set_swap_bodies(so, (PySetObject *)tmp);
+	Py_DECREF(tmp);
+	Py_RETURN_NONE;
+}
+
+static PyObject *
+set_intersection_update_multi(PySetObject *so, PyObject *args)
+{
+	PyObject *tmp;
+
+	tmp = set_intersection_multi(so, args);
 	if (tmp == NULL)
 		return NULL;
 	set_swap_bodies(so, (PySetObject *)tmp);
@@ -1946,9 +1979,9 @@ static PyMethodDef set_methods[] = {
 	 difference_doc},
 	{"difference_update",	(PyCFunction)set_difference_update,	METH_O,
 	 difference_update_doc},
-	{"intersection",(PyCFunction)set_intersection,	METH_O,
+	{"intersection",(PyCFunction)set_intersection_multi,	METH_VARARGS,
 	 intersection_doc},
-	{"intersection_update",(PyCFunction)set_intersection_update,	METH_O,
+	{"intersection_update",(PyCFunction)set_intersection_update_multi,	METH_VARARGS,
 	 intersection_update_doc},
 	{"isdisjoint",	(PyCFunction)set_isdisjoint,	METH_O,
 	 isdisjoint_doc},
@@ -2073,7 +2106,7 @@ static PyMethodDef frozenset_methods[] = {
 	 copy_doc},
 	{"difference",	(PyCFunction)set_difference,	METH_O,
 	 difference_doc},
-	{"intersection",(PyCFunction)set_intersection,	METH_O,
+	{"intersection",(PyCFunction)set_intersection_multi,	METH_VARARGS,
 	 intersection_doc},
 	{"isdisjoint",	(PyCFunction)set_isdisjoint,	METH_O,
 	 isdisjoint_doc},

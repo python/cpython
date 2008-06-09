@@ -103,6 +103,7 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').intersection(C('efgfe')), set(''))
             self.assertEqual(self.thetype('abcba').intersection(C('ccb')), set('bc'))
             self.assertEqual(self.thetype('abcba').intersection(C('ef')), set(''))
+            self.assertEqual(self.thetype('abcba').intersection(C('cbcf'), C('bag')), set('b'))
 
     def test_isdisjoint(self):
         def f(s1, s2):
@@ -429,6 +430,11 @@ class TestSet(TestJointOps):
                 s = self.thetype('abcba')
                 self.assertEqual(s.intersection_update(C(p)), None)
                 self.assertEqual(s, set(q))
+                ss = 'abcba'
+                s = self.thetype(ss)
+                t = 'cbc'
+                self.assertEqual(s.intersection_update(C(p), C(t)), None)
+                self.assertEqual(s, set('abcba')&set(p)&set(t))
 
     def test_iand(self):
         self.s &= set(self.otherword)
