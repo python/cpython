@@ -40,6 +40,8 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- Issue #2138: Add factorial() the math module.
+
 - The heapq module does comparisons using LT instead of LE.  This
   makes its implementation match that used by list.sort().
 
