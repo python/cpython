@@ -324,12 +324,17 @@ FUNC1(tanh, tanh, 0,
 
    Note 3: The itermediate values lo, yr, and hi are declared volatile so
    aggressive compilers won't algebraicly reduce lo to always be exactly 0.0.
+   Also, the volatile declaration forces the values to be stored in memory as
+   regular doubles instead of extended long precision (80-bit) values.  This
+   prevents double rounding because any addition or substraction of two doubles
+   can be resolved exactly into double-sized hi and lo values.  As long as the 
+   hi value gets forced into a double before yr and lo are computed, the extra
+   bits in downstream extended precision operations (x87 for example) will be
+   exactly zero and therefore can be losslessly stored back into a double,
+   thereby preventing double rounding.
 
-   Note 4: Intermediate values and partial sums are declared as long doubles
-   as a way to eliminate double rounding environments where the operations
-   are carried-out in extended precision but stored in double precision
-   variables.  In some cases, this doesn't help because the compiler
-   treats long doubles as doubles (i.e. the MS compiler for Win32 builds).
+   Note 4: A similar implementation is in Modules/cmathmodule.c.
+   Be sure to update both when making changes.
 
    Note 5: The signature of math.sum() differs from __builtin__.sum()
    because the start argument doesn't make sense in the context of
@@ -342,28 +347,28 @@ FUNC1(tanh, tanh, 0,
 
 /* Extend the partials array p[] by doubling its size. */
 static int                          /* non-zero on error */
-_sum_realloc(long double **p_ptr, Py_ssize_t  n,
-             long double  *ps,    Py_ssize_t *m_ptr)
+_sum_realloc(double **p_ptr, Py_ssize_t  n,
+             double  *ps,    Py_ssize_t *m_ptr)
 {
 	void *v = NULL;
 	Py_ssize_t m = *m_ptr;
 
-	m += m;  /* long double */
-	if (n < m && m < (PY_SSIZE_T_MAX / sizeof(long double))) {
-		long double *p = *p_ptr;
+	m += m;  /* double */
+	if (n < m && m < (PY_SSIZE_T_MAX / sizeof(double))) {
+		double *p = *p_ptr;
 		if (p == ps) {
-			v = PyMem_Malloc(sizeof(long double) * m);
+			v = PyMem_Malloc(sizeof(double) * m);
 			if (v != NULL)
-				memcpy(v, ps, sizeof(long double) * n);
+				memcpy(v, ps, sizeof(double) * n);
 		}
 		else
-			v = PyMem_Realloc(p, sizeof(long double) * m);
+			v = PyMem_Realloc(p, sizeof(double) * m);
 	}
 	if (v == NULL) {        /* size overflow or no memory */
 		PyErr_SetString(PyExc_MemoryError, "math sum partials");
 		return 1;
 	}
-	*p_ptr = (long double*) v;
+	*p_ptr = (double*) v;
 	*m_ptr = m;
 	return 0;
 }
@@ -403,8 +408,8 @@ math_sum(PyObject *self, PyObject *seq)
 {
 	PyObject *item, *iter, *sum = NULL;
 	Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
-	long double x, y, t, ps[NUM_PARTIALS], *p = ps;
-	volatile long double hi, yr, lo;
+	double x, y, t, ps[NUM_PARTIALS], *p = ps;
+	volatile double hi, yr, lo;
 
 	iter = PyObject_GetIter(seq);
 	if (iter == NULL)
@@ -423,7 +428,7 @@ math_sum(PyObject *self, PyObject *seq)
 				goto _sum_error;
 			break;
 		}
-		x = (long double)PyFloat_AsDouble(item);
+		x = PyFloat_AsDouble(item);
 		Py_DECREF(item);
 		if (PyErr_Occurred())
 			goto _sum_error;
@@ -490,7 +495,7 @@ math_sum(PyObject *self, PyObject *seq)
 				goto _sum_error;
 		}
 	}
-	sum = PyFloat_FromDouble((double)hi);
+	sum = PyFloat_FromDouble(hi);
 
 _sum_error:
 	PyFPE_END_PROTECT(hi)
@@ -506,7 +511,6 @@ PyDoc_STRVAR(math_sum_doc,
 "sum(iterable)\n\n\
 Return an accurate floating point sum of values in the iterable.\n\
 Assumes IEEE-754 floating point arithmetic.");
-
 
 static PyObject *
 math_factorial(PyObject *self, PyObject *arg)
