@@ -96,6 +96,11 @@ Node classes
       node = ast.UnaryOp(ast.USub(), ast.Num(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
 
+   .. versionadded:: 2.6
+      The constructor as explained above was added.  In Python 2.5 nodes had
+      to be created by calling the class constructor without arguments and
+      setting the attributes afterwards.
+
 
 .. _abstract-grammar:
 
