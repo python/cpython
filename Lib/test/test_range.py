@@ -2,6 +2,7 @@
 
 import test.support, unittest
 import sys
+import pickle
 
 import warnings
 warnings.filterwarnings("ignore", "integer argument expected",
@@ -60,6 +61,15 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(repr(range(1)), 'range(0, 1)')
         self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
         self.assertEqual(repr(range(1, 2, 3)), 'range(1, 2, 3)')
+
+    def test_pickling(self):
+        testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
+                     (13, 21, 3), (-2, 2, 2)]
+        for proto in range(pickle.HIGHEST_PROTOCOL):
+            for t in testcases:
+                r = range(*t)
+                self.assertEquals(list(pickle.loads(pickle.dumps(r, proto))),
+                                  list(r))
 
 def test_main():
     test.support.run_unittest(RangeTest)
