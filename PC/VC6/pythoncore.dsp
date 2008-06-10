@@ -241,7 +241,7 @@ SOURCE=..\..\Objects\bytearrayobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Objects\bytesobject.c
+SOURCE=..\..\Objects\stringobject.c
 # End Source File
 # Begin Source File
 

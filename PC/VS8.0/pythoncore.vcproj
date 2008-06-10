@@ -1379,7 +1379,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Objects\bytesobject.c"
+				RelativePath="..\..\Objects\stringobject.c"
 				>
 			</File>
 			<File
