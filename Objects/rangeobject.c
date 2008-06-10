@@ -252,6 +252,14 @@ range_repr(rangeobject *r)
                                     r->start, r->stop, r->step);
 }
 
+/* Pickling support */
+static PyObject *
+range_reduce(rangeobject *r, PyObject *args)
+{
+	return Py_BuildValue("(O(OOO))", Py_TYPE(r),
+                         r->start, r->stop, r->step);
+}
+
 static PySequenceMethods range_as_sequence = {
     (lenfunc)range_length,	/* sq_length */
     0,			/* sq_concat */
@@ -269,6 +277,7 @@ PyDoc_STRVAR(reverse_doc,
 static PyMethodDef range_methods[] = {
     {"__reversed__",	(PyCFunction)range_reverse, METH_NOARGS,
 	reverse_doc},
+    {"__reduce__",	(PyCFunction)range_reduce, METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };
 
