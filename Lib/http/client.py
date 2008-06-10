@@ -664,7 +664,8 @@ class HTTPConnection:
     debuglevel = 0
     strict = 0
 
-    def __init__(self, host, port=None, strict=None, timeout=None):
+    def __init__(self, host, port=None, strict=None,
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         self.timeout = timeout
         self.sock = None
         self._buffer = []
@@ -996,7 +997,7 @@ else:
         default_port = HTTPS_PORT
 
         def __init__(self, host, port=None, key_file=None, cert_file=None,
-                     strict=None, timeout=None):
+                     strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
             HTTPConnection.__init__(self, host, port, strict, timeout)
             self.key_file = key_file
             self.cert_file = cert_file

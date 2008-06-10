@@ -265,13 +265,17 @@ def getfqdn(name=''):
     return name
 
 
-def create_connection(address, timeout=None):
-    """Connect to address (host, port) with an optional timeout.
+_GLOBAL_DEFAULT_TIMEOUT = object()
 
-    Provides access to socketobject timeout for higher-level
-    protocols.  Passing a timeout will set the timeout on the
-    socket instance (if not present, or passed as None, the
-    default global timeout setting will be used).
+def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT):
+    """Connect to *address* and return the socket object.
+
+    Convenience function.  Connect to *address* (a 2-tuple ``(host,
+    port)``) and return the socket object.  Passing the optional
+    *timeout* parameter will set the timeout on the socket instance
+    before attempting to connect.  If no *timeout* is supplied, the
+    global default timeout setting returned by :func:`getdefaulttimeout`
+    is used.
     """
 
     msg = "getaddrinfo returns an empty list"
@@ -281,7 +285,7 @@ def create_connection(address, timeout=None):
         sock = None
         try:
             sock = socket(af, socktype, proto)
-            if timeout is not None:
+            if timeout is not _GLOBAL_DEFAULT_TIMEOUT:
                 sock.settimeout(timeout)
             sock.connect(sa)
             return sock

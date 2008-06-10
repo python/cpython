@@ -292,6 +292,15 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("update test set name='bar'")
         self.failUnlessEqual(self.cu.rowcount, 2)
 
+    def CheckRowcountSelect(self):
+        """
+        pysqlite does not know the rowcount of SELECT statements, because we
+        don't fetch all rows after executing the select statement. The rowcount
+        has thus to be -1.
+        """
+        self.cu.execute("select 5 union select 6")
+        self.failUnlessEqual(self.cu.rowcount, -1)
+
     def CheckRowcountExecutemany(self):
         self.cu.execute("delete from test")
         self.cu.executemany("insert into test(name) values (?)", [(1,), (2,), (3,)])

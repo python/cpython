@@ -845,8 +845,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(TypeError, t.strftime, "one", "two") # too many args
         self.assertRaises(TypeError, t.strftime, 42) # arg wrong type
 
+        # test that unicode input is allowed (issue 2782)
+        self.assertEqual(t.strftime("%m"), "03")
+
         # A naive object replaces %z and %Z w/ empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
+
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10)

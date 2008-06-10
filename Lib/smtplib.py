@@ -220,7 +220,8 @@ class SMTP:
     ehlo_resp = None
     does_esmtp = 0
 
-    def __init__(self, host='', port=0, local_hostname=None, timeout=None):
+    def __init__(self, host='', port=0, local_hostname=None,
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         """Initialize a new instance.
 
         If specified, `host' is the name of the remote host to which to
@@ -744,7 +745,8 @@ if _have_ssl:
         certificate chain file for the SSL connection.
         """
         def __init__(self, host='', port=0, local_hostname=None,
-                     keyfile=None, certfile=None, timeout=None):
+                     keyfile=None, certfile=None,
+                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
             self.keyfile = keyfile
             self.certfile = certfile
             SMTP.__init__(self, host, port, local_hostname, timeout)

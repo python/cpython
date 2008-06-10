@@ -101,10 +101,7 @@ int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs
 
     self->arraysize = 1;
 
-    self->rowcount = PyLong_FromLong(-1L);
-    if (!self->rowcount) {
-        return -1;
-    }
+    self->rowcount = -1L;
 
     Py_INCREF(Py_None);
     self->row_factory = Py_None;
@@ -130,7 +127,6 @@ void pysqlite_cursor_dealloc(pysqlite_Cursor* self)
     Py_XDECREF(self->row_cast_map);
     Py_XDECREF(self->description);
     Py_XDECREF(self->lastrowid);
-    Py_XDECREF(self->rowcount);
     Py_XDECREF(self->row_factory);
     Py_XDECREF(self->next_row);
 
@@ -418,12 +414,12 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     int statement_type;
     PyObject* descriptor;
     PyObject* second_argument = NULL;
-    long rowcount = 0;
     int allow_8bit_chars;
 
     if (!pysqlite_check_thread(self->connection) || !pysqlite_check_connection(self->connection)) {
         return NULL;
     }
+
     /* Make shooting yourself in the foot with not utf-8 decodable 8-bit-strings harder */
     allow_8bit_chars = ((self->connection->text_factory != (PyObject*)&PyUnicode_Type) &&
         (self->connection->text_factory != (PyObject*)&PyUnicode_Type && pysqlite_OptimizedUnicode));
@@ -498,10 +494,11 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     if (operation == NULL)
         goto error;
 
-    /* reset description */
+    /* reset description and rowcount */
     Py_DECREF(self->description);
     Py_INCREF(Py_None);
     self->description = Py_None;
+    self->rowcount = -1L;
 
     func_args = PyTuple_New(1);
     if (!func_args) {
@@ -723,7 +720,10 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             case STATEMENT_DELETE:
             case STATEMENT_INSERT:
             case STATEMENT_REPLACE:
-                rowcount += (long)sqlite3_changes(self->connection->db);
+                if (self->rowcount == -1L) {
+                    self->rowcount = 0L;
+                }
+                self->rowcount += (long)sqlite3_changes(self->connection->db);
         }
 
         Py_DECREF(self->lastrowid);
@@ -757,13 +757,9 @@ error:
     Py_XDECREF(parameters_list);
 
     if (PyErr_Occurred()) {
-        Py_DECREF(self->rowcount);
-        self->rowcount = PyLong_FromLong(-1L);
+        self->rowcount = -1L;
         return NULL;
     } else {
-        Py_DECREF(self->rowcount);
-        self->rowcount = PyLong_FromLong(rowcount);
-
         Py_INCREF(self);
         return (PyObject*)self;
     }
@@ -1053,7 +1049,7 @@ static struct PyMemberDef cursor_members[] =
     {"description", T_OBJECT, offsetof(pysqlite_Cursor, description), READONLY},
     {"arraysize", T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
     {"lastrowid", T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), READONLY},
-    {"rowcount", T_OBJECT, offsetof(pysqlite_Cursor, rowcount), READONLY},
+    {"rowcount", T_LONG, offsetof(pysqlite_Cursor, rowcount), READONLY},
     {"row_factory", T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
     {NULL}
 };
