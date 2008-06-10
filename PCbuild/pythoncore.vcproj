@@ -1055,10 +1055,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\cStringIO.c"
-				>
-			</File>
-			<File
 				RelativePath="..\Modules\datetimemodule.c"
 				>
 			</File>

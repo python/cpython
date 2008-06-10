@@ -293,10 +293,6 @@ SOURCE=..\..\Modules\zlib\crc32.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\cStringIO.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\datetimemodule.c
 # End Source File
 # Begin Source File
