@@ -214,7 +214,12 @@ class PyDocDocTest(unittest.TestCase):
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
         mod_file = inspect.getabsfile(pydoc_mod)
-        expected_html = expected_html_pattern % (mod_file, mod_file, doc_loc)
+        if sys.platform == 'win32':
+            import nturl2path
+            mod_url = nturl2path.pathname2url(mod_file)
+        else:
+            mod_url = mod_file
+        expected_html = expected_html_pattern % (mod_url, mod_file, doc_loc)
         if result != expected_html:
             print_diffs(expected_html, result)
             self.fail("outputs are not equal, see diff above")
