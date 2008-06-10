@@ -117,12 +117,18 @@ get_error_object(int **pspace)
 {
 	PyObject *dict = PyThreadState_GetDict();
 	PyObject *errobj;
+	static PyObject *error_object_name;
 	if (dict == 0) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"cannot get thread state");
 		return NULL;
 	}
-	errobj = PyDict_GetItemString(dict, "ctypes.error_object");
+	if (error_object_name == NULL) {
+		error_object_name = PyString_InternFromString("ctypes.error_object");
+		if (error_object_name == NULL)
+			return NULL;
+	}
+	errobj = PyDict_GetItem(dict, error_object_name);
 	if (errobj)
 		Py_INCREF(errobj);
 	else {
@@ -133,8 +139,8 @@ get_error_object(int **pspace)
 		errobj = PyCObject_FromVoidPtr(space, PyMem_Free);
 		if (errobj == NULL)
 			return NULL;
-		if (-1 == PyDict_SetItemString(dict, "ctypes.error_object",
-					       errobj)) {
+		if (-1 == PyDict_SetItem(dict, error_object_name,
+					 errobj)) {
 			Py_DECREF(errobj);
 			return NULL;
 		}
