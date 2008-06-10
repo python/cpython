@@ -384,8 +384,8 @@ if hasattr(asyncore, 'file_wrapper'):
             fd = os.open(TESTFN, os.O_RDONLY)
             w = asyncore.file_wrapper(fd)
 
-            self.assertEqual(w.fd, fd)
-            self.assertEqual(w.fileno(), fd)
+            self.assertNotEqual(w.fd, fd)
+            self.assertNotEqual(w.fileno(), fd)
             self.assertEqual(w.recv(13), "It's not dead")
             self.assertEqual(w.read(6), ", it's")
             w.close()
