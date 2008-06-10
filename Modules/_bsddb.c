@@ -312,6 +312,10 @@ static Py_buffer * _malloc_view(PyObject *obj)
                         "Py_buffer malloc failed");
         return NULL;
     }
+
+    if (PyObject_GetBuffer(obj, view, PyBUF_SIMPLE))
+        return NULL;
+
     if (view->ndim > 1) {
         PyErr_SetString(PyExc_BufferError,
                         "buffers must be single dimension");
