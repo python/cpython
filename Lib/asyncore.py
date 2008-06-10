@@ -228,7 +228,7 @@ class dispatcher:
             # passed be connected.
             try:
                 self.addr = sock.getpeername()
-            except socket.error:
+            except socket.error, err:
                 if err[0] == ENOTCONN:
                     # To handle the case where we got an unconnected
                     # socket.
@@ -424,7 +424,7 @@ class dispatcher:
             #check for errors
             err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
             if err != 0:
-                raise socket.error(err, strerror(err))
+                raise socket.error(err, _strerror(err))
 
             self.handle_connect_event()
         self.handle_write()
