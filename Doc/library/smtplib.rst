@@ -25,8 +25,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    with those parameters during initialization.  An :exc:`SMTPConnectError` is
    raised if the specified host doesn't respond correctly. The optional
    *timeout* parameter specifies a timeout in seconds for blocking operations
-   like the connection attempt (if not specified, or passed as None, the global
-   default timeout setting will be used).
+   like the connection attempt (if not specified, the global default timeout
+   setting will be used).
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`quit` methods.  An example is included below.
@@ -42,8 +42,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    and *certfile* are also optional, and can contain a PEM formatted private key
    and certificate chain file for the SSL connection. The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
-   connection attempt (if not specified, or passed as None, the global default
-   timeout setting will be used).
+   connection attempt (if not specified, the global default timeout setting
+   will be used).
 
 
 .. class:: LMTP([host[, port[, local_hostname]]])

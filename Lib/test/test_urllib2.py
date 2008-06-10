@@ -3,6 +3,7 @@ from test import support
 
 import os
 import io
+import socket
 
 import urllib2
 from urllib2 import Request, OpenerDirector
@@ -546,14 +547,15 @@ class HandlerTests(unittest.TestCase):
 
         class NullFTPHandler(urllib2.FTPHandler):
             def __init__(self, data): self.data = data
-            def connect_ftp(self, user, passwd, host, port, dirs, timeout=None):
+            def connect_ftp(self, user, passwd, host, port, dirs,
+                            timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
                 self.user, self.passwd = user, passwd
                 self.host, self.port = host, port
                 self.dirs = dirs
                 self.ftpwrapper = MockFTPWrapper(self.data)
                 return self.ftpwrapper
 
-        import ftplib, socket
+        import ftplib
         data = "rheum rhaponicum"
         h = NullFTPHandler(data)
         o = h.parent = MockOpener()
@@ -686,7 +688,7 @@ class HandlerTests(unittest.TestCase):
                 self.req_headers = []
                 self.data = None
                 self.raise_on_endheaders = False
-            def __call__(self, host, timeout=None):
+            def __call__(self, host, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
                 self.host = host
                 self.timeout = timeout
                 return self

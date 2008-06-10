@@ -776,7 +776,8 @@ def noheaders():
 class ftpwrapper:
     """Class used by open_ftp() for cache of open FTP connections."""
 
-    def __init__(self, user, passwd, host, port, dirs, timeout=None):
+    def __init__(self, user, passwd, host, port, dirs,
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         self.user = user
         self.passwd = passwd
         self.host = host

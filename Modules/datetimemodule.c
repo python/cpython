@@ -1201,17 +1201,17 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	PyObject *Zreplacement = NULL;	/* py string, replacement for %Z */
 	PyObject *freplacement = NULL;	/* py string, replacement for %f */
 
-	const char *pin;/* pointer to next char in input format */
-        Py_ssize_t flen;/* length of input format */
-	char ch;	/* next char in input format */
+	const char *pin;	/* pointer to next char in input format */
+	Py_ssize_t flen;	/* length of input format */
+	char ch;		/* next char in input format */
 
 	PyObject *newfmt = NULL;	/* py string, the output format */
 	char *pnew;	/* pointer to available byte in output format */
-	int totalnew;	/* number bytes total in output format buffer,
-			   exclusive of trailing \0 */
-	int usednew;	/* number bytes used so far in output format buffer */
+	size_t totalnew;	/* number bytes total in output format buffer,
+				   exclusive of trailing \0 */
+	size_t usednew;	/* number bytes used so far in output format buffer */
 
-	const char *ptoappend;/* pointer to string to append to output buffer */
+	const char *ptoappend;	/* ptr to string to append to output buffer */
 	Py_ssize_t ntoappend;	/* # of bytes to append to output buffer */
 
 	assert(object && format && timetuple);
@@ -1335,7 +1335,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  		assert(ptoappend != NULL);
  		assert(ntoappend > 0);
  		while (usednew + ntoappend > totalnew) {
- 			int bigger = totalnew << 1;
+ 			size_t bigger = totalnew << 1;
  			if ((bigger >> 1) != totalnew) { /* overflow */
  				PyErr_NoMemory();
  				goto Done;
@@ -2444,8 +2444,8 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	 * timetuple() method appropriate to self's class.
 	 */
 	PyObject *result;
-	PyObject *format;
 	PyObject *tuple;
+	PyObject *format;
 	static char *keywords[] = {"format", NULL};
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
@@ -3211,8 +3211,8 @@ static PyObject *
 time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
 	PyObject *result;
-	PyObject *format;
 	PyObject *tuple;
+	PyObject *format;
 	static char *keywords[] = {"format", NULL};
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
@@ -3232,7 +3232,8 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	if (tuple == NULL)
 		return NULL;
 	assert(PyTuple_Size(tuple) == 9);
-	result = wrap_strftime((PyObject *)self, format, tuple, Py_None);
+	result = wrap_strftime((PyObject *)self, format, tuple,
+			       Py_None);
 	Py_DECREF(tuple);
 	return result;
 }

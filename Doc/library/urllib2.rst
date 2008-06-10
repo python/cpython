@@ -27,9 +27,9 @@ The :mod:`urllib2` module defines the following functions:
    returns a string in this format.
 
    The optional *timeout* parameter specifies a timeout in seconds for blocking
-   operations like the connection attempt (if not specified, or passed as
-   ``None``, the global default timeout setting will be used).  This actually
-   only works for HTTP, HTTPS, FTP and FTPS connections.
+   operations like the connection attempt (if not specified, the global default
+   timeout setting will be used).  This actually only works for HTTP, HTTPS,
+   FTP and FTPS connections.
 
    This function returns a file-like object with two additional methods:
 
@@ -404,9 +404,9 @@ OpenerDirector Objects
    the same as those of :func:`urlopen` (which simply calls the :meth:`open`
    method on the currently installed global :class:`OpenerDirector`).  The
    optional *timeout* parameter specifies a timeout in seconds for blocking
-   operations like the connection attempt (if not specified, or passed as
-   ``None``, the global default timeout setting will be used; this actually only
-   works for HTTP, HTTPS, FTP and FTPS connections).
+   operations like the connection attempt (if not specified, the global default
+   timeout setting will be usedi). The timeout feature actually works only for
+   HTTP, HTTPS, FTP and FTPS connections).
 
 
 .. method:: OpenerDirector.error(proto[, arg[, ...]])

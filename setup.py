@@ -939,7 +939,7 @@ class PyBuildExt(build_ext):
                 missing.append('resource')
 
             # Sun yellow pages. Some systems have the functions in libc.
-            if platform not in ['cygwin', 'atheos']:
+            if platform not in ['cygwin', 'atheos', 'qnx6']:
                 if (self.compiler.find_library_file(lib_dirs, 'nsl')):
                     libs = ['nsl']
                 else:

@@ -45,6 +45,10 @@
 		Value="$(SolutionDir)\python.exe"
 	/>
 	<UserMacro
+		Name="externalsDir"
+		Value="..\.."
+	/>
+	<UserMacro
 		Name="bsddbDir"
 		Value="$(bsddb44Dir)"
 	/>
@@ -54,7 +58,7 @@
 	/>
 	<UserMacro
 		Name="bsddb44Dir"
-		Value="..\..\db-4.4.20\build_win32"
+		Value="$(externalsDir)\db-4.4.20\build_win32"
 	/>
 	<UserMacro
 		Name="bsddb44DepLibs"
@@ -62,7 +66,7 @@
 	/>
 	<UserMacro
 		Name="bsddb45Dir"
-		Value="..\..\db-4.5.20.x\build_windows"
+		Value="$(externalsDir)\db-4.5.20.x\build_windows"
 	/>
 	<UserMacro
 		Name="bsddb45DepLibs"
@@ -70,23 +74,23 @@
 	/>
 	<UserMacro
 		Name="sqlite3Dir"
-		Value="..\..\sqlite-source-3.3.4"
+		Value="$(externalsDir)\sqlite-source-3.3.4"
 	/>
 	<UserMacro
 		Name="bz2Dir"
-		Value="..\..\bzip2-1.0.3"
+		Value="$(externalsDir)\bzip2-1.0.3"
 	/>
 	<UserMacro
 		Name="opensslDir"
-		Value="..\..\openssl-0.9.8g"
+		Value="$(externalsDir)\openssl-0.9.8g"
 	/>
 	<UserMacro
 		Name="tcltkDir"
-		Value="..\..\tcltk"
+		Value="$(externalsDir)\tcltk"
 	/>
 	<UserMacro
 		Name="tcltk64Dir"
-		Value="..\..\tcltk64"
+		Value="$(externalsDir)\tcltk64"
 	/>
 	<UserMacro
 		Name="tcltkLib"

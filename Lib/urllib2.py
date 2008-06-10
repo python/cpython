@@ -115,7 +115,7 @@ from urllib import localhost, url2pathname, getproxies
 __version__ = sys.version[:3]
 
 _opener = None
-def urlopen(url, data=None, timeout=None):
+def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
     global _opener
     if _opener is None:
         _opener = build_opener()
@@ -357,7 +357,7 @@ class OpenerDirector:
             if result is not None:
                 return result
 
-    def open(self, fullurl, data=None, timeout=None):
+    def open(self, fullurl, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         # accept a URL or a Request object
         if isinstance(fullurl, str):
             req = Request(fullurl, data)

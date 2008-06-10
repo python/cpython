@@ -215,27 +215,32 @@ class TimeoutTest(TestCase):
         # This will prove that the timeout gets through HTTPConnection
         # and into the socket.
 
-        # default
-        httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT)
-        httpConn.connect()
-        self.assertTrue(httpConn.sock.gettimeout() is None)
-        httpConn.close()
-
-        # a value
-        httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT, timeout=30)
-        httpConn.connect()
+        # default -- use global socket timeout
+        self.assert_(socket.getdefaulttimeout() is None)
+        socket.setdefaulttimeout(30)
+        try:
+            httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT)
+            httpConn.connect()
+        finally:
+            socket.setdefaulttimeout(None)
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
 
-        # None, having other default
-        previous = socket.getdefaulttimeout()
+        # no timeout -- do not use global socket default
+        self.assert_(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
             httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT,
                                               timeout=None)
             httpConn.connect()
         finally:
-            socket.setdefaulttimeout(previous)
+            socket.setdefaulttimeout(None)
+        self.assertEqual(httpConn.sock.gettimeout(), None)
+        httpConn.close()
+
+        # a value
+        httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT, timeout=30)
+        httpConn.connect()
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
 
