@@ -77,6 +77,8 @@ Extension Modules
 Library
 -------
 
+- Added the ast module.
+
 - Factored out the indentation cleaning from inspect.getdoc() into
   inspect.cleandoc() to ease standalone use.
 
