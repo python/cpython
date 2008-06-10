@@ -124,7 +124,7 @@ get_error_object(int **pspace)
 		return NULL;
 	}
 	if (error_object_name == NULL) {
-		error_object_name = PyString_InternFromString("ctypes.error_object");
+		error_object_name = PyUnicode_InternFromString("ctypes.error_object");
 		if (error_object_name == NULL)
 			return NULL;
 	}
