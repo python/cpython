@@ -129,6 +129,16 @@ range_repr(rangeobject *r)
 	return rtn;
 }
 
+/* Pickling support */
+static PyObject *
+range_getnewargs(rangeobject *r)
+{
+	return Py_BuildValue("(iii)",
+			     r->start,
+			     r->start + r->len * r->step,
+			     r->step);
+}
+
 static PySequenceMethods range_as_sequence = {
 	(lenfunc)range_length,	/* sq_length */
 	0,			/* sq_concat */
@@ -145,6 +155,7 @@ PyDoc_STRVAR(reverse_doc,
 
 static PyMethodDef range_methods[] = {
 	{"__reversed__",	(PyCFunction)range_reverse, METH_NOARGS, reverse_doc},
+	{"__getnewargs__",	(PyCFunction)range_getnewargs, METH_NOARGS},
  	{NULL,		NULL}		/* sentinel */
 };
 
