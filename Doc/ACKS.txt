@@ -157,6 +157,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Bernhard Reiter
    * Armin Rigo
    * Wes Rishel
+   * Armin Ronacher
    * Jim Roskind
    * Guido van Rossum
    * Donald Wallace Rouse II

@@ -1,8 +1,8 @@
 
-/* String object interface */
+/* Bytes (String) object interface */
 
-#ifndef Py_STRINGOBJECT_H
-#define Py_STRINGOBJECT_H
+#ifndef Py_BYTESOBJECT_H
+#define Py_BYTESOBJECT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -107,4 +107,4 @@ PyAPI_FUNC(int) _PyBytes_InsertThousandsGrouping(char *buffer,
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_STRINGOBJECT_H */
+#endif /* !Py_BYTESOBJECT_H */

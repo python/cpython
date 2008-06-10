@@ -26,7 +26,12 @@ interface.
 
    The optional arguments *stdin* and *stdout* specify the  input and output file
    objects that the Cmd instance or subclass  instance will use for input and
-   output. If not specified, they will default to *sys.stdin* and *sys.stdout*.
+   output. If not specified, they will default to :data:`sys.stdin` and
+   :data:`sys.stdout`.
+
+   If you want a given *stdin* to be used, make sure to set the instance's
+   :attr:`use_rawinput` attribute to ``False``, otherwise *stdin* will be
+   ignored.
 
 
 .. _cmd-objects:

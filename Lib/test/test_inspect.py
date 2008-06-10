@@ -195,6 +195,10 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getdoc(git.abuse),
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
 
+    def test_cleandoc(self):
+        self.assertEqual(inspect.cleandoc('An\n    indented\n    docstring.'),
+                         'An\nindented\ndocstring.')
+
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')

@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Gregor Lingl was given SVN access on 10 June 2008 by MvL,
+  for work on the turtle module.
+
 - Robert Schuppenies was given SVN access on 21 May 2008 by MvL,
   for GSoC contributions.
 

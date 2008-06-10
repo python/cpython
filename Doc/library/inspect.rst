@@ -320,13 +320,9 @@ attributes:
 Retrieving source code
 ----------------------
 
-
 .. function:: getdoc(object)
 
-   Get the documentation string for an object. All tabs are expanded to spaces.  To
-   clean up docstrings that are indented to line up with blocks of code, any
-   whitespace than can be uniformly removed from the second line onwards is
-   removed.
+   Get the documentation string for an object, cleaned up with :func:`cleandoc`.
 
 
 .. function:: getcomments(object)
@@ -371,6 +367,15 @@ Retrieving source code
    class, method, function, traceback, frame, or code object.  The source code is
    returned as a single string.  An :exc:`IOError` is raised if the source code
    cannot be retrieved.
+
+
+.. function:: cleandoc(doc)
+
+   Clean up indentation from docstrings that are indented to line up with blocks
+   of code.  Any whitespace that can be uniformly removed from the second line
+   onwards is removed.  Also, all tabs are expanded to spaces.
+
+   .. versionadded:: 2.6
 
 
 .. _inspect-classes-functions:
