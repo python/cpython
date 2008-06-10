@@ -135,7 +135,7 @@ and classes for traversing abstract syntax trees:
    from untrusted sources without the need to parse the values oneself.
 
 
-.. function:: get_docstring(node, clean=True):
+.. function:: get_docstring(node, clean=True)
 
    Return the docstring of the given *node* (which must be a
    :class:`FunctionDef`, :class:`ClassDef` or :class:`Module` node), or ``None``
