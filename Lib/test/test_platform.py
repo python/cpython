@@ -72,7 +72,7 @@ class PlatformTest(unittest.TestCase):
         else:
             have_toolbox_glue = True
 
-        if have_toolbox_glue and os.uname()[0] == 'Darwin':
+        if have_toolbox_glue and platform.uname()[0] == 'Darwin':
             # We're on a MacOSX system, check that
             # the right version information is returned
             fd = os.popen('sw_vers', 'r')
