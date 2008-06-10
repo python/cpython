@@ -93,8 +93,9 @@ def namedtuple(typename, field_names, verbose=False):
     if verbose:
         print(template)
 
-    # Execute the template string in a temporary namespace
-    namespace = dict(itemgetter=_itemgetter)
+    # Execute the template string in a temporary namespace and
+    # support tracing utilities by setting a value for frame.f_globals['__name__']
+    namespace = dict(itemgetter=_itemgetter, __name__='namedtuple_%s' % typename)
     try:
         exec(template, namespace)
     except SyntaxError as e:

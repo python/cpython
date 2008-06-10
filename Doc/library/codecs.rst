@@ -285,7 +285,8 @@ Codec Base Classes
 ------------------
 
 The :mod:`codecs` module defines a set of base classes which define the
-interface and can also be used to easily write you own codecs for use in Python.
+interface and can also be used to easily write your own codecs for use in
+Python.
 
 Each codec has to define four interfaces to make it usable as codec in Python:
 stateless encoder, stateless decoder, stream reader and stream writer. The

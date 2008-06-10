@@ -661,8 +661,10 @@ class Popen(object):
                 self.stdin.close()
             elif self.stdout:
                 stdout = self.stdout.read()
+                self.stdout.close()
             elif self.stderr:
                 stderr = self.stderr.read()
+                self.stderr.close()
             self.wait()
             return (stdout, stderr)
 

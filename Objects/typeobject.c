@@ -33,7 +33,6 @@ struct method_cache_entry {
 
 static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
 static unsigned int next_version_tag = 0;
-static void type_modified(PyTypeObject *);
 
 unsigned int
 PyType_ClearCache(void)
@@ -48,12 +47,12 @@ PyType_ClearCache(void)
 	}
 	next_version_tag = 0;
 	/* mark all version tags as invalid */
-	type_modified(&PyBaseObject_Type);
+	PyType_Modified(&PyBaseObject_Type);
 	return cur_version_tag;
 }
 
-static void
-type_modified(PyTypeObject *type)
+void
+PyType_Modified(PyTypeObject *type)
 {
 	/* Invalidate any cached data for the specified type and all
 	   subclasses.  This function is called after the base
@@ -87,7 +86,7 @@ type_modified(PyTypeObject *type)
 			ref = PyList_GET_ITEM(raw, i);
 			ref = PyWeakref_GET_OBJECT(ref);
 			if (ref != Py_None) {
-				type_modified((PyTypeObject *)ref);
+				PyType_Modified((PyTypeObject *)ref);
 			}
 		}
 	}
@@ -173,7 +172,7 @@ assign_version_tag(PyTypeObject *type)
 			Py_INCREF(Py_None);
 		}
 		/* mark all version tags as invalid */
-		type_modified(&PyBaseObject_Type);
+		PyType_Modified(&PyBaseObject_Type);
 		return 1;
 	}
 	bases = type->tp_bases;
@@ -313,7 +312,7 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 		return -1;
 	}
 
-	type_modified(type);
+	PyType_Modified(type);
 
 	return PyDict_SetItemString(type->tp_dict, "__module__", value);
 }
@@ -341,7 +340,7 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
 	int res = PyDict_SetItemString(type->tp_dict,
 				       "__abstractmethods__", value);
 	if (res == 0) {
-		type_modified(type);
+		PyType_Modified(type);
 		if (value && PyObject_IsTrue(value)) {
 			type->tp_flags |= Py_TPFLAGS_IS_ABSTRACT;
 		}
@@ -1520,7 +1519,7 @@ mro_internal(PyTypeObject *type)
 	   from the custom MRO */
 	type_mro_modified(type, type->tp_bases);
 
-	type_modified(type);
+	PyType_Modified(type);
 
 	return 0;
 }
@@ -5750,7 +5749,7 @@ update_slot(PyTypeObject *type, PyObject *name)
 	   update_subclasses() recursion below, but carefully:
 	   they each have their own conditions on which to stop
 	   recursing into subclasses. */
-	type_modified(type);
+	PyType_Modified(type);
 
 	init_slotdefs();
 	pp = ptrs;
