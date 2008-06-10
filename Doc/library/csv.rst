@@ -484,7 +484,7 @@ For all other encodings the following :class:`UnicodeReader` and
 parameter in their constructor and make sure that the data passes the real
 reader or writer encoded as UTF-8::
 
-   import csv, codecs, cStringIO
+   import csv, codecs, io
 
    class UTF8Recoder:
        """
@@ -524,7 +524,7 @@ reader or writer encoded as UTF-8::
 
        def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
            # Redirect output to a queue
-           self.queue = cStringIO.StringIO()
+           self.queue = io.StringIO()
            self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
            self.stream = f
            self.encoder = codecs.getincrementalencoder(encoding)()

@@ -555,7 +555,7 @@ the referenced object.
 Here's a silly example that *might* shed more light::
 
    import pickle
-   from cStringIO import StringIO
+   from io import StringIO
 
    src = StringIO()
    p = pickle.Pickler(src)

@@ -695,10 +695,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Include\cStringIO.h"
-				>
-			</File>
-			<File
 				RelativePath="..\Include\datetime.h"
 				>
 			</File>

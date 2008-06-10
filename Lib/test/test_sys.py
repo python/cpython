@@ -297,7 +297,7 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(vi[4], int))
 
     def test_43581(self):
-        # Can't use sys.stdout, as this is a cStringIO object when
+        # Can't use sys.stdout, as this is a StringIO object when
         # the test runs under regrtest.
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 

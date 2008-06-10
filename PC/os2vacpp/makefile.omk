@@ -142,7 +142,6 @@ MODULES		=                   \
                   ArrayModule.obj   \
                   BinAscii.obj      \
                   CMathModule.obj   \
-                  cStringIO.obj     \
                   ErrnoModule.obj   \
                   GetBuildInfo.obj  \
                   GetPathP.obj      \
@@ -379,7 +378,7 @@ cmathmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 stringobject.h sysmodule.h traceback.h tupleobject.h
 
 cpickle.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
-	 pyconfig.h cstringio.h dictobject.h fileobject.h floatobject.h \
+	 pyconfig.h dictobject.h fileobject.h floatobject.h \
 	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
 	 longobject.h methodobject.h modsupport.h moduleobject.h mymalloc.h \
 	 mymath.h myproto.h object.h objimpl.h pydebug.h pyerrors.h pyfpe.h \
@@ -393,14 +392,6 @@ cryptmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
 	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
 	 traceback.h tupleobject.h
-
-cstringio.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
-	 pyconfig.h cstringio.h dictobject.h fileobject.h floatobject.h \
-	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
-	 longobject.h methodobject.h modsupport.h moduleobject.h mymalloc.h \
-	 myproto.h object.h objimpl.h pydebug.h pyerrors.h pyfpe.h \
-	 pystate.h python.h pythonrun.h rangeobject.h sliceobject.h \
-	 stringobject.h sysmodule.h traceback.h tupleobject.h
 
 cursesmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \

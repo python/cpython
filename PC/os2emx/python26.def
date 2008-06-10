@@ -1218,9 +1218,6 @@ EXPORTS
 ;  "initcPickle"
 ;  "fast_save_leave"
 
-; From python26_s.lib(cStringIO)
-;  "initcStringIO"
-
 ; From python26_s.lib(_csv)
 ;  "init_csv"
 

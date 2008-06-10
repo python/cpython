@@ -50,7 +50,6 @@ extern void init_symtable();
 extern void init_weakref();
 extern void initarray();
 extern void initbinascii();
-extern void initcStringIO();
 extern void initcollections();
 extern void initcmath();
 extern void initdatetime();
@@ -110,7 +109,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_weakref", init_weakref},
 	{"array", initarray},
 	{"binascii", initbinascii},
-	{"cStringIO", initcStringIO},
 	{"collections", initcollections},
 	{"cmath", initcmath},
 	{"datetime", initdatetime},
