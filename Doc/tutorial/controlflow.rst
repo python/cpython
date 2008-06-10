@@ -475,8 +475,8 @@ called with an arbitrary number of arguments.  These arguments will be wrapped
 up in a tuple.  Before the variable number of arguments, zero or more normal
 arguments may occur. ::
 
-   def fprintf(file, template, *args):
-       file.write(template.format(args))
+   def write_multiple_items(file, separator, *args):
+       file.write(separator.join(args))
 
  
 Normally, these ``variadic`` arguments will be last in the list of formal

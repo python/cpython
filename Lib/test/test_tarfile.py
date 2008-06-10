@@ -528,7 +528,19 @@ class PaxReadTest(LongnameTest):
         self.assertEqual(float(tarinfo.pax_headers["ctime"]), 1041808783.0)
 
 
-class WriteTest(unittest.TestCase):
+class WriteTestBase(unittest.TestCase):
+    # Put all write tests in here that are supposed to be tested
+    # in all possible mode combinations.
+
+    def test_fileobj_no_close(self):
+        fobj = io.BytesIO()
+        tar = tarfile.open(fileobj=fobj, mode=self.mode)
+        tar.addfile(tarfile.TarInfo("foo"))
+        tar.close()
+        self.assert_(fobj.closed is False, "external fileobjs must never closed")
+
+
+class WriteTest(WriteTestBase):
 
     mode = "w:"
 
@@ -651,7 +663,7 @@ class WriteTest(unittest.TestCase):
             shutil.rmtree(tempdir)
 
 
-class StreamWriteTest(unittest.TestCase):
+class StreamWriteTest(WriteTestBase):
 
     mode = "w|"
 

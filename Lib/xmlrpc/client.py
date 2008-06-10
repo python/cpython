@@ -800,6 +800,7 @@ class Unmarshaller:
         self.append(int(data))
         self._value = 0
     dispatch["i4"] = end_int
+    dispatch["i8"] = end_int
     dispatch["int"] = end_int
 
     def end_double(self, data):

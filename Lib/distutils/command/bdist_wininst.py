@@ -75,6 +75,12 @@ class bdist_wininst(Command):
 
     def finalize_options(self):
         if self.bdist_dir is None:
+            if self.skip_build and self.plat_name:
+                # If build is skipped and plat_name is overridden, bdist will
+                # not see the correct 'plat_name' - so set that up manually.
+                bdist = self.distribution.get_command_obj('bdist')
+                bdist.plat_name = self.plat_name
+                # next the command will be initialized using that name
             bdist_base = self.get_finalized_command('bdist').bdist_base
             self.bdist_dir = os.path.join(bdist_base, 'wininst')
         if not self.target_version:

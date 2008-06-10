@@ -35,7 +35,14 @@ Type Objects
 
 .. cfunction:: unsigned int PyType_ClearCache(void)
 
-   Clears the internal lookup cache. Return the current version tag.
+   Clear the internal lookup cache. Return the current version tag.
+
+
+.. cfunction:: void PyType_Modified(PyTypeObject *type)
+
+   Invalidate the internal lookup cache for the type and all of its
+   subtypes.  This function must be called after any manual
+   modification of the attributes or base classes of the type.
 
 
 .. cfunction:: int PyType_HasFeature(PyObject *o, int feature)
