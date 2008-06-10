@@ -6,6 +6,7 @@ import unittest
 import math
 import os
 import sys
+import random
 
 eps = 1E-05
 NAN = float('nan')
@@ -273,6 +274,20 @@ class MathTests(unittest.TestCase):
         self.ftest('fabs(-1)', math.fabs(-1), 1)
         self.ftest('fabs(0)', math.fabs(0), 0)
         self.ftest('fabs(1)', math.fabs(1), 1)
+
+    def testFactorial(self):
+        def fact(n):
+            result = 1
+            for i in range(1, int(n)+1):
+                result *= i
+            return result
+        values = list(range(10)) + [50, 100, 500]
+        random.shuffle(values)
+        for x in range(10):
+            for cast in (int, float):
+                self.assertEqual(math.factorial(cast(x)), fact(x), (x, fact(x), math.factorial(x)))
+        self.assertRaises(ValueError, math.factorial, -1)
+        self.assertRaises(ValueError, math.factorial, math.pi)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)

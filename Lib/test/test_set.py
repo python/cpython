@@ -79,6 +79,7 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').union(C('efgfe')), set('abcefg'))
             self.assertEqual(self.thetype('abcba').union(C('ccb')), set('abc'))
             self.assertEqual(self.thetype('abcba').union(C('ef')), set('abcef'))
+            self.assertEqual(self.thetype('abcba').union(C('ef'), C('fg')), set('abcefg'))
 
     def test_or(self):
         i = self.s.union(self.otherword)
@@ -103,6 +104,7 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').intersection(C('efgfe')), set(''))
             self.assertEqual(self.thetype('abcba').intersection(C('ccb')), set('bc'))
             self.assertEqual(self.thetype('abcba').intersection(C('ef')), set(''))
+            self.assertEqual(self.thetype('abcba').intersection(C('cbcf'), C('bag')), set('b'))
 
     def test_isdisjoint(self):
         def f(s1, s2):
@@ -410,6 +412,12 @@ class TestSet(TestJointOps):
                 s = self.thetype('abcba')
                 self.assertEqual(s.update(C(p)), None)
                 self.assertEqual(s, set(q))
+        for p in ('cdc', 'efgfe', 'ccb', 'ef', 'abcda'):
+            q = 'ahi'
+            for C in set, frozenset, dict.fromkeys, str, list, tuple:
+                s = self.thetype('abcba')
+                self.assertEqual(s.update(C(p), C(q)), None)
+                self.assertEqual(s, set(s) | set(p) | set(q))
 
     def test_ior(self):
         self.s |= set(self.otherword)
@@ -431,6 +439,11 @@ class TestSet(TestJointOps):
                 s = self.thetype('abcba')
                 self.assertEqual(s.intersection_update(C(p)), None)
                 self.assertEqual(s, set(q))
+                ss = 'abcba'
+                s = self.thetype(ss)
+                t = 'cbc'
+                self.assertEqual(s.intersection_update(C(p), C(t)), None)
+                self.assertEqual(s, set('abcba')&set(p)&set(t))
 
     def test_iand(self):
         self.s &= set(self.otherword)

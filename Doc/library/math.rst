@@ -41,6 +41,10 @@ Number-theoretic and representation functions:
 
    Return the absolute value of *x*.
 
+.. function:: factorial(x)
+
+   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not intergral or
+   is negative.
 
 .. function:: floor(x)
 

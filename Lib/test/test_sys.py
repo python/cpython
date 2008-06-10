@@ -386,11 +386,14 @@ class SizeofTest(unittest.TestCase):
         self.file.close()
         test.support.unlink(test.support.TESTFN)
 
-    def check_sizeof(self, o, size):
+    def check_sizeof(self, o, size, size2=None):
+        """Check size of o. Possible are size and optionally size2)."""
         result = sys.getsizeof(o)
-        msg = 'wrong size for %s: got %d, expected %d' \
-            % (type(o), result, size)
-        self.assertEqual(result, size, msg)
+        msg = 'wrong size for %s: got %d, expected ' % (type(o), result)
+        if (size2 != None) and (result != size):
+            self.assertEqual(result, size2, msg + str(size2))
+        else:
+            self.assertEqual(result, size, msg + str(size))
 
     def align(self, value):
         mod = value % self.p
@@ -486,6 +489,24 @@ class SizeofTest(unittest.TestCase):
         # list
         self.check_sizeof([], h + l + p + l)
         self.check_sizeof([1, 2, 3], h + l + p + l + 3*l)
+        # unicode
+        import math
+        usize = math.log(sys.maxunicode + 1, 2) / 8
+        samples = ['', '1'*100]
+        # we need to test for both sizes, because we don't know if the string
+        # has been cached
+        for s in samples:
+            basicsize =  h + l + p + l + l + p + usize * (len(s) + 1)
+            defenc = bytes(s, 'ascii')
+            self.check_sizeof(s, basicsize,
+                              size2=basicsize + sys.getsizeof(defenc))
+            # trigger caching encoded version as bytes object
+            try:
+                getattr(sys, s)
+            except AttributeError:
+                pass
+            finally:
+                self.check_sizeof(s, basicsize + sys.getsizeof(defenc))
 
         h += l
         # long
@@ -495,9 +516,6 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(32768, h + self.align(2) + 2)
         self.check_sizeof(32768*32768-1, h + self.align(2) + 2)
         self.check_sizeof(32768*32768, h + self.align(2) + 4)
-        # XXX add Unicode support
-        # self.check_sizeof('', h + l + self.align(i + 1))
-        # self.check_sizeof('abc', h + l + self.align(i + 1) + 3)
 
 
 def test_main():
