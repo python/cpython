@@ -1335,14 +1335,14 @@ There are several ways to loaded shared libraries into the Python process.  One
 way is to instantiate one of the following classes:
 
 
-.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None)
+.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
 
    Instances of this class represent loaded shared libraries. Functions in these
    libraries use the standard C calling convention, and are assumed to return
    ``int``.
 
 
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None)
+.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1352,7 +1352,7 @@ way is to instantiate one of the following classes:
    failure, an :class:`WindowsError` is automatically raised.
 
 
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None)
+.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1385,6 +1385,29 @@ it.
 The *mode* parameter can be used to specify how the library is loaded.  For
 details, consult the ``dlopen(3)`` manpage, on Windows, *mode* is ignored.
 
+The *use_errno* parameter, when set to True, enables a ctypes
+mechanism that allows to access the system `errno` error number in a
+safe way.  `ctypes` maintains a thread-local copy of the systems
+`errno` variable; if you call foreign functions created with
+`use_errno=True` then the `errno` value before the function call is
+swapped with the ctypes private copy, the same happens immediately
+after the function call.
+
+The function `ctypes.get_errno()` returns the value of the ctypes
+private copy, and the function `ctypes.set_errno(value)` changes the
+ctypes private copy to `value` and returns the former value.
+
+The *use_last_error* parameter, when set to True, enables the same
+mechanism for the Windows error code which is managed by the
+GetLastError() and SetLastError() Windows api functions;
+`ctypes.get_last_error()` and `ctypes.set_last_error(value)` are used
+to request and change the ctypes private copy of the windows error
+code.
+
+.. versionchanged:: 2.6
+
+The `use_errno` and `use_last_error` parameters were added in Python
+2.6.
 
 .. data:: RTLD_GLOBAL
    :noindex:
@@ -1583,18 +1606,26 @@ implementation.  The factory functions must be called with the desired result
 type and the argument types of the function.
 
 
-.. function:: CFUNCTYPE(restype, *argtypes)
+.. function:: CFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
    The returned function prototype creates functions that use the standard C
    calling convention.  The function will release the GIL during the call.
+   If `use_errno` is set to True, the ctypes private copy of the system `errno`
+   variable is exchanged with the real `errno` value bafore and after the call;
+   `use_last_error` does the same for the Windows error code.
+
+   .. versionchanged:: 2.6
+
+   The optional `use_errno` and `use_last_error` parameters were added
+   in Python 2.6.
 
 
-.. function:: WINFUNCTYPE(restype, *argtypes)
+.. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
    Windows only: The returned function prototype creates functions that use the
    ``stdcall`` calling convention, except on Windows CE where :func:`WINFUNCTYPE`
    is the same as :func:`CFUNCTYPE`.  The function will release the GIL during the
-   call.
+   call. `use_errno` and `use_last_error` have the same meaning as above.
 
 
 .. function:: PYFUNCTYPE(restype, *argtypes)
@@ -1846,7 +1877,22 @@ Utility functions
 .. function:: GetLastError()
 
    Windows only: Returns the last error code set by Windows in the calling thread.
+   This function calls the Windows `GetLastError()` function directly,
+   it does not return the ctypes-private copy of the error code.
 
+.. function:: get_errno()
+
+   Returns the current value of the ctypes-private copy of the system
+   `errno` variable in the calling thread.
+
+   .. versionadded:: 2.6
+
+.. function:: get_last_error()
+
+   Windows only: returns the current value of the ctypes-private copy of the system
+   `LastError` variable in the calling thread.
+
+   .. versionadded:: 2.6
 
 .. function:: memmove(dst, src, count)
 
@@ -1898,6 +1944,22 @@ Utility functions
    rules. On windows, the initial conversion rules are ``('mbcs', 'ignore')``, on
    other systems ``('ascii', 'strict')``.
 
+
+.. function:: set_errno(value)
+
+   Set the  current value of the ctypes-private copy of the system
+   `errno` variable in the calling thread to `value` and return the
+   previous value.
+
+   .. versionadded:: 2.6
+
+.. function:: set_last_error(value)
+
+   Windows only: set the current value of the ctypes-private copy of
+   the system `LastError` variable in the calling thread to `value`
+   and return the previous value.
+
+   .. versionadded:: 2.6
 
 .. function:: sizeof(obj_or_type)
 
