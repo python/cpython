@@ -2019,7 +2019,7 @@ empty:
 }
 
 PyDoc_STRVAR(combinations_doc,
-"combinations(iterables) --> combinations object\n\
+"combinations(iterable[, r]) --> combinations object\n\
 \n\
 Return successive r-length combinations of elements in the iterable.\n\n\
 combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)");
@@ -2294,10 +2294,10 @@ empty:
 }
 
 PyDoc_STRVAR(permutations_doc,
-"permutations(iterables[, r]) --> permutations object\n\
+"permutations(iterable[, r]) --> permutations object\n\
 \n\
 Return successive r-length permutations of elements in the iterable.\n\n\
-permutations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)");
+permutations(range(3), 2) --> (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)");
 
 static PyTypeObject permutations_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)

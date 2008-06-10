@@ -352,6 +352,14 @@ class ComplexTest(unittest.TestCase):
             except (OSError, IOError):
                 pass
 
+    def test_getnewargs(self):
+        self.assertEqual((1+2j).__getnewargs__(), (1.0, 2.0))
+        self.assertEqual((1-2j).__getnewargs__(), (1.0, -2.0))
+        self.assertEqual((2j).__getnewargs__(), (0.0, 2.0))
+        self.assertEqual((-0j).__getnewargs__(), (0.0, -0.0))
+        self.assertEqual(complex(0, INF).__getnewargs__(), (0.0, INF))
+        self.assertEqual(complex(INF, 0).__getnewargs__(), (INF, 0.0))
+
     if float.__getformat__("double").startswith("IEEE"):
         def test_plus_minus_0j(self):
             # test that -0j and 0j literals are not identified

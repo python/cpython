@@ -1618,7 +1618,7 @@ The :class:`TimedRotatingFileHandler` class, located in the
 timed intervals.
 
 
-.. class:: TimedRotatingFileHandler(filename [,when [,interval [,backupCount[, encoding[, delay]]]]])
+.. class:: TimedRotatingFileHandler(filename [,when [,interval [,backupCount[, encoding[, delay[, utc]]]]]])
 
    Returns a new instance of the :class:`TimedRotatingFileHandler` class. The
    specified file is opened and used as the stream for logging. On rotating it also
@@ -1626,7 +1626,7 @@ timed intervals.
    *interval*.
 
    You can use the *when* to specify the type of *interval*. The list of possible
-   values is, note that they are not case sensitive:
+   values is below.  Note that they are not case sensitive.
 
    +----------------+-----------------------+
    | Value          | Type of interval      |
@@ -1647,7 +1647,11 @@ timed intervals.
    The system will save old log files by appending extensions to the filename.
    The extensions are date-and-time based, using the strftime format
    ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the
-   rollover interval. If *backupCount* is nonzero, at most *backupCount* files
+   rollover interval. 
+   If the *utc* argument is true, times in UTC will be used; otherwise
+   local time is used.
+
+   If *backupCount* is nonzero, at most *backupCount* files
    will be kept, and if more would be created when rollover occurs, the oldest
    one is deleted. The deletion logic uses the interval to determine which
    files to delete, so changing the interval may leave old files lying around.

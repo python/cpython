@@ -1,7 +1,7 @@
-/* Bytes object interface */
+/* ByteArray object interface */
 
-#ifndef Py_BYTESOBJECT_H
-#define Py_BYTESOBJECT_H
+#ifndef Py_BYTEARRAYOBJECT_H
+#define Py_BYTEARRAYOBJECT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,4 +50,4 @@ PyAPI_FUNC(int) PyByteArray_Resize(PyObject *, Py_ssize_t);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_BYTESOBJECT_H */
+#endif /* !Py_BYTEARRAYOBJECT_H */
