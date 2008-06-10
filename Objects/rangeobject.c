@@ -131,9 +131,9 @@ range_repr(rangeobject *r)
 
 /* Pickling support */
 static PyObject *
-range_getnewargs(rangeobject *r)
+range_reduce(rangeobject *r, PyObject *args)
 {
-	return Py_BuildValue("(iii)",
+	return Py_BuildValue("(O(iii))", Py_TYPE(r),
 			     r->start,
 			     r->start + r->len * r->step,
 			     r->step);
@@ -155,7 +155,7 @@ PyDoc_STRVAR(reverse_doc,
 
 static PyMethodDef range_methods[] = {
 	{"__reversed__",	(PyCFunction)range_reverse, METH_NOARGS, reverse_doc},
-	{"__getnewargs__",	(PyCFunction)range_getnewargs, METH_NOARGS},
+	{"__reduce__",		(PyCFunction)range_reduce, METH_VARARGS},
  	{NULL,		NULL}		/* sentinel */
 };
 
