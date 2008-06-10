@@ -23,7 +23,6 @@ extern void init_sha256(void);
 extern void init_sha512(void);
 extern void inittime(void);
 extern void init_thread(void);
-extern void initcStringIO(void);
 #ifdef WIN32
 extern void initmsvcrt(void);
 extern void init_locale(void);
@@ -95,7 +94,6 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef WITH_THREAD
         {"_thread", init_thread},
 #endif
-        {"cStringIO", initcStringIO},
 #ifdef WIN32
         {"msvcrt", initmsvcrt},
         {"_locale", init_locale},
