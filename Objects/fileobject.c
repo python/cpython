@@ -453,7 +453,7 @@ PyFile_SetEncodingAndErrors(PyObject *f, const char *enc, char* errors)
 	PyObject *str, *oerrors;
 
 	assert(PyFile_Check(f));
-	str = PyBytes_FromString(enc);
+	str = PyString_FromString(enc);
 	if (!str)
 		return 0;
 	if (errors) {
@@ -2321,9 +2321,9 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 #ifdef Py_USING_UNICODE
                 if ((flags & Py_PRINT_RAW) &&
 		    PyUnicode_Check(v) && enc != Py_None) {
-			char *cenc = PyBytes_AS_STRING(enc);
+			char *cenc = PyString_AS_STRING(enc);
 			char *errors = fobj->f_errors == Py_None ? 
-			  "strict" : PyBytes_AS_STRING(fobj->f_errors);
+			  "strict" : PyString_AS_STRING(fobj->f_errors);
 			value = PyUnicode_AsEncodedString(v, cenc, errors);
 			if (value == NULL)
 				return -1;

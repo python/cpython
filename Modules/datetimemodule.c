@@ -1207,9 +1207,9 @@ wrap_strftime(PyObject *object, const char *format, size_t format_len,
 	 * is expensive, don't unless they're actually used.
 	 */
 	totalnew = format_len + 1;	/* realistic if no %z/%Z/%f */
-	newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
+	newfmt = PyString_FromStringAndSize(NULL, totalnew);
 	if (newfmt == NULL) goto Done;
-	pnew = PyBytes_AsString(newfmt);
+	pnew = PyString_AsString(newfmt);
 	usednew = 0;
 
 	pin = format;
