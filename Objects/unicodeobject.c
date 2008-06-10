@@ -7895,6 +7895,29 @@ PyDoc_STRVAR(p_format__doc__,
 \n\
 ");
 
+static PyObject *
+unicode__sizeof__(PyUnicodeObject *v)
+{
+    PyObject *res = NULL, *defsize = NULL;
+
+    res = PyInt_FromSsize_t(sizeof(PyUnicodeObject) +
+                            sizeof(Py_UNICODE) * (v->length + 1));
+    if (v->defenc) {
+        defsize = PyObject_CallMethod(v->defenc, "__sizeof__", NULL);
+        if (defsize == NULL) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        res = PyNumber_Add(res, defsize);
+        Py_DECREF(defsize);
+    }
+    return res;
+}
+
+PyDoc_STRVAR(sizeof__doc__,
+"S.__sizeof__() -> size of S in memory, in bytes\n\
+\n\
+");
 
 static PyObject *
 unicode_getnewargs(PyUnicodeObject *v)
@@ -7952,6 +7975,7 @@ static PyMethodDef unicode_methods[] = {
     {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
     {"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
     {"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
+    {"__sizeof__", (PyCFunction) unicode__sizeof__, METH_NOARGS, sizeof__doc__},
 #if 0
     {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},
 #endif

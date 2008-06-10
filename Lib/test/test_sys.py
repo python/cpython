@@ -421,11 +421,14 @@ class SizeofTest(unittest.TestCase):
         self.file.close()
         test.test_support.unlink(test.test_support.TESTFN)
 
-    def check_sizeof(self, o, size):
+    def check_sizeof(self, o, size, size2=None):
+        """Check size of o. Possible are size and optionally size2)."""
         result = sys.getsizeof(o)
-        msg = 'wrong size for %s: got %d, expected %d' \
-            % (type(o), result, size)
-        self.assertEqual(result, size, msg)
+        msg = 'wrong size for %s: got %d, expected ' % (type(o), result)
+        if (size2 != None) and (result != size):
+            self.assertEqual(result, size2, msg + str(size2))
+        else:
+            self.assertEqual(result, size, msg + str(size))
 
     def align(self, value):
         mod = value % self.p
@@ -517,10 +520,10 @@ class SizeofTest(unittest.TestCase):
                 pass
         # type (PyTypeObject + PyNumberMethods +  PyMappingMethods +
         #       PySequenceMethods +  PyBufferProcs)
-        len_typeobject = p + 2*l + 15*p + l + 4*p + l + 9*p + l + 11*p
+        len_typeobject = p + 2*l + 15*p + l + 4*p + l + 9*p +\
+                         l + 11*p + self.align(4)
         self.check_sizeof(class_newstyle,
-                          h + len_typeobject + 42*p + 10*p + 3*p + 6*p)
-
+                          h + len_typeobject + 41*p + 10*p + 3*p + 6*p)
 
     def test_specialtypes(self):
         i = self.i
@@ -534,6 +537,24 @@ class SizeofTest(unittest.TestCase):
         # list
         self.check_sizeof([], h + l + p + l)
         self.check_sizeof([1, 2, 3], h + l + p + l + 3*l)
+        # unicode
+        import math
+        usize = math.log(sys.maxunicode + 1, 2) / 8
+        samples = [u'', u'1'*100]
+        # we need to test for both sizes, because we don't know if the string
+        # has been cached
+        for s in samples:
+            basicsize =  h + l + p + l + p + usize * (len(s) + 1)
+            self.check_sizeof(s, basicsize,\
+                                  size2=basicsize + sys.getsizeof(str(s)))
+        # XXX trigger caching encoded version as Python string
+        s = samples[1]
+        try:
+            getattr(sys, s)
+        except AttributeError:
+            pass
+        finally:
+            self.check_sizeof(s, basicsize + sys.getsizeof(str(s)))
 
         h += l
         # long
