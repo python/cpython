@@ -27,6 +27,9 @@ class dummychannel:
     def __init__(self):
         self.socket = dummysocket()
 
+    def close(self):
+        self.socket.close()
+
 class exitingdummy:
     def __init__(self):
         pass

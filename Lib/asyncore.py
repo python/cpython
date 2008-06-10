@@ -53,12 +53,18 @@ import time
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
-     ENOTCONN, ESHUTDOWN, EINTR, EISCONN, errorcode
+     ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, errorcode
 
 try:
     socket_map
 except NameError:
     socket_map = {}
+
+def _strerror(err):
+    res = os.strerror(err)
+    if res == 'Unknown error':
+        res = errorcode[err]
+    return res
 
 class ExitNow(Exception):
     pass
@@ -66,7 +72,7 @@ class ExitNow(Exception):
 def read(obj):
     try:
         obj.handle_read_event()
-    except ExitNow:
+    except (ExitNow, KeyboardInterrupt, SystemExit):
         raise
     except:
         obj.handle_error()
@@ -74,15 +80,15 @@ def read(obj):
 def write(obj):
     try:
         obj.handle_write_event()
-    except ExitNow:
+    except (ExitNow, KeyboardInterrupt, SystemExit):
         raise
     except:
         obj.handle_error()
 
-def _exception (obj):
+def _exception(obj):
     try:
         obj.handle_expt_event()
-    except ExitNow:
+    except (ExitNow, KeyboardInterrupt, SystemExit):
         raise
     except:
         obj.handle_error()
@@ -95,7 +101,7 @@ def readwrite(obj, flags):
             obj.handle_write_event()
         if flags & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
             obj.handle_expt_event()
-    except ExitNow:
+    except (ExitNow, KeyboardInterrupt, SystemExit):
         raise
     except:
         obj.handle_error()
@@ -116,14 +122,15 @@ def poll(timeout=0.0, map=None):
                 e.append(fd)
         if [] == r == w == e:
             time.sleep(timeout)
-        else:
-            try:
-                r, w, e = select.select(r, w, e, timeout)
-            except select.error, err:
-                if err[0] != EINTR:
-                    raise
-                else:
-                    return
+            return
+
+        try:
+            r, w, e = select.select(r, w, e, timeout)
+        except select.error, err:
+            if err[0] != EINTR:
+                raise
+            else:
+                return
 
         for fd in r:
             obj = map.get(fd)
@@ -209,18 +216,29 @@ class dispatcher:
         else:
             self._map = map
 
+        self._fileno = None
+
         if sock:
+            # Set to nonblocking just to make sure for cases where we
+            # get a socket from a blocking source.
+            sock.setblocking(0)
             self.set_socket(sock, map)
-            # I think it should inherit this anyway
-            self.socket.setblocking(0)
             self.connected = True
-            # XXX Does the constructor require that the socket passed
-            # be connected?
+            # The constructor no longer requires that the socket
+            # passed be connected.
             try:
                 self.addr = sock.getpeername()
             except socket.error:
-                # The addr isn't crucial
-                pass
+                if err[0] == ENOTCONN:
+                    # To handle the case where we got an unconnected
+                    # socket.
+                    self.connected = False
+                else:
+                    # The socket is broken in some unknown way, alert
+                    # the user and remove it from the map (to prevent
+                    # polling of broken sockets).
+                    self.del_channel(map)
+                    raise
         else:
             self.socket = None
 
@@ -254,10 +272,9 @@ class dispatcher:
 
     def create_socket(self, family, type):
         self.family_and_type = family, type
-        self.socket = socket.socket(family, type)
-        self.socket.setblocking(0)
-        self._fileno = self.socket.fileno()
-        self.add_channel()
+        sock = socket.socket(family, type)
+        sock.setblocking(0)
+        self.set_socket(sock)
 
     def set_socket(self, sock, map=None):
         self.socket = sock
@@ -295,7 +312,7 @@ class dispatcher:
     def listen(self, num):
         self.accepting = True
         if os.name == 'nt' and num > 5:
-            num = 1
+            num = 5
         return self.socket.listen(num)
 
     def bind(self, addr):
@@ -310,10 +327,9 @@ class dispatcher:
             return
         if err in (0, EISCONN):
             self.addr = address
-            self.connected = True
-            self.handle_connect()
+            self.handle_connect_event()
         else:
-            raise socket.error, (err, errorcode[err])
+            raise socket.error(err, errorcode[err])
 
     def accept(self):
         # XXX can return either an address pair or None
@@ -333,9 +349,11 @@ class dispatcher:
         except socket.error, why:
             if why[0] == EWOULDBLOCK:
                 return 0
+            elif why[0] in (ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED):
+                self.handle_close()
+                return 0
             else:
                 raise
-            return 0
 
     def recv(self, buffer_size):
         try:
@@ -349,15 +367,21 @@ class dispatcher:
                 return data
         except socket.error, why:
             # winsock sometimes throws ENOTCONN
-            if why[0] in [ECONNRESET, ENOTCONN, ESHUTDOWN]:
+            if why[0] in [ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED]:
                 self.handle_close()
                 return ''
             else:
                 raise
 
     def close(self):
+        self.connected = False
+        self.accepting = False
         self.del_channel()
-        self.socket.close()
+        try:
+            self.socket.close()
+        except socket.error, why:
+            if why[0] not in (ENOTCONN, EBADF):
+                raise
 
     # cheap inheritance, used to pass all other attribute
     # references to the underlying socket object.
@@ -377,27 +401,53 @@ class dispatcher:
 
     def handle_read_event(self):
         if self.accepting:
-            # for an accepting socket, getting a read implies
-            # that we are connected
-            if not self.connected:
-                self.connected = True
+            # accepting sockets are never connected, they "spawn" new
+            # sockets that are connected
             self.handle_accept()
         elif not self.connected:
-            self.handle_connect()
-            self.connected = True
+            self.handle_connect_event()
             self.handle_read()
         else:
             self.handle_read()
 
+    def handle_connect_event(self):
+        self.connected = True
+        self.handle_connect()
+
     def handle_write_event(self):
-        # getting a write implies that we are connected
+        if self.accepting:
+            # Accepting sockets shouldn't get a write event.
+            # We will pretend it didn't happen.
+            return
+
         if not self.connected:
-            self.handle_connect()
-            self.connected = True
+            #check for errors
+            err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+            if err != 0:
+                raise socket.error(err, strerror(err))
+
+            self.handle_connect_event()
         self.handle_write()
 
     def handle_expt_event(self):
-        self.handle_expt()
+        # if the handle_expt is the same default worthless method,
+        # we'll not even bother calling it, we'll instead generate
+        # a useful error
+        x = True
+        try:
+            y1 = self.__class__.handle_expt.im_func
+            y2 = dispatcher.handle_expt.im_func
+            x = y1 is y2
+        except AttributeError:
+            pass
+
+        if x:
+            err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+            msg = _strerror(err)
+
+            raise socket.error(err, msg)
+        else:
+            self.handle_expt()
 
     def handle_error(self):
         nil, t, v, tbinfo = compact_traceback()
@@ -473,7 +523,8 @@ class dispatcher_with_send(dispatcher):
 def compact_traceback():
     t, v, tb = sys.exc_info()
     tbinfo = []
-    assert tb # Must have a traceback
+    if not tb: # Must have a traceback
+        raise AssertionError("traceback does not exist")
     while tb:
         tbinfo.append((
             tb.tb_frame.f_code.co_filename,
@@ -489,11 +540,22 @@ def compact_traceback():
     info = ' '.join(['[%s|%s|%s]' % x for x in tbinfo])
     return (file, function, line), t, v, info
 
-def close_all(map=None):
+def close_all(map=None, ignore_all=False):
     if map is None:
         map = socket_map
     for x in map.values():
-        x.socket.close()
+        try:
+            x.close()
+        except OSError, x:
+            if x[0] == EBADF:
+                pass
+            elif not ignore_all:
+                raise
+        except (ExitNow, KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            if not ignore_all:
+                raise
     map.clear()
 
 # Asynchronous File I/O:
@@ -513,11 +575,12 @@ if os.name == 'posix':
     import fcntl
 
     class file_wrapper:
-        # here we override just enough to make a file
+        # Here we override just enough to make a file
         # look like a socket for the purposes of asyncore.
+        # The passed fd is automatically os.dup()'d
 
         def __init__(self, fd):
-            self.fd = fd
+            self.fd = os.dup(fd)
 
         def recv(self, *args):
             return os.read(self.fd, *args)
@@ -539,6 +602,10 @@ if os.name == 'posix':
         def __init__(self, fd, map=None):
             dispatcher.__init__(self, None, map)
             self.connected = True
+            try:
+                fd = fd.fileno()
+            except AttributeError:
+                pass
             self.set_file(fd)
             # set it to non-blocking mode
             flags = fcntl.fcntl(fd, fcntl.F_GETFL, 0)

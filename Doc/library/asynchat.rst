@@ -81,6 +81,12 @@ connection requests.
    :exc:`NotImplementedError` exception.
 
 
+.. method:: async_chat._collect_incoming_data(data)
+
+   Sample implementation of a data collection rutine to be used in conjunction
+   with :meth:`_get_data` in a user-specified :meth:`found_terminator`.
+
+
 .. method:: async_chat.discard_buffers()
 
    In emergencies this method will discard any data held in the input and/or
@@ -93,6 +99,12 @@ connection requests.
    by :meth:`set_terminator`. The default method, which must be overridden,
    raises a :exc:`NotImplementedError` exception. The buffered input data
    should be available via an instance attribute.
+
+
+.. method:: async_chat._get_data()
+
+   Will return and clear the data received with the sample
+   :meth:`_collect_incoming_data` implementation.
 
 
 .. method:: async_chat.get_terminator()
