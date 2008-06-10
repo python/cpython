@@ -1528,7 +1528,7 @@ align_func(PyObject *self, PyObject *obj)
 }
 
 static char byref_doc[] =
-"byref(C instance) -> byref-object\n"
+"byref(C instance[, offset=0]) -> byref-object\n"
 "Return a pointer lookalike to a C instance, only usable\n"
 "as function argument";
 
@@ -1537,9 +1537,21 @@ static char byref_doc[] =
  * but still has a reference to self.
  */
 static PyObject *
-byref(PyObject *self, PyObject *obj)
+byref(PyObject *self, PyObject *args)
 {
 	PyCArgObject *parg;
+	PyObject *obj;
+	PyObject *pyoffset = NULL;
+	Py_ssize_t offset = 0;
+
+	if (!PyArg_UnpackTuple(args, "byref", 1, 2,
+			       &obj, &pyoffset))
+		return NULL;
+	if (pyoffset) {
+		offset = PyNumber_AsSsize_t(pyoffset, NULL);
+		if (offset == -1 && PyErr_Occurred())
+			return NULL;
+	}
 	if (!CDataObject_Check(obj)) {
 		PyErr_Format(PyExc_TypeError,
 			     "byref() argument must be a ctypes instance, not '%s'",
@@ -1555,7 +1567,7 @@ byref(PyObject *self, PyObject *obj)
 	parg->pffi_type = &ffi_type_pointer;
 	Py_INCREF(obj);
 	parg->obj = obj;
-	parg->value.p = ((CDataObject *)obj)->b_ptr;
+	parg->value.p = (char *)((CDataObject *)obj)->b_ptr + offset;
 	return (PyObject *)parg;
 }
 
@@ -1835,7 +1847,7 @@ PyMethodDef module_methods[] = {
 #endif
 	{"alignment", align_func, METH_O, alignment_doc},
 	{"sizeof", sizeof_func, METH_O, sizeof_doc},
-	{"byref", byref, METH_O, byref_doc},
+	{"byref", byref, METH_VARARGS, byref_doc},
 	{"addressof", addressof, METH_O, addressof_doc},
 	{"call_function", call_function, METH_VARARGS },
 	{"call_cdeclfunction", call_cdeclfunction, METH_VARARGS },
