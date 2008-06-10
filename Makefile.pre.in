@@ -303,7 +303,6 @@ OBJECT_OBJS=	\
 		Objects/bufferobject.o \
 		Objects/bytes_methods.o \
 		Objects/bytearrayobject.o \
-		Objects/bytesobject.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/cobject.o \
@@ -327,8 +326,9 @@ OBJECT_OBJS=	\
 		Objects/object.o \
 		Objects/obmalloc.o \
 		Objects/rangeobject.o \
-                Objects/setobject.o \
+		Objects/setobject.o \
 		Objects/sliceobject.o \
+		Objects/stringobject.o \
 		Objects/structseq.o \
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
@@ -562,8 +562,6 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 				$(STRINGLIB_HEADERS)
 
 Objects/stringobject.o: $(srcdir)/Objects/stringobject.c \
-				$(STRINGLIB_HEADERS)
-Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c \
 				$(STRINGLIB_HEADERS)
 
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
