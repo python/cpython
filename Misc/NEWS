@@ -77,6 +77,10 @@ Extension Modules
 Library
 -------
 
+- The ctypes.byref function now takes an optional second parameter
+  which allows to specify an offset in bytes for the constructed
+  pointer-like object.
+
 - Added the ast module.
 
 - Factored out the indentation cleaning from inspect.getdoc() into
