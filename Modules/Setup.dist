@@ -339,9 +339,6 @@ _symtable symtablemodule.c
 # Fred Drake's interface to the Python parser
 #parser parsermodule.c
 
-# cStringIO
-#cStringIO cStringIO.c
-
 
 # Lee Busby's SIGFPE modules.
 # The library to link fpectl with is platform specific.

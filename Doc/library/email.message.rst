@@ -48,7 +48,7 @@ Here are the methods of the :class:`Message` class:
       :class:`Generator` instance and use its :meth:`flatten` method directly.
       For example::
 
-         from cStringIO import StringIO
+         from io import StringIO
          from email.generator import Generator
          fp = StringIO()
          g = Generator(fp, mangle_from_=False, maxheaderlen=60)
