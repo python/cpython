@@ -2,6 +2,7 @@
 
 import test.test_support, unittest
 import sys
+import pickle
 
 import warnings
 warnings.filterwarnings("ignore", "integer argument expected",
@@ -57,15 +58,15 @@ class XrangeTest(unittest.TestCase):
         self.assertEqual(len(r), sys.maxint)
         self.assertRaises(OverflowError, xrange, -sys.maxint-1, sys.maxint, 2)
 
-    def test_getnewargs(self):
-        def test(*args):
-            r = xrange(*args)
-            return list(r) == list(xrange(*r.__getnewargs__()))
-        tests = [(13,), (0, 11), (-22, 10), (20, 3, -1),
-                 (13, 21, 3), (-2, 2, 2)]
-        for t in tests:
-            self.assert_(test(*t),
-                         "xrange.__getnewargs__() failed with %r" % (t,))
+    def test_pickling(self):
+        testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
+                     (13, 21, 3), (-2, 2, 2)]
+        for proto in range(pickle.HIGHEST_PROTOCOL):
+            for t in testcases:
+                r = xrange(*t)
+                self.assertEquals(list(pickle.loads(pickle.dumps(r, proto))),
+                                  list(r))
+
 
 def test_main():
     test.test_support.run_unittest(XrangeTest)
