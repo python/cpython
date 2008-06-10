@@ -222,6 +222,20 @@ any that have been added to the map during asynchronous service) is closed.
       flushed).  Sockets are automatically closed when they are
       garbage-collected.
 
+.. class:: file_dispatcher()
+  A file_dispatcher takes a file descriptor or file object along with an
+  optional map argument and wraps it for use with the :cfunc:`poll`\ or
+  :cfunc:`loop`\ functions.  If provided a file object or anything with a
+  :cfunc:`fileno`\ method, that method will be called and passed to the
+  :class:`file_wrapper` constructor.
+  Availability: UNIX
+
+.. class::file_wrapper()
+  A file_wrapper takes an integer file descriptor and calls os.dup() to
+  duplicate the handle so that the original handle may be closed independently
+  of the file_wrapper.  This class implements sufficient methods to emulate a
+  socket for use by the file_dispatcher class.
+  Availability: UNIX
 
 .. _asyncore-example:
 
