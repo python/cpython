@@ -1,4 +1,3 @@
-
 :mod:`tokenize` --- Tokenizer for Python source
 ===============================================
 
@@ -15,7 +14,6 @@ colorizers for on-screen displays.
 
 The primary entry point is a :term:`generator`:
 
-
 .. function:: tokenize(readline)
 
    The :func:`tokenize` generator requires one argument, *readline*, which
@@ -28,11 +26,11 @@ The primary entry point is a :term:`generator`:
    token string; a 2-tuple ``(srow, scol)`` of ints specifying the row and 
    column where the token begins in the source; a 2-tuple ``(erow, ecol)`` of 
    ints specifying the row and column where the token ends in the source; and 
-   the line on which the token was found. The line passed is the *logical* 
-   line; continuation lines are included.
+   the line on which the token was found. The line passed (the last tuple item)
+   is the *logical* line; continuation lines are included.
    
-   tokenize determines the source encoding of the file by looking for a utf-8
-   bom or encoding cookie, according to :pep:`263`.
+   :func:`tokenize` determines the source encoding of the file by looking for a
+   UTF-8 BOM or encoding cookie, according to :pep:`263`.
 
 
 All constants from the :mod:`token` module are also exported from

@@ -568,6 +568,54 @@ Return an accurate floating point sum of values in the iterable.\n\
 Assumes IEEE-754 floating point arithmetic.");
 
 static PyObject *
+math_factorial(PyObject *self, PyObject *arg)
+{
+	long i, x;
+	PyObject *result, *iobj, *newresult;
+
+	if (PyFloat_Check(arg)) {
+		double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
+		if (dx != floor(dx)) {
+			PyErr_SetString(PyExc_ValueError, 
+				"factorial() only accepts integral values");
+			return NULL;
+		}
+	}
+
+	x = PyLong_AsLong(arg);
+	if (x == -1 && PyErr_Occurred())
+		return NULL;
+	if (x < 0) {
+		PyErr_SetString(PyExc_ValueError, 
+			"factorial() not defined for negative values");
+		return NULL;
+	}
+
+	result = (PyObject *)PyLong_FromLong(1);
+	if (result == NULL)
+		return NULL;
+	for (i=1 ; i<=x ; i++) {
+		iobj = (PyObject *)PyLong_FromLong(i);
+		if (iobj == NULL)
+			goto error;
+		newresult = PyNumber_Multiply(result, iobj);
+		Py_DECREF(iobj);
+		if (newresult == NULL)
+			goto error;
+		Py_DECREF(result);
+		result = newresult;
+	}
+	return result;
+
+error:
+	Py_DECREF(result);
+	Py_XDECREF(iobj);
+	return NULL;
+}
+
+PyDoc_STRVAR(math_factorial_doc, "Return n!");
+
+static PyObject *
 math_trunc(PyObject *self, PyObject *number)
 {
 	static PyObject *trunc_str = NULL;
@@ -1022,6 +1070,7 @@ static PyMethodDef math_methods[] = {
 	{"degrees",	math_degrees,	METH_O,		math_degrees_doc},
 	{"exp",		math_exp,	METH_O,		math_exp_doc},
 	{"fabs",	math_fabs,	METH_O,		math_fabs_doc},
+	{"factorial",	math_factorial,	METH_O,		math_factorial_doc},
 	{"floor",	math_floor,	METH_O,		math_floor_doc},
 	{"fmod",	math_fmod,	METH_VARARGS,	math_fmod_doc},
 	{"frexp",	math_frexp,	METH_O,		math_frexp_doc},
