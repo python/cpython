@@ -60,6 +60,9 @@ Core and Builtins
   f_exc_type, f_exc_value, and f_exc_traceback cannot be accessed from Python
   code anymore.
 
+- Three of PyNumberMethods' members, nb_coerce, nb_hex, and nb_oct, have been
+  removed.
+
 Extension Modules
 -----------------
 

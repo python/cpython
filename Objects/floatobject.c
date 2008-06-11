@@ -1381,12 +1381,9 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_and*/
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
-	0,		/*nb_reserved*/
 	float_trunc,	/*nb_int*/
 	float_trunc,	/*nb_long*/
 	float_float,	/*nb_float*/
-	0,		/* nb_oct */
-	0,		/* nb_hex */
 	0,		/* nb_inplace_add */
 	0,		/* nb_inplace_subtract */
 	0,		/* nb_inplace_multiply */
