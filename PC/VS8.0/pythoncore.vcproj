@@ -986,10 +986,18 @@
 				RelativePath="..\..\Modules\_fileio.c"
 				>
 			</File>
-                        <File^M
-                                RelativePath="..\..\Modules\_bytesio.c"^M
-                                >^M
-                        </File>^M
+			<File
+				RelativePath="..\..\Modules\_bytesio.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\_stringio.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\_pickle.c"
+				>
+			</File>
 			<File
 				RelativePath="..\..\Modules\_functoolsmodule.c"
 				>
