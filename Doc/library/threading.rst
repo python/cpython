@@ -13,10 +13,16 @@ See also the :mod:`mutex` and :mod:`Queue` modules.
 The :mod:`dummy_threading` module is provided for situations where
 :mod:`threading` cannot be used because :mod:`thread` is missing.
 
+.. note::
+
+   In 3.x, names in camelCase have been renamed to their underscored
+   equivelents.  Both names are availble in 2.6.
+
 This module defines the following functions and objects:
 
 
 .. function:: active_count()
+              activeCount()
 
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`enumerate`.
@@ -31,6 +37,7 @@ This module defines the following functions and objects:
 
 
 .. function:: current_thread()
+              currentThread()
 
    Return the current :class:`Thread` object, corresponding to the caller's thread
    of control.  If the caller's thread of control was not created through the
@@ -396,6 +403,7 @@ needs to wake up one consumer thread.
 
 
 .. method:: Condition.notify_all()
+            Condition.notifyAll()
 
    Wake up all threads waiting on this condition.  This method acts like
    :meth:`notify`, but wakes up all waiting threads instead of one. If the calling
@@ -498,7 +506,8 @@ An event object manages an internal flag that can be set to true with the
    The internal flag is initially false.
 
 
-.. method:: Event.isSet()
+.. method:: Event.is_set()
+            Event.isSet()
 
    Return true if and only if the internal flag is true.
 
@@ -638,11 +647,13 @@ impossible to detect the termination of alien threads.
 
 
 .. method:: Thread.get_name()
+            Thread.getName()
 
    Return the thread's name.
 
 
-.. method:: Thread.set_same(name)
+.. method:: Thread.set_name(name)
+            Thread.setName(name)
 
    Set the thread's name.
 
@@ -651,7 +662,7 @@ impossible to detect the termination of alien threads.
    constructor.
 
 
-.. method:: Thread.get_ddent()
+.. method:: Thread.get_ident()
 
    Return the 'thread identifier' of this thread or None if the thread has not
    been started.  This is a nonzero integer.  See the :func:`thread.get_ident()`
@@ -663,6 +674,7 @@ impossible to detect the termination of alien threads.
 
 
 .. method:: Thread.is_alive()
+            Thread.isAlive()
 
    Return whether the thread is alive.
 
@@ -672,11 +684,13 @@ impossible to detect the termination of alien threads.
 
 
 .. method:: Thread.is_daemon()
+            Thread.isDaemon()
 
    Return the thread's daemon flag.
 
 
 .. method:: Thread.set_daemon(daemonic)
+            Thread.setDaemon(daemonic)
 
    Set the thread's daemon flag to the Boolean value *daemonic*. This must be
    called before :meth:`start` is called, otherwise :exc:`RuntimeError` is raised.
