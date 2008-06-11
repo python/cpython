@@ -511,9 +511,9 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 			/* module init functions inside the core need no external linkage */
 			/* except for Cygwin to handle embedding */
 #			if defined(__CYGWIN__)
-#				define PyMODINIT_FUNC __declspec(dllexport) void
+#				define PyMODINIT_FUNC __declspec(dllexport) PyObject*
 #			else /* __CYGWIN__ */
-#				define PyMODINIT_FUNC void
+#				define PyMODINIT_FUNC PyObject*
 #			endif /* __CYGWIN__ */
 #		else /* Py_BUILD_CORE */
 			/* Building an extension module, or an embedded situation */
@@ -526,9 +526,9 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #			define PyAPI_DATA(RTYPE) extern __declspec(dllimport) RTYPE
 			/* module init functions outside the core must be exported */
 #			if defined(__cplusplus)
-#				define PyMODINIT_FUNC extern "C" __declspec(dllexport) void
+#				define PyMODINIT_FUNC extern "C" __declspec(dllexport) PyObject*
 #			else /* __cplusplus */
-#				define PyMODINIT_FUNC __declspec(dllexport) void
+#				define PyMODINIT_FUNC __declspec(dllexport) PyObject*
 #			endif /* __cplusplus */
 #		endif /* Py_BUILD_CORE */
 #	endif /* HAVE_DECLSPEC */
@@ -543,9 +543,9 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #endif
 #ifndef PyMODINIT_FUNC
 #	if defined(__cplusplus)
-#		define PyMODINIT_FUNC extern "C" void
+#		define PyMODINIT_FUNC extern "C" PyObject*
 #	else /* __cplusplus */
-#		define PyMODINIT_FUNC void
+#		define PyMODINIT_FUNC PyObject*
 #	endif /* __cplusplus */
 #endif
 

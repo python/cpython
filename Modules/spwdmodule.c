@@ -167,17 +167,31 @@ static PyMethodDef spwd_methods[] = {
 };
 
 
+
+static struct PyModuleDef spwdmodule = {
+	PyModuleDef_HEAD_INIT,
+	"spwd",
+	spwd__doc__,
+	-1,
+	spwd_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initspwd(void)
+PyInit_spwd(void)
 {
 	PyObject *m;
-	m=Py_InitModule3("spwd", spwd_methods, spwd__doc__);
+	m=PyModule_Create(&spwdmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	if (!initialized)
 		PyStructSequence_InitType(&StructSpwdType, 
 					  &struct_spwd_type_desc);
 	Py_INCREF((PyObject *) &StructSpwdType);
 	PyModule_AddObject(m, "struct_spwd", (PyObject *) &StructSpwdType);
 	initialized = 1;
+	return m;
 }

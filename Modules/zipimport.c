@@ -1145,13 +1145,25 @@ It is usually not needed to use the zipimport module explicitly; it is\n\
 used by the builtin import mechanism for sys.path items that are paths\n\
 to Zip archives.");
 
+static struct PyModuleDef zipimportmodule = {
+	PyModuleDef_HEAD_INIT,
+	"zipimport",
+	zipimport_doc,
+	-1,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initzipimport(void)
+PyInit_zipimport(void)
 {
 	PyObject *mod;
 
 	if (PyType_Ready(&ZipImporter_Type) < 0)
-		return;
+		return NULL;
 
 	/* Correct directory separator */
 	zip_searchorder[0].suffix[0] = SEP;
@@ -1168,31 +1180,31 @@ initzipimport(void)
 		zip_searchorder[4] = tmp;
 	}
 
-	mod = Py_InitModule4("zipimport", NULL, zipimport_doc,
-			     NULL, PYTHON_API_VERSION);
+	mod = PyModule_Create(&zipimportmodule);
 	if (mod == NULL)
-		return;
+		return NULL;
 
 	ZipImportError = PyErr_NewException("zipimport.ZipImportError",
 					    PyExc_ImportError, NULL);
 	if (ZipImportError == NULL)
-		return;
+		return NULL;
 
 	Py_INCREF(ZipImportError);
 	if (PyModule_AddObject(mod, "ZipImportError",
 			       ZipImportError) < 0)
-		return;
+		return NULL;
 
 	Py_INCREF(&ZipImporter_Type);
 	if (PyModule_AddObject(mod, "zipimporter",
 			       (PyObject *)&ZipImporter_Type) < 0)
-		return;
+		return NULL;
 
 	zip_directory_cache = PyDict_New();
 	if (zip_directory_cache == NULL)
-		return;
+		return NULL;
 	Py_INCREF(zip_directory_cache);
 	if (PyModule_AddObject(mod, "_zip_directory_cache",
 			       zip_directory_cache) < 0)
-		return;
+		return NULL;
+	return mod;
 }

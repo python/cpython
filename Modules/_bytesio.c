@@ -722,16 +722,30 @@ static PyTypeObject BytesIO_Type = {
     bytesio_new,                               /*tp_new*/
 };
 
+
+static struct PyModuleDef _bytesiomodule = {
+	PyModuleDef_HEAD_INIT,
+	"_bytesio",
+	NULL,
+	-1,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_bytesio(void)
+PyInit__bytesio(void)
 {
     PyObject *m;
 
     if (PyType_Ready(&BytesIO_Type) < 0)
-        return;
-    m = Py_InitModule("_bytesio", NULL);
+        return NULL;
+    m = PyModule_Create(&_bytesiomodule);
     if (m == NULL)
-        return;
+        return NULL;
     Py_INCREF(&BytesIO_Type);
     PyModule_AddObject(m, "_BytesIO", (PyObject *)&BytesIO_Type);
+    return m;
 }

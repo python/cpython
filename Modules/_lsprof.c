@@ -857,16 +857,29 @@ static PyMethodDef moduleMethods[] = {
 	{NULL, NULL}
 };
 
+
+static struct PyModuleDef _lsprofmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_lsprof",
+	"Fast profiler",
+	-1,
+	moduleMethods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_lsprof(void)
+PyInit__lsprof(void)
 {
 	PyObject *module, *d;
-	module = Py_InitModule3("_lsprof", moduleMethods, "Fast profiler");
+	module = PyModule_Create(&_lsprofmodule);
 	if (module == NULL)
-		return;
+		return NULL;
 	d = PyModule_GetDict(module);
 	if (PyType_Ready(&PyProfiler_Type) < 0)
-		return;
+		return NULL;
 	PyDict_SetItemString(d, "Profiler", (PyObject *)&PyProfiler_Type);
 
 	if (!initialized) {
@@ -883,4 +896,5 @@ init_lsprof(void)
 			   (PyObject*) &StatsSubEntryType);
 	empty_tuple = PyTuple_New(0);
 	initialized = 1;
+	return module;
 }

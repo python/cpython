@@ -233,21 +233,35 @@ upon normal program termination.\n\
 Two public functions, register and unregister, are defined.\n\
 ");
 
+
+static struct PyModuleDef atexitmodule = {
+	PyModuleDef_HEAD_INIT,
+	"atexit",
+	atexit__doc__,
+	-1,
+	atexit_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initatexit(void)
+PyInit_atexit(void)
 {
     PyObject *m;
     
     atexit_callbacks = PyMem_New(atexit_callback*, callback_len);
     if (atexit_callbacks == NULL)
-        return;
+        return NULL;
 
-    m = Py_InitModule3("atexit", atexit_methods, atexit__doc__);
+    m = PyModule_Create(&atexitmodule);
     if (m == NULL)
-        return;
+        return NULL;
     
     _Py_PyAtExit(atexit_callfuncs);
     /* Register a callback that will free
        atexit_callbacks, otherwise valgrind will report memory leaks. */
     Py_AtExit(atexit_cleanup);
+    return m;
 }

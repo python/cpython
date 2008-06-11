@@ -2087,28 +2087,41 @@ Whitespace between formats is ignored.\n\
 \n\
 The variable struct.error is an exception raised on errors.\n");
 
+
+static struct PyModuleDef _structmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_struct",
+	module_doc,
+	-1,
+	module_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_struct(void)
+PyInit__struct(void)
 {
 	PyObject *ver, *m;
 
 	ver = PyBytes_FromString("0.2");
 	if (ver == NULL)
-		return;
+		return NULL;
 
-	m = Py_InitModule3("_struct", module_functions, module_doc);
+	m = PyModule_Create(&_structmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	Py_TYPE(&PyStructType) = &PyType_Type;
 	if (PyType_Ready(&PyStructType) < 0)
-		return;
+		return NULL;
 
 #ifdef PY_STRUCT_OVERFLOW_MASKING
 	if (pyint_zero == NULL) {
 		pyint_zero = PyLong_FromLong(0);
 		if (pyint_zero == NULL)
-			return;
+			return NULL;
 	}
 	if (pylong_ulong_mask == NULL) {
 #if (SIZEOF_LONG == 4)
@@ -2117,7 +2130,7 @@ init_struct(void)
 		pylong_ulong_mask = PyLong_FromString("FFFFFFFFFFFFFFFF", NULL, 16);
 #endif
 		if (pylong_ulong_mask == NULL)
-			return;
+			return NULL;
 	}
 
 #else
@@ -2168,7 +2181,7 @@ init_struct(void)
 	if (StructError == NULL) {
 		StructError = PyErr_NewException("struct.error", NULL, NULL);
 		if (StructError == NULL)
-			return;
+			return NULL;
 	}
 
 	Py_INCREF(StructError);
@@ -2186,5 +2199,6 @@ init_struct(void)
 #ifdef PY_STRUCT_FLOAT_COERCE
 	PyModule_AddIntConstant(m, "_PY_STRUCT_FLOAT_COERCE", 1);
 #endif
+	return m;
 
 }

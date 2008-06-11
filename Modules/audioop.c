@@ -1600,17 +1600,31 @@ static PyMethodDef audioop_methods[] = {
         { 0,          0 }
 };
 
+
+static struct PyModuleDef audioopmodule = {
+	PyModuleDef_HEAD_INIT,
+	"audioop",
+	NULL,
+	-1,
+	audioop_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initaudioop(void)
+PyInit_audioop(void)
 {
         PyObject *m, *d;
-        m = Py_InitModule("audioop", audioop_methods);
+        m = PyModule_Create(&audioopmodule);
         if (m == NULL)
-                return;
+                return NULL;
         d = PyModule_GetDict(m);
         if (d == NULL)
-                return;
+                return NULL;
         AudioopError = PyErr_NewException("audioop.error", NULL, NULL);
         if (AudioopError != NULL)
              PyDict_SetItemString(d,"error",AudioopError);
+	return m;
 }

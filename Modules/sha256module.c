@@ -682,18 +682,27 @@ static struct PyMethodDef SHA_functions[] = {
 
 #define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
 
-PyMODINIT_FUNC
-init_sha256(void)
-{
-    PyObject *m;
 
+static struct PyModuleDef _sha256module = {
+	PyModuleDef_HEAD_INIT,
+	"_sha256",
+	NULL,
+	-1,
+	SHA_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyMODINIT_FUNC
+PyInit__sha256(void)
+{
     Py_TYPE(&SHA224type) = &PyType_Type;
     if (PyType_Ready(&SHA224type) < 0)
-        return;
+        return NULL;
     Py_TYPE(&SHA256type) = &PyType_Type;
     if (PyType_Ready(&SHA256type) < 0)
-        return;
-    m = Py_InitModule("_sha256", SHA_functions);
-    if (m == NULL)
-	return;
+        return NULL;
+    return PyModule_Create(&_sha256module);
 }

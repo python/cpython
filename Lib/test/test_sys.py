@@ -458,7 +458,7 @@ class SizeofTest(unittest.TestCase):
         # builtin_function_or_method
         self.check_sizeof(abs, h + 3*p)
         # module
-        self.check_sizeof(unittest, h + p)
+        self.check_sizeof(unittest, h + 3*p)
         # range
         self.check_sizeof(range(1), h + 3*p)
         # slice

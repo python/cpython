@@ -390,15 +390,28 @@ static PyMethodDef dbmmodule_methods[] = {
 	{ 0, 0 },
 };
 
+
+static struct PyModuleDef _dbmmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_dbm",
+	NULL,
+	-1,
+	dbmmodule_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_dbm(void) {
+PyInit__dbm(void) {
 	PyObject *m, *d, *s;
 
 	if (PyType_Ready(&Dbmtype) < 0)
-		return;
-	m = Py_InitModule("_dbm", dbmmodule_methods);
+		return NULL;
+	m = PyModule_Create(&_dbmmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	d = PyModule_GetDict(m);
 	if (DbmError == NULL)
 		DbmError = PyErr_NewException("_dbm.error",
@@ -410,4 +423,9 @@ init_dbm(void) {
 	}
 	if (DbmError != NULL)
 		PyDict_SetItemString(d, "error", DbmError);
+	if (PyErr_Occurred()) {
+		Py_DECREF(m);
+		m = NULL;
+	}
+	return m;
 }

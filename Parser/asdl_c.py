@@ -858,23 +858,27 @@ def parse_version(mod):
 class ASTModuleVisitor(PickleVisitor):
 
     def visitModule(self, mod):
+        self.emit("static struct PyModuleDef _astmodule = {", 0)
+        self.emit('  PyModuleDef_HEAD_INIT, "_ast"', 0)
+        self.emit("};", 0)
         self.emit("PyMODINIT_FUNC", 0)
-        self.emit("init_ast(void)", 0)
+        self.emit("PyInit__ast(void)", 0)
         self.emit("{", 0)
         self.emit("PyObject *m, *d;", 1)
-        self.emit("if (!init_types()) return;", 1)
-        self.emit('m = Py_InitModule3("_ast", NULL, NULL);', 1)
-        self.emit("if (!m) return;", 1)
+        self.emit("if (!init_types()) return NULL;", 1)
+        self.emit('m = PyModule_Create(&_astmodule);', 1)
+        self.emit("if (!m) return NULL;", 1)
         self.emit("d = PyModule_GetDict(m);", 1)
-        self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return;', 1)
+        self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
         self.emit('if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)', 1)
-        self.emit("return;", 2)
+        self.emit("return NULL;", 2)
         # Value of version: "$Revision$"
         self.emit('if (PyModule_AddStringConstant(m, "__version__", "%s") < 0)'
                 % parse_version(mod), 1)
-        self.emit("return;", 2)
+        self.emit("return NULL;", 2)
         for dfn in mod.dfns:
             self.visit(dfn)
+        self.emit("return m;", 1)
         self.emit("}", 0)
 
     def visitProduct(self, prod, name):
@@ -889,7 +893,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.addObj(cons.name)
 
     def addObj(self, name):
-        self.emit('if (PyDict_SetItemString(d, "%s", (PyObject*)%s_type) < 0) return;' % (name, name), 1)
+        self.emit('if (PyDict_SetItemString(d, "%s", (PyObject*)%s_type) < 0) return NULL;' % (name, name), 1)
 
 
 _SPECIALIZED_SEQUENCES = ('stmt', 'expr')

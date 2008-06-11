@@ -498,8 +498,21 @@ static struct PyMethodDef EVP_functions[] = {
 
 /* Initialize this module. */
 
+
+static struct PyModuleDef _hashlibmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_hashlib",
+	NULL,
+	-1,
+	EVP_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_hashlib(void)
+PyInit__hashlib(void)
 {
     PyObject *m;
 
@@ -512,11 +525,11 @@ init_hashlib(void)
 
     Py_TYPE(&EVPtype) = &PyType_Type;
     if (PyType_Ready(&EVPtype) < 0)
-        return;
+        return NULL;
 
-    m = Py_InitModule("_hashlib", EVP_functions);
+    m = PyModule_Create(&_hashlibmodule);
     if (m == NULL)
-        return;
+        return NULL;
 
 #if HASH_OBJ_CONSTRUCTOR
     Py_INCREF(&EVPtype);
@@ -530,4 +543,5 @@ init_hashlib(void)
     INIT_CONSTRUCTOR_CONSTANTS(sha256);
     INIT_CONSTRUCTOR_CONSTANTS(sha384);
     INIT_CONSTRUCTOR_CONSTANTS(sha512);
+    return m;
 }

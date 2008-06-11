@@ -3009,8 +3009,20 @@ ins_string(PyObject *d, char *name, char *val)
 }
 
 
+static struct PyModuleDef _tkintermodule = {
+	PyModuleDef_HEAD_INIT,
+	"_tkinter",
+	NULL,
+	-1,
+	moduleMethods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_tkinter(void)
+PyInit__tkinter(void)
 {
 	PyObject *m, *d, *uexe, *cexe;
 
@@ -3020,9 +3032,9 @@ init_tkinter(void)
 	tcl_lock = PyThread_allocate_lock();
 #endif
 
-	m = Py_InitModule("_tkinter", moduleMethods);
+	m = PyModule_Create(&_tkintermodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	d = PyModule_GetDict(m);
 	Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);
@@ -3076,8 +3088,10 @@ init_tkinter(void)
 		Py_DECREF(uexe);
 	}
 
-	if (PyErr_Occurred())
-		return;
+	if (PyErr_Occurred()) {
+		Py_DECREF(m);
+		return NULL;
+	}
 
 #if 0
 	/* This was not a good idea; through <Destroy> bindings,
@@ -3085,5 +3099,5 @@ init_tkinter(void)
 	   interpreter and thread state have already been destroyed! */
 	Py_AtExit(Tcl_Finalize);
 #endif
-
+	return m;
 }

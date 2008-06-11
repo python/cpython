@@ -65,8 +65,20 @@ static struct PyMethodDef gestalt_methods[] = {
     {NULL, NULL} /* Sentinel */
 };
 
+static struct PyModuleDef gestaltmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_gestalt",
+	NULL,
+	-1,
+	gestalt_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 void
-init_gestalt(void)
+PyInit__gestalt(void)
 {
-    Py_InitModule("_gestalt", gestalt_methods);
+	return PyModule_Create(&gestaltmodule);
 }

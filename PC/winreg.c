@@ -1565,23 +1565,36 @@ inskey(PyObject * d, char * name, HKEY key)
 
 #define ADD_KEY(val) inskey(d, #val, val)
 
-PyMODINIT_FUNC initwinreg(void)
+
+static struct PyModuleDef winregmodule = {
+	PyModuleDef_HEAD_INIT,
+	"winreg",
+	module_doc,
+	-1,
+	winreg_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyMODINIT_FUNC PyInit_winreg(void)
 {
 	PyObject *m, *d;
-	m = Py_InitModule3("winreg", winreg_methods, module_doc);
+	m = PyModule_Create(&winregmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	d = PyModule_GetDict(m);
 	Py_TYPE(&PyHKEY_Type) = &PyType_Type;
 	PyHKEY_Type.tp_doc = PyHKEY_doc;
 	Py_INCREF(&PyHKEY_Type);
 	if (PyDict_SetItemString(d, "HKEYType",
 				 (PyObject *)&PyHKEY_Type) != 0)
-		return;
+		return NULL;
 	Py_INCREF(PyExc_WindowsError);
 	if (PyDict_SetItemString(d, "error",
 				 PyExc_WindowsError) != 0)
-		return;
+		return NULL;
 
 	/* Add the relevant constants */
 	ADD_KEY(HKEY_CLASSES_ROOT);
@@ -1640,6 +1653,7 @@ PyMODINIT_FUNC initwinreg(void)
 	ADD_INT(REG_RESOURCE_LIST);
 	ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
 	ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
+	return m;
 }
 
 

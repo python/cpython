@@ -661,7 +661,7 @@ Convert a time tuple in local time to seconds since the Epoch.");
 #endif /* HAVE_MKTIME */
 
 #ifdef HAVE_WORKING_TZSET
-static void inittimezone(PyObject *module);
+static void PyInit_timezone(PyObject *module);
 
 static PyObject *
 time_tzset(PyObject *self, PyObject *unused)
@@ -676,7 +676,7 @@ time_tzset(PyObject *self, PyObject *unused)
 	tzset();
 
 	/* Reset timezone, altzone, daylight and tzname */
-	inittimezone(m);
+	PyInit_timezone(m);
 	Py_DECREF(m);
 
 	Py_INCREF(Py_None);
@@ -698,8 +698,8 @@ should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
 static void
-inittimezone(PyObject *m) {
-    /* This code moved from inittime wholesale to allow calling it from
+PyInit_timezone(PyObject *m) {
+    /* This code moved from PyInit_time wholesale to allow calling it from
 	time_tzset. In the future, some parts of it can be moved back
 	(for platforms that don't HAVE_WORKING_TZSET, when we know what they
 	are), and the extraneous calls to tzset(3) should be removed.
@@ -858,14 +858,27 @@ strptime() -- parse string to time tuple according to format specification\n\
 tzset() -- change the local timezone");
 
 
+
+static struct PyModuleDef timemodule = {
+	PyModuleDef_HEAD_INIT,
+	"time",
+	module_doc,
+	-1,
+	time_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-inittime(void)
+PyInit_time(void)
 {
 	PyObject *m;
 	char *p;
-	m = Py_InitModule3("time", time_methods, module_doc);
+	m = PyModule_Create(&timemodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
 	p = Py_GETENV("PYTHONY2K");
@@ -875,7 +888,7 @@ inittime(void)
 	Py_INCREF(moddict);
 
 	/* Set, or reset, module variables like time.timezone */
-	inittimezone(m);
+	PyInit_timezone(m);
 
 #ifdef MS_WINDOWS
 	/* Helper to allow interrupts for Windows.
@@ -893,6 +906,7 @@ inittime(void)
 	Py_INCREF(&StructTimeType);
 	PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
 	initialized = 1;
+	return m;
 }
 
 

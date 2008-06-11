@@ -8,9 +8,9 @@
 #include "importdl.h"
 
 #if defined(__hp9000s300)
-#define FUNCNAME_PATTERN "_init%.200s"
+#define FUNCNAME_PATTERN "_PyInit_%.200s"
 #else
-#define FUNCNAME_PATTERN "init%.200s"
+#define FUNCNAME_PATTERN "PyInit_%.200s"
 #endif
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {

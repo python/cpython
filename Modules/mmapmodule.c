@@ -1312,24 +1312,37 @@ setint(PyObject *d, const char *name, long value)
 	}
 }
 
+
+static struct PyModuleDef mmapmodule = {
+	PyModuleDef_HEAD_INIT,
+	"mmap",
+	NULL,
+	-1,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initmmap(void)
+PyInit_mmap(void)
 {
 	PyObject *dict, *module;
 
 	if (PyType_Ready(&mmap_object_type) < 0)
-		return;
+		return NULL;
 
-	module = Py_InitModule("mmap", NULL);
+	module = PyModule_Create(&mmapmodule);
 	if (module == NULL)
-		return;
+		return NULL;
 	dict = PyModule_GetDict(module);
 	if (!dict)
-		return;
+		return NULL;
 	mmap_module_error = PyErr_NewException("mmap.error",
 		PyExc_EnvironmentError , NULL);
 	if (mmap_module_error == NULL)
-		return;
+		return NULL;
 	PyDict_SetItemString(dict, "error", mmap_module_error);
 	PyDict_SetItemString(dict, "mmap", (PyObject*) &mmap_object_type);
 #ifdef PROT_EXEC
@@ -1366,4 +1379,5 @@ initmmap(void)
 	setint(dict, "ACCESS_READ", ACCESS_READ);
 	setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
 	setint(dict, "ACCESS_COPY", ACCESS_COPY);
+	return module;
 }

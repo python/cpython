@@ -257,8 +257,21 @@ static PyMethodDef xxsubtype_functions[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
+static struct PyModuleDef xxsubtypemodule = {
+	PyModuleDef_HEAD_INIT,
+	"xxsubtype",
+	xxsubtype__doc__,
+	-1,
+	xxsubtype_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+
 PyMODINIT_FUNC
-initxxsubtype(void)
+PyInit_xxsubtype(void)
 {
 	PyObject *m;
 
@@ -268,30 +281,29 @@ initxxsubtype(void)
 	   so it's not necessary to fill in ob_type first. */
 	spamdict_type.tp_base = &PyDict_Type;
 	if (PyType_Ready(&spamdict_type) < 0)
-		return;
+		return NULL;
 
 	spamlist_type.tp_base = &PyList_Type;
 	if (PyType_Ready(&spamlist_type) < 0)
-		return;
+		return NULL;
 
-	m = Py_InitModule3("xxsubtype",
-			   xxsubtype_functions,
-			   xxsubtype__doc__);
+	m = PyModule_Create(&xxsubtypemodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	if (PyType_Ready(&spamlist_type) < 0)
-		return;
+		return NULL;
 	if (PyType_Ready(&spamdict_type) < 0)
-		return;
+		return NULL;
 
 	Py_INCREF(&spamlist_type);
 	if (PyModule_AddObject(m, "spamlist",
 			       (PyObject *) &spamlist_type) < 0)
-		return;
+		return NULL;
 
 	Py_INCREF(&spamdict_type);
 	if (PyModule_AddObject(m, "spamdict",
 			       (PyObject *) &spamdict_type) < 0)
-		return;
+		return NULL;
+	return m;
 }

@@ -871,17 +871,29 @@ static PyMethodDef module_methods[] = {
 	{NULL, NULL}
 };
 
+static struct PyModuleDef fileiomodule = {
+	PyModuleDef_HEAD_INIT,
+	"_fileio",
+	"Fast implementation of io.FileIO.",
+	-1,
+	module_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_fileio(void)
+PyInit__fileio(void)
 {
 	PyObject *m;	/* a module object */
 
-	m = Py_InitModule3("_fileio", module_methods,
-			   "Fast implementation of io.FileIO.");
+	m = PyModule_Create(&fileiomodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	if (PyType_Ready(&PyFileIO_Type) < 0)
-		return;
+		return NULL;
 	Py_INCREF(&PyFileIO_Type);
 	PyModule_AddObject(m, "_FileIO", (PyObject *) &PyFileIO_Type);
+	return m;
 }

@@ -2,8 +2,6 @@
 
 #include "Python.h"
 
-#define PyInit_termios inittermios
-
 /* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
    is defined, so we define it here. */
 #if defined(__sgi)
@@ -902,16 +900,27 @@ static struct constant {
 };
 
 
+static struct PyModuleDef termiosmodule = {
+	PyModuleDef_HEAD_INIT,
+	"termios",
+	termios__doc__,
+	-1,
+	termios_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
 PyInit_termios(void)
 {
 	PyObject *m;
 	struct constant *constant = termios_constants;
 
-	m = Py_InitModule4("termios", termios_methods, termios__doc__,
-                           (PyObject *)NULL, PYTHON_API_VERSION);
+	m = PyModule_Create(&termiosmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	if (TermiosError == NULL) {
 		TermiosError = PyErr_NewException("termios.error", NULL, NULL);
@@ -923,4 +932,5 @@ PyInit_termios(void)
 		PyModule_AddIntConstant(m, constant->name, constant->value);
 		++constant;
 	}
+	return m;
 }

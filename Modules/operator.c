@@ -688,31 +688,44 @@ static PyTypeObject methodcaller_type = {
 };
 
 
-/* Initialization function for the module (*must* be called initoperator) */
+/* Initialization function for the module (*must* be called PyInit_operator) */
+
+
+static struct PyModuleDef operatormodule = {
+	PyModuleDef_HEAD_INIT,
+	"operator",
+	operator_doc,
+	-1,
+	operator_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
 
 PyMODINIT_FUNC
-initoperator(void)
+PyInit_operator(void)
 {
 	PyObject *m;
         
 	/* Create the module and add the functions */
-        m = Py_InitModule4("operator", operator_methods, operator_doc,
-		       (PyObject*)NULL, PYTHON_API_VERSION);
+        m = PyModule_Create(&operatormodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	if (PyType_Ready(&itemgetter_type) < 0)
-		return;
+		return NULL;
 	Py_INCREF(&itemgetter_type);
 	PyModule_AddObject(m, "itemgetter", (PyObject *)&itemgetter_type);
 
 	if (PyType_Ready(&attrgetter_type) < 0)
-		return;
+		return NULL;
 	Py_INCREF(&attrgetter_type);
 	PyModule_AddObject(m, "attrgetter", (PyObject *)&attrgetter_type);
 
 	if (PyType_Ready(&methodcaller_type) < 0)
-		return;
+		return NULL;
 	Py_INCREF(&methodcaller_type);
 	PyModule_AddObject(m, "methodcaller", (PyObject *)&methodcaller_type);
+	return m;
 }

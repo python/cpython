@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-PyAPI_FUNC(void) _PyWarnings_Init(void);
+PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
 
 PyAPI_FUNC(int) PyErr_WarnEx(PyObject *, const char *, Py_ssize_t);
 PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject *, const char *, const char *, int,

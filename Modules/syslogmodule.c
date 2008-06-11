@@ -163,15 +163,28 @@ static PyMethodDef syslog_methods[] = {
 
 /* Initialization function for the module */
 
+
+static struct PyModuleDef syslogmodule = {
+	PyModuleDef_HEAD_INIT,
+	"syslog",
+	NULL,
+	-1,
+	syslog_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initsyslog(void)
+PyInit_syslog(void)
 {
 	PyObject *m;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("syslog", syslog_methods);
+	m = PyModule_Create(&syslogmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	/* Add some symbolic constants to the module */
 
@@ -229,4 +242,5 @@ initsyslog(void)
 	PyModule_AddIntConstant(m, "LOG_CRON",	  LOG_CRON);
 	PyModule_AddIntConstant(m, "LOG_UUCP",	  LOG_UUCP);
 	PyModule_AddIntConstant(m, "LOG_NEWS",	  LOG_NEWS);
+	return m;
 }

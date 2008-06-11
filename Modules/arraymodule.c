@@ -2156,9 +2156,21 @@ static PyMethodDef a_methods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+static struct PyModuleDef arraymodule = {
+	PyModuleDef_HEAD_INIT,
+	"array",
+	module_doc,
+	-1,
+	a_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 
 PyMODINIT_FUNC
-initarray(void)
+PyInit_array(void)
 {
 	PyObject *m;
 	PyObject *typecodes;
@@ -2167,11 +2179,11 @@ initarray(void)
 	struct arraydescr *descr;
 
 	if (PyType_Ready(&Arraytype) < 0)
-            return;
+            return NULL;
 	Py_TYPE(&PyArrayIter_Type) = &PyType_Type;
-	m = Py_InitModule3("array", a_methods, module_doc);
+	m = PyModule_Create(&arraymodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
         Py_INCREF((PyObject *)&Arraytype);
 	PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype);
@@ -2190,5 +2202,9 @@ initarray(void)
 
 	PyModule_AddObject(m, "typecodes", (PyObject *)typecodes);
 	
-	/* No need to check the error here, the caller will do that */
+	if (PyErr_Occurred()) {
+		Py_DECREF(m);
+		m = NULL;
+	}
+	return m;
 }

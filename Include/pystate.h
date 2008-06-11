@@ -19,6 +19,7 @@ typedef struct _is {
     struct _ts *tstate_head;
 
     PyObject *modules;
+    PyObject *modules_by_index;
     PyObject *sysdict;
     PyObject *builtins;
     PyObject *modules_reloading;
@@ -107,6 +108,8 @@ typedef struct _ts {
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
+PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
 PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);

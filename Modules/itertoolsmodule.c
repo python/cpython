@@ -3030,8 +3030,21 @@ static PyMethodDef module_methods[] = {
  	{NULL,		NULL}		/* sentinel */
 };
 
+
+static struct PyModuleDef itertoolsmodule = {
+	PyModuleDef_HEAD_INIT,
+	"itertools",
+	module_doc,
+	-1,
+	module_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-inititertools(void)
+PyInit_itertools(void)
 {
 	int i;
 	PyObject *m;
@@ -3055,13 +3068,13 @@ inititertools(void)
 	};
 
 	Py_TYPE(&teedataobject_type) = &PyType_Type;
-	m = Py_InitModule3("itertools", module_methods, module_doc);
+	m = PyModule_Create(&itertoolsmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	for (i=0 ; typelist[i] != NULL ; i++) {
 		if (PyType_Ready(typelist[i]) < 0)
-			return;
+			return NULL;
 		name = strchr(typelist[i]->tp_name, '.');
 		assert (name != NULL);
 		Py_INCREF(typelist[i]);
@@ -3069,9 +3082,10 @@ inititertools(void)
 	}
 
 	if (PyType_Ready(&teedataobject_type) < 0)
-		return;
+		return NULL;
 	if (PyType_Ready(&tee_type) < 0)
-		return;
+		return NULL;
 	if (PyType_Ready(&_grouper_type) < 0)
-		return;
+		return NULL;
+	return m;
 }

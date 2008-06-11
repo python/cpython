@@ -182,13 +182,26 @@ static PyMethodDef pwd_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
+static struct PyModuleDef pwdmodule = {
+	PyModuleDef_HEAD_INIT,
+	"pwd",
+	pwd__doc__,
+	-1,
+	pwd_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+
 PyMODINIT_FUNC
-initpwd(void)
+PyInit_pwd(void)
 {
 	PyObject *m;
-	m = Py_InitModule3("pwd", pwd_methods, pwd__doc__);
+	m = PyModule_Create(&pwdmodule);
 	if (m == NULL)
-    		return;
+    		return NULL;
 
 	if (!initialized)
 		PyStructSequence_InitType(&StructPwdType, 
@@ -198,4 +211,5 @@ initpwd(void)
 	/* And for b/w compatibility (this was defined by mistake): */
 	PyModule_AddObject(m, "struct_pwent", (PyObject *) &StructPwdType);
 	initialized = 1;
+	return m;
 }

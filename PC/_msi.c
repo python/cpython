@@ -997,14 +997,27 @@ static PyMethodDef msi_methods[] = {
 
 static char msi_doc[] = "Documentation";
 
+
+static struct PyModuleDef _msimodule = {
+	PyModuleDef_HEAD_INIT,
+	"_msi",
+	msi_doc,
+	-1,
+	msi_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_msi(void)
+PyInit__msi(void)
 {
     PyObject *m;
 
-    m = Py_InitModule3("_msi", msi_methods, msi_doc);
+    m = PyModule_Create(&_msimodule);
     if (m == NULL)
-	return;
+	return NULL;
 
     PyModule_AddIntConstant(m, "MSIDBOPEN_CREATEDIRECT", (int)MSIDBOPEN_CREATEDIRECT);
     PyModule_AddIntConstant(m, "MSIDBOPEN_CREATE", (int)MSIDBOPEN_CREATE);
@@ -1050,6 +1063,7 @@ init_msi(void)
 
     MSIError = PyErr_NewException ("_msi.MSIError", NULL, NULL);
     if (!MSIError)
-	return;
+	return NULL;
     PyModule_AddObject(m, "MSIError", MSIError);
+    return NULL;
 }

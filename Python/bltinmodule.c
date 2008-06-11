@@ -2231,13 +2231,24 @@ PyDoc_STRVAR(builtin_doc,
 \n\
 Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.");
 
+static struct PyModuleDef builtinsmodule = {
+	PyModuleDef_HEAD_INIT,
+	"builtins",
+	builtin_doc,
+	0,
+	builtin_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+
 PyObject *
 _PyBuiltin_Init(void)
 {
 	PyObject *mod, *dict, *debug;
-	mod = Py_InitModule4("builtins", builtin_methods,
-			     builtin_doc, (PyObject *)NULL,
-			     PYTHON_API_VERSION);
+	mod = PyModule_Create(&builtinsmodule);
 	if (mod == NULL)
 		return NULL;
 	dict = PyModule_GetDict(mod);

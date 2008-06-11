@@ -657,17 +657,30 @@ static struct PyMethodDef PyLocale_Methods[] = {
   {NULL, NULL}
 };
 
+
+static struct PyModuleDef _localemodule = {
+	PyModuleDef_HEAD_INIT,
+	"_locale",
+	locale__doc__,
+	-1,
+	PyLocale_Methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_locale(void)
+PyInit__locale(void)
 {
     PyObject *m, *d, *x;
 #ifdef HAVE_LANGINFO_H
     int i;
 #endif
 
-    m = Py_InitModule3("_locale", PyLocale_Methods, locale__doc__);
+    m = PyModule_Create(&_localemodule);
     if (m == NULL)
-    	return;
+    	return NULL;
 
     d = PyModule_GetDict(m);
 
@@ -714,6 +727,7 @@ init_locale(void)
 				    langinfo_constants[i].value);
     }
 #endif
+    return m;
 }
 
 /* 

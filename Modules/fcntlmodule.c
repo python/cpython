@@ -599,17 +599,31 @@ all_ins(PyObject* d)
 	return 0;
 }
 
+
+static struct PyModuleDef fcntlmodule = {
+	PyModuleDef_HEAD_INIT,
+	"fcntl",
+	module_doc,
+	-1,
+	fcntl_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initfcntl(void)
+PyInit_fcntl(void)
 {
 	PyObject *m, *d;
 
 	/* Create the module and add the functions and documentation */
-	m = Py_InitModule3("fcntl", fcntl_methods, module_doc);
+	m = PyModule_Create(&fcntlmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	all_ins(d);
+	return m;
 }

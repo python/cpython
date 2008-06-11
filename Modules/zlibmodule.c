@@ -53,7 +53,6 @@ static PyThread_type_lock zlib_lock = NULL; /* initialized on module load */
 
 /* The output buffer will be increased in chunks of DEFAULTALLOC bytes. */
 #define DEFAULTALLOC (16*1024)
-#define PyInit_zlib initzlib
 
 static PyTypeObject Comptype;
 static PyTypeObject Decomptype;
@@ -1013,17 +1012,27 @@ PyDoc_STRVAR(zlib_module_documentation,
 "Compressor objects support compress() and flush() methods; decompressor\n"
 "objects support decompress() and flush().");
 
+static struct PyModuleDef zlibmodule = {
+	PyModuleDef_HEAD_INIT,
+	"zlib",
+	zlib_module_documentation,
+	-1,
+	zlib_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
 PyInit_zlib(void)
 {
     PyObject *m, *ver;
     Py_TYPE(&Comptype) = &PyType_Type;
     Py_TYPE(&Decomptype) = &PyType_Type;
-    m = Py_InitModule4("zlib", zlib_methods,
-		       zlib_module_documentation,
-		       (PyObject*)NULL,PYTHON_API_VERSION);
+    m = PyModule_Create(&zlibmodule);
     if (m == NULL)
-	return;
+	return NULL;
 
     ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (ZlibError != NULL) {
@@ -1054,4 +1063,5 @@ PyInit_zlib(void)
 #ifdef WITH_THREAD
     zlib_lock = PyThread_allocate_lock();
 #endif /* WITH_THREAD */
+    return m;
 }

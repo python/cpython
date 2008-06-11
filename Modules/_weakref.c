@@ -88,13 +88,25 @@ weakref_functions[] =  {
 };
 
 
+static struct PyModuleDef weakrefmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_weakref",
+	"Weak-reference support module.",
+	-1,
+	weakref_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_weakref(void)
+PyInit__weakref(void)
 {
     PyObject *m;
 
-    m = Py_InitModule3("_weakref", weakref_functions,
-                       "Weak-reference support module.");
+    m = PyModule_Create(&weakrefmodule);
+                       
     if (m != NULL) {
         Py_INCREF(&_PyWeakref_RefType);
         PyModule_AddObject(m, "ref",
@@ -109,4 +121,5 @@ init_weakref(void)
         PyModule_AddObject(m, "CallableProxyType",
                            (PyObject *) &_PyWeakref_CallableProxyType);
     }
+    return m;
 }

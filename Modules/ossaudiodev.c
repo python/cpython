@@ -889,7 +889,7 @@ static PyMethodDef ossaudiodev_methods[] = {
 
 
 #define _EXPORT_INT(mod, name) \
-  if (PyModule_AddIntConstant(mod, #name, (long) (name)) == -1) return;
+  if (PyModule_AddIntConstant(mod, #name, (long) (name)) == -1) return NULL;
 
 
 static char *control_labels[] = SOUND_DEVICE_LABELS;
@@ -939,14 +939,26 @@ error1:
 }
 
 
-void
-initossaudiodev(void)
+static struct PyModuleDef ossaudiodevmodule = {
+	PyModuleDef_HEAD_INIT,
+	"ossaudiodev",
+	NULL,
+	-1,
+	ossaudiodev_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyObject*
+PyInit_ossaudiodev(void)
 {
     PyObject *m;
 
-    m = Py_InitModule("ossaudiodev", ossaudiodev_methods);
+    m = PyModule_Create(&ossaudiodevmodule);
     if (m == NULL)
-	return;
+	return NULL;
 
     OSSAudioError = PyErr_NewException("ossaudiodev.OSSAudioError",
 				       NULL, NULL);
@@ -961,7 +973,7 @@ initossaudiodev(void)
     /* Build 'control_labels' and 'control_names' lists and add them
        to the module. */
     if (build_namelists(m) == -1)       /* XXX what to do here? */
-        return;
+        return NULL;
 
     /* Expose the audio format numbers -- essential! */
     _EXPORT_INT(m, AFMT_QUERY);
@@ -1133,4 +1145,5 @@ initossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_TMR_STOP);
     _EXPORT_INT(m, SNDCTL_TMR_TEMPO);
     _EXPORT_INT(m, SNDCTL_TMR_TIMEBASE);
+    return m;
 }

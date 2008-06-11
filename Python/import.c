@@ -541,56 +541,101 @@ PyImport_GetMagicNumber(void)
    dictionary is stored by calling _PyImport_FixupExtension()
    immediately after the module initialization function succeeds.  A
    copy can be retrieved from there by calling
-   _PyImport_FindExtension(). */
+   _PyImport_FindExtension(). 
 
-PyObject *
-_PyImport_FixupExtension(char *name, char *filename)
+   Modules which do support multiple multiple initialization set
+   their m_size field to a non-negative number (indicating the size
+   of the module-specific state). They are still recorded in the
+   extensions dictionary, to avoid loading shared libraries twice.
+*/
+
+int
+_PyImport_FixupExtension(PyObject *mod, char *name, char *filename)
 {
-	PyObject *modules, *mod, *dict, *copy;
+	PyObject *modules, *dict;
+	struct PyModuleDef *def;
 	if (extensions == NULL) {
 		extensions = PyDict_New();
 		if (extensions == NULL)
-			return NULL;
+			return -1;
+	}
+	if (mod == NULL || !PyModule_Check(mod)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	def = PyModule_GetDef(mod);
+	if (!def) {
+		PyErr_BadInternalCall();
+		return -1;
 	}
 	modules = PyImport_GetModuleDict();
-	mod = PyDict_GetItemString(modules, name);
-	if (mod == NULL || !PyModule_Check(mod)) {
-		PyErr_Format(PyExc_SystemError,
-		  "_PyImport_FixupExtension: module %.200s not loaded", name);
-		return NULL;
+	if (PyDict_SetItemString(modules, name, mod) < 0)
+		return -1;
+	if (_PyState_AddModule(mod, def) < 0) {
+		PyDict_DelItemString(modules, name);
+		return -1;
 	}
-	dict = PyModule_GetDict(mod);
-	if (dict == NULL)
-		return NULL;
-	copy = PyDict_Copy(dict);
-	if (copy == NULL)
-		return NULL;
-	PyDict_SetItemString(extensions, filename, copy);
-	Py_DECREF(copy);
-	return copy;
+	if (def->m_size == -1) {
+		if (def->m_base.m_copy) {
+			/* Somebody already imported the module, 
+			   likely under a different name.
+			   XXX this should really not happen. */
+			Py_DECREF(def->m_base.m_copy);
+			def->m_base.m_copy = NULL;
+		}
+		dict = PyModule_GetDict(mod);
+		if (dict == NULL)
+			return -1;
+		def->m_base.m_copy = PyDict_Copy(dict);
+		if (def->m_base.m_copy == NULL)
+			return -1;
+	}
+	PyDict_SetItemString(extensions, filename, (PyObject*)def);
+	return 0;
 }
 
 PyObject *
 _PyImport_FindExtension(char *name, char *filename)
 {
-	PyObject *dict, *mod, *mdict;
+	PyObject *mod, *mdict;
+	PyModuleDef* def;
 	if (extensions == NULL)
 		return NULL;
-	dict = PyDict_GetItemString(extensions, filename);
-	if (dict == NULL)
+	def = (PyModuleDef*)PyDict_GetItemString(extensions, filename);
+	if (def == NULL)
 		return NULL;
-	mod = PyImport_AddModule(name);
-	if (mod == NULL)
+	if (def->m_size == -1) {
+		/* Module does not support repeated initialization */
+		if (def->m_base.m_copy == NULL)
+			return NULL;
+		mod = PyImport_AddModule(name);
+		if (mod == NULL)
+			return NULL;
+		Py_INCREF(mod);
+		mdict = PyModule_GetDict(mod);
+		if (mdict == NULL)
+			return NULL;
+		if (PyDict_Update(mdict, def->m_base.m_copy))
+			return NULL;
+	}
+	else {
+		if (def->m_base.m_init == NULL)
+			return NULL;
+		mod = def->m_base.m_init();
+		if (mod == NULL)
+			return NULL;
+		PyDict_SetItemString(PyImport_GetModuleDict(), name, mod);
+	}
+	if (_PyState_AddModule(mod, def) < 0) {
+		PyDict_DelItemString(PyImport_GetModuleDict(), name);
+		Py_DECREF(mod);
 		return NULL;
-	mdict = PyModule_GetDict(mod);
-	if (mdict == NULL)
-		return NULL;
-	if (PyDict_Update(mdict, dict))
-		return NULL;
+	}
 	if (Py_VerboseFlag)
 		PySys_WriteStderr("import %s # previously loaded (%s)\n",
-			name, filename);
+				  name, filename);
 	return mod;
+	
 }
 
 
@@ -1801,6 +1846,7 @@ init_builtin(char *name)
 		return 1;
 
 	for (p = PyImport_Inittab; p->name != NULL; p++) {
+		PyObject *mod;
 		if (strcmp(name, p->name) == 0) {
 			if (p->initfunc == NULL) {
 				PyErr_Format(PyExc_ImportError,
@@ -1810,11 +1856,14 @@ init_builtin(char *name)
 			}
 			if (Py_VerboseFlag)
 				PySys_WriteStderr("import %s # builtin\n", name);
-			(*p->initfunc)();
-			if (PyErr_Occurred())
+			mod = (*p->initfunc)();
+			if (mod == 0)
 				return -1;
-			if (_PyImport_FixupExtension(name, name) == NULL)
+			if (_PyImport_FixupExtension(mod, name, name) < 0)
 				return -1;
+			/* FixupExtension has put the module into sys.modules,
+			   so we can release our own reference. */
+			Py_DECREF(mod);
 			return 1;
 		}
 	}
@@ -3200,17 +3249,27 @@ PyTypeObject PyNullImporter_Type = {
 	PyType_GenericNew          /* tp_new */
 };
 
+static struct PyModuleDef impmodule = {
+	PyModuleDef_HEAD_INIT,
+	"imp",
+	doc_imp,
+	0,
+	imp_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
 
 PyMODINIT_FUNC
-initimp(void)
+PyInit_imp(void)
 {
 	PyObject *m, *d;
 
 	if (PyType_Ready(&PyNullImporter_Type) < 0)
-		goto failure;
+		return NULL;
 
-	m = Py_InitModule4("imp", imp_methods, doc_imp,
-			   NULL, PYTHON_API_VERSION);
+	m = PyModule_Create(&impmodule);
 	if (m == NULL)
 		goto failure;
 	d = PyModule_GetDict(m);
@@ -3230,8 +3289,11 @@ initimp(void)
 
 	Py_INCREF(&PyNullImporter_Type);
 	PyModule_AddObject(m, "NullImporter", (PyObject *)&PyNullImporter_Type);
+	return m;
   failure:
-	;
+	Py_XDECREF(m);
+	return NULL;
+
 }
 
 
@@ -3275,7 +3337,7 @@ PyImport_ExtendInittab(struct _inittab *newtab)
 /* Shorthand to add a single entry given a name and a function */
 
 int
-PyImport_AppendInittab(char *name, void (*initfunc)(void))
+PyImport_AppendInittab(char *name, PyObject* (*initfunc)(void))
 {
 	struct _inittab newtab[2];
 

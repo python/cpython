@@ -2770,8 +2770,21 @@ static PyMethodDef PyCurses_methods[] = {
 
 /* Initialization function for the module */
 
+
+static struct PyModuleDef _cursesmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_curses",
+	NULL,
+	-1,
+	PyCurses_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_curses(void)
+PyInit__curses(void)
 {
 	PyObject *m, *d, *v, *c_api_object;
 	static void *PyCurses_API[PyCurses_API_pointers];
@@ -2786,14 +2799,14 @@ init_curses(void)
 	PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("_curses", PyCurses_methods);
+	m = PyModule_Create(&_cursesmodule);
 	if (m == NULL)
-    		return;
+    		return NULL;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	if (d == NULL)
-		return;
+		return NULL;
 	ModDict = d; /* For PyCurses_InitScr to use later */
 
 	/* Add a CObject for the C API */
@@ -2931,4 +2944,5 @@ init_curses(void)
 	  SetDictInt("KEY_MIN", KEY_MIN);
 	  SetDictInt("KEY_MAX", KEY_MAX);
 	}
+	return m;
 }

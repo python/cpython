@@ -246,7 +246,7 @@ static PyTypeObject Str_Type = {
 	0,			/*tp_methods*/
 	0,			/*tp_members*/
 	0,			/*tp_getset*/
-	0, /* see initxx */	/*tp_base*/
+	0, /* see PyInit_xx */	/*tp_base*/
 	0,			/*tp_dict*/
 	0,			/*tp_descr_get*/
 	0,			/*tp_descr_set*/
@@ -301,14 +301,14 @@ static PyTypeObject Null_Type = {
 	0,			/*tp_methods*/
 	0,			/*tp_members*/
 	0,			/*tp_getset*/
-	0, /* see initxx */	/*tp_base*/
+	0, /* see PyInit_xx */	/*tp_base*/
 	0,			/*tp_dict*/
 	0,			/*tp_descr_get*/
 	0,			/*tp_descr_set*/
 	0,			/*tp_dictoffset*/
 	0,			/*tp_init*/
 	0,			/*tp_alloc*/
-	0, /* see initxx */	/*tp_new*/
+	0, /* see PyInit_xx */	/*tp_new*/
 	0,			/*tp_free*/
 	0,			/*tp_is_gc*/
 };
@@ -334,12 +334,25 @@ static PyMethodDef xx_methods[] = {
 PyDoc_STRVAR(module_doc,
 "This is a template module just for instruction.");
 
-/* Initialization function for the module (*must* be called initxx) */
+/* Initialization function for the module (*must* be called PyInit_xx) */
+
+
+static struct PyModuleDef xxmodule = {
+	PyModuleDef_HEAD_INIT,
+	"xx",
+	module_doc,
+	-1,
+	xx_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
 
 PyMODINIT_FUNC
-initxx(void)
+PyInit_xx(void)
 {
-	PyObject *m;
+	PyObject *m = NULL;
 
 	/* Due to cross platform compiler issues the slots must be filled
 	 * here. It's required for portability to Windows without requiring
@@ -351,29 +364,33 @@ initxx(void)
 	/* Finalize the type object including setting type of the new type
 	 * object; doing it here is required for portability, too. */
 	if (PyType_Ready(&Xxo_Type) < 0)
-		return;
+		goto fail;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule3("xx", xx_methods, module_doc);
+	m = PyModule_Create(&xxmodule);
 	if (m == NULL)
-		return;
+		goto fail;
 
 	/* Add some symbolic constants to the module */
 	if (ErrorObject == NULL) {
 		ErrorObject = PyErr_NewException("xx.error", NULL, NULL);
 		if (ErrorObject == NULL)
-			return;
+			goto fail;
 	}
 	Py_INCREF(ErrorObject);
 	PyModule_AddObject(m, "error", ErrorObject);
 
 	/* Add Str */
 	if (PyType_Ready(&Str_Type) < 0)
-		return;
+		goto fail;
 	PyModule_AddObject(m, "Str", (PyObject *)&Str_Type);
 
 	/* Add Null */
 	if (PyType_Ready(&Null_Type) < 0)
-		return;
+		goto fail;
 	PyModule_AddObject(m, "Null", (PyObject *)&Null_Type);
+	return m;
+ fail:
+	Py_XDECREF(m);
+	return NULL;
 }

@@ -69,6 +69,7 @@ PyInterpreterState_New(void)
 #endif
 		interp->modules = NULL;
 		interp->modules_reloading = NULL;
+		interp->modules_by_index = NULL;
 		interp->sysdict = NULL;
 		interp->builtins = NULL;
 		interp->tstate_head = NULL;
@@ -108,6 +109,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 	Py_CLEAR(interp->codec_search_cache);
 	Py_CLEAR(interp->codec_error_registry);
 	Py_CLEAR(interp->modules);
+	Py_CLEAR(interp->modules_by_index);
 	Py_CLEAR(interp->modules_reloading);
 	Py_CLEAR(interp->sysdict);
 	Py_CLEAR(interp->builtins);
@@ -208,6 +210,40 @@ PyThreadState_New(PyInterpreterState *interp)
 	return tstate;
 }
 
+PyObject*
+PyState_FindModule(struct PyModuleDef* m)
+{
+	Py_ssize_t index = m->m_base.m_index;
+	PyInterpreterState *state = PyThreadState_GET()->interp;
+	PyObject *res;
+	if (index == 0)
+		return NULL;
+	if (state->modules_by_index == NULL)
+		return NULL;
+	if (index > PyList_GET_SIZE(state->modules_by_index))
+		return NULL;
+	res = PyList_GET_ITEM(state->modules_by_index, index);
+	return res==Py_None ? NULL : res;
+}
+
+int
+_PyState_AddModule(PyObject* module, struct PyModuleDef* def)
+{
+	PyInterpreterState *state = PyThreadState_GET()->interp;
+	if (!def)
+		return -1;
+	if (!state->modules_by_index) {
+		state->modules_by_index = PyList_New(20);
+		if (!state->modules_by_index)
+			return -1;
+	}
+	while(PyList_GET_SIZE(state->modules_by_index) <= def->m_base.m_index)
+		if (PyList_Append(state->modules_by_index, Py_None) < 0)
+			return -1;
+	Py_INCREF(module);
+	return PyList_SetItem(state->modules_by_index, 
+			      def->m_base.m_index, module);
+}
 
 void
 PyThreadState_Clear(PyThreadState *tstate)

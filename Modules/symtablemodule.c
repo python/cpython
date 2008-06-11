@@ -47,14 +47,26 @@ static PyMethodDef symtable_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
+static struct PyModuleDef symtablemodule = {
+	PyModuleDef_HEAD_INIT,
+	"_symtable",
+	NULL,
+	-1,
+	symtable_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_symtable(void)
+PyInit__symtable(void)
 {
 	PyObject *m;
 
-	m = Py_InitModule("_symtable", symtable_methods);
+	m = PyModule_Create(&symtablemodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	PyModule_AddIntConstant(m, "USE", USE);
 	PyModule_AddIntConstant(m, "DEF_GLOBAL", DEF_GLOBAL);
 	PyModule_AddIntConstant(m, "DEF_LOCAL", DEF_LOCAL);
@@ -80,4 +92,9 @@ init_symtable(void)
 	PyModule_AddIntConstant(m, "GLOBAL_IMPLICIT", GLOBAL_IMPLICIT);
 	PyModule_AddIntConstant(m, "FREE", FREE);
 	PyModule_AddIntConstant(m, "CELL", CELL);
+	if (PyErr_Occurred()) {
+		Py_DECREF(m);
+		m = 0;
+	}
+	return m;
 }

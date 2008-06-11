@@ -1563,28 +1563,41 @@ PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
 for documentation.");
 
+
+static struct PyModuleDef _sslmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_ssl",
+	module_doc,
+	-1,
+	PySSL_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_ssl(void)
+PyInit__ssl(void)
 {
 	PyObject *m, *d;
 
 	Py_TYPE(&PySSL_Type) = &PyType_Type;
 
-	m = Py_InitModule3("_ssl", PySSL_methods, module_doc);
+	m = PyModule_Create(&_sslmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	d = PyModule_GetDict(m);
 
 	/* Load _socket module and its C API */
 	if (PySocketModule_ImportModuleAndAPI())
-		return;
+		return NULL;
 
 	/* Init OpenSSL */
 	SSL_load_error_strings();
 #ifdef WITH_THREAD
 	/* note that this will start threading if not already started */
 	if (!_setup_ssl_threads()) {
-		return;
+		return NULL;
 	}
 #endif
 	SSLeay_add_ssl_algorithms();
@@ -1594,12 +1607,12 @@ init_ssl(void)
 					      PySocketModule.error,
 					      NULL);
 	if (PySSLErrorObject == NULL)
-		return;
+		return NULL;
 	if (PyDict_SetItemString(d, "SSLError", PySSLErrorObject) != 0)
-		return;
+		return NULL;
 	if (PyDict_SetItemString(d, "SSLType",
 				 (PyObject *)&PySSL_Type) != 0)
-		return;
+		return NULL;
 	PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
 				PY_SSL_ERROR_ZERO_RETURN);
 	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_READ",
@@ -1636,4 +1649,5 @@ init_ssl(void)
 				PY_SSL_VERSION_SSL23);
 	PyModule_AddIntConstant(m, "PROTOCOL_TLSv1",
 				PY_SSL_VERSION_TLS1);
+	return m;
 }

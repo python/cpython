@@ -430,15 +430,28 @@ static PyMethodDef nis_methods[] = {
 PyDoc_STRVAR(nis__doc__,
 "This module contains functions for accessing NIS maps.\n");
 
-void
-initnis (void)
+static struct PyModuleDef nismodule = {
+	PyModuleDef_HEAD_INIT,
+	"nis",
+	nis__doc__,
+	-1,
+	nis_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyObject*
+PyInit_nis (void)
 {
 	PyObject *m, *d;
-	m = Py_InitModule3("nis", nis_methods, nis__doc__);
+	m = PyModule_Create(&nismodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	d = PyModule_GetDict(m);
 	NisError = PyErr_NewException("nis.error", NULL, NULL);
 	if (NisError != NULL)
 		PyDict_SetItemString(d, "error", NisError);
+	return m;
 }
