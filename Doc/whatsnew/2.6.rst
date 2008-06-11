@@ -521,6 +521,21 @@ environment variable.
 
 .. ======================================================================
 
+.. _pep-0371:
+
+PEP 371: The ``multiprocessing`` Package
+=====================================================
+
+XXX write this.
+
+.. seealso::
+
+   :pep:`371` - Per-user ``site-packages`` Directory
+     PEP written by Jesse Noller and Richard Oudkerk; 
+     implemented by Jesse Noller.
+
+.. ======================================================================
+
 .. _pep-3101:
 
 PEP 3101: Advanced String Formatting
