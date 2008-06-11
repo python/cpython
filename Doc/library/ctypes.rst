@@ -2159,6 +2159,7 @@ These are the fundamental ctypes data types:
    optional float initializer.  On platforms where ``sizeof(long
    double) == sizeof(double)`` it is an alias to :class:`c_double`.
 
+   .. versionadded:: 2.6
 
 .. class:: c_float
 
