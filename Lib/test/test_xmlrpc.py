@@ -320,7 +320,7 @@ class SimpleServerTestCase(unittest.TestCase):
     def tearDown(self):
         # wait on the server thread to terminate
         self.evt.wait(4.0)
-        if not self.evt.isSet():
+        if not self.evt.is_set():
             self.evt.set()
             stop_serving()
             raise RuntimeError("timeout reached, test has failed")
