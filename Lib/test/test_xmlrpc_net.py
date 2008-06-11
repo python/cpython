@@ -10,8 +10,7 @@ import xmlrpc.client as xmlrpclib
 
 class CurrentTimeTest(unittest.TestCase):
 
-    # XXX time.xmlrpc.com seems broken which is why this is disabled
-    def Xtest_current_time(self):
+    def test_current_time(self):
         # Get the current time from xmlrpc.com.  This code exercises
         # the minimal HTTP functionality in xmlrpclib.
         server = xmlrpclib.ServerProxy("http://time.xmlrpc.com/RPC2")
