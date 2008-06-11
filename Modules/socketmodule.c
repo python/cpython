@@ -4995,7 +4995,7 @@ PyInit__socket(void)
 		PyObject *tmp;
 		tmp = PyLong_FromUnsignedLong(SIO_RCVALL);
 		if (tmp == NULL)
-			return;
+			return NULL;
 		PyModule_AddObject(m, "SIO_RCVALL", tmp);
 	}
 	PyModule_AddIntConstant(m, "RCVALL_OFF", RCVALL_OFF);
