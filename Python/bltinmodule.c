@@ -265,6 +265,20 @@ PyDoc_STRVAR(any_doc,
 \n\
 Return True if bool(x) is True for any x in the iterable.");
 
+static PyObject *
+builtin_ascii(PyObject *self, PyObject *v)
+{
+	return PyObject_ASCII(v);
+}
+
+PyDoc_STRVAR(ascii_doc,
+"ascii(object) -> string\n\
+\n\
+As repr(), return a string containing a printable representation of an\n\
+object, but escape the non-ASCII characters in the string returned by\n\
+repr() using \\x, \\u or \\U escapes.  This generates a string similar\n\
+to that returned by repr() in Python 2.");
+
 
 static PyObject *
 builtin_bin(PyObject *self, PyObject *v)
@@ -2188,6 +2202,7 @@ static PyMethodDef builtin_methods[] = {
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
+ 	{"ascii",	builtin_ascii,      METH_O, ascii_doc},
 	{"bin",		builtin_bin,	    METH_O, bin_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},

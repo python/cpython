@@ -116,8 +116,18 @@ Object Protocol
 
    Compute a string representation of object *o*.  Returns the string
    representation on success, *NULL* on failure.  This is the equivalent of the
-   Python expression ``repr(o)``.  Called by the :func:`repr` built-in function and
-   by reverse quotes.
+   Python expression ``repr(o)``.  Called by the :func:`repr` built-in function.
+
+
+.. cfunction:: PyObject* PyObject_ASCII(PyObject *o)
+
+   .. index:: builtin: ascii
+
+   As :cfunc:`PyObject_Repr`, compute a string representation of object *o*, but
+   escape the non-ASCII characters in the string returned by
+   :cfunc:`PyObject_Repr` with ``\x``, ``\u`` or ``\U`` escapes.  This generates
+   a string similar to that returned by :cfunc:`PyObject_Repr` in Python 2.
+   Called by the :func:`ascii` built-in function.
 
 
 .. cfunction:: PyObject* PyObject_Str(PyObject *o)

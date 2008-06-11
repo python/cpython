@@ -425,6 +425,33 @@ PyObject_Str(PyObject *v)
 	return res;
 }
 
+PyObject *
+PyObject_ASCII(PyObject *v)
+{
+	PyObject *repr, *ascii, *res;
+	
+	repr = PyObject_Repr(v);
+	if (repr == NULL)
+		return NULL;
+
+	/* repr is guaranteed to be a PyUnicode object by PyObject_Repr */
+	ascii = PyUnicode_EncodeASCII(
+		PyUnicode_AS_UNICODE(repr),
+		PyUnicode_GET_SIZE(repr),
+		"backslashreplace");
+
+	Py_DECREF(repr);
+	if (ascii == NULL) 
+		return NULL;
+
+	res = PyUnicode_DecodeASCII(
+		PyBytes_AS_STRING(ascii),
+		PyBytes_GET_SIZE(ascii),
+		NULL);
+
+	Py_DECREF(ascii);
+	return res;
+}
 
 /* The new comparison philosophy is: we completely separate three-way
    comparison from rich comparison.  That is, PyObject_Compare() and

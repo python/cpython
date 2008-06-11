@@ -220,6 +220,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_IsLinebreak _PyUnicodeUCS2_IsLinebreak
 # define _PyUnicode_IsLowercase _PyUnicodeUCS2_IsLowercase
 # define _PyUnicode_IsNumeric _PyUnicodeUCS2_IsNumeric
+# define _PyUnicode_IsPrintable _PyUnicodeUCS2_IsPrintable
 # define _PyUnicode_IsTitlecase _PyUnicodeUCS2_IsTitlecase
 # define _PyUnicode_IsXidStart _PyUnicodeUCS2_IsXidStart
 # define _PyUnicode_IsXidContinue _PyUnicodeUCS2_IsXidContinue
@@ -317,6 +318,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_IsLinebreak _PyUnicodeUCS4_IsLinebreak
 # define _PyUnicode_IsLowercase _PyUnicodeUCS4_IsLowercase
 # define _PyUnicode_IsNumeric _PyUnicodeUCS4_IsNumeric
+# define _PyUnicode_IsPrintable _PyUnicodeUCS4_IsPrintable
 # define _PyUnicode_IsTitlecase _PyUnicodeUCS4_IsTitlecase
 # define _PyUnicode_IsXidStart _PyUnicodeUCS4_IsXidStart
 # define _PyUnicode_IsXidContinue _PyUnicodeUCS4_IsXidContinue
@@ -357,6 +359,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 #define Py_UNICODE_ISDECIMAL(ch) _PyUnicode_IsDecimalDigit(ch)
 #define Py_UNICODE_ISDIGIT(ch) _PyUnicode_IsDigit(ch)
 #define Py_UNICODE_ISNUMERIC(ch) _PyUnicode_IsNumeric(ch)
+#define Py_UNICODE_ISPRINTABLE(ch) _PyUnicode_IsPrintable(ch)
 
 #define Py_UNICODE_TODECIMAL(ch) _PyUnicode_ToDecimalDigit(ch)
 #define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
@@ -387,6 +390,7 @@ extern const unsigned char _Py_ascii_whitespace[];
 #define Py_UNICODE_ISDECIMAL(ch) _PyUnicode_IsDecimalDigit(ch)
 #define Py_UNICODE_ISDIGIT(ch) _PyUnicode_IsDigit(ch)
 #define Py_UNICODE_ISNUMERIC(ch) _PyUnicode_IsNumeric(ch)
+#define Py_UNICODE_ISPRINTABLE(ch) _PyUnicode_IsPrintable(ch)
 
 #define Py_UNICODE_TODECIMAL(ch) _PyUnicode_ToDecimalDigit(ch)
 #define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
@@ -1530,6 +1534,10 @@ PyAPI_FUNC(int) _PyUnicode_IsDigit(
     );
 
 PyAPI_FUNC(int) _PyUnicode_IsNumeric(
+    Py_UNICODE ch 	/* Unicode character */
+    );
+
+PyAPI_FUNC(int) _PyUnicode_IsPrintable(
     Py_UNICODE ch 	/* Unicode character */
     );
 

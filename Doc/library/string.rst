@@ -229,8 +229,9 @@ as a string, overriding its own definition of formatting.  By converting the
 value to a string before calling :meth:`__format__`, the normal formatting logic
 is bypassed.
 
-Two conversion flags are currently supported: ``'!s'`` which calls :func:`str`
-on the value, and ``'!r'`` which calls :func:`repr`.
+Three conversion flags are currently supported: ``'!s'`` which calls :func:`str`
+on the value, ``'!r'`` which calls :func:`repr` and ``'!a'`` which calls
+:func:`ascii`.
 
 Some examples::
 

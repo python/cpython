@@ -793,7 +793,7 @@ initstdio(void)
 	}
 	else {
 		if (!(std = PyFile_FromFd(fd, "<stderr>", "w", -1, encoding,
-					  errors, "\n", 0))) {
+					  "backslashreplace", "\n", 0))) {
 			goto error;
 		}
 	} /* if (fd < 0) */
