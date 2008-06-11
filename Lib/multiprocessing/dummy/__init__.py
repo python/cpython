@@ -48,24 +48,17 @@ class DummyProcess(threading.Thread):
         threading.Thread.start(self)
 
     def get_exitcode(self):
-        if self._start_called and not self.isAlive():
+        if self._start_called and not self.is_alive():
             return 0
         else:
             return None
 
-    # XXX
-    if sys.version_info < (3, 0):
-        is_alive = threading.Thread.isAlive.__func__
-        get_name = threading.Thread.getName.__func__
-        set_name = threading.Thread.setName.__func__
-        is_daemon = threading.Thread.isDaemon.__func__
-        set_daemon = threading.Thread.setDaemon.__func__
-    else:
-        is_alive = threading.Thread.isAlive
-        get_name = threading.Thread.getName
-        set_name = threading.Thread.setName
-        is_daemon = threading.Thread.isDaemon
-        set_daemon = threading.Thread.setDaemon
+
+    is_alive = threading.Thread.is_alive
+    get_name = threading.Thread.get_name
+    set_name = threading.Thread.set_name
+    is_daemon = threading.Thread.is_daemon
+    set_daemon = threading.Thread.set_daemon
 
 #
 #
@@ -74,22 +67,22 @@ class DummyProcess(threading.Thread):
 class Condition(threading._Condition):
     # XXX
     if sys.version_info < (3, 0):
-        notify_all = threading._Condition.notifyAll.__func__
+        notify_all = threading._Condition.notify_all.__func__
     else:
-        notify_all = threading._Condition.notifyAll
+        notify_all = threading._Condition.notify_all
 
 #
 #
 #
 
 Process = DummyProcess
-current_process = threading.currentThread
+current_process = threading.current_thread
 current_process()._children = weakref.WeakKeyDictionary()
 
 def active_children():
     children = current_process()._children
     for p in list(children):
-        if not p.isAlive():
+        if not p.is_alive():
             children.pop(p, None)
     return list(children)
 

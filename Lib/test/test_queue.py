@@ -52,11 +52,11 @@ class BlockingTestMixin:
         self.t.start()
         self.result = block_func(*block_args)
         # If block_func returned before our thread made the call, we failed!
-        if not self.t.startedEvent.isSet():
+        if not self.t.startedEvent.is_set():
             self.fail("blocking function '%r' appeared not to block" %
                       block_func)
         self.t.join(10) # make sure the thread terminates
-        if self.t.isAlive():
+        if self.t.is_alive():
             self.fail("trigger function '%r' appeared to not return" %
                       trigger_func)
         return self.result
@@ -76,10 +76,10 @@ class BlockingTestMixin:
                                  expected_exception_class)
         finally:
             self.t.join(10) # make sure the thread terminates
-            if self.t.isAlive():
+            if self.t.is_alive():
                 self.fail("trigger function '%r' appeared to not return" %
                                  trigger_func)
-            if not self.t.startedEvent.isSet():
+            if not self.t.startedEvent.is_set():
                 self.fail("trigger thread ended but event never set")
 
 
