@@ -425,6 +425,9 @@ These environment variables influence Python's behavior.
    ``encodingname:errorhandler``.  The ``:errorhandler`` part is optional and
    has the same meaning as in :func:`str.encode`.
 
+   For stderr, the ``:errorhandler`` part is ignored; the handler will always be
+   ``'backslashreplace'``.
+
 
 .. envvar:: PYTHONNOUSERSITE
 

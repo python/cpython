@@ -71,6 +71,48 @@ class UnicodeTest(
         # raw strings should not have unicode escapes
         self.assertNotEquals(r"\u0020", " ")
 
+    def test_ascii(self):
+        if not sys.platform.startswith('java'):
+            # Test basic sanity of repr()
+            self.assertEqual(ascii('abc'), "'abc'")
+            self.assertEqual(ascii('ab\\c'), "'ab\\\\c'")
+            self.assertEqual(ascii('ab\\'), "'ab\\\\'")
+            self.assertEqual(ascii('\\c'), "'\\\\c'")
+            self.assertEqual(ascii('\\'), "'\\\\'")
+            self.assertEqual(ascii('\n'), "'\\n'")
+            self.assertEqual(ascii('\r'), "'\\r'")
+            self.assertEqual(ascii('\t'), "'\\t'")
+            self.assertEqual(ascii('\b'), "'\\x08'")
+            self.assertEqual(ascii("'\""), """'\\'"'""")
+            self.assertEqual(ascii("'\""), """'\\'"'""")
+            self.assertEqual(ascii("'"), '''"'"''')
+            self.assertEqual(ascii('"'), """'"'""")
+            latin1repr = (
+                "'\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\t\\n\\x0b\\x0c\\r"
+                "\\x0e\\x0f\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1a"
+                "\\x1b\\x1c\\x1d\\x1e\\x1f !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHI"
+                "JKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x7f"
+                "\\x80\\x81\\x82\\x83\\x84\\x85\\x86\\x87\\x88\\x89\\x8a\\x8b\\x8c\\x8d"
+                "\\x8e\\x8f\\x90\\x91\\x92\\x93\\x94\\x95\\x96\\x97\\x98\\x99\\x9a\\x9b"
+                "\\x9c\\x9d\\x9e\\x9f\\xa0\\xa1\\xa2\\xa3\\xa4\\xa5\\xa6\\xa7\\xa8\\xa9"
+                "\\xaa\\xab\\xac\\xad\\xae\\xaf\\xb0\\xb1\\xb2\\xb3\\xb4\\xb5\\xb6\\xb7"
+                "\\xb8\\xb9\\xba\\xbb\\xbc\\xbd\\xbe\\xbf\\xc0\\xc1\\xc2\\xc3\\xc4\\xc5"
+                "\\xc6\\xc7\\xc8\\xc9\\xca\\xcb\\xcc\\xcd\\xce\\xcf\\xd0\\xd1\\xd2\\xd3"
+                "\\xd4\\xd5\\xd6\\xd7\\xd8\\xd9\\xda\\xdb\\xdc\\xdd\\xde\\xdf\\xe0\\xe1"
+                "\\xe2\\xe3\\xe4\\xe5\\xe6\\xe7\\xe8\\xe9\\xea\\xeb\\xec\\xed\\xee\\xef"
+                "\\xf0\\xf1\\xf2\\xf3\\xf4\\xf5\\xf6\\xf7\\xf8\\xf9\\xfa\\xfb\\xfc\\xfd"
+                "\\xfe\\xff'")
+            testrepr = ascii(''.join(map(chr, range(256))))
+            self.assertEqual(testrepr, latin1repr)
+            # Test ascii works on wide unicode escapes without overflow.
+            self.assertEqual(ascii("\U00010000" * 39 + "\uffff" * 4096),
+                             ascii("\U00010000" * 39 + "\uffff" * 4096))
+
+            class WrongRepr:
+                def __repr__(self):
+                    return b'byte-repr'
+            self.assertRaises(TypeError, ascii, WrongRepr())
+
     def test_repr(self):
         if not sys.platform.startswith('java'):
             # Test basic sanity of repr()
@@ -94,19 +136,24 @@ class UnicodeTest(
                 "JKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x7f"
                 "\\x80\\x81\\x82\\x83\\x84\\x85\\x86\\x87\\x88\\x89\\x8a\\x8b\\x8c\\x8d"
                 "\\x8e\\x8f\\x90\\x91\\x92\\x93\\x94\\x95\\x96\\x97\\x98\\x99\\x9a\\x9b"
-                "\\x9c\\x9d\\x9e\\x9f\\xa0\\xa1\\xa2\\xa3\\xa4\\xa5\\xa6\\xa7\\xa8\\xa9"
-                "\\xaa\\xab\\xac\\xad\\xae\\xaf\\xb0\\xb1\\xb2\\xb3\\xb4\\xb5\\xb6\\xb7"
-                "\\xb8\\xb9\\xba\\xbb\\xbc\\xbd\\xbe\\xbf\\xc0\\xc1\\xc2\\xc3\\xc4\\xc5"
-                "\\xc6\\xc7\\xc8\\xc9\\xca\\xcb\\xcc\\xcd\\xce\\xcf\\xd0\\xd1\\xd2\\xd3"
-                "\\xd4\\xd5\\xd6\\xd7\\xd8\\xd9\\xda\\xdb\\xdc\\xdd\\xde\\xdf\\xe0\\xe1"
-                "\\xe2\\xe3\\xe4\\xe5\\xe6\\xe7\\xe8\\xe9\\xea\\xeb\\xec\\xed\\xee\\xef"
-                "\\xf0\\xf1\\xf2\\xf3\\xf4\\xf5\\xf6\\xf7\\xf8\\xf9\\xfa\\xfb\\xfc\\xfd"
-                "\\xfe\\xff'")
+                "\\x9c\\x9d\\x9e\\x9f\\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9"
+                "\xaa\xab\xac\\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7"
+                "\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5"
+                "\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3"
+                "\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1"
+                "\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
+                "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd"
+                "\xfe\xff'")
             testrepr = repr(''.join(map(chr, range(256))))
             self.assertEqual(testrepr, latin1repr)
             # Test repr works on wide unicode escapes without overflow.
             self.assertEqual(repr("\U00010000" * 39 + "\uffff" * 4096),
                              repr("\U00010000" * 39 + "\uffff" * 4096))
+
+            class WrongRepr:
+                def __repr__(self):
+                    return b'byte-repr'
+            self.assertRaises(TypeError, repr, WrongRepr())
 
     def test_iterators(self):
         # Make sure unicode objects have an __iter__ method
@@ -374,6 +421,13 @@ class UnicodeTest(
         self.assertFalse("[".isidentifier())
         self.assertFalse("©".isidentifier())
 
+    def test_isprintable(self):
+        self.assertTrue("".isprintable())
+        self.assertTrue("abcdefg".isprintable())
+        self.assertFalse("abcdefg\n".isprintable())
+        self.assertTrue("\u0370".isprintable())
+        self.assertFalse("\ud800".isprintable())
+
     def test_contains(self):
         # Testing Unicode contains method
         self.assert_('a' in 'abdb')
@@ -544,7 +598,7 @@ class UnicodeTest(
         # format specifiers for user defined type
         self.assertEqual('{0:abc}'.format(C()), 'abc')
 
-        # !r and !s coersions
+        # !r, !s and !a coersions
         self.assertEqual('{0!s}'.format('Hello'), 'Hello')
         self.assertEqual('{0!s:}'.format('Hello'), 'Hello')
         self.assertEqual('{0!s:15}'.format('Hello'), 'Hello          ')
@@ -552,6 +606,11 @@ class UnicodeTest(
         self.assertEqual('{0!r}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!r:}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!r}'.format(F('Hello')), 'F(Hello)')
+        self.assertEqual('{0!r}'.format(F('\u0370')), 'F(\u0370)')
+        self.assertEqual('{0!a}'.format('Hello'), "'Hello'")
+        self.assertEqual('{0!a:}'.format('Hello'), "'Hello'")
+        self.assertEqual('{0!a}'.format(F('Hello')), 'F(Hello)')
+        self.assertEqual('{0!a}'.format(F('\u0370')), 'F(\\u0370)')
 
         # test fallback to object.__format__
         self.assertEqual('{0}'.format({}), '{}')
@@ -643,6 +702,8 @@ class UnicodeTest(
         self.assertEqual("%s, %s, %i, %f, %5.2f" % ("abc", "abc", -1, -2, 1003.57), 'abc, abc, -1, -2.000000, 1003.57')
         if not sys.platform.startswith('java'):
             self.assertEqual("%r, %r" % (b"abc", "abc"), "b'abc', 'abc'")
+            self.assertEqual("%r" % ("\u1234",), "'\u1234'")
+            self.assertEqual("%a" % ("\u1234",), "'\\u1234'")
         self.assertEqual("%(x)s, %(y)s" % {'x':"abc", 'y':"def"}, 'abc, def')
         self.assertEqual("%(x)s, %(\xfc)s" % {'x':"abc", '\xfc':"def"}, 'abc, def')
 

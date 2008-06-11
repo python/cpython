@@ -645,11 +645,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	count = vargs;
 #endif
 #endif
-	/* step 1: count the number of %S/%R format specifications
-	 * (we call PyObject_Str()/PyObject_Repr() for these objects
-	 * once during step 3 and put the result in an array) */
+	/* step 1: count the number of %S/%R/%A format specifications
+	 * (we call PyObject_Str()/PyObject_Repr()/PyObject_ASCII() for 
+	 * these objects once during step 3 and put the result in 
+	   an array) */
 	for (f = format; *f; f++) {
-		if (*f == '%' && (*(f+1)=='S' || *(f+1)=='R'))
+		if (*f == '%' && (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A'))
 			++callcount;
 	}
 	/* step 2: allocate memory for the results of
@@ -776,6 +777,19 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				n += PyUnicode_GET_SIZE(repr);
 				/* Remember the repr and switch to the next slot */
 				*callresult++ = repr;
+				break;
+			}
+			case 'A':
+			{
+				PyObject *obj = va_arg(count, PyObject *);
+				PyObject *ascii;
+				assert(obj);
+				ascii = PyObject_ASCII(obj);
+				if (!ascii)
+					goto fail;
+				n += PyUnicode_GET_SIZE(ascii);
+				/* Remember the repr and switch to the next slot */
+				*callresult++ = ascii;
 				break;
 			}
 			case 'p':
@@ -7231,6 +7245,32 @@ unicode_isidentifier(PyObject *self)
     return PyBool_FromLong(PyUnicode_IsIdentifier(self));
 }
 
+PyDoc_STRVAR(isprintable__doc__,
+"S.isprintable() -> bool\n\
+\n\
+Return True if all characters in S are considered\n\
+printable in repr() or S is empty, False otherwise.");
+
+static PyObject*
+unicode_isprintable(PyObject *self)
+{
+    register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
+    register const Py_UNICODE *e;
+
+    /* Shortcut for single character strings */
+    if (PyUnicode_GET_SIZE(self) == 1 && Py_UNICODE_ISPRINTABLE(*p)) {
+        Py_RETURN_TRUE;
+    }
+
+    e = p + PyUnicode_GET_SIZE(self);
+    for (; p < e; p++) {
+        if (!Py_UNICODE_ISPRINTABLE(*p)) {
+            Py_RETURN_FALSE;
+        }
+    }
+    Py_RETURN_TRUE;
+}
+
 PyDoc_STRVAR(join__doc__,
 "S.join(sequence) -> str\n\
 \n\
@@ -7608,61 +7648,8 @@ PyObject *unicode_repr(PyObject *unicode)
             continue;
         }
 
-#ifdef Py_UNICODE_WIDE
-        /* Map 21-bit characters to '\U00xxxxxx' */
-        else if (ch >= 0x10000) {
-            *p++ = '\\';
-            *p++ = 'U';
-            *p++ = hexdigits[(ch >> 28) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 24) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 20) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 16) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 12) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 8) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 4) & 0x0000000F];
-            *p++ = hexdigits[ch & 0x0000000F];
-	    continue;
-        }
-#else
-	/* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
-	else if (ch >= 0xD800 && ch < 0xDC00) {
-	    Py_UNICODE ch2;
-	    Py_UCS4 ucs;
-
-	    ch2 = *s++;
-	    size--;
-	    if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
-		ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
-		*p++ = '\\';
-		*p++ = 'U';
-		*p++ = hexdigits[(ucs >> 28) & 0x0000000F];
-		*p++ = hexdigits[(ucs >> 24) & 0x0000000F];
-		*p++ = hexdigits[(ucs >> 20) & 0x0000000F];
-		*p++ = hexdigits[(ucs >> 16) & 0x0000000F];
-		*p++ = hexdigits[(ucs >> 12) & 0x0000000F];
-		*p++ = hexdigits[(ucs >> 8) & 0x0000000F];
-		*p++ = hexdigits[(ucs >> 4) & 0x0000000F];
-		*p++ = hexdigits[ucs & 0x0000000F];
-		continue;
-	    }
-	    /* Fall through: isolated surrogates are copied as-is */
-	    s--;
-	    size++;
-	}
-#endif
-
-        /* Map 16-bit characters to '\uxxxx' */
-        if (ch >= 256) {
-            *p++ = '\\';
-            *p++ = 'u';
-            *p++ = hexdigits[(ch >> 12) & 0x000F];
-            *p++ = hexdigits[(ch >> 8) & 0x000F];
-            *p++ = hexdigits[(ch >> 4) & 0x000F];
-            *p++ = hexdigits[ch & 0x000F];
-        }
-
-        /* Map special whitespace to '\t', \n', '\r' */
-        else if (ch == '\t') {
+	/* Map special whitespace to '\t', \n', '\r' */
+        if (ch == '\t') {
             *p++ = '\\';
             *p++ = 't';
         }
@@ -7676,16 +7663,79 @@ PyObject *unicode_repr(PyObject *unicode)
         }
 
         /* Map non-printable US ASCII to '\xhh' */
-        else if (ch < ' ' || ch >= 0x7F) {
+        else if (ch < ' ' || ch == 0x7F) {
             *p++ = '\\';
             *p++ = 'x';
             *p++ = hexdigits[(ch >> 4) & 0x000F];
             *p++ = hexdigits[ch & 0x000F];
         }
 
-        /* Copy everything else as-is */
-        else
-            *p++ = (char) ch;
+        /* Copy ASCII characters as-is */
+        else if (ch < 0x7F) {
+            *p++ = ch;
+        }
+
+	/* Non-ASCII characters */
+        else {
+            Py_UCS4 ucs = ch;
+
+#ifndef Py_UNICODE_WIDE
+            Py_UNICODE ch2 = 0;
+            /* Get code point from surrogate pair */
+            if (size > 0) {
+                ch2 = *s;
+                if (ch >= 0xD800 && ch < 0xDC00 && ch2 >= 0xDC00
+                            && ch2 <= 0xDFFF) {
+                    ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) 
+                            + 0x00010000;
+                    s++; 
+                    size--;
+                }
+            }
+#endif
+            /* Map Unicode whitespace and control characters 
+               (categories Z* and C* except ASCII space)
+            */
+            if (!Py_UNICODE_ISPRINTABLE(ucs)) {
+                /* Map 8-bit characters to '\xhh' */
+                if (ucs <= 0xff) {
+                    *p++ = '\\';
+                    *p++ = 'x';
+                    *p++ = hexdigits[(ch >> 4) & 0x000F];
+                    *p++ = hexdigits[ch & 0x000F];
+                }
+                /* Map 21-bit characters to '\U00xxxxxx' */
+                else if (ucs >= 0x10000) {
+                    *p++ = '\\';
+                    *p++ = 'U';
+                    *p++ = hexdigits[(ucs >> 28) & 0x0000000F];
+                    *p++ = hexdigits[(ucs >> 24) & 0x0000000F];
+                    *p++ = hexdigits[(ucs >> 20) & 0x0000000F];
+                    *p++ = hexdigits[(ucs >> 16) & 0x0000000F];
+                    *p++ = hexdigits[(ucs >> 12) & 0x0000000F];
+                    *p++ = hexdigits[(ucs >> 8) & 0x0000000F];
+                    *p++ = hexdigits[(ucs >> 4) & 0x0000000F];
+                    *p++ = hexdigits[ucs & 0x0000000F];
+                }
+                /* Map 16-bit characters to '\uxxxx' */
+                else {
+                    *p++ = '\\';
+                    *p++ = 'u';
+                    *p++ = hexdigits[(ucs >> 12) & 0x000F];
+                    *p++ = hexdigits[(ucs >> 8) & 0x000F];
+                    *p++ = hexdigits[(ucs >> 4) & 0x000F];
+                    *p++ = hexdigits[ucs & 0x000F];
+                }
+            }
+            /* Copy characters as-is */
+            else {
+                *p++ = ch;
+#ifndef Py_UNICODE_WIDE
+                if (ucs >= 0x10000)
+                    *p++ = ch2;
+#endif
+            }
+        }
     }
     /* Add quote */
     *p++ = PyUnicode_AS_UNICODE(repr)[0];
@@ -8372,6 +8422,7 @@ static PyMethodDef unicode_methods[] = {
     {"isalpha", (PyCFunction) unicode_isalpha, METH_NOARGS, isalpha__doc__},
     {"isalnum", (PyCFunction) unicode_isalnum, METH_NOARGS, isalnum__doc__},
     {"isidentifier", (PyCFunction) unicode_isidentifier, METH_NOARGS, isidentifier__doc__},
+    {"isprintable", (PyCFunction) unicode_isprintable, METH_NOARGS, isprintable__doc__},
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
     {"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
     {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
@@ -8958,6 +9009,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 
 	    case 's':
 	    case 'r':
+	    case 'a':
 		if (PyUnicode_Check(v) && c == 's') {
 		    temp = v;
 		    Py_INCREF(temp);
@@ -8965,8 +9017,10 @@ PyObject *PyUnicode_Format(PyObject *format,
 		else {
 		    if (c == 's')
 			temp = PyObject_Str(v);
-		    else
+		    else if (c == 'r')
 			temp = PyObject_Repr(v);
+		    else
+			temp = PyObject_ASCII(v);
 		    if (temp == NULL)
 			goto onError;
                     if (PyUnicode_Check(temp))

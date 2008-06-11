@@ -159,6 +159,20 @@ class BuiltinTest(unittest.TestCase):
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
 
+    def test_ascii(self):
+        self.assertEqual(ascii(''), '\'\'')
+        self.assertEqual(ascii(0), '0')
+        self.assertEqual(ascii(0), '0')
+        self.assertEqual(ascii(()), '()')
+        self.assertEqual(ascii([]), '[]')
+        self.assertEqual(ascii({}), '{}')
+        a = []
+        a.append(a)
+        self.assertEqual(ascii(a), '[[...]]')
+        a = {}
+        a[0] = a
+        self.assertEqual(ascii(a), '{0: {...}}')
+
     def test_neg(self):
         x = -sys.maxsize-1
         self.assert_(isinstance(x, int))

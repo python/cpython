@@ -12,6 +12,10 @@ What's new in Python 3.0b1?
 Core and Builtins
 -----------------
 
+- Issue #2630: implement PEP 3138. repr() now returns printable
+  Unicode characters unescaped, to get an ASCII-only representation
+  of an object use ascii().
+
 - Issue #1342: On windows, Python could not start when installed in a
   directory with non-ascii characters.
 

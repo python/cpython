@@ -774,6 +774,17 @@ functions based on regular expressions.
    least one cased character, false otherwise.
 
 
+.. method:: str.isprintable()
+
+   Return true if all characters in the string are printable or the string is
+   empty, false otherwise.  Nonprintable characters are those characters defined
+   in the Unicode character database as "Other" or "Separator", excepting the
+   ASCII space (0x20) which is considered printable.  (Note that printable
+   characters in this context are those which should not be escaped when
+   :func:`repr` is invoked on a string.  It has no bearing on the handling of
+   strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
+
+
 .. method:: str.isspace()
 
    Return true if there are only whitespace characters in the string and there is

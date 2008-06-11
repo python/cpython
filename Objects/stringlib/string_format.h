@@ -766,6 +766,10 @@ do_conversion(PyObject *obj, STRINGLIB_CHAR conversion)
         return PyObject_Repr(obj);
     case 's':
         return STRINGLIB_TOSTR(obj);
+#if PY_VERSION_HEX >= 0x03000000
+    case 'a':
+        return STRINGLIB_TOASCII(obj);
+#endif
     default:
 	if (conversion > 32 && conversion < 127) {
 		/* It's the ASCII subrange; casting to char is safe
