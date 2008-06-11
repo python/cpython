@@ -1049,13 +1049,9 @@ Number Object Structures
             binaryfunc nb_and;
             binaryfunc nb_xor;
             binaryfunc nb_or;
-            int nb_reserved;  /* unused, must be zero */
             unaryfunc nb_int;
             unaryfunc nb_long;
             unaryfunc nb_float;
-            
-            unaryfunc nb_oct; /* not used anymore, must be zero */
-            unaryfunc nb_hex; /* not used anymore, must be zero */
 
             binaryfunc nb_inplace_add;
             binaryfunc nb_inplace_subtract;
