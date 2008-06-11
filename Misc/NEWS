@@ -78,6 +78,10 @@ Extension Modules
 Library
 -------
 
+- The ``pickle`` module is now automatically use an optimized C
+  implementation of Pickler and Unpickler when available. The
+  ``cPickle`` module is no longer needed.
+
 - Removed the ``htmllib`` and ``sgmllib`` modules.
 
 - The deprecated ``SmartCookie`` and ``SimpleCookie`` classes have
