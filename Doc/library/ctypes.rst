@@ -1706,16 +1706,14 @@ the windows header file is this::
        LPCSTR lpCaption,
        UINT uType);
 
-Here is the wrapping with ``ctypes``:
+Here is the wrapping with ``ctypes``::
 
-   ::
-
-      >>> from ctypes import c_int, WINFUNCTYPE, windll
-      >>> from ctypes.wintypes import HWND, LPCSTR, UINT
-      >>> prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, UINT)
-      >>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", None), (1, "flags", 0)
-      >>> MessageBox = prototype(("MessageBoxA", windll.user32), paramflags)
-      >>>
+   >>> from ctypes import c_int, WINFUNCTYPE, windll
+   >>> from ctypes.wintypes import HWND, LPCSTR, UINT
+   >>> prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, UINT)
+   >>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", None), (1, "flags", 0)
+   >>> MessageBox = prototype(("MessageBoxA", windll.user32), paramflags)
+   >>>
 
 The MessageBox foreign function can now be called in these ways::
 
@@ -1733,16 +1731,14 @@ function retrieves the dimensions of a specified window by copying them into
         HWND hWnd,
         LPRECT lpRect);
 
-Here is the wrapping with ``ctypes``:
+Here is the wrapping with ``ctypes``::
 
-   ::
-
-      >>> from ctypes import POINTER, WINFUNCTYPE, windll, WinError
-      >>> from ctypes.wintypes import BOOL, HWND, RECT
-      >>> prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
-      >>> paramflags = (1, "hwnd"), (2, "lprect")
-      >>> GetWindowRect = prototype(("GetWindowRect", windll.user32), paramflags)
-      >>>
+   >>> from ctypes import POINTER, WINFUNCTYPE, windll, WinError
+   >>> from ctypes.wintypes import BOOL, HWND, RECT
+   >>> prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
+   >>> paramflags = (1, "hwnd"), (2, "lprect")
+   >>> GetWindowRect = prototype(("GetWindowRect", windll.user32), paramflags)
+   >>>
 
 Functions with output parameters will automatically return the output parameter
 value if there is a single one, or a tuple containing the output parameter
@@ -1758,6 +1754,7 @@ do the error checking, and raises an exception when the api call failed::
    ...     if not result:
    ...         raise WinError()
    ...     return args
+   ...
    >>> GetWindowRect.errcheck = errcheck
    >>>
 
@@ -1772,7 +1769,7 @@ instead, the normal processing will no longer take place::
    ...         raise WinError()
    ...     rc = args[1]
    ...     return rc.left, rc.top, rc.bottom, rc.right
-   >>>
+   ...
    >>> GetWindowRect.errcheck = errcheck
    >>>
 
