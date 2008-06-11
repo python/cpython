@@ -16,7 +16,8 @@ from traceback import format_exc as _format_exc
 from collections import deque
 
 # Rename some stuff so "from threading import *" is safe
-__all__ = ['active_count', 'Condition', 'current_thread', 'enumerate', 'Event',
+__all__ = ['activeCount', 'active_count', 'Condition', 'currentThread',
+           'current_thread', 'enumerate', 'Event',
            'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Timer', 'setprofile', 'settrace', 'local', 'stack_size']
 
