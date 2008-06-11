@@ -1110,6 +1110,56 @@ class PyBuildExt(build_ext):
 
         # _fileio -- supposedly cross platform
         exts.append(Extension('_fileio', ['_fileio.c']))
+        # Richard Oudkerk's multiprocessing module
+        if platform == 'win32':             # Windows
+            macros = dict()
+            libraries = ['ws2_32']
+
+        elif platform == 'darwin':          # Mac OSX
+            macros = dict(
+                HAVE_SEM_OPEN=1,
+                HAVE_SEM_TIMEDWAIT=0,
+                HAVE_FD_TRANSFER=1,
+                HAVE_BROKEN_SEM_GETVALUE=1
+                )
+            libraries = []
+
+        elif platform == 'cygwin':          # Cygwin
+            macros = dict(
+                HAVE_SEM_OPEN=1,
+                HAVE_SEM_TIMEDWAIT=1,
+                HAVE_FD_TRANSFER=0,
+                HAVE_BROKEN_SEM_UNLINK=1
+                )
+            libraries = []
+        else:                                   # Linux and other unices
+            macros = dict(
+                HAVE_SEM_OPEN=1,
+                HAVE_SEM_TIMEDWAIT=1,
+                HAVE_FD_TRANSFER=1
+                )
+            libraries = ['rt']
+
+        if platform == 'win32':
+            multiprocessing_srcs = [ '_multiprocessing/multiprocessing.c',
+                                     '_multiprocessing/semaphore.c',
+                                     '_multiprocessing/pipe_connection.c',
+                                     '_multiprocessing/socket_connection.c',
+                                     '_multiprocessing/win32_functions.c'
+                                   ]
+
+        else:
+            multiprocessing_srcs = [ '_multiprocessing/multiprocessing.c',
+                                     '_multiprocessing/socket_connection.c'
+                                   ]
+
+            if macros.get('HAVE_SEM_OPEN', False):
+                multiprocessing_srcs.append('_multiprocessing/semaphore.c')
+
+        exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
+                                 define_macros=list(macros.items()),
+                                 include_dirs=["Modules/_multiprocessing"]))
+        # End multiprocessing
 
         # Platform-specific libraries
         if platform in ('linux2', 'freebsd4', 'freebsd5', 'freebsd6',
