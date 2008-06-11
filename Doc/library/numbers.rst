@@ -73,10 +73,10 @@ The numeric tower
 
 .. class:: Integral
 
-   Subtypes :class:`Rational` and adds a conversion to :class:`long`, the
-   3-argument form of :func:`pow`, and the bit-string operations: ``<<``,
-   ``>>``, ``&``, ``^``, ``|``, ``~``. Provides defaults for :func:`float`,
-   :attr:`Rational.numerator`, and :attr:`Rational.denominator`.
+   Subtypes :class:`Rational` and adds a conversion to :class:`int`.
+   Provides defaults for :func:`float`, :attr:`Rational.numerator`, and
+   :attr:`Rational.denominator`, and bit-string operations: ``<<``,
+   ``>>``, ``&``, ``^``, ``|``, ``~``.
 
 
 Notes for type implementors
