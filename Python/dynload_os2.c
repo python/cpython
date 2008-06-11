@@ -38,7 +38,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		return NULL;
 	}
 
-	PyOS_snprintf(funcname, sizeof(funcname), "init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), "PyInit_%.200s", shortname);
 	rc = DosQueryProcAddr(hDLL, 0L, funcname, &p);
 	if (rc != NO_ERROR)
 		p = NULL; /* Signify Failure to Acquire Entrypoint */

@@ -24,8 +24,8 @@
 # Copying config.c.in to config.c:
 # - insert an identifying comment at the start
 # - for each <module> mentioned in Setup before *noconfig*:
-#   + insert 'extern void init<module>(void);' before MARKER 1
-#   + insert '{"<module>", initmodule},' before MARKER 2
+#   + insert 'extern PyObject* PyInit_<module>(void);' before MARKER 1
+#   + insert '{"<module>", PyInit_<module>},' before MARKER 2
 #
 # Copying Makefile.pre to Makefile:
 # - insert an identifying comment at the start
@@ -260,8 +260,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	INITBITS=
 	for mod in $MODS
 	do
-		EXTDECLS="${EXTDECLS}extern void init$mod(void);$NL"
-		INITBITS="${INITBITS}	{\"$mod\", init$mod},$NL"
+		EXTDECLS="${EXTDECLS}extern PyObject* PyInit_$mod(void);$NL"
+		INITBITS="${INITBITS}	{\"$mod\", PyInit_$mod},$NL"
 	done
 
 

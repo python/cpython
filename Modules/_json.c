@@ -613,9 +613,20 @@ static PyMethodDef json_methods[] = {
 PyDoc_STRVAR(module_doc,
 "json speedups\n");
 
-void
-init_json(void)
+static struct PyModuleDef jsonmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_json",
+	module_doc,
+	-1,
+	json_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyObject*
+PyInit__json(void)
 {
-    PyObject *m;
-    m = Py_InitModule3("_json", json_methods, module_doc);
+	return PyModule_Create(&jsonmodule);
 }

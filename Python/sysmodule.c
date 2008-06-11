@@ -1193,13 +1193,27 @@ make_flags(void)
 	return seq;
 }
 
+static struct PyModuleDef sysmodule = {
+	PyModuleDef_HEAD_INIT,
+	"sys",
+	sys_doc,
+	0,
+	sys_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+
+
 PyObject *
 _PySys_Init(void)
 {
 	PyObject *m, *v, *sysdict;
 	char *s;
 
-	m = Py_InitModule3("sys", sys_methods, sys_doc);
+	m = PyModule_Create(&sysmodule);
 	if (m == NULL)
 		return NULL;
 	sysdict = PyModule_GetDict(m);

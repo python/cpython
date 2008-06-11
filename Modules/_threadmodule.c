@@ -687,21 +687,34 @@ A lock is not owned by the thread that locked it; another thread may\n\
 unlock it.  A thread attempting to lock a lock that it has already locked\n\
 will block until another thread unlocks it.  Deadlocks may ensue.");
 
+static struct PyModuleDef threadmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_thread",
+	thread_doc,
+	-1,
+	thread_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+
 PyMODINIT_FUNC
-init_thread(void)
+PyInit__thread(void)
 {
 	PyObject *m, *d;
 	
 	/* Initialize types: */
 	if (PyType_Ready(&localtype) < 0)
-		return;
+		return NULL;
 	if (PyType_Ready(&Locktype) < 0)
-		return;
+		return NULL;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule3("_thread", thread_methods, thread_doc);
+	m = PyModule_Create(&threadmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	/* Add a symbolic constant */
 	d = PyModule_GetDict(m);
@@ -713,8 +726,9 @@ init_thread(void)
 
 	Py_INCREF(&localtype);
 	if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
-		return;
+		return NULL;
 
 	/* Initialize the C thread library */
 	PyThread_init_thread();
+	return m;
 }

@@ -89,42 +89,18 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
    9-Jan-1995	GvR	Initial version (incompatible with older API)
 */
 
-#ifdef MS_WINDOWS
-/* Special defines for Windows versions used to live here.  Things
-   have changed, and the "Version" is now in a global string variable.
-   Reason for this is that this for easier branding of a "custom DLL"
-   without actually needing a recompile.  */
-#endif /* MS_WINDOWS */
-
-#if SIZEOF_SIZE_T != SIZEOF_INT
-/* On a 64-bit system, rename the Py_InitModule4 so that 2.4
-   modules cannot get loaded into a 2.5 interpreter */
-#define Py_InitModule4 Py_InitModule4_64
-#endif
-
 #ifdef Py_TRACE_REFS
- /* When we are tracing reference counts, rename Py_InitModule4 so
+ /* When we are tracing reference counts, rename PyModule_New2 so
     modules compiled with incompatible settings will generate a
     link-time error. */
- #if SIZEOF_SIZE_T != SIZEOF_INT
- #undef Py_InitModule4
- #define Py_InitModule4 Py_InitModule4TraceRefs_64
- #else
- #define Py_InitModule4 Py_InitModule4TraceRefs
- #endif
+ #define PyModule_New2 PyModule_Create2TraceRefs
 #endif
 
-PyAPI_FUNC(PyObject *) Py_InitModule4(const char *name, PyMethodDef *methods,
-                                      const char *doc, PyObject *self,
-                                      int apiver);
+PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,
+                                     int apiver);
 
-#define Py_InitModule(name, methods) \
-	Py_InitModule4(name, methods, (char *)NULL, (PyObject *)NULL, \
-		       PYTHON_API_VERSION)
-
-#define Py_InitModule3(name, methods, doc) \
-	Py_InitModule4(name, methods, doc, (PyObject *)NULL, \
-		       PYTHON_API_VERSION)
+#define PyModule_Create(module) \
+	PyModule_Create2(module, PYTHON_API_VERSION)
 
 PyAPI_DATA(char *) _Py_PackageContext;
 

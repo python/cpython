@@ -12,6 +12,8 @@ What's new in Python 3.0b1?
 Core and Builtins
 -----------------
 
+- Implement PEP 3121: new module initialization and finalization API.
+
 - Removed the already-defunct ``-t`` option.
 
 - Issue #2957: Corrected a ValueError "recursion limit exceeded", when

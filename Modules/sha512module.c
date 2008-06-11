@@ -748,20 +748,29 @@ static struct PyMethodDef SHA_functions[] = {
 
 #define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
 
-PyMODINIT_FUNC
-init_sha512(void)
-{
-    PyObject *m;
 
+static struct PyModuleDef _sha512module = {
+	PyModuleDef_HEAD_INIT,
+	"_sha512",
+	NULL,
+	-1,
+	SHA_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyMODINIT_FUNC
+PyInit__sha512(void)
+{
     Py_TYPE(&SHA384type) = &PyType_Type;
     if (PyType_Ready(&SHA384type) < 0)
-        return;
+        return NULL;
     Py_TYPE(&SHA512type) = &PyType_Type;
     if (PyType_Ready(&SHA512type) < 0)
-        return;
-    m = Py_InitModule("_sha512", SHA_functions);
-    if (m == NULL)
-	return;
+        return NULL;
+    return PyModule_Create(&_sha512module);
 }
 
 #endif

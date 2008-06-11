@@ -1135,14 +1135,27 @@ static PyTypeObject test_structmembersType = {
 };
 
 
+
+static struct PyModuleDef _testcapimodule = {
+	PyModuleDef_HEAD_INIT,
+	"_testcapi",
+	NULL,
+	-1,
+	TestMethods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_testcapi(void)
+PyInit__testcapi(void)
 {
 	PyObject *m;
 
-	m = Py_InitModule("_testcapi", TestMethods);
+	m = PyModule_Create(&_testcapimodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	Py_TYPE(&test_structmembersType)=&PyType_Type;
 	Py_INCREF(&test_structmembersType);
@@ -1173,4 +1186,5 @@ init_testcapi(void)
 	TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
 	Py_INCREF(TestError);
 	PyModule_AddObject(m, "error", TestError);
+	return m;
 }

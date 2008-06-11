@@ -297,7 +297,7 @@ parser_st2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
 
     static char *keywords[] = {"ast", "line_info", "col_info", NULL};
 
-    if (self == NULL) {
+    if (self == NULL || PyModule_Check(self)) {
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|OO:st2tuple", keywords,
                                          &PyST_Type, &self, &line_option,
                                          &col_option);
@@ -341,7 +341,7 @@ parser_st2list(PyST_Object *self, PyObject *args, PyObject *kw)
 
     static char *keywords[] = {"ast", "line_info", "col_info", NULL};
 
-    if (self == NULL)
+    if (self == NULL || PyModule_Check(self))
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|OO:st2list", keywords,
                                          &PyST_Type, &self, &line_option,
                                          &col_option);
@@ -383,7 +383,7 @@ parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
 
     static char *keywords[] = {"ast", "filename", NULL};
 
-    if (self == NULL)
+    if (self == NULL || PyModule_Check(self))
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|s:compilest", keywords,
                                          &PyST_Type, &self, &str);
     else
@@ -412,7 +412,7 @@ parser_isexpr(PyST_Object *self, PyObject *args, PyObject *kw)
 
     static char *keywords[] = {"ast", NULL};
 
-    if (self == NULL)
+    if (self == NULL || PyModule_Check(self))
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:isexpr", keywords,
                                          &PyST_Type, &self);
     else
@@ -435,7 +435,7 @@ parser_issuite(PyST_Object *self, PyObject *args, PyObject *kw)
 
     static char *keywords[] = {"ast", NULL};
 
-    if (self == NULL)
+    if (self == NULL || PyModule_Check(self))
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:issuite", keywords,
                                          &PyST_Type, &self);
     else
@@ -3047,33 +3047,45 @@ static PyMethodDef parser_functions[] =  {
     };
 
 
-PyMODINIT_FUNC initparser(void);  /* supply a prototype */
+
+static struct PyModuleDef parsermodule = {
+	PyModuleDef_HEAD_INIT,
+	"parser",
+	NULL,
+	-1,
+	parser_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyMODINIT_FUNC PyInit_parser(void);  /* supply a prototype */
 
 PyMODINIT_FUNC
-initparser(void)
+PyInit_parser(void)
 {
     PyObject *module, *copyreg;
 
     Py_TYPE(&PyST_Type) = &PyType_Type;
-    module = Py_InitModule("parser", parser_functions);
+    module = PyModule_Create(&parsermodule);
     if (module == NULL)
-    	return;
+    	return NULL;
 
     if (parser_error == 0)
         parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);
 
     if (parser_error == 0)
-        /* caller will check PyErr_Occurred() */
-        return;
+        return NULL;
     /* CAUTION:  The code next used to skip bumping the refcount on
-     * parser_error.  That's a disaster if initparser() gets called more
+     * parser_error.  That's a disaster if PyInit_parser() gets called more
      * than once.  By incref'ing, we ensure that each module dict that
      * gets created owns its reference to the shared parser_error object,
      * and the file static parser_error vrbl owns a reference too.
      */
     Py_INCREF(parser_error);
     if (PyModule_AddObject(module, "ParserError", parser_error) != 0)
-        return;
+        return NULL;
 
     Py_INCREF(&PyST_Type);
     PyModule_AddObject(module, "ASTType", (PyObject*)&PyST_Type);
@@ -3112,4 +3124,5 @@ initparser(void)
         Py_XDECREF(pickler);
         Py_DECREF(copyreg);
     }
+    return module;
 }

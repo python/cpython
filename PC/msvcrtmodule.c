@@ -358,13 +358,26 @@ static struct PyMethodDef msvcrt_functions[] = {
 	{NULL,			NULL}
 };
 
+
+static struct PyModuleDef msvcrtmodule = {
+	PyModuleDef_HEAD_INIT,
+	"msvcrt",
+	NULL,
+	-1,
+	msvcrt_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initmsvcrt(void)
+PyInit_msvcrt(void)
 {
 	PyObject *d;
-	PyObject *m = Py_InitModule("msvcrt", msvcrt_functions);
+	PyObject *m = PyModule_Create(&msvcrtmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	d = PyModule_GetDict(m);
 
 	/* constants for the locking() function's mode argument */
@@ -389,4 +402,5 @@ initmsvcrt(void)
 	insertint(d, "CRTDBG_FILE_STDOUT", (int)_CRTDBG_FILE_STDOUT);
 	insertint(d, "CRTDBG_REPORT_FILE", (int)_CRTDBG_REPORT_FILE);
 #endif
+	return m;
 }

@@ -5646,7 +5646,20 @@ static BSDDB_api bsddb_api;
 #define MODULE_NAME_MAX_LEN     11
 static char _bsddbModuleName[MODULE_NAME_MAX_LEN+1] = "_bsddb";
 
-PyMODINIT_FUNC init_bsddb(void)
+
+static struct PyModuleDef _bsddbmodule = {
+	PyModuleDef_HEAD_INIT,
+	_bsddbModuleName,
+	NULL,
+	-1,
+	bsddb_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyMODINIT_FUNC PyInit__bsddb(void)
 {
     PyObject* m;
     PyObject* d;
@@ -5673,9 +5686,9 @@ PyMODINIT_FUNC init_bsddb(void)
 #endif
 
     /* Create the module and add the functions */
-    m = Py_InitModule(_bsddbModuleName, bsddb_methods);
+    m = PyModule_Create(&_bsddbmodule);
     if (m == NULL)
-    	return;
+    	return NULL;
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
@@ -6064,7 +6077,10 @@ PyMODINIT_FUNC init_bsddb(void)
     if (PyErr_Occurred()) {
         PyErr_Print();
         Py_FatalError("can't initialize module _bsddb");
+	Py_DECREF(m);
+	m = NULL;
     }
+    return m;
 }
 
 /* allow this module to be named _pybsddb so that it can be installed
@@ -6073,5 +6089,5 @@ PyMODINIT_FUNC init_bsddb(void)
 PyMODINIT_FUNC init_pybsddb(void)
 {
     strncpy(_bsddbModuleName, "_pybsddb", MODULE_NAME_MAX_LEN);
-    init_bsddb();
+    return PyInit__bsddb();
 }

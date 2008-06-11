@@ -43,7 +43,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	const char *errString;
 	char errBuf[512];
 
-	PyOS_snprintf(funcname, sizeof(funcname), "_init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), "_PyInit_%.200s", shortname);
 
 #ifdef USE_DYLD_GLOBAL_NAMESPACE
 	if (NSIsSymbolNameDefined(funcname)) {

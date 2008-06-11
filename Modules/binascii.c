@@ -1357,18 +1357,31 @@ static struct PyMethodDef binascii_module_methods[] = {
 };
 
 
-/* Initialization function for the module (*must* be called initbinascii) */
+/* Initialization function for the module (*must* be called PyInit_binascii) */
 PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
+
+static struct PyModuleDef binasciimodule = {
+	PyModuleDef_HEAD_INIT,
+	"binascii",
+	doc_binascii,
+	-1,
+	binascii_module_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initbinascii(void)
+PyInit_binascii(void)
 {
 	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule3("binascii", binascii_module_methods, doc_binascii);
+	m = PyModule_Create(&binasciimodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	d = PyModule_GetDict(m);
 
@@ -1376,4 +1389,9 @@ initbinascii(void)
 	PyDict_SetItemString(d, "Error", Error);
 	Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
 	PyDict_SetItemString(d, "Incomplete", Incomplete);
+	if (PyErr_Occurred()) {
+		Py_DECREF(m);
+		m = NULL;
+	}
+	return m;
 }

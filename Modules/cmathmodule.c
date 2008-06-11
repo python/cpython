@@ -1077,14 +1077,27 @@ static PyMethodDef cmath_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
+
+static struct PyModuleDef cmathmodule = {
+	PyModuleDef_HEAD_INIT,
+	"cmath",
+	module_doc,
+	-1,
+	cmath_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initcmath(void)
+PyInit_cmath(void)
 {
 	PyObject *m;
 
-	m = Py_InitModule3("cmath", cmath_methods, module_doc);
+	m = PyModule_Create(&cmathmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	PyModule_AddObject(m, "pi",
                            PyFloat_FromDouble(Py_MATH_PI));
@@ -1204,4 +1217,5 @@ initcmath(void)
 	  C(INF,N) C(U,U) C(INF,-0.) C(INF,0.)   C(U,U) C(INF,N) C(INF,N)
 	  C(N,N)   C(N,N) C(N,0.)    C(N,0.)     C(N,N) C(N,N)   C(N,N)
 	})
+        return m;
 }

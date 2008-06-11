@@ -1751,7 +1751,7 @@ get_version_string(void)
 #endif
 
 #ifndef MODULE_INITFUNC
-#define MODULE_INITFUNC initpyexpat
+#define MODULE_INITFUNC PyInit_pyexpat
 #endif
 
 #ifndef PyMODINIT_FUNC
@@ -1763,6 +1763,18 @@ get_version_string(void)
 #endif
 
 PyMODINIT_FUNC MODULE_INITFUNC(void);  /* avoid compiler warnings */
+
+static struct PyModuleDef pyexpatmodule = {
+	PyModuleDef_HEAD_INIT,
+	MODULE_NAME,
+	pyexpat_module_documentation,
+	-1,
+	pyexpat_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
 
 PyMODINIT_FUNC
 MODULE_INITFUNC(void)
@@ -1777,25 +1789,24 @@ MODULE_INITFUNC(void)
     PyObject* capi_object;
 
     if (errmod_name == NULL)
-        return;
+        return NULL;
     modelmod_name = PyUnicode_FromString(MODULE_NAME ".model");
     if (modelmod_name == NULL)
-        return;
+        return NULL;
 
     Py_TYPE(&Xmlparsetype) = &PyType_Type;
 
     /* Create the module and add the functions */
-    m = Py_InitModule3(MODULE_NAME, pyexpat_methods,
-                       pyexpat_module_documentation);
+    m = PyModule_Create(&pyexpatmodule);
     if (m == NULL)
-	return;
+	return NULL;
 
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
         ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
                                          NULL, NULL);
         if (ErrorObject == NULL)
-            return;
+            return NULL;
     }
     Py_INCREF(ErrorObject);
     PyModule_AddObject(m, "error", ErrorObject);
@@ -1844,7 +1855,7 @@ MODULE_INITFUNC(void)
     Py_DECREF(modelmod_name);
     if (errors_module == NULL || model_module == NULL)
         /* Don't core dump later! */
-        return;
+        return NULL;
     
 #if XML_COMBINED_VERSION > 19505
     {
@@ -1975,6 +1986,7 @@ MODULE_INITFUNC(void)
     capi_object = PyCObject_FromVoidPtr(&capi, NULL);
     if (capi_object)
         PyModule_AddObject(m, "expat_CAPI", capi_object);
+    return m;
 }
 
 static void

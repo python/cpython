@@ -188,7 +188,7 @@ static PyMemberDef meth_members[] = {
 static PyObject *
 meth_repr(PyCFunctionObject *m)
 {
-	if (m->m_self == NULL)
+	if (m->m_self == NULL || PyModule_Check(m->m_self))
 		return PyUnicode_FromFormat("<built-in function %s>",
 					   m->m_ml->ml_name);
 	return PyUnicode_FromFormat("<built-in method %s of %s object at %p>",

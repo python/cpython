@@ -582,8 +582,21 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #endif
 
+
+static struct PyModuleDef _ctypes_testmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_ctypes_test",
+	NULL,
+	-1,
+	module_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_ctypes_test(void)
+PyInit__ctypes_test(void)
 {
-	Py_InitModule("_ctypes_test", module_methods);
+	return PyModule_Create(&_ctypes_testmodule);
 }

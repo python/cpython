@@ -179,16 +179,30 @@ according to the password database.  Check both databases to get\n\
 complete membership information.)");
 
 
+
+static struct PyModuleDef grpmodule = {
+	PyModuleDef_HEAD_INIT,
+	"grp",
+	grp__doc__,
+	-1,
+	grp_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initgrp(void)
+PyInit_grp(void)
 {
     PyObject *m, *d;
-    m = Py_InitModule3("grp", grp_methods, grp__doc__);
+    m = PyModule_Create(&grpmodule);
     if (m == NULL)
-        return;
+        return NULL;
     d = PyModule_GetDict(m);
     if (!initialized)
 	    PyStructSequence_InitType(&StructGrpType, &struct_group_type_desc);
     PyDict_SetItemString(d, "struct_group", (PyObject *) &StructGrpType);
     initialized = 1;
+    return m;
 }

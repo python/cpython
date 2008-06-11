@@ -451,8 +451,21 @@ static PyMethodDef PyCurses_methods[] = {
 
 /* Initialization function for the module */
 
+
+static struct PyModuleDef _curses_panelmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_curses_panel",
+	NULL,
+	-1,
+	PyCurses_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_curses_panel(void)
+PyInit__curses_panel(void)
 {
     PyObject *m, *d, *v;
 
@@ -462,9 +475,9 @@ init_curses_panel(void)
     import_curses();
 
     /* Create the module and add the functions */
-    m = Py_InitModule("_curses_panel", PyCurses_methods);
+    m = PyModule_Create(&_curses_panelmodule);
     if (m == NULL)
-    	return;
+    	return NULL;
     d = PyModule_GetDict(m);
 
     /* For exception _curses_panel.error */
@@ -476,4 +489,5 @@ init_curses_panel(void)
     PyDict_SetItemString(d, "version", v);
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);
+    return m;
 }

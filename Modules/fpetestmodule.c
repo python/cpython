@@ -44,7 +44,8 @@
 #include "Python.h"
 
 static PyObject *fpe_error;
-PyMODINIT_FUNC initfpetest(void);
+
+PyMODINIT_FUNC PyInit_fpetest(void);
 static PyObject *test(PyObject *self,PyObject *args);
 static double db0(double);
 static double overflow(double);
@@ -172,15 +173,28 @@ static double overflow(double b)
   return a;
 }
 
-PyMODINIT_FUNC initfpetest(void)
+static struct PyModuleDef fpetestmodule = {
+	PyModuleDef_HEAD_INIT,
+	"fpetest",
+	NULL,
+	-1,
+	fpetest_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyMODINIT_FUNC PyInit_fpetest(void)
 {
     PyObject *m, *d;
 
-    m = Py_InitModule("fpetest", fpetest_methods);
+    m = PyModule_Create(&fpetestmodule);
     if (m == NULL)
-    	return;
+    	return NULL;
     d = PyModule_GetDict(m);
     fpe_error = PyErr_NewException("fpetest.error", NULL, NULL);
     if (fpe_error != NULL)
 	    PyDict_SetItemString(d, "error", fpe_error);
+    return m;
 }

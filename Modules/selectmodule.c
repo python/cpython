@@ -1729,13 +1729,26 @@ PyDoc_STRVAR(module_doc,
 *** IMPORTANT NOTICE ***\n\
 On Windows and OpenVMS, only sockets are supported; on Unix, all file descriptors.");
 
+
+static struct PyModuleDef selectmodule = {
+	PyModuleDef_HEAD_INIT,
+	"select",
+	module_doc,
+	-1,
+	select_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initselect(void)
+PyInit_select(void)
 {
 	PyObject *m;
-	m = Py_InitModule3("select", select_methods, module_doc);
+	m = PyModule_Create(&selectmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	SelectError = PyErr_NewException("select.error", NULL, NULL);
 	Py_INCREF(SelectError);
@@ -1780,7 +1793,7 @@ initselect(void)
 #ifdef HAVE_EPOLL
 	Py_TYPE(&pyEpoll_Type) = &PyType_Type;
 	if (PyType_Ready(&pyEpoll_Type) < 0)
-		return;
+		return NULL;
 
 	Py_INCREF(&pyEpoll_Type);
 	PyModule_AddObject(m, "epoll", (PyObject *) &pyEpoll_Type);
@@ -1807,14 +1820,14 @@ initselect(void)
 	kqueue_event_Type.tp_new = PyType_GenericNew;
 	Py_TYPE(&kqueue_event_Type) = &PyType_Type;
 	if(PyType_Ready(&kqueue_event_Type) < 0)
-		return;
+		return NULL;
 
 	Py_INCREF(&kqueue_event_Type);
 	PyModule_AddObject(m, "kevent", (PyObject *)&kqueue_event_Type);
 
 	Py_TYPE(&kqueue_queue_Type) = &PyType_Type;
 	if(PyType_Ready(&kqueue_queue_Type) < 0)
-		return;
+		return NULL;
 	Py_INCREF(&kqueue_queue_Type);
 	PyModule_AddObject(m, "kqueue", (PyObject *)&kqueue_queue_Type);
 	
@@ -1875,4 +1888,5 @@ initselect(void)
 #endif
 
 #endif /* HAVE_KQUEUE */
+	return m;
 }

@@ -1799,7 +1799,7 @@ InvalidParameterHandler(
 #endif
 
 
-PyMODINIT_FUNC
+void
 _PyExc_Init(void)
 {
     PyObject *bltinmod, *bdict;

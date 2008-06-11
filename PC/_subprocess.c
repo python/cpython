@@ -541,12 +541,20 @@ defint(PyObject* d, const char* name, int value)
 	}
 }
 
-#if PY_VERSION_HEX >= 0x02030000
+static struct PyModuleDef _subprocessmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_subprocess",
+	NULL,
+	-1,
+	sp_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-#else
-DL_EXPORT(void)
-#endif
-init_subprocess()
+PyInit__subprocess()
 {
 	PyObject *d;
 	PyObject *m;
@@ -555,9 +563,9 @@ init_subprocess()
 	Py_TYPE(&sp_handle_type) = &PyType_Type;
 	sp_handle_as_number.nb_int = (unaryfunc) sp_handle_as_int;
 
-	m = Py_InitModule("_subprocess", sp_functions);
+	m = PyModule_Create(&_subprocessmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 	d = PyModule_GetDict(m);
 
 	/* constants */
@@ -571,4 +579,5 @@ init_subprocess()
 	defint(d, "INFINITE", INFINITE);
 	defint(d, "WAIT_OBJECT_0", WAIT_OBJECT_0);
 	defint(d, "CREATE_NEW_CONSOLE", CREATE_NEW_CONSOLE);
+	return m;
 }

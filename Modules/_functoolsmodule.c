@@ -326,8 +326,21 @@ static PyMethodDef module_methods[] = {
  	{NULL,		NULL}		/* sentinel */
 };
 
+
+static struct PyModuleDef _functoolsmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_functools",
+	module_doc,
+	-1,
+	module_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_functools(void)
+PyInit__functools(void)
 {
 	int i;
 	PyObject *m;
@@ -337,16 +350,19 @@ init_functools(void)
 		NULL
 	};
 
-	m = Py_InitModule3("_functools", module_methods, module_doc);
+	m = PyModule_Create(&_functoolsmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	for (i=0 ; typelist[i] != NULL ; i++) {
-		if (PyType_Ready(typelist[i]) < 0)
-			return;
+		if (PyType_Ready(typelist[i]) < 0) {
+			Py_DECREF(m);
+			return NULL;
+		}
 		name = strchr(typelist[i]->tp_name, '.');
 		assert (name != NULL);
 		Py_INCREF(typelist[i]);
 		PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
 	}
+	return m;
 }

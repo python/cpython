@@ -1002,16 +1002,29 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 PyDoc_STRVAR(doc_module,
 "Importing this module enables command line editing using GNU readline.");
 
+
+static struct PyModuleDef readlinemodule = {
+	PyModuleDef_HEAD_INIT,
+	"readline",
+	doc_module,
+	-1,
+	readline_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initreadline(void)
+PyInit_readline(void)
 {
 	PyObject *m;
 
-	m = Py_InitModule4("readline", readline_methods, doc_module,
-			   (PyObject *)NULL, PYTHON_API_VERSION);
+	m = PyModule_Create(&readlinemodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	PyOS_ReadlineFunctionPointer = call_readline;
 	setup_readline();
+	return m;
 }

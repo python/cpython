@@ -1542,53 +1542,67 @@ static struct PyMethodDef csv_methods[] = {
 	{ NULL, NULL }
 };
 
+
+static struct PyModuleDef _csvmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_csv",
+	csv_module_doc,
+	-1,
+	csv_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_csv(void)
+PyInit__csv(void)
 {
 	PyObject *module;
 	StyleDesc *style;
 
 	if (PyType_Ready(&Dialect_Type) < 0)
-		return;
+		return NULL;
 
 	if (PyType_Ready(&Reader_Type) < 0)
-		return;
+		return NULL;
 
 	if (PyType_Ready(&Writer_Type) < 0)
-		return;
+		return NULL;
 
 	/* Create the module and add the functions */
-	module = Py_InitModule3("_csv", csv_methods, csv_module_doc);
+	module = PyModule_Create(&_csvmodule);
 	if (module == NULL)
-		return;
+		return NULL;
 
 	/* Add version to the module. */
 	if (PyModule_AddStringConstant(module, "__version__",
 				       MODULE_VERSION) == -1)
-		return;
+		return NULL;
 
         /* Add _dialects dictionary */
         dialects = PyDict_New();
         if (dialects == NULL)
-                return;
+                return NULL;
         if (PyModule_AddObject(module, "_dialects", dialects))
-                return;
+                return NULL;
 
 	/* Add quote styles into dictionary */
 	for (style = quote_styles; style->name; style++) {
 		if (PyModule_AddIntConstant(module, style->name,
 					    style->style) == -1)
-			return;
+			return NULL;
 	}
 
         /* Add the Dialect type */
 	Py_INCREF(&Dialect_Type);
         if (PyModule_AddObject(module, "Dialect", (PyObject *)&Dialect_Type))
-                return;
+                return NULL;
 
 	/* Add the CSV exception object to the module. */
 	error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
 	if (error_obj == NULL)
-		return;
+		return NULL;
 	PyModule_AddObject(module, "Error", error_obj);
+	return module;
 }

@@ -679,15 +679,29 @@ backwards, and this was also used to avoid the rewinding time.\n\
 Believe me, real good tape sorts were quite spectacular to watch!\n\
 From all times, sorting has always been a Great Art! :-)\n");
 
+
+static struct PyModuleDef _heapqmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_heapq",
+	module_doc,
+	-1,
+	heapq_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_heapq(void)
+PyInit__heapq(void)
 {
 	PyObject *m, *about;
 
-	m = Py_InitModule3("_heapq", heapq_methods, module_doc);
+	m = PyModule_Create(&_heapqmodule);
 	if (m == NULL)
-    		return;
+    		return NULL;
 	about = PyUnicode_DecodeUTF8(__about__, strlen(__about__), NULL);
 	PyModule_AddObject(m, "__about__", about);
+	return m;
 }
 

@@ -1192,27 +1192,37 @@ static PyMethodDef GcMethods[] = {
 	{NULL,	NULL}		/* Sentinel */
 };
 
+static struct PyModuleDef gcmodule = {
+	PyModuleDef_HEAD_INIT,
+	"gc",
+	gc__doc__,
+	-1,
+	GcMethods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+
 PyMODINIT_FUNC
-initgc(void)
+PyInit_gc(void)
 {
 	PyObject *m;
 
-	m = Py_InitModule4("gc",
-			      GcMethods,
-			      gc__doc__,
-			      NULL,
-			      PYTHON_API_VERSION);
+	m = PyModule_Create(&gcmodule);
+
 	if (m == NULL)
-		return;
+		return NULL;
 
 	if (garbage == NULL) {
 		garbage = PyList_New(0);
 		if (garbage == NULL)
-			return;
+			return NULL;
 	}
 	Py_INCREF(garbage);
 	if (PyModule_AddObject(m, "garbage", garbage) < 0)
-		return;
+		return NULL;
 
 	/* Importing can't be done in collect() because collect()
 	 * can be called via PyGC_Collect() in Py_Finalize().
@@ -1226,13 +1236,14 @@ initgc(void)
 			PyErr_Clear();
 	}
 
-#define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return
+#define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return NULL
 	ADD_INT(DEBUG_STATS);
 	ADD_INT(DEBUG_COLLECTABLE);
 	ADD_INT(DEBUG_UNCOLLECTABLE);
 	ADD_INT(DEBUG_SAVEALL);
 	ADD_INT(DEBUG_LEAK);
 #undef ADD_INT
+	return m;
 }
 
 /* API to invoke gc.collect() from C */

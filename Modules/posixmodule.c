@@ -7326,41 +7326,52 @@ all_ins(PyObject *d)
 
 
 #if (defined(_MSC_VER) || defined(__WATCOMC__) || defined(__BORLANDC__)) && !defined(__QNX__)
-#define INITFUNC initnt
+#define INITFUNC PyInit_nt
 #define MODNAME "nt"
 
 #elif defined(PYOS_OS2)
-#define INITFUNC initos2
+#define INITFUNC PyInit_os2
 #define MODNAME "os2"
 
 #else
-#define INITFUNC initposix
+#define INITFUNC PyInit_posix
 #define MODNAME "posix"
 #endif
+
+static struct PyModuleDef posixmodule = {
+	PyModuleDef_HEAD_INIT,
+	MODNAME,
+	posix__doc__,
+	-1,
+	posix_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 
 PyMODINIT_FUNC
 INITFUNC(void)
 {
 	PyObject *m, *v;
 
-	m = Py_InitModule3(MODNAME,
-			   posix_methods,
-			   posix__doc__);
+	m = PyModule_Create(&posixmodule);
 	if (m == NULL)
-    		return;
+    		return NULL;
 
 	/* Initialize environ dictionary */
 	v = convertenviron();
 	Py_XINCREF(v);
 	if (v == NULL || PyModule_AddObject(m, "environ", v) != 0)
-		return;
+		return NULL;
 	Py_DECREF(v);
 
         if (all_ins(m))
-                return;
+                return NULL;
 
         if (setup_confname_tables(m))
-                return;
+                return NULL;
 
 	Py_INCREF(PyExc_OSError);
 	PyModule_AddObject(m, "error", PyExc_OSError);
@@ -7403,7 +7414,7 @@ INITFUNC(void)
 #ifdef HAVE_FSTATVFS
 	if (fstatvfs == NULL) {
 		if (PyObject_DelAttrString(m, "fstatvfs") == -1) {
-			return;
+			return NULL;
 		}
 	}
 #endif /* HAVE_FSTATVFS */
@@ -7411,7 +7422,7 @@ INITFUNC(void)
 #ifdef HAVE_STATVFS
 	if (statvfs == NULL) {
 		if (PyObject_DelAttrString(m, "statvfs") == -1) {
-			return;
+			return NULL;
 		}
 	}
 #endif /* HAVE_STATVFS */
@@ -7419,13 +7430,14 @@ INITFUNC(void)
 # ifdef HAVE_LCHOWN
 	if (lchown == NULL) {
 		if (PyObject_DelAttrString(m, "lchown") == -1) {
-			return;
+			return NULL;
 		}
 	}
 #endif /* HAVE_LCHOWN */
 
 
 #endif /* __APPLE__ */
+	return m;
 
 }
 

@@ -389,12 +389,24 @@ errorexit:
 #endif
 
 #define I_AM_A_MODULE_FOR(loc)						\
-	void								\
-	init_codecs_##loc(void)						\
+	static struct PyModuleDef __module = {				\
+		PyModuleDef_HEAD_INIT,					\
+		"_codecs_"#loc,						\
+		NULL,							\
+		0,							\
+		__methods,						\
+		NULL,							\
+		NULL,							\
+		NULL,							\
+		NULL							\
+	};								\
+	PyObject*							\
+	PyInit__codecs_##loc(void)					\
 	{								\
-		PyObject *m = Py_InitModule("_codecs_" #loc, __methods);\
+		PyObject *m = PyModule_Create(&__module);		\
 		if (m != NULL)						\
 			(void)register_maps(m);				\
+		return m;						\
 	}
 
 #endif

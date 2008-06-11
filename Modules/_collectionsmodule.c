@@ -1348,31 +1348,44 @@ PyDoc_STRVAR(module_doc,
 - defaultdict:  dict subclass with a default value factory\n\
 ");
 
+
+static struct PyModuleDef _collectionsmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_collections",
+	module_doc,
+	-1,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_collections(void)
+PyInit__collections(void)
 {
 	PyObject *m;
 
-	m = Py_InitModule3("_collections", NULL, module_doc);
+	m = PyModule_Create(&_collectionsmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	if (PyType_Ready(&deque_type) < 0)
-		return;
+		return NULL;
 	Py_INCREF(&deque_type);
 	PyModule_AddObject(m, "deque", (PyObject *)&deque_type);
 
 	defdict_type.tp_base = &PyDict_Type;
 	if (PyType_Ready(&defdict_type) < 0)
-		return;
+		return NULL;
 	Py_INCREF(&defdict_type);
 	PyModule_AddObject(m, "defaultdict", (PyObject *)&defdict_type);
 
 	if (PyType_Ready(&dequeiter_type) < 0)
-		return;
+		return NULL;
 
 	if (PyType_Ready(&dequereviter_type) < 0)
-		return;
+		return NULL;
 
-	return;
+	return m;
 }

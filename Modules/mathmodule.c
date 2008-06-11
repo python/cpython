@@ -1099,12 +1099,25 @@ PyDoc_STRVAR(module_doc,
 "This module is always available.  It provides access to the\n"
 "mathematical functions defined by the C standard.");
 
+
+static struct PyModuleDef mathmodule = {
+	PyModuleDef_HEAD_INIT,
+	"math",
+	module_doc,
+	-1,
+	math_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initmath(void)
+PyInit_math(void)
 {
 	PyObject *m;
 
-	m = Py_InitModule3("math", math_methods, module_doc);
+	m = PyModule_Create(&mathmodule);
 	if (m == NULL)
 		goto finally;
 
@@ -1112,5 +1125,5 @@ initmath(void)
 	PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
 
     finally:
-	return;
+	return m;
 }

@@ -191,21 +191,22 @@ usually declare a static object variable at the beginning of your file::
 
    static PyObject *SpamError;
 
-and initialize it in your module's initialization function (:cfunc:`initspam`)
+and initialize it in your module's initialization function (:cfunc:`PyInit_spam`)
 with an exception object (leaving out the error checking for now)::
 
    PyMODINIT_FUNC
-   initspam(void)
+   PyInit_spam(void)
    {
        PyObject *m;
 
-       m = Py_InitModule("spam", SpamMethods);
+       m = PyModule_Create(&spammodule);
        if (m == NULL)
-           return;
+           return NULL;
 
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
        Py_INCREF(SpamError);
        PyModule_AddObject(m, "error", SpamError);
+       return m;
    }
 
 Note that the Python name for the exception object is :exc:`spam.error`.  The
@@ -303,15 +304,26 @@ accept a third ``PyObject *`` parameter which will be a dictionary of keywords.
 Use :cfunc:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
 function.
 
-The method table must be passed to the interpreter in the module's
+The method table must be referenced in the module definition structure::
+
+   struct PyModuleDef spammodule = {
+      PyModuleDef_HEAD_INIT,
+      "spam",   /* name of module */
+      spam_doc, /* module documentation, may be NULL */
+      -1,       /* size of per-interpreter state of the module,
+                   or -1 if the module keeps state in global variables. */
+      SpamMethods
+   };
+
+This structure, in turn, must be passed to the interpreter in the module's
 initialization function.  The initialization function must be named
-:cfunc:`initname`, where *name* is the name of the module, and should be the
+:cfunc:`PyInit_name`, where *name* is the name of the module, and should be the
 only non-\ ``static`` item defined in the module file::
 
    PyMODINIT_FUNC
-   initspam(void)
+   PyInit_spam(void)
    {
-       (void) Py_InitModule("spam", SpamMethods);
+       return PyModule_Create(&spammodule);
    }
 
 Note that PyMODINIT_FUNC declares the function as ``void`` return type,
@@ -319,33 +331,37 @@ declares any special linkage declarations required by the platform, and for  C++
 declares the function as ``extern "C"``.
 
 When the Python program imports module :mod:`spam` for the first time,
-:cfunc:`initspam` is called. (See below for comments about embedding Python.)
-It calls :cfunc:`Py_InitModule`, which creates a "module object" (which is
-inserted in the dictionary ``sys.modules`` under the key ``"spam"``), and
+:cfunc:`PyInit_spam` is called. (See below for comments about embedding Python.)
+It calls :cfunc:`PyModule_Create`, which returns a module object, and
 inserts built-in function objects into the newly created module based upon the
-table (an array of :ctype:`PyMethodDef` structures) that was passed as its
-second argument. :cfunc:`Py_InitModule` returns a pointer to the module object
-that it creates (which is unused here).  It may abort with a fatal error for
+table (an array of :ctype:`PyMethodDef` structures) found in the module definition. 
+:cfunc:`PyModule_Create` returns a pointer to the module object
+that it creates.  It may abort with a fatal error for
 certain errors, or return *NULL* if the module could not be initialized
-satisfactorily.
+satisfactorily. The init function must return the module object to its caller,
+so that it then gets inserted into ``sys.modules``.
 
-When embedding Python, the :cfunc:`initspam` function is not called
+When embedding Python, the :cfunc:`PyInit_spam` function is not called
 automatically unless there's an entry in the :cdata:`_PyImport_Inittab` table.
-The easiest way to handle this is to statically initialize your
-statically-linked modules by directly calling :cfunc:`initspam` after the call
-to :cfunc:`Py_Initialize`::
+To add the module to the initialization table, use :cfunc:`PyImport_AppendInittab`,
+optionally followed by an import of the module::
 
    int
    main(int argc, char *argv[])
    {
+       /* Add a builtin module, before Py_Initialize */
+       PyImport_AppendInittab("spam", PyInit_spam);
+
        /* Pass argv[0] to the Python interpreter */
        Py_SetProgramName(argv[0]);
 
        /* Initialize the Python interpreter.  Required. */
        Py_Initialize();
 
-       /* Add a static module */
-       initspam();
+       /* Optionally import the module; alternatively,
+          import can be deferred until the embedded script
+          imports it. */
+       PyImport_ImportModule("spam");
 
 An example may be found in the file :file:`Demo/embed/demo.c` in the Python
 source distribution.
@@ -1154,15 +1170,15 @@ exporting module, not a client module. Finally, the module's initialization
 function must take care of initializing the C API pointer array::
 
    PyMODINIT_FUNC
-   initspam(void)
+   PyInit_spam(void)
    {
        PyObject *m;
        static void *PySpam_API[PySpam_API_pointers];
        PyObject *c_api_object;
 
-       m = Py_InitModule("spam", SpamMethods);
+       m = PyModule_Create(&spammodule);
        if (m == NULL)
-           return;
+           return NULL;
 
        /* Initialize the C API pointer array */
        PySpam_API[PySpam_System_NUM] = (void *)PySpam_System;
@@ -1172,10 +1188,11 @@ function must take care of initializing the C API pointer array::
 
        if (c_api_object != NULL)
            PyModule_AddObject(m, "_C_API", c_api_object);
+       return m;
    }
 
 Note that ``PySpam_API`` is declared ``static``; otherwise the pointer
-array would disappear when :func:`initspam` terminates!
+array would disappear when :func:`PyInit_spam` terminates!
 
 The bulk of the work is in the header file :file:`spammodule.h`, which looks
 like this::

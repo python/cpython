@@ -257,13 +257,26 @@ static IntConstantPair _int_constants[] = {
     {(char*)NULL, 0}
 };
 
-PyMODINIT_FUNC init_sqlite3(void)
+
+static struct PyModuleDef _sqlite3module = {
+	PyModuleDef_HEAD_INIT,
+	"_sqlite3",
+	NULL,
+	-1,
+	module_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module, *dict;
     PyObject *tmp_obj;
     int i;
 
-    module = Py_InitModule("_sqlite3", module_methods);
+    module = PyModule_Create(&_sqlite3module);
 
     if (!module ||
         (pysqlite_row_setup_types() < 0) ||
@@ -273,7 +286,8 @@ PyMODINIT_FUNC init_sqlite3(void)
         (pysqlite_statement_setup_types() < 0) ||
         (pysqlite_prepare_protocol_setup_types() < 0)
        ) {
-        return;
+	Py_DECREF(module);
+        return NULL;
     }
 
     Py_INCREF(&pysqlite_ConnectionType);
@@ -408,5 +422,8 @@ error:
     if (PyErr_Occurred())
     {
         PyErr_SetString(PyExc_ImportError, MODULE_NAME ": init failed");
+	Py_DECREF(module);
+	module = NULL;
     }
+    return module;
 }

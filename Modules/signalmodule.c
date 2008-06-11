@@ -516,8 +516,20 @@ ITIMER_PROF -- decrements both when the process is executing and\n\
 A signal handler function is called with two arguments:\n\
 the first is the signal number, the second is the interrupted stack frame.");
 
+static struct PyModuleDef signalmodule = {
+	PyModuleDef_HEAD_INIT,
+	"signal",
+	module_doc,
+	-1,
+	signal_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initsignal(void)
+PyInit_signal(void)
 {
 	PyObject *m, *d, *x;
 	int i;
@@ -528,9 +540,9 @@ initsignal(void)
 #endif
 
 	/* Create the module and add the functions */
-	m = Py_InitModule3("signal", signal_methods, module_doc);
+	m = PyModule_Create(&signalmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
@@ -787,12 +799,13 @@ initsignal(void)
     PyDict_SetItemString(d, "ItimerError", ItimerError);
 #endif
 
-        if (!PyErr_Occurred())
-                return;
+    if (PyErr_Occurred()) {
+	    Py_DECREF(m);
+	    m = NULL;
+    }
 
-	/* Check for errors */
   finally:
-        return;
+    return m;
 }
 
 static void
@@ -893,8 +906,11 @@ PyErr_SetInterrupt(void)
 void
 PyOS_InitInterrupts(void)
 {
-	initsignal();
-	_PyImport_FixupExtension("signal", "signal");
+	PyObject *m = PyInit_signal();
+	if (m) {
+		_PyImport_FixupExtension(m, "signal", "signal");
+		Py_DECREF(m);
+	}
 }
 
 void

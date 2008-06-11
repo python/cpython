@@ -193,6 +193,7 @@ Py_InitializeEx(int install_sigs)
 	bimod = _PyBuiltin_Init();
 	if (bimod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize builtins modules");
+	_PyImport_FixupExtension(bimod, "builtins", "builtins");
 	interp->builtins = PyModule_GetDict(bimod);
 	if (interp->builtins == NULL)
 		Py_FatalError("Py_Initialize: can't initialize builtins dict");
@@ -208,7 +209,7 @@ Py_InitializeEx(int install_sigs)
 	if (interp->sysdict == NULL)
 		Py_FatalError("Py_Initialize: can't initialize sys dict");
 	Py_INCREF(interp->sysdict);
-	_PyImport_FixupExtension("sys", "sys");
+	_PyImport_FixupExtension(sysmod, "sys", "sys");
 	PySys_SetPath(Py_GetPath());
 	PyDict_SetItemString(interp->sysdict, "modules",
 			     interp->modules);
@@ -222,9 +223,6 @@ Py_InitializeEx(int install_sigs)
 	PySys_SetObject("__stderr__", pstderr);
 
 	_PyImport_Init();
-
-	/* phase 2 of builtins */
-	_PyImport_FixupExtension("builtins", "builtins");
 
 	_PyImportHooks_Init();
 

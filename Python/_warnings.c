@@ -868,33 +868,46 @@ init_filters(void)
     return filters;
 }
 
+static struct PyModuleDef warningsmodule = {
+	PyModuleDef_HEAD_INIT,
+	MODULE_NAME,
+	warnings__doc__,
+	0,
+	warnings_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 
 PyMODINIT_FUNC
 _PyWarnings_Init(void)
 {
     PyObject *m, *default_action;
 
-    m = Py_InitModule3(MODULE_NAME, warnings_functions, warnings__doc__);
+    m = PyModule_Create(&warningsmodule);
     if (m == NULL)
-        return;
+        return NULL;
 
     _filters = init_filters();
     if (_filters == NULL)
-        return;
+        return NULL;
     Py_INCREF(_filters);
     if (PyModule_AddObject(m, "filters", _filters) < 0)
-        return;
+        return NULL;
 
     _once_registry = PyDict_New();
     if (_once_registry == NULL)
-        return;
+        return NULL;
     Py_INCREF(_once_registry);
     if (PyModule_AddObject(m, "once_registry", _once_registry) < 0)
-        return;
+        return NULL;
 
     default_action = PyUnicode_InternFromString("default");
     if (default_action == NULL)
-        return;
+        return NULL;
     if (PyModule_AddObject(m, DEFAULT_ACTION_NAME, default_action) < 0)
-        return;
+        return NULL;
+    return m;
 }

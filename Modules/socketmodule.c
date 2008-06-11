@@ -695,7 +695,7 @@ internal_select(PySocketSockObject *s, int writing)
 
 static double defaulttimeout = -1.0; /* Default timeout for new sockets */
 
-PyMODINIT_FUNC
+static void
 init_sockobject(PySocketSockObject *s,
 		SOCKET_T fd, int family, int type, int proto)
 {
@@ -4096,54 +4096,64 @@ PyDoc_STRVAR(socket_doc,
 \n\
 See the socket module for documentation.");
 
+static struct PyModuleDef socketmodule = {
+	PyModuleDef_HEAD_INIT,
+	PySocket_MODULE_NAME,
+	socket_doc,
+	-1,
+	socket_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-init_socket(void)
+PyInit__socket(void)
 {
 	PyObject *m, *has_ipv6;
 
 	if (!os_init())
-		return;
+		return NULL;
 
 	Py_TYPE(&sock_type) = &PyType_Type;
-	m = Py_InitModule3(PySocket_MODULE_NAME,
-			   socket_methods,
-			   socket_doc);
+	m = PyModule_Create(&socketmodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	socket_error = PyErr_NewException("socket.error",
 					  PyExc_IOError, NULL);
 	if (socket_error == NULL)
-		return;
+		return NULL;
         PySocketModuleAPI.error = socket_error;
 	Py_INCREF(socket_error);
 	PyModule_AddObject(m, "error", socket_error);
 	socket_herror = PyErr_NewException("socket.herror",
 					   socket_error, NULL);
 	if (socket_herror == NULL)
-		return;
+		return NULL;
 	Py_INCREF(socket_herror);
 	PyModule_AddObject(m, "herror", socket_herror);
 	socket_gaierror = PyErr_NewException("socket.gaierror", socket_error,
 	    NULL);
 	if (socket_gaierror == NULL)
-		return;
+		return NULL;
 	Py_INCREF(socket_gaierror);
 	PyModule_AddObject(m, "gaierror", socket_gaierror);
 	socket_timeout = PyErr_NewException("socket.timeout",
 					    socket_error, NULL);
 	if (socket_timeout == NULL)
-		return;
+		return NULL;
 	Py_INCREF(socket_timeout);
 	PyModule_AddObject(m, "timeout", socket_timeout);
 	Py_INCREF((PyObject *)&sock_type);
 	if (PyModule_AddObject(m, "SocketType",
 			       (PyObject *)&sock_type) != 0)
-		return;
+		return NULL;
 	Py_INCREF((PyObject *)&sock_type);
 	if (PyModule_AddObject(m, "socket",
 			       (PyObject *)&sock_type) != 0)
-		return;
+		return NULL;
 
 #ifdef ENABLE_IPV6
 	has_ipv6 = Py_True;
@@ -4157,7 +4167,7 @@ init_socket(void)
 	if (PyModule_AddObject(m, PySocket_CAPI_NAME,
 	       PyCObject_FromVoidPtr((void *)&PySocketModuleAPI, NULL)
 				 ) != 0)
-		return;
+		return NULL;
 
 	/* Address families (we only support AF_INET and AF_UNIX) */
 #ifdef AF_UNSPEC
@@ -4999,6 +5009,7 @@ init_socket(void)
 #if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
 	netdb_lock = PyThread_allocate_lock();
 #endif
+	return m;
 }
 
 

@@ -225,15 +225,28 @@ resource_methods[] = {
 
 /* Module initialization */
 
+
+static struct PyModuleDef resourcemodule = {
+	PyModuleDef_HEAD_INIT,
+	"resource",
+	NULL,
+	-1,
+	resource_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initresource(void)
+PyInit_resource(void)
 {
 	PyObject *m, *v;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("resource", resource_methods);
+	m = PyModule_Create(&resourcemodule);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	/* Add some symbolic constants to the module */
 	if (ResourceError == NULL) {
@@ -326,4 +339,5 @@ initresource(void)
 		PyModule_AddObject(m, "RLIM_INFINITY", v);
 	}
 	initialized = 1;
+	return m;
 }

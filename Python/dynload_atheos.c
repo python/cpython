@@ -34,7 +34,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		PyErr_SetString(PyExc_ImportError, buf);
 		return NULL;
 	}
-	PyOS_snprintf(funcname, sizeof(funcname), "init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), "PyInit_%.200s", shortname);
 	if (Py_VerboseFlag)
 		printf("get_symbol_address %s\n", funcname);
 	if (get_symbol_address(lib, funcname, -1, &p) < 0) {

@@ -2026,8 +2026,21 @@ interface, one shot (de)compression functions, and types for\n\
 sequential (de)compression.\n\
 ");
 
+
+static struct PyModuleDef bz2module = {
+	PyModuleDef_HEAD_INIT,
+	"bz2",
+	bz2__doc__,
+	-1,
+	bz2_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 PyMODINIT_FUNC
-initbz2(void)
+PyInit_bz2(void)
 {
 	PyObject *m;
 
@@ -2035,9 +2048,9 @@ initbz2(void)
 	Py_TYPE(&BZ2Comp_Type) = &PyType_Type;
 	Py_TYPE(&BZ2Decomp_Type) = &PyType_Type;
 
-	m = Py_InitModule3("bz2", bz2_methods, bz2__doc__);
+	m = PyModule_Create(&bz2module);
 	if (m == NULL)
-		return;
+		return NULL;
 
 	PyModule_AddObject(m, "__author__", PyUnicode_FromString(__author__));
 
@@ -2049,4 +2062,5 @@ initbz2(void)
 
 	Py_INCREF(&BZ2Decomp_Type);
 	PyModule_AddObject(m, "BZ2Decompressor", (PyObject *)&BZ2Decomp_Type);
+	return m;
 }
