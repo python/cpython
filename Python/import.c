@@ -86,8 +86,9 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 		      3100 (merge from 2.6a0, see 62151)
 		      3102 (__file__ points to source file)
        Python 3.0a4: 3110 (WITH_CLEANUP optimization).
+       Python 3.0a5: 3130 (lexical exception stacking, including POP_EXCEPT)
 */
-#define MAGIC (3110 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3130 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the

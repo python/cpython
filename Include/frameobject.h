@@ -27,13 +27,13 @@ typedef struct _frame {
     PyObject **f_stacktop;
     PyObject *f_trace;		/* Trace function */
 
-    /* If an exception is raised in this frame, the next three are used to
-     * record the exception info (if any) originally in the thread state.  See
-     * comments before set_exc_info() -- it's not obvious.
-     * Invariant:  if _type is NULL, then so are _value and _traceback.
-     * Desired invariant:  all three are NULL, or all three are non-NULL.  That
-     * one isn't currently true, but "should be".
-     */
+	/* In a generator, we need to be able to swap between the exception
+	   state inside the generator and the exception state of the calling
+	   frame (which shouldn't be impacted when the generator "yields"
+	   from an except handler).
+	   These three fields exist exactly for that, and are unused for
+	   non-generator frames. See the SAVE_EXC_STATE and SWAP_EXC_STATE
+	   macros in ceval.c for details of their use. */
     PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
 
     PyThreadState *f_tstate;

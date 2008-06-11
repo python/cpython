@@ -1262,9 +1262,6 @@ Special informative state attributes for some types:
         f_lineno (int, R/O): current line number
         f_lasti (int, R/O): precise instruction (index into bytecode)
         f_trace (function/None, R/W): debug hook called at start of each source line
-        f_exc_type (Type/None, R/W): Most recent exception type
-        f_exc_value (any, R/W): Most recent exception value
-        f_exc_traceback (traceback/None, R/W): Most recent exception traceback
     Tracebacks:
         tb_next (frame/None, R/O): next level in stack trace (toward the frame where
                                   the exception occurred)

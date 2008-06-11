@@ -397,6 +397,14 @@ Miscellaneous opcodes.
    denoting nested loops, try statements, and such.
 
 
+.. opcode:: POP_EXCEPT ()
+
+   Removes one block from the block stack. The popped block must be an exception
+   handler block, as implicitly created when entering an except handler.
+   In addition to popping extraneous values from the frame stack, the
+   last three popped values are used to restore the exception state.
+
+
 .. opcode:: END_FINALLY ()
 
    Terminates a :keyword:`finally` clause.  The interpreter recalls whether the
@@ -412,24 +420,22 @@ Miscellaneous opcodes.
 
 .. opcode:: WITH_CLEANUP ()
 
-   Cleans up the stack when a :keyword:`with` statement block exits.  On top of
-   the stack are 1--3 values indicating how/why the finally clause was entered:
+   Cleans up the stack when a :keyword:`with` statement block exits.  TOS is
+   the context manager's :meth:`__exit__` bound method. Below TOS are 1--3
+   values indicating how/why the finally clause was entered:
 
-   * TOP = ``None``
-   * (TOP, SECOND) = (``WHY_{RETURN,CONTINUE}``), retval
-   * TOP = ``WHY_*``; no retval below it
-   * (TOP, SECOND, THIRD) = exc_info()
+   * SECOND = ``None``
+   * (SECOND, THIRD) = (``WHY_{RETURN,CONTINUE}``), retval
+   * SECOND = ``WHY_*``; no retval below it
+   * (SECOND, THIRD, FOURTH) = exc_info()
 
-   Under them is EXIT, the context manager's :meth:`__exit__` bound method.
+   In the last case, ``TOS(SECOND, THIRD, FOURTH)`` is called, otherwise
+   ``TOS(None, None, None)``.  In addition, TOS is removed from the stack.
 
-   In the last case, ``EXIT(TOP, SECOND, THIRD)`` is called, otherwise
-   ``EXIT(None, None, None)``.
-
-   EXIT is removed from the stack, leaving the values above it in the same
-   order. In addition, if the stack represents an exception, *and* the function
-   call returns a 'true' value, this information is "zapped", to prevent
-   ``END_FINALLY`` from re-raising the exception.  (But non-local gotos should
-   still be resumed.)
+   If the stack represents an exception, *and* the function call returns
+   a 'true' value, this information is "zapped" and replaced with a single
+   ``WHY_SILENCED`` to prevent ``END_FINALLY`` from re-raising the exception.
+   (But non-local gotos will still be resumed.)
 
    .. XXX explain the WHY stuff!
 

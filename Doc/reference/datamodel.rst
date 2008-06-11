@@ -875,19 +875,14 @@ Internal types
 
       .. index::
          single: f_trace (frame attribute)
-         single: f_exc_type (frame attribute)
-         single: f_exc_value (frame attribute)
-         single: f_exc_traceback (frame attribute)
          single: f_lineno (frame attribute)
 
       Special writable attributes: :attr:`f_trace`, if not ``None``, is a function
       called at the start of each source code line (this is used by the debugger);
-      :attr:`f_exc_type`, :attr:`f_exc_value`, :attr:`f_exc_traceback` represent the
-      last exception raised in the parent frame provided another exception was ever
-      raised in the current frame (in all other cases they are None); :attr:`f_lineno`
-      is the current line number of the frame --- writing to this from within a trace
-      function jumps to the given line (only for the bottom-most frame).  A debugger
-      can implement a Jump command (aka Set Next Statement) by writing to f_lineno.
+      :attr:`f_lineno` is the current line number of the frame --- writing to this
+      from within a trace function jumps to the given line (only for the bottom-most
+      frame).  A debugger can implement a Jump command (aka Set Next Statement)
+      by writing to f_lineno.
 
    Traceback objects
       .. index::

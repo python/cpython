@@ -70,6 +70,7 @@ extern "C" {
 #define YIELD_VALUE	86
 #define POP_BLOCK	87
 #define END_FINALLY	88
+#define POP_EXCEPT	89
 
 #define HAVE_ARGUMENT	90	/* Opcodes from here have an argument: */
 
@@ -131,6 +132,13 @@ extern "C" {
 
 /* Support for opargs more than 16 bits long */
 #define EXTENDED_ARG  143
+
+
+/* EXCEPT_HANDLER is a special, implicit block type which is created when
+   entering an except handler. It is not an opcode but we define it here
+   as we want it to be available to both frameobject.c and ceval.c, while
+   remaining private.*/
+#define EXCEPT_HANDLER 257
 
 
 enum cmp_op {PyCmp_LT=Py_LT, PyCmp_LE=Py_LE, PyCmp_EQ=Py_EQ, PyCmp_NE=Py_NE, PyCmp_GT=Py_GT, PyCmp_GE=Py_GE,

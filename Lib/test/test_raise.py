@@ -16,6 +16,13 @@ def get_tb():
         return sys.exc_info()[2]
 
 
+class Context:
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        return True
+
+
 class TestRaise(unittest.TestCase):
     def test_invalid_reraise(self):
         try:
@@ -36,6 +43,71 @@ class TestRaise(unittest.TestCase):
             self.failUnless(exc1 is exc2)
         else:
             self.fail("No exception raised")
+
+    def test_except_reraise(self):
+        def reraise():
+            try:
+                raise TypeError("foo")
+            except:
+                try:
+                    raise KeyError("caught")
+                except KeyError:
+                    pass
+                raise
+        self.assertRaises(TypeError, reraise)
+
+    def test_finally_reraise(self):
+        def reraise():
+            try:
+                raise TypeError("foo")
+            except:
+                try:
+                    raise KeyError("caught")
+                finally:
+                    raise
+        self.assertRaises(KeyError, reraise)
+
+    def test_nested_reraise(self):
+        def nested_reraise():
+            raise
+        def reraise():
+            try:
+                raise TypeError("foo")
+            except:
+                nested_reraise()
+        self.assertRaises(TypeError, reraise)
+
+    def test_with_reraise1(self):
+        def reraise():
+            try:
+                raise TypeError("foo")
+            except:
+                with Context():
+                    pass
+                raise
+        self.assertRaises(TypeError, reraise)
+
+    def test_with_reraise2(self):
+        def reraise():
+            try:
+                raise TypeError("foo")
+            except:
+                with Context():
+                    raise KeyError("caught")
+                raise
+        self.assertRaises(TypeError, reraise)
+
+    def test_yield_reraise(self):
+        def reraise():
+            try:
+                raise TypeError("foo")
+            except:
+                yield 1
+                raise
+        g = reraise()
+        next(g)
+        self.assertRaises(TypeError, lambda: next(g))
+        self.assertRaises(StopIteration, lambda: next(g))
 
     def test_erroneous_exception(self):
         class MyException(Exception):
@@ -157,7 +229,6 @@ class TestRemovedFunctionality(unittest.TestCase):
 
 def test_main():
     support.run_unittest(__name__)
-
 
 if __name__ == "__main__":
     unittest.main()

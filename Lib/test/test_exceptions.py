@@ -427,6 +427,7 @@ class ExceptionTests(unittest.TestCase):
             local_ref = obj
             raise MyException(obj)
 
+        # Qualified "except" with "as"
         obj = MyObj()
         wr = weakref.ref(obj)
         try:
@@ -437,6 +438,113 @@ class ExceptionTests(unittest.TestCase):
         obj = wr()
         self.failUnless(obj is None, "%s" % obj)
 
+        # Qualified "except" without "as"
+        obj = MyObj()
+        wr = weakref.ref(obj)
+        try:
+            inner_raising_func()
+        except MyException:
+            pass
+        obj = None
+        obj = wr()
+        self.failUnless(obj is None, "%s" % obj)
+
+        # Bare "except"
+        obj = MyObj()
+        wr = weakref.ref(obj)
+        try:
+            inner_raising_func()
+        except:
+            pass
+        obj = None
+        obj = wr()
+        self.failUnless(obj is None, "%s" % obj)
+
+        # "except" with premature block leave
+        obj = MyObj()
+        wr = weakref.ref(obj)
+        for i in [0]:
+            try:
+                inner_raising_func()
+            except:
+                break
+        obj = None
+        obj = wr()
+        self.failUnless(obj is None, "%s" % obj)
+
+        # "except" block raising another exception
+        obj = MyObj()
+        wr = weakref.ref(obj)
+        try:
+            try:
+                inner_raising_func()
+            except:
+                raise KeyError
+        except KeyError:
+            obj = None
+            obj = wr()
+            self.failUnless(obj is None, "%s" % obj)
+
+        # Some complicated construct
+        obj = MyObj()
+        wr = weakref.ref(obj)
+        try:
+            inner_raising_func()
+        except MyException:
+            try:
+                try:
+                    raise
+                finally:
+                    raise
+            except MyException:
+                pass
+        obj = None
+        obj = wr()
+        self.failUnless(obj is None, "%s" % obj)
+
+        # Inside an exception-silencing "with" block
+        class Context:
+            def __enter__(self):
+                return self
+            def __exit__ (self, exc_type, exc_value, exc_tb):
+                return True
+        obj = MyObj()
+        wr = weakref.ref(obj)
+        with Context():
+            inner_raising_func()
+        obj = None
+        obj = wr()
+        self.failUnless(obj is None, "%s" % obj)
+
+    def test_generator_leaking(self):
+        # Test that generator exception state doesn't leak into the calling
+        # frame
+        def yield_raise():
+            try:
+                raise KeyError("caught")
+            except KeyError:
+                yield sys.exc_info()[0]
+                yield sys.exc_info()[0]
+            yield sys.exc_info()[0]
+        g = yield_raise()
+        self.assertEquals(next(g), KeyError)
+        self.assertEquals(sys.exc_info()[0], None)
+        self.assertEquals(next(g), KeyError)
+        self.assertEquals(sys.exc_info()[0], None)
+        self.assertEquals(next(g), None)
+
+        # Same test, but inside an exception handler
+        try:
+            raise TypeError("foo")
+        except TypeError:
+            g = yield_raise()
+            self.assertEquals(next(g), KeyError)
+            self.assertEquals(sys.exc_info()[0], TypeError)
+            self.assertEquals(next(g), KeyError)
+            self.assertEquals(sys.exc_info()[0], TypeError)
+            self.assertEquals(next(g), TypeError)
+            del g
+            self.assertEquals(sys.exc_info()[0], TypeError)
 
 def test_main():
     run_unittest(ExceptionTests)

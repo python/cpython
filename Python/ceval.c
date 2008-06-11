@@ -116,8 +116,6 @@ static int maybe_call_line_trace(Py_tracefunc, PyObject *,
 static PyObject * cmp_outcome(int, PyObject *, PyObject *);
 static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
-static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
-static void reset_exc_info(PyThreadState *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
                                       PyFrameObject *, unsigned char *);
@@ -483,7 +481,8 @@ enum why_code {
 		WHY_RETURN =	0x0008,	/* 'return' statement */
 		WHY_BREAK =	0x0010,	/* 'break' statement */
 		WHY_CONTINUE =	0x0020,	/* 'continue' statement */
-		WHY_YIELD =	0x0040	/* 'yield' operator */
+		WHY_YIELD =	0x0040,	/* 'yield' operator */
+		WHY_SILENCED = 0x0080 /* Exception silenced by 'with' */
 };
 
 static enum why_code do_raise(PyObject *, PyObject *);
@@ -692,6 +691,53 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				     GETLOCAL(i) = value; \
                                      Py_XDECREF(tmp); } while (0)
 
+
+#define UNWIND_BLOCK(b) \
+	while (STACK_LEVEL() > (b)->b_level) { \
+		PyObject *v = POP(); \
+		Py_XDECREF(v); \
+	}
+
+#define UNWIND_EXCEPT_HANDLER(b) \
+	assert(STACK_LEVEL() >= (b)->b_level + 3); \
+	while (STACK_LEVEL() > (b)->b_level + 3) { \
+		PyObject *v = POP(); \
+		Py_XDECREF(v); \
+	} \
+	Py_XDECREF(tstate->exc_type); \
+	tstate->exc_type = POP(); \
+	Py_XDECREF(tstate->exc_value); \
+	tstate->exc_value = POP(); \
+	Py_XDECREF(tstate->exc_traceback); \
+	tstate->exc_traceback = POP();
+
+#define SAVE_EXC_STATE() \
+	{ \
+		Py_XINCREF(tstate->exc_type); \
+		Py_XINCREF(tstate->exc_value); \
+		Py_XINCREF(tstate->exc_traceback); \
+		Py_XDECREF(f->f_exc_type); \
+		Py_XDECREF(f->f_exc_value); \
+		Py_XDECREF(f->f_exc_traceback); \
+		f->f_exc_type = tstate->exc_type; \
+		f->f_exc_value = tstate->exc_value; \
+		f->f_exc_traceback = tstate->exc_traceback; \
+	}
+
+#define SWAP_EXC_STATE() \
+	{ \
+		PyObject *tmp; \
+		tmp = tstate->exc_type; \
+		tstate->exc_type = f->f_exc_type; \
+		f->f_exc_type = tmp; \
+		tmp = tstate->exc_value; \
+		tstate->exc_value = f->f_exc_value; \
+		f->f_exc_value = tmp; \
+		tmp = tstate->exc_traceback; \
+		tstate->exc_traceback = f->f_exc_traceback; \
+		f->f_exc_traceback = tmp; \
+	}
+
 /* Start of code */
 
 	if (f == NULL)
@@ -764,6 +810,18 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	stack_pointer = f->f_stacktop;
 	assert(stack_pointer != NULL);
 	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
+
+	if (f->f_code->co_flags & CO_GENERATOR) {
+		if (f->f_exc_type != NULL && f->f_exc_type != Py_None) {
+			/* We were in an except handler when we left,
+			   restore the exception state which was put aside
+			   (see YIELD_VALUE). */
+			SWAP_EXC_STATE();
+		}
+		else {
+			SAVE_EXC_STATE();
+		}
+	}
 
 #ifdef LLTRACE
 	lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
@@ -1443,15 +1501,29 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			retval = POP();
 			f->f_stacktop = stack_pointer;
 			why = WHY_YIELD;
+			/* Put aside the current exception state and restore
+			   that of the calling frame. This only serves when
+			   "yield" is used inside an except handler. */
+			SWAP_EXC_STATE();
 			goto fast_yield;
+
+		case POP_EXCEPT:
+			{
+				PyTryBlock *b = PyFrame_BlockPop(f);
+				if (b->b_type != EXCEPT_HANDLER) {
+					PyErr_SetString(PyExc_SystemError,
+						"popped block is not an except handler");
+					why = WHY_EXCEPTION;
+					break;
+				}
+				UNWIND_EXCEPT_HANDLER(b);
+			}
+			continue;
 
 		case POP_BLOCK:
 			{
 				PyTryBlock *b = PyFrame_BlockPop(f);
-				while (STACK_LEVEL() > b->b_level) {
-					v = POP();
-					Py_DECREF(v);
-				}
+				UNWIND_BLOCK(b);
 			}
 			continue;
 
@@ -1464,6 +1536,22 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				if (why == WHY_RETURN ||
 				    why == WHY_CONTINUE)
 					retval = POP();
+				if (why == WHY_SILENCED) {
+					/* An exception was silenced by 'with', we must
+					manually unwind the EXCEPT_HANDLER block which was
+					created when the exception was caught, otherwise
+					the stack will be in an inconsistent state. */
+					PyTryBlock *b = PyFrame_BlockPop(f);
+					if (b->b_type != EXCEPT_HANDLER) {
+						PyErr_SetString(PyExc_SystemError,
+							"popped block is not an except handler");
+						why = WHY_EXCEPTION;
+					}
+					else {
+						UNWIND_EXCEPT_HANDLER(b);
+						why = WHY_NOT;
+					}
+				}
 			}
 			else if (PyExceptionClass_Check(v)) {
 				w = POP();
@@ -1476,19 +1564,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				PyErr_SetString(PyExc_SystemError,
 					"'finally' pops bad exception");
 				why = WHY_EXCEPTION;
-			}
-			/*
-			  Make sure the exception state is cleaned up before
-			  the end of an except block. This ensures objects
-			  referenced by the exception state are not kept
-			  alive too long.
-			  See #2507.
-			*/
-			if (tstate->frame->f_exc_type != NULL)
-				reset_exc_info(tstate);
-			else {
-				assert(tstate->frame->f_exc_value == NULL);
-				assert(tstate->frame->f_exc_traceback == NULL);
 			}
 			Py_DECREF(v);
 			break;
@@ -2056,59 +2131,33 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			   should still be resumed.)
 			*/
 
-			PyObject *exit_func;
-
-			u = POP();
+			PyObject *exit_func = POP();
+			u = TOP();
 			if (u == Py_None) {
-			       	exit_func = TOP();
-				SET_TOP(u);
 				v = w = Py_None;
 			}
 			else if (PyLong_Check(u)) {
-				switch(PyLong_AS_LONG(u)) {
-				case WHY_RETURN:
-				case WHY_CONTINUE:
-					/* Retval in TOP. */
-					exit_func = SECOND();
-					SET_SECOND(TOP());
-					SET_TOP(u);
-					break;
-				default:
-					exit_func = TOP();
-					SET_TOP(u);
-					break;
-				}
 				u = v = w = Py_None;
 			}
 			else {
-				v = TOP();
-				w = SECOND();
-				exit_func = THIRD();
-				SET_TOP(u);
-				SET_SECOND(v);
-				SET_THIRD(w);
+				v = SECOND();
+				w = THIRD();
 			}
 			/* XXX Not the fastest way to call it... */
 			x = PyObject_CallFunctionObjArgs(exit_func, u, v, w,
 							 NULL);
-			if (x == NULL) {
-				Py_DECREF(exit_func);
+			Py_DECREF(exit_func);
+			if (x == NULL)
 				break; /* Go to error exit */
-			}
 			if (u != Py_None && PyObject_IsTrue(x)) {
-				/* There was an exception and a true return */
+				/* There was an exception and a True return */
 				STACKADJ(-2);
-				Py_INCREF(Py_None);
-				SET_TOP(Py_None);
+				SET_TOP(PyLong_FromLong((long) WHY_SILENCED));
 				Py_DECREF(u);
 				Py_DECREF(v);
 				Py_DECREF(w);
-			} else {
-				/* The stack was rearranged to remove EXIT
-				   above. Let END_FINALLY do its thing */
 			}
 			Py_DECREF(x);
-			Py_DECREF(exit_func);
 			PREDICT(END_FINALLY);
 			break;
 		}
@@ -2370,50 +2419,63 @@ fast_block_end:
 				break;
 			}
 
-			while (STACK_LEVEL() > b->b_level) {
-				v = POP();
-				Py_XDECREF(v);
+			if (b->b_type == EXCEPT_HANDLER) {
+				UNWIND_EXCEPT_HANDLER(b);
+				if (why == WHY_EXCEPTION) {
+					Py_CLEAR(tstate->exc_type);
+					Py_CLEAR(tstate->exc_value);
+					Py_CLEAR(tstate->exc_traceback);
+				}
+				continue;
 			}
+			UNWIND_BLOCK(b);
 			if (b->b_type == SETUP_LOOP && why == WHY_BREAK) {
 				why = WHY_NOT;
 				JUMPTO(b->b_handler);
 				break;
 			}
-			if (b->b_type == SETUP_FINALLY ||
-			    (b->b_type == SETUP_EXCEPT &&
-			     why == WHY_EXCEPTION)) {
-				if (why == WHY_EXCEPTION) {
-					PyObject *exc, *val, *tb;
-					PyErr_Fetch(&exc, &val, &tb);
-					if (val == NULL) {
-						val = Py_None;
-						Py_INCREF(val);
-					}
-					/* Make the raw exception data
-					   available to the handler,
-					   so a program can emulate the
-					   Python main loop.  Don't do
-					   this for 'finally'. */
-					if (b->b_type == SETUP_EXCEPT) {
-						PyErr_NormalizeException(
-							&exc, &val, &tb);
-						set_exc_info(tstate,
-							     exc, val, tb);
-					}
-					if (tb == NULL) {
-						Py_INCREF(Py_None);
-						PUSH(Py_None);
-					} else
-						PUSH(tb);
-					PUSH(val);
-					PUSH(exc);
+			if (why == WHY_EXCEPTION && (b->b_type == SETUP_EXCEPT
+				|| b->b_type == SETUP_FINALLY)) {
+				PyObject *exc, *val, *tb;
+				int handler = b->b_handler;
+				/* Beware, this invalidates all b->b_* fields */
+ 				PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL());
+				PUSH(tstate->exc_traceback);
+				PUSH(tstate->exc_value);
+				if (tstate->exc_type != NULL) {
+					PUSH(tstate->exc_type);
 				}
 				else {
-					if (why & (WHY_RETURN | WHY_CONTINUE))
-						PUSH(retval);
-					v = PyLong_FromLong((long)why);
-					PUSH(v);
+					Py_INCREF(Py_None);
+					PUSH(Py_None);
 				}
+				PyErr_Fetch(&exc, &val, &tb);
+				/* Make the raw exception data
+				   available to the handler,
+				   so a program can emulate the
+				   Python main loop. */
+				PyErr_NormalizeException(
+					&exc, &val, &tb);
+				PyException_SetTraceback(val, tb);
+				Py_INCREF(exc);
+				tstate->exc_type = exc;
+				Py_INCREF(val);
+				tstate->exc_value = val;
+				tstate->exc_traceback = tb;
+				if (tb == NULL)
+					tb = Py_None;
+				Py_INCREF(tb);
+				PUSH(tb);
+				PUSH(val);
+				PUSH(exc);
+				why = WHY_NOT;
+				JUMPTO(handler);
+				break;
+			}
+			if (b->b_type == SETUP_FINALLY) {
+				if (why & (WHY_RETURN | WHY_CONTINUE))
+					PUSH(retval);
+				PUSH(PyLong_FromLong((long)why));
 				why = WHY_NOT;
 				JUMPTO(b->b_handler);
 				break;
@@ -2469,13 +2531,6 @@ fast_yield:
 				why = WHY_EXCEPTION;
 			}
 		}
-	}
-
-	if (tstate->frame->f_exc_type != NULL)
-		reset_exc_info(tstate);
-	else {
-		assert(tstate->frame->f_exc_value == NULL);
-		assert(tstate->frame->f_exc_traceback == NULL);
 	}
 
 	/* pop frame */
@@ -2756,150 +2811,6 @@ fail: /* Jump here from prelude on failure */
 	return retval;
 }
 
-
-/* Implementation notes for set_exc_info() and reset_exc_info():
-
-- Below, 'exc_ZZZ' stands for 'exc_type', 'exc_value' and
-  'exc_traceback'.  These always travel together.
-
-- tstate->curexc_ZZZ is the "hot" exception that is set by
-  PyErr_SetString(), cleared by PyErr_Clear(), and so on.
-
-- Once an exception is caught by an except clause, it is transferred
-  from tstate->curexc_ZZZ to tstate->exc_ZZZ, from which sys.exc_info()
-  can pick it up.  This is the primary task of set_exc_info().
-  XXX That can't be right:  set_exc_info() doesn't look at tstate->curexc_ZZZ.
-
-- Now let me explain the complicated dance with frame->f_exc_ZZZ.
-
-  Long ago, when none of this existed, there were just a few globals:
-  one set corresponding to the "hot" exception, and one set
-  corresponding to sys.exc_ZZZ.  (Actually, the latter weren't C
-  globals; they were simply stored as sys.exc_ZZZ.  For backwards
-  compatibility, they still are!)  The problem was that in code like
-  this:
-
-     try:
-	"something that may fail"
-     except "some exception":
-	"do something else first"
-	"print the exception from sys.exc_ZZZ."
-
-  if "do something else first" invoked something that raised and caught
-  an exception, sys.exc_ZZZ were overwritten.  That was a frequent
-  cause of subtle bugs.  I fixed this by changing the semantics as
-  follows:
-
-    - Within one frame, sys.exc_ZZZ will hold the last exception caught
-      *in that frame*.
-
-    - But initially, and as long as no exception is caught in a given
-      frame, sys.exc_ZZZ will hold the last exception caught in the
-      previous frame (or the frame before that, etc.).
-
-  The first bullet fixed the bug in the above example.  The second
-  bullet was for backwards compatibility: it was (and is) common to
-  have a function that is called when an exception is caught, and to
-  have that function access the caught exception via sys.exc_ZZZ.
-  (Example: traceback.print_exc()).
-
-  At the same time I fixed the problem that sys.exc_ZZZ weren't
-  thread-safe, by introducing sys.exc_info() which gets it from tstate;
-  but that's really a separate improvement.
-
-  The reset_exc_info() function in ceval.c restores the tstate->exc_ZZZ
-  variables to what they were before the current frame was called.  The
-  set_exc_info() function saves them on the frame so that
-  reset_exc_info() can restore them.  The invariant is that
-  frame->f_exc_ZZZ is NULL iff the current frame never caught an
-  exception (where "catching" an exception applies only to successful
-  except clauses); and if the current frame ever caught an exception,
-  frame->f_exc_ZZZ is the exception that was stored in tstate->exc_ZZZ
-  at the start of the current frame.
-
-*/
-
-static void
-set_exc_info(PyThreadState *tstate,
-	     PyObject *type, PyObject *value, PyObject *tb)
-{
-	PyFrameObject *frame = tstate->frame;
-	PyObject *tmp_type, *tmp_value, *tmp_tb;
-
-	assert(type != NULL);
-	assert(frame != NULL);
-	if (frame->f_exc_type == NULL) {
-		assert(frame->f_exc_value == NULL);
-		assert(frame->f_exc_traceback == NULL);
-		/* This frame didn't catch an exception before. */
-		/* Save previous exception of this thread in this frame. */
-		if (tstate->exc_type == NULL) {
-			/* XXX Why is this set to Py_None? */
-			Py_INCREF(Py_None);
-			tstate->exc_type = Py_None;
-		}
-		Py_INCREF(tstate->exc_type);
-		Py_XINCREF(tstate->exc_value);
-		Py_XINCREF(tstate->exc_traceback);
-		frame->f_exc_type = tstate->exc_type;
-		frame->f_exc_value = tstate->exc_value;
-		frame->f_exc_traceback = tstate->exc_traceback;
-	}
-	/* Set new exception for this thread. */
-	tmp_type = tstate->exc_type;
-	tmp_value = tstate->exc_value;
-	tmp_tb = tstate->exc_traceback;
-	Py_INCREF(type);
-	Py_XINCREF(value);
-	Py_XINCREF(tb);
-	tstate->exc_type = type;
-	tstate->exc_value = value;
-	tstate->exc_traceback = tb;
-	PyException_SetTraceback(value, tb);
-	Py_XDECREF(tmp_type);
-	Py_XDECREF(tmp_value);
-	Py_XDECREF(tmp_tb);
-}
-
-static void
-reset_exc_info(PyThreadState *tstate)
-{
-	PyFrameObject *frame;
-	PyObject *tmp_type, *tmp_value, *tmp_tb;
-
-	/* It's a precondition that the thread state's frame caught an
-	 * exception -- verify in a debug build.
-	 */
-	assert(tstate != NULL);
-	frame = tstate->frame;
-	assert(frame != NULL);
-	assert(frame->f_exc_type != NULL);
-
-	/* Copy the frame's exception info back to the thread state. */
-	tmp_type = tstate->exc_type;
-	tmp_value = tstate->exc_value;
-	tmp_tb = tstate->exc_traceback;
-	Py_INCREF(frame->f_exc_type);
-	Py_XINCREF(frame->f_exc_value);
-	Py_XINCREF(frame->f_exc_traceback);
-	tstate->exc_type = frame->f_exc_type;
-	tstate->exc_value = frame->f_exc_value;
-	tstate->exc_traceback = frame->f_exc_traceback;
-	Py_XDECREF(tmp_type);
-	Py_XDECREF(tmp_value);
-	Py_XDECREF(tmp_tb);
-
-	/* Clear the frame's exception info. */
-	tmp_type = frame->f_exc_type;
-	tmp_value = frame->f_exc_value;
-	tmp_tb = frame->f_exc_traceback;
-	frame->f_exc_type = NULL;
-	frame->f_exc_value = NULL;
-	frame->f_exc_traceback = NULL;
-	Py_DECREF(tmp_type);
-	Py_XDECREF(tmp_value);
-	Py_XDECREF(tmp_tb);
-}
 
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
