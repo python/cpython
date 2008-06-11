@@ -225,7 +225,7 @@ static struct PyModuleDef multiprocessing_module = {
 };
 
 
-PyObject*
+PyMODINIT_FUNC 
 PyInit__multiprocessing(void)
 {
 	PyObject *module, *temp;
