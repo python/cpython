@@ -109,7 +109,7 @@ def debugging_server(serv, serv_evt, client_evt):
 
             # when the client conversation is finished, it will
             # set client_evt, and it's then ok to kill the server
-            if client_evt.isSet():
+            if client_evt.is_set():
                 serv.close()
                 break
 
@@ -118,7 +118,7 @@ def debugging_server(serv, serv_evt, client_evt):
     except socket.timeout:
         pass
     finally:
-        if not client_evt.isSet():
+        if not client_evt.is_set():
             # allow some time for the client to read the result
             time.sleep(0.5)
             serv.close()

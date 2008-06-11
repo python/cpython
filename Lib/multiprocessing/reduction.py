@@ -84,7 +84,7 @@ def _get_listener():
                 debug('starting listener and thread for sending handles')
                 _listener = Listener(authkey=current_process().get_authkey())
                 t = threading.Thread(target=_serve)
-                t.setDaemon(True)
+                t.set_daemon(True)
                 t.start()
         finally:
             _lock.release()

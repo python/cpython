@@ -162,16 +162,16 @@ class _localbase(object):
         # __init__ being called, to make sure we don't call it
         # again ourselves.
         dict = object.__getattribute__(self, '__dict__')
-        currentThread().__dict__[key] = dict
+        current_thread().__dict__[key] = dict
 
         return self
 
 def _patch(self):
     key = object.__getattribute__(self, '_local__key')
-    d = currentThread().__dict__.get(key)
+    d = current_thread().__dict__.get(key)
     if d is None:
         d = {}
-        currentThread().__dict__[key] = d
+        current_thread().__dict__[key] = d
         object.__setattr__(self, '__dict__', d)
 
         # we have a new instance dict, so call out __init__ if we have
@@ -238,4 +238,4 @@ class local(_localbase):
                 except KeyError:
                     pass # didn't have anything in this thread
 
-from threading import currentThread, RLock
+from threading import current_thread, RLock

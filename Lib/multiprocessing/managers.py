@@ -169,7 +169,7 @@ class Server(object):
                     except (OSError, IOError):
                         continue
                     t = threading.Thread(target=self.handle_request, args=(c,))
-                    t.setDaemon(True)
+                    t.set_daemon(True)
                     t.start()
             except (KeyboardInterrupt, SystemExit):
                 pass
@@ -216,7 +216,7 @@ class Server(object):
         Handle requests from the proxies in a particular process/thread
         '''
         util.debug('starting server thread to service %r',
-                   threading.currentThread().getName())
+                   threading.current_thread().get_name())
 
         recv = conn.recv
         send = conn.send
@@ -266,7 +266,7 @@ class Server(object):
 
             except EOFError:
                 util.debug('got EOF -- exiting thread serving %r',
-                           threading.currentThread().getName())
+                           threading.current_thread().get_name())
                 sys.exit(0)
 
             except Exception:
@@ -279,7 +279,7 @@ class Server(object):
                     send(('#UNSERIALIZABLE', repr(msg)))
             except Exception, e:
                 util.info('exception in thread serving %r',
-                        threading.currentThread().getName())
+                        threading.current_thread().get_name())
                 util.info(' ... message was %r', msg)
                 util.info(' ... exception was %r', e)
                 conn.close()
@@ -401,7 +401,7 @@ class Server(object):
         '''
         Spawn a new thread to serve this connection
         '''
-        threading.currentThread().setName(name)
+        threading.current_thread().set_name(name)
         c.send(('#RETURN', None))
         self.serve_client(c)
 
@@ -715,8 +715,8 @@ class BaseProxy(object):
     def _connect(self):
         util.debug('making connection to manager')
         name = current_process().get_name()
-        if threading.currentThread().getName() != 'MainThread':
-            name += '|' + threading.currentThread().getName()
+        if threading.current_thread().get_name() != 'MainThread':
+            name += '|' + threading.current_thread().get_name()
         conn = self._Client(self._token.address, authkey=self._authkey)
         dispatch(conn, None, 'accept_connection', (name,))
         self._tls.connection = conn
@@ -729,7 +729,7 @@ class BaseProxy(object):
             conn = self._tls.connection
         except AttributeError:
             util.debug('thread %r does not own a connection',
-                       threading.currentThread().getName())
+                       threading.current_thread().get_name())
             self._connect()
             conn = self._tls.connection
 
@@ -790,7 +790,7 @@ class BaseProxy(object):
         # the process owns no more references to objects for this manager
         if not idset and hasattr(tls, 'connection'):
             util.debug('thread %r has no more proxies so closing conn',
-                       threading.currentThread().getName())
+                       threading.current_thread().get_name())
             tls.connection.close()
             del tls.connection
             
@@ -969,13 +969,13 @@ class AcquirerProxy(BaseProxy):
 
 class ConditionProxy(AcquirerProxy):
     # XXX will Condition.notfyAll() name be available in Py3.0?
-    _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notifyAll')
+    _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notify_all')
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
     def notify(self):
         return self._callmethod('notify')
     def notify_all(self):
-        return self._callmethod('notifyAll')
+        return self._callmethod('notify_all')
 
 class EventProxy(BaseProxy):
     # XXX will Event.isSet name be available in Py3.0?
