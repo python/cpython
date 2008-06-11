@@ -12,8 +12,6 @@ class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
     def loads(self, buf):
         return pickle.loads(buf)
 
-    module = pickle
-    error = KeyError
 
 def test_main():
     support.run_unittest(OptimizedPickleTests)

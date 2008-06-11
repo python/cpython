@@ -422,6 +422,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
         # Memory-based IO accelerator modules
         exts.append( Extension("_bytesio", ["_bytesio.c"]) )
+        # C-optimized pickle replacement
+        exts.append( Extension("_pickle", ["_pickle.c"]) )
         # atexit
         exts.append( Extension("atexit", ["atexitmodule.c"]) )
         # _json speedups

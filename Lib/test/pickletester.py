@@ -362,7 +362,7 @@ def create_data():
     return x
 
 class AbstractPickleTests(unittest.TestCase):
-    # Subclass must define self.dumps, self.loads, self.error.
+    # Subclass must define self.dumps, self.loads.
 
     _testdata = create_data()
 
@@ -463,8 +463,9 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(list(x[0].attr.keys()), [1])
             self.assert_(x[0].attr[1] is x)
 
-    def test_garyp(self):
-        self.assertRaises(self.error, self.loads, b'garyp')
+    def test_get(self):
+        self.assertRaises(KeyError, self.loads, b'g0\np0')
+        self.assertEquals(self.loads(b'((Kdtp0\nh\x00l.))'), [(100,), (100,)])
 
     def test_insecure_strings(self):
         # XXX Some of these tests are temporarily disabled
@@ -955,7 +956,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         f = open(TESTFN, "wb")
         try:
             f.close()
-            self.assertRaises(ValueError, self.module.dump, 123, f)
+            self.assertRaises(ValueError, pickle.dump, 123, f)
         finally:
             os.remove(TESTFN)
 
@@ -964,24 +965,24 @@ class AbstractPickleModuleTests(unittest.TestCase):
         f = open(TESTFN, "wb")
         try:
             f.close()
-            self.assertRaises(ValueError, self.module.dump, 123, f)
+            self.assertRaises(ValueError, pickle.dump, 123, f)
         finally:
             os.remove(TESTFN)
 
     def test_highest_protocol(self):
         # Of course this needs to be changed when HIGHEST_PROTOCOL changes.
-        self.assertEqual(self.module.HIGHEST_PROTOCOL, 3)
+        self.assertEqual(pickle.HIGHEST_PROTOCOL, 3)
 
     def test_callapi(self):
         from io import BytesIO
         f = BytesIO()
         # With and without keyword arguments
-        self.module.dump(123, f, -1)
-        self.module.dump(123, file=f, protocol=-1)
-        self.module.dumps(123, -1)
-        self.module.dumps(123, protocol=-1)
-        self.module.Pickler(f, -1)
-        self.module.Pickler(f, protocol=-1)
+        pickle.dump(123, f, -1)
+        pickle.dump(123, file=f, protocol=-1)
+        pickle.dumps(123, -1)
+        pickle.dumps(123, protocol=-1)
+        pickle.Pickler(f, -1)
+        pickle.Pickler(f, protocol=-1)
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
