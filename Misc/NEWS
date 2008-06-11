@@ -49,6 +49,10 @@ Core and Builtins
   Exception (KeyboardInterrupt, and SystemExit) propagate instead of
   ignoring them.
 
+- #3021 Exception reraising sematics have been significantly improved.  However,
+  f_exc_type, f_exc_value, and f_exc_traceback cannot be accessed from Python
+  code anymore.
+
 Extension Modules
 -----------------
 

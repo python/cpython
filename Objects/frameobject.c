@@ -20,9 +20,6 @@ static PyMemberDef frame_memberlist[] = {
 	{"f_builtins",	T_OBJECT,	OFF(f_builtins),READONLY},
 	{"f_globals",	T_OBJECT,	OFF(f_globals),	READONLY},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	READONLY},
-	{"f_exc_type",	T_OBJECT,	OFF(f_exc_type)},
-	{"f_exc_value",	T_OBJECT,	OFF(f_exc_value)},
-	{"f_exc_traceback", T_OBJECT,	OFF(f_exc_traceback)},
 	{NULL}	/* Sentinel */
 };
 

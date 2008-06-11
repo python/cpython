@@ -760,6 +760,8 @@ opcode_stack_effect(int opcode, int oparg)
 
 		case POP_BLOCK:
 			return 0;
+		case POP_EXCEPT:
+			return 0;  /* -3 except if bad bytecode */
 		case END_FINALLY:
 			return -1; /* or -2 or -3 if exception occurred */
 
@@ -818,7 +820,8 @@ opcode_stack_effect(int opcode, int oparg)
 			return 0;
 		case SETUP_EXCEPT:
 		case SETUP_FINALLY:
-			return 3; /* actually pushed by an exception */
+			return 6; /* can push 3 values for the new exception
+				+ 3 others for the previous exception state */
 
 		case LOAD_FAST:
 			return 1;
@@ -2031,6 +2034,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* second # body */
 		VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
 	        ADDOP(c, POP_BLOCK);
+	        ADDOP(c, POP_EXCEPT);
 	        compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
 
             /* finally: */
@@ -2050,9 +2054,20 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 	        compiler_pop_fblock(c, FINALLY_END, cleanup_end);
 		}
 		else {
+            basicblock *cleanup_body;
+
+            cleanup_body = compiler_new_block(c);
+            if(!cleanup_body)
+                return 0;
+
+			ADDOP(c, POP_TOP);
             ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
+	        compiler_use_next_block(c, cleanup_body);
+	        if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
+		        return 0;
 		    VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
+	        ADDOP(c, POP_EXCEPT);
+	        compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
 		}
 		ADDOP_JREL(c, JUMP_FORWARD, end);
 		compiler_use_next_block(c, except);
@@ -3109,7 +3124,7 @@ compiler_with(struct compiler *c, stmt_ty s)
 {
     static identifier enter_attr, exit_attr;
     basicblock *block, *finally;
-    identifier tmpvalue = NULL;
+    identifier tmpvalue = NULL, tmpexit = NULL;
 
     assert(s->kind == With_kind);
 
@@ -3144,6 +3159,10 @@ compiler_with(struct compiler *c, stmt_ty s)
 	    return 0;
 	PyArena_AddPyObject(c->c_arena, tmpvalue);
     }
+	tmpexit = compiler_new_tmpname(c);
+	if (tmpexit == NULL)
+	    return 0;
+	PyArena_AddPyObject(c->c_arena, tmpexit);
 
     /* Evaluate EXPR */
     VISIT(c, expr, s->v.With.context_expr);
@@ -3151,7 +3170,8 @@ compiler_with(struct compiler *c, stmt_ty s)
     /* Squirrel away context.__exit__ by stuffing it under context */
     ADDOP(c, DUP_TOP);
     ADDOP_O(c, LOAD_ATTR, exit_attr, names);
-    ADDOP(c, ROT_TWO);
+	if (!compiler_nameop(c, tmpexit, Store))
+	    return 0;
 
     /* Call context.__enter__() */
     ADDOP_O(c, LOAD_ATTR, enter_attr, names);
@@ -3198,6 +3218,9 @@ compiler_with(struct compiler *c, stmt_ty s)
     /* Finally block starts; context.__exit__ is on the stack under
        the exception or return information. Just issue our magic
        opcode. */
+	if (!compiler_nameop(c, tmpexit, Load) ||
+		!compiler_nameop(c, tmpexit, Del))
+		return 0;
     ADDOP(c, WITH_CLEANUP);
 
     /* Finally block ends. */

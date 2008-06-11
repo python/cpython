@@ -197,9 +197,6 @@ def isframe(object):
         f_back          next outer frame object (this frame's caller)
         f_builtins      built-in namespace seen by this frame
         f_code          code object being executed in this frame
-        f_exc_traceback traceback if raised in this frame, or None
-        f_exc_type      exception type if raised in this frame, or None
-        f_exc_value     exception value if raised in this frame, or None
         f_globals       global namespace seen by this frame
         f_lasti         index of last attempted instruction in bytecode
         f_lineno        current line number in Python source code

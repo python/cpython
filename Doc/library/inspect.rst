@@ -94,17 +94,6 @@ attributes:
 |           | f_code          | code object being         |
 |           |                 | executed in this frame    |
 +-----------+-----------------+---------------------------+
-|           | f_exc_traceback | traceback if raised in    |
-|           |                 | this frame, or ``None``   |
-+-----------+-----------------+---------------------------+
-|           | f_exc_type      | exception type if raised  |
-|           |                 | in this frame, or         |
-|           |                 | ``None``                  |
-+-----------+-----------------+---------------------------+
-|           | f_exc_value     | exception value if raised |
-|           |                 | in this frame, or         |
-|           |                 | ``None``                  |
-+-----------+-----------------+---------------------------+
 |           | f_globals       | global namespace seen by  |
 |           |                 | this frame                |
 +-----------+-----------------+---------------------------+
