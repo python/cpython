@@ -1308,9 +1308,6 @@ try:
     from _pickle import *
 except ImportError:
     Pickler, Unpickler = _Pickler, _Unpickler
-    PickleError = _PickleError
-    PicklingError = _PicklingError
-    UnpicklingError = _UnpicklingError
 
 # Shorthands
 
