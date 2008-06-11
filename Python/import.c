@@ -1364,19 +1364,26 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		if (!v)
 			return NULL;
 		if (PyUnicode_Check(v)) {
-			v = _PyUnicode_AsDefaultEncodedString(v, NULL);
+			v = PyUnicode_AsEncodedString(v, 
+			    Py_FileSystemDefaultEncoding, NULL);
 			if (v == NULL)
 				return NULL;
 		}
-		if (!PyBytes_Check(v))
+		else if (!PyBytes_Check(v))
 			continue;
+		else
+			Py_INCREF(v);
+
 		base = PyBytes_AS_STRING(v);
 		size = PyBytes_GET_SIZE(v);
 		len = size;
 		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
+			Py_DECREF(v);
 			continue; /* Too long */
 		}
 		strcpy(buf, base);
+		Py_DECREF(v);
+
 		if (strlen(buf) != len) {
 			continue; /* v contains '\0' */
 		}
@@ -3155,8 +3162,8 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 	if (!_PyArg_NoKeywords("NullImporter()", kwds))
 		return -1;
 
-	if (!PyArg_ParseTuple(args, "s:NullImporter",
-			      &path))
+	if (!PyArg_ParseTuple(args, "es:NullImporter",
+			      Py_FileSystemDefaultEncoding, &path))
 		return -1;
 
 	pathlen = strlen(path);
