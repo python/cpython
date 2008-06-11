@@ -42,7 +42,7 @@ loads libraries which export functions using the standard ``cdecl`` calling
 convention, while *windll* libraries call functions using the ``stdcall``
 calling convention. *oledll* also uses the ``stdcall`` calling convention, and
 assumes the functions return a Windows :class:`HRESULT` error code. The error
-code is used to automatically raise :class:`WindowsError` Python exceptions when
+code is used to automatically raise a :class:`WindowsError` exception when
 the function call fails.
 
 Here are some examples for Windows. Note that ``msvcrt`` is the MS standard C
@@ -57,10 +57,10 @@ convention::
    >>> libc = cdll.msvcrt # doctest: +WINDOWS
    >>>
 
-Windows appends the usual '.dll' file suffix automatically.
+Windows appends the usual ``.dll`` file suffix automatically.
 
 On Linux, it is required to specify the filename *including* the extension to
-load a library, so attribute access does not work. Either the
+load a library, so attribute access can not be used to load libraries. Either the
 :meth:`LoadLibrary` method of the dll loaders should be used, or you should load
 the library by creating an instance of CDLL by calling the constructor::
 
@@ -109,7 +109,7 @@ UNICODE is defined or not::
 
 *windll* does not try to select one of them by magic, you must access the
 version you need by specifying ``GetModuleHandleA`` or ``GetModuleHandleW``
-explicitly, and then call it with normal strings or unicode strings
+explicitly, and then call it with strings or unicode strings
 respectively.
 
 Sometimes, dlls export functions with names which aren't valid Python
@@ -424,9 +424,9 @@ to implement a :meth:`from_param` class method for them to be able to use them
 in the :attr:`argtypes` sequence. The :meth:`from_param` class method receives
 the Python object passed to the function call, it should do a typecheck or
 whatever is needed to make sure this object is acceptable, and then return the
-object itself, it's :attr:`_as_parameter_` attribute, or whatever you want to
+object itself, its :attr:`_as_parameter_` attribute, or whatever you want to
 pass as the C function argument in this case. Again, the result should be an
-integer, string, unicode, a ``ctypes`` instance, or something having the
+integer, string, unicode, a ``ctypes`` instance, or an object with an
 :attr:`_as_parameter_` attribute.
 
 
@@ -1617,9 +1617,8 @@ type and the argument types of the function.
    `use_last_error` does the same for the Windows error code.
 
    .. versionchanged:: 2.6
-
-   The optional `use_errno` and `use_last_error` parameters were added
-   in Python 2.6.
+      The optional `use_errno` and `use_last_error` parameters were
+      added.
 
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
