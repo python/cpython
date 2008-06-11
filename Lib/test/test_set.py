@@ -104,6 +104,12 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').intersection(C('ccb')), set('bc'))
             self.assertEqual(self.thetype('abcba').intersection(C('ef')), set(''))
             self.assertEqual(self.thetype('abcba').intersection(C('cbcf'), C('bag')), set('b'))
+        s = self.thetype('abcba')
+        z = s.intersection()
+        if self.thetype == frozenset():
+            self.assertEqual(id(s), id(z))
+        else:
+            self.assertNotEqual(id(s), id(z))
 
     def test_isdisjoint(self):
         def f(s1, s2):

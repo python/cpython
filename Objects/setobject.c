@@ -1312,6 +1312,9 @@ set_intersection_multi(PySetObject *so, PyObject *args)
 	Py_ssize_t i;
 	PyObject *result = (PyObject *)so;
 
+	if (PyTuple_GET_SIZE(args) == 0)
+		return set_copy(so);
+
 	Py_INCREF(so);
 	for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
 		PyObject *other = PyTuple_GET_ITEM(args, i);
