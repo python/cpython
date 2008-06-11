@@ -90,6 +90,8 @@ Library
 
 - Added the ast module.
 
+- Added the multiprocessing module, PEP 371
+
 - Factored out the indentation cleaning from inspect.getdoc() into
   inspect.cleandoc() to ease standalone use.
 
