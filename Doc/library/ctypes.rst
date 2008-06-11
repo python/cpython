@@ -1625,75 +1625,71 @@ type and the argument types of the function.
    The returned function prototype creates functions that use the Python calling
    convention.  The function will *not* release the GIL during the call.
 
-Function prototypes created by the factory functions can be instantiated in
-different ways, depending on the type and number of the parameters in the call.
+Function prototypes created by these factory functions can be instantiated in
+different ways, depending on the type and number of the parameters in the call:
 
 
-.. function:: prototype(address)
-   :noindex:
+   .. function:: prototype(address)
+      :noindex:
+      :module:
 
-   Returns a foreign function at the specified address.
-
-
-.. function:: prototype(callable)
-   :noindex:
-
-   Create a C callable function (a callback function) from a Python ``callable``.
+      Returns a foreign function at the specified address which must be an integer.
 
 
-.. function:: prototype(func_spec[, paramflags])
-   :noindex:
+   .. function:: prototype(callable)
+      :noindex:
+      :module:
 
-   Returns a foreign function exported by a shared library. ``func_spec`` must be a
-   2-tuple ``(name_or_ordinal, library)``. The first item is the name of the
-   exported function as string, or the ordinal of the exported function as small
-   integer.  The second item is the shared library instance.
+      Create a C callable function (a callback function) from a Python ``callable``.
 
 
-.. function:: prototype(vtbl_index, name[, paramflags[, iid]])
-   :noindex:
+   .. function:: prototype(func_spec[, paramflags])
+      :noindex:
+      :module:
 
-   Returns a foreign function that will call a COM method. ``vtbl_index`` is the
-   index into the virtual function table, a small non-negative integer. *name* is
-   name of the COM method. *iid* is an optional pointer to the interface identifier
-   which is used in extended error reporting.
-
-   COM methods use a special calling convention: They require a pointer to the COM
-   interface as first argument, in addition to those parameters that are specified
-   in the :attr:`argtypes` tuple.
-
-The optional *paramflags* parameter creates foreign function wrappers with much
-more functionality than the features described above.
-
-*paramflags* must be a tuple of the same length as :attr:`argtypes`.
-
-Each item in this tuple contains further information about a parameter, it must
-be a tuple containing 1, 2, or 3 items.
-
-The first item is an integer containing flags for the parameter:
+      Returns a foreign function exported by a shared library. ``func_spec`` must be a
+      2-tuple ``(name_or_ordinal, library)``. The first item is the name of the
+      exported function as string, or the ordinal of the exported function as small
+      integer.  The second item is the shared library instance.
 
 
-.. data:: 1
-   :noindex:
+   .. function:: prototype(vtbl_index, name[, paramflags[, iid]])
+      :noindex:
+      :module:
 
-   Specifies an input parameter to the function.
+      Returns a foreign function that will call a COM method. ``vtbl_index`` is the
+      index into the virtual function table, a small non-negative integer. *name* is
+      name of the COM method. *iid* is an optional pointer to the interface identifier
+      which is used in extended error reporting.
 
+      COM methods use a special calling convention: They require a pointer to the COM
+      interface as first argument, in addition to those parameters that are specified
+      in the :attr:`argtypes` tuple.
 
-.. data:: 2
-   :noindex:
+   The optional *paramflags* parameter creates foreign function wrappers with much
+   more functionality than the features described above.
 
-   Output parameter.  The foreign function fills in a value.
+   *paramflags* must be a tuple of the same length as :attr:`argtypes`.
 
+   Each item in this tuple contains further information about a parameter, it must
+   be a tuple containing one, two, or three items.
 
-.. data:: 4
-   :noindex:
+   The first item is an integer containing a combination of direction
+   flags for the parameter:
 
-   Input parameter which defaults to the integer zero.
+      1
+         Specifies an input parameter to the function.
 
-The optional second item is the parameter name as string.  If this is specified,
-the foreign function can be called with named parameters.
+      2
+         Output parameter.  The foreign function fills in a value.
 
-The optional third item is the default value for this parameter.
+      4
+         Input parameter which defaults to the integer zero.
+
+   The optional second item is the parameter name as string.  If this is specified,
+   the foreign function can be called with named parameters.
+
+   The optional third item is the default value for this parameter.
 
 This example demonstrates how to wrap the Windows ``MessageBoxA`` function so
 that it supports default parameters and named arguments. The C declaration from
@@ -1865,6 +1861,33 @@ Utility functions
    servers with ctypes. It is called from the DllGetClassObject function that the
    ``_ctypes`` extension dll exports.
 
+.. function:: find_library(name)
+   :module: ctypes.util
+
+   Try to find a library and return a pathname.  `name` is the library name without
+   any prefix like `lib`, suffix like ``.so``, ``.dylib`` or version number (this
+   is the form used for the posix linker option :option:`-l`).  If no library can
+   be found, returns ``None``.
+
+   The exact functionality is system dependent.
+
+   .. versionchanged:: 2.6
+      Windows only: ``find_library("m")`` or
+      ``find_library("c")`` return the result of a call to
+      ``find_msvcrt()``.
+
+.. function:: find_msvcrt()
+   :module: ctypes.util
+
+   Windows only: return the filename of the VC runtype library used
+   by Python, and by the extension modules.  If the name of the
+   library cannot be determined, ``None`` is returned.
+
+   If you need to free memory, for example, allocated by an extension
+   module with a call to the ``free(void *)``, it is important that you
+   use the function in the same library that allocated the memory.
+
+   .. versionadded:: 2.6
 
 .. function:: FormatError([code])
 
