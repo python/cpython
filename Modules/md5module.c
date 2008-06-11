@@ -566,5 +566,5 @@ PyInit__md5(void)
     Py_TYPE(&MD5type) = &PyType_Type;
     if (PyType_Ready(&MD5type) < 0)
         return NULL;
-    return PyModule_Create("_md5", MD5_functions);
+    return PyModule_Create(&_md5module);
 }
