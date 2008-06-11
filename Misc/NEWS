@@ -291,6 +291,7 @@ Library
 - The bundled OSX-specific copy of libbffi is now in sync with the version
   shipped with PyObjC 2.0 and includes support for x86_64 and ppc64 platforms.
 
+- The threading module gained alias for names that are removed in 3.x.
 
 Build
 -----

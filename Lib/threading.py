@@ -9,6 +9,8 @@ except ImportError:
     raise
 
 import warnings
+
+from functools import wraps
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
 from collections import deque
@@ -30,6 +32,18 @@ del thread
 warnings.filterwarnings('ignore', category=DeprecationWarning,
                         module='threading', message='sys.exc_clear')
 
+
+def _old_api(callable, old_name):
+    if not _sys.py3kwarning:
+        return callable
+    @wraps(callable)
+    def old(*args, **kwargs):
+        warnings.warnpy3k("In 3.x, {0} is renamed to {1}."
+                          .format(old_name, callable.__name__),
+                          stacklevel=3)
+        return callable(*args, **kwargs)
+    old.__name__ = old_name
+    return old
 
 # Debug support (adapted from ihooks.py).
 # All the major classes here derive from _Verbose.  We force that to
@@ -274,6 +288,8 @@ class _Condition(_Verbose):
     def notify_all(self):
         self.notify(len(self.__waiters))
 
+    notifyAll = _old_api(notify_all, "notifyAll")
+
 
 def Semaphore(*args, **kwargs):
     return _Semaphore(*args, **kwargs)
@@ -352,6 +368,8 @@ class _Event(_Verbose):
 
     def is_set(self):
         return self.__flag
+
+    isSet = _old_api(is_set, "isSet")
 
     def set(self):
         self.__cond.acquire()
@@ -635,9 +653,13 @@ class Thread(_Verbose):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__name
 
+    getName = _old_api(get_name, "getName")
+
     def set_name(self, name):
         assert self.__initialized, "Thread.__init__() not called"
         self.__name = str(name)
+
+    setName = _old_api(set_name, "setName")
 
     def get_ident(self):
         assert self.__initialized, "Thread.__init__() not called"
@@ -647,9 +669,13 @@ class Thread(_Verbose):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__started.is_set() and not self.__stopped
 
+    isAlive = _old_api(is_alive, "isAlive")
+
     def is_daemon(self):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__daemonic
+
+    isDaemon = _old_api(is_daemon, "isDaemon")
 
     def set_daemon(self, daemonic):
         if not self.__initialized:
@@ -657,6 +683,8 @@ class Thread(_Verbose):
         if self.__started.is_set():
             raise RuntimeError("cannot set daemon status of active thread");
         self.__daemonic = daemonic
+
+    setDaemon = _old_api(set_daemon, "setDaemon")
 
 # The timer class was contributed by Itamar Shtull-Trauring
 
@@ -763,11 +791,15 @@ def current_thread():
         ##print "current_thread(): no current thread for", _get_ident()
         return _DummyThread()
 
+currentThread = _old_api(current_thread, "currentThread")
+
 def active_count():
     _active_limbo_lock.acquire()
     count = len(_active) + len(_limbo)
     _active_limbo_lock.release()
     return count
+
+activeCount = _old_api(active_count, "activeCount")
 
 def enumerate():
     _active_limbo_lock.acquire()
