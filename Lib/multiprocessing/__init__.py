@@ -60,7 +60,6 @@ __author__ = 'R. Oudkerk (r.m.oudkerk@gmail.com)'
 import os
 import sys
 
-import _multiprocessing
 from multiprocessing.process import Process, current_process, active_children
 
 #
@@ -78,6 +77,9 @@ class TimeoutError(ProcessError):
 
 class AuthenticationError(ProcessError):
     pass
+
+# This is down here because _multiprocessing uses BufferTooShort
+import _multiprocessing
 
 #
 # Definitions not depending on native semaphores

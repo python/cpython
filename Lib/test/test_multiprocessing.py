@@ -16,13 +16,13 @@ import socket
 import random
 import logging
 
-import _multiprocessing
 import multiprocessing.dummy
 import multiprocessing.connection
 import multiprocessing.managers
 import multiprocessing.heap
 import multiprocessing.managers
 import multiprocessing.pool
+import _multiprocessing
 
 from multiprocessing import util
 
