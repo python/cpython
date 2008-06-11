@@ -107,7 +107,7 @@ class Pool(object):
             target=Pool._handle_tasks,
             args=(self._taskqueue, self._quick_put, self._outqueue, self._pool)
             )
-        self._task_handler.setDaemon(True)
+        self._task_handler.set_daemon(True)
         self._task_handler._state = RUN
         self._task_handler.start()
 
@@ -115,7 +115,7 @@ class Pool(object):
             target=Pool._handle_results,
             args=(self._outqueue, self._quick_get, self._cache)
             )
-        self._result_handler.setDaemon(True)
+        self._result_handler.set_daemon(True)
         self._result_handler._state = RUN
         self._result_handler.start()
 
@@ -213,7 +213,7 @@ class Pool(object):
 
     @staticmethod
     def _handle_tasks(taskqueue, put, outqueue, pool):
-        thread = threading.currentThread()
+        thread = threading.current_thread()
 
         for taskseq, set_length in iter(taskqueue.get, None):
             i = -1
@@ -252,7 +252,7 @@ class Pool(object):
 
     @staticmethod
     def _handle_results(outqueue, get, cache):
-        thread = threading.currentThread()
+        thread = threading.current_thread()
 
         while 1:
             try:
@@ -346,7 +346,7 @@ class Pool(object):
         # task_handler may be blocked trying to put items on inqueue
         debug('removing tasks from inqueue until task handler finished')
         inqueue._rlock.acquire()
-        while task_handler.isAlive() and inqueue._reader.poll():
+        while task_handler.is_alive() and inqueue._reader.poll():
             inqueue._reader.recv()
             time.sleep(0)
 
@@ -362,7 +362,7 @@ class Pool(object):
         debug('helping task handler/workers to finish')
         cls._help_stuff_finish(inqueue, task_handler, len(pool))
 
-        assert result_handler.isAlive() or len(cache) == 0
+        assert result_handler.is_alive() or len(cache) == 0
         
         result_handler._state = TERMINATE
         outqueue.put(None)                  # sentinel
@@ -591,6 +591,6 @@ class ThreadPool(Pool):
         try:
             inqueue.queue.clear()
             inqueue.queue.extend([None] * size)
-            inqueue.not_empty.notifyAll()
+            inqueue.not_empty.notify_all()
         finally:
             inqueue.not_empty.release()

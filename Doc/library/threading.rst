@@ -16,7 +16,7 @@ The :mod:`dummy_threading` module is provided for situations where
 This module defines the following functions and objects:
 
 
-.. function:: activeCount()
+.. function:: active_count()
 
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`enumerate`.
@@ -30,7 +30,7 @@ This module defines the following functions and objects:
    thread.
 
 
-.. function:: currentThread()
+.. function:: current_thread()
 
    Return the current :class:`Thread` object, corresponding to the caller's thread
    of control.  If the caller's thread of control was not created through the
@@ -40,10 +40,10 @@ This module defines the following functions and objects:
 
 .. function:: enumerate()
 
-   Return a list of all :class:`Thread` objects currently alive.  The list includes
-   daemonic threads, dummy thread objects created by :func:`currentThread`, and the
-   main thread.  It excludes terminated threads and threads that have not yet been
-   started.
+   Return a list of all :class:`Thread` objects currently alive.  The list
+   includes daemonic threads, dummy thread objects created by
+   :func:`current_thread`, and the main thread.  It excludes terminated threads
+   and threads that have not yet been started.
 
 
 .. function:: Event()
@@ -395,7 +395,7 @@ needs to wake up one consumer thread.
    lock, its caller should.
 
 
-.. method:: Condition.notifyAll()
+.. method:: Condition.notify_all()
 
    Wake up all threads waiting on this condition.  This method acts like
    :meth:`notify`, but wakes up all waiting threads instead of one. If the calling
@@ -552,12 +552,12 @@ Other threads can call a thread's :meth:`join` method.  This blocks the calling
 thread until the thread whose :meth:`join` method is called is terminated.
 
 A thread has a name.  The name can be passed to the constructor, set with the
-:meth:`setName` method, and retrieved with the :meth:`getName` method.
+:meth:`set_name` method, and retrieved with the :meth:`get_name` method.
 
 A thread can be flagged as a "daemon thread".  The significance of this flag is
 that the entire Python program exits when only daemon threads are left.  The
 initial value is inherited from the creating thread.  The flag can be set with
-the :meth:`setDaemon` method and retrieved with the :meth:`isDaemon` method.
+the :meth:`set_daemon` method and retrieved with the :meth:`is_daemon` method.
 
 There is a "main thread" object; this corresponds to the initial thread of
 control in the Python program.  It is not a daemon thread.
@@ -637,12 +637,12 @@ impossible to detect the termination of alien threads.
    raises the same exception.
 
 
-.. method:: Thread.getName()
+.. method:: Thread.get_name()
 
    Return the thread's name.
 
 
-.. method:: Thread.setName(name)
+.. method:: Thread.set_same(name)
 
    Set the thread's name.
 
@@ -651,18 +651,18 @@ impossible to detect the termination of alien threads.
    constructor.
 
 
-.. method:: Thread.getIdent()
+.. method:: Thread.get_ddent()
 
    Return the 'thread identifier' of this thread or None if the thread has not
-   been started.  This is a nonzero integer.  See the :mod:`thread` module's
-   :func:`get_ident()` function.  Thread identifiers may be recycled when a
-   thread exits and another thread is created.  The identifier is returned
-   even after the thread has exited.
+   been started.  This is a nonzero integer.  See the :func:`thread.get_ident()`
+   function.  Thread identifiers may be recycled when a thread exits and another
+   thread is created.  The identifier is returned even after the thread has
+   exited.
 
    .. versionadded:: 2.6
 
 
-.. method:: Thread.isAlive()
+.. method:: Thread.is_alive()
 
    Return whether the thread is alive.
 
@@ -671,12 +671,12 @@ impossible to detect the termination of alien threads.
    returns a list of all alive threads.
 
 
-.. method:: Thread.isDaemon()
+.. method:: Thread.is_daemon()
 
    Return the thread's daemon flag.
 
 
-.. method:: Thread.setDaemon(daemonic)
+.. method:: Thread.set_daemon(daemonic)
 
    Set the thread's daemon flag to the Boolean value *daemonic*. This must be
    called before :meth:`start` is called, otherwise :exc:`RuntimeError` is raised.

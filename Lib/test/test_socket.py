@@ -107,7 +107,7 @@ class ThreadableTest:
             self.clientRun, (test_method,))
 
         self.__setUp()
-        if not self.server_ready.isSet():
+        if not self.server_ready.is_set():
             self.server_ready.set()
         self.client_ready.wait()
 
