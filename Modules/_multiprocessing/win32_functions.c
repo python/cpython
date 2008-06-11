@@ -176,7 +176,7 @@ win32_SetNamedPipeHandleState(PyObject *self, PyObject *args)
 
 	for (i = 0 ; i < 3 ; i++) {
 		if (oArgs[i] != Py_None) {
-			dwArgs[i] = PyInt_AsUnsignedLongMask(oArgs[i]);
+			dwArgs[i] = PyLong_AsUnsignedLongMask(oArgs[i]);
 			if (PyErr_Occurred())
 				return NULL;
 			pArgs[i] = &dwArgs[i];
