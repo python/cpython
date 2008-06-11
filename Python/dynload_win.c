@@ -165,7 +165,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	dl_funcptr p;
 	char funcname[258], *import_python;
 
-	PyOS_snprintf(funcname, sizeof(funcname), "PyInit_init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), "PyInit_%.200s", shortname);
 
 	{
 		HINSTANCE hDLL = NULL;
