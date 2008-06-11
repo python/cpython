@@ -1,0 +1,302 @@
+#
+# Module providing the `Process` class which emulates `threading.Thread`
+#
+# multiprocessing/process.py
+#
+# Copyright (c) 2006-2008, R Oudkerk --- see COPYING.txt
+#
+
+__all__ = ['Process', 'current_process', 'active_children']
+
+#
+# Imports
+#
+
+import os
+import sys
+import signal
+import itertools
+
+#
+#
+#
+
+try:
+    ORIGINAL_DIR = os.path.abspath(os.getcwd())
+except OSError:
+    ORIGINAL_DIR = None
+
+try:
+    bytes
+except NameError:
+    bytes = str                  # XXX not needed in Py2.6 and Py3.0
+
+#
+# Public functions
+#
+
+def current_process():
+    '''
+    Return process object representing the current process
+    '''
+    return _current_process
+
+def active_children():
+    '''
+    Return list of process objects corresponding to live child processes
+    '''
+    _cleanup()
+    return list(_current_process._children)
+    
+#
+#
+#
+
+def _cleanup():
+    # check for processes which have finished
+    for p in list(_current_process._children):
+        if p._popen.poll() is not None:
+            _current_process._children.discard(p)
+
+#
+# The `Process` class
+#
+
+class Process(object):
+    '''
+    Process objects represent activity that is run in a separate process
+
+    The class is analagous to `threading.Thread`
+    '''
+    _Popen = None
+    
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
+        assert group is None, 'group argument must be None for now'
+        count = _current_process._counter.next()
+        self._identity = _current_process._identity + (count,)
+        self._authkey = _current_process._authkey
+        self._daemonic = _current_process._daemonic
+        self._tempdir = _current_process._tempdir
+        self._parent_pid = os.getpid()
+        self._popen = None
+        self._target = target
+        self._args = tuple(args)
+        self._kwargs = dict(kwargs)
+        self._name = name or type(self).__name__ + '-' + \
+                     ':'.join(str(i) for i in self._identity)
+
+    def run(self):
+        '''
+        Method to be run in sub-process; can be overridden in sub-class
+        '''
+        if self._target:
+            self._target(*self._args, **self._kwargs)
+            
+    def start(self):
+        '''
+        Start child process
+        '''
+        assert self._popen is None, 'cannot start a process twice'
+        assert self._parent_pid == os.getpid(), \
+               'can only start a process object created by current process'
+        assert not _current_process._daemonic, \
+               'daemonic processes are not allowed to have children'
+        _cleanup()
+        if self._Popen is not None:
+            Popen = self._Popen
+        else:
+            from .forking import Popen
+        self._popen = Popen(self)
+        _current_process._children.add(self)
+
+    def terminate(self):
+        '''
+        Terminate process; sends SIGTERM signal or uses TerminateProcess()
+        '''
+        self._popen.terminate()
+        
+    def join(self, timeout=None):
+        '''
+        Wait until child process terminates
+        '''
+        assert self._parent_pid == os.getpid(), 'can only join a child process'
+        assert self._popen is not None, 'can only join a started process'
+        res = self._popen.wait(timeout)
+        if res is not None:
+            _current_process._children.discard(self)
+
+    def is_alive(self):
+        '''
+        Return whether process is alive
+        '''
+        if self is _current_process:
+            return True
+        assert self._parent_pid == os.getpid(), 'can only test a child process'
+        if self._popen is None:
+            return False
+        self._popen.poll()
+        return self._popen.returncode is None
+
+    def get_name(self):
+        '''
+        Return name of process
+        '''
+        return self._name
+
+    def set_name(self, name):
+        '''
+        Set name of process
+        '''
+        assert isinstance(name, str), 'name must be a string'
+        self._name = name
+
+    def is_daemon(self):
+        '''
+        Return whether process is a daemon
+        '''
+        return self._daemonic
+
+    def set_daemon(self, daemonic):
+        '''
+        Set whether process is a daemon
+        '''
+        assert self._popen is None, 'process has already started'
+        self._daemonic = daemonic
+
+    def get_authkey(self):
+        '''
+        Return authorization key of process
+        '''
+        return self._authkey
+
+    def set_authkey(self, authkey):
+        '''
+        Set authorization key of process
+        '''
+        self._authkey = AuthenticationString(authkey)
+
+    def get_exitcode(self):
+        '''
+        Return exit code of process or `None` if it has yet to stop
+        '''
+        if self._popen is None:
+            return self._popen
+        return self._popen.poll()
+
+    def get_ident(self):
+        '''
+        Return indentifier (PID) of process or `None` if it has yet to start
+        '''
+        if self is _current_process:
+            return os.getpid()
+        else:
+            return self._popen and self._popen.pid
+
+    pid = property(get_ident)
+
+    def __repr__(self):
+        if self is _current_process:
+            status = 'started'
+        elif self._parent_pid != os.getpid():
+            status = 'unknown'
+        elif self._popen is None:
+            status = 'initial'
+        else:
+            if self._popen.poll() is not None:
+                status = self.get_exitcode()
+            else:
+                status = 'started'
+
+        if type(status) is int:
+            if status == 0:
+                status = 'stopped'
+            else:
+                status = 'stopped[%s]' % _exitcode_to_name.get(status, status)
+
+        return '<%s(%s, %s%s)>' % (type(self).__name__, self._name,
+                                   status, self._daemonic and ' daemon' or '')
+
+    ##
+        
+    def _bootstrap(self):
+        from . import util
+        global _current_process
+        
+        try:
+            self._children = set()
+            self._counter = itertools.count(1)
+            try:
+                os.close(sys.stdin.fileno())
+            except (OSError, ValueError):
+                pass
+            _current_process = self
+            util._finalizer_registry.clear()
+            util._run_after_forkers()
+            util.info('child process calling self.run()')
+            try:
+                self.run()
+                exitcode = 0
+            finally:
+                util._exit_function()
+        except SystemExit, e:
+            if not e.args:
+                exitcode = 1
+            elif type(e.args[0]) is int:
+                exitcode = e.args[0]
+            else:
+                sys.stderr.write(e.args[0] + '\n')
+                sys.stderr.flush()
+                exitcode = 1
+        except:
+            exitcode = 1
+            import traceback
+            sys.stderr.write('Process %s:\n' % self.get_name())
+            sys.stderr.flush()
+            traceback.print_exc()
+
+        util.info('process exiting with exitcode %d' % exitcode)
+        return exitcode
+
+#
+# We subclass bytes to avoid accidental transmission of auth keys over network
+#
+
+class AuthenticationString(bytes):
+    def __reduce__(self):
+        from .forking import Popen
+        if not Popen.thread_is_spawning():
+            raise TypeError(
+                'Pickling an AuthenticationString object is '
+                'disallowed for security reasons'
+                )
+        return AuthenticationString, (bytes(self),)
+
+#
+# Create object representing the main process
+#
+
+class _MainProcess(Process):
+
+    def __init__(self):
+        self._identity = ()
+        self._daemonic = False
+        self._name = 'MainProcess'
+        self._parent_pid = None
+        self._popen = None
+        self._counter = itertools.count(1)
+        self._children = set()
+        self._authkey = AuthenticationString(os.urandom(32))
+        self._tempdir = None
+
+_current_process = _MainProcess()
+del _MainProcess
+
+#
+# Give names to some return codes
+#
+
+_exitcode_to_name = {}
+
+for name, signum in signal.__dict__.items():
+    if name[:3]=='SIG' and '_' not in name:
+        _exitcode_to_name[-signum] = name
