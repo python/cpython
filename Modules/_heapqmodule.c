@@ -17,8 +17,14 @@ static int
 cmp_lt(PyObject *x, PyObject *y)
 {
 	int cmp;
+	static PyObject *lt = NULL;
 
-	if (PyObject_HasAttrString(x, "__lt__"))
+	if (lt == NULL) {
+		lt = PyString_FromString("__lt__");
+		if (lt == NULL)
+			return -1;
+	}
+	if (PyObject_HasAttr(x, lt))
 		return PyObject_RichCompareBool(x, y, Py_LT);
 	cmp = PyObject_RichCompareBool(y, x, Py_LE);
 	if (cmp != -1)
