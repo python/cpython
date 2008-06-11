@@ -90,7 +90,7 @@ Library
 
 - Added the ast module.
 
-- Added the multiprocessing module, PEP 371
+- Added the multiprocessing module, PEP 371.
 
 - Factored out the indentation cleaning from inspect.getdoc() into
   inspect.cleandoc() to ease standalone use.
@@ -98,7 +98,7 @@ Library
 - Issue #1798: Add ctypes calling convention that allows safe access
   to errno.
 
-- Issue #2404: ctypes objects support the new pep3118 buffer interface
+- Issue #2404: ctypes objects support the new pep3118 buffer interface.
 
 - Patch #2125: Add GetInteger and GetString methods for 
   msilib.Record objects.
@@ -306,7 +306,7 @@ Build
 
 - On MacOS X it is now possible to install the framework in 64-bit
   mode or even as a 4-way universal binary (that is, PPC, i386,
-  PPC64 and x86_64 support in one binary)
+  PPC64 and x86_64 support in one binary).
 
   This is controlled by the configure argument ``--with-universal-archs``:
 
@@ -395,7 +395,7 @@ Library
   ending in) '.', '!' or '?'.
 
 - Add from_buffer() and from_buffer_copy() class methods to ctypes
-  data types
+  data types.
 
 - Issue #2682: ctypes callback functions no longer contain a cyclic
   reference to themselves.
