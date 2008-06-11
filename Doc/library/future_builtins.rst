@@ -28,6 +28,14 @@ this usage and leave the new builtins alone.
 
 Available builtins are:
 
+.. function:: ascii(object)
+
+   Returns the same as :func:`repr`.  In Python 3, :func:`repr` will return
+   printable Unicode characters unescaped, while :func:`ascii` will always
+   backslash-escape them.  Using :func:`future_builtins.ascii` instead of
+   :func:`repr` in 2.6 code makes it clear that you need a pure ASCII return
+   value.
+
 .. function:: filter(function, iterable)
 
    Works like :func:`itertools.ifilter`.

@@ -45,11 +45,25 @@ PyDoc_STRVAR(oct_doc,
 Return the octal representation of an integer or long integer.");
 
 
+static PyObject *
+builtin_ascii(PyObject *self, PyObject *v)
+{
+	return PyObject_Repr(v);
+}
+
+PyDoc_STRVAR(ascii_doc,
+"ascii(object) -> string\n\
+\n\
+Return the same as repr().  In Python 3.x, the repr() result will\n\
+contain printable characters unescaped, while the ascii() result\n\
+will have such characters backslash-escaped.");
+
 /* List of functions exported by this module */
 
 static PyMethodDef module_functions[] = {
  	{"hex",		builtin_hex,        METH_O, hex_doc},
  	{"oct",		builtin_oct,        METH_O, oct_doc},
+	{"ascii",	builtin_ascii,      METH_O, ascii_doc},
 	{NULL,		NULL}	/* Sentinel */
 };
 
