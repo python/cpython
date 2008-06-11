@@ -8,6 +8,7 @@ from test.test_support import TestFailed, verbose, run_unittest, catch_warning
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
+IS32BIT = sys.maxint == 0x7fffffff
 del sys
 
 try:
@@ -567,6 +568,13 @@ class StructTest(unittest.TestCase):
 
             for c in '\x01\x7f\xff\x0f\xf0':
                 self.assertTrue(struct.unpack('>?', c)[0])
+
+    def test_crasher(self):
+        if IS32BIT:
+            self.assertRaises(MemoryError, struct.pack, "357913941c", "a")
+        else:
+            print "%s test_crasher skipped on 64bit build."
+
 
 
 def test_main():

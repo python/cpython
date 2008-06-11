@@ -3435,6 +3435,14 @@ load_binstring(Unpicklerobject *self)
 	if (self->read_func(self, &s, 4) < 0) return -1;
 
 	l = calc_binint(s, 4);
+	if (l < 0) {
+		/* Corrupt or hostile pickle -- we never write one like
+		 * this.
+		 */
+		PyErr_SetString(UnpicklingError,
+				"BINSTRING pickle has negative byte count");
+		return -1;
+	}
 
 	if (self->read_func(self, &s, l) < 0)
 		return -1;
@@ -3502,6 +3510,14 @@ load_binunicode(Unpicklerobject *self)
 	if (self->read_func(self, &s, 4) < 0) return -1;
 
 	l = calc_binint(s, 4);
+	if (l < 0) {
+		/* Corrupt or hostile pickle -- we never write one like
+		 * this.
+		 */
+		PyErr_SetString(UnpicklingError,
+				"BINUNICODE pickle has negative byte count");
+		return -1;
+	}
 
 	if (self->read_func(self, &s, l) < 0)
 		return -1;
