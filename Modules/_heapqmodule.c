@@ -17,13 +17,12 @@ static int
 cmp_lt(PyObject *x, PyObject *y)
 {
 	int cmp;
-	cmp = PyObject_RichCompareBool(x, y, Py_LT);
-	if (cmp == -1 && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-		PyErr_Clear();
-		cmp = PyObject_RichCompareBool(y, x, Py_LE);
-		if (cmp != -1)
-			cmp = 1 - cmp;
-	}
+
+	if (PyObject_HasAttrString(x, "__lt__"))
+		return PyObject_RichCompareBool(x, y, Py_LT);
+	cmp = PyObject_RichCompareBool(y, x, Py_LE);
+	if (cmp != -1)
+		cmp = 1 - cmp;
 	return cmp;
 }
 
