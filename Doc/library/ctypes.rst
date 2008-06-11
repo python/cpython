@@ -721,6 +721,8 @@ would cause the pointer to point to the memory location where this is stored::
    c_long(99)
    >>>
 
+.. XXX Document dereferencing pointers, and that it is preferred over the .contents attribute.
+
 Pointer instances can also be indexed with integers::
 
    >>> pi[0]
@@ -767,7 +769,7 @@ Calling the pointer type without an argument creates a ``NULL`` pointer.
    >>>
 
 ``ctypes`` checks for ``NULL`` when dereferencing pointers (but dereferencing
-non-\ ``NULL`` pointers would crash Python)::
+invalid non-\ ``NULL`` pointers would crash Python)::
 
    >>> null_ptr[0]
    Traceback (most recent call last):
@@ -813,9 +815,9 @@ To set a POINTER type field to ``NULL``, you can assign ``None``::
    >>> bar.values = None
    >>>
 
-XXX list other conversions...
+.. XXX list other conversions...
 
-Sometimes you have instances of incompatible types.  In ``C``, you can cast one
+Sometimes you have instances of incompatible types.  In C, you can cast one
 type into another type.  ``ctypes`` provides a ``cast`` function which can be
 used in the same way.  The ``Bar`` structure defined above accepts
 ``POINTER(c_int)`` pointers or :class:`c_int` arrays for its ``values`` field,
@@ -1072,7 +1074,7 @@ crashing your program when a callback is made.
 Accessing values exported from dlls
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, a dll not only exports functions, it also exports variables. An
+Some shared libraries not only export functions, they also export variables. An
 example in the Python library itself is the ``Py_OptimizeFlag``, an integer set
 to 0, 1, or 2, depending on the :option:`-O` or :option:`-OO` flag given on
 startup.
@@ -1246,17 +1248,6 @@ get errors accessing other elements::
 Another way to use variable-sized data types with ``ctypes`` is to use the
 dynamic nature of Python, and (re-)define the data type after the required size
 is already known, on a case by case basis.
-
-
-.. _ctypes-bugs-todo-non-implemented-things:
-
-Bugs, ToDo and non-implemented things
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Enumeration types are not implemented. You can do it easily yourself, using
-:class:`c_int` as the base class.
-
-``long double`` is not implemented.
 
 
 .. _ctypes-ctypes-reference:
