@@ -23,7 +23,6 @@ extern PyObject* PyInit__sha256(void);
 extern PyObject* PyInit__sha512(void);
 extern PyObject* PyInit_time(void);
 extern PyObject* PyInit__thread(void);
-extern PyObject* PyInit_cStringIO(void);
 #ifdef WIN32
 extern PyObject* PyInit_msvcrt(void);
 extern PyObject* PyInit__locale(void);
