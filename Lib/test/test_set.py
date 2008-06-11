@@ -149,6 +149,8 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').difference(C('efgfe')), set('abc'))
             self.assertEqual(self.thetype('abcba').difference(C('ccb')), set('a'))
             self.assertEqual(self.thetype('abcba').difference(C('ef')), set('abc'))
+            self.assertEqual(self.thetype('abcba').difference(), set('abc'))
+            self.assertEqual(self.thetype('abcba').difference(C('a'), C('b')), set('c'))
 
     def test_sub(self):
         i = self.s.difference(self.otherword)
@@ -466,6 +468,18 @@ class TestSet(TestJointOps):
                 s = self.thetype('abcba')
                 self.assertEqual(s.difference_update(C(p)), None)
                 self.assertEqual(s, set(q))
+
+                s = self.thetype('abcdefghih')
+                s.difference_update()
+                self.assertEqual(s, self.thetype('abcdefghih'))
+
+                s = self.thetype('abcdefghih')
+                s.difference_update(C('aba'))
+                self.assertEqual(s, self.thetype('cdefghih'))
+
+                s = self.thetype('abcdefghih')
+                s.difference_update(C('cdc'), C('aba'))
+                self.assertEqual(s, self.thetype('efghih'))
 
     def test_isub(self):
         self.s -= set(self.otherword)

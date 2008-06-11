@@ -1583,10 +1583,13 @@ The constructors for both classes work the same:
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
 
-   .. method:: difference(other)
-               set - other
+   .. method:: difference(other, ...)
+               set - other - ...
 
-      Return a new set with elements in the set that are not in *other*.
+      Return a new set with elements in the set that are not in the others.
+
+      .. versionchanged:: 2.6
+         Accepts multiple input iterables.
 
    .. method:: symmetric_difference(other)
                set ^ other
@@ -1650,10 +1653,13 @@ The constructors for both classes work the same:
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
 
-   .. method:: difference_update(other)
-               set -= other
+   .. method:: difference_update(other, ...)
+               set -= other | ...
 
-      Update the set, removing elements found in *other*.
+      Update the set, removing elements found in others.
+
+      .. versionchanged:: 2.6
+         Accepts multiple input iterables.
 
    .. method:: symmetric_difference_update(other)
                set ^= other

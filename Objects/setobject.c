@@ -1495,11 +1495,16 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 }
 
 static PyObject *
-set_difference_update(PySetObject *so, PyObject *other)
+set_difference_update(PySetObject *so, PyObject *args)
 {
-	if (set_difference_update_internal(so, other) != -1)
-		Py_RETURN_NONE;
-	return NULL;
+	Py_ssize_t i;
+
+	for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
+		PyObject *other = PyTuple_GET_ITEM(args, i);
+		if (set_difference_update_internal(so, other) == -1)
+			return NULL;
+	}
+	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(difference_update_doc,
@@ -1557,10 +1562,34 @@ set_difference(PySetObject *so, PyObject *other)
 	return result;
 }
 
+static PyObject *
+set_difference_multi(PySetObject *so, PyObject *args)
+{
+	Py_ssize_t i;
+	PyObject *result, *other;
+
+	if (PyTuple_GET_SIZE(args) == 0)
+		return set_copy(so);
+
+	other = PyTuple_GET_ITEM(args, 0);
+	result = set_difference(so, other);
+	if (result == NULL)
+		return NULL;
+
+	for (i=1 ; i<PyTuple_GET_SIZE(args) ; i++) {
+		other = PyTuple_GET_ITEM(args, i);
+		if (set_difference_update_internal((PySetObject *)result, other) == -1) {
+			Py_DECREF(result);
+			return NULL;
+		}
+	}
+	return result;
+}
+
 PyDoc_STRVAR(difference_doc,
-"Return the difference of two sets as a new set.\n\
+"Return the difference of two or more sets as a new set.\n\
 \n\
-(i.e. all elements that are in this set but not the other.)");
+(i.e. all elements that are in this set but not the others.)");
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
 {
@@ -1574,16 +1603,12 @@ set_sub(PySetObject *so, PyObject *other)
 static PyObject *
 set_isub(PySetObject *so, PyObject *other)
 {
-	PyObject *result;
-
 	if (!PyAnySet_Check(other)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	result = set_difference_update(so, other);
-	if (result == NULL)
+	if (set_difference_update_internal(so, other) == -1)
 		return NULL;
-	Py_DECREF(result);
 	Py_INCREF(so);
 	return (PyObject *)so;
 }
@@ -1978,9 +2003,9 @@ static PyMethodDef set_methods[] = {
 	 copy_doc},
 	{"discard",	(PyCFunction)set_discard,	METH_O,
 	 discard_doc},
-	{"difference",	(PyCFunction)set_difference,	METH_O,
+	{"difference",	(PyCFunction)set_difference_multi,	METH_VARARGS,
 	 difference_doc},
-	{"difference_update",	(PyCFunction)set_difference_update,	METH_O,
+	{"difference_update",	(PyCFunction)set_difference_update,	METH_VARARGS,
 	 difference_update_doc},
 	{"intersection",(PyCFunction)set_intersection_multi,	METH_VARARGS,
 	 intersection_doc},
@@ -2107,7 +2132,7 @@ static PyMethodDef frozenset_methods[] = {
 	 contains_doc},
 	{"copy",	(PyCFunction)frozenset_copy,	METH_NOARGS,
 	 copy_doc},
-	{"difference",	(PyCFunction)set_difference,	METH_O,
+	{"difference",	(PyCFunction)set_difference_multi,	METH_VARARGS,
 	 difference_doc},
 	{"intersection",(PyCFunction)set_intersection_multi,	METH_VARARGS,
 	 intersection_doc},
