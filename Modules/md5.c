@@ -53,6 +53,7 @@
 
 #include "md5.h"
 #include <string.h>
+#include <limits.h>
 
 #undef BYTE_ORDER	/* 1 = big-endian, -1 = little-endian, 0 = unknown */
 #ifdef ARCH_IS_BIG_ENDIAN
@@ -329,6 +330,18 @@ md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes)
 
     if (nbytes <= 0)
 	return;
+
+    /* this special case is handled recursively */
+    if (nbytes > INT_MAX - offset) {
+        int overlap;
+
+        /* handle the append in two steps to prevent overflow */
+        overlap = 64 - offset;
+
+        md5_append(pms, data, overlap);
+        md5_append(pms, data + overlap, nbytes - overlap); 
+        return;
+    }
 
     /* Update the message length. */
     pms->count[1] += nbytes >> 29;

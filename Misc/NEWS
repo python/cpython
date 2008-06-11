@@ -40,6 +40,11 @@ Core and Builtins
   Exception (KeyboardInterrupt, and SystemExit) propagate instead of
   ignoring them.
 
+- Added checks for integer overflows, contributed by Google. Some are
+  only available if asserts are left in the code, in cases where they
+  can't be triggered from Python code.
+
+
 Extension Modules
 -----------------
 
