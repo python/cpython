@@ -15,9 +15,9 @@ some other systems as well (e.g. Windows or NT).  Here's an overview:
 
    select.rst
    threading.rst
-   dummy_threading.rst
    _thread.rst
    _dummy_thread.rst
+   multiprocessing.rst
    mmap.rst
    readline.rst
    rlcompleter.rst
