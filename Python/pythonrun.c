@@ -695,7 +695,7 @@ initstdio(void)
 	PyObject *std = NULL;
 	int status = 0, fd;
 	PyObject * encoding_attr;
-	char *encoding, *errors;
+	char *encoding = NULL, *errors;
 
 	/* Hack to avoid a nasty recursion issue when Python is invoked
 	   in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
