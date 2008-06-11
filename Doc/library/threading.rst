@@ -1,4 +1,3 @@
-
 :mod:`threading` --- Higher-level threading interface
 =====================================================
 
@@ -15,8 +14,8 @@ The :mod:`dummy_threading` module is provided for situations where
 
 .. note::
 
-   In 3.x, names in camelCase have been renamed to their underscored
-   equivelents.  Both names are availble in 2.6.
+   In 3.x, names in ``camelCase`` have been renamed to their underscored
+   equivalents.  Both names are available in 2.6.
 
 This module defines the following functions and objects:
 
