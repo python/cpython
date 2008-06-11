@@ -3,7 +3,6 @@
 import os
 import sys
 import pickle
-from io import StringIO
 from test.support import verbose, run_unittest, TestSkipped
 import unittest
 
@@ -80,7 +79,7 @@ class MinidomTest(unittest.TestCase):
         self.confirm(t == s, "looking for %s, found %s" % (repr(s), repr(t)))
 
     def testParseFromFile(self):
-        dom = parse(StringIO(open(tstfile).read()))
+        dom = parse(open(tstfile))
         dom.unlink()
         self.confirm(isinstance(dom, Document))
 

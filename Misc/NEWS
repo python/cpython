@@ -78,6 +78,8 @@ Extension Modules
 Library
 -------
 
+- Added C optimized implementation of io.StringIO.
+
 - The ``pickle`` module is now automatically use an optimized C
   implementation of Pickler and Unpickler when available. The
   ``cPickle`` module is no longer needed.
