@@ -10,7 +10,7 @@ import io
 import sys
 
 try:
-    import _bytesio
+    import _bytesio, _stringio
     has_c_implementation = True
 except ImportError:
     has_c_implementation = False
@@ -373,7 +373,7 @@ class PyBytesIOTest(MemoryTestMixin, unittest.TestCase):
 
 class PyStringIOTest(MemoryTestMixin, unittest.TestCase):
     buftype = str
-    ioclass = io.StringIO
+    ioclass = io._StringIO
     EOF = ""
 
     def test_relative_seek(self):
@@ -404,10 +404,14 @@ if has_c_implementation:
     class CBytesIOTest(PyBytesIOTest):
         ioclass = io.BytesIO
 
+    class CStringIOTest(PyStringIOTest):
+        ioclass = io.StringIO
+
+
 def test_main():
     tests = [PyBytesIOTest, PyStringIOTest]
     if has_c_implementation:
-        tests.extend([CBytesIOTest])
+        tests.extend([CBytesIOTest, CStringIOTest])
     support.run_unittest(*tests)
 
 if __name__ == '__main__':

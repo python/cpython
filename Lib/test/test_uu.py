@@ -17,6 +17,32 @@ encodedtext = b"""\
 M5&AE('-M;V]T:\"US8V%L960@<'ET:&]N(&-R97!T(&]V97(@=&AE('-L965P
 (:6YG(&1O9PH """
 
+# Stolen from io.py
+class FakeIO(io.TextIOWrapper):
+    """Text I/O implementation using an in-memory buffer.
+
+    Can be a used as a drop-in replacement for sys.stdin and sys.stdout.
+    """
+
+    # XXX This is really slow, but fully functional
+
+    def __init__(self, initial_value="", encoding="utf-8",
+                 errors="strict", newline="\n"):
+        super(FakeIO, self).__init__(io.BytesIO(),
+                                     encoding=encoding,
+                                     errors=errors,
+                                     newline=newline)
+        if initial_value:
+            if not isinstance(initial_value, str):
+                initial_value = str(initial_value)
+            self.write(initial_value)
+            self.seek(0)
+
+    def getvalue(self):
+        self.flush()
+        return self.buffer.getvalue().decode(self._encoding, self._errors)
+
+
 def encodedtextwrapped(mode, filename):
     return (bytes("begin %03o %s\n" % (mode, filename), "ascii") +
             encodedtext + b"\n \nend\n")
@@ -76,15 +102,15 @@ class UUStdIOTest(unittest.TestCase):
         sys.stdout = self.stdout
 
     def test_encode(self):
-        sys.stdin = io.StringIO(plaintext.decode("ascii"))
-        sys.stdout = io.StringIO()
+        sys.stdin = FakeIO(plaintext.decode("ascii"))
+        sys.stdout = FakeIO()
         uu.encode("-", "-", "t1", 0o666)
         self.assertEqual(sys.stdout.getvalue(),
                          encodedtextwrapped(0o666, "t1").decode("ascii"))
 
     def test_decode(self):
-        sys.stdin = io.StringIO(encodedtextwrapped(0o666, "t1").decode("ascii"))
-        sys.stdout = io.StringIO()
+        sys.stdin = FakeIO(encodedtextwrapped(0o666, "t1").decode("ascii"))
+        sys.stdout = FakeIO()
         uu.decode("-", "-")
         stdout = sys.stdout
         sys.stdout = self.stdout
