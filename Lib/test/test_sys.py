@@ -471,11 +471,16 @@ class SizeofTest(unittest.TestCase):
                 pass
         # type (PyTypeObject + PyNumberMethods + PyMappingMethods +
         #       PySequenceMethods + PyBufferProcs)
-        self.check_sizeof(class_newstyle, h +\
-                          p + 2*l + 15*p + l + 4*p + l + 9*p + l + 11*p +\
-                              self.align(4) +\
-                          16*p + self.align(i) + 20*p +\
-                          10*p + 3*p + 2*p + 2*p);
+        self.check_sizeof(class_newstyle, h +
+                          # PyTypeObject
+                          p + 2*l + 15*p + l + 4*p + l + 9*p + l + 11*p +
+                          self.align(4) +
+                          # PyNumberMethods
+                          16*p + self.align(i) + 17*p +
+                          3*p  + # PyMappingMethods
+                          10*p + # PySequenceMethods
+                          2*p  + # PyBufferProcs
+                          2*p)   # *ht_name and *ht_slots
 
     def test_specialtypes(self):
         i = self.i
