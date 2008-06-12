@@ -1839,6 +1839,22 @@ try:
             raise UnsupportedOperation("%s.buffer attribute is unsupported" %
                                        self.__class__.__name__)
 
+        # XXX Cruft to support the TextIOWrapper API. This would only
+        # be meaningful if StringIO supported the buffer attribute.
+        # Hopefully, a better solution, than adding these pseudo-attributes,
+        # will be found.
+        @property
+        def encoding(self):
+            return "utf-8"
+
+        @property
+        def errors(self):
+            return "strict"
+
+        @property
+        def line_buffering(self):
+            return False
+
         def _decode_newlines(self, input, final=False):
             # decode input (with the eventual \r from a previous pass)
             if self._pending:
