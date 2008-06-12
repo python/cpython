@@ -15,4 +15,8 @@
 		Name="VCLinkerTool"
 		TargetMachine="17"
 	/>
+	<UserMacro
+		Name="PythonExe"
+		Value="$(HOST_PYTHON)"
+	/>
 </VisualStudioPropertySheet>

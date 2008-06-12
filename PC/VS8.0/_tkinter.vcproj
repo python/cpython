@@ -56,7 +56,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(tcltkLib)"
+				AdditionalDependencies="$(tcltkLibDebug)"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -104,7 +104,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(tcltk64Dir)\include&quot;"
+				AdditionalIncludeDirectories="$(tcltk64Dir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
 			/>
 			<Tool
@@ -118,7 +118,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(tcltk64Lib)"
+				AdditionalDependencies="$(tcltk64LibDebug)"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -229,7 +229,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(tcltk64Dir)\include&quot;"
+				AdditionalIncludeDirectories="$(tcltk64Dir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
 			/>
 			<Tool
@@ -354,7 +354,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(tcltk64Dir)\include&quot;"
+				AdditionalIncludeDirectories="$(tcltk64Dir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
 			/>
 			<Tool
@@ -480,7 +480,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(tcltk64Dir)\include&quot;"
+				AdditionalIncludeDirectories="$(tcltk64Dir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
 			/>
 			<Tool
