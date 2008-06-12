@@ -234,7 +234,7 @@ Content-Disposition: form-data; name="submit"
         self.assertEquals(len(fs.list), 4)
         expect = [{'name':'id', 'filename':None, 'value':'1234'},
                   {'name':'title', 'filename':None, 'value':''},
-                  {'name':'file', 'filename':'test.txt','value':'Testing 123.\n'},
+                  {'name':'file', 'filename':'test.txt', 'value':'Testing 123.'},
                   {'name':'submit', 'filename':None, 'value':' Add '}]
         for x in range(len(fs.list)):
             for k, exp in expect[x].items():
