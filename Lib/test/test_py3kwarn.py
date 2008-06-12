@@ -197,7 +197,7 @@ class TestStdlibRemovals(unittest.TestCase):
     # test.testall not tested as it executes all unit tests as an
     # import side-effect.
     all_platforms = ('audiodev', 'imputil', 'mutex', 'user', 'new', 'rexec',
-                        'Bastion', 'compiler', 'dircache', 'fpformat',
+                        'Bastion', 'compiler', 'dircache', 'mimetools', 'fpformat',
                         'ihooks', 'mhlib', 'statvfs', 'htmllib', 'sgmllib')
     inclusive_platforms = {'irix' : ('pure', 'AL', 'al', 'CD', 'cd', 'cddb',
                                      'cdplayer', 'CL', 'cl', 'DEVICE', 'GL',

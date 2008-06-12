@@ -1,7 +1,10 @@
 import unittest
 from test import test_support
 
-import string, StringIO, mimetools
+import string
+import StringIO
+
+mimetools = test_support.import_module("mimetools", deprecated=True)
 
 msgtext1 = mimetools.Message(StringIO.StringIO(
 """Content-Type: text/plain; charset=iso-8859-1; format=flowed

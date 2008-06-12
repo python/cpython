@@ -9,7 +9,8 @@
 
 .. deprecated:: 2.3
    The :mod:`email` package should be used in preference to the :mod:`mimetools`
-   module.  This module is present only to maintain backward compatibility.
+   module.  This module is present only to maintain backward compatibility, and
+   it has been removed in 3.x.
 
 .. index:: module: rfc822
 

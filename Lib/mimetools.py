@@ -5,6 +5,9 @@ import os
 import rfc822
 import tempfile
 
+from warnings import warnpy3k
+warnpy3k("in 3.x, mimetools has been removed in favor of the email package")
+
 __all__ = ["Message","choose_boundary","encode","decode","copyliteral",
            "copybinary"]
 
