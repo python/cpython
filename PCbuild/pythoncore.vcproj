@@ -1015,11 +1015,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Modules\_pickle.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Modules\_randommodule.c"
 				>
 			</File>
 			<File
 				RelativePath="..\Modules\_sre.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_stringio.c"
 				>
 			</File>
 			<File
