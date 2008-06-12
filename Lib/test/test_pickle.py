@@ -7,42 +7,37 @@ from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
 from test.pickletester import AbstractPersistentPicklerTests
 
-try:
-    import _pickle
-    has_c_implementation = True
-except ImportError:
-    has_c_implementation = False
+class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
+    module = pickle
+    error = KeyError
 
-class PickleTests(AbstractPickleModuleTests):
-    pass
+    def dumps(self, arg, proto=None):
+        return pickle.dumps(arg, proto)
 
+    def loads(self, buf):
+        return pickle.loads(buf)
 
-class PyPicklerTests(AbstractPickleTests):
+class PicklerTests(AbstractPickleTests):
 
-    pickler = pickle._Pickler
-    unpickler = pickle._Unpickler
+    error = KeyError
 
     def dumps(self, arg, proto=None):
         f = io.BytesIO()
-        p = self.pickler(f, proto)
+        p = pickle.Pickler(f, proto)
         p.dump(arg)
         f.seek(0)
         return bytes(f.read())
 
     def loads(self, buf):
         f = io.BytesIO(buf)
-        u = self.unpickler(f)
+        u = pickle.Unpickler(f)
         return u.load()
 
-
-class PyPersPicklerTests(AbstractPersistentPicklerTests):
-
-    pickler = pickle._Pickler
-    unpickler = pickle._Unpickler
+class PersPicklerTests(AbstractPersistentPicklerTests):
 
     def dumps(self, arg, proto=None):
-        class PersPickler(self.pickler):
+        class PersPickler(pickle.Pickler):
             def persistent_id(subself, obj):
                 return self.persistent_id(obj)
         f = io.BytesIO()
@@ -52,29 +47,19 @@ class PyPersPicklerTests(AbstractPersistentPicklerTests):
         return f.read()
 
     def loads(self, buf):
-        class PersUnpickler(self.unpickler):
+        class PersUnpickler(pickle.Unpickler):
             def persistent_load(subself, obj):
                 return self.persistent_load(obj)
         f = io.BytesIO(buf)
         u = PersUnpickler(f)
         return u.load()
 
-
-if has_c_implementation:
-    class CPicklerTests(PyPicklerTests):
-        pickler = _pickle.Pickler
-        unpickler = _pickle.Unpickler
-
-    class CPersPicklerTests(PyPersPicklerTests):
-        pickler = _pickle.Pickler
-        unpickler = _pickle.Unpickler
-
-
 def test_main():
-    tests = [PickleTests, PyPicklerTests, PyPersPicklerTests]
-    if has_c_implementation:
-        tests.extend([CPicklerTests, CPersPicklerTests])
-    support.run_unittest(*tests)
+    support.run_unittest(
+        PickleTests,
+        PicklerTests,
+        PersPicklerTests
+    )
     support.run_doctest(pickle)
 
 if __name__ == "__main__":

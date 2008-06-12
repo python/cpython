@@ -153,7 +153,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"_fileio", PyInit__fileio},
         {"_bytesio", PyInit__bytesio},
         {"_stringio", PyInit__stringio},
-        {"_pickle", PyInit__pickle},
         {"atexit", PyInit_atexit},
 
         /* Sentinel */
