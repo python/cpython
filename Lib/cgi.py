@@ -32,13 +32,12 @@ __version__ = "2.6"
 # =======
 
 from operator import attrgetter
+from io import StringIO
 import sys
 import os
 import urllib
 import mimetools
-import rfc822
-import collections
-from io import StringIO
+import email.parser
 
 __all__ = ["MiniFieldStorage", "FieldStorage",
            "parse", "parse_qs", "parse_qsl", "parse_multipart",
@@ -404,7 +403,7 @@ class FieldStorage:
 
     disposition_options: dictionary of corresponding options
 
-    headers: a dictionary(-like) object (sometimes rfc822.Message or a
+    headers: a dictionary(-like) object (sometimes email.message.Message or a
         subclass thereof) containing *all* headers
 
     The class is subclassable, mostly for the purpose of overriding
@@ -633,13 +632,17 @@ class FieldStorage:
             raise ValueError('Invalid boundary in multipart form: %r' % (ib,))
         self.list = []
         klass = self.FieldStorageClass or self.__class__
-        part = klass(self.fp, {}, ib,
-                     environ, keep_blank_values, strict_parsing)
-        # Throw first part away
-        while not part.done:
-            headers = rfc822.Message(self.fp)
-            part = klass(self.fp, headers, ib,
-                         environ, keep_blank_values, strict_parsing)
+        parser = email.parser.FeedParser()
+        # Create bogus content-type header for proper multipart parsing
+        parser.feed('Content-Type: %s; boundary=%s\r\n\r\n' % (self.type, ib))
+        parser.feed(self.fp.read())
+        full_msg = parser.close()
+        # Get subparts
+        msgs = full_msg.get_payload()
+        for msg in msgs:
+            fp = StringIO(msg.get_payload())
+            part = klass(fp, msg, ib, environ, keep_blank_values,
+                         strict_parsing)
             self.list.append(part)
         self.skip_lines()
 
