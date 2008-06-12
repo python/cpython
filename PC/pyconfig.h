@@ -158,11 +158,11 @@ WIN32 is still required for the locale module.
 /* set the version macros for the windows headers */
 #ifdef MS_WINX64
 /* 64 bit only runs on XP or greater */
-#define Py_WINVER _WIN32_WINNT_WINXP
+#define Py_WINVER 0x0501 /* _WIN32_WINNT_WINXP */
 #define Py_NTDDI NTDDI_WINXP
 #else
 /* Python 2.6+ requires Windows 2000 or greater */
-#define Py_WINVER _WIN32_WINNT_WIN2K
+#define Py_WINVER 0x0500 /* _WIN32_WINNT_WIN2K */
 #define Py_NTDDI NTDDI_WIN2KSP4
 #endif
 
