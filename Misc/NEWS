@@ -78,6 +78,8 @@ Extension Modules
 Library
 -------
 
+- rfc822 has been removed in favor of the email package.
+
 - mimetools has been removed in favor of the email package.
 
 - Patch #2849: Remove use of rfc822 module from standard library.

@@ -586,7 +586,7 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):
-        import rfc822, socket
+        import email.utils, socket
         h = urllib2.FileHandler()
         o = h.parent = MockOpener()
 
@@ -621,7 +621,7 @@ class HandlerTests(unittest.TestCase):
                 finally:
                     r.close()
                 stats = os.stat(TESTFN)
-                modified = rfc822.formatdate(stats.st_mtime)
+                modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
             finally:
                 os.remove(TESTFN)
             self.assertEqual(data, towrite)
