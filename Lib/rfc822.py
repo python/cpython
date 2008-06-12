@@ -73,6 +73,9 @@ There are also some utility functions here.
 
 import time
 
+from warnings import warnpy3k
+warnpy3k("in 3.x, rfc822 has been removed in favor of the email package")
+
 __all__ = ["Message","AddressList","parsedate","parsedate_tz","mktime_tz"]
 
 _blanklines = ('\r\n', '\n')            # Optimization for islast()
