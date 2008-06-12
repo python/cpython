@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32,..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -103,7 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32,..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -166,7 +166,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32,..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -229,7 +229,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32,..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -292,7 +292,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32,..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -355,7 +355,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32,..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -418,7 +418,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32,..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -481,7 +481,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir),$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32,..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

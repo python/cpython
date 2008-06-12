@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -56,7 +56,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
+				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -104,7 +104,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -118,7 +118,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
+				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -166,7 +166,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -180,7 +180,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
+				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -229,7 +229,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -243,7 +243,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
+				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -291,7 +291,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -304,7 +304,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
+				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -353,7 +353,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -366,7 +366,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
+				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -414,7 +414,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -427,7 +427,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
+				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -476,7 +476,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -489,7 +489,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
+				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -521,51 +521,51 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="$(sqlite3Dir)\btree.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\btree.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\hash.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\hash.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\keywordhash.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\keywordhash.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\opcodes.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\opcodes.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\os.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\os.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\os_common.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\os_common.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\pager.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\pager.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\parse.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\parse.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\sqlite3.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\sqlite3.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\sqliteInt.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\sqliteInt.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\vdbe.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\vdbe.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\vdbeInt.h"
+				RelativePath="..\..\..\sqlite-source-3.3.4\vdbeInt.h"
 				>
 			</File>
 		</Filter>
@@ -573,167 +573,167 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="$(sqlite3Dir)\alter.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\alter.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\analyze.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\analyze.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\attach.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\attach.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\auth.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\auth.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\btree.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\btree.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\build.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\build.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\callback.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\callback.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\complete.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\complete.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\date.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\date.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\delete.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\delete.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\expr.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\expr.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\func.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\func.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\hash.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\hash.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\insert.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\insert.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\legacy.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\legacy.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\main.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\main.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\opcodes.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\opcodes.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\os.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\os.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\os_unix.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\os_unix.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\os_win.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\os_win.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\pager.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\pager.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\parse.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\parse.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\pragma.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\pragma.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\prepare.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\prepare.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\printf.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\printf.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\random.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\random.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\select.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\select.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\shell.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\shell.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\table.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\table.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\tokenize.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\tokenize.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\trigger.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\trigger.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\update.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\update.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\utf.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\utf.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\util.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\util.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\vacuum.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\vacuum.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\vdbe.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\vdbe.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\vdbeapi.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\vdbeapi.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\vdbeaux.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\vdbeaux.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\vdbefifo.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\vdbefifo.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\vdbemem.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\vdbemem.c"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\where.c"
+				RelativePath="..\..\..\sqlite-source-3.3.4\where.c"
 				>
 			</File>
 		</Filter>
