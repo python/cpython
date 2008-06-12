@@ -10,15 +10,12 @@
 
 
 The :mod:`email` package is a library for managing email messages, including
-MIME and other :rfc:`2822`\ -based message documents.  It subsumes most of the
-functionality in several older standard modules such as :mod:`rfc822`,
-:mod:`mimetools`, :mod:`multifile`, and other non-standard packages such as
-:mod:`mimecntl`.  It is specifically *not* designed to do any sending of email
-messages to SMTP (:rfc:`2821`), NNTP, or other servers; those are functions of
-modules such as :mod:`smtplib` and :mod:`nntplib`. The :mod:`email` package
-attempts to be as RFC-compliant as possible, supporting in addition to
-:rfc:`2822`, such MIME-related RFCs as :rfc:`2045`, :rfc:`2046`, :rfc:`2047`,
-and :rfc:`2231`.
+MIME and other :rfc:`2822`\ -based message documents.  It is specifically *not*
+designed to do any sending of email messages to SMTP (:rfc:`2821`), NNTP, or
+other servers; those are functions of modules such as :mod:`smtplib` and
+:mod:`nntplib`. The :mod:`email` package attempts to be as RFC-compliant as
+possible, supporting in addition to :rfc:`2822`, such MIME-related RFCs as
+:rfc:`2045`, :rfc:`2046`, :rfc:`2047`, and :rfc:`2231`.
 
 The primary distinguishing feature of the :mod:`email` package is that it splits
 the parsing and generating of email messages from the internal *object model*

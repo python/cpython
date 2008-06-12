@@ -165,10 +165,9 @@ contained :class:`Cookie` objects.
    :mailheader:`Set-Cookie2` headers in the *response* argument, and store cookies
    as appropriate (subject to the :meth:`CookiePolicy.set_ok` method's approval).
 
-   The *response* object (usually the result of a call to :meth:`urllib2.urlopen`,
-   or similar) should support an :meth:`info` method, which returns an object with
-   a :meth:`getallmatchingheaders` method (usually a :class:`mimetools.Message`
-   instance).
+   The *response* object (usually the result of a call to
+   :meth:`urllib2.urlopen`, or similar) should support an :meth:`info` method,
+   which returns a :class:`email.message.Message` instance.
 
    The *request* object (usually a :class:`urllib2.Request` instance) must support
    the methods :meth:`get_full_url`, :meth:`get_host`, :meth:`unverifiable`, and
