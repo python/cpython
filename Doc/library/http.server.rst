@@ -124,11 +124,9 @@ of which this module provides three different variants:
 
    .. attribute:: MessageClass
 
-      .. index:: single: Message (in module mimetools)
-
-      Specifies a :class:`rfc822.Message`\ -like class to parse HTTP headers.
-      Typically, this is not overridden, and it defaults to
-      :class:`mimetools.Message`.
+      Specifies an :class:`email.message.Message`\ -like class to parse HTTP
+      headers.  Typically, this is not overridden, and it defaults to
+      :class:`http.client.HTTPMessage`.
 
    .. attribute:: responses
 

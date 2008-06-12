@@ -132,9 +132,6 @@ various end-user mail programs.
    Module :mod:`mailbox`
       Classes to read various mailbox formats produced  by end-user mail programs.
 
-   Module :mod:`mimetools`
-      Subclass of :class:`rfc822.Message` that handles MIME encoded messages.
-
 
 .. _message-objects:
 

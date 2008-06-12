@@ -1903,17 +1903,7 @@ def apropos(key):
 # --------------------------------------------------- web browser interface
 
 def serve(port, callback=None, completer=None):
-    import http.server, mimetools, select
-
-    # Patch up mimetools.Message so it doesn't break if rfc822 is reloaded.
-    class Message(mimetools.Message):
-        def __init__(self, fp, seekable=1):
-            Message = self.__class__
-            Message.__bases__[0].__bases__[0].__init__(self, fp, seekable)
-            self.encodingheader = self.get('content-transfer-encoding')
-            self.typeheader = self.get('content-type')
-            self.parsetype()
-            self.parseplist()
+    import http.server, email.message, select
 
     class DocHandler(http.server.BaseHTTPRequestHandler):
         def send_document(self, title, contents):
@@ -1981,7 +1971,7 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
 
     DocServer.base = http.server.HTTPServer
     DocServer.handler = DocHandler
-    DocHandler.MessageClass = Message
+    DocHandler.MessageClass = email.message.Message
     try:
         try:
             DocServer(port, callback).serve_until_quit()

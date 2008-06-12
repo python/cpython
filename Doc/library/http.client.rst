@@ -445,7 +445,7 @@ HTTPResponse Objects
 
 .. attribute:: HTTPResponse.msg
 
-   A :class:`mimetools.Message` instance containing the response headers.
+   An :class:`email.message.Message` instance containing the response headers.
 
 
 .. attribute:: HTTPResponse.version

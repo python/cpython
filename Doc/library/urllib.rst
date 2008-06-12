@@ -39,19 +39,17 @@ High-level interface
    however, so it can't be used at those few places where a true built-in file
    object is required.)
 
-   .. index:: module: mimetools
-
    The :meth:`info` method returns an instance of the class
-   :class:`mimetools.Message` containing meta-information associated with the
-   URL.  When the method is HTTP, these headers are those returned by the server
-   at the head of the retrieved HTML page (including Content-Length and
+   :class:`email.message.Message` containing meta-information associated with
+   the URL.  When the method is HTTP, these headers are those returned by the
+   server at the head of the retrieved HTML page (including Content-Length and
    Content-Type).  When the method is FTP, a Content-Length header will be
    present if (as is now usual) the server passed back a file length in response
    to the FTP retrieval request. A Content-Type header will be present if the
    MIME type can be guessed.  When the method is local-file, returned headers
    will include a Date representing the file's last-modified time, a
    Content-Length giving file size, and a Content-Type containing a guess at the
-   file's type. See also the description of the :mod:`mimetools` module.
+   file's type.
 
    The :meth:`geturl` method returns the real URL of the page.  In some cases, the
    HTTP server redirects a client to another URL.  The :func:`urlopen` function
@@ -288,7 +286,7 @@ URL Opener objects
 
        Retrieves the contents of *url* and places it in *filename*.  The return value
        is a tuple consisting of a local filename and either a
-       :class:`mimetools.Message` object containing the response headers (for remote
+       :class:`email.message.Message` object containing the response headers (for remote
        URLs) or ``None`` (for local URLs).  The caller must then open and read the
        contents of *filename*.  If *filename* is not given and the URL refers to a
        local file, the input filename is returned.  If the URL is non-local and
