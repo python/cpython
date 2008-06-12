@@ -15,7 +15,6 @@ on the Internet.
    json.rst
    mailcap.rst
    mailbox.rst
-   mimetools.rst
    mimetypes.rst
    rfc822.rst
    base64.rst
