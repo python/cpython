@@ -1547,8 +1547,8 @@ class CookieJar:
         """Return sequence of Cookie objects extracted from response object."""
         # get cookie-attributes for RFC 2965 and Netscape protocols
         headers = response.info()
-        rfc2965_hdrs = headers.getheaders("Set-Cookie2")
-        ns_hdrs = headers.getheaders("Set-Cookie")
+        rfc2965_hdrs = headers.get_all("Set-Cookie2", [])
+        ns_hdrs = headers.get_all("Set-Cookie", [])
 
         rfc2965 = self._policy.rfc2965
         netscape = self._policy.netscape

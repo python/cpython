@@ -6,7 +6,6 @@ import unittest
 import xmlrpc.client as xmlrpclib
 import xmlrpc.server
 import threading
-import mimetools
 import http.client
 import socket
 import os
@@ -452,12 +451,12 @@ class SimpleServerTestCase(unittest.TestCase):
 
 # This is a contrived way to make a failure occur on the server side
 # in order to test the _send_traceback_header flag on the server
-class FailingMessageClass(mimetools.Message):
-    def __getitem__(self, key):
+class FailingMessageClass(http.client.HTTPMessage):
+    def get(self, key, failobj=None):
         key = key.lower()
         if key == 'content-length':
             return 'I am broken'
-        return mimetools.Message.__getitem__(self, key)
+        return super().get(key, failobj)
 
 
 class FailingServerTestCase(unittest.TestCase):
@@ -477,7 +476,8 @@ class FailingServerTestCase(unittest.TestCase):
         # reset flag
         xmlrpc.server.SimpleXMLRPCServer._send_traceback_header = False
         # reset message class
-        xmlrpc.server.SimpleXMLRPCRequestHandler.MessageClass = mimetools.Message
+        default_class = http.client.HTTPMessage
+        xmlrpc.server.SimpleXMLRPCRequestHandler.MessageClass = default_class
 
     def test_basic(self):
         # check that flag is false by default
@@ -529,8 +529,8 @@ class FailingServerTestCase(unittest.TestCase):
             if not is_unavailable_exception(e) and hasattr(e, "headers"):
                 # We should get error info in the response
                 expected_err = "invalid literal for int() with base 10: 'I am broken'"
-                self.assertEqual(e.headers.get("x-exception"), expected_err)
-                self.assertTrue(e.headers.get("x-traceback") is not None)
+                self.assertEqual(e.headers.get("X-exception"), expected_err)
+                self.assertTrue(e.headers.get("X-traceback") is not None)
         else:
             self.fail('ProtocolError not raised')
 

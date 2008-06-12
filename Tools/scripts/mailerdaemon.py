@@ -14,7 +14,7 @@ class ErrorMessage(rfc822.Message):
         self.sub = ''
 
     def is_warning(self):
-        sub = self.getheader('Subject')
+        sub = self.get('Subject')
         if not sub:
             return 0
         sub = sub.lower()

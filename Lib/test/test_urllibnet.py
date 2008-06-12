@@ -7,7 +7,7 @@ import socket
 import urllib
 import sys
 import os
-import mimetools
+import email.message
 
 
 def _open_with_retry(func, host, *args, **kwargs):
@@ -87,10 +87,10 @@ class urlopenNetworkTests(unittest.TestCase):
             info_obj = open_url.info()
         finally:
             open_url.close()
-            self.assert_(isinstance(info_obj, mimetools.Message),
+            self.assert_(isinstance(info_obj, email.message.Message),
                          "object returned by 'info' is not an instance of "
-                         "mimetools.Message")
-            self.assertEqual(info_obj.getsubtype(), "html")
+                         "email.message.Message")
+            self.assertEqual(info_obj.get_content_subtype(), "html")
 
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
@@ -180,8 +180,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
         # Make sure header returned as 2nd value from urlretrieve is good.
         file_location, header = self.urlretrieve("http://www.python.org/")
         os.unlink(file_location)
-        self.assert_(isinstance(header, mimetools.Message),
-                     "header is not an instance of mimetools.Message")
+        self.assert_(isinstance(header, email.message.Message),
+                     "header is not an instance of email.message.Message")
 
 
 

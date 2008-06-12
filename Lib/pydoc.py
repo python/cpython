@@ -1910,8 +1910,8 @@ def serve(port, callback=None, completer=None):
         def __init__(self, fp, seekable=1):
             Message = self.__class__
             Message.__bases__[0].__bases__[0].__init__(self, fp, seekable)
-            self.encodingheader = self.getheader('content-transfer-encoding')
-            self.typeheader = self.getheader('content-type')
+            self.encodingheader = self.get('content-transfer-encoding')
+            self.typeheader = self.get('content-type')
             self.parsetype()
             self.parseplist()
 

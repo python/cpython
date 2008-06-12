@@ -2,11 +2,11 @@
 
 import urllib
 import http.client
+import email.message
 import io
 import unittest
 from test import support
 import os
-import mimetools
 import tempfile
 
 def hexescape(char):
@@ -78,7 +78,7 @@ class urlopen_FileTests(unittest.TestCase):
         self.returned_obj.close()
 
     def test_info(self):
-        self.assert_(isinstance(self.returned_obj.info(), mimetools.Message))
+        self.assert_(isinstance(self.returned_obj.info(), email.message.Message))
 
     def test_geturl(self):
         self.assertEqual(self.returned_obj.geturl(), self.pathname)
@@ -206,8 +206,8 @@ class urlretrieve_FileTests(unittest.TestCase):
         # a headers value is returned.
         result = urllib.urlretrieve("file:%s" % support.TESTFN)
         self.assertEqual(result[0], support.TESTFN)
-        self.assert_(isinstance(result[1], mimetools.Message),
-                     "did not get a mimetools.Message instance as second "
+        self.assert_(isinstance(result[1], email.message.Message),
+                     "did not get a email.message.Message instance as second "
                      "returned value")
 
     def test_copy(self):

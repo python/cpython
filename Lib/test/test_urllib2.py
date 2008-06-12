@@ -349,18 +349,18 @@ class MockHTTPHandler(urllib2.BaseHandler):
         self._count = 0
         self.requests = []
     def http_open(self, req):
-        import mimetools, http.client, copy
+        import email, http.client, copy
         from io import StringIO
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
             name = http.client.responses[self.code]
-            msg = mimetools.Message(StringIO(self.headers))
+            msg = email.message_from_string(self.headers)
             return self.parent.error(
                 "http", req, MockFile(), self.code, name, msg)
         else:
             self.req = req
-            msg = mimetools.Message(StringIO("\r\n\r\n"))
+            msg = email.message_from_string("\r\n\r\n")
             return MockResponse(200, "OK", msg, "", req.get_full_url())
 
 class MockPasswordManager:

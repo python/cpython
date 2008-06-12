@@ -67,8 +67,9 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
 import io
-import mimetools
 import socket
+import email.parser
+import email.message
 from urlparse import urlsplit
 import warnings
 
@@ -201,110 +202,52 @@ responses = {
 # maximal amount of data to read at one time in _safe_read
 MAXAMOUNT = 1048576
 
-class HTTPMessage(mimetools.Message):
+class HTTPMessage(email.message.Message):
+    def getallmatchingheaders(self, name):
+        """Find all header lines matching a given header name.
 
-    def addheader(self, key, value):
-        """Add header for field key handling repeats."""
-        prev = self.dict.get(key)
-        if prev is None:
-            self.dict[key] = value
-        else:
-            combined = ", ".join((prev, value))
-            self.dict[key] = combined
+        Look through the list of headers and find all lines matching a given
+        header name (and their continuation lines).  A list of the lines is
+        returned, without interpretation.  If the header does not occur, an
+        empty list is returned.  If the header occurs multiple times, all
+        occurrences are returned.  Case is not important in the header name.
 
-    def addcontinue(self, key, more):
-        """Add more field data from a continuation line."""
-        prev = self.dict[key]
-        self.dict[key] = prev + "\n " + more
-
-    def readheaders(self):
-        """Read header lines.
-
-        Read header lines up to the entirely blank line that terminates them.
-        The (normally blank) line that ends the headers is skipped, but not
-        included in the returned list.  If a non-header line ends the headers,
-        (which is an error), an attempt is made to backspace over it; it is
-        never included in the returned list.
-
-        The variable self.status is set to the empty string if all went well,
-        otherwise it is an error message.  The variable self.headers is a
-        completely uninterpreted list of lines contained in the header (so
-        printing them will reproduce the header exactly as it appears in the
-        file).
-
-        If multiple header fields with the same name occur, they are combined
-        according to the rules in RFC 2616 sec 4.2:
-
-        Appending each subsequent field-value to the first, each separated
-        by a comma. The order in which header fields with the same field-name
-        are received is significant to the interpretation of the combined
-        field value.
         """
-        # XXX The implementation overrides the readheaders() method of
-        # rfc822.Message.  The base class design isn't amenable to
-        # customized behavior here so the method here is a copy of the
-        # base class code with a few small changes.
+        # XXX: copied from rfc822.Message for compatibility
+        name = name.lower() + ':'
+        n = len(name)
+        lst = []
+        hit = 0
+        for line in self.keys():
+            if line[:n].lower() == name:
+                hit = 1
+            elif not line[:1].isspace():
+                hit = 0
+            if hit:
+                lst.append(line)
+        return lst
 
-        self.dict = {}
-        self.unixfrom = ''
-        self.headers = hlist = []
-        self.status = ''
-        headerseen = ""
-        firstline = 1
-        startofline = unread = tell = None
-        if hasattr(self.fp, 'unread'):
-            unread = self.fp.unread
-        elif self.seekable:
-            tell = self.fp.tell
-        while True:
-            if tell:
-                try:
-                    startofline = tell()
-                except IOError:
-                    startofline = tell = None
-                    self.seekable = 0
-            line = str(self.fp.readline(), "iso-8859-1")
-            if not line:
-                self.status = 'EOF in headers'
-                break
-            # Skip unix From name time lines
-            if firstline and line.startswith('From '):
-                self.unixfrom = self.unixfrom + line
-                continue
-            firstline = 0
-            if headerseen and line[0] in ' \t':
-                # XXX Not sure if continuation lines are handled properly
-                # for http and/or for repeating headers
-                # It's a continuation line.
-                hlist.append(line)
-                self.addcontinue(headerseen, line.strip())
-                continue
-            elif self.iscomment(line):
-                # It's a comment.  Ignore it.
-                continue
-            elif self.islast(line):
-                # Note! No pushback here!  The delimiter line gets eaten.
-                break
-            headerseen = self.isheader(line)
-            if headerseen:
-                # It's a legal header line, save it.
-                hlist.append(line)
-                self.addheader(headerseen, line[len(headerseen)+1:].strip())
-                continue
-            else:
-                # It's not a header line; throw it back and stop here.
-                if not self.dict:
-                    self.status = 'No headers'
-                else:
-                    self.status = 'Non-header line where header expected'
-                # Try to undo the read.
-                if unread:
-                    unread(line)
-                elif tell:
-                    self.fp.seek(startofline)
-                else:
-                    self.status = self.status + '; bad seek'
-                break
+def parse_headers(fp):
+    """Parses only RFC2822 headers from a file pointer.
+
+    email Parser wants to see strings rather than bytes.
+    But a TextIOWrapper around self.rfile would buffer too many bytes
+    from the stream, bytes which we later need to read as bytes.
+    So we read the correct bytes here, as bytes, for email Parser
+    to parse.
+
+    """
+    # XXX: Copied from http.server.BaseHTTPRequestHandler.parse_request,
+    # maybe we can just call this function from there.
+    headers = []
+    while True:
+        line = fp.readline()
+        headers.append(line)
+        if line in (b'\r\n', b'\n', b''):
+            break
+    hstring = b''.join(headers).decode('iso-8859-1')
+
+    return email.parser.Parser(_class=HTTPMessage).parsestr(hstring)
 
 class HTTPResponse:
 
@@ -418,19 +361,17 @@ class HTTPResponse:
             self.length = None
             self.chunked = 0
             self.will_close = 1
-            self.msg = HTTPMessage(io.BytesIO())
+            self.msg = email.message_from_string('')
             return
 
-        self.msg = HTTPMessage(self.fp, 0)
+        self.msg = parse_headers(self.fp)
+
         if self.debuglevel > 0:
-            for hdr in self.msg.headers:
+            for hdr in self.msg:
                 print("header:", hdr, end=" ")
 
-        # don't let the msg keep an fp
-        self.msg.fp = None
-
         # are we using the chunked-style of transfer encoding?
-        tr_enc = self.msg.getheader("transfer-encoding")
+        tr_enc = self.msg.get("transfer-encoding")
         if tr_enc and tr_enc.lower() == "chunked":
             self.chunked = 1
             self.chunk_left = None
@@ -443,7 +384,10 @@ class HTTPResponse:
         # do we have a Content-Length?
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         self.length = None
-        length = self.msg.getheader("content-length")
+        length = self.msg.get("content-length")
+
+         # are we using the chunked-style of transfer encoding?
+        tr_enc = self.msg.get("transfer-encoding")
         if length and not self.chunked:
             try:
                 self.length = int(length)
@@ -470,11 +414,11 @@ class HTTPResponse:
             self.will_close = 1
 
     def _check_close(self):
-        conn = self.msg.getheader("connection")
+        conn = self.msg.get("connection")
         if self.version == 11:
             # An HTTP/1.1 proxy is assumed to stay open unless
             # explicitly closed.
-            conn = self.msg.getheader("connection")
+            conn = self.msg.get("connection")
             if conn and "close" in conn.lower():
                 return True
             return False
@@ -483,7 +427,7 @@ class HTTPResponse:
         # connections, using rules different than HTTP/1.1.
 
         # For older HTTP, Keep-Alive indicates persistent connection.
-        if self.msg.getheader("keep-alive"):
+        if self.msg.get("keep-alive"):
             return False
 
         # At least Akamai returns a "Connection: Keep-Alive" header,
@@ -492,7 +436,7 @@ class HTTPResponse:
             return False
 
         # Proxy-Connection is a netscape hack.
-        pconn = self.msg.getheader("proxy-connection")
+        pconn = self.msg.get("proxy-connection")
         if pconn and "keep-alive" in pconn.lower():
             return False
 
@@ -644,7 +588,7 @@ class HTTPResponse:
     def getheader(self, name, default=None):
         if self.msg is None:
             raise ResponseNotReady()
-        return self.msg.getheader(name, default)
+        return ', '.join(self.msg.get_all(name, default))
 
     def getheaders(self):
         """Return list of (header, value) tuples."""

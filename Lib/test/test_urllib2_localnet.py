@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import mimetools
+import email
 import threading
 import urlparse
 import urllib2
@@ -443,10 +443,10 @@ class TestUrlopen(unittest.TestCase):
         try:
             open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
             info_obj = open_url.info()
-            self.assert_(isinstance(info_obj, mimetools.Message),
+            self.assert_(isinstance(info_obj, email.message.Message),
                          "object returned by 'info' is not an instance of "
-                         "mimetools.Message")
-            self.assertEqual(info_obj.getsubtype(), "plain")
+                         "email.message.Message")
+            self.assertEqual(info_obj.get_content_subtype(), "plain")
         finally:
             self.server.stop()
 

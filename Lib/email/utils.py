@@ -25,7 +25,6 @@ import time
 import base64
 import random
 import socket
-import urllib
 import warnings
 from io import StringIO
 
@@ -235,6 +234,7 @@ def decode_params(params):
 
     params is a sequence of 2-tuples containing (param name, string value).
     """
+    import urllib
     # Copy params so we don't mess with the original
     params = params[:]
     new_params = []

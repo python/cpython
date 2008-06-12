@@ -101,16 +101,16 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             env['REMOTE_HOST'] = host
         env['REMOTE_ADDR'] = self.client_address[0]
 
-        if self.headers.typeheader is None:
-            env['CONTENT_TYPE'] = self.headers.type
+        if self.headers.get('content-type') is None:
+            env['CONTENT_TYPE'] = self.headers.get_content_type()
         else:
-            env['CONTENT_TYPE'] = self.headers.typeheader
+            env['CONTENT_TYPE'] = self.headers['content-type']
 
-        length = self.headers.getheader('content-length')
+        length = self.headers.get('content-length')
         if length:
             env['CONTENT_LENGTH'] = length
 
-        for h in self.headers.headers:
+        for h in self.headers:
             k,v = h.split(':',1)
             k=k.replace('-','_').upper(); v=v.strip()
             if k in env:

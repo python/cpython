@@ -193,9 +193,8 @@ class FakeResponse:
         """
         headers: list of RFC822-style 'Key: value' strings
         """
-        import mimetools, io
-        f = io.StringIO("\n".join(headers))
-        self._headers = mimetools.Message(f)
+        import email
+        self._headers = email.message_from_string("\n".join(headers))
         self._url = url
     def info(self): return self._headers
 

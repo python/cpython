@@ -8,7 +8,6 @@ import socket
 import urllib2
 import sys
 import os
-import mimetools
 
 
 def _retry_thrice(func, exc, *args, **kwargs):

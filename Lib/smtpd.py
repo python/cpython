@@ -421,9 +421,9 @@ class MailmanProxy(PureProxy):
         # These headers are required for the proper execution of Mailman.  All
         # MTAs in existance seem to add these if the original message doesn't
         # have them.
-        if not msg.getheader('from'):
+        if not msg.get('from'):
             msg['From'] = mailfrom
-        if not msg.getheader('date'):
+        if not msg.get('date'):
             msg['Date'] = time.ctime(time.time())
         for rcpt, listname, command in listnames:
             print('sending message to', rcpt, file=DEBUGSTREAM)
