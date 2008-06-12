@@ -1,16 +1,16 @@
 """mailerdaemon - classes to parse mailer-daemon messages"""
 
-import rfc822
 import calendar
+import email.message
 import re
 import os
 import sys
 
 Unparseable = 'mailerdaemon.Unparseable'
 
-class ErrorMessage(rfc822.Message):
-    def __init__(self, fp):
-        rfc822.Message.__init__(self, fp)
+class ErrorMessage(email.message.Message):
+    def __init__(self):
+        email.message.Message.__init__(self)
         self.sub = ''
 
     def is_warning(self):
@@ -169,7 +169,7 @@ def parsedir(dir, modify):
     for fn in files:
         # Lets try to parse the file.
         fp = open(fn)
-        m = ErrorMessage(fp)
+        m = email.message_from_file(fp, _class=ErrorMessage)
         sender = m.getaddr('From')
         print('%s\t%-40s\t'%(fn, sender[1]), end=' ')
 
