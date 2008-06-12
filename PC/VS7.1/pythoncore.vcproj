@@ -377,9 +377,6 @@
 			RelativePath="..\..\Modules\_stringio.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\_pickle.c">
-		</File>
-		<File
 			RelativePath="..\..\Modules\_functoolsmodule.c">
 		</File>
 		<File
