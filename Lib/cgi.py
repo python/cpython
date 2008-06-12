@@ -36,7 +36,6 @@ from io import StringIO
 import sys
 import os
 import urllib
-import mimetools
 import email.parser
 
 __all__ = ["MiniFieldStorage", "FieldStorage",
