@@ -89,7 +89,7 @@ def message(f, delimiter = ''):
         t = time.mktime(tt)
     else:
         sys.stderr.write(
-                'Unparseable date: %r\n' % (m.getheader('Date'),))
+                'Unparseable date: %r\n' % (m.get('Date'),))
         t = os.fstat(f.fileno())[stat.ST_MTIME]
     print('From', email, time.ctime(t))
     # Copy RFC822 header

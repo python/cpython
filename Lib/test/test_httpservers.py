@@ -19,11 +19,13 @@ import threading
 import unittest
 from test import support
 
-
 class NoLogRequestHandler:
     def log_message(self, *args):
         # don't write log messages to stderr
         pass
+
+    def read(self, n=None):
+        return ''
 
 
 class TestServerThread(threading.Thread):

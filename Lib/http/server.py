@@ -95,10 +95,11 @@ import socket # For gethostbyaddr()
 import shutil
 import urllib
 import select
-import mimetools
 import mimetypes
 import posixpath
 import socketserver
+import email.message
+import email.parser
 
 # Default error message template
 DEFAULT_ERROR_MESSAGE = """\
@@ -211,7 +212,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
     - command, path and version are the broken-down request line;
 
-    - headers is an instance of mimetools.Message (or a derived
+    - headers is an instance of email.message.Message (or a derived
     class) containing the header information;
 
     - rfile is a file object open for reading positioned at the
@@ -326,7 +327,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             if line in (b'\r\n', b'\n', b''):
                 break
         hfile = io.StringIO(b''.join(headers).decode('iso-8859-1'))
-        self.headers = self.MessageClass(hfile)
+        self.headers = email.parser.Parser(_class=self.MessageClass).parse(hfile)
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
@@ -524,8 +525,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # Set this to HTTP/1.1 to enable automatic keepalive
     protocol_version = "HTTP/1.0"
 
-    # The Message-like class used to parse headers
-    MessageClass = mimetools.Message
+    # MessageClass used to parse headers
+    import http.client
+    MessageClass = http.client.HTTPMessage
 
     # Table mapping response codes to messages; entries have the
     # form {code: (shortmessage, longmessage)}.
@@ -955,7 +957,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         if host != self.client_address[0]:
             env['REMOTE_HOST'] = host
         env['REMOTE_ADDR'] = self.client_address[0]
-        authorization = self.headers.getheader("authorization")
+        authorization = self.headers.get("authorization")
         if authorization:
             authorization = authorization.split()
             if len(authorization) == 2:
@@ -973,14 +975,14 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                         if len(authorization) == 2:
                             env['REMOTE_USER'] = authorization[0]
         # XXX REMOTE_IDENT
-        if self.headers.typeheader is None:
-            env['CONTENT_TYPE'] = self.headers.type
+        if self.headers.get('content-type') is None:
+            env['CONTENT_TYPE'] = self.headers.get_content_type()
         else:
-            env['CONTENT_TYPE'] = self.headers.typeheader
-        length = self.headers.getheader('content-length')
+            env['CONTENT_TYPE'] = self.headers['content-type']
+        length = self.headers.get('content-length')
         if length:
             env['CONTENT_LENGTH'] = length
-        referer = self.headers.getheader('referer')
+        referer = self.headers.get('referer')
         if referer:
             env['HTTP_REFERER'] = referer
         accept = []
@@ -990,10 +992,10 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             else:
                 accept = accept + line[7:].split(',')
         env['HTTP_ACCEPT'] = ','.join(accept)
-        ua = self.headers.getheader('user-agent')
+        ua = self.headers.get('user-agent')
         if ua:
             env['HTTP_USER_AGENT'] = ua
-        co = filter(None, self.headers.getheaders('cookie'))
+        co = filter(None, self.headers.get_all('cookie', []))
         if co:
             env['HTTP_COOKIE'] = ', '.join(co)
         # XXX Other HTTP_* headers

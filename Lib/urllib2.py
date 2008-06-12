@@ -91,7 +91,7 @@ import base64
 import hashlib
 import http.client
 import io
-import mimetools
+import email
 import os
 import posixpath
 import random
@@ -549,9 +549,9 @@ class HTTPRedirectHandler(BaseHandler):
         # Some servers (incorrectly) return multiple Location headers
         # (so probably same goes for URI).  Use first header.
         if 'location' in headers:
-            newurl = headers.getheaders('location')[0]
+            newurl = headers['location']
         elif 'uri' in headers:
-            newurl = headers.getheaders('uri')[0]
+            newurl = headers['uri']
         else:
             return
         newurl = urlparse.urljoin(req.get_full_url(), newurl)
@@ -1050,7 +1050,7 @@ class AbstractHTTPHandler(BaseHandler):
         http_class must implement the HTTPConnection API from http.client.
         The addinfourl return value is a file-like object.  It also
         has methods and attributes including:
-            - info(): return a mimetools.Message object for the headers
+            - info(): return a email.message.Message object for the headers
             - geturl(): return the original request URL
             - code: HTTP status code
         """
@@ -1140,6 +1140,10 @@ def parse_keqv_list(l):
     """Parse list of key=value strings where keys are not duplicated."""
     parsed = {}
     for elt in l:
+        # Because of a trailing comma in the auth string, elt could be the
+        # empty string.
+        if not elt:
+            continue
         k, v = elt.split('=', 1)
         if v[0] == '"' and v[-1] == '"':
             v = v[1:-1]
@@ -1222,9 +1226,9 @@ class FileHandler(BaseHandler):
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(file)[0]
-            headers = mimetools.Message(StringIO(
+            headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
-                (mtype or 'text/plain', size, modified)))
+                (mtype or 'text/plain', size, modified))
             if host:
                 host, port = splitport(host)
             if not host or \
@@ -1290,8 +1294,8 @@ class FTPHandler(BaseHandler):
                 headers += "Content-type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
                 headers += "Content-length: %d\n" % retrlen
+            headers = email.message_from_string(headers)
             sf = StringIO(headers)
-            headers = mimetools.Message(sf)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
             raise URLError('ftp error: %s' % msg).with_traceback(sys.exc_info()[2])

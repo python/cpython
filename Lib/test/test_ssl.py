@@ -944,7 +944,7 @@ else:
                 url = 'https://%s:%d/%s' % (
                     HOST, server.port, os.path.split(CERTFILE)[1])
                 f = urllib.urlopen(url)
-                dlen = f.info().getheader("content-length")
+                dlen = f.info().get("content-length")
                 if dlen and (int(dlen) > 0):
                     d2 = f.read(int(dlen))
                     if support.verbose:

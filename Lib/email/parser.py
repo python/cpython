@@ -68,11 +68,7 @@ class Parser:
             data = fp.read(8192)
             if not data:
                 break
-            # XXX When Guido fixes TextIOWrapper.read() to act just like
-            # .readlines(), this...
-            feedparser.feed(str(data))
-            # ...gets reverted back to
-            #feedparser.feed(data)
+            feedparser.feed(data)
         return feedparser.close()
 
     def parsestr(self, text, headersonly=False):

@@ -53,7 +53,7 @@ def _check1version(package, url, version, verbose=0):
             print('    Cannot open:', arg)
         return -1, None, None
     msg = rfc822.Message(fp, seekable=0)
-    newversion = msg.getheader('current-version')
+    newversion = msg.get('current-version')
     if not newversion:
         if verbose >= VERBOSE_EACHFILE:
             print('    No "Current-Version:" header in URL or URL not found')

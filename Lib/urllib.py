@@ -17,12 +17,14 @@ The object returned by URLopener().open(file) will differ per
 protocol.  All you know is that is has methods read(), readline(),
 readlines(), fileno(), close() and info().  The read*(), fileno()
 and close() methods work like those of open files.
-The info() method returns a mimetools.Message object which can be
+The info() method returns a email.message.Message object which can be
 used to query various info about the object, if available.
-(mimetools.Message objects are queried with the getheader() method.)
+(email.message.Message objects provide a dict-like interface.)
 """
 
 import http.client
+import email.message
+import email
 import os
 import socket
 import sys
@@ -414,8 +416,7 @@ class URLopener:
 
     def open_local_file(self, url):
         """Use local file."""
-        import mimetypes, mimetools, email.utils
-        from io import StringIO
+        import mimetypes, email.utils
         host, file = splithost(url)
         localname = url2pathname(file)
         try:
@@ -425,9 +426,9 @@ class URLopener:
         size = stats.st_size
         modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(url)[0]
-        headers = mimetools.Message(StringIO(
+        headers = email.message_from_string(
             'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
-            (mtype or 'text/plain', size, modified)))
+            (mtype or 'text/plain', size, modified))
         if not host:
             urlfile = file
             if file[:1] == '/':
@@ -448,8 +449,7 @@ class URLopener:
         """Use FTP protocol."""
         if not isinstance(url, str):
             raise IOError('ftp error', 'proxy support for ftp protocol currently not implemented')
-        import mimetypes, mimetools
-        from io import StringIO
+        import mimetypes
         host, path = splithost(url)
         if not host: raise IOError('ftp error', 'no host given')
         host, port = splitport(host)
@@ -498,7 +498,7 @@ class URLopener:
                 headers += "Content-Type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
                 headers += "Content-Length: %d\n" % retrlen
-            headers = mimetools.Message(StringIO(headers))
+            headers = email.message_from_string(headers)
             return addinfourl(fp, headers, "ftp:" + url)
         except ftperrors() as msg:
             raise IOError('ftp error', msg).with_traceback(sys.exc_info()[2])
@@ -514,7 +514,6 @@ class URLopener:
         # mediatype := [ type "/" subtype ] *( ";" parameter )
         # data      := *urlchar
         # parameter := attribute "=" value
-        import mimetools
         from io import StringIO
         try:
             [type, data] = url.split(',', 1)
@@ -541,8 +540,8 @@ class URLopener:
         msg.append('')
         msg.append(data)
         msg = '\n'.join(msg)
+        headers = email.message_from_string(msg)
         f = StringIO(msg)
-        headers = mimetools.Message(f, 0)
         #f.fileno = None     # needed for addinfourl
         return addinfourl(f, headers, url)
 
@@ -761,13 +760,10 @@ def ftperrors():
 
 _noheaders = None
 def noheaders():
-    """Return an empty mimetools.Message object."""
+    """Return an empty email.message.Message object."""
     global _noheaders
     if _noheaders is None:
-        import mimetools
-        from io import StringIO
-        _noheaders = mimetools.Message(StringIO(), 0)
-        _noheaders.fp.close()   # Recycle file descriptor
+        _noheaders = email.message.Message()
     return _noheaders
 
 

@@ -249,6 +249,8 @@ def parse_multipart(fp, pdict):
     since it can call parse_multipart().
 
     """
+    import http.client
+
     boundary = ""
     if 'boundary' in pdict:
         boundary = pdict['boundary']
@@ -266,8 +268,8 @@ def parse_multipart(fp, pdict):
         data = None
         if terminator:
             # At start of next part.  Read headers first.
-            headers = mimetools.Message(fp)
-            clength = headers.getheader('content-length')
+            headers = http.client.parse_headers(fp)
+            clength = headers.get('content-length')
             if clength:
                 try:
                     bytes = int(clength)
