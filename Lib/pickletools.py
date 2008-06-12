@@ -2079,11 +2079,12 @@ _dis_test = r"""
    70: t        TUPLE      (MARK at 49)
    71: p    PUT        5
    74: R    REDUCE
-   75: V    UNICODE    'def'
-   80: p    PUT        6
-   83: s    SETITEM
-   84: a    APPEND
-   85: .    STOP
+   75: p    PUT        6
+   78: V    UNICODE    'def'
+   83: p    PUT        7
+   86: s    SETITEM
+   87: a    APPEND
+   88: .    STOP
 highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
@@ -2115,11 +2116,12 @@ Try again with a "binary" pickle.
    49: t            TUPLE      (MARK at 37)
    50: q        BINPUT     5
    52: R        REDUCE
-   53: X        BINUNICODE 'def'
-   61: q        BINPUT     6
-   63: s        SETITEM
-   64: e        APPENDS    (MARK at 3)
-   65: .    STOP
+   53: q        BINPUT     6
+   55: X        BINUNICODE 'def'
+   63: q        BINPUT     7
+   65: s        SETITEM
+   66: e        APPENDS    (MARK at 3)
+   67: .    STOP
 highest protocol among opcodes = 1
 
 Exercise the INST/OBJ/BUILD family.
