@@ -16,7 +16,6 @@ on the Internet.
    mailcap.rst
    mailbox.rst
    mimetypes.rst
-   rfc822.rst
    base64.rst
    binhex.rst
    binascii.rst
