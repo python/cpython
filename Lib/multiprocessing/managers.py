@@ -968,7 +968,6 @@ class AcquirerProxy(BaseProxy):
 
 
 class ConditionProxy(AcquirerProxy):
-    # XXX will Condition.notfyAll() name be available in Py3.0?
     _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notify_all')
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
@@ -978,10 +977,9 @@ class ConditionProxy(AcquirerProxy):
         return self._callmethod('notify_all')
 
 class EventProxy(BaseProxy):
-    # XXX will Event.isSet name be available in Py3.0?
-    _exposed_ = ('isSet', 'set', 'clear', 'wait')
+    _exposed_ = ('is_set', 'set', 'clear', 'wait')
     def is_set(self):
-        return self._callmethod('isSet')
+        return self._callmethod('is_set')
     def set(self):
         return self._callmethod('set')
     def clear(self):
