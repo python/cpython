@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32;..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -96,7 +96,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32;..\..\..\db-4.4.20\build_win32\.."
 				PreprocessorDefinitions="DIAGNOSTIC"
 			/>
 			<Tool
@@ -151,7 +151,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32;..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -206,7 +206,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32;..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -260,7 +260,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32;..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -315,7 +315,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32;..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -369,7 +369,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32;..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -424,7 +424,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bsddbDir);$(bsddbDir)\.."
+				AdditionalIncludeDirectories="..\..\..\db-4.4.20\build_win32;..\..\..\db-4.4.20\build_win32\.."
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -462,787 +462,787 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_compact.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_compact.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_compare.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_compare.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_conv.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_conv.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_curadj.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_curadj.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_cursor.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_cursor.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_delete.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_delete.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_open.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_open.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_put.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_put.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_rec.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_rec.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_reclaim.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_reclaim.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_recno.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_recno.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_rsearch.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_rsearch.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_search.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_search.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_split.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_split.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_upgrade.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_upgrade.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\bt_verify.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\bt_verify.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\btree\btree_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\btree\btree_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\crdel_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\crdel_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\crdel_rec.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\crdel_rec.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\crypto_stub.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\crypto_stub.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_am.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_am.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\db_byteorder.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\db_byteorder.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_cam.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_cam.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\db_clock.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\db_clock.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_conv.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_conv.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_dispatch.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_dispatch.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_dup.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_dup.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\db_err.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\db_err.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\db_getlong.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\db_getlong.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\db_idspace.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\db_idspace.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_iface.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_iface.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_join.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_join.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\db_log2.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\db_log2.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_meta.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_meta.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_open.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_open.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_overflow.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_overflow.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_ovfl_vrfy.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_ovfl_vrfy.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_pr.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_pr.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_rec.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_rec.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_reclaim.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_reclaim.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_remove.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_remove.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_rename.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_rename.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_ret.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_ret.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\db_salloc.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\db_salloc.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_setid.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_setid.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_setlsn.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_setlsn.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\db_shash.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\db_shash.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_stati.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_stati.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_truncate.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_truncate.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_upg.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_upg.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_upg_opd.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_upg_opd.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_vrfy.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_vrfy.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\db\db_vrfyutil.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\db\db_vrfyutil.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\dbm\dbm.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\dbm\dbm.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\dbreg\dbreg.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\dbreg\dbreg.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\dbreg\dbreg_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\dbreg\dbreg_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\dbreg\dbreg_rec.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\dbreg\dbreg_rec.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\dbreg\dbreg_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\dbreg\dbreg_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\dbreg\dbreg_util.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\dbreg\dbreg_util.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\env_failchk.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\env_failchk.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\env_file.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\env_file.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\env_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\env_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\env_open.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\env_open.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\env_recover.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\env_recover.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\env_region.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\env_region.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\env_register.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\env_register.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\env\env_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\env\env_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\fileops\fileops_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\fileops\fileops_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\fileops\fop_basic.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\fileops\fop_basic.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\fileops\fop_rec.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\fileops\fop_rec.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\fileops\fop_util.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\fileops\fop_util.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_conv.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_conv.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_dup.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_dup.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_func.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_func.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_meta.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_meta.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_open.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_open.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_page.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_page.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_rec.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_rec.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_reclaim.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_reclaim.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_upgrade.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_upgrade.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hash\hash_verify.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hash\hash_verify.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hmac\hmac.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hmac\hmac.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hsearch\hsearch.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hsearch\hsearch.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_deadlock.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_deadlock.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_failchk.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_failchk.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_id.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_id.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_list.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_list.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_region.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_region.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_timer.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_timer.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\lock\lock_util.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\lock\lock_util.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\log\log.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\log\log.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\log\log_archive.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\log\log_archive.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\log\log_compare.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\log\log_compare.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\log\log_debug.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\log\log_debug.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\log\log_get.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\log\log_get.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\log\log_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\log\log_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\log\log_put.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\log\log_put.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\log\log_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\log\log_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_alloc.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_alloc.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_bh.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_bh.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_fget.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_fget.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_fmethod.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_fmethod.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_fopen.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_fopen.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_fput.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_fput.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_fset.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_fset.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_region.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_region.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_register.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_register.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_sync.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_sync.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mp\mp_trickle.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mp\mp_trickle.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mutex\mut_alloc.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mutex\mut_alloc.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mutex\mut_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mutex\mut_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mutex\mut_region.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mutex\mut_region.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mutex\mut_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mutex\mut_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\mutex\mut_win32.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\mutex\mut_win32.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_abs.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_abs.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_alloc.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_alloc.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_clock.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_clock.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_config.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_config.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_dir.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_dir.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_errno.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_errno.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_fid.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_fid.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_flock.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_flock.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_fsync.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_fsync.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_handle.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_handle.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_id.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_id.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_map.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_map.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_mkdir.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_mkdir.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_oflags.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_oflags.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_open.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_open.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_region.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_region.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_rename.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_rename.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_root.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_root.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_rpath.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_rpath.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_rw.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_rw.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_seek.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_seek.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_sleep.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_sleep.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_spin.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_spin.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os\os_tmpdir.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os\os_tmpdir.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_truncate.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_truncate.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\os_win32\os_unlink.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\os_win32\os_unlink.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_conv.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_conv.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_files.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_files.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_open.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_open.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_rec.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_rec.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_upgrade.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_upgrade.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\qam\qam_verify.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\qam\qam_verify.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_backup.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_backup.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_elect.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_elect.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_log.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_log.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_record.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_record.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_region.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_region.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_util.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_util.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\rep\rep_verify.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\rep\rep_verify.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\sequence\seq_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\sequence\seq_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\sequence\sequence.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\sequence\sequence.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\hmac\sha1.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\hmac\sha1.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\clib\strcasecmp.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\clib\strcasecmp.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_auto.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_auto.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_chkpt.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_chkpt.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_failchk.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_failchk.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_method.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_method.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_rec.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_rec.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_recover.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_recover.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_region.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_region.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_stat.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_stat.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\txn\txn_util.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\txn\txn_util.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\util_cache.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\util_cache.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\util_log.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\util_log.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\common\util_sig.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\common\util_sig.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\xa\xa.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\xa\xa.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\xa\xa_db.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\xa\xa_db.c"
 				>
 			</File>
 			<File
-				RelativePath="$(bsddbDir)\..\..\xa\xa_map.c"
+				RelativePath="..\..\..\db-4.4.20\build_win32\..\xa\xa_map.c"
 				>
 			</File>
 		</Filter>
