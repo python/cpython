@@ -77,7 +77,7 @@ static struct PyModuleDef gestaltmodule = {
 	NULL
 };
 
-void
+PyMODINIT_FUNC
 PyInit__gestalt(void)
 {
 	return PyModule_Create(&gestaltmodule);
