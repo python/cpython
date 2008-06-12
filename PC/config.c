@@ -60,8 +60,6 @@ extern PyObject* PyInit__lsprof(void);
 extern PyObject* PyInit__ast(void);
 extern PyObject* PyInit__fileio(void);
 extern PyObject* PyInit__bytesio(void);
-extern PyObject* PyInit__stringio(void);
-extern PyObject* PyInit__pickle(void);
 extern PyObject* PyInit_atexit(void);
 extern PyObject* _PyWarnings_Init(void);
 

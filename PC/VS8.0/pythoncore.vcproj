@@ -991,10 +991,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\_stringio.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Modules\_functoolsmodule.c"
 				>
 			</File>
