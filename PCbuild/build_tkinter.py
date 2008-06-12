@@ -41,7 +41,7 @@ def build(platform, clean):
 
     # TCL
     tcldir = os.path.join(ROOT, TCL)
-    if 0:
+    if 1:
         os.chdir(os.path.join(tcldir, "win"))
         if clean:
             nmake("makefile.vc", "clean")
@@ -49,7 +49,7 @@ def build(platform, clean):
         nmake("makefile.vc", "install", INSTALLDIR=dest, MACHINE=machine)
 
     # TK
-    if 0:
+    if 1:
         os.chdir(os.path.join(ROOT, TK, "win"))
         if clean:
             nmake("makefile.vc", "clean", TCLDIR=tcldir)
