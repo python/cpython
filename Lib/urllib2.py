@@ -1295,7 +1295,7 @@ class FTPHandler(BaseHandler):
             if retrlen is not None and retrlen >= 0:
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
-            sf = StringIO(headers)
+            sf = StringIO(str(headers))
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
             raise URLError('ftp error: %s' % msg).with_traceback(sys.exc_info()[2])
