@@ -1,6 +1,6 @@
 """pyversioncheck - Module to help with checking versions"""
-import rfc822
 import urllib
+import email
 import sys
 
 # Verbose options
@@ -52,7 +52,7 @@ def _check1version(package, url, version, verbose=0):
         if verbose >= VERBOSE_EACHFILE:
             print('    Cannot open:', arg)
         return -1, None, None
-    msg = rfc822.Message(fp, seekable=0)
+    msg = email.message_from_file(fp)
     newversion = msg.get('current-version')
     if not newversion:
         if verbose >= VERBOSE_EACHFILE:

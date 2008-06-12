@@ -131,7 +131,7 @@ class SMTPAuthenticationError(SMTPResponseException):
 def quoteaddr(addr):
     """Quote a subset of the email addresses defined by RFC 821.
 
-    Should be able to handle anything rfc822.parseaddr can handle.
+    Should be able to handle anything email.utils.parseaddr can handle.
     """
     m = (None, None)
     try:

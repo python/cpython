@@ -315,7 +315,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         # Examine the headers and look for a Connection directive.
 
-        # MessageClass (rfc822) wants to see strings rather than bytes.
+        # MessageClass wants to see strings rather than bytes.
         # But a TextIOWrapper around self.rfile would buffer too many bytes
         # from the stream, bytes which we later need to read as bytes.
         # So we read the correct bytes here, as bytes, then use StringIO

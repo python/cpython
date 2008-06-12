@@ -207,8 +207,8 @@ class FaqEntry:
         self.file = file
         self.sec, self.num = sec_num
         if fp:
-            import rfc822
-            self.__headers = rfc822.Message(fp)
+            import email
+            self.__headers = email.message_from_file(fp)
             self.body = fp.read().strip()
         else:
             self.__headers = {'title': "%d.%d. " % sec_num}
