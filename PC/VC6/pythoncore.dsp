@@ -141,10 +141,6 @@ SOURCE=..\..\Modules\_bytesio.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\_stringio.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\_functoolsmodule.c
 # End Source File
 # Begin Source File
