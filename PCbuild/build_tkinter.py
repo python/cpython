@@ -11,14 +11,9 @@ import sys
 here = os.path.abspath(os.path.dirname(__file__))
 par = os.path.pardir
 
-if 1:
-    TCL = "tcl8.4.16"
-    TK = "tk8.4.16"
-    TIX = "tix-8.4.0"
-else:
-    TCL = "tcl8.5b3"
-    TK = "tcl8.5b3"
-    TIX = "Tix8.4.2"
+TCL = "tcl8.5.2"
+TK = "tk8.5.2"
+TIX = "tix-8.4.0.x"
 
 ROOT = os.path.abspath(os.path.join(here, par, par))
 # Windows 2000 compatibility: WINVER 0x0500
@@ -38,28 +33,28 @@ def build(platform, clean):
     if platform == "Win32":
         dest = os.path.join(ROOT, "tcltk")
         machine = "X86"
-    elif platform == "x64":
+    elif platform == "AMD64":
         dest = os.path.join(ROOT, "tcltk64")
-        machine = "X64"
+        machine = "AMD64"
     else:
         raise ValueError(platform)
 
     # TCL
     tcldir = os.path.join(ROOT, TCL)
-    if 1:
+    if 0:
         os.chdir(os.path.join(tcldir, "win"))
         if clean:
             nmake("makefile.vc", "clean")
-        nmake("makefile.vc")
-        nmake("makefile.vc", "install", INSTALLDIR=dest)
+        nmake("makefile.vc", MACHINE=machine)
+        nmake("makefile.vc", "install", INSTALLDIR=dest, MACHINE=machine)
 
     # TK
-    if 1:
+    if 0:
         os.chdir(os.path.join(ROOT, TK, "win"))
         if clean:
             nmake("makefile.vc", "clean", TCLDIR=tcldir)
-        nmake("makefile.vc", TCLDIR=tcldir)
-        nmake("makefile.vc", "install", TCLDIR=tcldir, INSTALLDIR=dest)
+        nmake("makefile.vc", TCLDIR=tcldir, MACHINE=machine)
+        nmake("makefile.vc", "install", TCLDIR=tcldir, INSTALLDIR=dest, MACHINE=machine)
 
     # TIX
     if 1:
@@ -67,12 +62,12 @@ def build(platform, clean):
         os.chdir(os.path.join(ROOT, TIX, "win"))
         if clean:
             nmake("python9.mak", "clean")
-        nmake("python9.mak", MACHINE=machine)
-        nmake("python9.mak", "install")
+        nmake("python9.mak", MACHINE=machine, INSTALL_DIR=dest)
+        nmake("python9.mak", "install", INSTALL_DIR=dest)
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ("Win32", "x64"):
-        print("%s Win32|x64" % sys.argv[0])
+    if len(sys.argv) < 2 or sys.argv[1] not in ("Win32", "AMD64"):
+        print("%s Win32|AMD64" % sys.argv[0])
         sys.exit(1)
 
     if "-c" in sys.argv:
