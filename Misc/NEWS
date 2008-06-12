@@ -302,6 +302,8 @@ Library
 Build
 -----
 
+- The Windows installer now includes Tk 8.5.
+
 - Patch #1722225: Support QNX 6.
 
 - ``Lib/lib-old`` is now added to sys.path.
