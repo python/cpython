@@ -84,6 +84,8 @@ Extension Modules
 Library
 -------
 
+- The mimetools module has been deprecated for removal in 3.0.
+
 - The ctypes.byref function now takes an optional second parameter
   which allows to specify an offset in bytes for the constructed
   pointer-like object.
