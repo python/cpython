@@ -145,7 +145,7 @@ msvcrt_getch(PyObject *self, PyObject *args)
 	return PyBytes_FromStringAndSize(s, 1);
 }
 
-#if _MSC_VER >= 1300
+#ifdef _WCONIO_DEFINED
 static PyObject *
 msvcrt_getwch(PyObject *self, PyObject *args)
 {
@@ -179,7 +179,7 @@ msvcrt_getche(PyObject *self, PyObject *args)
 	return PyBytes_FromStringAndSize(s, 1);
 }
 
-#if _MSC_VER >= 1300
+#ifdef _WCONIO_DEFINED
 static PyObject *
 msvcrt_getwche(PyObject *self, PyObject *args)
 {
@@ -210,8 +210,7 @@ msvcrt_putch(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-
-#if _MSC_VER >= 1300
+#ifdef _WCONIO_DEFINED
 static PyObject *
 msvcrt_putwch(PyObject *self, PyObject *args)
 {
@@ -246,7 +245,7 @@ msvcrt_ungetch(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-#if _MSC_VER >= 1300
+#ifdef _WCONIO_DEFINED
 static PyObject *
 msvcrt_ungetwch(PyObject *self, PyObject *args)
 {
@@ -349,7 +348,7 @@ static struct PyMethodDef msvcrt_functions[] = {
 	{"CrtSetReportMode",	msvcrt_setreportmode, METH_VARARGS},
 	{"set_error_mode",	msvcrt_seterrormode, METH_VARARGS},
 #endif
-#if _MSC_VER >= 1300
+#ifdef _WCONIO_DEFINED
 	{"getwch",		msvcrt_getwch, METH_VARARGS},
 	{"getwche",		msvcrt_getwche, METH_VARARGS},
 	{"putwch",		msvcrt_putwch, METH_VARARGS},

@@ -2628,7 +2628,7 @@ PyDoc_STRVAR(shutdown_doc,
 Shut down the reading side of the socket (flag == SHUT_RD), the writing side\n\
 of the socket (flag == SHUT_WR), or both ends (flag == SHUT_RDWR).");
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && defined(SIO_RCVALL)
 static PyObject*
 sock_ioctl(PySocketSockObject *s, PyObject *arg)
 {
@@ -2677,7 +2677,7 @@ static PyMethodDef sock_methods[] = {
 			  METH_NOARGS, getsockname_doc},
 	{"getsockopt",	  (PyCFunction)sock_getsockopt, METH_VARARGS,
 			  getsockopt_doc},
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && defined(SIO_RCVALL)
 	{"ioctl",	  (PyCFunction)sock_ioctl, METH_VARARGS,
 			  sock_ioctl_doc},
 #endif
