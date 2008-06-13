@@ -627,7 +627,7 @@ memo_put(PicklerObject *self, PyObject *obj)
     else {
         if (x < 256) {
             pdata[0] = BINPUT;
-            pdata[1] = x;
+            pdata[1] = (unsigned char)x;
             len = 2;
         }
         else if (x <= 0xffffffffL) {
@@ -3930,7 +3930,8 @@ load_mark(UnpicklerObject *self)
 
         /* Use the size_t type to check for overflow. */
         alloc = ((size_t)self->num_marks << 1) + 20;
-        if (alloc > PY_SSIZE_T_MAX || alloc <= (self->num_marks + 1)) {
+        if (alloc > PY_SSIZE_T_MAX || 
+            alloc <= ((size_t)self->num_marks + 1)) {
             PyErr_NoMemory();
             return -1;
         }
