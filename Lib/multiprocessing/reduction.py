@@ -36,7 +36,7 @@ if not(sys.platform == 'win32' or hasattr(_multiprocessing, 'recvfd')):
 if sys.platform == 'win32':
     import _subprocess
     from ._multiprocessing import win32
-    
+
     def send_handle(conn, handle, destination_pid):
         process_handle = win32.OpenProcess(
             win32.PROCESS_ALL_ACCESS, False, destination_pid
@@ -46,14 +46,14 @@ if sys.platform == 'win32':
             conn.send(new_handle)
         finally:
             close(process_handle)
-            
+
     def recv_handle(conn):
         return conn.recv()
 
 else:
     def send_handle(conn, handle, destination_pid):
         _multiprocessing.sendfd(conn.fileno(), handle)
-        
+
     def recv_handle(conn):
         return _multiprocessing.recvfd(conn.fileno())
 
@@ -93,7 +93,7 @@ def _get_listener():
 
 def _serve():
     from .util import is_exiting, sub_warning
-    
+
     while 1:
         try:
             conn = _listener.accept()
@@ -109,7 +109,7 @@ def _serve():
                     'thread for sharing handles raised exception :\n' +
                     '-'*79 + '\n' + traceback.format_exc() + '-'*79
                     )
-    
+
 #
 # Functions to be used for pickling/unpickling objects with handles
 #
@@ -176,15 +176,15 @@ copy_reg.pickle(socket.socket, reduce_socket)
 #
 
 if sys.platform == 'win32':
-    
+
     def reduce_pipe_connection(conn):
         rh = reduce_handle(conn.fileno())
         return rebuild_pipe_connection, (rh, conn.readable, conn.writable)
-    
+
     def rebuild_pipe_connection(reduced_handle, readable, writable):
         handle = rebuild_handle(reduced_handle)
         return _multiprocessing.PipeConnection(
             handle, readable=readable, writable=writable
             )
-    
+
     copy_reg.pickle(_multiprocessing.PipeConnection, reduce_pipe_connection)

@@ -83,7 +83,7 @@ def _check_logger_class():
     import logging
     if hasattr(logging, 'multiprocessing'):
         return
-    
+
     logging._acquireLock()
     try:
         OldLoggerClass = logging.getLoggerClass()

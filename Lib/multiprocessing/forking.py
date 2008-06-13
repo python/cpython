@@ -92,7 +92,7 @@ if sys.platform != 'win32':
                 except OSError, e:
                     if self.wait(timeout=0.1) is None:
                         raise
-                    
+
         @staticmethod
         def thread_is_spawning():
             return False
@@ -107,10 +107,10 @@ else:
     import _subprocess
     import copy_reg
     import time
-    
+
     from ._multiprocessing import win32, Connection, PipeConnection
     from .util import Finalize
-    
+
     try:
         from cPickle import dump, load, HIGHEST_PROTOCOL
     except ImportError:
@@ -217,7 +217,7 @@ else:
                     if code == TERMINATE:
                         code = -signal.SIGTERM
                     self.returncode = code
-                    
+
             return self.returncode
 
         def poll(self):
@@ -230,7 +230,7 @@ else:
                 except WindowsError:
                     if self.wait(timeout=0.1) is None:
                         raise
-        
+
     #
     #
     #
@@ -308,7 +308,7 @@ else:
         Return info about parent needed by child to unpickle process object
         '''
         from .util import _logger, _log_to_stderr
-        
+
         d = dict(
             name=name,
             sys_path=sys.path,
@@ -317,7 +317,7 @@ else:
             orig_dir=process.ORIGINAL_DIR,
             authkey=process.current_process().get_authkey(),
             )
-        
+
         if _logger is not None:
             d['log_level'] = _logger.getEffectiveLevel()
 
@@ -336,7 +336,7 @@ else:
     #
     # Make (Pipe)Connection picklable
     #
-    
+
     def reduce_connection(conn):
         if not Popen.thread_is_spawning():
             raise RuntimeError(
@@ -345,7 +345,7 @@ else:
                 )
         return type(conn), (Popen.duplicate_for_child(conn.fileno()),
                             conn.readable, conn.writable)
-    
+
     copy_reg.pickle(Connection, reduce_connection)
     copy_reg.pickle(PipeConnection, reduce_connection)
 
@@ -367,7 +367,7 @@ def prepare(data):
 
     if 'authkey' in data:
         process.current_process()._authkey = data['authkey']
-    
+
     if 'log_to_stderr' in data and data['log_to_stderr']:
         util.log_to_stderr()
 

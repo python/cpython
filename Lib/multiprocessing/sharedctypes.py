@@ -92,10 +92,10 @@ def copy(obj):
     new_obj = _new_value(type(obj))
     ctypes.pointer(new_obj)[0] = obj
     return new_obj
-    
+
 def synchronized(obj, lock=None):
     assert not isinstance(obj, SynchronizedBase), 'object already synchronized'
-    
+
     if isinstance(obj, ctypes._SimpleCData):
         return Synchronized(obj, lock)
     elif isinstance(obj, ctypes.Array):
@@ -123,7 +123,7 @@ def reduce_ctype(obj):
         return rebuild_ctype, (obj._type_, obj._wrapper, obj._length_)
     else:
         return rebuild_ctype, (type(obj), obj._wrapper, None)
-    
+
 def rebuild_ctype(type_, wrapper, length):
     if length is not None:
         type_ = type_ * length
@@ -170,7 +170,7 @@ class_cache = weakref.WeakKeyDictionary()
 #
 
 class SynchronizedBase(object):
-    
+
     def __init__(self, obj, lock=None):
         self._obj = obj
         self._lock = lock or RLock()
@@ -180,55 +180,55 @@ class SynchronizedBase(object):
     def __reduce__(self):
         assert_spawning(self)
         return synchronized, (self._obj, self._lock)
-    
+
     def get_obj(self):
         return self._obj
-    
+
     def get_lock(self):
         return self._lock
-    
+
     def __repr__(self):
         return '<%s wrapper for %s>' % (type(self).__name__, self._obj)
-    
-    
+
+
 class Synchronized(SynchronizedBase):
     value = make_property('value')
-    
-    
+
+
 class SynchronizedArray(SynchronizedBase):
-    
+
     def __len__(self):
         return len(self._obj)
-    
+
     def __getitem__(self, i):
         self.acquire()
         try:
             return self._obj[i]
         finally:
             self.release()
-            
+
     def __setitem__(self, i, value):
         self.acquire()
         try:
             self._obj[i] = value
         finally:
             self.release()
-            
+
     def __getslice__(self, start, stop):
         self.acquire()
         try:
             return self._obj[start:stop]
         finally:
             self.release()
-            
+
     def __setslice__(self, start, stop, values):
         self.acquire()
         try:
             self._obj[start:stop] = values
         finally:
             self.release()
-            
-            
+
+
 class SynchronizedString(SynchronizedArray):
     value = make_property('value')
     raw = make_property('raw')

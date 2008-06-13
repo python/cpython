@@ -38,7 +38,7 @@ class SemLock(object):
         sl = self._semlock = _multiprocessing.SemLock(kind, value, maxvalue)
         debug('created semlock with handle %s' % sl.handle)
         self._make_methods()
-        
+
         if sys.platform != 'win32':
             def _after_fork(obj):
                 obj._semlock._after_fork()
@@ -129,7 +129,7 @@ class RLock(SemLock):
 
     def __init__(self):
         SemLock.__init__(self, RECURSIVE_MUTEX, 1, 1)
-        
+
     def __repr__(self):
         try:
             if self._semlock._is_mine():
@@ -210,17 +210,17 @@ class Condition(object):
     def notify(self):
         assert self._lock._semlock._is_mine(), 'lock is not owned'
         assert not self._wait_semaphore.acquire(False)
-        
+
         # to take account of timeouts since last notify() we subtract
         # woken_count from sleeping_count and rezero woken_count
         while self._woken_count.acquire(False):
             res = self._sleeping_count.acquire(False)
             assert res
-            
+
         if self._sleeping_count.acquire(False): # try grabbing a sleeper
             self._wait_semaphore.release()      # wake up one sleeper
             self._woken_count.acquire()         # wait for the sleeper to wake
-            
+
             # rezero _wait_semaphore in case a timeout just happened
             self._wait_semaphore.acquire(False)
 
@@ -233,7 +233,7 @@ class Condition(object):
         while self._woken_count.acquire(False):
             res = self._sleeping_count.acquire(False)
             assert res
-            
+
         sleepers = 0
         while self._sleeping_count.acquire(False):
             self._wait_semaphore.release()        # wake up one sleeper
@@ -266,7 +266,7 @@ class Event(object):
             return False
         finally:
             self._cond.release()
-    
+
     def set(self):
         self._cond.acquire()
         try:
