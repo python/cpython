@@ -377,7 +377,7 @@ PyFile_NewStdPrinter(int fd)
 	return (PyObject*)self;
 }
 
-PyObject *
+static PyObject *
 stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 {
 	char *c;
