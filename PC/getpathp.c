@@ -117,8 +117,7 @@ reduce(wchar_t *dir)
 static int
 exists(wchar_t *filename)
 {
-	struct _stat64 buf;
-	return _wstat64(filename, &buf) == 0;
+	return GetFileAttributesW(filename) != 0xFFFFFFFF;
 }
 
 /* Assumes 'filename' MAXPATHLEN+1 bytes long - 

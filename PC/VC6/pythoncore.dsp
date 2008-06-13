@@ -97,6 +97,10 @@ SOURCE=..\..\Modules\_bisectmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_bytesio.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\cjkcodecs\_codecs_cn.c
 # End Source File
 # Begin Source File
@@ -134,10 +138,6 @@ SOURCE=..\..\Modules\_csv.c
 # Begin Source File
 
 SOURCE=..\..\Modules\_fileio.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\_bytesio.c
 # End Source File
 # Begin Source File
 
@@ -245,6 +245,10 @@ SOURCE=..\..\Objects\boolobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Objects\bytearrayobject.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Objects\bytes_methods.c
 # End Source File
 # Begin Source File
@@ -278,10 +282,6 @@ SOURCE=..\..\Python\codecs.c
 # Begin Source File
 
 SOURCE=..\..\Objects\codeobject.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\_collectionsmodule.c
 # End Source File
 # Begin Source File
 
@@ -365,19 +365,11 @@ SOURCE=..\..\Objects\floatobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Python\formatter_string.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Python\formatter_unicode.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Objects\frameobject.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Python\formatter_unicode.c
 # End Source File
 # Begin Source File
 
@@ -656,10 +648,6 @@ SOURCE=..\..\Modules\signalmodule.c
 # Begin Source File
 
 SOURCE=..\..\Objects\sliceobject.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Objects\stringobject.c
 # End Source File
 # Begin Source File
 
