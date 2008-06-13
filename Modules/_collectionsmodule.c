@@ -85,7 +85,7 @@ newblock(block *leftlink, block *rightlink, int len) {
 	return b;
 }
 
-void
+static void
 freeblock(block *b)
 {
 	if (numfreeblocks < MAXFREEBLOCKS) {
@@ -957,7 +957,7 @@ typedef struct {
 	int counter;    /* number of items remaining for iteration */
 } dequeiterobject;
 
-PyTypeObject dequeiter_type;
+static PyTypeObject dequeiter_type;
 
 static PyObject *
 deque_iter(dequeobject *deque)
@@ -1024,7 +1024,7 @@ static PyMethodDef dequeiter_methods[] = {
  	{NULL,		NULL}		/* sentinel */
 };
 
-PyTypeObject dequeiter_type = {
+static PyTypeObject dequeiter_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"deque_iterator",			/* tp_name */
 	sizeof(dequeiterobject),		/* tp_basicsize */
@@ -1059,7 +1059,7 @@ PyTypeObject dequeiter_type = {
 
 /*********************** Deque Reverse Iterator **************************/
 
-PyTypeObject dequereviter_type;
+static PyTypeObject dequereviter_type;
 
 static PyObject *
 deque_reviter(dequeobject *deque)
@@ -1106,7 +1106,7 @@ dequereviter_next(dequeiterobject *it)
 	return item;
 }
 
-PyTypeObject dequereviter_type = {
+static PyTypeObject dequereviter_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"deque_reverse_iterator",		/* tp_name */
 	sizeof(dequeiterobject),		/* tp_basicsize */

@@ -229,12 +229,12 @@ def makeunicodedata(unicode, trace):
     print >>fp, "#define TOTAL_FIRST",total_first
     print >>fp, "#define TOTAL_LAST",total_last
     print >>fp, "struct reindex{int start;short count,index;};"
-    print >>fp, "struct reindex nfc_first[] = {"
+    print >>fp, "static struct reindex nfc_first[] = {"
     for start,end in comp_first_ranges:
         print >>fp,"  { %d, %d, %d}," % (start,end-start,comp_first[start])
     print >>fp,"  {0,0,0}"
     print >>fp,"};\n"
-    print >>fp, "struct reindex nfc_last[] = {"
+    print >>fp, "static struct reindex nfc_last[] = {"
     for start,end in comp_last_ranges:
         print >>fp,"  { %d, %d, %d}," % (start,end-start,comp_last[start])
     print >>fp,"  {0,0,0}"

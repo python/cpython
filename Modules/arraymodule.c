@@ -1546,7 +1546,7 @@ static PyGetSetDef array_getsets [] = {
 	{NULL}
 };
 
-PyMethodDef array_methods[] = {
+static PyMethodDef array_methods[] = {
 	{"append",	(PyCFunction)array_append,	METH_O,
 	 append_doc},
 	{"buffer_info", (PyCFunction)array_buffer_info, METH_NOARGS,

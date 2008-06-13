@@ -444,7 +444,7 @@ PyLocale_getdefaultlocale(PyObject* self)
 
 #ifdef HAVE_LANGINFO_H
 #define LANGINFO(X) {#X, X}
-struct langinfo_constant{
+static struct langinfo_constant{
 	char* name;
 	int value;
 } langinfo_constants[] = 

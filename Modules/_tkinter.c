@@ -490,7 +490,7 @@ Split(char *list)
    lists. SplitObj walks through a nested tuple, finding string objects that
    need to be split. */
 
-PyObject *
+static PyObject *
 SplitObj(PyObject *arg)
 {
 	if (PyTuple_Check(arg)) {
@@ -1523,7 +1523,7 @@ varname_converter(PyObject *in, void *_out)
 	return 0;
 }	
 
-void
+static void
 var_perform(VarEvent *ev)
 {
 	*(ev->res) = ev->func(ev->self, ev->args, ev->flags);
