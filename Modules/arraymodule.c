@@ -432,6 +432,9 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, struct arraydescr *descr)
 	if (op == NULL) {
 		return NULL;
 	}
+	op->ob_descr = descr;
+	op->allocated = size;
+	op->weakreflist = NULL;
 	Py_SIZE(op) = size;
 	if (size <= 0) {
 		op->ob_item = NULL;
@@ -439,13 +442,10 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, struct arraydescr *descr)
 	else {
 		op->ob_item = PyMem_NEW(char, nbytes);
 		if (op->ob_item == NULL) {
-			PyObject_Del(op);
+			Py_DECREF(op);
 			return PyErr_NoMemory();
 		}
 	}
-	op->ob_descr = descr;
-	op->allocated = size;
-	op->weakreflist = NULL;
 	return (PyObject *) op;
 }
 
@@ -826,14 +826,13 @@ array_do_extend(arrayobject *self, PyObject *bb)
 	}
 	if ((Py_SIZE(self) > PY_SSIZE_T_MAX - Py_SIZE(b)) ||
 		((Py_SIZE(self) + Py_SIZE(b)) > PY_SSIZE_T_MAX / self->ob_descr->itemsize)) {
-			PyErr_NoMemory();
-			return -1;
+		PyErr_NoMemory();
+		return -1;
 	}
 	size = Py_SIZE(self) + Py_SIZE(b);
         PyMem_RESIZE(self->ob_item, char, size*self->ob_descr->itemsize);
         if (self->ob_item == NULL) {
-                PyObject_Del(self);
-                PyErr_NoMemory();
+		PyErr_NoMemory();
 		return -1;
         }
 	memcpy(self->ob_item + Py_SIZE(self)*self->ob_descr->itemsize,
