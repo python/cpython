@@ -1,5 +1,5 @@
 /*
- * Extension module used by mutliprocessing package
+ * Extension module used by multiprocessing package
  *
  * multiprocessing.c
  *
@@ -228,7 +228,7 @@ static struct PyModuleDef multiprocessing_module = {
 PyMODINIT_FUNC 
 PyInit__multiprocessing(void)
 {
-	PyObject *module, *temp;
+	PyObject *module, *temp, *value;
 
 	/* Initialize module */
 	module = PyModule_Create(&multiprocessing_module);
@@ -297,11 +297,13 @@ PyInit__multiprocessing(void)
 	temp = PyDict_New();
 	if (!temp)
 		return NULL;
-	if (PyModule_AddObject(module, "flags", temp) < 0)
-		return NULL;
 
-#define ADD_FLAG(name) \
-       if (PyDict_SetItemString(temp, #name, Py_BuildValue("i", name)) < 0) return NULL
+#define ADD_FLAG(name)						  \
+	value = Py_BuildValue("i", name);			  \
+	if (value == NULL) { Py_DECREF(temp); return NULL; }	  \
+	if (PyDict_SetItemString(temp, #name, value) < 0) {	  \
+		Py_DECREF(temp); Py_DECREF(value); return NULL; }	  \
+	Py_DECREF(value)
 	
 #ifdef HAVE_SEM_OPEN
 	ADD_FLAG(HAVE_SEM_OPEN);
@@ -318,5 +320,9 @@ PyInit__multiprocessing(void)
 #ifdef HAVE_BROKEN_SEM_UNLINK
 	ADD_FLAG(HAVE_BROKEN_SEM_UNLINK);
 #endif
+
+	if (PyModule_AddObject(module, "flags", temp) < 0)
+		return NULL;
+
         return module;
 }
