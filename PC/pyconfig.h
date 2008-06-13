@@ -467,13 +467,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
 /* #undef size_t */
 
-/* Define to `int' if <sys/types.h> doesn't define.  */
-#if _MSC_VER + 0 >= 1300
-/* VC.NET typedefs socklen_t in ws2tcpip.h. */
-#else
-#define socklen_t int
-#endif
-
 /* Define if you have the ANSI C header files.  */
 #define STDC_HEADERS 1
 

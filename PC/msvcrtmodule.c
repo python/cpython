@@ -143,6 +143,7 @@ msvcrt_getch(PyObject *self, PyObject *args)
 	return PyString_FromStringAndSize(s, 1);
 }
 
+#ifdef _WCONIO_DEFINED
 static PyObject *
 msvcrt_getwch(PyObject *self, PyObject *args)
 {
@@ -158,6 +159,7 @@ msvcrt_getwch(PyObject *self, PyObject *args)
 	u[0] = ch;
 	return PyUnicode_FromUnicode(u, 1);
 }
+#endif
 
 static PyObject *
 msvcrt_getche(PyObject *self, PyObject *args)
@@ -175,6 +177,7 @@ msvcrt_getche(PyObject *self, PyObject *args)
 	return PyString_FromStringAndSize(s, 1);
 }
 
+#ifdef _WCONIO_DEFINED
 static PyObject *
 msvcrt_getwche(PyObject *self, PyObject *args)
 {
@@ -190,6 +193,7 @@ msvcrt_getwche(PyObject *self, PyObject *args)
 	s[0] = ch;
 	return PyUnicode_FromUnicode(s, 1);
 }
+#endif
 
 static PyObject *
 msvcrt_putch(PyObject *self, PyObject *args)
@@ -204,7 +208,7 @@ msvcrt_putch(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-
+#ifdef _WCONIO_DEFINED
 static PyObject *
 msvcrt_putwch(PyObject *self, PyObject *args)
 {
@@ -223,6 +227,7 @@ msvcrt_putwch(PyObject *self, PyObject *args)
 	Py_RETURN_NONE;
 
 }
+#endif
 
 static PyObject *
 msvcrt_ungetch(PyObject *self, PyObject *args)
@@ -238,6 +243,7 @@ msvcrt_ungetch(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+#ifdef _WCONIO_DEFINED
 static PyObject *
 msvcrt_ungetwch(PyObject *self, PyObject *args)
 {
@@ -251,6 +257,7 @@ msvcrt_ungetwch(PyObject *self, PyObject *args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif
 
 static void
 insertint(PyObject *d, char *name, int value)
@@ -279,11 +286,12 @@ static struct PyMethodDef msvcrt_functions[] = {
 	{"getche",		msvcrt_getche, METH_VARARGS},
 	{"putch",		msvcrt_putch, METH_VARARGS},
 	{"ungetch",		msvcrt_ungetch, METH_VARARGS},
+#ifdef _WCONIO_DEFINED
 	{"getwch",		msvcrt_getwch, METH_VARARGS},
 	{"getwche",		msvcrt_getwche, METH_VARARGS},
 	{"putwch",		msvcrt_putwch, METH_VARARGS},
 	{"ungetwch",		msvcrt_ungetwch, METH_VARARGS},
-
+#endif
 	{NULL,			NULL}
 };
 

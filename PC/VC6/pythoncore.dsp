@@ -97,6 +97,10 @@ SOURCE=..\..\Modules\_bisectmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_bytesio.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\cjkcodecs\_codecs_cn.c
 # End Source File
 # Begin Source File

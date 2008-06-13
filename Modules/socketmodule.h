@@ -13,19 +13,23 @@
 # endif
 
 #else /* MS_WINDOWS */
-#if _MSC_VER >= 1300
 # include <winsock2.h>
 # include <ws2tcpip.h>
-# include <MSTcpIP.h> /* for SIO_RCVALL */
-# define HAVE_ADDRINFO
-# define HAVE_SOCKADDR_STORAGE
-# define HAVE_GETADDRINFO
-# define HAVE_GETNAMEINFO
-# define ENABLE_IPV6
-#else
-# include <winsock.h>
-#endif
-#endif
+/* VC6 is shipped with old platform headers, and does not have MSTcpIP.h
+ * Separate SDKs have all the functions we want, but older ones don't have
+ * any version information. I use IPPROTO_IPV6 to detect a decent SDK.
+ */
+# ifdef IPPROTO_IPV6
+#  include <MSTcpIP.h> /* for SIO_RCVALL */
+#  define HAVE_ADDRINFO
+#  define HAVE_SOCKADDR_STORAGE
+#  define HAVE_GETADDRINFO
+#  define HAVE_GETNAMEINFO
+#  define ENABLE_IPV6
+# else
+typedef int socklen_t;
+# endif /* IPPROTO_IPV6 */
+#endif /* MS_WINDOWS */
 
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
