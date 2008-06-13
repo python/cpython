@@ -27,8 +27,11 @@ if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4
 if not exist openssl-0.9.8g svn export http://svn.python.org/projects/external/openssl-0.9.8g
 
 @rem tcl/tk
-if not exist tcl-8.4.18.2 svn export http://svn.python.org/projects/external/tcl-8.4.18.2
-if not exist tk-8.4.18.1 svn export http://svn.python.org/projects/external/tk-8.4.18.1
+if not exist tcl-8.5.2.1 (
+   rd /s/q tcltk tcltk64
+   svn export http://svn.python.org/projects/external/tcl-8.5.2.1
+)
+if not exist tk-8.5.2.0 svn export http://svn.python.org/projects/external/tk-8.5.2.0
 
 @rem sqlite3
 if not exist sqlite-source-3.3.4 svn export http://svn.python.org/projects/external/sqlite-source-3.3.4

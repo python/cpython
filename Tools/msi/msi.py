@@ -849,17 +849,18 @@ def generate_license():
     import shutil, glob
     out = open("LICENSE.txt", "w")
     shutil.copyfileobj(open(os.path.join(srcdir, "LICENSE")), out)
-    for dir, file in (("bzip2","LICENSE"),
-                      ("db", "LICENSE"),
-                      ("openssl", "LICENSE"),
-                      ("tcl", "license.terms"),
-                      ("tk", "license.terms")):
-        out.write("\nThis copy of Python includes a copy of %s, which is licensed under the following terms:\n\n" % dir)
-        dirs = glob.glob(srcdir+"/../"+dir+"-*")
+    for name, pat, file in (("bzip2","bzip2-*", "LICENSE"),
+                      ("Berkeley DB", "db-*", "LICENSE"),
+                      ("openssl", "openssl-*", "LICENSE"),
+                      ("Tcl", "tcl8*", "license.terms"),
+                      ("Tk", "tk8*", "license.terms"),
+                      ("Tix", "tix-*", "license.terms")):
+        out.write("\nThis copy of Python includes a copy of %s, which is licensed under the following terms:\n\n" % name)
+        dirs = glob.glob(srcdir+"/../"+pat)
         if not dirs:
-            raise ValueError, "Could not find "+srcdir+"/../"+dir+"-*"
+            raise ValueError, "Could not find "+srcdir+"/../"+pat
         if len(dirs) > 2:
-            raise ValueError, "Multiple copies of "+dir
+            raise ValueError, "Multiple copies of "+pat
         dir = dirs[0]
         shutil.copyfileobj(open(os.path.join(dir, file)), out)
     out.close()
