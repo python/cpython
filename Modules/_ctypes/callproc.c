@@ -1849,6 +1849,8 @@ buffer_info(PyObject *self, PyObject *arg)
 		return NULL;
 	}
 	shape = PyTuple_New(dict->ndim);
+	if (shape == NULL)
+		return NULL;
 	for (i = 0; i < (int)dict->ndim; ++i)
 		PyTuple_SET_ITEM(shape, i, PyLong_FromSsize_t(dict->shape[i]));
 
