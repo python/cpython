@@ -215,7 +215,7 @@ static PyMethodDef module_methods[] = {
 PyMODINIT_FUNC
 init_multiprocessing(void)
 {
-	PyObject *module, *temp;
+	PyObject *module, *temp, *value;
 
 	/* Initialize module */
 	module = Py_InitModule("_multiprocessing", module_methods);
@@ -284,11 +284,12 @@ init_multiprocessing(void)
 	temp = PyDict_New();
 	if (!temp)
 		return;
-	if (PyModule_AddObject(module, "flags", temp) < 0)
-		return;
-
-#define ADD_FLAG(name) \
-    if (PyDict_SetItemString(temp, #name, Py_BuildValue("i", name)) < 0) return
+#define ADD_FLAG(name)						  \
+	value = Py_BuildValue("i", name);			  \
+	if (value == NULL) { Py_DECREF(temp); return; }		  \
+	if (PyDict_SetItemString(temp, #name, value) < 0) {	  \
+		Py_DECREF(temp); Py_DECREF(value); return; }	  \
+	Py_DECREF(value)
 	
 #ifdef HAVE_SEM_OPEN
 	ADD_FLAG(HAVE_SEM_OPEN);
@@ -305,4 +306,6 @@ init_multiprocessing(void)
 #ifdef HAVE_BROKEN_SEM_UNLINK
 	ADD_FLAG(HAVE_BROKEN_SEM_UNLINK);
 #endif
+	if (PyModule_AddObject(module, "flags", temp) < 0)
+		return;
 }
