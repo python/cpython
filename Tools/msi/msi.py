@@ -24,8 +24,6 @@ srcdir = os.path.abspath("../..")
 full_current_version = None
 # Is Tcl available at all?
 have_tcl = True
-# Where is sqlite3.dll located, relative to srcdir?
-sqlite_dir = "../sqlite-source-3.3.4"
 # path to PCbuild directory
 PCBUILD="PCbuild"
 # msvcrt version
@@ -939,6 +937,8 @@ def add_files(db):
     dirs={}
     pydirs = [(root,"Lib")]
     while pydirs:
+        # Commit every now and then, or else installer will complain
+        db.Commit()
         parent, dir = pydirs.pop()
         if dir == ".svn" or dir.startswith("plat-"):
             continue
@@ -1041,7 +1041,7 @@ def add_files(db):
     else:
         sqlite_arch = ""
         tclsuffix = ""
-    lib.add_file(srcdir+"/"+sqlite_dir+sqlite_arch+"/sqlite3.dll")
+    lib.add_file("sqlite3.dll")
     if have_tcl:
         if not os.path.exists("%s/%s/_tkinter.pyd" % (srcdir, PCBUILD)):
             print "WARNING: Missing _tkinter.pyd"
