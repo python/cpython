@@ -175,7 +175,7 @@ Library
 
 - The test.test_support module has been renamed to test.support.
 
-- The threading module API's were renamed to by PEP 8 complaint.
+- The threading module API was renamed to be PEP 8 complaint.
 
 Tools/Demos
 -----------

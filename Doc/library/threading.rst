@@ -283,29 +283,29 @@ several condition variables must share the same lock.)
 
 A condition variable has :meth:`acquire` and :meth:`release` methods that call
 the corresponding methods of the associated lock. It also has a :meth:`wait`
-method, and :meth:`notify` and :meth:`notifyAll` methods.  These three must only
+method, and :meth:`notify` and :meth:`notify_all` methods.  These three must only
 be called when the calling thread has acquired the lock, otherwise a
 :exc:`RuntimeError` is raised.
 
 The :meth:`wait` method releases the lock, and then blocks until it is awakened
-by a :meth:`notify` or :meth:`notifyAll` call for the same condition variable in
+by a :meth:`notify` or :meth:`notify_all` call for the same condition variable in
 another thread.  Once awakened, it re-acquires the lock and returns.  It is also
 possible to specify a timeout.
 
 The :meth:`notify` method wakes up one of the threads waiting for the condition
-variable, if any are waiting.  The :meth:`notifyAll` method wakes up all threads
+variable, if any are waiting.  The :meth:`notify_all` method wakes up all threads
 waiting for the condition variable.
 
-Note: the :meth:`notify` and :meth:`notifyAll` methods don't release the lock;
+Note: the :meth:`notify` and :meth:`notify_all` methods don't release the lock;
 this means that the thread or threads awakened will not return from their
 :meth:`wait` call immediately, but only when the thread that called
-:meth:`notify` or :meth:`notifyAll` finally relinquishes ownership of the lock.
+:meth:`notify` or :meth:`notify_all` finally relinquishes ownership of the lock.
 
 Tip: the typical programming style using condition variables uses the lock to
 synchronize access to some shared state; threads that are interested in a
 particular change of state call :meth:`wait` repeatedly until they see the
 desired state, while threads that modify the state call :meth:`notify` or
-:meth:`notifyAll` when they change the state in such a way that it could
+:meth:`notify_all` when they change the state in such a way that it could
 possibly be a desired state for one of the waiters.  For example, the following
 code is a generic producer-consumer situation with unlimited buffer capacity::
 
@@ -322,7 +322,7 @@ code is a generic producer-consumer situation with unlimited buffer capacity::
    cv.notify()
    cv.release()
 
-To choose between :meth:`notify` and :meth:`notifyAll`, consider whether one
+To choose between :meth:`notify` and :meth:`notify_all`, consider whether one
 state change can be interesting for only one or several waiting threads.  E.g.
 in a typical producer-consumer situation, adding one item to the buffer only
 needs to wake up one consumer thread.
@@ -353,7 +353,7 @@ needs to wake up one consumer thread.
    acquired the lock when this method is called, a :exc:`RuntimeError` is raised.
 
    This method releases the underlying lock, and then blocks until it is awakened
-   by a :meth:`notify` or :meth:`notifyAll` call for the same condition variable in
+   by a :meth:`notify` or :meth:`notify_all` call for the same condition variable in
    another thread, or until the optional timeout occurs.  Once awakened or timed
    out, it re-acquires the lock and returns.
 
@@ -490,7 +490,7 @@ An event object manages an internal flag that can be set to true with the
    The internal flag is initially false.
 
 
-.. method:: Event.isSet()
+.. method:: Event.is_set()
 
    Return true if and only if the internal flag is true.
 
@@ -537,7 +537,7 @@ separate thread of control.
 
 Once the thread's activity is started, the thread is considered 'alive'. It
 stops being alive when its :meth:`run` method terminates -- either normally, or
-by raising an unhandled exception.  The :meth:`isAlive` method tests whether the
+by raising an unhandled exception.  The :meth:`is_alive` method tests whether the
 thread is alive.
 
 Other threads can call a thread's :meth:`join` method.  This blocks the calling
@@ -614,7 +614,7 @@ impossible to detect the termination of alien threads.
 
    When the *timeout* argument is present and not ``None``, it should be a floating
    point number specifying a timeout for the operation in seconds (or fractions
-   thereof). As :meth:`join` always returns ``None``, you must call :meth:`isAlive`
+   thereof). As :meth:`join` always returns ``None``, you must call :meth:`is_alive`
    after :meth:`join` to decide whether a timeout happened -- if the thread is
    still alive, the :meth:`join` call timed out.
 

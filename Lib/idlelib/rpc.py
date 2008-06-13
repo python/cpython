@@ -149,7 +149,7 @@ class SocketIO(object):
     def debug(self, *args):
         if not self.debugging:
             return
-        s = self.location + " " + str(threading.current_thread().getName())
+        s = self.location + " " + str(threading.current_thread().get_name())
         for a in args:
             s = s + " " + str(a)
         print(s, file=sys.__stderr__)

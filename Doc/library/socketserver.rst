@@ -480,8 +480,8 @@ An example for the :class:`ThreadingMixIn` class::
 
        def handle(self):
            data = self.request.recv(1024)
-           cur_thread = threading.currentThread()
-           response = "%s: %s" % (cur_thread.getName(), data)
+           cur_thread = threading.current_thread()
+           response = "%s: %s" % (cur_thread.get_name(), data)
            self.request.send(response)
 
    class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -506,9 +506,9 @@ An example for the :class:`ThreadingMixIn` class::
        # more thread for each request
        server_thread = threading.Thread(target=server.serve_forever)
        # Exit the server thread when the main thread terminates
-       server_thread.setDaemon(True)
+       server_thread.set_daemon(True)
        server_thread.start()
-       print "Server loop running in thread:", t.getName()
+       print "Server loop running in thread:", t.get_name()
 
        client(ip, port, "Hello World 1")
        client(ip, port, "Hello World 2")

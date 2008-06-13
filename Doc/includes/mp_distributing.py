@@ -243,7 +243,7 @@ class SettableQueue(Queue.Queue):
         try:
             self.queue.clear()
             self.queue.extend(contents)
-            self.not_empty.notifyAll()
+            self.not_empty.notify_all()
         finally:
             self.not_empty.release()
 
