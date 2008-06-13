@@ -210,7 +210,7 @@ class TestHeapC(TestHeap):
         class LE:
             def __init__(self, x):
                 self.x = x
-            def __lt__(self, other):
+            def __le__(self, other):
                 return self.x >= other.x
         data = [random.random() for i in range(100)]
         target = sorted(data, reverse=True)
