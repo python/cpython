@@ -567,6 +567,9 @@ class SizeofTest(unittest.TestCase):
         # string
         self.check_sizeof('', h + l + self.align(i + 1))
         self.check_sizeof('abc', h + l + self.align(i + 1) + 3)
+        # tuple
+        self.check_sizeof((), h)
+        self.check_sizeof((1,2,3), h + 3*p)
 
 
 def test_main():
