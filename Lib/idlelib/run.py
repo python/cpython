@@ -73,7 +73,7 @@ def main(del_exitfunc=False):
     sockthread = threading.Thread(target=manage_socket,
                                   name='SockThread',
                                   args=((LOCALHOST, port),))
-    sockthread.setDaemon(True)
+    sockthread.set_daemon(True)
     sockthread.start()
     while 1:
         try:
@@ -227,7 +227,7 @@ class MyRPCServer(rpc.RPCServer):
             erf = sys.__stderr__
             print('\n' + '-'*40, file=erf)
             print('Unhandled server exception!', file=erf)
-            print('Thread: %s' % threading.currentThread().getName(), file=erf)
+            print('Thread: %s' % threading.current_thread().get_name(), file=erf)
             print('Client Address: ', client_address, file=erf)
             print('Request: ', repr(request), file=erf)
             traceback.print_exc(file=erf)

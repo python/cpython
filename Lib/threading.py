@@ -856,7 +856,7 @@ def _test():
     P = []
     for i in range(NP):
         t = ProducerThread(Q, NI)
-        t.setName("Producer-%d" % (i+1))
+        t.set_name("Producer-%d" % (i+1))
         P.append(t)
     C = ConsumerThread(Q, NI*NP)
     for t in P:

@@ -106,7 +106,7 @@ class RPCServer(socketserver.TCPServer):
             erf = sys.__stderr__
             print('\n' + '-'*40, file=erf)
             print('Unhandled server exception!', file=erf)
-            print('Thread: %s' % threading.currentThread().getName(), file=erf)
+            print('Thread: %s' % threading.current_thread().get_name(), file=erf)
             print('Client Address: ', client_address, file=erf)
             print('Request: ', repr(request), file=erf)
             traceback.print_exc(file=erf)
@@ -126,7 +126,7 @@ class SocketIO(object):
     nextseq = 0
 
     def __init__(self, sock, objtable=None, debugging=None):
-        self.sockthread = threading.currentThread()
+        self.sockthread = threading.current_thread()
         if debugging is not None:
             self.debugging = debugging
         self.sock = sock
@@ -149,7 +149,7 @@ class SocketIO(object):
     def debug(self, *args):
         if not self.debugging:
             return
-        s = self.location + " " + str(threading.currentThread().getName())
+        s = self.location + " " + str(threading.current_thread().getName())
         for a in args:
             s = s + " " + str(a)
         print(s, file=sys.__stderr__)
@@ -218,7 +218,7 @@ class SocketIO(object):
     def asynccall(self, oid, methodname, args, kwargs):
         request = ("CALL", (oid, methodname, args, kwargs))
         seq = self.newseq()
-        if threading.currentThread() != self.sockthread:
+        if threading.current_thread() != self.sockthread:
             cvar = threading.Condition()
             self.cvars[seq] = cvar
         self.debug(("asynccall:%d:" % seq), oid, methodname, args, kwargs)
@@ -228,7 +228,7 @@ class SocketIO(object):
     def asyncqueue(self, oid, methodname, args, kwargs):
         request = ("QUEUE", (oid, methodname, args, kwargs))
         seq = self.newseq()
-        if threading.currentThread() != self.sockthread:
+        if threading.current_thread() != self.sockthread:
             cvar = threading.Condition()
             self.cvars[seq] = cvar
         self.debug(("asyncqueue:%d:" % seq), oid, methodname, args, kwargs)
@@ -294,7 +294,7 @@ class SocketIO(object):
 
     def _getresponse(self, myseq, wait):
         self.debug("_getresponse:myseq:", myseq)
-        if threading.currentThread() is self.sockthread:
+        if threading.current_thread() is self.sockthread:
             # this thread does all reading of requests or responses
             while 1:
                 response = self.pollresponse(myseq, wait)
