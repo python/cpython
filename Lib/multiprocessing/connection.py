@@ -50,7 +50,7 @@ def arbitrary_address(family):
     '''
     if family == 'AF_INET':
         return ('localhost', 0)
-    elif family == 'AF_UNIX':        
+    elif family == 'AF_UNIX':
         return tempfile.mktemp(prefix='listener-', dir=get_temp_dir())
     elif family == 'AF_PIPE':
         return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
@@ -160,7 +160,7 @@ if sys.platform != 'win32':
             c2 = _multiprocessing.Connection(fd2, readable=False)
 
         return c1, c2
-    
+
 else:
 
     from ._multiprocessing import win32
@@ -200,7 +200,7 @@ else:
 
         c1 = _multiprocessing.PipeConnection(h1, writable=duplex)
         c2 = _multiprocessing.PipeConnection(h2, readable=duplex)
-        
+
         return c1, c2
 
 #
@@ -290,14 +290,14 @@ if sys.platform == 'win32':
                 )
             self._handle_queue = [handle]
             self._last_accepted = None
-            
+
             sub_debug('listener created with address=%r', self._address)
 
             self.close = Finalize(
                 self, PipeListener._finalize_pipe_listener,
                 args=(self._handle_queue, self._address), exitpriority=0
                 )
-            
+
         def accept(self):
             newhandle = win32.CreateNamedPipe(
                 self._address, win32.PIPE_ACCESS_DUPLEX,
@@ -320,7 +320,7 @@ if sys.platform == 'win32':
             sub_debug('closing listener with address=%r', address)
             for handle in queue:
                 close(handle)
-        
+
     def PipeClient(address):
         '''
         Return a connection object connected to the pipe given by `address`
@@ -397,7 +397,7 @@ class ConnectionWrapper(object):
         self._loads = loads
         for attr in ('fileno', 'close', 'poll', 'recv_bytes', 'send_bytes'):
             obj = getattr(conn, attr)
-            setattr(self, attr, obj)            
+            setattr(self, attr, obj)
     def send(self, obj):
         s = self._dumps(obj)
         self._conn.send_bytes(s)

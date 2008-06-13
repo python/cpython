@@ -68,10 +68,10 @@ from multiprocessing.process import Process, current_process, active_children
 
 class ProcessError(Exception):
     pass
-    
+
 class BufferTooShort(ProcessError):
     pass
-    
+
 class TimeoutError(ProcessError):
     pass
 
@@ -123,7 +123,7 @@ def cpu_count():
             num = os.sysconf('SC_NPROCESSORS_ONLN')
         except (ValueError, OSError, AttributeError):
             num = 0
-        
+
     if num >= 1:
         return num
     else:
@@ -151,13 +151,13 @@ def log_to_stderr(level=None):
     '''
     from multiprocessing.util import log_to_stderr
     return log_to_stderr(level)
-    
+
 def allow_connection_pickling():
     '''
     Install support for sending connections and sockets between processes
     '''
     from multiprocessing import reduction
-    
+
 #
 # Definitions depending on native semaphores
 #
@@ -263,7 +263,7 @@ if sys.platform == 'win32':
         '''
         Sets the path to a python.exe or pythonw.exe binary used to run
         child processes on Windows instead of sys.executable.
-        Useful for people embedding Python. 
+        Useful for people embedding Python.
         '''
         from multiprocessing.forking import set_executable
         set_executable(executable)

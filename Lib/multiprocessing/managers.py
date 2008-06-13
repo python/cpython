@@ -40,7 +40,7 @@ try:
     bytes
 except NameError:
     bytes = str                  # XXX not needed in Py2.6 and Py3.0
-    
+
 #
 # Register some things for pickling
 #
@@ -55,7 +55,7 @@ if view_types[0] is not list:       # XXX only needed in Py3.0
         return list, (list(obj),)
     for view_type in view_types:
         copy_reg.pickle(view_type, rebuild_as_list)
-    
+
 #
 # Type for identifying shared objects
 #
@@ -104,7 +104,7 @@ def convert_to_error(kind, result):
         return RemoteError('Unserializable message: %s\n' % result)
     else:
         return ValueError('Unrecognized message type')
-        
+
 class RemoteError(Exception):
     def __str__(self):
         return ('\n' + '-'*75 + '\n' + str(self.args[0]) + '-'*75)
@@ -340,7 +340,7 @@ class Server(object):
                     util.debug('resetting stdout, stderr')
                     sys.stdout = sys.__stdout__
                     sys.stderr = sys.__stderr__
-                    
+
                 util._run_finalizers(0)
 
                 for p in active_children():
@@ -358,7 +358,7 @@ class Server(object):
                 traceback.print_exc()
         finally:
             exit(0)
-            
+
     def create(self, c, typeid, *args, **kwds):
         '''
         Create a new shared object and return its id
@@ -367,7 +367,7 @@ class Server(object):
         try:
             callable, exposed, method_to_typeid, proxytype = \
                       self.registry[typeid]
-            
+
             if callable is None:
                 assert len(args) == 1 and not kwds
                 obj = args[0]
@@ -456,7 +456,7 @@ class BaseManager(object):
     '''
     _registry = {}
     _Server = Server
-    
+
     def __init__(self, address=None, authkey=None, serializer='pickle'):
         if authkey is None:
             authkey = current_process().get_authkey()
@@ -487,7 +487,7 @@ class BaseManager(object):
         conn = Client(self._address, authkey=self._authkey)
         dispatch(conn, None, 'dummy')
         self._state.value = State.STARTED
-        
+
     def start(self):
         '''
         Spawn a server process for this manager object
@@ -570,10 +570,10 @@ class BaseManager(object):
         Return the number of shared objects
         '''
         conn = self._Client(self._address, authkey=self._authkey)
-        try:        
+        try:
             return dispatch(conn, None, 'number_of_objects')
         finally:
-            conn.close()        
+            conn.close()
 
     def __enter__(self):
         return self
@@ -612,7 +612,7 @@ class BaseManager(object):
             del BaseProxy._address_to_local[address]
         except KeyError:
             pass
-        
+
     address = property(lambda self: self._address)
 
     @classmethod
@@ -640,7 +640,7 @@ class BaseManager(object):
         cls._registry[typeid] = (
             callable, exposed, method_to_typeid, proxytype
             )
-        
+
         if create_method:
             def temp(self, *args, **kwds):
                 util.debug('requesting creation of a shared %r object', typeid)
@@ -709,9 +709,9 @@ class BaseProxy(object):
 
         if incref:
             self._incref()
-            
+
         util.register_after_fork(self, BaseProxy._after_fork)
-        
+
     def _connect(self):
         util.debug('making connection to manager')
         name = current_process().get_name()
@@ -720,7 +720,7 @@ class BaseProxy(object):
         conn = self._Client(self._token.address, authkey=self._authkey)
         dispatch(conn, None, 'accept_connection', (name,))
         self._tls.connection = conn
-        
+
     def _callmethod(self, methodname, args=(), kwds={}):
         '''
         Try to call a method of the referrent and return a copy of the result
@@ -735,7 +735,7 @@ class BaseProxy(object):
 
         conn.send((self._id, methodname, args, kwds))
         kind, result = conn.recv()
-        
+
         if kind == '#RETURN':
             return result
         elif kind == '#PROXY':
@@ -793,7 +793,7 @@ class BaseProxy(object):
                        threading.current_thread().get_name())
             tls.connection.close()
             del tls.connection
-            
+
     def _after_fork(self):
         self._manager = None
         try:
@@ -806,7 +806,7 @@ class BaseProxy(object):
         kwds = {}
         if Popen.thread_is_spawning():
             kwds['authkey'] = self._authkey
-        
+
         if getattr(self, '_isauto', False):
             kwds['exposed'] = self._exposed_
             return (RebuildProxy,
@@ -817,7 +817,7 @@ class BaseProxy(object):
 
     def __deepcopy__(self, memo):
         return self._getvalue()
-    
+
     def __repr__(self):
         return '<%s object, typeid %r at %s>' % \
                (type(self).__name__, self._token.typeid, '0x%x' % id(self))
@@ -842,7 +842,7 @@ def RebuildProxy(func, token, serializer, kwds):
     If possible the shared object is returned, or otherwise a proxy for it.
     '''
     server = getattr(current_process(), '_manager_server', None)
-    
+
     if server and server.address == token.address:
         return server.id_to_obj[token.id][0]
     else:
@@ -884,7 +884,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
     Return an auto-proxy for `token`
     '''
     _Client = listener_client[serializer][1]
-    
+
     if exposed is None:
         conn = _Client(token.address, authkey=authkey)
         try:
@@ -995,7 +995,7 @@ class NamespaceProxy(BaseProxy):
         if key[0] == '_':
             return object.__getattribute__(self, key)
         callmethod = object.__getattribute__(self, '_callmethod')
-        return callmethod('__getattribute__', (key,))    
+        return callmethod('__getattribute__', (key,))
     def __setattr__(self, key, value):
         if key[0] == '_':
             return object.__setattr__(self, key, value)
@@ -1007,7 +1007,7 @@ class NamespaceProxy(BaseProxy):
         callmethod = object.__getattribute__(self, '_callmethod')
         return callmethod('__delattr__', (key,))
 
-    
+
 class ValueProxy(BaseProxy):
     _exposed_ = ('get', 'set')
     def get(self):
@@ -1063,10 +1063,10 @@ PoolProxy._method_to_typeid_ = {
 class SyncManager(BaseManager):
     '''
     Subclass of `BaseManager` which supports a number of shared object types.
-    
+
     The types registered are those intended for the synchronization
     of threads, plus `dict`, `list` and `Namespace`.
-    
+
     The `multiprocessing.Manager()` function creates started instances of
     this class.
     '''

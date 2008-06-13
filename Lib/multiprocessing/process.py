@@ -47,7 +47,7 @@ def active_children():
     '''
     _cleanup()
     return list(_current_process._children)
-    
+
 #
 #
 #
@@ -69,7 +69,7 @@ class Process(object):
     The class is analagous to `threading.Thread`
     '''
     _Popen = None
-    
+
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
         assert group is None, 'group argument must be None for now'
         count = _current_process._counter.next()
@@ -91,7 +91,7 @@ class Process(object):
         '''
         if self._target:
             self._target(*self._args, **self._kwargs)
-            
+
     def start(self):
         '''
         Start child process
@@ -114,7 +114,7 @@ class Process(object):
         Terminate process; sends SIGTERM signal or uses TerminateProcess()
         '''
         self._popen.terminate()
-        
+
     def join(self, timeout=None):
         '''
         Wait until child process terminates
@@ -217,11 +217,11 @@ class Process(object):
                                    status, self._daemonic and ' daemon' or '')
 
     ##
-        
+
     def _bootstrap(self):
         from . import util
         global _current_process
-        
+
         try:
             self._children = set()
             self._counter = itertools.count(1)

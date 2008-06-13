@@ -70,7 +70,7 @@ class DummyProcess(threading.Thread):
 #
 #
 #
-        
+
 class Condition(threading._Condition):
     # XXX
     if sys.version_info < (3, 0):
