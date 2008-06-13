@@ -105,6 +105,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -118,7 +119,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -230,6 +230,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -243,7 +244,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -354,6 +354,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -366,7 +367,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -477,6 +477,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -489,7 +490,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
