@@ -5,7 +5,7 @@
 
 /* Windows socket errors (WSA*)  */
 #ifdef MS_WINDOWS
-#include <winsock.h>
+#include <windows.h>
 #endif
 
 /*
