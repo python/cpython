@@ -1,5 +1,5 @@
 /*
- * Extension module used by mutliprocessing package
+ * Extension module used by multiprocessing package
  *
  * multiprocessing.c
  *
