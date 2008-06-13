@@ -228,7 +228,7 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database_Records[] = {
 #define TOTAL_FIRST 356
 #define TOTAL_LAST 53
 struct reindex{int start;short count,index;};
-struct reindex nfc_first[] = {
+static struct reindex nfc_first[] = {
   { 60, 2, 0},
   { 65, 15, 3},
   { 82, 8, 19},
@@ -425,7 +425,7 @@ struct reindex nfc_first[] = {
   {0,0,0}
 };
 
-struct reindex nfc_last[] = {
+static struct reindex nfc_last[] = {
   { 768, 4, 0},
   { 774, 6, 5},
   { 783, 0, 12},
