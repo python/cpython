@@ -822,7 +822,7 @@ test_with_docstring(PyObject *self)
 
 #ifdef HAVE_GETTIMEOFDAY
 /* Profiling of integer performance */
-void print_delta(int test, struct timeval *s, struct timeval *e)
+static void print_delta(int test, struct timeval *s, struct timeval *e)
 {
 	e->tv_sec -= s->tv_sec;
 	e->tv_usec -= s->tv_usec;
