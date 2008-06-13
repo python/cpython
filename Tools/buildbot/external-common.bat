@@ -15,7 +15,7 @@ cd ..
 @rem if exist tk-8.4.18.1 rd /s/q tk-8.4.18.1
 @rem if exist db-4.4.20 rd /s/q db-4.4.20
 @rem if exist openssl-0.9.8g rd /s/q openssl-0.9.8g
-@rem if exist sqlite-source-3.3.4 rd /s/q sqlite-source-3.3.4    
+@rem if exist sqlite-source-3.5.9 rd /s/q sqlite-source-3.5.9    
 
 @rem bzip
 if not exist bzip2-1.0.5 (
@@ -37,4 +37,7 @@ if not exist tcl-8.5.2.1 (
 if not exist tk-8.5.2.0 svn export http://svn.python.org/projects/external/tk-8.5.2.0
 
 @rem sqlite3
-if not exist sqlite-source-3.3.4 svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
+if not exist sqlite-source-3.5.9 (
+  rd /s/q sqlite-source-3.3.4
+  svn export http://svn.python.org/projects/external/sqlite-source-3.5.9
+)
