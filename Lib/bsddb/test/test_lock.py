@@ -7,7 +7,7 @@ import tempfile
 import time
 
 try:
-    from threading import Thread, currentThread
+    from threading import Thread, current_thread
     have_threads = 1
 except ImportError:
     have_threads = 0
@@ -117,7 +117,7 @@ class LockingTestCase(unittest.TestCase):
         deadlock_detection.end=False
         deadlock_detection.count=0
         t=Thread(target=deadlock_detection)
-        t.setDaemon(True)
+        t.set_daemon(True)
         t.start()
         self.env.set_timeout(100000, db.DB_SET_LOCK_TIMEOUT)
         anID = self.env.lock_id()
@@ -143,7 +143,7 @@ class LockingTestCase(unittest.TestCase):
             self.assertTrue(deadlock_detection.count>0)
 
     def theThread(self, sleepTime, lockType):
-        name = currentThread().getName()
+        name = current_thread().get_name()
         if lockType ==  db.DB_LOCK_WRITE:
             lt = "write"
         else:

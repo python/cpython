@@ -9,7 +9,7 @@ import time
 from pprint import pprint
 
 try:
-    from threading import Thread, currentThread
+    from threading import Thread, current_thread
     have_threads = 1
 except ImportError:
     have_threads = 0
