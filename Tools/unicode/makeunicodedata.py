@@ -234,12 +234,12 @@ def makeunicodedata(unicode, trace):
     print("#define TOTAL_FIRST",total_first, file=fp)
     print("#define TOTAL_LAST",total_last, file=fp)
     print("struct reindex{int start;short count,index;};", file=fp)
-    print("struct reindex nfc_first[] = {", file=fp)
+    print("static struct reindex nfc_first[] = {", file=fp)
     for start,end in comp_first_ranges:
         print("  { %d, %d, %d}," % (start,end-start,comp_first[start]), file=fp)
     print("  {0,0,0}", file=fp)
     print("};\n", file=fp)
-    print("struct reindex nfc_last[] = {", file=fp)
+    print("static struct reindex nfc_last[] = {", file=fp)
     for start,end in comp_last_ranges:
         print("  { %d, %d, %d}," % (start,end-start,comp_last[start]), file=fp)
     print("  {0,0,0}", file=fp)
