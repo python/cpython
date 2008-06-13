@@ -307,7 +307,7 @@ Library
 Build
 -----
 
-- The Windows installer now includes Tk 8.5 and bzip2 1.0.5.
+- The Windows installer now includes Tk 8.5, bzip2 1.0.5, and SQLite 3.5.9.
 
 - Patch #1722225: Support QNX 6.
 
