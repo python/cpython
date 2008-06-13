@@ -925,5 +925,6 @@ PyOS_AfterFork(void)
 	main_thread = PyThread_get_thread_ident();
 	main_pid = getpid();
 	_PyImport_ReInitLock();
+	PyThread_ReInitTLS();
 #endif
 }
