@@ -377,4 +377,35 @@ PyThread_delete_key_value(int key)
 	PyThread_release_lock(keymutex);
 }
 
+/* Forget everything not associated with the current thread id.
+ * This function is called from PyOS_AfterFork().  It is necessary
+ * because other thread ids which were in use at the time of the fork
+ * may be reused for new threads created in the forked process.
+ */
+void
+PyThread_ReInitTLS(void)
+{
+	long id = PyThread_get_thread_ident();
+	struct key *p, **q;
+
+	if (!keymutex)
+		return;
+	
+	/* As with interpreter_lock in PyEval_ReInitThreads()
+	   we just create a new lock without freeing the old one */
+	keymutex = PyThread_allocate_lock();
+
+	/* Delete all keys which do not match the current thread id */
+	q = &keyhead;
+	while ((p = *q) != NULL) {
+		if (p->id != id) {
+			*q = p->next;
+			free((void *)p);
+			/* NB This does *not* free p->value! */
+		}
+		else
+			q = &p->next;
+	}
+}
+
 #endif /* Py_HAVE_NATIVE_TLS */
