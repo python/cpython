@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="sqlite3"
 	ProjectGUID="{A1A295E5-463C-437F-81CA-1F32367685DA}"
 	RootNamespace="sqlite3"
@@ -43,6 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -56,7 +57,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -167,6 +167,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -180,7 +181,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -292,6 +292,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -304,7 +305,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -415,6 +415,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -427,7 +428,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="$(sqlite3Dir)\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -521,51 +521,11 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="$(sqlite3Dir)\btree.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\hash.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\keywordhash.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\opcodes.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\os.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\os_common.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\pager.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\parse.h"
-				>
-			</File>
-			<File
 				RelativePath="$(sqlite3Dir)\sqlite3.h"
 				>
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\sqliteInt.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\vdbe.h"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\vdbeInt.h"
+				RelativePath="$(sqlite3Dir)\sqlite3ext.h"
 				>
 			</File>
 		</Filter>
@@ -573,167 +533,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="$(sqlite3Dir)\alter.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\analyze.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\attach.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\auth.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\btree.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\build.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\callback.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\complete.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\date.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\delete.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\expr.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\func.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\hash.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\insert.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\legacy.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\main.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\opcodes.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\os.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\os_unix.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\os_win.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\pager.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\parse.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\pragma.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\prepare.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\printf.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\random.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\select.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\shell.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\table.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\tokenize.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\trigger.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\update.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\utf.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\util.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\vacuum.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\vdbe.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\vdbeapi.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\vdbeaux.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\vdbefifo.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\vdbemem.c"
-				>
-			</File>
-			<File
-				RelativePath="$(sqlite3Dir)\where.c"
+				RelativePath="$(sqlite3Dir)\sqlite3.c"
 				>
 			</File>
 		</Filter>
