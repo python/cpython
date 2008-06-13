@@ -107,7 +107,7 @@ _bsddb
     Wraps Berkeley DB 4.4.20, which is currently built by _bsddb44.vcproj.
     project (see below).
 _sqlite3
-    Wraps SQLite 3.3.4, which is currently built by sqlite3.vcproj (see below).
+    Wraps SQLite 3.5.9, which is currently built by sqlite3.vcproj (see below).
 _tkinter
     Wraps the Tk windowing system.  Unlike _bsddb and _sqlite3, there's no
     corresponding tcltk.vcproj-type project that builds Tcl/Tk from vcproj's
