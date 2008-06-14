@@ -4,8 +4,6 @@
 .. module:: multiprocessing
    :synopsis: Process-based "threading" interface.
 
-.. versionadded:: 2.6
-
 :mod:`multiprocessing` is a package for the Python language which supports the
 spawning of processes using a similar API of the :mod:`threading` module.  It
 runs on both Unix and Windows.
