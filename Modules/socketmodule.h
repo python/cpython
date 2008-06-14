@@ -17,9 +17,10 @@
 # include <ws2tcpip.h>
 /* VC6 is shipped with old platform headers, and does not have MSTcpIP.h
  * Separate SDKs have all the functions we want, but older ones don't have
- * any version information. I use IPPROTO_IPV6 to detect a decent SDK.
+ * any version information. 
+ * I use SIO_GET_MULTICAST_FILTER to detect a decent SDK.
  */
-# ifdef IPPROTO_IPV6
+# ifdef SIO_GET_MULTICAST_FILTER
 #  include <MSTcpIP.h> /* for SIO_RCVALL */
 #  define HAVE_ADDRINFO
 #  define HAVE_SOCKADDR_STORAGE
