@@ -14,8 +14,8 @@ if not exist tcltk\bin\tcl85.dll (
 
 if not exist tcltk\bin\tk85.dll (
     cd tk-8.5.2.0\win    
-    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.5.2.1 clean
-    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.5.2.1 all
-    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.5.2.1 install
+    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 OPTS=noxp DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.5.2.1 clean
+    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 OPTS=noxp DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.5.2.1 all
+    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 OPTS=noxp DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.5.2.1 install
     cd ..\..
 )
