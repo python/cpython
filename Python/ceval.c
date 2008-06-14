@@ -2817,11 +2817,12 @@ fail: /* Jump here from prelude on failure */
 static enum why_code
 do_raise(PyObject *exc, PyObject *cause)
 {
-	PyObject *type = NULL, *value = NULL, *tb = NULL;
+	PyObject *type = NULL, *value = NULL;
 
 	if (exc == NULL) {
 		/* Reraise */
 		PyThreadState *tstate = PyThreadState_GET();
+		PyObject *tb;
 		type = tstate->exc_type;
 		value = tstate->exc_value;
 		tb = tstate->exc_traceback;
@@ -2862,7 +2863,6 @@ do_raise(PyObject *exc, PyObject *cause)
 		goto raise_error;
 	}
 
-	tb = PyException_GetTraceback(value);
 	if (cause) {
 		PyObject *fixed_cause;
 		if (PyExceptionClass_Check(cause)) {
@@ -2883,13 +2883,15 @@ do_raise(PyObject *exc, PyObject *cause)
 		PyException_SetCause(value, fixed_cause);
 	}
 
-	PyErr_Restore(type, value, tb);
+	PyErr_SetObject(type, value);
+	/* PyErr_SetObject incref's its arguments */
+	Py_XDECREF(value);
+	Py_XDECREF(type);
 	return WHY_EXCEPTION;
 
 raise_error:
 	Py_XDECREF(value);
 	Py_XDECREF(type);
-	Py_XDECREF(tb);
 	Py_XDECREF(cause);
 	return WHY_EXCEPTION;
 }
