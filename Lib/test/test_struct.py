@@ -569,11 +569,9 @@ class StructTest(unittest.TestCase):
             for c in '\x01\x7f\xff\x0f\xf0':
                 self.assertTrue(struct.unpack('>?', c)[0])
 
-    def test_crasher(self):
-        if IS32BIT:
+    if IS32BIT:
+        def test_crasher(self):
             self.assertRaises(MemoryError, struct.pack, "357913941c", "a")
-        else:
-            print "%s test_crasher skipped on 64bit build."
 
 
 
