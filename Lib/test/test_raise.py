@@ -181,32 +181,102 @@ class TestTraceback(unittest.TestCase):
             self.fail("No exception raised")
 
 
-# Disabled until context is implemented
-# class TestContext(object):
-#     def test_instance_context_bare_raise(self):
-#         context = IndexError()
-#         try:
-#             try:
-#                 raise context
-#             except:
-#                 raise OSError()
-#         except OSError as e:
-#             self.assertEqual(e.__context__, context)
-#         else:
-#             self.fail("No exception raised")
-#
-#     def test_class_context_bare_raise(self):
-#         context = IndexError
-#         try:
-#             try:
-#                 raise context
-#             except:
-#                 raise OSError()
-#         except OSError as e:
-#             self.assertNotEqual(e.__context__, context)
-#             self.failUnless(isinstance(e.__context__, context))
-#         else:
-#             self.fail("No exception raised")
+class TestContext(unittest.TestCase):
+    def test_instance_context_instance_raise(self):
+        context = IndexError()
+        try:
+            try:
+                raise context
+            except:
+                raise OSError()
+        except OSError as e:
+            self.assertEqual(e.__context__, context)
+        else:
+            self.fail("No exception raised")
+
+    def test_class_context_instance_raise(self):
+        context = IndexError
+        try:
+            try:
+                raise context
+            except:
+                raise OSError()
+        except OSError as e:
+            self.assertNotEqual(e.__context__, context)
+            self.failUnless(isinstance(e.__context__, context))
+        else:
+            self.fail("No exception raised")
+
+    def test_class_context_class_raise(self):
+        context = IndexError
+        try:
+            try:
+                raise context
+            except:
+                raise OSError
+        except OSError as e:
+            self.assertNotEqual(e.__context__, context)
+            self.failUnless(isinstance(e.__context__, context))
+        else:
+            self.fail("No exception raised")
+
+    def test_c_exception_context(self):
+        try:
+            try:
+                1/0
+            except:
+                raise OSError
+        except OSError as e:
+            self.failUnless(isinstance(e.__context__, ZeroDivisionError))
+        else:
+            self.fail("No exception raised")
+
+    def test_c_exception_raise(self):
+        try:
+            try:
+                1/0
+            except:
+                xyzzy
+        except NameError as e:
+            self.failUnless(isinstance(e.__context__, ZeroDivisionError))
+        else:
+            self.fail("No exception raised")
+
+    def test_noraise_finally(self):
+        try:
+            try:
+                pass
+            finally:
+                raise OSError
+        except OSError as e:
+            self.failUnless(e.__context__ is None)
+        else:
+            self.fail("No exception raised")
+
+    def test_raise_finally(self):
+        try:
+            try:
+                1/0
+            finally:
+                raise OSError
+        except OSError as e:
+            self.failUnless(isinstance(e.__context__, ZeroDivisionError))
+        else:
+            self.fail("No exception raised")
+
+    def test_context_manager(self):
+        class ContextManager:
+            def __enter__(self):
+                pass
+            def __exit__(self, t, v, tb):
+                xyzzy
+        try:
+            with ContextManager():
+                1/0
+        except NameError as e:
+            self.failUnless(isinstance(e.__context__, ZeroDivisionError))
+        else:
+            self.fail("No exception raised")
 
 
 class TestRemovedFunctionality(unittest.TestCase):

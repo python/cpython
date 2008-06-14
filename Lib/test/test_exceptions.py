@@ -480,7 +480,12 @@ class ExceptionTests(unittest.TestCase):
                 inner_raising_func()
             except:
                 raise KeyError
-        except KeyError:
+        except KeyError as e:
+            # We want to test that the except block above got rid of
+            # the exception raised in inner_raising_func(), but it
+            # also ends up in the __context__ of the KeyError, so we
+            # must clear the latter manually for our test to succeed.
+            e.__context__ = None
             obj = None
             obj = wr()
             self.failUnless(obj is None, "%s" % obj)

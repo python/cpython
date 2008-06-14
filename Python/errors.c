@@ -52,6 +52,9 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 void
 PyErr_SetObject(PyObject *exception, PyObject *value)
 {
+	PyThreadState *tstate = PyThreadState_GET();
+	PyObject *tb = NULL;
+
 	if (exception != NULL &&
 	    !PyExceptionClass_Check(exception)) {
 		PyErr_Format(PyExc_SystemError,
@@ -59,9 +62,35 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 			     exception);
 		return;
 	}
-	Py_XINCREF(exception);
 	Py_XINCREF(value);
-	PyErr_Restore(exception, value, (PyObject *)NULL);
+	if (tstate->exc_value != NULL && tstate->exc_value != Py_None) {
+		/* Implicit exception chaining */
+		if (value == NULL || !PyExceptionInstance_Check(value)) {
+			/* We must normalize the value right now */
+			PyObject *args, *fixed_value;
+			if (value == NULL || value == Py_None)
+				args = PyTuple_New(0);
+			else if (PyTuple_Check(value)) {
+				Py_INCREF(value);
+				args = value;
+			}
+			else
+				args = PyTuple_Pack(1, value);
+			fixed_value = args ?
+				PyEval_CallObject(exception, args) : NULL;
+			Py_XDECREF(args);
+			Py_XDECREF(value);
+			if (fixed_value == NULL)
+				return;
+			value = fixed_value;
+		}
+		Py_INCREF(tstate->exc_value);
+		PyException_SetContext(value, tstate->exc_value);
+	}
+	if (value != NULL && PyExceptionInstance_Check(value))
+		tb = PyException_GetTraceback(value);
+	Py_XINCREF(exception);
+	PyErr_Restore(exception, value, tb);
 }
 
 void
