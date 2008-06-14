@@ -33,9 +33,21 @@ and for a file with a binary mime-type property:
 import re
 import os
 
+def propfile(root, fn):
+    default = os.path.join(root, ".svn", "props", fn+".svn-work")
+    try:
+        format = int(open(os.path.join(root, ".svn", "format")).read().strip())
+    except IOError:
+        return default
+    # XXX I don't know what version uses what format;
+    # this condition is just anecdotal
+    if format >= 8:
+        return os.path.join(root, ".svn", "prop-base", fn+".svn-base")
+    return default
+
 def proplist(root, fn):
     "Return a list of property names for file fn in directory root"
-    path = os.path.join(root, ".svn", "props", fn+".svn-work")
+    path = propfile(root, fn)
     try:
         f = open(path)
     except IOError:
