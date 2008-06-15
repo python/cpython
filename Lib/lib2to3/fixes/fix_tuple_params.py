@@ -21,14 +21,14 @@ It will also support lambdas:
 # Local imports
 from .. import pytree
 from ..pgen2 import token
-from .import basefix
-from .util import Assign, Name, Newline, Number, Subscript, syms
+from .. import fixer_base
+from ..fixer_util import Assign, Name, Newline, Number, Subscript, syms
 
 def is_docstring(stmt):
     return isinstance(stmt, pytree.Node) and \
            stmt.children[0].type == token.STRING
 
-class FixTupleParams(basefix.BaseFix):
+class FixTupleParams(fixer_base.BaseFix):
     PATTERN = """
               funcdef< 'def' any parameters< '(' args=any ')' >
                        ['->' any] ':' suite=any+ >

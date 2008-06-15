@@ -8,10 +8,10 @@
     """
 
 # Local imports
-from . import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
-class FixItertools(basefix.BaseFix):
+class FixItertools(fixer_base.BaseFix):
     it_funcs = "('imap'|'ifilter'|'izip'|'ifilterfalse')"
     PATTERN = """
               power< it='itertools'

@@ -4,12 +4,12 @@
 """Fixer that changes xrange(...) into range(...)."""
 
 # Local imports
-from .import basefix
-from .util import Name, Call, consuming_calls
+from .. import fixer_base
+from ..fixer_util import Name, Call, consuming_calls
 from .. import patcomp
 
 
-class FixXrange(basefix.BaseFix):
+class FixXrange(fixer_base.BaseFix):
 
     PATTERN = """
               power< (name='range'|name='xrange') trailer< '(' [any] ')' > any* >

@@ -28,13 +28,13 @@ into
 # Author: Jacques Frechet, Collin Winter
 
 # Local imports
-from . import basefix
-from .util import Call, Comma, Name, Node, syms
+from .. import fixer_base
+from ..fixer_util import Call, Comma, Name, Node, syms
 
 CMP = "(n='!=' | '==' | 'is' | n=comp_op< 'is' 'not' >)"
 TYPE = "power< 'type' trailer< '(' x=any ')' > >"
 
-class FixIdioms(basefix.BaseFix):
+class FixIdioms(fixer_base.BaseFix):
 
     explicit = True # The user must ask for this fixer
 

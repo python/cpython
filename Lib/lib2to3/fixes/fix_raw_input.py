@@ -2,10 +2,10 @@
 # Author: Andre Roberge
 
 # Local imports
-from .import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
-class FixRawInput(basefix.BaseFix):
+class FixRawInput(fixer_base.BaseFix):
 
     PATTERN = """
               power< name='raw_input' trailer< '(' [any] ')' > >

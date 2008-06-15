@@ -4,11 +4,11 @@
 """Fixer that transforms `xyzzy` into repr(xyzzy)."""
 
 # Local imports
-from .import basefix
-from .util import Call, Name
+from .. import fixer_base
+from ..fixer_util import Call, Name
 
 
-class FixRepr(basefix.BaseFix):
+class FixRepr(fixer_base.BaseFix):
 
     PATTERN = """
               atom < '`' expr=any '`' >

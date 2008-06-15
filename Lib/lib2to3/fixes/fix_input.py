@@ -2,15 +2,15 @@
 # Author: Andre Roberge
 
 # Local imports
-from . import basefix
-from .util import Call, Name
+from .. import fixer_base
+from ..fixer_util import Call, Name
 from .. import patcomp
 
 
 context = patcomp.compile_pattern("power< 'eval' trailer< '(' any ')' > >")
 
 
-class FixInput(basefix.BaseFix):
+class FixInput(fixer_base.BaseFix):
 
     PATTERN = """
               power< 'input' args=trailer< '(' [any] ')' > >

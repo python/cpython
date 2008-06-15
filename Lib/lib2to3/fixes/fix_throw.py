@@ -10,10 +10,10 @@ g.throw("foo"[, V[, T]]) will warn about string exceptions."""
 # Local imports
 from .. import pytree
 from ..pgen2 import token
-from .import basefix
-from .util import Name, Call, ArgList, Attr, is_tuple
+from .. import fixer_base
+from ..fixer_util import Name, Call, ArgList, Attr, is_tuple
 
-class FixThrow(basefix.BaseFix):
+class FixThrow(fixer_base.BaseFix):
 
     PATTERN = """
     power< any trailer< '.' 'throw' >
