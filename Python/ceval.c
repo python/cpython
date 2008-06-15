@@ -704,11 +704,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		PyObject *v = POP(); \
 		Py_XDECREF(v); \
 	} \
-	Py_XDECREF(tstate->exc_type); \
+	Py_CLEAR(tstate->exc_type); \
+	Py_CLEAR(tstate->exc_value); \
+	Py_CLEAR(tstate->exc_traceback); \
 	tstate->exc_type = POP(); \
-	Py_XDECREF(tstate->exc_value); \
 	tstate->exc_value = POP(); \
-	Py_XDECREF(tstate->exc_traceback); \
 	tstate->exc_traceback = POP();
 
 #define SAVE_EXC_STATE() \
@@ -716,9 +716,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		Py_XINCREF(tstate->exc_type); \
 		Py_XINCREF(tstate->exc_value); \
 		Py_XINCREF(tstate->exc_traceback); \
-		Py_XDECREF(f->f_exc_type); \
-		Py_XDECREF(f->f_exc_value); \
-		Py_XDECREF(f->f_exc_traceback); \
+		Py_CLEAR(f->f_exc_type); \
+		Py_CLEAR(f->f_exc_value); \
+		Py_CLEAR(f->f_exc_traceback); \
 		f->f_exc_type = tstate->exc_type; \
 		f->f_exc_value = tstate->exc_value; \
 		f->f_exc_traceback = tstate->exc_traceback; \
