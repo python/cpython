@@ -277,6 +277,7 @@ l5 = lambda x, y, z=2: x + y + z
 verify(l5(1, 2) == 5)
 verify(l5(1, 2, 3) == 6)
 check_syntax("lambda x: x = 2")
+check_syntax("lambda (None,): None")
 
 ### stmt: simple_stmt | compound_stmt
 # Tested below
