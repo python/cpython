@@ -4,11 +4,11 @@
 """Fixer that changes buffer(...) into memoryview(...)."""
 
 # Local imports
-from . import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
 
-class FixBuffer(basefix.BaseFix):
+class FixBuffer(fixer_base.BaseFix):
 
     explicit = True # The user must ask for this fixer
 

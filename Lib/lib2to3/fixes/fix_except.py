@@ -24,8 +24,8 @@ The following cases will be converted:
 # Local imports
 from .. import pytree
 from ..pgen2 import token
-from . import basefix
-from .util import Assign, Attr, Name, is_tuple, is_list, reversed
+from .. import fixer_base
+from ..fixer_util import Assign, Attr, Name, is_tuple, is_list, reversed
 
 def find_excepts(nodes):
     for i, n in enumerate(nodes):
@@ -33,7 +33,7 @@ def find_excepts(nodes):
             if n.children[0].value == 'except':
                 yield (n, nodes[i+2])
 
-class FixExcept(basefix.BaseFix):
+class FixExcept(fixer_base.BaseFix):
 
     PATTERN = """
     try_stmt< 'try' ':' suite

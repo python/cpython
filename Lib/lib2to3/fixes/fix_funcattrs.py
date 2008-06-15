@@ -2,11 +2,11 @@
 # Author: Collin Winter
 
 # Local imports
-from . import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
 
-class FixFuncattrs(basefix.BaseFix):
+class FixFuncattrs(fixer_base.BaseFix):
     PATTERN = """
     power< any+ trailer< '.' attr=('func_closure' | 'func_doc' | 'func_globals'
                                   | 'func_name' | 'func_defaults' | 'func_code'

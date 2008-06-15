@@ -7,10 +7,10 @@ This converts callable(obj) into hasattr(obj, '__call__')."""
 
 # Local imports
 from .. import pytree
-from . import basefix
-from .util import Call, Name, String
+from .. import fixer_base
+from ..fixer_util import Call, Name, String
 
-class FixCallable(basefix.BaseFix):
+class FixCallable(fixer_base.BaseFix):
 
     # Ignore callable(*args) or use of keywords.
     # Either could be a hint that the builtin callable() is not being used.

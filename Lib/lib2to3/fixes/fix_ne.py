@@ -6,10 +6,10 @@
 # Local imports
 from .. import pytree
 from ..pgen2 import token
-from . import basefix
+from .. import fixer_base
 
 
-class FixNe(basefix.BaseFix):
+class FixNe(fixer_base.BaseFix):
     # This is so simple that we don't need the pattern compiler.
 
     def match(self, node):

@@ -7,8 +7,8 @@ Fixes:
 # based on Collin Winter's fix_import
 
 # Local imports
-from .import basefix
-from .util import Name, attr_chain, any, set
+from .. import fixer_base
+from ..fixer_util import Name, attr_chain, any, set
 
 MAPPING = {"sys":  {"maxint" : "maxsize"},
           }
@@ -39,7 +39,7 @@ def build_pattern():
     #yield """bare_name=%s""" % alternates(bare)
 
 
-class FixRenames(basefix.BaseFix):
+class FixRenames(fixer_base.BaseFix):
     PATTERN = "|".join(build_pattern())
 
     order = "pre" # Pre-order tree traversal

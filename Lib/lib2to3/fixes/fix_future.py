@@ -5,10 +5,10 @@ from __future__ import foo is replaced with an empty line.
 # Author: Christian Heimes
 
 # Local imports
-from . import basefix
-from .util import BlankLine
+from .. import fixer_base
+from ..fixer_util import BlankLine
 
-class FixFuture(basefix.BaseFix):
+class FixFuture(fixer_base.BaseFix):
     PATTERN = """import_from< 'from' module_name="__future__" 'import' any >"""
 
     # This should be run last -- some things check for the import

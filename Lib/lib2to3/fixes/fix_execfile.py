@@ -8,11 +8,11 @@ exec() function.
 """
 
 from .. import pytree
-from . import basefix
-from .util import Comma, Name, Call, LParen, RParen, Dot
+from .. import fixer_base
+from ..fixer_util import Comma, Name, Call, LParen, RParen, Dot
 
 
-class FixExecfile(basefix.BaseFix):
+class FixExecfile(fixer_base.BaseFix):
 
     PATTERN = """
     power< 'execfile' trailer< '(' arglist< filename=any [',' globals=any [',' locals=any ] ] > ')' > >

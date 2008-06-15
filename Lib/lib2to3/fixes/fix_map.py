@@ -21,11 +21,11 @@ soon as the shortest argument is exhausted.
 
 # Local imports
 from ..pgen2 import token
-from . import basefix
-from .util import Name, Call, ListComp, in_special_context
+from .. import fixer_base
+from ..fixer_util import Name, Call, ListComp, in_special_context
 from ..pygram import python_symbols as syms
 
-class FixMap(basefix.ConditionalFix):
+class FixMap(fixer_base.ConditionalFix):
 
     PATTERN = """
     map_none=power<

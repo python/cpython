@@ -14,9 +14,9 @@ except NameError:
     from sets import Set as set
 
 # Local imports
-from ..patcomp import PatternCompiler
-from .. import pygram
-from .util import does_tree_import
+from .patcomp import PatternCompiler
+from . import pygram
+from .fixer_util import does_tree_import
 
 class BaseFix(object):
 

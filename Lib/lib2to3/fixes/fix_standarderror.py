@@ -4,11 +4,11 @@
 """Fixer for StandardError -> Exception."""
 
 # Local imports
-from .import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
 
-class FixStandarderror(basefix.BaseFix):
+class FixStandarderror(fixer_base.BaseFix):
 
     PATTERN = """
               'StandardError'

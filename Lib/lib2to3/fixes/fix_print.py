@@ -17,8 +17,8 @@ No changes are applied if print_function is imported from __future__
 from .. import patcomp
 from .. import pytree
 from ..pgen2 import token
-from .import basefix
-from .util import Name, Call, Comma, String, is_tuple
+from .. import fixer_base
+from ..fixer_util import Name, Call, Comma, String, is_tuple
 
 
 parend_expr = patcomp.compile_pattern(
@@ -26,7 +26,7 @@ parend_expr = patcomp.compile_pattern(
               )
 
 
-class FixPrint(basefix.ConditionalFix):
+class FixPrint(fixer_base.ConditionalFix):
 
     PATTERN = """
               simple_stmt< bare='print' any > | print_stmt

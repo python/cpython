@@ -11,11 +11,11 @@ Becomes:
 """
 
 # Local imports
-from . import basefix
+from .. import fixer_base
 from os.path import dirname, join, exists, pathsep
-from .util import FromImport
+from ..fixer_util import FromImport
 
-class FixImport(basefix.BaseFix):
+class FixImport(fixer_base.BaseFix):
 
     PATTERN = """
     import_from< type='from' imp=any 'import' any >
