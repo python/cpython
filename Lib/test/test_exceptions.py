@@ -5,8 +5,6 @@ import sys
 import unittest
 import pickle
 import weakref
-import gc
-import traceback
 
 from test.support import TESTFN, unlink, run_unittest
 
@@ -553,9 +551,9 @@ class ExceptionTests(unittest.TestCase):
             del g
             self.assertEquals(sys.exc_info()[0], TypeError)
 
-    def test_crash_3114(self):
-        # Bug #3114: in its destructor, MyObject retrieves a pointer to a
-        # deallocated exception instance or traceback.
+    def test_3114(self):
+        # Bug #3114: in its destructor, MyObject retrieves a pointer to
+        # obsolete and/or deallocated objects.
         class MyObject:
             def __del__(self):
                 nonlocal e
@@ -565,10 +563,7 @@ class ExceptionTests(unittest.TestCase):
             raise Exception(MyObject())
         except:
             pass
-        gc.collect()
-        [0]*10000
-        # Do something with the exception and its traceback
-        traceback.format_exception(*e)
+        self.assertEquals(e, (None, None, None))
 
 def test_main():
     run_unittest(ExceptionTests)
