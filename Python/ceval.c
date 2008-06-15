@@ -699,29 +699,39 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	}
 
 #define UNWIND_EXCEPT_HANDLER(b) \
-	assert(STACK_LEVEL() >= (b)->b_level + 3); \
-	while (STACK_LEVEL() > (b)->b_level + 3) { \
-		PyObject *v = POP(); \
-		Py_XDECREF(v); \
-	} \
-	Py_CLEAR(tstate->exc_type); \
-	Py_CLEAR(tstate->exc_value); \
-	Py_CLEAR(tstate->exc_traceback); \
-	tstate->exc_type = POP(); \
-	tstate->exc_value = POP(); \
-	tstate->exc_traceback = POP();
+	{ \
+		PyObject *type, *value, *traceback; \
+		assert(STACK_LEVEL() >= (b)->b_level + 3); \
+		while (STACK_LEVEL() > (b)->b_level + 3) { \
+			value = POP(); \
+			Py_XDECREF(value); \
+		} \
+		type = tstate->exc_type; \
+		value = tstate->exc_value; \
+		traceback = tstate->exc_traceback; \
+		tstate->exc_type = POP(); \
+		tstate->exc_value = POP(); \
+		tstate->exc_traceback = POP(); \
+		Py_XDECREF(type); \
+		Py_XDECREF(value); \
+		Py_XDECREF(traceback); \
+	}
 
 #define SAVE_EXC_STATE() \
 	{ \
+		PyObject *type, *value, *traceback; \
 		Py_XINCREF(tstate->exc_type); \
 		Py_XINCREF(tstate->exc_value); \
 		Py_XINCREF(tstate->exc_traceback); \
-		Py_CLEAR(f->f_exc_type); \
-		Py_CLEAR(f->f_exc_value); \
-		Py_CLEAR(f->f_exc_traceback); \
+		type = f->f_exc_type; \
+		value = f->f_exc_value; \
+		traceback = f->f_exc_traceback; \
 		f->f_exc_type = tstate->exc_type; \
 		f->f_exc_value = tstate->exc_value; \
 		f->f_exc_traceback = tstate->exc_traceback; \
+		Py_XDECREF(type); \
+		Py_XDECREF(value); \
+		Py_XDECREF(traceback); \
 	}
 
 #define SWAP_EXC_STATE() \
