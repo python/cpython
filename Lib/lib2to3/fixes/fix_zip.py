@@ -8,10 +8,10 @@ iter(<>), list(<>), tuple(<>), sorted(<>), ...join(<>), or for V in <>:.
 """
 
 # Local imports
-from . import basefix
-from .util import Name, Call, in_special_context
+from .. import fixer_base
+from ..fixer_util import Name, Call, in_special_context
 
-class FixZip(basefix.ConditionalFix):
+class FixZip(fixer_base.ConditionalFix):
 
     PATTERN = """
     power< 'zip' args=trailer< '(' [any] ')' >

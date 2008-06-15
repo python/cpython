@@ -2,10 +2,10 @@
 # Author: Collin Winter
 
 # Local imports
-from ..pgen2 import token
-from ..pytree import Leaf, Node
-from ..pygram import python_symbols as syms
-from .. import patcomp
+from .pgen2 import token
+from .pytree import Leaf, Node
+from .pygram import python_symbols as syms
+from . import patcomp
 
 
 ###########################################################
@@ -345,7 +345,7 @@ def _is_import_binding(node, name, package=None):
         elif imp.type == token.NAME and imp.value == name:
             return node
     elif node.type == syms.import_from:
-        # unicode(...) is used to make life easier here, because
+        # str(...) is used to make life easier here, because
         # from a.b import parses to ['import', ['a', '.', 'b'], ...]
         if package and str(node.children[1]).strip() != package:
             return None

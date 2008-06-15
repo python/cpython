@@ -30,11 +30,13 @@ from . import patcomp
 from . import fixes
 from . import pygram
 
-def main(args=None):
+def main(fixer_dir, args=None):
     """Main program.
 
-    Call without arguments to use sys.argv[1:] as the arguments; or
-    call with a list of arguments (excluding sys.argv[0]).
+    Args:
+        fixer_dir: directory where fixer modules are located.
+        args: optional; a list of command line arguments. If omitted,
+              sys.argv[1:] is used.
 
     Returns a suggested exit status (0, 1, 2).
     """
@@ -57,7 +59,7 @@ def main(args=None):
     options, args = parser.parse_args(args)
     if options.list_fixes:
         print("Available transformations for the -f/--fix option:")
-        for fixname in get_all_fix_names():
+        for fixname in get_all_fix_names(fixer_dir):
             print(fixname)
         if not args:
             return 0
@@ -76,7 +78,7 @@ def main(args=None):
         logging.basicConfig(format='%(name)s: %(message)s', level=logging.INFO)
 
     # Initialize the refactoring tool
-    rt = RefactoringTool(options)
+    rt = RefactoringTool(fixer_dir, options)
 
     # Refactor all files and directories passed as arguments
     if not rt.errors:
@@ -87,10 +89,10 @@ def main(args=None):
     return int(bool(rt.errors))
 
 
-def get_all_fix_names():
+def get_all_fix_names(fixer_dir):
     """Return a sorted list of all available fix names."""
     fix_names = []
-    names = os.listdir(os.path.dirname(fixes.__file__))
+    names = os.listdir(fixer_dir)
     names.sort()
     for name in names:
         if name.startswith("fix_") and name.endswith(".py"):
@@ -138,11 +140,14 @@ def get_headnode_dict(fixer_list):
 
 class RefactoringTool(object):
 
-    def __init__(self, options):
+    def __init__(self, fixer_dir, options):
         """Initializer.
 
-        The argument is an optparse.Values instance.
+        Args:
+            fixer_dir: directory in which to find fixer modules.
+            options: an optparse.Values instance.
         """
+        self.fixer_dir = fixer_dir
         self.options = options
         self.errors = []
         self.logger = logging.getLogger("RefactoringTool")
@@ -167,14 +172,15 @@ class RefactoringTool(object):
           want a pre-order AST traversal, and post_order is the list that want
           post-order traversal.
         """
+        fixer_pkg = ".".join(self.fixer_dir.split(os.path.sep))
         pre_order_fixers = []
         post_order_fixers = []
         fix_names = self.options.fix
         if not fix_names or "all" in fix_names:
-            fix_names = get_all_fix_names()
+            fix_names = get_all_fix_names(self.fixer_dir)
         for fix_name in fix_names:
             try:
-                mod = __import__("lib2to3.fixes.fix_" + fix_name, {}, {}, ["*"])
+                mod = __import__(fixer_pkg + ".fix_" + fix_name, {}, {}, ["*"])
             except ImportError:
                 self.log_error("Can't find transformation %s", fix_name)
                 continue

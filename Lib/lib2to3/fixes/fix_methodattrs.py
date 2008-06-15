@@ -3,8 +3,8 @@
 # Author: Christian Heimes
 
 # Local imports
-from . import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
 MAP = {
     "im_func" : "__func__",
@@ -12,7 +12,7 @@ MAP = {
     "im_class" : "__self__.__class__"
     }
 
-class FixMethodattrs(basefix.BaseFix):
+class FixMethodattrs(fixer_base.BaseFix):
     PATTERN = """
     power< any+ trailer< '.' attr=('im_func' | 'im_self' | 'im_class') > any* >
     """

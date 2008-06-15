@@ -11,11 +11,11 @@ exec code in ns1, ns2 -> exec(code, ns1, ns2)
 
 # Local imports
 from .. import pytree
-from . import basefix
-from .util import Comma, Name, Call
+from .. import fixer_base
+from ..fixer_util import Comma, Name, Call
 
 
-class FixExec(basefix.BaseFix):
+class FixExec(fixer_base.BaseFix):
 
     PATTERN = """
     exec_stmt< 'exec' a=any 'in' b=any [',' c=any] >

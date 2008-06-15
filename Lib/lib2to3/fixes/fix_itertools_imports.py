@@ -1,10 +1,10 @@
 """ Fixer for imports of itertools.(imap|ifilter|izip|ifilterfalse) """
 
 # Local imports
-from . import basefix
-from .util import BlankLine
+from .. import fixer_base
+from ..fixer_util import BlankLine
 
-class FixItertoolsImports(basefix.BaseFix):
+class FixItertoolsImports(fixer_base.BaseFix):
     PATTERN = """
               import_from< 'from' 'itertools' 'import' imports=any >
               """ %(locals())

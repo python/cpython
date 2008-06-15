@@ -4,9 +4,9 @@
 
 import re
 from ..pgen2 import token
-from .import basefix
+from .. import fixer_base
 
-class FixUnicode(basefix.BaseFix):
+class FixUnicode(fixer_base.BaseFix):
 
     PATTERN = "STRING | NAME<'unicode' | 'unichr'>"
 

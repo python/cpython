@@ -8,11 +8,11 @@ This also strips the trailing 'L' or 'l' from long loterals.
 
 # Local imports
 from .. import pytree
-from . import basefix
-from .util import Name, Number
+from .. import fixer_base
+from ..fixer_util import Name, Number
 
 
-class FixLong(basefix.BaseFix):
+class FixLong(fixer_base.BaseFix):
 
     PATTERN = """
     (long_type = 'long' | number = NUMBER)

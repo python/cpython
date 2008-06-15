@@ -21,8 +21,8 @@ There should be another fixer that handles at least the following constants:
 
 # Local imports
 from ..pgen2 import token
-from .import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
 _TYPE_MAPPING = {
         'BooleanType' : 'bool',
@@ -51,7 +51,7 @@ _TYPE_MAPPING = {
 
 _pats = ["power< 'types' trailer< '.' name='%s' > >" % t for t in _TYPE_MAPPING]
 
-class FixTypes(basefix.BaseFix):
+class FixTypes(fixer_base.BaseFix):
 
     PATTERN = '|'.join(_pats)
 

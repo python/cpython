@@ -8,13 +8,13 @@
 # Local imports
 from ..pgen2 import token
 from ..pygram import python_symbols as syms
-from . import basefix
-from .util import Name, Call, find_binding, any
+from .. import fixer_base
+from ..fixer_util import Name, Call, find_binding, any
 
 bind_warning = "Calls to builtin next() possibly shadowed by global binding"
 
 
-class FixNext(basefix.BaseFix):
+class FixNext(fixer_base.BaseFix):
     PATTERN = """
     power< base=any+ trailer< '.' attr='next' > trailer< '(' ')' > >
     |
