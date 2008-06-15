@@ -8,10 +8,10 @@ This converts apply(func, v, k) into (func)(*v, **k)."""
 # Local imports
 from .. import pytree
 from ..pgen2 import token
-from . import basefix
-from .util import Call, Comma
+from .. import fixer_base
+from ..fixer_util import Call, Comma
 
-class FixApply(basefix.BaseFix):
+class FixApply(fixer_base.BaseFix):
 
     PATTERN = """
     power< 'apply'

@@ -27,15 +27,15 @@ as an argument to a function that introspects the argument).
 from .. import pytree
 from .. import patcomp
 from ..pgen2 import token
-from . import basefix
-from .util import Name, Call, LParen, RParen, ArgList, Dot, set
-from . import util
+from .. import fixer_base
+from ..fixer_util import Name, Call, LParen, RParen, ArgList, Dot, set
+from .. import fixer_util
 
 
-iter_exempt = util.consuming_calls | set(["iter"])
+iter_exempt = fixer_util.consuming_calls | set(["iter"])
 
 
-class FixDict(basefix.BaseFix):
+class FixDict(fixer_base.BaseFix):
     PATTERN = """
     power< head=any+
          trailer< '.' method=('keys'|'items'|'values'|
@@ -92,7 +92,7 @@ class FixDict(basefix.BaseFix):
                 return results["func"].value in iter_exempt
             else:
                 # list(d.keys()) -> list(d.keys()), etc.
-                return results["func"].value in util.consuming_calls
+                return results["func"].value in fixer_util.consuming_calls
         if not isiter:
             return False
         # for ... in d.iterkeys() -> for ... in d.keys(), etc.

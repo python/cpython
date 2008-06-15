@@ -32,11 +32,11 @@ CAVEATS:
 # Local imports
 from .. import pytree
 from ..pgen2 import token
-from . import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
 
-class FixHasKey(basefix.BaseFix):
+class FixHasKey(fixer_base.BaseFix):
 
     PATTERN = """
     anchor=power<

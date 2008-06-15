@@ -2,10 +2,10 @@
 # Author: Christian Heimes
 
 # Local imports
-from . import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
-class FixBasestring(basefix.BaseFix):
+class FixBasestring(fixer_base.BaseFix):
 
     PATTERN = "'basestring'"
 

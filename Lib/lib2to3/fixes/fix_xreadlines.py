@@ -4,11 +4,11 @@ This fixer will also convert g(f.xreadlines) into g(f.__iter__)."""
 # Author: Collin Winter
 
 # Local imports
-from .import basefix
-from .util import Name
+from .. import fixer_base
+from ..fixer_util import Name
 
 
-class FixXreadlines(basefix.BaseFix):
+class FixXreadlines(fixer_base.BaseFix):
     PATTERN = """
     power< call=any+ trailer< '.' 'xreadlines' > trailer< '(' ')' > >
     |

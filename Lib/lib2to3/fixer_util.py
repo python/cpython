@@ -2,10 +2,10 @@
 # Author: Collin Winter
 
 # Local imports
-from ..pgen2 import token
-from ..pytree import Leaf, Node
-from ..pygram import python_symbols as syms
-from .. import patcomp
+from .pgen2 import token
+from .pytree import Leaf, Node
+from .pygram import python_symbols as syms
+from . import patcomp
 
 
 ###########################################################

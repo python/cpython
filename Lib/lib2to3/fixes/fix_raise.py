@@ -24,10 +24,10 @@ CAVEATS:
 # Local imports
 from .. import pytree
 from ..pgen2 import token
-from .import basefix
-from .util import Name, Call, Attr, ArgList, is_tuple
+from .. import fixer_base
+from ..fixer_util import Name, Call, Attr, ArgList, is_tuple
 
-class FixRaise(basefix.BaseFix):
+class FixRaise(fixer_base.BaseFix):
 
     PATTERN = """
     raise_stmt< 'raise' exc=any [',' val=any [',' tb=any]] >

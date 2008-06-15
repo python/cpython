@@ -15,10 +15,10 @@ Python 2.6 figure it out.
 
 # Local imports
 from ..pgen2 import token
-from . import basefix
-from .util import Name, Call, ListComp, in_special_context
+from .. import fixer_base
+from ..fixer_util import Name, Call, ListComp, in_special_context
 
-class FixFilter(basefix.ConditionalFix):
+class FixFilter(fixer_base.ConditionalFix):
 
     PATTERN = """
     filter_lambda=power<

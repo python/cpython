@@ -2,10 +2,10 @@
 # Author: Collin Winter
 
 # Local imports
-from .import basefix
-from .util import Name, syms
+from .. import fixer_base
+from ..fixer_util import Name, syms
 
-class FixNonzero(basefix.BaseFix):
+class FixNonzero(fixer_base.BaseFix):
     PATTERN = """
     classdef< 'class' any+ ':'
               suite< any*

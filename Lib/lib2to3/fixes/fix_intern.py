@@ -7,11 +7,11 @@ intern(s) -> sys.intern(s)"""
 
 # Local imports
 from .. import pytree
-from . import basefix
-from .util import Name, Attr
+from .. import fixer_base
+from ..fixer_util import Name, Attr
 
 
-class FixIntern(basefix.BaseFix):
+class FixIntern(fixer_base.BaseFix):
 
     PATTERN = """
     power< 'intern'

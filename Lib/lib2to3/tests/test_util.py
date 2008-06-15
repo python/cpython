@@ -10,7 +10,8 @@ import os.path
 
 # Local imports
 from .. import pytree
-from ..fixes import util
+from .. import fixer_util
+from ..fixer_util import Attr, Name
 
 
 def parse(code, strip_levels=0):
@@ -25,13 +26,13 @@ def parse(code, strip_levels=0):
 class MacroTestCase(support.TestCase):
     def assertStr(self, node, string):
         if isinstance(node, (tuple, list)):
-            node = pytree.Node(util.syms.simple_stmt, node)
+            node = pytree.Node(fixer_util.syms.simple_stmt, node)
         self.assertEqual(str(node), string)
 
 
 class Test_is_tuple(support.TestCase):
     def is_tuple(self, string):
-        return util.is_tuple(parse(string, strip_levels=2))
+        return fixer_util.is_tuple(parse(string, strip_levels=2))
 
     def test_valid(self):
         self.failUnless(self.is_tuple("(a, b)"))
@@ -47,7 +48,7 @@ class Test_is_tuple(support.TestCase):
 
 class Test_is_list(support.TestCase):
     def is_list(self, string):
-        return util.is_list(parse(string, strip_levels=2))
+        return fixer_util.is_list(parse(string, strip_levels=2))
 
     def test_valid(self):
         self.failUnless(self.is_list("[]"))
@@ -62,23 +63,18 @@ class Test_is_list(support.TestCase):
 
 class Test_Attr(MacroTestCase):
     def test(self):
-        from ..fixes.util import Attr, Name
         call = parse("foo()", strip_levels=2)
 
         self.assertStr(Attr(Name("a"), Name("b")), "a.b")
         self.assertStr(Attr(call, Name("b")), "foo().b")
 
     def test_returns(self):
-        from ..fixes.util import Attr, Name
-
         attr = Attr(Name("a"), Name("b"))
         self.assertEqual(type(attr), list)
 
 
 class Test_Name(MacroTestCase):
     def test(self):
-        from ..fixes.util import Name
-
         self.assertStr(Name("a"), "a")
         self.assertStr(Name("foo.foo().bar"), "foo.foo().bar")
         self.assertStr(Name("a", prefix="b"), "ba")
@@ -88,7 +84,7 @@ class Test_does_tree_import(support.TestCase):
     def _find_bind_rec(self, name, node):
         # Search a tree for a binding -- used to find the starting
         # point for these tests.
-        c = util.find_binding(name, node)
+        c = fixer_util.find_binding(name, node)
         if c: return c
         for child in node.children:
             c = self._find_bind_rec(name, child)
@@ -98,7 +94,7 @@ class Test_does_tree_import(support.TestCase):
         node = parse(string)
         # Find the binding of start -- that's what we'll go from
         node = self._find_bind_rec('start', node)
-        return util.does_tree_import(package, name, node)
+        return fixer_util.does_tree_import(package, name, node)
 
     def try_with(self, string):
         failing_tests = (("a", "a", "from a import b"),
@@ -130,7 +126,7 @@ class Test_does_tree_import(support.TestCase):
 
 class Test_find_binding(support.TestCase):
     def find_binding(self, name, string, package=None):
-        return util.find_binding(name, parse(string), package)
+        return fixer_util.find_binding(name, parse(string), package)
 
     def test_simple_assignment(self):
         self.failUnless(self.find_binding("a", "a = b"))
