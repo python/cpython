@@ -12,6 +12,9 @@ What's New in Python 2.6 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #3100: Corrected a crash on deallocation of a subclassed weakref which
+  holds the last (strong) reference to its referent.
+
 - Add future_builtins.ascii().
 
 - Several set methods now accept multiple arguments:  update(), union(),
