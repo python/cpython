@@ -40,7 +40,7 @@ loads libraries which export functions using the standard ``cdecl`` calling
 convention, while *windll* libraries call functions using the ``stdcall``
 calling convention. *oledll* also uses the ``stdcall`` calling convention, and
 assumes the functions return a Windows :class:`HRESULT` error code. The error
-code is used to automatically raise :class:`WindowsError` Python exceptions when
+code is used to automatically raise a :class:`WindowsError` exception when
 the function call fails.
 
 Here are some examples for Windows. Note that ``msvcrt`` is the MS standard C
@@ -55,10 +55,10 @@ convention::
    >>> libc = cdll.msvcrt # doctest: +WINDOWS
    >>>
 
-Windows appends the usual '.dll' file suffix automatically.
+Windows appends the usual ``.dll`` file suffix automatically.
 
 On Linux, it is required to specify the filename *including* the extension to
-load a library, so attribute access does not work. Either the
+load a library, so attribute access can not be used to load libraries. Either the
 :meth:`LoadLibrary` method of the dll loaders should be used, or you should load
 the library by creating an instance of CDLL by calling the constructor::
 
@@ -107,7 +107,7 @@ UNICODE is defined or not::
 
 *windll* does not try to select one of them by magic, you must access the
 version you need by specifying ``GetModuleHandleA`` or ``GetModuleHandleW``
-explicitly, and then call it with normal strings or unicode strings
+explicitly, and then call it with strings or unicode strings
 respectively.
 
 Sometimes, dlls export functions with names which aren't valid Python
@@ -422,9 +422,9 @@ to implement a :meth:`from_param` class method for them to be able to use them
 in the :attr:`argtypes` sequence. The :meth:`from_param` class method receives
 the Python object passed to the function call, it should do a typecheck or
 whatever is needed to make sure this object is acceptable, and then return the
-object itself, it's :attr:`_as_parameter_` attribute, or whatever you want to
+object itself, its :attr:`_as_parameter_` attribute, or whatever you want to
 pass as the C function argument in this case. Again, the result should be an
-integer, string, unicode, a ``ctypes`` instance, or something having the
+integer, string, unicode, a ``ctypes`` instance, or an object with an
 :attr:`_as_parameter_` attribute.
 
 
@@ -719,6 +719,8 @@ would cause the pointer to point to the memory location where this is stored::
    c_long(99)
    >>>
 
+.. XXX Document dereferencing pointers, and that it is preferred over the .contents attribute.
+
 Pointer instances can also be indexed with integers::
 
    >>> pi[0]
@@ -765,7 +767,7 @@ Calling the pointer type without an argument creates a ``NULL`` pointer.
    >>>
 
 ``ctypes`` checks for ``NULL`` when dereferencing pointers (but dereferencing
-non-\ ``NULL`` pointers would crash Python)::
+invalid non-\ ``NULL`` pointers would crash Python)::
 
    >>> null_ptr[0]
    Traceback (most recent call last):
@@ -811,9 +813,9 @@ To set a POINTER type field to ``NULL``, you can assign ``None``::
    >>> bar.values = None
    >>>
 
-XXX list other conversions...
+.. XXX list other conversions...
 
-Sometimes you have instances of incompatible types.  In ``C``, you can cast one
+Sometimes you have instances of incompatible types.  In C, you can cast one
 type into another type.  ``ctypes`` provides a ``cast`` function which can be
 used in the same way.  The ``Bar`` structure defined above accepts
 ``POINTER(c_int)`` pointers or :class:`c_int` arrays for its ``values`` field,
@@ -1070,7 +1072,7 @@ crashing your program when a callback is made.
 Accessing values exported from dlls
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, a dll not only exports functions, it also exports variables. An
+Some shared libraries not only export functions, they also export variables. An
 example in the Python library itself is the ``Py_OptimizeFlag``, an integer set
 to 0, 1, or 2, depending on the :option:`-O` or :option:`-OO` flag given on
 startup.
@@ -1244,17 +1246,6 @@ get errors accessing other elements::
 Another way to use variable-sized data types with ``ctypes`` is to use the
 dynamic nature of Python, and (re-)define the data type after the required size
 is already known, on a case by case basis.
-
-
-.. _ctypes-bugs-todo-non-implemented-things:
-
-Bugs, ToDo and non-implemented things
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Enumeration types are not implemented. You can do it easily yourself, using
-:class:`c_int` as the base class.
-
-``long double`` is not implemented.
 
 
 .. _ctypes-ctypes-reference:
@@ -1615,9 +1606,8 @@ type and the argument types of the function.
    `use_last_error` does the same for the Windows error code.
 
    .. versionchanged:: 2.6
-
-   The optional `use_errno` and `use_last_error` parameters were added
-   in Python 2.6.
+      The optional `use_errno` and `use_last_error` parameters were
+      added.
 
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
@@ -1633,75 +1623,71 @@ type and the argument types of the function.
    The returned function prototype creates functions that use the Python calling
    convention.  The function will *not* release the GIL during the call.
 
-Function prototypes created by the factory functions can be instantiated in
-different ways, depending on the type and number of the parameters in the call.
+Function prototypes created by these factory functions can be instantiated in
+different ways, depending on the type and number of the parameters in the call:
 
 
-.. function:: prototype(address)
-   :noindex:
+   .. function:: prototype(address)
+      :noindex:
+      :module:
 
-   Returns a foreign function at the specified address.
-
-
-.. function:: prototype(callable)
-   :noindex:
-
-   Create a C callable function (a callback function) from a Python ``callable``.
+      Returns a foreign function at the specified address which must be an integer.
 
 
-.. function:: prototype(func_spec[, paramflags])
-   :noindex:
+   .. function:: prototype(callable)
+      :noindex:
+      :module:
 
-   Returns a foreign function exported by a shared library. ``func_spec`` must be a
-   2-tuple ``(name_or_ordinal, library)``. The first item is the name of the
-   exported function as string, or the ordinal of the exported function as small
-   integer.  The second item is the shared library instance.
+      Create a C callable function (a callback function) from a Python ``callable``.
 
 
-.. function:: prototype(vtbl_index, name[, paramflags[, iid]])
-   :noindex:
+   .. function:: prototype(func_spec[, paramflags])
+      :noindex:
+      :module:
 
-   Returns a foreign function that will call a COM method. ``vtbl_index`` is the
-   index into the virtual function table, a small non-negative integer. *name* is
-   name of the COM method. *iid* is an optional pointer to the interface identifier
-   which is used in extended error reporting.
-
-   COM methods use a special calling convention: They require a pointer to the COM
-   interface as first argument, in addition to those parameters that are specified
-   in the :attr:`argtypes` tuple.
-
-The optional *paramflags* parameter creates foreign function wrappers with much
-more functionality than the features described above.
-
-*paramflags* must be a tuple of the same length as :attr:`argtypes`.
-
-Each item in this tuple contains further information about a parameter, it must
-be a tuple containing 1, 2, or 3 items.
-
-The first item is an integer containing flags for the parameter:
+      Returns a foreign function exported by a shared library. ``func_spec`` must be a
+      2-tuple ``(name_or_ordinal, library)``. The first item is the name of the
+      exported function as string, or the ordinal of the exported function as small
+      integer.  The second item is the shared library instance.
 
 
-.. data:: 1
-   :noindex:
+   .. function:: prototype(vtbl_index, name[, paramflags[, iid]])
+      :noindex:
+      :module:
 
-   Specifies an input parameter to the function.
+      Returns a foreign function that will call a COM method. ``vtbl_index`` is the
+      index into the virtual function table, a small non-negative integer. *name* is
+      name of the COM method. *iid* is an optional pointer to the interface identifier
+      which is used in extended error reporting.
 
+      COM methods use a special calling convention: They require a pointer to the COM
+      interface as first argument, in addition to those parameters that are specified
+      in the :attr:`argtypes` tuple.
 
-.. data:: 2
-   :noindex:
+   The optional *paramflags* parameter creates foreign function wrappers with much
+   more functionality than the features described above.
 
-   Output parameter.  The foreign function fills in a value.
+   *paramflags* must be a tuple of the same length as :attr:`argtypes`.
 
+   Each item in this tuple contains further information about a parameter, it must
+   be a tuple containing one, two, or three items.
 
-.. data:: 4
-   :noindex:
+   The first item is an integer containing a combination of direction
+   flags for the parameter:
 
-   Input parameter which defaults to the integer zero.
+      1
+         Specifies an input parameter to the function.
 
-The optional second item is the parameter name as string.  If this is specified,
-the foreign function can be called with named parameters.
+      2
+         Output parameter.  The foreign function fills in a value.
 
-The optional third item is the default value for this parameter.
+      4
+         Input parameter which defaults to the integer zero.
+
+   The optional second item is the parameter name as string.  If this is specified,
+   the foreign function can be called with named parameters.
+
+   The optional third item is the default value for this parameter.
 
 This example demonstrates how to wrap the Windows ``MessageBoxA`` function so
 that it supports default parameters and named arguments. The C declaration from
@@ -1714,16 +1700,14 @@ the windows header file is this::
        LPCSTR lpCaption,
        UINT uType);
 
-Here is the wrapping with ``ctypes``:
+Here is the wrapping with ``ctypes``::
 
-   ::
-
-      >>> from ctypes import c_int, WINFUNCTYPE, windll
-      >>> from ctypes.wintypes import HWND, LPCSTR, UINT
-      >>> prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, UINT)
-      >>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", None), (1, "flags", 0)
-      >>> MessageBox = prototype(("MessageBoxA", windll.user32), paramflags)
-      >>>
+   >>> from ctypes import c_int, WINFUNCTYPE, windll
+   >>> from ctypes.wintypes import HWND, LPCSTR, UINT
+   >>> prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, UINT)
+   >>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", None), (1, "flags", 0)
+   >>> MessageBox = prototype(("MessageBoxA", windll.user32), paramflags)
+   >>>
 
 The MessageBox foreign function can now be called in these ways::
 
@@ -1741,16 +1725,14 @@ function retrieves the dimensions of a specified window by copying them into
         HWND hWnd,
         LPRECT lpRect);
 
-Here is the wrapping with ``ctypes``:
+Here is the wrapping with ``ctypes``::
 
-   ::
-
-      >>> from ctypes import POINTER, WINFUNCTYPE, windll, WinError
-      >>> from ctypes.wintypes import BOOL, HWND, RECT
-      >>> prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
-      >>> paramflags = (1, "hwnd"), (2, "lprect")
-      >>> GetWindowRect = prototype(("GetWindowRect", windll.user32), paramflags)
-      >>>
+   >>> from ctypes import POINTER, WINFUNCTYPE, windll, WinError
+   >>> from ctypes.wintypes import BOOL, HWND, RECT
+   >>> prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
+   >>> paramflags = (1, "hwnd"), (2, "lprect")
+   >>> GetWindowRect = prototype(("GetWindowRect", windll.user32), paramflags)
+   >>>
 
 Functions with output parameters will automatically return the output parameter
 value if there is a single one, or a tuple containing the output parameter
@@ -1766,6 +1748,7 @@ do the error checking, and raises an exception when the api call failed::
    ...     if not result:
    ...         raise WinError()
    ...     return args
+   ...
    >>> GetWindowRect.errcheck = errcheck
    >>>
 
@@ -1780,7 +1763,7 @@ instead, the normal processing will no longer take place::
    ...         raise WinError()
    ...     rc = args[1]
    ...     return rc.left, rc.top, rc.bottom, rc.right
-   >>>
+   ...
    >>> GetWindowRect.errcheck = errcheck
    >>>
 
@@ -1866,6 +1849,33 @@ Utility functions
    servers with ctypes. It is called from the DllGetClassObject function that the
    ``_ctypes`` extension dll exports.
 
+.. function:: find_library(name)
+   :module: ctypes.util
+
+   Try to find a library and return a pathname.  `name` is the library name without
+   any prefix like `lib`, suffix like ``.so``, ``.dylib`` or version number (this
+   is the form used for the posix linker option :option:`-l`).  If no library can
+   be found, returns ``None``.
+
+   The exact functionality is system dependent.
+
+   .. versionchanged:: 2.6
+      Windows only: ``find_library("m")`` or
+      ``find_library("c")`` return the result of a call to
+      ``find_msvcrt()``.
+
+.. function:: find_msvcrt()
+   :module: ctypes.util
+
+   Windows only: return the filename of the VC runtype library used
+   by Python, and by the extension modules.  If the name of the
+   library cannot be determined, ``None`` is returned.
+
+   If you need to free memory, for example, allocated by an extension
+   module with a call to the ``free(void *)``, it is important that you
+   use the function in the same library that allocated the memory.
+
+   .. versionadded:: 2.6
 
 .. function:: FormatError([code])
 
@@ -2154,6 +2164,7 @@ These are the fundamental ctypes data types:
    optional float initializer.  On platforms where ``sizeof(long
    double) == sizeof(double)`` it is an alias to :class:`c_double`.
 
+   .. versionadded:: 2.6
 
 .. class:: c_float
 
