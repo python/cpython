@@ -884,7 +884,7 @@ PyObject_ClearWeakRefs(PyObject *object)
             current->wr_callback = NULL;
             clear_weakref(current);
             if (callback != NULL) {
-                if (current->ob_refcnt > 0)
+                if (((PyObject *)current)->ob_refcnt > 0)
                     handle_callback(current, callback);
                 Py_DECREF(callback);
             }
@@ -903,7 +903,7 @@ PyObject_ClearWeakRefs(PyObject *object)
             for (i = 0; i < count; ++i) {
                 PyWeakReference *next = current->wr_next;
 
-                if (current->ob_refcnt > 0)
+                if (((PyObject *)current)->ob_refcnt > 0)
                 {
                     Py_INCREF(current);
                     PyTuple_SET_ITEM(tuple, i * 2, (PyObject *) current);
