@@ -661,7 +661,7 @@ class ReferencesTestCase(TestBase):
         w = Target()
 
 
-class SubclassableWeakrefTestCase(unittest.TestCase):
+class SubclassableWeakrefTestCase(TestBase):
 
     def test_subclass_refs(self):
         class MyRef(weakref.ref):
@@ -724,6 +724,44 @@ class SubclassableWeakrefTestCase(unittest.TestCase):
         self.assertEqual(r.slot2, "def")
         self.assertEqual(r.meth(), "abcdef")
         self.failIf(hasattr(r, "__dict__"))
+
+    def test_subclass_refs_with_cycle(self):
+        # Bug #3110
+        # An instance of a weakref subclass can have attributes.
+        # If such a weakref holds the only strong reference to the object,
+        # deleting the weakref will delete the object. In this case,
+        # the callback must not be called, because the ref object is
+        # being deleted.
+        class MyRef(weakref.ref):
+            pass
+
+        # Use a local callback, for "regrtest -R::"
+        # to detect refcounting problems
+        def callback(w):
+            self.cbcalled += 1
+
+        o = C()
+        r1 = MyRef(o, callback)
+        r1.o = o
+        del o
+
+        del r1 # Used to crash here
+
+        self.assertEqual(self.cbcalled, 0)
+
+        # Same test, with two weakrefs to the same object
+        # (since code paths are different)
+        o = C()
+        r1 = MyRef(o, callback)
+        r2 = MyRef(o, callback)
+        r1.r = r2
+        r2.o = o
+        del o
+        del r2
+
+        del r1 # Used to crash here
+
+        self.assertEqual(self.cbcalled, 0)
 
 
 class Object:
@@ -1171,6 +1209,7 @@ def test_main():
         MappingTestCase,
         WeakValueDictionaryTestCase,
         WeakKeyDictionaryTestCase,
+        SubclassableWeakrefTestCase,
         )
     support.run_doctest(sys.modules[__name__])
 

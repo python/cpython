@@ -12,6 +12,9 @@ What's new in Python 3.0b1?
 Core and Builtins
 -----------------
 
+- Issue #3100: Corrected a crash on deallocation of a subclassed weakref which
+  holds the last (strong) reference to its referent.
+
 - Issue #2630: implement PEP 3138. repr() now returns printable
   Unicode characters unescaped, to get an ASCII-only representation
   of an object use ascii().
