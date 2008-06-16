@@ -2,4 +2,4 @@
 from lib2to3 import refactor
 import sys
 
-sys.exit(refactor.main())
+sys.exit(refactor.main("lib2to3/fixes"))
