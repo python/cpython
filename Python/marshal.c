@@ -65,7 +65,10 @@ w_more(int c, WFILE *p)
 	if (p->str == NULL)
 		return; /* An error already occurred */
 	size = PyString_Size(p->str);
-	newsize = size + 1024;
+	newsize = size + size + 1024;
+	if (newsize > 32*1024*1024) {
+		newsize = size + (size >> 3);	/* 12.5% overallocation */
+	}
 	if (_PyString_Resize(&p->str, newsize) != 0) {
 		p->ptr = p->end = NULL;
 	}
