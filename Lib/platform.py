@@ -1089,7 +1089,7 @@ def uname():
             node = _node()
             machine = ''
 
-        use_syscmd_ver = 01
+        use_syscmd_ver = 1
 
         # Try win32_ver() on win32 platforms
         if system == 'win32':
