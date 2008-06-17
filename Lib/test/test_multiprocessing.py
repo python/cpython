@@ -1756,6 +1756,7 @@ globals().update(testcases_threads)
 
 def test_main(run=None):
     if sys.platform.startswith("linux") and not os.path.exists("/dev/shm"):
+        from test.test_support import TestSkipped
         raise TestSkipped("Missing required /dev/shm device on Linux!")
 
     if run is None:
