@@ -17,13 +17,18 @@ static int
 cmp_lt(PyObject *x, PyObject *y)
 {
 	int cmp;
-	cmp = PyObject_RichCompareBool(x, y, Py_LT);
-	if (cmp == -1 && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-		PyErr_Clear();
-		cmp = PyObject_RichCompareBool(y, x, Py_LE);
-		if (cmp != -1)
-			cmp = 1 - cmp;
+	static PyObject *lt = NULL;
+
+	if (lt == NULL) {
+		lt = PyUnicode_FromString("__lt__");
+		if (lt == NULL)
+			return -1;
 	}
+	if (PyObject_HasAttr(x, lt))
+		return PyObject_RichCompareBool(x, y, Py_LT);
+	cmp = PyObject_RichCompareBool(y, x, Py_LE);
+	if (cmp != -1)
+		cmp = 1 - cmp;
 	return cmp;
 }
 

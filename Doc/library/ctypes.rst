@@ -1395,11 +1395,6 @@ GetLastError() and SetLastError() Windows api functions;
 to request and change the ctypes private copy of the windows error
 code.
 
-.. versionchanged:: 2.6
-
-The `use_errno` and `use_last_error` parameters were added in Python
-2.6.
-
 .. data:: RTLD_GLOBAL
    :noindex:
 
@@ -1561,22 +1556,23 @@ They are instances of a private class:
       Assign a Python function or another callable to this attribute. The
       callable will be called with three or more arguments:
 
+      .. function:: callable(result, func, arguments)
+         :noindex:
 
-.. function:: callable(result, func, arguments)
-   :noindex:
+         ``result`` is what the foreign function returns, as specified
+         by the :attr:`restype` attribute.
 
-   ``result`` is what the foreign function returns, as specified by the
-   :attr:`restype` attribute.
+         ``func`` is the foreign function object itself, this allows
+         to reuse the same callable object to check or post process
+         the results of several functions.
 
-   ``func`` is the foreign function object itself, this allows to reuse the same
-   callable object to check or post process the results of several functions.
+         ``arguments`` is a tuple containing the parameters originally
+         passed to the function call, this allows to specialize the
+         behavior on the arguments used.
 
-   ``arguments`` is a tuple containing the parameters originally passed to the
-   function call, this allows to specialize the behavior on the arguments used.
-
-   The object that this function returns will be returned from the foreign
-   function call, but it can also check the result value and raise an exception
-   if the foreign function call failed.
+      The object that this function returns will be returned from the
+      foreign function call, but it can also check the result value
+      and raise an exception if the foreign function call failed.
 
 
 .. exception:: ArgumentError()
@@ -1604,10 +1600,6 @@ type and the argument types of the function.
    If `use_errno` is set to True, the ctypes private copy of the system `errno`
    variable is exchanged with the real `errno` value bafore and after the call;
    `use_last_error` does the same for the Windows error code.
-
-   .. versionchanged:: 2.6
-      The optional `use_errno` and `use_last_error` parameters were
-      added.
 
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
@@ -1786,11 +1778,19 @@ Utility functions
    ctypes type or instance.
 
 
-.. function:: byref(obj)
+.. function:: byref(obj[, offset])
 
-   Returns a light-weight pointer to ``obj``, which must be an instance of a ctypes
-   type. The returned object can only be used as a foreign function call parameter.
-   It behaves similar to ``pointer(obj)``, but the construction is a lot faster.
+   Returns a light-weight pointer to ``obj``, which must be an
+   instance of a ctypes type.  ``offset`` defaults to zero, it must be
+   an integer which is added to the internal pointer value.
+
+   ``byref(obj, offset)`` corresponds to this C code::
+
+      (((char *)&obj) + offset)
+
+   The returned object can only be used as a foreign function call
+   parameter.  It behaves similar to ``pointer(obj)``, but the
+   construction is a lot faster.
 
 
 .. function:: cast(obj, type)
