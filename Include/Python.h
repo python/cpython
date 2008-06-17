@@ -35,7 +35,7 @@
 #include <unistd.h>
 #endif
 
-/* For uintptr_t, intptr_t */
+/* For size_t? */
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
 #endif

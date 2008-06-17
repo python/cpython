@@ -105,6 +105,12 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').intersection(C('ccb')), set('bc'))
             self.assertEqual(self.thetype('abcba').intersection(C('ef')), set(''))
             self.assertEqual(self.thetype('abcba').intersection(C('cbcf'), C('bag')), set('b'))
+        s = self.thetype('abcba')
+        z = s.intersection()
+        if self.thetype == frozenset():
+            self.assertEqual(id(s), id(z))
+        else:
+            self.assertNotEqual(id(s), id(z))
 
     def test_isdisjoint(self):
         def f(s1, s2):
@@ -144,6 +150,8 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').difference(C('efgfe')), set('abc'))
             self.assertEqual(self.thetype('abcba').difference(C('ccb')), set('a'))
             self.assertEqual(self.thetype('abcba').difference(C('ef')), set('abc'))
+            self.assertEqual(self.thetype('abcba').difference(), set('abc'))
+            self.assertEqual(self.thetype('abcba').difference(C('a'), C('b')), set('c'))
 
     def test_sub(self):
         i = self.s.difference(self.otherword)
@@ -469,6 +477,18 @@ class TestSet(TestJointOps):
                 s = self.thetype('abcba')
                 self.assertEqual(s.difference_update(C(p)), None)
                 self.assertEqual(s, set(q))
+
+                s = self.thetype('abcdefghih')
+                s.difference_update()
+                self.assertEqual(s, self.thetype('abcdefghih'))
+
+                s = self.thetype('abcdefghih')
+                s.difference_update(C('aba'))
+                self.assertEqual(s, self.thetype('cdefghih'))
+
+                s = self.thetype('abcdefghih')
+                s.difference_update(C('cdc'), C('aba'))
+                self.assertEqual(s, self.thetype('efghih'))
 
     def test_isub(self):
         self.s -= set(self.otherword)
