@@ -283,54 +283,87 @@ class Rational(Real):
 
 
 class Integral(Rational):
-    """Integral adds a conversion to int and the bit-string operations."""
+    """Integral adds a conversion to long and the bit-string operations."""
 
     @abstractmethod
-    def __int__(self):
-        """int(self)"""
+    def __long__(self):
+        """long(self)"""
         raise NotImplementedError
 
     def __index__(self):
         """index(self)"""
-        return int(self)
+        return long(self)
 
+    @abstractmethod
+    def __pow__(self, exponent, modulus=None):
+        """self ** exponent % modulus, but maybe faster.
+
+        Accept the modulus argument if you want to support the
+        3-argument version of pow(). Raise a TypeError if exponent < 0
+        or any argument isn't Integral. Otherwise, just implement the
+        2-argument version described in Complex.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def __lshift__(self, other):
-        return int(self) << int(other)
+        """self << other"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __rlshift__(self, other):
-        return int(other) << int(self)
+        """other << self"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __rshift__(self, other):
-        return int(self) >> int(other)
+        """self >> other"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __rrshift__(self, other):
-        return int(other) >> int(self)
+        """other >> self"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __and__(self, other):
-        return int(self) & int(other)
+        """self & other"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __rand__(self, other):
-        return int(other) & int(self)
+        """other & self"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __xor__(self, other):
-        return int(self) ^ int(other)
+        """self ^ other"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __rxor__(self, other):
-        return int(other) ^ int(self)
+        """other ^ self"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __or__(self, other):
-        return int(self) | int(other)
+        """self | other"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __ror__(self, other):
-        return int(other) | int(self)
+        """other | self"""
+        raise NotImplementedError
 
+    @abstractmethod
     def __invert__(self):
-        return ~int(self)
+        """~self"""
+        raise NotImplementedError
 
     # Concrete implementations of Rational and Real abstract methods.
     def __float__(self):
-        """float(self) == float(int(self))"""
-        return float(int(self))
+        """float(self) == float(long(self))"""
+        return float(long(self))
 
     @property
     def numerator(self):
