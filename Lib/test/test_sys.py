@@ -538,8 +538,7 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof([], h + l + p + l)
         self.check_sizeof([1, 2, 3], h + l + p + l + 3*l)
         # unicode
-        import math
-        usize = math.log(sys.maxunicode + 1, 2) / 8
+        usize = len(u'\0'.encode('unicode-internal'))
         samples = [u'', u'1'*100]
         # we need to test for both sizes, because we don't know if the string
         # has been cached
