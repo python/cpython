@@ -89,6 +89,10 @@ Extension Modules
 Library
 -------
 
+- Issue #3126: StreamHandler and FileHandler check before calling "flush" and
+  "close" that the stream object has these, using hasattr (thanks to bobf for
+  the patch).
+
 - Issue #2912: platform.uname now tries to determine unknown information even if
   os.uname exists.
 
@@ -112,7 +116,7 @@ Library
 
 - Issue #2404: ctypes objects support the new pep3118 buffer interface.
 
-- Patch #2125: Add GetInteger and GetString methods for 
+- Patch #2125: Add GetInteger and GetString methods for
   msilib.Record objects.
 
 - Issue #2782: The datetime module's strftime methods now accept
@@ -299,7 +303,7 @@ Library
 - The Mac Modules (including Carbon) have been deprecated for removal
   in Python 3.0.
 
-- Library: on MacOS X you can now set ``ARCHFLAGS`` in the shell 
+- Library: on MacOS X you can now set ``ARCHFLAGS`` in the shell
   environment to control the '-arch' flags that are used to build
   an extension. This was added for compatibility with Apple's build
   of Python.
