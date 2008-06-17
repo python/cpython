@@ -1065,5 +1065,5 @@ PyInit__msi(void)
     if (!MSIError)
 	return NULL;
     PyModule_AddObject(m, "MSIError", MSIError);
-    return NULL;
+    return m;
 }
