@@ -731,7 +731,7 @@ class StreamHandler(Handler):
         """
         Flushes the stream.
         """
-        if self.stream:
+        if self.stream and hasattr(self.stream, "flush"):
             self.stream.flush()
 
     def emit(self, record):
@@ -787,7 +787,8 @@ class FileHandler(StreamHandler):
         """
         if self.stream:
             self.flush()
-            self.stream.close()
+            if hasattr(self.stream, "close"):
+                self.stream.close()
             StreamHandler.close(self)
             self.stream = None
 

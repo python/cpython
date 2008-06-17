@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Jesse Noller was given SVN access on 16 June 2008 by Georg Brandl,
+  for work on the multiprocessing module.
+
 - Gregor Lingl was given SVN access on 10 June 2008 by MvL,
   for work on the turtle module.
 

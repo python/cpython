@@ -27,10 +27,9 @@ class Base(object):
 class Base2(object):
     mykey = 'from Base2'
 
-class X(Base):
-    # you can't add a non-string key to X.__dict__, but it can be
-    # there from the beginning :-)
-    locals()[MyKey()] = 5
+# you can't add a non-string key to X.__dict__, but it can be
+# there from the beginning :-)
+X = type('X', (Base,), {MyKey(): 5})
 
 print(X.mykey)
 # I get a segfault, or a slightly wrong assertion error in a debug build.
