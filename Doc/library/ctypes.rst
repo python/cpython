@@ -1875,8 +1875,6 @@ Utility functions
    module with a call to the ``free(void *)``, it is important that you
    use the function in the same library that allocated the memory.
 
-   .. versionadded:: 2.6
-
 .. function:: FormatError([code])
 
    Windows only: Returns a textual description of the error code. If no error code
@@ -1895,14 +1893,10 @@ Utility functions
    Returns the current value of the ctypes-private copy of the system
    `errno` variable in the calling thread.
 
-   .. versionadded:: 2.6
-
 .. function:: get_last_error()
 
    Windows only: returns the current value of the ctypes-private copy of the system
    `LastError` variable in the calling thread.
-
-   .. versionadded:: 2.6
 
 .. function:: memmove(dst, src, count)
 
@@ -1961,15 +1955,11 @@ Utility functions
    `errno` variable in the calling thread to `value` and return the
    previous value.
 
-   .. versionadded:: 2.6
-
 .. function:: set_last_error(value)
 
    Windows only: set the current value of the ctypes-private copy of
    the system `LastError` variable in the calling thread to `value`
    and return the previous value.
-
-   .. versionadded:: 2.6
 
 .. function:: sizeof(obj_or_type)
 
@@ -2163,8 +2153,6 @@ These are the fundamental ctypes data types:
    Represents the C long double datatype. The constructor accepts an
    optional float initializer.  On platforms where ``sizeof(long
    double) == sizeof(double)`` it is an alias to :class:`c_double`.
-
-   .. versionadded:: 2.6
 
 .. class:: c_float
 
