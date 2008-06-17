@@ -8,28 +8,10 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 
 #include "Python.h"
 
-/* Older implementations of heapq used Py_LE for comparisons.  Now, it uses
-   Py_LT so it will match min(), sorted(), and bisect().  Unfortunately, some
-   client code (Twisted for example) relied on Py_LE, so this little function
-   restores compatability by trying both.
-*/
 static int
 cmp_lt(PyObject *x, PyObject *y)
 {
-	int cmp;
-	static PyObject *lt = NULL;
-
-	if (lt == NULL) {
-		lt = PyUnicode_FromString("__lt__");
-		if (lt == NULL)
-			return -1;
-	}
-	if (PyObject_HasAttr(x, lt))
-		return PyObject_RichCompareBool(x, y, Py_LT);
-	cmp = PyObject_RichCompareBool(y, x, Py_LE);
-	if (cmp != -1)
-		cmp = 1 - cmp;
-	return cmp;
+	return PyObject_RichCompareBool(x, y, Py_LT);
 }
 
 static int
