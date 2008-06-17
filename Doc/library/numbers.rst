@@ -181,7 +181,7 @@ forward and reverse instances of any given operator. For example,
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         def forward(a, b):
-            if isinstance(b, (int, long, Fraction)):
+            if isinstance(b, (int, Fraction)):
                 return monomorphic_operator(a, b)
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
