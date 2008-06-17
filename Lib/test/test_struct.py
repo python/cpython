@@ -84,7 +84,7 @@ class StructTest(unittest.TestCase):
             self.fail("did not raise error for float coerce")
 
     def test_isbigendian(self):
-        self.assertEqual((struct.pack('=i', 1)[0] == chr(0)), ISBIGENDIAN)
+        self.assertEqual((struct.pack('=i', 1)[0] == 0), ISBIGENDIAN)
 
     def test_consistence(self):
         self.assertRaises(struct.error, struct.calcsize, 'Z')
