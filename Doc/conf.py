@@ -94,6 +94,9 @@ html_static_path = ['tools/sphinxext/static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
 
+# Split the index
+html_split_index = True
+
 
 # Options for LaTeX output
 # ------------------------
