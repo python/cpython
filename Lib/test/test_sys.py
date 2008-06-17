@@ -520,6 +520,9 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(32768, h + self.align(2) + 2)
         self.check_sizeof(32768*32768-1, h + self.align(2) + 2)
         self.check_sizeof(32768*32768, h + self.align(2) + 4)
+        # tuple
+        self.check_sizeof((), h)
+        self.check_sizeof((1,2,3), h + 3*p)
 
 
 def test_main():

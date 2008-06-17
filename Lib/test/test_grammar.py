@@ -335,6 +335,7 @@ class GrammarTests(unittest.TestCase):
         self.assertEquals(l5(1, 2), 5)
         self.assertEquals(l5(1, 2, 3), 6)
         check_syntax_error(self, "lambda x: x = 2")
+        check_syntax_error(self, "lambda (None,): None")
         l6 = lambda x, y, *, k=20: x+y+k
         self.assertEquals(l6(1,2), 1+2+20)
         self.assertEquals(l6(1,2,k=10), 1+2+10)

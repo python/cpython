@@ -70,7 +70,7 @@ w_more(int c, WFILE *p)
 	size = PyBytes_Size(p->str);
 	newsize = size + size + 1024;
 	if (newsize > 32*1024*1024) {
-		newsize = size + 1024*1024;
+		newsize = size + (size >> 3);	/* 12.5% overallocation */
 	}
 	if (_PyBytes_Resize(&p->str, newsize) != 0) {
 		p->ptr = p->end = NULL;

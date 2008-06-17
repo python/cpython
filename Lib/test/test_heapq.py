@@ -211,10 +211,11 @@ class TestHeapC(TestHeap):
         class LE:
             def __init__(self, x):
                 self.x = x
-            def __lt__(self, other):
+            def __le__(self, other):
                 return self.x >= other.x
         data = [random.random() for i in range(100)]
         target = sorted(data, reverse=True)
+        print("HASATTR", hasattr(LE(0), "__lt__"), LE(0).__lt__)
         self.assertEqual(hsort(data, LT), target)
         self.assertEqual(hsort(data, LE), target)
 

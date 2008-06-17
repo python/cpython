@@ -284,7 +284,8 @@ def add_stream(db, name, path):
 
 def init_database(name, schema,
                   ProductName, ProductCode, ProductVersion,
-                  Manufacturer):
+                  Manufacturer,
+                  request_uac = False):
     try:
         os.unlink(name)
     except OSError:
@@ -306,7 +307,11 @@ def init_database(name, schema,
     si.SetProperty(PID_AUTHOR, Manufacturer)
     si.SetProperty(PID_TEMPLATE, msi_type)
     si.SetProperty(PID_REVNUMBER, gen_uuid())
-    si.SetProperty(PID_WORDCOUNT, 2) # long file names, compressed, original media
+    if request_uac:
+        wc = 2 # long file names, compressed, original media
+    else:
+        wc = 2 | 8 # +never invoke UAC
+    si.SetProperty(PID_WORDCOUNT, wc)
     si.SetProperty(PID_PAGECOUNT, 200)
     si.SetProperty(PID_APPNAME, "Python MSI Library")
     # XXX more properties
