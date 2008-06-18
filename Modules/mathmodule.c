@@ -181,16 +181,16 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
 	PyFPE_END_PROTECT(r);
 	if (Py_IS_NAN(r) && !Py_IS_NAN(x)) {
 		PyErr_SetString(PyExc_ValueError,
-				"math domain error (invalid argument)");
+				"math domain error"); /* invalid arg */
 		return NULL;
 	}
 	if (Py_IS_INFINITY(r) && Py_IS_FINITE(x)) {
 			if (can_overflow)
 				PyErr_SetString(PyExc_OverflowError,
-					"math range error (overflow)");
+					"math range error"); /* overflow */
 			else
 				PyErr_SetString(PyExc_ValueError,
-					"math domain error (singularity)");
+					"math domain error"); /* singularity */
 			return NULL;
 	}
 	if (Py_IS_FINITE(r) && errno && is_error(r))
