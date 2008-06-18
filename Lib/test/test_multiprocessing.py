@@ -1333,7 +1333,7 @@ class _TestConnection(BaseTestCase):
 
         self.assertRaises(ValueError, a.send_bytes, msg, 4, -1)
 
-
+"""
 class _TestListenerClient(BaseTestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
@@ -1353,7 +1353,7 @@ class _TestListenerClient(BaseTestCase):
             self.assertEqual(conn.recv(), 'hello')
             p.join()
             l.close()
-
+"""
 #
 # Test of sending connection and socket objects between processes
 #
