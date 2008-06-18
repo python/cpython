@@ -105,7 +105,6 @@ except:
     _have_ssl = False
 else:
     _have_ssl = True
-assert _have_ssl
 
 # used in User-Agent header sent
 __version__ = sys.version[:3]
@@ -417,8 +416,6 @@ def build_opener(*handlers):
                        FTPHandler, FileHandler, HTTPErrorProcessor]
     if hasattr(http.client, "HTTPSConnection"):
         default_classes.append(HTTPSHandler)
-    else:
-        import pdb; pdb.set_trace()
     skip = set()
     for klass in default_classes:
         for check in handlers:
