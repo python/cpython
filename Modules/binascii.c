@@ -198,6 +198,8 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "t#:a2b_uu", &ascii_data, &ascii_len) )
 		return NULL;
 
+	assert(ascii_len >= 0);
+
 	/* First byte: binary data length (in bytes) */
 	bin_len = (*ascii_data++ - ' ') & 077;
 	ascii_len--;
@@ -355,6 +357,11 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "t#:a2b_base64", &ascii_data, &ascii_len) )
 		return NULL;
 
+	assert(ascii_len >= 0);
+
+	if (ascii_len > PY_SSIZE_T_MAX - 3)
+		return PyErr_NoMemory();
+
 	bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
 
 	/* Allocate the buffer */
@@ -448,6 +455,9 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
 
 	if ( !PyArg_ParseTuple(args, "s#:b2a_base64", &bin_data, &bin_len) )
 		return NULL;
+
+	assert(bin_len >= 0);
+
 	if ( bin_len > BASE64_MAXBIN ) {
 		PyErr_SetString(Error, "Too much data for base64 line");
 		return NULL;
@@ -506,6 +516,11 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 
 	if ( !PyArg_ParseTuple(args, "t#:a2b_hqx", &ascii_data, &len) )
 		return NULL;
+
+	assert(len >= 0);
+
+	if (len > PY_SSIZE_T_MAX - 2)
+		return PyErr_NoMemory();
 
 	/* Allocate a string that is too big (fixed later) 
 	   Add two to the initial length to prevent interning which
@@ -574,6 +589,11 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#:rlecode_hqx", &in_data, &len) )
 		return NULL;
 
+	assert(len >= 0);
+
+	if (len > PY_SSIZE_T_MAX / 2 - 2)
+		return PyErr_NoMemory();
+
 	/* Worst case: output is twice as big as input (fixed later) */
 	if ( (rv=PyBytes_FromStringAndSize(NULL, len*2+2)) == NULL )
 		return NULL;
@@ -627,6 +647,11 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#:b2a_hqx", &bin_data, &len) )
 		return NULL;
 
+	assert(len >= 0);
+
+	if (len > PY_SSIZE_T_MAX / 2 - 2)
+		return PyErr_NoMemory();
+
 	/* Allocate a buffer that is at least large enough */
 	if ( (rv=PyBytes_FromStringAndSize(NULL, len*2+2)) == NULL )
 		return NULL;
@@ -669,9 +694,13 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#:rledecode_hqx", &in_data, &in_len) )
 		return NULL;
 
+	assert(in_len >= 0);
+
 	/* Empty string is a special case */
 	if ( in_len == 0 )
 		return PyBytes_FromStringAndSize("", 0);
+	else if (in_len > PY_SSIZE_T_MAX / 2)
+		return PyErr_NoMemory();
 
 	/* Allocate a buffer of reasonable size. Resized when needed */
 	out_len = in_len*2;
@@ -697,6 +726,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
 #define OUTBYTE(b) \
 	do { \
 		 if ( --out_len_left < 0 ) { \
+			  if ( out_len > PY_SSIZE_T_MAX / 2) return PyErr_NoMemory(); \
 			  if (_PyBytes_Resize(&rv, 2*out_len) < 0) \
 			    { Py_DECREF(rv); return NULL; } \
 			  out_data = (unsigned char *)PyBytes_AS_STRING(rv) \
@@ -769,7 +799,7 @@ binascii_crc_hqx(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#i:crc_hqx", &bin_data, &len, &crc) )
 		return NULL;
 
-	while(len--) {
+	while(len-- > 0) {
 		crc=((crc<<8)&0xff00)^crctab_hqx[((crc>>8)&0xff)^*bin_data++];
 	}
 
@@ -925,7 +955,7 @@ binascii_crc32(PyObject *self, PyObject *args)
 		return NULL;
 
 	crc = ~ crc;
-	while (len--) {
+	while (len-- > 0) {
 		crc = crc_32_tab[(crc ^ *bin_data++) & 0xff] ^ (crc >> 8);
 		/* Note:  (crc >> 8) MUST zero fill on left */
 	}
@@ -947,6 +977,10 @@ binascii_hexlify(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s#:b2a_hex", &argbuf, &arglen))
 		return NULL;
+
+	assert(arglen >= 0);
+	if (arglen > PY_SSIZE_T_MAX / 2)
+		return PyErr_NoMemory();
 
 	retval = PyBytes_FromStringAndSize(NULL, arglen*2);
 	if (!retval)
@@ -998,6 +1032,8 @@ binascii_unhexlify(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s#:a2b_hex", &argbuf, &arglen))
 		return NULL;
+
+	assert(arglen >= 0);
 
 	/* XXX What should we do about strings with an odd length?  Should
 	 * we add an implicit leading zero, or a trailing zero?  For now,

@@ -151,8 +151,11 @@ _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
         char *ptr;
         void (*func)(int, Py_ssize_t *, Py_ssize_t *);
 
+        if (view->ndim > PY_SSIZE_T_MAX / sizeof(Py_ssize_t)) {
+                PyErr_NoMemory();
+                return -1;
+        }
 
-        /* XXX(nnorwitz): need to check for overflow! */
         indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view->ndim);
         if (indices == NULL) {
                 PyErr_NoMemory();
