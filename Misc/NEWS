@@ -81,6 +81,8 @@ Extension Modules
 Library
 -------
 
+- Patch #3133: http.server.CGIHTTPRequestHandler did not work on windows.
+
 - a new ``urllib`` package was created.  It consists of code from
   ``urllib``, ``urllib2``, ``urlparse``, and ``robotparser``.  The old
   modules have all been removed.  The new package has five submodules:

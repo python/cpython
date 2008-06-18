@@ -13,9 +13,7 @@ Notes on CGIHTTPRequestHandler
 This class implements GET and POST requests to cgi-bin scripts.
 
 If the os.fork() function is not present (e.g. on Windows),
-os.popen2() is used as a fallback, with slightly altered semantics; if
-that function is not present either (e.g. on Macintosh), only Python
-scripts are supported, and they are executed by the current process.
+subprocess.Popen() is used as a fallback, with slightly altered semantics.
 
 In all cases, the implementation is intentionally naive -- all
 requests are executed synchronously.
@@ -826,8 +824,6 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
 
     # Determine platform specifics
     have_fork = hasattr(os, 'fork')
-    have_popen2 = hasattr(os, 'popen2')
-    have_popen3 = hasattr(os, 'popen3')
 
     # Make rfile unbuffered -- we need to read one line and then pass
     # the rest to a subprocess, so we can't use buffered input.
@@ -929,10 +925,6 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             return
         ispy = self.is_python(scriptname)
         if not ispy:
-            if not (self.have_fork or self.have_popen2 or self.have_popen3):
-                self.send_error(403, "CGI script is not a Python script (%r)" %
-                                scriptname)
-                return
             if not self.is_executable(scriptfile):
                 self.send_error(403, "CGI script is not executable (%r)" %
                                 scriptname)
@@ -1041,13 +1033,9 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 self.server.handle_error(self.request, self.client_address)
                 os._exit(127)
 
-        elif self.have_popen2 or self.have_popen3:
-            # Windows -- use popen2 or popen3 to create a subprocess
-            import shutil
-            if self.have_popen3:
-                popenx = os.popen3
-            else:
-                popenx = os.popen2
+        else:
+            # Non-Unix -- use subprocess
+            import subprocess
             cmdline = scriptfile
             if self.is_python(scriptfile):
                 interp = sys.executable
@@ -1062,54 +1050,26 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 nbytes = int(length)
             except (TypeError, ValueError):
                 nbytes = 0
-            files = popenx(cmdline, 'b')
-            fi = files[0]
-            fo = files[1]
-            if self.have_popen3:
-                fe = files[2]
+            p = subprocess.Popen(cmdline,
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 )
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
-                fi.write(data)
+            else:
+                data = None
             # throw away additional data [see bug #427345]
             while select.select([self.rfile._sock], [], [], 0)[0]:
                 if not self.rfile._sock.recv(1):
                     break
-            fi.close()
-            shutil.copyfileobj(fo, self.wfile)
-            if self.have_popen3:
-                errors = fe.read()
-                fe.close()
-                if errors:
-                    self.log_error('%s', errors)
-            sts = fo.close()
-            if sts:
-                self.log_error("CGI script exit status %#x", sts)
-            else:
-                self.log_message("CGI script exited OK")
-
-        else:
-            # Other O.S. -- execute script in this process
-            save_argv = sys.argv
-            save_stdin = sys.stdin
-            save_stdout = sys.stdout
-            save_stderr = sys.stderr
-            try:
-                save_cwd = os.getcwd()
-                try:
-                    sys.argv = [scriptfile]
-                    if '=' not in decoded_query:
-                        sys.argv.append(decoded_query)
-                    sys.stdout = self.wfile
-                    sys.stdin = self.rfile
-                    exec(open(scriptfile).read(), {"__name__": "__main__"})
-                finally:
-                    sys.argv = save_argv
-                    sys.stdin = save_stdin
-                    sys.stdout = save_stdout
-                    sys.stderr = save_stderr
-                    os.chdir(save_cwd)
-            except SystemExit as sts:
-                self.log_error("CGI script exit status %s", str(sts))
+            stdout, stderr = p.communicate(data)
+            self.wfile.write(stdout)
+            if stderr:
+                self.log_error('%s', stderr)
+            status = p.returncode
+            if status:
+                self.log_error("CGI script exit status %#x", status)
             else:
                 self.log_message("CGI script exited OK")
 
