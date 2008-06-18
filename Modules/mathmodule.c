@@ -559,7 +559,6 @@ math_factorial(PyObject *self, PyObject *arg)
 
 error:
 	Py_DECREF(result);
-	Py_XDECREF(iobj);
 	return NULL;
 }
 
