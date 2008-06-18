@@ -24,7 +24,7 @@ read_mime_types(file) -- parse one file, return a dictionary or None
 
 import os
 import posixpath
-import urllib
+import urllib.parse
 
 __all__ = [
     "guess_type","guess_extension","guess_all_extensions",
@@ -104,7 +104,7 @@ class MimeTypes:
         Optional `strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
-        scheme, url = urllib.splittype(url)
+        scheme, url = urllib.parse.splittype(url)
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data

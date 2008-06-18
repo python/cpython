@@ -10,7 +10,7 @@ import subprocess
 import time
 import os
 import pprint
-import urllib, urlparse
+import urllib.parse, urllib.request
 import shutil
 import traceback
 import asyncore
@@ -440,8 +440,8 @@ else:
 
                 """
                 # abandon query parameters
-                path = urlparse.urlparse(path)[2]
-                path = os.path.normpath(urllib.unquote(path))
+                path = urllib.parse.urlparse(path)[2]
+                path = os.path.normpath(urllib.parse.unquote(path))
                 words = path.split('/')
                 words = filter(None, words)
                 path = self.root
@@ -943,7 +943,7 @@ else:
                 # now fetch the same data from the HTTPS server
                 url = 'https://%s:%d/%s' % (
                     HOST, server.port, os.path.split(CERTFILE)[1])
-                f = urllib.urlopen(url)
+                f = urllib.request.urlopen(url)
                 dlen = f.info().get("content-length")
                 if dlen and (int(dlen) > 0):
                     d2 = f.read(int(dlen))

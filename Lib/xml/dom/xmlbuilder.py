@@ -190,8 +190,8 @@ class DOMBuilder:
         options.errorHandler = self.errorHandler
         fp = input.byteStream
         if fp is None and options.systemId:
-            import urllib2
-            fp = urllib2.urlopen(input.systemId)
+            import urllib.request
+            fp = urllib.request.urlopen(input.systemId)
         return self._parse_bytestream(fp, options)
 
     def parseWithContext(self, input, cnode, action):
@@ -223,14 +223,14 @@ class DOMEntityResolver(object):
         source.encoding = self._guess_media_encoding(source)
 
         # determine the base URI is we can
-        import posixpath, urlparse
-        parts = urlparse.urlparse(systemId)
+        import posixpath, urllib.parse
+        parts = urllib.parse.urlparse(systemId)
         scheme, netloc, path, params, query, fragment = parts
         # XXX should we check the scheme here as well?
         if path and not path.endswith("/"):
             path = posixpath.dirname(path) + "/"
             parts = scheme, netloc, path, params, query, fragment
-            source.baseURI = urlparse.urlunparse(parts)
+            source.baseURI = urllib.parse.urlunparse(parts)
 
         return source
 
@@ -242,8 +242,8 @@ class DOMEntityResolver(object):
             return self._opener
 
     def _create_opener(self):
-        import urllib2
-        return urllib2.build_opener()
+        import urllib.request
+        return urllib.request.build_opener()
 
     def _guess_media_encoding(self, source):
         info = source.byteStream.info()

@@ -28,7 +28,10 @@ http://wwwsearch.sf.net/):
 __all__ = ['Cookie', 'CookieJar', 'CookiePolicy', 'DefaultCookiePolicy',
            'FileCookieJar', 'LWPCookieJar', 'LoadError', 'MozillaCookieJar']
 
-import re, urlparse, copy, time, urllib
+import copy
+import re
+import time
+import urllib.parse, urllib.request
 try:
     import threading as _threading
 except ImportError:
@@ -580,7 +583,7 @@ def request_host(request):
 
     """
     url = request.get_full_url()
-    host = urlparse.urlparse(url)[1]
+    host = urllib.parse.urlparse(url)[1]
     if host == "":
         host = request.get_header("Host", "")
 
@@ -602,13 +605,11 @@ def eff_request_host(request):
 def request_path(request):
     """request-URI, as defined by RFC 2965."""
     url = request.get_full_url()
-    #scheme, netloc, path, parameters, query, frag = urlparse.urlparse(url)
-    #req_path = escape_path("".join(urlparse.urlparse(url)[2:]))
-    path, parameters, query, frag = urlparse.urlparse(url)[2:]
+    path, parameters, query, frag = urllib.parse.urlparse(url)[2:]
     if parameters:
         path = "%s;%s" % (path, parameters)
     path = escape_path(path)
-    req_path = urlparse.urlunparse(("", "", path, "", query, frag))
+    req_path = urllib.parse.urlunparse(("", "", path, "", query, frag))
     if not req_path.startswith("/"):
         # fix bad RFC 2396 absoluteURI
         req_path = "/"+req_path
@@ -644,7 +645,7 @@ def escape_path(path):
     # And here, kind of: draft-fielding-uri-rfc2396bis-03
     # (And in draft IRI specification: draft-duerst-iri-05)
     # (And here, for new URI schemes: RFC 2718)
-    path = urllib.quote(path, HTTP_PATH_SAFE)
+    path = urllib.parse.quote(path, HTTP_PATH_SAFE)
     path = ESCAPED_CHAR_RE.sub(uppercase_escaped_char, path)
     return path
 
@@ -1197,8 +1198,7 @@ class CookieJar:
     """Collection of HTTP cookies.
 
     You may not need to know about this class: try
-    urllib2.build_opener(HTTPCookieProcessor).open(url).
-
+    urllib.request.build_opener(HTTPCookieProcessor).open(url).
     """
 
     non_word_re = re.compile(r"\W")

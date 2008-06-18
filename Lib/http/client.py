@@ -70,7 +70,7 @@ import io
 import socket
 import email.parser
 import email.message
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 import warnings
 
 __all__ = ["HTTPResponse", "HTTPConnection",

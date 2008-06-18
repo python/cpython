@@ -2,8 +2,8 @@
 
 import email
 import threading
-import urlparse
-import urllib2
+import urllib.parse
+import urllib.request
 import http.server
 import unittest
 import hashlib
@@ -45,7 +45,7 @@ class LoopbackHttpServerThread(threading.Thread):
         self._stop_server = False
         self.ready = threading.Event()
         request_handler.protocol_version = "HTTP/1.0"
-        self.httpd = LoopbackHttpServer(('127.0.0.1', 0),
+        self.httpd = LoopbackHttpServer(("127.0.0.1", 0),
                                         request_handler)
         #print "Serving HTTP on %s port %s" % (self.httpd.server_name,
         #                                      self.httpd.server_port)
@@ -154,11 +154,11 @@ class DigestAuthHandler:
         if len(self._users) == 0:
             return True
 
-        if 'Proxy-Authorization' not in request_handler.headers:
+        if "Proxy-Authorization" not in request_handler.headers:
             return self._return_auth_challenge(request_handler)
         else:
             auth_dict = self._create_auth_dict(
-                request_handler.headers['Proxy-Authorization']
+                request_handler.headers["Proxy-Authorization"]
                 )
             if auth_dict["username"] in self._users:
                 password = self._users[ auth_dict["username"] ]
@@ -199,12 +199,12 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         # Uncomment the next line for debugging.
-        #sys.stderr.write(format % args)
+        # sys.stderr.write(format % args)
         pass
 
     def do_GET(self):
-        (scm, netloc, path, params, query, fragment) = urlparse.urlparse(
-            self.path, 'http')
+        (scm, netloc, path, params, query, fragment) = urllib.parse.urlparse(
+            self.path, "http")
         self.short_path = path
         if self.digest_auth_handler.handle_request(self):
             self.send_response(200, "OK")
@@ -234,9 +234,10 @@ class ProxyAuthTests(unittest.TestCase):
         self.server.start()
         self.server.ready.wait()
         proxy_url = "http://127.0.0.1:%d" % self.server.port
-        handler = urllib2.ProxyHandler({"http" : proxy_url})
-        self._digest_auth_handler = urllib2.ProxyDigestAuthHandler()
-        self.opener = urllib2.build_opener(handler, self._digest_auth_handler)
+        handler = urllib.request.ProxyHandler({"http" : proxy_url})
+        self._digest_auth_handler = urllib.request.ProxyDigestAuthHandler()
+        self.opener = urllib.request.build_opener(
+            handler, self._digest_auth_handler)
 
     def tearDown(self):
         self.server.stop()
@@ -245,13 +246,13 @@ class ProxyAuthTests(unittest.TestCase):
         self._digest_auth_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD+"bad")
         FakeProxyHandler.digest_auth_handler.set_qop("auth")
-        self.assertRaises(urllib2.HTTPError,
+        self.assertRaises(urllib.error.HTTPError,
                           self.opener.open,
                           self.URL)
 
     def test_proxy_with_no_password_raises_httperror(self):
         FakeProxyHandler.digest_auth_handler.set_qop("auth")
-        self.assertRaises(urllib2.HTTPError,
+        self.assertRaises(urllib.error.HTTPError,
                           self.opener.open,
                           self.URL)
 
@@ -270,7 +271,7 @@ class ProxyAuthTests(unittest.TestCase):
         FakeProxyHandler.digest_auth_handler.set_qop("auth-int")
         try:
             result = self.opener.open(self.URL)
-        except urllib2.URLError:
+        except urllib.error.URLError:
             # It's okay if we don't support auth-int, but we certainly
             # shouldn't receive any kind of exception here other than
             # a URLError.
@@ -296,7 +297,7 @@ def GetRequestHandler(responses):
                 self.wfile.write(body)
 
         def do_POST(self):
-            content_length = self.headers['Content-Length']
+            content_length = self.headers["Content-Length"]
             post_data = self.rfile.read(int(content_length))
             self.do_GET()
             self.requests.append(post_data)
@@ -311,7 +312,7 @@ def GetRequestHandler(responses):
             for (header, value) in headers:
                 self.send_header(header, value % self.port)
             if body:
-                self.send_header('Content-type', 'text/plain')
+                self.send_header("Content-type", "text/plain")
                 self.end_headers()
                 return body
             self.end_headers()
@@ -332,7 +333,22 @@ class TestUrlopen(unittest.TestCase):
     for transparent redirection have been written.
     """
 
-    def start_server(self, responses):
+    def setUp(self):
+        self.server = None
+
+    def tearDown(self):
+        if self.server is not None:
+            self.server.stop()
+
+    def urlopen(self, url, data=None):
+        f = urllib.request.urlopen(url, data)
+        result = f.read()
+        f.close()
+        return result
+
+    def start_server(self, responses=None):
+        if responses is None:
+            responses = [(200, [], b"we don't care")]
         handler = GetRequestHandler(responses)
 
         self.server = LoopbackHttpServerThread(handler)
@@ -342,106 +358,71 @@ class TestUrlopen(unittest.TestCase):
         handler.port = port
         return handler
 
-
     def test_redirection(self):
-        expected_response = b'We got here...'
+        expected_response = b"We got here..."
         responses = [
-            (302, [('Location', 'http://localhost:%s/somewhere_else')], ''),
+            (302, [("Location", "http://localhost:%s/somewhere_else")], ""),
             (200, [], expected_response)
         ]
 
         handler = self.start_server(responses)
-
-        try:
-            f = urllib2.urlopen('http://localhost:%s/' % handler.port)
-            data = f.read()
-            f.close()
-
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/', '/somewhere_else'])
-        finally:
-            self.server.stop()
-
+        data = self.urlopen("http://localhost:%s/" % handler.port)
+        self.assertEquals(data, expected_response)
+        self.assertEquals(handler.requests, ["/", "/somewhere_else"])
 
     def test_404(self):
-        expected_response = b'Bad bad bad...'
+        expected_response = b"Bad bad bad..."
         handler = self.start_server([(404, [], expected_response)])
 
         try:
-            try:
-                urllib2.urlopen('http://localhost:%s/weeble' % handler.port)
-            except urllib2.URLError as f:
-                data = f.read()
-                f.close()
-            else:
-                self.fail('404 should raise URLError')
+            self.urlopen("http://localhost:%s/weeble" % handler.port)
+        except urllib.error.URLError as f:
+            data = f.read()
+            f.close()
+        else:
+            self.fail("404 should raise URLError")
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/weeble'])
-        finally:
-            self.server.stop()
-
+        self.assertEquals(data, expected_response)
+        self.assertEquals(handler.requests, ["/weeble"])
 
     def test_200(self):
-        expected_response = b'pycon 2008...'
+        expected_response = b"pycon 2008..."
         handler = self.start_server([(200, [], expected_response)])
-
-        try:
-            f = urllib2.urlopen('http://localhost:%s/bizarre' % handler.port)
-            data = f.read()
-            f.close()
-
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/bizarre'])
-        finally:
-            self.server.stop()
+        data = self.urlopen("http://localhost:%s/bizarre" % handler.port)
+        self.assertEquals(data, expected_response)
+        self.assertEquals(handler.requests, ["/bizarre"])
 
     def test_200_with_parameters(self):
-        expected_response = b'pycon 2008...'
+        expected_response = b"pycon 2008..."
         handler = self.start_server([(200, [], expected_response)])
-
-        try:
-            f = urllib2.urlopen('http://localhost:%s/bizarre' % handler.port, b'get=with_feeling')
-            data = f.read()
-            f.close()
-
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/bizarre', b'get=with_feeling'])
-        finally:
-            self.server.stop()
-
+        data = self.urlopen("http://localhost:%s/bizarre" % handler.port,
+                             b"get=with_feeling")
+        self.assertEquals(data, expected_response)
+        self.assertEquals(handler.requests, ["/bizarre", b"get=with_feeling"])
 
     def test_sending_headers(self):
-        handler = self.start_server([(200, [], b"we don't care")])
-
-        try:
-            req = urllib2.Request("http://localhost:%s/" % handler.port,
-                                  headers={'Range': 'bytes=20-39'})
-            urllib2.urlopen(req)
-            self.assertEqual(handler.headers_received['Range'], 'bytes=20-39')
-        finally:
-            self.server.stop()
+        handler = self.start_server()
+        req = urllib.request.Request("http://localhost:%s/" % handler.port,
+                                     headers={"Range": "bytes=20-39"})
+        urllib.request.urlopen(req)
+        self.assertEqual(handler.headers_received["Range"], "bytes=20-39")
 
     def test_basic(self):
-        handler = self.start_server([(200, [], b"we don't care")])
-
+        handler = self.start_server()
+        open_url = urllib.request.urlopen("http://localhost:%s" % handler.port)
+        for attr in ("read", "close", "info", "geturl"):
+            self.assert_(hasattr(open_url, attr), "object returned from "
+                         "urlopen lacks the %s attribute" % attr)
         try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
-            for attr in ("read", "close", "info", "geturl"):
-                self.assert_(hasattr(open_url, attr), "object returned from "
-                             "urlopen lacks the %s attribute" % attr)
-            try:
-                self.assert_(open_url.read(), "calling 'read' failed")
-            finally:
-                open_url.close()
+            self.assert_(open_url.read(), "calling 'read' failed")
         finally:
-            self.server.stop()
+            open_url.close()
 
     def test_info(self):
-        handler = self.start_server([(200, [], b"we don't care")])
-
+        handler = self.start_server()
         try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
+            open_url = urllib.request.urlopen(
+                "http://localhost:%s" % handler.port)
             info_obj = open_url.info()
             self.assert_(isinstance(info_obj, email.message.Message),
                          "object returned by 'info' is not an instance of "
@@ -452,15 +433,10 @@ class TestUrlopen(unittest.TestCase):
 
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
-        handler = self.start_server([(200, [], b"we don't care")])
-
-        try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
-            url = open_url.geturl()
-            self.assertEqual(url, "http://localhost:%s" % handler.port)
-        finally:
-            self.server.stop()
-
+        handler = self.start_server()
+        open_url = urllib.request.urlopen("http://localhost:%s" % handler.port)
+        url = open_url.geturl()
+        self.assertEqual(url, "http://localhost:%s" % handler.port)
 
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
@@ -472,17 +448,10 @@ class TestUrlopen(unittest.TestCase):
                           # started failing then.  One hopes the .invalid
                           # domain will be spared to serve its defined
                           # purpose.
-                          # urllib2.urlopen, "http://www.sadflkjsasadf.com/")
-                          urllib2.urlopen, "http://www.python.invalid./")
-
+                          urllib.request.urlopen,
+                          "http://www.python.invalid./")
 
 def test_main():
-    # We will NOT depend on the network resource flag
-    # (Lib/test/regrtest.py -u network) since all tests here are only
-    # localhost.  However, if this is a bad rationale, then uncomment
-    # the next line.
-    #support.requires("network")
-
     support.run_unittest(ProxyAuthTests)
     support.run_unittest(TestUrlopen)
 

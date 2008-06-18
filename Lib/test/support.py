@@ -352,10 +352,10 @@ def check_syntax_error(testcase, statement):
         testcase.fail('Missing SyntaxError: "%s"' % statement)
 
 def open_urlresource(url, *args, **kw):
-    import urllib, urlparse
+    import urllib.request, urllib.parse
 
     requires('urlfetch')
-    filename = urlparse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
+    filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
 
     for path in [os.path.curdir, os.path.pardir]:
         fn = os.path.join(path, filename)
@@ -363,7 +363,7 @@ def open_urlresource(url, *args, **kw):
             return open(fn, *args, **kw)
 
     print('\tfetching %s ...' % url, file=get_original_stdout())
-    fn, _ = urllib.urlretrieve(url, filename)
+    fn, _ = urllib.request.urlretrieve(url, filename)
     return open(fn, *args, **kw)
 
 

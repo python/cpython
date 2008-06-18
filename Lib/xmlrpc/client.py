@@ -1160,12 +1160,12 @@ class Transport:
         if isinstance(host, tuple):
             host, x509 = host
 
-        import urllib
-        auth, host = urllib.splituser(host)
+        import urllib.parse
+        auth, host = urllib.parse.splituser(host)
 
         if auth:
             import base64
-            auth = base64.encodestring(urllib.unquote(auth))
+            auth = base64.encodestring(urllib.parse.unquote(auth))
             auth = "".join(auth.split()) # get rid of whitespace
             extra_headers = [
                 ("Authorization", "Basic " + auth)
@@ -1321,11 +1321,11 @@ class ServerProxy:
         # establish a "logical" server connection
 
         # get the url
-        import urllib
-        type, uri = urllib.splittype(uri)
+        import urllib.parse
+        type, uri = urllib.parse.splittype(uri)
         if type not in ("http", "https"):
             raise IOError("unsupported XML-RPC protocol")
-        self.__host, self.__handler = urllib.splithost(uri)
+        self.__host, self.__handler = urllib.parse.splithost(uri)
         if not self.__handler:
             self.__handler = "/RPC2"
 

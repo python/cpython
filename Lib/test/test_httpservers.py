@@ -11,7 +11,7 @@ import os
 import sys
 import base64
 import shutil
-import urllib
+import urllib.parse
 import http.client
 import tempfile
 import threading
@@ -322,7 +322,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
              (res.read(), res.getheader('Content-type'), res.status))
 
     def test_post(self):
-        params = urllib.urlencode({'spam' : 1, 'eggs' : 'python', 'bacon' : 123456})
+        params = urllib.parse.urlencode(
+            {'spam' : 1, 'eggs' : 'python', 'bacon' : 123456})
         headers = {'Content-type' : 'application/x-www-form-urlencoded'}
         res = self.request('/cgi-bin/file2.py', 'POST', params, headers)
 
