@@ -642,6 +642,9 @@ array_concat(arrayobject *a, PyObject *bb)
 		PyErr_BadArgument();
 		return NULL;
 	}
+	if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b)) {
+		return PyErr_NoMemory();
+	}
 	size = Py_SIZE(a) + Py_SIZE(b);
 	np = (arrayobject *) newarrayobject(&Arraytype, size, a->ob_descr);
 	if (np == NULL) {
@@ -664,6 +667,9 @@ array_repeat(arrayobject *a, Py_ssize_t n)
 	Py_ssize_t nbytes;
 	if (n < 0)
 		n = 0;
+	if ((Py_SIZE(a) != 0) && (n > PY_SSIZE_T_MAX / Py_SIZE(a))) {
+		return PyErr_NoMemory();
+	}
 	size = Py_SIZE(a) * n;
 	np = (arrayobject *) newarrayobject(&Arraytype, size, a->ob_descr);
 	if (np == NULL)
@@ -853,6 +859,10 @@ array_inplace_repeat(arrayobject *self, Py_ssize_t n)
 		if (n < 0)
 			n = 0;
 		items = self->ob_item;
+		if ((self->ob_descr->itemsize != 0) && 
+			(Py_SIZE(self) > PY_SSIZE_T_MAX / self->ob_descr->itemsize)) {
+			return PyErr_NoMemory();
+		}
 		size = Py_SIZE(self) * self->ob_descr->itemsize;
 		if (n == 0) {
 			PyMem_FREE(items);
@@ -861,6 +871,9 @@ array_inplace_repeat(arrayobject *self, Py_ssize_t n)
 			self->allocated = 0;
 		}
 		else {
+			if (size > PY_SSIZE_T_MAX / n) {
+				return PyErr_NoMemory();
+			}
 			PyMem_Resize(items, char, n * size);
 			if (items == NULL)
 				return PyErr_NoMemory();
@@ -1142,6 +1155,10 @@ array_reduce(arrayobject *array)
 		Py_INCREF(dict);
 	}
 	if (Py_SIZE(array) > 0) {
+		if (array->ob_descr->itemsize 
+				> PY_SSIZE_T_MAX / Py_SIZE(array)) {
+			return PyErr_NoMemory();
+		}
 		result = Py_BuildValue("O(cy#)O", 
 			Py_TYPE(array), 
 			array->ob_descr->typecode,
@@ -1315,6 +1332,9 @@ array_fromlist(arrayobject *self, PyObject *list)
 			if ((*self->ob_descr->setitem)(self,
 					Py_SIZE(self) - n + i, v) != 0) {
 				Py_SIZE(self) -= n;
+				if (itemsize && (Py_SIZE(self) > PY_SSIZE_T_MAX / itemsize)) {
+					return PyErr_NoMemory();
+				}
 				PyMem_RESIZE(item, char,
 					          Py_SIZE(self) * itemsize);
 				self->ob_item = item;
@@ -1373,6 +1393,10 @@ array_fromstring(arrayobject *self, PyObject *args)
 	n = n / itemsize;
 	if (n > 0) {
 		char *item = self->ob_item;
+		if ((n > PY_SSIZE_T_MAX - Py_SIZE(self)) ||
+			((Py_SIZE(self) + n) > PY_SSIZE_T_MAX / itemsize)) {
+				return PyErr_NoMemory();
+		}
 		PyMem_RESIZE(item, char, (Py_SIZE(self) + n) * itemsize);
 		if (item == NULL) {
 			PyErr_NoMemory();
@@ -1398,8 +1422,12 @@ values, as if it had been read from a file using the fromfile() method).");
 static PyObject *
 array_tostring(arrayobject *self, PyObject *unused)
 {
-	return PyBytes_FromStringAndSize(self->ob_item,
-                                         Py_SIZE(self) * self->ob_descr->itemsize);
+	if (Py_SIZE(self) <= PY_SSIZE_T_MAX / self->ob_descr->itemsize) {
+		return PyBytes_FromStringAndSize(self->ob_item,
+				    Py_SIZE(self) * self->ob_descr->itemsize);
+	} else {
+		return PyErr_NoMemory();
+	}
 }
 
 PyDoc_STRVAR(tostring_doc,
@@ -1428,6 +1456,9 @@ array_fromunicode(arrayobject *self, PyObject *args)
 	}
 	if (n > 0) {
 		Py_UNICODE *item = (Py_UNICODE *) self->ob_item;
+		if (Py_SIZE(self) > PY_SSIZE_T_MAX - n) {
+			return PyErr_NoMemory();
+		}
 		PyMem_RESIZE(item, Py_UNICODE, Py_SIZE(self) + n);
 		if (item == NULL) {
 			PyErr_NoMemory();
