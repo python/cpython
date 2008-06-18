@@ -48,7 +48,7 @@ class ConnectedTests(unittest.TestCase):
         socket.RAND_add("this is a random string", 75.0)
 
         with test_support.transient_internet():
-            f = self.urlopen('https://sf.net')
+            f = self.urlopen('https://sourceforge.net')
         buf = f.read()
         f.close()
 
