@@ -42,10 +42,14 @@ Number-theoretic and representation functions:
 
    Return the absolute value of *x*.
 
+
 .. function:: factorial(x)
 
    Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
+
+   .. versionadded:: 2.6
+
 
 .. function:: floor(x)
 
@@ -107,6 +111,7 @@ Number-theoretic and representation functions:
    Return the fractional and integer parts of *x*.  Both results carry the sign of
    *x*, and both are floats.
 
+
 .. function:: sum(iterable)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
@@ -114,12 +119,16 @@ Number-theoretic and representation functions:
    algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
    typical case where the rounding mode is half-even.
 
+   .. versionadded:: 2.6
+
+
 .. function:: trunc(x)
 
    Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
    a long integer). Delegates to ``x.__trunc__()``.
 
    .. versionadded:: 2.6
+
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
 than their C equivalents: they take a single argument and return a pair of
@@ -133,7 +142,6 @@ platform C double type), in which case any float *x* with ``abs(x) >= 2**52``
 necessarily has no fractional bits.
 
 Power and logarithmic functions:
-
 
 .. function:: exp(x)
 
@@ -179,8 +187,8 @@ Power and logarithmic functions:
 
    Return the square root of *x*.
 
-Trigonometric functions:
 
+Trigonometric functions:
 
 .. function:: acos(x)
 
@@ -227,8 +235,8 @@ Trigonometric functions:
 
    Return the tangent of *x* radians.
 
-Angular conversion:
 
+Angular conversion:
 
 .. function:: degrees(x)
 
@@ -239,8 +247,8 @@ Angular conversion:
 
    Converts angle *x* from degrees to radians.
 
-Hyperbolic functions:
 
+Hyperbolic functions:
 
 .. function:: acosh(x)
 
@@ -278,9 +286,7 @@ Hyperbolic functions:
    Return the hyperbolic tangent of *x*.
 
 
-
 The module also defines two mathematical constants:
-
 
 .. data:: pi
 
