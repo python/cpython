@@ -156,16 +156,6 @@ class PyclbrTest(TestCase):
         # These were once about the 10 longest modules
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
-        cm('urllib', ignore=('_CFNumberToInt32',
-                             '_CStringFromCFString',
-                             '_CFSetup',
-                             'getproxies_registry',
-                             'proxy_bypass_registry',
-                             'proxy_bypass_macosx_sysconf',
-                             'open_https',
-                             '_https_connection',
-                             'getproxies_macosx_sysconf',
-                             'getproxies_internetconfig',)) # not on all platforms
         cm('pickle')
         cm('aifc', ignore=('openfp',))  # set with = in module
         cm('sre_parse', ignore=('dump',)) # from sre_constants import *

@@ -35,7 +35,7 @@ from operator import attrgetter
 from io import StringIO
 import sys
 import os
-import urllib
+import urllib.parse
 import email.parser
 
 __all__ = ["MiniFieldStorage", "FieldStorage",
@@ -216,8 +216,8 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
             else:
                 continue
         if len(nv[1]) or keep_blank_values:
-            name = urllib.unquote(nv[0].replace('+', ' '))
-            value = urllib.unquote(nv[1].replace('+', ' '))
+            name = urllib.parse.unquote(nv[0].replace('+', ' '))
+            value = urllib.parse.unquote(nv[1].replace('+', ' '))
             r.append((name, value))
 
     return r

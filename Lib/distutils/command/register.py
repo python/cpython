@@ -7,8 +7,9 @@ Implements the Distutils 'register' command (register with the repository).
 
 __revision__ = "$Id$"
 
-import os, string, urllib2, getpass, urlparse
+import os, string, getpass
 import io
+import urllib.parse, urllib.request
 
 from distutils.core import PyPIRCCommand
 from distutils.errors import *
@@ -94,7 +95,8 @@ class register(PyPIRCCommand):
     def classifiers(self):
         ''' Fetch the list of classifiers from the server.
         '''
-        response = urllib2.urlopen(self.repository+'?:action=list_classifiers')
+        url = self.repository+'?:action=list_classifiers'
+        response = urllib.request.urlopen(url)
         print(response.read())
 
     def verify_metadata(self):
@@ -166,8 +168,8 @@ Your selection [default 1]: ''', end=' ')
                 password = getpass.getpass('Password: ')
 
             # set up the authentication
-            auth = urllib2.HTTPPasswordMgr()
-            host = urlparse.urlparse(self.repository)[1]
+            auth = urllib.request.HTTPPasswordMgr()
+            host = urllib.parse.urlparse(self.repository)[1]
             auth.add_password(self.realm, host, username, password)
             # send the info to the server and report the result
             code, result = self.post_to_server(self.build_post_data('submit'),
@@ -276,20 +278,20 @@ Your selection [default 1]: ''', end=' ')
             'Content-type': 'multipart/form-data; boundary=%s; charset=utf-8'%boundary,
             'Content-length': str(len(body))
         }
-        req = urllib2.Request(self.repository, body, headers)
+        req = urllib.request.Request(self.repository, body, headers)
 
         # handle HTTP and include the Basic Auth handler
-        opener = urllib2.build_opener(
-            urllib2.HTTPBasicAuthHandler(password_mgr=auth)
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPBasicAuthHandler(password_mgr=auth)
         )
         data = ''
         try:
             result = opener.open(req)
-        except urllib2.HTTPError as e:
+        except urllib.error.HTTPError as e:
             if self.show_response:
                 data = e.fp.read()
             result = e.code, e.msg
-        except urllib2.URLError as e:
+        except urllib.error.URLError as e:
             result = 500, str(e)
         else:
             if self.show_response:

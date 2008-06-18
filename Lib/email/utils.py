@@ -25,6 +25,7 @@ import time
 import base64
 import random
 import socket
+import urllib.parse
 import warnings
 from io import StringIO
 
@@ -218,8 +219,7 @@ def encode_rfc2231(s, charset=None, language=None):
     charset is given but not language, the string is encoded using the empty
     string for language.
     """
-    import urllib
-    s = urllib.quote(s, safe='')
+    s = urllib.parse.quote(s, safe='')
     if charset is None and language is None:
         return s
     if language is None:
@@ -234,7 +234,6 @@ def decode_params(params):
 
     params is a sequence of 2-tuples containing (param name, string value).
     """
-    import urllib
     # Copy params so we don't mess with the original
     params = params[:]
     new_params = []
@@ -272,7 +271,7 @@ def decode_params(params):
             # language specifiers at the beginning of the string.
             for num, s, encoded in continuations:
                 if encoded:
-                    s = urllib.unquote(s)
+                    s = urllib.parse.unquote(s)
                     extended = True
                 value.append(s)
             value = quote(EMPTYSTRING.join(value))

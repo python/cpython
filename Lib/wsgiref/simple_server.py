@@ -11,7 +11,8 @@ module.  See also the BaseHTTPServer module docs for other API information.
 """
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import urllib, sys
+import sys
+import urllib.parse
 from wsgiref.handlers import SimpleHandler
 
 __version__ = "0.1"
@@ -93,7 +94,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         else:
             path,query = self.path,''
 
-        env['PATH_INFO'] = urllib.unquote(path)
+        env['PATH_INFO'] = urllib.parse.unquote(path)
         env['QUERY_STRING'] = query
 
         host = self.address_string()

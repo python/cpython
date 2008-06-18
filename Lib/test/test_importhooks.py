@@ -247,22 +247,22 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         i = ImpWrapper()
         sys.meta_path.append(i)
         sys.path_hooks.append(ImpWrapper)
-        mnames = ("colorsys", "urlparse", "distutils.core")
+        mnames = ("colorsys", "urllib.parse", "distutils.core")
         for mname in mnames:
             parent = mname.split(".")[0]
-            for n in list(sys.modules.keys()):
+            for n in list(sys.modules):
                 if n.startswith(parent):
                     del sys.modules[n]
         for mname in mnames:
             m = __import__(mname, globals(), locals(), ["__dummy__"])
             m.__loader__  # to make sure we actually handled the import
-        # Delete urllib from modules because urlparse was imported above.
-        # Without this hack, test_socket_ssl fails if run in this order:
-        # regrtest.py test_codecmaps_tw test_importhooks test_socket_ssl
-        try:
-            del sys.modules['urllib']
-        except KeyError:
-            pass
+##        # Delete urllib from modules because urlparse was imported above.
+##        # Without this hack, test_socket_ssl fails if run in this order:
+##        # regrtest.py test_codecmaps_tw test_importhooks test_socket_ssl
+##        try:
+##            del sys.modules['urllib']
+##        except KeyError:
+##            pass
 
 def test_main():
     support.run_unittest(ImportHooksTestCase)

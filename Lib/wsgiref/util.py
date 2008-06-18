@@ -50,7 +50,7 @@ def guess_scheme(environ):
 def application_uri(environ):
     """Return the application's base URI (no PATH_INFO or QUERY_STRING)"""
     url = environ['wsgi.url_scheme']+'://'
-    from urllib import quote
+    from urllib.parse import quote
 
     if environ.get('HTTP_HOST'):
         url += environ['HTTP_HOST']
@@ -70,7 +70,7 @@ def application_uri(environ):
 def request_uri(environ, include_query=1):
     """Return the full request URI, optionally including the query string"""
     url = application_uri(environ)
-    from urllib import quote
+    from urllib.parse import quote
     path_info = quote(environ.get('PATH_INFO',''))
     if not environ.get('SCRIPT_NAME'):
         url += path_info[1:]

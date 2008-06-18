@@ -4,7 +4,7 @@ import unittest
 from test import support
 
 import socket
-import urllib
+import urllib.request
 import sys
 import os
 import email.message
@@ -36,11 +36,11 @@ class URLTimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
-        f = _open_with_retry(urllib.urlopen, "http://www.python.org/")
+        f = _open_with_retry(urllib.request.urlopen, "http://www.python.org/")
         x = f.read()
 
 class urlopenNetworkTests(unittest.TestCase):
-    """Tests urllib.urlopen using the network.
+    """Tests urllib.reqest.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
     good job overall of some of the basic interface features.  There are no
@@ -55,7 +55,7 @@ class urlopenNetworkTests(unittest.TestCase):
     """
 
     def urlopen(self, *args):
-        return _open_with_retry(urllib.urlopen, *args)
+        return _open_with_retry(urllib.request.urlopen, *args)
 
     def test_basic(self):
         # Simple test expected to pass.
@@ -105,7 +105,7 @@ class urlopenNetworkTests(unittest.TestCase):
     def test_getcode(self):
         # test getcode() with the fancy opener to get 404 error codes
         URL = "http://www.python.org/XXXinvalidXXX"
-        open_url = urllib.FancyURLopener().open(URL)
+        open_url = urllib.request.FancyURLopener().open(URL)
         try:
             code = open_url.getcode()
         finally:
@@ -114,7 +114,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_fileno(self):
         if (sys.platform in ('win32',) or
-                not hasattr(os, 'fdopen')):
+            not hasattr(os, 'fdopen')):
             # On Windows, socket handles are not file descriptors; this
             # test can't pass on Windows.
             return
@@ -142,13 +142,14 @@ class urlopenNetworkTests(unittest.TestCase):
                           # domain will be spared to serve its defined
                           # purpose.
                           # urllib.urlopen, "http://www.sadflkjsasadf.com/")
-                          urllib.urlopen, "http://www.python.invalid./")
+                          urllib.request.urlopen,
+                          "http://www.python.invalid./")
 
 class urlretrieveNetworkTests(unittest.TestCase):
-    """Tests urllib.urlretrieve using the network."""
+    """Tests urllib.request.urlretrieve using the network."""
 
     def urlretrieve(self, *args):
-        return _open_with_retry(urllib.urlretrieve, *args)
+        return _open_with_retry(urllib.request.urlretrieve, *args)
 
     def test_basic(self):
         # Test basic functionality.

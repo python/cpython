@@ -13,7 +13,7 @@ import platform
 import configparser
 import http.client
 import base64
-import urlparse
+import urllib.parse
 
 class upload(PyPIRCCommand):
 
@@ -145,10 +145,11 @@ class upload(PyPIRCCommand):
         self.announce("Submitting %s to %s" % (filename, self.repository), log.INFO)
 
         # build the Request
-        # We can't use urllib2 since we need to send the Basic
+        # We can't use urllib since we need to send the Basic
         # auth right with the first request
+        # TODO(jhylton): Can we fix urllib?
         schema, netloc, url, params, query, fragments = \
-            urlparse.urlparse(self.repository)
+            urllib.parse.urlparse(self.repository)
         assert not params and not query and not fragments
         if schema == 'http':
             http = http.client.HTTPConnection(netloc)

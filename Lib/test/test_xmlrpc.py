@@ -111,8 +111,10 @@ class XMLRPCTestCase(unittest.TestCase):
                               (int(2**34),))
 
         xmlrpclib.dumps((xmlrpclib.MAXINT, xmlrpclib.MININT))
-        self.assertRaises(OverflowError, xmlrpclib.dumps, (xmlrpclib.MAXINT+1,))
-        self.assertRaises(OverflowError, xmlrpclib.dumps, (xmlrpclib.MININT-1,))
+        self.assertRaises(OverflowError, xmlrpclib.dumps,
+                          (xmlrpclib.MAXINT+1,))
+        self.assertRaises(OverflowError, xmlrpclib.dumps,
+                          (xmlrpclib.MININT-1,))
 
         def dummy_write(s):
             pass
@@ -120,9 +122,10 @@ class XMLRPCTestCase(unittest.TestCase):
         m = xmlrpclib.Marshaller()
         m.dump_int(xmlrpclib.MAXINT, dummy_write)
         m.dump_int(xmlrpclib.MININT, dummy_write)
-        self.assertRaises(OverflowError, m.dump_int, xmlrpclib.MAXINT+1, dummy_write)
-        self.assertRaises(OverflowError, m.dump_int, xmlrpclib.MININT-1, dummy_write)
-
+        self.assertRaises(OverflowError, m.dump_int,
+                          xmlrpclib.MAXINT+1, dummy_write)
+        self.assertRaises(OverflowError, m.dump_int,
+                          xmlrpclib.MININT-1, dummy_write)
 
     def test_dump_none(self):
         value = alist + [None]
@@ -131,7 +134,6 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertEquals(value,
                           xmlrpclib.loads(strg)[0][0])
         self.assertRaises(TypeError, xmlrpclib.dumps, (arg1,))
-
 
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):
@@ -160,7 +162,6 @@ class FaultTestCase(unittest.TestCase):
         # private methods
         self.assertRaises(AttributeError,
                           xmlrpc.server.resolve_dotted_attribute, str, '__add')
-
         self.assert_(xmlrpc.server.resolve_dotted_attribute(str, 'title'))
 
 class DateTimeTestCase(unittest.TestCase):
@@ -170,7 +171,8 @@ class DateTimeTestCase(unittest.TestCase):
     def test_time(self):
         d = 1181399930.036952
         t = xmlrpclib.DateTime(d)
-        self.assertEqual(str(t), time.strftime("%Y%m%dT%H:%M:%S", time.localtime(d)))
+        self.assertEqual(str(t),
+                         time.strftime("%Y%m%dT%H:%M:%S", time.localtime(d)))
 
     def test_time_tuple(self):
         d = (2007,6,9,10,38,50,5,160,0)
@@ -180,7 +182,7 @@ class DateTimeTestCase(unittest.TestCase):
     def test_time_struct(self):
         d = time.localtime(1181399930.036952)
         t = xmlrpclib.DateTime(d)
-        self.assertEqual(str(t),  time.strftime("%Y%m%dT%H:%M:%S", d))
+        self.assertEqual(str(t), time.strftime("%Y%m%dT%H:%M:%S", d))
 
     def test_datetime_datetime(self):
         d = datetime.datetime(2007,1,2,3,4,5)
@@ -350,12 +352,12 @@ class SimpleServerTestCase(unittest.TestCase):
         self.assertEqual(response.reason, 'Not Found')
 
     def test_introspection1(self):
+        expected_methods = set(['pow', 'div', 'my_function', 'add',
+                                'system.listMethods', 'system.methodHelp',
+                                'system.methodSignature', 'system.multicall'])
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             meth = p.system.listMethods()
-            expected_methods = set(['pow', 'div', 'my_function', 'add',
-                                    'system.listMethods', 'system.methodHelp',
-                                    'system.methodSignature', 'system.multicall'])
             self.assertEqual(set(meth), expected_methods)
         except (xmlrpclib.ProtocolError, socket.error) as e:
             # ignore failures due to non-blocking socket 'unavailable' errors
@@ -593,7 +595,8 @@ class CGIHandlerTestCase(unittest.TestCase):
         # will respond exception, if so, our goal is achieved ;)
         handle = open(support.TESTFN, "r").read()
 
-        # start with 44th char so as not to get http header, we just need only xml
+        # start with 44th char so as not to get http header, we just
+        # need only xml
         self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, handle[44:])
 
         os.remove("xmldata.txt")

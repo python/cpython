@@ -9,8 +9,8 @@
     The robots.txt Exclusion Protocol is implemented as specified in
     http://info.webcrawler.com/mak/projects/robots/norobots-rfc.html
 """
-import urlparse
-import urllib
+
+import urllib.parse, urllib.request
 
 __all__ = ["RobotFileParser"]
 
@@ -48,24 +48,19 @@ class RobotFileParser:
     def set_url(self, url):
         """Sets the URL referring to a robots.txt file."""
         self.url = url
-        self.host, self.path = urlparse.urlparse(url)[1:3]
+        self.host, self.path = urllib.parse.urlparse(url)[1:3]
 
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
-        opener = URLopener()
-        f = opener.open(self.url)
-        lines = []
-        line = f.readline()
-        while line:
-            lines.append(line.strip())
-            line = f.readline()
-        self.errcode = opener.errcode
-        if self.errcode in (401, 403):
-            self.disallow_all = True
-        elif self.errcode >= 400:
-            self.allow_all = True
-        elif self.errcode == 200 and lines:
-            self.parse(lines)
+        try:
+            f = urllib.request.urlopen(self.url)
+        except urllib.error.HTTPError as err:
+            if err.code in (401, 403):
+                self.disallow_all = True
+            elif err.code >= 400:
+                self.allow_all = True
+        else:
+            self.parse(f.read().splitlines())
 
     def _add_entry(self, entry):
         if "*" in entry.useragents:
@@ -75,15 +70,15 @@ class RobotFileParser:
             self.entries.append(entry)
 
     def parse(self, lines):
-        """parse the input lines from a robots.txt file.
-           We allow that a user-agent: line is not preceded by
-           one or more blank lines."""
+        """Parse the input lines from a robots.txt file.
+
+        We allow that a user-agent: line is not preceded by
+        one or more blank lines.
+        """
         state = 0
-        linenumber = 0
         entry = Entry()
 
         for line in lines:
-            linenumber = linenumber + 1
             if not line:
                 if state == 1:
                     entry = Entry()
@@ -102,7 +97,7 @@ class RobotFileParser:
             line = line.split(':', 1)
             if len(line) == 2:
                 line[0] = line[0].strip().lower()
-                line[1] = urllib.unquote(line[1].strip())
+                line[1] = urllib.parse.unquote(line[1].strip())
                 if line[0] == "user-agent":
                     if state == 2:
                         self._add_entry(entry)
@@ -128,7 +123,7 @@ class RobotFileParser:
             return True
         # search for given user agent matches
         # the first match counts
-        url = urllib.quote(urlparse.urlparse(urllib.unquote(url))[2]) or "/"
+        url = urllib.parse.quote(urllib.parse.urlparse(urllib.parse.unquote(url))[2]) or "/"
         for entry in self.entries:
             if entry.applies_to(useragent):
                 return entry.allowance(url)
@@ -137,7 +132,6 @@ class RobotFileParser:
             return self.default_entry.allowance(url)
         # agent not found ==> access granted
         return True
-
 
     def __str__(self):
         return ''.join([str(entry) + "\n" for entry in self.entries])
@@ -150,7 +144,7 @@ class RuleLine:
         if path == '' and not allowance:
             # an empty value means allow all
             allowance = True
-        self.path = urllib.quote(path)
+        self.path = urllib.parse.quote(path)
         self.allowance = allowance
 
     def applies_to(self, filename):
@@ -195,18 +189,3 @@ class Entry:
             if line.applies_to(filename):
                 return line.allowance
         return True
-
-class URLopener(urllib.FancyURLopener):
-    def __init__(self, *args):
-        urllib.FancyURLopener.__init__(self, *args)
-        self.errcode = 200
-
-    def prompt_user_passwd(self, host, realm):
-        ## If robots.txt file is accessible only with a password,
-        ## we act as if the file wasn't there.
-        return None, None
-
-    def http_error_default(self, url, fp, errcode, errmsg, headers):
-        self.errcode = errcode
-        return urllib.FancyURLopener.http_error_default(self, url, fp, errcode,
-                                                        errmsg, headers)

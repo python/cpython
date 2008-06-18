@@ -809,7 +809,7 @@ LIBSUBDIRS=	tkinter site-packages test test/output test/data \
 		email email/mime email/test email/test/data \
 		html json json/tests http dbm xmlrpc \
 		sqlite3 sqlite3/test \
-		logging bsddb bsddb/test csv wsgiref \
+		logging bsddb bsddb/test csv wsgiref urllib \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \

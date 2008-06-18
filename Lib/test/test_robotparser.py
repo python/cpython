@@ -1,5 +1,6 @@
-import unittest, robotparser
 import io
+import unittest
+import urllib.robotparser
 from test import support
 
 class RobotTestCase(unittest.TestCase):
@@ -34,7 +35,7 @@ def RobotTest(index, robots_txt, good_urls, bad_urls,
               agent="test_robotparser"):
 
     lines = io.StringIO(robots_txt).readlines()
-    parser = robotparser.RobotFileParser()
+    parser = urllib.robotparser.RobotFileParser()
     parser.parse(lines)
     for url in good_urls:
         tests.addTest(RobotTestCase(index, parser, url, 1, agent))
@@ -140,7 +141,7 @@ class TestCase(unittest.TestCase):
         support.requires('network')
         # whole site is password-protected.
         url = 'http://mueblesmoraleda.com'
-        parser = robotparser.RobotFileParser()
+        parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
         parser.read()
         self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)

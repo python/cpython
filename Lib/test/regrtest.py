@@ -725,7 +725,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 def dash_R_cleanup(fs, ps, pic, abcs):
     import gc, copyreg
     import _strptime, linecache
-    import urlparse, urllib, urllib2, mimetypes, doctest
+    import urllib.parse, urllib.request, mimetypes, doctest
     import struct, filecmp, _abcoll
     from distutils.dir_util import _path_created
     from weakref import WeakSet
@@ -758,9 +758,8 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     _path_created.clear()
     re.purge()
     _strptime._regex_cache.clear()
-    urlparse.clear_cache()
-    urllib.urlcleanup()
-    urllib2.install_opener(None)
+    urllib.parse.clear_cache()
+    urllib.request.urlcleanup()
     linecache.clearcache()
     mimetypes._default_mime_types()
     filecmp._cache.clear()
