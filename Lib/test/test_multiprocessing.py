@@ -1755,9 +1755,12 @@ globals().update(testcases_threads)
 #
 
 def test_main(run=None):
-    if sys.platform.startswith("linux") and not os.path.exists("/dev/shm"):
-        from test.test_support import TestSkipped
-        raise TestSkipped("Missing required /dev/shm device on Linux!")
+    if sys.platform.startswith("linux"):
+        try:
+            lock = multiprocessing.RLock()
+        except OSError:
+            from test.test_support import TestSkipped
+            raise TestSkipped("OSError raises on RLock creation, see issue 3111!")
 
     if run is None:
         from test.test_support import run_unittest as run
