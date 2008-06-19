@@ -1870,16 +1870,25 @@ class ModuleScanner:
             else:
                 loader = importer.find_module(modname)
                 if hasattr(loader,'get_source'):
+                    try:
+                        source = loader.get_source(modname)
+                    except UnicodeDecodeError:
+                        if onerror:
+                            onerror(modname)
+                        continue
                     import io
-                    desc = source_synopsis(
-                        io.StringIO(loader.get_source(modname))
-                    ) or ''
+                    desc = source_synopsis(io.StringIO(source)) or ''
                     if hasattr(loader,'get_filename'):
                         path = loader.get_filename(modname)
                     else:
                         path = None
                 else:
-                    module = loader.load_module(modname)
+                    try:
+                        module = loader.load_module(modname)
+                    except ImportError:
+                        if onerror:
+                            onerror(modname)
+                        continue
                     desc = (module.__doc__ or '').splitlines()[0]
                     path = getattr(module,'__file__',None)
                 name = modname + ' - ' + desc
@@ -1895,10 +1904,12 @@ def apropos(key):
         if modname[-9:] == '.__init__':
             modname = modname[:-9] + ' (package)'
         print(modname, desc and '- ' + desc)
+    def onerror(modname):
+        pass
     try: import warnings
     except ImportError: pass
     else: warnings.filterwarnings('ignore') # ignore problems during import
-    ModuleScanner().run(callback, key)
+    ModuleScanner().run(callback, key, onerror=onerror)
 
 # --------------------------------------------------- web browser interface
 
