@@ -1176,8 +1176,6 @@ class PyBuildExt(build_ext):
                        Extension('_gestalt', ['_gestalt.c'],
                        extra_link_args=['-framework', 'Carbon'])
                        )
-        else:
-            missing.append('_gestalt')
 
         self.extensions.extend(exts)
 
