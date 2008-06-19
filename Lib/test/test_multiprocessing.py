@@ -1759,7 +1759,7 @@ def test_main(run=None):
         try:
             lock = multiprocessing.RLock()
         except OSError:
-            from test.test_support import TestSkipped
+            from test.support import TestSkipped
             raise TestSkipped("OSError raises on RLock creation, see issue 3111!")
 
     if run is None:
