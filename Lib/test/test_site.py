@@ -101,17 +101,17 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assert_(usersite in sys.path)
 
         rc = subprocess.call([sys.executable, '-c',
-            'import sys; sys.exit("%s" in sys.path)' % usersite])
+            'import sys; sys.exit(%r in sys.path)' % usersite])
         self.assertEqual(rc, 1)
 
         rc = subprocess.call([sys.executable, '-s', '-c',
-            'import sys; sys.exit("%s" in sys.path)' % usersite])
+            'import sys; sys.exit(%r in sys.path)' % usersite])
         self.assertEqual(rc, 0)
 
         env = os.environ.copy()
         env["PYTHONNOUSERSITE"] = "1"
         rc = subprocess.call([sys.executable, '-c',
-            'import sys; sys.exit("%s" in sys.path)' % usersite],
+            'import sys; sys.exit(%r in sys.path)' % usersite],
             env=env)
         self.assertEqual(rc, 0)
 
