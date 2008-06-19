@@ -89,6 +89,11 @@ Extension Modules
 Library
 -------
 
+- Issue #3136: fileConfig()'s disabling of old loggers is now conditional via
+  an optional disable_existing_loggers parameter, but the default value is
+  such that the old behaviour is preserved. Thanks to Leandro Lucarella for
+  the patch.
+
 - Issue #3126: StreamHandler and FileHandler check before calling "flush" and
   "close" that the stream object has these, using hasattr (thanks to bobf for
   the patch).
