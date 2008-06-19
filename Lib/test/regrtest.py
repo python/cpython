@@ -870,7 +870,6 @@ _expectations = {
         test_crypt
         test_curses
         test_dbm
-        test_dl
         test_fcntl
         test_fork1
         test_epoll
@@ -879,7 +878,6 @@ _expectations = {
         test_ioctl
         test_largefile
         test_kqueue
-        test_mhlib
         test_openpty
         test_ossaudiodev
         test_pipes
@@ -897,7 +895,6 @@ _expectations = {
     'linux2':
         """
         test_curses
-        test_dl
         test_largefile
         test_kqueue
         test_ossaudiodev
@@ -911,7 +908,6 @@ _expectations = {
         test_crypt
         test_curses
         test_dbm
-        test_dl
         test_fcntl
         test_fork1
         test_epoll
@@ -936,7 +932,6 @@ _expectations = {
     'unixware7':
         """
         test_bsddb
-        test_dl
         test_epoll
         test_largefile
         test_kqueue
@@ -949,7 +944,6 @@ _expectations = {
     'openunix8':
         """
         test_bsddb
-        test_dl
         test_epoll
         test_largefile
         test_kqueue
@@ -963,7 +957,6 @@ _expectations = {
         """
         test_asynchat
         test_bsddb
-        test_dl
         test_fork1
         test_epoll
         test_gettext
@@ -1012,7 +1005,6 @@ _expectations = {
         """
         test_bsddb
         test_curses
-        test_dl
         test_epoll
         test_dbm_gnu
         test_gzip
@@ -1029,7 +1021,6 @@ _expectations = {
     'atheos':
         """
         test_curses
-        test_dl
         test_dbm_gnu
         test_epoll
         test_largefile
@@ -1058,11 +1049,9 @@ _expectations = {
         test_audioop
         test_bsddb3
         test_curses
-        test_dl
         test_epoll
         test_kqueue
         test_largefile
-        test_mhlib
         test_mmap
         test_openpty
         test_ossaudiodev
@@ -1090,7 +1079,6 @@ _expectations = {
         test_bsddb
         test_bsddb3
         test_bz2
-        test_dl
         test_epoll
         test_dbm_gnu
         test_gzip
@@ -1105,7 +1093,6 @@ _expectations = {
         test_bsddb
         test_bsddb3
         test_ctypes
-        test_dl
         test_epoll
         test_dbm_gnu
         test_locale
@@ -1120,7 +1107,6 @@ _expectations = {
         test_bsddb3
         test_ctypes
         test_curses
-        test_dl
         test_epoll
         test_dbm_gnu
         test_locale
@@ -1163,13 +1149,6 @@ class _ExpectedSkips:
 
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')
-
-            if not sys.platform in ("mac", "darwin"):
-                MAC_ONLY = ["test_macostools", "test_aepack",
-                            "test_plistlib", "test_scriptpackages",
-                            "test_applesingle"]
-                for skip in MAC_ONLY:
-                    self.expected.add(skip)
 
             if sys.platform != "win32":
                 # test_sqlite is only reliable on Windows where the library
