@@ -1,5 +1,5 @@
-This is Python version 3.0 alpha 5
-==================================
+This is Python version 3.0 beta 1
+=================================
 
 For notes specific to this release, see RELNOTES in this directory.
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
@@ -22,7 +22,7 @@ Release Schedule
 ----------------
 
 The release plan is to have a series of alpha releases in 2007 and 2008,
-beta releases in 2008, and a final release in August 2008.  The alpha
+beta releases in 2008, and a final release in September 2008.  The alpha
 releases are primarily aimed at developers who want a sneak peek at the
 new langauge, especially those folks who plan to port their code to
 Python 3000.  The hope is that by the time of the final release, many
