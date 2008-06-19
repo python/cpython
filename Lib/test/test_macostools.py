@@ -91,6 +91,9 @@ class TestMacostools(unittest.TestCase):
 
 
 def test_main():
+    # Skip on wide unicode
+    if len(u'\0'.encode('unicode-internal')) == 4:
+        raise test_support.TestSkipped("test_macostools is broken in USC4")
     test_support.run_unittest(TestMacostools)
 
 

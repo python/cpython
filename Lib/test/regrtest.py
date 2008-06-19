@@ -1133,6 +1133,9 @@ class _ExpectedSkips:
                             "test_applesingle"]
                 for skip in MAC_ONLY:
                     self.expected.add(skip)
+            elif len(u'\0'.encode('unicode-internal')) == 4:
+                self.expected.add("test_macostools")
+
 
             if sys.platform != "win32":
                 # test_sqlite is only reliable on Windows where the library
