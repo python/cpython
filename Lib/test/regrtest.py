@@ -1128,7 +1128,7 @@ class _ExpectedSkips:
                 self.expected.add('test_imageop')
 
             if not sys.platform in ("mac", "darwin"):
-                MAC_ONLY = ["test_macostools", "test_aepack",
+                MAC_ONLY = ["test_macos", "test_macostools", "test_aepack",
                             "test_plistlib", "test_scriptpackages",
                             "test_applesingle"]
                 for skip in MAC_ONLY:
