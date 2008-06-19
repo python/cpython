@@ -6,75 +6,17 @@
 
 .. versionadded:: 2.6
 
-:mod:`multiprocessing` is a package for the Python language which supports the
-spawning of processes using a similar API of the :mod:`threading` module.  It
-runs on both Unix and Windows.
-
-The :mod:`multiprocessing` module offers the capability of both local and remote
-concurrency effectively side-stepping the Global Interpreter Lock by utilizing
-subprocesses for "threads".  Due to this, the :mod:`multiprocessing` module
-allows the programmer to fully leverage multiple processors on a given machine.
-
-
 Introduction
-------------
+----------------------
 
-
-Threads, processes and the GIL
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To run more than one piece of code at the same time on the same computer one has
-the choice of either using multiple processes or multiple threads.
-
-Although a program can be made up of multiple processes, these processes are in
-effect completely independent of one another: different processes are not able
-to cooperate with one another unless one sets up some means of communication
-between them (such as by using sockets).  If a lot of data must be transferred
-between processes then this can be inefficient.
-
-On the other hand, multiple threads within a single process are intimately
-connected: they share their data but often can interfere badly with one another.
-It is often argued that the only way to make multithreaded programming "easy" is
-to avoid relying on any shared state and for the threads to only communicate by
-passing messages to each other.
-
-CPython has a *Global Interpreter Lock* (GIL) which in many ways makes threading
-easier than it is in most languages by making sure that only one thread can
-manipulate the interpreter's objects at a time.  As a result, it is often safe
-to let multiple threads access data without using any additional locking as one
-would need to in a language such as C.
-
-One downside of the GIL is that on multi-processor (or multi-core) systems a
-multithreaded Python program can only make use of one processor at a time unless
-your application makes heavy use of I/O which effectively side-steps this.  This
-is a problem that can be overcome by using multiple processes instead.
-
-This package allows one to write multi-process programs using much the same API
-that one uses for writing threaded programs.
-
-
-Forking and spawning
-~~~~~~~~~~~~~~~~~~~~
-
-There are two ways of creating a new process in Python:
-
-* The current process can *fork* a new child process by using the
-  :func:`os.fork` function.  This effectively creates an identical copy of the
-  current process which is now able to go off and perform some task set by the
-  parent process.  This means that the child process inherits *copies* of all
-  variables that the parent process had.  However, :func:`os.fork` is not
-  available on every platform: in particular Windows does not support it.
-
-* Alternatively, the current process can spawn a completely new Python
-  interpreter by using the :mod:`subprocess` module or one of the
-  :func:`os.spawn*` functions.  Getting this new interpreter in to a fit state
-  to perform the task set for it by its parent process is, however, a bit of a
-  challenge.
-
-The :mod:`multiprocessing` module uses :func:`os.fork` if it is available since
-it makes life a lot simpler.  Forking the process is also more efficient in
-terms of memory usage and the time needed to create the new process.
-
+:mod:`multiprocessing` is a package that supports spawning processes
+using an API similar to the :mod:`threading` module.  The
+:mod:`multiprocessing` package offers both local and remote
+concurrency, effectively side-stepping the :term:`Global Interpreter
+Lock` by using subprocesses instead of threads.  Due to this, the
+:mod:`multiprocessing` module allows the programmer to fully leverage
+multiple processors on a given machine.  It runs on both Unix and
+Windows.
 
 The :class:`Process` class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -270,7 +212,7 @@ However, if you really do need to use some shared data then
 Using a pool of workers
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The :class:`multiprocessing.pool.Pool()` class represens a pool of worker
+The :class:`multiprocessing.pool.Pool()` class represents a pool of worker
 processes.  It has methods which allows tasks to be offloaded to the worker
 processes in a few different ways.
 
@@ -305,7 +247,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    :class:`threading.Thread`.
 
    The constructor should always be called with keyword arguments. *group*
-   should always be ``None``; it exists soley for compatibility with
+   should always be ``None``; it exists solely for compatibility with
    :class:`threading.Thread`.  *target* is the callable object to be invoked by
    the :meth:`run()` method.  It defaults to None, meaning nothing is
    called. *name* is the process name.  By default, a unique name is constructed
@@ -415,11 +357,11 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       Set the process's authentication key which must be a byte string.
 
-   .. method:: terminate()`
+   .. method:: terminate()
 
-      Terminate the process.  On Unix this is done using the ``SIGTERM`` signal,
+      Terminate the process.  On Unix this is done using the ``SIGTERM`` signal;
       on Windows ``TerminateProcess()`` is used.  Note that exit handlers and
-      finally clauses etc will not be executed.
+      finally clauses, etc., will not be executed.
 
       Note that descendant processes of the process will *not* be terminated --
       they will simply become orphaned.
@@ -559,10 +501,10 @@ For an example of the usage of queues for interprocess communication see
       Return ``True`` if the queue is full, ``False`` otherwise.  Because of
       multithreading/multiprocessing semantics, this is not reliable.
 
-   .. method:: put(item[, block[, timeout]])`
+   .. method:: put(item[, block[, timeout]])
 
-      Put item into the queue.  If optional args *block* is ``True`` (the
-      default) and *timeout* is ``None`` (the default), block if necessary until
+      Put item into the queue.  If the optional argument *block* is ``True`` 
+      (the default) and *timeout* is ``None`` (the default), block if necessary until
       a free slot is available.  If *timeout* is a positive number, it blocks at
       most *timeout* seconds and raises the :exc:`Queue.Full` exception if no
       free slot was available within that time.  Otherwise (*block* is
@@ -1782,10 +1724,10 @@ server::
 Address Formats
 >>>>>>>>>>>>>>>
 
-* An ``'AF_INET'`` address is a tuple of the form ``(hostname, port)``` where
+* An ``'AF_INET'`` address is a tuple of the form ``(hostname, port)`` where
   *hostname* is a string and *port* is an integer.
 
-* An ``'AF_UNIX'``` address is a string representing a filename on the
+* An ``'AF_UNIX'`` address is a string representing a filename on the
   filesystem.
 
 * An ``'AF_PIPE'`` address is a string of the form
@@ -1914,7 +1856,7 @@ Joining zombie processes
 
 Better to inherit than pickle/unpickle
 
-    On Windows many of types from :mod:`multiprocessing` need to be picklable so
+    On Windows many types from :mod:`multiprocessing` need to be picklable so
     that child processes can use them.  However, one should generally avoid
     sending shared objects to other processes using pipes or queues.  Instead
     you should arrange the program so that a process which need access to a
@@ -1961,7 +1903,7 @@ Joining processes that use queues
     A fix here would be to swap the last two lines round (or simply remove the
     ``p.join()`` line).
 
-Explicity pass resources to child processes
+Explicitly pass resources to child processes
 
     On Unix a child process can make use of a shared resource created in a
     parent process using a global resource.  However, it is better to pass the
