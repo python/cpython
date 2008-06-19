@@ -4,6 +4,21 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's new in Python 3.0b2?
+===========================
+
+*Release date: XX-XXX-2008*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #3145: help("modules whatever") failed when trying to load the source
+  code of every single module of the standard library, including invalid files
+  used in the test suite.
+
 What's new in Python 3.0b1?
 ===========================
 
