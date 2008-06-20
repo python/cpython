@@ -10,6 +10,13 @@ What's New in Python 2.6 beta 2?
 Core and Builtins
 -----------------
 
+- Issue #3004: Minor change to slice.indices(): the start and stop
+  arguments are now treated identically, making the behaviour easier
+  to describe and understand.  For example, slice(None, -10,
+  1).indices(9) now returns (0, 0, 1) instead of (0, -1, 1), and
+  slice(None, 10, -1).indices(10) returns (9, 9, -1) instead of (9,
+  10, -1).
+
 - Make bin() implementation parallel oct() and hex().
 
 

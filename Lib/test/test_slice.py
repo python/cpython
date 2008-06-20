@@ -79,6 +79,20 @@ class SliceTest(unittest.TestCase):
         self.assertEqual(slice(None,  None, -1).indices(10), (9, -1, -1))
         self.assertEqual(slice(None,  None, -2).indices(10), (9, -1, -2))
         self.assertEqual(slice(3,     None, -2).indices(10), (3, -1, -2))
+        # issue 3004 tests
+        self.assertEqual(slice(None, -9).indices(10), (0, 1, 1))
+        self.assertEqual(slice(None, -10).indices(10), (0, 0, 1))
+        self.assertEqual(slice(None, -11).indices(10), (0, 0, 1))
+        self.assertEqual(slice(None, -10, -1).indices(10), (9, 0, -1))
+        self.assertEqual(slice(None, -11, -1).indices(10), (9, -1, -1))
+        self.assertEqual(slice(None, -12, -1).indices(10), (9, -1, -1))
+        self.assertEqual(slice(None, 9).indices(10), (0, 9, 1))
+        self.assertEqual(slice(None, 10).indices(10), (0, 10, 1))
+        self.assertEqual(slice(None, 11).indices(10), (0, 10, 1))
+        self.assertEqual(slice(None, 8, -1).indices(10), (9, 8, -1))
+        self.assertEqual(slice(None, 9, -1).indices(10), (9, 9, -1))
+        self.assertEqual(slice(None, 10, -1).indices(10), (9, 9, -1))
+
         self.assertEqual(
             slice(-100,  100     ).indices(10),
             slice(None).indices(10)
