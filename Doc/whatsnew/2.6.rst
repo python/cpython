@@ -1344,7 +1344,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   :func:`isnan`, return true if their floating-point argument is
   infinite or Not A Number.  (:issue:`1640`)
 
-* The :mod:`math` module has seven new functions, and the existing
+* The :mod:`math` module has a number of new functions, and the existing
   functions have been improved to give more consistent behaviour
   across platforms, especially with respect to handling of
   floating-point exceptions and IEEE 754 special values.
