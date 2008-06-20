@@ -1350,29 +1350,28 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   floating-point exceptions and IEEE 754 special values.
   The new functions are:
 
-  * :func:`isinf` and :func:`isnan` determine whether a given float is
-    a (positive or negative) infinity or a NaN (Not a Number),
-    respectively.
+  * :func:`~math.isinf` and :func:`~math.isnan` determine whether a given float
+    is a (positive or negative) infinity or a NaN (Not a Number), respectively.
 
-  * ``copysign(x, y)`` copies the sign bit of an IEEE 754 number,
+  * :func:`~math.copysign` copies the sign bit of an IEEE 754 number,
     returning the absolute value of *x* combined with the sign bit of
     *y*.  For example, ``math.copysign(1, -0.0)`` returns -1.0.
     (Contributed by Christian Heimes.)
 
-  * :func:`factorial` computes the factorial of a number.
+  * :func:`~math.factorial` computes the factorial of a number.
     (Contributed by Raymond Hettinger; :issue:`2138`.)
 
-  * :func:`sum` adds up the stream of numbers from an iterable,
+  * :func:`~math.sum` adds up the stream of numbers from an iterable,
     and is careful to avoid loss of precision by calculating partial sums.
     (Contributed by Jean Brouwers; :issue:`2819`.)
 
-  * The inverse hyperbolic functions :func:`acosh`, :func:`asinh` and
-    :func:`atanh`.
+  * The inverse hyperbolic functions :func:`~math.acosh`, :func:`~math.asinh`
+    and :func:`~math.atanh`.
 
-  * The function :func:`log1p`, returning the natural logarithm of
-    *1+x* (base *e*).
+  * The function :func:`~math.log1p`, returning the natural logarithm of *1+x*
+    (base *e*).
 
-  There's also a new :func:`trunc` function as a result of the
+  There's also a new :func:`trunc` built-in function as a result of the
   backport of `PEP 3141's type hierarchy for numbers <#pep-3141>`__.
 
   The existing math functions have been modified to follow the
