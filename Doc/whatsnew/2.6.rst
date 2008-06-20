@@ -1496,6 +1496,25 @@ specific to a particular implementation of Python such as CPython,
 Jython, or IronPython.  If either option is used with Python 2.6, the
 interpreter will report that the option isn't currently used.
 
+It's now possible to prevent Python from writing :file:`.pyc` or
+:file:`.pyo` files on importing a module by supplying the :option:`-B`
+switch to the Python interpreter, or by setting the
+:envvar:`PYTHONDONTWRITEBYTECODE` environment variable before running
+the interpreter.  This setting is available to Python programs as the
+``sys.dont_write_bytecode`` variable, and can be changed by Python
+code to modify the interpreter's behaviour.  (Contributed by Neal
+Norwitz and Georg Brandl.)
+
+The encoding used for standard input, output, and standard error can
+be specified by setting the :envvar:`PYTHONIOENCODING` environment
+variable before running the interpreter.  The value should be a string 
+in the form ``**encoding**`` or ``**encoding**:**errorhandler**``.  
+The **encoding** part specifies the encoding's name, e.g. ``utf-8`` or
+``latin-1``; the optional **errorhandler** part specifies 
+what to do with characters that can't be handled by the encoding,
+and  should be one of "error", "ignore", or "replace".   (Contributed
+by Martin von Loewis.)
+
 .. ======================================================================
 
 New, Improved, and Deprecated Modules
@@ -2276,6 +2295,11 @@ details.
   the corresponding method. (Contributed by Erik Demaine;
   :issue:`1533909`.)
 
+* The :mod:`Tkinter` module now accepts lists and tuples for options,
+  separating the elements by spaces before passing the resulting value to 
+  Tcl/Tk.
+  (Contributed by XXX; :issue:`2906`.)
+
 * The :mod:`turtle` module for turtle graphics was greatly enhanced by
   Gregor Lingl.  New features in the module include:
 
@@ -2366,6 +2390,93 @@ details.
 .. ======================================================================
 .. whole new modules get described in subsections here
 
+The :mod:`ast` module
+----------------------
+
+The :mod:`ast` module provides an Abstract Syntax Tree representation
+of Python code.  For Python 2.6, Armin Ronacher contributed a set of
+helper functions that perform various common tasks.  These will be useful
+for HTML templating packages, code analyzers, and similar tools that
+process Python code. 
+
+The :func:`parse` function takes an expression and returns an AST.
+The :func:`dump` function outputs a representation of a tree, suitable
+for debugging::
+
+    import ast
+
+    t = ast.parse("""
+    d = {}
+    for i in 'abcdefghijklm':
+	d[i + i] = ord(i) - ord('a') + 1
+    print d
+    """)
+    print ast.dump(t)
+
+This outputs::
+
+    Module(body=[Assign(targets=[Name(id='d', ctx=Store())],
+    value=Dict(keys=[], values=[])), For(target=Name(id='i',
+    ctx=Store()), iter=Str(s='abcdefghijklm'),
+    body=[Assign(targets=[Subscript(value=Name(id='d', ctx=Load()),
+    slice=Index(value=BinOp(left=Name(id='i', ctx=Load()), op=Add(),
+    right=Name(id='i', ctx=Load()))), ctx=Store())],
+    value=BinOp(left=BinOp(left=Call(func=Name(id='ord', ctx=Load()),
+    args=[Name(id='i', ctx=Load())], keywords=[], starargs=None,
+    kwargs=None), op=Sub(), right=Call(func=Name(id='ord',
+    ctx=Load()), args=[Str(s='a')], keywords=[], starargs=None,
+    kwargs=None)), op=Add(), right=Num(n=1)))], orelse=[]),
+    Print(dest=None, values=[Name(id='d', ctx=Load())], nl=True)])
+
+The :func:`literal_eval` method takes a string or an AST
+representing a literal expression, one that contains a Python
+expression containing only strings, numbers, dictionaries, etc. but no
+statements or function calls, and returns the resulting value.  If you
+need to unserialize an expression but need to worry about security 
+and can't risk using an :func:`eval` call, :func:`literal_eval` will
+handle it safely::
+
+    >>> literal = '("a", "b", {2:4, 3:8, 1:2})'
+    >>> print ast.literal_eval(literal)
+    ('a', 'b', {1: 2, 2: 4, 3: 8})
+    >>> print ast.literal_eval('"a" + "b"')
+    Traceback (most recent call last):
+      ...
+    ValueError: malformed string
+
+The module also includes 
+:class:`NodeVisitor` and :class:`NodeTransformer` classes 
+for traversing and modifying an AST, and functions for common transformations such as changing line numbers.
+
+.. ======================================================================
+
+The :mod:`future_builtins` module
+--------------------------------------
+
+Python 3.0 makes various changes to the repertoire of built-in
+functions, and most of the changes can't be introduced in the Python
+2.x series because they would break compatibility.
+The :mod:`future_builtins` module provides versions 
+of these built-in functions that can be imported when writing 
+3.0-compatible code.
+
+The functions in this module currently include:
+
+* ``ascii(**obj**)``: equivalent to :func:`repr`.  In Python 3.0, 
+  :func:`repr` will return a Unicode string, while :func:`ascii` will 
+  return a pure ASCII bytestring.
+
+* ``filter(**predicate**, **iterable**)``, 
+  ``map(**func**, **iterable1**, ...)``: the 3.0 versions 
+  return iterators, differing from the 2.x built-ins that return lists.
+
+* ``hex(**value**)``, ``oct(**value**)``: instead of calling the 
+  :meth:`__hex__` or :meth:`__oct__` methods, these versions will 
+  call the :meth:`__index__` method and convert the result to hexadecimal
+  or octal.
+
+.. ======================================================================
+
 The :mod:`json` module
 ----------------------
 
@@ -2389,28 +2500,6 @@ It is also possible to write your own decoders and encoders to support more
 types. Pretty-printing of the JSON strings is also supported.
 
 :mod:`json` (originally called simplejson) was written by Bob Ippolito.
-
-
-Improved SSL Support
---------------------------------------------------
-
-Bill Janssen made extensive improvements to Python 2.6's support for
-the Secure Sockets Layer by adding a new module, :mod:`ssl`, on top of
-the `OpenSSL <http://www.openssl.org/>`__ library.  This new module
-provides more control over the protocol negotiated, the X.509
-certificates used, and has better support for writing SSL servers (as
-opposed to clients) in Python.  The existing SSL support in the
-:mod:`socket` module hasn't been removed and continues to work,
-though it will be removed in Python 3.0.
-
-To use the new module, first you must create a TCP connection in the
-usual way and then pass it to the :func:`ssl.wrap_socket` function.
-It's possible to specify whether a certificate is required, and to
-obtain certificate info by calling the :meth:`getpeercert` method.
-
-.. seealso::
-
-   The documentation for the :mod:`ssl` module.
 
 
 .. ======================================================================
@@ -2452,31 +2541,28 @@ Using the module is simple::
     # read/writePlist accepts file-like objects as well as paths.
     plistlib.writePlist(data_struct, sys.stdout)
 
+.. ======================================================================
 
-The :mod:`future_builtins` module
---------------------------------------
+Improved SSL Support
+--------------------------------------------------
 
-Python 3.0 makes various changes to the repertoire of built-in
-functions, and most of the changes can't be introduced in the Python
-2.x series because they would break compatibility.
-The :mod:`future_builtins` module provides versions 
-of these built-in functions that can be imported when writing 
-3.0-compatible code.
+Bill Janssen made extensive improvements to Python 2.6's support for
+the Secure Sockets Layer by adding a new module, :mod:`ssl`, on top of
+the `OpenSSL <http://www.openssl.org/>`__ library.  This new module
+provides more control over the protocol negotiated, the X.509
+certificates used, and has better support for writing SSL servers (as
+opposed to clients) in Python.  The existing SSL support in the
+:mod:`socket` module hasn't been removed and continues to work,
+though it will be removed in Python 3.0.
 
-The functions in this module currently include:
+To use the new module, first you must create a TCP connection in the
+usual way and then pass it to the :func:`ssl.wrap_socket` function.
+It's possible to specify whether a certificate is required, and to
+obtain certificate info by calling the :meth:`getpeercert` method.
 
-* ``ascii(**obj**)``: equivalent to :func:`repr`.  In Python 3.0, 
-  :func:`repr` will return a Unicode string, while :func:`ascii` will 
-  return a pure ASCII bytestring.
+.. seealso::
 
-* ``filter(**predicate**, **iterable**)``, 
-  ``map(**func**, **iterable1**, ...)``: the 3.0 versions 
-  return iterators, differing from the 2.x built-ins that return lists.
-
-* ``hex(**value**)``, ``oct(**value**)``: instead of calling the 
-  :meth:`__hex__` or :meth:`__oct__` methods, these versions will 
-  call the :meth:`__index__` method and convert the result to hexadecimal
-  or octal.
+   The documentation for the :mod:`ssl` module.
 
 .. ======================================================================
 
@@ -2631,6 +2717,11 @@ Port-Specific Changes: Windows
   and :func:`QueryReflectionKey` functions, which enable and disable
   registry reflection for 32-bit processes running on 64-bit systems.
   (:issue:`1753245`)
+
+* The :mod:`msilib` module's :class:`Record` object 
+  gained :meth:`GetInteger` and :meth:`GetString` methods that 
+  return field values as an integer or a string.  
+  (Contributed by XXX; :issue:`2125`.)
 
 * The new default compiler on Windows is Visual Studio 2008 (VS 9.0). The
   build directories for Visual Studio 2003 (VS7.1) and 2005 (VS8.0)
