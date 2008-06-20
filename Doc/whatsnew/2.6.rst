@@ -532,7 +532,7 @@ XXX write this.
 
    :pep:`371` - Per-user ``site-packages`` Directory
      PEP written by Jesse Noller and Richard Oudkerk; 
-     implemented by Jesse Noller.
+     implemented by Richard Oudkerk and Jesse Noller.
 
 .. ======================================================================
 
@@ -1205,11 +1205,11 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
 The :mod:`fractions` Module
 --------------------------------------------------
 
-To fill out the hierarchy of numeric types, a rational-number class
-has been added as the :mod:`fractions` module.  Rational numbers are
-represented as a fraction, and can exactly represent
-numbers such as two-thirds that floating-point numbers can only
-approximate.
+To fill out the hierarchy of numeric types, a rational-number class is
+provided by the :mod:`fractions` module.  Rational numbers store their
+values as a numerator and denominator forming a fraction, and can
+exactly represent numbers such as ``2/3`` that floating-point numbers
+can only approximate.
 
 The :class:`Fraction` constructor takes two :class:`Integral` values
 that will be the numerator and denominator of the resulting fraction. ::
@@ -1313,18 +1313,26 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
         def x(self, value):
             self._x = value / 2
 
+* Several methods of the built-in set types now accept multiple iterables:
+  :meth:`intersection`, 
+  :meth:`intersection_update`, 
+  :meth:`union`, :meth:`update`,
+  :meth:`difference` and :meth:`difference_update`.
 
-* C functions and methods that use
-  :cfunc:`PyComplex_AsCComplex` will now accept arguments that
-  have a :meth:`__complex__` method.  In particular, the functions in the
-  :mod:`cmath` module will now accept objects with this method.
-  This is a backport of a Python 3.0 change.
-  (Contributed by Mark Dickinson; :issue:`1675423`.)
+  ::
 
-  A numerical nicety: when creating a complex number from two floats
+    >>> s=set('1234567890')
+    >>> s.intersection('abc123', 'cdf246')  # Intersection between all inputs
+    set(['2'])
+    >>> s.difference('246', '789')
+    set(['1', '0', '3', '5'])
+
+  (Contributed by Raymond Hettinger.)
+
+* A numerical nicety: when creating a complex number from two floats
   on systems that support signed zeros (-0 and +0), the
   :func:`complex` constructor will now preserve the sign
-  of the zero.  (:issue:`1507`)
+  of the zero.  (Fixed by Mark T. Dickinson; :issue:`1507`)
 
 * More floating-point features were also added.  The :func:`float` function
   will now turn the strings ``+nan`` and ``-nan`` into the corresponding
@@ -1350,6 +1358,13 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
     returning the absolute value of *x* combined with the sign bit of
     *y*.  For example, ``math.copysign(1, -0.0)`` returns -1.0.
     (Contributed by Christian Heimes.)
+
+  * :func:`factorial` computes the factorial of a number.
+    (Contributed by Raymond Hettinger; :issue:`2138`.)
+
+  * :func:`sum` adds up the stream of numbers from an iterable,
+    and is careful to avoid loss of precision by calculating partial sums.
+    (Contributed by Jean Brouwers; :issue:`2819`.)
 
   * The inverse hyperbolic functions :func:`acosh`, :func:`asinh` and
     :func:`atanh`.
@@ -1468,9 +1483,9 @@ benchmark around XX% faster than Python 2.5.
 
 .. ======================================================================
 
-.. _new-26-interactive:
+.. _new-26-interpreter:
 
-Interactive Interpreter Changes
+Interpreter Changes
 -------------------------------
 
 Two command-line options have been reserved for use by other Python
@@ -1493,23 +1508,9 @@ complete list of changes, or look through the Subversion logs for all the
 details.
 
 * (3.0-warning mode) Python 3.0 will feature a reorganized standard
-  library; many outdated modules are being dropped,
-  and some modules are being renamed or moved into packages.
+  library; many outdated modules are being dropped.
   Python 2.6 running in 3.0-warning mode will warn about these modules
   when they are imported.
-
-  The modules that have been renamed are:
-
-  * :mod:`ConfigParser` has become :mod:`configparser`.
-  * :mod:`copy_reg` has become :mod:`copyreg`.
-  * :mod:`htmlentitydefs` has become :mod:`html.entities`.
-  * :mod:`HTMLParser` has become :mod:`html.parser`.
-  * :mod:`repr` (the module) has become :mod:`reprlib`.
-  * :mod:`SocketServer` has become :mod:`socketserver`.
-  * :mod:`Tkinter` has become the :mod:`tkinter` package.
-  * :mod:`Queue` has become :mod:`queue`.
-
-  .. XXX no warnings anymore for renamed modules!
 
   The list of deprecated modules is:
   :mod:`audiodev`,
@@ -1527,6 +1528,7 @@ details.
   :mod:`imgfile`,
   :mod:`linuxaudiodev`,
   :mod:`mhlib`,
+  :mod:`mimetools`,
   :mod:`multifile`,
   :mod:`new`,
   :mod:`popen2`,
@@ -1598,6 +1600,11 @@ details.
   :mod:`torgb`,
   :mod:`videoreader`,
   :mod:`WAIT`.
+
+* The :mod:`asyncore` and :mod:`asynchat` modules are 
+  being actively maintained again, and a number of patches and bugfixes 
+  were applied.  (Maintained by Josiah Carlson; see :issue:`1736190` for 
+  one patch.)
 
 * The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.
@@ -2257,7 +2264,8 @@ details.
 
 * The :mod:`threading` module's :class:`Thread` objects 
   gained a :meth:`getIdent` method that returns the thread's 
-  identifier, a nonzero integer.  (Contributed by XXX; :issue:`2871`.)
+  identifier, a nonzero integer.  (Contributed by Gregory P. Smith; 
+  :issue:`2871`.)
 
 * The :mod:`timeit` module now accepts callables as well as strings
   for the statement being timed and for the setup code.
@@ -2330,7 +2338,7 @@ details.
   instances. (:issue:`1330538`)  The code can also handle
   dates before 1900 (contributed by Ralf Schmitt; :issue:`2014`)
   and 64-bit integers represented by using ``<i8>`` in XML-RPC responses
-  (contributed by XXX; :issue:`2985`).
+  (contributed by Riku Lindblad; :issue:`2985`).
   
 * The :mod:`zipfile` module's :class:`ZipFile` class now has
   :meth:`extract` and :meth:`extractall` methods that will unpack
@@ -2445,6 +2453,31 @@ Using the module is simple::
     plistlib.writePlist(data_struct, sys.stdout)
 
 
+The :mod:`future_builtins` module
+--------------------------------------
+
+Python 3.0 makes various changes to the repertoire of built-in
+functions, and most of the changes can't be introduced in the Python
+2.x series because they would break compatibility.
+The :mod:`future_builtins` module provides versions 
+of these built-in functions that can be imported when writing 
+3.0-compatible code.
+
+The functions in this module currently include:
+
+* ``ascii(**obj**)``: equivalent to :func:`repr`.  In Python 3.0, 
+  :func:`repr` will return a Unicode string, while :func:`ascii` will 
+  return a pure ASCII bytestring.
+
+* ``filter(**predicate**, **iterable**)``, 
+  ``map(**func**, **iterable1**, ...)``: the 3.0 versions 
+  return iterators, differing from the 2.x built-ins that return lists.
+
+* ``hex(**value**)``, ``oct(**value**)``: instead of calling the 
+  :meth:`__hex__` or :meth:`__oct__` methods, these versions will 
+  call the :meth:`__index__` method and convert the result to hexadecimal
+  or octal.
+
 .. ======================================================================
 
 
@@ -2456,6 +2489,13 @@ Changes to Python's build process and to the C API include:
 * Python 2.6 can be built with Microsoft Visual Studio 2008.
   See the :file:`PCbuild9` directory for the build files.
   (Implemented by Christian Heimes.)
+
+* On MacOS X, Python 2.6 can be compiled as a 4-way universal build.
+  The :program:`configure` script 
+  can take a :option:`--with-universal-archs=[32-bit|64-bit|all]`
+  switch, controlling whether the binaries are built for 32-bit
+  architectures (x86, PowerPC), 64-bit (x86-64 and PPC-64), or both.
+  (Contributed by Ronald Oussoren.)
 
 * Python now can only be compiled with C89 compilers (after 19
   years!).  This means that the Python source tree can now drop its
@@ -2503,6 +2543,13 @@ Changes to Python's build process and to the C API include:
   (smallest difference between 1.0 and the next largest value
   representable), and several others.
   (Contributed by Christian Heimes; :issue:`1534`.)
+
+* C functions and methods that use
+  :cfunc:`PyComplex_AsCComplex` will now accept arguments that
+  have a :meth:`__complex__` method.  In particular, the functions in the
+  :mod:`cmath` module will now accept objects with this method.
+  This is a backport of a Python 3.0 change.
+  (Contributed by Mark Dickinson; :issue:`1675423`.)
 
 * Python's C API now includes two functions for case-insensitive string
   comparisons, ``PyOS_stricmp(char*, char*)``
