@@ -20,27 +20,15 @@ process whereby a Python object hierarchy is converted into a byte stream, and
 "unpickling" is the inverse operation, whereby a byte stream is converted back
 into an object hierarchy.  Pickling (and unpickling) is alternatively known as
 "serialization", "marshalling," [#]_ or "flattening", however, to avoid
-confusion, the terms used here are "pickling" and "unpickling".
-
-This documentation describes both the :mod:`pickle` module and the
-:mod:`cPickle` module.
+confusion, the terms used here are "pickling" and "unpickling"..
 
 
 Relationship to other Python modules
 ------------------------------------
 
-The :mod:`pickle` module has an optimized cousin called the :mod:`cPickle`
-module.  As its name implies, :mod:`cPickle` is written in C, so it can be up to
-1000 times faster than :mod:`pickle`.  However it does not support subclassing
-of the :func:`Pickler` and :func:`Unpickler` classes, because in :mod:`cPickle`
-these are functions, not classes.  Most applications have no need for this
-functionality, and can benefit from the improved performance of :mod:`cPickle`.
-Other than that, the interfaces of the two modules are nearly identical; the
-common interface is described in this manual and differences are pointed out
-where necessary.  In the following discussions, we use the term "pickle" to
-collectively describe the :mod:`pickle` and :mod:`cPickle` modules.
-
-The data streams the two modules produce are guaranteed to be interchangeable.
+The :mod:`pickle` module has an transparent optimizer (:mod:`_pickle`) written
+in C. It is used whenever available. Otherwise the pure Python implementation is
+used.
 
 Python has a more primitive serialization module called :mod:`marshal`, but in
 general :mod:`pickle` should always be the preferred way to serialize Python
@@ -229,7 +217,7 @@ The :mod:`pickle` module also defines three exceptions:
    necessarily limited to) :exc:`AttributeError`, :exc:`EOFError`,
    :exc:`ImportError`, and :exc:`IndexError`.
 
-The :mod:`pickle` module also exports two callables [#]_, :class:`Pickler` and
+The :mod:`pickle` module also exports two callables, :class:`Pickler` and
 :class:`Unpickler`:
 
 
@@ -304,11 +292,6 @@ instance.  If the same object is pickled by multiple :meth:`dump` calls, the
       objects.  This is useful primarily for finding what's called "persistent
       ids" that may be referenced in a pickle data stream.  See section
       :ref:`pickle-protocol` below for more details.
-
-      **Note:** the :meth:`noload` method is currently only available on
-      :class:`Unpickler` objects created with the :mod:`cPickle` module.
-      :mod:`pickle` module :class:`Unpickler`\ s do not have the :meth:`noload`
-      method.
 
 
 What can be pickled and unpickled?
@@ -535,7 +518,7 @@ notion of a reference to an object outside the pickled data stream.  Such
 objects are referenced by a "persistent id", which is just an arbitrary string
 of printable ASCII characters. The resolution of such names is not defined by
 the :mod:`pickle` module; it will delegate this resolution to user defined
-functions on the pickler and unpickler. [#]_
+functions on the pickler and unpickler.
 
 To define external persistent id resolution, you need to set the
 :attr:`persistent_id` attribute of the pickler object and the
@@ -600,15 +583,8 @@ Here's a silly example that *might* shed more light::
    j = up.load()
    print(j)
 
-In the :mod:`cPickle` module, the unpickler's :attr:`persistent_load` attribute
-can also be set to a Python list, in which case, when the unpickler reaches a
-persistent id, the persistent id string will simply be appended to this list.
-This functionality exists so that a pickle data stream can be "sniffed" for
-object references without actually instantiating all the objects in a pickle.
-[#]_  Setting :attr:`persistent_load` to a list is usually used in conjunction
-with the :meth:`noload` method on the Unpickler.
 
-.. BAW: Both pickle and cPickle support something called inst_persistent_id()
+.. BAW: pickle supports something called inst_persistent_id()
    which appears to give unknown types a second shot at producing a persistent
    id.  Since Jim Fulton can't remember why it was added or what it's for, I'm
    leaving it undocumented.
@@ -625,32 +601,22 @@ Subclassing Unpicklers
 
 By default, unpickling will import any class that it finds in the pickle data.
 You can control exactly what gets unpickled and what gets called by customizing
-your unpickler.  Unfortunately, exactly how you do this is different depending
-on whether you're using :mod:`pickle` or :mod:`cPickle`. [#]_
+your unpickler.
 
-In the :mod:`pickle` module, you need to derive a subclass from
-:class:`Unpickler`, overriding the :meth:`load_global` method.
-:meth:`load_global` should read two lines from the pickle data stream where the
-first line will the name of the module containing the class and the second line
-will be the name of the instance's class.  It then looks up the class, possibly
-importing the module and digging out the attribute, then it appends what it
-finds to the unpickler's stack.  Later on, this class will be assigned to the
-:attr:`__class__` attribute of an empty class, as a way of magically creating an
-instance without calling its class's :meth:`__init__`. Your job (should you
-choose to accept it), would be to have :meth:`load_global` push onto the
-unpickler's stack, a known safe version of any class you deem safe to unpickle.
-It is up to you to produce such a class.  Or you could raise an error if you
-want to disallow all unpickling of instances.  If this sounds like a hack,
-you're right.  Refer to the source code to make this work.
-
-Things are a little cleaner with :mod:`cPickle`, but not by much. To control
-what gets unpickled, you can set the unpickler's :attr:`find_global` attribute
-to a function or ``None``.  If it is ``None`` then any attempts to unpickle
-instances will raise an :exc:`UnpicklingError`.  If it is a function, then it
-should accept a module name and a class name, and return the corresponding class
-object.  It is responsible for looking up the class and performing any necessary
-imports, and it may raise an error to prevent instances of the class from being
-unpickled.
+You need to derive a subclass from :class:`Unpickler`, overriding the
+:meth:`load_global` method.  :meth:`load_global` should read two lines from the
+pickle data stream where the first line will the name of the module containing
+the class and the second line will be the name of the instance's class.  It then
+looks up the class, possibly importing the module and digging out the attribute,
+then it appends what it finds to the unpickler's stack.  Later on, this class
+will be assigned to the :attr:`__class__` attribute of an empty class, as a way
+of magically creating an instance without calling its class's
+:meth:`__init__`. Your job (should you choose to accept it), would be to have
+:meth:`load_global` push onto the unpickler's stack, a known safe version of any
+class you deem safe to unpickle.  It is up to you to produce such a class.  Or
+you could raise an error if you want to disallow all unpickling of instances.
+If this sounds like a hack, you're right.  Refer to the source code to make this
+work.
 
 The moral of the story is that you should be really careful about the source of
 the strings your application unpickles.
@@ -777,47 +743,9 @@ the same process or a new process. ::
       High-performance serialization of built-in types.
 
 
-:mod:`cPickle` --- A faster :mod:`pickle`
-=========================================
-
-.. module:: cPickle
-   :synopsis: Faster version of pickle, but not subclassable.
-.. moduleauthor:: Jim Fulton <jim@zope.com>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
-.. index:: module: pickle
-
-The :mod:`cPickle` module supports serialization and de-serialization of Python
-objects, providing an interface and functionality nearly identical to the
-:mod:`pickle` module.  There are several differences, the most important being
-performance and subclassability.
-
-First, :mod:`cPickle` can be up to 1000 times faster than :mod:`pickle` because
-the former is implemented in C.  Second, in the :mod:`cPickle` module the
-callables :func:`Pickler` and :func:`Unpickler` are functions, not classes.
-This means that you cannot use them to derive custom pickling and unpickling
-subclasses.  Most applications have no need for this functionality and should
-benefit from the greatly improved performance of the :mod:`cPickle` module.
-
-The pickle data stream produced by :mod:`pickle` and :mod:`cPickle` are
-identical, so it is possible to use :mod:`pickle` and :mod:`cPickle`
-interchangeably with existing pickles. [#]_
-
-There are additional minor differences in API between :mod:`cPickle` and
-:mod:`pickle`, however for most applications, they are interchangeable.  More
-documentation is provided in the :mod:`pickle` module documentation, which
-includes a list of the documented differences.
-
 .. rubric:: Footnotes
 
 .. [#] Don't confuse this with the :mod:`marshal` module
-
-.. [#] In the :mod:`pickle` module these callables are classes, which you could
-   subclass to customize the behavior.  However, in the :mod:`cPickle` module these
-   callables are factory functions and so cannot be subclassed.  One common reason
-   to subclass is to control what objects can actually be unpickled.  See section
-   :ref:`pickle-sub` for more details.
 
 .. [#] *Warning*: this is intended for pickling multiple objects without intervening
    modifications to the objects or their parts.  If you modify an object and then
@@ -834,25 +762,3 @@ includes a list of the documented differences.
 
 .. [#] This protocol is also used by the shallow and deep copying operations defined in
    the :mod:`copy` module.
-
-.. [#] The actual mechanism for associating these user defined functions is slightly
-   different for :mod:`pickle` and :mod:`cPickle`.  The description given here
-   works the same for both implementations.  Users of the :mod:`pickle` module
-   could also use subclassing to effect the same results, overriding the
-   :meth:`persistent_id` and :meth:`persistent_load` methods in the derived
-   classes.
-
-.. [#] We'll leave you with the image of Guido and Jim sitting around sniffing pickles
-   in their living rooms.
-
-.. [#] A word of caution: the mechanisms described here use internal attributes and
-   methods, which are subject to change in future versions of Python.  We intend to
-   someday provide a common interface for controlling this behavior, which will
-   work in either :mod:`pickle` or :mod:`cPickle`.
-
-.. [#] Since the pickle data format is actually a tiny stack-oriented programming
-   language, and some freedom is taken in the encodings of certain objects, it is
-   possible that the two modules produce different data streams for the same input
-   objects.  However it is guaranteed that they will always be able to read each
-   other's data streams.
-
