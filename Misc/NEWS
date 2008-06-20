@@ -4,6 +4,15 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.6 beta 2?
+================================
+
+Core and Builtins
+-----------------
+
+- Make bin() implementation parallel oct() and hex().
+
+
 What's New in Python 2.6 beta 1?
 ================================
 

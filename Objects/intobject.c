@@ -934,6 +934,12 @@ int_float(PyIntObject *v)
 }
 
 static PyObject *
+int_bin(PyObject *v)
+{
+        return PyNumber_ToBase(v, 2);
+}
+
+static PyObject *
 int_oct(PyIntObject *v)
 {
 	return _PyInt_Format(v, 8, 0);
@@ -1231,6 +1237,7 @@ static PyNumberMethods int_as_number = {
 	0,			/* nb_inplace_floor_divide */
 	0,			/* nb_inplace_true_divide */
 	(unaryfunc)int_int,	/* nb_index */
+	(unaryfunc)int_bin, 	/* nb_bin */
 };
 
 PyTypeObject PyInt_Type = {

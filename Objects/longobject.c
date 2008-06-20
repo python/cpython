@@ -3301,6 +3301,12 @@ long_float(PyObject *v)
 }
 
 static PyObject *
+long_bin(PyObject *v)
+{
+        return PyNumber_ToBase(v, 2);
+}
+
+static PyObject *
 long_oct(PyObject *v)
 {
 	return _PyLong_Format(v, 8, 1, 0);
@@ -3540,6 +3546,7 @@ static PyNumberMethods long_as_number = {
 	0,				/* nb_inplace_floor_divide */
 	0,				/* nb_inplace_true_divide */
 	long_long,			/* nb_index */
+	long_bin,			/* nb_bin */
 };
 
 PyTypeObject PyLong_Type = {

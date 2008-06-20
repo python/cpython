@@ -267,6 +267,9 @@ typedef struct {
 
 	/* Added in release 2.5 */
 	unaryfunc nb_index;
+
+	/* Added in release 2.6 */
+	unaryfunc nb_bin;
 } PyNumberMethods;
 
 typedef struct {
