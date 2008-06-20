@@ -762,7 +762,7 @@ work.
 PEP 3112: Byte Literals
 =====================================================
 
-Python 3.0 adopts Unicode as the language's fundamental string type, and
+Python 3.0 adopts Unicode as the language's fundamental string type and
 denotes 8-bit literals differently, either as ``b'string'``
 or using a :class:`bytes` constructor.  For future compatibility,
 Python 2.6 adds :class:`bytes` as a synonym for the :class:`str` type,
@@ -780,7 +780,38 @@ can be used to include Unicode characters::
 
     print len(s)               # 12 Unicode characters
 
+At the C level, Python 3.0 will rename the existing 8-bit 
+string type, called :ctype:`PyStringObject` in Python 2.x, 
+to :ctype:`PyBytesObject`.  Python 2.6 uses ``#define``
+to support using the names :cfunc:`PyBytesObject`, 
+:cfunc:`PyBytes_Check`, :cfunc:`PyBytes_FromStringAndSize`,
+and all the other functions and macros used with strings.
 
+Instances of the :class:`bytes` type are immutable just 
+as strings are.  A new :class:`bytearray` type stores a mutable 
+sequence of bytes::
+
+    >>> bytearray([65, 66, 67])
+    bytearray(b'ABC')
+    >>> b = bytearray(u'\u21ef\u3244', 'utf-8')
+    >>> b
+    bytearray(b'\xe2\x87\xaf \xe3\x89\x84')
+    >>> b[0] = '\xe3'
+    >>> b
+    bytearray(b'\xe3\x87\xaf \xe3\x89\x84')
+    >>> unicode(str(b), 'utf-8')
+    u'\u31ef \u3244'
+
+Byte arrays support most of the methods of string types, such as 
+:meth:`startswith`/:meth:`endswith`, :meth:`find`/:meth:`rfind`,
+and some of the methods of lists, such as :meth:`append`, 
+:meth:`pop`,  and :meth:`reverse`.
+
+    >>> b = bytearray('ABC')
+    >>> b.append('d')
+    >>> b.append(ord('e'))
+    >>> b
+    bytearray(b'ABCde')
 
 .. seealso::
 
@@ -1251,6 +1282,14 @@ Other Language Changes
 ======================
 
 Here are all of the changes that Python 2.6 makes to the core Python language.
+
+* The :func:`hasattr` function was catching and ignoring all errors,
+  under the assumption that they meant a :meth:`__getattr__` method has 
+  failing somewhere and the return value of :func:`hasattr` would therefore
+  be ``False``.  This logic shouldn't be applied to 
+  :exc:`KeyboardInterrupt` and :exc:`SystemExit`, however; Python 2.6 will
+  no longer discard such exceptions when :func:`hasattr` encounters them.
+  (Fixed by Benjamin Peterson; :issue:`2196`.)
 
 * When calling a function using the ``**`` syntax to provide keyword
   arguments, you are no longer required to use a Python dictionary;
@@ -2058,10 +2097,14 @@ details.
 
 * Long regular expression searches carried out by the  :mod:`re`
   module will now check for signals being delivered, so especially
-  long searches can now be interrupted.
+  time-consuming searches can now be interrupted.
   (Contributed by Josh Hoyt and Ralf Schmitt; :issue:`846388`.)
 
 * The :mod:`rgbimg` module has been removed.
+
+* The :mod:`rlcompleter` module's :meth:`Completer.complete()` method
+  will now ignore exceptions triggered while evaluating a name.
+  (Fixed by Lorenz Quack; :issue:`2250`.)
 
 * The :mod:`sched` module's :class:`scheduler` instances now
   have a read-only :attr:`queue` attribute that returns the
@@ -2297,7 +2340,7 @@ details.
 * The :mod:`Tkinter` module now accepts lists and tuples for options,
   separating the elements by spaces before passing the resulting value to 
   Tcl/Tk.
-  (Contributed by XXX; :issue:`2906`.)
+  (Contributed by Guilherme Polo; :issue:`2906`.)
 
 * The :mod:`turtle` module for turtle graphics was greatly enhanced by
   Gregor Lingl.  New features in the module include:
@@ -2720,7 +2763,7 @@ Port-Specific Changes: Windows
 * The :mod:`msilib` module's :class:`Record` object 
   gained :meth:`GetInteger` and :meth:`GetString` methods that 
   return field values as an integer or a string.  
-  (Contributed by XXX; :issue:`2125`.)
+  (Contributed by Floris Bruynooghe; :issue:`2125`.)
 
 * The new default compiler on Windows is Visual Studio 2008 (VS 9.0). The
   build directories for Visual Studio 2003 (VS7.1) and 2005 (VS8.0)
