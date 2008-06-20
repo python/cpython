@@ -2185,7 +2185,7 @@ the particular object.
 
 .. attribute:: file.errors
 
-   The Unicode error handler used to along with the encoding.
+   The Unicode error handler used along with the encoding.
 
    .. versionadded:: 2.6
 
