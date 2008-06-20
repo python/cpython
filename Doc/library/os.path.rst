@@ -305,7 +305,7 @@ write files see :func:`open`, and for accessing the filesystem see the
 
    .. warning::
 
-      This function is deprecated and is removed in 3.0 in favor of
+      This function is deprecated and has been removed in 3.0 in favor of
       :func:`os.walk`.
 
 
