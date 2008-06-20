@@ -328,7 +328,7 @@ FUNC1(tanh, tanh, 0,
    overflow of the first partial sum.
 
    Note 3: The intermediate values lo, yr, and hi are declared volatile so
-   aggressive compilers won't algebraicly reduce lo to always be exactly 0.0.
+   aggressive compilers won't algebraically reduce lo to always be exactly 0.0.
    Also, the volatile declaration forces the values to be stored in memory as
    regular doubles instead of extended long precision (80-bit) values.  This
    prevents double rounding because any addition or subtraction of two doubles
