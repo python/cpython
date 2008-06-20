@@ -47,7 +47,7 @@ The :mod:`commands` module defines the following functions:
    the argument.
 
    .. deprecated:: 2.6
-      This function is nonobvious and useless, also the name is misleading in the
+      This function is nonobvious and useless.  The name is also misleading in the
       presence of :func:`getstatusoutput`.
 
 
