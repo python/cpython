@@ -264,9 +264,7 @@ form items are lists of values).  Useful if your form contains multiple fields
 with the same name.
 
 Other classes (:class:`FormContent`, :class:`InterpFormContentDict`) are present
-for backwards compatibility with really old applications only. If you still use
-these and would be inconvenienced when they disappeared from a next version of
-this module, drop me a note.
+for backwards compatibility with really old applications only.
 
 
 .. _functions-in-cgi-module:
