@@ -362,7 +362,9 @@ These functions create new file objects. (See also :func:`open`.)
    is returned. Availability: Macintosh, Unix, Windows.
 
    .. deprecated:: 2.6
-      This function is obsolete.  Use the :mod:`subprocess` module.
+      This function is obsolete.  Use the :mod:`subprocess` module.  Check 
+      specially the *Replacing Older Functions with the subprocess Module* 
+      section in that documentation page.
 
    .. versionchanged:: 2.0
       This function worked unreliably under Windows in earlier versions of Python.
@@ -412,7 +414,8 @@ functions, see :ref:`popen2-flow-control`.
 
    .. deprecated:: 2.6
       All of the :func:`popen\*` functions are obsolete. Use the :mod:`subprocess`
-      module.
+      module.  Check specially the *Replacing Older Functions with the
+      subprocess Module* section in that documentation page.
 
    Availability: Macintosh, Unix, Windows.
 
@@ -426,7 +429,8 @@ functions, see :ref:`popen2-flow-control`.
 
    .. deprecated:: 2.6
       All of the :func:`popen\*` functions are obsolete. Use the :mod:`subprocess`
-      module.
+      module.  Check specially the *Replacing Older Functions with the
+      subprocess Module* section in that documentation page.
 
    Availability: Macintosh, Unix, Windows.
 
@@ -440,7 +444,8 @@ functions, see :ref:`popen2-flow-control`.
 
    .. deprecated:: 2.6
       All of the :func:`popen\*` functions are obsolete. Use the :mod:`subprocess`
-      module.
+      module.  Check specially the *Replacing Older Functions with the
+      subprocess Module* section in that documentation page.
 
    Availability: Macintosh, Unix, Windows.
 
@@ -1707,7 +1712,8 @@ written in Python, such as a mail server's external command delivery program.
 
    (Note that the :mod:`subprocess` module provides more powerful facilities for
    spawning new processes and retrieving their results; using that module is
-   preferable to using these functions.)
+   preferable to using these functions.  Check specially the *Replacing Older 
+   Functions with the subprocess Module* section in that documentation page.)
 
    If *mode* is :const:`P_NOWAIT`, this function returns the process id of the new
    process; if *mode* is :const:`P_WAIT`, returns the process's exit code if it
@@ -1842,7 +1848,8 @@ written in Python, such as a mail server's external command delivery program.
 
    The :mod:`subprocess` module provides more powerful facilities for spawning new
    processes and retrieving their results; using that module is preferable to using
-   this function.
+   this function. Check specially the *Replacing Older Functions with the
+   subprocess Module* section in that documentation page.
 
 
 .. function:: times()

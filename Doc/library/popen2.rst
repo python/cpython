@@ -9,7 +9,9 @@
 
 
 .. deprecated:: 2.6
-   This module is obsolete.  Use the :mod:`subprocess` module.
+   This module is obsolete.  Use the :mod:`subprocess` module.  Check 
+   specially the *Replacing Older Functions with the subprocess Module* 
+   section in that documentation page.
 
 This module allows you to spawn processes and connect to their
 input/output/error pipes and obtain their return codes under Unix and Windows.
