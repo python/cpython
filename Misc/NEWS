@@ -112,6 +112,8 @@ Library
   structures, to match the behaviour of 2.5 and 3.0 (now follows the common
   sense).
 
+- Issue #1817: cgi now correctly handles the querystring on POST requests
+
 - Issue #3136: fileConfig()'s disabling of old loggers is now conditional via
   an optional disable_existing_loggers parameter, but the default value is
   such that the old behaviour is preserved. Thanks to Leandro Lucarella for
