@@ -405,11 +405,11 @@ PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
    obj is not of float, int or long type, Py_NotImplemented is incref'ed,
    stored in obj, and returned from the function invoking this macro.
 */
-#define CONVERT_TO_DOUBLE(obj, dbl)			\
-	if (PyFloat_Check(obj))				\
-		dbl = PyFloat_AS_DOUBLE(obj);		\
-	else if (convert_to_double(&(obj), &(dbl)) < 0)	\
-		return obj;
+#define CONVERT_TO_DOUBLE(obj, dbl)					\
+	if (PyFloat_Check(obj))						\
+		dbl = PyFloat_AS_DOUBLE(obj);				\
+	else if (convert_to_double((PyObject **)&(obj), &(dbl)) < 0)	\
+		return (PyObject *)(obj);
 
 static int
 convert_to_double(PyObject **v, double *dbl)
@@ -1212,7 +1212,7 @@ _float_to_base(PyFloatObject *v, unaryfunc int_to_base)
 	int i, exp, n;
 	char *conv_str;
 
-	CONVERT_TO_DOUBLE(((PyObject *)v), x);
+	CONVERT_TO_DOUBLE(v, x);
 	if (!Py_IS_FINITE(x))
 		return PyObject_Repr((PyObject *)v);
 	fr = frexp(x, &exp);
