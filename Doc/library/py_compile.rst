@@ -46,8 +46,7 @@ files named on the command line.  The exit status is nonzero if one of the files
 could not be compiled.
 
 .. versionchanged:: 2.6
-
-   Added the nonzero exit status.
+   Added the nonzero exit status when module is run as a script.
 
 
 .. seealso::
