@@ -135,6 +135,7 @@ representation error).  Decimal numbers include special values such as
 :const:`NaN` which stands for "Not a number", positive and negative
 :const:`Infinity`, and :const:`-0`.
 
+   >>> getcontext().prec = 28
    >>> Decimal(10)
    Decimal('10')
    >>> Decimal('3.14')
@@ -173,7 +174,7 @@ floating point flying circus:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> data = map(Decimal, '1.34 1.87 3.45 2.35 1.00 0.03 9.25'.split())
+   >>> data = list(map(Decimal, '1.34 1.87 3.45 2.35 1.00 0.03 9.25'.split()))
    >>> max(data)
    Decimal('9.25')
    >>> min(data)
@@ -201,6 +202,7 @@ floating point flying circus:
 
 And some mathematical functions are also available to Decimal:
 
+   >>> getcontext().prec = 28
    >>> Decimal(2).sqrt()
    Decimal('1.414213562373095048801688724')
    >>> Decimal(1).exp()
@@ -267,7 +269,7 @@ using the :meth:`clear_flags` method. ::
    Decimal('3.14159292')
    >>> getcontext()
    Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-           capitals=1, flags=[Rounded, Inexact], traps=[])
+           capitals=1, flags=[Inexact, Rounded], traps=[])
 
 The *flags* entry shows that the rational approximation to :const:`Pi` was
 rounded (digits beyond the context precision were thrown away) and that the
@@ -413,6 +415,11 @@ Decimal objects
       value as in :meth:`compare_total`, but ignoring the sign of each operand.
       ``x.compare_total_mag(y)`` is equivalent to
       ``x.copy_abs().compare_total(y.copy_abs())``.
+
+   .. method:: conjugate()
+
+      Just returns itself, this method is only to comply with the Decimal
+      Specification.
 
    .. method:: copy_abs()
 
@@ -722,13 +729,6 @@ Decimal objects
       :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the
       rounding method in either the supplied *context* or the current context.
 
-   .. method:: trim()
-
-      Return the decimal with *insignificant* trailing zeros removed.  Here, a
-      trailing zero is considered insignificant either if it follows the decimal
-      point, or if the exponent of the argument (that is, the last element of
-      the :meth:`as_tuple` representation) is positive.
-
 
 .. _logical_operands_label:
 
@@ -940,6 +940,46 @@ In addition to the three supplied contexts, new contexts can be created with the
       Return the sum of *x* and *y*.
 
 
+   .. method:: canonical(x)
+
+      Returns the same Decimal object *x*.
+
+
+   .. method:: compare(x, y)
+
+      Compares *x* and *y* numerically.
+
+
+   .. method:: compare_signal(x, y)
+
+      Compares the values of the two operands numerically.
+
+
+   .. method:: compare_total(x, y)
+
+      Compares two operands using their abstract representation.
+
+
+   .. method:: compare_total_mag(x, y)
+
+      Compares two operands using their abstract representation, ignoring sign.
+
+
+   .. method:: copy_abs(x)
+
+      Returns a copy of *x* with the sign set to 0.
+
+
+   .. method:: copy_negate(x)
+
+      Returns a copy of *x* with the sign inverted.
+
+
+   .. method:: copy_sign(x, y)
+
+      Copies the sign from *y* to *x*.
+
+
    .. method:: divide(x, y)
 
       Return *x* divided by *y*.
@@ -955,6 +995,121 @@ In addition to the three supplied contexts, new contexts can be created with the
       Divides two numbers and returns the integer part of the result.
 
 
+   .. method:: exp(x)
+
+      Returns `e ** x`.
+
+
+   .. method:: fma(x, y, z)
+
+      Returns *x* multiplied by *y*, plus *z*.
+
+
+   .. method:: is_canonical(x)
+
+      Returns True if *x* is canonical; otherwise returns False.
+
+
+   .. method:: is_finite(x)
+
+      Returns True if *x* is finite; otherwise returns False.
+
+
+   .. method:: is_infinite(x)
+
+      Returns True if *x* is infinite; otherwise returns False.
+
+
+   .. method:: is_nan(x)
+
+      Returns True if *x* is a qNaN or sNaN; otherwise returns False.
+
+
+   .. method:: is_normal(x)
+
+      Returns True if *x* is a normal number; otherwise returns False.
+
+
+   .. method:: is_qnan(x)
+
+      Returns True if *x* is a quiet NaN; otherwise returns False.
+
+
+   .. method:: is_signed(x)
+
+      Returns True if *x* is negative; otherwise returns False.
+
+
+   .. method:: is_snan(x)
+
+      Returns True if *x* is a signaling NaN; otherwise returns False.
+
+
+   .. method:: is_subnormal(x)
+
+      Returns True if *x* is subnormal; otherwise returns False.
+
+
+   .. method:: is_zero(x)
+
+      Returns True if *x* is a zero; otherwise returns False.
+
+
+   .. method:: ln(x)
+
+      Returns the natural (base e) logarithm of *x*.
+
+
+   .. method:: log10(x)
+
+      Returns the base 10 logarithm of *x*.
+
+
+   .. method:: logb(x)
+
+       Returns the exponent of the magnitude of the operand's MSD.
+
+
+   .. method:: logical_and(x, y)
+
+      Applies the logical operation `and` between each operand's digits.
+
+
+   .. method:: logical_invert(x)
+
+      Invert all the digits in *x*.
+
+
+   .. method:: logical_or(x, y)
+
+      Applies the logical operation `or` between each operand's digits.
+
+
+   .. method:: logical_xor(x, y)
+
+      Applies the logical operation `xor` between each operand's digits.
+
+
+   .. method:: max(x, y)
+
+      Compares two values numerically and returns the maximum.
+
+
+   .. method:: max_mag(x, y)
+
+      Compares the values numerically with their sign ignored.
+
+
+   .. method:: min(x, y)
+
+      Compares two values numerically and returns the minimum.
+
+
+   .. method:: min_mag(x, y)
+
+      Compares the values numerically with their sign ignored.
+
+
    .. method:: minus(x)
 
       Minus corresponds to the unary prefix minus operator in Python.
@@ -963,6 +1118,31 @@ In addition to the three supplied contexts, new contexts can be created with the
    .. method:: multiply(x, y)
 
       Return the product of *x* and *y*.
+
+
+   .. method:: next_minus(x)
+
+      Returns the largest representable number smaller than *x*.
+
+
+   .. method:: next_plus(x)
+
+      Returns the smallest representable number larger than *x*.
+
+
+   .. method:: next_toward(x, y)
+
+      Returns the number closest to *x*, in direction towards *y*.
+
+
+   .. method:: normalize(x)
+
+      Reduces *x* to its simplest form.
+
+
+   .. method:: number_class(x)
+
+      Returns an indication of the class of *x*.
 
 
    .. method:: plus(x)
@@ -994,6 +1174,17 @@ In addition to the three supplied contexts, new contexts can be created with the
       that would be obtained by computing ``(x**y) % modulo`` with unbounded
       precision, but is computed more efficiently.  It is always exact.
 
+
+   .. method:: quantize(x, y)
+
+      Returns a value equal to *x* (rounded), having the exponent of *y*.
+
+
+   .. method:: radix()
+
+      Just returns 10, as this is Decimal, :)
+
+
    .. method:: remainder(x, y)
 
       Returns the remainder from integer division.
@@ -1001,9 +1192,51 @@ In addition to the three supplied contexts, new contexts can be created with the
       The sign of the result, if non-zero, is the same as that of the original
       dividend.
 
+   .. method:: remainder_near(x, y)
+
+      Returns `x - y * n`, where *n* is the integer nearest the exact value 
+      of `x / y` (if the result is `0` then its sign will be the sign of *x*).
+
+
+   .. method:: rotate(x, y)
+
+      Returns a rotated copy of *x*, *y* times.
+
+
+   .. method:: same_quantum(x, y)
+
+      Returns True if the two operands have the same exponent.
+
+
+   .. method:: scaleb (x, y)
+
+      Returns the first operand after adding the second value its exp.
+
+
+   .. method:: shift(x, y)
+
+      Returns a shifted copy of *x*, *y* times.
+
+
+   .. method:: sqrt(x)
+
+      Square root of a non-negative number to context precision.
+
+
    .. method:: subtract(x, y)
 
       Return the difference between *x* and *y*.
+
+
+   .. method:: to_eng_string(x)
+
+      Converts a number to a string, using scientific notation.
+
+
+   .. method:: to_integral_exact(x)
+
+      Rounds to an integer.
+
 
    .. method:: to_sci_string(x)
 
@@ -1323,7 +1556,7 @@ to work with the :class:`Decimal` class::
        q = Decimal(10) ** -places      # 2 places --> '0.01'
        sign, digits, exp = value.quantize(q).as_tuple()  
        result = []
-       digits = map(str, digits)
+       digits = list(map(str, digits))
        build, next = result.append, digits.pop
        if sign:
            build(trailneg)
