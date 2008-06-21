@@ -86,38 +86,38 @@ class FractionTest(unittest.TestCase):
             ZeroDivisionError, "Fraction(3, 0)",
             F, "3/0")
         self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: 3/",
+            ValueError, "Invalid literal for Fraction: '3/'",
             F, "3/")
         self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: 3 /2",
+            ValueError, "Invalid literal for Fraction: '3 /2'",
             F, "3 /2")
         self.assertRaisesMessage(
             # Denominators don't need a sign.
-            ValueError, "Invalid literal for Fraction: 3/+2",
+            ValueError, "Invalid literal for Fraction: '3/+2'",
             F, "3/+2")
         self.assertRaisesMessage(
             # Imitate float's parsing.
-            ValueError, "Invalid literal for Fraction: + 3/2",
+            ValueError, "Invalid literal for Fraction: '+ 3/2'",
             F, "+ 3/2")
         self.assertRaisesMessage(
             # Avoid treating '.' as a regex special character.
-            ValueError, "Invalid literal for Fraction: 3a2",
+            ValueError, "Invalid literal for Fraction: '3a2'",
             F, "3a2")
         self.assertRaisesMessage(
             # Only parse ordinary decimals, not scientific form.
-            ValueError, "Invalid literal for Fraction: 3.2e4",
+            ValueError, "Invalid literal for Fraction: '3.2e4'",
             F, "3.2e4")
         self.assertRaisesMessage(
             # Don't accept combinations of decimals and fractions.
-            ValueError, "Invalid literal for Fraction: 3/7.2",
+            ValueError, "Invalid literal for Fraction: '3/7.2'",
             F, "3/7.2")
         self.assertRaisesMessage(
             # Don't accept combinations of decimals and fractions.
-            ValueError, "Invalid literal for Fraction: 3.2/7",
+            ValueError, "Invalid literal for Fraction: '3.2/7'",
             F, "3.2/7")
         self.assertRaisesMessage(
             # Allow 3. and .3, but not .
-            ValueError, "Invalid literal for Fraction: .",
+            ValueError, "Invalid literal for Fraction: '.'",
             F, ".")
 
     def testImmutable(self):
