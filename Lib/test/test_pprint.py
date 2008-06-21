@@ -170,6 +170,17 @@ class QueryTestCase(unittest.TestCase):
         for type in [list, list2]:
             self.assertEqual(pprint.pformat(type(o), indent=4), exp)
 
+    def test_nested_indentations(self):
+        o1 = list(range(10))
+        o2 = dict(first=1, second=2, third=3)
+        o = [o1, o2]
+        expected = """\
+[   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    {   'first': 1,
+        'second': 2,
+        'third': 3}]"""
+        self.assertEqual(pprint.pformat(o, indent=4, width=42), expected)
+
     def test_sorted_dict(self):
         # Starting in Python 2.5, pprint sorts dict displays by key regardless
         # of how small the dictionary may be.

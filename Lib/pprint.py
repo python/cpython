@@ -194,7 +194,7 @@ class PrettyPrinter:
             else:
                 write('(')
                 endchar = ')'
-            if self._indent_per_level > 1:
+            if self._indent_per_level > 1 and sepLines:
                 write((self._indent_per_level - 1) * ' ')
             if length:
                 context[objid] = 1
