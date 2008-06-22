@@ -1451,8 +1451,11 @@ PyObject *
 PyNumber_ToBase(PyObject *n, int base)
 {
 	PyObject *res = NULL;
-	PyObject *index = PyNumber_Index(n);
+	PyObject *index;
 
+	if (PyFloat_Check(n))
+		return _float_to_base(n, base);
+	index = PyNumber_Index(n);
 	if (!index)
 		return NULL;
 	if (PyLong_Check(index))

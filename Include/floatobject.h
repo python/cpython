@@ -111,6 +111,8 @@ PyAPI_FUNC(PyObject *) _PyFloat_FormatAdvanced(PyObject *obj,
 					       Py_UNICODE *format_spec,
 					       Py_ssize_t format_spec_len);
 
+PyAPI_FUNC(PyObject *) _float_to_base(PyObject *v, int base);
+
 #ifdef __cplusplus
 }
 #endif
