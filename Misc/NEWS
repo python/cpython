@@ -74,7 +74,7 @@ Extension Modules
 
 - Issue #3116:  marshal.dumps() had quadratic behavior for strings > 32Mb.
 
-- Issue #2138: Add factorial() the math module.
+- Issue #2138: Add factorial() to the math module.
 
 - The heapq module does comparisons using LT instead of LE.  This
   makes its implementation match that used by list.sort().
