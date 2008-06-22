@@ -1519,6 +1519,7 @@ batch_list(Picklerobject *self, PyObject *iter)
 	PyObject *obj;
 	PyObject *slice[BATCHSIZE];
 	int i, n;
+    self->nesting++;
 
 	static char append = APPEND;
 	static char appends = APPENDS;
@@ -1658,6 +1659,7 @@ batch_dict(Picklerobject *self, PyObject *iter)
 	PyObject *p;
 	PyObject *slice[BATCHSIZE];
 	int i, n;
+    self->nesting++;
 
 	static char setitem = SETITEM;
 	static char setitems = SETITEMS;
