@@ -2366,6 +2366,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 			res = save_string(self, args, 0);
 			goto finally;
 		}
+		break;
 
 #ifdef Py_USING_UNICODE
         case 'u':
@@ -2373,6 +2374,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 			res = save_unicode(self, args, 0);
 			goto finally;
 		}
+		break;
 #endif
 	}
 
