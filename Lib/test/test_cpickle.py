@@ -1,4 +1,4 @@
-import cPickle
+import cPickle, unittest
 from cStringIO import StringIO
 from test.pickletester import AbstractPickleTests, AbstractPickleModuleTests
 from test import test_support
@@ -90,12 +90,28 @@ class cPickleFastPicklerTests(AbstractPickleTests):
         b = self.loads(self.dumps(a))
         self.assertEqual(a, b)
 
+class Node(object):
+    pass
+
+class cPickleDeepRecursive(unittest.TestCase):
+    '''Issue 2702. This should raise a RecursionLimit but in some
+    platforms (FreeBSD, win32) sometimes raises KeyError instead,
+    or just silently terminates the interpreter (=crashes).
+    '''
+    def test_deep_recursive(self):
+        nodes = [Node() for i in range(500)]
+        for n in nodes:
+            n.connections = list(nodes)
+            n.connections.remove(n)
+        self.assertRaises(RuntimeError, cPickle.dumps, n)
+
 def test_main():
     test_support.run_unittest(
         cPickleTests,
         cPicklePicklerTests,
         cPickleListPicklerTests,
-        cPickleFastPicklerTests
+        cPickleFastPicklerTests,
+        cPickleDeepRecursive,
     )
 
 if __name__ == "__main__":
