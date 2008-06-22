@@ -372,13 +372,13 @@ Replacing os.popen\*
 
 ::
 
-   pipe = os.popen(cmd, mode='r', bufsize)
+   pipe = os.popen(cmd, 'r', bufsize)
    ==>
    pipe = Popen(cmd, shell=True, bufsize=bufsize, stdout=PIPE).stdout
 
 ::
 
-   pipe = os.popen(cmd, mode='w', bufsize)
+   pipe = os.popen(cmd, 'w', bufsize)
    ==>
    pipe = Popen(cmd, shell=True, bufsize=bufsize, stdin=PIPE).stdin
 
