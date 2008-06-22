@@ -1956,19 +1956,38 @@ Return a string representing the current working directory.");
 static PyObject *
 posix_getcwd(PyObject *self, PyObject *noargs)
 {
-	char buf[1026];
-	char *res;
+	int bufsize_incr = 1024;
+	int bufsize = 0;
+	char *tmpbuf = NULL;
+	char *res = NULL;
+	PyObject *dynamic_return;
 
 	Py_BEGIN_ALLOW_THREADS
+	do {
+		bufsize = bufsize + bufsize_incr;
+		tmpbuf = malloc(bufsize);
+		if (tmpbuf == NULL) {
+			break;
+		}
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
-	res = _getcwd2(buf, sizeof buf);
+		res = _getcwd2(tmpbuf, bufsize);
 #else
-	res = getcwd(buf, sizeof buf);
+		res = getcwd(tmpbuf, bufsize);
 #endif
+
+		if (res == NULL) {
+			free(tmpbuf);
+		}
+	} while ((res == NULL) && (errno == ERANGE));
 	Py_END_ALLOW_THREADS
+
 	if (res == NULL)
 		return posix_error();
-	return PyString_FromString(buf);
+
+	dynamic_return = PyString_FromString(tmpbuf);
+	free(tmpbuf);
+
+	return dynamic_return;
 }
 
 #ifdef Py_USING_UNICODE

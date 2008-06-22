@@ -10,6 +10,7 @@ except ImportError:
 import time
 import os
 import pwd
+import shutil
 import unittest
 import warnings
 warnings.filterwarnings('ignore', '.* potential security risk .*',
@@ -230,6 +231,38 @@ class PosixTester(unittest.TestCase):
             st = os.stat(test_support.TESTFN)
             if hasattr(st, 'st_flags'):
                 posix.lchflags(test_support.TESTFN, st.st_flags)
+
+    def test_getcwd_long_pathnames(self):
+        if hasattr(posix, 'getcwd'):
+            dirname = 'getcwd-test-directory-0123456789abcdef-01234567890abcdef'
+            curdir = os.getcwd()
+            base_path = os.path.abspath(test_support.TESTFN) + '.getcwd'
+
+            try:
+                os.mkdir(base_path)
+                os.chdir(base_path)
+
+                def _create_and_do_getcwd(dirname, current_path_length = 0):
+                    try:
+                        os.mkdir(dirname)
+                    except:
+                        raise test_support.TestSkipped, "mkdir cannot create directory sufficiently deep for getcwd test"
+
+                    os.chdir(dirname)
+                    try:
+                        os.getcwd()
+                        if current_path_length < 1027:
+                            _create_and_do_getcwd(dirname, current_path_length + len(dirname) + 1)
+                    finally:
+                        os.chdir('..')
+                        os.rmdir(dirname)
+
+                _create_and_do_getcwd(dirname)
+
+            finally:
+                shutil.rmtree(base_path)
+                os.chdir(curdir)
+
 
 def test_main():
     test_support.run_unittest(PosixTester)

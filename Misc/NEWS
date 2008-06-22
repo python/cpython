@@ -108,6 +108,8 @@ Extension Modules
 Library
 -------
 
+- Issue #2722: Now the os.getcwd() supports very long path names.
+
 - Issue #2888: Fixed the behaviour of pprint when working with nested
   structures, to match the behaviour of 2.5 and 3.0 (now follows the common
   sense).
