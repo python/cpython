@@ -236,12 +236,15 @@ class PosixTester(unittest.TestCase):
         if hasattr(posix, 'getcwd'):
             dirname = 'getcwd-test-directory-0123456789abcdef-01234567890abcdef'
             curdir = os.getcwd()
-            base_path = os.path.abspath(test_support.TESTFN[1:]) + '.getcwd'
+            base_path = os.path.abspath(test_support.TESTFN) + '.getcwd'
 
             try:
                 os.mkdir(base_path)
                 os.chdir(base_path)
+            except:
+                raise test_support.TestSkipped, "mkdir cannot create directory sufficiently deep for getcwd test"
 
+            try:
                 def _create_and_do_getcwd(dirname, current_path_length = 0):
                     try:
                         os.mkdir(dirname)
