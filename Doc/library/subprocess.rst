@@ -273,6 +273,8 @@ The following attributes are also available:
    ``N`` (Unix only).
 
 
+.. _subprocess-replacements:
+
 Replacing Older Functions with the subprocess Module
 ----------------------------------------------------
 
