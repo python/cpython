@@ -13,7 +13,6 @@ that aren't markup languages or are related to e-mail.
 
    csv.rst
    configparser.rst
-   robotparser.rst
    netrc.rst
    xdrlib.rst
    plistlib.rst

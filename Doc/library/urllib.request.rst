@@ -1,17 +1,17 @@
-:mod:`urllib2` --- extensible library for opening URLs
-======================================================
+:mod:`urllib.request` --- extensible library for opening URLs
+=============================================================
 
-.. module:: urllib2
+.. module:: urllib.request
    :synopsis: Next generation URL opening library.
 .. moduleauthor:: Jeremy Hylton <jhylton@users.sourceforge.net>
 .. sectionauthor:: Moshe Zadka <moshez@users.sourceforge.net>
 
 
-The :mod:`urllib2` module defines functions and classes which help in opening
+The :mod:`urllib.request` module defines functions and classes which help in opening
 URLs (mostly HTTP) in a complex world --- basic and digest authentication,
 redirections, cookies and more.
 
-The :mod:`urllib2` module defines the following functions:
+The :mod:`urllib.request` module defines the following functions:
 
 
 .. function:: urlopen(url[, data][, timeout])
@@ -31,7 +31,8 @@ The :mod:`urllib2` module defines the following functions:
    timeout setting will be used).  This actually only works for HTTP, HTTPS,
    FTP and FTPS connections.
 
-   This function returns a file-like object with two additional methods:
+   This function returns a file-like object with two additional methods from
+   the :mod:`urllib.response` module
 
    * :meth:`geturl` --- return the URL of the resource retrieved, commonly used to
      determine if a redirect was followed
@@ -45,6 +46,11 @@ The :mod:`urllib2` module defines the following functions:
    Note that ``None`` may be returned if no handler handles the request (though the
    default installed global :class:`OpenerDirector` uses :class:`UnknownHandler` to
    ensure this never happens).
+   The urlopen function from the previous version, Python 2.6 and earlier,  of
+   the module  urllib has been discontinued as urlopen can return the
+   file-object as the previous. The proxy handling, which in earlier was passed
+   as a dict parameter to urlopen can be availed by the use of `ProxyHandler`
+   objects.
 
 
 .. function:: install_opener(opener)
@@ -74,38 +80,86 @@ The :mod:`urllib2` module defines the following functions:
    A :class:`BaseHandler` subclass may also change its :attr:`handler_order`
    member variable to modify its position in the handlers list.
 
-The following exceptions are raised as appropriate:
+.. function:: urlretrieve(url[, filename[, reporthook[, data]]])
+
+   Copy a network object denoted by a URL to a local file, if necessary. If the URL
+   points to a local file, or a valid cached copy of the object exists, the object
+   is not copied.  Return a tuple ``(filename, headers)`` where *filename* is the
+   local file name under which the object can be found, and *headers* is whatever
+   the :meth:`info` method of the object returned by :func:`urlopen` returned (for
+   a remote object, possibly cached). Exceptions are the same as for
+   :func:`urlopen`.
+
+   The second argument, if present, specifies the file location to copy to (if
+   absent, the location will be a tempfile with a generated name). The third
+   argument, if present, is a hook function that will be called once on
+   establishment of the network connection and once after each block read
+   thereafter.  The hook will be passed three arguments; a count of blocks
+   transferred so far, a block size in bytes, and the total size of the file.  The
+   third argument may be ``-1`` on older FTP servers which do not return a file
+   size in response to a retrieval request.
+
+   If the *url* uses the :file:`http:` scheme identifier, the optional *data*
+   argument may be given to specify a ``POST`` request (normally the request type
+   is ``GET``).  The *data* argument must in standard
+   :mimetype:`application/x-www-form-urlencoded` format; see the :func:`urlencode`
+   function below.
+
+   :func:`urlretrieve` will raise :exc:`ContentTooShortError` when it detects that
+   the amount of data available  was less than the expected amount (which is the
+   size reported by a  *Content-Length* header). This can occur, for example, when
+   the  download is interrupted.
+
+   The *Content-Length* is treated as a lower bound: if there's more data  to read,
+   urlretrieve reads more data, but if less data is available,  it raises the
+   exception.
+
+   You can still retrieve the downloaded data in this case, it is stored  in the
+   :attr:`content` attribute of the exception instance.
+
+   If no *Content-Length* header was supplied, urlretrieve can not check the size
+   of the data it has downloaded, and just returns it.  In this case you just have
+   to assume that the download was successful.
 
 
-.. exception:: URLError
+.. data:: _urlopener
 
-   The handlers raise this exception (or derived exceptions) when they run into a
-   problem.  It is a subclass of :exc:`IOError`.
+   The public functions :func:`urlopen` and :func:`urlretrieve` create an instance
+   of the :class:`FancyURLopener` class and use it to perform their requested
+   actions.  To override this functionality, programmers can create a subclass of
+   :class:`URLopener` or :class:`FancyURLopener`, then assign an instance of that
+   class to the ``urllib._urlopener`` variable before calling the desired function.
+   For example, applications may want to specify a different
+   :mailheader:`User-Agent` header than :class:`URLopener` defines.  This can be
+   accomplished with the following code::
 
-   .. attribute:: reason
+      import urllib.request
 
-      The reason for this error.  It can be a message string or another exception
-      instance (:exc:`socket.error` for remote URLs, :exc:`OSError` for local
-      URLs).
+      class AppURLopener(urllib.request.FancyURLopener):
+          version = "App/1.7"
 
-
-.. exception:: HTTPError
-
-   Though being an exception (a subclass of :exc:`URLError`), an :exc:`HTTPError`
-   can also function as a non-exceptional file-like return value (the same thing
-   that :func:`urlopen` returns).  This is useful when handling exotic HTTP
-   errors, such as requests for authentication.
-
-   .. attribute:: code
-
-      An HTTP status code as defined in `RFC 2616 <http://www.faqs.org/rfcs/rfc2616.html>`_. 
-      This numeric value corresponds to a value found in the dictionary of
-      codes as found in :attr:`http.server.BaseHTTPRequestHandler.responses`.
+      urllib._urlopener = AppURLopener()
 
 
+.. function:: urlcleanup()
+
+   Clear the cache that may have been built up by previous calls to
+   :func:`urlretrieve`.
+
+.. function:: pathname2url(path)
+
+   Convert the pathname *path* from the local syntax for a path to the form used in
+   the path component of a URL.  This does not produce a complete URL.  The return
+   value will already be quoted using the :func:`quote` function.
+
+
+.. function:: url2pathname(path)
+
+   Convert the path component *path* from an encoded URL to the local syntax for a
+   path.  This does not accept a complete URL.  This function uses :func:`unquote`
+   to decode *path*.
 
 The following classes are provided:
-
 
 .. class:: Request(url[, data][, headers][, origin_req_host][, unverifiable])
 
@@ -145,6 +199,114 @@ The following classes are provided:
    an image in an HTML document, and the user had no option to approve the
    automatic fetching of the image, this should be true.
 
+.. class:: URLopener([proxies[, **x509]])
+
+   Base class for opening and reading URLs.  Unless you need to support opening
+   objects using schemes other than :file:`http:`, :file:`ftp:`, or :file:`file:`,
+   you probably want to use :class:`FancyURLopener`.
+
+   By default, the :class:`URLopener` class sends a :mailheader:`User-Agent` header
+   of ``urllib/VVV``, where *VVV* is the :mod:`urllib` version number.
+   Applications can define their own :mailheader:`User-Agent` header by subclassing
+   :class:`URLopener` or :class:`FancyURLopener` and setting the class attribute
+   :attr:`version` to an appropriate string value in the subclass definition.
+
+   The optional *proxies* parameter should be a dictionary mapping scheme names to
+   proxy URLs, where an empty dictionary turns proxies off completely.  Its default
+   value is ``None``, in which case environmental proxy settings will be used if
+   present, as discussed in the definition of :func:`urlopen`, above.
+
+   Additional keyword parameters, collected in *x509*, may be used for
+   authentication of the client when using the :file:`https:` scheme.  The keywords
+   *key_file* and *cert_file* are supported to provide an  SSL key and certificate;
+   both are needed to support client authentication.
+
+   :class:`URLopener` objects will raise an :exc:`IOError` exception if the server
+   returns an error code.
+
+    .. method:: open(fullurl[, data])
+
+       Open *fullurl* using the appropriate protocol.  This method sets up cache and
+       proxy information, then calls the appropriate open method with its input
+       arguments.  If the scheme is not recognized, :meth:`open_unknown` is called.
+       The *data* argument has the same meaning as the *data* argument of
+       :func:`urlopen`.
+
+
+    .. method:: open_unknown(fullurl[, data])
+
+       Overridable interface to open unknown URL types.
+
+
+    .. method:: retrieve(url[, filename[, reporthook[, data]]])
+
+       Retrieves the contents of *url* and places it in *filename*.  The return value
+       is a tuple consisting of a local filename and either a
+       :class:`email.message.Message` object containing the response headers (for remote
+       URLs) or ``None`` (for local URLs).  The caller must then open and read the
+       contents of *filename*.  If *filename* is not given and the URL refers to a
+       local file, the input filename is returned.  If the URL is non-local and
+       *filename* is not given, the filename is the output of :func:`tempfile.mktemp`
+       with a suffix that matches the suffix of the last path component of the input
+       URL.  If *reporthook* is given, it must be a function accepting three numeric
+       parameters.  It will be called after each chunk of data is read from the
+       network.  *reporthook* is ignored for local URLs.
+
+       If the *url* uses the :file:`http:` scheme identifier, the optional *data*
+       argument may be given to specify a ``POST`` request (normally the request type
+       is ``GET``).  The *data* argument must in standard
+       :mimetype:`application/x-www-form-urlencoded` format; see the :func:`urlencode`
+       function below.
+
+
+    .. attribute:: version
+
+       Variable that specifies the user agent of the opener object.  To get
+       :mod:`urllib` to tell servers that it is a particular user agent, set this in a
+       subclass as a class variable or in the constructor before calling the base
+       constructor.
+
+
+.. class:: FancyURLopener(...)
+
+   :class:`FancyURLopener` subclasses :class:`URLopener` providing default handling
+   for the following HTTP response codes: 301, 302, 303, 307 and 401.  For the 30x
+   response codes listed above, the :mailheader:`Location` header is used to fetch
+   the actual URL.  For 401 response codes (authentication required), basic HTTP
+   authentication is performed.  For the 30x response codes, recursion is bounded
+   by the value of the *maxtries* attribute, which defaults to 10.
+
+   For all other response codes, the method :meth:`http_error_default` is called
+   which you can override in subclasses to handle the error appropriately.
+
+   .. note::
+
+      According to the letter of :rfc:`2616`, 301 and 302 responses to POST requests
+      must not be automatically redirected without confirmation by the user.  In
+      reality, browsers do allow automatic redirection of these responses, changing
+      the POST to a GET, and :mod:`urllib` reproduces this behaviour.
+
+   The parameters to the constructor are the same as those for :class:`URLopener`.
+
+   .. note::
+
+      When performing basic authentication, a :class:`FancyURLopener` instance calls
+      its :meth:`prompt_user_passwd` method.  The default implementation asks the
+      users for the required information on the controlling terminal.  A subclass may
+      override this method to support more appropriate behavior if needed.
+
+    The :class:`FancyURLopener` class offers one additional method that should be
+    overloaded to provide the appropriate behavior:
+
+    .. method:: prompt_user_passwd(host, realm)
+
+       Return information needed to authenticate the user at the given host in the
+       specified security realm.  The return value should be a tuple, ``(user,
+       password)``, which can be used for basic authentication.
+
+       The implementation prompts for this information on the terminal; an application
+       should override this method to use an appropriate interaction model in the local
+       environment.
 
 .. class:: OpenerDirector()
 
@@ -846,7 +1008,6 @@ HTTPErrorProcessor Objects
    Eventually, :class:`urllib2.HTTPDefaultErrorHandler` will raise an
    :exc:`HTTPError` if no other handler handles the error.
 
-
 .. _urllib2-examples:
 
 Examples
@@ -855,8 +1016,8 @@ Examples
 This example gets the python.org main page and displays the first 100 bytes of
 it::
 
-   >>> import urllib2
-   >>> f = urllib2.urlopen('http://www.python.org/')
+   >>> import urllib.request
+   >>> f = urllib.request.urlopen('http://www.python.org/')
    >>> print(f.read(100))
    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
    <?xml-stylesheet href="./css/ht2html
@@ -865,10 +1026,10 @@ Here we are sending a data-stream to the stdin of a CGI and reading the data it
 returns to us. Note that this example will only work when the Python
 installation supports SSL. ::
 
-   >>> import urllib2
-   >>> req = urllib2.Request(url='https://localhost/cgi-bin/test.cgi',
+   >>> import urllib.request
+   >>> req = urllib.request.Request(url='https://localhost/cgi-bin/test.cgi',
    ...                       data='This data is passed to stdin of the CGI')
-   >>> f = urllib2.urlopen(req)
+   >>> f = urllib.request.urlopen(req)
    >>> print(f.read())
    Got Data: "This data is passed to stdin of the CGI"
 
@@ -881,17 +1042,17 @@ The code for the sample CGI used in the above example is::
 
 Use of Basic HTTP Authentication::
 
-   import urllib2
+   import urllib.request
    # Create an OpenerDirector with support for Basic HTTP Authentication...
-   auth_handler = urllib2.HTTPBasicAuthHandler()
+   auth_handler = urllib.request.HTTPBasicAuthHandler()
    auth_handler.add_password(realm='PDQ Application',
                              uri='https://mahler:8092/site-updates.py',
                              user='klem',
                              passwd='kadidd!ehopper')
-   opener = urllib2.build_opener(auth_handler)
+   opener = urllib.request.build_opener(auth_handler)
    # ...and install it globally so it can be used with urlopen.
-   urllib2.install_opener(opener)
-   urllib2.urlopen('http://www.example.com/login.html')
+   urllib.request.install_opener(opener)
+   urllib.request.urlopen('http://www.example.com/login.html')
 
 :func:`build_opener` provides many handlers by default, including a
 :class:`ProxyHandler`.  By default, :class:`ProxyHandler` uses the environment
@@ -903,8 +1064,8 @@ This example replaces the default :class:`ProxyHandler` with one that uses
 programatically-supplied proxy URLs, and adds proxy authorization support with
 :class:`ProxyBasicAuthHandler`. ::
 
-   proxy_handler = urllib2.ProxyHandler({'http': 'http://www.example.com:3128/'})
-   proxy_auth_handler = urllib2.HTTPBasicAuthHandler()
+   proxy_handler = urllib.request.ProxyHandler({'http': 'http://www.example.com:3128/'})
+   proxy_auth_handler = urllib.request.HTTPBasicAuthHandler()
    proxy_auth_handler.add_password('realm', 'host', 'username', 'password')
 
    opener = build_opener(proxy_handler, proxy_auth_handler)
@@ -915,20 +1076,119 @@ Adding HTTP headers:
 
 Use the *headers* argument to the :class:`Request` constructor, or::
 
-   import urllib2
-   req = urllib2.Request('http://www.example.com/')
+   import urllib
+   req = urllib.request.Request('http://www.example.com/')
    req.add_header('Referer', 'http://www.python.org/')
-   r = urllib2.urlopen(req)
+   r = urllib.request.urlopen(req)
 
 :class:`OpenerDirector` automatically adds a :mailheader:`User-Agent` header to
 every :class:`Request`.  To change this::
 
-   import urllib2
-   opener = urllib2.build_opener()
+   import urllib
+   opener = urllib.request.build_opener()
    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
    opener.open('http://www.example.com/')
 
 Also, remember that a few standard headers (:mailheader:`Content-Length`,
 :mailheader:`Content-Type` and :mailheader:`Host`) are added when the
 :class:`Request` is passed to :func:`urlopen` (or :meth:`OpenerDirector.open`).
+
+.. _urllib-examples:
+
+Here is an example session that uses the ``GET`` method to retrieve a URL
+containing parameters::
+
+   >>> import urllib.request
+   >>> import urllib.parse
+   >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+   >>> f = urllib.request.urlopen("http://www.musi-cal.com/cgi-bin/query?%s" % params)
+   >>> print(f.read())
+
+The following example uses the ``POST`` method instead::
+
+   >>> import urllib.request
+   >>> import urllib.parse
+   >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+   >>> f = urllib.request.urlopen("http://www.musi-cal.com/cgi-bin/query", params)
+   >>> print(f.read())
+
+The following example uses an explicitly specified HTTP proxy, overriding
+environment settings::
+
+   >>> import urllib.request
+   >>> proxies = {'http': 'http://proxy.example.com:8080/'}
+   >>> opener = urllib.request.FancyURLopener(proxies)
+   >>> f = opener.open("http://www.python.org")
+   >>> f.read()
+
+The following example uses no proxies at all, overriding environment settings::
+
+   >>> import urllib.request
+   >>> opener = urllib.request.FancyURLopener({})
+   >>> f = opener.open("http://www.python.org/")
+   >>> f.read()
+
+
+:mod:`urllib.request` Restrictions
+----------------------------------
+
+  .. index::
+     pair: HTTP; protocol
+     pair: FTP; protocol
+
+* Currently, only the following protocols are supported: HTTP, (versions 0.9 and
+  1.0),  FTP, and local files.
+
+* The caching feature of :func:`urlretrieve` has been disabled until I find the
+  time to hack proper processing of Expiration time headers.
+
+* There should be a function to query whether a particular URL is in the cache.
+
+* For backward compatibility, if a URL appears to point to a local file but the
+  file can't be opened, the URL is re-interpreted using the FTP protocol.  This
+  can sometimes cause confusing error messages.
+
+* The :func:`urlopen` and :func:`urlretrieve` functions can cause arbitrarily
+  long delays while waiting for a network connection to be set up.  This means
+  that it is difficult to build an interactive Web client using these functions
+  without using threads.
+
+  .. index::
+     single: HTML
+     pair: HTTP; protocol
+
+* The data returned by :func:`urlopen` or :func:`urlretrieve` is the raw data
+  returned by the server.  This may be binary data (such as an image), plain text
+  or (for example) HTML.  The HTTP protocol provides type information in the reply
+  header, which can be inspected by looking at the :mailheader:`Content-Type`
+  header.  If the returned data is HTML, you can use the module
+  :mod:`html.parser` to parse it.
+
+  .. index:: single: FTP
+
+* The code handling the FTP protocol cannot differentiate between a file and a
+  directory.  This can lead to unexpected behavior when attempting to read a URL
+  that points to a file that is not accessible.  If the URL ends in a ``/``, it is
+  assumed to refer to a directory and will be handled accordingly.  But if an
+  attempt to read a file leads to a 550 error (meaning the URL cannot be found or
+  is not accessible, often for permission reasons), then the path is treated as a
+  directory in order to handle the case when a directory is specified by a URL but
+  the trailing ``/`` has been left off.  This can cause misleading results when
+  you try to fetch a file whose read permissions make it inaccessible; the FTP
+  code will try to read it, fail with a 550 error, and then perform a directory
+  listing for the unreadable file. If fine-grained control is needed, consider
+  using the :mod:`ftplib` module, subclassing :class:`FancyURLOpener`, or changing
+  *_urlopener* to meet your needs.
+
+:mod:`urllib.response` --- Response classes used by urllib.
+===========================================================
+.. module:: urllib.response
+   :synopsis: Response classes used by urllib.
+
+The :mod:`urllib.response` module defines functions and classes which define a
+minimal file like interface, including read() and readline(). The typical
+response object is an addinfourl instance, which defines and info() method and
+that returns headers and a geturl() method that returns the url. 
+Functions defined by this module are used internally by the
+:mod:`urllib.request` module.
 

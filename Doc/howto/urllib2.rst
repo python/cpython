@@ -1,6 +1,6 @@
-************************************************
-  HOWTO Fetch Internet Resources Using urllib2
-************************************************
+*****************************************************
+  HOWTO Fetch Internet Resources Using urllib package
+*****************************************************
 
 :Author: `Michael Foord <http://www.voidspace.org.uk/python/index.shtml>`_
 
@@ -24,14 +24,14 @@ Introduction
     
         A tutorial on *Basic Authentication*, with examples in Python.
 
-**urllib2** is a `Python <http://www.python.org>`_ module for fetching URLs
+**urllib.request** is a `Python <http://www.python.org>`_ module for fetching URLs
 (Uniform Resource Locators). It offers a very simple interface, in the form of
 the *urlopen* function. This is capable of fetching URLs using a variety of
 different protocols. It also offers a slightly more complex interface for
 handling common situations - like basic authentication, cookies, proxies and so
 on. These are provided by objects called handlers and openers.
 
-urllib2 supports fetching URLs for many "URL schemes" (identified by the string
+urllib.request supports fetching URLs for many "URL schemes" (identified by the string
 before the ":" in URL - for example "ftp" is the URL scheme of
 "ftp://python.org/") using their associated network protocols (e.g. FTP, HTTP).
 This tutorial focuses on the most common case, HTTP.
@@ -40,43 +40,43 @@ For straightforward situations *urlopen* is very easy to use. But as soon as you
 encounter errors or non-trivial cases when opening HTTP URLs, you will need some
 understanding of the HyperText Transfer Protocol. The most comprehensive and
 authoritative reference to HTTP is :rfc:`2616`. This is a technical document and
-not intended to be easy to read. This HOWTO aims to illustrate using *urllib2*,
+not intended to be easy to read. This HOWTO aims to illustrate using *urllib*,
 with enough detail about HTTP to help you through. It is not intended to replace
-the :mod:`urllib2` docs, but is supplementary to them.
+the :mod:`urllib.request` docs, but is supplementary to them.
 
 
 Fetching URLs
 =============
 
-The simplest way to use urllib2 is as follows::
+The simplest way to use urllib.request is as follows::
 
-    import urllib2
-    response = urllib2.urlopen('http://python.org/')
+    import urllib.request
+    response = urllib.request.urlopen('http://python.org/')
     html = response.read()
 
-Many uses of urllib2 will be that simple (note that instead of an 'http:' URL we
+Many uses of urllib will be that simple (note that instead of an 'http:' URL we
 could have used an URL starting with 'ftp:', 'file:', etc.).  However, it's the
 purpose of this tutorial to explain the more complicated cases, concentrating on
 HTTP.
 
 HTTP is based on requests and responses - the client makes requests and servers
-send responses. urllib2 mirrors this with a ``Request`` object which represents
+send responses. urllib.request mirrors this with a ``Request`` object which represents
 the HTTP request you are making. In its simplest form you create a Request
 object that specifies the URL you want to fetch. Calling ``urlopen`` with this
 Request object returns a response object for the URL requested. This response is
 a file-like object, which means you can for example call ``.read()`` on the
 response::
 
-    import urllib2
+    import urllib.request
 
-    req = urllib2.Request('http://www.voidspace.org.uk')
-    response = urllib2.urlopen(req)
+    req = urllib.request.Request('http://www.voidspace.org.uk')
+    response = urllib.request.urlopen(req)
     the_page = response.read()
 
-Note that urllib2 makes use of the same Request interface to handle all URL
+Note that urllib.request makes use of the same Request interface to handle all URL
 schemes.  For example, you can make an FTP request like so::
 
-    req = urllib2.Request('ftp://example.com/')
+    req = urllib.request.Request('ftp://example.com/')
 
 In the case of HTTP, there are two extra things that Request objects allow you
 to do: First, you can pass data to be sent to the server.  Second, you can pass
@@ -94,20 +94,20 @@ your browser does when you submit a HTML form that you filled in on the web. Not
 all POSTs have to come from forms: you can use a POST to transmit arbitrary data
 to your own application. In the common case of HTML forms, the data needs to be
 encoded in a standard way, and then passed to the Request object as the ``data``
-argument. The encoding is done using a function from the ``urllib`` library
-*not* from ``urllib2``. ::
+argument. The encoding is done using a function from the ``urllib.parse`` library
+*not* from ``urllib.request``. ::
 
-    import urllib
-    import urllib2  
+    import urllib.parse
+    import urllib.request 
 
     url = 'http://www.someserver.com/cgi-bin/register.cgi'
     values = {'name' : 'Michael Foord',
               'location' : 'Northampton',
               'language' : 'Python' }
 
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
-    response = urllib2.urlopen(req)
+    data = urllib.parse.urlencode(values)
+    req = urllib.request.Request(url, data)
+    response = urllib.request.urlopen(req)
     the_page = response.read()
 
 Note that other encodings are sometimes required (e.g. for file upload from HTML
@@ -115,7 +115,7 @@ forms - see `HTML Specification, Form Submission
 <http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13>`_ for more
 details).
 
-If you do not pass the ``data`` argument, urllib2 uses a **GET** request. One
+If you do not pass the ``data`` argument, urllib.request uses a **GET** request. One
 way in which GET and POST requests differ is that POST requests often have
 "side-effects": they change the state of the system in some way (for example by
 placing an order with the website for a hundredweight of tinned spam to be
@@ -127,18 +127,18 @@ GET request by encoding it in the URL itself.
 
 This is done as follows::
 
-    >>> import urllib2
-    >>> import urllib
+    >>> import urllib.request
+    >>> import urllib.parse
     >>> data = {}
     >>> data['name'] = 'Somebody Here'
     >>> data['location'] = 'Northampton'
     >>> data['language'] = 'Python'
-    >>> url_values = urllib.urlencode(data)
+    >>> url_values = urllib.parse.urlencode(data)
     >>> print(url_values)
     name=Somebody+Here&language=Python&location=Northampton
     >>> url = 'http://www.example.com/example.cgi'
     >>> full_url = url + '?' + url_values
-    >>> data = urllib2.open(full_url)
+    >>> data = urllib.request.open(full_url)
 
 Notice that the full URL is created by adding a ``?`` to the URL, followed by
 the encoded values.
@@ -150,7 +150,7 @@ We'll discuss here one particular HTTP header, to illustrate how to add headers
 to your HTTP request.
 
 Some websites [#]_ dislike being browsed by programs, or send different versions
-to different browsers [#]_ . By default urllib2 identifies itself as
+to different browsers [#]_ . By default urllib identifies itself as
 ``Python-urllib/x.y`` (where ``x`` and ``y`` are the major and minor version
 numbers of the Python release,
 e.g. ``Python-urllib/2.5``), which may confuse the site, or just plain
@@ -160,8 +160,8 @@ pass a dictionary of headers in. The following example makes the same
 request as above, but identifies itself as a version of Internet
 Explorer [#]_. ::
 
-    import urllib
-    import urllib2  
+    import urllib.parse
+    import urllib.request 
     
     url = 'http://www.someserver.com/cgi-bin/register.cgi'
     user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' 
@@ -170,9 +170,9 @@ Explorer [#]_. ::
               'language' : 'Python' }
     headers = { 'User-Agent' : user_agent }
     
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data, headers)
-    response = urllib2.urlopen(req)
+    data = urllib.parse.urlencode(values)
+    req = urllib.request.Request(url, data, headers)
+    response = urllib.request.urlopen(req)
     the_page = response.read()
 
 The response also has two useful methods. See the section on `info and geturl`_
@@ -182,7 +182,7 @@ which comes after we have a look at what happens when things go wrong.
 Handling Exceptions
 ===================
 
-*urlopen* raises ``URLError`` when it cannot handle a response (though as usual
+*urllib.error* raises ``URLError`` when it cannot handle a response (though as usual
 with Python APIs, builtin exceptions such as ValueError, TypeError etc. may also
 be raised).
 
@@ -199,9 +199,9 @@ error code and a text error message.
 
 e.g. ::
 
-    >>> req = urllib2.Request('http://www.pretend_server.org')
-    >>> try: urllib2.urlopen(req)
-    >>> except URLError, e:
+    >>> req = urllib.request.Request('http://www.pretend_server.org')
+    >>> try: urllib.request.urlopen(req)
+    >>> except urllib.error.URLError, e:
     >>>    print(e.reason)
     >>>
     (4, 'getaddrinfo failed')
@@ -214,7 +214,7 @@ Every HTTP response from the server contains a numeric "status code". Sometimes
 the status code indicates that the server is unable to fulfil the request. The
 default handlers will handle some of these responses for you (for example, if
 the response is a "redirection" that requests the client fetch the document from
-a different URL, urllib2 will handle that for you). For those it can't handle,
+a different URL, urllib.request will handle that for you). For those it can't handle,
 urlopen will raise an ``HTTPError``. Typical errors include '404' (page not
 found), '403' (request forbidden), and '401' (authentication required).
 
@@ -305,12 +305,12 @@ dictionary is reproduced here for convenience ::
 When an error is raised the server responds by returning an HTTP error code
 *and* an error page. You can use the ``HTTPError`` instance as a response on the
 page returned. This means that as well as the code attribute, it also has read,
-geturl, and info, methods. ::
+geturl, and info, methods as returned by the ``urllib.response`` module::
 
-    >>> req = urllib2.Request('http://www.python.org/fish.html')
+    >>> req = urllib.request.Request('http://www.python.org/fish.html')
     >>> try: 
-    >>>     urllib2.urlopen(req)
-    >>> except URLError, e:
+    >>>     urllib.request.urlopen(req)
+    >>> except urllib.error.URLError, e:
     >>>     print(e.code)
     >>>     print(e.read())
     >>> 
@@ -334,7 +334,8 @@ Number 1
 ::
 
 
-    from urllib2 import Request, urlopen, URLError, HTTPError
+    from urllib.request import Request, urlopen
+    from urllib.error import URLError, HTTPError
     req = Request(someurl)
     try:
         response = urlopen(req)
@@ -358,7 +359,8 @@ Number 2
 
 ::
 
-    from urllib2 import Request, urlopen, URLError
+    from urllib.request import Request, urlopen
+    from urllib.error import  URLError
     req = Request(someurl)
     try:
         response = urlopen(req)
@@ -377,7 +379,8 @@ info and geturl
 ===============
 
 The response returned by urlopen (or the ``HTTPError`` instance) has two useful
-methods ``info`` and ``geturl``.
+methods ``info`` and ``geturl`` and is defined in the module
+``urllib.response``.
 
 **geturl** - this returns the real URL of the page fetched. This is useful
 because ``urlopen`` (or the opener object used) may have followed a
@@ -397,7 +400,7 @@ Openers and Handlers
 ====================
 
 When you fetch a URL you use an opener (an instance of the perhaps
-confusingly-named :class:`urllib2.OpenerDirector`). Normally we have been using
+confusingly-named :class:`urllib.request.OpenerDirector`). Normally we have been using
 the default opener - via ``urlopen`` - but you can create custom
 openers. Openers use handlers. All the "heavy lifting" is done by the
 handlers. Each handler knows how to open URLs for a particular URL scheme (http,
@@ -466,24 +469,24 @@ The top-level URL is the first URL that requires authentication. URLs "deeper"
 than the URL you pass to .add_password() will also match. ::
 
     # create a password manager
-    password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()                        
+    password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()                        
 
     # Add the username and password.
     # If we knew the realm, we could use it instead of ``None``.
     top_level_url = "http://example.com/foo/"
     password_mgr.add_password(None, top_level_url, username, password)
 
-    handler = urllib2.HTTPBasicAuthHandler(password_mgr)                            
+    handler = urllib.request.HTTPBasicAuthHandler(password_mgr)                            
 
     # create "opener" (OpenerDirector instance)
-    opener = urllib2.build_opener(handler)                       
+    opener = urllib.request.build_opener(handler)                       
 
     # use the opener to fetch a URL
     opener.open(a_url)      
 
     # Install the opener.
-    # Now all calls to urllib2.urlopen use our opener.
-    urllib2.install_opener(opener)                               
+    # Now all calls to urllib.request.urlopen use our opener.
+    urllib.request.install_opener(opener)                               
 
 .. note::
 
@@ -505,46 +508,46 @@ not correct.
 Proxies
 =======
 
-**urllib2** will auto-detect your proxy settings and use those. This is through
+**urllib.request** will auto-detect your proxy settings and use those. This is through
 the ``ProxyHandler`` which is part of the normal handler chain. Normally that's
 a good thing, but there are occasions when it may not be helpful [#]_. One way
 to do this is to setup our own ``ProxyHandler``, with no proxies defined. This
 is done using similar steps to setting up a `Basic Authentication`_ handler : ::
 
-    >>> proxy_support = urllib2.ProxyHandler({})
-    >>> opener = urllib2.build_opener(proxy_support)
-    >>> urllib2.install_opener(opener)
+    >>> proxy_support = urllib.request.ProxyHandler({})
+    >>> opener = urllib.request.build_opener(proxy_support)
+    >>> urllib.request.install_opener(opener)
 
 .. note::
 
-    Currently ``urllib2`` *does not* support fetching of ``https`` locations
-    through a proxy.  However, this can be enabled by extending urllib2 as
+    Currently ``urllib.request`` *does not* support fetching of ``https`` locations
+    through a proxy.  However, this can be enabled by extending urllib.request as
     shown in the recipe [#]_.
 
 
 Sockets and Layers
 ==================
 
-The Python support for fetching resources from the web is layered. urllib2 uses
-the http.client library, which in turn uses the socket library.
+The Python support for fetching resources from the web is layered.
+urllib.request uses the http.client library, which in turn uses the socket library.
 
 As of Python 2.3 you can specify how long a socket should wait for a response
 before timing out. This can be useful in applications which have to fetch web
 pages. By default the socket module has *no timeout* and can hang. Currently,
-the socket timeout is not exposed at the http.client or urllib2 levels.
+the socket timeout is not exposed at the http.client or urllib.request levels.
 However, you can set the default timeout globally for all sockets using ::
 
     import socket
-    import urllib2
+    import urllib.request
 
     # timeout in seconds
     timeout = 10
     socket.setdefaulttimeout(timeout) 
 
-    # this call to urllib2.urlopen now uses the default timeout
+    # this call to urllib.request.urlopen now uses the default timeout
     # we have set in the socket module
-    req = urllib2.Request('http://www.voidspace.org.uk')
-    response = urllib2.urlopen(req)
+    req = urllib.request.Request('http://www.voidspace.org.uk')
+    response = urllib.request.urlopen(req)
 
 
 -------
