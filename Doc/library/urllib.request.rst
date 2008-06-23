@@ -1077,7 +1077,7 @@ Adding HTTP headers:
 
 Use the *headers* argument to the :class:`Request` constructor, or::
 
-   import urllib
+   import urllib.request
    req = urllib.request.Request('http://www.example.com/')
    req.add_header('Referer', 'http://www.python.org/')
    r = urllib.request.urlopen(req)
@@ -1085,7 +1085,7 @@ Use the *headers* argument to the :class:`Request` constructor, or::
 :class:`OpenerDirector` automatically adds a :mailheader:`User-Agent` header to
 every :class:`Request`.  To change this::
 
-   import urllib
+   import urllib.request
    opener = urllib.request.build_opener()
    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
    opener.open('http://www.example.com/')

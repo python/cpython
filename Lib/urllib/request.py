@@ -47,24 +47,25 @@ _call_chain conventions
 
 Example usage:
 
-import urllib2
+import urllib.request
 
 # set up authentication info
-authinfo = urllib2.HTTPBasicAuthHandler()
+authinfo = urllib.request.HTTPBasicAuthHandler()
 authinfo.add_password(realm='PDQ Application',
                       uri='https://mahler:8092/site-updates.py',
                       user='klem',
                       passwd='geheim$parole')
 
-proxy_support = urllib2.ProxyHandler({"http" : "http://ahad-haam:3128"})
+proxy_support = urllib.request.ProxyHandler({"http" : "http://ahad-haam:3128"})
 
 # build a new opener that adds authentication and caching FTP handlers
-opener = urllib2.build_opener(proxy_support, authinfo, urllib2.CacheFTPHandler)
+opener = urllib.request.build_opener(proxy_support, authinfo,
+                                     urllib.request.CacheFTPHandler)
 
 # install it
-urllib2.install_opener(opener)
+urllib.request.install_opener(opener)
 
-f = urllib2.urlopen('http://www.python.org/')
+f = urllib.request.urlopen('http://www.python.org/')
 """
 
 # XXX issues:
@@ -502,7 +503,7 @@ class HTTPRedirectHandler(BaseHandler):
 
         # Strictly (according to RFC 2616), 301 or 302 in response to
         # a POST MUST NOT cause a redirection without confirmation
-        # from the user (of urllib2, in this case).  In practice,
+        # from the user (of urllib.request, in this case).  In practice,
         # essentially all clients do redirect in this case, so we do
         # the same.
         # be conciliant with URIs containing a space
@@ -655,7 +656,7 @@ class ProxyHandler(BaseHandler):
         if proxy_type is None:
             proxy_type = orig_type
         if user and password:
-            user_pass = '%s:%s' % (unquote(user),
+            user_pass = '%s:%s' % (urllib.parse.unquote(user),
                                    urllib.parse.unquote(password))
             creds = base64.b64encode(user_pass.encode()).decode("ascii")
             req.add_header('Proxy-authorization', 'Basic ' + creds)
@@ -808,7 +809,7 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
     def http_error_407(self, req, fp, code, msg, headers):
         # http_error_auth_reqed requires that there is no userinfo component in
-        # authority.  Assume there isn't one, since urllib2 does not (and
+        # authority.  Assume there isn't one, since urllib.request does not (and
         # should not, RFC 3986 s. 3.2.1) support requests for URLs containing
         # userinfo.
         authority = req.get_host()
@@ -1194,7 +1195,7 @@ class FileHandler(BaseHandler):
                 return urllib.response.addinfourl(open(localfile, 'rb'),
                                                   headers, 'file:'+file)
         except OSError as msg:
-            # urllib2 users shouldn't expect OSErrors coming from urlopen()
+            # users shouldn't expect OSErrors coming from urlopen()
             raise urllib.error.URLError(msg)
         raise urllib.error.URLError('file not on local host')
 

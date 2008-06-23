@@ -1002,11 +1002,11 @@ class HTTPHandler(logging.Handler):
         Send the record to the Web server as an URL-encoded dictionary
         """
         try:
-            import http.client, urllib
+            import http.client, urllib.parse
             host = self.host
             h = http.client.HTTP(host)
             url = self.url
-            data = urllib.urlencode(self.mapLogRecord(record))
+            data = urllib.parse.urlencode(self.mapLogRecord(record))
             if self.method == "GET":
                 if (url.find('?') >= 0):
                     sep = '&'
