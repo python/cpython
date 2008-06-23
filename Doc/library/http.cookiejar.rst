@@ -100,7 +100,7 @@ The following classes are provided:
 
 .. seealso::
 
-   Module :mod:`urllib2`
+   Module :mod:`urllib.request`
       URL opening with automatic cookie handling.
 
    Module :mod:`http.cookies`
@@ -149,11 +149,11 @@ contained :class:`Cookie` objects.
    the :class:`CookieJar`'s :class:`CookiePolicy` instance are true and false
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
-   The *request* object (usually a :class:`urllib2.Request` instance) must support
-   the methods :meth:`get_full_url`, :meth:`get_host`, :meth:`get_type`,
-   :meth:`unverifiable`, :meth:`get_origin_req_host`, :meth:`has_header`,
-   :meth:`get_header`, :meth:`header_items`, and :meth:`add_unredirected_header`,as
-   documented by :mod:`urllib2`.
+   The *request* object (usually a :class:`urllib.request..Request` instance)
+   must support the methods :meth:`get_full_url`, :meth:`get_host`,
+   :meth:`get_type`, :meth:`unverifiable`, :meth:`get_origin_req_host`,
+   :meth:`has_header`, :meth:`get_header`, :meth:`header_items`, and
+   :meth:`add_unredirected_header`, as documented by :mod:`urllib.request`.
 
 
 .. method:: CookieJar.extract_cookies(response, request)
@@ -166,14 +166,15 @@ contained :class:`Cookie` objects.
    as appropriate (subject to the :meth:`CookiePolicy.set_ok` method's approval).
 
    The *response* object (usually the result of a call to
-   :meth:`urllib2.urlopen`, or similar) should support an :meth:`info` method,
-   which returns a :class:`email.message.Message` instance.
+   :meth:`urllib.request.urlopen`, or similar) should support an :meth:`info`
+   method, which returns a :class:`email.message.Message` instance.
 
-   The *request* object (usually a :class:`urllib2.Request` instance) must support
-   the methods :meth:`get_full_url`, :meth:`get_host`, :meth:`unverifiable`, and
-   :meth:`get_origin_req_host`, as documented by :mod:`urllib2`.  The request is
-   used to set default values for cookie-attributes as well as for checking that
-   the cookie is allowed to be set.
+   The *request* object (usually a :class:`urllib.request.Request` instance)
+   must support the methods :meth:`get_full_url`, :meth:`get_host`,
+   :meth:`unverifiable`, and :meth:`get_origin_req_host`, as documented by
+   :mod:`urllib.request`.  The request is used to set default values for
+   cookie-attributes as well as for checking that the cookie is allowed to be
+   set.
 
 
 .. method:: CookieJar.set_policy(policy)
@@ -715,18 +716,18 @@ Examples
 
 The first example shows the most common usage of :mod:`http.cookiejar`::
 
-   import http.cookiejar, urllib2
+   import http.cookiejar, urllib.request
    cj = http.cookiejar.CookieJar()
-   opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+   opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
    r = opener.open("http://example.com/")
 
 This example illustrates how to open a URL using your Netscape, Mozilla, or Lynx
 cookies (assumes Unix/Netscape convention for location of the cookies file)::
 
-   import os, http.cookiejar, urllib2
+   import os, http.cookiejar, urllib.request
    cj = http.cookiejar.MozillaCookieJar()
    cj.load(os.path.join(os.environ["HOME"], ".netscape/cookies.txt"))
-   opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+   opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
    r = opener.open("http://example.com/")
 
 The next example illustrates the use of :class:`DefaultCookiePolicy`. Turn on
@@ -734,12 +735,12 @@ RFC 2965 cookies, be more strict about domains when setting and returning
 Netscape cookies, and block some domains from setting cookies or having them
 returned::
 
-   import urllib2
+   import urllib.request
    from http.cookiejar import CookieJar, DefaultCookiePolicy
    policy = DefaultCookiePolicy(
        rfc2965=True, strict_ns_domain=Policy.DomainStrict,
        blocked_domains=["ads.net", ".ads.net"])
    cj = CookieJar(policy)
-   opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+   opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
    r = opener.open("http://example.com/")
 

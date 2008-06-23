@@ -9,7 +9,8 @@ bootstrap issues (/usr/bin/python is Python 2.3 on OSX 10.4)
 
 Usage: see USAGE variable in the script.
 """
-import platform, os, sys, getopt, textwrap, shutil, urllib2, stat, time, pwd
+import platform, os, sys, getopt, textwrap, shutil, stat, time, pwd
+import urllib.request
 import grp
 
 INCLUDE_TIMESTAMP = 1
@@ -442,7 +443,7 @@ def downloadURL(url, fname):
         if KNOWNSIZES.get(url) == size:
             print("Using existing file for", url)
             return
-    fpIn = urllib2.urlopen(url)
+    fpIn = urllib.request.urlopen(url)
     fpOut = open(fname, 'wb')
     block = fpIn.read(10240)
     try:

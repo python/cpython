@@ -1889,7 +1889,6 @@ random           Random variable generators
 re               Regular Expressions.
 reprlib          Redo repr() but with limits on most sizes.
 rlcompleter      Word completion for GNU readline 2.0.
-robotparser      Parse robots.txt files, useful for web spiders.
 sched            A generally useful event scheduler class.
 shelve           Manage shelves of pickled objects.
 shlex            Lexical analyzer class for simple shell-like syntaxes.
@@ -1920,8 +1919,9 @@ turtle           LogoMation-like turtle graphics
 types            Define names for all type symbols in the std interpreter.
 tzparse          Parse a timezone specification.
 unicodedata      Interface to unicode properties.
-urllib           Open an arbitrary URL.
-urlparse         Parse URLs according to latest draft of standard.
+urllib.parse     Parse URLs according to latest draft of standard.
+urllib.request   Open an arbitrary URL.
+urllib.robotparser  Parse robots.txt files, useful for web spiders.
 user             Hook to allow user-specified customization code to run.
 uu               UUencode/UUdecode.
 unittest         Utilities for implementing unit testing.

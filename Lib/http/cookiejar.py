@@ -1305,7 +1305,7 @@ class CookieJar:
         return attrs
 
     def add_cookie_header(self, request):
-        """Add correct Cookie: header to request (urllib2.Request object).
+        """Add correct Cookie: header to request (urllib.request.Request object).
 
         The Cookie2 header is also added unless policy.hide_cookie2 is true.
 
