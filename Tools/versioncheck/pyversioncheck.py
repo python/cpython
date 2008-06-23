@@ -1,5 +1,5 @@
 """pyversioncheck - Module to help with checking versions"""
-import urllib
+import urllib.request
 import email
 import sys
 
@@ -47,7 +47,7 @@ def _check1version(package, url, version, verbose=0):
     if verbose >= VERBOSE_EACHFILE:
         print('  Checking %s'%url)
     try:
-        fp = urllib.urlopen(url)
+        fp = urllib.request.urlopen(url)
     except IOError as arg:
         if verbose >= VERBOSE_EACHFILE:
             print('    Cannot open:', arg)

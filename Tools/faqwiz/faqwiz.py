@@ -138,8 +138,8 @@ def load_my_cookie():
         value = cookies[COOKIE_NAME]
     except KeyError:
         return {}
-    import urllib
-    value = urllib.unquote(value)
+    import urllib.parse
+    value = urllib.parse.unquote(value)
     words = value.split('/')
     while len(words) < 3:
         words.append('')
@@ -153,8 +153,8 @@ def load_my_cookie():
 def send_my_cookie(ui):
     name = COOKIE_NAME
     value = "%s/%s/%s" % (ui.author, ui.email, ui.password)
-    import urllib
-    value = urllib.quote(value)
+    import urllib.parse
+    value = urllib.parse.quote(value)
     then = now + COOKIE_LIFETIME
     gmt = time.gmtime(then)
     path = os.environ.get('SCRIPT_NAME', '/cgi-bin/')
