@@ -7,9 +7,9 @@
 .. sectionauthor:: Moshe Zadka <moshez@users.sourceforge.net>
 
 
-The :mod:`urllib.request` module defines functions and classes which help in opening
-URLs (mostly HTTP) in a complex world --- basic and digest authentication,
-redirections, cookies and more.
+The :mod:`urllib.request` module defines functions and classes which help in
+opening URLs (mostly HTTP) in a complex world --- basic and digest
+authentication, redirections, cookies and more.
 
 The :mod:`urllib.request` module defines the following functions:
 
@@ -180,7 +180,7 @@ The following classes are provided:
    the ``User-Agent`` header, which is used by a browser to identify itself --
    some HTTP servers only allow requests coming from common browsers as opposed
    to scripts.  For example, Mozilla Firefox may identify itself as ``"Mozilla/5.0
-   (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while :mod:`urllib2`'s
+   (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while :mod:`urllib`'s
    default user agent string is ``"Python-urllib/2.6"`` (on Python 2.6).
 
    The final two arguments are only of interest for correct handling of third-party
@@ -1005,10 +1005,11 @@ HTTPErrorProcessor Objects
 
    For non-200 error codes, this simply passes the job on to the
    :meth:`protocol_error_code` handler methods, via :meth:`OpenerDirector.error`.
-   Eventually, :class:`urllib2.HTTPDefaultErrorHandler` will raise an
+   Eventually, :class:`HTTPDefaultErrorHandler` will raise an
    :exc:`HTTPError` if no other handler handles the error.
 
-.. _urllib2-examples:
+
+.. _urllib-request-examples:
 
 Examples
 --------
@@ -1180,15 +1181,18 @@ The following example uses no proxies at all, overriding environment settings::
   using the :mod:`ftplib` module, subclassing :class:`FancyURLOpener`, or changing
   *_urlopener* to meet your needs.
 
+
+
 :mod:`urllib.response` --- Response classes used by urllib.
 ===========================================================
+
 .. module:: urllib.response
    :synopsis: Response classes used by urllib.
 
 The :mod:`urllib.response` module defines functions and classes which define a
-minimal file like interface, including read() and readline(). The typical
-response object is an addinfourl instance, which defines and info() method and
-that returns headers and a geturl() method that returns the url. 
+minimal file like interface, including ``read()`` and ``readline()``. The
+typical response object is an addinfourl instance, which defines and ``info()``
+method and that returns headers and a ``geturl()`` method that returns the url.
 Functions defined by this module are used internally by the
 :mod:`urllib.request` module.
 

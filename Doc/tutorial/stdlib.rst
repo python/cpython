@@ -150,8 +150,8 @@ There are a number of modules for accessing the internet and processing internet
 protocols. Two of the simplest are :mod:`urllib.request` for retrieving data
 from urls and :mod:`smtplib` for sending mail::
 
-   >>> import urllib.request
-   >>> for line in urllib.request.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl'):
+   >>> from urllib.request import urlopen
+   >>> for line in urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl'):
    ...     if 'EST' in line or 'EDT' in line:  # look for Eastern Time
    ...         print(line)
 

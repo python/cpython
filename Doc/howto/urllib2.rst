@@ -1,12 +1,12 @@
-*****************************************************
-  HOWTO Fetch Internet Resources Using urllib package
-*****************************************************
+***********************************************************
+  HOWTO Fetch Internet Resources Using The urllib Package
+***********************************************************
 
 :Author: `Michael Foord <http://www.voidspace.org.uk/python/index.shtml>`_
 
 .. note::
 
-    There is an French translation of an earlier revision of this
+    There is a French translation of an earlier revision of this
     HOWTO, available at `urllib2 - Le Manuel manquant
     <http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
 
@@ -18,7 +18,7 @@ Introduction
 .. sidebar:: Related Articles
 
     You may also find useful the following article on fetching web resources
-    with Python :
+    with Python:
     
     * `Basic Authentication <http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
     
@@ -94,8 +94,8 @@ your browser does when you submit a HTML form that you filled in on the web. Not
 all POSTs have to come from forms: you can use a POST to transmit arbitrary data
 to your own application. In the common case of HTML forms, the data needs to be
 encoded in a standard way, and then passed to the Request object as the ``data``
-argument. The encoding is done using a function from the ``urllib.parse`` library
-*not* from ``urllib.request``. ::
+argument. The encoding is done using a function from the :mod:`urllib.parse`
+library. ::
 
     import urllib.parse
     import urllib.request 
@@ -115,7 +115,7 @@ forms - see `HTML Specification, Form Submission
 <http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13>`_ for more
 details).
 
-If you do not pass the ``data`` argument, urllib.request uses a **GET** request. One
+If you do not pass the ``data`` argument, urllib uses a **GET** request. One
 way in which GET and POST requests differ is that POST requests often have
 "side-effects": they change the state of the system in some way (for example by
 placing an order with the website for a hundredweight of tinned spam to be
@@ -182,12 +182,14 @@ which comes after we have a look at what happens when things go wrong.
 Handling Exceptions
 ===================
 
-*urllib.error* raises ``URLError`` when it cannot handle a response (though as usual
+*urlopen* raises ``URLError`` when it cannot handle a response (though as usual
 with Python APIs, builtin exceptions such as ValueError, TypeError etc. may also
 be raised).
 
 ``HTTPError`` is the subclass of ``URLError`` raised in the specific case of
 HTTP URLs.
+
+The exception classes are exported from the :mod:`urllib.error` module.
 
 URLError
 --------
@@ -214,7 +216,7 @@ Every HTTP response from the server contains a numeric "status code". Sometimes
 the status code indicates that the server is unable to fulfil the request. The
 default handlers will handle some of these responses for you (for example, if
 the response is a "redirection" that requests the client fetch the document from
-a different URL, urllib.request will handle that for you). For those it can't handle,
+a different URL, urllib will handle that for you). For those it can't handle,
 urlopen will raise an ``HTTPError``. Typical errors include '404' (page not
 found), '403' (request forbidden), and '401' (authentication required).
 
@@ -380,7 +382,7 @@ info and geturl
 
 The response returned by urlopen (or the ``HTTPError`` instance) has two useful
 methods ``info`` and ``geturl`` and is defined in the module
-``urllib.response``.
+:mod:`urllib.response`.
 
 **geturl** - this returns the real URL of the page fetched. This is useful
 because ``urlopen`` (or the opener object used) may have followed a
@@ -388,7 +390,7 @@ redirect. The URL of the page fetched may not be the same as the URL requested.
 
 **info** - this returns a dictionary-like object that describes the page
 fetched, particularly the headers sent by the server. It is currently an
-``http.client.HTTPMessage`` instance.
+:class:`http.client.HTTPMessage` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so on. See the
 `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_
@@ -508,7 +510,7 @@ not correct.
 Proxies
 =======
 
-**urllib.request** will auto-detect your proxy settings and use those. This is through
+**urllib** will auto-detect your proxy settings and use those. This is through
 the ``ProxyHandler`` which is part of the normal handler chain. Normally that's
 a good thing, but there are occasions when it may not be helpful [#]_. One way
 to do this is to setup our own ``ProxyHandler``, with no proxies defined. This
@@ -528,8 +530,8 @@ is done using similar steps to setting up a `Basic Authentication`_ handler : ::
 Sockets and Layers
 ==================
 
-The Python support for fetching resources from the web is layered.
-urllib.request uses the http.client library, which in turn uses the socket library.
+The Python support for fetching resources from the web is layered.  urllib uses
+the :mod:`http.client` library, which in turn uses the socket library.
 
 As of Python 2.3 you can specify how long a socket should wait for a response
 before timing out. This can be useful in applications which have to fetch web
@@ -573,9 +575,9 @@ This document was reviewed and revised by John Lee.
        `Quick Reference to HTTP Headers`_.
 .. [#] In my case I have to use a proxy to access the internet at work. If you
        attempt to fetch *localhost* URLs through this proxy it blocks them. IE
-       is set to use the proxy, which urllib2 picks up on. In order to test
-       scripts with a localhost server, I have to prevent urllib2 from using
+       is set to use the proxy, which urllib picks up on. In order to test
+       scripts with a localhost server, I have to prevent urllib from using
        the proxy.
-.. [#] urllib2 opener for SSL proxy (CONNECT method): `ASPN Cookbook Recipe 
+.. [#] urllib opener for SSL proxy (CONNECT method): `ASPN Cookbook Recipe 
        <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/456195>`_.
  

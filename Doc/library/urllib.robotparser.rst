@@ -1,9 +1,8 @@
-
 :mod:`urllib.robotparser` ---  Parser for robots.txt
 ====================================================
 
 .. module:: urllib.robotparser
-   :synopsis: Loads a robots.txt file and answers questions about
+   :synopsis: Load a robots.txt file and answer questions about
               fetchability of other URLs.
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
@@ -25,21 +24,17 @@ structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
    This class provides a set of methods to read, parse and answer questions
    about a single :file:`robots.txt` file.
 
-
    .. method:: set_url(url)
 
       Sets the URL referring to a :file:`robots.txt` file.
-
 
    .. method:: read()
 
       Reads the :file:`robots.txt` URL and feeds it to the parser.
 
-
    .. method:: parse(lines)
 
       Parses the lines argument.
-
 
    .. method:: can_fetch(useragent, url)
 
@@ -47,20 +42,19 @@ structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
       according to the rules contained in the parsed :file:`robots.txt`
       file.
 
-
    .. method:: mtime()
 
       Returns the time the ``robots.txt`` file was last fetched.  This is
       useful for long-running web spiders that need to check for new
       ``robots.txt`` files periodically.
 
-
    .. method:: modified()
 
       Sets the time the ``robots.txt`` file was last fetched to the current
       time.
 
-The following example demonstrates basic use of the RobotFileParser class. ::
+
+The following example demonstrates basic use of the RobotFileParser class.
 
    >>> import urllib.robotparser
    >>> rp = urllib.robotparser.RobotFileParser()

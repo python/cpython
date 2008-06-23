@@ -20,12 +20,11 @@ to an absolute URL given a "base URL."
 The module has been designed to match the Internet RFC on Relative Uniform
 Resource Locators (and discovered a bug in an earlier draft!). It supports the
 following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
-``https``, ``imap``, ``mailto``, ``mms``, ``news``,  ``nntp``, ``prospero``,
-``rsync``, ``rtsp``, ``rtspu``,  ``sftp``, ``shttp``, ``sip``, ``sips``,
-``snews``, ``svn``,  ``svn+ssh``, ``telnet``, ``wais``.
+``https``, ``imap``, ``mailto``, ``mms``, ``news``, ``nntp``, ``prospero``,
+``rsync``, ``rtsp``, ``rtspu``, ``sftp``, ``shttp``, ``sip``, ``sips``,
+``snews``, ``svn``, ``svn+ssh``, ``telnet``, ``wais``.
 
 The :mod:`urllib.parse` module defines the following functions:
-
 
 .. function:: urlparse(urlstring[, default_scheme[, allow_fragments]])
 
@@ -92,11 +91,11 @@ The :mod:`urllib.parse` module defines the following functions:
 
 .. function:: urlunparse(parts)
 
-   Construct a URL from a tuple as returned by ``urlparse()``. The *parts* argument
-   can be any six-item iterable. This may result in a slightly different, but
-   equivalent URL, if the URL that was parsed originally had unnecessary delimiters
-   (for example, a ? with an empty query; the RFC states that these are
-   equivalent).
+   Construct a URL from a tuple as returned by ``urlparse()``. The *parts*
+   argument can be any six-item iterable. This may result in a slightly
+   different, but equivalent URL, if the URL that was parsed originally had
+   unnecessary delimiters (for example, a ``?`` with an empty query; the RFC
+   states that these are equivalent).
 
 
 .. function:: urlsplit(urlstring[, default_scheme[, allow_fragments]])
@@ -140,19 +139,19 @@ The :mod:`urllib.parse` module defines the following functions:
 
 .. function:: urlunsplit(parts)
 
-   Combine the elements of a tuple as returned by :func:`urlsplit` into a complete
-   URL as a string. The *parts* argument can be any five-item iterable. This may
-   result in a slightly different, but equivalent URL, if the URL that was parsed
-   originally had unnecessary delimiters (for example, a ? with an empty query; the
-   RFC states that these are equivalent).
+   Combine the elements of a tuple as returned by :func:`urlsplit` into a
+   complete URL as a string. The *parts* argument can be any five-item
+   iterable. This may result in a slightly different, but equivalent URL, if the
+   URL that was parsed originally had unnecessary delimiters (for example, a ?
+   with an empty query; the RFC states that these are equivalent).
 
 
 .. function:: urljoin(base, url[, allow_fragments])
 
    Construct a full ("absolute") URL by combining a "base URL" (*base*) with
    another URL (*url*).  Informally, this uses components of the base URL, in
-   particular the addressing scheme, the network location and (part of) the path,
-   to provide missing components in the relative URL.  For example:
+   particular the addressing scheme, the network location and (part of) the
+   path, to provide missing components in the relative URL.  For example:
 
       >>> from urllib.parse import urljoin
       >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
@@ -178,10 +177,10 @@ The :mod:`urllib.parse` module defines the following functions:
 
 .. function:: urldefrag(url)
 
-   If *url* contains a fragment identifier, returns a modified version of *url*
-   with no fragment identifier, and the fragment identifier as a separate string.
-   If there is no fragment identifier in *url*, returns *url* unmodified and an
-   empty string.
+   If *url* contains a fragment identifier, return a modified version of *url*
+   with no fragment identifier, and the fragment identifier as a separate
+   string.  If there is no fragment identifier in *url*, return *url* unmodified
+   and an empty string.
 
 .. function:: quote(string[, safe])
 
@@ -195,9 +194,10 @@ The :mod:`urllib.parse` module defines the following functions:
 
 .. function:: quote_plus(string[, safe])
 
-   Like :func:`quote`, but also replaces spaces by plus signs, as required for
-   quoting HTML form values.  Plus signs in the original string are escaped unless
-   they are included in *safe*.  It also does not have *safe* default to ``'/'``.
+   Like :func:`quote`, but also replace spaces by plus signs, as required for
+   quoting HTML form values.  Plus signs in the original string are escaped
+   unless they are included in *safe*.  It also does not have *safe* default to
+   ``'/'``.
 
 
 .. function:: unquote(string)
@@ -209,7 +209,7 @@ The :mod:`urllib.parse` module defines the following functions:
 
 .. function:: unquote_plus(string)
 
-   Like :func:`unquote`, but also replaces plus signs by spaces, as required for
+   Like :func:`unquote`, but also replace plus signs by spaces, as required for
    unquoting HTML form values.
 
 
@@ -254,7 +254,6 @@ The result objects from the :func:`urlparse` and :func:`urlsplit` functions are
 subclasses of the :class:`tuple` type.  These subclasses add the attributes
 described in those functions, as well as provide an additional method:
 
-
 .. method:: ParseResult.geturl()
 
    Return the re-combined version of the original URL as a string. This may differ
@@ -279,13 +278,12 @@ described in those functions, as well as provide an additional method:
 
 The following classes provide the implementations of the parse results::
 
-
 .. class:: BaseResult
 
-   Base class for the concrete result classes.  This provides most of the attribute
-   definitions.  It does not provide a :meth:`geturl` method.  It is derived from
-   :class:`tuple`, but does not override the :meth:`__init__` or :meth:`__new__`
-   methods.
+   Base class for the concrete result classes.  This provides most of the
+   attribute definitions.  It does not provide a :meth:`geturl` method.  It is
+   derived from :class:`tuple`, but does not override the :meth:`__init__` or
+   :meth:`__new__` methods.
 
 
 .. class:: ParseResult(scheme, netloc, path, params, query, fragment)
