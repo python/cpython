@@ -113,13 +113,13 @@ import io
 import getopt
 import pickle
 
-import urllib
-import urlparse
+import urllib.request
+import urllib.parse as urlparse
 import sgmllib
 import cgi
 
 import mimetypes
-import robotparser
+from urllib import robotparser
 
 # Extract real version number if necessary
 if __version__[0] == '$':
@@ -487,7 +487,7 @@ class Checker:
         if url in self.name_table:
             return self.name_table[url]
 
-        scheme, path = urllib.splittype(url)
+        scheme, path = urllib.request.splittype(url)
         if scheme in ('mailto', 'news', 'javascript', 'telnet'):
             self.note(1, " Not checking %s URL" % scheme)
             return None
@@ -733,13 +733,13 @@ class MyStringIO(io.StringIO):
         return self.__url
 
 
-class MyURLopener(urllib.FancyURLopener):
+class MyURLopener(urllib.request.FancyURLopener):
 
-    http_error_default = urllib.URLopener.http_error_default
+    http_error_default = urllib.request.URLopener.http_error_default
 
     def __init__(*args):
         self = args[0]
-        urllib.FancyURLopener.__init__(*args)
+        urllib.request.FancyURLopener.__init__(*args)
         self.addheaders = [
             ('User-agent', 'Python-webchecker/%s' % __version__),
             ]
@@ -769,7 +769,7 @@ class MyURLopener(urllib.FancyURLopener):
                 s.write('<A HREF="%s">%s</A>\n' % (q, q))
             s.seek(0)
             return s
-        return urllib.FancyURLopener.open_file(self, url)
+        return urllib.request.FancyURLopener.open_file(self, url)
 
 
 class MyHTMLParser(sgmllib.SGMLParser):

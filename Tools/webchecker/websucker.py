@@ -6,8 +6,8 @@ __version__ = "$Revision$"
 
 import os
 import sys
-import urllib
 import getopt
+import urllib.parse
 
 import webchecker
 
@@ -87,11 +87,11 @@ class Sucker(webchecker.Checker):
             self.message("didn't save %s: %s", path, str(msg))
 
     def savefilename(self, url):
-        type, rest = urllib.splittype(url)
-        host, path = urllib.splithost(rest)
+        type, rest = urllib.parse.splittype(url)
+        host, path = urllib.parse.splithost(rest)
         path = path.lstrip("/")
-        user, host = urllib.splituser(host)
-        host, port = urllib.splitnport(host)
+        user, host = urllib.parse.splituser(host)
+        host, port = urllib.parse.splitnport(host)
         host = host.lower()
         if not path or path[-1] == "/":
             path = path + "index.html"
