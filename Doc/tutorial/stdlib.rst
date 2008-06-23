@@ -147,11 +147,11 @@ Internet Access
 ===============
 
 There are a number of modules for accessing the internet and processing internet
-protocols. Two of the simplest are :mod:`urllib2` for retrieving data from urls
-and :mod:`smtplib` for sending mail::
+protocols. Two of the simplest are :mod:`urllib.request` for retrieving data
+from urls and :mod:`smtplib` for sending mail::
 
-   >>> import urllib2
-   >>> for line in urllib2.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl'):
+   >>> import urllib.request
+   >>> for line in urllib.request.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl'):
    ...     if 'EST' in line or 'EDT' in line:  # look for Eastern Time
    ...         print(line)
 

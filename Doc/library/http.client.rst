@@ -9,10 +9,11 @@
    pair: HTTP; protocol
    single: HTTP; http.client (standard module)
 
-.. index:: module: urllib
+.. index:: module: urllib.request
 
 This module defines classes which implement the client side of the HTTP and
-HTTPS protocols.  It is normally not used directly --- the module :mod:`urllib`
+HTTPS protocols.  It is normally not used directly --- the module
+:mod:`urllib.request`
 uses it to handle URLs that use HTTP and HTTPS.
 
 .. note::
@@ -484,8 +485,8 @@ Here is an example session that uses the ``GET`` method::
 
 Here is an example session that shows how to ``POST`` requests::
 
-   >>> import http.client, urllib
-   >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+   >>> import http.client, urllib.parse
+   >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> headers = {"Content-type": "application/x-www-form-urlencoded",
    ...            "Accept": "text/plain"}
    >>> conn = http.client.HTTPConnection("musi-cal.mojam.com:80")

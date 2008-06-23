@@ -1,7 +1,7 @@
-:mod:`urlparse` --- Parse URLs into components
-==============================================
+:mod:`urllib.parse` --- Parse URLs into components
+==================================================
 
-.. module:: urlparse
+.. module:: urllib.parse
    :synopsis: Parse URLs into or assemble them from components.
 
 
@@ -24,7 +24,7 @@ following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
 ``rsync``, ``rtsp``, ``rtspu``,  ``sftp``, ``shttp``, ``sip``, ``sips``,
 ``snews``, ``svn``,  ``svn+ssh``, ``telnet``, ``wais``.
 
-The :mod:`urlparse` module defines the following functions:
+The :mod:`urllib.parse` module defines the following functions:
 
 
 .. function:: urlparse(urlstring[, default_scheme[, allow_fragments]])
@@ -37,7 +37,7 @@ The :mod:`urlparse` module defines the following functions:
    result, except for a leading slash in the *path* component, which is retained if
    present.  For example:
 
-      >>> from urlparse import urlparse
+      >>> from urllib.parse import urlparse
       >>> o = urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
       >>> o   # doctest: +NORMALIZE_WHITESPACE
       ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
@@ -154,7 +154,7 @@ The :mod:`urlparse` module defines the following functions:
    particular the addressing scheme, the network location and (part of) the path,
    to provide missing components in the relative URL.  For example:
 
-      >>> from urlparse import urljoin
+      >>> from urllib.parse import urljoin
       >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
       'http://www.cwi.nl/%7Eguido/FAQ.html'
 
@@ -182,6 +182,52 @@ The :mod:`urlparse` module defines the following functions:
    with no fragment identifier, and the fragment identifier as a separate string.
    If there is no fragment identifier in *url*, returns *url* unmodified and an
    empty string.
+
+.. function:: quote(string[, safe])
+
+   Replace special characters in *string* using the ``%xx`` escape. Letters,
+   digits, and the characters ``'_.-'`` are never quoted. The optional *safe*
+   parameter specifies additional characters that should not be quoted --- its
+   default value is ``'/'``.
+
+   Example: ``quote('/~connolly/')`` yields ``'/%7econnolly/'``.
+
+
+.. function:: quote_plus(string[, safe])
+
+   Like :func:`quote`, but also replaces spaces by plus signs, as required for
+   quoting HTML form values.  Plus signs in the original string are escaped unless
+   they are included in *safe*.  It also does not have *safe* default to ``'/'``.
+
+
+.. function:: unquote(string)
+
+   Replace ``%xx`` escapes by their single-character equivalent.
+
+   Example: ``unquote('/%7Econnolly/')`` yields ``'/~connolly/'``.
+
+
+.. function:: unquote_plus(string)
+
+   Like :func:`unquote`, but also replaces plus signs by spaces, as required for
+   unquoting HTML form values.
+
+
+.. function:: urlencode(query[, doseq])
+
+   Convert a mapping object or a sequence of two-element tuples  to a "url-encoded"
+   string, suitable to pass to :func:`urlopen` above as the optional *data*
+   argument.  This is useful to pass a dictionary of form fields to a ``POST``
+   request.  The resulting string is a series of ``key=value`` pairs separated by
+   ``'&'`` characters, where both *key* and *value* are quoted using
+   :func:`quote_plus` above.  If the optional parameter *doseq* is present and
+   evaluates to true, individual ``key=value`` pairs are generated for each element
+   of the sequence. When a sequence of two-element tuples is used as the *query*
+   argument, the first element of each tuple is a key and the second is a value.
+   The order of parameters in the encoded string will match the order of parameter
+   tuples in the sequence. The :mod:`cgi` module provides the functions
+   :func:`parse_qs` and :func:`parse_qsl` which are used to parse query strings
+   into Python data structures.
 
 
 .. seealso::
@@ -219,14 +265,14 @@ described in those functions, as well as provide an additional method:
    The result of this method is a fixpoint if passed back through the original
    parsing function:
 
-      >>> import urlparse
+      >>> import urllib.parse
       >>> url = 'HTTP://www.Python.org/doc/#'
 
-      >>> r1 = urlparse.urlsplit(url)
+      >>> r1 = urllib.parse.urlsplit(url)
       >>> r1.geturl()
       'http://www.Python.org/doc/'
 
-      >>> r2 = urlparse.urlsplit(r1.geturl())
+      >>> r2 = urllib.parse.urlsplit(r1.geturl())
       >>> r2.geturl()
       'http://www.Python.org/doc/'
 

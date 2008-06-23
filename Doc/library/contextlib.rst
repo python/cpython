@@ -98,9 +98,9 @@ Functions provided:
    And lets you write code like this::
 
       from contextlib import closing
-      import urllib
+      import urllib.request
 
-      with closing(urllib.urlopen('http://www.python.org')) as page:
+      with closing(urllib.request.urlopen('http://www.python.org')) as page:
           for line in page:
               print(line)
 
