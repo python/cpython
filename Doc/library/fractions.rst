@@ -65,14 +65,12 @@ Fraction number class.
 
    .. method:: __floor__()
 
-      Returns the greatest :class:`int` ``<= self``. Will be accessible through
-      :func:`math.floor` in Py3k.
+      Returns the greatest :class:`int` ``<= self``.
 
 
    .. method:: __ceil__()
 
-      Returns the least :class:`int` ``>= self``. Will be accessible through
-      :func:`math.ceil` in Py3k.
+      Returns the least :class:`int` ``>= self``.
 
 
    .. method:: __round__()
@@ -81,8 +79,7 @@ Fraction number class.
       The first version returns the nearest :class:`int` to ``self``, rounding
       half to even. The second version rounds ``self`` to the nearest multiple
       of ``Fraction(1, 10**ndigits)`` (logically, if ``ndigits`` is negative),
-      again rounding half toward even. Will be accessible through :func:`round`
-      in Py3k.
+      again rounding half toward even.
 
 
 .. seealso::
