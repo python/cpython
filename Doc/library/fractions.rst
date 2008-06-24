@@ -21,8 +21,8 @@ Rational number class.
    ``Fraction`` representing ``numerator/denominator``. If
    *denominator* is :const:`0`, raises a :exc:`ZeroDivisionError`. The
    second version requires that *other_fraction* is an instance of
-   :class:`numbers.Fraction` and returns an instance of
-   :class:`Rational` with the same value. The third version expects a
+   :class:`numbers.Rational` and returns an instance of
+   :class:`Fraction` with the same value. The third version expects a
    string of the form ``[-+]?[0-9]+(/[0-9]+)?``, optionally surrounded
    by spaces.
 
@@ -40,7 +40,7 @@ Rational number class.
    .. method:: from_decimal(dec)
 
       This classmethod constructs a :class:`Fraction` representing the exact
-      value of *dec*, which must be a :class:`decimal.Decimal`.
+      value of *dec*, which must be a :class:`decimal.Decimal` instance.
 
 
    .. method:: limit_denominator(max_denominator=1000000)
@@ -64,24 +64,28 @@ Rational number class.
 
    .. method:: __floor__()
 
-      Returns the greatest :class:`int` ``<= self``. Will be accessible through
-      :func:`math.floor` in Py3k.
+      Returns the greatest :class:`int` ``<= self``.  This method can
+      also be accessed through the :func:`math.floor` function:
+
+        >>> from math import floor
+        >>> floor(Fraction(355, 113))
+        3
 
 
    .. method:: __ceil__()
 
-      Returns the least :class:`int` ``>= self``. Will be accessible through
-      :func:`math.ceil` in Py3k.
+      Returns the least :class:`int` ``>= self``.  This method can
+      also be accessed through the :func:`math.ceil` function.
 
 
    .. method:: __round__()
                __round__(ndigits)
 
-      The first version returns the nearest :class:`int` to ``self``, rounding
-      half to even. The second version rounds ``self`` to the nearest multiple
-      of ``Fraction(1, 10**ndigits)`` (logically, if ``ndigits`` is negative),
-      again rounding half toward even. Will be accessible through :func:`round`
-      in Py3k.
+      The first version returns the nearest :class:`int` to ``self``,
+      rounding half to even. The second version rounds ``self`` to the
+      nearest multiple of ``Fraction(1, 10**ndigits)`` (logically, if
+      ``ndigits`` is negative), again rounding half toward even.  This
+      method can also be accessed through the :func:`round` function.
 
 
 .. seealso::
