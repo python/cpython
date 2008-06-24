@@ -1458,8 +1458,8 @@ PyAPI_FUNC(PyObject *) _PyUnicode_XStrip(
    see Objects/stringlib/localeutil.h */
 
 PyAPI_FUNC(int) _PyUnicode_InsertThousandsGrouping(Py_UNICODE *buffer,
-						  Py_ssize_t len,
-						  Py_UNICODE *plast,
+						  Py_ssize_t n_buffer,
+						  Py_ssize_t n_digits,
 						  Py_ssize_t buf_size,
 						  Py_ssize_t *count,
 						  int append_zero_char);
