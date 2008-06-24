@@ -563,8 +563,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     if (format->type == 'n')
 	    /* Compute how many additional chars we need to allocate
 	       to hold the thousands grouping. */
-	    STRINGLIB_GROUPING(pnumeric_chars, n_digits,
-			       pnumeric_chars+n_digits,
+	    STRINGLIB_GROUPING(NULL, n_digits, n_digits,
 			       0, &n_grouping_chars, 0);
 
     /* Allocate a new string to hold the result */
@@ -592,8 +591,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 	    /* We know this can't fail, since we've already
 	       reserved enough space. */
 	    STRINGLIB_CHAR *pstart = p + n_leading_chars;
-	    int r = STRINGLIB_GROUPING(pstart, n_digits,
-				       pstart + n_digits,
+	    int r = STRINGLIB_GROUPING(pstart, n_digits, n_digits,
 				       spec.n_total+n_grouping_chars-n_leading_chars,
 				       NULL, 0);
 	    assert(r);
