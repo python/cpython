@@ -1113,36 +1113,6 @@ PyDoc_STRVAR(float_as_integer_ratio_doc,
 ">>> (-.25).as_integer_ratio()\n"
 "(-1, 4)");
 
-PyObject *
-_float_to_base(PyObject *v, int base)
-{
-	PyObject *mant, *conv, *result;
-	double x, fr;
-	int i, exp;
-
-	if (!PyFloat_Check(v)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	CONVERT_TO_DOUBLE(v, x);
-	if (!Py_IS_FINITE(x))
-		return PyObject_Repr(v);
-	fr = frexp(x, &exp);
-	for (i=0; i<300 && fr != floor(fr) ; i++) {
-		fr *= 2.0;
-		exp--;
-	}
-	mant = PyLong_FromDouble(floor(fr));
-	if (mant == NULL)
-		return NULL;
-	conv = PyNumber_ToBase(mant, base);
-	Py_DECREF(mant);
-	if (conv == NULL)
-		return NULL;
-	result = PyUnicode_FromFormat("%U * 2.0 ** %d", conv, exp);
-	Py_DECREF(conv);
-	return result;
-}
 
 static PyObject *
 float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);

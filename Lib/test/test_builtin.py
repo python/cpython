@@ -553,15 +553,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(hex(-16), '-0x10')
         self.assertEqual(hex(-16), '-0x10')
         self.assertRaises(TypeError, hex, {})
-        self.assertEqual(hex(3.125), '0x19 * 2.0 ** -3')
-        self.assertEqual(hex(0.0), '0x0 * 2.0 ** 0')
-        for sv in float('nan'), float('inf'), float('-inf'):
-            self.assertEqual(hex(sv), repr(sv))
-        for i in range(100):
-            x = random.expovariate(.05)
-            self.assertEqual(eval(hex(x)), x, (x, hex(x), eval(hex(x))))
-            self.assertEqual(eval(hex(-x)), -x)
-            self.assertEqual(hex(-x), ('-' + hex(x)))
 
     def test_id(self):
         id(None)
@@ -805,15 +796,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(oct(-100), '-0o144')
         self.assertEqual(oct(-100), '-0o144')
         self.assertRaises(TypeError, oct, ())
-        self.assertEqual(oct(3.125), '0o31 * 2.0 ** -3')
-        self.assertEqual(oct(0.0), '0o0 * 2.0 ** 0')
-        for sv in float('nan'), float('inf'), float('-inf'):
-            self.assertEqual(oct(sv), repr(sv))
-        for i in range(100):
-            x = random.expovariate(.05)
-            self.assertEqual(eval(oct(x)), x)
-            self.assertEqual(eval(oct(-x)), -x)
-            self.assertEqual(oct(-x), ('-' + oct(x)))
 
     def write_testfile(self):
         # NB the first 4 lines are also used to test input, below
@@ -1231,15 +1213,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(bin(2**65-1), '0b' + '1' * 65)
         self.assertEqual(bin(-(2**65)), '-0b1' + '0' * 65)
         self.assertEqual(bin(-(2**65-1)), '-0b' + '1' * 65)
-        self.assertEqual(bin(3.125), '0b11001 * 2.0 ** -3')
-        self.assertEqual(bin(0.0), '0b0 * 2.0 ** 0')
-        for sv in float('nan'), float('inf'), float('-inf'):
-            self.assertEqual(bin(sv), repr(sv))
-        for i in range(100):
-            x = random.expovariate(.05)
-            self.assertEqual(eval(bin(x)), x)
-            self.assertEqual(eval(bin(-x)), -x)
-            self.assertEqual(bin(-x), ('-' + bin(x)))
 
 class TestSorted(unittest.TestCase):
 
