@@ -8,10 +8,9 @@
 /**
  * _Py_InsertThousandsGrouping:
  * @buffer: A pointer to the start of a string.
- * @len: The length of the string.
- * @plast: A pointer to the end of of the digits in the string.  This
- *         may be before the end of the string (if the string contains
- *         decimals, for example).
+ * @n_buffer: The length of the string.
+ * @n_digits: The number of digits in the string, in which we want
+ *            to put the grouping chars.
  * @buf_size: The maximum size of the buffer pointed to by buffer.
  * @count: If non-NULL, points to a variable that will receive the
  *         number of characters we need to insert (and no formatting
@@ -21,10 +20,11 @@
  *         string.
  *
  * Inserts thousand grouping characters (as defined in the current
- *  locale) into the string between buffer and plast.  If count is
- *  non-NULL, don't do any formatting, just count the number of
- *  characters to insert.  This is used by the caller to appropriately
- *  resize the buffer, if needed.
+ *  locale) into the string between buffer and buffer+n_digits.  If
+ *  count is non-NULL, don't do any formatting, just count the number
+ *  of characters to insert.  This is used by the caller to
+ *  appropriately resize the buffer, if needed.  If count is non-NULL,
+ *  buffer can be NULL (it is not dereferenced at all in that case).
  *
  * Return value: 0 on error, else 1.  Note that no error can occur if
  *  count is non-NULL.
@@ -34,8 +34,8 @@
  **/
 int
 _Py_InsertThousandsGrouping(STRINGLIB_CHAR *buffer,
-			    Py_ssize_t len,
-			    STRINGLIB_CHAR *plast,
+			    Py_ssize_t n_buffer,
+			    Py_ssize_t n_digits,
 			    Py_ssize_t buf_size,
 			    Py_ssize_t *count,
 			    int append_zero_char)
@@ -44,15 +44,22 @@ _Py_InsertThousandsGrouping(STRINGLIB_CHAR *buffer,
 	const char *grouping = locale_data->grouping;
 	const char *thousands_sep = locale_data->thousands_sep;
 	Py_ssize_t thousands_sep_len = strlen(thousands_sep);
-	STRINGLIB_CHAR *pend = buffer + len; /* current end of buffer */
-	STRINGLIB_CHAR *pmax = buffer + buf_size;       /* max of buffer */
+	STRINGLIB_CHAR *pend = NULL; /* current end of buffer */
+	STRINGLIB_CHAR *pmax = NULL; /* max of buffer */
 	char current_grouping;
+	Py_ssize_t remaining = n_digits; /* Number of chars remaining to
+					    be looked at */
 
 	/* Initialize the character count, if we're just counting. */
 	if (count)
 		*count = 0;
+	else {
+		/* We're not just counting, we're modifying buffer */
+		pend = buffer + n_buffer;
+		pmax = buffer + buf_size;
+	}
 
-	/* Starting at plast and working right-to-left, keep track of
+	/* Starting at the end and working right-to-left, keep track of
 	   what grouping needs to be added and insert that. */
 	current_grouping = *grouping++;
 
@@ -60,17 +67,19 @@ _Py_InsertThousandsGrouping(STRINGLIB_CHAR *buffer,
 	if (current_grouping == 0)
 		return 1;
 
-	while (plast - buffer > current_grouping) {
+	while (remaining > current_grouping) {
 		/* Always leave buffer and pend valid at the end of this
 		   loop, since we might leave with a return statement. */
 
-		plast -= current_grouping;
+		remaining -= current_grouping;
 		if (count) {
 			/* We're only counting, not touching the memory. */
 			*count += thousands_sep_len;
 		}
 		else {
 			/* Do the formatting. */
+
+			STRINGLIB_CHAR *plast = buffer + remaining;
 
 			/* Is there room to insert thousands_sep_len chars? */
 			if (pmax - pend < thousands_sep_len)
@@ -111,7 +120,7 @@ _Py_InsertThousandsGrouping(STRINGLIB_CHAR *buffer,
 	if (append_zero_char) {
 		/* Append a zero character to mark the end of the string,
 		   if there's room. */
-		if (pend - plast < 1)
+		if (pend - (buffer + remaining) < 1)
 			/* No room, error. */
 			return 0;
 		*pend = 0;
