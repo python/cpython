@@ -182,8 +182,8 @@ PyAPI_FUNC(int) PyString_AsStringAndSize(
    see Objects/stringlib/localeutil.h */
 
 PyAPI_FUNC(int) _PyString_InsertThousandsGrouping(char *buffer,
-						  Py_ssize_t len,
-						  char *plast,
+						  Py_ssize_t n_buffer,
+						  Py_ssize_t n_digits,
 						  Py_ssize_t buf_size,
 						  Py_ssize_t *count,
 						  int append_zero_char);
