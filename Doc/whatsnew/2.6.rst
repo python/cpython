@@ -1374,8 +1374,8 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   of the zero.  (Fixed by Mark T. Dickinson; :issue:`1507`)
 
 * More floating-point features were also added.  The :func:`float` function
-  will now turn the strings ``+nan`` and ``-nan`` into the corresponding
-  IEEE 754 Not A Number values, and ``+inf`` and ``-inf`` into
+  will now turn the string ``nan`` into an
+  IEEE 754 Not A Number value, and ``+inf`` and ``-inf`` into
   positive or negative infinity.  This works on any platform with
   IEEE 754 semantics.  (Contributed by Christian Heimes; :issue:`1635`.)
 
