@@ -313,8 +313,8 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
    as determined in _calc_integer_widths().  returns the pointer to
    where the digits go. */
 static STRINGLIB_CHAR *
-fill_number(STRINGLIB_CHAR *p_buf, const NumberFieldWidths *spec,
-            Py_ssize_t n_digits, STRINGLIB_CHAR fill_char)
+fill_non_digits(STRINGLIB_CHAR *p_buf, const NumberFieldWidths *spec,
+		Py_ssize_t n_digits, STRINGLIB_CHAR fill_char)
 {
     STRINGLIB_CHAR* p_digits;
 
@@ -557,17 +557,17 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 	pnumeric_chars += leading_chars_to_skip;
     }
 
-    /* Calculate the widths of the various leading and trailing parts */
-    calc_number_widths(&spec, sign, n_digits, format);
-
     if (format->type == 'n')
 	    /* Compute how many additional chars we need to allocate
 	       to hold the thousands grouping. */
 	    STRINGLIB_GROUPING(NULL, n_digits, n_digits,
 			       0, &n_grouping_chars, 0);
 
+    /* Calculate the widths of the various leading and trailing parts */
+    calc_number_widths(&spec, sign, n_digits + n_grouping_chars, format);
+
     /* Allocate a new string to hold the result */
-    result = STRINGLIB_NEW(NULL, spec.n_total + n_grouping_chars);
+    result = STRINGLIB_NEW(NULL, spec.n_total);
     if (!result)
 	goto done;
     p = STRINGLIB_STR(result);
@@ -587,7 +587,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* Insert the grouping, if any, after the uppercasing of 'X', so we can
        ensure that grouping chars won't be affected. */
-    if (n_grouping_chars && format->type == 'n') {
+    if (n_grouping_chars) {
 	    /* We know this can't fail, since we've already
 	       reserved enough space. */
 	    STRINGLIB_CHAR *pstart = p + n_leading_chars;
@@ -597,9 +597,9 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 	    assert(r);
     }
 
-    /* Fill in the non-digit parts */
-    fill_number(p, &spec, n_digits,
-                format->fill_char == '\0' ? ' ' : format->fill_char);
+    /* Fill in the non-digit parts (padding, sign, etc.) */
+    fill_non_digits(p, &spec, n_digits + n_grouping_chars,
+		    format->fill_char == '\0' ? ' ' : format->fill_char);
 
 done:
     Py_XDECREF(tmp);
@@ -737,9 +737,9 @@ format_float_internal(PyObject *value,
     if (result == NULL)
         goto done;
 
-    /* fill in the non-digit parts */
-    fill_number(STRINGLIB_STR(result), &spec, n_digits,
-                format->fill_char == '\0' ? ' ' : format->fill_char);
+    /* Fill in the non-digit parts (padding, sign, etc.) */
+    fill_non_digits(STRINGLIB_STR(result), &spec, n_digits,
+		    format->fill_char == '\0' ? ' ' : format->fill_char);
 
     /* fill in the digit parts */
     memmove(STRINGLIB_STR(result) +

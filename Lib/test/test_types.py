@@ -428,6 +428,14 @@ class TypesTests(unittest.TestCase):
             # move to the next integer to test
             x = x // 10
 
+        rfmt = ">20n"
+        lfmt = "<20n"
+        cfmt = "^20n"
+        for x in (1234, 12345, 123456, 1234567, 12345678, 123456789, 1234567890, 12345678900):
+            self.assertEqual(len(format(0, rfmt)), len(format(x, rfmt)))
+            self.assertEqual(len(format(0, lfmt)), len(format(x, lfmt)))
+            self.assertEqual(len(format(0, cfmt)), len(format(x, cfmt)))
+
     def test_float__format__(self):
         # these should be rewritten to use both format(x, spec) and
         # x.__format__(spec)
