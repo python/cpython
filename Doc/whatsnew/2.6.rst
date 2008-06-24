@@ -530,7 +530,7 @@ XXX write this.
 
 .. seealso::
 
-   :pep:`371` - Per-user ``site-packages`` Directory
+   :pep:`371` - Addition of the multiprocessing package
      PEP written by Jesse Noller and Richard Oudkerk; 
      implemented by Richard Oudkerk and Jesse Noller.
 
