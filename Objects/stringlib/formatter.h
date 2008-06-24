@@ -586,7 +586,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     }
 
     /* Insert the grouping, if any, after the uppercasing of 'X', so we can
-       ensure that grouping chars won't be affeted. */
+       ensure that grouping chars won't be affected. */
     if (n_grouping_chars && format->type == 'n') {
 	    /* We know this can't fail, since we've already
 	       reserved enough space. */
