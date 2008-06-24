@@ -51,15 +51,15 @@ Rational number class.
 
          >>> from fractions import Fraction
          >>> Fraction('3.1415926535897932').limit_denominator(1000)
-         Fraction(355L, 113L)
+         Fraction(355, 113)
 
       or for recovering a rational number that's represented as a float:
 
          >>> from math import pi, cos
          >>> Fraction.from_float(cos(pi/3))
-         Fraction(4503599627370497L, 9007199254740992L)
+         Fraction(4503599627370497, 9007199254740992)
          >>> Fraction.from_float(cos(pi/3)).limit_denominator()
-         Fraction(1L, 2L)
+         Fraction(1, 2)
 
 
    .. method:: __floor__()
