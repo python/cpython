@@ -211,24 +211,7 @@ Deprecated since release 2.3. Instead, use the extended call syntax:\n\
 static PyObject *
 builtin_bin(PyObject *self, PyObject *v)
 {
-	PyNumberMethods *nb;
-	PyObject *res;
-
-	if ((nb = v->ob_type->tp_as_number) == NULL ||
-	    nb->nb_hex == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			   "bin() argument can't be converted to hex");
-		return NULL;
-	}
-	res = (*nb->nb_bin)(v);
-	if (res && !PyString_Check(res)) {
-		PyErr_Format(PyExc_TypeError,
-			     "__bin__ returned non-string (type %.200s)",
-			     res->ob_type->tp_name);
-		Py_DECREF(res);
-		return NULL;
-	}
-	return res;
+        return PyNumber_ToBase(v, 2);
 }
 
 PyDoc_STRVAR(bin_doc,

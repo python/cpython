@@ -17,12 +17,6 @@ Core and Builtins
   slice(None, 10, -1).indices(10) returns (9, 9, -1) instead of (9,
   10, -1).
 
-- Issue 3008: hex(), oct(), and bin() can now create exact reprs 
-  for floats.
-
-- Make bin() implementation parallel oct() and hex().
-
-
 What's New in Python 2.6 beta 1?
 ================================
 

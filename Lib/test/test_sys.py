@@ -523,7 +523,7 @@ class SizeofTest(unittest.TestCase):
         len_typeobject = p + 2*l + 15*p + l + 4*p + l + 9*p +\
                          l + 11*p + self.align(4)
         self.check_sizeof(class_newstyle,
-                          h + len_typeobject + 42*p + 10*p + 3*p + 6*p)
+                          h + len_typeobject + 41*p + 10*p + 3*p + 6*p)
 
     def test_specialtypes(self):
         i = self.i

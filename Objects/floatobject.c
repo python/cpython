@@ -405,11 +405,11 @@ PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
    obj is not of float, int or long type, Py_NotImplemented is incref'ed,
    stored in obj, and returned from the function invoking this macro.
 */
-#define CONVERT_TO_DOUBLE(obj, dbl)					\
-	if (PyFloat_Check(obj))						\
-		dbl = PyFloat_AS_DOUBLE(obj);				\
-	else if (convert_to_double((PyObject **)&(obj), &(dbl)) < 0)	\
-		return (PyObject *)(obj);
+#define CONVERT_TO_DOUBLE(obj, dbl)			\
+	if (PyFloat_Check(obj))				\
+		dbl = PyFloat_AS_DOUBLE(obj);		\
+	else if (convert_to_double(&(obj), &(dbl)) < 0)	\
+		return obj;
 
 static int
 convert_to_double(PyObject **v, double *dbl)
@@ -1204,62 +1204,6 @@ PyDoc_STRVAR(float_as_integer_ratio_doc,
 ">>> (-.25).as_integer_ratio()\n"
 "(-1, 4)");
 
-static PyObject *
-_float_to_base(PyFloatObject *v, unaryfunc int_to_base)
-{
-	PyObject *mant, *conv, *result;
-	double x, fr;
-	int i, exp, n;
-	char *conv_str;
-
-	CONVERT_TO_DOUBLE(v, x);
-	if (!Py_IS_FINITE(x))
-		return PyObject_Repr((PyObject *)v);
-	fr = frexp(x, &exp);
-	for (i=0; i<300 && fr != floor(fr) ; i++) {
-		fr *= 2.0;
-		exp--;
-	}
-	mant = PyLong_FromDouble(floor(fr));
-	if (mant == NULL)
-		return NULL;
-	conv = int_to_base(mant);
-	Py_DECREF(mant);
-	if (conv== NULL)
-		return NULL;
-	n = PyString_GET_SIZE(conv);
-	conv_str = PyString_AS_STRING(conv);
-	/* Remove the trailing 'L' if present */
-	if (n && conv_str[n-1] == 'L') {
-		PyObject *newconv = PySequence_GetSlice(conv, 0, -1);
-		Py_DECREF(conv);
-		if (newconv == NULL)
-			return NULL;
-		conv = newconv;
-		conv_str = PyString_AS_STRING(conv);
-	}
-	result = PyString_FromFormat("%s * 2.0 ** %d", conv_str, exp);
-	Py_DECREF(conv);
-	return result;
-}
-
-static PyObject *
-float_hex(PyFloatObject *v)
-{
-	return _float_to_base(v, PyLong_Type.tp_as_number->nb_hex);
-}
-
-static PyObject *
-float_oct(PyFloatObject *v)
-{
-	return _float_to_base(v, PyLong_Type.tp_as_number->nb_oct);
-}
-
-static PyObject *
-float_bin(PyFloatObject *v)
-{
-	return _float_to_base(v, PyLong_Type.tp_as_number->nb_bin);
-}
 
 static PyObject *
 float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -1546,8 +1490,8 @@ static PyNumberMethods float_as_number = {
 	float_trunc, 	/*nb_int*/
 	float_trunc, 	/*nb_long*/
 	float_float,	/*nb_float*/
-	(unaryfunc)float_oct,		/* nb_oct */
-	(unaryfunc)float_hex,		/* nb_hex */
+	0,		/* nb_oct */
+	0,		/* nb_hex */
 	0,		/* nb_inplace_add */
 	0,		/* nb_inplace_subtract */
 	0,		/* nb_inplace_multiply */
@@ -1563,8 +1507,6 @@ static PyNumberMethods float_as_number = {
 	float_div,	/* nb_true_divide */
 	0,		/* nb_inplace_floor_divide */
 	0,		/* nb_inplace_true_divide */
-	0,		/* nb_index */
-	(unaryfunc)float_bin,		/* nb_bin */
 };
 
 PyTypeObject PyFloat_Type = {
