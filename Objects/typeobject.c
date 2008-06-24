@@ -3743,7 +3743,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		if (base->tp_flags & Py_TPFLAGS_HAVE_INDEX) {
 			COPYNUM(nb_index);
 		}
-		COPYNUM(nb_hex);
 	}
 
 	if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL) {
@@ -5136,7 +5135,6 @@ slot_nb_coerce(PyObject **a, PyObject **b)
 SLOT0(slot_nb_int, "__int__")
 SLOT0(slot_nb_long, "__long__")
 SLOT0(slot_nb_float, "__float__")
-SLOT0(slot_nb_bin, "__bin__")
 SLOT0(slot_nb_oct, "__oct__")
 SLOT0(slot_nb_hex, "__hex__")
 SLOT1(slot_nb_inplace_add, "__iadd__", PyObject *, "O")
@@ -5804,8 +5802,6 @@ static slotdef slotdefs[] = {
 	       "long(x)"),
 	UNSLOT("__float__", nb_float, slot_nb_float, wrap_unaryfunc,
 	       "float(x)"),
-	UNSLOT("__bin__", nb_bin, slot_nb_bin, wrap_unaryfunc,
-	       "bin(x)"),
 	UNSLOT("__oct__", nb_oct, slot_nb_oct, wrap_unaryfunc,
 	       "oct(x)"),
 	UNSLOT("__hex__", nb_hex, slot_nb_hex, wrap_unaryfunc,
