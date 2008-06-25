@@ -53,30 +53,18 @@ class DummyProcess(threading.Thread):
         else:
             return None
 
-    # XXX
-    if sys.version_info < (3, 0):
-        is_alive = threading.Thread.is_alive.im_func
-        get_name = threading.Thread.get_name.im_func
-        set_name = threading.Thread.set_name.im_func
-        is_daemon = threading.Thread.is_daemon.im_func
-        set_daemon = threading.Thread.set_daemon.im_func
-    else:
-        is_alive = threading.Thread.is_alive
-        get_name = threading.Thread.get_name
-        set_name = threading.Thread.set_name
-        is_daemon = threading.Thread.is_daemon
-        set_daemon = threading.Thread.set_daemon
+    is_alive = threading.Thread.is_alive.im_func
+    get_name = threading.Thread.get_name.im_func
+    set_name = threading.Thread.set_name.im_func
+    is_daemon = threading.Thread.is_daemon.im_func
+    set_daemon = threading.Thread.set_daemon.im_func
 
 #
 #
 #
 
 class Condition(threading._Condition):
-    # XXX
-    if sys.version_info < (3, 0):
-        notify_all = threading._Condition.notify_all.im_func
-    else:
-        notify_all = threading._Condition.notify_all
+    notify_all = threading._Condition.notify_all.im_func
 
 #
 #
