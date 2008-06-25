@@ -41,7 +41,7 @@ def reduce_array(a):
 copyreg.pickle(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
-if view_types[0] is not list:       # XXX only needed in Py3.0
+if view_types[0] is not list:       # only needed in Py3.0
     def rebuild_as_list(obj):
         return list, (list(obj),)
     for view_type in view_types:
@@ -930,14 +930,11 @@ def Array(typecode, sequence, lock=True):
 #
 
 class IteratorProxy(BaseProxy):
-    # XXX remove methods for Py3.0 and Py2.6
-    _exposed_ = ('__next__', 'next', 'send', 'throw', 'close')
+    _exposed_ = ('__next__', 'send', 'throw', 'close')
     def __iter__(self):
         return self
     def __next__(self, *args):
         return self._callmethod('__next__', args)
-    def next(self, *args):
-        return self._callmethod('next', args)
     def send(self, *args):
         return self._callmethod('send', args)
     def throw(self, *args):
