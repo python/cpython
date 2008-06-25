@@ -33,15 +33,6 @@ except ImportError:
     from pickle import PicklingError
 
 #
-#
-#
-
-try:
-    bytes
-except NameError:
-    bytes = str                  # XXX not needed in Py2.6 and Py3.0
-
-#
 # Register some things for pickling
 #
 

@@ -352,14 +352,9 @@ if sys.platform == 'win32':
 
 MESSAGE_LENGTH = 20
 
-CHALLENGE = '#CHALLENGE#'
-WELCOME = '#WELCOME#'
-FAILURE = '#FAILURE#'
-
-if sys.version_info >= (3, 0):         # XXX can use bytes literals in 2.6/3.0
-    CHALLENGE = CHALLENGE.encode('ascii')
-    WELCOME = WELCOME.encode('ascii')
-    FAILURE = FAILURE.encode('ascii')
+CHALLENGE = b'#CHALLENGE#'
+WELCOME = b'#WELCOME#'
+FAILURE = b'#FAILURE#'
 
 def deliver_challenge(connection, authkey):
     import hmac
