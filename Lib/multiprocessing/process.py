@@ -26,11 +26,6 @@ try:
 except OSError:
     ORIGINAL_DIR = None
 
-try:
-    bytes
-except NameError:
-    bytes = str                  # XXX not needed in Py2.6 and Py3.0
-
 #
 # Public functions
 #
