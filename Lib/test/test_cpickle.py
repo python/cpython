@@ -94,16 +94,28 @@ class Node(object):
     pass
 
 class cPickleDeepRecursive(unittest.TestCase):
-    '''Issue 2702. This should raise a RecursionLimit but in some
-    platforms (FreeBSD, win32) sometimes raises KeyError instead,
-    or just silently terminates the interpreter (=crashes).
-    '''
-    def test_deep_recursive(self):
-        nodes = [Node() for i in range(500)]
-        for n in nodes:
-            n.connections = list(nodes)
-            n.connections.remove(n)
-        self.assertRaises(RuntimeError, cPickle.dumps, n)
+#    I commented out, because the patch that fixes this was reverted, as
+#    it broke the next test case. Check the issues for full history.
+#     def test_issue2702(self):
+#         '''This should raise a RecursionLimit but in some
+#         platforms (FreeBSD, win32) sometimes raises KeyError instead,
+#         or just silently terminates the interpreter (=crashes).
+#         '''
+#         nodes = [Node() for i in range(500)]
+#         for n in nodes:
+#             n.connections = list(nodes)
+#             n.connections.remove(n)
+#         self.assertRaises(RuntimeError, cPickle.dumps, n)
+
+    def test_issue3179(self):
+        '''Safe test, because of I broken this case when fixing the
+        behaviour for the previous test.
+        '''
+        res=[]
+        for x in range(1,2000):
+            res.append(dict(doc=x, similar=[]))
+        cPickle.dumps(res)
+
 
 def test_main():
     test_support.run_unittest(

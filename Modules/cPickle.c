@@ -1523,8 +1523,6 @@ batch_list(Picklerobject *self, PyObject *iter)
 	static char append = APPEND;
 	static char appends = APPENDS;
 
-	self->nesting++;
-
 	assert(iter != NULL);
 
 	if (self->proto == 0) {
@@ -1663,8 +1661,6 @@ batch_dict(Picklerobject *self, PyObject *iter)
 
 	static char setitem = SETITEM;
 	static char setitems = SETITEMS;
-
-	self->nesting++;
 
 	assert(iter != NULL);
 
