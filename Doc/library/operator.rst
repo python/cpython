@@ -210,22 +210,10 @@ Operations which work with sequences include:
    Remove the value of *a* at index *b*.
 
  
-.. function:: delslice(a, b, c)
-              __delslice__(a, b, c)
-
-   Delete the slice of *a* from index *b* to index *c-1*.
-
-
 .. function:: getitem(a, b)
               __getitem__(a, b)
 
    Return the value of *a* at index *b*.
-
-
-.. function:: getslice(a, b, c)
-              __getslice__(a, b, c)
-
-   Return the slice of *a* from index *b* to index *c-1*.
 
 
 .. function:: indexOf(a, b)
@@ -243,12 +231,6 @@ Operations which work with sequences include:
               __setitem__(a, b, c)
 
    Set the value of *a* at index *b* to *c*.
-
-
-.. function:: setslice(a, b, c, v)
-              __setslice__(a, b, c, v)
-
-   Set the slice of *a* from index *b* to index *c-1* to the sequence *v*.
 
 
 Many operations have an "in-place" version.  The following functions provide a
@@ -532,12 +514,6 @@ Python syntax and the functions in the :mod:`operator` module.
 | Right Shift           | ``a >> b``              | ``rshift(a, b)``                |
 +-----------------------+-------------------------+---------------------------------+
 | Sequence Repitition   | ``seq * i``             | ``repeat(seq, i)``              |
-+-----------------------+-------------------------+---------------------------------+
-| Slice Assignment      | ``seq[i:j] = values``   | ``setslice(seq, i, j, values)`` |
-+-----------------------+-------------------------+---------------------------------+
-| Slice Deletion        | ``del seq[i:j]``        | ``delslice(seq, i, j)``         |
-+-----------------------+-------------------------+---------------------------------+
-| Slicing               | ``seq[i:j]``            | ``getslice(seq, i, j)``         |
 +-----------------------+-------------------------+---------------------------------+
 | String Formatting     | ``s % obj``             | ``mod(s, obj)``                 |
 +-----------------------+-------------------------+---------------------------------+
