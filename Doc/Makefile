@@ -33,15 +33,15 @@ checkout:
 	fi
 	@if [ ! -d tools/docutils ]; then \
 	  echo "Checking out Docutils..."; \
-	  svn checkout $(SVNROOT)/external/docutils-0.4/docutils tools/docutils; \
+	  svn checkout $(SVNROOT)/external/docutils-0.5/docutils tools/docutils; \
 	fi
 	@if [ ! -d tools/jinja ]; then \
 	  echo "Checking out Jinja..."; \
-	  svn checkout $(SVNROOT)/external/Jinja-1.1/jinja tools/jinja; \
+	  svn checkout $(SVNROOT)/external/Jinja-1.2/jinja tools/jinja; \
 	fi
 	@if [ ! -d tools/pygments ]; then \
 	  echo "Checking out Pygments..."; \
-	  svn checkout $(SVNROOT)/external/Pygments-0.9/pygments tools/pygments; \
+	  svn checkout $(SVNROOT)/external/Pygments-0.10/pygments tools/pygments; \
 	fi
 
 update: checkout
