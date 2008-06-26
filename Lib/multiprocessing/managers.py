@@ -964,8 +964,7 @@ class ConditionProxy(AcquirerProxy):
         return self._callmethod('notify_all')
 
 class EventProxy(BaseProxy):
-    # XXX will Event.isSet name be available in Py3.0?
-    _exposed_ = ('isSet', 'set', 'clear', 'wait')
+    _exposed_ = ('is_set', 'set', 'clear', 'wait')
     def is_set(self):
         return self._callmethod('is_set')
     def set(self):
