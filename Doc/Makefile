@@ -103,6 +103,8 @@ pydoc-topics: build
 	@echo "Building finished; now copy build/pydoc-topics/pydoc_topics.py " \
 	      "into the Lib/ directory"
 
+htmlview: html
+	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
 clean:
 	-rm -rf build/*
 	-rm -rf tools/sphinx
