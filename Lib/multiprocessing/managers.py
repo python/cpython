@@ -967,7 +967,7 @@ class EventProxy(BaseProxy):
     # XXX will Event.isSet name be available in Py3.0?
     _exposed_ = ('isSet', 'set', 'clear', 'wait')
     def is_set(self):
-        return self._callmethod('isSet')
+        return self._callmethod('is_set')
     def set(self):
         return self._callmethod('set')
     def clear(self):
