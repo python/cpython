@@ -158,6 +158,8 @@ Server Objects
 
    Tells the :meth:`serve_forever` loop to stop and waits until it does.
 
+   .. versionadded:: 2.6
+
 
 .. data:: address_family
 
