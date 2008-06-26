@@ -416,7 +416,7 @@ class SizeofTest(unittest.TestCase):
         self.P = len(struct.pack('P', 0))
         # due to missing size_t information from struct, it is assumed that
         # sizeof(Py_ssize_t) = sizeof(void*)
-        self.header = 'lP'
+        self.header = 'PP'
         if hasattr(sys, "gettotalrefcount"):
             self.header += '2P'
         self.file = open(test.test_support.TESTFN, 'wb')
@@ -480,7 +480,7 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(float(0), size(h + 'd'))
         # function
         def func(): pass
-        self.check_sizeof(func, size(h + '9l'))
+        self.check_sizeof(func, size(h + '9P'))
         class c():
             @staticmethod
             def foo():
@@ -489,9 +489,9 @@ class SizeofTest(unittest.TestCase):
             def bar(cls):
                 pass
             # staticmethod
-            self.check_sizeof(foo, size(h + 'l'))
+            self.check_sizeof(foo, size(h + 'P'))
             # classmethod
-            self.check_sizeof(bar, size(h + 'l'))
+            self.check_sizeof(bar, size(h + 'P'))
         # generator
         def get_gen(): yield 1
         self.check_sizeof(get_gen(), size(h + 'Pi2P'))
@@ -502,11 +502,11 @@ class SizeofTest(unittest.TestCase):
         # module
         self.check_sizeof(unittest, size(h + 'P'))
         # xrange
-        self.check_sizeof(xrange(1), size(h + '3P'))
+        self.check_sizeof(xrange(1), size(h + '3l'))
         # slice
         self.check_sizeof(slice(0), size(h + '3P'))
 
-        h += 'l'
+        h += 'P'
         # new-style class
         class class_newstyle(object):
             def method():
@@ -520,12 +520,9 @@ class SizeofTest(unittest.TestCase):
         h = self.header
         size = self.calcsize
         # dict
-        self.check_sizeof({}, size(h + '3P3P') + 8*size('P2P'))
+        self.check_sizeof({}, size(h + '3P2P') + 8*size('P2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        self.check_sizeof(longdict, size(h + '3P3P') + (8+16)*size('P2P'))
-        # list
-        self.check_sizeof([], size(h + 'lPP'))
-        self.check_sizeof([1, 2, 3], size(h + 'lPP') + 3*self.P)
+        self.check_sizeof(longdict, size(h + '3P2P') + (8+16)*size('P2P'))
         # unicode
         usize = len(u'\0'.encode('unicode-internal'))
         samples = [u'', u'1'*100]
@@ -544,7 +541,10 @@ class SizeofTest(unittest.TestCase):
         finally:
             self.check_sizeof(s, basicsize + sys.getsizeof(str(s)))
 
-        h += 'l'
+        h += 'P'
+        # list
+        self.check_sizeof([], size(h + 'PP'))
+        self.check_sizeof([1, 2, 3], size(h + 'PP') + 3*self.P)
         # long
         self.check_sizeof(0L, size(h + 'H'))
         self.check_sizeof(1L, size(h + 'H'))
