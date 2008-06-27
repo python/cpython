@@ -351,6 +351,10 @@ class FractionTest(unittest.TestCase):
 
     def testStringification(self):
         self.assertEquals("Fraction(7, 3)", repr(F(7, 3)))
+        self.assertEquals("Fraction(6283185307, 2000000000)",
+                          repr(F('3.1415926535')))
+        self.assertEquals("Fraction(-1, 100000000000000000000)",
+                          repr(F(1, -10**20)))
         self.assertEquals("7/3", str(F(7, 3)))
         self.assertEquals("7", str(F(7, 1)))
 
