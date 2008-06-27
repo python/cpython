@@ -540,8 +540,8 @@ Example:
                    raise ValueError('Got unexpected field names: %r' % kwds.keys())
                return result
    <BLANKLINE>            
-        def __getnewargs__(self): 
-            return tuple(self)
+           def __getnewargs__(self): 
+               return tuple(self)
    <BLANKLINE>
            x = property(itemgetter(0))
            y = property(itemgetter(1))
