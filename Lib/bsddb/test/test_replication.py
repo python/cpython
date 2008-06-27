@@ -94,7 +94,7 @@ class DBReplicationManager(unittest.TestCase):
         # The timeout is necessary in BDB 4.5, since DB_EVENT_REP_STARTUPDONE
         # is not generated if the master has no new transactions.
         # This is solved in BDB 4.6 (#15542).
-        timeout = time.time()+2
+        timeout = time.time()+10
         while (time.time()<timeout) and not (self.confirmed_master and self.client_startupdone) :
             time.sleep(0.02)
         if db.version() >= (4,6) :

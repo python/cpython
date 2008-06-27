@@ -50,11 +50,11 @@
 	/>
 	<UserMacro
 		Name="bsddbDir"
-		Value="$(bsddb44Dir)"
+		Value="$(bsddb47Dir)"
 	/>
 	<UserMacro
 		Name="bsddbDepLibs"
-		Value="$(bsddb44DepLibs)"
+		Value="$(bsddb47DepLibs)"
 	/>
 	<UserMacro
 		Name="bsddb44Dir"
@@ -65,11 +65,11 @@
 		Value=""
 	/>
 	<UserMacro
-		Name="bsddb45Dir"
-		Value="$(externalsDir)\db-4.5.20.x\build_windows"
+		Name="bsddb47Dir"
+		Value="$(externalsDir)\db-4.7.25.0\build_windows"
 	/>
 	<UserMacro
-		Name="bsddb45DepLibs"
+		Name="bsddb47DepLibs"
 		Value="ws2_32.lib"
 	/>
 	<UserMacro
