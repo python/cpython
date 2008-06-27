@@ -1328,7 +1328,7 @@ AC_TRY_COMPILE([], [long double x; x = (long double)0.;], [
   have_long_double=yes
 ])
 AC_MSG_RESULT($have_long_double)
-if test "$have_long_long" = yes ; then
+if test "$have_long_double" = yes ; then
 AC_CHECK_SIZEOF(long double, 12)
 fi
 
