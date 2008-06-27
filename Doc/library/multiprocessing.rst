@@ -6,23 +6,24 @@
 
 .. versionadded:: 2.6
 
+
 Introduction
 ----------------------
 
-:mod:`multiprocessing` is a package that supports spawning processes
-using an API similar to the :mod:`threading` module.  The
-:mod:`multiprocessing` package offers both local and remote
-concurrency, effectively side-stepping the :term:`Global Interpreter
-Lock` by using subprocesses instead of threads.  Due to this, the
-:mod:`multiprocessing` module allows the programmer to fully leverage
-multiple processors on a given machine.  It runs on both Unix and
+:mod:`multiprocessing` is a package that supports spawning processes using an
+API similar to the :mod:`threading` module.  The :mod:`multiprocessing` package
+offers both local and remote concurrency, effectively side-stepping the
+:term:`Global Interpreter Lock` by using subprocesses instead of threads.  Due
+to this, the :mod:`multiprocessing` module allows the programmer to fully
+leverage multiple processors on a given machine.  It runs on both Unix and
 Windows.
+
 
 The :class:`Process` class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In :mod:`multiprocessing`, processes are spawned by creating a :class:`Process`
-object and then calling its :meth:`Process.start` method.  :class:`Process`
+object and then calling its :meth:`~Process.start` method.  :class:`Process`
 follows the API of :class:`threading.Thread`.  A trivial example of a
 multiprocess program is ::
 
@@ -87,11 +88,12 @@ processes:
           p.join()
 
    The two connection objects returned by :func:`Pipe` represent the two ends of
-   the pipe.  Each connection object has :meth:`send` and :meth:`recv` methods
-   (among others).  Note that data in a pipe may become corrupted if two
-   processes (or threads) try to read from or write to the *same* end of the
-   pipe at the same time.  Of course there is no risk of corruption from
-   processes using different ends of the pipe at the same time.
+   the pipe.  Each connection object has :meth:`~Connection.send` and
+   :meth:`~Connection.recv` methods (among others).  Note that data in a pipe
+   may become corrupted if two processes (or threads) try to read from or write
+   to the *same* end of the pipe at the same time.  Of course there is no risk
+   of corruption from processes using different ends of the pipe at the same
+   time.
 
 
 Synchronization between processes
@@ -212,7 +214,7 @@ However, if you really do need to use some shared data then
 Using a pool of workers
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The :class:`multiprocessing.pool.Pool()` class represents a pool of worker
+The :class:`~multiprocessing.pool.Pool` class represents a pool of worker
 processes.  It has methods which allows tasks to be offloaded to the worker
 processes in a few different ways.
 
@@ -248,8 +250,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    The constructor should always be called with keyword arguments. *group*
    should always be ``None``; it exists solely for compatibility with
-   :class:`threading.Thread`.  *target* is the callable object to be invoked by
-   the :meth:`run()` method.  It defaults to None, meaning nothing is
+   :class:`~threading.Thread`.  *target* is the callable object to be invoked by
+   the :meth:`run()` method.  It defaults to ``None``, meaning nothing is
    called. *name* is the process name.  By default, a unique name is constructed
    of the form 'Process-N\ :sub:`1`:N\ :sub:`2`:...:N\ :sub:`k`' where N\
    :sub:`1`,N\ :sub:`2`,...,N\ :sub:`k` is a sequence of integers whose length
@@ -360,7 +362,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    .. method:: terminate()
 
       Terminate the process.  On Unix this is done using the ``SIGTERM`` signal;
-      on Windows ``TerminateProcess()`` is used.  Note that exit handlers and
+      on Windows :cfunc:`TerminateProcess` is used.  Note that exit handlers and
       finally clauses, etc., will not be executed.
 
       Note that descendant processes of the process will *not* be terminated --
@@ -416,13 +418,16 @@ processes) or a queue (which allows multiple producers and consumers).
 The :class:`Queue` and :class:`JoinableQueue` types are multi-producer,
 multi-consumer FIFO queues modelled on the :class:`Queue.Queue` class in the
 standard library.  They differ in that :class:`Queue` lacks the
-:meth:`task_done` and :meth:`join` methods introduced into Python 2.5's
-:class:`Queue.Queue` class.
+:meth:`~Queue.Queue.task_done` and :meth:`~Queue.Queue.join` methods introduced
+into Python 2.5's :class:`Queue.Queue` class.
 
 If you use :class:`JoinableQueue` then you **must** call
 :meth:`JoinableQueue.task_done` for each task removed from the queue or else the
 semaphore used to count the number of unfinished tasks may eventually overflow
 raising an exception.
+
+Note that one can also create a shared queue by using a manager object -- see
+:ref:`multiprocessing-managers`.
 
 .. note::
 
@@ -453,9 +458,6 @@ raising an exception.
    Note that a queue created using a manager does not have this issue.  See
    :ref:`multiprocessing-programming`.
 
-Note that one can also create a shared queue by using a manager object -- see
-:ref:`multiprocessing-managers`.
-
 For an example of the usage of queues for interprocess communication see
 :ref:`multiprocessing-examples`.
 
@@ -481,7 +483,7 @@ For an example of the usage of queues for interprocess communication see
    standard library's :mod:`Queue` module are raised to signal timeouts.
 
    :class:`Queue` implements all the methods of :class:`Queue.Queue` except for
-   :meth:`task_done` and :meth:`join`.
+   :meth:`~Queue.Queue.task_done` and :meth:`~Queue.Queue.join`.
 
    .. method:: qsize()
 
@@ -549,13 +551,13 @@ For an example of the usage of queues for interprocess communication see
 
       By default if a process is not the creator of the queue then on exit it
       will attempt to join the queue's background thread.  The process can call
-      :meth:`cancel_join_thread()` to make :meth:`join_thread()` do nothing.
+      :meth:`cancel_join_thread` to make :meth:`join_thread` do nothing.
 
    .. method:: cancel_join_thread()
 
       Prevent :meth:`join_thread` from blocking.  In particular, this prevents
       the background thread from being joined automatically when the process
-      exits -- see :meth:`join_thread()`.
+      exits -- see :meth:`join_thread`.
 
 
 .. class:: JoinableQueue([maxsize])
@@ -566,13 +568,13 @@ For an example of the usage of queues for interprocess communication see
    .. method:: task_done()
 
       Indicate that a formerly enqueued task is complete. Used by queue consumer
-      threads.  For each :meth:`get` used to fetch a task, a subsequent call to
-      :meth:`task_done` tells the queue that the processing on the task is
-      complete.
+      threads.  For each :meth:`~Queue.get` used to fetch a task, a subsequent
+      call to :meth:`task_done` tells the queue that the processing on the task
+      is complete.
 
-      If a :meth:`join` is currently blocking, it will resume when all items
-      have been processed (meaning that a :meth:`task_done` call was received
-      for every item that had been :meth:`put` into the queue).
+      If a :meth:`~Queue.join` is currently blocking, it will resume when all
+      items have been processed (meaning that a :meth:`task_done` call was
+      received for every item that had been :meth:`~Queue.put` into the queue).
 
       Raises a :exc:`ValueError` if called more times than there were items
       placed in the queue.
@@ -586,7 +588,7 @@ For an example of the usage of queues for interprocess communication see
       queue.  The count goes down whenever a consumer thread calls
       :meth:`task_done` to indicate that the item was retrieved and all work on
       it is complete.  When the count of unfinished tasks drops to zero,
-      :meth:`join` unblocks.
+      :meth:`~Queue.join` unblocks.
 
 
 Miscellaneous
@@ -628,17 +630,17 @@ Miscellaneous
           freeze_support()
           Process(target=f).start()
 
-   If the :func:`freeze_support()` line is missed out then trying to run the
-   frozen executable will raise :exc:`RuntimeError`.
+   If the ``freeze_support()`` line is missed out then trying to run the frozen
+   executable will raise :exc:`RuntimeError`.
 
    If the module is being run normally by the Python interpreter then
-   :func:`freeze_support()` has no effect.
+   :func:`freeze_support` has no effect.
 
 .. function:: set_executable()
 
    Sets the path of the python interpreter to use when starting a child process.
-   (By default `sys.executable` is used).  Embedders will probably need to do
-   some thing like ::
+   (By default :data:`sys.executable` is used).  Embedders will probably need to
+   do some thing like ::
 
       setExecutable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 
@@ -659,7 +661,7 @@ Connection Objects
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
 
-Connection objects usually created using :func:`Pipe()` -- see also
+Connection objects usually created using :func:`Pipe` -- see also
 :ref:`multiprocessing-listeners-clients`.
 
 .. class:: Connection
@@ -756,9 +758,10 @@ For example:
     receives, which can be a security risk unless you can trust the process
     which sent the message.
 
-    Therefore, unless the connection object was produced using :func:`Pipe()`
-    you should only use the `recv()` and `send()` methods after performing some
-    sort of authentication.  See :ref:`multiprocessing-auth-keys`.
+    Therefore, unless the connection object was produced using :func:`Pipe` you
+    should only use the :meth:`~Connection.recv` and :meth:`~Connection.send`
+    methods after performing some sort of authentication.  See
+    :ref:`multiprocessing-auth-keys`.
 
 .. warning::
 
@@ -771,8 +774,8 @@ Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generally synchronization primitives are not as necessary in a multiprocess
-program as they are in a mulithreaded program.  See the documentation for the
-standard library's :mod:`threading` module.
+program as they are in a mulithreaded program.  See the documentation for
+:mod:`threading` module.
 
 Note that one can also create synchronization primitives by using a manager
 object -- see :ref:`multiprocessing-managers`.
@@ -786,7 +789,7 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. class:: Condition([lock])
 
-   A condition variable: a clone of `threading.Condition`.
+   A condition variable: a clone of :class:`threading.Condition`.
 
    If *lock* is specified then it should be a :class:`Lock` or :class:`RLock`
    object from :mod:`multiprocessing`.
@@ -809,7 +812,7 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. note::
 
-   The :meth:`acquire()` method of :class:`BoundedSemaphore`, :class:`Lock`,
+   The :meth:`acquire` method of :class:`BoundedSemaphore`, :class:`Lock`,
    :class:`RLock` and :class:`Semaphore` has a timeout parameter not supported
    by the equivalents in :mod:`threading`.  The signature is
    ``acquire(block=True, timeout=None)`` with keyword parameters being
@@ -835,7 +838,7 @@ Shared :mod:`ctypes` Objects
 It is possible to create shared objects using shared memory which can be
 inherited by child processes.
 
-.. function:: Value(typecode_or_type[, lock[, *args]])
+.. function:: Value(typecode_or_type[, *args, lock]])
 
    Return a :mod:`ctypes` object allocated from shared memory.  By default the
    return value is actually a synchronized wrapper for the object.
@@ -927,7 +930,7 @@ processes.
    attributes which allow one to use it to store and retrieve strings -- see
    documentation for :mod:`ctypes`.
 
-.. function:: Array(typecode_or_type, size_or_initializer[, lock[, *args]])
+.. function:: Array(typecode_or_type, size_or_initializer[, *args[, lock]])
 
    The same as :func:`RawArray` except that depending on the value of *lock* a
    process-safe synchronization wrapper may be returned instead of a raw ctypes
@@ -969,11 +972,11 @@ processes.
    :class:`multiprocessing.RLock` object is created automatically.
 
    A synchronized wrapper will have two methods in addition to those of the
-   object it wraps: :meth:`get_obj()` returns the wrapped object and
-   :meth:`get_lock()` returns the lock object used for synchronization.
+   object it wraps: :meth:`get_obj` returns the wrapped object and
+   :meth:`get_lock` returns the lock object used for synchronization.
 
    Note that accessing the ctypes object through the wrapper can be a lot slower
-   han accessing the raw ctypes object.
+   than accessing the raw ctypes object.
 
 
 The table below compares the syntax for creating shared ctypes objects from
@@ -1049,10 +1052,10 @@ objects*.  Other processes can access the shared objects by using proxies.
 
 .. function:: multiprocessing.Manager()
 
-   Returns a started :class:`SyncManager` object which can be used for sharing
-   objects between processes.  The returned manager object corresponds to a
-   spawned child process and has methods which will create shared objects and
-   return corresponding proxies.
+   Returns a started :class:`~multiprocessing.managers.SyncManager` object which
+   can be used for sharing objects between processes.  The returned manager
+   object corresponds to a spawned child process and has methods which will
+   create shared objects and return corresponding proxies.
 
 .. module:: multiprocessing.managers
    :synopsis: Share data between process with shared objects.
@@ -1092,7 +1095,7 @@ their parent process exits.  The manager classes are defined in the
    .. method:: shutdown()
 
       Stop the process used by the manager.  This is only available if
-      meth:`start` has been used to start the server process.
+      :meth:`start` has been used to start the server process.
 
       This can be called multiple times.
 
@@ -1106,12 +1109,12 @@ their parent process exits.  The manager classes are defined in the
 
       *callable* is a callable used for creating objects for this type
       identifier.  If a manager instance will be created using the
-      :meth:`from_address()` classmethod or if the *create_method* argument is
+      :meth:`from_address` classmethod or if the *create_method* argument is
       ``False`` then this can be left as ``None``.
 
-      *proxytype* is a subclass of :class:`multiprocessing.managers.BaseProxy`
-      which is used to create proxies for shared objects with this *typeid*.  If
-      ``None`` then a proxy class is created automatically.
+      *proxytype* is a subclass of :class:`BaseProxy` which is used to create
+      proxies for shared objects with this *typeid*.  If ``None`` then a proxy
+      class is created automatically.
 
       *exposed* is used to specify a sequence of method names which proxies for
       this typeid should be allowed to access using
@@ -1119,7 +1122,7 @@ their parent process exits.  The manager classes are defined in the
       :attr:`proxytype._exposed_` is used instead if it exists.)  In the case
       where no exposed list is specified, all "public methods" of the shared
       object will be accessible.  (Here a "public method" means any attribute
-      which has a ``__call__()`` method and whose name does not begin with
+      which has a :meth:`__call__` method and whose name does not begin with
       ``'_'``.)
 
       *method_to_typeid* is a mapping used to specify the return type of those
@@ -1144,7 +1147,7 @@ their parent process exits.  The manager classes are defined in the
 
    A subclass of :class:`BaseManager` which can be used for the synchronization
    of processes.  Objects of this type are returned by
-   :func:`multiprocessing.Manager()`.
+   :func:`multiprocessing.Manager`.
 
    It also supports creation of shared lists and dictionaries.
 
@@ -1175,7 +1178,7 @@ their parent process exits.  The manager classes are defined in the
 
    .. method:: Queue([maxsize])
 
-      Create a shared `Queue.Queue` object and return a proxy for it.
+      Create a shared :class:`Queue.Queue` object and return a proxy for it.
 
    .. method:: RLock()
 
@@ -1188,7 +1191,7 @@ their parent process exits.  The manager classes are defined in the
 
    .. method:: Array(typecode, sequence)
 
-      Create an array and return a proxy for it.  (*format* is ignored.)
+      Create an array and return a proxy for it.
 
    .. method:: Value(typecode, value)
 
@@ -1229,8 +1232,8 @@ Customized managers
 >>>>>>>>>>>>>>>>>>>
 
 To create one's own manager, one creates a subclass of :class:`BaseManager` and
-use the :meth:`resgister()` classmethod to register new types or callables with
-the manager class.  For example::
+use the :meth:`~BaseManager.resgister` classmethod to register new types or
+callables with the manager class.  For example::
 
    from multiprocessing.managers import BaseManager
 
@@ -1329,7 +1332,7 @@ itself.  This means, for example, that one shared object can contain a second::
 
    >>> a = manager.list()
    >>> b = manager.list()
-   >>> a.append(b)         # referent of `a` now contains referent of `b`
+   >>> a.append(b)         # referent of a now contains referent of b
    >>> print a, b
    [[]] []
    >>> b.append('hello')
@@ -1376,7 +1379,7 @@ itself.  This means, for example, that one shared object can contain a second::
       Note in particular that an exception will be raised if *methodname* has
       not been *exposed*
 
-      An example of the usage of :meth:`_call_method()`::
+      An example of the usage of :meth:`_call_method`::
 
          >>> l = manager.list(range(10))
          >>> l._call_method('__len__')
@@ -1420,7 +1423,7 @@ Process Pools
    :synopsis: Create pools of processes.
 
 One can create a pool of processes which will carry out tasks submitted to it
-with the :class:`Pool` class in :mod:`multiprocess.pool`.
+with the :class:`Pool` class.
 
 .. class:: multiprocessing.Pool([processes[, initializer[, initargs]]])
 
@@ -1458,7 +1461,7 @@ with the :class:`Pool` class in :mod:`multiprocess.pool`.
 
    .. method:: map_async(func, iterable[, chunksize[, callback]])
 
-      A variant of the :meth:`.map` method which returns a result object.
+      A variant of the :meth:`map` method which returns a result object.
 
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
@@ -1566,7 +1569,7 @@ Usually message passing between processes is done using queues or by using
 However, the :mod:`multiprocessing.connection` module allows some extra
 flexibility.  It basically gives a high level message oriented API for dealing
 with sockets or Windows named pipes, and also has support for *digest
-authentication* using the :mod:`hmac` module from the standard library.
+authentication* using the :mod:`hmac` module.
 
 
 .. function:: deliver_challenge(connection, authkey)
@@ -1589,7 +1592,7 @@ authentication* using the :mod:`hmac` module from the standard library.
 .. function:: Client(address[, family[, authenticate[, authkey]]])
 
    Attempt to set up a connection to the listener which is using address
-   *address*, returning a :class:`Connection`.
+   *address*, returning a :class:`~multiprocessing.Connection`.
 
    The type of the connection is determined by *family* argument, but this can
    generally be omitted since it can usually be inferred from the format of
@@ -1664,15 +1667,6 @@ The module defines two exceptions:
 .. exception:: AuthenticationError
 
    Exception raised when there is an authentication error.
-
-.. exception:: BufferTooShort
-
-   Exception raise by the :meth:`Connection.recv_bytes_into` method of a
-   connection object when the supplied buffer object is too small for the
-   message read.
-
-   If *e* is an instance of :exc:`BufferTooShort` then ``e.args[0]`` will give
-   the message as a byte string.
 
 
 **Examples**
@@ -1756,11 +1750,11 @@ authentication key.  (Demonstrating that both ends are using the same key does
 
 If authentication is requested but do authentication key is specified then the
 return value of ``current_process().get_auth_key`` is used (see
-:class:`Process`).  This value will automatically inherited by any
-:class:`Process` object that the current process creates.  This means that (by
-default) all processes of a multi-process program will share a single
-authentication key which can be used when setting up connections between the
-themselves.
+:class:`~multiprocessing.Process`).  This value will automatically inherited by
+any :class:`~multiprocessing.Process` object that the current process creates.
+This means that (by default) all processes of a multi-process program will share
+a single authentication key which can be used when setting up connections
+between the themselves.
 
 Suitable authentication keys can also be generated by using :func:`os.urandom`.
 
@@ -1810,7 +1804,7 @@ The :mod:`multiprocessing.dummy` module
    :synopsis: Dumb wrapper around threading.
 
 :mod:`multiprocessing.dummy` replicates the API of :mod:`multiprocessing` but is
-no more than a wrapper around the `threading` module.
+no more than a wrapper around the :mod:`threading` module.
 
 
 .. _multiprocessing-programming:
@@ -1870,8 +1864,7 @@ Avoid terminating processes
     processes.
 
     Therefore it is probably best to only consider using
-    :meth:`Process.terminate()` on processes which never use any shared
-    resources.
+    :meth:`Process.terminate` on processes which never use any shared resources.
 
 Joining processes that use queues
 
@@ -1994,7 +1987,7 @@ Safe importing of main module
            p = Process(target=foo)
            p.start()
 
-    (The :func:`freeze_support()` line can be omitted if the program will be run
+    (The ``freeze_support()`` line can be omitted if the program will be run
     normally instead of frozen.)
 
     This allows the newly spawned Python interpreter to safely import the module
