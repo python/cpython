@@ -62,13 +62,10 @@ def RawArray(typecode_or_type, size_or_initializer):
         result.__init__(*size_or_initializer)
         return result
 
-def Value(typecode_or_type, *args, **kwds):
+def Value(typecode_or_type, *args, lock=None):
     '''
     Return a synchronization wrapper for a Value
     '''
-    lock = kwds.pop('lock', None)
-    if kwds:
-        raise ValueError('unrecognized keyword argument(s): %s' % list(kwds.keys()))
     obj = RawValue(typecode_or_type, *args)
     if lock is None:
         lock = RLock()
