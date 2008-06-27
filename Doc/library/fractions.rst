@@ -8,9 +8,11 @@
 .. sectionauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
 
 
-The :mod:`fractions` module defines an immutable, infinite-precision
-Rational number class.
+The :mod:`fractions` module provides support for rational number arithmetic.
 
+
+A Fraction instance can be constructed from a pair of integers, from
+another rational number, or from a string.
 
 .. class:: Fraction(numerator=0, denominator=1)
            Fraction(other_fraction)
@@ -18,28 +20,62 @@ Rational number class.
 
    The first version requires that *numerator* and *denominator* are
    instances of :class:`numbers.Integral` and returns a new
-   ``Fraction`` representing ``numerator/denominator``. If
-   *denominator* is :const:`0`, raises a :exc:`ZeroDivisionError`. The
-   second version requires that *other_fraction* is an instance of
-   :class:`numbers.Rational` and returns an instance of
-   :class:`Fraction` with the same value. The third version expects a
-   string of the form ``[-+]?[0-9]+(/[0-9]+)?``, optionally surrounded
-   by spaces.
+   :class:`Fraction` instance with value ``numerator/denominator``. If
+   *denominator* is :const:`0`, it raises a
+   :exc:`ZeroDivisionError`. The second version requires that
+   *other_fraction* is an instance of :class:`numbers.Rational` and
+   returns an :class:`Fraction` instance with the same value.  The
+   last version of the constructor expects a string or unicode
+   instance in one of two possible forms.  The first form is::
 
-   Implements all of the methods and operations from
-   :class:`numbers.Rational` and is immutable and hashable.
+      [sign] numerator ['/' denominator]
+
+   where the optional ``sign`` may be either '+' or '-' and
+   ``numerator`` and ``denominator`` (if present) are strings of
+   decimal digits.  The second permitted form is that of a number
+   containing a decimal point::
+
+      [sign] integer '.' [fraction] | [sign] '.' fraction
+
+   where ``integer`` and ``fraction`` are strings of digits.  In
+   either form the input string may also have leading and/or trailing
+   whitespace.  Here are some examples::
+
+      >>> from fractions import Fraction
+      >>> Fraction(16, -10)
+      Fraction(-8, 5)
+      >>> Fraction(123)
+      Fraction(123, 1)
+      >>> Fraction()
+      Fraction(0, 1)
+      >>> Fraction('3/7')
+      Fraction(3, 7)
+      [40794 refs]
+      >>> Fraction(' -3/7 ')
+      Fraction(-3, 7)
+      >>> Fraction('1.414213 \t\n')
+      Fraction(1414213, 1000000)
+      >>> Fraction('-.125')
+      Fraction(-1, 8)
+
+
+   The :class:`Fraction` class inherits from the abstract base class
+   :class:`numbers.Rational`, and implements all of the methods and
+   operations from that class.  :class:`Fraction` instances are hashable,
+   and should be treated as immutable.  In addition,
+   :class:`Fraction` has the following methods:
 
 
    .. method:: from_float(flt)
 
-      This classmethod constructs a :class:`Fraction` representing the exact
+      This class method constructs a :class:`Fraction` representing the exact
       value of *flt*, which must be a :class:`float`. Beware that
-      ``Fraction.from_float(0.3)`` is not the same value as ``Rational(3, 10)``
+      ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``
 
 
    .. method:: from_decimal(dec)
 
-      This classmethod constructs a :class:`Fraction` representing the exact
+      This class method constructs a :class:`Fraction` representing the exact
       value of *dec*, which must be a :class:`decimal.Decimal` instance.
 
 
@@ -86,6 +122,15 @@ Rational number class.
       nearest multiple of ``Fraction(1, 10**ndigits)`` (logically, if
       ``ndigits`` is negative), again rounding half toward even.  This
       method can also be accessed through the :func:`round` function.
+
+
+.. function:: gcd(a, b)
+
+   Return the greatest common divisor of the integers `a` and `b`.  If
+   either `a` or `b` is nonzero, then the absolute value of `gcd(a,
+   b)` is the largest integer that divides both `a` and `b`.  `gcd(a,b)`
+   has the same sign as `b` if `b` is nonzero; otherwise it takes the sign
+   of `a`.  `gcd(0, 0)` returns `0`.
 
 
 .. seealso::
