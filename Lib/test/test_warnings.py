@@ -301,6 +301,21 @@ class WarnTests(unittest.TestCase):
             warning_tests.__name__ = module_name
             sys.argv = argv
 
+    def test_warn_explicit_type_errors(self):
+        # warn_explicit() shoud error out gracefully if it is given objects
+        # of the wrong types.
+        # lineno is expected to be an integer.
+        self.assertRaises(TypeError, self.module.warn_explicit,
+                            None, UserWarning, None, None)
+        # Either 'message' needs to be an instance of Warning or 'category'
+        # needs to be a subclass.
+        self.assertRaises(TypeError, self.module.warn_explicit,
+                            None, None, None, 1)
+        # 'registry' must be a dict or None.
+        self.assertRaises((TypeError, AttributeError),
+                            self.module.warn_explicit,
+                            None, Warning, None, 1, registry=42)
+
 
 
 class CWarnTests(BaseTest, WarnTests):
