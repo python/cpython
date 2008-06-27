@@ -203,7 +203,7 @@ class Fraction(Rational):
 
     def __repr__(self):
         """repr(self)"""
-        return ('Fraction(%r, %r)' % (self._numerator, self._denominator))
+        return ('Fraction(%s, %s)' % (self._numerator, self._denominator))
 
     def __str__(self):
         """str(self)"""
