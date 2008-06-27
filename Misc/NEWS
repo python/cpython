@@ -27,6 +27,11 @@ What's new in Python 3.0b1?
 Core and Builtins
 -----------------
 
+- Issue #3211: warnings.warn_explicit() did not guard against its 'registry'
+  argument being anything other than a dict or None. Also fixed a bug in error
+  handling when 'message' and 'category' were both set to None, triggering a
+  bus error.
+
 - Issue #3100: Corrected a crash on deallocation of a subclassed weakref which
   holds the last (strong) reference to its referent.
 
