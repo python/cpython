@@ -1191,7 +1191,7 @@ static PyMethodDef marshal_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static struct PyModuleDef impmodule = {
+static struct PyModuleDef marshalmodule = {
 	PyModuleDef_HEAD_INIT,
 	"marshal",
 	NULL,
@@ -1208,7 +1208,7 @@ static struct PyModuleDef impmodule = {
 PyMODINIT_FUNC
 PyMarshal_Init(void)
 {
-	PyObject *mod = PyModule_Create(&impmodule);
+	PyObject *mod = PyModule_Create(&marshalmodule);
 	if (mod == NULL)
 		return NULL;
 	PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION);
