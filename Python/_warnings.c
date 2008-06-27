@@ -280,6 +280,11 @@ warn_explicit(PyObject *category, PyObject *message,
     PyObject *item = Py_None;
     const char *action;
     int rc;
+    
+    if (registry && !PyDict_Check(registry) && (registry != Py_None)) {
+        PyErr_SetString(PyExc_TypeError, "'registry' must be a dict");
+        return NULL;
+    }
 
     /* Normalize module. */
     if (module == NULL) {
@@ -303,6 +308,8 @@ warn_explicit(PyObject *category, PyObject *message,
     else {
         text = message;
         message = PyObject_CallFunction(category, "O", message);
+        if (message == NULL)
+            goto cleanup;
     }
 
     lineno_obj = PyInt_FromLong(lineno);
@@ -314,7 +321,7 @@ warn_explicit(PyObject *category, PyObject *message,
     if (key == NULL)
         goto cleanup;
 
-    if (registry != NULL) {
+    if ((registry != NULL) && (registry != Py_None)) {
         rc = already_warned(registry, key, 0);
         if (rc == -1)
             goto cleanup;
@@ -336,12 +343,13 @@ warn_explicit(PyObject *category, PyObject *message,
        is "always". */
     rc = 0;
     if (strcmp(action, "always") != 0) {
-        if (registry != NULL && PyDict_SetItem(registry, key, Py_True) < 0)
+        if (registry != NULL && registry != Py_None &&
+                PyDict_SetItem(registry, key, Py_True) < 0)
             goto cleanup;
         else if (strcmp(action, "ignore") == 0)
             goto return_none;
         else if (strcmp(action, "once") == 0) {
-            if (registry == NULL) {
+            if (registry == NULL || registry == Py_None) {
                 registry = get_once_registry();
                 if (registry == NULL)
                     goto cleanup;
@@ -351,7 +359,7 @@ warn_explicit(PyObject *category, PyObject *message,
         }
         else if (strcmp(action, "module") == 0) {
             /* registry[(text, category, 0)] = 1 */
-            if (registry != NULL)
+            if (registry != NULL && registry != Py_None)
                 rc = update_registry(registry, text, category, 0);
         }
         else if (strcmp(action, "default") != 0) {
@@ -435,7 +443,7 @@ warn_explicit(PyObject *category, PyObject *message,
     Py_XDECREF(text);
     Py_XDECREF(lineno_obj);
     Py_DECREF(module);
-    Py_DECREF(message);
+    Py_XDECREF(message);
     return result;  /* Py_None or NULL. */
 }
 
