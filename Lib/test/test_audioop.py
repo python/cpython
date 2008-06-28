@@ -30,7 +30,7 @@ class TestAudioop(unittest.TestCase):
 
     def test_minmax(self):
         self.assertEqual(audioop.minmax(data[0], 1), (0, 2))
-        Self.assertEqual(audioop.minmax(data[1], 2), (0, 2))
+        self.assertEqual(audioop.minmax(data[1], 2), (0, 2))
         self.assertEqual(audioop.minmax(data[2], 4), (0, 2))
 
     def test_maxpp(self):
