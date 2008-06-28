@@ -50,7 +50,7 @@ processes:
 
 **Queues**
 
-   The :class:`Queue` class is a near clone of :class:`Queue.Queue`.  For
+   The :class:`Queue` class is a near clone of :class:`queue.Queue`.  For
    example::
 
       from multiprocessing import Process, Queue
@@ -414,10 +414,10 @@ For passing messages one can use :func:`Pipe` (for a connection between two
 processes) or a queue (which allows multiple producers and consumers).
 
 The :class:`Queue` and :class:`JoinableQueue` types are multi-producer,
-multi-consumer FIFO queues modelled on the :class:`Queue.Queue` class in the
+multi-consumer FIFO queues modelled on the :class:`queue.Queue` class in the
 standard library.  They differ in that :class:`Queue` lacks the
-:meth:`~Queue.Queue.task_done` and :meth:`~Queue.Queue.join` methods introduced
-into Python 2.5's :class:`Queue.Queue` class.
+:meth:`~queue.Queue.task_done` and :meth:`~queue.Queue.join` methods introduced
+into Python 2.5's :class:`queue.Queue` class.
 
 If you use :class:`JoinableQueue` then you **must** call
 :meth:`JoinableQueue.task_done` for each task removed from the queue or else the
@@ -429,10 +429,10 @@ Note that one can also create a shared queue by using a manager object -- see
 
 .. note::
 
-   :mod:`multiprocessing` uses the usual :exc:`Queue.Empty` and
-   :exc:`Queue.Full` exceptions to signal a timeout.  They are not available in
+   :mod:`multiprocessing` uses the usual :exc:`queue.Empty` and
+   :exc:`queue.Full` exceptions to signal a timeout.  They are not available in
    the :mod:`multiprocessing` namespace so you need to import them from
-   :mod:`Queue`.
+   :mod:`queue`.
 
 
 .. warning::
@@ -477,11 +477,11 @@ For an example of the usage of queues for interprocess communication see
    locks/semaphores.  When a process first puts an item on the queue a feeder
    thread is started which transfers objects from a buffer into the pipe.
 
-   The usual :exc:`Queue.Empty` and :exc:`Queue.Full` exceptions from the
+   The usual :exc:`queue.Empty` and :exc:`queue.Full` exceptions from the
    standard library's :mod:`Queue` module are raised to signal timeouts.
 
-   :class:`Queue` implements all the methods of :class:`Queue.Queue` except for
-   :meth:`~Queue.Queue.task_done` and :meth:`~Queue.Queue.join`.
+   :class:`Queue` implements all the methods of :class:`queue.Queue` except for
+   :meth:`~queue.Queue.task_done` and :meth:`~queue.Queue.join`.
 
    .. method:: qsize()
 
@@ -506,10 +506,10 @@ For an example of the usage of queues for interprocess communication see
       Put item into the queue.  If the optional argument *block* is ``True`` 
       (the default) and *timeout* is ``None`` (the default), block if necessary until
       a free slot is available.  If *timeout* is a positive number, it blocks at
-      most *timeout* seconds and raises the :exc:`Queue.Full` exception if no
+      most *timeout* seconds and raises the :exc:`queue.Full` exception if no
       free slot was available within that time.  Otherwise (*block* is
       ``False``), put an item on the queue if a free slot is immediately
-      available, else raise the :exc:`Queue.Full` exception (*timeout* is
+      available, else raise the :exc:`queue.Full` exception (*timeout* is
       ignored in that case).
 
    .. method:: put_nowait(item)
@@ -521,10 +521,10 @@ For an example of the usage of queues for interprocess communication see
       Remove and return an item from the queue.  If optional args *block* is
       ``True`` (the default) and *timeout* is ``None`` (the default), block if
       necessary until an item is available.  If *timeout* is a positive number,
-      it blocks at most *timeout* seconds and raises the :exc:`Queue.Empty`
+      it blocks at most *timeout* seconds and raises the :exc:`queue.Empty`
       exception if no item was available within that time.  Otherwise (block is
       ``False``), return an item if one is immediately available, else raise the
-      :exc:`Queue.Empty` exception (*timeout* is ignored in that case).
+      :exc:`queue.Empty` exception (*timeout* is ignored in that case).
 
    .. method:: get_nowait()
                get_no_wait()
@@ -532,7 +532,7 @@ For an example of the usage of queues for interprocess communication see
       Equivalent to ``get(False)``.
 
    :class:`multiprocessing.Queue` has a few additional methods not found in
-   :class:`Queue.Queue` which are usually unnecessary:
+   :class:`queue.Queue` which are usually unnecessary:
 
    .. method:: close()
 
@@ -1176,7 +1176,7 @@ their parent process exits.  The manager classes are defined in the
 
    .. method:: Queue([maxsize])
 
-      Create a shared :class:`Queue.Queue` object and return a proxy for it.
+      Create a shared :class:`queue.Queue` object and return a proxy for it.
 
    .. method:: RLock()
 
@@ -1264,8 +1264,8 @@ Running the following commands creates a server for a single shared queue which
 remote clients can access::
 
    >>> from multiprocessing.managers import BaseManager
-   >>> import Queue
-   >>> queue = Queue.Queue()
+   >>> import queue
+   >>> queue = queue.Queue()
    >>> class QueueManager(BaseManager): pass
    ...
    >>> QueueManager.register('getQueue', callable=lambda:queue)
