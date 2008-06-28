@@ -386,6 +386,7 @@ else:
                     self.send(data.lower())
 
                 def handle_close(self):
+                    self.close()
                     if test_support.verbose:
                         sys.stdout.write(" server:  closed connection %s\n" % self.socket)
 
