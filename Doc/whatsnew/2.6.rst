@@ -1284,12 +1284,12 @@ Other Language Changes
 Here are all of the changes that Python 2.6 makes to the core Python language.
 
 * The :func:`hasattr` function was catching and ignoring all errors,
-  under the assumption that they meant a :meth:`__getattr__` method has 
-  failing somewhere and the return value of :func:`hasattr` would therefore
-  be ``False``.  This logic shouldn't be applied to 
-  :exc:`KeyboardInterrupt` and :exc:`SystemExit`, however; Python 2.6 will
-  no longer discard such exceptions when :func:`hasattr` encounters them.
-  (Fixed by Benjamin Peterson; :issue:`2196`.)
+  under the assumption that they meant a :meth:`__getattr__` method
+  was failing somewhere and the return value of :func:`hasattr` would
+  therefore be ``False``.  This logic shouldn't be applied to
+  :exc:`KeyboardInterrupt` and :exc:`SystemExit`, however; Python 2.6
+  will no longer discard such exceptions when :func:`hasattr`
+  encounters them.  (Fixed by Benjamin Peterson; :issue:`2196`.)
 
 * When calling a function using the ``**`` syntax to provide keyword
   arguments, you are no longer required to use a Python dictionary;
