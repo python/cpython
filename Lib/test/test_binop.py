@@ -301,20 +301,15 @@ class RatTestCase(unittest.TestCase):
         self.assertEqual(Rat(10), 10.0)
         self.assertEqual(10.0, Rat(10))
 
-    def test_future_div(self):
-        exec(future_test)
+    def test_true_div(self):
+        self.assertEqual(Rat(10, 3) / Rat(5, 7), Rat(14, 3))
+        self.assertEqual(Rat(10, 3) / 3, Rat(10, 9))
+        self.assertEqual(2 / Rat(5), Rat(2, 5))
+        self.assertEqual(3.0 * Rat(1, 2), 1.5)
+        self.assertEqual(Rat(1, 2) * 3.0, 1.5)
+        self.assertEqual(eval('1/2'), 0.5)
 
     # XXX Ran out of steam; TO DO: divmod, div, future division
-
-future_test = """
-from __future__ import division
-self.assertEqual(Rat(10, 3) / Rat(5, 7), Rat(14, 3))
-self.assertEqual(Rat(10, 3) / 3, Rat(10, 9))
-self.assertEqual(2 / Rat(5), Rat(2, 5))
-self.assertEqual(3.0 * Rat(1, 2), 1.5)
-self.assertEqual(Rat(1, 2) * 3.0, 1.5)
-self.assertEqual(eval('1/2'), 0.5)
-"""
 
 def test_main():
     support.run_unittest(RatTestCase)
