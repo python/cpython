@@ -1,6 +1,7 @@
 # -*- coding: iso-8859-1 -*-
 import unittest, test.support
 import sys, io, os
+import struct
 
 class SysModuleTest(unittest.TestCase):
 
@@ -373,13 +374,16 @@ class SysModuleTest(unittest.TestCase):
 class SizeofTest(unittest.TestCase):
 
     def setUp(self):
-        import struct
+        self.c = len(struct.pack('c', ' '))
+        self.H = len(struct.pack('H', 0))
         self.i = len(struct.pack('i', 0))
         self.l = len(struct.pack('l', 0))
-        self.p = len(struct.pack('P', 0))
-        self.headersize = self.l + self.p
+        self.P = len(struct.pack('P', 0))
+        # due to missing size_t information from struct, it is assumed that
+        # sizeof(Py_ssize_t) = sizeof(void*)
+        self.header = 'PP'
         if hasattr(sys, "gettotalrefcount"):
-            self.headersize += 2 * self.p
+            self.header += '2P'
         self.file = open(test.support.TESTFN, 'wb')
 
     def tearDown(self):
@@ -395,52 +399,38 @@ class SizeofTest(unittest.TestCase):
         else:
             self.assertEqual(result, size, msg + str(size))
 
-    def align(self, value):
-        mod = value % self.p
-        if mod != 0:
-            return value - mod + self.p
-        else:
-            return value
+    def calcsize(self, fmt):
+        """Wrapper around struct.calcsize which enforces the alignment of the
+        end of a structure to the alignment requirement of pointer.
 
-    def test_align(self):
-        self.assertEqual(self.align(0) % self.p, 0)
-        self.assertEqual(self.align(1) % self.p, 0)
-        self.assertEqual(self.align(3) % self.p, 0)
-        self.assertEqual(self.align(4) % self.p, 0)
-        self.assertEqual(self.align(7) % self.p, 0)
-        self.assertEqual(self.align(8) % self.p, 0)
-        self.assertEqual(self.align(9) % self.p, 0)
+        Note: This wrapper should only be used if a pointer member is included
+        and no member with a size larger than a pointer exists.
+        """
+        return struct.calcsize(fmt + '0P')
 
     def test_standardtypes(self):
-        i = self.i
-        l = self.l
-        p = self.p
-        h = self.headersize
-        # bool
-        self.check_sizeof(True, h + 2*l)
-        # bytearray
-        self.check_sizeof(bytes(), h + self.align(i) + l + p)
+        h = self.header
+        size = self.calcsize
         # cell
         def get_cell():
             x = 42
             def inner():
                 return x
             return inner
-        self.check_sizeof(get_cell().__closure__[0], h + p)
+        self.check_sizeof(get_cell().__closure__[0], size(h + 'P'))
         # code
-        self.check_sizeof(get_cell().__code__, h + self.align(5*i) + 8*p +\
-                           self.align(i) + 2*p)
+        self.check_sizeof(get_cell().__code__, size(h + '5i8Pi2P'))
         # complex
-        self.check_sizeof(complex(0,1), h + 2*8)
+        self.check_sizeof(complex(0,1), size(h + '2d'))
         # enumerate
-        self.check_sizeof(enumerate([]), h + l + 3*p)
+        self.check_sizeof(enumerate([]), size(h + 'l3P'))
         # reverse
-        self.check_sizeof(reversed(''), h + l + p )
+        self.check_sizeof(reversed(''), size(h + 'PP'))
         # float
-        self.check_sizeof(float(0), h + 8)
+        self.check_sizeof(float(0), size(h + 'd'))
         # function
         def func(): pass
-        self.check_sizeof(func, h + 11 * p)
+        self.check_sizeof(func, size(h + '11P'))
         class c():
             @staticmethod
             def foo():
@@ -449,58 +439,47 @@ class SizeofTest(unittest.TestCase):
             def bar(cls):
                 pass
             # staticmethod
-            self.check_sizeof(foo, h + l)
+            self.check_sizeof(foo, size(h + 'P'))
             # classmethod
-            self.check_sizeof(bar, h + l)
+            self.check_sizeof(bar, size(h + 'P'))
         # generator
         def get_gen(): yield 1
-        self.check_sizeof(get_gen(), h + p + self.align(i) + 2*p)
+        self.check_sizeof(get_gen(), size(h + 'Pi2P'))
         # builtin_function_or_method
-        self.check_sizeof(abs, h + 3*p)
+        self.check_sizeof(abs, size(h + '3P'))
         # module
-        self.check_sizeof(unittest, h + 3*p)
+        self.check_sizeof(unittest, size(h + '3P'))
         # range
-        self.check_sizeof(range(1), h + 3*p)
+        self.check_sizeof(range(1), size(h + '3P'))
         # slice
-        self.check_sizeof(slice(0), h + 3*p)
+        self.check_sizeof(slice(0), size(h + '3P'))
 
-        h += l
+        h += 'P'
+        # bool
+        self.check_sizeof(True, size(h + 'H'))
         # new-style class
         class class_newstyle(object):
             def method():
                 pass
         # type (PyTypeObject + PyNumberMethods + PyMappingMethods +
         #       PySequenceMethods + PyBufferProcs)
-        self.check_sizeof(class_newstyle, h +
-                          # PyTypeObject
-                          p + 2*l + 15*p + l + 4*p + l + 9*p + l + 11*p +
-                          self.align(4) +
-                          # PyNumberMethods
-                          16*p + self.align(i) + 17*p +
-                          3*p  + # PyMappingMethods
-                          10*p + # PySequenceMethods
-                          2*p  + # PyBufferProcs
-                          2*p)   # *ht_name and *ht_slots
+        self.check_sizeof(class_newstyle, size(h + 'P2P15Pl4PP9PP11PI') +\
+                                          size('16Pi17P 3P 10P 2P 2P'))
 
     def test_specialtypes(self):
-        i = self.i
-        l = self.l
-        p = self.p
-        h = self.headersize
+        h = self.header
+        size = self.calcsize
         # dict
-        self.check_sizeof({}, h + 3*l + 3*p + 8*(l + 2*p))
+        self.check_sizeof({}, size(h + '3P2P') + 8*size('P2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        self.check_sizeof(longdict, h + 3*l + 3*p + 8*(l + 2*p) + 16*(l + 2*p))
-        # list
-        self.check_sizeof([], h + l + p + l)
-        self.check_sizeof([1, 2, 3], h + l + p + l + 3*l)
+        self.check_sizeof(longdict, size(h + '3P2P') + (8+16)*size('P2P'))
         # unicode
         usize = len('\0'.encode('unicode-internal'))
         samples = ['', '1'*100]
         # we need to test for both sizes, because we don't know if the string
         # has been cached
         for s in samples:
-            basicsize =  h + l + p + l + l + p + usize * (len(s) + 1)
+            basicsize =  size(h + 'PPliP') + usize * (len(s) + 1)
             defenc = bytes(s, 'ascii')
             self.check_sizeof(s, basicsize,
                               size2=basicsize + sys.getsizeof(defenc))
@@ -512,17 +491,20 @@ class SizeofTest(unittest.TestCase):
             finally:
                 self.check_sizeof(s, basicsize + sys.getsizeof(defenc))
 
-        h += l
+        h += 'P'
+        # list
+        self.check_sizeof([], size(h + 'PP'))
+        self.check_sizeof([1, 2, 3], size(h + 'PP') + 3*self.P)
         # long
-        self.check_sizeof(0, h + self.align(2))
-        self.check_sizeof(1, h + self.align(2))
-        self.check_sizeof(-1, h + self.align(2))
-        self.check_sizeof(32768, h + self.align(2) + 2)
-        self.check_sizeof(32768*32768-1, h + self.align(2) + 2)
-        self.check_sizeof(32768*32768, h + self.align(2) + 4)
+        self.check_sizeof(0, size(h + 'H'))
+        self.check_sizeof(1, size(h + 'H'))
+        self.check_sizeof(-1, size(h + 'H'))
+        self.check_sizeof(32768, size(h + 'H') + self.H)
+        self.check_sizeof(32768*32768-1, size(h + 'H') + self.H)
+        self.check_sizeof(32768*32768, size(h + 'H') + 2*self.H)
         # tuple
-        self.check_sizeof((), h)
-        self.check_sizeof((1,2,3), h + 3*p)
+        self.check_sizeof((), size(h))
+        self.check_sizeof((1,2,3), size(h) + 3*self.P)
 
 
 def test_main():
