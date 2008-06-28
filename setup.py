@@ -656,6 +656,7 @@ class PyBuildExt(build_ext):
                              # have issues on many platforms.  I've temporarily
                              # disabled 4.6 to see what the odd platform
                              # buildbots say.
+        max_db_ver = (4, 7)  # XXX(matthias.klose): test with 4.7 on some buildds
         min_db_ver = (3, 3)
         db_setup_debug = False   # verbose debug prints from this script?
 
