@@ -1253,7 +1253,7 @@ dict_fromkeys(PyObject *cls, PyObject *args)
 		PyObject *key;
 		long hash;
 
-		if (dictresize(mp, PySet_GET_SIZE(seq)))
+		if (dictresize(mp, Py_SIZE(seq)))
 			return NULL;
 
 		while (_PyDict_Next(seq, &pos, &key, &oldvalue, &hash)) {
