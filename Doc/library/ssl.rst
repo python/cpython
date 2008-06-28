@@ -54,7 +54,7 @@ Functions, Constants, and Exceptions
    network connection.  This error is a subtype of :exc:`socket.error`, which
    in turn is a subtype of :exc:`IOError`.
 
-.. function:: wrap_socket (sock, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None)
+.. function:: wrap_socket (sock, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None, do_handshake_on_connect=True, suppress_ragged_eofs=True)
 
    Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance of :class:`ssl.SSLSocket`, a subtype
    of :class:`socket.socket`, which wraps the underlying socket in an SSL context.
@@ -121,6 +121,18 @@ Functions, Constants, and Exceptions
 
    In some older versions of OpenSSL (for instance, 0.9.7l on OS X 10.4),
    an SSLv2 client could not connect to an SSLv23 server.
+
+   The parameter ``do_handshake_on_connect`` specifies whether to do the SSL
+   handshake automatically after doing a :meth:`socket.connect`, or whether the
+   application program will call it explicitly, by invoking the :meth:`SSLSocket.do_handshake`
+   method.  Calling :meth:`SSLSocket.do_handshake` explicitly gives the program control over
+   the blocking behavior of the socket I/O involved in the handshake.
+
+   The parameter ``suppress_ragged_eofs`` specifies how the :meth:`SSLSocket.read`
+   method should signal unexpected EOF from the other end of the connection.  If specified
+   as :const:`True` (the default), it returns a normal EOF in response to unexpected
+   EOF errors raised from the underlying socket; if :const:`False`, it will raise
+   the exceptions back to the caller.
 
 .. function:: RAND_status()
 
@@ -290,6 +302,25 @@ SSLSocket Objects
    number of secret bits being used.  If no connection has been
    established, returns ``None``.
 
+.. method:: SSLSocket.do_handshake()
+
+   Perform a TLS/SSL handshake.  If this is used with a non-blocking socket,
+   it may raise :exc:`SSLError` with an ``arg[0]`` of :const:`SSL_ERROR_WANT_READ`
+   or :const:`SSL_ERROR_WANT_WRITE`, in which case it must be called again until it
+   completes successfully.  For example, to simulate the behavior of a blocking socket,
+   one might write::
+
+        while True:
+            try:
+                s.do_handshake()
+                break
+            except ssl.SSLError, err:
+                if err.args[0] == ssl.SSL_ERROR_WANT_READ:
+                    select.select([s], [], [])
+                elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
+                    select.select([], [s], [])
+                else:
+                    raise
 
 .. index:: single: certificates
 
@@ -367,6 +398,7 @@ certificate, you need to provide a "CA certs" file, filled with the certificate
 chains for each issuer you are willing to trust.  Again, this file just
 contains these chains concatenated together.  For validation, Python will
 use the first chain it finds in the file which matches.
+
 Some "standard" root certificates are available from various certification
 authorities:
 `CACert.org <http://www.cacert.org/index.php?id=3>`_,
