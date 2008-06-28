@@ -2,14 +2,15 @@
 
    SSL support based on patches by Brian E Gallew and Laszlo Kovacs.
    Re-worked a bit by Bill Janssen to add server-side support and
-   certificate decoding.
+   certificate decoding.  Chris Stawarz contributed some non-blocking
+   patches.
 
    This module is imported by ssl.py. It should *not* be used
    directly.
 
    XXX should partial writes be enabled, SSL_MODE_ENABLE_PARTIAL_WRITE?
 
-   XXX what about SSL_MODE_AUTO_RETRY
+   XXX what about SSL_MODE_AUTO_RETRY?
 */
 
 #include "Python.h"
@@ -265,8 +266,6 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 	PySSLObject *self;
 	char *errstr = NULL;
 	int ret;
-	int err;
-	int sockstate;
 	int verification_mode;
 
 	self = PyObject_New(PySSLObject, &PySSL_Type); /* Create new object */
@@ -388,57 +387,6 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 		SSL_set_accept_state(self->ssl);
 	PySSL_END_ALLOW_THREADS
 
-	/* Actually negotiate SSL connection */
-	/* XXX If SSL_connect() returns 0, it's also a failure. */
-	sockstate = 0;
-	do {
-		PySSL_BEGIN_ALLOW_THREADS
-		if (socket_type == PY_SSL_CLIENT)
-			ret = SSL_connect(self->ssl);
-		else
-			ret = SSL_accept(self->ssl);
-		err = SSL_get_error(self->ssl, ret);
-		PySSL_END_ALLOW_THREADS
-		if(PyErr_CheckSignals()) {
-			goto fail;
-		}
-		if (err == SSL_ERROR_WANT_READ) {
-			sockstate = check_socket_and_wait_for_timeout(Sock, 0);
-		} else if (err == SSL_ERROR_WANT_WRITE) {
-			sockstate = check_socket_and_wait_for_timeout(Sock, 1);
-		} else {
-			sockstate = SOCKET_OPERATION_OK;
-		}
-		if (sockstate == SOCKET_HAS_TIMED_OUT) {
-			PyErr_SetString(PySSLErrorObject,
-				ERRSTR("The connect operation timed out"));
-			goto fail;
-		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-			PyErr_SetString(PySSLErrorObject,
-				ERRSTR("Underlying socket has been closed."));
-			goto fail;
-		} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
-			PyErr_SetString(PySSLErrorObject,
-			  ERRSTR("Underlying socket too large for select()."));
-			goto fail;
-		} else if (sockstate == SOCKET_IS_NONBLOCKING) {
-			break;
-		}
-	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
-	if (ret < 1) {
-		PySSL_SetError(self, ret, __FILE__, __LINE__);
-		goto fail;
-	}
-	self->ssl->debug = 1;
-
-	PySSL_BEGIN_ALLOW_THREADS
-	if ((self->peer_cert = SSL_get_peer_certificate(self->ssl))) {
-		X509_NAME_oneline(X509_get_subject_name(self->peer_cert),
-				  self->server, X509_NAME_MAXLEN);
-		X509_NAME_oneline(X509_get_issuer_name(self->peer_cert),
-				  self->issuer, X509_NAME_MAXLEN);
-	}
-	PySSL_END_ALLOW_THREADS
 	self->Socket = Sock;
 	Py_INCREF(self->Socket);
 	return self;
@@ -487,6 +435,65 @@ PyDoc_STRVAR(ssl_doc,
 "                              cacertsfile]) -> sslobject");
 
 /* SSL object methods */
+
+static PyObject *PySSL_SSLdo_handshake(PySSLObject *self)
+{
+	int ret;
+	int err;
+	int sockstate;
+
+	/* Actually negotiate SSL connection */
+	/* XXX If SSL_do_handshake() returns 0, it's also a failure. */
+	sockstate = 0;
+	do {
+		PySSL_BEGIN_ALLOW_THREADS
+		ret = SSL_do_handshake(self->ssl);
+		err = SSL_get_error(self->ssl, ret);
+		PySSL_END_ALLOW_THREADS
+		if(PyErr_CheckSignals()) {
+			return NULL;
+		}
+		if (err == SSL_ERROR_WANT_READ) {
+			sockstate = check_socket_and_wait_for_timeout(self->Socket, 0);
+		} else if (err == SSL_ERROR_WANT_WRITE) {
+			sockstate = check_socket_and_wait_for_timeout(self->Socket, 1);
+		} else {
+			sockstate = SOCKET_OPERATION_OK;
+		}
+		if (sockstate == SOCKET_HAS_TIMED_OUT) {
+			PyErr_SetString(PySSLErrorObject,
+				ERRSTR("The handshake operation timed out"));
+			return NULL;
+		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
+			PyErr_SetString(PySSLErrorObject,
+				ERRSTR("Underlying socket has been closed."));
+			return NULL;
+		} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
+			PyErr_SetString(PySSLErrorObject,
+			  ERRSTR("Underlying socket too large for select()."));
+			return NULL;
+		} else if (sockstate == SOCKET_IS_NONBLOCKING) {
+			break;
+		}
+	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+	if (ret < 1)
+		return PySSL_SetError(self, ret, __FILE__, __LINE__);
+	self->ssl->debug = 1;
+
+	if (self->peer_cert)
+		X509_free (self->peer_cert);
+	PySSL_BEGIN_ALLOW_THREADS
+	if ((self->peer_cert = SSL_get_peer_certificate(self->ssl))) {
+		X509_NAME_oneline(X509_get_subject_name(self->peer_cert),
+				  self->server, X509_NAME_MAXLEN);
+		X509_NAME_oneline(X509_get_issuer_name(self->peer_cert),
+				  self->issuer, X509_NAME_MAXLEN);
+	}
+	PySSL_END_ALLOW_THREADS
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static PyObject *
 PySSL_server(PySSLObject *self)
@@ -1127,7 +1134,9 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
 		rc = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
 	PySSL_END_ALLOW_THREADS
 
+#ifdef HAVE_POLL
 normal_return:
+#endif
 	/* Return SOCKET_TIMED_OUT on timeout, SOCKET_OPERATION_OK otherwise
 	   (when we are able to write or when there's something to read) */
 	return rc == 0 ? SOCKET_HAS_TIMED_OUT : SOCKET_OPERATION_OK;
@@ -1140,9 +1149,15 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 	int count;
 	int sockstate;
 	int err;
+        int nonblocking;
 
 	if (!PyArg_ParseTuple(args, "s#:write", &data, &count))
 		return NULL;
+
+        /* just in case the blocking state of the socket has been changed */
+	nonblocking = (self->Socket->sock_timeout >= 0.0);
+        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
+        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
 
 	sockstate = check_socket_and_wait_for_timeout(self->Socket, 1);
 	if (sockstate == SOCKET_HAS_TIMED_OUT) {
@@ -1200,6 +1215,25 @@ PyDoc_STRVAR(PySSL_SSLwrite_doc,
 Writes the string s into the SSL object.  Returns the number\n\
 of bytes written.");
 
+static PyObject *PySSL_SSLpending(PySSLObject *self)
+{
+	int count = 0;
+
+	PySSL_BEGIN_ALLOW_THREADS
+	count = SSL_pending(self->ssl);
+	PySSL_END_ALLOW_THREADS
+	if (count < 0)
+		return PySSL_SetError(self, count, __FILE__, __LINE__);
+	else
+		return PyInt_FromLong(count);
+}
+
+PyDoc_STRVAR(PySSL_SSLpending_doc,
+"pending() -> count\n\
+\n\
+Returns the number of already decrypted bytes available for read,\n\
+pending on the connection.\n");
+
 static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 {
 	PyObject *buf;
@@ -1207,12 +1241,18 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	int len = 1024;
 	int sockstate;
 	int err;
+        int nonblocking;
 
 	if (!PyArg_ParseTuple(args, "|i:read", &len))
 		return NULL;
 
 	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
 		return NULL;
+
+        /* just in case the blocking state of the socket has been changed */
+	nonblocking = (self->Socket->sock_timeout >= 0.0);
+        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
+        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
 
 	/* first check if there are bytes ready to be read */
 	PySSL_BEGIN_ALLOW_THREADS
@@ -1232,9 +1272,18 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 			Py_DECREF(buf);
 			return NULL;
 		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-			/* should contain a zero-length string */
-			_PyString_Resize(&buf, 0);
-			return buf;
+			if (SSL_get_shutdown(self->ssl) !=
+			    SSL_RECEIVED_SHUTDOWN)
+			{
+                            Py_DECREF(buf);
+                            PyErr_SetString(PySSLErrorObject,
+                              "Socket closed without SSL shutdown handshake");
+				return NULL;
+			} else {
+				/* should contain a zero-length string */
+				_PyString_Resize(&buf, 0);
+				return buf;
+			}
 		}
 	}
 	do {
@@ -1285,16 +1334,54 @@ PyDoc_STRVAR(PySSL_SSLread_doc,
 \n\
 Read up to len bytes from the SSL socket.");
 
+static PyObject *PySSL_SSLshutdown(PySSLObject *self)
+{
+	int err;
+
+	/* Guard against closed socket */
+	if (self->Socket->sock_fd < 0) {
+		PyErr_SetString(PySSLErrorObject,
+				"Underlying socket has been closed.");
+		return NULL;
+	}
+
+	PySSL_BEGIN_ALLOW_THREADS
+	err = SSL_shutdown(self->ssl);
+	if (err == 0) {
+		/* we need to call it again to finish the shutdown */
+		err = SSL_shutdown(self->ssl);
+	}
+	PySSL_END_ALLOW_THREADS
+
+	if (err < 0)
+		return PySSL_SetError(self, err, __FILE__, __LINE__);
+	else {
+		Py_INCREF(self->Socket);
+		return (PyObject *) (self->Socket);
+	}
+}
+
+PyDoc_STRVAR(PySSL_SSLshutdown_doc,
+"shutdown(s) -> socket\n\
+\n\
+Does the SSL shutdown handshake with the remote end, and returns\n\
+the underlying socket object.");
+
 static PyMethodDef PySSLMethods[] = {
+	{"do_handshake", (PyCFunction)PySSL_SSLdo_handshake, METH_NOARGS},
 	{"write", (PyCFunction)PySSL_SSLwrite, METH_VARARGS,
 	 PySSL_SSLwrite_doc},
 	{"read", (PyCFunction)PySSL_SSLread, METH_VARARGS,
 	 PySSL_SSLread_doc},
+	{"pending", (PyCFunction)PySSL_SSLpending, METH_NOARGS,
+	 PySSL_SSLpending_doc},
 	{"server", (PyCFunction)PySSL_server, METH_NOARGS},
 	{"issuer", (PyCFunction)PySSL_issuer, METH_NOARGS},
 	{"peer_certificate", (PyCFunction)PySSL_peercert, METH_VARARGS,
 	 PySSL_peercert_doc},
 	{"cipher", (PyCFunction)PySSL_cipher, METH_NOARGS},
+	{"shutdown", (PyCFunction)PySSL_SSLshutdown, METH_NOARGS,
+         PySSL_SSLshutdown_doc},
 	{NULL, NULL}
 };
 
