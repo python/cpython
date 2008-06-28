@@ -46,7 +46,7 @@ Summarizing:
    compound_stmt: `if_stmt`
                 : | `while_stmt`
                 : | `for_stmt`
-                : | `try_stmt`
+                : | `try_stmt
                 : | `with_stmt`
                 : | `funcdef`
                 : | `classdef`
@@ -538,10 +538,10 @@ mutable values there can lead to unexpected results.  For :term:`new-style
 class`\es, descriptors can be used to create instance variables with different
 implementation details.
 
-Class definitions, like function definitions, may be wrapped by one or
-more :term:`decorator` expressions.  The evaluation rules for the
-decorator expressions are the same as for functions.  The result must
-be a class object, which is then bound to the class name.
+Class definitions, like function definitions, may be wrapped by one or more
+:term:`decorator` expressions.  The evaluation rules for the decorator
+expressions are the same as for functions.  The result must be a class object,
+which is then bound to the class name.
 
 .. rubric:: Footnotes
 
