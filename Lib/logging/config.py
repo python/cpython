@@ -155,8 +155,7 @@ def _install_handlers(cp, formatters):
             h.setLevel(logging._levelNames[level])
         if len(fmt):
             h.setFormatter(formatters[fmt])
-        #temporary hack for FileHandler and MemoryHandler.
-        if klass == logging.handlers.MemoryHandler:
+        if issubclass(klass, logging.handlers.MemoryHandler):
             if "target" in opts:
                 target = cp.get(sectname,"target")
             else:
