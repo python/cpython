@@ -129,7 +129,7 @@ Functions, Constants, and Exceptions
    method should signal unexpected EOF from the other end of the connection.  If specified
    as :const:`True` (the default), it returns a normal EOF in response to unexpected
    EOF errors raised from the underlying socket; if :const:`False`, it will raise
-   the exceptions back the caller.
+   the exceptions back to the caller.
 
 .. function:: RAND_status()
 
