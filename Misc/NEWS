@@ -107,6 +107,9 @@ Extension Modules
 Library
 -------
 
+- logging.config: Removed out-of-date comment in _install_handlers and
+  used issubclass in place of equality comparison of classes.
+
 - Issue #2722: Now the os.getcwd() supports very long path names.
 
 - Issue #2888: Fixed the behaviour of pprint when working with nested
