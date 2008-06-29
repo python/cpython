@@ -529,6 +529,7 @@ else:
                         self.send(str(data, 'ASCII', 'strict').lower().encode('ASCII', 'strict'))
 
                 def handle_close(self):
+                    self.close()
                     if support.verbose:
                         sys.stdout.write(" server:  closed connection %s\n" % self.socket)
 
