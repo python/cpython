@@ -305,6 +305,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName).dll"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -428,6 +429,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName).dll"
 			/>
 			<Tool
 				Name="VCALinkTool"
