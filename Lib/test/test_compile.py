@@ -18,21 +18,9 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(SyntaxError, eval, 'lambda a,a:0')
         self.assertRaises(SyntaxError, eval, 'lambda a,a=1:0')
         self.assertRaises(SyntaxError, eval, 'lambda a=1,a=1:0')
-        try:
-            exec('def f(a, a): pass')
-            self.fail("duplicate arguments")
-        except SyntaxError:
-            pass
-        try:
-            exec('def f(a = 0, a = 1): pass')
-            self.fail("duplicate keyword arguments")
-        except SyntaxError:
-            pass
-        try:
-            exec('def f(a): global a; a = 1')
-            self.fail("variable is global and local")
-        except SyntaxError:
-            pass
+        self.assertRaises(SyntaxError, exec, 'def f(a, a): pass')
+        self.assertRaises(SyntaxError, exec, 'def f(a = 0, a = 1): pass')
+        self.assertRaises(SyntaxError, exec, 'def f(a): global a; a = 1')
 
     def test_syntax_error(self):
         self.assertRaises(SyntaxError, compile, "1+*3", "filename", "exec")
@@ -41,11 +29,7 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(SyntaxError, compile, "f(None=1)", "<string>", "exec")
 
     def test_duplicate_global_local(self):
-        try:
-            exec('def f(a): global a; a = 1')
-            self.fail("variable is global and local")
-        except SyntaxError:
-            pass
+        self.assertRaises(SyntaxError, exec, 'def f(a): global a; a = 1')
 
     def test_exec_with_general_mapping_for_locals(self):
 
@@ -76,23 +60,13 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(m.results, ('z', g))
         exec('z = locals()', g, m)
         self.assertEqual(m.results, ('z', m))
-        try:
-            exec('z = b', m)
-        except TypeError:
-            pass
-        else:
-            self.fail('Did not validate globals as a real dict')
+        self.assertRaises(TypeError, exec, 'z = b', m)
 
         class A:
             "Non-mapping"
             pass
         m = A()
-        try:
-            exec('z = a', g, m)
-        except TypeError:
-            pass
-        else:
-            self.fail('Did not validate locals as a mapping')
+        self.assertRaises(TypeError, exec, 'z = a', g, m)
 
         # Verify that dict subclasses work as well
         class D(dict):
@@ -129,11 +103,7 @@ def f(x):
         self.assertEqual(g['f'](5), 0)
 
     def test_argument_order(self):
-        try:
-            exec('def f(a=1, b): pass')
-            self.fail("non-default args after default")
-        except SyntaxError:
-            pass
+        self.assertRaises(SyntaxError, exec, 'def f(a=1, b): pass')
 
     def test_float_literals(self):
         # testing bad float literals
