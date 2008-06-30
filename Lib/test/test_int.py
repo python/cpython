@@ -95,6 +95,9 @@ class IntTestCases(unittest.TestCase):
         self.assertRaises(ValueError, int, "0b", 2)
         self.assertRaises(ValueError, int, "0b", 0)
 
+        # Bug #3236: Return small longs from PyLong_FromString
+        self.assert_(int("10") is 10)
+        self.assert_(int("-1") is -1)
 
         # SF bug 1334662: int(string, base) wrong answers
         # Various representations of 2**32 evaluated to 0
