@@ -1981,6 +1981,14 @@ digit beyond the first.
 		goto onError;
 	if (pend)
 		*pend = str;
+	long_normalize(z);
+	if (ABS(Py_SIZE(z)) <= 1) {
+		long res = MEDIUM_VALUE(z);
+		if (-NSMALLPOSINTS <= res && res <= NSMALLPOSINTS) {
+			Py_DECREF(z);
+			return PyLong_FromLong(res);
+		}
+	}
 	return (PyObject *) z;
 
  onError:
