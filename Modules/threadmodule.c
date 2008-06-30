@@ -293,7 +293,10 @@ _ldict(localobject *self)
 		}
 		
 	}
-	else if (self->dict != ldict) {
+
+	/* The call to tp_init above may have caused another thread to run.
+	   Install our ldict again. */
+	if (self->dict != ldict) {
 		Py_CLEAR(self->dict);
 		Py_INCREF(ldict);
 		self->dict = ldict;
