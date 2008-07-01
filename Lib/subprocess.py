@@ -883,8 +883,6 @@ class Popen(object):
 
             if self.stdin:
                 if input is not None:
-                    if isinstance(input, str):
-                        input = input.encode()
                     self.stdin.write(input)
                 self.stdin.close()
 
@@ -1129,10 +1127,6 @@ class Popen(object):
 
 
         def _communicate(self, input):
-            if self.stdin:
-                if isinstance(input, str): # Unicode
-                    input = input.encode("utf-8") # XXX What else?
-                input = bytes(input)
             read_set = []
             write_set = []
             stdout = None # Return
