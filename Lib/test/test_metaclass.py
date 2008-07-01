@@ -128,7 +128,7 @@ Check for duplicate keywords.
     ...
     Traceback (most recent call last):
     [...]
-    TypeError: __build_class__() got multiple values for keyword argument 'metaclass'
+    SyntaxError: keyword argument repeated
     >>>
 
 Another way.
