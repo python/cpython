@@ -470,6 +470,12 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
      ...
    SyntaxError: invalid syntax
 
+
+>>> f(a=23, a=234)
+Traceback (most recent call last):
+   ...
+SyntaxError: keyword argument repeated
+
 """
 
 import re

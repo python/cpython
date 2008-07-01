@@ -1968,7 +1968,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
             }
             else {
                 keyword_ty kw;
-                identifier key;
+                identifier key, tmp;
+                int k;
 
                 /* CHILD(ch, 0) is test, but must be an identifier? */ 
                 e = ast_for_expr(c, CHILD(ch, 0));
@@ -1989,6 +1990,13 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 		  return NULL;
 		}
                 key = e->v.Name.id;
+                for (k = 0; k < nkeywords; k++) {
+                    tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
+                    if (!PyUnicode_Compare(tmp, key)) {
+                        ast_error(CHILD(ch, 0), "keyword argument repeated");
+                        return NULL;
+                    }
+                }
                 e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
                     return NULL;
