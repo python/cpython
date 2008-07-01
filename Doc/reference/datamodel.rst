@@ -1803,14 +1803,17 @@ left undefined.
 .. method:: object.__complex__(self)
             object.__int__(self)
             object.__float__(self)
+            object.__round__(self, [,n])
 
    .. index::
       builtin: complex
       builtin: int
       builtin: float
+      builtin: round
 
-   Called to implement the built-in functions :func:`complex`, :func:`int`
-   and :func:`float`.  Should return a value of the appropriate type.
+   Called to implement the built-in functions :func:`complex`,
+   :func:`int`, :func:`float` and :func:`round`.  Should return a value
+   of the appropriate type.
 
 
 .. method:: object.__index__(self)
