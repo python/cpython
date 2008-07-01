@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2683: Fix inconsistency in subprocess.Popen.communicate(): the
+  argument now must be a bytes object in any case.
+
 - Issue #3145: help("modules whatever") failed when trying to load the source
   code of every single module of the standard library, including invalid files
   used in the test suite.

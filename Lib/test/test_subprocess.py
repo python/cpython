@@ -302,7 +302,7 @@ class ProcessTestCase(unittest.TestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-        (stdout, stderr) = p.communicate("banana")
+        (stdout, stderr) = p.communicate(b"banana")
         self.assertEqual(stdout, b"banana")
         self.assertEqual(remove_stderr_debug_decorations(stderr),
                          b"pineapple")
@@ -420,7 +420,7 @@ class ProcessTestCase(unittest.TestCase):
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-            data = p.communicate("lime")[0]
+            data = p.communicate(b"lime")[0]
             self.assertEqual(data, b"lime")
 
 
