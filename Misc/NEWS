@@ -10,6 +10,10 @@ What's New in Python 2.6 beta 2?
 Core and Builtins
 -----------------
 
+- Issue #3242: Fix a crash inside the print statement, if sys.stdout is
+  set to a custom object whose write() method happens to install
+  another file in sys.stdout.
+
 - Issue #3088: Corrected a race condition in classes derived from
   threading.local: the first member set by a thread could be saved in
   another thread's dictionary.
