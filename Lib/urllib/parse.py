@@ -416,11 +416,11 @@ def urlencode(query,doseq=0):
 # urllib.parse.unquote('abc%20def') -> 'abc def'
 # quote('abc def') -> 'abc%20def')
 
-def toBytes(url):
-    """toBytes(u"URL") --> 'URL'."""
+def to_bytes(url):
+    """to_bytes(u"URL") --> 'URL'."""
     # Most URL schemes require ASCII. If that changes, the conversion
     # can be relaxed.
-    # XXX get rid of toBytes()
+    # XXX get rid of to_bytes()
     if isinstance(url, str):
         try:
             url = url.encode("ASCII").decode()
