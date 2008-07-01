@@ -512,17 +512,21 @@ string literals.  In addition to the functionality described here, there are
 also string-specific methods described in the :ref:`string-methods` section.
 
 Bytes and bytearray objects contain single bytes -- the former is immutable
-while the latter is a mutable sequence.  Bytes objects can be constructed from
-literals too; use a ``b`` prefix with normal string syntax: ``b'xyzzy'``.  To
-construct byte arrays, use the :func:`bytearray` function.
+while the latter is a mutable sequence.  Bytes objects can be constructed the
+constructor, :func:`bytes`, and from literals; use a ``b`` prefix with normal
+string syntax: ``b'xyzzy'``.  To construct byte arrays, use the
+:func:`bytearray` function.
 
 .. warning::
 
    While string objects are sequences of characters (represented by strings of
    length 1), bytes and bytearray objects are sequences of *integers* (between 0
    and 255), representing the ASCII value of single bytes.  That means that for
-   a bytes or bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]``
-   will be a bytes or bytearray object of length 1.
+   a bytes or bytearray object *b*, ``b[0]`` will be an integer, while
+   ``b[0:1]`` will be a bytes or bytearray object of length 1.  The
+   representation of bytes objects uses the literal format (``b'...'``) since it
+   is generally more useful than e.g. ``bytes([50, 19, 100])``.  You can always
+   convert a bytes object into a list of integers using ``list(b)``.
 
    Also, while in previous Python versions, byte strings and Unicode strings
    could be exchanged for each other rather freely (barring encoding issues),
@@ -1413,15 +1417,14 @@ Wherever one of these methods needs to interpret the bytes as characters
 The bytes and bytearray types have an additional class method:
 
 .. method:: bytes.fromhex(string)
+            bytearray.fromhex(string)
 
-   This :class:`bytes` class method returns a bytes object, decoding the given
-   string object.  The string must contain two hexadecimal digits per byte, spaces
-   are ignored.
+   This :class:`bytes` class method returns a bytes or bytearray object,
+   decoding the given string object.  The string must contain two hexadecimal
+   digits per byte, spaces are ignored.
 
-   Example::
-   
-      >>> bytes.fromhex('f0 f1f2  ')
-      b'\xf0\xf1\xf2'
+   >>> bytes.fromhex('f0 f1f2  ')
+   b'\xf0\xf1\xf2'
 
 .. XXX verify/document translate() semantics!
 
