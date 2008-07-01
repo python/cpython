@@ -526,7 +526,21 @@ environment variable.
 PEP 371: The ``multiprocessing`` Package
 =====================================================
 
-XXX write this.
+.. XXX I think this still needs help
+
+:mod:`multiprocessing` makes it easy to distribute work over multiple processes.
+Its API is similiar to that of :mod:`threading`.  For example::
+
+    from multiprocessing import Process
+
+    def long_hard_task(n):
+        print n * 43
+
+    for i in range(10):
+        Process(target=long_hard_task, args=(i)).start()
+
+will multiply the numbers between 0 and 10 times 43 and print out the result
+concurrently.
 
 .. seealso::
 
