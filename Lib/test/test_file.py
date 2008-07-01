@@ -323,11 +323,30 @@ class OtherFileTests(unittest.TestCase):
             os.unlink(TESTFN)
 
 
+class StdoutTests(unittest.TestCase):
+
+    def test_move_stdout_on_write(self):
+        # Issue 3242: sys.stdout can be replaced (and freed) during a
+        # print statement; prevent a segfault in this case
+        save_stdout = sys.stdout
+
+        class File:
+            def write(self, data):
+                if '\n' in data:
+                    sys.stdout = save_stdout
+
+        try:
+            sys.stdout = File()
+            print "some text"
+        finally:
+            sys.stdout = save_stdout
+
+
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
     try:
-        run_unittest(AutoFileTests, OtherFileTests)
+        run_unittest(AutoFileTests, OtherFileTests, StdoutTests)
     finally:
         if os.path.exists(TESTFN):
             os.unlink(TESTFN)
