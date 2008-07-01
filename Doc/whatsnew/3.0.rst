@@ -342,10 +342,6 @@ language and built-in functions.
 
 * :func:`exec` is now a function.
 
-* There is a new free format floating point representation, which is based on
-  "Floating-Point Printer Sample Code", by Robert G. Burger.  ``repr(11./5)``
-  now returns ``2.2`` instead of ``2.2000000000000002``.
-
 * The :meth:`__oct__` and :meth:`__hex__` special methods are removed --
   :func:`oct` and :func:`hex` use :meth:`__index__` now to convert the argument
   to an integer.
