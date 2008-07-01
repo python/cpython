@@ -1726,8 +1726,8 @@ PyDoc_STRVAR(round_doc,
 "round(number[, ndigits]) -> floating point number\n\
 \n\
 Round a number to a given precision in decimal digits (default 0 digits).\n\
-This returns an int when called with one argument, otherwise a float.\n\
-Precision may be negative.");
+This returns an int when called with one argument, otherwise a the\n\
+same type as the number. ndigits may be negative.");
 
 
 static PyObject *
