@@ -1,4 +1,3 @@
-
 :mod:`msilib` --- Read and write Microsoft Installer files
 ==========================================================
 
@@ -165,11 +164,11 @@ View Objects
 ------------
 
 
-.. method:: View.Execute([params=None])
+.. method:: View.Execute(params)
 
-   Execute the SQL query of the view, through :cfunc:`MSIViewExecute`. *params* is
-   an optional record describing actual values of the parameter tokens in the
-   query.
+   Execute the SQL query of the view, through :cfunc:`MSIViewExecute`. If
+   *params* is not ``None``, it is a record describing actual values of the
+   parameter tokens in the query.
 
 
 .. method:: View.GetColumnInfo(kind)
