@@ -46,7 +46,7 @@ following values are considered false:
 
 * ``False``
 
-* zero of any numeric type, for example, ``0``, ``0L``, ``0.0``, ``0j``.
+* zero of any numeric type, for example, ``0``, ``0.0``, ``0j``.
 
 * any empty sequence, for example, ``''``, ``()``, ``[]``.
 
@@ -216,15 +216,17 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
    object: complex number
    pair: C; language
 
-There are three distinct numeric types: :dfn:`integers`, :dfn:`floating point
-numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a subtype of
-integers.  Integers have unlimited precision.  Floating point numbers are
-implemented using :ctype:`double` in C.  All bets on their precision are off
-unless you happen to know the machine you are working with.
-
-Complex numbers have a real and imaginary part, which are each implemented using
-:ctype:`double` in C.  To extract these parts from a complex number *z*, use
-``z.real`` and ``z.imag``.
+There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
+point numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a
+subtype of integers.  Integers have unlimited precision.  Floating point
+numbers are implemented using :ctype:`double` in C---all bets on their
+precision are off unless you happen to know the machine you are working
+with. Complex numbers have a real and imaginary part, which are each
+implemented using :ctype:`double` in C.  To extract these parts from a
+complex number *z*, use ``z.real`` and ``z.imag``. (The standard library
+includes additional numeric types, :mod:`fractions` that hold rationals,
+and :mod:`decimal` that hold floating-point numbers with user-definable
+precision.)
 
 .. index::
    pair: numeric; literals
@@ -355,6 +357,9 @@ All :class:`numbers.Real` types (:class:`int` and
 +--------------------+--------------------------------+--------+
 | ``math.ceil(x)``   | the least Integral >= *x*      |        |
 +--------------------+--------------------------------+--------+
+
+For additional numeric operations see the :mod:`math` and :mod:`cmath`
+modules.
 
 .. XXXJH exceptions: overflow (when? what operations?) zerodivision
 
@@ -756,6 +761,15 @@ functions based on regular expressions.
    one character, false otherwise.
 
 
+.. method:: str.isdecimal()
+
+   Return true if all characters in the string are decimal
+   characters and there is at least one character, false
+   otherwise. Decimal characters include digit characters, and all characters
+   that that can be used to form decimal-radix numbers, e.g. U+0660,
+   ARABIC-INDIC DIGIT ZERO.
+   
+
 .. method:: str.isdigit()
 
    Return true if all characters in the string are digits and there is at least one
@@ -774,6 +788,15 @@ functions based on regular expressions.
    least one cased character, false otherwise.
 
 
+.. method:: str.isnumeric()
+
+   Return true if all characters in the string are numeric
+   characters, and there is at least one character, false
+   otherwise. Numeric characters include digit characters, and all characters
+   that have the Unicode numeric value property, e.g. U+2155,
+   VULGAR FRACTION ONE FIFTH.
+
+   
 .. method:: str.isprintable()
 
    Return true if all characters in the string are printable or the string is
@@ -1016,22 +1039,6 @@ functions based on regular expressions.
    *width*.  A sign prefix is handled correctly.  The original string is
    returned if *width* is less than ``len(s)``.
 
-
-.. method:: str.isnumeric()
-
-   Return ``True`` if there are only numeric characters in S, ``False``
-   otherwise. Numeric characters include digit characters, and all characters
-   that have the Unicode numeric value property, e.g. U+2155,
-   VULGAR FRACTION ONE FIFTH.
-
-   
-.. method:: str.isdecimal()
-
-   Return ``True`` if there are only decimal characters in S, ``False``
-   otherwise. Decimal characters include digit characters, and all characters
-   that that can be used to form decimal-radix numbers, e.g. U+0660,
-   ARABIC-INDIC DIGIT ZERO.
-   
 
 
 .. _old-string-formatting:
