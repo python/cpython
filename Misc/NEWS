@@ -21,6 +21,10 @@ Core and Builtins
   slice(None, 10, -1).indices(10) returns (9, 9, -1) instead of (9,
   10, -1).
 
+- Issue #3219: Calling a function with repeated keyword arguments, f(a=2, a=23),
+  would not cause a syntax error.  This was regression from 2.4 caused by the
+  switch to the new compiler.
+
 Build
 -----
 

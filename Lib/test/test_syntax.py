@@ -417,6 +417,11 @@ leading to spurious errors.
      ...
    SyntaxError: can't assign to function call (<doctest test.test_syntax[48]>, line 6)
 
+>>> f(a=23, a=234)
+Traceback (most recent call last):
+   ...
+SyntaxError: keyword argument repeated (<doctest test.test_syntax[49]>, line 1)
+
 """
 
 import re

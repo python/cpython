@@ -1912,6 +1912,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
             else {
                 keyword_ty kw;
                 identifier key;
+                int k;
+                char *tmp;
 
                 /* CHILD(ch, 0) is test, but must be an identifier? */ 
                 e = ast_for_expr(c, CHILD(ch, 0));
@@ -1933,6 +1935,14 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                 key = e->v.Name.id;
                 if (!forbidden_check(c, CHILD(ch, 0), PyBytes_AS_STRING(key)))
                     return NULL;
+                for (k = 0; k < nkeywords; k++) {
+                    tmp = PyString_AS_STRING(
+                        ((keyword_ty)asdl_seq_GET(keywords, k))->arg);
+                    if (!strcmp(tmp, PyString_AS_STRING(key))) {
+                        ast_error(CHILD(ch, 0), "keyword argument repeated");
+                        return NULL;
+                    }
+                }
                 e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
                     return NULL;
