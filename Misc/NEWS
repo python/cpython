@@ -27,9 +27,9 @@ Library
 Tools/Demos
 -----------
 
-- The Mac/Demos directory has been removed
+- The Mac/Demos directory has been removed.
 
-- All of the Mac scripts have been removed (including BuildApplet.py)
+- All of the Mac scripts have been removed (including BuildApplet.py).
 
 
 What's new in Python 3.0b1?
