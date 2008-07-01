@@ -123,11 +123,6 @@ GUI-things. Keep the "alt" key depressed while dragging or double-clicking a
 script to set runtime options. These options can be set once and for all
 through PythonLauncher's preferences dialog.
 
-"BuildApplet.app" creates an applet from a Python script. Drop the script on it
-and out comes a full-featured MacOS application. There is much more to this,
-to be supplied later. Some useful (but outdated) info can be found in
-Mac/Demo.
-
 The commandline scripts /usr/local/bin/python and pythonw can be used to run
 non-GUI and GUI python scripts from the command line, respectively.
 

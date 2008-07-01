@@ -141,7 +141,6 @@ AC_ARG_ENABLE(framework,
 		# files:
 		AC_CONFIG_FILES(Mac/Makefile)
 		AC_CONFIG_FILES(Mac/PythonLauncher/Makefile)
-		AC_CONFIG_FILES(Mac/IDLE/Makefile)
 		AC_CONFIG_FILES(Mac/Resources/framework/Info.plist)
 		AC_CONFIG_FILES(Mac/Resources/app/Info.plist)
 	esac
