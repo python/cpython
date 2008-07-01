@@ -2058,6 +2058,10 @@ Files have the following methods:
    that when in non-blocking mode, less data than what was requested may be
    returned, even if no *size* parameter was given.
 
+   .. note::
+      As this function depends of the underlying C function :cfunc:`fread`,
+      it resembles its behaviour in details like caching EOF and others.
+
 
 .. method:: file.readline([size])
 
