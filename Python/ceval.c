@@ -1617,6 +1617,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 							"lost sys.stdout");
 			}
 			if (w != NULL) {
+				/* w.write() may replace sys.stdout, so we
+				 * have to keep our reference to it */
 				Py_INCREF(w);
 				err = PyFile_WriteString("\n", w);
 				if (err == 0)
