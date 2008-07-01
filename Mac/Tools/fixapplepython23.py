@@ -14,7 +14,7 @@ status also when nothing needs to be fixed.
 """
 import sys
 import os
-import gestalt
+import gestalt as _gestalt
 
 MAKEFILE='/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config/Makefile'
 CHANGES=((

@@ -45,8 +45,8 @@ DOCDIR=$(srcdir)/Resources/app/Resources/English.lproj/Documentation
 DOCINDEX=$(DOCDIR)/"Documentation idx"
 compileall=$(srcdir)/../Lib/compileall.py
 
-installapps: install_Python install_BuildApplet install_PythonLauncher \
-	install_IDLE checkapplepython install_pythonw install_versionedtools
+installapps: install_PythonLauncher install_IDLE checkapplepython install_pythonw \
+	install_versionedtools
 
 install_pythonw: pythonw
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
@@ -159,73 +159,10 @@ install_Python:
 	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
 
 install_IDLE:
-	cd IDLE && make install
-
-install_BuildApplet:
-	$(RUNSHARED) $(BUILDPYTHON) $(srcdir)/scripts/BuildApplet.py \
-		--destroot "$(DESTDIR)" \
-		--python $(INSTALLED_PYTHONAPP) \
-		--output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app" \
-		$(srcdir)/scripts/BuildApplet.py
-
-MACLIBDEST=$(LIBDEST)/plat-mac
-MACTOOLSDEST=$(prefix)/Mac/Tools
-MACTOOLSSRC=$(srcdir)/Mac/Tools
-MACTOOLSSUBDIRS=IDE
-
-installmacsubtree:
-	@for i in $(MACTOOLSDEST); \
-	do \
-		if test ! -d $(DESTDIR)$$i; then \
-			echo "Creating directory $(DESTDIR)$$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
-		else	true; \
-		fi; \
-	done
-	@for d in $(MACTOOLSSUBDIRS); \
-	do \
-		a=$(MACTOOLSSRC)/$$d; \
-		if test ! -d $$a; then continue; else true; fi; \
-		b=$(DESTDIR)$(MACTOOLSDEST)/$$d; \
-		if test ! -d $$b; then \
-			echo "Creating directory $$b"; \
-			$(INSTALL) -d -m $(DIRMODE) $$b; \
-		else	true; \
-		fi; \
-	done
-	@for d in $(MACTOOLSSUBDIRS); \
-	do \
-		a=$(MACTOOLSSRC)/$$d; \
-		if test ! -d $$a; then continue; else true; fi; \
-		b=$(DESTDIR)$(MACTOOLSDEST)/$$d; \
-		for i in $$a/*; \
-		do \
-			case $$i in \
-			*CVS) ;; \
-			*.svn) ;; \
-			*.py[co]) ;; \
-			*.orig) ;; \
-			*~) ;; \
-			*.rsrc) \
-				echo $(CPMAC) $$i $$b ; \
-				$(CPMAC) $$i $$b ; \
-				;; \
-			*) \
-				if test -d $$i; then continue; fi; \
-				if test -x $$i; then \
-				    echo $(INSTALL_SCRIPT) $$i $$b; \
-				    $(INSTALL_SCRIPT) $$i $$b; \
-				else \
-				    echo $(INSTALL_DATA) $$i $$b; \
-				    $(INSTALL_DATA) $$i $$b; \
-				fi;; \
-			esac; \
-		done; \
-	done
-
-
-	$(RUNSHARED) $(BUILDPYTHON) -Wi $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
-	$(RUNSHARED) $(BUILDPYTHON) -O -Wi $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
+	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
+	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
+	cp -PR IDLE/IDLE.app "$(DESTDIR)$(PYTHONAPPSDIR)"
+	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
 
 $(INSTALLED_PYTHONAPP): install_Python
 
@@ -248,7 +185,6 @@ checkapplepython: $(srcdir)/Tools/fixapplepython23.py
 clean:
 	rm pythonw
 	cd PythonLauncher && make clean
-	cd IDLE && make clean
 
 Makefile: $(srcdir)/Makefile.in ../config.status
 	cd .. && CONFIG_FILES=Mac/Makefile CONFIG_HEADERS= $(SHELL) ./config.status

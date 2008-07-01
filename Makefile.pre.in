@@ -1026,7 +1026,6 @@ frameworkinstallstructure:	$(LDLIBRARY)
 # install (which includes python-config) happy.
 frameworkinstallmaclib:
 	ln -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(prefix)/lib/python$(VERSION)/config/libpython$(VERSION).a"
-	cd Mac && $(MAKE) installmacsubtree DESTDIR="$(DESTDIR)"
 
 # This installs the IDE, the Launcher and other apps into /Applications
 frameworkinstallapps:
