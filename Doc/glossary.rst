@@ -24,6 +24,14 @@ Glossary
       2to3 is available in the standard library as :mod:`lib2to3`; a standalone
       entry point is provided as :file:`Tools/scripts/2to3`.
 
+   Abstract Base Class
+      Abstract Base Classes (abbreviated ABCs) complement :term:`duck-typing` by
+      providing a way to define interfaces when other techniques like :func:`hasattr`
+      would be clumsy. Python comes with many builtin ABCs for data structures
+      (in the :mod:`collections` module), numbers (in the :mod:`numbers`
+      module), and streams (in the :mod:`io` module). You can create your own
+      ABC with the :mod:`abc` module.
+
    argument
       A value passed to a function or method, assigned to a name local to
       the body.  A function or method may have both positional arguments and
@@ -116,15 +124,16 @@ Glossary
       be any object with a :meth:`__hash__` function, not just integers starting
       from zero.  Called a hash in Perl.
     
-   duck-typing
+   duck-typing 
       Pythonic programming style that determines an object's type by inspection
       of its method or attribute signature rather than by explicit relationship
       to some type object ("If it looks like a duck and quacks like a duck, it
       must be a duck.")  By emphasizing interfaces rather than specific types,
       well-designed code improves its flexibility by allowing polymorphic
       substitution.  Duck-typing avoids tests using :func:`type` or
-      :func:`isinstance`. Instead, it typically employs :func:`hasattr` tests or
-      :term:`EAFP` programming.
+      :func:`isinstance`. (Note, however, that duck-typing can be complemented
+      with abstract base classes.) Instead, it typically employs :func:`hasattr`
+      tests or :term:`EAFP` programming.
     
    EAFP
       Easier to ask for forgiveness than permission.  This common Python coding
