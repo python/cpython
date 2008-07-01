@@ -23,6 +23,10 @@ replace several other, older modules and functions, such as::
 Information about how the :mod:`subprocess` module can be used to replace these
 modules and functions can be found in the following sections.
 
+.. seealso::
+
+   :pep:`324` -- PEP proposing the subprocess module
+
 
 Using the subprocess Module
 ---------------------------
