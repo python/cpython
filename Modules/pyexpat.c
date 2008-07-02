@@ -1135,6 +1135,8 @@ xmlparse_UseForeignDTD(xmlparseobject *self, PyObject *args)
 }
 #endif
 
+static PyObject *xmlparse_dir(PyObject *self, PyObject* noargs);
+
 static struct PyMethodDef xmlparse_methods[] = {
     {"Parse",	  (PyCFunction)xmlparse_Parse,
 		  METH_VARARGS,	xmlparse_Parse__doc__},
@@ -1154,6 +1156,7 @@ static struct PyMethodDef xmlparse_methods[] = {
     {"UseForeignDTD", (PyCFunction)xmlparse_UseForeignDTD,
 		  METH_VARARGS, xmlparse_UseForeignDTD__doc__},
 #endif
+    {"__dir__", xmlparse_dir, METH_NOARGS},
     {NULL,	  NULL}		/* sentinel */
 };
 
@@ -1329,9 +1332,15 @@ get_pybool(int istrue)
 }
 
 static PyObject *
-xmlparse_getattr(xmlparseobject *self, char *name)
+xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
 {
-    int handlernum = handlername2int(name);
+    char *name = "";
+    int handlernum = -1;
+
+    if (PyUnicode_Check(nameobj))
+	name = PyUnicode_AsString(nameobj);
+    
+    handlernum = handlername2int(name);
 
     if (handlernum != -1) {
         PyObject *result = self->handlers[handlernum];
@@ -1390,7 +1399,7 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         }
     }
 
-    return Py_FindMethod(xmlparse_methods, (PyObject *)self, name);
+    return PyObject_GenericGetAttr((PyObject*)self, nameobj);
 }
 
 static PyObject *
@@ -1603,11 +1612,6 @@ xmlparse_clear(xmlparseobject *op)
 
 PyDoc_STRVAR(Xmlparsetype__doc__, "XML parser");
 
-static PyMethodDef xmlparse_tp_methods[] = {
-    {"__dir__", xmlparse_dir, METH_NOARGS},
-    {NULL, NULL}    /* sentinel */
-};
-
 static PyTypeObject Xmlparsetype = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"pyexpat.xmlparser",		/*tp_name*/
@@ -1616,7 +1620,7 @@ static PyTypeObject Xmlparsetype = {
 	/* methods */
 	(destructor)xmlparse_dealloc,	/*tp_dealloc*/
 	(printfunc)0,		/*tp_print*/
-	(getattrfunc)xmlparse_getattr,	/*tp_getattr*/
+	0,			/*tp_getattr*/
 	(setattrfunc)xmlparse_setattr,	/*tp_setattr*/
 	(cmpfunc)0,		/*tp_compare*/
 	(reprfunc)0,		/*tp_repr*/
@@ -1626,7 +1630,7 @@ static PyTypeObject Xmlparsetype = {
 	(hashfunc)0,		/*tp_hash*/
 	(ternaryfunc)0,		/*tp_call*/
 	(reprfunc)0,		/*tp_str*/
-	0,		/* tp_getattro */
+	(getattrofunc)xmlparse_getattro, /* tp_getattro */
 	0,		/* tp_setattro */
 	0,		/* tp_as_buffer */
 #ifdef Py_TPFLAGS_HAVE_GC
@@ -1641,7 +1645,7 @@ static PyTypeObject Xmlparsetype = {
 	0,				/* tp_weaklistoffset */
 	0,				/* tp_iter */
 	0,				/* tp_iternext */
-	xmlparse_tp_methods		/* tp_methods */
+	xmlparse_methods,		/* tp_methods */
 };
 
 /* End of code for xmlparser objects */
@@ -1794,7 +1798,8 @@ MODULE_INITFUNC(void)
     if (modelmod_name == NULL)
         return NULL;
 
-    Py_TYPE(&Xmlparsetype) = &PyType_Type;
+    if (PyType_Ready(&Xmlparsetype) < 0)
+	return NULL;
 
     /* Create the module and add the functions */
     m = PyModule_Create(&pyexpatmodule);

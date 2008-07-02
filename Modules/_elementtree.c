@@ -1297,15 +1297,13 @@ static PyMethodDef element_methods[] = {
 };
 
 static PyObject*  
-element_getattr(ElementObject* self, char* name)
+element_getattro(ElementObject* self, PyObject* nameobj)
 {
     PyObject* res;
+    char *name = "";
 
-    res = Py_FindMethod(element_methods, (PyObject*) self, name);
-    if (res)
-	return res;
-
-    PyErr_Clear();
+    if (PyUnicode_Check(nameobj))
+	name = PyUnicode_AsString(nameobj);
 
     if (strcmp(name, "tag") == 0)
 	res = self->tag;
@@ -1318,14 +1316,10 @@ element_getattr(ElementObject* self, char* name)
             element_new_extra(self, NULL);
 	res = element_get_attrib(self);
     } else {
-        PyErr_SetString(PyExc_AttributeError, name);
-        return NULL;
+        return PyObject_GenericGetAttr((PyObject*) self, nameobj);
     }
 
-    if (!res)
-        return NULL;
-
-    Py_INCREF(res);
+    Py_XINCREF(res);
     return res;
 }
 
@@ -1382,12 +1376,29 @@ static PyTypeObject Element_Type = {
     /* methods */
     (destructor)element_dealloc, /* tp_dealloc */
     0, /* tp_print */
-    (getattrfunc)element_getattr, /* tp_getattr */
+    0, /* tp_getattr */
     (setattrfunc)element_setattr, /* tp_setattr */
     0, /* tp_compare */
     (reprfunc)element_repr, /* tp_repr */
     0, /* tp_as_number */
     &element_as_sequence, /* tp_as_sequence */
+    0, /* tp_as_mapping */
+    0, /* tp_hash */
+    0, /* tp_call */
+    0, /* tp_str */
+    (getattrofunc)element_getattro, /* tp_getattro */
+    0, /* tp_setattro */
+    0, /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT, /* tp_flags */
+    0, /* tp_doc */
+    0, /* tp_traverse */
+    0, /* tp_clear */
+    0, /* tp_richcompare */
+    0, /* tp_weaklistoffset */
+    0, /* tp_iter */
+    0, /* tp_iternext */
+    element_methods, /* tp_methods */
+    0, /* tp_members */
 };
 
 /* ==================================================================== */
@@ -1783,19 +1794,35 @@ static PyMethodDef treebuilder_methods[] = {
     {NULL, NULL}
 };
 
-static PyObject*  
-treebuilder_getattr(TreeBuilderObject* self, char* name)
-{
-    return Py_FindMethod(treebuilder_methods, (PyObject*) self, name);
-}
-
 static PyTypeObject TreeBuilder_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "TreeBuilder", sizeof(TreeBuilderObject), 0,
     /* methods */
     (destructor)treebuilder_dealloc, /* tp_dealloc */
     0, /* tp_print */
-    (getattrfunc)treebuilder_getattr, /* tp_getattr */
+    0, /* tp_getattr */
+    0, /* tp_setattr */
+    0, /* tp_compare */
+    0, /* tp_repr */
+    0, /* tp_as_number */
+    0, /* tp_as_sequence */
+    0, /* tp_as_mapping */
+    0, /* tp_hash */
+    0, /* tp_call */
+    0, /* tp_str */
+    0, /* tp_getattro */
+    0, /* tp_setattro */
+    0, /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT, /* tp_flags */
+    0, /* tp_doc */
+    0, /* tp_traverse */
+    0, /* tp_clear */
+    0, /* tp_richcompare */
+    0, /* tp_weaklistoffset */
+    0, /* tp_iter */
+    0, /* tp_iternext */
+    treebuilder_methods, /* tp_methods */
+    0, /* tp_members */
 };
 
 /* ==================================================================== */
@@ -2496,13 +2523,13 @@ static PyMethodDef xmlparser_methods[] = {
 };
 
 static PyObject*  
-xmlparser_getattr(XMLParserObject* self, char* name)
+xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
 {
     PyObject* res;
+    char *name = "";
 
-    res = Py_FindMethod(xmlparser_methods, (PyObject*) self, name);
-    if (res)
-	return res;
+    if (PyUnicode_Check(nameobj))
+	name = PyUnicode_AsString(nameobj);
 
     PyErr_Clear();
 
@@ -2516,8 +2543,7 @@ xmlparser_getattr(XMLParserObject* self, char* name)
                 XML_MINOR_VERSION, XML_MICRO_VERSION);
         return PyBytes_FromString(buffer);
     } else {
-        PyErr_SetString(PyExc_AttributeError, name);
-        return NULL;
+        return PyObject_GenericGetAttr((PyObject*) self, nameobj);
     }
 
     Py_INCREF(res);
@@ -2530,7 +2556,29 @@ static PyTypeObject XMLParser_Type = {
     /* methods */
     (destructor)xmlparser_dealloc, /* tp_dealloc */
     0, /* tp_print */
-    (getattrfunc)xmlparser_getattr, /* tp_getattr */
+    0, /* tp_getattr */
+    0, /* tp_setattr */
+    0, /* tp_compare */
+    0, /* tp_repr */
+    0, /* tp_as_number */
+    0, /* tp_as_sequence */
+    0, /* tp_as_mapping */
+    0, /* tp_hash */
+    0, /* tp_call */
+    0, /* tp_str */
+    (getattrofunc)xmlparser_getattro, /* tp_getattro */
+    0, /* tp_setattro */
+    0, /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT, /* tp_flags */
+    0, /* tp_doc */
+    0, /* tp_traverse */
+    0, /* tp_clear */
+    0, /* tp_richcompare */
+    0, /* tp_weaklistoffset */
+    0, /* tp_iter */
+    0, /* tp_iternext */
+    xmlparser_methods, /* tp_methods */
+    0, /* tp_members */
 };
 
 #endif
@@ -2572,10 +2620,14 @@ PyInit__elementtree(void)
     struct PyExpat_CAPI* capi;
 #endif
 
-    /* Patch object type */
-    Py_TYPE(&Element_Type) = Py_TYPE(&TreeBuilder_Type) = &PyType_Type;
+    /* Initialize object types */
+    if (PyType_Ready(&TreeBuilder_Type) < 0)
+	return NULL;
+    if (PyType_Ready(&Element_Type) < 0)
+	return NULL;
 #if defined(USE_EXPAT)
-    Py_TYPE(&XMLParser_Type) = &PyType_Type;
+    if (PyType_Ready(&XMLParser_Type) < 0)
+	return NULL;
 #endif
 
     m = PyModule_Create(&_elementtreemodule);
