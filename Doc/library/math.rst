@@ -43,7 +43,7 @@ Number-theoretic and representation functions:
 
 .. function:: factorial(x)
 
-   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not intergral or
+   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
 
 .. function:: floor(x)

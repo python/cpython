@@ -2380,6 +2380,7 @@ PyCurses_QiFlush(PyObject *self, PyObject *args)
 
 /* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
  * and _curses.COLS */
+#if defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)
 static int
 update_lines_cols(void)
 {
@@ -2424,6 +2425,7 @@ update_lines_cols(void)
   Py_DECREF(m);
   return 1;
 }
+#endif
 
 #ifdef HAVE_CURSES_RESIZETERM
 static PyObject *
