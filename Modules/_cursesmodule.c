@@ -1650,12 +1650,6 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{NULL,		    NULL}   /* sentinel */
 };
 
-static PyObject *
-PyCursesWindow_GetAttr(PyCursesWindowObject *self, char *name)
-{
-  return Py_FindMethod(PyCursesWindow_Methods, (PyObject *)self, name);
-}
-
 /* -------------------------------------------------------*/
 
 PyTypeObject PyCursesWindow_Type = {
@@ -1666,14 +1660,28 @@ PyTypeObject PyCursesWindow_Type = {
 	/* methods */
 	(destructor)PyCursesWindow_Dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	(getattrfunc)PyCursesWindow_GetAttr, /*tp_getattr*/
-	(setattrfunc)0, /*tp_setattr*/
+	(getattrfunc)0,		/*tp_getattr*/
+	(setattrfunc)0,		/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
 	0,			/*tp_hash*/
+	0,			/*tp_call*/
+	0,			/*tp_str*/
+	0,			/*tp_getattro*/
+	0,			/*tp_setattro*/
+	0,			/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
+	0,			/*tp_doc*/
+	0,			/*tp_traverse*/
+	0,			/*tp_clear*/
+	0,			/*tp_richcompare*/
+	0,			/*tp_weaklistoffset*/
+	0,			/*tp_iter*/
+	0,			/*tp_iternext*/
+	PyCursesWindow_Methods,	/*tp_methods*/
 };
 
 /*********************************************************************
@@ -2792,7 +2800,8 @@ PyInit__curses(void)
 	static void *PyCurses_API[PyCurses_API_pointers];
 
 	/* Initialize object type */
-	Py_TYPE(&PyCursesWindow_Type) = &PyType_Type;
+	if (PyType_Ready(&PyCursesWindow_Type) < 0)
+		return NULL;
 
 	/* Initialize the C API pointer array */
 	PyCurses_API[0] = (void *)&PyCursesWindow_Type;

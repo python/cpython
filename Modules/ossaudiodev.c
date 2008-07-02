@@ -803,9 +803,14 @@ static PyMethodDef oss_mixer_methods[] = {
 };
 
 static PyObject *
-oss_getattr(oss_audio_t *self, char *name)
+oss_getattro(oss_audio_t *self, PyObject *nameobj)
 {
+    char *name = "";
     PyObject * rval = NULL;
+
+    if (PyUnicode_Check(nameobj))
+	name = PyUnicode_AsString(nameobj);
+    
     if (strcmp(name, "closed") == 0) {
         rval = (self->fd == -1) ? Py_True : Py_False;
         Py_INCREF(rval);
@@ -829,15 +834,9 @@ oss_getattr(oss_audio_t *self, char *name)
         }
     }
     else {
-        rval = Py_FindMethod(oss_methods, (PyObject *)self, name);
+        rval = PyObject_GenericGetAttr((PyObject *)self, nameobj);
     }
     return rval;
-}
-
-static PyObject *
-oss_mixer_getattr(oss_mixer_t *self, char *name)
-{
-    return Py_FindMethod(oss_mixer_methods, (PyObject *)self, name);
 }
 
 static PyTypeObject OSSAudioType = {
@@ -848,10 +847,28 @@ static PyTypeObject OSSAudioType = {
     /* methods */
     (destructor)oss_dealloc,    /*tp_dealloc*/
     0,                          /*tp_print*/
-    (getattrfunc)oss_getattr,   /*tp_getattr*/
+    0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
     0,                          /*tp_compare*/
     0,                          /*tp_repr*/
+    0,                          /*tp_as_number*/
+    0,                          /*tp_as_sequence*/
+    0,                          /*tp_as_mapping*/
+    0,                          /*tp_hash*/
+    0,                          /*tp_call*/
+    0,                          /*tp_str*/
+    (getattrofunc)oss_getattro, /*tp_getattro*/
+    0,                          /*tp_setattro*/
+    0,                          /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,         /*tp_flags*/
+    0,                          /*tp_doc*/
+    0,                          /*tp_traverse*/
+    0,                          /*tp_clear*/
+    0,                          /*tp_richcompare*/
+    0,                          /*tp_weaklistoffset*/
+    0,                          /*tp_iter*/
+    0,                          /*tp_iternext*/
+    oss_methods,                /*tp_methods*/
 };
 
 static PyTypeObject OSSMixerType = {
@@ -862,10 +879,28 @@ static PyTypeObject OSSMixerType = {
     /* methods */
     (destructor)oss_mixer_dealloc,  /*tp_dealloc*/
     0,                              /*tp_print*/
-    (getattrfunc)oss_mixer_getattr, /*tp_getattr*/
+    0,                              /*tp_getattr*/
     0,                              /*tp_setattr*/
     0,                              /*tp_compare*/
     0,                              /*tp_repr*/
+    0,                              /*tp_as_number*/
+    0,                              /*tp_as_sequence*/
+    0,                              /*tp_as_mapping*/
+    0,                              /*tp_hash*/
+    0,                              /*tp_call*/
+    0,                              /*tp_str*/
+    0,                              /*tp_getattro*/
+    0,                              /*tp_setattro*/
+    0,                              /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,             /*tp_flags*/
+    0,                              /*tp_doc*/
+    0,                              /*tp_traverse*/
+    0,                              /*tp_clear*/
+    0,                              /*tp_richcompare*/
+    0,                              /*tp_weaklistoffset*/
+    0,                              /*tp_iter*/
+    0,                              /*tp_iternext*/
+    oss_mixer_methods,              /*tp_methods*/
 };
 
 

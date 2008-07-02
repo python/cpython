@@ -381,12 +381,6 @@ static PyMethodDef dbm_methods[] = {
     {NULL,		NULL}		/* sentinel */
 };
 
-static PyObject *
-dbm_getattr(dbmobject *dp, char *name)
-{
-    return Py_FindMethod(dbm_methods, (PyObject *)dp, name);
-}
-
 static PyTypeObject Dbmtype = {
     PyVarObject_HEAD_INIT(0, 0)
     "_gdbm.gdbm",
@@ -394,7 +388,7 @@ static PyTypeObject Dbmtype = {
     0,
     (destructor)dbm_dealloc,            /*tp_dealloc*/
     0,                                  /*tp_print*/
-    (getattrfunc)dbm_getattr,           /*tp_getattr*/
+    0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
     0,                                  /*tp_compare*/
     0,                                  /*tp_repr*/
@@ -409,6 +403,13 @@ static PyTypeObject Dbmtype = {
     0,                                  /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,                 /*tp_xxx4*/
     gdbm_object__doc__,                 /*tp_doc*/
+    0,                                  /*tp_traverse*/
+    0,                                  /*tp_clear*/
+    0,                                  /*tp_richcompare*/
+    0,                                  /*tp_weaklistoffset*/
+    0,                                  /*tp_iter*/
+    0,                                  /*tp_iternext*/
+    dbm_methods,                        /*tp_methods*/
 };
 
 /* ----------------------------------------------------------------- */
