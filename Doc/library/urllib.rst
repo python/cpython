@@ -4,6 +4,13 @@
 .. module:: urllib
    :synopsis: Open an arbitrary network resource by URL (requires sockets).
 
+.. note::
+    The :mod:`urllib` module has been split into parts and renamed in
+    Python 3.0 to :mod:`urllib.request`, :mod:`urllib.parse`,
+    and :mod:`urllib.error`. The :term:`2to3` tool will automatically adapt
+    imports when converting your sources to 3.0.
+    Also note that the :func:`urllib.urlopen` function has been removed in
+    Python 3.0 in favor of :func:`urllib2.urlopen`.
 
 .. index::
    single: WWW
@@ -116,6 +123,10 @@ High-level interface
    .. versionchanged:: 2.6
       Added :meth:`getcode` to returned object and support for the
       :envvar:`no_proxy` environment variable.
+      
+   .. deprecated:: 2.6
+      The :func:`urlopen` function has been removed in Python 3.0 in favor
+      of :func:`urllib2.urlopen`.
 
 
 .. function:: urlretrieve(url[, filename[, reporthook[, data]]])

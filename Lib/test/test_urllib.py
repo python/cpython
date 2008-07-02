@@ -640,16 +640,20 @@ class Pathname_Tests(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(
-        urlopen_FileTests,
-        urlopen_HttpTests,
-        urlretrieve_FileTests,
-        QuotingTests,
-        UnquotingTests,
-        urlencode_Tests,
-        Pathname_Tests,
-        #FTPWrapperTests,
-    )
+    import warnings
+    with test_support.catch_warning(record=False):
+        warnings.filterwarnings('ignore', ".*urllib\.urlopen.*Python 3.0",
+                                DeprecationWarning)
+        test_support.run_unittest(
+            urlopen_FileTests,
+            urlopen_HttpTests,
+            urlretrieve_FileTests,
+            QuotingTests,
+            UnquotingTests,
+            urlencode_Tests,
+            Pathname_Tests,
+            #FTPWrapperTests,
+        )
 
 
 

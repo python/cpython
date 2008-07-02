@@ -182,9 +182,13 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
 def test_main():
     test_support.requires('network')
-    test_support.run_unittest(URLTimeoutTest,
-                              urlopenNetworkTests,
-                              urlretrieveNetworkTests)
+    from warnings import filterwarnings
+    with test_support.catch_warning(record=False):
+        filterwarnings('ignore', '.*urllib\.urlopen.*Python 3.0',
+                        DeprecationWarning)
+        test_support.run_unittest(URLTimeoutTest,
+                                  urlopenNetworkTests,
+                                  urlretrieveNetworkTests)
 
 if __name__ == "__main__":
     test_main()

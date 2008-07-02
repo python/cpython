@@ -28,6 +28,7 @@ import os
 import time
 import sys
 from urlparse import urljoin as basejoin
+import warnings
 
 __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "urlcleanup", "quote", "quote_plus", "unquote", "unquote_plus",
@@ -69,7 +70,11 @@ else:
 # Shortcut for basic usage
 _urlopener = None
 def urlopen(url, data=None, proxies=None):
-    """urlopen(url [, data]) -> open file-like object"""
+    """Create a file-like object for the specified URL to read from."""
+    from warnings import warnpy3k
+    warnings.warnpy3k("urllib.urlopen() has been removed in Python 3.0 in "
+                        "favor of urllib2.urlopen()", stacklevel=2)
+
     global _urlopener
     if proxies is not None:
         opener = FancyURLopener(proxies=proxies)
