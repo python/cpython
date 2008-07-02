@@ -43,8 +43,6 @@ struct PyMethodDef {
 };
 typedef struct PyMethodDef PyMethodDef;
 
-PyAPI_FUNC(PyObject *) Py_FindMethod(PyMethodDef[], PyObject *, const char *);
-
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *, 
 					 PyObject *);
@@ -69,14 +67,6 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
    slot like sq_contains. */
 
 #define METH_COEXIST   0x0040
-
-typedef struct PyMethodChain {
-    PyMethodDef *methods;		/* Methods of this type */
-    struct PyMethodChain *link;	/* NULL or base type */
-} PyMethodChain;
-
-PyAPI_FUNC(PyObject *) Py_FindMethodInChain(PyMethodChain *, PyObject *,
-                                            const char *);
 
 typedef struct {
     PyObject_HEAD
