@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: latin-1 -*-
 """Tests for cookielib.py."""
 
 import re, os, time
@@ -1530,13 +1530,13 @@ class LWPCookieTests(TestCase):
                       "foo  =   bar; version    =   1")
 
         cookie = interact_2965(
-            c, "http://www.acme.com/foo%2f%25/<<%0anewÃ¥/Ã¦Ã¸Ã¥",
+            c, "http://www.acme.com/foo%2f%25/<<%0anewå/æøå",
             'bar=baz; path="/foo/"; version=1');
         version_re = re.compile(r'^\$version=\"?1\"?', re.I)
         self.assert_("foo=bar" in cookie and version_re.search(cookie))
 
         cookie = interact_2965(
-            c, "http://www.acme.com/foo/%25/<<%0anewÃ¥/Ã¦Ã¸Ã¥")
+            c, "http://www.acme.com/foo/%25/<<%0anewå/æøå")
         self.assert_(not cookie)
 
         # unicode URL doesn't raise exception
