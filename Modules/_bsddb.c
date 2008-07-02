@@ -5324,54 +5324,21 @@ static PyMethodDef DBSequence_methods[] = {
 };
 #endif
 
-
 static PyObject*
-DB_getattr(DBObject* self, char *name)
+DBEnv_db_home_get(DBEnvObject* self)
 {
-    return Py_FindMethod(DB_methods, (PyObject* )self, name);
-}
-
-
-static PyObject*
-DBEnv_getattr(DBEnvObject* self, char *name)
-{
-    if (!strcmp(name, "db_home")) {
-        CHECK_ENV_NOT_CLOSED(self);
-        if (self->db_env->db_home == NULL) {
-            RETURN_NONE();
-        }
-        return PyUnicode_FromString(self->db_env->db_home);
+    CHECK_ENV_NOT_CLOSED(self);
+    if (self->db_env->db_home == NULL) {
+        RETURN_NONE();
     }
-
-    return Py_FindMethod(DBEnv_methods, (PyObject* )self, name);
+    return PyUnicode_FromString(self->db_env->db_home);
 }
 
+static PyGetSetDef DBEnv_getsets[] = {
+    {"db_home", (getter)DBEnv_db_home_get, NULL,},
+    {NULL}
+};
 
-static PyObject*
-DBCursor_getattr(DBCursorObject* self, char *name)
-{
-    return Py_FindMethod(DBCursor_methods, (PyObject* )self, name);
-}
-
-static PyObject*
-DBTxn_getattr(DBTxnObject* self, char *name)
-{
-    return Py_FindMethod(DBTxn_methods, (PyObject* )self, name);
-}
-
-static PyObject*
-DBLock_getattr(DBLockObject* self, char *name)
-{
-    return NULL;
-}
-
-#if (DBVER >= 43)
-static PyObject*
-DBSequence_getattr(DBSequenceObject* self, char *name)
-{
-    return Py_FindMethod(DBSequence_methods, (PyObject* )self, name);
-}
-#endif
 
 static PyTypeObject DB_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -5381,8 +5348,8 @@ static PyTypeObject DB_Type = {
     /* methods */
     (destructor)DB_dealloc, /*tp_dealloc*/
     0,                  /*tp_print*/
-    (getattrfunc)DB_getattr, /*tp_getattr*/
-    0,                      /*tp_setattr*/
+    0,                  /*tp_getattr*/
+    0,                  /*tp_setattr*/
     0,          /*tp_compare*/
     0,          /*tp_repr*/
     0,          /*tp_as_number*/
@@ -5400,6 +5367,9 @@ static PyTypeObject DB_Type = {
     0,			/* tp_clear */
     0,			/* tp_richcompare */
     offsetof(DBObject, in_weakreflist),   /* tp_weaklistoffset */
+    0,			/* tp_iter */
+    0,			/* tp_iternext */
+    DB_methods,		/* tp_methods */
 };
 
 
@@ -5411,7 +5381,7 @@ static PyTypeObject DBCursor_Type = {
     /* methods */
     (destructor)DBCursor_dealloc,/*tp_dealloc*/
     0,                  /*tp_print*/
-    (getattrfunc)DBCursor_getattr, /*tp_getattr*/
+    0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_compare*/
     0,                  /*tp_repr*/
@@ -5430,6 +5400,9 @@ static PyTypeObject DBCursor_Type = {
     0,			/* tp_clear */
     0,			/* tp_richcompare */
     offsetof(DBCursorObject, in_weakreflist),   /* tp_weaklistoffset */
+    0,			/* tp_iter */
+    0,			/* tp_iternext */
+    DBCursor_methods,	/* tp_methods */
 };
 
 
@@ -5441,7 +5414,7 @@ static PyTypeObject DBEnv_Type = {
     /* methods */
     (destructor)DBEnv_dealloc, /*tp_dealloc*/
     0,          /*tp_print*/
-    (getattrfunc)DBEnv_getattr, /*tp_getattr*/
+    0,          /*tp_getattr*/
     0,          /*tp_setattr*/
     0,          /*tp_compare*/
     0,          /*tp_repr*/
@@ -5460,6 +5433,11 @@ static PyTypeObject DBEnv_Type = {
     0,			/* tp_clear */
     0,			/* tp_richcompare */
     offsetof(DBEnvObject, in_weakreflist),   /* tp_weaklistoffset */
+    0,                  /* tp_iter */
+    0,                  /* tp_iternext */
+    DBEnv_methods,      /* tp_methods */
+    0,                  /* tp_members */
+    DBEnv_getsets,      /* tp_getsets */
 };
 
 static PyTypeObject DBTxn_Type = {
@@ -5470,8 +5448,8 @@ static PyTypeObject DBTxn_Type = {
     /* methods */
     (destructor)DBTxn_dealloc, /*tp_dealloc*/
     0,          /*tp_print*/
-    (getattrfunc)DBTxn_getattr, /*tp_getattr*/
-    0,                      /*tp_setattr*/
+    0,          /*tp_getattr*/
+    0,          /*tp_setattr*/
     0,          /*tp_compare*/
     0,          /*tp_repr*/
     0,          /*tp_as_number*/
@@ -5489,6 +5467,9 @@ static PyTypeObject DBTxn_Type = {
     0,			/* tp_clear */
     0,			/* tp_richcompare */
     offsetof(DBTxnObject, in_weakreflist),   /* tp_weaklistoffset */
+    0,			/* tp_iter */
+    0,			/* tp_iternext */
+    DBTxn_methods,	/* tp_methods */
 };
 
 
@@ -5500,8 +5481,8 @@ static PyTypeObject DBLock_Type = {
     /* methods */
     (destructor)DBLock_dealloc, /*tp_dealloc*/
     0,          /*tp_print*/
-    (getattrfunc)DBLock_getattr, /*tp_getattr*/
-    0,                      /*tp_setattr*/
+    0,          /*tp_getattr*/
+    0,          /*tp_setattr*/
     0,          /*tp_compare*/
     0,          /*tp_repr*/
     0,          /*tp_as_number*/
@@ -5530,7 +5511,7 @@ static PyTypeObject DBSequence_Type = {
     /* methods */
     (destructor)DBSequence_dealloc, /*tp_dealloc*/
     0,          /*tp_print*/
-    (getattrfunc)DBSequence_getattr,/*tp_getattr*/
+    0,          /*tp_getattr*/
     0,          /*tp_setattr*/
     0,          /*tp_compare*/
     0,          /*tp_repr*/
@@ -5549,6 +5530,9 @@ static PyTypeObject DBSequence_Type = {
     0,			/* tp_clear */
     0,			/* tp_richcompare */
     offsetof(DBSequenceObject, in_weakreflist),   /* tp_weaklistoffset */
+    0,			/* tp_iter */
+    0,			/* tp_iternext */
+    DBSequence_methods,	/* tp_methods */
 };
 #endif
 
@@ -5668,16 +5652,21 @@ PyMODINIT_FUNC PyInit__bsddb(void)
     PyObject* svnid_s = PyUnicode_FromString(svn_id);
     PyObject* py_api;
 
-    /* Initialize the type of the new type objects here; doing it here
-       is required for portability to Windows without requiring C++. */
-    Py_TYPE(&DB_Type) = &PyType_Type;
-    Py_TYPE(&DBCursor_Type) = &PyType_Type;
-    Py_TYPE(&DBEnv_Type) = &PyType_Type;
-    Py_TYPE(&DBTxn_Type) = &PyType_Type;
-    Py_TYPE(&DBLock_Type) = &PyType_Type;
-#if (DBVER >= 43)    
-    Py_TYPE(&DBSequence_Type) = &PyType_Type;
-#endif    
+    /* Initialize object types */
+    if (PyType_Ready(&DB_Type) < 0)
+        return NULL;
+    if (PyType_Ready(&DBCursor_Type) < 0)
+        return NULL;
+    if (PyType_Ready(&DBEnv_Type) < 0)
+        return NULL;
+    if (PyType_Ready(&DBTxn_Type) < 0)
+        return NULL;
+    if (PyType_Ready(&DBLock_Type) < 0)
+        return NULL;
+#if (DBVER >= 43)
+    if (PyType_Ready(&DBSequence_Type) < 0)
+        return NULL;
+#endif
 
 
 #if defined(WITH_THREAD) && !defined(MYDB_USE_GILSTATE)

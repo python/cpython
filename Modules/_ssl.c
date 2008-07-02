@@ -1384,11 +1384,6 @@ static PyMethodDef PySSLMethods[] = {
 	{NULL, NULL}
 };
 
-static PyObject *PySSL_getattr(PySSLObject *self, char *name)
-{
-	return Py_FindMethod(PySSLMethods, (PyObject *)self, name);
-}
-
 static PyTypeObject PySSL_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"ssl.SSLContext",		/*tp_name*/
@@ -1397,7 +1392,7 @@ static PyTypeObject PySSL_Type = {
 	/* methods */
 	(destructor)PySSL_dealloc,	/*tp_dealloc*/
 	0,				/*tp_print*/
-	(getattrfunc)PySSL_getattr,	/*tp_getattr*/
+	0,				/*tp_getattr*/
 	0,				/*tp_setattr*/
 	0,				/*tp_compare*/
 	0,				/*tp_repr*/
@@ -1405,6 +1400,20 @@ static PyTypeObject PySSL_Type = {
 	0,				/*tp_as_sequence*/
 	0,				/*tp_as_mapping*/
 	0,				/*tp_hash*/
+	0,				/*tp_call*/
+	0,				/*tp_str*/
+	0,				/*tp_getattro*/
+	0,				/*tp_setattro*/
+	0,				/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,		/*tp_flags*/
+	0,				/*tp_doc*/
+	0,				/*tp_traverse*/
+	0,				/*tp_clear*/
+	0,				/*tp_richcompare*/
+	0,				/*tp_weaklistoffset*/
+	0,				/*tp_iter*/
+	0,				/*tp_iternext*/
+	PySSLMethods,			/*tp_methods*/
 };
 
 #ifdef HAVE_OPENSSL_RAND
@@ -1581,7 +1590,8 @@ PyInit__ssl(void)
 {
 	PyObject *m, *d;
 
-	Py_TYPE(&PySSL_Type) = &PyType_Type;
+	if (PyType_Ready(&PySSL_Type) < 0)
+		return NULL;
 
 	m = PyModule_Create(&_sslmodule);
 	if (m == NULL)

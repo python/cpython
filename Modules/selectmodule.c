@@ -625,12 +625,6 @@ poll_dealloc(pollObject *self)
   	PyObject_Del(self);
 }
 
-static PyObject *
-poll_getattr(pollObject *self, char *name)
-{
-	return Py_FindMethod(poll_methods, (PyObject *)self, name);
-}
-
 static PyTypeObject poll_Type = {
 	/* The ob_type field must be initialized in the module init function
 	 * to be portable to Windows without using C++. */
@@ -641,7 +635,7 @@ static PyTypeObject poll_Type = {
 	/* methods */
 	(destructor)poll_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	(getattrfunc)poll_getattr, /*tp_getattr*/
+	0,			/*tp_getattr*/
 	0,                      /*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -649,6 +643,20 @@ static PyTypeObject poll_Type = {
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
 	0,			/*tp_hash*/
+	0,			/*tp_call*/
+	0,			/*tp_str*/
+	0,			/*tp_getattro*/
+	0,			/*tp_setattro*/
+	0,			/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
+	0,			/*tp_doc*/
+	0,			/*tp_traverse*/
+	0,			/*tp_clear*/
+	0,			/*tp_richcompare*/
+	0,			/*tp_weaklistoffset*/
+	0,			/*tp_iter*/
+	0,			/*tp_iternext*/
+	poll_methods,		/*tp_methods*/
 };
 
 PyDoc_STRVAR(poll_doc,
@@ -1764,7 +1772,8 @@ PyInit_select(void)
 #else
 	{
 #endif
-		Py_TYPE(&poll_Type) = &PyType_Type;
+		if (PyType_Ready(&poll_Type) < 0)
+			return NULL;
 		PyModule_AddIntConstant(m, "POLLIN", POLLIN);
 		PyModule_AddIntConstant(m, "POLLPRI", POLLPRI);
 		PyModule_AddIntConstant(m, "POLLOUT", POLLOUT);

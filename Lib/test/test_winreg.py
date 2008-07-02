@@ -29,6 +29,7 @@ class WinregTests(unittest.TestCase):
         # Set the default value for this key.
         SetValue(root_key, test_key_name, REG_SZ, "Default value")
         key = CreateKey(root_key, test_key_name)
+        self.assert_(key.handle != 0)
         # Create a sub-key
         sub_key = CreateKey(key, subkeystr)
         # Give the sub-key some named values

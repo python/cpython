@@ -161,6 +161,7 @@ class CompressObjectTestCase(unittest.TestCase):
             self.assertEqual(b'', dco.unconsumed_tail, ########
                              "(A) uct should be b'': not %d long" %
                                        len(dco.unconsumed_tail))
+            self.assertEqual(b'', dco.unused_data)
         if flush:
             bufs.append(dco.flush())
         else:
@@ -173,6 +174,7 @@ class CompressObjectTestCase(unittest.TestCase):
         self.assertEqual(b'', dco.unconsumed_tail, ########
                          "(B) uct should be b'': not %d long" %
                                        len(dco.unconsumed_tail))
+        self.assertEqual(b'', dco.unused_data)
         self.assertEqual(data, b''.join(bufs))
         # Failure means: "decompressobj with init options failed"
 
