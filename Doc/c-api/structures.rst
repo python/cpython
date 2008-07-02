@@ -198,9 +198,3 @@ definition with the same method name.
    object and will co-exist with the slot.  This is helpful because calls to
    PyCFunctions are optimized more than wrapper object calls.
 
-
-.. cfunction:: PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)
-
-   Return a bound method object for an extension type implemented in C.  This can
-   be useful in the implementation of a :attr:`tp_getattro` or :attr:`tp_getattr`
-   handler that does not use the :cfunc:`PyObject_GenericGetAttr` function.

@@ -1074,8 +1074,8 @@ sense for the implementation's convenience. ::
    getattrfunc  tp_getattr;        /* char * version */
    setattrfunc  tp_setattr;
    /* ... */
-   getattrofunc tp_getattrofunc;   /* PyObject * version */
-   setattrofunc tp_setattrofunc;
+   getattrofunc tp_getattro;       /* PyObject * version */
+   setattrofunc tp_setattro;
 
 If accessing attributes of an object is always a simple operation (this will be
 explained shortly), there are generic implementations which can be used to
@@ -1204,9 +1204,7 @@ For simplicity, only the :ctype:`char\*` version will be demonstrated here; the
 type of the name parameter is the only difference between the :ctype:`char\*`
 and :ctype:`PyObject\*` flavors of the interface. This example effectively does
 the same thing as the generic example above, but does not use the generic
-support added in Python 2.2.  The value in showing this is two-fold: it
-demonstrates how basic attribute management can be done in a way that is
-portable to older versions of Python, and explains how the handler functions are
+support added in Python 2.2.  It explains how the handler functions are
 called, so that if you do need to extend their functionality, you'll understand
 what needs to be done.
 
@@ -1214,27 +1212,20 @@ The :attr:`tp_getattr` handler is called when the object requires an attribute
 look-up.  It is called in the same situations where the :meth:`__getattr__`
 method of a class would be called.
 
-A likely way to handle this is (1) to implement a set of functions (such as
-:cfunc:`newdatatype_getSize` and :cfunc:`newdatatype_setSize` in the example
-below), (2) provide a method table listing these functions, and (3) provide a
-getattr function that returns the result of a lookup in that table.  The method
-table uses the same structure as the :attr:`tp_methods` field of the type
-object.
-
 Here is an example::
-
-   static PyMethodDef newdatatype_methods[] = {
-       {"getSize", (PyCFunction)newdatatype_getSize, METH_VARARGS,
-        "Return the current size."},
-       {"setSize", (PyCFunction)newdatatype_setSize, METH_VARARGS,
-        "Set the size."},
-       {NULL, NULL, 0, NULL}           /* sentinel */
-   };
 
    static PyObject *
    newdatatype_getattr(newdatatypeobject *obj, char *name)
    {
-       return Py_FindMethod(newdatatype_methods, (PyObject *)obj, name);
+       if (strcmp(name, "data") == 0)
+       {
+           return PyInt_FromLong(obj->data);
+       }
+
+       PyErr_Format(PyExc_AttributeError,
+                    "'%.50s' object has no attribute '%.400s'",
+		    tp->tp_name, name);
+       return NULL;
    }
 
 The :attr:`tp_setattr` handler is called when the :meth:`__setattr__` or
