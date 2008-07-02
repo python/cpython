@@ -57,7 +57,6 @@ FUNCTIONS
 DATA
     __author__ = 'Benjamin Peterson'
     __credits__ = 'Nobody'
-    __package__ = None
     __version__ = '1.2.3.4'
 
 VERSION
@@ -146,7 +145,6 @@ war</tt></dd></dl>
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%%"><strong>__author__</strong> = 'Benjamin Peterson'<br>
 <strong>__credits__</strong> = 'Nobody'<br>
-<strong>__package__</strong> = None<br>
 <strong>__version__</strong> = '1.2.3.4'</td></tr></table><p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#7799ee">
