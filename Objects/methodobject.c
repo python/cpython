@@ -280,6 +280,43 @@ PyTypeObject PyCFunction_Type = {
 	0,					/* tp_dict */
 };
 
+/* Find a method in a method chain */
+
+PyObject *
+Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
+{
+	if (name[0] == '_' && name[1] == '_') {
+		if (strcmp(name, "__doc__") == 0) {
+			const char *doc = self->ob_type->tp_doc;
+			if (doc != NULL)
+				return PyUnicode_FromString(doc);
+		}
+	}
+	while (chain != NULL) {
+		PyMethodDef *ml = chain->methods;
+		for (; ml->ml_name != NULL; ml++) {
+			if (name[0] == ml->ml_name[0] &&
+			    strcmp(name+1, ml->ml_name+1) == 0)
+				/* XXX */
+				return PyCFunction_New(ml, self);
+		}
+		chain = chain->link;
+	}
+	PyErr_SetString(PyExc_AttributeError, name);
+	return NULL;
+}
+
+/* Find a method in a single method list */
+
+PyObject *
+Py_FindMethod(PyMethodDef *methods, PyObject *self, const char *name)
+{
+	PyMethodChain chain;
+	chain.methods = methods;
+	chain.link = NULL;
+	return Py_FindMethodInChain(&chain, self, name);
+}
+
 /* Clear out the free list */
 
 int
