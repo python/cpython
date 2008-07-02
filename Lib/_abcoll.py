@@ -9,6 +9,7 @@ bootstrapping issues.  Unit tests are in test_collections.
 """
 
 from abc import ABCMeta, abstractmethod
+import sys
 
 __all__ = ["Hashable", "Iterable", "Iterator",
            "Sized", "Container", "Callable",

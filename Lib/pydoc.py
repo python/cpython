@@ -159,8 +159,9 @@ def _split_list(s, predicate):
 def visiblename(name, all=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant.
-    if name in ('__builtins__', '__doc__', '__file__', '__path__',
-                '__module__', '__name__', '__slots__'): return 0
+    _hidden_names = ('__builtins__', '__doc__', '__file__', '__path__',
+                     '__module__', '__name__', '__slots__', '__package__')
+    if name in _hidden_names: return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
     if all is not None:

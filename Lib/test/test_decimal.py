@@ -426,6 +426,9 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertEqual(str(Decimal('1.3E4 \n')), '1.3E+4')
         self.assertEqual(str(Decimal('  -7.89')), '-7.89')
 
+        #but alternate unicode digits should not
+        self.assertEqual(str(Decimal('\uff11')), 'NaN')
+
     def test_explicit_from_tuples(self):
 
         #zero

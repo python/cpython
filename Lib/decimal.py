@@ -5423,20 +5423,20 @@ ExtendedContext = Context(
 # other meaning for \d than the numbers [0-9].
 
 import re
-_parser = re.compile(r"""     # A numeric string consists of:
+_parser = re.compile(r"""        # A numeric string consists of:
 #    \s*
-    (?P<sign>[-+])?           # an optional sign, followed by either...
+    (?P<sign>[-+])?              # an optional sign, followed by either...
     (
-        (?=\d|\.\d)           # ...a number (with at least one digit)
-        (?P<int>\d*)          # consisting of a (possibly empty) integer part
-        (\.(?P<frac>\d*))?    # followed by an optional fractional part
-        (E(?P<exp>[-+]?\d+))? # followed by an optional exponent, or...
+        (?=[0-9]|\.[0-9])        # ...a number (with at least one digit)
+        (?P<int>[0-9]*)          # having a (possibly empty) integer part
+        (\.(?P<frac>[0-9]*))?    # followed by an optional fractional part
+        (E(?P<exp>[-+]?[0-9]+))? # followed by an optional exponent, or...
     |
-        Inf(inity)?           # ...an infinity, or...
+        Inf(inity)?              # ...an infinity, or...
     |
-        (?P<signal>s)?        # ...an (optionally signaling)
-        NaN                   # NaN
-        (?P<diag>\d*)         # with (possibly empty) diagnostic information.
+        (?P<signal>s)?           # ...an (optionally signaling)
+        NaN                      # NaN
+        (?P<diag>[0-9]*)         # with (possibly empty) diagnostic info.
     )
 #    \s*
     \Z
