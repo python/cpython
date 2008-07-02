@@ -29,10 +29,23 @@ Core and Builtins
   would not cause a syntax error.  This was regression from 2.4 caused by the
   switch to the new compiler.
 
+
+Library
+-------
+
+- Issue #2885 (partial): The urllib.urlopen() function has been deprecated for
+  removal in Python 3.0 in favor of urllib2.urlopen().
+
+- Issue #2885 (partial): lib2to3 has been updated to handle the renaming of the
+  urllib module in Python 3.0 to urllib.request, urllib.parse, and
+  urllib.error.
+
+
 Build
 -----
 
 - Issue #3215: Build sqlite3 as sqlite3.dll, not sqlite3.pyd.
+
 
 What's New in Python 2.6 beta 1?
 ================================
