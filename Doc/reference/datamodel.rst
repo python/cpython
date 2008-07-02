@@ -1314,6 +1314,11 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    should only be implemented if ``del obj.name`` is meaningful for the object.
 
 
+.. method:: object.__dir__(self)
+
+   Called when :func:`dir` is called on the object.  A list must be returned.
+
+
 .. _descriptors:
 
 Implementing Descriptors
