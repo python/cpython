@@ -63,16 +63,16 @@ static PyMethodDef Xxo_methods[] = {
 };
 
 static PyObject *
-Xxo_getattr(XxoObject *self, char *name)
+Xxo_getattro(XxoObject *self, PyObject *name)
 {
 	if (self->x_attr != NULL) {
-		PyObject *v = PyDict_GetItemString(self->x_attr, name);
+		PyObject *v = PyDict_GetItem(self->x_attr, name);
 		if (v != NULL) {
 			Py_INCREF(v);
 			return v;
 		}
 	}
-	return Py_FindMethod(Xxo_methods, (PyObject *)self, name);
+	return PyObject_GenericGetattr((PyObject *)self, name);
 }
 
 static int
@@ -104,7 +104,7 @@ static PyTypeObject Xxo_Type = {
 	/* methods */
 	(destructor)Xxo_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	(getattrfunc)Xxo_getattr, /*tp_getattr*/
+	(getattrfunc)0,         /*tp_getattr*/
 	(setattrfunc)Xxo_setattr, /*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -114,7 +114,7 @@ static PyTypeObject Xxo_Type = {
 	0,			/*tp_hash*/
         0,                      /*tp_call*/
         0,                      /*tp_str*/
-        0,                      /*tp_getattro*/
+        (getattrofunc)Xxo_getattro, /*tp_getattro*/
         0,                      /*tp_setattro*/
         0,                      /*tp_as_buffer*/
         Py_TPFLAGS_DEFAULT,     /*tp_flags*/
@@ -125,7 +125,7 @@ static PyTypeObject Xxo_Type = {
         0,                      /*tp_weaklistoffset*/
         0,                      /*tp_iter*/
         0,                      /*tp_iternext*/
-        0,                      /*tp_methods*/
+        Xxo_methods,            /*tp_methods*/
         0,                      /*tp_members*/
         0,                      /*tp_getset*/
         0,                      /*tp_base*/
