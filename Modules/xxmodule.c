@@ -72,7 +72,7 @@ Xxo_getattro(XxoObject *self, PyObject *name)
 			return v;
 		}
 	}
-	return PyObject_GenericGetattr((PyObject *)self, name);
+	return PyObject_GenericGetAttr((PyObject *)self, name);
 }
 
 static int
