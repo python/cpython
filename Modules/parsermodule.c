@@ -161,8 +161,28 @@ typedef struct {
 
 static void parser_free(PyST_Object *st);
 static int parser_compare(PyST_Object *left, PyST_Object *right);
-static PyObject *parser_getattr(PyObject *self, char *name);
+static PyObject* parser_compilest(PyST_Object *, PyObject *, PyObject *);
+static PyObject* parser_isexpr(PyST_Object *, PyObject *, PyObject *);
+static PyObject* parser_issuite(PyST_Object *, PyObject *, PyObject *);
+static PyObject* parser_st2list(PyST_Object *, PyObject *, PyObject *);
+static PyObject* parser_st2tuple(PyST_Object *, PyObject *, PyObject *);
 
+#define PUBLIC_METHOD_TYPE (METH_VARARGS|METH_KEYWORDS)
+
+static PyMethodDef parser_methods[] = {
+    {"compile",         (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Compile this ST object into a code object.")},
+    {"isexpr",          (PyCFunction)parser_isexpr,     PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Determines if this ST object was created from an expression.")},
+    {"issuite",         (PyCFunction)parser_issuite,    PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Determines if this ST object was created from a suite.")},
+    {"tolist",          (PyCFunction)parser_st2list,    PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Creates a list-tree representation of this ST.")},
+    {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Creates a tuple-tree representation of this ST.")},
+
+    {NULL, NULL, 0, NULL}
+};
 
 static
 PyTypeObject PyST_Type = {
@@ -172,7 +192,7 @@ PyTypeObject PyST_Type = {
     0,                                  /* tp_itemsize          */
     (destructor)parser_free,            /* tp_dealloc           */
     0,                                  /* tp_print             */
-    parser_getattr,                     /* tp_getattr           */
+    0,                                  /* tp_getattr           */
     0,                                  /* tp_setattr           */
     (cmpfunc)parser_compare,            /* tp_compare           */
     0,                                  /* tp_repr              */
@@ -191,7 +211,14 @@ PyTypeObject PyST_Type = {
     Py_TPFLAGS_DEFAULT,                 /* tp_flags             */
 
     /* __doc__ */
-    "Intermediate representation of a Python parse tree."
+    "Intermediate representation of a Python parse tree.",
+    0,                                  /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    0,                                  /* tp_iter */
+    0,                                  /* tp_iternext */
+    parser_methods,                     /* tp_methods */
 };  /* PyST_Type */
 
 
@@ -447,32 +474,6 @@ parser_issuite(PyST_Object *self, PyObject *args, PyObject *kw)
         Py_INCREF(res);
     }
     return (res);
-}
-
-
-#define PUBLIC_METHOD_TYPE (METH_VARARGS|METH_KEYWORDS)
-
-static PyMethodDef
-parser_methods[] = {
-    {"compile",         (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Compile this ST object into a code object.")},
-    {"isexpr",          (PyCFunction)parser_isexpr,     PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Determines if this ST object was created from an expression.")},
-    {"issuite",         (PyCFunction)parser_issuite,    PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Determines if this ST object was created from a suite.")},
-    {"tolist",          (PyCFunction)parser_st2list,    PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Creates a list-tree representation of this ST.")},
-    {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Creates a tuple-tree representation of this ST.")},
-
-    {NULL, NULL, 0, NULL}
-};
-
-
-static PyObject*
-parser_getattr(PyObject *self, char *name)
-{
-    return (Py_FindMethod(parser_methods, self, name));
 }
 
 
@@ -3067,7 +3068,8 @@ PyInit_parser(void)
 {
     PyObject *module, *copyreg;
 
-    Py_TYPE(&PyST_Type) = &PyType_Type;
+    if (PyType_Ready(&PyST_Type) < 0)
+        return NULL;
     module = PyModule_Create(&parsermodule);
     if (module == NULL)
     	return NULL;

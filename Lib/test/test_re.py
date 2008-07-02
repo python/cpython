@@ -326,6 +326,13 @@ class ReTests(unittest.TestCase):
         self.assertNotEqual(re.match("^x{}$", "x{}"), None)
 
     def test_getattr(self):
+        self.assertEqual(re.compile("(?i)(a)(b)").pattern, "(?i)(a)(b)")
+        self.assertEqual(re.compile("(?i)(a)(b)").flags, re.I)
+        self.assertEqual(re.compile("(?i)(a)(b)").groups, 2)
+        self.assertEqual(re.compile("(?i)(a)(b)").groupindex, {})
+        self.assertEqual(re.compile("(?i)(?P<first>a)(?P<other>b)").groupindex,
+                         {'first': 1, 'other': 2})
+
         self.assertEqual(re.match("(a)", "a").pos, 0)
         self.assertEqual(re.match("(a)", "a").endpos, 1)
         self.assertEqual(re.match("(a)", "a").string, "a")

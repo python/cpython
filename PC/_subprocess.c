@@ -111,12 +111,6 @@ static PyMethodDef sp_handle_methods[] = {
 };
 
 static PyObject*
-sp_handle_getattr(sp_handle_object* self, char* name)
-{
-	return Py_FindMethod(sp_handle_methods, (PyObject*) self, name);
-}
-
-static PyObject*
 sp_handle_as_int(sp_handle_object* self)
 {
 	return PyLong_FromLong((long) self->handle);
@@ -129,14 +123,28 @@ static PyTypeObject sp_handle_type = {
 	"_subprocess_handle", sizeof(sp_handle_object), 0,
 	(destructor) sp_handle_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) sp_handle_getattr,/*tp_getattr*/
+	0,				/*tp_getattr*/
 	0,				/*tp_setattr*/
 	0,				/*tp_compare*/
 	0,				/*tp_repr*/
 	&sp_handle_as_number,		/*tp_as_number */
 	0,				/*tp_as_sequence */
 	0,				/*tp_as_mapping */
-	0				/*tp_hash*/
+	0,				/*tp_hash*/
+	0,				/*tp_call*/
+	0,				/*tp_str*/
+	0,				/*tp_getattro*/
+	0,				/*tp_setattro*/
+	0,				/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,		/*tp_flags*/
+	0,				/*tp_doc*/
+	0,				/*tp_traverse*/
+	0,				/*tp_clear*/
+	0,				/*tp_richcompare*/
+	0,				/*tp_weaklistoffset*/
+	0,				/*tp_iter*/
+	0,				/*tp_iternext*/
+	sp_handle_methods,		/*tp_methods*/
 };
 
 /* -------------------------------------------------------------------- */
@@ -560,8 +568,9 @@ PyInit__subprocess()
 	PyObject *m;
 
 	/* patch up object descriptors */
-	Py_TYPE(&sp_handle_type) = &PyType_Type;
 	sp_handle_as_number.nb_int = (unaryfunc) sp_handle_as_int;
+	if (PyType_Ready(&sp_handle_type) < 0)
+		return NULL;
 
 	m = PyModule_Create(&_subprocessmodule);
 	if (m == NULL)

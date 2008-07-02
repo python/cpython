@@ -455,9 +455,24 @@ static PyNumberMethods PyHKEY_NumberMethods =
 	PyHKEY_unaryFailureFunc,	/* nb_float */
 };
 
+static PyObject *PyHKEY_CloseMethod(PyObject *self, PyObject *args);
+static PyObject *PyHKEY_DetachMethod(PyObject *self, PyObject *args);
+static PyObject *PyHKEY_Enter(PyObject *self);
+static PyObject *PyHKEY_Exit(PyObject *self, PyObject *args);
 
-/* fwd declare __getattr__ */
-static PyObject *PyHKEY_getattr(PyObject *self, const char *name);
+static struct PyMethodDef PyHKEY_methods[] = {
+	{"Close",  PyHKEY_CloseMethod, METH_VARARGS, PyHKEY_Close_doc},
+	{"Detach", PyHKEY_DetachMethod, METH_VARARGS, PyHKEY_Detach_doc},
+	{"__enter__", (PyCFunction)PyHKEY_Enter, METH_NOARGS, NULL},
+	{"__exit__", PyHKEY_Exit, METH_VARARGS, NULL},
+	{NULL}
+};
+
+#define OFF(e) offsetof(PyHKEYObject, e)
+static PyMemberDef PyHKEY_memberlist[] = {
+	{"handle",      T_INT,      OFF(hkey), READONLY},
+	{NULL}    /* Sentinel */
+};
 
 /* The type itself */
 PyTypeObject PyHKEY_Type =
@@ -468,7 +483,7 @@ PyTypeObject PyHKEY_Type =
 	0,
 	PyHKEY_deallocFunc,		/* tp_dealloc */
 	0,				/* tp_print */
-	PyHKEY_getattr,			/* tp_getattr */
+	0,				/* tp_getattr */
 	0,				/* tp_setattr */
 	PyHKEY_compareFunc,		/* tp_compare */
 	0,				/* tp_repr */
@@ -483,13 +498,14 @@ PyTypeObject PyHKEY_Type =
 	0,				/* tp_as_buffer */
 	0,				/* tp_flags */
 	PyHKEY_doc,			/* tp_doc */
-};
-
-#define OFF(e) offsetof(PyHKEYObject, e)
-
-static PyMemberDef PyHKEY_memberlist[] = {
-	{"handle",      T_INT,      OFF(hkey), READONLY},
-	{NULL}    /* Sentinel */
+	0,				/*tp_traverse*/
+	0,				/*tp_clear*/
+	0,				/*tp_richcompare*/
+	0,				/*tp_weaklistoffset*/
+	0,				/*tp_iter*/
+	0,				/*tp_iternext*/
+	PyHKEY_methods,			/*tp_methods*/
+	PyHKEY_memberlist,		/*tp_members*/
 };
 
 /************************************************************************
@@ -535,31 +551,6 @@ PyHKEY_Exit(PyObject *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-
-static struct PyMethodDef PyHKEY_methods[] = {
-	{"Close",  PyHKEY_CloseMethod, METH_VARARGS, PyHKEY_Close_doc},
-	{"Detach", PyHKEY_DetachMethod, METH_VARARGS, PyHKEY_Detach_doc},
-	{"__enter__", (PyCFunction)PyHKEY_Enter, METH_NOARGS, NULL},
-	{"__exit__", PyHKEY_Exit, METH_VARARGS, NULL},
-	{NULL}
-};
-
-/*static*/ PyObject *
-PyHKEY_getattr(PyObject *self, const char *name)
-{
-	PyObject *res;
-
-	res = Py_FindMethod(PyHKEY_methods, self, name);
-	if (res != NULL)
-		return res;
-	PyErr_Clear();
-	if (strcmp(name, "handle") == 0)
-		return PyLong_FromVoidPtr(((PyHKEYObject *)self)->hkey);
-	PyErr_Format(PyExc_AttributeError,
-                     "'%.50s' object has no attribute '%.400s'",
-                     Py_TYPE(self)->tp_name, name);
-	return NULL;
-}
 
 /************************************************************************
    The public PyHKEY API (well, not public yet :-)
@@ -1582,8 +1573,9 @@ PyMODINIT_FUNC PyInit_winreg(void)
 	if (m == NULL)
 		return NULL;
 	d = PyModule_GetDict(m);
-	Py_TYPE(&PyHKEY_Type) = &PyType_Type;
 	PyHKEY_Type.tp_doc = PyHKEY_doc;
+	if (PyType_Ready(&PyHKEY_Type) < 0)
+		return NULL;
 	Py_INCREF(&PyHKEY_Type);
 	if (PyDict_SetItemString(d, "HKEYType",
 				 (PyObject *)&PyHKEY_Type) != 0)

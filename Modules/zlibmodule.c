@@ -5,6 +5,7 @@
 
 
 #include "Python.h"
+#include "structmember.h"
 #include "zlib.h"
 
 #ifdef WITH_THREAD
@@ -879,35 +880,12 @@ static PyMethodDef Decomp_methods[] =
     {NULL, NULL}
 };
 
-static PyObject *
-Comp_getattr(compobject *self, char *name)
-{
-  /* No ENTER/LEAVE_ZLIB is necessary because this fn doesn't touch
-     internal data. */
-
-  return Py_FindMethod(comp_methods, (PyObject *)self, name);
-}
-
-static PyObject *
-Decomp_getattr(compobject *self, char *name)
-{
-    PyObject * retval;
-
-    ENTER_ZLIB
-
-    if (strcmp(name, "unused_data") == 0) {
-	Py_INCREF(self->unused_data);
-	retval = self->unused_data;
-    } else if (strcmp(name, "unconsumed_tail") == 0) {
-	Py_INCREF(self->unconsumed_tail);
-	retval = self->unconsumed_tail;
-    } else
-	retval = Py_FindMethod(Decomp_methods, (PyObject *)self, name);
-
-    LEAVE_ZLIB
-
-    return retval;
-}
+#define COMP_OFF(x) offsetof(compobject, x)
+static PyMemberDef Decomp_members[] = {
+    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
+    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
+    {NULL},
+};
 
 PyDoc_STRVAR(adler32__doc__,
 "adler32(string[, start]) -- Compute an Adler-32 checksum of string.\n"
@@ -972,13 +950,28 @@ static PyTypeObject Comptype = {
     0,
     (destructor)Comp_dealloc,       /*tp_dealloc*/
     0,                              /*tp_print*/
-    (getattrfunc)Comp_getattr,      /*tp_getattr*/
+    0,                              /*tp_getattr*/
     0,                              /*tp_setattr*/
     0,                              /*tp_compare*/
     0,                              /*tp_repr*/
     0,                              /*tp_as_number*/
     0,                              /*tp_as_sequence*/
     0,                              /*tp_as_mapping*/
+    0,                              /*tp_hash*/
+    0,                              /*tp_call*/
+    0,                              /*tp_str*/
+    0,                              /*tp_getattro*/
+    0,                              /*tp_setattro*/
+    0,                              /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,             /*tp_flags*/
+    0,                              /*tp_doc*/
+    0,                              /*tp_traverse*/
+    0,                              /*tp_clear*/
+    0,                              /*tp_richcompare*/
+    0,                              /*tp_weaklistoffset*/
+    0,                              /*tp_iter*/
+    0,                              /*tp_iternext*/
+    comp_methods,                   /*tp_methods*/
 };
 
 static PyTypeObject Decomptype = {
@@ -988,13 +981,29 @@ static PyTypeObject Decomptype = {
     0,
     (destructor)Decomp_dealloc,     /*tp_dealloc*/
     0,                              /*tp_print*/
-    (getattrfunc)Decomp_getattr,    /*tp_getattr*/
+    0,                              /*tp_getattr*/
     0,                              /*tp_setattr*/
     0,                              /*tp_compare*/
     0,                              /*tp_repr*/
     0,                              /*tp_as_number*/
     0,                              /*tp_as_sequence*/
     0,                              /*tp_as_mapping*/
+    0,                              /*tp_hash*/
+    0,                              /*tp_call*/
+    0,                              /*tp_str*/
+    0,                              /*tp_getattro*/
+    0,                              /*tp_setattro*/
+    0,                              /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,             /*tp_flags*/
+    0,                              /*tp_doc*/
+    0,                              /*tp_traverse*/
+    0,                              /*tp_clear*/
+    0,                              /*tp_richcompare*/
+    0,                              /*tp_weaklistoffset*/
+    0,                              /*tp_iter*/
+    0,                              /*tp_iternext*/
+    Decomp_methods,                 /*tp_methods*/
+    Decomp_members,                 /*tp_members*/
 };
 
 PyDoc_STRVAR(zlib_module_documentation,
@@ -1028,8 +1037,10 @@ PyMODINIT_FUNC
 PyInit_zlib(void)
 {
     PyObject *m, *ver;
-    Py_TYPE(&Comptype) = &PyType_Type;
-    Py_TYPE(&Decomptype) = &PyType_Type;
+    if (PyType_Ready(&Comptype) < 0)
+	    return NULL;
+    if (PyType_Ready(&Decomptype) < 0)
+	    return NULL;
     m = PyModule_Create(&zlibmodule);
     if (m == NULL)
 	return NULL;
