@@ -418,7 +418,7 @@ Decimal objects
 
    .. method:: conjugate()
 
-      Just returns itself, this method is only to comply with the Decimal
+      Just returns self, this method is only to comply with the Decimal
       Specification.
 
    .. method:: copy_abs()
@@ -1192,9 +1192,10 @@ In addition to the three supplied contexts, new contexts can be created with the
       The sign of the result, if non-zero, is the same as that of the original
       dividend.
 
+
    .. method:: remainder_near(x, y)
 
-      Returns `x - y * n`, where *n* is the integer nearest the exact value 
+      Returns `x - y * n`, where *n* is the integer nearest the exact value
       of `x / y` (if the result is `0` then its sign will be the sign of *x*).
 
 

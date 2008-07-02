@@ -68,7 +68,7 @@ class Fraction(numbers.Rational):
                 input = numerator
                 m = _RATIONAL_FORMAT.match(input)
                 if m is None:
-                    raise ValueError('Invalid literal for Fraction: ' + input)
+                    raise ValueError('Invalid literal for Fraction: %r' % input)
                 numerator = m.group('num')
                 decimal = m.group('decimal')
                 if decimal:

@@ -162,6 +162,8 @@ data part of type :mimetype:`application/x-www-form-urlencoded`), the items will
 actually be instances of the class :class:`MiniFieldStorage`.  In this case, the
 :attr:`list`, :attr:`file`, and :attr:`filename` attributes are always ``None``.
 
+A form submitted via POST that also has a query string will contain both
+:class:`FieldStorage` and :class:`MiniFieldStorage` items.
 
 Higher Level Interface
 ----------------------

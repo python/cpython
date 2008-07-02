@@ -337,21 +337,6 @@ These functions create new file objects. (See also :func:`open`.)
    does on most platforms).
 
 
-.. function:: popen(command[, mode[, bufsize]])
-
-   Open a pipe to or from *command*.  The return value is an open file object
-   connected to the pipe, which can be read or written depending on whether *mode*
-   is ``'r'`` (default) or ``'w'``. The *bufsize* argument has the same meaning as
-   the corresponding argument to the built-in :func:`open` function.  The exit
-   status of the command (encoded in the format specified for :func:`wait`) is
-   available as the return value of the :meth:`close` method of the file object,
-   except that when the exit status is zero (termination without errors), ``None``
-   is returned. Availability: Macintosh, Unix, Windows.
-
-   .. deprecated:: 2.6
-      This function is obsolete.  Use the :mod:`subprocess` module.
-
-
 .. _os-fd-ops:
 
 File Descriptor Operations
@@ -1449,7 +1434,8 @@ written in Python, such as a mail server's external command delivery program.
 
    (Note that the :mod:`subprocess` module provides more powerful facilities for
    spawning new processes and retrieving their results; using that module is
-   preferable to using these functions.)
+   preferable to using these functions.  Check specially the *Replacing Older 
+   Functions with the subprocess Module* section in that documentation page.)
 
    If *mode* is :const:`P_NOWAIT`, this function returns the process id of the new
    process; if *mode* is :const:`P_WAIT`, returns the process's exit code if it
@@ -1571,7 +1557,8 @@ written in Python, such as a mail server's external command delivery program.
 
    The :mod:`subprocess` module provides more powerful facilities for spawning new
    processes and retrieving their results; using that module is preferable to using
-   this function.
+   this function.  Use the :mod:`subprocess` module.  Check especially the
+   :ref:`subprocess-replacements` section.
 
 
 .. function:: times()
