@@ -432,6 +432,9 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertEqual(str(Decimal(u'-Inf')), '-Infinity')
         self.assertEqual(str(Decimal(u'NaN123')), 'NaN123')
 
+        #but alternate unicode digits should not
+        self.assertEqual(str(Decimal(u'\uff11')), 'NaN')
+
     def test_explicit_from_tuples(self):
 
         #zero
