@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #449227: Now with the rlcompleter module, callable objects are added
+  "(" when completed.
+
 - Issue #3190: Pydoc now hides the automatic module attribute __package__ (the
   handling is now the same as that of other special attributes like __name__).
 

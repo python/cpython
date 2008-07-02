@@ -92,6 +92,11 @@ class Completer:
         except IndexError:
             return None
 
+    def _callable_postfix(self, val, word):
+        if callable(val):
+            word = word + "("
+        return word
+
     def global_matches(self, text):
         """Compute matches when text is a simple name.
 
@@ -102,12 +107,13 @@ class Completer:
         import keyword
         matches = []
         n = len(text)
-        for list in [keyword.kwlist,
-                     __builtin__.__dict__,
-                     self.namespace]:
-            for word in list:
+        for word in keyword.kwlist:
+            if word[:n] == text:
+                matches.append(word)
+        for nspace in [__builtin__.__dict__, self.namespace]:
+            for word, val in nspace.items():
                 if word[:n] == text and word != "__builtins__":
-                    matches.append(word)
+                    matches.append(self._callable_postfix(val, word))
         return matches
 
     def attr_matches(self, text):
@@ -139,7 +145,9 @@ class Completer:
         n = len(attr)
         for word in words:
             if word[:n] == attr and word != "__builtins__":
-                matches.append("%s.%s" % (expr, word))
+                val = getattr(object, word)
+                word = self._callable_postfix(val, "%s.%s" % (expr, word))
+                matches.append(word)
         return matches
 
 def get_class_members(klass):

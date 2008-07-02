@@ -20,9 +20,9 @@ Example::
    >>> import readline
    >>> readline.parse_and_bind("tab: complete")
    >>> readline. <TAB PRESSED>
-   readline.__doc__          readline.get_line_buffer  readline.read_init_file
-   readline.__file__         readline.insert_text      readline.set_completer
-   readline.__name__         readline.parse_and_bind
+   readline.__doc__          readline.get_line_buffer(  readline.read_init_file(
+   readline.__file__         readline.insert_text(      readline.set_completer(
+   readline.__name__         readline.parse_and_bind(
    >>> readline.
 
 The :mod:`rlcompleter` module is designed for use with Python's interactive
