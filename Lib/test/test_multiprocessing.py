@@ -960,7 +960,6 @@ class _TestContainers(BaseTestCase):
 def sqr(x, wait=0.0):
     time.sleep(wait)
     return x*x
-"""
 class _TestPool(BaseTestCase):
 
     def test_apply(self):
@@ -1030,7 +1029,6 @@ class _TestPool(BaseTestCase):
         join = TimingWrapper(self.pool.join)
         join()
         self.assertTrue(join.elapsed < 0.2)
-"""
 #
 # Test that manager has expected number of shared objects left
 #
@@ -1333,7 +1331,6 @@ class _TestConnection(BaseTestCase):
 
         self.assertRaises(ValueError, a.send_bytes, msg, 4, -1)
 
-"""
 class _TestListenerClient(BaseTestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
@@ -1353,7 +1350,6 @@ class _TestListenerClient(BaseTestCase):
             self.assertEqual(conn.recv(), 'hello')
             p.join()
             l.close()
-"""
 #
 # Test of sending connection and socket objects between processes
 #
@@ -1769,28 +1765,28 @@ def test_main(run=None):
 
     multiprocessing.get_logger().setLevel(LOG_LEVEL)
 
-    #ProcessesMixin.pool = multiprocessing.Pool(4)
-    #ThreadsMixin.pool = multiprocessing.dummy.Pool(4)
-    #ManagerMixin.manager.__init__()
-    #ManagerMixin.manager.start()
-    #ManagerMixin.pool = ManagerMixin.manager.Pool(4)
+    ProcessesMixin.pool = multiprocessing.Pool(4)
+    ThreadsMixin.pool = multiprocessing.dummy.Pool(4)
+    ManagerMixin.manager.__init__()
+    ManagerMixin.manager.start()
+    ManagerMixin.pool = ManagerMixin.manager.Pool(4)
 
     testcases = (
-        sorted(testcases_processes.values(), key=lambda tc:tc.__name__) #+
-        #sorted(testcases_threads.values(), key=lambda tc:tc.__name__) +
-        #sorted(testcases_manager.values(), key=lambda tc:tc.__name__)
+        sorted(testcases_processes.values(), key=lambda tc:tc.__name__) +
+        sorted(testcases_threads.values(), key=lambda tc:tc.__name__) +
+        sorted(testcases_manager.values(), key=lambda tc:tc.__name__)
         )
 
     loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase
     suite = unittest.TestSuite(loadTestsFromTestCase(tc) for tc in testcases)
     run(suite)
 
-    #ThreadsMixin.pool.terminate()
-    #ProcessesMixin.pool.terminate()
-    #ManagerMixin.pool.terminate()
-    #ManagerMixin.manager.shutdown()
+    ThreadsMixin.pool.terminate()
+    ProcessesMixin.pool.terminate()
+    ManagerMixin.pool.terminate()
+    ManagerMixin.manager.shutdown()
 
-    #del ProcessesMixin.pool, ThreadsMixin.pool, ManagerMixin.pool
+    del ProcessesMixin.pool, ThreadsMixin.pool, ManagerMixin.pool
 
 def main():
     test_main(unittest.TextTestRunner(verbosity=2).run)

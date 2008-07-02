@@ -1082,7 +1082,7 @@ The operator :keyword:`not in` is defined to have the inverse true value of
 
 The operators :keyword:`is` and :keyword:`is not` test for object identity: ``x
 is y`` is true if and only if *x* and *y* are the same object.  ``x is not y``
-yields the inverse truth value.
+yields the inverse truth value. [#]_
 
 
 .. _booleans:
@@ -1314,3 +1314,7 @@ groups from right to left).
    identity only, but this caused surprises because people expected to be able
    to test a dictionary for emptiness by comparing it to ``{}``.
 
+.. [#] Due to automatic garbage-collection, free lists, and the dynamic nature of 
+   descriptors, you may notice seemingly unusual behaviour in certain uses of
+   the :keyword:`is` operator, like those involving comparisons between instance
+   methods, or constants.  Check their documentation for more info.

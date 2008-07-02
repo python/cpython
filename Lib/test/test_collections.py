@@ -296,6 +296,21 @@ class TestCollectionABCs(unittest.TestCase):
             self.failUnless(isinstance(sample(), Set))
             self.failUnless(issubclass(sample, Set))
 
+    def test_hash_Set(self):
+        class OneTwoThreeSet(Set):
+            def __init__(self):
+                self.contents = [1, 2, 3]
+            def __contains__(self, x):
+                return x in self.contents
+            def __len__(self):
+                return len(self.contents)
+            def __iter__(self):
+                return iter(self.contents)
+            def __hash__(self):
+                return self._hash()
+        a, b = OneTwoThreeSet(), OneTwoThreeSet()
+        self.failUnless(hash(a) == hash(b))
+
     def test_MutableSet(self):
         self.failUnless(isinstance(set(), MutableSet))
         self.failUnless(issubclass(set, MutableSet))

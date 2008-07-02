@@ -583,10 +583,10 @@ variables with different implementation details.
 
    :pep:`3129` - Class Decorators
 
-Class definitions, like function definitions, may be wrapped by one or
-more :term:`decorator` expressions.  The evaluation rules for the
-decorator expressions are the same as for functions.  The result must
-be a class object, which is then bound to the class name.
+Class definitions, like function definitions, may be wrapped by one or more
+:term:`decorator` expressions.  The evaluation rules for the decorator
+expressions are the same as for functions.  The result must be a class object,
+which is then bound to the class name.
 
 
 .. rubric:: Footnotes
