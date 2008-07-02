@@ -40,9 +40,9 @@ Definition::
 
 In engineering the polar coordinate system is popular for complex numbers. In
 polar coordinates a complex number is defined by the radius *r* and the phase
-angle *φ*. The radius *r* is the absolute value of the complex, which can be
+angle *phi*. The radius *r* is the absolute value of the complex, which can be
 viewed as distance from (0, 0). The radius *r* is always 0 or a positive float.
-The phase angle *φ* is the counter clockwise angle from the positive x axis,
+The phase angle *phi* is the counter clockwise angle from the positive x axis,
 e.g. *1* has the angle *0*, *1j* has the angle *π/2* and *-1* the angle *-π*.
 
 .. note::
@@ -53,12 +53,12 @@ e.g. *1* has the angle *0*, *1j* has the angle *π/2* and *-1* the angle *-π*.
 
 Definition::
 
-   z = r * exp(1j * φ)
-   z = r * cis(φ)
+   z = r * exp(1j * phi)
+   z = r * cis(phi)
 
    r := abs(z) := sqrt(real(z)**2 + imag(z)**2)
    phi := phase(z) := atan2(imag(z), real(z))
-   cis(φ) := cos(φ) + 1j * sin(φ)
+   cis(phi) := cos(phi) + 1j * sin(phi)
 
 
 .. function:: phase(x)

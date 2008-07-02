@@ -76,6 +76,13 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
     return result;
 }
 
+PyDoc_STRVAR(module_connect_doc,
+"connect(database[, timeout, isolation_level, detect_types, factory])\n\
+\n\
+Opens a connection to the SQLite database file *database*. You can use\n\
+\":memory:\" to open a database connection to a database that resides in\n\
+RAM instead of on disk.");
+
 static PyObject* module_complete(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
@@ -100,6 +107,11 @@ static PyObject* module_complete(PyObject* self, PyObject* args, PyObject*
     return result;
 }
 
+PyDoc_STRVAR(module_complete_doc,
+"complete_statement(sql)\n\
+\n\
+Checks if a string contains a complete SQL statement. Non-standard.");
+
 #ifdef HAVE_SHARED_CACHE
 static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyObject*
         kwargs)
@@ -123,9 +135,15 @@ static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyOb
         return Py_None;
     }
 }
+
+PyDoc_STRVAR(module_enable_shared_cache_doc,
+"enable_shared_cache(do_enable)\n\
+\n\
+Enable or disable shared cache mode for the calling thread.\n\
+Experimental/Non-standard.");
 #endif /* HAVE_SHARED_CACHE */
 
-static PyObject* module_register_adapter(PyObject* self, PyObject* args, PyObject* kwargs)
+static PyObject* module_register_adapter(PyObject* self, PyObject* args)
 {
     PyTypeObject* type;
     PyObject* caster;
@@ -147,7 +165,12 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args, PyObjec
     return Py_None;
 }
 
-static PyObject* module_register_converter(PyObject* self, PyObject* args, PyObject* kwargs)
+PyDoc_STRVAR(module_register_adapter_doc,
+"register_adapter(type, callable)\n\
+\n\
+Registers an adapter with pysqlite's adapter registry. Non-standard.");
+
+static PyObject* module_register_converter(PyObject* self, PyObject* args)
 {
     PyObject* orig_name;
     PyObject* name = NULL;
@@ -175,7 +198,12 @@ error:
     return retval;
 }
 
-static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args, PyObject* kwargs)
+PyDoc_STRVAR(module_register_converter_doc,
+"register_converter(typename, callable)\n\
+\n\
+Registers a converter with pysqlite. Non-standard.");
+
+static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
 {
     if (!PyArg_ParseTuple(args, "i", &_enable_callback_tracebacks)) {
         return NULL;
@@ -184,6 +212,11 @@ static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args, PyOb
     Py_INCREF(Py_None);
     return Py_None;
 }
+
+PyDoc_STRVAR(enable_callback_tracebacks_doc,
+"enable_callback_tracebacks(flag)\n\
+\n\
+Enable or disable callback functions throwing errors to stderr.");
 
 static void converters_init(PyObject* dict)
 {
@@ -196,15 +229,22 @@ static void converters_init(PyObject* dict)
 }
 
 static PyMethodDef module_methods[] = {
-    {"connect",  (PyCFunction)module_connect,  METH_VARARGS|METH_KEYWORDS, PyDoc_STR("Creates a connection.")},
-    {"complete_statement",  (PyCFunction)module_complete,  METH_VARARGS|METH_KEYWORDS, PyDoc_STR("Checks if a string contains a complete SQL statement. Non-standard.")},
+    {"connect",  (PyCFunction)module_connect,
+     METH_VARARGS | METH_KEYWORDS, module_connect_doc},
+    {"complete_statement",  (PyCFunction)module_complete,
+     METH_VARARGS | METH_KEYWORDS, module_complete_doc},
 #ifdef HAVE_SHARED_CACHE
-    {"enable_shared_cache",  (PyCFunction)module_enable_shared_cache,  METH_VARARGS|METH_KEYWORDS, PyDoc_STR("Enable or disable shared cache mode for the calling thread. Experimental/Non-standard.")},
+    {"enable_shared_cache",  (PyCFunction)module_enable_shared_cache,
+     METH_VARARGS | METH_KEYWORDS, module_enable_shared_cache_doc},
 #endif
-    {"register_adapter", (PyCFunction)module_register_adapter, METH_VARARGS, PyDoc_STR("Registers an adapter with pysqlite's adapter registry. Non-standard.")},
-    {"register_converter", (PyCFunction)module_register_converter, METH_VARARGS, PyDoc_STR("Registers a converter with pysqlite. Non-standard.")},
-    {"adapt",  (PyCFunction)psyco_microprotocols_adapt, METH_VARARGS, psyco_microprotocols_adapt_doc},
-    {"enable_callback_tracebacks",  (PyCFunction)enable_callback_tracebacks, METH_VARARGS, PyDoc_STR("Enable or disable callback functions throwing errors to stderr.")},
+    {"register_adapter", (PyCFunction)module_register_adapter,
+     METH_VARARGS, module_register_adapter_doc},
+    {"register_converter", (PyCFunction)module_register_converter,
+     METH_VARARGS, module_register_converter_doc},
+    {"adapt",  (PyCFunction)psyco_microprotocols_adapt, METH_VARARGS,
+     psyco_microprotocols_adapt_doc},
+    {"enable_callback_tracebacks",  (PyCFunction)enable_callback_tracebacks,
+     METH_VARARGS, enable_callback_tracebacks_doc},
     {NULL, NULL}
 };
 
@@ -403,12 +443,12 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     pysqlite_BaseTypeAdapted = 0;
 
-    /* Original comment form _bsddb.c in the Python core. This is also still
+    /* Original comment from _bsddb.c in the Python core. This is also still
      * needed nowadays for Python 2.3/2.4.
      * 
      * PyEval_InitThreads is called here due to a quirk in python 1.5
      * - 2.2.1 (at least) according to Russell Williamson <merel@wt.net>:
-     * The global interepreter lock is not initialized until the first
+     * The global interpreter lock is not initialized until the first
      * thread is created using thread.start_new_thread() or fork() is
      * called.  that would cause the ALLOW_THREADS here to segfault due
      * to a null pointer reference if no threads or child processes

@@ -126,6 +126,16 @@ def first_elts(list):
 def first_second_elts(list):
     return [(p[0], p[1][0]) for p in list]
 
+def gen_result(data, environ):
+    fake_stdin = StringIO(data)
+    fake_stdin.seek(0)
+    form = cgi.FieldStorage(fp=fake_stdin, environ=environ)
+
+    result = {}
+    for k, v in dict(form).items():
+        result[k] = type(v) is list and form.getlist(k) or v.value
+
+    return result
 
 class CgiTests(unittest.TestCase):
 
@@ -240,6 +250,83 @@ Content-Disposition: form-data; name="submit"
             for k, exp in expect[x].items():
                 got = getattr(fs.list[x], k)
                 self.assertEquals(got, exp)
+
+    _qs_result = {
+        'key1': 'value1',
+        'key2': ['value2x', 'value2y'],
+        'key3': 'value3',
+        'key4': 'value4'
+    }
+    def testQSAndUrlEncode(self):
+        data = "key2=value2x&key3=value3&key4=value4"
+        environ = {
+            'CONTENT_LENGTH':   str(len(data)),
+            'CONTENT_TYPE':     'application/x-www-form-urlencoded',
+            'QUERY_STRING':     'key1=value1&key2=value2y',
+            'REQUEST_METHOD':   'POST',
+        }
+        v = gen_result(data, environ)
+        self.assertEqual(self._qs_result, v)
+
+    def testQSAndFormData(self):
+        data = """
+---123
+Content-Disposition: form-data; name="key2"
+
+value2y
+---123
+Content-Disposition: form-data; name="key3"
+
+value3
+---123
+Content-Disposition: form-data; name="key4"
+
+value4
+---123--
+"""
+        environ = {
+            'CONTENT_LENGTH':   str(len(data)),
+            'CONTENT_TYPE':     'multipart/form-data; boundary=-123',
+            'QUERY_STRING':     'key1=value1&key2=value2x',
+            'REQUEST_METHOD':   'POST',
+        }
+        v = gen_result(data, environ)
+        self.assertEqual(self._qs_result, v)
+
+    def testQSAndFormDataFile(self):
+        data = """
+---123
+Content-Disposition: form-data; name="key2"
+
+value2y
+---123
+Content-Disposition: form-data; name="key3"
+
+value3
+---123
+Content-Disposition: form-data; name="key4"
+
+value4
+---123
+Content-Disposition: form-data; name="upload"; filename="fake.txt"
+Content-Type: text/plain
+
+this is the content of the fake file
+
+---123--
+"""
+        environ = {
+            'CONTENT_LENGTH':   str(len(data)),
+            'CONTENT_TYPE':     'multipart/form-data; boundary=-123',
+            'QUERY_STRING':     'key1=value1&key2=value2x',
+            'REQUEST_METHOD':   'POST',
+        }
+        result = self._qs_result.copy()
+        result.update({
+            'upload': 'this is the content of the fake file'
+        })
+        v = gen_result(data, environ)
+        self.assertEqual(result, v)
 
 def test_main():
     run_unittest(CgiTests)

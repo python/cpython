@@ -10,6 +10,7 @@ except ImportError:
 import time
 import os
 import pwd
+import shutil
 import unittest
 import warnings
 warnings.filterwarnings('ignore', '.* potential security risk .*',
@@ -224,6 +225,44 @@ class PosixTester(unittest.TestCase):
         for k, v in posix.environ.items():
             self.assertEqual(type(k), str)
             self.assertEqual(type(v), str)
+
+    def test_getcwd_long_pathnames(self):
+        if hasattr(posix, 'getcwd'):
+            dirname = 'getcwd-test-directory-0123456789abcdef-01234567890abcdef'
+            curdir = os.getcwd()
+            base_path = os.path.abspath(support.TESTFN) + '.getcwd'
+
+            try:
+                os.mkdir(base_path)
+                os.chdir(base_path)
+            except:
+#               Just returning nothing instead of the TestSkipped exception,
+#               because the test results in Error in that case.
+#               Is that ok?
+#                raise support.TestSkipped, "cannot create directory for testing"
+                return
+
+                def _create_and_do_getcwd(dirname, current_path_length = 0):
+                    try:
+                        os.mkdir(dirname)
+                    except:
+                        raise support.TestSkipped("mkdir cannot create directory sufficiently deep for getcwd test")
+
+                    os.chdir(dirname)
+                    try:
+                        os.getcwd()
+                        if current_path_length < 1027:
+                            _create_and_do_getcwd(dirname, current_path_length + len(dirname) + 1)
+                    finally:
+                        os.chdir('..')
+                        os.rmdir(dirname)
+
+                _create_and_do_getcwd(dirname)
+
+            finally:
+                shutil.rmtree(base_path)
+                os.chdir(curdir)
+
 
 def test_main():
     support.run_unittest(PosixTester)

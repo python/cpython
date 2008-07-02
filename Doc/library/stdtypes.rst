@@ -2145,6 +2145,11 @@ the particular object.
    the system default encoding for converting strings.
 
 
+.. attribute:: file.errors
+
+   The Unicode error handler used along with the encoding.
+
+
 .. attribute:: file.mode
 
    The I/O mode for the file.  If the file was created using the :func:`open`

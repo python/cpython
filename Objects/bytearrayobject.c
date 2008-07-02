@@ -2648,7 +2648,7 @@ PyDoc_STRVAR(pop__doc__,
 "B.pop([index]) -> int\n\
 \n\
 Remove and return a single item from B. If no index\n\
-argument is give, will pop the last value.");
+argument is given, will pop the last value.");
 static PyObject *
 bytes_pop(PyByteArrayObject *self, PyObject *args)
 {

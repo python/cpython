@@ -449,6 +449,7 @@ class FieldStorage:
         self.strict_parsing = strict_parsing
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
+        self.qs_on_post = None
         if method == 'GET' or method == 'HEAD':
             if 'QUERY_STRING' in environ:
                 qs = environ['QUERY_STRING']
@@ -467,6 +468,8 @@ class FieldStorage:
                 headers['content-type'] = "application/x-www-form-urlencoded"
             if 'CONTENT_TYPE' in environ:
                 headers['content-type'] = environ['CONTENT_TYPE']
+            if 'QUERY_STRING' in environ:
+                self.qs_on_post = environ['QUERY_STRING']
             if 'CONTENT_LENGTH' in environ:
                 headers['content-length'] = environ['CONTENT_LENGTH']
         self.fp = fp or sys.stdin
@@ -618,6 +621,8 @@ class FieldStorage:
     def read_urlencoded(self):
         """Internal: read data in query string format."""
         qs = self.fp.read(self.length)
+        if self.qs_on_post:
+            qs += '&' + self.qs_on_post
         self.list = list = []
         for key, value in parse_qsl(qs, self.keep_blank_values,
                                     self.strict_parsing):
@@ -632,6 +637,12 @@ class FieldStorage:
         if not valid_boundary(ib):
             raise ValueError('Invalid boundary in multipart form: %r' % (ib,))
         self.list = []
+        if self.qs_on_post:
+            for key, value in parse_qsl(self.qs_on_post, self.keep_blank_values,
+                                        self.strict_parsing):
+                self.list.append(MiniFieldStorage(key, value))
+            FieldStorageClass = None
+
         klass = self.FieldStorageClass or self.__class__
         parser = email.parser.FeedParser()
         # Create bogus content-type header for proper multipart parsing
