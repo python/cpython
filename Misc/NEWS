@@ -24,6 +24,12 @@ Library
   code of every single module of the standard library, including invalid files
   used in the test suite.
 
+C API
+-----
+
+- Issue #3247: the function Py_FindMethod was removed. Modern types should
+  use the tp_methods slot instead.
+
 Tools/Demos
 -----------
 
