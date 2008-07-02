@@ -117,6 +117,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #3261: test_cookielib had an improper file encoding specified.
+
 - Patch #2232: os.tmpfile might fail on Windows if the user has no
   permission to create files in the root directory.
 

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: latin-1 -*-
 """Tests for cookielib.py."""
 
 import re, os, time
