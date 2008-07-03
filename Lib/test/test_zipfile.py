@@ -699,6 +699,55 @@ class OtherTests(unittest.TestCase):
         zipf.writestr("foo.txt\x00qqq", b"O, for a Muse of Fire!")
         self.assertEqual(zipf.namelist(), ['foo.txt'])
 
+    def test_StructSizes(self):
+        # check that ZIP internal structure sizes are calculated correctly
+        self.assertEqual(zipfile.sizeEndCentDir, 22)
+        self.assertEqual(zipfile.sizeCentralDir, 46)
+        self.assertEqual(zipfile.sizeEndCentDir64, 56)
+        self.assertEqual(zipfile.sizeEndCentDir64Locator, 20)
+
+    def testComments(self):
+        # This test checks that comments on the archive are handled properly
+
+        # check default comment is empty
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        self.assertEqual(zipf.comment, b'')
+        zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        zipf.close()
+        zipfr = zipfile.ZipFile(TESTFN, mode="r")
+        self.assertEqual(zipfr.comment, b'')
+        zipfr.close()
+
+        # check a simple short comment
+        comment = b'Bravely taking to his feet, he beat a very brave retreat.'
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf.comment = comment
+        zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        zipf.close()
+        zipfr = zipfile.ZipFile(TESTFN, mode="r")
+        self.assertEqual(zipfr.comment, comment)
+        zipfr.close()
+
+        # check a comment of max length
+        comment2 = ''.join(['%d' % (i**3 % 10) for i in range((1 << 16)-1)])
+        comment2 = comment2.encode("ascii")
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf.comment = comment2
+        zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        zipf.close()
+        zipfr = zipfile.ZipFile(TESTFN, mode="r")
+        self.assertEqual(zipfr.comment, comment2)
+        zipfr.close()
+
+        # check a comment that is too long is truncated
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf.comment = comment2 + b'oops'
+        zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        zipf.close()
+        zipfr = zipfile.ZipFile(TESTFN, mode="r")
+        self.assertEqual(zipfr.comment, comment2)
+        zipfr.close()
+
     def tearDown(self):
         support.unlink(TESTFN)
         support.unlink(TESTFN2)

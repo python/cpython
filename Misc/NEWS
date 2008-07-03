@@ -17,8 +17,21 @@ Core and Builtins
 Library
 -------
 
+<<<<<<< .working
 - Issue #2683: Fix inconsistency in subprocess.Popen.communicate(): the
   argument now must be a bytes object in any case.
+=======
+- Issue #1622: Correct interpretation of various ZIP header fields.
+
+- Issue #1526: Allow more than 64k files to be added to Zip64 file.
+
+- Issue #1746: Correct handling of zipfile archive comments (previously
+  archives with comments over 4k were flagged as invalid). Allow writing
+  Zip files with archives by setting the 'comment' attribute of a ZipFile.  
+
+- Issue #449227: Now with the rlcompleter module, callable objects are added
+  "(" when completed.
+>>>>>>> .merge-right.r64688
 
 - Issue #3145: help("modules whatever") failed when trying to load the source
   code of every single module of the standard library, including invalid files
