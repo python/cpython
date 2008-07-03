@@ -375,8 +375,8 @@ generator function:
 
    Starts the execution of a generator function or resumes it at the last
    executed :keyword:`yield` expression.  When a generator function is resumed
-   with a :meth:`next` method, the current :keyword:`yield` expression always
-   evaluates to :const:`None`.  The execution then continues to the next
+   with a :meth:`__next__` method, the current :keyword:`yield` expression
+   always evaluates to :const:`None`.  The execution then continues to the next
    :keyword:`yield` expression, where the generator is suspended again, and the
    value of the :token:`expression_list` is returned to :meth:`next`'s caller.
    If the generator exits without yielding another value, a :exc:`StopIteration`
