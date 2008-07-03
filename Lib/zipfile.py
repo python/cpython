@@ -29,31 +29,79 @@ class LargeZipFile(Exception):
 error = BadZipfile      # The exception raised by this module
 
 ZIP64_LIMIT= (1 << 31) - 1
+ZIP_FILECOUNT_LIMIT = 1 << 16
+ZIP_MAX_COMMENT = (1 << 16) - 1
 
 # constants for Zip file compression methods
 ZIP_STORED = 0
 ZIP_DEFLATED = 8
 # Other ZIP compression methods not supported
 
-# Here are some struct module formats for reading headers
-structEndArchive = "<4s4H2LH"     # 9 items, end of archive, 22 bytes
-stringEndArchive = b"PK\005\006"   # magic number for end of archive record
-structCentralDir = "<4s4B4HLLL5HLL"# 19 items, central directory, 46 bytes
-stringCentralDir = b"PK\001\002"   # magic number for central directory
-structFileHeader = "<4s2B4HLLL2H"  # 12 items, file header record, 30 bytes
-stringFileHeader = b"PK\003\004"   # magic number for file header
-structEndArchive64Locator = "<4sLQL" # 4 items, locate Zip64 header, 20 bytes
-stringEndArchive64Locator = b"PK\x06\x07" # magic token for locator header
-structEndArchive64 = "<4sQHHLLQQQQ" # 10 items, end of archive (Zip64), 56 bytes
-stringEndArchive64 = b"PK\x06\x06" # magic token for Zip64 header
+# Below are some formats and associated data for reading/writing headers using
+# the struct module.  The names and structures of headers/records are those used
+# in the PKWARE description of the ZIP file format:
+#     http://www.pkware.com/documents/casestudies/APPNOTE.TXT
+# (URL valid as of January 2008)
 
+# The "end of central directory" structure, magic number, size, and indices
+# (section V.I in the format document)
+structEndCentDir = b"<4s4H2LH"
+magicEndCentDir = b"PK\005\006"
+sizeEndCentDir = struct.calcsize(structEndCentDir)
+
+_ECD_SIGNATURE = 0
+_ECD_DISK_NUMBER = 1
+_ECD_DISK_START = 2
+_ECD_ENTRIES_THIS_DISK = 3
+_ECD_ENTRIES_TOTAL = 4
+_ECD_SIZE = 5
+_ECD_OFFSET = 6
+_ECD_COMMENT_SIZE = 7
+# These last two indices are not part of the structure as defined in the
+# spec, but they are used internally by this module as a convenience
+_ECD_COMMENT = 8
+_ECD_LOCATION = 9
+
+# The "central directory" structure, magic number, size, and indices
+# of entries in the structure (section V.F in the format document)
+structCentralDir = "<4s4B4HL2L5H2L"
+magicCentralDir = b"PK\001\002"
+sizeCentralDir = struct.calcsize(structCentralDir)
+
+# The "local file header" structure, magic number, size, and indices
+# (section V.A in the format document)
+structFileHeader = "<4s2B4HL2L2H"
+magicFileHeader = b"PK\003\004"
+sizeFileHeader = struct.calcsize(structFileHeader)
+
+# The "Zip64 end of central directory locator" structure, magic number, and size
+structEndCentDir64Locator = "<4sLQL"
+magicEndCentDir64Locator = b"PK\x06\x07"
+sizeEndCentDir64Locator = struct.calcsize(structEndCentDir64Locator)
+
+# The "Zip64 end of central directory" record, magic number, size, and indices
+# (section V.G in the format document)
+structEndCentDir64 = "<4sQ2H2L4Q"
+magicEndCentDir64 = b"PK\x06\x06"
+sizeEndCentDir64 = struct.calcsize(structEndCentDir64)
+
+_CD64_SIGNATURE = 0
+_CD64_DIRECTORY_RECSIZE = 1
+_CD64_CREATE_VERSION = 2
+_CD64_EXTRACT_VERSION = 3
+_CD64_DISK_NUMBER = 4
+_CD64_DISK_NUMBER_START = 5
+_CD64_NUMBER_ENTRIES_THIS_DISK = 6
+_CD64_NUMBER_ENTRIES_TOTAL = 7
+_CD64_DIRECTORY_SIZE = 8
+_CD64_OFFSET_START_CENTDIR = 9
 
 # indexes of entries in the central directory structure
 _CD_SIGNATURE = 0
 _CD_CREATE_VERSION = 1
 _CD_CREATE_SYSTEM = 2
 _CD_EXTRACT_VERSION = 3
-_CD_EXTRACT_SYSTEM = 4                  # is this meaningful?
+_CD_EXTRACT_SYSTEM = 4
 _CD_FLAG_BITS = 5
 _CD_COMPRESS_TYPE = 6
 _CD_TIME = 7
@@ -69,10 +117,15 @@ _CD_INTERNAL_FILE_ATTRIBUTES = 16
 _CD_EXTERNAL_FILE_ATTRIBUTES = 17
 _CD_LOCAL_HEADER_OFFSET = 18
 
-# indexes of entries in the local file header structure
+# The "local file header" structure, magic number, size, and indices
+# (section V.A in the format document)
+structFileHeader = "<4s2B4HL2L2H"
+magicFileHeader = b"PK\003\004"
+sizeFileHeader = struct.calcsize(structFileHeader)
+
 _FH_SIGNATURE = 0
 _FH_EXTRACT_VERSION = 1
-_FH_EXTRACT_SYSTEM = 2                  # is this meaningful?
+_FH_EXTRACT_SYSTEM = 2
 _FH_GENERAL_PURPOSE_FLAG_BITS = 3
 _FH_COMPRESSION_METHOD = 4
 _FH_LAST_MOD_TIME = 5
@@ -82,6 +135,28 @@ _FH_COMPRESSED_SIZE = 8
 _FH_UNCOMPRESSED_SIZE = 9
 _FH_FILENAME_LENGTH = 10
 _FH_EXTRA_FIELD_LENGTH = 11
+
+# The "Zip64 end of central directory locator" structure, magic number, and size
+structEndCentDir64Locator = "<4sLQL"
+magicEndCentDir64Locator = b"PK\x06\x07"
+sizeEndCentDir64Locator = struct.calcsize(structEndCentDir64Locator)
+
+# The "Zip64 end of central directory" record, magic number, size, and indices
+# (section V.G in the format document)
+structEndCentDir64 = "<4sQ2H2L4Q"
+magicEndCentDir64 = b"PK\x06\x06"
+sizeEndCentDir64 = struct.calcsize(structEndCentDir64)
+
+_CD64_SIGNATURE = 0
+_CD64_DIRECTORY_RECSIZE = 1
+_CD64_CREATE_VERSION = 2
+_CD64_EXTRACT_VERSION = 3
+_CD64_DISK_NUMBER = 4
+_CD64_DISK_NUMBER_START = 5
+_CD64_NUMBER_ENTRIES_THIS_DISK = 6
+_CD64_NUMBER_ENTRIES_TOTAL = 7
+_CD64_DIRECTORY_SIZE = 8
+_CD64_OFFSET_START_CENTDIR = 9
 
 def is_zipfile(filename):
     """Quickly see if file is a ZIP file by checking the magic number."""
@@ -99,33 +174,31 @@ def _EndRecData64(fpin, offset, endrec):
     """
     Read the ZIP64 end-of-archive records and use that to update endrec
     """
-    locatorSize = struct.calcsize(structEndArchive64Locator)
-    fpin.seek(offset - locatorSize, 2)
-    data = fpin.read(locatorSize)
-    sig, diskno, reloff, disks = struct.unpack(structEndArchive64Locator, data)
-    if sig != stringEndArchive64Locator:
+    fpin.seek(offset - sizeEndCentDir64Locator, 2)
+    data = fpin.read(sizeEndCentDir64Locator)
+    sig, diskno, reloff, disks = struct.unpack(structEndCentDir64Locator, data)
+    if sig != magicEndCentDir64Locator:
         return endrec
 
     if diskno != 0 or disks != 1:
         raise BadZipfile("zipfiles that span multiple disks are not supported")
 
     # Assume no 'zip64 extensible data'
-    endArchiveSize = struct.calcsize(structEndArchive64)
-    fpin.seek(offset - locatorSize - endArchiveSize, 2)
-    data = fpin.read(endArchiveSize)
+    fpin.seek(offset - sizeEndCentDir64Locator - sizeEndCentDir64, 2)
+    data = fpin.read(sizeEndCentDir64)
     sig, sz, create_version, read_version, disk_num, disk_dir, \
             dircount, dircount2, dirsize, diroffset = \
-            struct.unpack(structEndArchive64, data)
-    if sig != stringEndArchive64:
+            struct.unpack(structEndCentDir64, data)
+    if sig != magicEndCentDir64:
         return endrec
 
     # Update the original endrec using data from the ZIP64 record
-    endrec[1] = disk_num
-    endrec[2] = disk_dir
-    endrec[3] = dircount
-    endrec[4] = dircount2
-    endrec[5] = dirsize
-    endrec[6] = diroffset
+    endrec[_ECD_DISK_NUMBER] = disk_num
+    endrec[_ECD_DISK_START] = disk_dir
+    endrec[_ECD_ENTRIES_THIS_DISK] = dircount
+    endrec[_ECD_ENTRIES_TOTAL] = dircount2
+    endrec[_ECD_SIZE] = dirsize
+    endrec[_ECD_OFFSET] = diroffset
     return endrec
 
 
@@ -134,38 +207,59 @@ def _EndRecData(fpin):
 
     The data is a list of the nine items in the ZIP "End of central dir"
     record followed by a tenth item, the file seek offset of this record."""
-    fpin.seek(-22, 2)               # Assume no archive comment.
-    filesize = fpin.tell() + 22     # Get file size
+
+    # Determine file size
+    fpin.seek(0, 2)
+    filesize = fpin.tell()
+
+    # Check to see if this is ZIP file with no archive comment (the
+    # "end of central directory" structure should be the last item in the
+    # file if this is the case).
+    fpin.seek(-sizeEndCentDir, 2)
     data = fpin.read()
-    if data[0:4] == stringEndArchive and data[-2:] == b"\000\000":
-        endrec = struct.unpack(structEndArchive, data)
-        endrec = list(endrec)
-        endrec.append("")               # Append the archive comment
-        endrec.append(filesize - 22)    # Append the record start offset
-        if endrec[-4] == 0xffffffff:
-            return _EndRecData64(fpin, -22, endrec)
+    if data[0:4] == magicEndCentDir and data[-2:] == b"\000\000":
+        # the signature is correct and there's no comment, unpack structure
+        endrec = struct.unpack(structEndCentDir, data)
+        endrec=list(endrec)
+
+        # Append a blank comment and record start offset
+        endrec.append(b"")
+        endrec.append(filesize - sizeEndCentDir)
+        if endrec[_ECD_OFFSET] == 0xffffffff:
+            # the value for the "offset of the start of the central directory"
+            # indicates that there is a "Zip64 end of central directory"
+            # structure present, so go look for it
+            return _EndRecData64(fpin, -sizeEndCentDir, endrec)
+
         return endrec
-    # Search the last END_BLOCK bytes of the file for the record signature.
-    # The comment is appended to the ZIP file and has a 16 bit length.
-    # So the comment may be up to 64K long.  We limit the search for the
-    # signature to a few Kbytes at the end of the file for efficiency.
-    # also, the signature must not appear in the comment.
-    END_BLOCK = min(filesize, 1024 * 4)
-    fpin.seek(filesize - END_BLOCK, 0)
+
+    # Either this is not a ZIP file, or it is a ZIP file with an archive
+    # comment.  Search the end of the file for the "end of central directory"
+    # record signature. The comment is the last item in the ZIP file and may be
+    # up to 64K long.  It is assumed that the "end of central directory" magic
+    # number does not appear in the comment.
+    maxCommentStart = max(filesize - (1 << 16) - sizeEndCentDir, 0)
+    fpin.seek(maxCommentStart, 0)
     data = fpin.read()
-    start = data.rfind(stringEndArchive)
-    if start >= 0:     # Correct signature string was found
-        endrec = struct.unpack(structEndArchive, data[start:start+22])
-        endrec = list(endrec)
-        comment = data[start+22:]
-        if endrec[7] == len(comment):     # Comment length checks out
+    start = data.rfind(magicEndCentDir)
+    if start >= 0:
+        # found the magic number; attempt to unpack and interpret
+        recData = data[start:start+sizeEndCentDir]
+        endrec = list(struct.unpack(structEndCentDir, recData))
+        comment = data[start+sizeEndCentDir:]
+        # check that comment length is correct
+        if endrec[_ECD_COMMENT_SIZE] == len(comment):
             # Append the archive comment and start offset
             endrec.append(comment)
-            endrec.append(filesize - END_BLOCK + start)
-            if endrec[-4] == 0xffffffff:
-                return _EndRecData64(fpin, - END_BLOCK + start, endrec)
+            endrec.append(maxCommentStart + start)
+            if endrec[_ECD_OFFSET] == 0xffffffff:
+                # There is apparently a "Zip64 end of central directory"
+                # structure present, so go look for it
+                return _EndRecData64(fpin, start - filesize, endrec)
             return endrec
-    return      # Error, return None
+
+    # Unable to find a valid end of central directory structure
+    return
 
 
 class ZipInfo (object):
@@ -252,13 +346,13 @@ class ZipInfo (object):
             fmt = '<HHQQ'
             extra = extra + struct.pack(fmt,
                     1, struct.calcsize(fmt)-4, file_size, compress_size)
-            file_size = 0xffffffff # -1
-            compress_size = 0xffffffff # -1
+            file_size = 0xffffffff
+            compress_size = 0xffffffff
             self.extract_version = max(45, self.extract_version)
             self.create_version = max(45, self.extract_version)
 
         filename, flag_bits = self._encodeFilenameFlags()
-        header = struct.pack(structFileHeader, stringFileHeader,
+        header = struct.pack(structFileHeader, magicFileHeader,
                  self.extract_version, self.reserved, flag_bits,
                  self.compress_type, dostime, dosdate, CRC,
                  compress_size, file_size,
@@ -292,16 +386,15 @@ class ZipInfo (object):
                 idx = 0
 
                 # ZIP64 extension (large files and/or large archives)
-                # XXX Is this correct? won't this exclude 2**32-1 byte files?
                 if self.file_size in (0xffffffffffffffff, 0xffffffff):
                     self.file_size = counts[idx]
                     idx += 1
 
-                if self.compress_size == -1 or self.compress_size == 0xFFFFFFFF:
+                if self.compress_size == 0xFFFFFFFF:
                     self.compress_size = counts[idx]
                     idx += 1
 
-                if self.header_offset == -1 or self.header_offset == 0xffffffff:
+                if self.header_offset == 0xffffffff:
                     old = self.header_offset
                     self.header_offset = counts[idx]
                     idx+=1
@@ -569,7 +662,7 @@ class ZipExtFile:
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
 
-    z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=True)
+    z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=False)
 
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
@@ -605,6 +698,7 @@ class ZipFile:
         self.compression = compression  # Method of compression
         self.mode = key = mode.replace('b', '')[0]
         self.pwd = None
+        self.comment = b''
 
         # Check if we were passed a file-like object
         if isinstance(file, str):
@@ -661,18 +755,20 @@ class ZipFile:
             raise BadZipfile("File is not a zip file")
         if self.debug > 1:
             print(endrec)
-        size_cd = endrec[5]             # bytes in central directory
-        offset_cd = endrec[6]   # offset of central directory
-        self.comment = endrec[8]        # archive comment
-        # endrec[9] is the offset of the "End of Central Dir" record
-        if endrec[9] > ZIP64_LIMIT:
-            x = endrec[9] - size_cd - 56 - 20
-        else:
-            x = endrec[9] - size_cd
+        size_cd = endrec[_ECD_SIZE]             # bytes in central directory
+        offset_cd = endrec[_ECD_OFFSET]         # offset of central directory
+        self.comment = endrec[_ECD_COMMENT]     # archive comment
+
         # "concat" is zero, unless zip was concatenated to another file
-        concat = x - offset_cd
+        concat = endrec[_ECD_LOCATION] - size_cd - offset_cd
+        if endrec[_ECD_LOCATION] > ZIP64_LIMIT:
+            # If the offset of the "End of Central Dir" record requires Zip64
+            # extension structures, account for them
+            concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
+
         if self.debug > 2:
-            print("given, inferred, offset", offset_cd, x, concat)
+            inferred = concat + offset_cd
+            print("given, inferred, offset", offset_cd, inferred, concat)
         # self.start_dir:  Position of start of central directory
         self.start_dir = offset_cd + concat
         fp.seek(self.start_dir, 0)
@@ -680,9 +776,8 @@ class ZipFile:
         fp = io.BytesIO(data)
         total = 0
         while total < size_cd:
-            centdir = fp.read(46)
-            total = total + 46
-            if centdir[0:4] != stringCentralDir:
+            centdir = fp.read(sizeCentralDir)
+            if centdir[0:4] != magicCentralDir:
                 raise BadZipfile("Bad magic number for central directory")
             centdir = struct.unpack(structCentralDir, centdir)
             if self.debug > 2:
@@ -699,9 +794,6 @@ class ZipFile:
             x = ZipInfo(filename)
             x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
             x.comment = fp.read(centdir[_CD_COMMENT_LENGTH])
-            total = (total + centdir[_CD_FILENAME_LENGTH]
-                     + centdir[_CD_EXTRA_FIELD_LENGTH]
-                     + centdir[_CD_COMMENT_LENGTH])
             x.header_offset = centdir[_CD_LOCAL_HEADER_OFFSET]
             (x.create_version, x.create_system, x.extract_version, x.reserved,
                 x.flag_bits, x.compress_type, t, d,
@@ -716,6 +808,12 @@ class ZipFile:
             x.header_offset = x.header_offset + concat
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
+
+            # update total bytes read from central directory
+            total = (total + sizeCentralDir + centdir[_CD_FILENAME_LENGTH]
+                     + centdir[_CD_EXTRA_FIELD_LENGTH]
+                     + centdir[_CD_COMMENT_LENGTH])
+
             if self.debug > 2:
                 print("total", total)
 
@@ -748,7 +846,6 @@ class ZipFile:
                 self.read(zinfo.filename)       # Check CRC-32
             except BadZipfile:
                 return zinfo.filename
-
 
     def getinfo(self, name):
         """Return the instance of ZipInfo given 'name'."""
@@ -794,8 +891,8 @@ class ZipFile:
         zef_file.seek(zinfo.header_offset, 0)
 
         # Skip the file header:
-        fheader = zef_file.read(30)
-        if fheader[0:4] != stringFileHeader:
+        fheader = zef_file.read(sizeFileHeader)
+        if fheader[0:4] != magicFileHeader:
             raise BadZipfile("Bad magic number for file header")
 
         fheader = struct.unpack(structFileHeader, fheader)
@@ -1059,15 +1156,15 @@ class ZipFile:
                         or zinfo.compress_size > ZIP64_LIMIT:
                     extra.append(zinfo.file_size)
                     extra.append(zinfo.compress_size)
-                    file_size = 0xffffffff #-1
-                    compress_size = 0xffffffff #-1
+                    file_size = 0xffffffff
+                    compress_size = 0xffffffff
                 else:
                     file_size = zinfo.file_size
                     compress_size = zinfo.compress_size
 
                 if zinfo.header_offset > ZIP64_LIMIT:
                     extra.append(zinfo.header_offset)
-                    header_offset = 0xffffffff  # -1 32 bit
+                    header_offset = 0xffffffff
                 else:
                     header_offset = zinfo.header_offset
 
@@ -1084,15 +1181,26 @@ class ZipFile:
                     extract_version = zinfo.extract_version
                     create_version = zinfo.create_version
 
-                filename, flag_bits = zinfo._encodeFilenameFlags()
-                centdir = struct.pack(structCentralDir,
-                 stringCentralDir, create_version,
-                 zinfo.create_system, extract_version, zinfo.reserved,
-                 flag_bits, zinfo.compress_type, dostime, dosdate,
-                 zinfo.CRC, compress_size, file_size,
-                 len(filename), len(extra_data), len(zinfo.comment),
-                 0, zinfo.internal_attr, zinfo.external_attr,
-                 header_offset)
+                try:
+                    filename, flag_bits = zinfo._encodeFilenameFlags()
+                    centdir = struct.pack(structCentralDir,
+                     magicCentralDir, create_version,
+                     zinfo.create_system, extract_version, zinfo.reserved,
+                     flag_bits, zinfo.compress_type, dostime, dosdate,
+                     zinfo.CRC, compress_size, file_size,
+                     len(filename), len(extra_data), len(zinfo.comment),
+                     0, zinfo.internal_attr, zinfo.external_attr,
+                     header_offset)
+                except DeprecationWarning:
+                    print >>sys.stderr, (structCentralDir,
+                     stringCentralDir, create_version,
+                     zinfo.create_system, extract_version, zinfo.reserved,
+                     zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
+                     zinfo.CRC, compress_size, file_size,
+                     len(zinfo.filename), len(extra_data), len(zinfo.comment),
+                     0, zinfo.internal_attr, zinfo.external_attr,
+                     header_offset)
+                    raise
                 self.fp.write(centdir)
                 self.fp.write(filename)
                 self.fp.write(extra_data)
@@ -1100,27 +1208,35 @@ class ZipFile:
 
             pos2 = self.fp.tell()
             # Write end-of-zip-archive record
+            centDirOffset = pos1
             if pos1 > ZIP64_LIMIT:
                 # Need to write the ZIP64 end-of-archive records
                 zip64endrec = struct.pack(
-                        structEndArchive64, stringEndArchive64,
+                        structEndCentDir64, magicEndCentDir64,
                         44, 45, 45, 0, 0, count, count, pos2 - pos1, pos1)
                 self.fp.write(zip64endrec)
 
                 zip64locrec = struct.pack(
-                        structEndArchive64Locator,
-                        stringEndArchive64Locator, 0, pos2, 1)
+                        structEndCentDir64Locator,
+                        magicEndCentDir64Locator, 0, pos2, 1)
                 self.fp.write(zip64locrec)
+                centDirOffset = 0xFFFFFFFF
 
-                endrec = struct.pack(structEndArchive, stringEndArchive,
-                            0, 0, count, count, pos2 - pos1, 0xffffffff, 0)
-                self.fp.write(endrec)
+            # check for valid comment length
+            if len(self.comment) >= ZIP_MAX_COMMENT:
+                if self.debug > 0:
+                    msg = 'Archive comment is too long; truncating to %d bytes' \
+                          % ZIP_MAX_COMMENT
+                self.comment = self.comment[:ZIP_MAX_COMMENT]
 
-            else:
-                endrec = struct.pack(structEndArchive, stringEndArchive,
-                         0, 0, count, count, pos2 - pos1, pos1, 0)
-                self.fp.write(endrec)
+            endrec = struct.pack(structEndCentDir, magicEndCentDir,
+                                 0, 0, count % ZIP_FILECOUNT_LIMIT,
+                                 count % ZIP_FILECOUNT_LIMIT, pos2 - pos1,
+                                 centDirOffset, len(self.comment))
+            self.fp.write(endrec)
+            self.fp.write(self.comment)
             self.fp.flush()
+
         if not self._filePassed:
             self.fp.close()
         self.fp = None
