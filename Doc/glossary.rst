@@ -24,7 +24,7 @@ Glossary
       2to3 is available in the standard library as :mod:`lib2to3`; a standalone
       entry point is provided as :file:`Tools/scripts/2to3`.
 
-   Abstract Base Class
+   abstract base class
       Abstract Base Classes (abbreviated ABCs) complement :term:`duck-typing` by
       providing a way to define interfaces when other techniques like :func:`hasattr`
       would be clumsy. Python comes with many builtin ABCs for data structures
