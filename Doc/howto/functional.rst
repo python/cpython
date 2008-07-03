@@ -184,11 +184,11 @@ foundation for writing functional-style programs: iterators.
 
 An iterator is an object representing a stream of data; this object returns the
 data one element at a time.  A Python iterator must support a method called
-``next()`` that takes no arguments and always returns the next element of the
-stream.  If there are no more elements in the stream, ``next()`` must raise the
-``StopIteration`` exception.  Iterators don't have to be finite, though; it's
-perfectly reasonable to write an iterator that produces an infinite stream of
-data.
+``__next__()`` that takes no arguments and always returns the next element of
+the stream.  If there are no more elements in the stream, ``__next__()`` must
+raise the ``StopIteration`` exception.  Iterators don't have to be finite,
+though; it's perfectly reasonable to write an iterator that produces an infinite
+stream of data.
 
 The built-in :func:`iter` function takes an arbitrary object and tries to return
 an iterator that will return the object's contents or elements, raising
@@ -203,13 +203,13 @@ You can experiment with the iteration interface manually:
     >>> it = iter(L)
     >>> it
     <...iterator object at ...>
-    >>> it.next()
+    >>> it.__next__()
     1
-    >>> it.next()
+    >>> next(it)
     2
-    >>> it.next()
+    >>> next(it)
     3
-    >>> it.next()
+    >>> next(it)
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     StopIteration
@@ -467,20 +467,20 @@ the ``yield`` expression, the generator outputs the value of ``i``, similar to a
 ``return`` statement.  The big difference between ``yield`` and a ``return``
 statement is that on reaching a ``yield`` the generator's state of execution is
 suspended and local variables are preserved.  On the next call to the
-generator's ``.next()`` method, the function will resume executing.
+generator's ``.__next__()`` method, the function will resume executing.
 
 Here's a sample usage of the ``generate_ints()`` generator:
 
     >>> gen = generate_ints(3)
     >>> gen
     <generator object at ...>
-    >>> gen.next()
+    >>> next(gen)
     0
-    >>> gen.next()
+    >>> next(gen)
     1
-    >>> gen.next()
+    >>> next(gen)
     2
-    >>> gen.next()
+    >>> next(gen)
     Traceback (most recent call last):
       File "stdin", line 1, in ?
       File "stdin", line 2, in generate_ints
@@ -500,7 +500,7 @@ the bottom of the function.
 You could achieve the effect of generators manually by writing your own class
 and storing all the local variables of the generator as instance variables.  For
 example, returning a list of integers could be done by setting ``self.count`` to
-0, and having the ``next()`` method increment ``self.count`` and return it.
+0, and having the ``__next__()`` method increment ``self.count`` and return it.
 However, for a moderately complicated generator, writing a corresponding class
 can be much messier.
 
@@ -555,7 +555,7 @@ but have to use parentheses when there's an operation, as in ``val = (yield i)
 
 Values are sent into a generator by calling its ``send(value)`` method.  This
 method resumes the generator's code and the ``yield`` expression returns the
-specified value.  If the regular ``next()`` method is called, the ``yield``
+specified value.  If the regular ``__next__()`` method is called, the ``yield``
 returns ``None``.
 
 Here's a simple counter that increments by 1 and allows changing the value of
@@ -576,15 +576,15 @@ the internal counter.
 And here's an example of changing the counter:
 
     >>> it = counter(10)
-    >>> it.next()
+    >>> next(it)
     0
-    >>> it.next()
+    >>> next(it)
     1
     >>> it.send(8)
     8
-    >>> it.next()
+    >>> next(it)
     9
-    >>> it.next()
+    >>> next(it)
     Traceback (most recent call last):
       File ``t.py'', line 15, in ?
         it.next()
