@@ -2,6 +2,7 @@
 # The test_support.requires call is the only reason for keeping this separate
 # from test_zipfile
 from test import test_support
+
 # XXX(nnorwitz): disable this test by looking for extra largfile resource
 # which doesn't exist.  This test takes over 30 minutes to run in general
 # and requires more disk space than most of the buildbots.
@@ -93,8 +94,31 @@ class TestsWithSourceFile(unittest.TestCase):
             if os.path.exists(fname):
                 os.remove(fname)
 
+
+class OtherTests(unittest.TestCase):
+    def testMoreThan64kFiles(self):
+        # This test checks that more than 64k files can be added to an archive,
+        # and that the resulting archive can be read properly by ZipFile
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf.debug = 100
+        numfiles = (1 << 16) * 3/2
+        for i in xrange(numfiles):
+            zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        zipf.close()
+
+        zipf2 = zipfile.ZipFile(TESTFN, mode="r")
+        self.assertEqual(len(zipf2.namelist()), numfiles)
+        for i in xrange(numfiles):
+            self.assertEqual(zipf2.read("foo%08d" % i), "%d" % (i**3 % 57))
+        zipf.close()
+
+    def tearDown(self):
+        test_support.unlink(TESTFN)
+        test_support.unlink(TESTFN2)
+
 def test_main():
-    run_unittest(TestsWithSourceFile)
+    run_unittest(TestsWithSourceFile, OtherTests)
 
 if __name__ == "__main__":
     test_main()
