@@ -412,10 +412,10 @@ Miscellaneous opcodes.
    with the outer-next block.
 
 
-.. opcode:: BUILD_CLASS ()
+.. opcode:: LOAD_BUILD_CLASS ()
 
-   Creates a new class object.  TOS is the methods dictionary, TOS1 the tuple of
-   the names of the base classes, and TOS2 the class name.
+   Pushes builtins.__build_class__ onto the stack.  It is later called by
+   ```CALL_FUNCTION`` to construct a class.
 
 
 .. opcode:: WITH_CLEANUP ()
