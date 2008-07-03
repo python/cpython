@@ -285,7 +285,7 @@ ZipFile Objects
       member of the given :class:`ZipInfo` instance.  By default, the 
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
 
-The following data attribute is also available:
+The following data attributes are also available:
 
 
 .. attribute:: ZipFile.debug
@@ -294,6 +294,12 @@ The following data attribute is also available:
    output) to ``3`` (the most output).  Debugging information is written to
    ``sys.stdout``.
 
+.. attribute:: ZipFile.comment
+
+   The comment text associated with the ZIP file.  If assigning a comment to a 
+   :class:`ZipFile` instance created with mode 'a' or 'w', this should be a 
+   string no longer than 65535 bytes.  Comments longer than this will be 
+   truncated in the written archive when :meth:`ZipFile.close` is called.
 
 .. _pyzipfile-objects:
 
