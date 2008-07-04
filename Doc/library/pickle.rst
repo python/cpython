@@ -396,6 +396,8 @@ conversions can be made by the class's :meth:`__setstate__` method.
 The pickle protocol
 -------------------
 
+.. currentmodule:: None
+
 This section describes the "pickling protocol" that defines the interface
 between the pickler/unpickler and the objects that are being serialized.  This
 protocol provides a standard way for you to define, customize, and control how
@@ -410,129 +412,126 @@ environment slightly safer from untrusted pickle data streams; see section
 Pickling and unpickling normal class instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. index::
-   single: __getinitargs__() (copy protocol)
-   single: __init__() (instance constructor)
+.. method:: object.__getinitargs__()
+   
+   When a pickled class instance is unpickled, its :meth:`__init__` method is
+   normally *not* invoked.  If it is desirable that the :meth:`__init__` method
+   be called on unpickling, an old-style class can define a method
+   :meth:`__getinitargs__`, which should return a *tuple* containing the
+   arguments to be passed to the class constructor (:meth:`__init__` for
+   example).  The :meth:`__getinitargs__` method is called at pickle time; the
+   tuple it returns is incorporated in the pickle for the instance.
 
-When a pickled class instance is unpickled, its :meth:`__init__` method is
-normally *not* invoked.  If it is desirable that the :meth:`__init__` method be
-called on unpickling, an old-style class can define a method
-:meth:`__getinitargs__`, which should return a *tuple* containing the arguments
-to be passed to the class constructor (:meth:`__init__` for example).  The
-:meth:`__getinitargs__` method is called at pickle time; the tuple it returns is
-incorporated in the pickle for the instance.
+.. method:: object.__getnewargs__()
 
-.. index:: single: __getnewargs__() (copy protocol)
+   New-style types can provide a :meth:`__getnewargs__` method that is used for
+   protocol 2.  Implementing this method is needed if the type establishes some
+   internal invariants when the instance is created, or if the memory allocation
+   is affected by the values passed to the :meth:`__new__` method for the type
+   (as it is for tuples and strings).  Instances of a :term:`new-style class`
+   ``C`` are created using ::
+    
+      obj = C.__new__(C, *args)
+    
+   where *args* is the result of calling :meth:`__getnewargs__` on the original
+   object; if there is no :meth:`__getnewargs__`, an empty tuple is assumed.
 
-New-style types can provide a :meth:`__getnewargs__` method that is used for
-protocol 2.  Implementing this method is needed if the type establishes some
-internal invariants when the instance is created, or if the memory allocation is
-affected by the values passed to the :meth:`__new__` method for the type (as it
-is for tuples and strings).  Instances of a :term:`new-style class` :class:`C`
-are created using ::
+.. method:: object.__getstate__()
+   
+   Classes can further influence how their instances are pickled; if the class
+   defines the method :meth:`__getstate__`, it is called and the return state is
+   pickled as the contents for the instance, instead of the contents of the
+   instance's dictionary.  If there is no :meth:`__getstate__` method, the
+   instance's :attr:`__dict__` is pickled.
 
-   obj = C.__new__(C, *args)
-
-
-where *args* is the result of calling :meth:`__getnewargs__` on the original
-object; if there is no :meth:`__getnewargs__`, an empty tuple is assumed.
-
-.. index::
-   single: __getstate__() (copy protocol)
-   single: __setstate__() (copy protocol)
-   single: __dict__ (instance attribute)
-
-Classes can further influence how their instances are pickled; if the class
-defines the method :meth:`__getstate__`, it is called and the return state is
-pickled as the contents for the instance, instead of the contents of the
-instance's dictionary.  If there is no :meth:`__getstate__` method, the
-instance's :attr:`__dict__` is pickled.
-
-Upon unpickling, if the class also defines the method :meth:`__setstate__`, it
-is called with the unpickled state. [#]_  If there is no :meth:`__setstate__`
-method, the pickled state must be a dictionary and its items are assigned to the
-new instance's dictionary.  If a class defines both :meth:`__getstate__` and
-:meth:`__setstate__`, the state object needn't be a dictionary and these methods
-can do what they want. [#]_
-
-.. warning::
-
-   For :term:`new-style class`\es, if :meth:`__getstate__` returns a false
-   value, the :meth:`__setstate__` method will not be called.
+.. method:: object.__setstate__() 
+   
+   Upon unpickling, if the class also defines the method :meth:`__setstate__`,
+   it is called with the unpickled state. [#]_ If there is no
+   :meth:`__setstate__` method, the pickled state must be a dictionary and its
+   items are assigned to the new instance's dictionary.  If a class defines both
+   :meth:`__getstate__` and :meth:`__setstate__`, the state object needn't be a
+   dictionary and these methods can do what they want. [#]_
+    
+   .. warning::
+    
+      For :term:`new-style class`\es, if :meth:`__getstate__` returns a false
+      value, the :meth:`__setstate__` method will not be called.
 
 
 Pickling and unpickling extension types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. index::
-   single: __reduce__() (pickle protocol)
-   single: __reduce_ex__() (pickle protocol)
-   single: __safe_for_unpickling__ (pickle protocol)
+.. method:: object.__reduce__()
+   
+   When the :class:`Pickler` encounters an object of a type it knows nothing
+   about --- such as an extension type --- it looks in two places for a hint of
+   how to pickle it.  One alternative is for the object to implement a
+   :meth:`__reduce__` method.  If provided, at pickling time :meth:`__reduce__`
+   will be called with no arguments, and it must return either a string or a
+   tuple.
 
-When the :class:`Pickler` encounters an object of a type it knows nothing about
---- such as an extension type --- it looks in two places for a hint of how to
-pickle it.  One alternative is for the object to implement a :meth:`__reduce__`
-method.  If provided, at pickling time :meth:`__reduce__` will be called with no
-arguments, and it must return either a string or a tuple.
+   If a string is returned, it names a global variable whose contents are
+   pickled as normal.  The string returned by :meth:`__reduce__` should be the
+   object's local name relative to its module; the pickle module searches the
+   module namespace to determine the object's module.
 
-If a string is returned, it names a global variable whose contents are pickled
-as normal.  The string returned by :meth:`__reduce__` should be the object's
-local name relative to its module; the pickle module searches the module
-namespace to determine the object's module.
+   When a tuple is returned, it must be between two and five elements long.
+   Optional elements can either be omitted, or ``None`` can be provided as their
+   value.  The contents of this tuple are pickled as normal and used to
+   reconstruct the object at unpickling time.  The semantics of each element
+   are:
 
-When a tuple is returned, it must be between two and five elements long.
-Optional elements can either be omitted, or ``None`` can be provided as their
-value.  The contents of this tuple are pickled as normal and used to
-reconstruct the object at unpickling time.  The semantics of each element are:
+   * A callable object that will be called to create the initial version of the
+     object.  The next element of the tuple will provide arguments for this
+     callable, and later elements provide additional state information that will
+     subsequently be used to fully reconstruct the pickled data.
 
-* A callable object that will be called to create the initial version of the
-  object.  The next element of the tuple will provide arguments for this callable,
-  and later elements provide additional state information that will subsequently
-  be used to fully reconstruct the pickled data.
+     In the unpickling environment this object must be either a class, a
+     callable registered as a "safe constructor" (see below), or it must have an
+     attribute :attr:`__safe_for_unpickling__` with a true value. Otherwise, an
+     :exc:`UnpicklingError` will be raised in the unpickling environment.  Note
+     that as usual, the callable itself is pickled by name.
 
-  In the unpickling environment this object must be either a class, a callable
-  registered as a "safe constructor" (see below), or it must have an attribute
-  :attr:`__safe_for_unpickling__` with a true value. Otherwise, an
-  :exc:`UnpicklingError` will be raised in the unpickling environment.  Note that
-  as usual, the callable itself is pickled by name.
+   * A tuple of arguments for the callable object.
 
-* A tuple of arguments for the callable object.
+     .. versionchanged:: 2.5
+        Formerly, this argument could also be ``None``.
 
-  .. versionchanged:: 2.5
-     Formerly, this argument could also be ``None``.
+   * Optionally, the object's state, which will be passed to the object's
+     :meth:`__setstate__` method as described in section :ref:`pickle-inst`.  If
+     the object has no :meth:`__setstate__` method, then, as above, the value
+     must be a dictionary and it will be added to the object's :attr:`__dict__`.
 
-* Optionally, the object's state, which will be passed to the object's
-  :meth:`__setstate__` method as described in section :ref:`pickle-inst`.  If the
-  object has no :meth:`__setstate__` method, then, as above, the value must be a
-  dictionary and it will be added to the object's :attr:`__dict__`.
+   * Optionally, an iterator (and not a sequence) yielding successive list
+     items.  These list items will be pickled, and appended to the object using
+     either ``obj.append(item)`` or ``obj.extend(list_of_items)``.  This is
+     primarily used for list subclasses, but may be used by other classes as
+     long as they have :meth:`append` and :meth:`extend` methods with the
+     appropriate signature.  (Whether :meth:`append` or :meth:`extend` is used
+     depends on which pickle protocol version is used as well as the number of
+     items to append, so both must be supported.)
 
-* Optionally, an iterator (and not a sequence) yielding successive list items.
-  These list items will be pickled, and appended to the object using either
-  ``obj.append(item)`` or ``obj.extend(list_of_items)``.  This is primarily used
-  for list subclasses, but may be used by other classes as long as they have
-  :meth:`append` and :meth:`extend` methods with the appropriate signature.
-  (Whether :meth:`append` or :meth:`extend` is used depends on which pickle
-  protocol version is used as well as the number of items to append, so both must
-  be supported.)
+   * Optionally, an iterator (not a sequence) yielding successive dictionary
+     items, which should be tuples of the form ``(key, value)``.  These items
+     will be pickled and stored to the object using ``obj[key] = value``. This
+     is primarily used for dictionary subclasses, but may be used by other
+     classes as long as they implement :meth:`__setitem__`.
 
-* Optionally, an iterator (not a sequence) yielding successive dictionary items,
-  which should be tuples of the form ``(key, value)``.  These items will be
-  pickled and stored to the object using ``obj[key] = value``. This is primarily
-  used for dictionary subclasses, but may be used by other classes as long as they
-  implement :meth:`__setitem__`.
+.. method:: object.__reduce_ex__(protocol) 
 
-It is sometimes useful to know the protocol version when implementing
-:meth:`__reduce__`.  This can be done by implementing a method named
-:meth:`__reduce_ex__` instead of :meth:`__reduce__`. :meth:`__reduce_ex__`, when
-it exists, is called in preference over :meth:`__reduce__` (you may still
-provide :meth:`__reduce__` for backwards compatibility).  The
-:meth:`__reduce_ex__` method will be called with a single integer argument, the
-protocol version.
+   It is sometimes useful to know the protocol version when implementing
+   :meth:`__reduce__`.  This can be done by implementing a method named
+   :meth:`__reduce_ex__` instead of :meth:`__reduce__`. :meth:`__reduce_ex__`,
+   when it exists, is called in preference over :meth:`__reduce__` (you may
+   still provide :meth:`__reduce__` for backwards compatibility).  The
+   :meth:`__reduce_ex__` method will be called with a single integer argument,
+   the protocol version.
 
-The :class:`object` class implements both :meth:`__reduce__` and
-:meth:`__reduce_ex__`; however, if a subclass overrides :meth:`__reduce__` but
-not :meth:`__reduce_ex__`, the :meth:`__reduce_ex__` implementation detects this
-and calls :meth:`__reduce__`.
+   The :class:`object` class implements both :meth:`__reduce__` and
+   :meth:`__reduce_ex__`; however, if a subclass overrides :meth:`__reduce__`
+   but not :meth:`__reduce_ex__`, the :meth:`__reduce_ex__` implementation
+   detects this and calls :meth:`__reduce__`.
 
 An alternative to implementing a :meth:`__reduce__` method on the object to be
 pickled, is to register the callable with the :mod:`copy_reg` module.  This
