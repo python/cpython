@@ -20,7 +20,7 @@
 # 2002-11-25 mvl  add UNIDATA_VERSION
 # 2004-05-29 perky add east asian width information
 # 2006-03-10 mvl  update to Unicode 4.1; add UCD 3.2 delta
-# 2008-06-11 gb   add NONPRINTABLE_MASK for Atsuo Ishimoto's ascii() patch
+# 2008-06-11 gb   add PRINTABLE_MASK for Atsuo Ishimoto's ascii() patch
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
@@ -61,7 +61,7 @@ TITLE_MASK = 0x40
 UPPER_MASK = 0x80
 XID_START_MASK = 0x100
 XID_CONTINUE_MASK = 0x200
-NONPRINTABLE_MASK = 0x400
+PRINTABLE_MASK = 0x400
 
 def maketables(trace=0):
 
@@ -373,10 +373,8 @@ def makeunicodetype(unicode, trace):
                 flags |= TITLE_MASK
             if category == "Lu":
                 flags |= UPPER_MASK
-            if category[0] == "C":
-                flags |= NONPRINTABLE_MASK
-            if category[0] == "Z" and char != " ":
-                flags |= NONPRINTABLE_MASK
+            if char == " " or category[0] not in ("C", "Z"):
+                flags |= PRINTABLE_MASK
             if "XID_Start" in properties:
                 flags |= XID_START_MASK
             if "XID_Continue" in properties:
