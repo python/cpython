@@ -8730,11 +8730,28 @@ formatchar(Py_UNICODE *buf,
            size_t buflen,
            PyObject *v)
 {
-    /* presume that the buffer is at least 2 characters long */
+    /* presume that the buffer is at least 3 characters long */
     if (PyUnicode_Check(v)) {
-	if (PyUnicode_GET_SIZE(v) != 1)
-	    goto onError;
-	buf[0] = PyUnicode_AS_UNICODE(v)[0];
+	if (PyUnicode_GET_SIZE(v) == 1) {
+	    buf[0] = PyUnicode_AS_UNICODE(v)[0];
+	    buf[1] = '\0';
+	    return 1;
+	}
+#ifndef Py_UNICODE_WIDE
+	if (PyUnicode_GET_SIZE(v) == 2) {
+	    /* Decode a valid surrogate pair */
+	    int c0 = PyUnicode_AS_UNICODE(v)[0];
+	    int c1 = PyUnicode_AS_UNICODE(v)[1];
+	    if (0xD800 <= c0 && c0 <= 0xDBFF &&
+		0xDC00 <= c1 && c1 <= 0xDFFF) {
+		buf[0] = c0;
+		buf[1] = c1;
+		buf[2] = '\0';
+		return 2;
+	    }
+	}
+#endif
+	goto onError;
     }
     else {
 	/* Integer input truncated to a character */
@@ -8742,25 +8759,25 @@ formatchar(Py_UNICODE *buf,
 	x = PyLong_AsLong(v);
 	if (x == -1 && PyErr_Occurred())
 	    goto onError;
-#ifdef Py_UNICODE_WIDE
+
 	if (x < 0 || x > 0x10ffff) {
 	    PyErr_SetString(PyExc_OverflowError,
-			    "%c arg not in range(0x110000) "
-			    "(wide Python build)");
+			    "%c arg not in range(0x110000)");
 	    return -1;
 	}
-#else
-	if (x < 0 || x > 0xffff) {
-	    PyErr_SetString(PyExc_OverflowError,
-			    "%c arg not in range(0x10000) "
-			    "(narrow Python build)");
-	    return -1;
+
+#ifndef Py_UNICODE_WIDE
+	if (x > 0xffff) {
+	    x -= 0x10000;
+	    buf[0] = (Py_UNICODE)(0xD800 | (x >> 10));
+	    buf[1] = (Py_UNICODE)(0xDC00 | (x & 0x3FF));
+	    return 2;
 	}
 #endif
 	buf[0] = (Py_UNICODE) x;
+	buf[1] = '\0';
+	return 1;
     }
-    buf[1] = '\0';
-    return 1;
 
  onError:
     PyErr_SetString(PyExc_TypeError,
