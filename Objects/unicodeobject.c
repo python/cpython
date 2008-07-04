@@ -260,7 +260,7 @@ int unicode_resize(register PyUnicodeObject *unicode,
 	 unicode->str[0] < 256U &&
 	 unicode_latin1[unicode->str[0]] == unicode)) {
         PyErr_SetString(PyExc_SystemError,
-                        "can't resize shared unicode objects");
+                        "can't resize shared str objects");
         return -1;
     }
 
@@ -377,14 +377,14 @@ void unicode_dealloc(register PyUnicodeObject *unicode)
             Py_REFCNT(unicode) = 3;
             if (PyDict_DelItem(interned, (PyObject *)unicode) != 0)
                 Py_FatalError(
-                    "deletion of interned unicode string failed");
+                    "deletion of interned string failed");
             break;
 
         case SSTATE_INTERNED_IMMORTAL:
-            Py_FatalError("Immortal interned unicode string died.");
+            Py_FatalError("Immortal interned string died.");
 
         default:
-            Py_FatalError("Inconsistent interned unicode string state.");
+            Py_FatalError("Inconsistent interned string state.");
     }
 
     if (PyUnicode_CheckExact(unicode) &&
@@ -1107,7 +1107,7 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 
     if (PyUnicode_Check(obj)) {
 	PyErr_SetString(PyExc_TypeError,
-			"decoding Unicode is not supported");
+			"decoding str is not supported");
 	return NULL;
 	}
 
@@ -1125,7 +1125,7 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 	   case of a TypeError. */
 	if (PyErr_ExceptionMatches(PyExc_TypeError))
             PyErr_Format(PyExc_TypeError,
-			 "coercing to Unicode: need string or buffer, "
+			 "coercing to str: need string or buffer, "
 			 "%.80s found",
 		     Py_TYPE(obj)->tp_name);
 	goto onError;
@@ -1206,7 +1206,7 @@ PyObject *PyUnicode_Decode(const char *s,
         goto onError;
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError,
-                     "decoder did not return a unicode object (type=%.400s)",
+                     "decoder did not return a str object (type=%.400s)",
                      Py_TYPE(unicode)->tp_name);
         Py_DECREF(unicode);
         goto onError;
@@ -1263,7 +1263,7 @@ PyObject *PyUnicode_AsDecodedUnicode(PyObject *unicode,
         goto onError;
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "decoder did not return a unicode object (type=%.400s)",
+                     "decoder did not return a str object (type=%.400s)",
                      Py_TYPE(v)->tp_name);
         Py_DECREF(v);
         goto onError;
@@ -1388,7 +1388,7 @@ PyObject *PyUnicode_AsEncodedUnicode(PyObject *unicode,
         goto onError;
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "encoder did not return an unicode object (type=%.400s)",
+                     "encoder did not return an str object (type=%.400s)",
                      Py_TYPE(v)->tp_name);
         Py_DECREF(v);
         goto onError;
@@ -1525,7 +1525,7 @@ int unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler
                  Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
                  PyObject **output, Py_ssize_t *outpos, Py_UNICODE **outptr)
 {
-    static char *argparse = "O!n;decoding error handler must return (unicode, int) tuple";
+    static char *argparse = "O!n;decoding error handler must return (str, int) tuple";
 
     PyObject *restuple = NULL;
     PyObject *repunicode = NULL;
@@ -3601,7 +3601,7 @@ static PyObject *unicode_encode_call_errorhandler(const char *errors,
     Py_ssize_t startpos, Py_ssize_t endpos,
     Py_ssize_t *newpos)
 {
-    static char *argparse = "O!n;encoding error handler must return (unicode, int) tuple";
+    static char *argparse = "O!n;encoding error handler must return (str, int) tuple";
 
     PyObject *restuple;
     PyObject *resunicode;
@@ -4264,7 +4264,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 	    else {
 		/* wrong return value */
 		PyErr_SetString(PyExc_TypeError,
-		      "character mapping must return integer, None or unicode");
+		      "character mapping must return integer, None or str");
 		Py_DECREF(x);
 		goto onError;
 	    }
@@ -4864,7 +4864,7 @@ static PyObject *unicode_translate_call_errorhandler(const char *errors,
     Py_ssize_t startpos, Py_ssize_t endpos,
     Py_ssize_t *newpos)
 {
-    static char *argparse = "O!n;translating error handler must return (unicode, int) tuple";
+    static char *argparse = "O!n;translating error handler must return (str, int) tuple";
 
     Py_ssize_t i_newpos;
     PyObject *restuple;
@@ -4954,7 +4954,7 @@ int charmaptranslate_lookup(Py_UNICODE c, PyObject *mapping, PyObject **result)
     else {
 	/* wrong return value */
 	PyErr_SetString(PyExc_TypeError,
-	      "character mapping must return integer, None or unicode");
+	      "character mapping must return integer, None or str");
 	Py_DECREF(x);
 	return -1;
     }
@@ -6352,7 +6352,7 @@ convert_uc(PyObject *obj, void *addr)
 PyDoc_STRVAR(center__doc__,
 "S.center(width[, fillchar]) -> str\n\
 \n\
-Return S centered in a Unicode string of length width. Padding is\n\
+Return S centered in a string of length width. Padding is\n\
 done using the specified fill character (default is a space)");
 
 static PyObject *
@@ -6551,12 +6551,12 @@ PyObject *PyUnicode_RichCompare(PyObject *left,
     PyErr_Clear();
     if (PyErr_WarnEx(PyExc_UnicodeWarning, 
                      (op == Py_EQ) ? 
-                     "Unicode equal comparison "
-                     "failed to convert both arguments to Unicode - "
+                     "equal comparison "
+                     "failed to convert both arguments to str - "
                      "interpreting them as being unequal"
                      :
                      "Unicode unequal comparison "
-                     "failed to convert both arguments to Unicode - "
+                     "failed to convert both arguments to str - "
                      "interpreting them as being unequal",
                      1) < 0)
         return NULL;
@@ -6662,7 +6662,7 @@ PyDoc_STRVAR(count__doc__,
 "S.count(sub[, start[, end]]) -> int\n\
 \n\
 Return the number of non-overlapping occurrences of substring sub in\n\
-Unicode string S[start:end].  Optional arguments start and end are\n\
+string S[start:end].  Optional arguments start and end are\n\
 interpreted as in slice notation.");
 
 static PyObject *
@@ -7411,7 +7411,7 @@ do_argstrip(PyUnicodeObject *self, int striptype, PyObject *args)
 			return _PyUnicode_XStrip(self, striptype, sep);
 		else {
 			PyErr_Format(PyExc_TypeError,
-				     "%s arg must be None, unicode or str",
+				     "%s arg must be None or str",
 				     STRIPNAME(striptype));
 			return NULL;
 		}
@@ -7426,8 +7426,7 @@ PyDoc_STRVAR(strip__doc__,
 \n\
 Return a copy of the string S with leading and trailing\n\
 whitespace removed.\n\
-If chars is given and not None, remove characters in chars instead.\n\
-If chars is a str, it will be converted to unicode before stripping");
+If chars is given and not None, remove characters in chars instead.");
 
 static PyObject *
 unicode_strip(PyUnicodeObject *self, PyObject *args)
@@ -7443,8 +7442,7 @@ PyDoc_STRVAR(lstrip__doc__,
 "S.lstrip([chars]) -> str\n\
 \n\
 Return a copy of the string S with leading whitespace removed.\n\
-If chars is given and not None, remove characters in chars instead.\n\
-If chars is a str, it will be converted to unicode before stripping");
+If chars is given and not None, remove characters in chars instead.");
 
 static PyObject *
 unicode_lstrip(PyUnicodeObject *self, PyObject *args)
@@ -7460,8 +7458,7 @@ PyDoc_STRVAR(rstrip__doc__,
 "S.rstrip([chars]) -> str\n\
 \n\
 Return a copy of the string S with trailing whitespace removed.\n\
-If chars is given and not None, remove characters in chars instead.\n\
-If chars is a str, it will be converted to unicode before stripping");
+If chars is given and not None, remove characters in chars instead.");
 
 static PyObject *
 unicode_rstrip(PyUnicodeObject *self, PyObject *args)
@@ -7810,7 +7807,7 @@ unicode_rindex(PyUnicodeObject *self, PyObject *args)
 PyDoc_STRVAR(rjust__doc__,
 "S.rjust(width[, fillchar]) -> str\n\
 \n\
-Return S right justified in a Unicode string of length width. Padding is\n\
+Return S right justified in a string of length width. Padding is\n\
 done using the specified fill character (default is a space).");
 
 static PyObject *
@@ -8059,7 +8056,7 @@ PyDoc_STRVAR(maketrans__doc__,
 Return a translation table usable for str.translate().\n\
 If there is only one argument, it must be a dictionary mapping Unicode\n\
 ordinals (integers) or characters to Unicode ordinals, strings or None.\n\
-Character keys will then be converted to ordinals.\n\
+Character keys will be then converted to ordinals.\n\
 If there are two arguments, they must be strings of equal length, and\n\
 in the resulting dictionary, each character in x will be mapped to the\n\
 character at the same position in y. If there is a third argument, it\n\
@@ -8161,7 +8158,7 @@ PyDoc_STRVAR(translate__doc__,
 \n\
 Return a copy of the string S, where all characters have been mapped\n\
 through the given translation table, which must be a mapping of\n\
-Unicode ordinals to Unicode ordinals, Unicode strings or None.\n\
+Unicode ordinals to Unicode ordinals, strings, or None.\n\
 Unmapped characters are left untouched. Characters mapped to None\n\
 are deleted.");
 
