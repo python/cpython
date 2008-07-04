@@ -21,7 +21,7 @@
 #define UPPER_MASK 0x80
 #define XID_START_MASK 0x100
 #define XID_CONTINUE_MASK 0x200
-#define NONPRINTABLE_MASK 0x400
+#define PRINTABLE_MASK 0x400
 
 typedef struct {
     const Py_UNICODE upper;
@@ -693,7 +693,7 @@ int _PyUnicode_IsPrintable(Py_UNICODE ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
-    return (ctype->flags & NONPRINTABLE_MASK) == 0;
+    return (ctype->flags & PRINTABLE_MASK) != 0;
 }
 
 #ifndef WANT_WCTYPE_FUNCTIONS

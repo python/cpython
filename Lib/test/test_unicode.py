@@ -420,12 +420,17 @@ class UnicodeTest(
         self.assertFalse(" ".isidentifier())
         self.assertFalse("[".isidentifier())
         self.assertFalse("©".isidentifier())
+        self.assertFalse("0".isidentifier())
 
     def test_isprintable(self):
         self.assertTrue("".isprintable())
         self.assertTrue("abcdefg".isprintable())
         self.assertFalse("abcdefg\n".isprintable())
-        self.assertTrue("\u0370".isprintable())
+        # some defined Unicode character
+        self.assertTrue("\u0374".isprintable())
+        # undefined character
+        self.assertFalse("\u0370".isprintable())
+        # single surrogate character
         self.assertFalse("\ud800".isprintable())
 
     def test_contains(self):
@@ -598,7 +603,7 @@ class UnicodeTest(
         # format specifiers for user defined type
         self.assertEqual('{0:abc}'.format(C()), 'abc')
 
-        # !r, !s and !a coersions
+        # !r, !s and !a coercions
         self.assertEqual('{0!s}'.format('Hello'), 'Hello')
         self.assertEqual('{0!s:}'.format('Hello'), 'Hello')
         self.assertEqual('{0!s:15}'.format('Hello'), 'Hello          ')
@@ -606,11 +611,15 @@ class UnicodeTest(
         self.assertEqual('{0!r}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!r:}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!r}'.format(F('Hello')), 'F(Hello)')
-        self.assertEqual('{0!r}'.format(F('\u0370')), 'F(\u0370)')
+        self.assertEqual('{0!r}'.format('\u0370'), "'\\u0370'") # nonprintable
+        self.assertEqual('{0!r}'.format('\u0374'), "'\u0374'")  # printable
+        self.assertEqual('{0!r}'.format(F('\u0374')), 'F(\u0374)')
         self.assertEqual('{0!a}'.format('Hello'), "'Hello'")
+        self.assertEqual('{0!a}'.format('\u0370'), "'\\u0370'") # nonprintable
+        self.assertEqual('{0!a}'.format('\u0374'), "'\\u0374'") # printable
         self.assertEqual('{0!a:}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!a}'.format(F('Hello')), 'F(Hello)')
-        self.assertEqual('{0!a}'.format(F('\u0370')), 'F(\\u0370)')
+        self.assertEqual('{0!a}'.format(F('\u0374')), 'F(\\u0374)')
 
         # test fallback to object.__format__
         self.assertEqual('{0}'.format({}), '{}')

@@ -12,6 +12,9 @@ What's new in Python 3.0b2?
 Core and Builtins
 -----------------
 
+- Issue #3282: str.isprintable() should return False for undefined
+  Unicode characters.
+
 - Issue #3236: Return small longs from PyLong_FromString.
 
 Library
