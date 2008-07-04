@@ -294,21 +294,12 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 		case 'C':
 		{
 			int i = va_arg(*p_va, int);
-			Py_UNICODE c;
 			if (i < 0 || i > PyUnicode_GetMax()) {
-#ifdef Py_UNICODE_WIDE
 				PyErr_SetString(PyExc_OverflowError,
-				                "%c arg not in range(0x110000) "
-				                "(wide Python build)");
-#else
-				PyErr_SetString(PyExc_OverflowError,
-				                "%c arg not in range(0x10000) "
-				                "(narrow Python build)");
-#endif
+				                "%c arg not in range(0x110000)";
 				return NULL;
 			}
-			c = i;
-			return PyUnicode_FromUnicode(&c, 1);
+			return PyUnicode_FromOrdinal(i);
 		}
 
 		case 's':

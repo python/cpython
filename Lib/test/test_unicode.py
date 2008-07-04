@@ -717,7 +717,10 @@ class UnicodeTest(
         self.assertEqual("%(x)s, %(\xfc)s" % {'x':"abc", '\xfc':"def"}, 'abc, def')
 
         self.assertEqual('%c' % 0x1234, '\u1234')
-        self.assertRaises(OverflowError, "%c".__mod__, (sys.maxunicode+1,))
+        self.assertEqual('%c' % 0x21483, '\U00021483')
+        self.assertRaises(OverflowError, "%c".__mod__, (0x110000,))
+        self.assertEqual('%c' % '\U00021483', '\U00021483')
+        self.assertRaises(TypeError, "%c".__mod__, "aa")
 
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':"abc"}, '...abc...')
