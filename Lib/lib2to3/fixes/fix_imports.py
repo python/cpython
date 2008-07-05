@@ -19,6 +19,11 @@ builtin_names = [name for name in dir(builtins)
 # XXX: overhead to the fixer.
 MAPPING = {"StringIO":  ("io", ["StringIO"]),
            "cStringIO": ("io", ["StringIO"]),
+           "cPickle": ("pickle", ['BadPickleGet', 'HIGHEST_PROTOCOL',
+                                  'PickleError', 'Pickler', 'PicklingError',
+                                  'UnpickleableError', 'Unpickler', 'UnpicklingError',
+                                  'compatible_formats', 'dump', 'dumps', 'format_version',
+                                  'load', 'loads']),
            "__builtin__" : ("builtins", builtin_names),
            'copy_reg': ('copyreg', ['pickle',
                                     'constructor',
