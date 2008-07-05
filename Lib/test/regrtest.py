@@ -91,6 +91,8 @@ resources to test.  Currently only the following are defined:
     curses -    Tests that use curses and will modify the terminal's
                 state and output modes.
 
+    lib2to3 -   Run the tests for 2to3 (They take a while.)
+
     largefile - It is okay to run some test that may create huge
                 files.  These tests can take a long time and may
                 consume >2GB of disk space temporarily.
@@ -165,7 +167,7 @@ if sys.platform == 'darwin':
 
 from test import test_support
 
-RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
+RESOURCE_NAMES = ('audio', 'curses', 'lib2to3', 'largefile', 'network', 'bsddb',
                   'decimal', 'compiler', 'subprocess', 'urlfetch')
 
 
