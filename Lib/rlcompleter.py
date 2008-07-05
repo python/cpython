@@ -106,7 +106,7 @@ class Completer:
                 matches.append(word)
         for nspace in [builtins.__dict__, self.namespace]:
             for word, val in nspace.items():
-                if word[:n] == text and word != "builtins":
+                if word[:n] == text and word != "__builtins__":
                     matches.append(self._callable_postfix(val, word))
         return matches
 
