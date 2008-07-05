@@ -1,6 +1,7 @@
 """Simple textbox editing widget with Emacs-like keybindings."""
 
-import curses, ascii
+import curses
+import curses.ascii
 
 def rectangle(win, uly, ulx, lry, lrx):
     """Draw a rectangle with corners at the provided upper-left
@@ -54,7 +55,7 @@ class Textbox:
         returning the index of the last non-blank character."""
         last = self.maxx
         while True:
-            if ascii.ascii(self.win.inch(y, last)) != ascii.SP:
+            if curses.ascii.ascii(self.win.inch(y, last)) != curses.ascii.SP:
                 last = min(self.maxx, last+1)
                 break
             elif last == 0:
@@ -76,7 +77,7 @@ class Textbox:
                 pass
             if self.insert_mode:
                 (backy, backx) = self.win.getyx()
-                if ascii.isprint(oldch):
+                if curses.ascii.isprint(oldch):
                     self._insert_printable_char(oldch)
                     self.win.move(backy, backx)
 
@@ -84,12 +85,12 @@ class Textbox:
         "Process a single editing command."
         (y, x) = self.win.getyx()
         self.lastcmd = ch
-        if ascii.isprint(ch):
+        if curses.ascii.isprint(ch):
             if y < self.maxy or x < self.maxx:
                 self._insert_printable_char(ch)
-        elif ch == ascii.SOH:                           # ^a
+        elif ch == curses.ascii.SOH:                           # ^a
             self.win.move(y, 0)
-        elif ch in (ascii.STX,curses.KEY_LEFT, ascii.BS,curses.KEY_BACKSPACE):
+        elif ch in (curses.ascii.STX,curses.KEY_LEFT, curses.ascii.BS,curses.KEY_BACKSPACE):
             if x > 0:
                 self.win.move(y, x-1)
             elif y == 0:
@@ -98,46 +99,46 @@ class Textbox:
                 self.win.move(y-1, self._end_of_line(y-1))
             else:
                 self.win.move(y-1, self.maxx)
-            if ch in (ascii.BS, curses.KEY_BACKSPACE):
+            if ch in (curses.ascii.BS, curses.KEY_BACKSPACE):
                 self.win.delch()
-        elif ch == ascii.EOT:                           # ^d
+        elif ch == curses.ascii.EOT:                           # ^d
             self.win.delch()
-        elif ch == ascii.ENQ:                           # ^e
+        elif ch == curses.ascii.ENQ:                           # ^e
             if self.stripspaces:
                 self.win.move(y, self._end_of_line(y))
             else:
                 self.win.move(y, self.maxx)
-        elif ch in (ascii.ACK, curses.KEY_RIGHT):       # ^f
+        elif ch in (curses.ascii.ACK, curses.KEY_RIGHT):       # ^f
             if x < self.maxx:
                 self.win.move(y, x+1)
             elif y == self.maxy:
                 pass
             else:
                 self.win.move(y+1, 0)
-        elif ch == ascii.BEL:                           # ^g
+        elif ch == curses.ascii.BEL:                           # ^g
             return 0
-        elif ch == ascii.NL:                            # ^j
+        elif ch == curses.ascii.NL:                            # ^j
             if self.maxy == 0:
                 return 0
             elif y < self.maxy:
                 self.win.move(y+1, 0)
-        elif ch == ascii.VT:                            # ^k
+        elif ch == curses.ascii.VT:                            # ^k
             if x == 0 and self._end_of_line(y) == 0:
                 self.win.deleteln()
             else:
                 # first undo the effect of self._end_of_line
                 self.win.move(y, x)
                 self.win.clrtoeol()
-        elif ch == ascii.FF:                            # ^l
+        elif ch == curses.ascii.FF:                            # ^l
             self.win.refresh()
-        elif ch in (ascii.SO, curses.KEY_DOWN):         # ^n
+        elif ch in (curses.ascii.SO, curses.KEY_DOWN):         # ^n
             if y < self.maxy:
                 self.win.move(y+1, x)
                 if x > self._end_of_line(y+1):
                     self.win.move(y+1, self._end_of_line(y+1))
-        elif ch == ascii.SI:                            # ^o
+        elif ch == curses.ascii.SI:                            # ^o
             self.win.insertln()
-        elif ch in (ascii.DLE, curses.KEY_UP):          # ^p
+        elif ch in (curses.ascii.DLE, curses.KEY_UP):          # ^p
             if y > 0:
                 self.win.move(y-1, x)
                 if x > self._end_of_line(y-1):
@@ -155,7 +156,7 @@ class Textbox:
             for x in range(self.maxx+1):
                 if self.stripspaces and x > stop:
                     break
-                result = result + chr(ascii.ascii(self.win.inch(y, x)))
+                result = result + chr(curses.ascii.ascii(self.win.inch(y, x)))
             if self.maxy > 0:
                 result = result + "\n"
         return result
