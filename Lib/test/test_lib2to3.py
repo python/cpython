@@ -2,7 +2,11 @@
 # because of running
 from lib2to3.tests import test_fixers, test_pytree, test_util
 import unittest
-from test.test_support import run_unittest
+from test.test_support import run_unittest, requires
+
+# Don't run lib2to3 tests by default since they take too long
+if __name__ != '__main__':
+    requires('lib2to3')
 
 def suite():
     tests = unittest.TestSuite()
