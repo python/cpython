@@ -8,6 +8,7 @@ import os
 import sys
 import stat
 from os.path import abspath
+import fnmatch
 
 __all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
            "copytree","move","rmtree","Error"]
@@ -93,8 +94,19 @@ def copy2(src, dst):
     copyfile(src, dst)
     copystat(src, dst)
 
+def ignore_patterns(*patterns):
+    """Function that can be used as copytree() ignore parameter.
 
-def copytree(src, dst, symlinks=False):
+    Patterns is a sequence of glob-style patterns
+    that are used to exclude files"""
+    def _ignore_patterns(path, names):
+        ignored_names = []
+        for pattern in patterns:
+            ignored_names.extend(fnmatch.filter(names, pattern))
+        return set(ignored_names)
+    return _ignore_patterns
+
+def copytree(src, dst, symlinks=False, ignore=None):
     """Recursively copy a directory tree using copy2().
 
     The destination directory must not already exist.
@@ -105,13 +117,32 @@ def copytree(src, dst, symlinks=False):
     it is false, the contents of the files pointed to by symbolic
     links are copied.
 
+    The optional ignore argument is a callable. If given, it
+    is called with the `src` parameter, which is the directory
+    being visited by copytree(), and `names` which is the list of
+    `src` contents, as returned by os.listdir():
+
+        callable(src, names) -> ignored_names
+
+    Since copytree() is called recursively, the callable will be
+    called once for each directory that is copied. It returns a
+    list of names relative to the `src` directory that should
+    not be copied.
+
     XXX Consider this example code rather than the ultimate tool.
 
     """
     names = os.listdir(src)
+    if ignore is not None:
+        ignored_names = ignore(src, names)
+    else:
+        ignored_names = set()
+
     os.makedirs(dst)
     errors = []
     for name in names:
+        if name in ignored_names:
+            continue
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         try:
@@ -119,7 +150,7 @@ def copytree(src, dst, symlinks=False):
                 linkto = os.readlink(srcname)
                 os.symlink(linkto, dstname)
             elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks)
+                copytree(srcname, dstname, symlinks, ignore)
             else:
                 copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?

@@ -29,9 +29,10 @@ Core and Builtins
   would not cause a syntax error.  This was regression from 2.4 caused by the
   switch to the new compiler.
 
-
 Library
 -------
+
+- Issue #2663: add filtering capability to shutil.copytree().
 
 - Issue #1622: Correct interpretation of various ZIP header fields.
 
@@ -53,7 +54,6 @@ Library
 - Issue #2885 (partial): lib2to3 has been updated to handle the renaming of the
   urllib module in Python 3.0 to urllib.request, urllib.parse, and
   urllib.error.
-
 
 Build
 -----

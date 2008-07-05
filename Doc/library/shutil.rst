@@ -78,18 +78,41 @@ copying and removal. For operations on individual files, see also the
    Unix command :program:`cp -p`.
 
 
-.. function:: copytree(src, dst[, symlinks])
+.. function:: ignore_patterns(\*patterns)
+
+   This factory function creates a function that can be used as a callable for
+   :func:`copytree`\'s *ignore* argument, ignoring files and directories that
+   match one the glob-style *patterns* provided.  See the example below.
+
+   .. versionadded:: 2.6
+
+
+.. function:: copytree(src, dst[, symlinks=False[, ignore=None]])
 
    Recursively copy an entire directory tree rooted at *src*.  The destination
-   directory, named by *dst*, must not already exist; it will be created as well as
-   missing parent directories. Permissions and times of directories are copied with
-   :func:`copystat`, individual files are copied using :func:`copy2`.   If
-   *symlinks* is true, symbolic links in the source tree are represented as
-   symbolic links in the new tree; if false or omitted, the contents of the linked
-   files are copied to the new tree.  If exception(s) occur, an :exc:`Error` is
-   raised with a list of reasons.
+   directory, named by *dst*, must not already exist; it will be created as well
+   as missing parent directories.  Permissions and times of directories are
+   copied with :func:`copystat`, individual files are copied using
+   :func:`copy2`.
 
-   The source code for this should be considered an example rather than a tool.
+   If *symlinks* is true, symbolic links in the source tree are represented as
+   symbolic links in the new tree; if false or omitted, the contents of the
+   linked files are copied to the new tree.
+
+   If *ignore* is given, it must be a callable that will receive as its
+   arguments the directory being visited by :func:`copytree`, and a list of its
+   contents, as returned by :func:`os.listdir`.  Since :func:`copytree` is
+   called recursively, the *ignore* callable will be called once for each
+   directory that is copied.  The callable must return a sequence of directory
+   and file names relative to the current directory (i.e. a subset of the items
+   in its second argument); these names will then be ignored in the copy
+   process.  :func:`ignore_patterns` can be used to create such a callable that
+   ignores names based on glob-style patterns.
+
+   If exception(s) occur, an :exc:`Error` is raised with a list of reasons.
+
+   The source code for this should be considered an example rather than the
+   ultimate tool.
 
    .. versionchanged:: 2.3
       :exc:`Error` is raised if any exceptions occur during copying, rather than
@@ -98,6 +121,9 @@ copying and removal. For operations on individual files, see also the
    .. versionchanged:: 2.5
       Create intermediate directories needed to create *dst*, rather than raising an
       error. Copy permissions and times of directories using :func:`copystat`.
+
+   .. versionchanged:: 2.6
+      Added the *ignore* argument to be able to influence what is being copied. 
 
 
 .. function:: rmtree(path[, ignore_errors[, onerror]])
@@ -152,11 +178,18 @@ This example is the implementation of the :func:`copytree` function, described
 above, with the docstring omitted.  It demonstrates many of the other functions
 provided by this module. ::
 
-   def copytree(src, dst, symlinks=False):
+   def copytree(src, dst, symlinks=False, ignore=None):
        names = os.listdir(src)
+       if ignore is not None:
+           ignored_names = ignore(src, names)
+       else:
+           ignored_names = set()
+
        os.makedirs(dst)
        errors = []
        for name in names:
+           if name in ignored_names:   
+               continue
            srcname = os.path.join(src, name)
            dstname = os.path.join(dst, name)
            try:
@@ -164,7 +197,7 @@ provided by this module. ::
                    linkto = os.readlink(srcname)
                    os.symlink(linkto, dstname)
                elif os.path.isdir(srcname):
-                   copytree(srcname, dstname, symlinks)
+                   copytree(srcname, dstname, symlinks, ignore)
                else:
                    copy2(srcname, dstname)
                # XXX What about devices, sockets etc.?
@@ -183,3 +216,24 @@ provided by this module. ::
            errors.extend((src, dst, str(why)))
        if errors:
            raise Error, errors
+
+Another example that uses the :func:`ignore_patterns` helper::
+
+   from shutil import copytree, ignore_patterns
+   
+   copytree(source, destination, ignore=ignore_patterns('*.pyc', 'tmp*'))
+
+This will copy everything except ``.pyc`` files and files or directories whose
+name starts with ``tmp``.
+
+Another example that uses the *ignore* argument to add a logging call::
+
+   from shutil import copytree
+   import logging
+   
+   def _logpath(path, names):
+       logging.info('Working in %s' % path)
+       return []   # nothing will be ignored
+
+   copytree(source, destination, ignore=_logpath)
+
