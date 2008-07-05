@@ -252,7 +252,7 @@ A more verbose version of this snippet shows the flow explicitly::
     for i in [0, 1, 2]:
         for row in mat:
             print(row[i], end="")
-        print
+        print()
 
 In real world, you should prefer builtin functions to complex flow statements. 
 The :func:`zip` function would do a great job for this use case::
