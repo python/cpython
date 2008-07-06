@@ -59,6 +59,9 @@ Library
   urllib module in Python 3.0 to urllib.request, urllib.parse, and
   urllib.error.
 
+- Issue #2113: Fix error in subprocess.Popen if the select system call is
+  interrupted by a signal.
+
 Build
 -----
 
