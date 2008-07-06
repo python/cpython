@@ -82,7 +82,7 @@ copying and removal. For operations on individual files, see also the
 
    This factory function creates a function that can be used as a callable for
    :func:`copytree`\'s *ignore* argument, ignoring files and directories that
-   match one the glob-style *patterns* provided.  See the example below.
+   match one of the glob-style *patterns* provided.  See the example below.
 
    .. versionadded:: 2.6
 
