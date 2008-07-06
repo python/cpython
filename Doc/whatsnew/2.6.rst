@@ -1681,6 +1681,11 @@ details.
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes; :issue:`1551443`.)
 
+* The :mod:`cgi` module will now read variables from the query string of an 
+  HTTP POST request.  This makes it possible to use form actions with 
+  URLs such as "/cgi-bin/add.py?category=1".  (Contributed by 
+  Alexandre Fiori and Nubis; :issue:`1817`.)
+
 * The :mod:`cmath` module underwent an extensive set of revisions,
   thanks to Mark Dickinson and Christian Heimes, that added some new
   features and greatly improved the accuracy of the computations.
@@ -2137,6 +2142,24 @@ details.
 * The :mod:`sets` module has been deprecated; it's better to
   use the built-in :class:`set` and :class:`frozenset` types.
 
+* The :func:`shutil.copytree` function now has an optional **ignore** argument
+  that takes a callable object.  This callable will receive each directory path
+  and a list of the directory's contents, and returns a list of names that
+  will be ignored, not copied.  
+
+  The :mod:`shutil` module also provides an :func:`ignore_patterns`
+  function for use with this new parameter.
+  :func:`ignore_patterns` takes an arbitrary number of glob-style patterns
+  and will ignore any files and directories that match this pattern.
+  The following example copies a directory tree, but skip both SVN's internal
+  :file:`.svn` directories and Emacs backup 
+  files, which have names ending with '~'::
+
+      shutil.copytree('Doc/library', '/tmp/library', 
+                      ignore=shutil.ignore_patterns('*~'))
+
+  (Contributed by Tarek Ziadé; :issue:`2663`.)
+
 * Integrating signal handling with GUI handling event loops
   like those used by Tkinter or GTk+ has long been a problem; most
   software ends up polling, waking up every fraction of a second.
@@ -2500,9 +2523,10 @@ handle it safely::
       ...
     ValueError: malformed string
 
-The module also includes 
-:class:`NodeVisitor` and :class:`NodeTransformer` classes 
-for traversing and modifying an AST, and functions for common transformations such as changing line numbers.
+The module also includes :class:`NodeVisitor` and
+:class:`NodeTransformer` classes for traversing and modifying an AST,
+and functions for common transformations such as changing line
+numbers.
 
 .. ======================================================================
 
