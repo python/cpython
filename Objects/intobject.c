@@ -1296,35 +1296,33 @@ _PyInt_Init(void)
 	return 1;
 }
 
-void
-PyInt_CompactFreeList(size_t *pbc, size_t *pbf, size_t *bsum)
+int
+PyInt_ClearFreeList(void)
 {
 	PyIntObject *p;
 	PyIntBlock *list, *next;
-	unsigned int ctr;
-	size_t bc = 0, bf = 0;	/* block count, number of freed blocks */
-	size_t isum = 0;	/* total unfreed ints */
-	int irem;		/* remaining unfreed ints per block */
+	int i;
+	int u;			/* remaining unfreed ints per block */
+	int freelist_size = 0;
 
 	list = block_list;
 	block_list = NULL;
 	free_list = NULL;
 	while (list != NULL) {
-		bc++;
-		irem = 0;
-		for (ctr = 0, p = &list->objects[0];
-		     ctr < N_INTOBJECTS;
-		     ctr++, p++) {
+		u = 0;
+		for (i = 0, p = &list->objects[0];
+		     i < N_INTOBJECTS;
+		     i++, p++) {
 			if (PyInt_CheckExact(p) && p->ob_refcnt != 0)
-				irem++;
+				u++;
 		}
 		next = list->next;
-		if (irem) {
+		if (u) {
 			list->next = block_list;
 			block_list = list;
-			for (ctr = 0, p = &list->objects[0];
-			     ctr < N_INTOBJECTS;
-			     ctr++, p++) {
+			for (i = 0, p = &list->objects[0];
+			     i < N_INTOBJECTS;
+			     i++, p++) {
 				if (!PyInt_CheckExact(p) ||
 				    p->ob_refcnt == 0) {
 					Py_TYPE(p) = (struct _typeobject *)
@@ -1345,15 +1343,12 @@ PyInt_CompactFreeList(size_t *pbc, size_t *pbf, size_t *bsum)
 		}
 		else {
 			PyMem_FREE(list);
-			bf++;
 		}
-		isum += irem;
+		freelist_size += u;
 		list = next;
 	}
 
-	*pbc = bc;
-	*pbf = bf;
-	*bsum = isum;
+	return freelist_size;
 }
 
 void
@@ -1361,12 +1356,10 @@ PyInt_Fini(void)
 {
 	PyIntObject *p;
 	PyIntBlock *list;
-	unsigned int ctr;
-	size_t bc, bf;	/* block count, number of freed blocks */
-	size_t isum;	/* total unfreed ints per block */
+	int i;
+	int u;			/* total unfreed ints per block */
 
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
-	int i;
 	PyIntObject **q;
 
 	i = NSMALLNEGINTS + NSMALLPOSINTS;
@@ -1376,27 +1369,24 @@ PyInt_Fini(void)
 		*q++ = NULL;
 	}
 #endif
-	PyInt_CompactFreeList(&bc, &bf, &isum);
+	u = PyInt_ClearFreeList();
 	if (!Py_VerboseFlag)
 		return;
 	fprintf(stderr, "# cleanup ints");
-	if (!isum) {
+	if (!u) {
 		fprintf(stderr, "\n");
 	}
 	else {
 		fprintf(stderr,
-			": %" PY_FORMAT_SIZE_T "d unfreed int%s in %"
-			PY_FORMAT_SIZE_T "d out of %"
-			PY_FORMAT_SIZE_T "d block%s\n",
-			isum, isum == 1 ? "" : "s",
-			bc - bf, bc, bc == 1 ? "" : "s");
+			": %d unfreed int%s\n",
+			u, u == 1 ? "" : "s");
 	}
 	if (Py_VerboseFlag > 1) {
 		list = block_list;
 		while (list != NULL) {
-			for (ctr = 0, p = &list->objects[0];
-			     ctr < N_INTOBJECTS;
-			     ctr++, p++) {
+			for (i = 0, p = &list->objects[0];
+			     i < N_INTOBJECTS;
+			     i++, p++) {
 				if (PyInt_CheckExact(p) && p->ob_refcnt != 0)
 					/* XXX(twouters) cast refcount to
 					   long until %zd is universally

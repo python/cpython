@@ -122,10 +122,9 @@ Plain Integer Objects
    (:const:`LONG_MAX`, as defined in the system header files).
 
 
-.. cfunction:: void PyInt_CompactFreeList(size_t *bc, size_t *bf, size_t *sum)
+.. cfunction:: int PyInt_ClearFreeList(void)
 
-   Compact the integer free list. *bc* is the number of allocated blocks before
-   blocks are freed, *bf* is the number of freed blocks and *sum* is the number
-   of remaining objects in the blocks.
+   Clear the integer free list. Return the number of items that could not
+   be freed.
 
    .. versionadded:: 2.6

@@ -736,6 +736,8 @@ clear_freelists(void)
 	(void)PyCFunction_ClearFreeList();
 	(void)PyTuple_ClearFreeList();
 	(void)PyUnicode_ClearFreeList();
+	(void)PyInt_ClearFreeList();
+	(void)PyFloat_ClearFreeList();
 }
 
 /* This is the main function.  Read this to understand how the
