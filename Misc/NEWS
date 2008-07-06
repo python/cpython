@@ -36,6 +36,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #839496: SimpleHTTPServer used to open text files in text mode. This is
+  both unnecessary (HTTP allows text content to be sent in several forms) and
+  wrong because the actual transmitted size could differ with the
+  content-length.  The problem had been corrected in the 2.4 branch, but never
+  merged into trunk.
+
 - Issue #2663: add filtering capability to shutil.copytree().
 
 - Issue #1622: Correct interpretation of various ZIP header fields.
