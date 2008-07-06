@@ -29,6 +29,10 @@ Core and Builtins
   would not cause a syntax error.  This was regression from 2.4 caused by the
   switch to the new compiler.
 
+- Issue #2862: Make int and float freelist management consistent with other
+  freelists.  Changes their CompactFreeList apis into ClearFreeList apis and
+  calls them via gc.collect().
+
 Library
 -------
 
