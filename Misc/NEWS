@@ -102,6 +102,9 @@ Library
   stdout and stderr fds rather than leaving them open until the
   instance is destroyed.
 
+- Issue #2632: Prevent socket.read(bignumber) from over allocating memory
+  in the common case when the data is returned from the underlying socket
+  in increments much smaller than bignumber.
 
 Extension Modules
 -----------------
