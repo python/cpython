@@ -161,6 +161,10 @@ class TestAudioop(unittest.TestCase):
             self.assertEqual(audioop.getsample(data[1], 2, i), i)
             self.assertEqual(audioop.getsample(data[2], 4, i), i)
 
+    def test_negavitelen(self):
+        # from issue 3306, previously it segfaulted
+        self.assertRaises(audioop.error,
+            audioop.findmax, ''.join( chr(x) for x in xrange(256)), -2392392)
 
 def test_main():
     run_unittest(TestAudioop)
