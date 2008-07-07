@@ -4,6 +4,8 @@ See RFC 1808: "Relative Uniform Resource Locators", by R. Fielding,
 UC Irvine, June 1995.
 """
 
+import sys
+
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit"]
 
@@ -599,7 +601,6 @@ test_input = """
 """
 
 def test():
-    import sys
     base = ''
     if sys.argv[1:]:
         fn = sys.argv[1]

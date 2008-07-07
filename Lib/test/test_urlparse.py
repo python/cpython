@@ -310,6 +310,10 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(urllib.parse.urlparse("http://example.com?blahblah=/foo"),
                          ('http', 'example.com', '', '', 'blahblah=/foo', ''))
 
+    def test_usingsys(self):
+        # Issue 3314: sys module is used in the error
+        self.assertRaises(TypeError, urllib.parse.urlencode, "foo")
+
 def test_main():
     support.run_unittest(UrlParseTestCase)
 
