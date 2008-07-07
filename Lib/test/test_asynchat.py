@@ -105,8 +105,8 @@ class TestAsynchat(unittest.TestCase):
         time.sleep(0.01) # Give server time to start accepting.
         c = echo_client(term, s.port)
         c.push(b"hello ")
-        c.push(bytes("world%s" % term, "ascii"))
-        c.push(bytes("I'm not dead yet!%s" % term, "ascii"))
+        c.push(b"world" + term)
+        c.push(b"I'm not dead yet!" + term)
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
         s.join()
@@ -120,17 +120,17 @@ class TestAsynchat(unittest.TestCase):
     def test_line_terminator1(self):
         # test one-character terminator
         for l in (1,2,3):
-            self.line_terminator_check('\n', l)
+            self.line_terminator_check(b'\n', l)
 
     def test_line_terminator2(self):
         # test two-character terminator
         for l in (1,2,3):
-            self.line_terminator_check('\r\n', l)
+            self.line_terminator_check(b'\r\n', l)
 
     def test_line_terminator3(self):
         # test three-character terminator
         for l in (1,2,3):
-            self.line_terminator_check('qqq', l)
+            self.line_terminator_check(b'qqq', l)
 
     def numeric_terminator_check(self, termlen):
         # Try reading a fixed number of bytes
@@ -190,7 +190,7 @@ class TestAsynchat(unittest.TestCase):
         # checks that empty lines are handled correctly
         s, event = start_echo_server()
         c = echo_client(b'\n', s.port)
-        c.push("hello world\n\nI'm not dead yet!\n")
+        c.push(b"hello world\n\nI'm not dead yet!\n")
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
         s.join()
@@ -201,7 +201,7 @@ class TestAsynchat(unittest.TestCase):
     def test_close_when_done(self):
         s, event = start_echo_server()
         c = echo_client(b'\n', s.port)
-        c.push("hello world\nI'm not dead yet!\n")
+        c.push(b"hello world\nI'm not dead yet!\n")
         c.push(SERVER_QUIT)
         c.close_when_done()
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)

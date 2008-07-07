@@ -124,11 +124,11 @@ class SMTPChannel(asynchat.async_chat):
         self.__peer = conn.getpeername()
         print('Peer:', repr(self.__peer), file=DEBUGSTREAM)
         self.push('220 %s %s' % (self.__fqdn, __version__))
-        self.set_terminator('\r\n')
+        self.set_terminator(b'\r\n')
 
     # Overrides base class for convenience
     def push(self, msg):
-        asynchat.async_chat.push(self, msg + '\r\n')
+        asynchat.async_chat.push(self, bytes(msg + '\r\n', 'ascii'))
 
     # Implementation of base class abstract method
     def collect_incoming_data(self, data):
@@ -177,7 +177,7 @@ class SMTPChannel(asynchat.async_chat):
             self.__rcpttos = []
             self.__mailfrom = None
             self.__state = self.COMMAND
-            self.set_terminator('\r\n')
+            self.set_terminator(b'\r\n')
             if not status:
                 self.push('250 Ok')
             else:
@@ -264,7 +264,7 @@ class SMTPChannel(asynchat.async_chat):
             self.push('501 Syntax: DATA')
             return
         self.__state = self.DATA
-        self.set_terminator('\r\n.\r\n')
+        self.set_terminator(b'\r\n.\r\n')
         self.push('354 End data with <CR><LF>.<CR><LF>')
 
 
