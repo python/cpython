@@ -38,6 +38,7 @@ class exitingdummy:
         raise asyncore.ExitNow()
 
     handle_write_event = handle_read_event
+    handle_close_event = handle_read_event
     handle_expt_event = handle_read_event
 
 class crashingdummy:
@@ -48,6 +49,7 @@ class crashingdummy:
         raise Exception()
 
     handle_write_event = handle_read_event
+    handle_close_event = handle_read_event
     handle_expt_event = handle_read_event
 
     def handle_error(self):
@@ -117,6 +119,7 @@ class HelperFunctionTests(unittest.TestCase):
                 def __init__(self):
                     self.read = False
                     self.write = False
+                    self.closed = False
                     self.expt = False
 
                 def handle_read_event(self):
@@ -124,6 +127,9 @@ class HelperFunctionTests(unittest.TestCase):
 
                 def handle_write_event(self):
                     self.write = True
+
+                def handle_close_event(self):
+                    self.closed = True
 
                 def handle_expt_event(self):
                     self.expt = True
@@ -167,9 +173,9 @@ class HelperFunctionTests(unittest.TestCase):
 
             for flag in (select.POLLERR, select.POLLHUP, select.POLLNVAL):
                 tobj = testobj()
-                self.assertEqual(tobj.expt, False)
+                self.assertEqual((tobj.expt, tobj.closed)[flag == select.POLLHUP], False)
                 asyncore.readwrite(tobj, flag)
-                self.assertEqual(tobj.expt, True)
+                self.assertEqual((tobj.expt, tobj.closed)[flag == select.POLLHUP], True)
 
                 # check that ExitNow exceptions in the object handler method
                 # bubbles all the way up through asyncore readwrite calls
