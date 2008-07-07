@@ -72,6 +72,10 @@ Library
   properly when raising an exception due to the bz2file being closed.
   Prevents a deadlock.
 
+- Issue #3094: httplib.HTTPSConnection Host: headers no longer include the
+  redundant ":443" port number designation when the connection is using the
+  default https port (443).
+
 Build
 -----
 
