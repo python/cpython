@@ -2156,7 +2156,7 @@ details.
   files, which have names ending with '~'::
 
       shutil.copytree('Doc/library', '/tmp/library', 
-                      ignore=shutil.ignore_patterns('*~'))
+                      ignore=shutil.ignore_patterns('*~', '.svn'))
 
   (Contributed by Tarek Ziadé; :issue:`2663`.)
 
