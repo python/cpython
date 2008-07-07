@@ -14,6 +14,14 @@ from test import support
 
 HOST = support.HOST
 
+if sys.platform == 'darwin':
+    # select.poll returns a select.POLLHUP at the end of the tests
+    # on darwin, so just ignore it
+    def handle_expt(self):
+        pass
+    smtpd.SMTPChannel.handle_expt = handle_expt
+
+
 def server(evt, buf, serv):
     serv.listen(5)
     evt.set()
