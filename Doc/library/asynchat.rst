@@ -5,7 +5,7 @@
 .. module:: asynchat
    :synopsis: Support for asynchronous command/response protocols.
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
-.. sectionauthor:: Steve Holden <sholden@holdenweb.com>
+.. sectionauthor:: Steve Holden <sholden@holdenweb.com>   
 
 
 This module builds on the :mod:`asyncore` infrastructure, simplifying
@@ -283,8 +283,8 @@ any extraneous data sent by the web client are ignored. ::
            self.addr = addr
            self.sessions = sessions
            self.ibuffer = []
-           self.obuffer = ""
-           self.set_terminator("\r\n\r\n")
+           self.obuffer = b""
+           self.set_terminator(b"\r\n\r\n")
            self.reading_headers = True
            self.handling = False
            self.cgi_data = None
@@ -299,7 +299,7 @@ any extraneous data sent by the web client are ignored. ::
                self.reading_headers = False
                self.parse_headers("".join(self.ibuffer))
                self.ibuffer = []
-               if self.op.upper() == "POST":
+               if self.op.upper() == b"POST":
                    clen = self.headers.getheader("content-length")
                    self.set_terminator(int(clen))
                else:
@@ -308,7 +308,7 @@ any extraneous data sent by the web client are ignored. ::
                    self.handle_request()
            elif not self.handling:
                self.set_terminator(None) # browsers sometimes over-send
-               self.cgi_data = parse(self.headers, "".join(self.ibuffer))
+               self.cgi_data = parse(self.headers, b"".join(self.ibuffer))
                self.handling = True
                self.ibuffer = []
                self.handle_request()
