@@ -77,7 +77,7 @@ class async_chat (asyncore.dispatcher):
     use_encoding            = 0
     encoding                = 'latin1'
 
-    def __init__ (self, conn=None):
+    def __init__ (self, sock=None, map=None):
         # for string terminator matching
         self.ac_in_buffer = b''
 
@@ -92,7 +92,7 @@ class async_chat (asyncore.dispatcher):
         # we toss the use of the "simple producer" and replace it with
         # a pure deque, which the original fifo was a wrapping of
         self.producer_fifo = deque()
-        asyncore.dispatcher.__init__ (self, conn)
+        asyncore.dispatcher.__init__ (self, sock, map)
 
     def collect_incoming_data(self, data):
         raise NotImplementedError("must be implemented in subclass")

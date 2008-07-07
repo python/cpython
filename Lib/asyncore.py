@@ -98,8 +98,10 @@ def readwrite(obj, flags):
             obj.handle_read_event()
         if flags & select.POLLOUT:
             obj.handle_write_event()
-        if flags & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
+        if flags & (select.POLLERR | select.POLLNVAL):
             obj.handle_expt_event()
+        if flags & select.POLLHUP:
+            obj.handle_close_event()
     except (ExitNow, KeyboardInterrupt, SystemExit):
         raise
     except:
@@ -466,7 +468,7 @@ class dispatcher:
                 ),
             'error'
             )
-        self.close()
+        self.handle_close()
 
     def handle_expt(self):
         self.log_info('unhandled exception', 'warning')
