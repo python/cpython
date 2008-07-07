@@ -68,6 +68,10 @@ Library
 - Issue #2113: Fix error in subprocess.Popen if the select system call is
   interrupted by a signal.
 
+- Issue #3309: Fix bz2.BZFile itererator to release its internal lock
+  properly when raising an exception due to the bz2file being closed.
+  Prevents a deadlock.
+
 Build
 -----
 
