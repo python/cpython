@@ -10,6 +10,10 @@ What's New in Python 2.6 beta 2?
 Core and Builtins
 -----------------
 
+- Issue #2517: Allow unicode messages in Exceptions again by correctly
+  bypassing the instance dictionary when looking up __unicode__ on
+  new-style classes.
+
 - Issue #3242: Fix a crash inside the print statement, if sys.stdout is
   set to a custom object whose write() method happens to install
   another file in sys.stdout.
