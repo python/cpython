@@ -458,6 +458,7 @@ PyObject_Unicode(PyObject *v)
 	PyObject *res;
 	PyObject *func;
 	PyObject *str;
+	int unicode_method_found = 0;
 	static PyObject *unicodestr;
 
 	if (v == NULL) {
@@ -471,26 +472,46 @@ PyObject_Unicode(PyObject *v)
 		Py_INCREF(v);
 		return v;
 	}
-	/* XXX As soon as we have a tp_unicode slot, we should
-	   check this before trying the __unicode__
-	   method. */
+
+	/* Try the __unicode__ method */
 	if (unicodestr == NULL) {
 		unicodestr= PyString_InternFromString("__unicode__");
 		if (unicodestr == NULL)
 			return NULL;
 	}
-	func = PyObject_GetAttr(v, unicodestr);
-	if (func != NULL) {
-		res = PyEval_CallObject(func, (PyObject *)NULL);
-		Py_DECREF(func);
+	if (PyInstance_Check(v)) {
+		/* We're an instance of a classic class */
+		/* Try __unicode__ from the instance -- alas we have no type */
+		func = PyObject_GetAttr(v, unicodestr);
+		if (func != NULL) {
+			unicode_method_found = 1;
+			res = PyObject_CallFunctionObjArgs(func, NULL);
+			Py_DECREF(func);
+		}
+		else {
+			PyErr_Clear(); 
+		}
 	}
 	else {
-		PyErr_Clear();
+		/* Not a classic class instance, try __unicode__ from type */
+		/* _PyType_Lookup doesn't create a reference */
+		func = _PyType_Lookup(Py_TYPE(v), unicodestr);
+		if (func != NULL) {
+			unicode_method_found = 1;
+			res = PyObject_CallFunctionObjArgs(func, v, NULL);
+		}
+		else {
+			PyErr_Clear();
+		}
+	}
+
+	/* Didn't find __unicode__ */
+	if (!unicode_method_found) {
 		if (PyUnicode_Check(v)) {
 			/* For a Unicode subtype that's didn't overwrite __unicode__,
 			   return a true Unicode object with the same data. */
 			return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(v),
-			                             PyUnicode_GET_SIZE(v));
+						     PyUnicode_GET_SIZE(v));
 		}
 		if (PyString_CheckExact(v)) {
 			Py_INCREF(v);
@@ -503,6 +524,7 @@ PyObject_Unicode(PyObject *v)
 				res = PyObject_Repr(v);
 		}
 	}
+
 	if (res == NULL)
 		return NULL;
 	if (!PyUnicode_Check(res)) {
