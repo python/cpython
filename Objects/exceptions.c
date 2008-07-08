@@ -117,6 +117,28 @@ BaseException_str(PyBaseExceptionObject *self)
     return out;
 }
 
+#ifdef Py_USING_UNICODE
+static PyObject *
+BaseException_unicode(PyBaseExceptionObject *self)
+{
+    PyObject *out;
+
+    switch (PyTuple_GET_SIZE(self->args)) {
+    case 0:
+        out = PyUnicode_FromString("");
+        break;
+    case 1:
+        out = PyObject_Unicode(PyTuple_GET_ITEM(self->args, 0));
+        break;
+    default:
+        out = PyObject_Unicode(self->args);
+        break;
+    }
+
+    return out;
+}
+#endif
+
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
@@ -181,6 +203,9 @@ BaseException_setstate(PyObject *self, PyObject *state)
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
+#ifdef Py_USING_UNICODE   
+   {"__unicode__", (PyCFunction)BaseException_unicode, METH_NOARGS },
+#endif
    {NULL, NULL, 0, NULL},
 };
 

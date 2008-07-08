@@ -342,6 +342,7 @@ class ExceptionTests(unittest.TestCase):
         self.failUnless(unicode(Exception))
         self.failUnless(str(Exception('a')))
         self.failUnless(unicode(Exception(u'a')))
+        self.failUnless(unicode(Exception(u'\xe1')))
 
 
 def test_main():
