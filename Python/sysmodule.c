@@ -651,8 +651,15 @@ sys_getsizeof(PyObject *self, PyObject *args)
 			return NULL;
 	}
 
-	/* Type objects */
-	if (PyType_Check(args)){
+	/* Make sure the type is initialized. float gets initialized late */
+	if (PyType_Ready(Py_TYPE(args)) < 0)
+		return NULL;
+
+	/* Instance of old-style class */
+	if (PyInstance_Check(args))
+		return PyInt_FromSsize_t(PyInstance_Type.tp_basicsize);
+	/* all other objects */
+	else {
 		PyObject *method = _PyType_Lookup(Py_TYPE(args),
 						  str__sizeof__);
 		if (method == NULL) {
@@ -662,15 +669,7 @@ sys_getsizeof(PyObject *self, PyObject *args)
 			return NULL;
 		}
 		return PyObject_CallFunctionObjArgs(method, args, NULL);
-	} 
-	/* Instance of old-style classes */
-	else if (PyInstance_Check(args))
-		return PyInt_FromSsize_t(PyInstance_Type.tp_basicsize);
-	/* Old-style classes */
-	else if (PyClass_Check(args))
-		return PyInt_FromSsize_t(PyClass_Type.tp_basicsize);
-	else
-		return PyObject_CallMethod(args, "__sizeof__", NULL);
+	}
 }
 
 PyDoc_STRVAR(getsizeof_doc,
