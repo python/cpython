@@ -508,6 +508,29 @@ frame_clear(PyFrameObject *f)
 	}
 }
 
+static PyObject *
+frame_sizeof(PyFrameObject *f)
+{
+	Py_ssize_t res, extras, ncells, nfrees;
+
+	ncells = PyTuple_GET_SIZE(f->f_code->co_cellvars);
+	nfrees = PyTuple_GET_SIZE(f->f_code->co_freevars);
+	extras = f->f_code->co_stacksize + f->f_code->co_nlocals +
+		 ncells + nfrees;
+	// subtract one as it is already included in PyFrameObject
+	res = sizeof(PyFrameObject) + (extras-1) * sizeof(PyObject *);
+
+	return PyInt_FromSsize_t(res);
+}
+
+PyDoc_STRVAR(sizeof__doc__,
+"F.__sizeof__() -> size of F in memory, in bytes");
+
+static PyMethodDef frame_methods[] = {
+	{"__sizeof__",	(PyCFunction)frame_sizeof,	METH_NOARGS,
+	 sizeof__doc__},
+	{NULL,		NULL}	/* sentinel */
+};
 
 PyTypeObject PyFrame_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -537,7 +560,7 @@ PyTypeObject PyFrame_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	frame_methods,				/* tp_methods */
 	frame_memberlist,			/* tp_members */
 	frame_getsetlist,			/* tp_getset */
 	0,					/* tp_base */

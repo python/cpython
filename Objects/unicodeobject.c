@@ -7898,20 +7898,8 @@ PyDoc_STRVAR(p_format__doc__,
 static PyObject *
 unicode__sizeof__(PyUnicodeObject *v)
 {
-    PyObject *res = NULL, *defsize = NULL;
-
-    res = PyInt_FromSsize_t(sizeof(PyUnicodeObject) +
-                            sizeof(Py_UNICODE) * (v->length + 1));
-    if (v->defenc) {
-        defsize = PyObject_CallMethod(v->defenc, "__sizeof__", NULL);
-        if (defsize == NULL) {
-            Py_DECREF(res);
-            return NULL;
-        }
-        res = PyNumber_Add(res, defsize);
-        Py_DECREF(defsize);
-    }
-    return res;
+    return PyInt_FromSsize_t(sizeof(PyUnicodeObject) +
+                             sizeof(Py_UNICODE) * (v->length + 1));
 }
 
 PyDoc_STRVAR(sizeof__doc__,
