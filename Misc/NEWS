@@ -10,6 +10,7 @@ What's New in Python 2.6 beta 2?
 Core and Builtins
 -----------------
 
+
 - Issue #2517: Allow unicode messages in Exceptions again by correctly
   bypassing the instance dictionary when looking up __unicode__ on
   new-style classes.
@@ -39,6 +40,8 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #3301: Bisect module modules behaved badly when lo was negative.
 
 - Issue #839496: SimpleHTTPServer used to open text files in text mode. This is
   both unnecessary (HTTP allows text content to be sent in several forms) and
