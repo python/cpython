@@ -389,6 +389,9 @@ class SysModuleTest(unittest.TestCase):
 
 class SizeofTest(unittest.TestCase):
 
+    TPFLAGS_HAVE_GC = 1<<14
+    TPFLAGS_HEAPTYPE = 1L<<9
+
     def setUp(self):
         self.c = len(struct.pack('c', ' '))
         self.H = len(struct.pack('H', 0))
@@ -402,6 +405,8 @@ class SizeofTest(unittest.TestCase):
         if hasattr(sys, "gettotalrefcount"):
             self.header += '2P'
             self.vheader += '2P'
+        import _testcapi
+        self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
         self.file = open(test.test_support.TESTFN, 'wb')
 
     def tearDown(self):
@@ -410,6 +415,9 @@ class SizeofTest(unittest.TestCase):
 
     def check_sizeof(self, o, size):
         result = sys.getsizeof(o)
+        if ((type(o) == type) and (o.__flags__ & self.TPFLAGS_HEAPTYPE) or\
+           ((type(o) != type) and (type(o).__flags__ & self.TPFLAGS_HAVE_GC))):
+            size += self.gc_headsize
         msg = 'wrong size for %s: got %d, expected %d' \
                 % (type(o), result, size)
         self.assertEqual(result, size, msg)
@@ -422,6 +430,21 @@ class SizeofTest(unittest.TestCase):
         and no member with a size larger than a pointer exists.
         """
         return struct.calcsize(fmt + '0P')
+
+    def test_gc_head_size(self):
+        # Check that the gc header size is added to objects tracked by the gc.
+        h = self.header
+        size = self.calcsize
+        gc_header_size = self.gc_headsize
+        # bool objects are not gc tracked
+        self.assertEqual(sys.getsizeof(True), size(h + 'l'))
+        # but lists are
+        self.assertEqual(sys.getsizeof([]), size(h + 'P PP') + gc_header_size)
+
+    def test_default(self):
+        h = self.header
+        size = self.calcsize
+        self.assertEqual(sys.getsizeof(True, -1), size(h + 'l'))
 
     def test_objecttypes(self):
         # check all types defined in Objects/
