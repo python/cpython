@@ -68,7 +68,6 @@ __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 # Backward compatibility
 ##############################################################################
 if sys.version_info[:2] < (2, 2):
-    False, True = 0, 1
     def isinstance(obj, clsinfo):
         import __builtin__
         if type(clsinfo) in (tuple, list):
@@ -79,6 +78,14 @@ if sys.version_info[:2] < (2, 2):
             return 0
         else: return __builtin__.isinstance(obj, clsinfo)
 
+def _CmpToKey(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K(object):
+        def __init__(self, obj):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) == -1
+    return K
 
 ##############################################################################
 # Test framework core
@@ -429,7 +436,7 @@ class TestSuite:
 
     def addTest(self, test):
         # sanity checks
-        if not callable(test):
+        if not hasattr(test, '__call__'):
             raise TypeError("the test to add must be callable")
         if (isinstance(test, (type, types.ClassType)) and
             issubclass(test, (TestCase, TestSuite))):
@@ -584,7 +591,7 @@ class TestLoader:
             return TestSuite([parent(obj.__name__)])
         elif isinstance(obj, TestSuite):
             return obj
-        elif callable(obj):
+        elif hasattr(obj, '__call__'):
             test = obj()
             if isinstance(test, TestSuite):
                 return test
@@ -607,10 +614,10 @@ class TestLoader:
         """Return a sorted sequence of method names found within testCaseClass
         """
         def isTestMethod(attrname, testCaseClass=testCaseClass, prefix=self.testMethodPrefix):
-            return attrname.startswith(prefix) and callable(getattr(testCaseClass, attrname))
+            return attrname.startswith(prefix) and hasattr(getattr(testCaseClass, attrname), '__call__')
         testFnNames = filter(isTestMethod, dir(testCaseClass))
         if self.sortTestMethodsUsing:
-            testFnNames.sort(self.sortTestMethodsUsing)
+            testFnNames.sort(key=_CmpToKey(self.sortTestMethodsUsing))
         return testFnNames
 
 
