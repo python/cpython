@@ -408,14 +408,11 @@ class SizeofTest(unittest.TestCase):
         self.file.close()
         test.test_support.unlink(test.test_support.TESTFN)
 
-    def check_sizeof(self, o, size, size2=None):
-        """Check size of o. Possible are size and optionally size2)."""
+    def check_sizeof(self, o, size):
         result = sys.getsizeof(o)
-        msg = 'wrong size for %s: got %d, expected ' % (type(o), result)
-        if (size2 != None) and (result != size):
-            self.assertEqual(result, size2, msg + str(size2))
-        else:
-            self.assertEqual(result, size, msg + str(size))
+        msg = 'wrong size for %s: got %d, expected %d' \
+                % (type(o), result, size)
+        self.assertEqual(result, size, msg)
 
     def calcsize(self, fmt):
         """Wrapper around struct.calcsize which enforces the alignment of the
@@ -438,6 +435,13 @@ class SizeofTest(unittest.TestCase):
         check(buffer(''), size(h + '2P2Pil'))
         # builtin_function_or_method
         check(len, size(h + '3P'))
+        # bytearray
+        samples = ['', 'u'*100000]
+        for sample in samples:
+            x = bytearray(sample)
+            check(x, size(vh + 'iPP') + x.__alloc__() * self.c)
+        # bytearray_iterator
+        check(iter(bytearray()), size(h + 'PP'))
         # cell
         def get_cell():
             x = 42
@@ -507,6 +511,17 @@ class SizeofTest(unittest.TestCase):
         check(float(0), size(h + 'd'))
         # sys.floatinfo
         check(sys.float_info, size(vh) + self.P * len(sys.float_info))
+        # frame
+        import inspect
+        CO_MAXBLOCKS = 20
+        x = inspect.currentframe()
+        ncells = len(x.f_code.co_cellvars)
+        nfrees = len(x.f_code.co_freevars)
+        extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
+                 ncells + nfrees - 1
+        check(x, size(vh + '12P3i') +\
+                              CO_MAXBLOCKS*struct.calcsize('3i') +\
+                              self.P + extras*self.P)
         # function
         def func(): pass
         check(func, size(h + '9P'))
@@ -545,7 +560,7 @@ class SizeofTest(unittest.TestCase):
         # listreverseiterator (list)
         check(reversed([]), size(h + 'lP'))
         # long
-        check(0L, size(vh + 'H'))
+        check(0L, size(vh + 'H') - self.H)
         check(1L, size(vh + 'H'))
         check(-1L, size(vh + 'H'))
         check(32768L, size(vh + 'H') + self.H)
@@ -570,6 +585,29 @@ class SizeofTest(unittest.TestCase):
         check(iter(xrange(1)), size(h + '4l'))
         # reverse
         check(reversed(''), size(h + 'PP'))
+        # set
+        # frozenset
+        PySet_MINSIZE = 8
+        samples = [[], range(10), range(50)]
+        s = size(h + '3P2P') +\
+            PySet_MINSIZE*struct.calcsize('lP') + self.l + self.P
+        for sample in samples:
+            minused = len(sample)
+            if minused == 0: tmp = 1
+            # the computation of minused is actually a bit more complicated
+            # but this suffices for the sizeof test
+            minused = minused*2
+            newsize = PySet_MINSIZE
+            while newsize <= minused:
+                newsize = newsize << 1
+            if newsize <= 8:
+                check(set(sample), s)
+                check(frozenset(sample), s)
+            else:
+                check(set(sample), s + newsize*struct.calcsize('lP'))
+                check(frozenset(sample), s + newsize*struct.calcsize('lP'))
+        # setiterator
+        check(iter(set()), size(h + 'P3P'))
         # slice
         check(slice(1), size(h + '3P'))
         # str
@@ -600,16 +638,7 @@ class SizeofTest(unittest.TestCase):
         # we need to test for both sizes, because we don't know if the string
         # has been cached
         for s in samples:
-            basicsize =  size(h + 'PPlP') + usize * (len(s) + 1)
-            check(s, basicsize, size2=basicsize + sys.getsizeof(str(s)))
-        # XXX trigger caching encoded version as Python string
-        s = samples[1]
-        try:
-            getattr(sys, s)
-        except AttributeError:
-            pass
-        finally:
-            check(s, basicsize + sys.getsizeof(str(s)))
+            check(s, size(h + 'PPlP') + usize * (len(s) + 1))
         # weakref
         import weakref
         check(weakref.ref(int), size(h + '2Pl2P'))
