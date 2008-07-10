@@ -640,9 +640,16 @@ sys_mdebug(PyObject *self, PyObject *args)
 #endif /* USE_MALLOPT */
 
 static PyObject *
-sys_getsizeof(PyObject *self, PyObject *args)
+sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	static PyObject * str__sizeof__ = NULL;
+	PyObject *res = NULL;
+	static PyObject *str__sizeof__, *gc_head_size = NULL;
+	static char *kwlist[] = {"object", "default", 0};
+	PyObject *o, *dflt = NULL;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
+					 kwlist, &o, &dflt))
+		return NULL;
 
 	/* Initialize static variable needed by _PyType_Lookup */
 	if (str__sizeof__ == NULL) {
@@ -651,29 +658,54 @@ sys_getsizeof(PyObject *self, PyObject *args)
 			return NULL;
 	}
 
+        /* Initialize static variable for GC head size */
+	if (gc_head_size == NULL) {
+		gc_head_size = PyInt_FromSsize_t(sizeof(PyGC_Head));
+		if (gc_head_size == NULL)
+			return NULL;
+	}
+
 	/* Make sure the type is initialized. float gets initialized late */
-	if (PyType_Ready(Py_TYPE(args)) < 0)
+	if (PyType_Ready(Py_TYPE(o)) < 0)
 		return NULL;
 
 	/* Instance of old-style class */
-	if (PyInstance_Check(args))
-		return PyInt_FromSsize_t(PyInstance_Type.tp_basicsize);
+	if (PyInstance_Check(o))
+		res = PyInt_FromSsize_t(PyInstance_Type.tp_basicsize);
 	/* all other objects */
 	else {
-		PyObject *method = _PyType_Lookup(Py_TYPE(args),
+		PyObject *method = _PyType_Lookup(Py_TYPE(o),
 						  str__sizeof__);
-		if (method == NULL) {
+		if (method == NULL)
 			PyErr_Format(PyExc_TypeError,
 				     "Type %.100s doesn't define __sizeof__",
-				     Py_TYPE(args)->tp_name);
-			return NULL;
-		}
-		return PyObject_CallFunctionObjArgs(method, args, NULL);
+				     Py_TYPE(o)->tp_name);
+		else
+			res = PyObject_CallFunctionObjArgs(method, o, NULL);
 	}
+	
+	/* Has a default value been given? */
+	if ((res == NULL) && (dflt != NULL) &&
+	    PyErr_ExceptionMatches(PyExc_TypeError))
+	{
+		PyErr_Clear();
+		Py_INCREF(dflt);
+		return dflt;
+	}
+	else if (res == NULL)
+		return res;
+
+	/* add gc_head size */
+	if (PyObject_IS_GC(o)) {
+		PyObject *tmp = res;
+		res = PyNumber_Add(tmp, gc_head_size);
+		Py_DECREF(tmp);
+	}
+	return res;
 }
 
 PyDoc_STRVAR(getsizeof_doc,
-"getsizeof(object) -> int\n\
+"getsizeof(object, default) -> int\n\
 \n\
 Return the size of object in bytes.");
 
@@ -868,7 +900,8 @@ static PyMethodDef sys_methods[] = {
 	{"getrefcount",	(PyCFunction)sys_getrefcount, METH_O, getrefcount_doc},
 	{"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS,
 	 getrecursionlimit_doc},
- 	{"getsizeof",	sys_getsizeof,  METH_O, getsizeof_doc},
+	{"getsizeof",   (PyCFunction)sys_getsizeof,
+	 METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
 	{"_getframe", sys_getframe, METH_VARARGS, getframe_doc},
 #ifdef MS_WINDOWS
 	{"getwindowsversion", (PyCFunction)sys_getwindowsversion, METH_NOARGS,
