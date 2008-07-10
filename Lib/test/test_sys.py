@@ -398,8 +398,10 @@ class SizeofTest(unittest.TestCase):
         # due to missing size_t information from struct, it is assumed that
         # sizeof(Py_ssize_t) = sizeof(void*)
         self.header = 'PP'
+        self.vheader = self.header + 'P'
         if hasattr(sys, "gettotalrefcount"):
             self.header += '2P'
+            self.vheader += '2P'
         self.file = open(test.test_support.TESTFN, 'wb')
 
     def tearDown(self):
@@ -424,44 +426,90 @@ class SizeofTest(unittest.TestCase):
         """
         return struct.calcsize(fmt + '0P')
 
-    def test_standardtypes(self):
+    def test_objecttypes(self):
+        # check all types defined in Objects/
         h = self.header
+        vh = self.vheader
         size = self.calcsize
+        check = self.check_sizeof
         # bool
-        self.check_sizeof(True, size(h + 'l'))
+        check(True, size(h + 'l'))
         # buffer
-        self.check_sizeof(buffer(''), size(h + '2P2Pil'))
+        check(buffer(''), size(h + '2P2Pil'))
+        # builtin_function_or_method
+        check(len, size(h + '3P'))
         # cell
         def get_cell():
             x = 42
             def inner():
                 return x
             return inner
-        self.check_sizeof(get_cell().func_closure[0], size(h + 'P'))
-        # old-style class
+        check(get_cell().func_closure[0], size(h + 'P'))
+        # classobj (old-style class)
         class class_oldstyle():
             def method():
                 pass
-        self.check_sizeof(class_oldstyle, size(h + '6P'))
-        # instance
-        self.check_sizeof(class_oldstyle(), size(h + '3P'))
-        # method
-        self.check_sizeof(class_oldstyle().method, size(h + '4P'))
-        # code
-        self.check_sizeof(get_cell().func_code, size(h + '4i8Pi2P'))
+        check(class_oldstyle, size(h + '6P'))
+        # instance (old-style class)
+        check(class_oldstyle(), size(h + '3P'))
+        # instancemethod (old-style class)
+        check(class_oldstyle().method, size(h + '4P'))
         # complex
-        self.check_sizeof(complex(0,1), size(h + '2d'))
+        check(complex(0,1), size(h + '2d'))
+        # code
+        check(get_cell().func_code, size(h + '4i8Pi2P'))
+        # BaseException
+        check(BaseException(), size(h + '3P'))
+        # UnicodeEncodeError
+        check(UnicodeEncodeError("", u"", 0, 0, ""), size(h + '5P2PP'))
+        # UnicodeDecodeError
+        check(UnicodeDecodeError("", "", 0, 0, ""), size(h + '5P2PP'))
+        # UnicodeTranslateError
+        check(UnicodeTranslateError(u"", 0, 1, ""), size(h + '5P2PP'))
+        # method_descriptor (descriptor object)
+        check(str.lower, size(h + '2PP'))
+        # classmethod_descriptor (descriptor object)
+        # XXX
+        # member_descriptor (descriptor object)
+        import datetime
+        check(datetime.timedelta.days, size(h + '2PP'))
+        # getset_descriptor (descriptor object)
+        import __builtin__
+        check(__builtin__.file.closed, size(h + '2PP'))
+        # wrapper_descriptor (descriptor object)
+        check(int.__add__, size(h + '2P2P'))
+        # dictproxy
+        class C(object): pass
+        check(C.__dict__, size(h + 'P'))
+        # method-wrapper (descriptor object)
+        check({}.__iter__, size(h + '2P'))
+        # dict
+        check({}, size(h + '3P2P') + 8*size('P2P'))
+        x = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
+        check(x, size(h + '3P2P') + (8+16)*size('P2P'))
+        # dictionary-keyiterator
+        check({}.iterkeys(), size(h + 'P2PPP'))
+        # dictionary-valueiterator
+        check({}.itervalues(), size(h + 'P2PPP'))
+        # dictionary-itemiterator
+        check({}.iteritems(), size(h + 'P2PPP'))
+        # ellipses
+        check(Ellipsis, size(h + ''))
+        # EncodingMap
+        import codecs, encodings.iso8859_3
+        x = codecs.charmap_build(encodings.iso8859_3.decoding_table)
+        check(x, size(h + '32B2iB'))
         # enumerate
-        self.check_sizeof(enumerate([]), size(h + 'l3P'))
-        # reverse
-        self.check_sizeof(reversed(''), size(h + 'PP'))
+        check(enumerate([]), size(h + 'l3P'))
         # file
-        self.check_sizeof(self.file, size(h + '4P2i4P3i3Pi'))
+        check(self.file, size(h + '4P2i4P3i3Pi'))
         # float
-        self.check_sizeof(float(0), size(h + 'd'))
+        check(float(0), size(h + 'd'))
+        # sys.floatinfo
+        check(sys.float_info, size(vh) + self.P * len(sys.float_info))
         # function
         def func(): pass
-        self.check_sizeof(func, size(h + '9P'))
+        check(func, size(h + '9P'))
         class c():
             @staticmethod
             def foo():
@@ -470,40 +518,82 @@ class SizeofTest(unittest.TestCase):
             def bar(cls):
                 pass
             # staticmethod
-            self.check_sizeof(foo, size(h + 'P'))
+            check(foo, size(h + 'P'))
             # classmethod
-            self.check_sizeof(bar, size(h + 'P'))
+            check(bar, size(h + 'P'))
         # generator
         def get_gen(): yield 1
-        self.check_sizeof(get_gen(), size(h + 'Pi2P'))
+        check(get_gen(), size(h + 'Pi2P'))
         # integer
-        self.check_sizeof(1, size(h + 'l'))
-        # builtin_function_or_method
-        self.check_sizeof(abs, size(h + '3P'))
+        check(1, size(h + 'l'))
+        check(100, size(h + 'l'))
+        # iterator
+        check(iter('abc'), size(h + 'lP'))
+        # callable-iterator
+        import re
+        check(re.finditer('',''), size(h + '2P'))
+        # list
+        samples = [[], [1,2,3], ['1', '2', '3']]
+        for sample in samples:
+            check(sample, size(vh + 'PP') + len(sample)*self.P)
+        # sortwrapper (list)
+        # XXX
+        # cmpwrapper (list)
+        # XXX
+        # listiterator (list)
+        check(iter([]), size(h + 'lP'))
+        # listreverseiterator (list)
+        check(reversed([]), size(h + 'lP'))
+        # long
+        check(0L, size(vh + 'H'))
+        check(1L, size(vh + 'H'))
+        check(-1L, size(vh + 'H'))
+        check(32768L, size(vh + 'H') + self.H)
+        check(32768L*32768L-1, size(vh + 'H') + self.H)
+        check(32768L*32768L, size(vh + 'H') + 2*self.H)
         # module
-        self.check_sizeof(unittest, size(h + 'P'))
-        # xrange
-        self.check_sizeof(xrange(1), size(h + '3l'))
+        check(unittest, size(h + 'P'))
+        # None
+        check(None, size(h + ''))
+        # object
+        check(object(), size(h + ''))
+        # property (descriptor object)
+        class C(object):
+            def getx(self): return self.__x
+            def setx(self, value): self.__x = value
+            def delx(self): del self.__x
+            x = property(getx, setx, delx, "")
+            check(x, size(h + '4Pi'))
+        # PyCObject
+        # XXX
+        # rangeiterator
+        check(iter(xrange(1)), size(h + '4l'))
+        # reverse
+        check(reversed(''), size(h + 'PP'))
         # slice
-        self.check_sizeof(slice(0), size(h + '3P'))
-
-        h += 'P'
-        # new-style class
-        class class_newstyle(object):
-            def method():
-                pass
-        # type (PyTypeObject + PyNumberMethods +  PyMappingMethods +
-        #       PySequenceMethods + PyBufferProcs)
-        self.check_sizeof(class_newstyle, size('P2P15Pl4PP9PP11PI') +\
-                                          size(h + '41P 10P 3P 6P'))
-
-    def test_specialtypes(self):
-        h = self.header
-        size = self.calcsize
-        # dict
-        self.check_sizeof({}, size(h + '3P2P') + 8*size('P2P'))
-        longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        self.check_sizeof(longdict, size(h + '3P2P') + (8+16)*size('P2P'))
+        check(slice(1), size(h + '3P'))
+        # str
+        check('', size(vh + 'lic'))
+        check('abc', size(vh + 'lic') + 3*self.c)
+        # super
+        check(super(int), size(h + '3P'))
+        # tuple
+        check((), size(vh))
+        check((1,2,3), size(vh) + 3*self.P)
+        # tupleiterator
+        check(iter(()), size(h + 'lP'))
+        # type
+        # (PyTypeObject + PyNumberMethods +  PyMappingMethods +
+        #  PySequenceMethods + PyBufferProcs)
+        s = size('P2P15Pl4PP9PP11PI') + size(vh + '41P 10P 3P 6P')
+        class newstyleclass(object):
+            pass
+        check(newstyleclass, s)
+        # builtin type
+        check(int, s)
+        # NotImplementedType
+        import types
+        check(types.NotImplementedType, s)
         # unicode
         usize = len(u'\0'.encode('unicode-internal'))
         samples = [u'', u'1'*100]
@@ -511,8 +601,7 @@ class SizeofTest(unittest.TestCase):
         # has been cached
         for s in samples:
             basicsize =  size(h + 'PPlP') + usize * (len(s) + 1)
-            self.check_sizeof(s, basicsize,\
-                                  size2=basicsize + sys.getsizeof(str(s)))
+            check(s, basicsize, size2=basicsize + sys.getsizeof(str(s)))
         # XXX trigger caching encoded version as Python string
         s = samples[1]
         try:
@@ -520,25 +609,41 @@ class SizeofTest(unittest.TestCase):
         except AttributeError:
             pass
         finally:
-            self.check_sizeof(s, basicsize + sys.getsizeof(str(s)))
+            check(s, basicsize + sys.getsizeof(str(s)))
+        # weakref
+        import weakref
+        check(weakref.ref(int), size(h + '2Pl2P'))
+        # weakproxy
+        # XXX
+        # weakcallableproxy
+        check(weakref.proxy(int), size(h + '2Pl2P'))
+        # xrange
+        check(xrange(1), size(h + '3l'))
+        check(xrange(66000), size(h + '3l'))
 
-        h += 'P'
-        # list
-        self.check_sizeof([], size(h + 'PP'))
-        self.check_sizeof([1, 2, 3], size(h + 'PP') + 3*self.P)
-        # long
-        self.check_sizeof(0L, size(h + 'H'))
-        self.check_sizeof(1L, size(h + 'H'))
-        self.check_sizeof(-1L, size(h + 'H'))
-        self.check_sizeof(32768L, size(h + 'H') + self.H)
-        self.check_sizeof(32768L*32768L-1, size(h + 'H') + self.H)
-        self.check_sizeof(32768L*32768L, size(h + 'H') + 2*self.H)
-        # string
-        self.check_sizeof('', size(h + 'lic'))
-        self.check_sizeof('abc', size(h + 'lic') + 3*self.c)
-        # tuple
-        self.check_sizeof((), size(h))
-        self.check_sizeof((1,2,3), size(h) + 3*self.P)
+    def test_pythontypes(self):
+        # check all types defined in Python/
+        h = self.header
+        vh = self.vheader
+        size = self.calcsize
+        check = self.check_sizeof
+        # _ast.AST
+        import _ast
+        check(_ast.AST(), size(h + ''))
+        # imp.NullImporter
+        import imp
+        check(imp.NullImporter(self.file.name), size(h + ''))
+        try:
+            raise TypeError
+        except TypeError:
+            tb = sys.exc_info()[2]
+            # traceback
+            if tb != None:
+                check(tb, size(h + '2P2i'))
+        # symtable entry
+        # XXX
+        # sys.flags
+        check(sys.flags, size(vh) + self.P * len(sys.flags))
 
 
 def test_main():
