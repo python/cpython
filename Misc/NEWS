@@ -41,6 +41,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3285: Fractions from_float() and from_decimal() accept Integral arguments.
+
 - Issue #3301: Bisect module modules behaved badly when lo was negative.
 
 - Issue #839496: SimpleHTTPServer used to open text files in text mode. This is
