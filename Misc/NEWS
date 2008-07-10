@@ -31,7 +31,7 @@ Core and Builtins
   10, -1).
 
 - Issue #3219: Calling a function with repeated keyword arguments, f(a=2, a=23),
-  would not cause a syntax error.  This was regression from 2.4 caused by the
+  would not cause a syntax error.  This was a regression from 2.4 caused by the
   switch to the new compiler.
 
 - Issue #2862: Make int and float freelist management consistent with other
@@ -43,11 +43,11 @@ Library
 
 - Issue #3285: Fractions from_float() and from_decimal() accept Integral arguments.
 
-- Issue #3301: Bisect module modules behaved badly when lo was negative.
+- Issue #3301: Bisect module behaved badly when lo was negative.
 
 - Issue #839496: SimpleHTTPServer used to open text files in text mode. This is
   both unnecessary (HTTP allows text content to be sent in several forms) and
-  wrong because the actual transmitted size could differ with the
+  wrong because the actual transmitted size could differ from the
   content-length.  The problem had been corrected in the 2.4 branch, but never
   merged into trunk.
 
@@ -61,8 +61,8 @@ Library
   archives with comments over 4k were flagged as invalid). Allow writing
   Zip files with archives by setting the 'comment' attribute of a ZipFile.  
 
-- Issue #449227: Now with the rlcompleter module, callable objects are added
-  "(" when completed.
+- Issue #449227: The rlcompleter module now adds "(" to callable objects 
+  when completed.
 
 - Issue #3190: Pydoc now hides the automatic module attribute __package__ (the
   handling is now the same as that of other special attributes like __name__).
@@ -77,7 +77,7 @@ Library
 - Issue #2113: Fix error in subprocess.Popen if the select system call is
   interrupted by a signal.
 
-- Issue #3309: Fix bz2.BZFile itererator to release its internal lock
+- Issue #3309: Fix bz2.BZFile iterator to release its internal lock
   properly when raising an exception due to the bz2file being closed.
   Prevents a deadlock.
 
