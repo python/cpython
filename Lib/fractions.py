@@ -96,11 +96,8 @@ class Fraction(Rational):
 
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
-        try:
-            numerator = numerator.__index__()
-            denominator = denominator.__index__()
-        except AttributeError:
-            raise TypeError('Numerator and denominator must support __index__.')
+        numerator = operator.index(numerator)
+        denominator = operator.index(denominator)
         g = gcd(numerator, denominator)
         self._numerator = numerator // g
         self._denominator = denominator // g
