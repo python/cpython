@@ -90,6 +90,8 @@ Build
 Documentation
 -------------
 
+- Document that urlparse has been renamed to urllib.parse in Python 3.0.
+
 - Document that urllib2 is split across multiple modules and renamed in
   Python 3.0.
 

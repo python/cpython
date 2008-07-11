@@ -12,6 +12,12 @@
    pair: URL; parsing
    pair: relative; URL
 
+.. note::
+   The :mod:`urlparse` module is renamed to :mod:`urllib.parse` in Python 3.0.
+   The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to 3.0.
+
+
 This module defines a standard interface to break Uniform Resource Locator (URL)
 strings up in components (addressing scheme, network location, path etc.), to
 combine the components back into a URL string, and to convert a "relative URL"
