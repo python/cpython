@@ -43,9 +43,9 @@ ZIP_DEFLATED = 8
 
 # The "end of central directory" structure, magic number, size, and indices
 # (section V.I in the format document)
-structEndCentDir = "<4s4H2LH"
-magicEndCentDir = "PK\005\006"
-sizeEndCentDir = struct.calcsize(structEndCentDir)
+structEndArchive = "<4s4H2LH"
+stringEndArchive = "PK\005\006"
+sizeEndCentDir = struct.calcsize(structEndArchive)
 
 _ECD_SIGNATURE = 0
 _ECD_DISK_NUMBER = 1
@@ -63,36 +63,8 @@ _ECD_LOCATION = 9
 # The "central directory" structure, magic number, size, and indices
 # of entries in the structure (section V.F in the format document)
 structCentralDir = "<4s4B4HL2L5H2L"
-magicCentralDir = "PK\001\002"
+stringCentralDir = "PK\001\002"
 sizeCentralDir = struct.calcsize(structCentralDir)
-
-# The "local file header" structure, magic number, size, and indices
-# (section V.A in the format document)
-structFileHeader = "<4s2B4HL2L2H"
-magicFileHeader = "PK\003\004"
-sizeFileHeader = struct.calcsize(structFileHeader)
-
-# The "Zip64 end of central directory locator" structure, magic number, and size
-structEndCentDir64Locator = "<4sLQL"
-magicEndCentDir64Locator = "PK\x06\x07"
-sizeEndCentDir64Locator = struct.calcsize(structEndCentDir64Locator)
-
-# The "Zip64 end of central directory" record, magic number, size, and indices
-# (section V.G in the format document)
-structEndCentDir64 = "<4sQ2H2L4Q"
-magicEndCentDir64 = "PK\x06\x06"
-sizeEndCentDir64 = struct.calcsize(structEndCentDir64)
-
-_CD64_SIGNATURE = 0
-_CD64_DIRECTORY_RECSIZE = 1
-_CD64_CREATE_VERSION = 2
-_CD64_EXTRACT_VERSION = 3
-_CD64_DISK_NUMBER = 4
-_CD64_DISK_NUMBER_START = 5
-_CD64_NUMBER_ENTRIES_THIS_DISK = 6
-_CD64_NUMBER_ENTRIES_TOTAL = 7
-_CD64_DIRECTORY_SIZE = 8
-_CD64_OFFSET_START_CENTDIR = 9
 
 # indexes of entries in the central directory structure
 _CD_SIGNATURE = 0
@@ -118,7 +90,7 @@ _CD_LOCAL_HEADER_OFFSET = 18
 # The "local file header" structure, magic number, size, and indices
 # (section V.A in the format document)
 structFileHeader = "<4s2B4HL2L2H"
-magicFileHeader = "PK\003\004"
+stringFileHeader = "PK\003\004"
 sizeFileHeader = struct.calcsize(structFileHeader)
 
 _FH_SIGNATURE = 0
@@ -135,15 +107,15 @@ _FH_FILENAME_LENGTH = 10
 _FH_EXTRA_FIELD_LENGTH = 11
 
 # The "Zip64 end of central directory locator" structure, magic number, and size
-structEndCentDir64Locator = "<4sLQL"
-magicEndCentDir64Locator = "PK\x06\x07"
-sizeEndCentDir64Locator = struct.calcsize(structEndCentDir64Locator)
+structEndArchive64Locator = "<4sLQL"
+stringEndArchive64Locator = "PK\x06\x07"
+sizeEndCentDir64Locator = struct.calcsize(structEndArchive64Locator)
 
 # The "Zip64 end of central directory" record, magic number, size, and indices
 # (section V.G in the format document)
-structEndCentDir64 = "<4sQ2H2L4Q"
-magicEndCentDir64 = "PK\x06\x06"
-sizeEndCentDir64 = struct.calcsize(structEndCentDir64)
+structEndArchive64 = "<4sQ2H2L4Q"
+stringEndArchive64 = "PK\x06\x06"
+sizeEndCentDir64 = struct.calcsize(structEndArchive64)
 
 _CD64_SIGNATURE = 0
 _CD64_DIRECTORY_RECSIZE = 1
@@ -174,8 +146,8 @@ def _EndRecData64(fpin, offset, endrec):
     """
     fpin.seek(offset - sizeEndCentDir64Locator, 2)
     data = fpin.read(sizeEndCentDir64Locator)
-    sig, diskno, reloff, disks = struct.unpack(structEndCentDir64Locator, data)
-    if sig != magicEndCentDir64Locator:
+    sig, diskno, reloff, disks = struct.unpack(structEndArchive64Locator, data)
+    if sig != stringEndArchive64Locator:
         return endrec
 
     if diskno != 0 or disks != 1:
@@ -186,8 +158,8 @@ def _EndRecData64(fpin, offset, endrec):
     data = fpin.read(sizeEndCentDir64)
     sig, sz, create_version, read_version, disk_num, disk_dir, \
             dircount, dircount2, dirsize, diroffset = \
-            struct.unpack(structEndCentDir64, data)
-    if sig != magicEndCentDir64:
+            struct.unpack(structEndArchive64, data)
+    if sig != stringEndArchive64:
         return endrec
 
     # Update the original endrec using data from the ZIP64 record
@@ -215,9 +187,9 @@ def _EndRecData(fpin):
     # file if this is the case).
     fpin.seek(-sizeEndCentDir, 2)
     data = fpin.read()
-    if data[0:4] == magicEndCentDir and data[-2:] == "\000\000":
+    if data[0:4] == stringEndArchive and data[-2:] == "\000\000":
         # the signature is correct and there's no comment, unpack structure
-        endrec = struct.unpack(structEndCentDir, data)
+        endrec = struct.unpack(structEndArchive, data)
         endrec=list(endrec)
 
         # Append a blank comment and record start offset
@@ -239,11 +211,11 @@ def _EndRecData(fpin):
     maxCommentStart = max(filesize - (1 << 16) - sizeEndCentDir, 0)
     fpin.seek(maxCommentStart, 0)
     data = fpin.read()
-    start = data.rfind(magicEndCentDir)
+    start = data.rfind(stringEndArchive)
     if start >= 0:
         # found the magic number; attempt to unpack and interpret
         recData = data[start:start+sizeEndCentDir]
-        endrec = list(struct.unpack(structEndCentDir, recData))
+        endrec = list(struct.unpack(structEndArchive, recData))
         comment = data[start+sizeEndCentDir:]
         # check that comment length is correct
         if endrec[_ECD_COMMENT_SIZE] == len(comment):
@@ -350,7 +322,7 @@ class ZipInfo (object):
             self.create_version = max(45, self.extract_version)
 
         filename, flag_bits = self._encodeFilenameFlags()
-        header = struct.pack(structFileHeader, magicFileHeader,
+        header = struct.pack(structFileHeader, stringFileHeader,
                  self.extract_version, self.reserved, flag_bits,
                  self.compress_type, dostime, dosdate, CRC,
                  compress_size, file_size,
@@ -779,7 +751,7 @@ class ZipFile:
         total = 0
         while total < size_cd:
             centdir = fp.read(sizeCentralDir)
-            if centdir[0:4] != magicCentralDir:
+            if centdir[0:4] != stringCentralDir:
                 raise BadZipfile, "Bad magic number for central directory"
             centdir = struct.unpack(structCentralDir, centdir)
             if self.debug > 2:
@@ -885,7 +857,7 @@ class ZipFile:
 
         # Skip the file header:
         fheader = zef_file.read(sizeFileHeader)
-        if fheader[0:4] != magicFileHeader:
+        if fheader[0:4] != stringFileHeader:
             raise BadZipfile, "Bad magic number for file header"
 
         fheader = struct.unpack(structFileHeader, fheader)
@@ -1173,7 +1145,7 @@ class ZipFile:
                 try:
                     filename, flag_bits = zinfo._encodeFilenameFlags()
                     centdir = struct.pack(structCentralDir,
-                     magicCentralDir, create_version,
+                     stringCentralDir, create_version,
                      zinfo.create_system, extract_version, zinfo.reserved,
                      flag_bits, zinfo.compress_type, dostime, dosdate,
                      zinfo.CRC, compress_size, file_size,
@@ -1201,13 +1173,13 @@ class ZipFile:
             if pos1 > ZIP64_LIMIT:
                 # Need to write the ZIP64 end-of-archive records
                 zip64endrec = struct.pack(
-                        structEndCentDir64, magicEndCentDir64,
+                        structEndArchive64, stringEndArchive64,
                         44, 45, 45, 0, 0, count, count, pos2 - pos1, pos1)
                 self.fp.write(zip64endrec)
 
                 zip64locrec = struct.pack(
-                        structEndCentDir64Locator,
-                        magicEndCentDir64Locator, 0, pos2, 1)
+                        structEndArchive64Locator,
+                        stringEndArchive64Locator, 0, pos2, 1)
                 self.fp.write(zip64locrec)
                 centDirOffset = 0xFFFFFFFF
 
@@ -1218,7 +1190,7 @@ class ZipFile:
                           % ZIP_MAX_COMMENT
                 self.comment = self.comment[:ZIP_MAX_COMMENT]
 
-            endrec = struct.pack(structEndCentDir, magicEndCentDir,
+            endrec = struct.pack(structEndArchive, stringEndArchive,
                                  0, 0, count % ZIP_FILECOUNT_LIMIT,
                                  count % ZIP_FILECOUNT_LIMIT, pos2 - pos1,
                                  centDirOffset, len(self.comment))
