@@ -177,7 +177,7 @@ class TracebackFormatTests(unittest.TestCase):
         banner, location, source_line = tb_lines
         self.assert_(banner.startswith('Traceback'))
         self.assert_(location.startswith('  File'))
-        self.assert_(source_line.startswith('raise'))
+        self.assert_(source_line.startswith('    raise'))
 
 
 def test_main():
