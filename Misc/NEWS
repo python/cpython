@@ -70,10 +70,6 @@ Library
 - Issue #2885 (partial): The urllib.urlopen() function has been deprecated for
   removal in Python 3.0 in favor of urllib2.urlopen().
 
-- Issue #2885 (partial): lib2to3 has been updated to handle the renaming of the
-  urllib module in Python 3.0 to urllib.request, urllib.parse, and
-  urllib.error.
-
 - Issue #2113: Fix error in subprocess.Popen if the select system call is
   interrupted by a signal.
 
