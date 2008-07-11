@@ -256,7 +256,6 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
     Py_XDECREF(name);
 
     /* Print "  source_line\n" */
-    PyFile_WriteString("  ", f_stderr);
     if (sourceline) {
         char *source_line_str = PyString_AS_STRING(sourceline);
         while (*source_line_str == ' ' || *source_line_str == '\t' ||
@@ -267,7 +266,8 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
         PyFile_WriteString("\n", f_stderr);
     }
     else
-        Py_DisplaySourceLine(f_stderr, PyString_AS_STRING(filename), lineno);
+        _Py_DisplaySourceLine(f_stderr, PyString_AS_STRING(filename), 
+                              lineno, 2);
     PyErr_Clear();
 }
 
