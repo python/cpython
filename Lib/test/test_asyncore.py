@@ -39,7 +39,7 @@ class exitingdummy:
         raise asyncore.ExitNow()
 
     handle_write_event = handle_read_event
-    handle_close_event = handle_read_event
+    handle_close = handle_read_event
     handle_expt_event = handle_read_event
 
 class crashingdummy:
@@ -50,7 +50,7 @@ class crashingdummy:
         raise Exception()
 
     handle_write_event = handle_read_event
-    handle_close_event = handle_read_event
+    handle_close = handle_read_event
     handle_expt_event = handle_read_event
 
     def handle_error(self):
@@ -129,7 +129,7 @@ class HelperFunctionTests(unittest.TestCase):
                 def handle_write_event(self):
                     self.write = True
 
-                def handle_close_event(self):
+                def handle_close(self):
                     self.closed = True
 
                 def handle_expt_event(self):
