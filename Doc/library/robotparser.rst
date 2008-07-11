@@ -13,6 +13,12 @@
    single: World Wide Web
    single: URL
    single: robots.txt
+   
+.. note::
+   The :mod:`robotparser` module has been renamed :mod:`urllib.robotparser` in
+   Python 3.0.
+   The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to 3.0.
 
 This module provides a single class, :class:`RobotFileParser`, which answers
 questions about whether or not a particular user agent can fetch a URL on the
