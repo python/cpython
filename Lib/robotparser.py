@@ -55,11 +55,8 @@ class RobotFileParser:
         """Reads the robots.txt URL and feeds it to the parser."""
         opener = URLopener()
         f = opener.open(self.url)
-        lines = []
-        line = f.readline()
-        while line:
-            lines.append(line.strip())
-            line = f.readline()
+        lines = [line.strip() for line in f]
+        f.close()
         self.errcode = opener.errcode
         if self.errcode in (401, 403):
             self.disallow_all = True
@@ -84,7 +81,7 @@ class RobotFileParser:
         entry = Entry()
 
         for line in lines:
-            linenumber = linenumber + 1
+            linenumber += 1
             if not line:
                 if state == 1:
                     entry = Entry()
