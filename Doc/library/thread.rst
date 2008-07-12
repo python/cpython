@@ -7,7 +7,7 @@
 .. note::
    The :mod:`thread` module has been renamed to :mod:`_thread` in Python 3.0.
    The :term:`2to3` tool will automatically adapt imports when converting your
-   sources to 3.0; however, you should consider using the high-lever
+   sources to 3.0; however, you should consider using the high-level
    :mod:`threading` module instead.
 
 
