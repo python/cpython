@@ -16,7 +16,7 @@
 
 * To document when incompatible changes were introduced, and when they will be
   --- or were --- made mandatory.  This is a form of executable documentation, and
-  can be inspected programatically via importing :mod:`__future__` and examining
+  can be inspected programmatically via importing :mod:`__future__` and examining
   its contents.
 
 Each statement in :file:`__future__.py` is of the form::

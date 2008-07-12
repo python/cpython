@@ -188,7 +188,7 @@ of your Python installation directory).  This suppresses the terminal window on
 startup.
 
 You can also make all ``.py`` scripts execute with :program:`pythonw.exe`,
-setting this through the usual facilites, for example (might require
+setting this through the usual facilities, for example (might require
 administrative rights):
 
 #. Launch a command prompt.
@@ -217,7 +217,7 @@ PyWin32
 
 The `PyWin32 <http://python.net/crew/mhammond/win32/>`_ module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
-utilites for:
+utilities for:
 
 * `Component Object Model <http://www.microsoft.com/com/>`_ (COM)
 * Win32 API calls

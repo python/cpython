@@ -529,7 +529,7 @@ PEP 371: The ``multiprocessing`` Package
 .. XXX I think this still needs help
 
 :mod:`multiprocessing` makes it easy to distribute work over multiple processes.
-Its API is similiar to that of :mod:`threading`.  For example::
+Its API is similar to that of :mod:`threading`.  For example::
 
     from multiprocessing import Process
 

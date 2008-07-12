@@ -23,7 +23,7 @@ C++.
 
    This chapter mentions a number of filenames that include an encoded Python
    version number.  These filenames are represented with the version number shown
-   as ``XY``; in practive, ``'X'`` will be the major version number and ``'Y'``
+   as ``XY``; in practice, ``'X'`` will be the major version number and ``'Y'``
    will be the minor version number of the Python release you're working with.  For
    example, if you are using Python 2.2.1, ``XY`` will actually be ``22``.
 

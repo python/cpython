@@ -108,7 +108,7 @@ This is a re-implementation of hierarchical module import.
 This code is intended to be read, not executed.  However, it does work
 -- all you need to do to enable it is "import knee".
 
-(The name is a pun on the klunkier predecessor of this module, "ni".)
+(The name is a pun on the clunkier predecessor of this module, "ni".)
 
 ::
 

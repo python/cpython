@@ -293,7 +293,7 @@ Then the outer replacement field would be evaluated, producing::
 
    "noses     "
    
-Which is subsitituted into the string, yielding::
+Which is substituted into the string, yielding::
    
    "A man with two noses     "
    
