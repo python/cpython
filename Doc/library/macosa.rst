@@ -6,10 +6,10 @@ MacPython OSA Modules
 *********************
 
 This chapter describes the current implementation of the Open Scripting
-Architecure (OSA, also commonly referred to as AppleScript) for Python, allowing
-you to control scriptable applications from your Python program, and with a
-fairly pythonic interface. Development on this set of modules has stopped, and a
-replacement is expected for Python 2.5.
+Architecture (OSA, also commonly referred to as AppleScript) for Python,
+allowing you to control scriptable applications from your Python program,
+and with a fairly pythonic interface. Development on this set of modules has
+stopped, and a replacement is expected for Python 2.5.
 
 For a description of the various components of AppleScript and OSA, and to get
 an understanding of the architecture and terminology, you should read Apple's

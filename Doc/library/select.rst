@@ -338,7 +338,7 @@ http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    +---------------------------+---------------------------------------------+
    | :const:`KQ_EV_DISABLE`    | Disablesevent                               |
    +---------------------------+---------------------------------------------+
-   | :const:`KQ_EV_ONESHOT`    | Removes event after first occurence         |
+   | :const:`KQ_EV_ONESHOT`    | Removes event after first occurrence        |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_EV_CLEAR`      | Reset the state after an event is retrieved |
    +---------------------------+---------------------------------------------+
@@ -373,7 +373,7 @@ http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    +============================+============================================+
    | :const:`KQ_NOTE_DELETE`    | *unlink()* was called                      |
    +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_WRITE`     | a write occured                            |
+   | :const:`KQ_NOTE_WRITE`     | a write occurred                           |
    +----------------------------+--------------------------------------------+
    | :const:`KQ_NOTE_EXTEND`    | the file was extended                      |
    +----------------------------+--------------------------------------------+

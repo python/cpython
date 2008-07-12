@@ -1389,7 +1389,7 @@ There are several built-in functions that are no longer essential to learn, know
 or use in modern Python programming.  They have been kept here to maintain
 backwards compatibility with programs written for older versions of Python.
 
-Python programmers, trainers, students and bookwriters should feel free to
+Python programmers, trainers, students and book writers should feel free to
 bypass these functions without concerns about missing something important.
 
 

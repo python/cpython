@@ -379,7 +379,7 @@ The client code for the preceding server::
    try:
        proxy.add(2, 5)
    except xmlrpclib.Fault, err:
-       print "A fault occured"
+       print "A fault occurred"
        print "Fault code: %d" % err.faultCode
        print "Fault string: %s" % err.faultString
 
@@ -426,7 +426,7 @@ by providing an invalid URI::
    try:
        proxy.some_method()
    except xmlrpclib.ProtocolError, err:
-       print "A protocol error occured"
+       print "A protocol error occurred"
        print "URL: %s" % err.url
        print "HTTP/HTTPS headers: %s" % err.headers
        print "Error code: %d" % err.errcode

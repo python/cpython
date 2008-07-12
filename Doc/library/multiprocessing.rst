@@ -160,7 +160,7 @@ However, if you really do need to use some shared data then
 
    The ``'d'`` and ``'i'`` arguments used when creating ``num`` and ``arr`` are
    typecodes of the kind used by the :mod:`array` module: ``'d'`` indicates a
-   double precision float and ``'i'`` inidicates a signed integer.  These shared
+   double precision float and ``'i'`` indicates a signed integer.  These shared
    objects will be process and thread safe.
 
    For more flexibility in using shared memory one can use the
@@ -784,7 +784,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    A bounded semaphore object: a clone of :class:`threading.BoundedSemaphore`.
 
-   (On Mac OSX this is indistiguishable from :class:`Semaphore` because
+   (On Mac OSX this is indistinguishable from :class:`Semaphore` because
    ``sem_getvalue()`` is not implemented on that platform).
 
 .. class:: Condition([lock])
@@ -893,8 +893,8 @@ processes.
 
 .. note::
 
-   Although it is posible to store a pointer in shared memory remember that this
-   will refer to a location in the address space of a specific process.
+   Although it is possible to store a pointer in shared memory remember that
+   this will refer to a location in the address space of a specific process.
    However, the pointer is quite likely to be invalid in the context of a second
    process and trying to dereference the pointer from the second process may
    cause a crash.
@@ -1776,7 +1776,7 @@ handler type) for messages from different processes to get mixed up.
    handler which sends output to :data:`sys.stderr` using format
    ``'[%(levelname)s/%(processName)s] %(message)s'``.  (The logger allows use of
    the non-standard ``'%(processName)s'`` format.)  Message sent to this logger
-   will not by default propogate to the root logger.
+   will not by default propagate to the root logger.
 
    Note that on Windows child processes will only inherit the level of the
    parent process's logger -- any other customization of the logger will not be
