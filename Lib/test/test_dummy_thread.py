@@ -60,6 +60,7 @@ class LockTests(unittest.TestCase):
         #Make sure that an unconditional locking returns True.
         self.failUnless(self.lock.acquire(1) is True,
                         "Unconditional locking did not return True.")
+        self.failUnless(self.lock.acquire() is True)
 
     def test_uncond_acquire_blocking(self):
         #Make sure that unconditional acquiring of a locked lock blocks.

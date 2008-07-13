@@ -10,7 +10,6 @@ What's New in Python 2.6 beta 2?
 Core and Builtins
 -----------------
 
-
 - Issue #2517: Allow unicode messages in Exceptions again by correctly
   bypassing the instance dictionary when looking up __unicode__ on
   new-style classes.
@@ -40,6 +39,8 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #3339: dummy_thread.acquire() should not return None.
 
 - Issue #3285: Fractions from_float() and from_decimal() accept Integral arguments.
 
