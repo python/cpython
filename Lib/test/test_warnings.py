@@ -487,6 +487,47 @@ class CWarningsDisplayTests(BaseTest, WarningsDisplayTests):
 class PyWarningsDisplayTests(BaseTest, WarningsDisplayTests):
     module = py_warnings
 
+class WarningsSupportTests(object):
+    """Test the warning tools from test support module"""
+
+    def test_catch_warning_restore(self):
+        wmod = self.module
+        orig_filters = wmod.filters
+        orig_showwarning = wmod.showwarning
+        with support.catch_warning(wmod):
+            wmod.filters = wmod.showwarning = object()
+        self.assert_(wmod.filters is orig_filters)
+        self.assert_(wmod.showwarning is orig_showwarning)
+        with support.catch_warning(wmod, record=False):
+            wmod.filters = wmod.showwarning = object()
+        self.assert_(wmod.filters is orig_filters)
+        self.assert_(wmod.showwarning is orig_showwarning)
+
+    def test_catch_warning_recording(self):
+        wmod = self.module
+        with support.catch_warning(wmod) as w:
+            self.assertEqual(w.warnings, [])
+            wmod.simplefilter("always")
+            wmod.warn("foo")
+            self.assertEqual(str(w.message), "foo")
+            wmod.warn("bar")
+            self.assertEqual(str(w.message), "bar")
+            self.assertEqual(str(w.warnings[0].message), "foo")
+            self.assertEqual(str(w.warnings[1].message), "bar")
+            w.reset()
+            self.assertEqual(w.warnings, [])
+        orig_showwarning = wmod.showwarning
+        with support.catch_warning(wmod, record=False) as w:
+            self.assert_(w is None)
+            self.assert_(wmod.showwarning is orig_showwarning)
+
+
+class CWarningsSupportTests(BaseTest, WarningsSupportTests):
+    module = c_warnings
+
+class PyWarningsSupportTests(BaseTest, WarningsSupportTests):
+    module = py_warnings
+
 
 def test_main():
     py_warnings.onceregistry.clear()
@@ -498,6 +539,7 @@ def test_main():
                                 CWCmdLineTests, PyWCmdLineTests,
                                 _WarningsTests,
                                 CWarningsDisplayTests, PyWarningsDisplayTests,
+                                CWarningsSupportTests, PyWarningsSupportTests,
                              )
 
 
