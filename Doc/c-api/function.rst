@@ -93,3 +93,5 @@ There are a few functions specific to Python functions.
 
    Set the annotations for the function object *op*. *annotations*
    must be a dictionary or *Py_None*.
+
+   Raises :exc:`SystemError` and returns ``-1`` on failure.
