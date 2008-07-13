@@ -1,6 +1,6 @@
 /* cursor.c - the cursor type
  *
- * Copyright (C) 2004-2007 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2007 Gerhard HÃ¤ring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -529,7 +529,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         }
         rc = pysqlite_statement_create(self->statement, self->connection, operation);
         if (rc != SQLITE_OK) {
-            self->statement = 0;
+            Py_CLEAR(self->statement);
             goto error;
         }
     }
@@ -602,7 +602,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         }
         rc = pysqlite_statement_create(self->statement, self->connection, operation);
         if (rc != SQLITE_OK) {
-            self->statement = 0;
+            Py_CLEAR(self->statement);
             goto error;
         }
     }
@@ -711,8 +711,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             self->next_row = _pysqlite_fetch_one_row(self);
         } else if (rc == SQLITE_DONE && !multiple) {
             pysqlite_statement_reset(self->statement);
-            Py_DECREF(self->statement);
-            self->statement = 0;
+            Py_CLEAR(self->statement);
         }
 
         switch (statement_type) {
@@ -1013,8 +1012,7 @@ PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
 
     if (self->statement) {
         (void)pysqlite_statement_reset(self->statement);
-        Py_DECREF(self->statement);
-        self->statement = 0;
+        Py_CLEAR(self->statement);
     }
 
     Py_INCREF(Py_None);
