@@ -82,6 +82,14 @@ Library
   redundant ":443" port number designation when the connection is using the
   default https port (443).
 
+Tests
+-----
+
+- test.test_support.catch_warning now keeps track of all warnings it sees
+  and is now better documented. Explicit unit tests for this context manager
+  have been added to test_warnings.
+
+
 Build
 -----
 

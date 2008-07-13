@@ -291,19 +291,34 @@ The :mod:`test.test_support` module defines the following functions:
    This will run all tests defined in the named module.
 
 
-.. function:: catch_warning(record=True)
+.. function:: catch_warning(module=warnings, record=True)
 
    Return a context manager that guards the warnings filter from being
-   permanently changed and records the data of the last warning that has been
-   issued. The ``record`` argument specifies whether any raised warnings are
-   captured by the object returned by :func:`warnings.catch_warning` or allowed
-   to propagate as normal.
+   permanently changed and optionally alters the :func:`showwarning`
+   function to record the details of any warnings that are issued in the
+   managed context. Details of the most recent call to :func:`showwarning`
+   are saved directly on the context manager, while details of previous
+   warnings can be retrieved from the ``warnings`` list.
 
-   The context manager is typically used like this::
+   The context manager is used like this::
 
       with catch_warning() as w:
+          warnings.simplefilter("always")
           warnings.warn("foo")
-          assert str(w.message) == "foo"
+          assert w.last == "foo"
+          warnings.warn("bar")
+          assert w.last == "bar"
+          assert str(w.warnings[0].message) == "foo"
+          assert str(w.warnings[1].message) == "bar"
+
+   By default, the real :mod:`warnings` module is affected - the ability
+   to select a different module is provided for the benefit of the
+   :mod:`warnings` module's  own unit tests.
+   The ``record`` argument specifies whether or not the :func:`showwarning`
+   function is replaced. Note that recording the warnings in this fashion
+   also prevents them from being written to sys.stderr. If set to ``False``,
+   the standard handling of warning messages is left in place (however, the
+   original handling is still restored at the end of the block).
 
    .. versionadded:: 2.6
 
@@ -334,8 +349,6 @@ The :mod:`test.test_support` module defines the following classes:
    attributes on the exception is :exc:`ResourceDenied` raised.
 
    .. versionadded:: 2.6
-
-
 .. class:: EnvironmentVarGuard()
 
    Class used to temporarily set or unset environment variables.  Instances can be
@@ -352,3 +365,5 @@ The :mod:`test.test_support` module defines the following classes:
 .. method:: EnvironmentVarGuard.unset(envvar)
 
    Temporarily unset the environment variable ``envvar``.
+
+

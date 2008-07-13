@@ -383,36 +383,49 @@ def open_urlresource(url):
 
 
 class WarningMessage(object):
-    "Holds the result of the latest showwarning() call"
-    def __init__(self):
-        self.message = None
-        self.category = None
-        self.filename = None
-        self.lineno = None
-
-    def _showwarning(self, message, category, filename, lineno, file=None,
-                        line=None):
-        self.message = message
-        self.category = category
-        self.filename = filename
-        self.lineno = lineno
-        self.line = line
-
-    def reset(self):
-        self._showwarning(*((None,)*6))
+    "Holds the result of a single showwarning() call"
+    _WARNING_DETAILS = "message category filename lineno line".split()
+    def __init__(self, message, category, filename, lineno, line=None):
+        for attr in self._WARNING_DETAILS:
+            setattr(self, attr, locals()[attr])
+        self._category_name = category.__name__ if category else None
 
     def __str__(self):
         return ("{message : %r, category : %r, filename : %r, lineno : %s, "
-                    "line : %r}" % (self.message,
-                            self.category.__name__ if self.category else None,
-                            self.filename, self.lineno, self.line))
+                    "line : %r}" % (self.message, self._category_name,
+                                    self.filename, self.lineno, self.line))
 
+class WarningRecorder(object):
+    "Records the result of any showwarning calls"
+    def __init__(self):
+        self.warnings = []
+        self._set_last(None)
+
+    def _showwarning(self, message, category, filename, lineno,
+                    file=None, line=None):
+        wm = WarningMessage(message, category, filename, lineno, line)
+        self.warnings.append(wm)
+        self._set_last(wm)
+
+    def _set_last(self, last_warning):
+        if last_warning is None:
+            for attr in WarningMessage._WARNING_DETAILS:
+                setattr(self, attr, None)
+        else:
+            for attr in WarningMessage._WARNING_DETAILS:
+                setattr(self, attr, getattr(last_warning, attr))
+
+    def reset(self):
+        self.warnings = []
+        self._set_last(None)
+
+    def __str__(self):
+        return '[%s]' % (', '.join(map(str, self.warnings)))
 
 @contextlib.contextmanager
 def catch_warning(module=warnings, record=True):
-    """
-    Guard the warnings filter from being permanently changed and record the
-    data of the last warning that has been issued.
+    """Guard the warnings filter from being permanently changed and
+    optionally record the details of any warnings that are issued.
 
     Use like this:
 
@@ -420,13 +433,17 @@ def catch_warning(module=warnings, record=True):
             warnings.warn("foo")
             assert str(w.message) == "foo"
     """
-    original_filters = module.filters[:]
+    original_filters = module.filters
     original_showwarning = module.showwarning
     if record:
-        warning_obj = WarningMessage()
-        module.showwarning = warning_obj._showwarning
+        recorder = WarningRecorder()
+        module.showwarning = recorder._showwarning
+    else:
+        recorder = None
     try:
-        yield warning_obj if record else None
+        # Replace the filters with a copy of the original
+        module.filters = module.filters[:]
+        yield recorder
     finally:
         module.showwarning = original_showwarning
         module.filters = original_filters
@@ -436,7 +453,7 @@ class CleanImport(object):
     """Context manager to force import to return a new module reference.
 
     This is useful for testing module-level behaviours, such as
-    the emission of a DepreciationWarning on import.
+    the emission of a DeprecationWarning on import.
 
     Use like this:
 
