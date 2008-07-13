@@ -36,13 +36,6 @@ if sys.version_info >= (3, 0):
 else:
     latin = str
 
-try:
-    bytes
-except NameError:
-    bytes = str
-    def bytearray(seq):
-        return array.array('c', seq)
-
 #
 # Constants
 #
