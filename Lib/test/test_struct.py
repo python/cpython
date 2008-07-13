@@ -35,12 +35,9 @@ def with_warning_restore(func):
     @wraps(func)
     def decorator(*args, **kw):
         with catch_warning():
-            # Grrr, we need this function to warn every time.  Without removing
-            # the warningregistry, running test_tarfile then test_struct would fail
-            # on 64-bit platforms.
-            globals = func.func_globals
-            if '__warningregistry__' in globals:
-                del globals['__warningregistry__']
+            # We need this function to warn every time, so stick an
+            # unqualifed 'always' at the head of the filter list
+            warnings.simplefilter("always")
             warnings.filterwarnings("error", category=DeprecationWarning)
             return func(*args, **kw)
     return decorator
@@ -53,7 +50,7 @@ def deprecated_err(func, *args):
         pass
     except DeprecationWarning:
         if not PY_STRUCT_OVERFLOW_MASKING:
-            raise TestFailed, "%s%s expected to raise struct.error" % (
+            raise TestFailed, "%s%s expected to raise DeprecationWarning" % (
                 func.__name__, args)
     else:
         raise TestFailed, "%s%s did not raise error" % (
