@@ -30,11 +30,8 @@ from multiprocessing import util
 #
 #
 
-if sys.version_info >= (3, 0):
-    def latin(s):
-        return s.encode('latin')
-else:
-    latin = str
+def latin(s):
+    return s.encode('latin')
 
 #
 # Constants
