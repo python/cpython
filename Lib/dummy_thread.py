@@ -107,18 +107,15 @@ class LockType(object):
         aren't triggered and throw a little fit.
 
         """
-        if waitflag is None:
+        if waitflag is None or waitflag:
             self.locked_status = True
-            return None
-        elif not waitflag:
+            return True
+        else:
             if not self.locked_status:
                 self.locked_status = True
                 return True
             else:
                 return False
-        else:
-            self.locked_status = True
-            return True
 
     __enter__ = acquire
 
