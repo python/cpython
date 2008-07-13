@@ -1,5 +1,3 @@
-from test.test_support import TESTFN, run_unittest, catch_warning
-
 import unittest
 import os
 import random
@@ -7,7 +5,7 @@ import shutil
 import sys
 import py_compile
 import warnings
-from test.test_support import unlink, TESTFN, unload
+from test.test_support import unlink, TESTFN, unload, run_unittest, catch_warning
 
 
 def remove_files(name):
@@ -265,6 +263,38 @@ class RelativeImport(unittest.TestCase):
         # This will import * from .test_import.
         from . import relimport
         self.assertTrue(hasattr(relimport, "RelativeImport"))
+
+    def test_issue3221(self):
+        def check_absolute():
+            exec "from os import path" in ns
+        def check_relative():
+            exec "from . import relimport" in ns
+        # Check both OK with __package__ and __name__ correct
+        ns = dict(__package__='test', __name__='test.notarealmodule')
+        check_absolute()
+        check_relative()
+        # Check both OK with only __name__ wrong
+        ns = dict(__package__='test', __name__='notarealpkg.notarealmodule')
+        check_absolute()
+        check_relative()
+        # Check relative fails with only __package__ wrong
+        ns = dict(__package__='foo', __name__='test.notarealmodule')
+        with catch_warning() as w:
+            check_absolute()
+            self.assert_('foo' in str(w.message))
+            self.assertEqual(w.category, RuntimeWarning)
+        self.assertRaises(SystemError, check_relative)
+        # Check relative fails with __package__ and __name__ wrong
+        ns = dict(__package__='foo', __name__='notarealpkg.notarealmodule')
+        with catch_warning() as w:
+            check_absolute()
+            self.assert_('foo' in str(w.message))
+            self.assertEqual(w.category, RuntimeWarning)
+        self.assertRaises(SystemError, check_relative)
+        # Check both fail with package set to a non-string
+        ns = dict(__package__=object())
+        self.assertRaises(ValueError, check_absolute)
+        self.assertRaises(ValueError, check_relative)
 
 def test_main(verbose=None):
     run_unittest(ImportTest, PathsTests, RelativeImport)
