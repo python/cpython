@@ -59,6 +59,9 @@ Core and builtins
 Library
 -------
 
+- Issue #3339: dummy_thread.acquire() could return None which is not a valid
+  return value.
+
 - Issue #3116 and #1792:  Fix quadratic behavior in marshal.dumps().
 
 - Issue #2682: ctypes callback functions no longer contain a cyclic
