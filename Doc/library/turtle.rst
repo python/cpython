@@ -2,6 +2,10 @@
 :mod:`turtle` --- Turtle graphics for Tk
 ========================================
 
+.. module:: turtle
+   :synopsis: Turtle graphics for Tk
+.. sectionauthor:: Gregor Lingl <gregor.lingl@aon.at>
+
 Introduction
 ============
 
