@@ -304,9 +304,6 @@ typedef struct PicklerObject {
     PyObject *arg;
     int proto;                  /* Pickle protocol number, >= 0 */
     int bin;                    /* Boolean, true if proto > 0 */
-    int nesting;                /* Current nesting level, this is to guard
-                                   save() from going into infinite recursion
-                                   and segfaulting. */
     int buf_size;               /* Size of the current buffered pickle data */
     char *write_buf;            /* Write buffer, this is to avoid calling the
                                    write() method of the output stream too
@@ -2075,12 +2072,8 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     PyObject *memo_key = NULL;
     int status = 0;
 
-    /* XXX: Use Py_EnterRecursiveCall()? */
-    if (++self->nesting > Py_GetRecursionLimit()) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "maximum recursion depth exceeded");
-        goto error;
-    }
+    if (Py_EnterRecursiveCall(" while pickling an object") < 0)
+        return -1;
 
     /* The extra pers_save argument is necessary to avoid calling save_pers()
        on its returned object. */
@@ -2273,7 +2266,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         status = -1;
     }
   done:
-    self->nesting--;
+    Py_LeaveRecursiveCall();
     Py_XDECREF(memo_key);
     Py_XDECREF(reduce_func);
     Py_XDECREF(reduce_value);
@@ -2440,7 +2433,6 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
 	self->proto = proto;
 	self->bin = proto > 0;
 	self->arg = NULL;
-    self->nesting = 0;
 	self->fast = 0;
 	self->fast_nesting = 0;
 	self->fast_memo = NULL;
