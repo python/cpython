@@ -305,9 +305,9 @@ The :mod:`test.test_support` module defines the following functions:
       with catch_warning() as w:
           warnings.simplefilter("always")
           warnings.warn("foo")
-          assert w.last == "foo"
+          assert str(w.message) == "foo"
           warnings.warn("bar")
-          assert w.last == "bar"
+          assert str(w.message) == "bar"
           assert str(w.warnings[0].message) == "foo"
           assert str(w.warnings[1].message) == "bar"
 
