@@ -51,7 +51,7 @@
 
 This article explains the new features in Python 2.6.  The release
 schedule is described in :pep:`361`; currently the final release is
-scheduled for September 3 2008.
+scheduled for October 1 2008.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
@@ -1770,21 +1770,6 @@ details.
 
   (Contributed by Raymond Hettinger.)
 
-* XXX Describe the new ctypes calling convention that allows safe
-  access to errno.
-  (Implemented by Thomas Heller; :issue:`1798`.)
-
-* The :mod:`ctypes` module now supports a :class:`c_bool` datatype
-  that represents the C99 ``bool`` type.  (Contributed by David Remahl;
-  :issue:`1649190`.)
-
-  The :mod:`ctypes` string, buffer and array types also have improved
-  support for extended slicing syntax,
-  where various combinations of ``(start, stop, step)`` are supplied.
-  (Implemented by Thomas Wouters.)
-
-  .. Revision 57769
-
 * A new method in the :mod:`curses` module: for a window, :meth:`chgat` changes
   the display characters for a  certain number of characters on a single line.
   (Contributed by Fabian Kreutz.)
@@ -2620,6 +2605,45 @@ Using the module is simple::
 
     # read/writePlist accepts file-like objects as well as paths.
     plistlib.writePlist(data_struct, sys.stdout)
+
+.. ======================================================================
+
+ctypes Enhancements
+--------------------------------------------------
+
+Thomas Heller continued to maintain and enhance the 
+:mod:`ctypes` module.  
+
+:mod:`ctypes` now supports a :class:`c_bool` datatype
+that represents the C99 ``bool`` type.  (Contributed by David Remahl;
+:issue:`1649190`.)
+
+The :mod:`ctypes` string, buffer and array types have improved
+support for extended slicing syntax,
+where various combinations of ``(start, stop, step)`` are supplied.
+(Implemented by Thomas Wouters.)
+
+.. Revision 57769
+
+A new calling convention tells :mod:`ctypes` to clear the ``errno`` or
+Win32 LastError variables at the outset of each wrapped call.
+(Implemented by Thomas Heller; :issue:`1798`.)
+
+For the Unix ``errno`` variable: when creating a wrapped function,
+you can supply ``use_errno=True`` as a keyword parameter
+to the :func:`DLL` function
+and then call the module-level methods :meth:`set_errno`
+and :meth:`get_errno` to set and retrieve the error value.  
+
+The Win32 LastError variable is supported similarly by
+the :func:`DLL`, :func:`OleDLL`, and :func:`WinDLL` functions.
+You supply ``use_last_error=True`` as a keyword parameter
+and then call the module-level methods :meth:`set_last_error`
+and :meth:`get_last_error`.  
+
+The :func:`byref` function, used to retrieve a pointer to a ctypes
+instance, now has an optional **offset** parameter that is a byte
+count that will be added to the returned pointer.
 
 .. ======================================================================
 
