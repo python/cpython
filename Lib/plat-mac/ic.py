@@ -1,7 +1,7 @@
 """IC wrapper module, based on Internet Config 1.3"""
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the ic module is removed.")
+warnpy3k("In 3.x, the ic module is removed.", stacklevel=2)
 
 import icglue
 import string

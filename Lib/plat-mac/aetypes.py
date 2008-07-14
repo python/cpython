@@ -1,7 +1,7 @@
 """aetypes - Python objects representing various AE types."""
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the aetypes module is removed.")
+warnpy3k("In 3.x, the aetypes module is removed.", stacklevel=2)
 
 from Carbon.AppleEvents import *
 import struct

@@ -1,8 +1,8 @@
 """tools for BuildApplet and BuildApplication"""
 
 import warnings
-warnings.warn("the buildtools module is deprecated and is removed in 3.0",
-              DeprecationWarning, 2)
+warnings.warnpy3k("the buildtools module is deprecated and is removed in 3.0",
+              stacklevel=2)
 
 import sys
 import os

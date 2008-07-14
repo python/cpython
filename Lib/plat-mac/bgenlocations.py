@@ -8,7 +8,7 @@
 import os
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the bgenlocations module is removed.")
+warnpy3k("In 3.x, the bgenlocations module is removed.", stacklevel=2)
 
 Error = "bgenlocations.Error"
 #

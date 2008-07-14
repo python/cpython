@@ -14,7 +14,7 @@ intention is that the end user will use this through a GUI.
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the pimp module is removed.")
+warnpy3k("In 3.x, the pimp module is removed.", stacklevel=2)
 
 import sys
 import os

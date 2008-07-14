@@ -3,7 +3,7 @@ Package generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicato
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the Netscape package is removed.")
+warnpy3k("In 3.x, the Netscape package is removed.", stacklevel=2)
 
 import aetools
 Error = aetools.Error

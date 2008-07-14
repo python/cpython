@@ -7,7 +7,7 @@ There are two classes:
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the MiniAEFrame module is removed.")
+warnpy3k("In 3.x, the MiniAEFrame module is removed.", stacklevel=2)
 
 import traceback
 import MacOS

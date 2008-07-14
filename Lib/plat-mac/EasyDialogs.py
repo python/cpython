@@ -19,7 +19,7 @@ Based upon STDWIN dialogs with the same names and functions.
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the EasyDialogs module is removed.")
+warnpy3k("In 3.x, the EasyDialogs module is removed.", stacklevel=2)
 
 from Carbon.Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
 from Carbon import Qd
