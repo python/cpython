@@ -32,6 +32,9 @@ Library
   code of every single module of the standard library, including invalid files
   used in the test suite.
 
+- All the u* variant functions and methods in gettext have been renamed to their
+  none u* siblings.
+
 C API
 -----
 
