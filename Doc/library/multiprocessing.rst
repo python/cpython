@@ -170,7 +170,7 @@ However, if you really do need to use some shared data then
 **Server process**
 
    A manager object returned by :func:`Manager` controls a server process which
-   holds python objects and allows other processes to manipulate them using
+   holds Python objects and allows other processes to manipulate them using
    proxies.
 
    A manager returned by :func:`Manager` will support types :class:`list`,
@@ -453,7 +453,7 @@ Note that one can also create a shared queue by using a manager object -- see
    This means that if you try joining that process you may get a deadlock unless
    you are sure that all items which have been put on the queue have been
    consumed.  Similarly, if the child process is non-daemonic then the parent
-   process may hang on exit when it tries to join all it non-daemonic children.
+   process may hang on exit when it tries to join all its non-daemonic children.
 
    Note that a queue created using a manager does not have this issue.  See
    :ref:`multiprocessing-programming`.
@@ -534,7 +534,8 @@ For an example of the usage of queues for interprocess communication see
       Equivalent to ``get(False)``.
 
    :class:`multiprocessing.Queue` has a few additional methods not found in
-   :class:`Queue.Queue` which are usually unnecessary:
+   :class:`Queue.Queue`.  These methods are usually unnecessary for most
+   code:
 
    .. method:: close()
 
