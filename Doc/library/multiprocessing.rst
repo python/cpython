@@ -775,7 +775,7 @@ Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generally synchronization primitives are not as necessary in a multiprocess
-program as they are in a mulithreaded program.  See the documentation for
+program as they are in a multithreaded program.  See the documentation for
 :mod:`threading` module.
 
 Note that one can also create synchronization primitives by using a manager
