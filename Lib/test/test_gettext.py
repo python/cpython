@@ -143,13 +143,13 @@ trggrkg zrffntr pngnybt yvoenel.''')
         t.install()
         eq(_('nudge nudge'), 'wink wink')
         # Try unicode return type
-        t.install(str=True)
+        t.install()
         eq(_('mullusk'), 'bacon')
         # Test installation of other methods
         import builtins
-        t.install(str=True, names=["gettext", "lgettext"])
-        eq(_, t.ugettext)
-        eq(builtins.gettext, t.ugettext)
+        t.install(names=["gettext", "lgettext"])
+        eq(_, t.gettext)
+        eq(builtins.gettext, t.gettext)
         eq(lgettext, t.lgettext)
         del builtins.gettext
         del builtins.lgettext
@@ -305,7 +305,7 @@ class UnicodeTranslationsTest(GettextBaseTest):
             self.t = gettext.GNUTranslations(fp)
         finally:
             fp.close()
-        self._ = self.t.ugettext
+        self._ = self.t.gettext
 
     def test_unicode_msgid(self):
         unless = self.failUnless
