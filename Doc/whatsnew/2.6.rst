@@ -526,28 +526,152 @@ environment variable.
 PEP 371: The ``multiprocessing`` Package
 =====================================================
 
-.. XXX I think this still needs help
+The new :mod:`multiprocessing` package lets Python programs create new
+processes that will perform a computation and return a result to the
+parent.  The parent and child processes can communicate using queues
+and pipes, synchronize their operations using locks and semaphores, 
+and can share simple arrays of data.  
 
-:mod:`multiprocessing` makes it easy to distribute work over multiple processes.
-Its API is similar to that of :mod:`threading`.  For example::
+The :mod:`multiprocessing` module started out as an exact emulation of
+the :mod:`threading` module using processes instead of threads.  That
+goal was discarded along the path to Python 2.6, but the general
+approach of the module is still similar.  The fundamental class
+is the :class:`Process`, which is passed a callable object and 
+a collection of arguments.  The :meth:`start` method 
+sets the callable running in a subprocess, after which you can call
+the :meth:`is_alive` method to check whether the subprocess is still running
+and the :meth:`join` method to wait for the process to exit.
 
-    from multiprocessing import Process
+Here's a simple example where the subprocess will calculate a
+factorial.  The function doing the calculation is a bit strange; it's
+written to take significantly longer when the input argument is a
+multiple of 4.
 
-    def long_hard_task(n):
-        print n * 43
+::
 
-    for i in range(10):
-        Process(target=long_hard_task, args=(i)).start()
+    import time
+    from multiprocessing import Process, Queue
 
-will multiply the numbers between 0 and 10 times 43 and print out the result
-concurrently.
+
+    def factorial(queue, N):
+	"Compute a factorial."
+	# If N is a multiple of 4, this function will take much longer.
+	if (N % 4) == 0:
+	    time.sleep(.05 * N/4)
+
+	# Calculate the result
+	fact = 1L
+	for i in range(1, N+1):
+	    fact = fact * i
+
+	# Put the result on the queue
+	queue.put(fact)
+
+    if __name__ == '__main__':
+	queue = Queue()
+
+	N = 5
+
+	p = Process(target=factorial, args=(queue, N))
+	p.start()
+	p.join()
+
+	result = queue.get()
+	print 'Factorial', N, '=', result
+
+A :class:`Queue` object is created and stored as a global.  The child
+process will use the value of the variable when the child was created;
+because it's a :class:`Queue`, parent and child can use the object to
+communicate.  (If the parent were to change the value of the global
+variable, the child's value would be unaffected, and vice versa.)
+
+Two other classes, :class:`Pool` and :class:`Manager`, provide
+higher-level interfaces.  :class:`Pool` will create a fixed number of
+worker processes, and requests can then be distributed to the workers
+by calling :meth:`apply` or `apply_async`, adding a single request,
+and :meth:`map` or :meth:`map_async` to distribute a number of
+requests.  The following code uses a :class:`Pool` to spread requests
+across 5 worker processes, receiving a list of results back.
+
+::
+
+   from multiprocessing import Pool
+
+    p = Pool(5)
+    result = p.map(factorial, range(1, 1000, 10))
+    for v in result:
+        print v
+
+This produces the following output::
+
+    1
+    39916800
+    51090942171709440000
+    8222838654177922817725562880000000
+    33452526613163807108170062053440751665152000000000
+    ...
+
+The :class:`Manager` class creates a separate server process that can
+hold master copies of Python data structures.  Other processes can
+then access and modify these data structures by using proxy objects.
+The following example creates a shared dictionary by calling the
+:meth:`dict` method; the worker processes then insert values into the
+dictionary.  (No locking is done automatically, which doesn't matter
+in this example.  :class:`Manager`'s methods also include
+:meth:`Lock`, :meth:`RLock`, and :meth:`Semaphore` to create shared locks.
+
+::
+
+    import time
+    from multiprocessing import Pool, Manager
+
+    def factorial(N, dictionary):
+	"Compute a factorial."
+	# Calculate the result
+	fact = 1L
+	for i in range(1, N+1):
+	    fact = fact * i
+
+        # Store result in dictionary
+	dictionary[N] = fact
+
+    if __name__ == '__main__':
+	p = Pool(5)
+	mgr = Manager()
+	d = mgr.dict()         # Create shared dictionary
+
+	# Run tasks using the pool
+	for N in range(1, 1000, 10):
+	    p.apply_async(factorial, (N, d))
+
+	# Mark pool as closed -- no more tasks can be added.
+	p.close()
+
+	# Wait for tasks to exit
+	p.join()
+
+	# Output results
+	for k, v in sorted(d.items()):
+	    print k, v
+
+This will produce the output::
+
+    1 1
+    11 39916800
+    21 51090942171709440000
+    31 8222838654177922817725562880000000
+    41 33452526613163807108170062053440751665152000000000
+    51 1551118753287382280224243016469303211063259720016986112000000000000
 
 .. seealso::
+
+   The documentation for the :mod:`multiprocessing` module.
 
    :pep:`371` - Addition of the multiprocessing package
      PEP written by Jesse Noller and Richard Oudkerk; 
      implemented by Richard Oudkerk and Jesse Noller.
 
+    
 .. ======================================================================
 
 .. _pep-3101:
