@@ -1944,6 +1944,18 @@ done:
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
+static PyObject *
+set_sizeof(PySetObject *so)
+{
+	Py_ssize_t res;
+
+	res = sizeof(PySetObject);
+	if (so->table != so->smalltable)
+		res = res + (so->mask + 1) * sizeof(setentry);
+	return PyLong_FromSsize_t(res);
+}
+
+PyDoc_STRVAR(sizeof_doc, "S.__sizeof__() -> size of S in memory, in bytes");
 static int
 set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
@@ -2011,6 +2023,8 @@ static PyMethodDef set_methods[] = {
 	 reduce_doc},
 	{"remove",	(PyCFunction)set_remove,	METH_O,
 	 remove_doc},
+	{"__sizeof__",	(PyCFunction)set_sizeof,	METH_NOARGS,
+	 sizeof_doc},
 	{"symmetric_difference",(PyCFunction)set_symmetric_difference,	METH_O,
 	 symmetric_difference_doc},
 	{"symmetric_difference_update",(PyCFunction)set_symmetric_difference_update,	METH_O,
@@ -2127,6 +2141,8 @@ static PyMethodDef frozenset_methods[] = {
 	 issuperset_doc},
 	{"__reduce__",	(PyCFunction)set_reduce,	METH_NOARGS,
 	 reduce_doc},
+	{"__sizeof__",	(PyCFunction)set_sizeof,	METH_NOARGS,
+	 sizeof_doc},
 	{"symmetric_difference",(PyCFunction)set_symmetric_difference,	METH_O,
 	 symmetric_difference_doc},
 	{"union",	(PyCFunction)set_union,		METH_VARARGS,

@@ -3638,9 +3638,7 @@ long_sizeof(PyLongObject *v)
 {
 	Py_ssize_t res;
 
-	res = sizeof(PyLongObject) + abs(Py_SIZE(v)) * sizeof(digit);
-        if (Py_SIZE(v) != 0)
-		res -=  sizeof(digit);
+	res = sizeof(PyVarObject) + abs(Py_SIZE(v))*sizeof(digit);
 	return PyLong_FromSsize_t(res);
 }
 

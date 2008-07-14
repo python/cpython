@@ -3033,6 +3033,19 @@ bytes_reduce(PyByteArrayObject *self)
     return Py_BuildValue("(O(Ns)N)", Py_TYPE(self), latin1, "latin-1", dict);
 }
 
+PyDoc_STRVAR(sizeof_doc,
+"B.__sizeof__() -> int\n\
+ \n\
+Returns the size of B in memory, in bytes");
+static PyObject *
+bytes_sizeof(PyByteArrayObject *self)
+{
+	Py_ssize_t res;
+
+	res = sizeof(PyByteArrayObject) + self->ob_alloc * sizeof(char);
+	return PyLong_FromSsize_t(res);
+}
+
 static PySequenceMethods bytes_as_sequence = {
     (lenfunc)bytes_length,              /* sq_length */
     (binaryfunc)PyByteArray_Concat,         /* sq_concat */
@@ -3061,6 +3074,7 @@ static PyMethodDef
 bytes_methods[] = {
     {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
     {"__reduce__", (PyCFunction)bytes_reduce, METH_NOARGS, reduce_doc},
+    {"__sizeof__", (PyCFunction)bytes_sizeof, METH_NOARGS, sizeof_doc},
     {"append", (PyCFunction)bytes_append, METH_O, append__doc__},
     {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
