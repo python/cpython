@@ -16,7 +16,7 @@ Mostly written by erik@letterror.com
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the findertools module is removed.")
+warnpy3k("In 3.x, the findertools module is removed.", stacklevel=2)
 
 import Finder
 from Carbon import AppleEvents

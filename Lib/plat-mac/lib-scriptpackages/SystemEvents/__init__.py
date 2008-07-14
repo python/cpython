@@ -3,7 +3,7 @@ Package generated from /System/Library/CoreServices/System Events.app
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the SystemEvents package is removed.")
+warnpy3k("In 3.x, the SystemEvents package is removed.", stacklevel=2)
 
 import aetools
 Error = aetools.Error

@@ -6,7 +6,7 @@ in the Standard suite.
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the _builtinSuites module is removed.")
+warnpy3k("In 3.x, the _builtinSuites module is removed.", stacklevel=2)
 
 import aetools
 import builtin_Suite

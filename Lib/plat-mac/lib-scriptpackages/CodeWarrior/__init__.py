@@ -3,7 +3,7 @@ Package generated from /Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarri
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the CodeWarrior package is removed.")
+warnpy3k("In 3.x, the CodeWarrior package is removed.", stacklevel=2)
 
 import aetools
 Error = aetools.Error

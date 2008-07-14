@@ -7,7 +7,7 @@ Reading and understanding this code is left as an exercise to the reader.
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the gensuitemodule module is removed.")
+warnpy3k("In 3.x, the gensuitemodule module is removed.", stacklevel=2)
 
 import MacOS
 import EasyDialogs

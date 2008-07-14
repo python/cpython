@@ -3,7 +3,7 @@ Package generated from /Applications/Utilities/Terminal.app
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the Terminal module is removed.")
+warnpy3k("In 3.x, the Terminal module is removed.", stacklevel=2)
 
 import aetools
 Error = aetools.Error

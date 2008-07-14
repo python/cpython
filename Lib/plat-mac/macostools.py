@@ -5,7 +5,7 @@ copy(src, dst) - Full copy of 'src' to 'dst'
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the macostools module is removed.")
+warnpy3k("In 3.x, the macostools module is removed.", stacklevel=2)
 
 from Carbon import Res
 from Carbon import File, Files

@@ -13,7 +13,7 @@ coerce(x, wanted_sample) coerces a python object to another python object
 #
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the aepack module is removed.")
+warnpy3k("In 3.x, the aepack module is removed.", stacklevel=2)
 
 import struct
 import types

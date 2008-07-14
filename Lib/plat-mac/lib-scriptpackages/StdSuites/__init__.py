@@ -4,7 +4,7 @@ Resource aeut resid 0 Standard Event Suites for English
 """
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the StdSuites package is removed.")
+warnpy3k("In 3.x, the StdSuites package is removed.", stacklevel=2)
 
 import aetools
 Error = aetools.Error

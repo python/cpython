@@ -15,7 +15,7 @@ with a decent input/output window.
 #
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, the terminalcommand module is removed.")
+warnpy3k("In 3.x, the terminalcommand module is removed.", stacklevel=2)
 
 import time
 import os

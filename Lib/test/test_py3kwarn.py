@@ -4,6 +4,8 @@ from test.test_support import (catch_warning, CleanImport,
                                TestSkipped, run_unittest)
 import warnings
 
+from contextlib import nested
+
 if not sys.py3kwarning:
     raise TestSkipped('%s must be run with the -3 flag' % __name__)
 
@@ -193,7 +195,7 @@ class TestStdlibRemovals(unittest.TestCase):
                                       'Explorer', 'Finder', 'Netscape',
                                       'StdSuites', 'SystemEvents', 'Terminal',
                                       'cfmfile', 'bundlebuilder', 'buildtools',
-                                      'ColorPicker'),
+                                      'ColorPicker', 'Audio_mac'),
                            'sunos5' : ('sunaudiodev', 'SUNAUDIODEV'),
                           }
     optional_modules = ('bsddb185', 'Canvas', 'dl', 'linuxaudiodev', 'imageop',
@@ -202,23 +204,22 @@ class TestStdlibRemovals(unittest.TestCase):
     def check_removal(self, module_name, optional=False):
         """Make sure the specified module, when imported, raises a
         DeprecationWarning and specifies itself in the message."""
-        with CleanImport(module_name):
-            with catch_warning(record=False):
-                warnings.filterwarnings("error", ".+ removed",
-                                        DeprecationWarning)
-                try:
-                    __import__(module_name, level=0)
-                except DeprecationWarning as exc:
-                    self.assert_(module_name in exc.args[0],
-                                 "%s warning didn't contain module name"
-                                 % module_name)
-                except ImportError:
-                    if not optional:
-                        self.fail("Non-optional module {0} raised an "
-                                  "ImportError.".format(module_name))
-                else:
-                    self.fail("DeprecationWarning not raised for {0}"
-                                .format(module_name))
+        with nested(CleanImport(module_name), catch_warning(record=False)):
+            warnings.filterwarnings("error", ".+ removed",
+                                    DeprecationWarning, __name__)
+            try:
+                __import__(module_name, level=0)
+            except DeprecationWarning as exc:
+                self.assert_(module_name in exc.args[0],
+                             "%s warning didn't contain module name"
+                             % module_name)
+            except ImportError:
+                if not optional:
+                    self.fail("Non-optional module {0} raised an "
+                              "ImportError.".format(module_name))
+            else:
+                self.fail("DeprecationWarning not raised for {0}"
+                            .format(module_name))
 
     def test_platform_independent_removals(self):
         # Make sure that the modules that are available on all platforms raise
