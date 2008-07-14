@@ -373,6 +373,9 @@ class SysModuleTest(unittest.TestCase):
 
 class SizeofTest(unittest.TestCase):
 
+    TPFLAGS_HAVE_GC = 1<<14
+    TPFLAGS_HEAPTYPE = 1<<9
+
     def setUp(self):
         self.c = len(struct.pack('c', ' '))
         self.H = len(struct.pack('H', 0))
@@ -382,22 +385,27 @@ class SizeofTest(unittest.TestCase):
         # due to missing size_t information from struct, it is assumed that
         # sizeof(Py_ssize_t) = sizeof(void*)
         self.header = 'PP'
+        self.vheader = self.header + 'P'
         if hasattr(sys, "gettotalrefcount"):
             self.header += '2P'
+            self.vheader += '2P'
+        import _testcapi
+        self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
         self.file = open(test.support.TESTFN, 'wb')
 
     def tearDown(self):
         self.file.close()
         test.support.unlink(test.support.TESTFN)
 
-    def check_sizeof(self, o, size, size2=None):
-        """Check size of o. Possible are size and optionally size2)."""
+    def check_sizeof(self, o, size):
         result = sys.getsizeof(o)
-        msg = 'wrong size for %s: got %d, expected ' % (type(o), result)
-        if (size2 != None) and (result != size):
-            self.assertEqual(result, size2, msg + str(size2))
-        else:
-            self.assertEqual(result, size, msg + str(size))
+        # add GC header size
+        if ((type(o) == type) and (o.__flags__ & self.TPFLAGS_HEAPTYPE) or\
+           ((type(o) != type) and (type(o).__flags__ & self.TPFLAGS_HAVE_GC))):
+            size += self.gc_headsize
+        msg = 'wrong size for %s: got %d, expected %d' \
+              % (type(o), result, size)
+        self.assertEqual(result, size, msg)
 
     def calcsize(self, fmt):
         """Wrapper around struct.calcsize which enforces the alignment of the
@@ -408,29 +416,116 @@ class SizeofTest(unittest.TestCase):
         """
         return struct.calcsize(fmt + '0P')
 
-    def test_standardtypes(self):
+    def test_gc_head_size(self):
+        # Check that the gc header size is added to objects tracked by the gc.
         h = self.header
+        vh = self.vheader
         size = self.calcsize
+        gc_header_size = self.gc_headsize
+        # bool objects are not gc tracked
+        self.assertEqual(sys.getsizeof(True), size(vh) + self.H)
+        # but lists are
+        self.assertEqual(sys.getsizeof([]), size(vh + 'PP') + gc_header_size)
+
+    def test_default(self):
+        h = self.header
+        vh = self.vheader
+        size = self.calcsize
+        self.assertEqual(sys.getsizeof(True), size(vh) + self.H)
+        self.assertEqual(sys.getsizeof(True, -1), size(vh) + self.H)
+
+    def test_objecttypes(self):
+        # check all types defined in Objects/
+        h = self.header
+        vh = self.vheader
+        size = self.calcsize
+        check = self.check_sizeof
+        # bool
+        check(True, size(vh) + self.H)
+        # buffer
+        # XXX
+        # builtin_function_or_method
+        check(len, size(h + '3P'))
+        # bytearray
+        samples = [b'', b'u'*100000]
+        for sample in samples:
+            x = bytearray(sample)
+            check(x, size(vh + 'iPP') + x.__alloc__() * self.c)
+        # bytearray_iterator
+        check(iter(bytearray()), size(h + 'PP'))
         # cell
         def get_cell():
             x = 42
             def inner():
                 return x
             return inner
-        self.check_sizeof(get_cell().__closure__[0], size(h + 'P'))
+        check(get_cell().__closure__[0], size(h + 'P'))
         # code
-        self.check_sizeof(get_cell().__code__, size(h + '5i8Pi2P'))
+        check(get_cell().__code__, size(h + '5i8Pi2P'))
         # complex
-        self.check_sizeof(complex(0,1), size(h + '2d'))
+        check(complex(0,1), size(h + '2d'))
+        # method_descriptor (descriptor object)
+        check(str.lower, size(h + '2PP'))
+        # classmethod_descriptor (descriptor object)
+        # XXX
+        # member_descriptor (descriptor object)
+        import datetime
+        check(datetime.timedelta.days, size(h + '2PP'))
+        # getset_descriptor (descriptor object)
+        import collections
+        check(collections.defaultdict.default_factory, size(h + '2PP'))
+        # wrapper_descriptor (descriptor object)
+        check(int.__add__, size(h + '2P2P'))
+        # method-wrapper (descriptor object)
+        check({}.__iter__, size(h + '2P'))
+        # dict
+        check({}, size(h + '3P2P' + 8*'P2P'))
+        longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
+        check(longdict, size(h + '3P2P' + 8*'P2P') + 16*size('P2P'))
+        # dictionary-keyiterator
+        check({}.keys(), size(h + 'P'))
+        # dictionary-valueiterator
+        check({}.values(), size(h + 'P'))
+        # dictionary-itemiterator
+        check({}.items(), size(h + 'P'))
+        # dictproxy
+        class C(object): pass
+        check(C.__dict__, size(h + 'P'))
+        # BaseException
+        check(BaseException(), size(h + '5P'))
+        # UnicodeEncodeError
+        check(UnicodeEncodeError("", "", 0, 0, ""), size(h + '5P 2P2PP'))
+        # UnicodeDecodeError
+        # XXX
+#        check(UnicodeDecodeError("", "", 0, 0, ""), size(h + '5P2PP'))
+        # UnicodeTranslateError
+        check(UnicodeTranslateError("", 0, 1, ""), size(h + '5P 2P2PP'))
+        # ellipses
+        check(Ellipsis, size(h + ''))
+        # EncodingMap
+        import codecs, encodings.iso8859_3
+        x = codecs.charmap_build(encodings.iso8859_3.decoding_table)
+        check(x, size(h + '32B2iB'))
         # enumerate
-        self.check_sizeof(enumerate([]), size(h + 'l3P'))
+        check(enumerate([]), size(h + 'l3P'))
         # reverse
-        self.check_sizeof(reversed(''), size(h + 'PP'))
+        check(reversed(''), size(h + 'PP'))
         # float
-        self.check_sizeof(float(0), size(h + 'd'))
+        check(float(0), size(h + 'd'))
+        # sys.floatinfo
+        check(sys.float_info, size(vh) + self.P * len(sys.float_info))
+        # frame
+        import inspect
+        CO_MAXBLOCKS = 20
+        x = inspect.currentframe()
+        ncells = len(x.f_code.co_cellvars)
+        nfrees = len(x.f_code.co_freevars)
+        extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
+                  ncells + nfrees - 1
+        check(x, size(vh + '12P3i' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
-        self.check_sizeof(func, size(h + '11P'))
+        check(func, size(h + '11P'))
         class c():
             @staticmethod
             def foo():
@@ -439,40 +534,99 @@ class SizeofTest(unittest.TestCase):
             def bar(cls):
                 pass
             # staticmethod
-            self.check_sizeof(foo, size(h + 'P'))
+            check(foo, size(h + 'P'))
             # classmethod
-            self.check_sizeof(bar, size(h + 'P'))
+            check(bar, size(h + 'P'))
         # generator
         def get_gen(): yield 1
-        self.check_sizeof(get_gen(), size(h + 'Pi2P'))
-        # builtin_function_or_method
-        self.check_sizeof(abs, size(h + '3P'))
+        check(get_gen(), size(h + 'Pi2P'))
+        # iterator
+        check(iter('abc'), size(h + 'lP'))
+        # callable-iterator
+        import re
+        check(re.finditer('',''), size(h + '2P'))
+        # list
+        samples = [[], [1,2,3], ['1', '2', '3']]
+        for sample in samples:
+            check(sample, size(vh + 'PP') + len(sample)*self.P)
+        # sortwrapper (list)
+        # XXX
+        # cmpwrapper (list)
+        # XXX
+        # listiterator (list)
+        check(iter([]), size(h + 'lP'))
+        # listreverseiterator (list)
+        check(reversed([]), size(h + 'lP'))
+        # long
+        check(0, size(vh))
+        check(1, size(vh) + self.H)
+        check(-1, size(vh) + self.H)
+        check(32768, size(vh) + 2*self.H)
+        check(32768*32768-1, size(vh) + 2*self.H)
+        check(32768*32768, size(vh) + 3*self.H)
+        # memory
+        check(memoryview(b''), size(h + 'P P2P2i5P'))
         # module
-        self.check_sizeof(unittest, size(h + '3P'))
+        check(unittest, size(h + '3P'))
+        # None
+        check(None, size(h + ''))
+        # NotImplementedType
+        check(NotImplemented, size(h))
+        # object
+        check(object(), size(h + ''))
+        # property (descriptor object)
+        class C(object):
+            def getx(self): return self.__x
+            def setx(self, value): self.__x = value
+            def delx(self): del self.__x
+            x = property(getx, setx, delx, "")
+            check(x, size(h + '4Pi'))
+        # PyCObject
+        # XXX
+        # rangeiterator
+        check(iter(range(1)), size(h + '4l'))
+        # reverse
+        check(reversed(''), size(h + 'PP'))
         # range
-        self.check_sizeof(range(1), size(h + '3P'))
+        check(range(1), size(h + '3P'))
+        check(range(66000), size(h + '3l'))
+        # set
+        # frozenset
+        PySet_MINSIZE = 8
+        samples = [[], range(10), range(50)]
+        s = size(h + '3P2P' + PySet_MINSIZE*'lP' + 'lP')
+        for sample in samples:
+            minused = len(sample)
+            if minused == 0: tmp = 1
+            # the computation of minused is actually a bit more complicated
+            # but this suffices for the sizeof test
+            minused = minused*2
+            newsize = PySet_MINSIZE
+            while newsize <= minused:
+                newsize = newsize << 1
+            if newsize <= 8:
+                check(set(sample), s)
+                check(frozenset(sample), s)
+            else:
+                check(set(sample), s + newsize*struct.calcsize('lP'))
+                check(frozenset(sample), s + newsize*struct.calcsize('lP'))
+        # setiterator
+        check(iter(set()), size(h + 'P3P'))
         # slice
-        self.check_sizeof(slice(0), size(h + '3P'))
-
-        h += 'P'
-        # bool
-        self.check_sizeof(True, size(h + 'H'))
-        # new-style class
-        class class_newstyle(object):
-            def method():
-                pass
-        # type (PyTypeObject + PyNumberMethods + PyMappingMethods +
-        #       PySequenceMethods + PyBufferProcs)
-        self.check_sizeof(class_newstyle, size(h + 'P2P15Pl4PP9PP11PI') +\
-                                          size('16Pi17P 3P 10P 2P 2P'))
-
-    def test_specialtypes(self):
-        h = self.header
-        size = self.calcsize
-        # dict
-        self.check_sizeof({}, size(h + '3P2P') + 8*size('P2P'))
-        longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        self.check_sizeof(longdict, size(h + '3P2P') + (8+16)*size('P2P'))
+        check(slice(0), size(h + '3P'))
+        # super
+        check(super(int), size(h + '3P'))
+        # tuple
+        check((), size(vh))
+        check((1,2,3), size(vh) + 3*self.P)
+        # type
+        # (PyTypeObject + PyNumberMethods + PyMappingMethods +
+        #  PySequenceMethods + PyBufferProcs)
+        s = size(vh + 'P2P15Pl4PP9PP11PI') + size('16Pi17P 3P 10P 2P 2P')
+        check(int, s)
+        # class
+        class newstyleclass(object): pass
+        check(newstyleclass, s)
         # unicode
         usize = len('\0'.encode('unicode-internal'))
         samples = ['', '1'*100]
@@ -480,31 +634,38 @@ class SizeofTest(unittest.TestCase):
         # has been cached
         for s in samples:
             basicsize =  size(h + 'PPliP') + usize * (len(s) + 1)
-            defenc = bytes(s, 'ascii')
-            self.check_sizeof(s, basicsize,
-                              size2=basicsize + sys.getsizeof(defenc))
-            # trigger caching encoded version as bytes object
-            try:
-                getattr(sys, s)
-            except AttributeError:
-                pass
-            finally:
-                self.check_sizeof(s, basicsize + sys.getsizeof(defenc))
+            check(s, basicsize)
+        # weakref
+        import weakref
+        check(weakref.ref(int), size(h + '2Pl2P'))
+        # weakproxy
+        # XXX
+        # weakcallableproxy
+        check(weakref.proxy(int), size(h + '2Pl2P'))
 
-        h += 'P'
-        # list
-        self.check_sizeof([], size(h + 'PP'))
-        self.check_sizeof([1, 2, 3], size(h + 'PP') + 3*self.P)
-        # long
-        self.check_sizeof(0, size(h + 'H'))
-        self.check_sizeof(1, size(h + 'H'))
-        self.check_sizeof(-1, size(h + 'H'))
-        self.check_sizeof(32768, size(h + 'H') + self.H)
-        self.check_sizeof(32768*32768-1, size(h + 'H') + self.H)
-        self.check_sizeof(32768*32768, size(h + 'H') + 2*self.H)
-        # tuple
-        self.check_sizeof((), size(h))
-        self.check_sizeof((1,2,3), size(h) + 3*self.P)
+    def test_pythontypes(self):
+        # check all types defined in Python/
+        h = self.header
+        vh = self.vheader
+        size = self.calcsize
+        check = self.check_sizeof
+        # _ast.AST
+        import _ast
+        check(_ast.AST(), size(h + ''))
+        # imp.NullImporter
+        import imp
+        check(imp.NullImporter(self.file.name), size(h + ''))
+        try:
+            raise TypeError
+        except TypeError:
+            tb = sys.exc_info()[2]
+            # traceback
+            if tb != None:
+                check(tb, size(h + '2P2i'))
+        # symtable entry
+        # XXX
+        # sys.flags
+        check(sys.flags, size(vh) + self.P * len(sys.flags))
 
 
 def test_main():
