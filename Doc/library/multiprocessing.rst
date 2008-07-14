@@ -1084,7 +1084,7 @@ their parent process exits.  The manager classes are defined in the
 
       Start a subprocess to start the manager.
 
-   .. method:: server_forever()
+   .. method:: serve_forever()
 
       Run the server in the current process.
 
