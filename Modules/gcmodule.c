@@ -9,9 +9,14 @@
   Eric Tiedemann, and various others.
 
   http://www.arctrix.com/nas/python/gc/
-  http://www.python.org/pipermail/python-dev/2000-March/003869.html
-  http://www.python.org/pipermail/python-dev/2000-March/004010.html
-  http://www.python.org/pipermail/python-dev/2000-March/004022.html
+
+  The following mailing list threads provide a historical perspective on
+  the design of this module.  Note that a fair amount of refinement has
+  occurred since those discussions.
+
+  http://mail.python.org/pipermail/python-dev/2000-March/002385.html
+  http://mail.python.org/pipermail/python-dev/2000-March/002434.html
+  http://mail.python.org/pipermail/python-dev/2000-March/002497.html
 
   For a highlevel view of the collection process, read the collect
   function.
