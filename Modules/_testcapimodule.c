@@ -951,6 +951,26 @@ traceback_print(PyObject *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+/* To test the format of exceptions as printed out. */
+static PyObject *
+exception_print(PyObject *self, PyObject *args)
+{
+	PyObject *value;
+	PyObject *tb;
+
+	if (!PyArg_ParseTuple(args, "O:exception_print",
+				&value))
+		return NULL;
+
+	tb = PyException_GetTraceback(value);
+	PyErr_Display((PyObject *) Py_TYPE(value), value, tb);
+	Py_XDECREF(tb);
+
+	Py_RETURN_NONE;
+}
+
+
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
@@ -995,6 +1015,7 @@ static PyMethodDef TestMethods[] = {
 	{"profile_int",		profile_int,			METH_NOARGS},
 #endif
 	{"traceback_print", traceback_print, 	         METH_VARARGS},
+	{"exception_print", exception_print, 	         METH_VARARGS},
 	{NULL, NULL} /* sentinel */
 };
 

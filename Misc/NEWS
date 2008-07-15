@@ -22,6 +22,8 @@ Core and Builtins
 
 - Issue #3236: Return small longs from PyLong_FromString.
 
+- Exception tracebacks now support exception chaining.
+
 Library
 -------
 
@@ -34,6 +36,8 @@ Library
 
 - All the u* variant functions and methods in gettext have been renamed to their
   none u* siblings.
+
+- The traceback module has been expanded to handle chained exceptions.
 
 C API
 -----
