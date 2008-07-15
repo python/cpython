@@ -700,6 +700,10 @@ class UnicodeTest(
         self.assertRaises(ValueError, format, "", "-")
         self.assertRaises(ValueError, "{0:=s}".format, '')
 
+        # Alternate formatting is not supported
+        self.assertRaises(ValueError, format, '', '#')
+        self.assertRaises(ValueError, format, '', '#20')
+
     def test_formatting(self):
         string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
         # Testing Unicode formatting strings...
