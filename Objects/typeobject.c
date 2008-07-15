@@ -3648,27 +3648,6 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 		type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
 }
 
-static char *hash_name_op[] = {
-	"__eq__",
-	"__cmp__",
-	"__hash__",
-	NULL
-};
-
-static int
-overrides_hash(PyTypeObject *type)
-{
-	char **p;
-	PyObject *dict = type->tp_dict;
-
-	assert(dict != NULL);
-	for (p = hash_name_op; *p; p++) {
-		if (PyDict_GetItemString(dict, *p) != NULL)
-			return 1;
-	}
-	return 0;
-}
-
 static void
 inherit_slots(PyTypeObject *type, PyTypeObject *base)
 {
@@ -3802,8 +3781,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE) {
 		if (type->tp_compare == NULL &&
 		    type->tp_richcompare == NULL &&
-		    type->tp_hash == NULL &&
-		    !overrides_hash(type))
+		    type->tp_hash == NULL)
 		{
 			type->tp_compare = base->tp_compare;
 			type->tp_richcompare = base->tp_richcompare;
@@ -3982,18 +3960,6 @@ PyType_Ready(PyTypeObject *type)
 			PyDict_SetItemString(type->tp_dict,
 					     "__doc__", Py_None);
 		}
-	}
-
-	/* Hack for tp_hash and __hash__.
-	   If after all that, tp_hash is still NULL, and __hash__ is not in
-	   tp_dict, set tp_dict['__hash__'] equal to None.
-	   This signals that __hash__ is not inherited.
-	*/
-	if (type->tp_hash == NULL &&
-	    PyDict_GetItemString(type->tp_dict, "__hash__") == NULL &&
-	    PyDict_SetItemString(type->tp_dict, "__hash__", Py_None) < 0)
-	{
-		goto error;
 	}
 
 	/* Some more special stuff */
@@ -5280,10 +5246,8 @@ slot_tp_hash(PyObject *self)
 			func = lookup_method(self, "__cmp__", &cmp_str);
 		}
 		if (func != NULL) {
-			PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
-				     self->ob_type->tp_name);
 			Py_DECREF(func);
-			return -1;
+			return PyObject_HashNotImplemented(self);
 		}
 		PyErr_Clear();
 		h = _Py_HashPointer((void *)self);
@@ -6034,6 +5998,13 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 			   sanity checks.  I'll buy the first person to
 			   point out a bug in this reasoning a beer. */
 		}
+		else if (descr == Py_None &&
+			 strcmp(p->name, "__hash__") == 0) {
+			/* We specifically allow __hash__ to be set to None
+			   to prevent inheritance of the default
+			   implementation from object.__hash__ */
+			specific = PyObject_HashNotImplemented;
+		}
 		else {
 			use_generic = 1;
 			generic = p->function;
@@ -6247,12 +6218,21 @@ add_operators(PyTypeObject *type)
 			continue;
 		if (PyDict_GetItem(dict, p->name_strobj))
 			continue;
-		descr = PyDescr_NewWrapper(type, p, *ptr);
-		if (descr == NULL)
-			return -1;
-		if (PyDict_SetItem(dict, p->name_strobj, descr) < 0)
-			return -1;
-		Py_DECREF(descr);
+		if (*ptr == PyObject_HashNotImplemented) {
+			/* Classes may prevent the inheritance of the tp_hash
+			   slot by storing PyObject_HashNotImplemented in it. Make it
+ 			   visible as a None value for the __hash__ attribute. */
+			if (PyDict_SetItem(dict, p->name_strobj, Py_None) < 0)
+				return -1;
+		}
+		else {
+			descr = PyDescr_NewWrapper(type, p, *ptr);
+			if (descr == NULL)
+				return -1;
+			if (PyDict_SetItem(dict, p->name_strobj, descr) < 0)
+				return -1;
+			Py_DECREF(descr);
+		}
 	}
 	if (type->tp_new != NULL) {
 		if (add_tp_new_wrapper(type) < 0)

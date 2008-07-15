@@ -608,13 +608,6 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 	return 0;
 }
 
-static long
-deque_nohash(PyObject *self)
-{
-	PyErr_SetString(PyExc_TypeError, "deque objects are unhashable");
-	return -1;
-}
-
 static PyObject *
 deque_copy(PyObject *deque)
 {
@@ -917,7 +910,7 @@ static PyTypeObject deque_type = {
 	0,				/* tp_as_number */
 	&deque_as_sequence,		/* tp_as_sequence */
 	0,				/* tp_as_mapping */
-	deque_nohash,			/* tp_hash */
+	(hashfunc)PyObject_HashNotImplemented,	/* tp_hash */
 	0,				/* tp_call */
 	0,				/* tp_str */
 	PyObject_GenericGetAttr,	/* tp_getattro */
