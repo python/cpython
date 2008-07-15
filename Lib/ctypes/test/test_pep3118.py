@@ -12,6 +12,8 @@ else:
 def normalize(format):
     # Remove current endian specifier and white space from a format
     # string
+    if format is None:
+        return ""
     format = format.replace(OTHER_ENDIAN, THIS_ENDIAN)
     return re.sub(r"\s", "", format)
 
@@ -84,6 +86,14 @@ class EmptyStruct(Structure):
 class aUnion(Union):
     _fields_ = [("a", c_int)]
 
+class Incomplete(Structure):
+    pass
+
+class Complete(Structure):
+    pass
+PComplete = POINTER(Complete)
+Complete._fields_ = [("a", c_int)]
+
 ################################################################
 #
 # This table contains format strings as they look on little endian
@@ -140,6 +150,16 @@ native_types = [
     (EmptyStruct,               "T{}",                  None,           EmptyStruct),
     # the pep does't support unions
     (aUnion,                    "B",                    None,           aUnion),
+
+    ## pointer to incomplete structure
+    (Incomplete,                "B",                    None,           Incomplete),
+    (POINTER(Incomplete),       "&B",                   None,           POINTER(Incomplete)),
+
+    # 'Complete' is a structure that starts incomplete, but is completed after the
+    # pointer type to it has been created.
+    (Complete,                  "T{<l:a:}",             None,           Complete),
+    # Unfortunately the pointer format string is not fixed...
+    (POINTER(Complete),         "&B",                   None,           POINTER(Complete)),
 
     ## other
 

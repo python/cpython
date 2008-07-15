@@ -353,6 +353,11 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 	}
 	Py_DECREF(result->tp_dict);
 	result->tp_dict = (PyObject *)dict;
+	dict->format = alloc_format_string(NULL, "B");
+	if (dict->format == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
 
 	dict->paramfunc = StructUnionType_paramfunc;
 
@@ -871,7 +876,13 @@ PointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (proto) {
 		StgDictObject *itemdict = PyType_stgdict(proto);
 		assert(itemdict);
-		stgdict->format = alloc_format_string("&", itemdict->format);
+		/* If itemdict->format is NULL, then this is a pointer to an
+		   incomplete type.  We create a generic format string
+		   'pointer to bytes' in this case.  XXX Better would be to
+		   fix the format string later...
+		*/
+		stgdict->format = alloc_format_string("&",
+			      itemdict->format ? itemdict->format : "B");
 		if (stgdict->format == NULL) {
 			Py_DECREF((PyObject *)stgdict);
 			return NULL;
