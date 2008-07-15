@@ -781,17 +781,22 @@ finally:
 #endif
 }
 
+long
+PyObject_HashNotImplemented(PyObject *v)
+{
+	PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
+		     Py_TYPE(v)->tp_name);
+	return -1;
+}
 
 long
 PyObject_Hash(PyObject *v)
 {
-	PyTypeObject *tp = v->ob_type;
+	PyTypeObject *tp = Py_TYPE(v);
 	if (tp->tp_hash != NULL)
 		return (*tp->tp_hash)(v);
 	/* Otherwise, the object can't be hashed */
-	PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
-		     v->ob_type->tp_name);
-	return -1;
+	return PyObject_HashNotImplemented(v);
 }
 
 PyObject *

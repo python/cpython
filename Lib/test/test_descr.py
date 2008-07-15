@@ -3070,12 +3070,20 @@ order (MRO) for bases """
         self.assertEqual(hash(d), 144)
         D.__hash__ = lambda self: 100
         self.assertEqual(hash(d), 100)
+        D.__hash__ = None
+        self.assertRaises(TypeError, hash, d)
         del D.__hash__
         self.assertEqual(hash(d), 144)
+        B.__hash__ = None
+        self.assertRaises(TypeError, hash, d)
         del B.__hash__
         self.assertEqual(hash(d), 314)
+        C.__hash__ = None
+        self.assertRaises(TypeError, hash, d)
         del C.__hash__
         self.assertEqual(hash(d), 42)
+        A.__hash__ = None
+        self.assertRaises(TypeError, hash, d)
         del A.__hash__
         self.assertEqual(hash(d), orig_hash)
         d.foo = 42
