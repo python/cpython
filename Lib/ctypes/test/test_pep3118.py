@@ -92,7 +92,7 @@ class Incomplete(Structure):
 class Complete(Structure):
     pass
 PComplete = POINTER(Complete)
-Complete._fields_ = [("a", c_int)]
+Complete._fields_ = [("a", c_long)]
 
 ################################################################
 #
