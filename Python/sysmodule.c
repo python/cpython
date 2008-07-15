@@ -990,7 +990,7 @@ excepthook -- called to handle any uncaught exception other than SystemExit\n\
   To customize printing in an interactive session or to install a custom\n\
   top-level exception handler, assign other functions to replace these.\n\
 \n\
-stdin -- standard input file object; used by raw_input() and input()\n\
+stdin -- standard input file object; used by input()\n\
 stdout -- standard output file object; used by print()\n\
 stderr -- standard error object; used for error messages\n\
   By assigning other file objects (or objects that behave like files)\n\
