@@ -150,8 +150,10 @@ class MutableString(UserString, collections.MutableSequence):
         warnpy3k('the class UserString.MutableString has been removed in '
                     'Python 3.0', stacklevel=2)
         self.data = string
-    def __hash__(self):
-        raise TypeError, "unhashable type (it is mutable)"
+
+    # We inherit object.__hash__, so we must deny this explicitly
+    __hash__ = None
+
     def __setitem__(self, index, sub):
         if isinstance(index, slice):
             if isinstance(sub, UserString):

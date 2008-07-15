@@ -1083,6 +1083,13 @@ finally:
 #endif
 }
 
+long
+PyObject_HashNotImplemented(PyObject *self)
+{
+	PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
+		     self->ob_type->tp_name);
+	return -1;
+}
 
 long
 PyObject_Hash(PyObject *v)
@@ -1094,9 +1101,7 @@ PyObject_Hash(PyObject *v)
 		return _Py_HashPointer(v); /* Use address as hash value */
 	}
 	/* If there's a cmp but no hash defined, the object can't be hashed */
-	PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
-		     v->ob_type->tp_name);
-	return -1;
+	return PyObject_HashNotImplemented(v);
 }
 
 PyObject *
