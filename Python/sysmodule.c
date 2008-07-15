@@ -616,6 +616,7 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 	static PyObject *str__sizeof__, *gc_head_size = NULL;
 	static char *kwlist[] = {"object", "default", 0};
 	PyObject *o, *dflt = NULL;
+	PyObject *method;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
 					 kwlist, &o, &dflt))
@@ -639,7 +640,7 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 	if (PyType_Ready(Py_TYPE(o)) < 0)
 		return NULL;
 	
-	PyObject *method = _PyType_Lookup(Py_TYPE(o), str__sizeof__);
+	method = _PyType_Lookup(Py_TYPE(o), str__sizeof__);
 	if (method == NULL)
 		PyErr_Format(PyExc_TypeError,
 			     "Type %.100s doesn't define __sizeof__",
