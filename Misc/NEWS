@@ -53,6 +53,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3258: Fixed a crash when a ctypes POINTER type to an
+  incomplete structure was created.
+
 - Issue #3339: dummy_thread.acquire() should not return None.
 
 - Issue #3285: Fractions from_float() and from_decimal() accept Integral arguments.
