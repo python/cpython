@@ -84,8 +84,23 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 				return;
 			value = fixed_value;
 		}
-		Py_INCREF(tstate->exc_value);
-		PyException_SetContext(value, tstate->exc_value);
+		/* Avoid reference cycles through the context chain.
+		   This is O(chain length) but context chains are
+		   usually very short. Sensitive readers may try
+		   to inline the call to PyException_GetContext. */
+		if (tstate->exc_value != value) {
+			PyObject *o = tstate->exc_value, *context;
+			while ((context = PyException_GetContext(o))) {
+				Py_DECREF(context);
+				if (context == value) {
+					PyException_SetContext(o, NULL);
+					break;
+				}
+				o = context;
+			}
+			Py_INCREF(tstate->exc_value);
+			PyException_SetContext(value, tstate->exc_value);
+		}
 	}
 	if (value != NULL && PyExceptionInstance_Check(value))
 		tb = PyException_GetTraceback(value);
@@ -160,6 +175,9 @@ PyErr_ExceptionMatches(PyObject *exc)
 
 /* Used in many places to normalize a raised exception, including in
    eval_code2(), do_raise(), and PyErr_Print()
+
+   XXX: should PyErr_NormalizeException() also call
+	    PyException_SetTraceback() with the resulting value and tb?
 */
 void
 PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)

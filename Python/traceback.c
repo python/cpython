@@ -129,7 +129,7 @@ PyTraceBack_Here(PyFrameObject *frame)
 }
 
 int
-Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno)
+Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno, int indent)
 {
 	int err = 0;
 	FILE *xfp = NULL;
@@ -139,8 +139,6 @@ Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno)
 
 	if (filename == NULL)
 		return -1;
-	/* This is needed by Emacs' compile command */
-#define FMT "  File \"%.500s\", line %d, in %.500s\n"
 	xfp = fopen(filename, "r" PY_STDIOTEXTMODE);
 	if (xfp == NULL) {
 		/* Search tail of filename in sys.path before giving up */
@@ -203,12 +201,27 @@ Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno)
 		} while (*pLastChar != '\0' && *pLastChar != '\n');
 	}
 	if (i == lineno) {
+		char buf[11];
 		char *p = linebuf;
 		while (*p == ' ' || *p == '\t' || *p == '\014')
 			p++;
-                    err = PyFile_WriteString(p, f);
-                    if (err == 0 && strchr(p, '\n') == NULL)
-                            err = PyFile_WriteString("\n", f);
+
+		/* Write some spaces before the line */
+		strcpy(buf, "          ");
+		assert (strlen(buf) == 10);
+		while (indent > 0) {
+			if(indent < 10)
+				buf[indent] = '\0';
+			err = PyFile_WriteString(buf, f);
+			if (err != 0)
+				break;
+			indent -= 10;
+		}
+
+		if (err == 0)
+			err = PyFile_WriteString(p, f);
+		if (err == 0 && strchr(p, '\n') == NULL)
+			err = PyFile_WriteString("\n", f);
 	}
 	fclose(xfp);
 	return err;
@@ -228,7 +241,7 @@ tb_displayline(PyObject *f, const char *filename, int lineno, const char *name)
 	err = PyFile_WriteString(linebuf, f);
 	if (err != 0)
 		return err;
-        return Py_DisplaySourceLine(f, filename, lineno);
+        return Py_DisplaySourceLine(f, filename, lineno, 4);
 }
 
 static int

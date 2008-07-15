@@ -278,6 +278,30 @@ class TestContext(unittest.TestCase):
         else:
             self.fail("No exception raised")
 
+    def test_cycle_broken(self):
+        # Self-cycles (when re-raising a caught exception) are broken
+        try:
+            try:
+                1/0
+            except ZeroDivisionError as e:
+                raise e
+        except ZeroDivisionError as e:
+            self.failUnless(e.__context__ is None, e.__context__)
+
+    def test_reraise_cycle_broken(self):
+        # Non-trivial context cycles (through re-raising a previous exception)
+        # are broken too.
+        try:
+            try:
+                xyzzy
+            except NameError as a:
+                try:
+                    1/0
+                except ZeroDivisionError:
+                    raise a
+        except NameError as e:
+            self.failUnless(e.__context__.__context__ is None)
+
 
 class TestRemovedFunctionality(unittest.TestCase):
     def test_tuples(self):
