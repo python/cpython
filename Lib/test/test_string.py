@@ -192,6 +192,10 @@ class ModuleTest(unittest.TestCase):
         self.assertRaises(ValueError, fmt.format, "{0}", 10, 20, i=100)
         self.assertRaises(ValueError, fmt.format, "{i}", 10, 20, i=100)
 
+        # Alternate formatting is not supported
+        self.assertRaises(ValueError, format, '', '#')
+        self.assertRaises(ValueError, format, '', '#20')
+
 class BytesAliasTest(unittest.TestCase):
 
     def test_builtin(self):
