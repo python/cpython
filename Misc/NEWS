@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3313: Fixed a crash when a failed dlopen() call does not set
+  a valid dlerror() message.
+
 - Issue #3258: Fixed a crash when a ctypes POINTER type to an
   incomplete structure was created.
 

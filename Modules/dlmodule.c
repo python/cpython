@@ -186,7 +186,10 @@ dl_open(PyObject *self, PyObject *args)
 	}
 	handle = dlopen(name, mode);
 	if (handle == NULL) {
-		PyErr_SetString(Dlerror, dlerror());
+		char *errmsg = dlerror();
+		if (!errmsg)
+			errmsg = "dlopen() error";
+		PyErr_SetString(Dlerror, errmsg);
 		return NULL;
 	}
 #ifdef __VMS
