@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3258: Fixed a crash when a ctypes POINTER type to an
+  incomplete structure was created.
+
 - Issue #2683: Fix inconsistency in subprocess.Popen.communicate(): the
   argument now must be a bytes object in any case.
 
