@@ -297,8 +297,8 @@ class TestJointOps(unittest.TestCase):
         w = ReprWrapper()
         s = self.thetype([w])
         w.value = s
+        fo = open(support.TESTFN, "w")
         try:
-            fo = open(support.TESTFN, "w")
             fo.write(str(s))
             fo.close()
             fo = open(support.TESTFN, "r")
