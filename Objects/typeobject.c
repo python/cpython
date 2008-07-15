@@ -3810,13 +3810,15 @@ PyType_Ready(PyTypeObject *type)
 
 	/* Hack for tp_hash and __hash__.
 	   If after all that, tp_hash is still NULL, and __hash__ is not in
-	   tp_dict, set tp_dict['__hash__'] equal to None.
+	   tp_dict, set tp_hash to PyObject_HashNotImplemented and
+	   tp_dict['__hash__'] equal to None.
 	   This signals that __hash__ is not inherited.
 	 */
 	if (type->tp_hash == NULL) {
 		if (PyDict_GetItemString(type->tp_dict, "__hash__") == NULL) {
 			if (PyDict_SetItemString(type->tp_dict, "__hash__", Py_None) < 0)
 				goto error;
+			type->tp_hash = PyObject_HashNotImplemented;
 		}
 	}
 
@@ -4943,9 +4945,7 @@ slot_tp_hash(PyObject *self)
 	}
 
 	if (func == NULL) {
-		PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
-			     Py_TYPE(self)->tp_name);
-		return -1;
+		return PyObject_HashNotImplemented(self);
         }
 
 	res = PyEval_CallObject(func, NULL);
@@ -5676,6 +5676,13 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 			   sanity checks.  I'll buy the first person to
 			   point out a bug in this reasoning a beer. */
 		}
+		else if (descr == Py_None &&
+			 strcmp(p->name, "__hash__") == 0) {
+			/* We specifically allow __hash__ to be set to None
+			   to prevent inheritance of the default
+			   implementation from object.__hash__ */
+			specific = PyObject_HashNotImplemented;
+		}
 		else {
 			use_generic = 1;
 			generic = p->function;
@@ -5889,12 +5896,21 @@ add_operators(PyTypeObject *type)
 			continue;
 		if (PyDict_GetItem(dict, p->name_strobj))
 			continue;
-		descr = PyDescr_NewWrapper(type, p, *ptr);
-		if (descr == NULL)
-			return -1;
-		if (PyDict_SetItem(dict, p->name_strobj, descr) < 0)
-			return -1;
-		Py_DECREF(descr);
+		if (*ptr == PyObject_HashNotImplemented) {
+			/* Classes may prevent the inheritance of the tp_hash
+			   slot by storing PyObject_HashNotImplemented in it. Make it
+ 			   visible as a None value for the __hash__ attribute. */
+			if (PyDict_SetItem(dict, p->name_strobj, Py_None) < 0)
+				return -1;
+		}
+		else {
+			descr = PyDescr_NewWrapper(type, p, *ptr);
+			if (descr == NULL)
+				return -1;
+			if (PyDict_SetItem(dict, p->name_strobj, descr) < 0)
+				return -1;
+			Py_DECREF(descr);
+		}
 	}
 	if (type->tp_new != NULL) {
 		if (add_tp_new_wrapper(type) < 0)
