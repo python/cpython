@@ -446,9 +446,6 @@ Notes:
    A right shift by *n* bits is equivalent to division by ``pow(2, n)``.
 
 
-.. _typeiter:
-
-
 Additional Methods on Float
 ---------------------------
 
@@ -516,6 +513,8 @@ hexadecimal string representing the same number::
    >>> float.hex(3740.0)
    '0x1.d380000000000p+11'
 
+
+.. _typeiter:
 
 Iterator Types
 ==============
