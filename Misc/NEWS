@@ -10,6 +10,10 @@ What's New in Python 2.6 beta 2?
 Core and Builtins
 -----------------
 
+- Issue #3008: the float type has a new instance method 'float.hex'
+  and a new class method 'float.fromhex' to convert floating-point
+  numbers to and from hexadecimal strings, respectively.
+
 - Issue #2235: __hash__ is once again inherited by default. To allow
   collections.Hashable to remain meaningful in the presence of the
   default hash implementation (object.__hash__), it is now possible
