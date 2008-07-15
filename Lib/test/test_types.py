@@ -357,6 +357,40 @@ class TypesTests(unittest.TestCase):
         test(1234, "+b", "+10011010010")
         test(-1234, "+b", "-10011010010")
 
+        # alternate (#) formatting
+        test(0, "#b", '0b0')
+        test(0, "-#b", '0b0')
+        test(1, "-#b", '0b1')
+        test(-1, "-#b", '-0b1')
+        test(-1, "-#5b", ' -0b1')
+        test(1, "+#5b", ' +0b1')
+        test(100, "+#b", '+0b1100100')
+#        test(100, "#012b", '0b001100100')
+
+        test(0, "#o", '0o0')
+        test(0, "-#o", '0o0')
+        test(1, "-#o", '0o1')
+        test(-1, "-#o", '-0o1')
+        test(-1, "-#5o", ' -0o1')
+        test(1, "+#5o", ' +0o1')
+        test(100, "+#o", '+0o144')
+
+        test(0, "#x", '0x0')
+        test(0, "-#x", '0x0')
+        test(1, "-#x", '0x1')
+        test(-1, "-#x", '-0x1')
+        test(-1, "-#5x", ' -0x1')
+        test(1, "+#5x", ' +0x1')
+        test(100, "+#x", '+0x64')
+
+        test(0, "#X", '0X0')
+        test(0, "-#X", '0X0')
+        test(1, "-#X", '0X1')
+        test(-1, "-#X", '-0X1')
+        test(-1, "-#5X", ' -0X1')
+        test(1, "+#5X", ' +0X1')
+        test(100, "+#X", '+0X64')
+
         # make sure these are errors
 
         # precision disallowed
@@ -461,6 +495,9 @@ class TypesTests(unittest.TestCase):
         # format spec must be string
         self.assertRaises(TypeError, 3L .__format__, None)
         self.assertRaises(TypeError, 3L .__format__, 0)
+        # alternate specifier in wrong place
+        self.assertRaises(ValueError, 1L .__format__, "#+5x")
+        self.assertRaises(ValueError, 1L .__format__, "+5#x")
 
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
@@ -578,6 +615,10 @@ class TypesTests(unittest.TestCase):
                 self.assertRaises(ValueError, format, -1e100, format_spec)
                 self.assertRaises(ValueError, format, 1e-100, format_spec)
                 self.assertRaises(ValueError, format, -1e-100, format_spec)
+
+        # Alternate formatting is not supported
+        self.assertRaises(ValueError, format, 0.0, '#')
+        self.assertRaises(ValueError, format, 0.0, '#20f')
 
 
 def test_main():

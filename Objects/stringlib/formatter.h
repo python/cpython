@@ -89,6 +89,7 @@ is_sign_element(STRINGLIB_CHAR c)
 typedef struct {
     STRINGLIB_CHAR fill_char;
     STRINGLIB_CHAR align;
+    int alternate;
     STRINGLIB_CHAR sign;
     Py_ssize_t width;
     Py_ssize_t precision;
@@ -117,6 +118,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
 
     format->fill_char = '\0';
     format->align = '\0';
+    format->alternate = 0;
     format->sign = '\0';
     format->width = -1;
     format->precision = -1;
@@ -152,6 +154,13 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
             format->align = '=';
         }
         ++ptr;
+    }
+
+    /* If the next character is #, we're in alternate mode.  This only
+       applies to integers. */
+    if (end-ptr >= 1 && ptr[0] == '#') {
+	format->alternate = 1;
+	++ptr;
     }
 
     /* XXX add error checking */
@@ -221,7 +230,8 @@ typedef struct {
    and more efficient enough to justify a little obfuscation? */
 static void
 calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
-                   Py_ssize_t n_digits, const InternalFormatSpec *format)
+		   Py_ssize_t n_prefix, Py_ssize_t n_digits,
+		   const InternalFormatSpec *format)
 {
     r->n_lpadding = 0;
     r->n_spadding = 0;
@@ -232,12 +242,14 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
     r->n_rsign = 0;
 
     /* the output will look like:
-       |                                                           |
-       | <lpadding> <lsign> <spadding> <digits> <rsign> <rpadding> |
-       |                                                           |
+       |                                                                    |
+       | <lpadding> <lsign> <prefix> <spadding> <digits> <rsign> <rpadding> |
+       |                                                                    |
 
        lsign and rsign are computed from format->sign and the actual
        sign of the number
+
+       prefix is given (it's for the '0x' prefix)
 
        digits is already known
 
@@ -360,6 +372,14 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
     if (format->sign != '\0') {
         PyErr_SetString(PyExc_ValueError,
                         "Sign not allowed in string format specifier");
+        goto done;
+    }
+
+    /* alternate is not allowed on strings */
+    if (format->alternate) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Alternate form (#) not allowed in string format "
+			"specifier");
         goto done;
     }
 
@@ -505,31 +525,33 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     }
     else {
         int base;
-	int leading_chars_to_skip;  /* Number of characters added by
-				       PyNumber_ToBase that we want to
-				       skip over. */
+	int leading_chars_to_skip = 0;  /* Number of characters added by
+				           PyNumber_ToBase that we want to
+				           skip over. */
 
         /* Compute the base and how many characters will be added by
            PyNumber_ToBase */
         switch (format->type) {
         case 'b':
             base = 2;
-            leading_chars_to_skip = 2; /* 0b */
+	    if (!format->alternate)
+		leading_chars_to_skip = 2; /* 0b */
             break;
         case 'o':
             base = 8;
-            leading_chars_to_skip = 2; /* 0o */
+	    if (!format->alternate)
+		leading_chars_to_skip = 2; /* 0o */
             break;
         case 'x':
         case 'X':
             base = 16;
-            leading_chars_to_skip = 2; /* 0x */
+	    if (!format->alternate)
+		leading_chars_to_skip = 2; /* 0x */
             break;
         default:  /* shouldn't be needed, but stops a compiler warning */
         case 'd':
         case 'n':
             base = 10;
-            leading_chars_to_skip = 0;
             break;
         }
 
@@ -564,7 +586,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 			       0, &n_grouping_chars, 0);
 
     /* Calculate the widths of the various leading and trailing parts */
-    calc_number_widths(&spec, sign, n_digits + n_grouping_chars, format);
+    calc_number_widths(&spec, sign, 0, n_digits + n_grouping_chars, format);
 
     /* Allocate a new string to hold the result */
     result = STRINGLIB_NEW(NULL, spec.n_total);
@@ -670,6 +692,14 @@ format_float_internal(PyObject *value,
     Py_UNICODE unicodebuf[FLOAT_FORMATBUFLEN];
 #endif
 
+    /* alternate is not allowed on floats. */
+    if (format->alternate) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Alternate form (#) not allowed in float format "
+			"specifier");
+        goto done;
+    }
+
     /* first, do the conversion as 8-bit chars, using the platform's
        snprintf.  then, if needed, convert to unicode. */
 
@@ -730,7 +760,7 @@ format_float_internal(PyObject *value,
         --n_digits;
     }
 
-    calc_number_widths(&spec, sign, n_digits, format);
+    calc_number_widths(&spec, sign, 0, n_digits, format);
 
     /* allocate a string with enough space */
     result = STRINGLIB_NEW(NULL, spec.n_total);
