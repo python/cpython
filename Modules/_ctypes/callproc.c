@@ -1383,8 +1383,11 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
 	mode |= RTLD_NOW;
 	handle = ctypes_dlopen(name, mode);
 	if (!handle) {
+		char *errmsg = ctypes_dlerror();
+		if (!errmsg)
+			errmsg = "dlopen() error";
 		PyErr_SetString(PyExc_OSError,
-				       ctypes_dlerror());
+				       errmsg);
 		return NULL;
 	}
 	return PyLong_FromVoidPtr(handle);
