@@ -1340,9 +1340,10 @@ print_exception(PyObject *f, PyObject *value)
 		/* Don't do anything else */
 	}
 	else {
-		assert(PyExceptionClass_Check(type));
 		PyObject* moduleName;
-		char* className = PyExceptionClass_Name(type);
+		char* className;
+		assert(PyExceptionClass_Check(type));
+		className = PyExceptionClass_Name(type);
 		if (className != NULL) {
 			char *dot = strrchr(className, '.');
 			if (dot != NULL)
