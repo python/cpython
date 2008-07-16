@@ -147,6 +147,13 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
 #endif
     }
 
+    /* If the next character is #, we're in alternate mode.  This only
+       applies to integers. */
+    if (end-ptr >= 1 && ptr[0] == '#') {
+	format->alternate = 1;
+	++ptr;
+    }
+
     /* The special case for 0-padding (backwards compat) */
     if (format->fill_char == '\0' && end-ptr >= 1 && ptr[0] == '0') {
         format->fill_char = '0';
@@ -154,13 +161,6 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
             format->align = '=';
         }
         ++ptr;
-    }
-
-    /* If the next character is #, we're in alternate mode.  This only
-       applies to integers. */
-    if (end-ptr >= 1 && ptr[0] == '#') {
-	format->alternate = 1;
-	++ptr;
     }
 
     /* XXX add error checking */
@@ -211,9 +211,10 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
 /************************************************************************/
 
 /* describes the layout for an integer, see the comment in
-   _calc_integer_widths() for details */
+   calc_number_widths() for details */
 typedef struct {
     Py_ssize_t n_lpadding;
+    Py_ssize_t n_prefix;
     Py_ssize_t n_spadding;
     Py_ssize_t n_rpadding;
     char lsign;
@@ -234,6 +235,7 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
 		   const InternalFormatSpec *format)
 {
     r->n_lpadding = 0;
+    r->n_prefix = 0;
     r->n_spadding = 0;
     r->n_rpadding = 0;
     r->lsign = '\0';
@@ -288,13 +290,16 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
         }
     }
 
+    r->n_prefix = n_prefix;
+
     /* now the number of padding characters */
     if (format->width == -1) {
         /* no padding at all, nothing to do */
     }
     else {
         /* see if any padding is needed */
-        if (r->n_lsign + n_digits + r->n_rsign >= format->width) {
+        if (r->n_lsign + n_digits + r->n_rsign +
+	        r->n_prefix >= format->width) {
             /* no padding needed, we're already bigger than the
                requested width */
         }
@@ -302,7 +307,8 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
             /* determine which of left, space, or right padding is
                needed */
             Py_ssize_t padding = format->width -
-		                    (r->n_lsign + n_digits + r->n_rsign);
+		                    (r->n_lsign + r->n_prefix +
+				     n_digits + r->n_rsign);
             if (format->align == '<')
                 r->n_rpadding = padding;
             else if (format->align == '>')
@@ -317,18 +323,19 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
                 r->n_lpadding = padding;
         }
     }
-    r->n_total = r->n_lpadding + r->n_lsign + r->n_spadding +
-        n_digits + r->n_rsign + r->n_rpadding;
+    r->n_total = r->n_lpadding + r->n_lsign + r->n_prefix +
+	    r->n_spadding + n_digits + r->n_rsign + r->n_rpadding;
 }
 
 /* fill in the non-digit parts of a numbers's string representation,
-   as determined in _calc_integer_widths().  returns the pointer to
+   as determined in calc_number_widths().  returns the pointer to
    where the digits go. */
 static STRINGLIB_CHAR *
 fill_non_digits(STRINGLIB_CHAR *p_buf, const NumberFieldWidths *spec,
-		Py_ssize_t n_digits, STRINGLIB_CHAR fill_char)
+		STRINGLIB_CHAR *prefix, Py_ssize_t n_digits,
+		STRINGLIB_CHAR fill_char)
 {
-    STRINGLIB_CHAR* p_digits;
+    STRINGLIB_CHAR *p_digits;
 
     if (spec->n_lpadding) {
         STRINGLIB_FILL(p_buf, fill_char, spec->n_lpadding);
@@ -336,6 +343,12 @@ fill_non_digits(STRINGLIB_CHAR *p_buf, const NumberFieldWidths *spec,
     }
     if (spec->n_lsign == 1) {
         *p_buf++ = spec->lsign;
+    }
+    if (spec->n_prefix) {
+	memmove(p_buf,
+		prefix,
+		spec->n_prefix * sizeof(STRINGLIB_CHAR));
+	p_buf += spec->n_prefix;
     }
     if (spec->n_spadding) {
         STRINGLIB_FILL(p_buf, fill_char, spec->n_spadding);
@@ -477,6 +490,8 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     Py_ssize_t n_grouping_chars = 0; /* Count of additional chars to
 					allocate, used for 'n'
 					formatting. */
+    Py_ssize_t n_prefix = 0;   /* Count of prefix chars, (e.g., '0x') */
+    STRINGLIB_CHAR *prefix = NULL;
     NumberFieldWidths spec;
     long x;
 
@@ -534,19 +549,16 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
         switch (format->type) {
         case 'b':
             base = 2;
-	    if (!format->alternate)
-		leading_chars_to_skip = 2; /* 0b */
+	    leading_chars_to_skip = 2; /* 0b */
             break;
         case 'o':
             base = 8;
-	    if (!format->alternate)
-		leading_chars_to_skip = 2; /* 0o */
+	    leading_chars_to_skip = 2; /* 0o */
             break;
         case 'x':
         case 'X':
             base = 16;
-	    if (!format->alternate)
-		leading_chars_to_skip = 2; /* 0x */
+	    leading_chars_to_skip = 2; /* 0x */
             break;
         default:  /* shouldn't be needed, but stops a compiler warning */
         case 'd':
@@ -554,6 +566,11 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
             base = 10;
             break;
         }
+
+	/* The number of prefix chars is the same as the leading
+	   chars to skip */
+	if (format->alternate)
+	    n_prefix = leading_chars_to_skip;
 
         /* Do the hard part, converting to a string in a given base */
 	tmp = tostring(value, base);
@@ -563,6 +580,8 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 	pnumeric_chars = STRINGLIB_STR(tmp);
         n_digits = STRINGLIB_LEN(tmp);
 
+	prefix = pnumeric_chars;
+
 	/* Remember not to modify what pnumeric_chars points to.  it
 	   might be interned.  Only modify it after we copy it into a
 	   newly allocated output buffer. */
@@ -571,6 +590,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
            and skip it */
         sign = pnumeric_chars[0];
         if (sign == '-') {
+	    ++prefix;
 	    ++leading_chars_to_skip;
         }
 
@@ -586,7 +606,8 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 			       0, &n_grouping_chars, 0);
 
     /* Calculate the widths of the various leading and trailing parts */
-    calc_number_widths(&spec, sign, 0, n_digits + n_grouping_chars, format);
+    calc_number_widths(&spec, sign, n_prefix, n_digits + n_grouping_chars,
+		       format);
 
     /* Allocate a new string to hold the result */
     result = STRINGLIB_NEW(NULL, spec.n_total);
@@ -594,34 +615,51 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 	goto done;
     p = STRINGLIB_STR(result);
 
+    /* XXX There is too much magic here regarding the internals of
+       spec and the location of the prefix and digits.  It would be
+       better if calc_number_widths returned a number of logical
+       offsets into the buffer, and those were used.  Maybe in a
+       future code cleanup. */
+
     /* Fill in the digit parts */
-    n_leading_chars = spec.n_lpadding + spec.n_lsign + spec.n_spadding;
+    n_leading_chars = spec.n_lpadding + spec.n_lsign +
+	    spec.n_prefix + spec.n_spadding;
     memmove(p + n_leading_chars,
 	    pnumeric_chars,
 	    n_digits * sizeof(STRINGLIB_CHAR));
 
-    /* If type is 'X', convert to uppercase */
+    /* If type is 'X', convert the filled in digits to uppercase */
     if (format->type == 'X') {
 	Py_ssize_t t;
 	for (t = 0; t < n_digits; ++t)
 	    p[t + n_leading_chars] = STRINGLIB_TOUPPER(p[t + n_leading_chars]);
     }
 
-    /* Insert the grouping, if any, after the uppercasing of 'X', so we can
-       ensure that grouping chars won't be affected. */
+    /* Insert the grouping, if any, after the uppercasing of the digits, so
+       we can ensure that grouping chars won't be affected. */
     if (n_grouping_chars) {
 	    /* We know this can't fail, since we've already
 	       reserved enough space. */
 	    STRINGLIB_CHAR *pstart = p + n_leading_chars;
 	    int r = STRINGLIB_GROUPING(pstart, n_digits, n_digits,
-				       spec.n_total+n_grouping_chars-n_leading_chars,
-				       NULL, 0);
+			   spec.n_total+n_grouping_chars-n_leading_chars,
+			   NULL, 0);
 	    assert(r);
     }
 
     /* Fill in the non-digit parts (padding, sign, etc.) */
-    fill_non_digits(p, &spec, n_digits + n_grouping_chars,
+    fill_non_digits(p, &spec, prefix, n_digits + n_grouping_chars,
 		    format->fill_char == '\0' ? ' ' : format->fill_char);
+
+    /* If type is 'X', uppercase the prefix.  This has to be done after the
+       prefix is filled in by fill_non_digits */
+    if (format->type == 'X') {
+	Py_ssize_t t;
+	for (t = 0; t < n_prefix; ++t)
+	    p[t + spec.n_lpadding + spec.n_lsign] =
+		    STRINGLIB_TOUPPER(p[t + spec.n_lpadding + spec.n_lsign]);
+    }
+
 
 done:
     Py_XDECREF(tmp);
@@ -768,7 +806,7 @@ format_float_internal(PyObject *value,
         goto done;
 
     /* Fill in the non-digit parts (padding, sign, etc.) */
-    fill_non_digits(STRINGLIB_STR(result), &spec, n_digits,
+    fill_non_digits(STRINGLIB_STR(result), &spec, NULL, n_digits,
 		    format->fill_char == '\0' ? ' ' : format->fill_char);
 
     /* fill in the digit parts */
