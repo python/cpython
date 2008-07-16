@@ -50,7 +50,7 @@ The :mod:`pprint` module defines one class:
       >>> stuff.insert(0, stuff[:])
       >>> pp = pprint.PrettyPrinter(indent=4)
       >>> pp.pprint(stuff)
-      [   [   'spam', 'eggs', 'lumberjack', 'knights', 'ni'],
+      [   ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
           'spam',
           'eggs',
           'lumberjack',
