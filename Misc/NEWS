@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #3360: Fix incorrect parsing of '020000000000.0', which
+  produced a ValueError instead of giving the correct float.
+
 - Issue #3242: Fix a crash inside the print statement, if sys.stdout is
   set to a custom object whose write() method happens to install
   another file in sys.stdout.
