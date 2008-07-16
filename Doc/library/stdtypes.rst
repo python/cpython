@@ -423,6 +423,71 @@ Notes:
 
 .. _typeiter:
 
+
+Additional Methods on Float
+---------------------------
+
+The float type has some additional methods to support conversion to
+and from hexadecimal strings.  Since Python's floats are stored
+internally as binary numbers, converting a float to or from a
+*decimal* string usually involves a small rounding error.  In
+contrast, hexadecimal strings allow exact representation and
+specification of floating-point numbers.  This can be useful when
+debugging, and in numerical work.
+
+
+.. method:: float.hex()
+
+   Return a representation of a floating-point number as a hexadecimal
+   string.  For finite floating-point numbers, this representation
+   will always include a leading ``0x`` and a trailing ``p`` and
+   exponent.
+
+
+.. method:: float.fromhex(s)
+
+   Class method to return the float represented by a hexadecimal
+   string *s*.  The string *s* may have leading and trailing
+   whitespace.
+
+
+Note that :meth:`float.hex` is an instance method, while
+:meth:`float.fromhex` is a class method.
+
+A hexadecimal string takes the form::
+
+   [sign] ['0x'] integer ['.' fraction] ['p' exponent]
+
+where the optional ``sign`` may by either ``+`` or ``-``, ``integer``
+and ``fraction`` are strings of hexadecimal digits, and ``exponent``
+is a decimal integer with an optional leading sign.  Case is not
+significant, and there must be at least one hexadecimal digit in
+either the integer or the fraction.  This syntax is similar to the
+syntax specified in section 6.4.4.2 of the C99 standard, and also to
+the syntax used in Java 1.5 onwards.  In particular, the output of
+:meth:`float.hex` is usable as a hexadecimal floating-point literal in
+C or Java code, and hexadecimal strings produced by C's ``%a`` format
+character or Java's ``Double.toHexString`` are accepted by
+:meth:`float.fromhex`.
+
+
+Note that the exponent is written in decimal rather than hexadecimal,
+and that it gives the power of 2 by which to multiply the coefficient.
+For example, the hexadecimal string ``0x3.a7p10`` represents the
+floating-point number ``(3 + 10./16 + 7./16**2) * 2.0**10``, or
+``3740.0``::
+
+   >>> float.fromhex('0x3.a7p10')
+   3740.0
+
+
+Applying the reverse conversion to ``3740.0`` gives a different
+hexadecimal string representing the same number::
+
+   >>> float.hex(3740.0)
+   '0x1.d380000000000p+11'
+
+
 Iterator Types
 ==============
 
