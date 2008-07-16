@@ -55,10 +55,9 @@ _getbytevalue(PyObject* arg, int *value)
         face_value = PyLong_AsLong(index);
         Py_DECREF(index);
     }
-    if (face_value == -1 && PyErr_Occurred())
-        return 0;
 
     if (face_value < 0 || face_value >= 256) {
+        /* this includes the OverflowError in case the long is too large */
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         return 0;
     }
