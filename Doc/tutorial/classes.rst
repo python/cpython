@@ -531,9 +531,8 @@ Python has two builtin functions that work with inheritance:
 
 * Use :func:`issubclass` to check class inheritance: ``issubclass(bool, int)``
   is ``True`` since :class:`bool` is a subclass of :class:`int`.  However,
-  ``issubclass(unicode, str)`` is ``False`` since :class:`unicode` is not a
-  subclass of :class:`str` (they only share a common ancestor,
-  :class:`basestring`).
+  ``issubclass(float, int)`` is ``False`` since :class:`float` is not a
+  subclass of :class:`int`.
   
 
 
