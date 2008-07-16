@@ -120,7 +120,7 @@ class FixUrllib(FixImports):
                 if member != ',':
                     for change in MAPPING[mod_member.value]:
                         if member in change[1]:
-                            if mod_dict.has_key(change[0]):
+                            if change[0] in mod_dict:
                                 mod_dict[change[0]].append(member)
                             else:
                                 mod_dict[change[0]] = [member]
