@@ -241,6 +241,19 @@ class PyBuildExt(build_ext):
                 'WARNING: skipping import check for Carbon-based "%s"' %
                 ext.name)
             return
+
+        if self.get_platform() == 'darwin' and (
+                sys.maxint > 2**32 and '-arch' in ext.extra_link_args):
+            # Don't bother doing an import check when an extension was
+            # build with an explicit '-arch' flag on OSX. That's currently
+            # only used to build 32-bit only extensions in a 4-way
+            # universal build and loading 32-bit code into a 64-bit
+            # process will fail.
+            self.announce(
+                'WARNING: skipping import check for "%s"' %
+                ext.name)
+            return
+
         # Workaround for Cygwin: Cygwin currently has fork issues when many
         # modules have been imported
         if self.get_platform() == 'cygwin':
@@ -507,10 +520,12 @@ class PyBuildExt(build_ext):
 
         # readline
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
-        if platform == 'darwin':
+        if platform == 'darwin': # and os.uname()[2] < '9.':
             # MacOSX 10.4 has a broken readline. Don't try to build
             # the readline module unless the user has installed a fixed
             # readline package
+            # FIXME: The readline emulation on 10.5 is better, but the
+            # readline module doesn't compile out of the box.
             if find_file('readline/rlconf.h', inc_dirs, []) is None:
                 do_readline = False
         if do_readline:
@@ -1242,11 +1257,29 @@ class PyBuildExt(build_ext):
         include_dirs.append('/usr/X11R6/include')
         frameworks = ['-framework', 'Tcl', '-framework', 'Tk']
 
+        # All existing framework builds of Tcl/Tk don't support 64-bit
+        # architectures.
+        cflags = sysconfig.get_config_vars('CFLAGS')[0]
+        archs = re.findall('-arch\s+(\w+)', cflags)
+        if 'x86_64' in archs or 'ppc64' in archs:
+            try:
+                archs.remove('x86_64')
+            except ValueError:
+                pass
+            try:
+                archs.remove('ppc64')
+            except ValueError:
+                pass
+
+            for a in archs:
+                frameworks.append('-arch')
+                frameworks.append(a)
+
         ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                         define_macros=[('WITH_APPINIT', 1)],
                         include_dirs = include_dirs,
                         libraries = [],
-                        extra_compile_args = frameworks,
+                        extra_compile_args = frameworks[2:],
                         extra_link_args = frameworks,
                         )
         self.extensions.append(ext)
@@ -1377,6 +1410,7 @@ class PyBuildExt(build_ext):
                                                   '_ctypes', 'libffi_osx'))
         sources = [os.path.join(ffi_srcdir, p)
                    for p in ['ffi.c',
+                             'x86/darwin64.S',
                              'x86/x86-darwin.S',
                              'x86/x86-ffi_darwin.c',
                              'x86/x86-ffi64.c',

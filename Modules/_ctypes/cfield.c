@@ -1778,6 +1778,7 @@ ffi_type ffi_type_double = { sizeof(double), DOUBLE_ALIGN, FFI_TYPE_DOUBLE };
 #ifdef ffi_type_longdouble
 #undef ffi_type_longdouble
 #endif
+  /* This is already defined on OSX */
 ffi_type ffi_type_longdouble = { sizeof(long double), LONGDOUBLE_ALIGN,
 				 FFI_TYPE_LONGDOUBLE };
 

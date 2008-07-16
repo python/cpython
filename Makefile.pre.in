@@ -428,7 +428,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(RESSRCDIR)/Info.plist
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
 	if test "${UNIVERSALSDK}"; then \
-		$(CC) -o $(LDLIBRARY) -arch i386 -arch ppc -dynamiclib \
+		$(CC) -o $(LDLIBRARY) @UNIVERSAL_ARCH_FLAGS@ -dynamiclib \
 			-isysroot "${UNIVERSALSDK}" \
 			-all_load $(LIBRARY) -Wl,-single_module \
 			-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
@@ -1031,12 +1031,21 @@ frameworkinstallmaclib:
 frameworkinstallapps:
 	cd Mac && $(MAKE) installapps DESTDIR="$(DESTDIR)"
 
+frameworkinstallapps4way:
+	cd Mac && $(MAKE) installapps4way DESTDIR="$(DESTDIR)"
+
 # This install the unix python and pythonw tools in /usr/local/bin
 frameworkinstallunixtools:
 	cd Mac && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
 
+frameworkinstallunixtools4way:
+	cd Mac && $(MAKE) installunixtools4way DESTDIR="$(DESTDIR)"
+
 frameworkaltinstallunixtools:
 	cd Mac && $(MAKE) altinstallunixtools DESTDIR="$(DESTDIR)"
+
+frameworkaltinstallunixtools4way:
+	cd Mac && $(MAKE) altinstallunixtools4way DESTDIR="$(DESTDIR)"
 
 # This installs the Demos and Tools into the applications directory.
 # It is not part of a normal frameworkinstall
@@ -1182,7 +1191,7 @@ funny:
 
 # Perform some verification checks on any modified files.
 check:
-	./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
 
 # Dependencies
 

@@ -124,11 +124,18 @@ def get_platform ():
             osname = "macosx"
 
 
-            if (release + '.') < '10.4.' and \
-                    get_config_vars().get('UNIVERSALSDK', '').strip():
+            if (release + '.') >= '10.4.' and \
+                    '-arch' in get_config_vars().get('CFLAGS', '').strip():
                 # The universal build will build fat binaries, but not on
                 # systems before 10.4
+                #
+                # Try to detect 4-way universal builds, those have machine-type
+                # 'universal' instead of 'fat'.
+
                 machine = 'fat'
+
+                if '-arch x86_64' in get_config_vars().get('CFLAGS'):
+                    machine = 'universal'
 
             elif machine in ('PowerPC', 'Power_Macintosh'):
                 # Pick a sane name for the PPC architecture.

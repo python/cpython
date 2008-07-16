@@ -48,11 +48,41 @@ compileall=$(srcdir)/../Lib/compileall.py
 installapps: install_PythonLauncher install_IDLE checkapplepython install_pythonw \
 	install_versionedtools
 
+installapps4way: install_Python4way install_BuildApplet install_PythonLauncher install_IDLE install_pythonw4way install_versionedtools
+
+
 install_pythonw: pythonw
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)"
 	ln -sf python$(VERSION) "$(DESTDIR)$(prefix)/bin/python"
 	ln -sf pythonw$(VERSION) "$(DESTDIR)$(prefix)/bin/pythonw"
+
+
+# Install 3 variants of python/pythonw: 
+# 	- 32-bit (i386 and ppc)
+# 	- 64-bit (x86_64 and ppc64)
+# 	- all    (all four architectures)
+# 	- Make 'python' and 'pythonw' aliases for the 32-bit variant
+install_pythonw4way: pythonw-32 pythonw-64 pythonw
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-64 "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-64"
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-64 "$(DESTDIR)$(prefix)/bin/python$(VERSION)-64"
+	ln -sf python$(VERSION)-64 "$(DESTDIR)$(prefix)/bin/python-64"
+	ln -sf pythonw$(VERSION)-64 "$(DESTDIR)$(prefix)/bin/pythonw-64"
+
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-32 "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-32"
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-32 "$(DESTDIR)$(prefix)/bin/python$(VERSION)-32"
+	ln -sf python$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/python-32"
+	ln -sf pythonw$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/pythonw-32"
+
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-all"
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)-all"
+	ln -sf python$(VERSION)-all "$(DESTDIR)$(prefix)/bin/python-all"
+	ln -sf pythonw$(VERSION)-all "$(DESTDIR)$(prefix)/bin/pythonw-all"
+
+	ln -sf pythonw$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
+	ln -sf python$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/python$(VERSION)"
+	ln -sf pythonw$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/pythonw"
+	ln -sf python$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/python"
 
 #
 # Install unix tools in /usr/local/bin. These are just aliases for the 
@@ -64,10 +94,15 @@ installunixtools:
 	fi
 	for fn in python pythonw idle pydoc python-config smtpd.py   \
 		  python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python-config$(VERSION) smtpd$(VERSION).py ;\
+		  pydoc$(VERSION) python$(VERSION)-config smtpd$(VERSION).py ;\
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
+
+
+# TODO: install symlinks for -32, -64 and -all as well
+installunixtools4way: installunixtools
+
 
 #
 # Like installunixtools, but only install links to the versioned binaries.
@@ -77,18 +112,20 @@ altinstallunixtools:
 		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
 	for fn in python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python-config$(VERSION) smtpd$(VERSION).py ;\
+		  pydoc$(VERSION) python$(VERSION)-config) smtpd$(VERSION).py ;\
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
 
+# TODO: -32, -64 and -all variants
+altinstallunixtools4way: altinstallunixtools
 
 # By default most tools are installed without a version in their basename, to
 # make it easier to install (and use) several python versions side-by-side move
 # the tools to a version-specific name and add the non-versioned name as an
 # alias.
 install_versionedtools:
-	for fn in idle pydoc python-config ;\
+	for fn in idle pydoc ;\
 	do \
 		if [ -h "$(DESTDIR)$(prefix)/bin/$${fn}" ]; then \
 			continue ;\
@@ -96,6 +133,10 @@ install_versionedtools:
 		mv "$(DESTDIR)$(prefix)/bin/$${fn}" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
 		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}" ;\
 	done
+	if [ ! -h "$(DESTDIR)$(prefix)/bin/python-config" ]; then \
+		mv "$(DESTDIR)$(prefix)/bin/python-config" "$(DESTDIR)$(prefix)/bin/python$(VERSION)-config" ;\
+		ln -sf "python$(VERSION)-config" "$(DESTDIR)$(prefix)/bin/python-config" ; \
+	fi
 	if [ ! -h "$(DESTDIR)$(prefix)/bin/smtpd.py" ]; then \
 		mv "$(DESTDIR)$(prefix)/bin/smtpd.py" "$(DESTDIR)$(prefix)/bin/smtpd$(VERSION).py"  ;\
 		ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd.py" ;\
@@ -106,6 +147,13 @@ pythonw: $(srcdir)/Tools/pythonw.c Makefile
 	$(CC) $(LDFLAGS) -o $@ $(srcdir)/Tools/pythonw.c \
 		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"'
 
+pythonw-32: $(srcdir)/Tools/pythonw.c Makefile
+	$(CC) $(LDFLAGS) -o $@ -arch i386 -arch ppc $(srcdir)/Tools/pythonw.c \
+		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-32"'
+
+pythonw-64: $(srcdir)/Tools/pythonw.c Makefile
+	$(CC) $(LDFLAGS) -o $@ -arch x86_64 -arch ppc64 $(srcdir)/Tools/pythonw.c \
+		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-64"'
 
 install_PythonLauncher:
 	cd PythonLauncher && make install DESTDIR=$(DESTDIR)
@@ -157,6 +205,12 @@ install_Python:
 		done; \
 	done
 	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
+
+install_Python4way: install_Python
+	lipo  -extract i386 -extract ppc7400 -output "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-32" "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
+	lipo  -extract x86_64 -extract ppc64 -output "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-64" "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
+
+
 
 install_IDLE:
 	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"

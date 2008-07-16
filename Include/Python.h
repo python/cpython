@@ -6,6 +6,7 @@
 
 #include "patchlevel.h"
 #include "pyconfig.h"
+#include "pymacconfig.h"
 
 #include <limits.h>
 
