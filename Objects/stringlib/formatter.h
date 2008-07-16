@@ -230,18 +230,18 @@ typedef struct {
    about what it does?  or is passing a single format parameter easier
    and more efficient enough to justify a little obfuscation? */
 static void
-calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
+calc_number_widths(NumberFieldWidths *spec, STRINGLIB_CHAR actual_sign,
 		   Py_ssize_t n_prefix, Py_ssize_t n_digits,
 		   const InternalFormatSpec *format)
 {
-    r->n_lpadding = 0;
-    r->n_prefix = 0;
-    r->n_spadding = 0;
-    r->n_rpadding = 0;
-    r->lsign = '\0';
-    r->n_lsign = 0;
-    r->rsign = '\0';
-    r->n_rsign = 0;
+    spec->n_lpadding = 0;
+    spec->n_prefix = 0;
+    spec->n_spadding = 0;
+    spec->n_rpadding = 0;
+    spec->lsign = '\0';
+    spec->n_lsign = 0;
+    spec->rsign = '\0';
+    spec->n_rsign = 0;
 
     /* the output will look like:
        |                                                                    |
@@ -265,32 +265,32 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
     /* compute the various parts we're going to write */
     if (format->sign == '+') {
         /* always put a + or - */
-        r->n_lsign = 1;
-        r->lsign = (actual_sign == '-' ? '-' : '+');
+        spec->n_lsign = 1;
+        spec->lsign = (actual_sign == '-' ? '-' : '+');
     }
 #if ALLOW_PARENS_FOR_SIGN
     else if (format->sign == '(') {
         if (actual_sign == '-') {
-            r->n_lsign = 1;
-            r->lsign = '(';
-            r->n_rsign = 1;
-            r->rsign = ')';
+            spec->n_lsign = 1;
+            spec->lsign = '(';
+            spec->n_rsign = 1;
+            spec->rsign = ')';
         }
     }
 #endif
     else if (format->sign == ' ') {
-        r->n_lsign = 1;
-        r->lsign = (actual_sign == '-' ? '-' : ' ');
+        spec->n_lsign = 1;
+        spec->lsign = (actual_sign == '-' ? '-' : ' ');
     }
     else {
         /* non specified, or the default (-) */
         if (actual_sign == '-') {
-            r->n_lsign = 1;
-            r->lsign = '-';
+            spec->n_lsign = 1;
+            spec->lsign = '-';
         }
     }
 
-    r->n_prefix = n_prefix;
+    spec->n_prefix = n_prefix;
 
     /* now the number of padding characters */
     if (format->width == -1) {
@@ -298,8 +298,8 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
     }
     else {
         /* see if any padding is needed */
-        if (r->n_lsign + n_digits + r->n_rsign +
-	        r->n_prefix >= format->width) {
+        if (spec->n_lsign + n_digits + spec->n_rsign +
+	        spec->n_prefix >= format->width) {
             /* no padding needed, we're already bigger than the
                requested width */
         }
@@ -307,24 +307,24 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
             /* determine which of left, space, or right padding is
                needed */
             Py_ssize_t padding = format->width -
-		                    (r->n_lsign + r->n_prefix +
-				     n_digits + r->n_rsign);
+		                    (spec->n_lsign + spec->n_prefix +
+				     n_digits + spec->n_rsign);
             if (format->align == '<')
-                r->n_rpadding = padding;
+                spec->n_rpadding = padding;
             else if (format->align == '>')
-                r->n_lpadding = padding;
+                spec->n_lpadding = padding;
             else if (format->align == '^') {
-                r->n_lpadding = padding / 2;
-                r->n_rpadding = padding - r->n_lpadding;
+                spec->n_lpadding = padding / 2;
+                spec->n_rpadding = padding - spec->n_lpadding;
             }
             else if (format->align == '=')
-                r->n_spadding = padding;
+                spec->n_spadding = padding;
             else
-                r->n_lpadding = padding;
+                spec->n_lpadding = padding;
         }
     }
-    r->n_total = r->n_lpadding + r->n_lsign + r->n_prefix +
-	    r->n_spadding + n_digits + r->n_rsign + r->n_rpadding;
+    spec->n_total = spec->n_lpadding + spec->n_lsign + spec->n_prefix +
+	    spec->n_spadding + n_digits + spec->n_rsign + spec->n_rpadding;
 }
 
 /* fill in the non-digit parts of a numbers's string representation,
