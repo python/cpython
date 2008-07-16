@@ -78,7 +78,8 @@ class BaseBytesTest(unittest.TestCase):
         self.assertRaises(TypeError, self.type2test, 0.0)
         class C:
             pass
-        self.assertRaises(TypeError, self.type2test, ["0"])
+        # allowed in 2.6
+        #self.assertRaises(TypeError, self.type2test, ["0"])
         self.assertRaises(TypeError, self.type2test, [0.0])
         self.assertRaises(TypeError, self.type2test, [None])
         self.assertRaises(TypeError, self.type2test, [C()])
