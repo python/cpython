@@ -17,6 +17,12 @@ import test.test_support
 import test.string_tests
 import test.buffer_tests
 
+class Indexable:
+    def __init__(self, value=0):
+        self.value = value
+    def __index__(self):
+        return self.value
+
 
 class BaseBytesTest(unittest.TestCase):
 
@@ -53,15 +59,11 @@ class BaseBytesTest(unittest.TestCase):
         self.assertEqual(list(b), ints)
 
     def test_from_index(self):
-        class C:
-            def __init__(self, i=0):
-                self.i = i
-            def __index__(self):
-                return self.i
-        b = self.type2test([C(), C(1), C(254), C(255)])
+        b = self.type2test([Indexable(), Indexable(1), Indexable(254),
+                            Indexable(255)])
         self.assertEqual(list(b), [0, 1, 254, 255])
-        self.assertRaises(ValueError, bytearray, [C(-1)])
-        self.assertRaises(ValueError, bytearray, [C(256)])
+        self.assertRaises(ValueError, bytearray, [Indexable(-1)])
+        self.assertRaises(ValueError, bytearray, [Indexable(256)])
 
     def test_from_ssize(self):
         self.assertEqual(bytearray(0), b'')
@@ -506,12 +508,7 @@ class ByteArrayTest(BaseBytesTest):
         self.assertEqual(b, bytearray([1, 100, 3]))
         b[-1] = 200
         self.assertEqual(b, bytearray([1, 100, 200]))
-        class C:
-            def __init__(self, i=0):
-                self.i = i
-            def __index__(self):
-                return self.i
-        b[0] = C(10)
+        b[0] = Indexable(10)
         self.assertEqual(b, bytearray([10, 100, 200]))
         try:
             b[3] = 0
@@ -529,7 +526,7 @@ class ByteArrayTest(BaseBytesTest):
         except ValueError:
             pass
         try:
-            b[0] = C(-1)
+            b[0] = Indexable(-1)
             self.fail("Didn't raise ValueError")
         except ValueError:
             pass
@@ -665,6 +662,9 @@ class ByteArrayTest(BaseBytesTest):
         self.assertRaises(ValueError, a.extend, [0, 1, 2, 256])
         self.assertRaises(ValueError, a.extend, [0, 1, 2, -1])
         self.assertEqual(len(a), 0)
+        a = bytearray(b'')
+        a.extend([Indexable(ord('a'))])
+        self.assertEqual(a, b'a')
 
     def test_remove(self):
         b = bytearray(b'hello')
@@ -680,6 +680,8 @@ class ByteArrayTest(BaseBytesTest):
         b.remove(ord('h'))
         self.assertEqual(b, b'e')
         self.assertRaises(TypeError, lambda: b.remove(u'e'))
+        b.remove(Indexable(ord('e')))
+        self.assertEqual(b, b'')
 
     def test_pop(self):
         b = bytearray(b'world')
@@ -701,6 +703,9 @@ class ByteArrayTest(BaseBytesTest):
         b.append(ord('A'))
         self.assertEqual(len(b), 1)
         self.assertRaises(TypeError, lambda: b.append(u'o'))
+        b = bytearray()
+        b.append(Indexable(ord('A')))
+        self.assertEqual(b, b'A')
 
     def test_insert(self):
         b = bytearray(b'msssspp')
@@ -709,7 +714,11 @@ class ByteArrayTest(BaseBytesTest):
         b.insert(-2, ord('i'))
         b.insert(1000, ord('i'))
         self.assertEqual(b, b'mississippi')
-        self.assertRaises(TypeError, lambda: b.insert(0, b'1'))
+        # allowed in 2.6
+        #self.assertRaises(TypeError, lambda: b.insert(0, b'1'))
+        b = bytearray()
+        b.insert(0, Indexable(ord('A')))
+        self.assertEqual(b, b'A')
 
     def test_partition_bytearray_doesnt_share_nullstring(self):
         a, b, c = bytearray(b"x").partition(b"y")

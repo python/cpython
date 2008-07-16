@@ -34,22 +34,32 @@ _getbytevalue(PyObject* arg, int *value)
 {
     long face_value;
 
-    if (PyInt_Check(arg)) {
-        face_value = PyInt_AsLong(arg);
-        if (face_value < 0 || face_value >= 256) {
-            PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
-            return 0;
-        }
-    }
-    else if (PyBytes_CheckExact(arg)) {
+    if (PyBytes_CheckExact(arg)) {
         if (Py_SIZE(arg) != 1) {
             PyErr_SetString(PyExc_ValueError, "string must be of size 1");
             return 0;
         }
-        face_value = Py_CHARMASK(((PyBytesObject*)arg)->ob_sval[0]);
+        *value = Py_CHARMASK(((PyBytesObject*)arg)->ob_sval[0]);
+        return 1;
+    }
+    else if (PyInt_Check(arg) || PyLong_Check(arg)) {
+        face_value = PyLong_AsLong(arg);
     }
     else {
-        PyErr_Format(PyExc_TypeError, "an integer or string of size 1 is required");
+        PyObject *index = PyNumber_Index(arg);
+        if (index == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "an integer or string of size 1 is required");
+            return 0;
+        }
+        face_value = PyLong_AsLong(index);
+        Py_DECREF(index);
+    }
+    if (face_value == -1 && PyErr_Occurred())
+        return 0;
+
+    if (face_value < 0 || face_value >= 256) {
+        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         return 0;
     }
 
@@ -410,10 +420,10 @@ bytes_getitem(PyByteArrayObject *self, Py_ssize_t i)
 }
 
 static PyObject *
-bytes_subscript(PyByteArrayObject *self, PyObject *item)
+bytes_subscript(PyByteArrayObject *self, PyObject *index)
 {
-    if (PyIndex_Check(item)) {
-        Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+    if (PyIndex_Check(index)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
         if (i == -1 && PyErr_Occurred())
             return NULL;
@@ -427,9 +437,9 @@ bytes_subscript(PyByteArrayObject *self, PyObject *item)
         }
         return PyInt_FromLong((unsigned char)(self->ob_bytes[i]));
     }
-    else if (PySlice_Check(item)) {
+    else if (PySlice_Check(index)) {
         Py_ssize_t start, stop, step, slicelength, cur, i;
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
+        if (PySlice_GetIndicesEx((PySliceObject *)index,
                                  PyByteArray_GET_SIZE(self),
                                  &start, &stop, &step, &slicelength) < 0) {
             return NULL;
@@ -574,13 +584,13 @@ bytes_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
 }
 
 static int
-bytes_ass_subscript(PyByteArrayObject *self, PyObject *item, PyObject *values)
+bytes_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *values)
 {
     Py_ssize_t start, stop, step, slicelen, needed;
     char *bytes;
 
-    if (PyIndex_Check(item)) {
-        Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+    if (PyIndex_Check(index)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
         if (i == -1 && PyErr_Occurred())
             return -1;
@@ -601,25 +611,15 @@ bytes_ass_subscript(PyByteArrayObject *self, PyObject *item, PyObject *values)
             slicelen = 1;
         }
         else {
-            Py_ssize_t ival = PyNumber_AsSsize_t(values, PyExc_ValueError);
-            if (ival == -1 && PyErr_Occurred()) {
-                int int_value;
-                /* Also accept str of size 1 in 2.x */
-                PyErr_Clear();
-                if (!_getbytevalue(values, &int_value))
-                    return -1;
-                ival = (int) int_value;
-            } else if (ival < 0 || ival >= 256) {
-                PyErr_SetString(PyExc_ValueError,
-                                "byte must be in range(0, 256)");
+            int ival;
+            if (!_getbytevalue(values, &ival))
                 return -1;
-            }
             self->ob_bytes[i] = (char)ival;
             return 0;
         }
     }
-    else if (PySlice_Check(item)) {
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
+    else if (PySlice_Check(index)) {
+        if (PySlice_GetIndicesEx((PySliceObject *)index,
                                  PyByteArray_GET_SIZE(self),
                                  &start, &stop, &step, &slicelen) < 0) {
             return -1;
@@ -640,7 +640,7 @@ bytes_ass_subscript(PyByteArrayObject *self, PyObject *item, PyObject *values)
         values = PyByteArray_FromObject(values);
         if (values == NULL)
             return -1;
-        err = bytes_ass_subscript(self, item, values);
+        err = bytes_ass_subscript(self, index, values);
         Py_DECREF(values);
         return err;
     }
@@ -2594,10 +2594,11 @@ Insert a single item into the bytearray before the given index.");
 static PyObject *
 bytes_insert(PyByteArrayObject *self, PyObject *args)
 {
-    int value;
+    PyObject *value;
+    int ival;
     Py_ssize_t where, n = Py_SIZE(self);
 
-    if (!PyArg_ParseTuple(args, "ni:insert", &where, &value))
+    if (!PyArg_ParseTuple(args, "nO:insert", &where, &value))
         return NULL;
 
     if (n == PY_SSIZE_T_MAX) {
@@ -2605,11 +2606,8 @@ bytes_insert(PyByteArrayObject *self, PyObject *args)
                         "cannot add more objects to bytes");
         return NULL;
     }
-    if (value < 0 || value >= 256) {
-        PyErr_SetString(PyExc_ValueError,
-                        "byte must be in range(0, 256)");
+    if (!_getbytevalue(value, &ival))
         return NULL;
-    }
     if (PyByteArray_Resize((PyObject *)self, n + 1) < 0)
         return NULL;
 
@@ -2621,7 +2619,7 @@ bytes_insert(PyByteArrayObject *self, PyObject *args)
     if (where > n)
         where = n;
     memmove(self->ob_bytes + where + 1, self->ob_bytes + where, n - where);
-    self->ob_bytes[where] = value;
+    self->ob_bytes[where] = ival;
 
     Py_RETURN_NONE;
 }
