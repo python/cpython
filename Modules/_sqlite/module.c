@@ -147,6 +147,7 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
 {
     PyTypeObject* type;
     PyObject* caster;
+    int rc;
 
     if (!PyArg_ParseTuple(args, "OO", &type, &caster)) {
         return NULL;
@@ -159,7 +160,9 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
         pysqlite_BaseTypeAdapted = 1;
     }
 
-    microprotocols_add(type, (PyObject*)&pysqlite_PrepareProtocolType, caster);
+    rc = microprotocols_add(type, (PyObject*)&pysqlite_PrepareProtocolType, caster);
+    if (rc == -1)
+        return NULL;
 
     Py_INCREF(Py_None);
     return Py_None;

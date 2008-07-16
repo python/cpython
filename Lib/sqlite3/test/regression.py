@@ -153,6 +153,20 @@ class RegressionTests(unittest.TestCase):
         con.execute("insert into foo(bar) values (5)")
         con.execute(SELECT)
 
+    def CheckRegisterAdapter(self):
+        """
+        See issue 3312.
+        """
+        self.assertRaises(TypeError, sqlite.register_adapter, {}, None)
+
+    def CheckSetIsolationLevel(self):
+        """
+        See issue 3312.
+        """
+        con = sqlite.connect(":memory:")
+        self.assertRaises(UnicodeEncodeError, setattr, con,
+                          "isolation_level", u"\xe9")
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")

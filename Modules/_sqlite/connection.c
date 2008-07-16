@@ -940,6 +940,7 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
 {
     PyObject* res;
     PyObject* begin_statement;
+    char* begin_statement_str;
 
     Py_XDECREF(self->isolation_level);
 
@@ -972,12 +973,18 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
             return -1;
         }
 
-        self->begin_statement = PyMem_Malloc(PyString_Size(begin_statement) + 2);
+        begin_statement_str = PyString_AsString(begin_statement);
+        if (!begin_statement_str) {
+            Py_DECREF(begin_statement);
+            return -1;
+        }
+        self->begin_statement = PyMem_Malloc(strlen(begin_statement_str) + 2);
         if (!self->begin_statement) {
+            Py_DECREF(begin_statement);
             return -1;
         }
 
-        strcpy(self->begin_statement, PyString_AsString(begin_statement));
+        strcpy(self->begin_statement, begin_statement_str);
         Py_DECREF(begin_statement);
     }
 
