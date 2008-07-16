@@ -860,7 +860,7 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     /* Run the iterator to exhaustion */
     for (;;) {
         PyObject *item;
-        Py_ssize_t value;
+        int rc, value;
 
         /* Get the next item */
         item = iternext(it);
@@ -874,17 +874,10 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Interpret it as an int (__index__) */
-        value = PyNumber_AsSsize_t(item, PyExc_ValueError);
+        rc = _getbytevalue(item, &value);
         Py_DECREF(item);
-        if (value == -1 && PyErr_Occurred())
+        if (!rc)
             goto error;
-
-        /* Range check */
-        if (value < 0 || value >= 256) {
-            PyErr_SetString(PyExc_ValueError,
-                            "bytes must be in range(0, 256)");
-            goto error;
-        }
 
         /* Append the byte */
         if (Py_SIZE(self) < self->ob_alloc)
