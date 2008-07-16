@@ -10,6 +10,10 @@ What's New in Python 2.6 beta 2?
 Core and Builtins
 -----------------
 
+- Issue #3156: Fix inconsistent behavior of the bytearray type: all
+  its methods now allow for items objects that can be converted to
+  an integer using operator.index().
+
 - Issue #3360: Fix incorrect parsing of '020000000000.0', which
   produced a ValueError instead of giving the correct float.
 
