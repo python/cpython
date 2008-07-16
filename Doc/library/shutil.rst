@@ -78,18 +78,39 @@ copying and removal. For operations on individual files, see also the
    Unix command :program:`cp -p`.
 
 
-.. function:: copytree(src, dst[, symlinks])
+.. function:: ignore_patterns(\*patterns)
+
+   This factory function creates a function that can be used as a callable for
+   :func:`copytree`\'s *ignore* argument, ignoring files and directories that
+   match one of the glob-style *patterns* provided.  See the example below.
+
+
+.. function:: copytree(src, dst[, symlinks=False[, ignore=None]])
 
    Recursively copy an entire directory tree rooted at *src*.  The destination
-   directory, named by *dst*, must not already exist; it will be created as well as
-   missing parent directories. Permissions and times of directories are copied with
-   :func:`copystat`, individual files are copied using :func:`copy2`.   If
-   *symlinks* is true, symbolic links in the source tree are represented as
-   symbolic links in the new tree; if false or omitted, the contents of the linked
-   files are copied to the new tree.  If exception(s) occur, an :exc:`Error` is
-   raised with a list of reasons.
+   directory, named by *dst*, must not already exist; it will be created as well
+   as missing parent directories.  Permissions and times of directories are
+   copied with :func:`copystat`, individual files are copied using
+   :func:`copy2`.
 
-   The source code for this should be considered an example rather than a tool.
+   If *symlinks* is true, symbolic links in the source tree are represented as
+   symbolic links in the new tree; if false or omitted, the contents of the
+   linked files are copied to the new tree.
+
+   If *ignore* is given, it must be a callable that will receive as its
+   arguments the directory being visited by :func:`copytree`, and a list of its
+   contents, as returned by :func:`os.listdir`.  Since :func:`copytree` is
+   called recursively, the *ignore* callable will be called once for each
+   directory that is copied.  The callable must return a sequence of directory
+   and file names relative to the current directory (i.e. a subset of the items
+   in its second argument); these names will then be ignored in the copy
+   process.  :func:`ignore_patterns` can be used to create such a callable that
+   ignores names based on glob-style patterns.
+
+   If exception(s) occur, an :exc:`Error` is raised with a list of reasons.
+
+   The source code for this should be considered an example rather than the
+   ultimate tool.
 
 
 .. function:: rmtree(path[, ignore_errors[, onerror]])

@@ -1632,7 +1632,7 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
 		return m->sq_item(s, i);
 	}
 
-	return type_error("'%.200s' object is unindexable", s);
+	return type_error("'%.200s' object does not support indexing", s);
 }
 
 PyObject *

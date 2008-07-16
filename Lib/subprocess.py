@@ -1149,7 +1149,12 @@ class Popen(object):
 
             input_offset = 0
             while read_set or write_set:
-                rlist, wlist, xlist = select.select(read_set, write_set, [])
+                try:
+                    rlist, wlist, xlist = select.select(read_set, write_set, [])
+                except select.error as e:
+                    if e.args[0] == errno.EINTR:
+                        continue
+                    raise
 
                 # XXX Rewrite these to use non-blocking I/O on the
                 # file objects; they are no longer using C stdio!

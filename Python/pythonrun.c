@@ -229,14 +229,14 @@ Py_InitializeEx(int install_sigs)
 	if (install_sigs)
 		initsigs(); /* Signal handling stuff, including initintr() */
 		
-    /* Initialize warnings. */
-    _PyWarnings_Init();
-    if (PySys_HasWarnOptions()) {
-        PyObject *warnings_module = PyImport_ImportModule("warnings");
-        if (!warnings_module)
-            PyErr_Clear();
-        Py_XDECREF(warnings_module);
-    }
+	/* Initialize warnings. */
+	_PyWarnings_Init();
+	if (PySys_HasWarnOptions()) {
+		PyObject *warnings_module = PyImport_ImportModule("warnings");
+		if (!warnings_module)
+			PyErr_Clear();
+		Py_XDECREF(warnings_module);
+	}
 
 	initmain(); /* Module __main__ */
 	if (!Py_NoSiteFlag)
@@ -1246,7 +1246,7 @@ PyErr_PrintEx(int set_sys_last_vars)
 	PyException_SetTraceback(v, tb);
 	if (exception == NULL)
 		return;
-        /* Now we know v != NULL too */
+	/* Now we know v != NULL too */
 	if (set_sys_last_vars) {
 		PySys_SetObject("last_type", exception);
 		PySys_SetObject("last_value", v);
@@ -2096,14 +2096,14 @@ PyRun_AnyFileFlags(FILE *fp, const char *name, PyCompilerFlags *flags)
 PyAPI_FUNC(PyObject *)
 PyRun_File(FILE *fp, const char *p, int s, PyObject *g, PyObject *l)
 {
-        return PyRun_FileExFlags(fp, p, s, g, l, 0, NULL);
+	return PyRun_FileExFlags(fp, p, s, g, l, 0, NULL);
 }
 
 #undef PyRun_FileEx
 PyAPI_FUNC(PyObject *)
 PyRun_FileEx(FILE *fp, const char *p, int s, PyObject *g, PyObject *l, int c)
 {
-        return PyRun_FileExFlags(fp, p, s, g, l, c, NULL);
+	return PyRun_FileExFlags(fp, p, s, g, l, c, NULL);
 }
 
 #undef PyRun_FileFlags
@@ -2111,7 +2111,7 @@ PyAPI_FUNC(PyObject *)
 PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject *g, PyObject *l,
 		PyCompilerFlags *flags)
 {
-        return PyRun_FileExFlags(fp, p, s, g, l, 0, flags);
+	return PyRun_FileExFlags(fp, p, s, g, l, 0, flags);
 }
 
 #undef PyRun_SimpleFile

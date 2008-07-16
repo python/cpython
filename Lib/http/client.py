@@ -783,7 +783,7 @@ class HTTPConnection:
                         host_enc = self.host.encode("ascii")
                     except UnicodeEncodeError:
                         host_enc = self.host.encode("idna")
-                    if self.port == HTTP_PORT:
+                    if self.port == self.default_port:
                         self.putheader('Host', host_enc)
                     else:
                         host_enc = host_enc.decode("ascii")
