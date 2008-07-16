@@ -1484,7 +1484,7 @@ mbstreamreader_dealloc(MultibyteStreamReaderObject *self)
 {
 	PyObject_GC_UnTrack(self);
 	ERROR_DECREF(self->errors);
-	Py_DECREF(self->stream);
+	Py_XDECREF(self->stream);
 	Py_TYPE(self)->tp_free(self);
 }
 
@@ -1686,7 +1686,7 @@ mbstreamwriter_dealloc(MultibyteStreamWriterObject *self)
 {
 	PyObject_GC_UnTrack(self);
 	ERROR_DECREF(self->errors);
-	Py_DECREF(self->stream);
+	Py_XDECREF(self->stream);
 	Py_TYPE(self)->tp_free(self);
 }
 
