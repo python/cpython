@@ -657,6 +657,7 @@ VERSION
 SOVERSION
 CONFIG_ARGS
 UNIVERSALSDK
+ARCH_RUN_32BIT
 PYTHONFRAMEWORK
 PYTHONFRAMEWORKIDENTIFIER
 PYTHONFRAMEWORKDIR
@@ -1890,6 +1891,9 @@ else
 
 fi
 
+
+
+ARCH_RUN_32BIT=
 
 
 UNIVERSAL_ARCHS="32-bit"
@@ -4588,12 +4592,14 @@ echo "${ECHO_T}$ac_cv_no_strict_aliasing_ok" >&6; }
 		UNIVERSAL_ARCH_FLAGS=""
 	        if test "$UNIVERSAL_ARCHS" = "32-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
+		   ARCH_RUN_32BIT=""
 
 	         elif test "$UNIVERSAL_ARCHS" = "64-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
 
 	         elif test "$UNIVERSAL_ARCHS" = "all" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
+		   ARCH_RUN_32BIT="arch -386 -ppc"
 
 		 else
 	           { { echo "$as_me:$LINENO: error: proper usage is --with-universalarch=32-bit|64-bit|all" >&5
@@ -24985,6 +24991,7 @@ VERSION!$VERSION$ac_delim
 SOVERSION!$SOVERSION$ac_delim
 CONFIG_ARGS!$CONFIG_ARGS$ac_delim
 UNIVERSALSDK!$UNIVERSALSDK$ac_delim
+ARCH_RUN_32BIT!$ARCH_RUN_32BIT$ac_delim
 PYTHONFRAMEWORK!$PYTHONFRAMEWORK$ac_delim
 PYTHONFRAMEWORKIDENTIFIER!$PYTHONFRAMEWORKIDENTIFIER$ac_delim
 PYTHONFRAMEWORKDIR!$PYTHONFRAMEWORKDIR$ac_delim
@@ -25040,7 +25047,6 @@ LINKFORSHARED!$LINKFORSHARED$ac_delim
 CFLAGSFORSHARED!$CFLAGSFORSHARED$ac_delim
 SHLIBS!$SHLIBS$ac_delim
 USE_SIGNAL_MODULE!$USE_SIGNAL_MODULE$ac_delim
-SIGNAL_OBJS!$SIGNAL_OBJS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -25082,6 +25088,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+SIGNAL_OBJS!$SIGNAL_OBJS$ac_delim
 USE_THREAD_MODULE!$USE_THREAD_MODULE$ac_delim
 LDLAST!$LDLAST$ac_delim
 THREADOBJ!$THREADOBJ$ac_delim
@@ -25102,7 +25109,7 @@ SRCDIRS!$SRCDIRS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 18; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 19; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
