@@ -3139,16 +3139,7 @@ parsenumber(struct compiling *c, const char *s)
 #endif
         if (*end == 'l' || *end == 'L')
                 return PyLong_FromString((char *)s, (char **)0, 0);
-        if (s[0] == '0') {
-                x = (long) PyOS_strtoul((char *)s, (char **)&end, 0);
-                if (x < 0 && errno == 0) {
-                                return PyLong_FromString((char *)s,
-                                                         (char **)0,
-                                                         0);
-                }
-        }
-        else
-                x = PyOS_strtol((char *)s, (char **)&end, 0);
+        x = PyOS_strtol((char *)s, (char **)&end, 0);
         if (*end == '\0') {
                 if (errno != 0)
                         return PyLong_FromString((char *)s, (char **)0, 0);
