@@ -243,7 +243,7 @@ class PyBuildExt(build_ext):
             return
 
         if self.get_platform() == 'darwin' and (
-                sys.maxint > 2**32 and '-arch' in ext.extra_link_args):
+                sys.maxsize > 2**32 and '-arch' in ext.extra_link_args):
             # Don't bother doing an import check when an extension was
             # build with an explicit '-arch' flag on OSX. That's currently
             # only used to build 32-bit only extensions in a 4-way
