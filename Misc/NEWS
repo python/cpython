@@ -63,6 +63,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1608818: Fix misbehavior in os.listdir() if readdir() fails.
+
 - Issue #3125: Remove copy_reg in multiprocessing and replace it with
   ForkingPickler.register() to resolve conflict with ctypes.
 
