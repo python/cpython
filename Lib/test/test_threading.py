@@ -323,6 +323,82 @@ class ThreadTests(unittest.TestCase):
                                sys.getrefcount(weak_raising_cyclic_object())))
 
 
+class ThreadJoinOnShutdown(unittest.TestCase):
+
+    def _run_and_join(self, script):
+        script = """if 1:
+            import sys, os, time, threading
+
+            # a thread, which waits for the main program to terminate
+            def joiningfunc(mainthread):
+                mainthread.join()
+                print 'end of thread'
+        \n""" + script
+
+        import subprocess
+        p = subprocess.Popen([sys.executable, "-c", script], stdout=subprocess.PIPE)
+        rc = p.wait()
+        self.assertEqual(p.stdout.read(), "end of main\nend of thread\n")
+        self.failIf(rc == 2, "interpreter was blocked")
+        self.failUnless(rc == 0, "Unexpected error")
+
+    def test_1_join_on_shutdown(self):
+        # The usual case: on exit, wait for a non-daemon thread
+        script = """if 1:
+            import os
+            t = threading.Thread(target=joiningfunc,
+                                 args=(threading.current_thread(),))
+            t.start()
+            time.sleep(0.1)
+            print 'end of main'
+            """
+        self._run_and_join(script)
+
+
+    def test_2_join_in_forked_process(self):
+        # Like the test above, but from a forked interpreter
+        import os
+        if not hasattr(os, 'fork'):
+            return
+        script = """if 1:
+            childpid = os.fork()
+            if childpid != 0:
+                os.waitpid(childpid, 0)
+                sys.exit(0)
+
+            t = threading.Thread(target=joiningfunc,
+                                 args=(threading.current_thread(),))
+            t.start()
+            print 'end of main'
+            """
+        self._run_and_join(script)
+
+    def test_3_join_in_forked_from_thread(self):
+        # Like the test above, but fork() was called from a worker thread
+        # In the forked process, the main Thread object must be marked as stopped.
+        import os
+        if not hasattr(os, 'fork'):
+            return
+        script = """if 1:
+            main_thread = threading.current_thread()
+            def worker():
+                childpid = os.fork()
+                if childpid != 0:
+                    os.waitpid(childpid, 0)
+                    sys.exit(0)
+
+                t = threading.Thread(target=joiningfunc,
+                                     args=(main_thread,))
+                print 'end of main'
+                t.start()
+                t.join() # Should not block: main_thread is already stopped
+
+            w = threading.Thread(target=worker)
+            w.start()
+            """
+        self._run_and_join(script)
+
+
 class ThreadingExceptionTests(unittest.TestCase):
     # A RuntimeError should be raised if Thread.start() is called
     # multiple times.
@@ -363,7 +439,9 @@ class ThreadingExceptionTests(unittest.TestCase):
 
 def test_main():
     test.test_support.run_unittest(ThreadTests,
-                                   ThreadingExceptionTests)
+                                   ThreadJoinOnShutdown,
+                                   ThreadingExceptionTests,
+                                   )
 
 if __name__ == "__main__":
     test_main()
