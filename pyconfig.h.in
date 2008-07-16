@@ -426,6 +426,9 @@
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
 
+/* Define if compiling using MacOS X 10.5 SDK or later. */
+#undef HAVE_OSX105_SDK
+
 /* Define to 1 if you have the `pathconf' function. */
 #undef HAVE_PATHCONF
 
@@ -488,9 +491,6 @@
 
 /* Define if you have readline 4.2 */
 #undef HAVE_RL_COMPLETION_MATCHES
-
-/* Define when using libedit's readline emulation */
-#undef HAVE_RL_DISPM_VFUNC
 
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_PRE_INPUT_HOOK

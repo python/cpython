@@ -873,6 +873,7 @@ yes)
 
 
 		BASECFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
+		CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
 	    fi
 
 	    ;;
@@ -1397,6 +1398,7 @@ fi
 CC="$ac_save_cc"
 
 
+
 AC_SUBST(OTHER_LIBTOOL_OPT)
 case $ac_sys_system/$ac_sys_release in
   Darwin/@<:@01567@:>@\..*) 
@@ -1717,6 +1719,7 @@ then
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
+
 
 AC_SUBST(CFLAGSFORSHARED)
 AC_MSG_CHECKING(CFLAGSFORSHARED)
@@ -2222,6 +2225,13 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 		fi
 	fi
 fi
+
+AC_MSG_CHECKING(for OSX 10.5 SDK or later)
+AC_TRY_COMPILE([#include <Carbon/Carbon.h>], FSIORefNum fRef = 0,
+  AC_DEFINE(HAVE_OSX105_SDK, 1, Define if compiling using MacOS X 10.5 SDK or later.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
 
 # Check for --with-doc-strings
 AC_MSG_CHECKING(for --with-doc-strings)
