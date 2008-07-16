@@ -294,7 +294,7 @@ result as if you had called :func:`str` on the value.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: sf
-   format_spec: [[`fill`]`align`][`sign`][0][`width`][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][.`precision`][`type`]
    fill: <a character other than '}'>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
@@ -348,6 +348,10 @@ following:
    |         | positive numbers, and a minus sign on negative numbers.  |
    +---------+----------------------------------------------------------+
 
+The ``'#'`` option is only valid for integers, and only for binary,
+octal, or decimal output.  If present, it specifies that the output
+will be prefixed by ``'0b'``, ``'0o'``, or ``'0x'``, respectively.
+
 *width* is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
 
@@ -368,7 +372,7 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
-   | ``'b'`` | Binary. Outputs the number in base 2.                    |
+   | ``'b'`` | Binary format. Outputs the number in base 2.             |
    +---------+----------------------------------------------------------+
    | ``'c'`` | Character. Converts the integer to the corresponding     |
    |         | unicode character before printing.                       |
