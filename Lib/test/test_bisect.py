@@ -114,6 +114,14 @@ class TestBisect(unittest.TestCase):
             self.assertEqual(func(data, elem), expected)
             self.assertEqual(func(UserList(data), elem), expected)
 
+    def test_negative_lo(self):
+        # Issue 3301
+        mod = self.module
+        self.assertRaises(ValueError, mod.bisect_left, [1, 2, 3], 5, -1, 3),
+        self.assertRaises(ValueError, mod.bisect_right, [1, 2, 3], 5, -1, 3),
+        self.assertRaises(ValueError, mod.insort_left, [1, 2, 3], 5, -1, 3),
+        self.assertRaises(ValueError, mod.insort_right, [1, 2, 3], 5, -1, 3),
+
     def test_random(self, n=25):
         from random import randrange
         for i in range(n):

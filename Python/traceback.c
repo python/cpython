@@ -129,7 +129,7 @@ PyTraceBack_Here(PyFrameObject *frame)
 }
 
 int
-Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno, int indent)
+_Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno, int indent)
 {
 	int err = 0;
 	FILE *xfp = NULL;
@@ -241,7 +241,7 @@ tb_displayline(PyObject *f, const char *filename, int lineno, const char *name)
 	err = PyFile_WriteString(linebuf, f);
 	if (err != 0)
 		return err;
-        return Py_DisplaySourceLine(f, filename, lineno, 4);
+        return _Py_DisplaySourceLine(f, filename, lineno, 4);
 }
 
 static int

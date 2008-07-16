@@ -305,8 +305,8 @@ File Selectors
 .. \ulink{FileEntry}{http://tix.sourceforge.net/dist/current/demos/samples/FileEnt.tcl}
 
 
-Hierachical ListBox
-^^^^^^^^^^^^^^^^^^^
+Hierarchical ListBox
+^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: HList()

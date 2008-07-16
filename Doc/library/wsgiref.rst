@@ -413,7 +413,7 @@ Paste" library.
       from wsgiref.validate import validator
       from wsgiref.simple_server import make_server
 
-      # Our callable object which is intentionally not compilant to the 
+      # Our callable object which is intentionally not compliant to the 
       # standard, so the validator is going to break
       def simple_app(environ, start_response):
           status = '200 OK' # HTTP Status

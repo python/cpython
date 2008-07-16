@@ -158,7 +158,7 @@ However, if you really do need to use some shared data then
 
    The ``'d'`` and ``'i'`` arguments used when creating ``num`` and ``arr`` are
    typecodes of the kind used by the :mod:`array` module: ``'d'`` indicates a
-   double precision float and ``'i'`` inidicates a signed integer.  These shared
+   double precision float and ``'i'`` indicates a signed integer.  These shared
    objects will be process and thread safe.
 
    For more flexibility in using shared memory one can use the
@@ -168,7 +168,7 @@ However, if you really do need to use some shared data then
 **Server process**
 
    A manager object returned by :func:`Manager` controls a server process which
-   holds python objects and allows other processes to manipulate them using
+   holds Python objects and allows other processes to manipulate them using
    proxies.
 
    A manager returned by :func:`Manager` will support types :class:`list`,
@@ -451,7 +451,7 @@ Note that one can also create a shared queue by using a manager object -- see
    This means that if you try joining that process you may get a deadlock unless
    you are sure that all items which have been put on the queue have been
    consumed.  Similarly, if the child process is non-daemonic then the parent
-   process may hang on exit when it tries to join all it non-daemonic children.
+   process may hang on exit when it tries to join all its non-daemonic children.
 
    Note that a queue created using a manager does not have this issue.  See
    :ref:`multiprocessing-programming`.
@@ -532,7 +532,8 @@ For an example of the usage of queues for interprocess communication see
       Equivalent to ``get(False)``.
 
    :class:`multiprocessing.Queue` has a few additional methods not found in
-   :class:`queue.Queue` which are usually unnecessary:
+   :class:`queue.Queue`.  These methods are usually unnecessary for most
+   code:
 
    .. method:: close()
 
@@ -772,7 +773,7 @@ Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generally synchronization primitives are not as necessary in a multiprocess
-program as they are in a mulithreaded program.  See the documentation for
+program as they are in a multithreaded program.  See the documentation for
 :mod:`threading` module.
 
 Note that one can also create synchronization primitives by using a manager
@@ -782,7 +783,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    A bounded semaphore object: a clone of :class:`threading.BoundedSemaphore`.
 
-   (On Mac OSX this is indistiguishable from :class:`Semaphore` because
+   (On Mac OSX this is indistinguishable from :class:`Semaphore` because
    ``sem_getvalue()`` is not implemented on that platform).
 
 .. class:: Condition([lock])
@@ -891,8 +892,8 @@ processes.
 
 .. note::
 
-   Although it is posible to store a pointer in shared memory remember that this
-   will refer to a location in the address space of a specific process.
+   Although it is possible to store a pointer in shared memory remember that
+   this will refer to a location in the address space of a specific process.
    However, the pointer is quite likely to be invalid in the context of a second
    process and trying to dereference the pointer from the second process may
    cause a crash.
@@ -1081,7 +1082,7 @@ their parent process exits.  The manager classes are defined in the
 
       Start a subprocess to start the manager.
 
-   .. method:: server_forever()
+   .. method:: serve_forever()
 
       Run the server in the current process.
 
@@ -1774,7 +1775,7 @@ handler type) for messages from different processes to get mixed up.
    handler which sends output to :data:`sys.stderr` using format
    ``'[%(levelname)s/%(processName)s] %(message)s'``.  (The logger allows use of
    the non-standard ``'%(processName)s'`` format.)  Message sent to this logger
-   will not by default propogate to the root logger.
+   will not by default propagate to the root logger.
 
    Note that on Windows child processes will only inherit the level of the
    parent process's logger -- any other customization of the logger will not be
