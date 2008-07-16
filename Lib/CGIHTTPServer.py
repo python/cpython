@@ -70,17 +70,18 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             return SimpleHTTPServer.SimpleHTTPRequestHandler.send_head(self)
 
     def is_cgi(self):
-        """Test whether self.path corresponds to a CGI script.
+        """Test whether self.path corresponds to a CGI script,
+        and return a boolean.
 
-        Return a tuple (dir, rest) if self.path requires running a
-        CGI script, None if not.  Note that rest begins with a
+        This function sets self.cgi_info to a tuple (dir, rest)
+        when it returns True, where dir is the directory part before
+        the CGI script name.  Note that rest begins with a
         slash if it is not empty.
 
         The default implementation tests whether the path
         begins with one of the strings in the list
         self.cgi_directories (and the next character is a '/'
         or the end of the string).
-
         """
 
         path = self.path
