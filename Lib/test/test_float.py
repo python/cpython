@@ -377,10 +377,10 @@ class HexFloatTestCase(unittest.TestCase):
         self.fail('%r not identical to %r' % (x, y))
 
     def test_ends(self):
-        self.identical(self.MIN, 2.**-1022)
-        self.identical(self.TINY, 2.**-1074)
-        self.identical(self.EPS, 2.**-52)
-        self.identical(self.MAX, 2.*(2.**1023 - 2.**970))
+        self.identical(self.MIN, ldexp(1.0, -1022))
+        self.identical(self.TINY, ldexp(1.0, -1074))
+        self.identical(self.EPS, ldexp(1.0, -52))
+        self.identical(self.MAX, 2.*(ldexp(1.0, 1023) - ldexp(1.0, 970)))
 
     def test_invalid_inputs(self):
         invalid_inputs = [
