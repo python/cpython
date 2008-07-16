@@ -92,6 +92,9 @@ AC_ARG_ENABLE(universalsdk,
 ])
 AC_SUBST(UNIVERSALSDK)
 
+ARCH_RUN_32BIT=
+AC_SUBST(ARCH_RUN_32BIT)
+
 UNIVERSAL_ARCHS="32-bit"
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
@@ -904,12 +907,14 @@ yes)
 		UNIVERSAL_ARCH_FLAGS=""
 	        if test "$UNIVERSAL_ARCHS" = "32-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
+		   ARCH_RUN_32BIT=""
 
 	         elif test "$UNIVERSAL_ARCHS" = "64-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
 
 	         elif test "$UNIVERSAL_ARCHS" = "all" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
+		   ARCH_RUN_32BIT="arch -386 -ppc"
 
 		 else
 	           AC_MSG_ERROR([proper usage is --with-universalarch=32-bit|64-bit|all])
