@@ -8,6 +8,7 @@ from test import test_support
 from test import test_multibytecodec_support
 from test.test_support import TESTFN
 import unittest, StringIO, codecs, sys, os
+import _multibytecodec
 
 ALL_CJKENCODINGS = [
 # _codecs_cn
@@ -52,6 +53,14 @@ class Test_MultibyteCodec(unittest.TestCase):
                 exec open(TESTFN)
         finally:
             os.unlink(TESTFN)
+
+    def test_init_segfault(self):
+        # bug #3305: this used to segfault
+        self.assertRaises(AttributeError,
+                          _multibytecodec.MultibyteStreamReader, None)
+        self.assertRaises(AttributeError,
+                          _multibytecodec.MultibyteStreamWriter, None)
+
 
 class Test_IncrementalEncoder(unittest.TestCase):
 
