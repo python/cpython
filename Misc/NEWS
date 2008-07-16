@@ -12,6 +12,10 @@ What's new in Python 3.0b2?
 Core and Builtins
 -----------------
 
+- Issue #3008: the float type has a new instance method 'float.hex'
+  and a new class method 'float.fromhex' to convert floating-point
+  numbers to and from hexadecimal strings, respectively.
+
 - Issue #3083: Add alternate (#) formatting for bin, oct, hex output
   for str.format().  This adds the prefix 0b, 0o, or 0x, respectively.
 

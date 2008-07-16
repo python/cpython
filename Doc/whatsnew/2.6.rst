@@ -1397,6 +1397,11 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   :func:`isnan`, return true if their floating-point argument is
   infinite or Not A Number.  (:issue:`1640`)
 
+  The float type has a new instance method :meth:`float.hex` and a
+  corresponding new class method :meth:`float.fromhex` to convert
+  floating-point numbers to and from hexadecimal strings,
+  respectively.  (:issue:`3008`)
+
 * The :mod:`math` module has a number of new functions, and the existing
   functions have been improved to give more consistent behaviour
   across platforms, especially with respect to handling of
