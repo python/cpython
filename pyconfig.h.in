@@ -489,6 +489,9 @@
 /* Define if you have readline 4.2 */
 #undef HAVE_RL_COMPLETION_MATCHES
 
+/* Define when using libedit's readline emulation */
+#undef HAVE_RL_DISPM_VFUNC
+
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_PRE_INPUT_HOOK
 
@@ -976,22 +979,9 @@
 /* Define to profile with the Pentium timestamp counter */
 #undef WITH_TSC
 
-
- /* Define to 1 if your processor stores words with the most significant byte
-    first (like Motorola and SPARC, unlike Intel and VAX). 
-
-    The block below does compile-time checking for endianness on platforms
-    that use GCC and therefore allows compiling fat binaries on OSX by using 
-    '-arch ppc -arch i386' as the compile flags. The phrasing was choosen
-    such that the configure-result is used on systems that don't use GCC.
-  */
-#ifdef __BIG_ENDIAN__
-#define WORDS_BIGENDIAN 1
-#else
-#ifndef __LITTLE_ENDIAN__
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
-#endif
-#endif
 
 /* Define to 1 if on AIX 3.
    System headers sometimes define this.
@@ -1005,6 +995,9 @@
 
 /* Define on Irix to enable u_int */
 #undef _BSD_TYPES
+
+/* Define on Darwin to activate all library features */
+#undef _DARWIN_C_SOURCE
 
 /* This must be set to 64 on some systems to enable large file support. */
 #undef _FILE_OFFSET_BITS
