@@ -1,10 +1,4 @@
-"""Fix incompatible imports and module references.
-
-Fixes:
-  * StringIO -> io
-  * cStringIO -> io
-  * md5 -> hashlib
-"""
+"""Fix incompatible imports and module references."""
 # Author: Collin Winter
 
 # Local imports
@@ -12,7 +6,7 @@ from .. import fixer_base
 from ..fixer_util import Name, attr_chain, any, set
 import __builtin__
 builtin_names = [name for name in dir(__builtin__)
-                 if name not in ("__name__", "__doc__")]
+                 if name not in ("__name__", "__doc__", "exec", "print")]
 
 # XXX(alexandre): It would be possible to get the modules exports by fetching
 # XXX: their __all__ attribute. However, I fear that this would add an additional
@@ -155,8 +149,7 @@ MAPPING = {"StringIO":  ("io", ["StringIO"]),
                        'error', 'exit', 'exit_thread', 'get_ident',
                        'interrupt_main', 'stack_size', 'start_new',
                        'start_new_thread']),
-           'whichdb': ('dbm', ['whichdb']),
-           'anydbm': ('dbm', ['error', 'open']),
+           # anydbm and whichdb are handed by fix_imports2.
            'dbhash': ('dbm.bsd', ['error', 'open']),
            'dumbdbm': ('dbm.dumb', ['error', 'open', '_Database']),
            'dbm': ('dbm.ndbm', ['error', 'open', 'library']),
@@ -253,25 +246,29 @@ MAPPING = {"StringIO":  ("io", ["StringIO"]),
            'CGIHTTPServer': ('http.server',
                              ['CGIHTTPRequestHandler', 'executable',
                               'nobody_uid', 'nobody']),
-           'test.test_support': ('test.support',
-                          ["Error", "TestFailed", "TestSkipped", "ResourceDenied",
-                          "import_module", "verbose", "use_resources",
-                          "max_memuse", "record_original_stdout",
-                          "get_original_stdout", "unload", "unlink", "rmtree",
-                          "forget", "is_resource_enabled", "requires",
-                          "find_unused_port", "bind_port",
-                          "fcmp", "is_jython", "TESTFN", "HOST",
-                          "FUZZ", "findfile", "verify", "vereq", "sortdict",
-                          "check_syntax_error", "open_urlresource", "WarningMessage",
-                          "catch_warning", "CleanImport", "EnvironmentVarGuard",
-                          "TransientResource", "captured_output", "captured_stdout",
-                          "TransientResource", "transient_internet", "run_with_locale",
-                          "set_memlimit", "bigmemtest", "bigaddrspacetest",
-                          "BasicTestRunner", "run_unittest", "run_doctest",
-                          "threading_setup", "threading_cleanup", "reap_children"]),
+           # 'test.test_support': ('test.support',
+           #                ["Error", "TestFailed", "TestSkipped", "ResourceDenied",
+           #                "import_module", "verbose", "use_resources",
+           #                "max_memuse", "record_original_stdout",
+           #                "get_original_stdout", "unload", "unlink", "rmtree",
+           #                "forget", "is_resource_enabled", "requires",
+           #                "find_unused_port", "bind_port",
+           #                "fcmp", "is_jython", "TESTFN", "HOST",
+           #                "FUZZ", "findfile", "verify", "vereq", "sortdict",
+           #                "check_syntax_error", "open_urlresource", "WarningMessage",
+           #                "catch_warning", "CleanImport", "EnvironmentVarGuard",
+           #                "TransientResource", "captured_output", "captured_stdout",
+           #                "TransientResource", "transient_internet", "run_with_locale",
+           #                "set_memlimit", "bigmemtest", "bigaddrspacetest",
+           #                "BasicTestRunner", "run_unittest", "run_doctest",
+           #                "threading_setup", "threading_cleanup", "reap_children"]),
            'commands': ('subprocess', ['getstatusoutput', 'getoutput']),
            'UserString' : ('collections', ['UserString']),
            'UserList' : ('collections', ['UserList']),
+           'urlparse' : ('urllib.parse',
+                            ['urlparse', 'urlunparse', 'urlsplit',
+                            'urlunsplit', 'urljoin', 'urldefrag']),
+            'robotparser' : ('urllib.robotparser', ['RobotFileParser']),
 }
 
 
@@ -279,9 +276,9 @@ def alternates(members):
     return "(" + "|".join(map(repr, members)) + ")"
 
 
-def build_pattern():
+def build_pattern(mapping=MAPPING):
     bare = set()
-    for old_module, (new_module, members) in MAPPING.items():
+    for old_module, (new_module, members) in mapping.items():
         bare.add(old_module)
         bare.update(members)
         members = alternates(members)
@@ -297,6 +294,7 @@ def build_pattern():
         yield """import_name< 'import'
                               dotted_as_name< module_name=%r 'as' any > >
               """ % old_module
+        # Find usages of module members in code e.g. urllib.foo(bar)
         yield """power< module_name=%r trailer< '.' %s > any* >
               """ % (old_module, members)
     yield """bare_name=%s""" % alternates(bare)
@@ -306,6 +304,8 @@ class FixImports(fixer_base.BaseFix):
     PATTERN = "|".join(build_pattern())
 
     order = "pre" # Pre-order tree traversal
+
+    mapping = MAPPING
 
     # Don't match the node if it's within another match
     def match(self, node):
@@ -328,7 +328,7 @@ class FixImports(fixer_base.BaseFix):
         star = results.get("star")
 
         if import_mod or mod_name:
-            new_name, members = MAPPING[(import_mod or mod_name).value]
+            new_name, members = self.mapping[(import_mod or mod_name).value]
 
         if import_mod:
             self.replace[import_mod.value] = new_name
