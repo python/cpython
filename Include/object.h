@@ -695,9 +695,9 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 #define Py_CLEAR(op)				\
         do {                            	\
                 if (op) {			\
-                        PyObject *tmp = (PyObject *)(op);	\
+                        PyObject *_py_tmp = (PyObject *)(op);	\
                         (op) = NULL;		\
-                        Py_DECREF(tmp);		\
+                        Py_DECREF(_py_tmp);	\
                 }				\
         } while (0)
 

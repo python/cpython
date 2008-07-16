@@ -1186,6 +1186,7 @@ are always available.  They are listed here in alphabetical order.
    care about trailing, unmatched values from the longer iterables.  If those
    values are important, use :func:`itertools.zip_longest` instead.
 
+
 .. rubric:: Footnotes
 
 .. [#] Specifying a buffer size currently has no effect on systems that don't have

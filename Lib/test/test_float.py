@@ -284,24 +284,36 @@ class ReprTestCase(unittest.TestCase):
         floats_file.close()
 
 # Beginning with Python 2.6 float has cross platform compatible
-# ways to create and representate inf and nan
+# ways to create and represent inf and nan
 class InfNanTest(unittest.TestCase):
     def test_inf_from_str(self):
         self.assert_(isinf(float("inf")))
         self.assert_(isinf(float("+inf")))
         self.assert_(isinf(float("-inf")))
+        self.assert_(isinf(float("infinity")))
+        self.assert_(isinf(float("+infinity")))
+        self.assert_(isinf(float("-infinity")))
 
         self.assertEqual(repr(float("inf")), "inf")
         self.assertEqual(repr(float("+inf")), "inf")
         self.assertEqual(repr(float("-inf")), "-inf")
+        self.assertEqual(repr(float("infinity")), "inf")
+        self.assertEqual(repr(float("+infinity")), "inf")
+        self.assertEqual(repr(float("-infinity")), "-inf")
 
         self.assertEqual(repr(float("INF")), "inf")
         self.assertEqual(repr(float("+Inf")), "inf")
         self.assertEqual(repr(float("-iNF")), "-inf")
+        self.assertEqual(repr(float("Infinity")), "inf")
+        self.assertEqual(repr(float("+iNfInItY")), "inf")
+        self.assertEqual(repr(float("-INFINITY")), "-inf")
 
         self.assertEqual(str(float("inf")), "inf")
         self.assertEqual(str(float("+inf")), "inf")
         self.assertEqual(str(float("-inf")), "-inf")
+        self.assertEqual(str(float("infinity")), "inf")
+        self.assertEqual(str(float("+infinity")), "inf")
+        self.assertEqual(str(float("-infinity")), "-inf")
 
         self.assertRaises(ValueError, float, "info")
         self.assertRaises(ValueError, float, "+info")
@@ -309,6 +321,10 @@ class InfNanTest(unittest.TestCase):
         self.assertRaises(ValueError, float, "in")
         self.assertRaises(ValueError, float, "+in")
         self.assertRaises(ValueError, float, "-in")
+        self.assertRaises(ValueError, float, "infinit")
+        self.assertRaises(ValueError, float, "+Infin")
+        self.assertRaises(ValueError, float, "-INFI")
+        self.assertRaises(ValueError, float, "infinitys")
 
     def test_inf_as_str(self):
         self.assertEqual(repr(1e300 * 1e300), "inf")

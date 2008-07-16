@@ -9,7 +9,7 @@
 #   blackjesus:~> ./move-faqwiz.sh 2\.1 3\.2
 #   Moving FAQ question 02.001 to 03.002
 
-if [ x$2 == x ]; then
+if [ x$2 = x ]; then
     echo "Need 2 args: original_version final_version."
     exit 2
 fi
@@ -19,7 +19,7 @@ if [ ! -d data -o ! -d data/RCS ]; then
     exit 2
 fi
 
-function cut_n_pad() {
+cut_n_pad() {
     t=`echo $1 | cut -d. -f $2`
     export $3=`echo $t | awk "{ tmp = \\$0; l = length(tmp); for (i = 0; i < $2-l+1; i++) { tmp = "0".tmp } print tmp  }"`
 }
@@ -28,7 +28,13 @@ cut_n_pad $1 1 prefix1
 cut_n_pad $1 2 suffix1
 cut_n_pad $2 1 prefix2
 cut_n_pad $2 2 suffix2
-tmpfile=tmp$RANDOM.tmp
+if which tempfile >/dev/null; then
+    tmpfile=$(tempfile -d .)
+elif [ -n "$RANDOM" ]; then
+    tmpfile=tmp$RANDOM.tmp
+else
+    tmpfile=tmp$$.tmp
+fi
 file1=faq$prefix1.$suffix1.htp
 file2=faq$prefix2.$suffix2.htp
 

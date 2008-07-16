@@ -1781,8 +1781,8 @@ Utility functions
 .. function:: byref(obj[, offset])
 
    Returns a light-weight pointer to ``obj``, which must be an
-   instance of a ctypes type.  ``offset`` defaults to zero, it must be
-   an integer which is added to the internal pointer value.
+   instance of a ctypes type.  ``offset`` defaults to zero, and must be
+   an integer that will be added to the internal pointer value.
 
    ``byref(obj, offset)`` corresponds to this C code::
 

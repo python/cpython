@@ -143,6 +143,10 @@ Sequence Protocol
 
    Return the underlying array of PyObject pointers.  Assumes that *o* was returned
    by :cfunc:`PySequence_Fast` and *o* is not *NULL*.
+   
+   Note, if a list gets resized, the reallocation may relocate the items array.
+   So, only use the underlying array pointer in contexts where the sequence 
+   cannot change.
 
 
 .. cfunction:: PyObject* PySequence_ITEM(PyObject *o, Py_ssize_t i)

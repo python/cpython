@@ -3638,7 +3638,8 @@ posix_fork1(PyObject *self, PyObject *noargs)
 	pid_t pid = fork1();
 	if (pid == -1)
 		return posix_error();
-	PyOS_AfterFork();
+	if (pid == 0)
+		PyOS_AfterFork();
 	return PyLong_FromLong(pid);
 }
 #endif

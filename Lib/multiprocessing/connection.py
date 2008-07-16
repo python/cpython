@@ -222,11 +222,9 @@ class SocketListener(object):
         self._family = family
         self._last_accepted = None
 
-        sub_debug('listener bound to address %r', self._address)
-
         if family == 'AF_UNIX':
             self._unlink = Finalize(
-                self, os.unlink, args=(self._address,), exitpriority=0
+                self, os.unlink, args=(address,), exitpriority=0
                 )
         else:
             self._unlink = None

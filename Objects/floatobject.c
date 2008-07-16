@@ -225,6 +225,9 @@ PyFloat_FromString(PyObject *v)
 		if (PyOS_strnicmp(p, "inf", 4) == 0) {
 			Py_RETURN_INF(sign);
 		}
+		if (PyOS_strnicmp(p, "infinity", 9) == 0) {
+			Py_RETURN_INF(sign);
+		}
 #ifdef Py_NAN
 		if(PyOS_strnicmp(p, "nan", 4) == 0) {
 			Py_RETURN_NAN;
@@ -1903,30 +1906,28 @@ _PyFloat_Init(void)
 		PyStructSequence_InitType(&FloatInfoType, &floatinfo_desc);
 }
 
-void
-PyFloat_CompactFreeList(size_t *pbc, size_t *pbf, size_t *bsum)
+int
+PyFloat_ClearFreeList(void)
 {
 	PyFloatObject *p;
 	PyFloatBlock *list, *next;
-	unsigned i;
-	size_t bc = 0, bf = 0;	/* block count, number of freed blocks */
-	size_t fsum = 0;	/* total unfreed ints */
-	int frem;		/* remaining unfreed ints per block */
+	int i;
+	int u;			/* remaining unfreed ints per block */
+	int freelist_size = 0;
 
 	list = block_list;
 	block_list = NULL;
 	free_list = NULL;
 	while (list != NULL) {
-		bc++;
-		frem = 0;
+		u = 0;
 		for (i = 0, p = &list->objects[0];
 		     i < N_FLOATOBJECTS;
 		     i++, p++) {
 			if (PyFloat_CheckExact(p) && Py_REFCNT(p) != 0)
-				frem++;
+				u++;
 		}
 		next = list->next;
-		if (frem) {
+		if (u) {
 			list->next = block_list;
 			block_list = list;
 			for (i = 0, p = &list->objects[0];
@@ -1941,15 +1942,12 @@ PyFloat_CompactFreeList(size_t *pbc, size_t *pbf, size_t *bsum)
 			}
 		}
 		else {
-			PyMem_FREE(list); /* XXX PyObject_FREE ??? */
-			bf++;
+			PyMem_FREE(list);
 		}
-		fsum += frem;
+		freelist_size += u;
 		list = next;
 	}
-	*pbc = bc;
-	*pbf = bf;
-	*bsum = fsum;
+	return freelist_size;
 }
 
 void
@@ -1957,25 +1955,21 @@ PyFloat_Fini(void)
 {
 	PyFloatObject *p;
 	PyFloatBlock *list;
-	unsigned i;
-	size_t bc, bf;	/* block count, number of freed blocks */
-	size_t fsum;	/* total unfreed floats per block */
+	int i;
+	int u;			/* total unfreed floats per block */
 
-	PyFloat_CompactFreeList(&bc, &bf, &fsum);
+	u = PyFloat_ClearFreeList();
 
 	if (!Py_VerboseFlag)
 		return;
 	fprintf(stderr, "# cleanup floats");
-	if (!fsum) {
+	if (!u) {
 		fprintf(stderr, "\n");
 	}
 	else {
 		fprintf(stderr,
-			": %" PY_FORMAT_SIZE_T "d unfreed float%s in %"
-			PY_FORMAT_SIZE_T "d out of %"
-			PY_FORMAT_SIZE_T "d block%s\n",
-			fsum, fsum == 1 ? "" : "s",
-			bc - bf, bc, bc == 1 ? "" : "s");
+			": %d unfreed float%s\n",
+			u, u == 1 ? "" : "s");
 	}
 	if (Py_VerboseFlag > 1) {
 		list = block_list;
