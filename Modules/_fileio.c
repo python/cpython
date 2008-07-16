@@ -278,7 +278,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	ret = -1;
 
  done:
-	PyMem_Free(name);
 	return ret;
 }
 

@@ -839,8 +839,10 @@ cmath_log(PyObject *self, PyObject *args)
 	errno = 0;
 	PyFPE_START_PROTECT("complex function", return 0)
 	x = c_log(x);
-	if (PyTuple_GET_SIZE(args) == 2)
-		x = c_quot(x, c_log(y));
+	if (PyTuple_GET_SIZE(args) == 2) {
+		y = c_log(y);
+		x = c_quot(x, y);
+	}
 	PyFPE_END_PROTECT(x)
 	if (errno != 0)
 		return math_error();

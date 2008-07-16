@@ -641,8 +641,6 @@ time_mktime(PyObject *self, PyObject *tup)
 {
 	struct tm buf;
 	time_t tt;
-	tt = time(&tt);
-	buf = *localtime(&tt);
 	if (!gettmarg(tup, &buf))
 		return NULL;
 	tt = mktime(&buf);

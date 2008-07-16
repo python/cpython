@@ -16,7 +16,7 @@ Glossary
       The typical Python prompt of the interactive shell when entering code for
       an indented code block.
 
-   Abstract Base Class
+   abstract base class
       Abstract Base Classes (abbreviated ABCs) complement :term:`duck-typing` by
       providing a way to define interfaces when other techniques like :func:`hasattr`
       would be clumsy. Python comes with many builtin ABCs for data structures

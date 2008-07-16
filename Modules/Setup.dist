@@ -228,9 +228,11 @@ _symtable symtablemodule.c
 #_md5 md5module.c md5.c
 
 
-# The _sha module implements the SHA checksum algorithm.
-# (NIST's Secure Hash Algorithm.)
+# The _sha module implements the SHA checksum algorithms.
+# (NIST's Secure Hash Algorithms.)
 #_sha shamodule.c
+#_sha256 sha256module.c
+#_sha512 sha512module.c
 
 
 # The _tkinter module.

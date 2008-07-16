@@ -575,7 +575,7 @@ audioop_findmax(PyObject *self, PyObject *args)
         }
         len1 >>= 1;
     
-        if ( len1 < len2 ) {
+        if ( len2 < 0 || len1 < len2 ) {
                 PyErr_SetString(AudioopError, "Input sample should be longer");
                 return 0;
         }

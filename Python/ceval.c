@@ -617,18 +617,20 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	COMPARE_OP is often followed by JUMP_IF_FALSE or JUMP_IF_TRUE.  And,
 	those opcodes are often followed by a POP_TOP.
 
-	Verifying the prediction costs a single high-speed test of register
+	Verifying the prediction costs a single high-speed test of a register
 	variable against a constant.  If the pairing was good, then the
-	processor has a high likelihood of making its own successful branch
-	prediction which results in a nearly zero overhead transition to the
-	next opcode.
+	processor's own internal branch predication has a high likelihood of
+	success, resulting in a nearly zero-overhead transition to the
+	next opcode.  A successful prediction saves a trip through the eval-loop
+	including its two unpredictable branches, the HAS_ARG test and the 
+	switch-case.  Combined with the processor's internal branch prediction,
+	a successful PREDICT has the effect of making the two opcodes run as if 
+	they were a single new opcode with the bodies combined.
 
-	A successful prediction saves a trip through the eval-loop including
-	its two unpredictable branches, the HAS_ARG test and the switch-case.
-
-        If collecting opcode statistics, turn off prediction so that
-	statistics are accurately maintained (the predictions bypass
-	the opcode frequency counter updates).
+    If collecting opcode statistics, your choices are to either keep the
+	predictions turned-on and interpret the results as if some opcodes
+	had been combined or turn-off predictions so that the opcode frequency
+	counter updates for both opcodes.
 */
 
 #ifdef DYNAMIC_EXECUTION_PROFILE

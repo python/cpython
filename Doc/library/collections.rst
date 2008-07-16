@@ -37,42 +37,50 @@ ABCs - abstract base classes
 
 The collections module offers the following ABCs:
 
-=========================  ====================  ======================  ====================================================
-ABC                        Inherits              Abstract Methods        Mixin Methods
-=========================  ====================  ======================  ====================================================
-:class:`Container`                               ``__contains__``
-:class:`Hashable`                                ``__hash__``
-:class:`Iterable`                                ``__iter__``
-:class:`Iterator`          :class:`Iterable`     ``__next__``            ``__iter__``
-:class:`Sized`          			 ``__len__``
-
-:class:`Mapping`           :class:`Sized`,       ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
-                           :class:`Iterable`,    ``__len__``. and        ``get``, ``__eq__``, and ``__ne__``
-                           :class:`Container`    ``__iter__``
-
-:class:`MutableMapping`    :class:`Mapping`      ``__getitem__``         Inherited Mapping methods and
-                                                 ``__setitem__``,        ``pop``, ``popitem``, ``clear``, ``update``,
-                                                 ``__delitem__``,        and ``setdefault``
-						 ``__iter__``, and
-                                                 ``__len__``
-
-:class:`Sequence`          :class:`Sized`,       ``__getitem__``         ``__contains__``. ``__iter__``, ``__reversed__``.
-                           :class:`Iterable`,    and ``__len__``         ``index``, and ``count``
-                           :class:`Container`
-
-:class:`MutableSequnce`    :class:`Sequence`     ``__getitem__``         Inherited Sequence methods and
-                                                 ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
-                                                 ``insert``,             ``remove``, and ``__iadd__``
-                                                 and ``__len__``
-
-:class:`Set`               :class:`Sized`,       ``__len__``,            ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
-                           :class:`Iterable`,    ``__iter__``, and       ``__gt__``, ``__ge__``, ``__and__``, ``__or__``
-                           :class:`Container`    ``__contains__``        ``__sub__``, ``__xor__``, and ``isdisjoint``
-
-:class:`MutableSet`        :class:`Set`          ``add`` and             Inherited Set methods and
-                                                 ``discard``             ``clear``, ``pop``, ``remove``, ``__ior__``,
-                                                                         ``__iand__``, ``__ixor__``, and ``__isub__``
-=========================  ====================  ======================  ====================================================
+=========================  =====================  ======================  ====================================================
+ABC                        Inherits               Abstract Methods        Mixin Methods
+=========================  =====================  ======================  ====================================================
+:class:`Container`                                ``__contains__``
+:class:`Hashable`                                 ``__hash__``
+:class:`Iterable`                                 ``__iter__``
+:class:`Iterator`          :class:`Iterable`      ``__next__``            ``__iter__``
+:class:`Sized`          			  ``__len__``
+:class:`Callable`                                 ``__call__``
+                                                  
+:class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``. ``__iter__``, ``__reversed__``.
+                           :class:`Iterable`,     and ``__len__``         ``index``, and ``count``
+                           :class:`Container`     
+                                                  
+:class:`MutableSequnce`    :class:`Sequence`      ``__getitem__``         Inherited Sequence methods and
+                                                  ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
+                                                  ``insert``,             ``remove``, and ``__iadd__``
+                                                  and ``__len__``
+                                                  
+:class:`Set`               :class:`Sized`,        ``__len__``,            ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
+                           :class:`Iterable`,     ``__iter__``, and       ``__gt__``, ``__ge__``, ``__and__``, ``__or__``
+                           :class:`Container`     ``__contains__``        ``__sub__``, ``__xor__``, and ``isdisjoint``
+                                                  
+:class:`MutableSet`        :class:`Set`           ``add`` and             Inherited Set methods and
+                                                  ``discard``             ``clear``, ``pop``, ``remove``, ``__ior__``,
+                                                                          ``__iand__``, ``__ixor__``, and ``__isub__``
+                                                  
+:class:`Mapping`           :class:`Sized`,        ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
+                           :class:`Iterable`,     ``__len__``. and        ``get``, ``__eq__``, and ``__ne__``
+                           :class:`Container`     ``__iter__``
+                                                  
+:class:`MutableMapping`    :class:`Mapping`       ``__getitem__``         Inherited Mapping methods and
+                                                  ``__setitem__``,        ``pop``, ``popitem``, ``clear``, ``update``,
+                                                  ``__delitem__``,        and ``setdefault``
+						  ``__iter__``, and
+                                                  ``__len__``
+                                                  
+:class:`MappingView`       :class:`Sized`                                 ``__len__``
+:class:`KeysView`          :class:`MappingView`,                          ``__contains__``,
+                           :class:`Set`                                   ``__iter__``
+:class:`ItemsView`         :class:`MappingView`,                          ``__contains__``,
+                           :class:`Set`                                   ``__iter__``
+:class:`ValuesView`        :class:`MappingView`                           ``__contains__``, ``__iter__``
+=========================  =====================  ======================  ====================================================
 
 These ABCs allow us to ask classes or instances if they provide
 particular functionality, for example::
