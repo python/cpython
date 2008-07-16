@@ -1333,7 +1333,7 @@ def getpager():
     (fd, filename) = tempfile.mkstemp()
     os.close(fd)
     try:
-        if hasattr(os, 'system') and os.system('more %s' % filename) == 0:
+        if hasattr(os, 'system') and os.system('more "%s"' % filename) == 0:
             return lambda text: pipepager(text, 'more')
         else:
             return ttypager
@@ -1361,7 +1361,7 @@ def tempfilepager(text, cmd):
     file.write(text)
     file.close()
     try:
-        os.system(cmd + ' ' + filename)
+        os.system(cmd + ' "' + filename + '"')
     finally:
         os.unlink(filename)
 
