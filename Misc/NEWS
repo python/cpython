@@ -12,6 +12,9 @@ What's new in Python 3.0b2?
 Core and Builtins
 -----------------
 
+- Issue #3083: Add alternate (#) formatting for bin, oct, hex output
+  for str.format().  This adds the prefix 0b, 0o, or 0x, respectively.
+
 - Issue #3280: like chr(), the "%c" format now accepts unicode code points
   beyond the Basic Multilingual Plane (above 0xffff) on all configurations. On
   "narrow Unicode" builds, the result is a string of 2 code units, forming a
