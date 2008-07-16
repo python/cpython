@@ -561,7 +561,8 @@ Objects/stringobject.o: $(srcdir)/Objects/stringobject.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS) 
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
-                                             $(BYTESTR_DEPS)
+                                             $(BYTESTR_DEPS) \
+                                             $(srcdir)/Objects/stringlib/formatter.h
 
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
                                              $(BYTESTR_DEPS)
