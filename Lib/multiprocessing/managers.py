@@ -18,13 +18,12 @@ import sys
 import weakref
 import threading
 import array
-import copy_reg
 import Queue
 
 from traceback import format_exc
 from multiprocessing import Process, current_process, active_children, Pool, util, connection
 from multiprocessing.process import AuthenticationString
-from multiprocessing.forking import exit, Popen, assert_spawning
+from multiprocessing.forking import exit, Popen, assert_spawning, ForkingPickler
 from multiprocessing.util import Finalize, info
 
 try:
@@ -38,7 +37,7 @@ except ImportError:
 
 def reduce_array(a):
     return array.array, (a.typecode, a.tostring())
-copy_reg.pickle(array.array, reduce_array)
+ForkingPickler.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
 
