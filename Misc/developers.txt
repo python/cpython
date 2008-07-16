@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Antoine Pitrou was given SVN access on July 16 2008, by recommendation
+  from GvR, for general contributions to Python.
+
 - Jesse Noller was given SVN access on 16 June 2008 by Georg Brandl,
   for work on the multiprocessing module.
 
