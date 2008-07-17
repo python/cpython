@@ -741,6 +741,10 @@ format_float_internal(PyObject *value,
     /* first, do the conversion as 8-bit chars, using the platform's
        snprintf.  then, if needed, convert to unicode. */
 
+    /* 'F' is the same as 'f', per the PEP */
+    if (type == 'F')
+        type = 'f';
+
     x = PyFloat_AsDouble(value);
 
     if (x == -1.0 && PyErr_Occurred())
@@ -754,12 +758,8 @@ format_float_internal(PyObject *value,
 
     if (precision < 0)
         precision = 6;
-    if ((type == 'f' || type == 'F') && (fabs(x) / 1e25) >= 1e25) {
-	if (type == 'f')
-	    type = 'g';
-	else
-	    type = 'G';
-    }
+    if (type == 'f' && (fabs(x) / 1e25) >= 1e25)
+        type = 'g';
 
     /* cast "type", because if we're in unicode we need to pass a
        8-bit char.  this is safe, because we've restricted what "type"

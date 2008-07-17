@@ -402,14 +402,13 @@ The available presentation types for floating point and decimal values are:
    | ``'e'`` | Exponent notation. Prints the number in scientific       |
    |         | notation using the letter 'e' to indicate the exponent.  |
    +---------+----------------------------------------------------------+
-   | ``'E'`` | Exponent notation. Same as ``'e'`` except it converts    |
-   |         | the number to upper case.                                |
+   | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
+   |         | upper case 'E' as the separator character.               |
    +---------+----------------------------------------------------------+
    | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
    |         | number.                                                  |
    +---------+----------------------------------------------------------+
-   | ``'F'`` | Fixed point. Same as ``'f'`` except it converts the      |
-   |         | number to upper case.                                    |
+   | ``'F'`` | Fixed point. Same as ``'f'``.                            |
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format. This prints the number as a fixed-point  |
    |         | number, unless the number is too large, in which case    |
