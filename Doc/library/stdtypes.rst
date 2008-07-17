@@ -1223,9 +1223,9 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'E'``    | Floating point exponential format (uppercase).      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'f'``    | Floating point decimal format (lowercase).          | \(3)  |
+| ``'f'``    | Floating point decimal format.                      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'F'``    | Floating point decimal format (uppercase).          | \(3)  |
+| ``'F'``    | Floating point decimal format.                      | \(3)  |
 +------------+-----------------------------------------------------+-------+
 | ``'g'``    | Floating point format. Uses lowercase exponential   | \(4)  |
 |            | format if exponent is less than -4 or not less than |       |

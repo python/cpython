@@ -12,9 +12,6 @@ What's new in Python 3.0b2?
 Core and Builtins
 -----------------
 
-- Issue #3382: Make '%F' and float.__format__('F') convert results
-  to uppercase.
-
 - Issue #3008: the float type has a new instance method 'float.hex'
   and a new class method 'float.fromhex' to convert floating-point
   numbers to and from hexadecimal strings, respectively.
