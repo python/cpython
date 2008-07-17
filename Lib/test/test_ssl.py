@@ -598,6 +598,9 @@ else:
             except ssl.SSLError, x:
                 if test_support.verbose:
                     sys.stdout.write("\nSSLError is %s\n" % x[1])
+            except socket.error, x:
+                if test_support.verbose:
+                    sys.stdout.write("\nsocket.error is %s\n" % x[1])
             else:
                 raise test_support.TestFailed(
                     "Use of invalid cert should have failed!")
