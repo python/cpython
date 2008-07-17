@@ -1413,7 +1413,7 @@ class Test_imports(FixerTestCase):
     from ..fixes.fix_imports import MAPPING as modules
 
     def test_import_module(self):
-        for old, (new, members) in list(self.modules.items()):
+        for old, new in self.modules.items():
             b = "import %s" % old
             a = "import %s" % new
             self.check(b, a)
@@ -1423,24 +1423,17 @@ class Test_imports(FixerTestCase):
             self.check(b, a)
 
     def test_import_from(self):
-        for old, (new, members) in list(self.modules.items()):
-            for member in members:
-                b = "from %s import %s" % (old, member)
-                a = "from %s import %s" % (new, member)
-                self.check(b, a)
-
-                s = "from foo import %s" % member
-                self.unchanged(s)
-
-            b = "from %s import %s" % (old, ", ".join(members))
-            a = "from %s import %s" % (new, ", ".join(members))
+        for old, new in self.modules.items():
+            b = "from %s import foo" % old
+            a = "from %s import foo" % new
             self.check(b, a)
 
-            s = "from foo import %s" % ", ".join(members)
-            self.unchanged(s)
+            b = "from %s import foo, bar" % old
+            a = "from %s import foo, bar" % new
+            self.check(b, a)
 
     def test_import_module_as(self):
-        for old, (new, members) in list(self.modules.items()):
+        for old, new in self.modules.items():
             b = "import %s as foo_bar" % old
             a = "import %s as foo_bar" % new
             self.check(b, a)
@@ -1450,50 +1443,27 @@ class Test_imports(FixerTestCase):
             self.check(b, a)
 
     def test_import_from_as(self):
-        for old, (new, members) in list(self.modules.items()):
-            for member in members:
-                b = "from %s import %s as foo_bar" % (old, member)
-                a = "from %s import %s as foo_bar" % (new, member)
-                self.check(b, a)
+        for old, new in self.modules.items():
+            b = "from %s import foo as bar" % old
+            a = "from %s import foo as bar" % new
+            self.check(b, a)
 
     def test_star(self):
-        for old in self.modules:
-            s = "from %s import *" % old
-            self.warns_unchanged(s, "Cannot handle star imports")
+        for old, new in self.modules.items():
+            b = "from %s import *" % old
+            a = "from %s import *" % new
+            self.check(b, a)
 
     def test_import_module_usage(self):
-        for old, (new, members) in list(self.modules.items()):
-            for member in members:
-                b = """
-                    import %s
-                    foo(%s, %s.%s)
-                    """ % (old, old, old, member)
-                a = """
-                    import %s
-                    foo(%s, %s.%s)
-                    """ % (new, new, new, member)
-                self.check(b, a)
-
-    def test_from_import_usage(self):
-        for old, (new, members) in list(self.modules.items()):
-            for member in members:
-                b = """
-                    from %s import %s
-                    foo(%s, %s())
-                    """ % (old, member, member, member)
-                a = """
-                    from %s import %s
-                    foo(%s, %s())
-                    """ % (new, member, member, member)
-                self.check(b, a)
+        for old, new in self.modules.items():
             b = """
-                from %s import %s
-                foo(%s)
-                """ % (old, ", ".join(members), ", ".join(members))
+                import %s
+                foo(%s.bar)
+                """ % (old, old)
             a = """
-                from %s import %s
-                foo(%s)
-                """ % (new, ", ".join(members), ", ".join(members))
+                import %s
+                foo(%s.bar)
+                """ % (new, new)
             self.check(b, a)
 
 

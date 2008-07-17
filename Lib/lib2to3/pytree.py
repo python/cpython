@@ -652,20 +652,35 @@ class WildcardPattern(BasePattern):
                 if self.name:
                     r[self.name] = nodes[:count]
                 yield count, r
+        elif self.name == "bare_name":
+            yield self._bare_name_matches(nodes)
         else:
             for count, r in self._recursive_matches(nodes, 0):
                 if self.name:
                     r[self.name] = nodes[:count]
                 yield count, r
 
+    def _bare_name_matches(self, nodes):
+        """Special optimized matcher for bare_name."""
+        count = 0
+        r = {}
+        done = False
+        max = len(nodes)
+        while not done and count < max:
+            done = True
+            for leaf in self.content:
+                if leaf[0].match(nodes[count], r):
+                    count += 1
+                    done = False
+                    break
+        r[self.name] = nodes[:count]
+        return count, r
+
     def _recursive_matches(self, nodes, count):
         """Helper to recursively yield the matches."""
         assert self.content is not None
         if count >= self.min:
-            r = {}
-            if self.name:
-                r[self.name] = nodes[:0]
-            yield 0, r
+            yield 0, {}
         if count < self.max:
             for alt in self.content:
                 for c0, r0 in generate_matches(alt, nodes):
