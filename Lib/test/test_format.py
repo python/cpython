@@ -88,18 +88,6 @@ class FormatTest(unittest.TestCase):
         testboth("%#.*F", (110, -1.e+100/3.))
         overflowrequired = 0
 
-        # check for %f and %F
-        testboth("%f", (1.0,), "1.000000")
-        testboth("%F", (1.0,), "1.000000")
-        testboth("%f", (1e100,), "1e+100")
-        testboth("%F", (1e100,), "1E+100")
-        testboth("%f", (1e100,), "1e+100")
-        testboth("%F", (1e100,), "1E+100")
-        testboth("%f", (float('nan'),), "nan")
-        testboth("%F", (float('nan'),), "NAN")
-        testboth("%f", (float('inf'),), "inf")
-        testboth("%F", (float('inf'),), "INF")
-
         # Formatting of long integers. Overflow is not ok
         overflowok = 0
         testboth("%x", 10L, "a")

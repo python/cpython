@@ -8191,12 +8191,8 @@ formatfloat(Py_UNICODE *buf,
 	return -1;
     if (prec < 0)
 	prec = 6;
-    if ((type == 'f' || type == 'F') && (fabs(x) / 1e25) >= 1e25) {
-        if (type == 'f')
-            type = 'g';
-        else
-            type = 'G';
-    }
+    if (type == 'f' && (fabs(x) / 1e25) >= 1e25)
+	type = 'g';
     /* Worst case length calc to ensure no buffer overrun:
 
        'g' formats:
@@ -8215,8 +8211,7 @@ formatfloat(Py_UNICODE *buf,
     */
     if (((type == 'g' || type == 'G') && 
           buflen <= (size_t)10 + (size_t)prec) ||
-	((type == 'f' || type == 'F')  &&
-          buflen <= (size_t)53 + (size_t)prec)) {
+	(type == 'f' && buflen <= (size_t)53 + (size_t)prec)) {
 	PyErr_SetString(PyExc_OverflowError,
 			"formatted float is too long (precision too large?)");
 	return -1;
@@ -8709,6 +8704,8 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    case 'F':
 	    case 'g':
 	    case 'G':
+		if (c == 'F')
+			c = 'f';
 		pbuf = formatbuf;
 		len = formatfloat(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
 			flags, prec, c, v);

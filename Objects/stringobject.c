@@ -4320,12 +4320,8 @@ formatfloat(char *buf, size_t buflen, int flags,
 	}
 	if (prec < 0)
 		prec = 6;
-	if ((type == 'f' || type == 'F') && (fabs(x) / 1e25) >= 1e25) {
-		if (type == 'f')
-			type = 'g';
-		else
-			type = 'G';
-	}
+	if (type == 'f' && fabs(x)/1e25 >= 1e25)
+		type = 'g';
 	/* Worst case length calc to ensure no buffer overrun:
 
 	   'g' formats:
@@ -4344,8 +4340,7 @@ formatfloat(char *buf, size_t buflen, int flags,
 	*/
 	if (((type == 'g' || type == 'G') &&
               buflen <= (size_t)10 + (size_t)prec) ||
-	    ((type == 'f' || type == 'F') &&
-	      buflen <= (size_t)53 + (size_t)prec)) {
+	    (type == 'f' && buflen <= (size_t)53 + (size_t)prec)) {
 		PyErr_SetString(PyExc_OverflowError,
 			"formatted float is too long (precision too large?)");
 		return -1;
@@ -4915,6 +4910,8 @@ PyString_Format(PyObject *format, PyObject *args)
 			case 'F':
 			case 'g':
 			case 'G':
+				if (c == 'F')
+					c = 'f';
 				pbuf = formatbuf;
 				len = formatfloat(pbuf, sizeof(formatbuf),
 						  flags, prec, c, v);

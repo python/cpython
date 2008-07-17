@@ -10,9 +10,6 @@ What's New in Python 2.6 beta 2?
 Core and Builtins
 -----------------
 
-- Issue #3382: Make '%F' and float.__format__('F') convert results
-  to uppercase.
-
 - Issue #3156: Fix inconsistent behavior of the bytearray type: all
   its methods now allow for items objects that can be converted to
   an integer using operator.index().
