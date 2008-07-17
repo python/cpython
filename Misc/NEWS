@@ -67,6 +67,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3395: fix reference in test_multiprocessing to old debugInfo method
+
 - Issue #3312: Fix two crashes in sqlite3.
 
 - Issue #1608818: Fix misbehavior in os.listdir() if readdir() fails.

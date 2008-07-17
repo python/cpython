@@ -1037,7 +1037,7 @@ class _TestZZZNumberOfObjects(BaseTestCase):
         gc.collect()                       # do garbage collection
         refs = self.manager._number_of_objects()
         if refs != EXPECTED_NUMBER:
-            print self.manager._debugInfo()
+            print self.manager._debug_info()
 
         self.assertEqual(refs, EXPECTED_NUMBER)
 
