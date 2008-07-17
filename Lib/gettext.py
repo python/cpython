@@ -304,26 +304,16 @@ class GNUTranslations(NullTranslations):
             # cause no problems since us-ascii should always be a subset of
             # the charset encoding.  We may want to fall back to 8-bit msgids
             # if the Unicode conversion fails.
+            charset = self._charset or 'ascii'
             if b'\x00' in msg:
                 # Plural forms
                 msgid1, msgid2 = msg.split(b'\x00')
                 tmsg = tmsg.split(b'\x00')
-                if self._charset:
-                    msgid1 = str(msgid1, self._charset)
-                    tmsg = [str(x, self._charset) for x in tmsg]
-                else:
-                    msgid1 = str(msgid1)
-                    tmsg = [str(x) for x in tmsg]
-                for i in range(len(tmsg)):
-                    catalog[(msgid1, i)] = tmsg[i]
+                msgid1 = str(msgid1, charset)
+                for i, x in enumerate(tmsg):
+                    catalog[(msgid1, i)] = str(x, charset)
             else:
-                if self._charset:
-                    msg = str(msg, self._charset)
-                    tmsg = str(tmsg, self._charset)
-                else:
-                    msg = str(msg)
-                    tmsg = str(tmsg)
-                catalog[msg] = tmsg
+                catalog[str(msg, charset)] = str(tmsg, charset)
             # advance to next entry in the seek tables
             masteridx += 8
             transidx += 8
@@ -359,7 +349,7 @@ class GNUTranslations(NullTranslations):
         if tmsg is missing:
             if self._fallback:
                 return self._fallback.gettext(message)
-            return str(message)
+            return message
         return tmsg
 
     def ngettext(self, msgid1, msgid2, n):
@@ -369,9 +359,9 @@ class GNUTranslations(NullTranslations):
             if self._fallback:
                 return self._fallback.ngettext(msgid1, msgid2, n)
             if n == 1:
-                tmsg = str(msgid1)
+                tmsg = msgid1
             else:
-                tmsg = str(msgid2)
+                tmsg = msgid2
         return tmsg
 
 
