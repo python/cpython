@@ -263,6 +263,12 @@ class PyBuildExt(build_ext):
         ext_filename = os.path.join(
             self.build_lib,
             self.get_ext_filename(self.get_ext_fullname(ext.name)))
+
+        # If the build directory didn't exist when setup.py was
+        # started, sys.path_importer_cache has a negative result
+        # cached.  Clear that cache before trying to import.
+        sys.path_importer_cache.clear()
+
         try:
             imp.load_dynamic(ext.name, ext_filename)
         except ImportError as why:
