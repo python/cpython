@@ -742,15 +742,21 @@ ast_for_arguments(struct compiling *c, const node *n)
     }
     assert(TYPE(n) == typedargslist || TYPE(n) == varargslist);
 
-    /* first count the number of positional args & defaults */
+    /* First count the number of positional args & defaults.  The
+       variable i is the loop index for this for loop and the next.
+       The next loop picks up where the first leaves off.
+    */
     for (i = 0; i < NCH(n); i++) {
         ch = CHILD(n, i);
         if (TYPE(ch) == STAR) {
-            /* skip star and possible argument */
+            /* skip star */
             i++;
-            i += (TYPE(CHILD(n, i)) == tfpdef
-                  || TYPE(CHILD(n, i)) == vfpdef);
-            break; 
+            if (i < NCH(n) && /* skip argument following star */
+                (TYPE(CHILD(n, i)) == tfpdef ||
+                 TYPE(CHILD(n, i)) == vfpdef)) {
+                i++;
+            }
+            break;
         }
         if (TYPE(ch) == DOUBLESTAR) break;
         if (TYPE(ch) == vfpdef || TYPE(ch) == tfpdef) nposargs++;
