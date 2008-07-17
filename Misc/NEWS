@@ -124,6 +124,10 @@ Library
   redundant ":443" port number designation when the connection is using the
   default https port (443).
 
+- Issue #874900: after an os.fork() call the threading module state is cleaned
+  up in the child process to prevent deadlock and report proper thread counts
+  if the new process uses the threading module.
+
 Tests
 -----
 
