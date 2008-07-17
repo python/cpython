@@ -601,6 +601,9 @@ else:
             except ssl.SSLError as x:
                 if support.verbose:
                     sys.stdout.write("\nSSLError is %s\n" % x)
+            except socket.error as x:
+                if support.verbose:
+                    sys.stdout.write("\nsocket.error is %s\n" % x)
             else:
                 raise support.TestFailed(
                     "Use of invalid cert should have failed!")
