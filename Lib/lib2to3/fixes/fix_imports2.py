@@ -4,8 +4,8 @@ from . import fix_imports
 
 
 MAPPING = {
-            'whichdb': ('dbm', ['whichdb']),
-            'anydbm': ('dbm', ['error', 'open']),
+            'whichdb': 'dbm',
+            'anydbm': 'dbm',
           }
 
 
