@@ -858,6 +858,8 @@ yes)
 	Darwin*)
 	    # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
 	    # used to be here, but non-Apple gcc doesn't accept them.
+
+
 	    if test "${enable_universalsdk}"; then
 		UNIVERSAL_ARCH_FLAGS=""
 	        if test "$UNIVERSAL_ARCHS" = "32-bit" ; then
@@ -878,8 +880,33 @@ yes)
 
 
 		BASECFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
-		CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+		tgt=`sw_vers -productVersion | sed 's/\(10\.[0-9]*\).*/\1/'`
+		if test "${UNIVERSALSDK}" != "/" -a "${tgt}" '>' '10.4' ; then
+			CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+		fi
 	    fi
+
+	    # Calculate the right deployment target for this build.
+	    #
+	    cur_target=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
+	    if test ${cur_target} '>' 10.2; then
+		    cur_target=10.3
+	    fi
+	    if test "${UNIVERSAL_ARCHS}" = "all"; then
+		    # Ensure that the default platform for a 4-way
+		    # universal build is OSX 10.5, that's the first
+		    # OS release where 4-way builds make sense.
+		    cur_target='10.5'
+	    fi
+	    CONFIGURE_MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET-${cur_target}}
+	    
+	    # Make sure that MACOSX_DEPLOYMENT_TARGET is set in the 
+	    # environment with a value that is the same as what we'll use
+	    # in the Makefile to ensure that we'll get the same compiler
+	    # environment during configure and build time.
+	    MACOSX_DEPLOYMENT_TARGET="$CONFIGURE_MACOSX_DEPLOYMENT_TARGET"
+	    export MACOSX_DEPLOYMENT_TARGET
+	    EXPORT_MACOSX_DEPLOYMENT_TARGET=''
 
 	    ;;
 	OSF*)
@@ -1550,26 +1577,7 @@ then
 	Darwin/*)
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
 		# This allows an extension to be used in any Python
-		cur_target=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
-		if test ${cur_target} '>' 10.2; then
-			cur_target=10.3
-		fi
-		if test "${UNIVERSAL_ARCHS}" = "all"; then
-			# Ensure that the default platform for a 4-way
-			# universal build is OSX 10.5, that's the first
-			# OS release where 4-way builds make sense.
-			cur_target='10.5'
-		fi
-		CONFIGURE_MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET-${cur_target}}
 
-		# Make sure that MACOSX_DEPLOYMENT_TARGET is set in the 
-		# environment with a value that is the same as what we'll use
-		# in the Makefile to ensure that we'll get the same compiler
-		# environment during configure and build time.
-		MACOSX_DEPLOYMENT_TARGET="$CONFIGURE_MACOSX_DEPLOYMENT_TARGET"
-		export MACOSX_DEPLOYMENT_TARGET
-
-		EXPORT_MACOSX_DEPLOYMENT_TARGET=''
 		if test ${MACOSX_DEPLOYMENT_TARGET} '>' 10.2
 		then
 			if test "${enable_universalsdk}"; then
