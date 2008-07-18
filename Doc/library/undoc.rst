@@ -60,6 +60,8 @@ Multimedia
 :mod:`sunaudio`
    --- Interpret Sun audio headers (may become obsolete or a tool/demo).
 
+   .. warning:: The :mod:`sunaudio` module has been removed in Python 3.0.
+
 :mod:`toaiff`
    --- Convert "arbitrary" sound files to AIFF files; should probably become a tool
    or demo.  Requires the external program :program:`sox`.

@@ -70,6 +70,8 @@ Library
 - Issue #3389: Allow resolving dotted names for handlers in logging
   configuration files.
 
+- Deprecate the sunaudio module for removal in Python 3.0.
+
 - Issue #3395: fix reference in test_multiprocessing to old debugInfo method
 
 - Issue #3312: Fix two crashes in sqlite3.
