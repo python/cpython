@@ -57,7 +57,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
         namei = 0
         fakename = allnames[namei]
         while fakename in bynames:
-            chars = map(None, fakename)
+            chars = list(fakename)
             for i in xrange(len(chars)):
                 if chars[i] == 'z':
                     chars[i] = 'A'
@@ -74,7 +74,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
                 except IndexError:
                     # should never happen... if so, just forget it
                     break
-            fakename = ''.join(map(None, chars))
+            fakename = ''.join(chars)
 
         self.assertRaises(KeyError, grp.getgrnam, fakename)
 
