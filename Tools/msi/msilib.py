@@ -5,7 +5,12 @@ import win32com.client.gencache
 import win32com.client
 import pythoncom, pywintypes
 from win32com.client import constants
-import re, string, os, sets, glob, subprocess, sys, winreg, struct
+import re, string, os, sets, glob, subprocess, sys, _winreg, struct
+
+try:
+    basestring
+except NameError:
+    basestring = (str, unicode)
 
 # Partially taken from Wine
 datasizemask=      0x00ff
@@ -90,7 +95,7 @@ class Table:
             index -= 1
             unk = type & ~knownbits
             if unk:
-                print("%s.%s unknown bits %x" % (self.name, name, unk))
+                print "%s.%s unknown bits %x" % (self.name, name, unk)
             size = type & datasizemask
             dtype = type & typemask
             if dtype == type_string:
@@ -109,7 +114,7 @@ class Table:
                 tname="OBJECT"
             else:
                 tname="unknown"
-                print("%s.%sunknown integer type %d" % (self.name, name, size))
+                print "%s.%sunknown integer type %d" % (self.name, name, size)
             if type & type_nullable:
                 flags = ""
             else:
@@ -168,14 +173,14 @@ def gen_schema(destpath, schemapath):
         r = v.Fetch()
         if not r:break
         # Table, Column, Nullable
-        f.write("(%r,%r,%r," %
-                (r.StringData(1), r.StringData(2), r.StringData(3)))
+        f.write("(%s,%s,%s," %
+                (`r.StringData(1)`, `r.StringData(2)`, `r.StringData(3)`))
         def put_int(i):
             if r.IsNull(i):f.write("None, ")
             else:f.write("%d," % r.IntegerData(i))
         def put_str(i):
             if r.IsNull(i):f.write("None, ")
-            else:f.write("%r," % r.StringData(i))
+            else:f.write("%s," % `r.StringData(i)`)
         put_int(4) # MinValue
         put_int(5) # MaxValue
         put_str(6) # KeyTable
@@ -197,7 +202,7 @@ def gen_sequence(destpath, msipath):
     v = seqmsi.OpenView("SELECT * FROM _Tables");
     v.Execute(None)
     f = open(destpath, "w")
-    f.write("import msilib,os;dirname=os.path.dirname(__file__)\n")
+    print >>f, "import msilib,os;dirname=os.path.dirname(__file__)"
     tables = []
     while 1:
         r = v.Fetch()
@@ -230,12 +235,12 @@ def gen_sequence(destpath, msipath):
                     else:
                         rec.append(bytes)
                 else:
-                    raise ValueError("Unsupported column type", info.StringData(i))
+                    raise "Unsupported column type", info.StringData(i)
             f.write(repr(tuple(rec))+",\n")
         v1.Close()
         f.write("]\n\n")
     v.Close()
-    f.write("tables=%s\n" % repr(list(map(str,tables))))
+    f.write("tables=%s\n" % repr(map(str,tables)))
     f.close()
 
 class _Unspecified:pass
@@ -249,7 +254,7 @@ def change_sequence(seq, action, seqno=_Unspecified, cond = _Unspecified):
                 seqno = seq[i][2]
             seq[i] = (action, cond, seqno)
             return
-    raise ValueError("Action not found in sequence")
+    raise ValueError, "Action not found in sequence"
 
 def add_data(db, table, values):
     d = MakeInstaller()
@@ -260,16 +265,16 @@ def add_data(db, table, values):
         assert len(value) == count, value
         for i in range(count):
             field = value[i]
-            if isinstance(field, int):
+            if isinstance(field, (int, long)):
                 r.SetIntegerData(i+1,field)
-            elif isinstance(field, str):
+            elif isinstance(field, basestring):
                 r.SetStringData(i+1,field)
             elif field is None:
                 pass
             elif isinstance(field, Binary):
                 r.SetStream(i+1, field.name)
             else:
-                raise TypeError("Unsupported type %s" % field.__class__.__name__)
+                raise TypeError, "Unsupported type %s" % field.__class__.__name__
         v.Modify(win32com.client.constants.msiViewModifyInsert, r)
         r.ClearData()
     v.Close()
@@ -365,9 +370,9 @@ class CAB:
             logical = self.gen_id(dir, file)
         self.index += 1
         if full.find(" ")!=-1:
-            self.file.write('"%s" %s\n' % (full, logical))
+            print >>self.file, '"%s" %s' % (full, logical)
         else:
-            self.file.write('%s %s\n' % (full, logical))
+            print >>self.file, '%s %s' % (full, logical)
         return self.index, logical
 
     def commit(self, db):
@@ -382,9 +387,9 @@ class CAB:
                      (r"Software\Microsoft\Win32SDK\Directories", "Install Dir"),
                     ]:
             try:
-                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, k)
-                dir = winreg.QueryValueEx(key, v)[0]
-                winreg.CloseKey(key)
+                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, k)
+                dir = _winreg.QueryValueEx(key, v)[0]
+                _winreg.CloseKey(key)
             except (WindowsError, IndexError):
                 continue
             cabarc = os.path.join(dir, r"Bin", "cabarc.exe")
@@ -392,7 +397,7 @@ class CAB:
                 continue
             break
         else:
-            print("WARNING: cabarc.exe not found in registry")
+            print "WARNING: cabarc.exe not found in registry"
             cabarc = "cabarc.exe"
         cmd = r'"%s" -m lzx:21 n %s.cab @%s.txt' % (cabarc, self.name, self.name)
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
@@ -404,7 +409,7 @@ class CAB:
                 sys.stdout.write(line)
             sys.stdout.flush()
         if not os.path.exists(self.name+".cab"):
-            raise IOError("cabarc failed")
+            raise IOError, "cabarc failed"
         add_data(db, "Media",
                 [(1, self.index, None, "#"+self.name, None, None)])
         add_stream(db, self.name, self.name+".cab")
@@ -523,7 +528,7 @@ class Directory:
             file = os.path.basename(file)
         absolute = os.path.join(self.absolute, src)
         assert not re.search(r'[\?|><:/*]"', file) # restrictions on long names
-        if file in self.keyfiles:
+        if self.keyfiles.has_key(file):
             logical = self.keyfiles[file]
         else:
             logical = None
@@ -683,5 +688,5 @@ def set_arch_from_file(path):
         Win64 = 1
         arch_ext = '.amd64'
     else:
-        raise ValueError("Unsupported architecture")
+        raise ValueError, "Unsupported architecture"
     msi_type += ";1033"
