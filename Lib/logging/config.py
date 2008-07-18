@@ -146,7 +146,10 @@ def _install_handlers(cp, formatters):
             fmt = cp.get(sectname, "formatter")
         else:
             fmt = ""
-        klass = eval(klass, vars(logging))
+        try:
+            klass = eval(klass, vars(logging))
+        except (AttributeError, NameError):
+            klass = _resolve(klass)
         args = cp.get(sectname, "args")
         args = eval(args, vars(logging))
         h = apply(klass, args)
