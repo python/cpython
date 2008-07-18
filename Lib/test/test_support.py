@@ -20,7 +20,7 @@ __all__ = ["Error", "TestFailed", "TestSkipped", "ResourceDenied", "import_modul
            "fcmp", "have_unicode", "is_jython", "TESTFN", "HOST", "FUZZ",
            "findfile", "verify", "vereq", "sortdict", "check_syntax_error",
            "open_urlresource", "WarningMessage", "catch_warning", "CleanImport",
-           "EnvironmentVarGuard", "TransientResource", "captured_output",
+           "EnvironmentVarGuard", "captured_output",
            "captured_stdout", "TransientResource", "transient_internet",
            "run_with_locale", "set_memlimit", "bigmemtest", "bigaddrspacetest",
            "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
