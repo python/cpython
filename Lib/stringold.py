@@ -391,7 +391,7 @@ def maketrans(fromstr, tostr):
         raise ValueError, "maketrans arguments must have same length"
     global _idmapL
     if not _idmapL:
-        _idmapL = map(None, _idmap)
+        _idmapL = list(_idmap)
     L = _idmapL[:]
     fromstr = map(ord, fromstr)
     for i in range(len(fromstr)):
