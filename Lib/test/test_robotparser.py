@@ -136,8 +136,9 @@ bad = [] # Bug report says "/" should be denied, but that is not in the RFC
 
 RobotTest(7, doc, good, bad)
 
-class TestCase(unittest.TestCase):
-    def runTest(self):
+class NetworkTestCase(unittest.TestCase):
+
+    def testPasswordProtectedSite(self):
         support.requires('network')
         # whole site is password-protected.
         url = 'http://mueblesmoraleda.com'
@@ -146,9 +147,17 @@ class TestCase(unittest.TestCase):
         parser.read()
         self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
 
+    def testPythonOrg(self):
+        support.requires('network')
+        parser = urllib.robotparser.RobotFileParser(
+            "http://www.python.org/robots.txt")
+        parser.read()
+        self.assertTrue(parser.can_fetch("*",
+                                         "http://www.python.org/robots.txt"))
+
 def test_main():
+    support.run_unittest(NetworkTestCase)
     support.run_unittest(tests)
-    TestCase().run()
 
 if __name__=='__main__':
     support.Verbose = 1
