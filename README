@@ -1,4 +1,4 @@
-This is Python version 3.0 beta 1
+This is Python version 3.0 beta 2
 =================================
 
 For notes specific to this release, see RELNOTES in this directory.
@@ -22,7 +22,7 @@ Release Schedule
 ----------------
 
 The release plan is to have a series of alpha releases in 2007 and 2008,
-beta releases in 2008, and a final release in September 2008.  The alpha
+beta releases in 2008, and a final release in October 2008.  The alpha
 releases are primarily aimed at developers who want a sneak peek at the
 new langauge, especially those folks who plan to port their code to
 Python 3000.  The hope is that by the time of the final release, many
