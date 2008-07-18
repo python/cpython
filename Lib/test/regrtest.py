@@ -175,8 +175,8 @@ if sys.platform == 'darwin':
 
 from test import support
 
-RESOURCE_NAMES = ('audio', 'curses', 'lib2to3', 'largefile', 'network',
-                  'bsddb', 'decimal', 'compiler', 'subprocess', 'urlfetch')
+RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
+                  'decimal', 'compiler', 'subprocess', 'urlfetch')
 
 
 def usage(msg):
