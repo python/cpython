@@ -149,5 +149,5 @@ def test_main():
     TestCase().run()
 
 if __name__=='__main__':
-    test_support.Verbose = 1
+    test_support.verbose = 1
     test_main()
