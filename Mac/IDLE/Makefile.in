@@ -42,7 +42,7 @@ IDLE.app:  \
 		$(srcdir)/../Icons/PythonSource.icns \
 		$(srcdir)/../Icons/PythonCompiled.icns Info.plist
 	rm -fr IDLE.app
-	$(RUNSHARED) arch -ppc -i386 $(BUILDPYTHON) $(BUNDLEBULDER) \
+	$(RUNSHARED) @ARCH_RUN_32BIT@ $(BUILDPYTHON) $(BUNDLEBULDER) \
 		--builddir=. \
 		--name=IDLE \
 		--link-exec \
