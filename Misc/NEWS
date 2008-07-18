@@ -67,6 +67,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3389: Allow resolving dotted names for handlers in logging
+  configuration files.
+
 - Issue #3395: fix reference in test_multiprocessing to old debugInfo method
 
 - Issue #3312: Fix two crashes in sqlite3.
@@ -76,7 +79,7 @@ Library
 - Issue #3125: Remove copy_reg in multiprocessing and replace it with
   ForkingPickler.register() to resolve conflict with ctypes.
 
-- Issue #3090: Fixed ARCHFLAGS parsing on OS/X 
+- Issue #3090: Fixed ARCHFLAGS parsing on OS/X
 
 - Issue #3313: Fixed a crash when a failed dlopen() call does not set
   a valid dlerror() message.
@@ -104,9 +107,9 @@ Library
 
 - Issue #1746: Correct handling of zipfile archive comments (previously
   archives with comments over 4k were flagged as invalid). Allow writing
-  Zip files with archives by setting the 'comment' attribute of a ZipFile.  
+  Zip files with archives by setting the 'comment' attribute of a ZipFile.
 
-- Issue #449227: The rlcompleter module now adds "(" to callable objects 
+- Issue #449227: The rlcompleter module now adds "(" to callable objects
   when completed.
 
 - Issue #3190: Pydoc now hides the automatic module attribute __package__ (the
