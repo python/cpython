@@ -6,6 +6,19 @@ Release notes describe unfinished work in particular releases.
 Please report bugs to http://bugs.python.org/.
 
 
+Version 3.0b2 - Release Date 17-Jul-2008
+----------------------------------------
+
+Please search the bug tracker for critical issues in Python 3.0.
+
+The bsddb3 library is known to be in bad shape.  The Python 2.6 version needs
+to be ported to Python 3.0, but so far, no one has done this.
+
+There are several known deferred blockers (issues that will block the next
+release).  These include, but are not limited to, problems with 2to3,
+multiprocessing, and bytearrays.
+
+
 Version 3.0b1 - Release Date 18-Jun-2008
 ----------------------------------------
 
