@@ -584,6 +584,9 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
+    # config5 specifies a custom handler class to be loaded
+    config5 = config1.replace('class=StreamHandler', 'class=logging.StreamHandler')
+
     def apply_config(self, conf):
         try:
             fn = tempfile.mktemp(".ini")
@@ -609,10 +612,10 @@ class ConfigFileTest(BaseTest):
             # Original logger output is empty.
             self.assert_log_lines([])
 
-    def test_config1_ok(self):
+    def test_config1_ok(self, config=config1):
         # A config file defining a sub-parser as well.
         with captured_stdout() as output:
-            self.apply_config(self.config1)
+            self.apply_config(config)
             logger = logging.getLogger("compiler.parser")
             # Both will output a message
             logger.info(self.next_message())
@@ -647,6 +650,8 @@ class ConfigFileTest(BaseTest):
             # Original logger output is empty
             self.assert_log_lines([])
 
+    def test_config5_ok(self):
+        self.test_config1_ok(config=self.config5)
 
 class LogRecordStreamHandler(StreamRequestHandler):
 
