@@ -349,7 +349,7 @@ following:
    +---------+----------------------------------------------------------+
 
 The ``'#'`` option is only valid for integers, and only for binary,
-octal, or decimal output.  If present, it specifies that the output
+octal, or hexadecimal output.  If present, it specifies that the output
 will be prefixed by ``'0b'``, ``'0o'``, or ``'0x'``, respectively.
 
 *width* is a decimal integer defining the minimum field width.  If not
