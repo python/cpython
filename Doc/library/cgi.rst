@@ -277,7 +277,7 @@ algorithms implemented in this module in other circumstances.
    parsing errors.  If false (the default), errors are silently ignored.  If true,
    errors raise a :exc:`ValueError` exception.
 
-   Use the :func:`urllib.urlencode` function to convert such dictionaries into
+   Use the :func:`urllib.parse.urlencode` function to convert such dictionaries into
    query strings.
 
 
@@ -297,7 +297,7 @@ algorithms implemented in this module in other circumstances.
    parsing errors.  If false (the default), errors are silently ignored.  If true,
    errors raise a :exc:`ValueError` exception.
 
-   Use the :func:`urllib.urlencode` function to convert such lists of pairs into
+   Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.
 
 
