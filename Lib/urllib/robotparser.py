@@ -60,7 +60,8 @@ class RobotFileParser:
             elif err.code >= 400:
                 self.allow_all = True
         else:
-            self.parse(f.read().splitlines())
+            raw = f.read()
+            self.parse(raw.decode("utf-8").splitlines())
 
     def _add_entry(self, entry):
         if "*" in entry.useragents:
@@ -123,7 +124,10 @@ class RobotFileParser:
             return True
         # search for given user agent matches
         # the first match counts
-        url = urllib.parse.quote(urllib.parse.urlparse(urllib.parse.unquote(url))[2]) or "/"
+        url = urllib.parse.quote(
+            urllib.parse.urlparse(urllib.parse.unquote(url))[2])
+        if not url:
+            url = "/"
         for entry in self.entries:
             if entry.applies_to(useragent):
                 return entry.allowance(url)
