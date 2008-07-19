@@ -289,7 +289,7 @@ class EditorWindow(object):
             insertpt = int(self.text.index("iomark").split(".")[1])
         else:
             line = self.text.get("insert linestart", "insert lineend")
-            for insertpt in xrange(len(line)):
+            for insertpt in range(len(line)):
                 if line[insertpt] not in (' ','\t'):
                     break
             else:
