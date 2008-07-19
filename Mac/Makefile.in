@@ -45,10 +45,11 @@ DOCDIR=$(srcdir)/Resources/app/Resources/English.lproj/Documentation
 DOCINDEX=$(DOCDIR)/"Documentation idx"
 compileall=$(srcdir)/../Lib/compileall.py
 
-installapps: install_PythonLauncher install_IDLE checkapplepython install_pythonw \
-	install_versionedtools
+installapps: install_Python install_PythonLauncher install_IDLE \
+	checkapplepython install_pythonw install_versionedtools
 
-installapps4way: install_Python4way install_BuildApplet install_PythonLauncher install_IDLE install_pythonw4way install_versionedtools
+installapps4way: install_Python4way install_PythonLauncher \
+	install_IDLE install_pythonw4way install_versionedtools
 
 
 install_pythonw: pythonw
