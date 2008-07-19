@@ -701,3 +701,18 @@ which incur interpreter overhead.
        for d, s in izip(data, selectors):
            if s:
                yield d
+
+    def combinations_with_replacement(iterable, r):
+        "combinations_with_replacement('ABC', 3) --> AA AB AC BB BC CC"
+        pool = tuple(iterable)
+        n = len(pool)
+        indices = [0] * r
+        yield tuple(pool[i] for i in indices)
+        while 1:
+            for i in reversed(range(r)):
+                if indices[i] != n - 1:
+                    break
+            else:
+                return
+            indices[i:] = [indices[i] + 1] * (r - i)
+            yield tuple(pool[i] for i in indices)
