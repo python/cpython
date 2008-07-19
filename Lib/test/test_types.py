@@ -497,6 +497,12 @@ class TypesTests(unittest.TestCase):
         test(0.01, '', '0.01')
         test(0.01, 'g', '0.01')
 
+        # test for issue 3411
+        test(1.23, '1', '1.23')
+        test(-1.23, '1', '-1.23')
+        test(1.23, '1g', '1.23')
+        test(-1.23, '1g', '-1.23')
+
         test( 1.0, ' g', ' 1')
         test(-1.0, ' g', '-1')
         test( 1.0, '+g', '+1')
