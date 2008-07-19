@@ -1600,6 +1600,10 @@ variable.  Space is saved because *__dict__* is not created for each instance.
 
 Notes on using *__slots__*
 
+* When inheriting from a class without *__slots__*, the *__dict__* attribute of
+  that class will always be accessible, so a *__slots__* definition in the
+  subclass is meaningless.
+
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
   variable name raises :exc:`AttributeError`. If dynamic assignment of new
