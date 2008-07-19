@@ -45,7 +45,7 @@ class FixImport(fixer_base.BaseFix):
             node.changed()
         else:
             new = FromImport('.', getattr(imp, 'content', None) or [imp])
-            new.prefix = node.get_prefix()
+            new.set_prefix(node.get_prefix())
             node = new
         return node
 
