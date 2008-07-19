@@ -5,7 +5,7 @@ import random
 import time
 import pickle
 import warnings
-from math import log, exp, sqrt, pi
+from math import log, exp, sqrt, pi, sum as msum
 from test import test_support
 
 class TestBasicOps(unittest.TestCase):
@@ -465,11 +465,9 @@ _gammacoeff = (0.9999999999995183, 676.5203681218835, -1259.139216722289,
 
 def gamma(z, cof=_gammacoeff, g=7):
     z -= 1.0
-    sum = cof[0]
-    for i in xrange(1,len(cof)):
-        sum += cof[i] / (z+i)
+    s = msum([cof[0]] + [cof[i] / (z+i) for i in range(1,len(cof))])
     z += 0.5
-    return (z+g)**z / exp(z+g) * sqrt(2*pi) * sum
+    return (z+g)**z / exp(z+g) * sqrt(2.0*pi) * s
 
 class TestDistributions(unittest.TestCase):
     def test_zeroinputs(self):
