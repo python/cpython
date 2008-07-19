@@ -3187,6 +3187,7 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 
 	pathlen = strlen(path);
 	if (pathlen == 0) {
+		PyMem_Free(path);
 		PyErr_SetString(PyExc_ImportError, "empty pathname");
 		return -1;
 	} else {
@@ -3208,6 +3209,7 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 			rv = stat(mangled, &statbuf);
 		}
 #endif
+		PyMem_Free(path);
 		if (rv == 0) {
 			/* it exists */
 			if (S_ISDIR(statbuf.st_mode)) {
