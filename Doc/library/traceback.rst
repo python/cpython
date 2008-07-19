@@ -1,4 +1,3 @@
-
 :mod:`traceback` --- Print or retrieve a stack traceback
 ========================================================
 
@@ -29,29 +28,31 @@ The module defines the following functions:
    object to receive the output.
 
 
-.. function:: print_exception(type, value, traceback[, limit[, file]])
+.. function:: print_exception(type, value, traceback[, limit[, file[, chain]]])
 
    Print exception information and up to *limit* stack trace entries from
-   *traceback* to *file*. This differs from :func:`print_tb` in the following ways:
-   (1) if *traceback* is not ``None``, it prints a header ``Traceback (most recent
-   call last):``; (2) it prints the exception *type* and *value* after the stack
-   trace; (3) if *type* is :exc:`SyntaxError` and *value* has the appropriate
-   format, it prints the line where the syntax error occurred with a caret
-   indicating the approximate position of the error.
+   *traceback* to *file*. This differs from :func:`print_tb` in the following
+   ways:
+
+   * if *traceback* is not ``None``, it prints a header ``Traceback (most recent
+     call last):``
+   * it prints the exception *type* and *value* after the stack trace
+   * if *type* is :exc:`SyntaxError` and *value* has the appropriate format, it
+     prints the line where the syntax error occurred with a caret indicating the
+     approximate position of the error.
+
+   If *chain* is true (the default), then chained exceptions (the
+   :attr:`__cause__` or :attr:`__context__` attributes of the exception) will be
+   printed as well, like the interpreter itself does when printing an unhandled
+   exception.
 
 
-.. function:: print_exc([limit[, file]])
+.. function:: print_exc([limit[, file[, chain]]])
 
    This is a shorthand for ``print_exception(*sys.exc_info())``.
 
 
-.. function:: format_exc([limit])
-
-   This is like ``print_exc(limit)`` but returns a string instead of printing to a
-   file.
-
-
-.. function:: print_last([limit[, file]])
+.. function:: print_last([limit[, file[, chain]]])
 
    This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
    sys.last_traceback, limit, file)``.
@@ -103,13 +104,19 @@ The module defines the following functions:
    occurred is the always last string in the list.
 
 
-.. function:: format_exception(type, value, tb[, limit])
+.. function:: format_exception(type, value, tb[, limit[, chain]])
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
    return value is a list of strings, each ending in a newline and some containing
    internal newlines.  When these lines are concatenated and printed, exactly the
    same text is printed as does :func:`print_exception`.
+
+
+.. function:: format_exc([limit[, chain]])
+
+   This is like ``print_exc(limit)`` but returns a string instead of printing to a
+   file.
 
 
 .. function:: format_tb(tb[, limit])

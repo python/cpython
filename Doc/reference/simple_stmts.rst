@@ -476,6 +476,7 @@ The :keyword:`raise` statement
    statement: raise
    single: exception
    pair: raising; exception
+   single: __traceback__ (exception attribute)
 
 .. productionlist::
    raise_stmt: "raise" [`expression` ["from" `expression`]]
@@ -503,9 +504,49 @@ instance, with its traceback set to its argument), like so::
 
    raise RuntimeError("foo occurred").with_traceback(tracebackobj)
 
-.. XXX document exception chaining 
+.. index:: pair: exception; chaining
+           __cause__ (exception attribute)
+           __context__ (exception attribute)
+   
+The ``from`` clause is used for exception chaining: if given, the second
+*expression* must be another exception class or instance, which will then be
+attached to the raised exception as the :attr:`__cause__` attribute (which is
+writable).  If the raised exception is not handled, both exceptions will be
+printed::
 
-The "from" clause is used for exception chaining, which is not documented yet.
+   >>> try:
+   ...     print(1 / 0)
+   ... except Exception as exc:
+   ...     raise RuntimeError("Something bad happened") from exc
+   ...
+   Traceback (most recent call last):
+     File "<stdin>", line 2, in <module>
+   ZeroDivisionError: int division or modulo by zero
+
+   The above exception was the direct cause of the following exception:
+
+   Traceback (most recent call last):
+     File "<stdin>", line 4, in <module>
+   RuntimeError: Something bad happened
+
+A similar mechanism works implicitly if an exception is raised inside an
+exception handler: the previous exception is then attached as the new
+exception's :attr:`__context__` attribute::
+
+   >>> try:
+   ...     print(1 / 0)
+   ... except:
+   ...     raise RuntimeError("Something bad happened")
+   ...
+   Traceback (most recent call last):
+     File "<stdin>", line 2, in <module>
+   ZeroDivisionError: int division or modulo by zero
+
+   During handling of the above exception, another exception occurred:
+
+   Traceback (most recent call last):
+     File "<stdin>", line 4, in <module>
+   RuntimeError: Something bad happened
 
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information about handling exceptions is in section :ref:`try`.
