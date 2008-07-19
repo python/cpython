@@ -230,6 +230,7 @@ handler and can carry additional information about the exceptional condition.
 See also the description of the :keyword:`try` statement in section :ref:`try`
 and :keyword:`raise` statement in section :ref:`raise`.
 
+
 .. rubric:: Footnotes
 
 .. [#] This limitation occurs because the code that is executed by these operations
