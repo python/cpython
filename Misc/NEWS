@@ -56,16 +56,19 @@ Core and Builtins
   slice(None, 10, -1).indices(10) returns (9, 9, -1) instead of (9,
   10, -1).
 
-- Issue #3219: Calling a function with repeated keyword arguments, f(a=2, a=23),
-  would not cause a syntax error.  This was a regression from 2.4 caused by the
-  switch to the new compiler.
+- Issue #3219: Calling a function with repeated keyword arguments,
+  f(a=2, a=23), would not cause a syntax error.  This was a regression
+  from 2.4 caused by the switch to the new compiler.
 
-- Issue #2862: Make int and float freelist management consistent with other
-  freelists.  Changes their CompactFreeList apis into ClearFreeList apis and
-  calls them via gc.collect().
+- Issue #2862: Make int and float freelist management consistent with
+  other freelists.  Changes their CompactFreeList apis into
+  ClearFreeList apis and calls them via gc.collect().
 
 Library
 -------
+
+- Issue #3303: Fix a crash in locale.strcoll() when calling it with
+  invalid arguments.
 
 - Issue #3302: Fix several crashes when calling locale's gettext functions
   with None arguments.
@@ -144,7 +147,6 @@ Tests
 - test.test_support.catch_warning now keeps track of all warnings it sees
   and is now better documented. Explicit unit tests for this context manager
   have been added to test_warnings.
-
 
 Build
 -----

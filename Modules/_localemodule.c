@@ -301,7 +301,9 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     if (!PyUnicode_Check(os2)) {
         os2 = PyUnicode_FromObject(os2);
         if (!os2) {
-            Py_DECREF(os1);
+            if (rel1) {
+                Py_DECREF(os1);
+            }
             return NULL;
         } 
         rel2 = 1;
