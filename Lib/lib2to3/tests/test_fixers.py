@@ -3319,6 +3319,17 @@ class Test_import(FixerTestCase):
         a = "from . import foo.bar as bang"
         self.check_both(b, a)
 
+    def test_prefix(self):
+        b = """
+        # prefix
+        import foo.bar
+        """
+        a = """
+        # prefix
+        from . import foo.bar
+        """
+        self.check_both(b, a)
+
 
 if __name__ == "__main__":
     import __main__
