@@ -302,6 +302,10 @@ ensure_decimal_point(char* buffer, size_t buf_size)
 
 	/* search for the first non-digit character */
 	char *p = buffer;
+	if (*p == '-' || *p == '+')
+		/* Skip leading sign, if present.  I think this could only
+		   ever be '-', but it can't hurt to check for both. */
+		++p;
 	while (*p && isdigit(Py_CHARMASK(*p)))
 		++p;
 
