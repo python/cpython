@@ -236,6 +236,10 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
     if (chunks == NULL) {
         goto bail;
     }
+    if (end < 0 || len <= end) {
+        PyErr_SetString(PyExc_ValueError, "end is out of bounds");
+        goto bail;
+    }
     while (1) {
         /* Find the end of the string or the next escape */
         Py_UNICODE c = 0;
@@ -246,7 +250,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
                 break;
             }
             else if (strict && c <= 0x1f) {
-                raise_errmsg("Invalid control character at", pystr, begin);
+                raise_errmsg("Invalid control character at", pystr, next);
                 goto bail;
             }
         }
@@ -401,6 +405,10 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict)
     if (chunks == NULL) {
         goto bail;
     }
+    if (end < 0 || len <= end) {
+        PyErr_SetString(PyExc_ValueError, "end is out of bounds");
+        goto bail;
+    }
     while (1) {
         /* Find the end of the string or the next escape */
         Py_UNICODE c = 0;
@@ -411,7 +419,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict)
                 break;
             }
             else if (strict && c <= 0x1f) {
-                raise_errmsg("Invalid control character at", pystr, begin);
+                raise_errmsg("Invalid control character at", pystr, next);
                 goto bail;
             }
         }
