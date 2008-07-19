@@ -1,4 +1,4 @@
-from test.test_support import verbose, TestSkipped
+from test.test_support import verbose, TestSkipped, TestFailed
 import locale
 import sys
 
@@ -113,3 +113,12 @@ else:
         teststrop('\xed\x95\xa0', 'upper', '\xed\x95\xa0')
     finally:
         locale.setlocale(locale.LC_CTYPE, oldlocale)
+
+if hasattr(locale, "strcoll"):
+    # test crasher from bug #3303
+    try:
+        locale.strcoll(u"a", None)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed("TypeError not raised")
