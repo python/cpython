@@ -1281,9 +1281,9 @@ Samuele
 
 >>> def compress(data, selectors):
 ...     "compress('abcdef', [1,0,1,0,1,1]) --> a c e f"
-...     for d, s in izip(data, selectors):
-...         if s:
-...             yield d
+...     decorated = izip(data, selectors)
+...     filtered =  ifilter(operator.itemgetter(1), decorated)
+...     return imap(operator.itemgetter(0), filtered)
 
 >>> def combinations_with_replacement(iterable, r):
 ...     "combinations_with_replacement('ABC', 3) --> AA AB AC BB BC CC"
