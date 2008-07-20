@@ -141,6 +141,8 @@ Library
   up in the child process to prevent deadlock and report proper thread counts
   if the new process uses the threading module.
 
+- Issue #3120: On 64-bit Windows the subprocess module was truncating handles.
+
 Tests
 -----
 
