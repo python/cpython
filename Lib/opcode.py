@@ -101,7 +101,7 @@ def_op('WITH_CLEANUP', 81)
 
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
-def_op('MAKE_BYTES', 85)
+
 def_op('YIELD_VALUE', 86)
 def_op('POP_BLOCK', 87)
 def_op('END_FINALLY', 88)
