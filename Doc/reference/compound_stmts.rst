@@ -422,7 +422,7 @@ reference to the current global namespace as the global namespace to be used
 when the function is called.
 
 The function definition does not execute the function body; this gets executed
-only when the function is called.
+only when the function is called. [#]_
 
 .. index::
   statement: @
@@ -509,6 +509,7 @@ Class definitions
    pair: name; binding
    pair: execution; frame
    single: inheritance
+   single: docstring
 
 A class definition defines a class object (see section :ref:`types`):
 
@@ -523,10 +524,10 @@ to a class object or class type which allows subclassing.  The class's suite is
 then executed in a new execution frame (see section :ref:`naming`), using a
 newly created local namespace and the original global namespace. (Usually, the
 suite contains only function definitions.)  When the class's suite finishes
-execution, its execution frame is discarded but its local namespace is saved.  A
-class object is then created using the inheritance list for the base classes and
-the saved local namespace for the attribute dictionary.  The class name is bound
-to this class object in the original local namespace.
+execution, its execution frame is discarded but its local namespace is
+saved. [#]_ A class object is then created using the inheritance list for the
+base classes and the saved local namespace for the attribute dictionary.  The
+class name is bound to this class object in the original local namespace.
 
 **Programmer's note:** Variables defined in the class definition are class
 variables; they are shared by all instances.  To create instance variables, they
@@ -551,3 +552,11 @@ which is then bound to the class name.
 .. [#] Currently, control "flows off the end" except in the case of an exception or the
    execution of a :keyword:`return`, :keyword:`continue`, or :keyword:`break`
    statement.
+
+.. [#] A string literal appearing as the first statement in the function body is
+   transformed into the function's ``__doc__`` attribute and therefore the
+   function's :term:`docstring`.
+
+.. [#] A string literal appearing as the first statement in the class body is
+   transformed into the namespace's ``__doc__`` item and therefore the class's
+   :term:`docstring`.
