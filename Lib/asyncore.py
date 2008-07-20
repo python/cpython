@@ -129,7 +129,7 @@ def poll(timeout=0.0, map=None):
         try:
             r, w, e = select.select(r, w, e, timeout)
         except select.error, err:
-            if err[0] != EINTR:
+            if err.args[0] != EINTR:
                 raise
             else:
                 return
@@ -175,7 +175,7 @@ def poll2(timeout=0.0, map=None):
         try:
             r = pollster.poll(timeout)
         except select.error, err:
-            if err[0] != EINTR:
+            if err.args[0] != EINTR:
                 raise
             r = []
         for fd, flags in r:
@@ -231,7 +231,7 @@ class dispatcher:
             try:
                 self.addr = sock.getpeername()
             except socket.error, err:
-                if err[0] == ENOTCONN:
+                if err.args[0] == ENOTCONN:
                     # To handle the case where we got an unconnected
                     # socket.
                     self.connected = False
@@ -339,7 +339,7 @@ class dispatcher:
             conn, addr = self.socket.accept()
             return conn, addr
         except socket.error, why:
-            if why[0] == EWOULDBLOCK:
+            if why.args[0] == EWOULDBLOCK:
                 pass
             else:
                 raise
@@ -349,9 +349,9 @@ class dispatcher:
             result = self.socket.send(data)
             return result
         except socket.error, why:
-            if why[0] == EWOULDBLOCK:
+            if why.args[0] == EWOULDBLOCK:
                 return 0
-            elif why[0] in (ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED):
+            elif why.args[0] in (ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED):
                 self.handle_close()
                 return 0
             else:
@@ -369,7 +369,7 @@ class dispatcher:
                 return data
         except socket.error, why:
             # winsock sometimes throws ENOTCONN
-            if why[0] in [ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED]:
+            if why.args[0] in [ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED]:
                 self.handle_close()
                 return ''
             else:
@@ -382,7 +382,7 @@ class dispatcher:
         try:
             self.socket.close()
         except socket.error, why:
-            if why[0] not in (ENOTCONN, EBADF):
+            if why.args[0] not in (ENOTCONN, EBADF):
                 raise
 
     # cheap inheritance, used to pass all other attribute
@@ -549,7 +549,7 @@ def close_all(map=None, ignore_all=False):
         try:
             x.close()
         except OSError, x:
-            if x[0] == EBADF:
+            if x.args[0] == EBADF:
                 pass
             elif not ignore_all:
                 raise
