@@ -415,7 +415,7 @@ Miscellaneous opcodes.
 .. opcode:: LOAD_BUILD_CLASS ()
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
-   by :opcode:`CALL_FUNCTION` to construct a class.
+   by ``CALL_FUNCTION`` to construct a class.
 
 
 .. opcode:: WITH_CLEANUP ()
