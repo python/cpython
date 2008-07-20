@@ -501,7 +501,7 @@ bytes_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
     else {
             if (_getbuffer(values, &vbytes) < 0) {
                     PyErr_Format(PyExc_TypeError,
-                                 "can't set bytes slice from %.100s",
+                                 "can't set bytearray slice from %.100s",
                                  Py_TYPE(values)->tp_name);
                     return -1;
             }
@@ -753,7 +753,7 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     }
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:bytes", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:bytearray", kwlist,
                                      &arg, &encoding, &errors))
         return -1;
 
