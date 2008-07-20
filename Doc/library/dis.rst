@@ -414,8 +414,8 @@ Miscellaneous opcodes.
 
 .. opcode:: LOAD_BUILD_CLASS ()
 
-   Pushes builtins.__build_class__ onto the stack.  It is later called by
-   ```CALL_FUNCTION`` to construct a class.
+   Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
+   by :opcode:`CALL_FUNCTION` to construct a class.
 
 
 .. opcode:: WITH_CLEANUP ()
@@ -440,6 +440,12 @@ Miscellaneous opcodes.
    .. XXX explain the WHY stuff!
 
 
+.. opcode:: STORE_LOCALS
+
+   Pops TOS from the stack and stores it as the current frame's ``f_locals``.
+   This is used in class construction.
+
+
 All of the following opcodes expect arguments.  An argument is two bytes, with
 the more significant byte last.
 
@@ -461,6 +467,18 @@ the more significant byte last.
    Unpacks TOS into *count* individual values, which are put onto the stack
    right-to-left.
 
+
+.. opcode:: UNPACK_EX (counts)
+
+   Implements assignment with a starred target: Unpacks an iterable in TOS into
+   individual values, where the total number of values can be smaller than the
+   number of items in the iterable: one the new values will be a list of all
+   leftover items.
+
+   The low byte of *counts* is the number of values before the list value, the
+   high byte of *counts* the number of values after it.  The resulting values
+   are put onto the stack right-to-left.
+   
 
 .. opcode:: DUP_TOPX (count)
 
