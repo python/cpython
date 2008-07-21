@@ -223,13 +223,19 @@ PyFloat_FromString(PyObject *v)
 			p++;
 		}
 		if (PyOS_strnicmp(p, "inf", 4) == 0) {
+			if (s_buffer != NULL)
+				PyMem_FREE(s_buffer);
 			Py_RETURN_INF(sign);
 		}
 		if (PyOS_strnicmp(p, "infinity", 9) == 0) {
+			if (s_buffer != NULL)
+				PyMem_FREE(s_buffer);
 			Py_RETURN_INF(sign);
 		}
 #ifdef Py_NAN
 		if(PyOS_strnicmp(p, "nan", 4) == 0) {
+			if (s_buffer != NULL)
+				PyMem_FREE(s_buffer);
 			Py_RETURN_NAN;
 		}
 #endif
