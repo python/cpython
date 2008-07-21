@@ -533,7 +533,7 @@ self.assert_(X.passed)
                 def f(self):
                     return x
 
-            assert x == 12 # Used to raise UnboundLocalError
+            self.assertEquals(x, 12) # Used to raise UnboundLocalError
         finally:
             sys.settrace(None)
 
