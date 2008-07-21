@@ -128,18 +128,23 @@ class Completer:
             return []
         expr, attr = m.group(1, 3)
         try:
-            object = eval(expr, self.namespace)
+            thisobject = eval(expr, self.namespace)
         except Exception:
             return []
-        words = dir(object)
-        if hasattr(object,'__class__'):
+
+        # get the content of the object, except __builtins__
+        words = dir(thisobject)
+        if "__builtins__" in words:
+            words.remove("__builtins__")
+
+        if hasattr(thisobject, '__class__'):
             words.append('__class__')
-            words = words + get_class_members(object.__class__)
+            words.extend(get_class_members(thisobject.__class__))
         matches = []
         n = len(attr)
         for word in words:
-            if word[:n] == attr and word != "__builtins__":
-                val = getattr(object, word)
+            if word[:n] == attr and hasattr(thisobject, word):
+                val = getattr(thisobject, word)
                 word = self._callable_postfix(val, "%s.%s" % (expr, word))
                 matches.append(word)
         return matches
