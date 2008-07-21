@@ -4,8 +4,35 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.6 beta 3?
+================================
+
+*Release date: XX-Aug-2008*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #3120: On 64-bit Windows the subprocess module was truncating handles.
+
+- Issue #3303: Fix a crash in locale.strcoll() when calling it with
+  invalid arguments.
+
+- Issue #3302: Fix several crashes when calling locale's gettext functions
+  with None arguments.
+
+- Issue #3389: Allow resolving dotted names for handlers in logging
+  configuration files.
+
+- Deprecate the sunaudio module for removal in Python 3.0.
+
+
 What's New in Python 2.6 beta 2?
 ================================
+
+*Release date: 17-Jul-2008*
 
 Core and Builtins
 -----------------
@@ -66,17 +93,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #3303: Fix a crash in locale.strcoll() when calling it with
-  invalid arguments.
-
-- Issue #3302: Fix several crashes when calling locale's gettext functions
-  with None arguments.
-
-- Issue #3389: Allow resolving dotted names for handlers in logging
-  configuration files.
-
-- Deprecate the sunaudio module for removal in Python 3.0.
 
 - Issue #3395: fix reference in test_multiprocessing to old debugInfo method
 
@@ -140,8 +156,6 @@ Library
 - Issue #874900: after an os.fork() call the threading module state is cleaned
   up in the child process to prevent deadlock and report proper thread counts
   if the new process uses the threading module.
-
-- Issue #3120: On 64-bit Windows the subprocess module was truncating handles.
 
 Tests
 -----
