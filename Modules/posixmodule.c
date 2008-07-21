@@ -8250,6 +8250,7 @@ win32_urandom(PyObject *self, PyObject *args)
 	result = PyString_FromStringAndSize(NULL, howMany);
 	if (result != NULL) {
 		/* Get random data */
+		memset(PyString_AS_STRING(result), 0, howMany); /* zero seed */
 		if (! pCryptGenRandom(hCryptProv, howMany, (unsigned char*)
 				      PyString_AS_STRING(result))) {
 			Py_DECREF(result);
