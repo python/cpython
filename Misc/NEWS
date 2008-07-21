@@ -12,6 +12,10 @@ What's New in Python 2.6 beta 3?
 Core and Builtins
 -----------------
 
+- Issue #2378: An unexpected UnboundLocalError or NameError could appear when
+  the python debugger steps into a class statement: the free variables (local
+  variables defined in an outer scope) would be deleted from the outer scope.
+
 Library
 -------
 
