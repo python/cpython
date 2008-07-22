@@ -1591,8 +1591,8 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 * The string :meth:`translate` method now accepts ``None`` as the
   translation table parameter, which is treated as the identity
   transformation.   This makes it easier to carry out operations
-  that only delete characters.  (Contributed by Bengt Richter;
-  :issue:`1193128`.)
+  that only delete characters.  (Contributed by Bengt Richter and
+  implemented by Raymond Hettinger; :issue:`1193128`.)
 
 * The built-in :func:`dir` function now checks for a :meth:`__dir__`
   method on the objects it receives.  This method must return a list
