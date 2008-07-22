@@ -118,7 +118,7 @@ changes to rarely used features.)
     ``print(x)`` instead!
 
   * When using the ``2to3`` source-to-source conversion tool, all
-    ``print`` statements are autmatically converted to :func:`print`
+    ``print`` statements are automatically converted to :func:`print`
     function calls, so this is mostly a non-issue for larger projects.
 
 * Python 3.0 uses strings and bytes instead of the Unicode strings and
@@ -159,7 +159,7 @@ Strings and Bytes
   implementation are like :class:`unicode` in 2.x.
 
 * The :class:`basestring` superclass has been removed. The ``2to3`` tool
-  replaces every occurence of :class:`basestring` with :class:`str`.
+  replaces every occurrence of :class:`basestring` with :class:`str`.
 
 * PEP 3137: There is a new type, :class:`bytes`, to represent binary data (and
   encoded text, which is treated as binary data until you decide to decode it).
