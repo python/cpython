@@ -106,9 +106,7 @@ def get_machine_details():
         print('Getting machine details...')
     buildno, builddate = platform.python_build()
     python = platform.python_version()
-    try:
-        chr(100000)
-    except ValueError:
+    if sys.maxunicode == 65535:
         # UCS2 build (standard)
         unitype = 'UCS2'
     else:
