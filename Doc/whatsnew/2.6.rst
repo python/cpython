@@ -1539,7 +1539,8 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   * :func:`~math.sum` adds up the stream of numbers from an iterable,
     and is careful to avoid loss of precision by calculating partial sums.
-    (Contributed by Jean Brouwers; :issue:`2819`.)
+    (Contributed by Jean Brouwers, Raymond Hettinger, and Mark Dickinson;
+    :issue:`2819`.)
 
   * The inverse hyperbolic functions :func:`~math.acosh`, :func:`~math.asinh`
     and :func:`~math.atanh`.
