@@ -661,12 +661,8 @@ xyzabc
     ('^([ab]*?)(?<!(a))c', 'abc', SUCCEED, 'g1+"-"+g2', 'ab-None'),
 ]
 
-try:
-    u = eval("u'\N{LATIN CAPITAL LETTER A WITH DIAERESIS}'")
-except SyntaxError:
-    pass
-else:
-    tests.extend([
+u = '\N{LATIN CAPITAL LETTER A WITH DIAERESIS}'
+tests.extend([
     # bug 410271: \b broken under locales
     (r'\b.\b', 'a', SUCCEED, 'found', 'a'),
     (r'(?u)\b.\b', u, SUCCEED, 'found', u),

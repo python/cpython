@@ -200,7 +200,7 @@ class Tokenizer:
             except IndexError:
                 raise error("bogus escape (end of line)")
             if isinstance(self.string, bytes):
-                char = chr(c)
+                c = chr(c)
             char = char + c
         self.index = self.index + len(char)
         self.next = char

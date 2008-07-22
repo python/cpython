@@ -732,23 +732,25 @@ def run_re_tests():
                 else:
                     print('=== Failed incorrectly', t)
 
-                # Try the match on a unicode string, and check that it
-                # still succeeds.
+                # Try the match with both pattern and string converted to
+                # bytes, and check that it still succeeds.
                 try:
-                    result = obj.search(str(s, "latin-1"))
-                    if result is None:
-                        print('=== Fails on unicode match', t)
-                except NameError:
-                    continue # 1.5.2
-                except TypeError:
-                    continue # unicode test case
-
-                # Try the match on a unicode pattern, and check that it
-                # still succeeds.
-                obj=re.compile(str(pattern, "latin-1"))
-                result = obj.search(s)
-                if result is None:
-                    print('=== Fails on unicode pattern match', t)
+                    bpat = bytes(pattern, "ascii")
+                    bs = bytes(s, "ascii")
+                except UnicodeEncodeError:
+                    # skip non-ascii tests
+                    pass
+                else:
+                    try:
+                        bpat = re.compile(bpat)
+                    except Exception:
+                        print('=== Fails on bytes pattern compile', t)
+                        if verbose:
+                            traceback.print_exc(file=sys.stdout)
+                    else:
+                        bytes_result = bpat.search(bs)
+                        if bytes_result is None:
+                            print('=== Fails on bytes pattern match', t)
 
                 # Try the match with the search area limited to the extent
                 # of the match and see if it still succeeds.  \B will
@@ -771,10 +773,11 @@ def run_re_tests():
 
                 # Try the match with LOCALE enabled, and check that it
                 # still succeeds.
-                obj = re.compile(pattern, re.LOCALE)
-                result = obj.search(s)
-                if result is None:
-                    print('=== Fails on locale-sensitive match', t)
+                if '(?u)' not in pattern:
+                    obj = re.compile(pattern, re.LOCALE)
+                    result = obj.search(s)
+                    if result is None:
+                        print('=== Fails on locale-sensitive match', t)
 
                 # Try the match with UNICODE locale enabled, and check
                 # that it still succeeds.
