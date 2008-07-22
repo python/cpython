@@ -1324,14 +1324,6 @@ The most general ABC is :class:`Number`.  It defines no operations at
 all, and only exists to allow checking if an object is a number by
 doing ``isinstance(obj, Number)``.
 
-Numbers are further divided into :class:`Exact` and :class:`Inexact`.
-Exact numbers can represent values precisely and operations never
-round off the results or introduce tiny errors that may break the
-commutativity and associativity properties; inexact numbers may
-perform such rounding or introduce small errors.  Integers, long
-integers, and rational numbers are exact, while floating-point
-and complex numbers are inexact.
-
 :class:`Complex` is a subclass of :class:`Number`.  Complex numbers
 can undergo the basic operations of addition, subtraction,
 multiplication, division, and exponentiation, and you can retrieve the
