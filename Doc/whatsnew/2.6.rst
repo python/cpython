@@ -1441,12 +1441,14 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   it will be returned if *iterator* has been exhausted; otherwise,
   the :exc:`StopIteration` exception will be raised.  (:issue:`2719`)
 
-* Tuples now have an :meth:`index` method matching the list type's
-  :meth:`index` method::
+* Tuples now have :meth:`index` and :meth:`count` methods matching the
+  list type's :meth:`index` and :meth:`count` methods::
 
     >>> t = (0,1,2,3,4)
     >>> t.index(3)
     3
+
+  (Contributed by Raymond Hettinger)
 
 * The built-in types now have improved support for extended slicing syntax,
   where various combinations of ``(start, stop, step)`` are supplied.
