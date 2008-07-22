@@ -925,7 +925,7 @@ yes)
 
 
 		BASECFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
-		tgt=`sw_vers -productVersion | sed 's/\(10\.[0-9]*\).*/\1/'`
+		tgt=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
 		if test "${UNIVERSALSDK}" != "/" -a "${tgt}" '>' '10.4' ; then
 			CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
 		fi
