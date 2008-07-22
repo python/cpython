@@ -8,7 +8,6 @@ import errno
 import socket
 import sys
 import os
-import os.path
 import shutil
 import warnings
 import unittest
