@@ -217,7 +217,7 @@ install_IDLE:
 	cd IDLE && make install
 
 install_BuildApplet:
-	$(RUNSHARED) arch -ppc -i386 $(BUILDPYTHON) $(srcdir)/scripts/BuildApplet.py \
+	$(RUNSHARED) @ARCH_RUN_32BIT@ $(BUILDPYTHON) $(srcdir)/scripts/BuildApplet.py \
 		--destroot "$(DESTDIR)" \
 		--python=$(prefix)/Resources/Python.app/Contents/MacOS/$(PYTHONFRAMEWORK)`test -f "$(DESTDIR)$(prefix)/Resources/Python.app/Contents/MacOS/$(PYTHONFRAMEWORK)-32" && echo "-32"`  \
 		--output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app" \
@@ -279,7 +279,7 @@ installmacsubtree:
 	done
 
 
-	$(RUNSHARED) arch -ppc -i386 $(BUILDPYTHON) $(CACHERSRC) -v $(DESTDIR)$(MACLIBDEST) $(DESTDIR)$(MACTOOLSDEST)
+	$(RUNSHARED) @ARCH_RUN_32BIT@ $(BUILDPYTHON) $(CACHERSRC) -v $(DESTDIR)$(MACLIBDEST) $(DESTDIR)$(MACTOOLSDEST)
 	$(RUNSHARED) $(BUILDPYTHON) -Wi -tt $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
 	$(RUNSHARED) $(BUILDPYTHON) -O -Wi -tt $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
 
