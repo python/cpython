@@ -7,14 +7,23 @@ import unittest
 try:
     # For Pythons w/distutils pybsddb
     from bsddb3 import db
+    import bsddb3 as bsddb
 except ImportError:
     # For Python 2.3
     from bsddb import db
+    import bsddb
 
 try:
     from bsddb3 import test_support
 except ImportError:
     from test import test_support
+
+try:
+    from threading import Thread, currentThread
+    del Thread, currentThread
+    have_threads = True
+except ImportError:
+    have_threads = False
 
 verbose = 0
 if 'verbose' in sys.argv:
@@ -33,6 +42,8 @@ def print_versions():
     print 'bsddb.db.version():   %s' % (db.version(), )
     print 'bsddb.db.__version__: %s' % db.__version__
     print 'bsddb.db.cvsid:       %s' % db.cvsid
+    print 'py module:            %s' % bsddb.__file__
+    print 'extension module:     %s' % bsddb._bsddb.__file__
     print 'python version:       %s' % sys.version
     print 'My pid:               %s' % os.getpid()
     print '-=' * 38
@@ -81,11 +92,11 @@ def set_test_path_prefix(path) :
 def remove_test_path_directory() :
     test_support.rmtree(get_new_path.prefix)
 
-try :
+if have_threads :
     import threading
     get_new_path.mutex=threading.Lock()
     del threading
-except ImportError:
+else :
     class Lock(object) :
         def acquire(self) :
             pass
@@ -104,8 +115,12 @@ class PrintInfoFakeTest(unittest.TestCase):
 # This little hack is for when this module is run as main and all the
 # other modules import it so they will still be able to get the right
 # verbose setting.  It's confusing but it works.
-import test_all
-test_all.verbose = verbose
+if sys.version_info[0] < 3 :
+    import test_all
+    test_all.verbose = verbose
+else :
+    import sys
+    print >>sys.stderr, "Work to do!"
 
 
 def suite(module_prefix='', timing_check=None):

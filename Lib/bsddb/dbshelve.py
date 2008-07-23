@@ -30,11 +30,17 @@ storage.
 #------------------------------------------------------------------------
 
 import cPickle
-import db
 import sys
 
-#At version 2.3 cPickle switched to using protocol instead of bin and
-#DictMixin was added
+import sys
+absolute_import = (sys.version_info[0] >= 3)
+if absolute_import :
+    # Because this syntaxis is not valid before Python 2.5
+    exec("from . import db")
+else :
+    import db
+
+#At version 2.3 cPickle switched to using protocol instead of bin
 if sys.version_info[:3] >= (2, 3, 0):
     HIGHEST_PROTOCOL = cPickle.HIGHEST_PROTOCOL
 # In python 2.3.*, "cPickle.dumps" accepts no
@@ -47,13 +53,22 @@ if sys.version_info[:3] >= (2, 3, 0):
         def _dumps(object, protocol):
             return cPickle.dumps(object, protocol=protocol)
 
-    from UserDict import DictMixin
-
 else:
     HIGHEST_PROTOCOL = None
     def _dumps(object, protocol):
         return cPickle.dumps(object, bin=protocol)
-    class DictMixin: pass
+
+
+if sys.version_info[0:2] <= (2, 5) :
+    try:
+        from UserDict import DictMixin
+    except ImportError:
+        # DictMixin is new in Python 2.3
+        class DictMixin: pass
+    MutableMapping = DictMixin
+else :
+    import collections
+    MutableMapping = collections.MutableMapping
 
 #------------------------------------------------------------------------
 
@@ -96,7 +111,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
 class DBShelveError(db.DBError): pass
 
 
-class DBShelf(DictMixin):
+class DBShelf(MutableMapping):
     """A shelf to hold pickled objects, built upon a bsddb DB object.  It
     automatically pickles/unpickles data objects going to/from the DB.
     """
@@ -146,6 +161,10 @@ class DBShelf(DictMixin):
             return self.db.keys(txn)
         else:
             return self.db.keys()
+
+    if sys.version_info[0:2] >= (2, 6) :
+        def __iter__(self) :
+            return self.db.__iter__()
 
 
     def open(self, *args, **kwargs):

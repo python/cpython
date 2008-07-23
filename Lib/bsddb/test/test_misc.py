@@ -47,6 +47,18 @@ class MiscTestCase(unittest.TestCase):
         rp = repr(db)
         self.assertEquals(rp, "{}")
 
+    def test04_repr_db(self) :
+        db = hashopen(self.filename)
+        d = {}
+        for i in xrange(100) :
+            db[repr(i)] = repr(100*i)
+            d[repr(i)] = repr(100*i)
+        db.close()
+        db = hashopen(self.filename)
+        rp = repr(db)
+        self.assertEquals(rp, repr(d))
+        db.close()
+
     # http://sourceforge.net/tracker/index.php?func=detail&aid=1708868&group_id=13900&atid=313900
     #
     # See the bug report for details.
@@ -54,7 +66,7 @@ class MiscTestCase(unittest.TestCase):
     # The problem was that make_key_dbt() was not allocating a copy of
     # string keys but FREE_DBT() was always being told to free it when the
     # database was opened with DB_THREAD.
-    def test04_double_free_make_key_dbt(self):
+    def test05_double_free_make_key_dbt(self):
         try:
             db1 = db.DB()
             db1.open(self.filename, None, db.DB_BTREE,
@@ -67,7 +79,7 @@ class MiscTestCase(unittest.TestCase):
             db1.close()
             os.unlink(self.filename)
 
-    def test05_key_with_null_bytes(self):
+    def test06_key_with_null_bytes(self):
         try:
             db1 = db.DB()
             db1.open(self.filename, None, db.DB_HASH, db.DB_CREATE)
@@ -86,7 +98,7 @@ class MiscTestCase(unittest.TestCase):
             db1.close()
             os.unlink(self.filename)
 
-    def test_DB_set_flags_persists(self):
+    def test07_DB_set_flags_persists(self):
         if db.version() < (4,2):
             # The get_flags API required for this to work is only available
             # in Berkeley DB >= 4.2

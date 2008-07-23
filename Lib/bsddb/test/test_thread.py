@@ -7,19 +7,7 @@ import time
 import errno
 from random import random
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
-
 DASH = '-'
-
-try:
-    from threading import Thread, currentThread
-    have_threads = True
-except ImportError:
-    have_threads = False
 
 try:
     WindowsError
@@ -28,7 +16,10 @@ except NameError:
         pass
 
 import unittest
-from test_all import verbose, get_new_environment_path, get_new_database_path
+from test_all import verbose, have_threads, get_new_environment_path, get_new_database_path
+
+if have_threads :
+    from threading import Thread, currentThread
 
 
 try:
@@ -103,8 +94,8 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
         keys=range(self.records)
         import random
         random.shuffle(keys)
-        records_per_writer=self.records/self.writers
-        readers_per_writer=self.readers/self.writers
+        records_per_writer=self.records//self.writers
+        readers_per_writer=self.readers//self.writers
         self.assertEqual(self.records,self.writers*records_per_writer)
         self.assertEqual(self.readers,self.writers*readers_per_writer)
         self.assertTrue((records_per_writer%readers_per_writer)==0)
@@ -143,7 +134,7 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
         if verbose:
             print "%s: creating records %d - %d" % (name, start, stop)
 
-        count=len(keys)/len(readers)
+        count=len(keys)//len(readers)
         count2=count
         for x in keys :
             key = '%04d' % x
@@ -218,8 +209,8 @@ class SimpleThreadedBase(BaseThreadedTestCase):
         keys=range(self.records)
         import random
         random.shuffle(keys)
-        records_per_writer=self.records/self.writers
-        readers_per_writer=self.readers/self.writers
+        records_per_writer=self.records//self.writers
+        readers_per_writer=self.readers//self.writers
         self.assertEqual(self.records,self.writers*records_per_writer)
         self.assertEqual(self.readers,self.writers*readers_per_writer)
         self.assertTrue((records_per_writer%readers_per_writer)==0)
@@ -258,7 +249,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
         if verbose:
             print "%s: creating records %d - %d" % (name, start, stop)
 
-        count=len(keys)/len(readers)
+        count=len(keys)//len(readers)
         count2=count
         for x in keys :
             key = '%04d' % x
@@ -332,8 +323,8 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
         keys=range(self.records)
         import random
         random.shuffle(keys)
-        records_per_writer=self.records/self.writers
-        readers_per_writer=self.readers/self.writers
+        records_per_writer=self.records//self.writers
+        readers_per_writer=self.readers//self.writers
         self.assertEqual(self.records,self.writers*records_per_writer)
         self.assertEqual(self.readers,self.writers*readers_per_writer)
         self.assertTrue((records_per_writer%readers_per_writer)==0)
@@ -375,7 +366,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
 
     def writerThread(self, d, keys, readers):
         name = currentThread().getName()
-        count=len(keys)/len(readers)
+        count=len(keys)//len(readers)
         while len(keys):
             try:
                 txn = self.env.txn_begin(None, self.txnFlag)

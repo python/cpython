@@ -240,9 +240,8 @@ def test_suite ():
     res = unittest.TestSuite ()
 
     res.addTest (unittest.makeSuite (ComparatorTests))
-    if db.version () >= (3, 3, 11):
-        res.addTest (unittest.makeSuite (BtreeExceptionsTestCase))
-        res.addTest (unittest.makeSuite (BtreeKeyCompareTestCase))
+    res.addTest (unittest.makeSuite (BtreeExceptionsTestCase))
+    res.addTest (unittest.makeSuite (BtreeKeyCompareTestCase))
     return res
 
 if __name__ == '__main__':

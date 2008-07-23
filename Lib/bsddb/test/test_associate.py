@@ -6,14 +6,8 @@ import sys, os, string
 import time
 from pprint import pprint
 
-try:
-    from threading import Thread, currentThread
-    have_threads = 1
-except ImportError:
-    have_threads = 0
-
 import unittest
-from test_all import verbose, get_new_environment_path
+from test_all import verbose, have_threads, get_new_environment_path
 
 try:
     # For Pythons w/distutils pybsddb
@@ -435,24 +429,23 @@ class ThreadedAssociateRecnoTestCase(ShelveAssociateTestCase):
 def test_suite():
     suite = unittest.TestSuite()
 
-    if db.version() >= (3, 3, 11):
-        suite.addTest(unittest.makeSuite(AssociateErrorTestCase))
+    suite.addTest(unittest.makeSuite(AssociateErrorTestCase))
 
-        suite.addTest(unittest.makeSuite(AssociateHashTestCase))
-        suite.addTest(unittest.makeSuite(AssociateBTreeTestCase))
-        suite.addTest(unittest.makeSuite(AssociateRecnoTestCase))
+    suite.addTest(unittest.makeSuite(AssociateHashTestCase))
+    suite.addTest(unittest.makeSuite(AssociateBTreeTestCase))
+    suite.addTest(unittest.makeSuite(AssociateRecnoTestCase))
 
-        if db.version() >= (4, 1):
-            suite.addTest(unittest.makeSuite(AssociateBTreeTxnTestCase))
+    if db.version() >= (4, 1):
+        suite.addTest(unittest.makeSuite(AssociateBTreeTxnTestCase))
 
-        suite.addTest(unittest.makeSuite(ShelveAssociateHashTestCase))
-        suite.addTest(unittest.makeSuite(ShelveAssociateBTreeTestCase))
-        suite.addTest(unittest.makeSuite(ShelveAssociateRecnoTestCase))
+    suite.addTest(unittest.makeSuite(ShelveAssociateHashTestCase))
+    suite.addTest(unittest.makeSuite(ShelveAssociateBTreeTestCase))
+    suite.addTest(unittest.makeSuite(ShelveAssociateRecnoTestCase))
 
-        if have_threads:
-            suite.addTest(unittest.makeSuite(ThreadedAssociateHashTestCase))
-            suite.addTest(unittest.makeSuite(ThreadedAssociateBTreeTestCase))
-            suite.addTest(unittest.makeSuite(ThreadedAssociateRecnoTestCase))
+    if have_threads:
+        suite.addTest(unittest.makeSuite(ThreadedAssociateHashTestCase))
+        suite.addTest(unittest.makeSuite(ThreadedAssociateBTreeTestCase))
+        suite.addTest(unittest.makeSuite(ThreadedAssociateRecnoTestCase))
 
     return suite
 
