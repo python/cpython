@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Deprecate the "ast" parser function aliases.
+
 - Issue #3120: On 64-bit Windows the subprocess module was truncating handles.
 
 - Issue #3303: Fix a crash in locale.strcoll() when calling it with
