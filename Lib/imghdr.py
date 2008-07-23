@@ -8,7 +8,7 @@ __all__ = ["what"]
 
 def what(file, h=None):
     if h is None:
-        if type(file) == type(''):
+        if isinstance(file, basestring):
             f = open(file, 'rb')
             h = f.read(32)
         else:
