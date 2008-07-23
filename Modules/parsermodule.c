@@ -324,6 +324,14 @@ parser_st2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
     return (res);
 }
 
+static PyObject*
+parser_ast2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
+{
+    if (PyErr_WarnPy3k("ast2tuple is removed in 3.x; use st2tuple", 1) < 0)
+        return NULL;
+    return parser_st2tuple(self, args, kw);
+}
+
 
 /*  parser_st2list(PyObject* self, PyObject* args, PyObject* kw)
  *
@@ -367,6 +375,14 @@ parser_st2list(PyST_Object *self, PyObject *args, PyObject *kw)
     return (res);
 }
 
+static PyObject*
+parser_ast2list(PyST_Object *self, PyObject *args, PyObject *kw)
+{
+    if (PyErr_WarnPy3k("ast2list is removed in 3.x; use st2list", 1) < 0)
+        return NULL;
+    return parser_st2list(self, args, kw);
+}
+
 
 /*  parser_compilest(PyObject* self, PyObject* args)
  *
@@ -394,6 +410,14 @@ parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
         res = (PyObject *)PyNode_Compile(self->st_node, str);
 
     return (res);
+}
+
+static PyObject*
+parser_compileast(PyST_Object *self, PyObject *args, PyObject *kw)
+{
+    if (PyErr_WarnPy3k("compileast is removed in 3.x; use compilest", 1) < 0)
+        return NULL;
+    return parser_compilest(self, args, kw);
 }
 
 
@@ -632,6 +656,14 @@ parser_tuple2st(PyST_Object *self, PyObject *args, PyObject *kw)
         err_string("unspecified ST error occurred");
 
     return st;
+}
+
+static PyObject*
+parser_tuple2ast(PyST_Object *self, PyObject *args, PyObject *kw)
+{
+    if (PyErr_WarnPy3k("tuple2ast is removed in 3.x; use tuple2st", 1) < 0)
+        return NULL;
+    return parser_tuple2st(self, args, kw);
 }
 
 
@@ -3203,11 +3235,11 @@ parser__pickler(PyObject *self, PyObject *args)
  *  inheritance.
  */
 static PyMethodDef parser_functions[] =  {
-    {"ast2tuple",       (PyCFunction)parser_st2tuple,  PUBLIC_METHOD_TYPE,
+    {"ast2tuple",       (PyCFunction)parser_ast2tuple, PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of an ST.")},
-    {"ast2list",        (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
+    {"ast2list",        (PyCFunction)parser_ast2list,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of an ST.")},
-    {"compileast",      (PyCFunction)parser_compilest, PUBLIC_METHOD_TYPE,
+    {"compileast",      (PyCFunction)parser_compileast,PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compiles an ST object into a code object.")},
     {"compilest",      (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compiles an ST object into a code object.")},
@@ -3219,7 +3251,7 @@ static PyMethodDef parser_functions[] =  {
         PyDoc_STR("Determines if an ST object was created from a suite.")},
     {"suite",           (PyCFunction)parser_suite,     PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a suite.")},
-    {"sequence2ast",    (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
+    {"sequence2ast",    (PyCFunction)parser_tuple2ast, PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
     {"sequence2st",     (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
@@ -3227,7 +3259,7 @@ static PyMethodDef parser_functions[] =  {
         PyDoc_STR("Creates a tuple-tree representation of an ST.")},
     {"st2list",         (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of an ST.")},
-    {"tuple2ast",       (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
+    {"tuple2ast",       (PyCFunction)parser_tuple2ast, PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
     {"tuple2st",        (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
