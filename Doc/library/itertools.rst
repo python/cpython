@@ -33,17 +33,10 @@ by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 Likewise, the functional tools are designed to work well with the high-speed
 functions provided by the :mod:`operator` module.
 
-The module author welcomes suggestions for other basic building blocks to be
-added to future versions of the module.
-
 Whether cast in pure python form or compiled code, tools that use iterators are
-more memory efficient (and faster) than their list based counterparts. Adopting
+more memory efficient (and often faster) than their list based counterparts. Adopting
 the principles of just-in-time manufacturing, they create data when and where
 needed instead of consuming memory with the computer equivalent of "inventory".
-
-The performance advantage of iterators becomes more acute as the number of
-elements increases -- at some point, lists grow large enough to severely impact
-memory cache performance and start running slowly.
 
 
 .. seealso::
@@ -517,55 +510,35 @@ which incur interpreter overhead.
 
 .. testcode::
 
-   def take(n, seq):
-       return list(islice(seq, n))
+   def take(n, iterable):
+       "Return first n items of the iterable as a list"
+       return list(islice(iterable, n))
 
-   def enumerate(iterable):
-       return zip(count(), iterable)
+   def enumerate(iterable, start=0):
+       return zip(count(start), iterable)
 
-   def tabulate(function):
+   def tabulate(function, start=0):
        "Return function(0), function(1), ..."
-       return map(function, count())
-
-   def items(mapping):
-       return zip(mapping.keys(), mapping.values())
+       return map(function, count(start))
 
    def nth(iterable, n):
-       "Returns the nth item or raise StopIteration"
-       return next(islice(iterable, n, None))
+       "Returns the nth item or empty list"
+       return list(islice(iterable, n, n+1))
 
-   def all(seq, pred=None):
-       "Returns True if pred(x) is true for every element in the iterable"
-       for elem in filterfalse(pred, seq):
-           return False
-       return True
+   def quantify(iterable, pred=bool):
+       "Count how many times the predicate is true"
+       return sum(map(pred, iterable))
 
-   def any(seq, pred=None):
-       "Returns True if pred(x) is true for at least one element in the iterable"
-       for elem in filter(pred, seq):
-           return True
-       return False
-
-   def no(seq, pred=None):
-       "Returns True if pred(x) is false for every element in the iterable"
-       for elem in filter(pred, seq):
-           return False
-       return True
-
-   def quantify(seq, pred=None):
-       "Count how many times the predicate is true in the sequence"
-       return sum(map(pred, seq))
-
-   def padnone(seq):
+   def padnone(iterable):
        """Returns the sequence elements and then returns None indefinitely.
 
        Useful for emulating the behavior of the built-in map() function.
        """
-       return chain(seq, repeat(None))
+       return chain(iterable, repeat(None))
 
-   def ncycles(seq, n):
+   def ncycles(iterable, n):
        "Returns the sequence elements n times"
-       return chain.from_iterable(repeat(seq, n))
+       return chain.from_iterable(repeat(iterable, n))
 
    def dotproduct(vec1, vec2):
        return sum(map(operator.mul, vec1, vec2))
@@ -616,7 +589,21 @@ which incur interpreter overhead.
 
    def compress(data, selectors):
        "compress('abcdef', [1,0,1,0,1,1]) --> a c e f"
-       for d, s in zip(data, selectors):
-           if s:
-               yield d
+       decorated = zip(data, selectors)
+       filtered =  filter(operator.itemgetter(1), decorated)
+       return map(operator.itemgetter(0), filtered)
 
+   def combinations_with_replacement(iterable, r):
+       "combinations_with_replacement('ABC', 3) --> AA AB AC BB BC CC"
+       pool = tuple(iterable)
+       n = len(pool)
+       indices = [0] * r
+       yield tuple(pool[i] for i in indices)
+       while True:
+           for i in reversed(range(r)):
+               if indices[i] != n - 1:
+                   break
+           else:
+               return
+           indices[i:] = [indices[i] + 1] * (r - i)
+           yield tuple(pool[i] for i in indices)

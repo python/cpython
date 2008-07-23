@@ -1647,7 +1647,7 @@ timed intervals.
    The system will save old log files by appending extensions to the filename.
    The extensions are date-and-time based, using the strftime format
    ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the
-   rollover interval. 
+   rollover interval.
    If the *utc* argument is true, times in UTC will be used; otherwise
    local time is used.
 
@@ -2314,6 +2314,10 @@ Sections which specify handler configuration are exemplified by the following.
 The ``class`` entry indicates the handler's class (as determined by :func:`eval`
 in the ``logging`` package's namespace). The ``level`` is interpreted as for
 loggers, and ``NOTSET`` is taken to mean "log everything".
+
+.. versionchanged:: 2.6
+  Added support for resolving the handler's class as a dotted module and class
+  name.
 
 The ``formatter`` entry indicates the key name of the formatter for this
 handler. If blank, a default formatter (``logging._defaultFormatter``) is used.

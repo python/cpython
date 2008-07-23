@@ -1778,10 +1778,10 @@ err_input(perrdetail *err)
 	case E_INTR:
 		if (!PyErr_Occurred())
 			PyErr_SetNone(PyExc_KeyboardInterrupt);
-		return;
+		goto cleanup;
 	case E_NOMEM:
 		PyErr_NoMemory();
-		return;
+		goto cleanup;
 	case E_EOF:
 		msg = "unexpected EOF while parsing";
 		break;
@@ -1839,10 +1839,6 @@ err_input(perrdetail *err)
 	}
 	v = Py_BuildValue("(ziiN)", err->filename,
 			  err->lineno, err->offset, errtext);
-	if (err->text != NULL) {
-		PyObject_FREE(err->text);
-		err->text = NULL;
-	}
 	w = NULL;
 	if (v != NULL)
 		w = Py_BuildValue("(sO)", msg, v);
@@ -1850,6 +1846,11 @@ err_input(perrdetail *err)
 	Py_XDECREF(v);
 	PyErr_SetObject(errtype, w);
 	Py_XDECREF(w);
+cleanup:
+	if (err->text != NULL) {
+		PyObject_FREE(err->text);
+		err->text = NULL;
+	}
 }
 
 /* Print fatal error message and abort */

@@ -495,6 +495,24 @@ self.assert_(X.passed)
         self.assert_("x" not in varnames)
         self.assert_("y" in varnames)
 
+    def testLocalsClass_WithTrace(self):
+        # Issue23728: after the trace function returns, the locals()
+        # dictionary is used to update all variables, this used to
+        # include free variables. But in class statements, free
+        # variables are not inserted...
+        import sys
+        sys.settrace(lambda a,b,c:None)
+        try:
+            x = 12
+
+            class C:
+                def f(self):
+                    return x
+
+            self.assertEquals(x, 12) # Used to raise UnboundLocalError
+        finally:
+            sys.settrace(None)
+
     def testBoundAndFree(self):
         # var is bound and free in class
 

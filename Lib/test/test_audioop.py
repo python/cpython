@@ -163,7 +163,7 @@ class TestAudioop(unittest.TestCase):
             self.assertEqual(audioop.getsample(data[1], 2, i), i)
             self.assertEqual(audioop.getsample(data[2], 4, i), i)
 
-    def test_negavitelen(self):
+    def test_negativelen(self):
         # from issue 3306, previously it segfaulted
         self.assertRaises(audioop.error,
             audioop.findmax, ''.join(chr(x) for x in range(256)), -2392392)

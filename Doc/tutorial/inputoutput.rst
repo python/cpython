@@ -355,6 +355,16 @@ attempts to use the file object will automatically fail. ::
      File "<stdin>", line 1, in ?
    ValueError: I/O operation on closed file
 
+It is good practice to use the :keyword:`with` keyword when dealing with file
+objects.  This has the advantage that the file is properly closed after its
+suite finishes, even if an exception is raised on the way.  It is also much
+shorter than writing equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
+
+    >>> with open('/tmp/workfile', 'r') as f:
+    ...     read_data = f.read()
+    >>> f.closed
+    True
+
 File objects have some additional methods, such as :meth:`isatty` and
 :meth:`truncate` which are less frequently used; consult the Library Reference
 for a complete guide to file objects.

@@ -128,7 +128,11 @@ def Proc0(loops=LOOPS):
         IntLoc1 = Proc2(IntLoc1)
 
     benchtime = clock() - starttime - nulltime
-    return benchtime, (loops / benchtime)
+    if benchtime == 0.0:
+        loopsPerBenchtime = 0.0
+    else:
+        loopsPerBenchtime = (loops / benchtime)
+    return benchtime, loopsPerBenchtime
 
 def Proc1(PtrParIn):
     PtrParIn.PtrComp = NextRecord = PtrGlb.copy()

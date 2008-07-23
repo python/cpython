@@ -902,8 +902,13 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
         }
 
         statement = PyUnicode_AsStringAndSize(begin_statement, &size);
+        if (!statement) {
+            Py_DECREF(statement);
+            return -1;
+        }
         self->begin_statement = PyMem_Malloc(size + 2);
         if (!self->begin_statement) {
+            Py_DECREF(begin_statement);
             return -1;
         }
 

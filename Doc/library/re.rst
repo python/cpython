@@ -571,17 +571,20 @@ form.
 .. function:: findall(pattern, string[, flags])
 
    Return all non-overlapping matches of *pattern* in *string*, as a list of
-   strings.  If one or more groups are present in the pattern, return a list of
-   groups; this will be a list of tuples if the pattern has more than one group.
-   Empty matches are included in the result unless they touch the beginning of
-   another match.
+   strings.  The *string* is scanned left-to-right, and matches are returned in
+   the order found.  If one or more groups are present in the pattern, return a
+   list of groups; this will be a list of tuples if the pattern has more than
+   one group.  Empty matches are included in the result unless they touch the
+   beginning of another match.
 
 
 .. function:: finditer(pattern, string[, flags])
 
    Return an :term:`iterator` yielding :class:`MatchObject` instances over all
-   non-overlapping matches for the RE *pattern* in *string*.  Empty matches are
-   included in the result unless they touch the beginning of another match.
+   non-overlapping matches for the RE *pattern* in *string*.  The *string* is
+   scanned left-to-right, and matches are returned in the order found.  Empty
+   matches are included in the result unless they touch the beginning of another
+   match.
 
 
 .. function:: sub(pattern, repl, string[, count])
