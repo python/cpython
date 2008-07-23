@@ -322,7 +322,7 @@ parser_st2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject *res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", "line_info", "col_info", NULL};
+    static char *keywords[] = {"st", "line_info", "col_info", NULL};
 
     if (self == NULL || PyModule_Check(self)) {
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|OO:st2tuple", keywords,
@@ -366,7 +366,7 @@ parser_st2list(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject *res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", "line_info", "col_info", NULL};
+    static char *keywords[] = {"st", "line_info", "col_info", NULL};
 
     if (self == NULL || PyModule_Check(self))
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|OO:st2list", keywords,
@@ -408,7 +408,7 @@ parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
     char*         str = "<syntax-tree>";
     int ok;
 
-    static char *keywords[] = {"ast", "filename", NULL};
+    static char *keywords[] = {"st", "filename", NULL};
 
     if (self == NULL || PyModule_Check(self))
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|s:compilest", keywords,
@@ -437,7 +437,7 @@ parser_isexpr(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject* res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", NULL};
+    static char *keywords[] = {"st", NULL};
 
     if (self == NULL || PyModule_Check(self))
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:isexpr", keywords,
@@ -460,7 +460,7 @@ parser_issuite(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject* res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", NULL};
+    static char *keywords[] = {"st", NULL};
 
     if (self == NULL || PyModule_Check(self))
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:issuite", keywords,
@@ -3011,12 +3011,6 @@ parser__pickler(PyObject *self, PyObject *args)
  *  inheritance.
  */
 static PyMethodDef parser_functions[] =  {
-    {"ast2tuple",       (PyCFunction)parser_st2tuple,  PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Creates a tuple-tree representation of an ST.")},
-    {"ast2list",        (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Creates a list-tree representation of an ST.")},
-    {"compileast",      (PyCFunction)parser_compilest, PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Compiles an ST object into a code object.")},
     {"compilest",      (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compiles an ST object into a code object.")},
     {"expr",            (PyCFunction)parser_expr,      PUBLIC_METHOD_TYPE,
@@ -3027,16 +3021,12 @@ static PyMethodDef parser_functions[] =  {
         PyDoc_STR("Determines if an ST object was created from a suite.")},
     {"suite",           (PyCFunction)parser_suite,     PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a suite.")},
-    {"sequence2ast",    (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Creates an ST object from a tree representation.")},
     {"sequence2st",     (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
     {"st2tuple",        (PyCFunction)parser_st2tuple,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of an ST.")},
     {"st2list",         (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of an ST.")},
-    {"tuple2ast",       (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Creates an ST object from a tree representation.")},
     {"tuple2st",        (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
 
@@ -3089,8 +3079,6 @@ PyInit_parser(void)
     if (PyModule_AddObject(module, "ParserError", parser_error) != 0)
         return NULL;
 
-    Py_INCREF(&PyST_Type);
-    PyModule_AddObject(module, "ASTType", (PyObject*)&PyST_Type);
     Py_INCREF(&PyST_Type);
     PyModule_AddObject(module, "STType", (PyObject*)&PyST_Type);
 
