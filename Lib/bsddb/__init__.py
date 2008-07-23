@@ -33,18 +33,25 @@
 #----------------------------------------------------------------------
 
 
-"""Support for Berkeley DB 4.x with a simple interface.
+"""Support for Berkeley DB 4.0 through 4.7 with a simple interface.
 
 For the full featured object oriented interface use the bsddb.db module
 instead.  It mirrors the Oracle Berkeley DB C API.
 """
+
+import sys
+absolute_import = (sys.version_info[0] >= 3)
 
 try:
     if __name__ == 'bsddb3':
         # import _pybsddb binary as it should be the more recent version from
         # a standalone pybsddb addon package than the version included with
         # python as bsddb._bsddb.
-        import _pybsddb
+        if absolute_import :
+            # Because this syntaxis is not valid before Python 2.5
+            exec("from . import _pybsddb")
+        else :
+            import _pybsddb
         _bsddb = _pybsddb
         from bsddb3.dbutils import DeadlockWrap as _DeadlockWrap
     else:
@@ -66,9 +73,16 @@ error = db.DBError  # So bsddb.error will mean something...
 
 import sys, os
 
-import UserDict
 from weakref import ref
-class _iter_mixin(UserDict.DictMixin):
+
+if sys.version_info[0:2] <= (2, 5) :
+    import UserDict
+    MutableMapping = UserDict.DictMixin
+else :
+    import collections
+    MutableMapping = collections.MutableMapping
+
+class _iter_mixin(MutableMapping):
     def _make_iter_cursor(self):
         cur = _DeadlockWrap(self.db.cursor)
         key = id(cur)
@@ -115,8 +129,12 @@ class _iter_mixin(UserDict.DictMixin):
             except _bsddb.DBCursorClosedError:
                 # the database was modified during iteration.  abort.
                 pass
-        finally:
+# When Python 2.3 not supported in bsddb3, we can change this to "finally"
+        except :
             self._in_iter -= 1
+            raise
+
+        self._in_iter -= 1
 
     def iteritems(self):
         if not self.db:
@@ -154,8 +172,12 @@ class _iter_mixin(UserDict.DictMixin):
             except _bsddb.DBCursorClosedError:
                 # the database was modified during iteration.  abort.
                 pass
-        finally:
+# When Python 2.3 not supported in bsddb3, we can change this to "finally"
+        except :
             self._in_iter -= 1
+            raise
+
+        self._in_iter -= 1
 
 
 class _DBWithCursor(_iter_mixin):
@@ -227,6 +249,12 @@ class _DBWithCursor(_iter_mixin):
     def __len__(self):
         self._checkOpen()
         return _DeadlockWrap(lambda: len(self.db))  # len(self.db)
+
+    if sys.version_info[0:2] >= (2, 6) :
+        def __repr__(self) :
+            if self.isOpen() :
+                return repr(dict(_DeadlockWrap(self.db.items)))
+            return repr(dict())
 
     def __getitem__(self, key):
         self._checkOpen()
@@ -407,8 +435,6 @@ def _checkflag(flag, file):
 try:
     import thread
     del thread
-    if db.version() < (3, 3, 0):
-        db.DB_THREAD = 0
 except ImportError:
     db.DB_THREAD = 0
 

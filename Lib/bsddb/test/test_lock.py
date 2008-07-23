@@ -4,15 +4,11 @@ TestCases for testing the locking sub-system.
 
 import time
 
-try:
-    from threading import Thread, currentThread
-    have_threads = 1
-except ImportError:
-    have_threads = 0
-
-
 import unittest
-from test_all import verbose, get_new_environment_path, get_new_database_path
+from test_all import verbose, have_threads, get_new_environment_path, get_new_database_path
+
+if have_threads :
+    from threading import Thread, currentThread
 
 try:
     # For Pythons w/distutils pybsddb
@@ -62,8 +58,7 @@ class LockingTestCase(unittest.TestCase):
         self.env.lock_put(lock)
         if verbose:
             print "Released lock: %s" % lock
-        if db.version() >= (4,0):
-            self.env.lock_id_free(anID)
+        self.env.lock_id_free(anID)
 
 
     def test02_threaded(self):
@@ -132,9 +127,8 @@ class LockingTestCase(unittest.TestCase):
         self.env.lock_put(lock)
         t.join()
 
-        if db.version() >= (4,0):
-            self.env.lock_id_free(anID)
-            self.env.lock_id_free(anID2)
+        self.env.lock_id_free(anID)
+        self.env.lock_id_free(anID2)
 
         if db.version() >= (4,6):
             self.assertTrue(deadlock_detection.count>0)
@@ -159,8 +153,7 @@ class LockingTestCase(unittest.TestCase):
             if verbose:
                 print "%s: Released %s lock: %s" % (name, lt, lock)
 
-        if db.version() >= (4,0):
-            self.env.lock_id_free(anID)
+        self.env.lock_id_free(anID)
 
 
 #----------------------------------------------------------------------

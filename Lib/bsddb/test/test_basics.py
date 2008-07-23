@@ -101,14 +101,14 @@ class BasicTestCase(unittest.TestCase):
     def populateDB(self, _txn=None):
         d = self.d
 
-        for x in range(self._numKeys/2):
+        for x in range(self._numKeys//2):
             key = '%04d' % (self._numKeys - x)  # insert keys in reverse order
             data = self.makeData(key)
             d.put(key, data, _txn)
 
         d.put('empty value', '', _txn)
 
-        for x in range(self._numKeys/2-1):
+        for x in range(self._numKeys//2-1):
             key = '%04d' % x  # and now some in forward order
             data = self.makeData(key)
             d.put(key, data, _txn)
@@ -536,10 +536,6 @@ class BasicTestCase(unittest.TestCase):
     #----------------------------------------
 
     def test06_Truncate(self):
-        if db.version() < (3,3):
-            # truncate is a feature of Berkeley DB 3.3 and above
-            return
-
         d = self.d
         if verbose:
             print '\n', '-=' * 30
@@ -681,12 +677,11 @@ class BasicTransactionTestCase(BasicTestCase):
         except db.DBIncompleteError:
             pass
 
-        if db.version() >= (4,0):
-            statDict = self.env.log_stat(0);
-            self.assert_(statDict.has_key('magic'))
-            self.assert_(statDict.has_key('version'))
-            self.assert_(statDict.has_key('cur_file'))
-            self.assert_(statDict.has_key('region_nowait'))
+        statDict = self.env.log_stat(0);
+        self.assert_(statDict.has_key('magic'))
+        self.assert_(statDict.has_key('version'))
+        self.assert_(statDict.has_key('cur_file'))
+        self.assert_(statDict.has_key('region_nowait'))
 
         # must have at least one log file present:
         logs = self.env.log_archive(db.DB_ARCH_ABS | db.DB_ARCH_LOG)
@@ -703,10 +698,6 @@ class BasicTransactionTestCase(BasicTestCase):
     #----------------------------------------
 
     def test07_TxnTruncate(self):
-        if db.version() < (3,3):
-            # truncate is a feature of Berkeley DB 3.3 and above
-            return
-
         d = self.d
         if verbose:
             print '\n', '-=' * 30
@@ -956,6 +947,55 @@ class HashMultiDBTestCase(BasicMultiDBTestCase):
     envflags = db.DB_THREAD | db.DB_INIT_MPOOL | db.DB_INIT_LOCK
 
 
+class PrivateObject(unittest.TestCase) :
+    import sys
+    if sys.version_info[:3] < (2, 4, 0):
+        def assertTrue(self, expr, msg=None):
+            self.failUnless(expr,msg=msg)
+
+    def tearDown(self) :
+        del self.obj
+
+    def test01_DefaultIsNone(self) :
+        self.assertEqual(self.obj.get_private(), None)
+
+    def test02_assignment(self) :
+        a = "example of private object"
+        self.obj.set_private(a)
+        b = self.obj.get_private()
+        self.assertTrue(a is b)  # Object identity
+
+    def test03_leak_assignment(self) :
+        import sys
+        a = "example of private object"
+        refcount = sys.getrefcount(a)
+        self.obj.set_private(a)
+        self.assertEqual(refcount+1, sys.getrefcount(a))
+        self.obj.set_private(None)
+        self.assertEqual(refcount, sys.getrefcount(a))
+
+    def test04_leak_GC(self) :
+        import sys
+        a = "example of private object"
+        refcount = sys.getrefcount(a)
+        self.obj.set_private(a)
+        self.obj = None
+        self.assertEqual(refcount, sys.getrefcount(a))
+
+class DBEnvPrivateObject(PrivateObject) :
+    def setUp(self) :
+        self.obj = db.DBEnv()
+
+class DBPrivateObject(PrivateObject) :
+    def setUp(self) :
+        self.obj = db.DB()
+
+class CrashAndBurn(unittest.TestCase) :
+    def test01_OpenCrash(self) :
+        # See http://bugs.python.org/issue3307
+        self.assertRaises(db.DBInvalidArgError, db.DB, None, 65535)
+
+
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
 
@@ -979,6 +1019,9 @@ def test_suite():
     suite.addTest(unittest.makeSuite(HashDUPWithThreadTestCase))
     suite.addTest(unittest.makeSuite(BTreeMultiDBTestCase))
     suite.addTest(unittest.makeSuite(HashMultiDBTestCase))
+    suite.addTest(unittest.makeSuite(DBEnvPrivateObject))
+    suite.addTest(unittest.makeSuite(DBPrivateObject))
+    #suite.addTest(unittest.makeSuite(CrashAndBurn))
 
     return suite
 

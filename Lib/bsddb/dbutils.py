@@ -26,7 +26,13 @@
 #
 from time import sleep as _sleep
 
-import db
+import sys
+absolute_import = (sys.version_info[0] >= 3)
+if absolute_import :
+    # Because this syntaxis is not valid before Python 2.5
+    exec("from . import db")
+else :
+    import db
 
 # always sleep at least N seconds between retrys
 _deadlock_MinSleepTime = 1.0/128
