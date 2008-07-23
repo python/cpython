@@ -136,7 +136,9 @@ The following type-oriented macros are provided for convenience.  Note  that
 
    Same as :cfunc:`PyMem_Realloc`, but the memory block is resized to ``(n *
    sizeof(TYPE))`` bytes.  Returns a pointer cast to :ctype:`TYPE\*`. On return,
-   *p* will be a pointer to the new memory area, or *NULL* in the event of failure.
+   *p* will be a pointer to the new memory area, or *NULL* in the event of
+   failure.  This is a C preprocessor macro; p is always reassigned.  Save
+   the original value of p to avoid losing memory when handling errors.
 
 
 .. cfunction:: void PyMem_Del(void *p)

@@ -805,6 +805,7 @@ static int
 array_do_extend(arrayobject *self, PyObject *bb)
 {
 	Py_ssize_t size;
+	char *old_item;
 
 	if (!array_Check(bb))
 		return array_iter_extend(self, bb);
@@ -820,8 +821,10 @@ array_do_extend(arrayobject *self, PyObject *bb)
 		return -1;
 	}
 	size = Py_SIZE(self) + Py_SIZE(b);
+	old_item = self->ob_item;
         PyMem_RESIZE(self->ob_item, char, size*self->ob_descr->itemsize);
         if (self->ob_item == NULL) {
+		self->ob_item = old_item;
 		PyErr_NoMemory();
 		return -1;
         }
@@ -874,7 +877,7 @@ array_inplace_repeat(arrayobject *self, Py_ssize_t n)
 			if (size > PY_SSIZE_T_MAX / n) {
 				return PyErr_NoMemory();
 			}
-			PyMem_Resize(items, char, n * size);
+			PyMem_RESIZE(items, char, n * size);
 			if (items == NULL)
 				return PyErr_NoMemory();
 			p = items;
