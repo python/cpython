@@ -1324,14 +1324,6 @@ The most general ABC is :class:`Number`.  It defines no operations at
 all, and only exists to allow checking if an object is a number by
 doing ``isinstance(obj, Number)``.
 
-Numbers are further divided into :class:`Exact` and :class:`Inexact`.
-Exact numbers can represent values precisely and operations never
-round off the results or introduce tiny errors that may break the
-commutativity and associativity properties; inexact numbers may
-perform such rounding or introduce small errors.  Integers, long
-integers, and rational numbers are exact, while floating-point
-and complex numbers are inexact.
-
 :class:`Complex` is a subclass of :class:`Number`.  Complex numbers
 can undergo the basic operations of addition, subtraction,
 multiplication, division, and exponentiation, and you can retrieve the
@@ -1449,12 +1441,14 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   it will be returned if *iterator* has been exhausted; otherwise,
   the :exc:`StopIteration` exception will be raised.  (:issue:`2719`)
 
-* Tuples now have an :meth:`index` method matching the list type's
-  :meth:`index` method::
+* Tuples now have :meth:`index` and :meth:`count` methods matching the
+  list type's :meth:`index` and :meth:`count` methods::
 
     >>> t = (0,1,2,3,4)
     >>> t.index(3)
     3
+
+  (Contributed by Raymond Hettinger)
 
 * The built-in types now have improved support for extended slicing syntax,
   where various combinations of ``(start, stop, step)`` are supplied.
@@ -1545,7 +1539,8 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   * :func:`~math.sum` adds up the stream of numbers from an iterable,
     and is careful to avoid loss of precision by calculating partial sums.
-    (Contributed by Jean Brouwers; :issue:`2819`.)
+    (Contributed by Jean Brouwers, Raymond Hettinger, and Mark Dickinson;
+    :issue:`2819`.)
 
   * The inverse hyperbolic functions :func:`~math.acosh`, :func:`~math.asinh`
     and :func:`~math.atanh`.
@@ -1596,8 +1591,8 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 * The string :meth:`translate` method now accepts ``None`` as the
   translation table parameter, which is treated as the identity
   transformation.   This makes it easier to carry out operations
-  that only delete characters.  (Contributed by Bengt Richter;
-  :issue:`1193128`.)
+  that only delete characters.  (Contributed by Bengt Richter and
+  implemented by Raymond Hettinger; :issue:`1193128`.)
 
 * The built-in :func:`dir` function now checks for a :meth:`__dir__`
   method on the objects it receives.  This method must return a list

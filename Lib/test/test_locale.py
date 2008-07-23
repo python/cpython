@@ -1,4 +1,4 @@
-from test.support import verbose, TestSkipped
+from test.support import verbose, TestSkipped, TestFailed
 import locale
 import sys
 
@@ -78,3 +78,12 @@ try:
 
 finally:
     locale.setlocale(locale.LC_NUMERIC, oldlocale)
+
+if hasattr(locale, "strcoll"):
+    # test crasher from bug #3303
+    try:
+        locale.strcoll("a", None)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed("TypeError not raised")

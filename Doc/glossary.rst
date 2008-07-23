@@ -100,6 +100,14 @@ Glossary
       of :class:`dict` much resembles that for :class:`list`, but the keys can
       be any object with a :meth:`__hash__` function, not just integers starting
       from zero.  Called a hash in Perl.
+
+   docstring
+      A docstring ("documentation string") is a string literal that appears as
+      the first thing in a class or function suite.  While ignored when the
+      suite is executed, it is recognized by the compiler and put into the
+      :attr:`__doc__` attribute of the class or function.  Since it is available
+      via introspection, it is the canonical place for documentation of the
+      object.
     
    duck-typing 
       Pythonic programming style that determines an object's type by inspection

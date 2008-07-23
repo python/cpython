@@ -139,7 +139,8 @@ RobotTest(7, doc, good, bad)
 class NetworkTestCase(unittest.TestCase):
 
     def testPasswordProtectedSite(self):
-        support.requires('network')
+        if not support.is_resource_enabled('network'):
+            return
         # whole site is password-protected.
         url = 'http://mueblesmoraleda.com'
         parser = urllib.robotparser.RobotFileParser()
@@ -148,7 +149,8 @@ class NetworkTestCase(unittest.TestCase):
         self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
 
     def testPythonOrg(self):
-        support.requires('network')
+        if not support.is_resource_enabled('network'):
+            return
         parser = urllib.robotparser.RobotFileParser(
             "http://www.python.org/robots.txt")
         parser.read()
@@ -160,5 +162,5 @@ def test_main():
     support.run_unittest(tests)
 
 if __name__=='__main__':
-    support.Verbose = 1
+    support.verbose = 1
     test_main()

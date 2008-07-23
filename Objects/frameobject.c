@@ -909,9 +909,12 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 	if (ncells || nfreevars) {
 		dict_to_map(co->co_cellvars, ncells,
 			    locals, fast + co->co_nlocals, 1, clear);
-		dict_to_map(co->co_freevars, nfreevars,
-			    locals, fast + co->co_nlocals + ncells, 1, 
-			    clear);
+		/* Same test as in PyFrame_FastToLocals() above. */
+		if (co->co_flags & CO_OPTIMIZED) {
+			dict_to_map(co->co_freevars, nfreevars,
+			        locals, fast + co->co_nlocals + ncells, 1, 
+			        clear);
+		}
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
 }

@@ -360,10 +360,11 @@ zero-padding.  This is equivalent to an *alignment* type of ``'='`` and a *fill*
 character of ``'0'``.
 
 The *precision* is a decimal number indicating how many digits should be
-displayed after the decimal point for a floating point value.  For non-number
-types the field indicates the maximum field size - in other words, how many
-characters will be used from the field content. The *precision* is ignored for
-integer values.
+displayed after the decimal point for a floating point value formatted with
+``'f'`` and ``'F'``, or before and after the decimal point for a floating point
+value formatted with ``'g'`` or ``'G'``.  For non-number types the field
+indicates the maximum field size - in other words, how many characters will be
+used from the field content. The *precision* is ignored for integer values.
 
 Finally, the *type* determines how the data should be presented.
 
@@ -391,7 +392,7 @@ The available integer presentation types are:
    |         | the current locale setting to insert the appropriate     |
    |         | number separator characters.                             |
    +---------+----------------------------------------------------------+
-   | None    | the same as ``'d'``                                      |
+   | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
                                                                          
 The available presentation types for floating point and decimal values are:
@@ -412,10 +413,13 @@ The available presentation types for floating point and decimal values are:
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format. This prints the number as a fixed-point  |
    |         | number, unless the number is too large, in which case    |
-   |         | it switches to ``'e'`` exponent notation.                |
+   |         | it switches to ``'e'`` exponent notation. Infinity and   |
+   |         | NaN values are formatted as ``inf``, ``-inf`` and        |
+   |         | ``nan``, respectively.                                   |
    +---------+----------------------------------------------------------+
    | ``'G'`` | General format. Same as ``'g'`` except switches to       |
-   |         | ``'E'`` if the number gets to large.                     |
+   |         | ``'E'`` if the number gets to large. The representations |
+   |         | of infinity and NaN are uppercased, too.                 |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
@@ -424,7 +428,7 @@ The available presentation types for floating point and decimal values are:
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | the same as ``'g'``                                      |
+   | None    | The same as ``'g'``.                                     |
    +---------+----------------------------------------------------------+
 
 

@@ -2350,11 +2350,19 @@ posix_listdir(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	for (;;) {
+		errno = 0;
 		Py_BEGIN_ALLOW_THREADS
 		ep = readdir(dirp);
 		Py_END_ALLOW_THREADS
-		if (ep == NULL)
-			break;
+		if (ep == NULL) {
+			if (errno == 0) {
+				break;
+			} else {
+				closedir(dirp);
+				Py_DECREF(d);
+				return posix_error_with_allocated_filename(name);
+			}
+		}
 		if (ep->d_name[0] == '.' &&
 		    (NAMLEN(ep) == 1 ||
 		     (ep->d_name[1] == '.' && NAMLEN(ep) == 2)))
@@ -2388,12 +2396,6 @@ posix_listdir(PyObject *self, PyObject *args)
 			break;
 		}
 		Py_DECREF(v);
-	}
-	if (errno != 0 && d != NULL) {
-		/* readdir() returned NULL and set errno */
-		closedir(dirp);
-		Py_DECREF(d);
-		return posix_error_with_allocated_filename(name); 
 	}
 	closedir(dirp);
 	PyMem_Free(name);

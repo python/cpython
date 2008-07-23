@@ -75,8 +75,7 @@ def _darwin_compiler_fixup(compiler_so, cc_args):
     if 'ARCHFLAGS' in os.environ and not stripArch:
         # User specified different -arch flags in the environ,
         # see also distutils.sysconfig
-        compiler_so = compiler_so + ' ' + os.environ['ARCHFLAGS']
-
+        compiler_so = compiler_so + os.environ['ARCHFLAGS'].split()
 
     if stripSysroot:
         try:

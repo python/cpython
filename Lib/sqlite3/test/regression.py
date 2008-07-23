@@ -146,7 +146,8 @@ class RegressionTests(unittest.TestCase):
         # decoding errors disappeared. This verifies they're back again.
         failure = None
         try:
-            self.con.execute("select 'xxx' || ? || 'yyy' colname", (bytes(bytearray([250])),)).fetchone()
+            self.con.execute("select 'xxx' || ? || 'yyy' colname",
+                             (bytes(bytearray([250])),)).fetchone()
             failure = "should have raised an OperationalError with detailed description"
         except sqlite.OperationalError as e:
             msg = e.args[0]
@@ -154,6 +155,20 @@ class RegressionTests(unittest.TestCase):
                 failure = "OperationalError did not have expected description text"
         if failure:
             self.fail(failure)
+
+    def CheckRegisterAdapter(self):
+        """
+        See issue 3312.
+        """
+        self.assertRaises(TypeError, sqlite.register_adapter, {}, None)
+
+    def CheckSetIsolationLevel(self):
+        """
+        See issue 3312.
+        """
+        con = sqlite.connect(":memory:")
+        setattr(con, "isolation_level", "\xe9")
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
