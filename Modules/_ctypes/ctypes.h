@@ -6,11 +6,19 @@
 #   include <alloca.h>
 #endif
 
+#if (PY_VERSION_HEX < 0x02040000)
+#define PyDict_CheckExact(ob) (Py_TYPE(ob) == &PyDict_Type)
+#endif
+
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
 #define PyInt_FromSsize_t PyInt_FromLong
 #define PyNumber_AsSsize_t(ob, exc) PyInt_AsLong(ob)
 #define PyIndex_Check(ob) PyInt_Check(ob)
+typedef Py_ssize_t (*readbufferproc)(PyObject *, Py_ssize_t, void **);
+typedef Py_ssize_t (*writebufferproc)(PyObject *, Py_ssize_t, void **);
+typedef Py_ssize_t (*segcountproc)(PyObject *, Py_ssize_t *);
+typedef Py_ssize_t (*charbufferproc)(PyObject *, Py_ssize_t, char **);
 #endif
 
 #if (PY_VERSION_HEX < 0x02060000)
@@ -18,6 +26,8 @@ typedef int Py_ssize_t;
 #define PyVarObject_HEAD_INIT(type, size) \
 	PyObject_HEAD_INIT(type) size,
 #define PyImport_ImportModuleNoBlock PyImport_ImportModule
+#define PyLong_FromSsize_t PyInt_FromLong
+#define Py_TPFLAGS_HAVE_NEWBUFFER 0
 #endif
 
 
