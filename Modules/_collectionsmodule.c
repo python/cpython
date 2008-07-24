@@ -394,7 +394,7 @@ deque_rotate(dequeobject *deque, PyObject *args)
 {
 	Py_ssize_t n=1;
 
-	if (!PyArg_ParseTuple(args, "|i:rotate", &n))
+	if (!PyArg_ParseTuple(args, "|n:rotate", &n))
 		return NULL;
 	if (_deque_rotate(deque, n) == 0)
 		Py_RETURN_NONE;
