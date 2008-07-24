@@ -22,7 +22,8 @@ Glossary
       source and traversing the parse tree.
 
       2to3 is available in the standard library as :mod:`lib2to3`; a standalone
-      entry point is provided as :file:`Tools/scripts/2to3`.
+      entry point is provided as :file:`Tools/scripts/2to3`.  See
+      :ref:`2to3-reference`.
 
    abstract base class
       Abstract Base Classes (abbreviated ABCs) complement :term:`duck-typing` by
