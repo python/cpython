@@ -4,10 +4,10 @@
 
 typedef struct {
 	PyObject_HEAD
-	long      en_index;        /* current index of enumeration */
+	Py_ssize_t en_index;	   /* current index of enumeration */
 	PyObject* en_sit;          /* secondary iterator of enumeration */
 	PyObject* en_result;	   /* result tuple  */
-	PyObject* en_longindex;	   /* index for sequences >= LONG_MAX */
+	PyObject* en_longindex;	   /* index for sequences >= PY_SSIZE_T_MAX */
 } enumobject;
 
 static PyObject *
@@ -25,18 +25,19 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	en = (enumobject *)type->tp_alloc(type, 0);
 	if (en == NULL)
 		return NULL;
-	if (start) {
+	if (start != NULL) {
 		start = PyNumber_Index(start);
 		if (start == NULL) {
 			Py_DECREF(en);
 			return NULL;
 		}
-		if (PyLong_Check(start)) {
-			en->en_index = LONG_MAX;
+		assert(PyInt_Check(start) || PyLong_Check(start));
+		en->en_index = PyInt_AsSsize_t(start);
+		if (en->en_index == -1 && PyErr_Occurred()) {
+			PyErr_Clear();
+			en->en_index = PY_SSIZE_T_MAX;
 			en->en_longindex = start;
 		} else {
-			assert(PyInt_Check(start));
-			en->en_index = PyInt_AsLong(start);
 			en->en_longindex = NULL;
 			Py_DECREF(start);
 		}
@@ -85,7 +86,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
 	PyObject *stepped_up;
 
 	if (en->en_longindex == NULL) {
-		en->en_longindex = PyInt_FromLong(LONG_MAX);
+		en->en_longindex = PyInt_FromSsize_t(PY_SSIZE_T_MAX);
 		if (en->en_longindex == NULL)
 			return NULL;
 	}
@@ -130,10 +131,10 @@ enum_next(enumobject *en)
 	if (next_item == NULL)
 		return NULL;
 
-	if (en->en_index == LONG_MAX)
+	if (en->en_index == PY_SSIZE_T_MAX)
 		return enum_next_long(en, next_item);
 
-	next_index = PyInt_FromLong(en->en_index);
+	next_index = PyInt_FromSsize_t(en->en_index);
 	if (next_index == NULL) {
 		Py_DECREF(next_item);
 		return NULL;
