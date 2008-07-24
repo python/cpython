@@ -1863,8 +1863,8 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 	if (PyString_Check(proto)) {
-		proto_str = PyBytes_AS_STRING(proto);
-		proto_len = PyBytes_GET_SIZE(proto);
+		proto_str = PyString_AS_STRING(proto);
+		proto_len = PyString_GET_SIZE(proto);
 	} else {
 		PyErr_SetString(PyExc_TypeError,
 			"class must define a '_type_' string attribute");
@@ -2506,6 +2506,7 @@ static PyMemberDef CData_members[] = {
 	{ NULL },
 };
 
+#if (PY_VERSION_HEX >= 0x02060000)
 static int CData_NewGetBuffer(PyObject *_self, Py_buffer *view, int flags)
 {
 	CDataObject *self = (CDataObject *)_self;
@@ -2530,6 +2531,7 @@ static int CData_NewGetBuffer(PyObject *_self, Py_buffer *view, int flags)
 	view->internal = NULL;
 	return 0;
 }
+#endif
 
 static Py_ssize_t CData_GetSegcount(PyObject *_self, Py_ssize_t *lenp)
 {
@@ -2554,8 +2556,10 @@ static PyBufferProcs CData_as_buffer = {
 	(writebufferproc)CData_GetBuffer,
 	(segcountproc)CData_GetSegcount,
 	(charbufferproc)NULL,
+#if (PY_VERSION_HEX >= 0x02060000)
 	(getbufferproc)CData_NewGetBuffer,
 	(releasebufferproc)NULL,
+#endif
 };
 
 /*
