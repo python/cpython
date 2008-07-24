@@ -805,6 +805,24 @@ class LongTest(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, eval, zero, namespace)
 
 
+    def test_small_ints(self):
+        for i in range(-5, 257):
+            self.assertTrue(i is i + 0)
+            self.assertTrue(i is i * 1)
+            self.assertTrue(i is i - 0)
+            self.assertTrue(i is i // 1)
+            self.assertTrue(i is i & -1)
+            self.assertTrue(i is i | 0)
+            self.assertTrue(i is i ^ 0)
+            self.assertTrue(i is ~~i)
+            self.assertTrue(i is i**1)
+            self.assertTrue(i is int(str(i)))
+            self.assertTrue(i is i<<2>>2, str(i))
+        # corner cases
+        i = 1 << 70
+        self.assertTrue(i - i is 0)
+        self.assertTrue(0 * i is 0)
+
 def test_main():
     support.run_unittest(LongTest)
 

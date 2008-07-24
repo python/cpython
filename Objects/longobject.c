@@ -13,6 +13,11 @@
 #ifndef NSMALLNEGINTS
 #define NSMALLNEGINTS		5
 #endif
+
+#define MEDIUM_VALUE(x) (Py_SIZE(x) < 0 ? -(x)->ob_digit[0] : \
+			 (Py_SIZE(x) == 0 ? 0 : (x)->ob_digit[0]))
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 /* Small integers are preallocated in this array so that they
    can be shared.
@@ -42,11 +47,23 @@ get_small_int(int ival)
 		return get_small_int(ival); \
 	} while(0)
 
+static PyLongObject * 
+maybe_small_long(PyLongObject *v)
+{
+	if (v && ABS(Py_SIZE(v)) <= 1) {
+		int ival = MEDIUM_VALUE(v);
+		if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
+			Py_DECREF(v);
+			return (PyLongObject *)get_small_int(ival);
+		}
+	}
+	return v;
+}
 #else
 #define CHECK_SMALL_INT(ival)
+#define maybe_small_long(val) (val)
 #endif
 
-#define MEDIUM_VALUE(x) (Py_SIZE(x) < 0 ? -(x)->ob_digit[0] : (Py_SIZE(x) == 0 ? 0 : (x)->ob_digit[0]))
 /* If a freshly-allocated long is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
 #define NEGATE(x) \
@@ -67,8 +84,6 @@ get_small_int(int ival)
  * a table of 2**5 intermediate results is computed.
  */
 #define FIVEARY_CUTOFF 8
-
-#define ABS(x) ((x) < 0 ? -(x) : (x))
 
 #undef MIN
 #undef MAX
@@ -1982,14 +1997,7 @@ digit beyond the first.
 	if (pend)
 		*pend = str;
 	long_normalize(z);
-	if (ABS(Py_SIZE(z)) <= 1) {
-		long res = MEDIUM_VALUE(z);
-		if (-NSMALLPOSINTS <= res && res <= NSMALLPOSINTS) {
-			Py_DECREF(z);
-			return PyLong_FromLong(res);
-		}
-	}
-	return (PyObject *) z;
+	return (PyObject *) maybe_small_long(z);
 
  onError:
 	Py_XDECREF(z);
@@ -2078,7 +2086,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
 		NEGATE(z);
 	if (Py_SIZE(a) < 0 && Py_SIZE(*prem) != 0)
 		NEGATE(*prem);
-	*pdiv = z;
+	*pdiv = maybe_small_long(z);
 	return 0;
 }
 
@@ -2335,7 +2343,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
 		while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
 			;
 		if (i < 0)
-			return _PyLong_New(0);
+			return (PyLongObject *)PyLong_FromLong(0);
 		if (a->ob_digit[i] < b->ob_digit[i]) {
 			sign = -1;
 			{ PyLongObject *temp = a; a = b; b = temp; }
@@ -2588,7 +2596,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	i = a == b ? KARATSUBA_SQUARE_CUTOFF : KARATSUBA_CUTOFF;
 	if (asize <= i) {
 		if (asize == 0)
-			return _PyLong_New(0);
+			return (PyLongObject *)PyLong_FromLong(0);
 		else
 			return x_mul(a, b);
 	}
@@ -3199,7 +3207,7 @@ long_invert(PyLongObject *v)
 	if (x == NULL)
 		return NULL;
 	Py_SIZE(x) = -(Py_SIZE(x));
-	return (PyObject *)x;
+	return (PyObject *)maybe_small_long(x);
 }
 
 static PyObject *
@@ -3264,10 +3272,8 @@ long_rshift(PyLongObject *a, PyLongObject *b)
 		}
 		wordshift = shiftby / PyLong_SHIFT;
 		newsize = ABS(Py_SIZE(a)) - wordshift;
-		if (newsize <= 0) {
-			z = _PyLong_New(0);
-			return (PyObject *)z;
-		}
+		if (newsize <= 0)
+		        return PyLong_FromLong(0);
 		loshift = shiftby % PyLong_SHIFT;
 		hishift = PyLong_SHIFT - loshift;
 		lomask = ((digit)1 << hishift) - 1;
@@ -3286,7 +3292,7 @@ long_rshift(PyLongObject *a, PyLongObject *b)
 		z = long_normalize(z);
 	}
 rshift_error:
-	return (PyObject *) z;
+	return (PyObject *) maybe_small_long(z);
 
 }
 
@@ -3342,7 +3348,7 @@ long_lshift(PyObject *v, PyObject *w)
 		assert(!accum);
 	z = long_normalize(z);
 lshift_error:
-	return (PyObject *) z;
+	return (PyObject *) maybe_small_long(z);
 }
 
 
@@ -3448,7 +3454,7 @@ long_bitwise(PyLongObject *a,
 	Py_DECREF(b);
 	z = long_normalize(z);
 	if (negz == 0)
-		return (PyObject *) z;
+		return (PyObject *) maybe_small_long(z);
 	v = long_invert(z);
 	Py_DECREF(z);
 	return v;
