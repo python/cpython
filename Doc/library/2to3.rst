@@ -1,4 +1,3 @@
-
 .. _2to3-reference:
 
 2to3 - Automated Python 2 to 3 code translation
@@ -19,7 +18,7 @@ traverse looking for files with the ``.py`` extension.
 Here is a sample Python 2.x source file, :file:`example.py`::
 
    def greet(name):
-      print "Hello, {0}!".format(name)
+       print "Hello, {0}!".format(name)
    print "What's your name?"
    name = raw_input()
    greet(name)
@@ -63,7 +62,6 @@ Notice how ``all`` enables all default fixers.
 Sometimes 2to3 will find will find a place in your source code that needs to be
 changed, but 2to3 cannot fix automatically.  In this case, 2to3 will print a
 warning beneath the diff for a file.
-
 
 
 :mod:`lib2to3` - 2to3's library
