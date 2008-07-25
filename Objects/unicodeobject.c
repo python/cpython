@@ -974,7 +974,7 @@ PyObject *PyUnicode_DecodeUTF7(const char *s,
     while (s < e) {
         Py_UNICODE ch;
         restart:
-        ch = *s;
+        ch = (unsigned char) *s;
 
         if (inShift) {
             if ((ch == '-') || !B64CHAR(ch)) {
