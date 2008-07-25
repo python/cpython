@@ -26,9 +26,3 @@ documented beyond this mention.  There's little need to document these.
 :mod:`posixpath`
    --- Implementation of :mod:`os.path` on POSIX.
 
-
-Multimedia
-==========
-
-:mod:`sunaudio`
-   --- Interpret Sun audio headers (may become obsolete or a tool/demo).

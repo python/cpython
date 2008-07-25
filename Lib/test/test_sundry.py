@@ -64,7 +64,6 @@ class TestUntestedModules(unittest.TestCase):
             import sched
             import sndhdr
             import sunau
-            import sunaudio
             import symbol
             import tabnanny
             import timeit
