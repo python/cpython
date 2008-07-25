@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 1592:  Improve error reporting when operations are attempted
+  on a closed shelf.
+
 - Deprecate the "ast" parser function aliases.
 
 - Issue #3120: On 64-bit Windows the subprocess module was truncating handles.
