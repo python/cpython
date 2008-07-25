@@ -640,9 +640,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	processor's own internal branch predication has a high likelihood of
 	success, resulting in a nearly zero-overhead transition to the
 	next opcode.  A successful prediction saves a trip through the eval-loop
-	including its two unpredictable branches, the HAS_ARG test and the 
+	including its two unpredictable branches, the HAS_ARG test and the
 	switch-case.  Combined with the processor's internal branch prediction,
-	a successful PREDICT has the effect of making the two opcodes run as if 
+	a successful PREDICT has the effect of making the two opcodes run as if
 	they were a single new opcode with the bodies combined.
 
     If collecting opcode statistics, your choices are to either keep the
@@ -737,7 +737,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			   an argument which depends on the situation.
 			   The global trace function is also called
 			   whenever an exception is detected. */
-			if (call_trace_protected(tstate->c_tracefunc, 
+			if (call_trace_protected(tstate->c_tracefunc,
 						 tstate->c_traceobj,
 						 f, PyTrace_CALL, Py_None)) {
 				/* Trace function raised an error */
@@ -769,10 +769,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	   this wasn't always true before 2.3!  PyFrame_New now sets
 	   f->f_lasti to -1 (i.e. the index *before* the first instruction)
 	   and YIELD_VALUE doesn't fiddle with f_lasti any more.  So this
-	   does work.  Promise. 
+	   does work.  Promise.
 
 	   When the PREDICT() macros are enabled, some opcode pairs follow in
-           direct succession without updating f->f_lasti.  A successful 
+           direct succession without updating f->f_lasti.  A successful
            prediction effectively links the two codes together as if they
            were a single new opcode; accordingly,f->f_lasti will point to
            the first code in the pair (for instance, GET_ITER followed by
@@ -2210,7 +2210,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                            because it prevents detection of a control-break in tight loops like
                            "while 1: pass".  Compile with this option turned-on when you need
                            the speed-up and do not need break checking inside tight loops (ones
-                           that contain only instructions ending with goto fast_next_opcode). 
+                           that contain only instructions ending with goto fast_next_opcode).
                         */
 			goto fast_next_opcode;
 #else
@@ -2779,6 +2779,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			}
 		}
 		for (i = 0; i < kwcount; i++) {
+			PyObject **co_varnames;
 			PyObject *keyword = kws[2*i];
 			PyObject *value = kws[2*i + 1];
 			int j;
@@ -2788,14 +2789,21 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				    PyString_AsString(co->co_name));
 				goto fail;
 			}
-			/* XXX slow -- speed up using dictionary? */
+			/* Speed hack: do raw pointer compares. As names are
+			   normally interned this should almost always hit. */
+			co_varnames = PySequence_Fast_ITEMS(co->co_varnames);
 			for (j = 0; j < co->co_argcount; j++) {
-				PyObject *nm = PyTuple_GET_ITEM(
-					co->co_varnames, j);
+				PyObject *nm = co_varnames[j];
+				if (nm == keyword)
+					goto kw_found;
+			}
+			/* Slow fallback, just in case */
+			for (j = 0; j < co->co_argcount; j++) {
+				PyObject *nm = co_varnames[j];
 				int cmp = PyObject_RichCompareBool(
 					keyword, nm, Py_EQ);
 				if (cmp > 0)
-					break;
+					goto kw_found;
 				else if (cmp < 0)
 					goto fail;
 			}
@@ -2812,20 +2820,20 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					goto fail;
 				}
 				PyDict_SetItem(kwdict, keyword, value);
+				continue;
 			}
-			else {
-				if (GETLOCAL(j) != NULL) {
-					PyErr_Format(PyExc_TypeError,
-					     "%.200s() got multiple "
-					     "values for keyword "
-					     "argument '%.400s'",
-					     PyString_AsString(co->co_name),
-					     PyString_AsString(keyword));
-					goto fail;
-				}
-				Py_INCREF(value);
-				SETLOCAL(j, value);
+kw_found:
+			if (GETLOCAL(j) != NULL) {
+				PyErr_Format(PyExc_TypeError,
+						"%.200s() got multiple "
+						"values for keyword "
+						"argument '%.400s'",
+						PyString_AsString(co->co_name),
+						PyString_AsString(keyword));
+				goto fail;
 			}
+			Py_INCREF(value);
+			SETLOCAL(j, value);
 		}
 		if (argcount < co->co_argcount) {
 			int m = co->co_argcount - defcount;
