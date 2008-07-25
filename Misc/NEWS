@@ -9,6 +9,12 @@ What's new in Python 3.0b3?
 
 *Release date: XX-XXX-2008*
 
+Core and Builtins
+-----------------
+
+- Issue #1819: function calls with several named parameters are now on
+  average 35% faster (as measured by pybench).
+
 Library
 -------
 
