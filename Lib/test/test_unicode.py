@@ -532,6 +532,9 @@ class UnicodeTest(
 
         self.assertEqual(unicode('+3ADYAA-', 'utf-7', 'replace'), u'\ufffd')
 
+        # Issue #2242: crash on some Windows/MSVC versions
+        self.assertRaises(UnicodeDecodeError, '+\xc1'.decode, 'utf-7')
+
     def test_codecs_utf8(self):
         self.assertEqual(u''.encode('utf-8'), '')
         self.assertEqual(u'\u20ac'.encode('utf-8'), '\xe2\x82\xac')
