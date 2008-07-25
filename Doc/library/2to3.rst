@@ -36,7 +36,7 @@ original file will also be made.)  This is done with the :option:`-w` flag::
 :file:`example.py` will now look like this::
 
    def greet(name):
-      print("Hello, {0}!".format(name))
+       print("Hello, {0}!".format(name))
    print("What's your name?")
    name = input()
    greet(name)
