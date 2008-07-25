@@ -8,6 +8,21 @@ class TestCase(unittest.TestCase):
 
     fn = "shelftemp" + os.extsep + "db"
 
+    def test_close(self):
+        d1 = {}
+        s = shelve.Shelf(d1, protocol=2, writeback=False)
+        s['key1'] = [1,2,3,4]
+        self.assertEqual(s['key1'], [1,2,3,4])
+        self.assertEqual(len(s), 1)
+        s.close()
+        self.assertRaises(ValueError, len, s)
+        try:
+            s['key1']
+        except ValueError:
+            pass
+        else:
+            self.fail('Closed shelf should not find a key')
+
     def test_ascii_file_shelf(self):
         try:
             s = shelve.open(self.fn, protocol=0)
