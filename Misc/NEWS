@@ -4,6 +4,19 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's new in Python 3.0b3?
+===========================
+
+*Release date: XX-XXX-2008*
+
+Library
+-------
+
+- Issue #3394: zipfile.writestr sets external attributes when passed a
+  file name rather than a ZipInfo instance, so files are extracted with
+  mode 0600 rather than 000 under Unix.
+
+
 What's new in Python 3.0b2?
 ===========================
 
@@ -191,7 +204,7 @@ Library
 - The ``xmlrpc`` package was created; it contains the old
   ``xmlrpclib`` module as ``xmlrpc.client`` and the content of
   the old ``SimpleXMLRPCServer`` and ``DocXMLRPCServer`` modules
-  as ``xmlrpc.server``.  
+  as ``xmlrpc.server``.
 
 - The ``dbm`` package was created, containing the old modules
   ``anydbm`` and ``whichdb`` in its ``__init__.py``, and having
@@ -562,7 +575,7 @@ Core and Builtins
 - Fixed `imp.find_module()` to obey the -*- coding: -*- header.
 
 - Changed `__file__` and `co_filename` to unicode. The path names are decoded
-  with `Py_FileSystemDefaultEncoding` and a new API method 
+  with `Py_FileSystemDefaultEncoding` and a new API method
   `PyUnicode_DecodeFSDefault(char*)` was added.
 
 - io.open() and _fileio.FileIO have grown a new argument closefd. A

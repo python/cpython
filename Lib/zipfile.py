@@ -1075,6 +1075,7 @@ class ZipFile:
             zinfo = ZipInfo(filename=zinfo_or_arcname,
                             date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
+            zinfo.external_attr = 0o600 << 16
         else:
             zinfo = zinfo_or_arcname
 
