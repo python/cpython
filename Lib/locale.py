@@ -13,6 +13,7 @@
 
 import sys, encodings, encodings.aliases
 from builtins import str as _builtin_str
+import functools
 
 # Try importing the _locale module.
 #
@@ -93,6 +94,21 @@ if 'strxfrm' not in globals():
     strxfrm = _strxfrm
 if 'strcoll' not in globals():
     strcoll = _strcoll
+
+
+_localeconv = localeconv
+
+# With this dict, you can override some items of localeconv's return value.
+# This is useful for testing purposes.
+_override_localeconv = {}
+
+@functools.wraps(_localeconv)
+def localeconv():
+    d = _localeconv()
+    if _override_localeconv:
+        d.update(_override_localeconv)
+    return d
+
 
 ### Number formatting APIs
 
