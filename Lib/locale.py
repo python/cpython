@@ -12,6 +12,7 @@
 """
 
 import sys, encodings, encodings.aliases
+import functools
 
 # Try importing the _locale module.
 #
@@ -86,6 +87,21 @@ except ImportError:
             Returns a string that behaves for cmp locale-aware.
         """
         return s
+
+
+_localeconv = localeconv
+
+# With this dict, you can override some items of localeconv's return value.
+# This is useful for testing purposes.
+_override_localeconv = {}
+
+@functools.wraps(_localeconv)
+def localeconv():
+    d = _localeconv()
+    if _override_localeconv:
+        d.update(_override_localeconv)
+    return d
+
 
 ### Number formatting APIs
 

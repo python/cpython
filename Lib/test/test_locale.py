@@ -1,124 +1,267 @@
-from test.test_support import verbose, TestSkipped, TestFailed
+from test.test_support import run_unittest, TestSkipped, verbose
+import unittest
 import locale
 import sys
+import codecs
 
-if sys.platform == 'darwin':
-    raise TestSkipped("Locale support on MacOSX is minimal and cannot be tested")
-oldlocale = locale.setlocale(locale.LC_NUMERIC)
 
-if sys.platform.startswith("win"):
-    tlocs = ("En", "English")
-else:
-    tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
+class BaseLocalizedTest(unittest.TestCase):
+    #
+    # Base class for tests using a real locale
+    #
 
-for tloc in tlocs:
-    try:
-        locale.setlocale(locale.LC_NUMERIC, tloc)
-        break
-    except locale.Error:
-        continue
-else:
-    raise ImportError, "test locale not supported (tried %s)"%(', '.join(tlocs))
+    if sys.platform.startswith("win"):
+        tlocs = ("En", "English")
+    else:
+        tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
 
-def testformat(formatstr, value, grouping = 0, output=None, func=locale.format):
-    if verbose:
-        if output:
-            print "%s %% %s =? %s ..." %\
-                (repr(formatstr), repr(value), repr(output)),
+    def setUp(self):
+        if sys.platform == 'darwin':
+            raise TestSkipped(
+                "Locale support on MacOSX is minimal and cannot be tested")
+        self.oldlocale = locale.setlocale(self.locale_type)
+        for tloc in self.tlocs:
+            try:
+                locale.setlocale(self.locale_type, tloc)
+            except locale.Error:
+                continue
+            break
         else:
-            print "%s %% %s works? ..." % (repr(formatstr), repr(value)),
-    result = func(formatstr, value, grouping = grouping)
-    if output and result != output:
+            raise TestSkipped(
+                "Test locale not supported (tried %s)" % (', '.join(self.tlocs)))
         if verbose:
-            print 'no'
-        print "%s %% %s == %s != %s" %\
-              (repr(formatstr), repr(value), repr(result), repr(output))
-    else:
-        if verbose:
-            print "yes"
+            print "testing with \"%s\"..." % tloc,
 
-try:
-    # On Solaris 10, the thousands_sep is the empty string
-    sep = locale.localeconv()['thousands_sep']
-    testformat("%f", 1024, grouping=1, output='1%s024.000000' % sep)
-    testformat("%f", 102, grouping=1, output='102.000000')
-    testformat("%f", -42, grouping=1, output='-42.000000')
-    testformat("%+f", -42, grouping=1, output='-42.000000')
-    testformat("%20.f", -42, grouping=1, output='                 -42')
-    testformat("%+10.f", -4200, grouping=1, output='    -4%s200' % sep)
-    testformat("%-10.f", 4200, grouping=1, output='4%s200     ' % sep)
-    # Invoke getpreferredencoding to make sure it does not cause exceptions,
-    locale.getpreferredencoding()
-
-    # === Test format() with more complex formatting strings
-    # test if grouping is independent from other characters in formatting string
-    testformat("One million is %i", 1000000, grouping=1,
-               output='One million is 1%s000%s000' % (sep, sep),
-               func=locale.format_string)
-    testformat("One  million is %i", 1000000, grouping=1,
-               output='One  million is 1%s000%s000' % (sep, sep),
-               func=locale.format_string)
-    # test dots in formatting string
-    testformat(".%f.", 1000.0, output='.1000.000000.', func=locale.format_string)
-    # test floats
-    testformat("--> %10.2f", 1000.0, grouping=1, output='-->   1%s000.00' % sep,
-               func=locale.format_string)
-    # test asterisk formats
-    testformat("%10.*f", (2, 1000.0), grouping=0, output='   1000.00',
-               func=locale.format_string)
-    testformat("%*.*f", (10, 2, 1000.0), grouping=1, output='  1%s000.00' % sep,
-               func=locale.format_string)
-    # test more-in-one
-    testformat("int %i float %.2f str %s", (1000, 1000.0, 'str'), grouping=1,
-               output='int 1%s000 float 1%s000.00 str str' % (sep, sep),
-               func=locale.format_string)
-
-finally:
-    locale.setlocale(locale.LC_NUMERIC, oldlocale)
+    def tearDown(self):
+        locale.setlocale(self.locale_type, self.oldlocale)
 
 
-# Test BSD Rune locale's bug for isctype functions.
-def teststrop(s, method, output):
-    if verbose:
-        print "%s.%s() =? %s ..." % (repr(s), method, repr(output)),
-    result = getattr(s, method)()
-    if result != output:
-        if verbose:
-            print "no"
-        print "%s.%s() == %s != %s" % (repr(s), method, repr(result),
-                                       repr(output))
-    elif verbose:
-        print "yes"
+class BaseCookedTest(unittest.TestCase):
+    #
+    # Base class for tests using cooked localeconv() values
+    #
 
-try:
-    if sys.platform == 'sunos5':
-        # On Solaris, in en_US.UTF-8, \xa0 is a space
-        raise locale.Error
-    oldlocale = locale.setlocale(locale.LC_CTYPE)
-    locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
-except locale.Error:
-    pass
-else:
-    try:
-        teststrop('\x20', 'isspace', True)
-        teststrop('\xa0', 'isspace', False)
-        teststrop('\xa1', 'isspace', False)
-        teststrop('\xc0', 'isalpha', False)
-        teststrop('\xc0', 'isalnum', False)
-        teststrop('\xc0', 'isupper', False)
-        teststrop('\xc0', 'islower', False)
-        teststrop('\xec\xa0\xbc', 'split', ['\xec\xa0\xbc'])
-        teststrop('\xed\x95\xa0', 'strip', '\xed\x95\xa0')
-        teststrop('\xcc\x85', 'lower', '\xcc\x85')
-        teststrop('\xed\x95\xa0', 'upper', '\xed\x95\xa0')
-    finally:
-        locale.setlocale(locale.LC_CTYPE, oldlocale)
+    def setUp(self):
+        locale._override_localeconv = self.cooked_values
 
-if hasattr(locale, "strcoll"):
-    # test crasher from bug #3303
-    try:
-        locale.strcoll(u"a", None)
-    except TypeError:
-        pass
-    else:
-        raise TestFailed("TypeError not raised")
+    def tearDown(self):
+        locale._override_localeconv = {}
+
+
+class CCookedTest(BaseCookedTest):
+    # A cooked "C" locale
+
+    cooked_values = {
+        'currency_symbol': '',
+        'decimal_point': '.',
+        'frac_digits': 127,
+        'grouping': [],
+        'int_curr_symbol': '',
+        'int_frac_digits': 127,
+        'mon_decimal_point': '',
+        'mon_grouping': [],
+        'mon_thousands_sep': '',
+        'n_cs_precedes': 127,
+        'n_sep_by_space': 127,
+        'n_sign_posn': 127,
+        'negative_sign': '',
+        'p_cs_precedes': 127,
+        'p_sep_by_space': 127,
+        'p_sign_posn': 127,
+        'positive_sign': '',
+        'thousands_sep': ''
+    }
+
+class EnUSCookedTest(BaseCookedTest):
+    # A cooked "en_US" locale
+
+    cooked_values = {
+        'currency_symbol': '$',
+        'decimal_point': '.',
+        'frac_digits': 2,
+        'grouping': [3, 3, 0],
+        'int_curr_symbol': 'USD ',
+        'int_frac_digits': 2,
+        'mon_decimal_point': '.',
+        'mon_grouping': [3, 3, 0],
+        'mon_thousands_sep': ',',
+        'n_cs_precedes': 1,
+        'n_sep_by_space': 0,
+        'n_sign_posn': 1,
+        'negative_sign': '-',
+        'p_cs_precedes': 1,
+        'p_sep_by_space': 0,
+        'p_sign_posn': 1,
+        'positive_sign': '',
+        'thousands_sep': ','
+    }
+
+
+class BaseFormattingTest(object):
+    #
+    # Utility functions for formatting tests
+    #
+
+    def _test_formatfunc(self, format, value, out, func, **format_opts):
+        self.assertEqual(
+            func(format, value, **format_opts), out)
+
+    def _test_format(self, format, value, out, **format_opts):
+        self._test_formatfunc(format, value, out,
+            func=locale.format, **format_opts)
+
+    def _test_format_string(self, format, value, out, **format_opts):
+        self._test_formatfunc(format, value, out,
+            func=locale.format_string, **format_opts)
+
+    def _test_currency(self, value, out, **format_opts):
+        self.assertEqual(locale.currency(value, **format_opts), out)
+
+
+class EnUSNumberFormatting(BaseFormattingTest):
+
+    def setUp(self):
+        # NOTE: On Solaris 10, the thousands_sep is the empty string
+        self.sep = locale.localeconv()['thousands_sep']
+
+    def test_grouping(self):
+        self._test_format("%f", 1024, grouping=1, out='1%s024.000000' % self.sep)
+        self._test_format("%f", 102, grouping=1, out='102.000000')
+        self._test_format("%f", -42, grouping=1, out='-42.000000')
+        self._test_format("%+f", -42, grouping=1, out='-42.000000')
+
+    def test_grouping_and_padding(self):
+        self._test_format("%20.f", -42, grouping=1, out='-42'.rjust(20))
+        self._test_format("%+10.f", -4200, grouping=1,
+            out=('-4%s200' % self.sep).rjust(10))
+        self._test_format("%-10.f", -4200, grouping=1,
+            out=('-4%s200' % self.sep).ljust(10))
+
+    def test_integer_grouping(self):
+        self._test_format("%d", 4200, grouping=True, out='4%s200' % self.sep)
+        self._test_format("%+d", 4200, grouping=True, out='+4%s200' % self.sep)
+        self._test_format("%+d", -4200, grouping=True, out='-4%s200' % self.sep)
+
+    def test_simple(self):
+        self._test_format("%f", 1024, grouping=0, out='1024.000000')
+        self._test_format("%f", 102, grouping=0, out='102.000000')
+        self._test_format("%f", -42, grouping=0, out='-42.000000')
+        self._test_format("%+f", -42, grouping=0, out='-42.000000')
+
+    def test_padding(self):
+        self._test_format("%20.f", -42, grouping=0, out='-42'.rjust(20))
+        self._test_format("%+10.f", -4200, grouping=0, out='-4200'.rjust(10))
+        self._test_format("%-10.f", 4200, grouping=0, out='4200'.ljust(10))
+
+    def test_complex_formatting(self):
+        # Spaces in formatting string
+        self._test_format_string("One million is %i", 1000000, grouping=1,
+            out='One million is 1%s000%s000' % (self.sep, self.sep))
+        self._test_format_string("One  million is %i", 1000000, grouping=1,
+            out='One  million is 1%s000%s000' % (self.sep, self.sep))
+        # Dots in formatting string
+        self._test_format_string(".%f.", 1000.0, out='.1000.000000.')
+        # Padding
+        self._test_format_string("-->  %10.2f", 4200, grouping=1,
+            out='-->  ' + ('4%s200.00' % self.sep).rjust(10))
+        # Asterisk formats
+        self._test_format_string("%10.*f", (2, 1000), grouping=0,
+            out='1000.00'.rjust(10))
+        self._test_format_string("%*.*f", (10, 2, 1000), grouping=1,
+            out=('1%s000.00' % self.sep).rjust(10))
+        # Test more-in-one
+        self._test_format_string("int %i float %.2f str %s",
+            (1000, 1000.0, 'str'), grouping=1,
+            out='int 1%s000 float 1%s000.00 str str' % (self.sep, self.sep))
+
+
+class TestNumberFormatting(BaseLocalizedTest, EnUSNumberFormatting):
+    # Test number formatting with a real English locale.
+
+    locale_type = locale.LC_NUMERIC
+
+    def setUp(self):
+        BaseLocalizedTest.setUp(self)
+        EnUSNumberFormatting.setUp(self)
+
+
+class TestEnUSNumberFormatting(EnUSCookedTest, EnUSNumberFormatting):
+    # Test number formatting with a cooked "en_US" locale.
+
+    def setUp(self):
+        EnUSCookedTest.setUp(self)
+        EnUSNumberFormatting.setUp(self)
+
+    def test_currency(self):
+        self._test_currency(50000, "$50000.00")
+        self._test_currency(50000, "$50,000.00", grouping=True)
+        self._test_currency(50000, "USD 50,000.00",
+            grouping=True, international=True)
+
+
+class TestCNumberFormatting(CCookedTest, BaseFormattingTest):
+    # Test number formatting with a cooked "C" locale.
+
+    def test_grouping(self):
+        self._test_format("%.2f", 12345.67, grouping=True, out='12345.67')
+
+    def test_grouping_and_padding(self):
+        self._test_format("%9.2f", 12345.67, grouping=True, out=' 12345.67')
+
+
+class TestStringMethods(BaseLocalizedTest):
+    locale_type = locale.LC_CTYPE
+
+    # Test BSD Rune locale's bug for isctype functions.
+
+    def test_isspace(self):
+        self.assertEqual('\x20'.isspace(), True)
+        if sys.platform == 'sunos5':
+            # On Solaris, in en_US.UTF-8, \xa0 is a space
+            self.assertEqual('\xa0'.isspace(), False)
+        self.assertEqual('\xa1'.isspace(), False)
+
+    def test_isalpha(self):
+        self.assertEqual('\xc0'.isalpha(), False)
+
+    def test_isalnum(self):
+        self.assertEqual('\xc0'.isalnum(), False)
+
+    def test_isupper(self):
+        self.assertEqual('\xc0'.isupper(), False)
+
+    def test_islower(self):
+        self.assertEqual('\xc0'.islower(), False)
+
+    def test_lower(self):
+        self.assertEqual('\xcc\x85'.lower(), '\xcc\x85')
+
+    def test_upper(self):
+        self.assertEqual('\xed\x95\xa0'.upper(), '\xed\x95\xa0')
+
+    def test_strip(self):
+        self.assertEqual('\xed\x95\xa0'.strip(), '\xed\x95\xa0')
+
+    def test_split(self):
+        self.assertEqual('\xec\xa0\xbc'.split(), ['\xec\xa0\xbc'])
+
+
+class TestMiscellaneous(unittest.TestCase):
+    def test_getpreferredencoding(self):
+        # Invoke getpreferredencoding to make sure it does not cause exceptions.
+        enc = locale.getpreferredencoding()
+        if enc:
+            # If encoding non-empty, make sure it is valid
+            codecs.lookup(enc)
+
+    if hasattr(locale, "strcoll"):
+        def test_strcoll_3303(self):
+            # test crasher from bug #3303
+            self.assertRaises(TypeError, locale.strcoll, u"a", None)
+
+
+def test_main():
+    run_unittest(__name__)
+
+if __name__ == '__main__':
+    test_main()
