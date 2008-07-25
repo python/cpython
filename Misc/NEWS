@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #2242: Fix a crash when decoding invalid utf-7 input on certain
+  Windows / Visual Studio versions.
+
 - Issue #3360: Fix incorrect parsing of '020000000000.0', which
   produced a ValueError instead of giving the correct float.
 
@@ -99,7 +102,7 @@ Library
   large messages.
 
 - Bug #1389051, 1092502: fix excessively large memory allocations when
-  calling .read() on a socket object wrapped with makefile(). 
+  calling .read() on a socket object wrapped with makefile().
 
 - Bug #1433694: minidom's .normalize() failed to set .nextSibling for
   last child element.
@@ -173,7 +176,7 @@ Core and builtins
   collections.defaultdict, if its default_factory is set to a bound method.
 
 - Issue #1920: "while 0" statements were completely removed by the compiler,
-  even in the presence of an "else" clause, which is supposed to be run when 
+  even in the presence of an "else" clause, which is supposed to be run when
   the condition is false. Now the compiler correctly emits bytecode for the
   "else" suite.
 
@@ -207,7 +210,7 @@ Core and builtins
   PY_SSIZE_T_CLEAN is set.  The str.decode method used to return incorrect
   results with huge strings.
 
-- Issue #1445: Fix a SystemError when accessing the ``cell_contents`` 
+- Issue #1445: Fix a SystemError when accessing the ``cell_contents``
   attribute of an empty cell object.
 
 - Issue #1265: Fix a problem with sys.settrace, if the tracing function uses a
@@ -386,7 +389,7 @@ Library
 - Issue1385: The hmac module now computes the correct hmac when using hashes
   with a block size other than 64 bytes (such as sha384 and sha512).
 
-- Issue829951: In the smtplib module, SMTP.starttls() now complies with 
+- Issue829951: In the smtplib module, SMTP.starttls() now complies with
   RFC 3207 and forgets any knowledge obtained from the server not obtained
   from the TLS negotiation itself.  Patch contributed by Bill Fenner.
 
@@ -406,7 +409,7 @@ Extension Modules
 - Bug #1301: Bad assert in _tkinter fixed.
 
 - Patch #1114: fix curses module compilation on 64-bit AIX, & possibly
-  other 64-bit LP64 platforms where attr_t is not the same size as a long.  
+  other 64-bit LP64 platforms where attr_t is not the same size as a long.
   (Contributed by Luke Mewburn.)
 
 - Bug #1649098: Avoid declaration of zero-sized array declaration in
@@ -469,7 +472,7 @@ Build
 
 - Define _BSD_SOURCE, to get access to POSIX extensions on OpenBSD 4.1+.
 
-- Patch #1673122: Use an explicit path to libtool when building a framework. 
+- Patch #1673122: Use an explicit path to libtool when building a framework.
   This avoids picking up GNU libtool from a users PATH.
 
 - Allow Emacs 22 for building the documentation in info format.
@@ -543,7 +546,7 @@ Core and builtins
   a weakref on itself during a __del__ call for new-style classes (classic
   classes still have the bug).
 
-- Bug #1648179:  set.update() did not recognize an overridden __iter__ 
+- Bug #1648179:  set.update() did not recognize an overridden __iter__
   method in subclasses of dict.
 
 - Bug #1579370: Make PyTraceBack_Here use the current thread, not the
@@ -678,7 +681,7 @@ Extension Modules
 - Bug #1563807: _ctypes built on AIX fails with ld ffi error.
 
 - Bug #1598620: A ctypes Structure cannot contain itself.
- 
+
 - Bug #1588217: don't parse "= " as a soft line break in binascii's
   a2b_qp() function, instead leave it in the string as quopri.decode()
   does.
@@ -790,7 +793,7 @@ Library
   on "linux" and "gnu" systems.
 
 - Bug #1124861: Automatically create pipes if GetStdHandle fails in
-  subprocess. 
+  subprocess.
 
 - Patch #783050: the pty.fork() function now closes the slave fd
   correctly.
@@ -801,7 +804,7 @@ Library
 
 - Bug #1643943: Fix %U handling for time.strptime.
 
-- Bug #1598181: Avoid O(N**2) bottleneck in subprocess communicate(). 
+- Bug #1598181: Avoid O(N**2) bottleneck in subprocess communicate().
 
 - Patch #1627441: close sockets properly in urllib2.
 
@@ -865,7 +868,7 @@ Library
 - Bug #1446043: correctly raise a LookupError if an encoding name given
   to encodings.search_function() contains a dot.
 
-- Bug #1545341: The 'classifier' keyword argument to the Distutils setup() 
+- Bug #1545341: The 'classifier' keyword argument to the Distutils setup()
   function now accepts tuples as well as lists.
 
 - Bug #1560617: in pyclbr, return full module name not only for classes,
@@ -884,7 +887,7 @@ Library
 - Bug #1575506: mailbox.py: Single-file mailboxes didn't re-lock
   properly in their flush() method.
 
-- Patch #1514543: mailbox.py: In the Maildir class, report errors if there's 
+- Patch #1514543: mailbox.py: In the Maildir class, report errors if there's
   a filename clash instead of possibly losing a message.  (Patch by David
   Watson.)
 
@@ -896,7 +899,7 @@ Library
   wasn't consistent with existing implementations of message packing, and
   was buggy on some platforms.
 
-- Bug #1633678: change old mailbox.UnixMailbox class to parse 
+- Bug #1633678: change old mailbox.UnixMailbox class to parse
   'From' lines less strictly.
 
 - Bug #1576241: fix functools.wraps() to work on built-in functions.
