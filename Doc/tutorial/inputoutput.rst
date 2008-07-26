@@ -143,12 +143,14 @@ the position of the object passed into the format method. ::
 If keyword arguments are used in the format method, their values are referred to
 by using the name of the argument. ::
 
-   >>> print 'This {food} is {adjective}.'.format(food='spam', adjective='absolutely horrible')
+   >>> print 'This {food} is {adjective}.'.format(
+   ...       food='spam', adjective='absolutely horrible')
    This spam is absolutely horrible.
 
 Positional and keyword arguments can be arbitrarily combined::
 
-   >>> print 'The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred', other='Georg')
+   >>> print 'The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred',
+   ...                                                    other='Georg')
    The story of Bill, Manfred, and Georg.
 
 An optional ``':``` and format specifier can follow the field name. This also
@@ -176,7 +178,8 @@ instead of by position.  This can be done by simply passing the dict and using
 square brackets ``'[]'`` to access the keys ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
-   >>> print 'Jack: {0[Jack]:d}; Sjoerd: {0[Sjoerd]:d}; Dcab: {0[Dcab]:d}'.format(table)
+   >>> print ('Jack: {0[Jack]:d}; Sjoerd: {0[Sjoerd]:d}; '
+   ...        'Dcab: {0[Dcab]:d}'.format(table))
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
 This could also be done by passing the table as keyword arguments with the '**'
