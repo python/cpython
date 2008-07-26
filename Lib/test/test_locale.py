@@ -1,8 +1,32 @@
-from test.test_support import run_unittest, TestSkipped, verbose
+from test.test_support import run_unittest, verbose, TestSkipped
 import unittest
 import locale
 import sys
 import codecs
+
+
+enUS_locale = None
+
+def get_enUS_locale():
+    global enUS_locale
+    if sys.platform == 'darwin':
+        raise TestSkipped("Locale support on MacOSX is minimal")
+    if sys.platform.startswith("win"):
+        tlocs = ("En", "English")
+    else:
+        tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
+    oldlocale = locale.setlocale(locale.LC_NUMERIC)
+    for tloc in tlocs:
+        try:
+            locale.setlocale(locale.LC_NUMERIC, tloc)
+        except locale.Error:
+            continue
+        break
+    else:
+        raise TestSkipped(
+            "Test locale not supported (tried %s)" % (', '.join(tlocs)))
+    enUS_locale = tloc
+    locale.setlocale(locale.LC_NUMERIC, oldlocale)
 
 
 class BaseLocalizedTest(unittest.TestCase):
@@ -10,27 +34,11 @@ class BaseLocalizedTest(unittest.TestCase):
     # Base class for tests using a real locale
     #
 
-    if sys.platform.startswith("win"):
-        tlocs = ("En", "English")
-    else:
-        tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
-
     def setUp(self):
-        if sys.platform == 'darwin':
-            raise TestSkipped(
-                "Locale support on MacOSX is minimal and cannot be tested")
         self.oldlocale = locale.setlocale(self.locale_type)
-        for tloc in self.tlocs:
-            try:
-                locale.setlocale(self.locale_type, tloc)
-            except locale.Error:
-                continue
-            break
-        else:
-            raise TestSkipped(
-                "Test locale not supported (tried %s)" % (', '.join(self.tlocs)))
+        locale.setlocale(self.locale_type, enUS_locale)
         if verbose:
-            print "testing with \"%s\"..." % tloc,
+            print "testing with \"%s\"..." % enUS_locale,
 
     def tearDown(self):
         locale.setlocale(self.locale_type, self.oldlocale)
@@ -132,10 +140,17 @@ class EnUSNumberFormatting(BaseFormattingTest):
 
     def test_grouping_and_padding(self):
         self._test_format("%20.f", -42, grouping=1, out='-42'.rjust(20))
-        self._test_format("%+10.f", -4200, grouping=1,
-            out=('-4%s200' % self.sep).rjust(10))
-        self._test_format("%-10.f", -4200, grouping=1,
-            out=('-4%s200' % self.sep).ljust(10))
+        try:
+            self._test_format("%+10.f", -4200, grouping=1,
+                out=('-4%s200' % self.sep).rjust(10))
+            self._test_format("%-10.f", -4200, grouping=1,
+                out=('-4%s200' % self.sep).ljust(10))
+        except AssertionError:
+            # Temp debug for the Solaris buildbot
+            import pprint
+            print
+            pprint.pprint(locale.localeconv())
+            raise
 
     def test_integer_grouping(self):
         self._test_format("%d", 4200, grouping=True, out='4%s200' % self.sep)
@@ -209,41 +224,40 @@ class TestCNumberFormatting(CCookedTest, BaseFormattingTest):
         self._test_format("%9.2f", 12345.67, grouping=True, out=' 12345.67')
 
 
-class TestStringMethods(BaseLocalizedTest):
-    locale_type = locale.LC_CTYPE
+if sys.platform != 'sunos5':
+    class TestStringMethods(BaseLocalizedTest):
+        locale_type = locale.LC_CTYPE
 
-    # Test BSD Rune locale's bug for isctype functions.
+        # Test BSD Rune locale's bug for isctype functions.
 
-    def test_isspace(self):
-        self.assertEqual('\x20'.isspace(), True)
-        if sys.platform == 'sunos5':
-            # On Solaris, in en_US.UTF-8, \xa0 is a space
+        def test_isspace(self):
+            self.assertEqual('\x20'.isspace(), True)
             self.assertEqual('\xa0'.isspace(), False)
-        self.assertEqual('\xa1'.isspace(), False)
+            self.assertEqual('\xa1'.isspace(), False)
 
-    def test_isalpha(self):
-        self.assertEqual('\xc0'.isalpha(), False)
+        def test_isalpha(self):
+            self.assertEqual('\xc0'.isalpha(), False)
 
-    def test_isalnum(self):
-        self.assertEqual('\xc0'.isalnum(), False)
+        def test_isalnum(self):
+            self.assertEqual('\xc0'.isalnum(), False)
 
-    def test_isupper(self):
-        self.assertEqual('\xc0'.isupper(), False)
+        def test_isupper(self):
+            self.assertEqual('\xc0'.isupper(), False)
 
-    def test_islower(self):
-        self.assertEqual('\xc0'.islower(), False)
+        def test_islower(self):
+            self.assertEqual('\xc0'.islower(), False)
 
-    def test_lower(self):
-        self.assertEqual('\xcc\x85'.lower(), '\xcc\x85')
+        def test_lower(self):
+            self.assertEqual('\xcc\x85'.lower(), '\xcc\x85')
 
-    def test_upper(self):
-        self.assertEqual('\xed\x95\xa0'.upper(), '\xed\x95\xa0')
+        def test_upper(self):
+            self.assertEqual('\xed\x95\xa0'.upper(), '\xed\x95\xa0')
 
-    def test_strip(self):
-        self.assertEqual('\xed\x95\xa0'.strip(), '\xed\x95\xa0')
+        def test_strip(self):
+            self.assertEqual('\xed\x95\xa0'.strip(), '\xed\x95\xa0')
 
-    def test_split(self):
-        self.assertEqual('\xec\xa0\xbc'.split(), ['\xec\xa0\xbc'])
+        def test_split(self):
+            self.assertEqual('\xec\xa0\xbc'.split(), ['\xec\xa0\xbc'])
 
 
 class TestMiscellaneous(unittest.TestCase):
@@ -261,7 +275,15 @@ class TestMiscellaneous(unittest.TestCase):
 
 
 def test_main():
-    run_unittest(__name__)
+    tests = [TestMiscellaneous, TestEnUSNumberFormatting, TestCNumberFormatting]
+    # TestSkipped can't be raised inside unittests, handle it manually instead
+    try:
+        get_enUS_locale()
+    except TestSkipped as e:
+        print "Some tests will be disabled: %s" % e
+    else:
+        tests += [TestNumberFormatting, TestStringMethods]
+    run_unittest(*tests)
 
 if __name__ == '__main__':
     test_main()
