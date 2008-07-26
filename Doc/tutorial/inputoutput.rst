@@ -131,27 +131,27 @@ with zeros.  It understands about plus and minus signs::
 
 Basic usage of the :meth:`str.format` method looks like this::
 
-   >>> print 'We are the {0} who say "{1}!"'.format('knights', 'Ni')
+   >>> print('We are the {0} who say "{1}!"'.format('knights', 'Ni'))
    We are the knights who say "Ni!"
 
 The brackets and characters within them (called format fields) are replaced with
 the objects passed into the format method.  The number in the brackets refers to
 the position of the object passed into the format method. ::
 
-   >>> print '{0} and {1}'.format('spam', 'eggs')
+   >>> print('{0} and {1}'.format('spam', 'eggs'))
    spam and eggs
-   >>> print '{1} and {0}'.format('spam', 'eggs')
+   >>> print('{1} and {0}'.format('spam', 'eggs'))
    eggs and spam
 
 If keyword arguments are used in the format method, their values are referred to
 by using the name of the argument. ::
 
-   >>> print 'This {food} is {adjective}.'.format(food='spam', adjective='absolutely horrible')
+   >>> print('This {food} is {adjective}.'.format(food='spam', adjective='absolutely horrible'))
    This spam is absolutely horrible.
 
 Positional and keyword arguments can be arbitrarily combined::
 
-   >>> print 'The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred', other='Georg')
+   >>> print('The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred', other='Georg'))
    The story of Bill, Manfred, and Georg.
 
 An optional ``':``` and format specifier can follow the field name. This also
