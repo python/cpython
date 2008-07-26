@@ -224,10 +224,10 @@ class TestCNumberFormatting(CCookedTest, BaseFormattingTest):
         self._test_format("%9.2f", 12345.67, grouping=True, out=' 12345.67')
 
 
-if sys.platform != 'sunos5':
-    class TestStringMethods(BaseLocalizedTest):
-        locale_type = locale.LC_CTYPE
+class TestStringMethods(BaseLocalizedTest):
+    locale_type = locale.LC_CTYPE
 
+    if sys.platform != 'sunos5' and not sys.platform.startswith("win"):
         # Test BSD Rune locale's bug for isctype functions.
 
         def test_isspace(self):
@@ -275,12 +275,17 @@ class TestMiscellaneous(unittest.TestCase):
 
 
 def test_main():
-    tests = [TestMiscellaneous, TestEnUSNumberFormatting, TestCNumberFormatting]
+    tests = [
+        TestMiscellaneous,
+        TestEnUSNumberFormatting,
+        TestCNumberFormatting
+    ]
     # TestSkipped can't be raised inside unittests, handle it manually instead
     try:
         get_enUS_locale()
     except TestSkipped as e:
-        print "Some tests will be disabled: %s" % e
+        if verbose:
+            print "Some tests will be disabled: %s" % e
     else:
         tests += [TestNumberFormatting, TestStringMethods]
     run_unittest(*tests)
