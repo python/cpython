@@ -2127,8 +2127,9 @@ Files have the following methods:
    returned, even if no *size* parameter was given.
 
    .. note::
-      As this function depends on the underlying  :cfunc:`fread` C function,
-      it will behave the same in details such as caching EOF.
+      This function is simply a wrapper for the underlying
+      :cfunc:`fread` C function, and will behave the same in corner cases,
+      such as whether the EOF value is cached.
 
 
 .. method:: file.readline([size])
