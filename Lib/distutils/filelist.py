@@ -85,13 +85,13 @@ class FileList:
             if len(words) < 2:
                 raise DistutilsTemplateError(
                       "'%s' expects <pattern1> <pattern2> ..." % action)
-            patterns = map(convert_path, words[1:])
+            patterns = [convert_path(w) for w in words[1:]]
         elif action in ('recursive-include', 'recursive-exclude'):
             if len(words) < 3:
                 raise DistutilsTemplateError(
                       "'%s' expects <dir> <pattern1> <pattern2> ..." % action)
             dir = convert_path(words[1])
-            patterns = map(convert_path, words[2:])
+            patterns = [convert_path(w) for w in words[2:]]
         elif action in ('graft', 'prune'):
             if len(words) != 2:
                 raise DistutilsTemplateError(

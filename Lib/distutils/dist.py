@@ -864,7 +864,8 @@ Common commands: (see '--help-commands' for more)
         for (option, (source, value)) in option_dict.items():
             if DEBUG: print("    %s = %s (from %s)" % (option, value, source))
             try:
-                bool_opts = map(translate_longopt, command_obj.boolean_options)
+                bool_opts = [translate_longopt(o)
+                             for o in command_obj.boolean_options]
             except AttributeError:
                 bool_opts = []
             try:
