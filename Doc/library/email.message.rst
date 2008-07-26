@@ -90,7 +90,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: get_payload([i[, decode]])
 
-      Return a reference the current payload, which will be a list of
+      Return the current payload, which will be a list of
       :class:`Message` objects when :meth:`is_multipart` is ``True``, or a
       string when :meth:`is_multipart` is ``False``.  If the payload is a list
       and you mutate the list object, you modify the message's payload in place.
