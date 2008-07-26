@@ -292,7 +292,7 @@ line 3 \\
   continues on next line
 """
     # result 1: no fancy options
-    result1 = map(lambda x: x + "\n", test_data.split("\n")[0:-1])
+    result1 = [x + "\n" for x in test_data.split("\n")[:-1]]
 
     # result 2: just strip comments
     result2 = ["\n",
@@ -357,4 +357,5 @@ line 3 \\
                        join_lines=1, rstrip_ws=1, collapse_join=1)
     test_input(6, "join lines with collapsing", in_file, result6)
 
+    del in_file
     os.remove(filename)

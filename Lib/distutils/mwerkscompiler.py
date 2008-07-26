@@ -104,10 +104,10 @@ class MWerksCompiler (CCompiler) :
         # This is because we (usually) create the project in a subdirectory of
         # where we are now, and keeping the paths relative is too much work right
         # now.
-        sources = map(self._filename_to_abs, self.__sources)
-        include_dirs = map(self._filename_to_abs, self.__include_dirs)
+        sources = [self._filename_to_abs(s) for s in self.__sources]
+        include_dirs = [self._filename_to_abs(d) for d in self.__include_dirs]
         if objects:
-            objects = map(self._filename_to_abs, objects)
+            objects = [self._filename_to_abs(o) for o in objects]
         else:
             objects = []
         if build_temp:
