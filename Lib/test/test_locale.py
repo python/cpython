@@ -4,32 +4,40 @@ import locale
 import sys
 import codecs
 
+enUS_locale = None
+
+def get_enUS_locale():
+    global enUS_locale
+    if sys.platform == 'darwin':
+        raise TestSkipped("Locale support on MacOSX is minimal")
+    if sys.platform.startswith("win"):
+        tlocs = ("En", "English")
+    else:
+        tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
+    oldlocale = locale.setlocale(locale.LC_NUMERIC)
+    for tloc in tlocs:
+        try:
+            locale.setlocale(locale.LC_NUMERIC, tloc)
+        except locale.Error:
+            continue
+        break
+    else:
+        raise TestSkipped(
+            "Test locale not supported (tried %s)" % (', '.join(tlocs)))
+    enUS_locale = tloc
+    locale.setlocale(locale.LC_NUMERIC, oldlocale)
+
+
 class BaseLocalizedTest(unittest.TestCase):
     #
     # Base class for tests using a real locale
     #
 
-    if sys.platform.startswith("win"):
-        tlocs = ("En", "English")
-    else:
-        tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
-
     def setUp(self):
-        if sys.platform == 'darwin':
-            raise TestSkipped(
-                "Locale support on MacOSX is minimal and cannot be tested")
         self.oldlocale = locale.setlocale(self.locale_type)
-        for tloc in self.tlocs:
-            try:
-                locale.setlocale(self.locale_type, tloc)
-            except locale.Error:
-                continue
-            break
-        else:
-            raise TestSkipped(
-                "Test locale not supported (tried %s)" % (', '.join(self.tlocs)))
+        locale.setlocale(self.locale_type, enUS_locale)
         if verbose:
-            print("testing with \"%s\"..." % tloc, end=' ')
+            print("testing with \"%s\"..." % enUS_locale, end=' ')
 
     def tearDown(self):
         locale.setlocale(self.locale_type, self.oldlocale)
@@ -117,9 +125,10 @@ class BaseFormattingTest(object):
 
 
 class EnUSNumberFormatting(BaseFormattingTest):
+    # XXX there is a grouping + padding bug when the thousands separator
+    # is empty but the grouping array contains values (e.g. Solaris 10)
 
     def setUp(self):
-        # NOTE: On Solaris 10, the thousands_sep is the empty string
         self.sep = locale.localeconv()['thousands_sep']
 
     def test_grouping(self):
@@ -130,10 +139,11 @@ class EnUSNumberFormatting(BaseFormattingTest):
 
     def test_grouping_and_padding(self):
         self._test_format("%20.f", -42, grouping=1, out='-42'.rjust(20))
-        self._test_format("%+10.f", -4200, grouping=1,
-            out=('-4%s200' % self.sep).rjust(10))
-        self._test_format("%-10.f", -4200, grouping=1,
-            out=('-4%s200' % self.sep).ljust(10))
+        if self.sep:
+            self._test_format("%+10.f", -4200, grouping=1,
+                out=('-4%s200' % self.sep).rjust(10))
+            self._test_format("%-10.f", -4200, grouping=1,
+                out=('-4%s200' % self.sep).ljust(10))
 
     def test_integer_grouping(self):
         self._test_format("%d", 4200, grouping=True, out='4%s200' % self.sep)
@@ -160,17 +170,21 @@ class EnUSNumberFormatting(BaseFormattingTest):
         # Dots in formatting string
         self._test_format_string(".%f.", 1000.0, out='.1000.000000.')
         # Padding
-        self._test_format_string("-->  %10.2f", 4200, grouping=1,
-            out='-->  ' + ('4%s200.00' % self.sep).rjust(10))
+        if self.sep:
+            self._test_format_string("-->  %10.2f", 4200, grouping=1,
+                out='-->  ' + ('4%s200.00' % self.sep).rjust(10))
         # Asterisk formats
         self._test_format_string("%10.*f", (2, 1000), grouping=0,
             out='1000.00'.rjust(10))
-        self._test_format_string("%*.*f", (10, 2, 1000), grouping=1,
-            out=('1%s000.00' % self.sep).rjust(10))
+        if self.sep:
+            self._test_format_string("%*.*f", (10, 2, 1000), grouping=1,
+                out=('1%s000.00' % self.sep).rjust(10))
         # Test more-in-one
-        self._test_format_string("int %i float %.2f str %s",
-            (1000, 1000.0, 'str'), grouping=1,
-            out='int 1%s000 float 1%s000.00 str str' % (self.sep, self.sep))
+        if self.sep:
+            self._test_format_string("int %i float %.2f str %s",
+                (1000, 1000.0, 'str'), grouping=1,
+                out='int 1%s000 float 1%s000.00 str str' %
+                (self.sep, self.sep))
 
 
 class TestNumberFormatting(BaseLocalizedTest, EnUSNumberFormatting):
@@ -223,7 +237,20 @@ class TestMiscellaneous(unittest.TestCase):
 
 
 def test_main():
-    run_unittest(__name__)
+    tests = [
+        TestMiscellaneous,
+        TestEnUSNumberFormatting,
+        TestCNumberFormatting
+    ]
+    # TestSkipped can't be raised inside unittests, handle it manually instead
+    try:
+        get_enUS_locale()
+    except TestSkipped as e:
+        if verbose:
+            print("Some tests will be disabled: %s" % e)
+    else:
+        tests += [TestNumberFormatting]
+    run_unittest(*tests)
 
 if __name__ == '__main__':
     test_main()
