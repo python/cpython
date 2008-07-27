@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 3437: Bug fix in robotparser parsing of Allow: lines.
+
 - Issue 1592:  Improve error reporting when operations are attempted
   on a closed shelf.
 
