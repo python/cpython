@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3449: Update decimal module to use most recent specification
+  (v. 1.68) and tests (v. 2.58) from IBM.
+
 - Issue 3437: Bug fix in robotparser parsing of Allow: lines.
 
 - Issue 1592:  Improve error reporting when operations are attempted
