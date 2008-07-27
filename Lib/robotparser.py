@@ -76,6 +76,10 @@ class RobotFileParser:
         """parse the input lines from a robots.txt file.
            We allow that a user-agent: line is not preceded by
            one or more blank lines."""
+        # states:
+        #   0: start state
+        #   1: saw user-agent line
+        #   2: saw an allow or disallow line
         state = 0
         linenumber = 0
         entry = Entry()
@@ -114,6 +118,7 @@ class RobotFileParser:
                 elif line[0] == "allow":
                     if state != 0:
                         entry.rulelines.append(RuleLine(line[1], True))
+                        state = 2
         if state == 2:
             self.entries.append(entry)
 
