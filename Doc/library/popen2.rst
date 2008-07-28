@@ -149,7 +149,7 @@ error while the parent is reading from the child's standard output, a deadlock
 can occur.  A similar situation can occur with other combinations of reads and
 writes.  The essential factors are that more than :const:`_PC_PIPE_BUF` bytes
 are being written by one process in a blocking fashion, while the other process
-is reading from the other process, also in a blocking fashion.
+is reading from the first process, also in a blocking fashion.
 
 .. Example explanation and suggested work-arounds substantially stolen
    from Martin von Löwis:
