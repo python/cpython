@@ -12,6 +12,13 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #2620: Overflow checking when allocating or reallocating memory
+  was not always being done properly in some python types and extension
+  modules.  PyMem_MALLOC, PyMem_REALLOC, PyMem_NEW and PyMem_RESIZE have
+  all been updated to perform better checks and places in the code that
+  would previously leak memory on the error path when such an allocation
+  failed have been fixed.
+
 - Issue #2242: Fix a crash when decoding invalid utf-7 input on certain
   Windows / Visual Studio versions.
 
