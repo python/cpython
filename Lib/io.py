@@ -906,8 +906,12 @@ class BufferedReader(_BufferedIOMixin):
         """
         raw._checkReadable()
         _BufferedIOMixin.__init__(self, raw)
-        self._read_buf = b""
         self.buffer_size = buffer_size
+        self._reset_read_buf()
+
+    def _reset_read_buf(self):
+        self._read_buf = b""
+        self._read_pos = 0
 
     def read(self, n=None):
         """Read n bytes.
@@ -917,25 +921,50 @@ class BufferedReader(_BufferedIOMixin):
         mode. If n is negative, read until EOF or until read() would
         block.
         """
-        if n is None:
-            n = -1
         nodata_val = b""
-        while n < 0 or len(self._read_buf) < n:
-            to_read = max(self.buffer_size,
-                          n if n is not None else 2*len(self._read_buf))
-            current = self.raw.read(to_read)
-            if current in (b"", None):
-                nodata_val = current
+        empty_values = (b"", None)
+        buf = self._read_buf
+        pos = self._read_pos
+
+        # Special case for when the number of bytes to read is unspecified.
+        if n is None or n == -1:
+            self._reset_read_buf()
+            chunks = [buf[pos:]]  # Strip the consumed bytes.
+            current_size = 0
+            while True:
+                # Read until EOF or until read() would block.
+                chunk = self.raw.read()
+                if chunk in empty_values:
+                    nodata_val = chunk
+                    break
+                current_size += len(chunk)
+                chunks.append(chunk)
+            return b"".join(chunks) or nodata_val
+
+        # The number of bytes to read is specified, return at most n bytes.
+        avail = len(buf) - pos  # Length of the available buffered data.
+        if n <= avail:
+            # Fast path: the data to read is fully buffered.
+            self._read_pos += n
+            return buf[pos:pos+n]
+        # Slow path: read from the stream until enough bytes are read,
+        # or until an EOF occurs or until read() would block.
+        chunks = [buf[pos:]]
+        wanted = max(self.buffer_size, n)
+        while avail < n:
+            chunk = self.raw.read(wanted)
+            if chunk in empty_values:
+                nodata_val = chunk
                 break
-            self._read_buf += current
-        if self._read_buf:
-            if n < 0:
-                n = len(self._read_buf)
-            out = self._read_buf[:n]
-            self._read_buf = self._read_buf[n:]
-        else:
-            out = nodata_val
-        return out
+            avail += len(chunk)
+            chunks.append(chunk)
+        # n is more then avail only when an EOF occurred or when
+        # read() would have blocked.
+        n = min(n, avail)
+        out = b"".join(chunks)
+        self._read_buf = out[n:]  # Save the extra data in the buffer.
+        self._read_pos = 0
+        return out[:n] if out else nodata_val
 
     def peek(self, n=0):
         """Returns buffered bytes without advancing the position.
@@ -945,13 +974,14 @@ class BufferedReader(_BufferedIOMixin):
         than self.buffer_size.
         """
         want = min(n, self.buffer_size)
-        have = len(self._read_buf)
+        have = len(self._read_buf) - self._read_pos
         if have < want:
             to_read = self.buffer_size - have
             current = self.raw.read(to_read)
             if current:
-                self._read_buf += current
-        return self._read_buf
+                self._read_buf = self._read_buf[self._read_pos:] + current
+                self._read_pos = 0
+        return self._read_buf[self._read_pos:]
 
     def read1(self, n):
         """Reads up to n bytes, with at most one read() system call."""
@@ -960,16 +990,16 @@ class BufferedReader(_BufferedIOMixin):
         if n <= 0:
             return b""
         self.peek(1)
-        return self.read(min(n, len(self._read_buf)))
+        return self.read(min(n, len(self._read_buf) - self._read_pos))
 
     def tell(self):
-        return self.raw.tell() - len(self._read_buf)
+        return self.raw.tell() - len(self._read_buf) + self._read_pos
 
     def seek(self, pos, whence=0):
         if whence == 1:
-            pos -= len(self._read_buf)
+            pos -= len(self._read_buf) - self._read_pos
         pos = self.raw.seek(pos, whence)
-        self._read_buf = b""
+        self._reset_read_buf()
         return pos
 
 
@@ -1138,14 +1168,14 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         # First do the raw seek, then empty the read buffer, so that
         # if the raw seek fails, we don't lose buffered data forever.
         pos = self.raw.seek(pos, whence)
-        self._read_buf = b""
+        self._reset_read_buf()
         return pos
 
     def tell(self):
-        if (self._write_buf):
+        if self._write_buf:
             return self.raw.tell() + len(self._write_buf)
         else:
-            return self.raw.tell() - len(self._read_buf)
+            return BufferedReader.tell(self)
 
     def truncate(self, pos=None):
         if pos is None:
@@ -1174,8 +1204,9 @@ class BufferedRandom(BufferedWriter, BufferedReader):
 
     def write(self, b):
         if self._read_buf:
-            self.raw.seek(-len(self._read_buf), 1) # Undo readahead
-            self._read_buf = b""
+            # Undo readahead
+            self.raw.seek(self._read_pos - len(self._read_buf), 1)
+            self._reset_read_buf()
         return BufferedWriter.write(self, b)
 
 
