@@ -22,6 +22,9 @@ Library
   file name rather than a ZipInfo instance, so files are extracted with
   mode 0600 rather than 000 under Unix.
 
+- Issue #2523: Fix quadratic behaviour when read()ing a binary file without
+  asking for a specific length.
+
 
 What's new in Python 3.0b2?
 ===========================
