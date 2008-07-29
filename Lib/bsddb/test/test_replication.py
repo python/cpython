@@ -131,7 +131,7 @@ class DBReplicationManager(unittest.TestCase):
         timeout = time.time()+2
         while (time.time()<timeout) and not (self.confirmed_master and self.client_startupdone) :
             time.sleep(0.02)
-        self.assertTrue(time.time()<timeout)
+        self.assertTrue(time.time()<timeout, msg = "Timeout Error: "+str(time.time()-timeout))
 
         d = self.dbenvMaster.repmgr_site_list()
         self.assertEquals(len(d), 1)
