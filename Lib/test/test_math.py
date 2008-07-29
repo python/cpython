@@ -659,48 +659,42 @@ class MathTests(unittest.TestCase):
 
         # on IEEE 754 compliant machines, both of the expressions
         # below should round to 10000000000000002.0.
-        if 1e16+2.999 != 1e16+2.9999:
+        if 1e16+2.0 != 1e16+2.9999:
             return
 
-        # Python version of math.sum algorithm, for comparison
+        # Python version of math.sum, for comparison.  Uses a
+        # different algorithm based on frexp, ldexp and integer
+        # arithmetic.
+        from sys import float_info
+        mant_dig = float_info.mant_dig
+        etiny = float_info.min_exp - mant_dig
+
         def msum(iterable):
-            """Full precision sum of values in iterable.  Returns the value of
-            the sum, rounded to the nearest representable floating-point number
-            using the round-half-to-even rule.
+            """Full precision summation.  Compute sum(iterable) without any
+            intermediate accumulation of error.  Based on the 'lsum' function
+            at http://code.activestate.com/recipes/393090/
 
             """
-            # Stage 1: accumulate partials
-            partials = []
+            tmant, texp = 0, 0
             for x in iterable:
-                i = 0
-                for y in partials:
-                    if abs(x) < abs(y):
-                        x, y = y, x
-                    hi = x + y
-                    lo = y - (hi - x)
-                    if lo:
-                        partials[i] = lo
-                        i += 1
-                    x = hi
-                partials[i:] = [x] if x else []
-
-            # Stage 2: sum partials
-            if not partials:
-                return 0.0
-
-            # sum from the top, stopping as soon as the sum is inexact.
-            total = partials.pop()
-            while partials:
-                x = partials.pop()
-                old_total, total = total, total + x
-                error = x - (total - old_total)
-                if error != 0.0:
-                    # adjust for correct rounding if necessary
-                    if partials and (partials[-1] > 0.0) == (error > 0.0) and \
-                            total + 2*error - total == 2*error:
-                        total += 2*error
-                    break
-            return total
+                mant, exp = math.frexp(x)
+                mant, exp = int(math.ldexp(mant, mant_dig)), exp - mant_dig
+                if texp > exp:
+                    tmant <<= texp-exp
+                    texp = exp
+                else:
+                    mant <<= exp-texp
+                tmant += mant
+            # Round tmant * 2**texp to a float.  The original recipe
+            # used float(str(tmant)) * 2.0**texp for this, but that's
+            # a little unsafe because str -> float conversion can't be
+            # relied upon to do correct rounding on all platforms.
+            tail = max(len(bin(abs(tmant)))-2 - mant_dig, etiny - texp)
+            if tail > 0:
+                h = 1 << (tail-1)
+                tmant = tmant // (2*h) + bool(tmant & h and tmant & 3*h-1)
+                texp += tail
+            return math.ldexp(tmant, texp)
 
         test_values = [
             ([], 0.0),
@@ -710,12 +704,18 @@ class MathTests(unittest.TestCase):
             ([2.0**53, 1.0, 2.0**-100], 2.0**53+2.0),
             ([2.0**53+10.0, 1.0, 2.0**-100], 2.0**53+12.0),
             ([2.0**53-4.0, 0.5, 2.0**-54], 2.0**53-3.0),
-            ([1./n for n in range(1, 1001)], 7.4854708605503451),
-            ([(-1.)**n/n for n in range(1, 1001)], -0.69264743055982025),
+            ([1./n for n in range(1, 1001)],
+             float.fromhex('0x1.df11f45f4e61ap+2')),
+            ([(-1.)**n/n for n in range(1, 1001)],
+             float.fromhex('-0x1.62a2af1bd3624p-1')),
             ([1.7**(i+1)-1.7**i for i in range(1000)] + [-1.7**1000], -1.0),
             ([1e16, 1., 1e-16], 10000000000000002.0),
             ([1e16-2., 1.-2.**-53, -(1e16-2.), -(1.-2.**-53)], 0.0),
-        ]
+            # exercise code for resizing partials array
+            ([2.**n - 2.**(n+50) + 2.**(n+52) for n in range(-1074, 972, 2)] +
+             [-2.**1022],
+             float.fromhex('0x1.5555555555555p+970')),
+            ]
 
         for i, (vals, expected) in enumerate(test_values):
             try:
