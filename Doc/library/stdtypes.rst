@@ -2039,7 +2039,7 @@ Files have the following methods:
    the :keyword:`with` statement.  For example, the following code will
    automatically close *f* when the :keyword:`with` block is exited::
 
-      from __future__ import with_statement
+      from __future__ import with_statement # This isn't required in Python 2.6
 
       with open("hello.txt") as f:
           for line in f:
