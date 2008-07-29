@@ -77,7 +77,7 @@ class MiscTestCase(unittest.TestCase):
             # double free happened during exit from DBC_get
         finally:
             db1.close()
-            os.unlink(self.filename)
+            test_support.unlink(self.filename)
 
     def test06_key_with_null_bytes(self):
         try:
@@ -96,7 +96,7 @@ class MiscTestCase(unittest.TestCase):
             self.assertEqual(db1['aaa'], 'eh eh eh!')
         finally:
             db1.close()
-            os.unlink(self.filename)
+            test_support.unlink(self.filename)
 
     def test07_DB_set_flags_persists(self):
         if db.version() < (4,2):
@@ -124,7 +124,7 @@ class MiscTestCase(unittest.TestCase):
             self.assertEqual([('a', 'new A')], db1.items())
         finally:
             db1.close()
-            os.unlink(self.filename)
+            test_support.unlink(self.filename)
 
 
 #----------------------------------------------------------------------
