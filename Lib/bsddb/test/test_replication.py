@@ -128,10 +128,10 @@ class DBReplicationManager(unittest.TestCase):
         # is not generated if the master has no new transactions.
         # This is solved in BDB 4.6 (#15542).
         import time
-        timeout = time.time()+2
+        timeout = time.time()+10
         while (time.time()<timeout) and not (self.confirmed_master and self.client_startupdone) :
             time.sleep(0.02)
-        self.assertTrue(time.time()<timeout, msg = "Timeout Error: "+str(time.time()-timeout))
+        self.assertTrue(time.time()<timeout)
 
         d = self.dbenvMaster.repmgr_site_list()
         self.assertEquals(len(d), 1)
@@ -181,22 +181,28 @@ class DBReplicationManager(unittest.TestCase):
         self.dbMaster.put("ABC", "123", txn=txn)
         txn.commit()
         import time
-        timeout=time.time()+1
+        timeout=time.time()+10
         v=None
         while (time.time()<timeout) and (v==None) :
             txn=self.dbenvClient.txn_begin()
             v=self.dbClient.get("ABC", txn=txn)
             txn.commit()
+            if v==None :
+                time.sleep(0.02)
+        self.assertTrue(time.time()<timeout)
         self.assertEquals("123", v)
 
         txn=self.dbenvMaster.txn_begin()
         self.dbMaster.delete("ABC", txn=txn)
         txn.commit()
-        timeout=time.time()+1
+        timeout=time.time()+10
         while (time.time()<timeout) and (v!=None) :
             txn=self.dbenvClient.txn_begin()
             v=self.dbClient.get("ABC", txn=txn)
             txn.commit()
+            if v==None :
+                time.sleep(0.02)
+        self.assertTrue(time.time()<timeout)
         self.assertEquals(None, v)
 
 class DBBaseReplication(DBReplicationManager):
@@ -297,7 +303,7 @@ class DBBaseReplication(DBReplicationManager):
         # is not generated if the master has no new transactions.
         # This is solved in BDB 4.6 (#15542).
         import time
-        timeout = time.time()+2
+        timeout = time.time()+10
         while (time.time()<timeout) and not (self.confirmed_master and
                 self.client_startupdone) :
             time.sleep(0.02)
@@ -333,22 +339,28 @@ class DBBaseReplication(DBReplicationManager):
         self.dbMaster.put("ABC", "123", txn=txn)
         txn.commit()
         import time
-        timeout=time.time()+1
+        timeout=time.time()+10
         v=None
         while (time.time()<timeout) and (v==None) :
             txn=self.dbenvClient.txn_begin()
             v=self.dbClient.get("ABC", txn=txn)
             txn.commit()
+            if v==None :
+                time.sleep(0.02)
+        self.assertTrue(time.time()<timeout)
         self.assertEquals("123", v)
 
         txn=self.dbenvMaster.txn_begin()
         self.dbMaster.delete("ABC", txn=txn)
         txn.commit()
-        timeout=time.time()+1
+        timeout=time.time()+10
         while (time.time()<timeout) and (v!=None) :
             txn=self.dbenvClient.txn_begin()
             v=self.dbClient.get("ABC", txn=txn)
             txn.commit()
+            if v==None :
+                time.sleep(0.02)
+        self.assertTrue(time.time()<timeout)
         self.assertEquals(None, v)
 
     if db.version() >= (4,7) :
