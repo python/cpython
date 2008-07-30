@@ -341,7 +341,7 @@ FUNC1(tanh, tanh, 0,
    Note 4: A similar implementation is in Modules/cmathmodule.c.
    Be sure to update both when making changes.
 
-   Note 5: The signature of math.sum() differs from __builtin__.sum()
+   Note 5: The signature of math.fsum() differs from __builtin__.sum()
    because the start argument doesn't make sense in the context of
    accurate summation.  Since the partials table is collapsed before
    returning a result, sum(seq2, start=sum(seq1)) may not equal the
@@ -506,7 +506,7 @@ math_fsum(PyObject *self, PyObject *seq)
 		   Needed so that sum([1e-16, 1, 1e16]) will round-up the last
 		   digit to two instead of down to zero (the 1e-16 makes the 1
 		   slightly closer to two).  With a potential 1 ULP rounding
-		   error fixed-up, math.sum() can guarantee commutativity. */
+		   error fixed-up, math.fsum() can guarantee commutativity. */
 		if (n > 0 && ((lo < 0.0 && p[n-1] < 0.0) ||
 			      (lo > 0.0 && p[n-1] > 0.0))) {
 			y = lo * 2.0;
