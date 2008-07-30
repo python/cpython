@@ -646,10 +646,10 @@ class MathTests(unittest.TestCase):
         self.assert_(math.isnan(math.sqrt(NAN)))
 
     def testSum(self):
-        # math.sum relies on exact rounding for correct operation.
+        # math.fsum relies on exact rounding for correct operation.
         # There's a known problem with IA32 floating-point that causes
         # inexact rounding in some situations, and will cause the
-        # math.sum tests below to fail; see issue #2937.  On non IEEE
+        # math.fsum tests below to fail; see issue #2937.  On non IEEE
         # 754 platforms, and on IEEE 754 platforms that exhibit the
         # problem described in issue #2937, we simply skip the whole
         # test.
@@ -662,7 +662,7 @@ class MathTests(unittest.TestCase):
         if 1e16+2.0 != 1e16+2.9999:
             return
 
-        # Python version of math.sum, for comparison.  Uses a
+        # Python version of math.fsum, for comparison.  Uses a
         # different algorithm based on frexp, ldexp and integer
         # arithmetic.
         from sys import float_info
@@ -719,13 +719,13 @@ class MathTests(unittest.TestCase):
 
         for i, (vals, expected) in enumerate(test_values):
             try:
-                actual = math.sum(vals)
+                actual = math.fsum(vals)
             except OverflowError:
                 self.fail("test %d failed: got OverflowError, expected %r "
-                          "for math.sum(%.100r)" % (i, expected, vals))
+                          "for math.fsum(%.100r)" % (i, expected, vals))
             except ValueError:
                 self.fail("test %d failed: got ValueError, expected %r "
-                          "for math.sum(%.100r)" % (i, expected, vals))
+                          "for math.fsum(%.100r)" % (i, expected, vals))
             self.assertEqual(actual, expected)
 
         from random import random, gauss, shuffle
@@ -739,7 +739,7 @@ class MathTests(unittest.TestCase):
             shuffle(vals)
 
             s = msum(vals)
-            self.assertEqual(msum(vals), math.sum(vals))
+            self.assertEqual(msum(vals), math.fsum(vals))
 
 
     def testTan(self):
