@@ -3,9 +3,9 @@ BaseException
  +-- KeyboardInterrupt
  +-- GeneratorExit
  +-- Exception
-      +-- BufferError
       +-- StopIteration
       +-- StandardError
+      |    +-- BufferError
       |    +-- ArithmeticError
       |    |    +-- FloatingPointError
       |    |    +-- OverflowError
