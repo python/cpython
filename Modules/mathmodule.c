@@ -352,7 +352,7 @@ FUNC1(tanh, tanh, 0,
 
 /* Extend the partials array p[] by doubling its size. */
 static int                          /* non-zero on error */
-_sum_realloc(double **p_ptr, Py_ssize_t  n,
+_fsum_realloc(double **p_ptr, Py_ssize_t  n,
              double  *ps,    Py_ssize_t *m_ptr)
 {
 	void *v = NULL;
@@ -370,7 +370,7 @@ _sum_realloc(double **p_ptr, Py_ssize_t  n,
 			v = PyMem_Realloc(p, sizeof(double) * m);
 	}
 	if (v == NULL) {        /* size overflow or no memory */
-		PyErr_SetString(PyExc_MemoryError, "math sum partials");
+		PyErr_SetString(PyExc_MemoryError, "math.fsum partials");
 		return 1;
 	}
 	*p_ptr = (double*) v;
@@ -409,7 +409,7 @@ _sum_realloc(double **p_ptr, Py_ssize_t  n,
 */
 
 static PyObject*
-math_sum(PyObject *self, PyObject *seq)
+math_fsum(PyObject *self, PyObject *seq)
 {
 	PyObject *item, *iter, *sum = NULL;
 	Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
@@ -421,7 +421,7 @@ math_sum(PyObject *self, PyObject *seq)
 	if (iter == NULL)
 		return NULL;
 
-	PyFPE_START_PROTECT("sum", Py_DECREF(iter); return NULL)
+	PyFPE_START_PROTECT("fsum", Py_DECREF(iter); return NULL)
 
 	for(;;) {           /* for x in iterable */
 		assert(0 <= n && n <= m);
@@ -431,13 +431,13 @@ math_sum(PyObject *self, PyObject *seq)
 		item = PyIter_Next(iter);
 		if (item == NULL) {
 			if (PyErr_Occurred())
-				goto _sum_error;
+				goto _fsum_error;
 			break;
 		}
 		x = PyFloat_AsDouble(item);
 		Py_DECREF(item);
 		if (PyErr_Occurred())
-			goto _sum_error;
+			goto _fsum_error;
 
 		xsave = x;
 		for (i = j = 0; j < n; j++) {       /* for y in partials */
@@ -462,8 +462,8 @@ math_sum(PyObject *self, PyObject *seq)
 				   summands */
 				if (Py_IS_FINITE(xsave)) {
 					PyErr_SetString(PyExc_OverflowError,
-					      "intermediate overflow in sum");
-					goto _sum_error;
+					      "intermediate overflow in fsum");
+					goto _fsum_error;
 				}
 				if (Py_IS_INFINITY(xsave))
 					inf_sum += xsave;
@@ -471,8 +471,8 @@ math_sum(PyObject *self, PyObject *seq)
 				/* reset partials */
 				n = 0;
 			}
-			else if (n >= m && _sum_realloc(&p, n, ps, &m))
-				goto _sum_error;
+			else if (n >= m && _fsum_realloc(&p, n, ps, &m))
+				goto _fsum_error;
 			else
 				p[n++] = x;
 		}
@@ -481,10 +481,10 @@ math_sum(PyObject *self, PyObject *seq)
 	if (special_sum != 0.0) {
 		if (Py_IS_NAN(inf_sum))
 			PyErr_SetString(PyExc_ValueError,
-					"-inf + inf in sum");
+					"-inf + inf in fsum");
 		else
 			sum = PyFloat_FromDouble(special_sum);
-		goto _sum_error;
+		goto _fsum_error;
 	}
 
 	hi = 0.0;
@@ -518,7 +518,7 @@ math_sum(PyObject *self, PyObject *seq)
 	}
 	sum = PyFloat_FromDouble(hi);
 
-_sum_error:
+_fsum_error:
 	PyFPE_END_PROTECT(hi)
 	Py_DECREF(iter);
 	if (p != ps)
@@ -528,7 +528,7 @@ _sum_error:
 
 #undef NUM_PARTIALS
 
-PyDoc_STRVAR(math_sum_doc,
+PyDoc_STRVAR(math_fsum_doc,
 "sum(iterable)\n\n\
 Return an accurate floating point sum of values in the iterable.\n\
 Assumes IEEE-754 floating point arithmetic.");
@@ -1021,6 +1021,7 @@ static PyMethodDef math_methods[] = {
 	{"floor",	math_floor,	METH_O,		math_floor_doc},
 	{"fmod",	math_fmod,	METH_VARARGS,	math_fmod_doc},
 	{"frexp",	math_frexp,	METH_O,		math_frexp_doc},
+	{"fsum",	math_fsum,	METH_O,		math_fsum_doc},
 	{"hypot",	math_hypot,	METH_VARARGS,	math_hypot_doc},
 	{"isinf",	math_isinf,	METH_O,		math_isinf_doc},
 	{"isnan",	math_isnan,	METH_O,		math_isnan_doc},
@@ -1034,10 +1035,9 @@ static PyMethodDef math_methods[] = {
 	{"sin",		math_sin,	METH_O,		math_sin_doc},
 	{"sinh",	math_sinh,	METH_O,		math_sinh_doc},
 	{"sqrt",	math_sqrt,	METH_O,		math_sqrt_doc},
-	{"sum",		math_sum,	METH_O,		math_sum_doc},
 	{"tan",		math_tan,	METH_O,		math_tan_doc},
 	{"tanh",	math_tanh,	METH_O,		math_tanh_doc},
- 	{"trunc",	math_trunc,	METH_O,		math_trunc_doc},
+	{"trunc",	math_trunc,	METH_O,		math_trunc_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
