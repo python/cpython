@@ -36,11 +36,11 @@ it likely that the generated sequences seen by each thread don't overlap.
 Class :class:`Random` can also be subclassed if you want to use a different
 basic generator of your own devising: in that case, override the :meth:`random`,
 :meth:`seed`, :meth:`getstate`, :meth:`setstate` and :meth:`jumpahead` methods.
-Optionally, a new generator can supply a :meth:`getrandombits` method --- this
+Optionally, a new generator can supply a :meth:`getrandbits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
 
 .. versionadded:: 2.4
-   the :meth:`getrandombits` method.
+   the :meth:`getrandbits` method.
 
 As an example of subclassing, the :mod:`random` module provides the
 :class:`WichmannHill` class that implements an alternative generator in pure
