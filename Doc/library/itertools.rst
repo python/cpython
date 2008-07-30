@@ -565,7 +565,8 @@ which incur interpreter overhead.
    def grouper(n, iterable, fillvalue=None):
        "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
        args = [iter(iterable)] * n
-       return zip_longest(*args, fillvalue=fillvalue)
+       kwds = dict(fillvalue=fillvalue)
+       return zip_longest(*args, **kwds)
 
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
