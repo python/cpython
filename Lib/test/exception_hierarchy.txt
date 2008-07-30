@@ -3,6 +3,7 @@ BaseException
  +-- KeyboardInterrupt
  +-- GeneratorExit
  +-- Exception
+      +-- BufferError
       +-- StopIteration
       +-- StandardError
       |    +-- ArithmeticError
