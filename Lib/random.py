@@ -74,7 +74,7 @@ class Random(_random.Random):
     Class Random can also be subclassed if you want to use a different basic
     generator of your own devising: in that case, override the following
     methods:  random(), seed(), getstate(), and setstate().
-    Optionally, implement a getrandombits() method so that randrange()
+    Optionally, implement a getrandbits() method so that randrange()
     can cover arbitrarily large ranges.
 
     """
