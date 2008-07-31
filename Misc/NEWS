@@ -12,6 +12,8 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Apply security patches from Apple.
+
 - Issue #2620: Overflow checking when allocating or reallocating memory
   was not always being done properly in some python types and extension
   modules.  PyMem_MALLOC, PyMem_REALLOC, PyMem_NEW and PyMem_RESIZE have

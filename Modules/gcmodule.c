@@ -1318,7 +1318,10 @@ PyObject *
 _PyObject_GC_Malloc(size_t basicsize)
 {
 	PyObject *op;
-	PyGC_Head *g = (PyGC_Head *)PyObject_MALLOC(
+	PyGC_Head *g;
+	if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
+		return PyErr_NoMemory();
+	g = (PyGC_Head *)PyObject_MALLOC(
                 sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return PyErr_NoMemory();
@@ -1361,6 +1364,8 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
 	const size_t basicsize = _PyObject_VAR_SIZE(op->ob_type, nitems);
 	PyGC_Head *g = AS_GC(op);
+	if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
+		return (PyVarObject *)PyErr_NoMemory();
 	g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
