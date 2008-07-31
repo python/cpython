@@ -39,10 +39,6 @@ if sys.platform == "win32":
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
 from tkinter.constants import *
-try:
-    import MacOS; _MacOS = MacOS; del MacOS
-except ImportError:
-    _MacOS = None
 
 wantobjects = 1
 
@@ -1650,12 +1646,6 @@ class Tk(Misc, Wm):
     def _loadtk(self):
         self._tkloaded = 1
         global _default_root
-        if _MacOS and hasattr(_MacOS, 'SchedParams'):
-            # Disable event scanning except for Command-Period
-            _MacOS.SchedParams(1, 0)
-            # Work around nasty MacTk bug
-            # XXX Is this one still needed?
-            self.update()
         # Version sanity checks
         tk_version = self.tk.getvar('tk_version')
         if tk_version != _tkinter.TK_VERSION:
