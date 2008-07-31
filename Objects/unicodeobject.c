@@ -299,6 +299,11 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
         return unicode_empty;
     }
 
+    /* Ensure we won't overflow the size. */
+    if (length > ((PY_SSIZE_T_MAX / sizeof(Py_UNICODE)) - 1)) {
+        return (PyUnicodeObject *)PyErr_NoMemory();
+    }
+
     /* Unicode freelist & memory allocation */
     if (free_list) {
         unicode = free_list;
@@ -1651,6 +1656,9 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
     char * out;
     char * start;
 
+    if (cbAllocated / 5 != size)
+        return PyErr_NoMemory();
+
     if (size == 0)
 		return PyString_FromStringAndSize(NULL, 0);
 
@@ -2245,8 +2253,9 @@ PyUnicode_EncodeUTF32(const Py_UNICODE *s,
 {
     PyObject *v;
     unsigned char *p;
+    Py_ssize_t nsize, bytesize;
 #ifndef Py_UNICODE_WIDE
-    int i, pairs;
+    Py_ssize_t i, pairs;
 #else
     const int pairs = 0;
 #endif
@@ -2274,8 +2283,11 @@ PyUnicode_EncodeUTF32(const Py_UNICODE *s,
 	    0xDC00 <= s[i+1] && s[i+1] <= 0xDFFF)
 	    pairs++;
 #endif
-    v = PyString_FromStringAndSize(NULL,
-		  4 * (size - pairs + (byteorder == 0)));
+    nsize = (size - pairs + (byteorder == 0));
+    bytesize = nsize * 4;
+    if (bytesize / 4 != nsize)
+	return PyErr_NoMemory();
+    v = PyString_FromStringAndSize(NULL, bytesize);
     if (v == NULL)
         return NULL;
 
@@ -2515,8 +2527,9 @@ PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 {
     PyObject *v;
     unsigned char *p;
+    Py_ssize_t nsize, bytesize;
 #ifdef Py_UNICODE_WIDE
-    int i, pairs;
+    Py_ssize_t i, pairs;
 #else
     const int pairs = 0;
 #endif
@@ -2539,8 +2552,15 @@ PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 	if (s[i] >= 0x10000)
 	    pairs++;
 #endif
-    v = PyString_FromStringAndSize(NULL,
-		  2 * (size + pairs + (byteorder == 0)));
+    /* 2 * (size + pairs + (byteorder == 0)) */
+    if (size > PY_SSIZE_T_MAX ||
+        size > PY_SSIZE_T_MAX - pairs - (byteorder == 0))
+	return PyErr_NoMemory();
+    nsize = size + pairs + (byteorder == 0);
+    bytesize = nsize * 2;
+    if (bytesize / 2 != nsize)
+	return PyErr_NoMemory();
+    v = PyString_FromStringAndSize(NULL, bytesize);
     if (v == NULL)
         return NULL;
 
@@ -2868,6 +2888,11 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     char *p;
 
     static const char *hexdigit = "0123456789abcdef";
+#ifdef Py_UNICODE_WIDE
+    const Py_ssize_t expandsize = 10;
+#else
+    const Py_ssize_t expandsize = 6;
+#endif
 
     /* XXX(nnorwitz): rather than over-allocating, it would be
        better to choose a different scheme.  Perhaps scan the
@@ -2887,13 +2912,12 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
        escape.
     */
 
+    if (size > (PY_SSIZE_T_MAX - 2 - 1) / expandsize)
+	return PyErr_NoMemory();
+
     repr = PyString_FromStringAndSize(NULL,
         2
-#ifdef Py_UNICODE_WIDE
-        + 10*size
-#else
-        + 6*size
-#endif
+        + expandsize*size
         + 1);
     if (repr == NULL)
         return NULL;
@@ -3146,12 +3170,16 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     char *q;
 
     static const char *hexdigit = "0123456789abcdef";
-
 #ifdef Py_UNICODE_WIDE
-    repr = PyString_FromStringAndSize(NULL, 10 * size);
+    const Py_ssize_t expandsize = 10;
 #else
-    repr = PyString_FromStringAndSize(NULL, 6 * size);
+    const Py_ssize_t expandsize = 6;
 #endif
+    
+    if (size > PY_SSIZE_T_MAX / expandsize)
+	return PyErr_NoMemory();
+    
+    repr = PyString_FromStringAndSize(NULL, expandsize * size);
     if (repr == NULL)
         return NULL;
     if (size == 0)
@@ -5574,6 +5602,11 @@ PyUnicodeObject *pad(PyUnicodeObject *self,
         return self;
     }
 
+    if (left > PY_SSIZE_T_MAX - self->length ||
+        right > PY_SSIZE_T_MAX - (left + self->length)) {
+        PyErr_SetString(PyExc_OverflowError, "padded string is too long");
+        return NULL;
+    }
     u = _PyUnicode_New(left + self->length + right);
     if (u) {
         if (left)

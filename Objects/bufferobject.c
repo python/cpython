@@ -431,6 +431,10 @@ buffer_repeat(PyBufferObject *self, Py_ssize_t count)
 		count = 0;
 	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
 		return NULL;
+	if (count > PY_SSIZE_T_MAX / size) {
+		PyErr_SetString(PyExc_MemoryError, "result too large");
+		return NULL;
+	}
 	ob = PyString_FromStringAndSize(NULL, size * count);
 	if ( ob == NULL )
 		return NULL;

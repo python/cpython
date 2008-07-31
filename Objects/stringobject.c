@@ -74,6 +74,11 @@ PyString_FromStringAndSize(const char *str, Py_ssize_t size)
 		return (PyObject *)op;
 	}
 
+	if (size > PY_SSIZE_T_MAX - sizeof(PyStringObject)) {
+		PyErr_SetString(PyExc_OverflowError, "string is too large");
+		return NULL;
+	}
+
 	/* Inline PyObject_NewVar */
 	op = (PyStringObject *)PyObject_MALLOC(sizeof(PyStringObject) + size);
 	if (op == NULL)
@@ -109,7 +114,7 @@ PyString_FromString(const char *str)
 
 	assert(str != NULL);
 	size = strlen(str);
-	if (size > PY_SSIZE_T_MAX) {
+	if (size > PY_SSIZE_T_MAX - sizeof(PyStringObject)) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too long for a Python string");
 		return NULL;
@@ -977,13 +982,23 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 		return (PyObject *)a;
 	}
 	size = Py_SIZE(a) + Py_SIZE(b);
-	if (size < 0) {
+	/* Check that string sizes are not negative, to prevent an
+	   overflow in cases where we are passed incorrectly-created
+	   strings with negative lengths (due to a bug in other code).
+        */
+	if (Py_SIZE(a) < 0 || Py_SIZE(b) < 0 ||
+	    Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b)) {
 		PyErr_SetString(PyExc_OverflowError,
 				"strings are too large to concat");
 		return NULL;
 	}
 	  
 	/* Inline PyObject_NewVar */
+	if (size > PY_SSIZE_T_MAX - sizeof(PyStringObject)) {
+		PyErr_SetString(PyExc_OverflowError,
+				"strings are too large to concat");
+		return NULL;
+	}
 	op = (PyStringObject *)PyObject_MALLOC(sizeof(PyStringObject) + size);
 	if (op == NULL)
 		return PyErr_NoMemory();
