@@ -62,6 +62,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Ben Gertzfield
    * Nadim Ghaznavi
    * Jonathan Giddy
+   * Matt Giuca
    * Shelley Gooch
    * Nathaniel Gray
    * Grant Griffin

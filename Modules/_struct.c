@@ -1,4 +1,4 @@
-/* struct module -- pack values into and (out of) strings */
+/* struct module -- pack values into and (out of) bytes objects */
 
 /* New version supporting byte order, alignment and size options,
    character strings, and unsigned numbers */
@@ -610,7 +610,7 @@ np_char(char *p, PyObject *v, const formatdef *f)
 	}
 	if (!PyBytes_Check(v) || PyBytes_Size(v) != 1) {
 		PyErr_SetString(StructError,
-				"char format requires string of length 1");
+				"char format requires bytes or string of length 1");
 		return -1;
 	}
 	*p = *PyBytes_AsString(v);
@@ -1654,7 +1654,7 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 			isstring = PyBytes_Check(v);
 			if (!isstring && !PyByteArray_Check(v)) {
 				PyErr_SetString(StructError,
-						"argument for 's' must be a string");
+						"argument for 's' must be a bytes or string");
 				return -1;
 			}
 			if (isstring) {
@@ -1680,7 +1680,7 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 			isstring = PyBytes_Check(v);
 			if (!isstring && !PyByteArray_Check(v)) {
 				PyErr_SetString(StructError,
-						"argument for 'p' must be a string");
+						"argument for 'p' must be a bytes or string");
 				return -1;
 			}
 			if (isstring) {
@@ -1714,9 +1714,9 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 
 
 PyDoc_STRVAR(s_pack__doc__,
-"S.pack(v1, v2, ...) -> string\n\
+"S.pack(v1, v2, ...) -> bytes\n\
 \n\
-Return a string containing values v1, v2, ... packed according to this\n\
+Return a bytes containing values v1, v2, ... packed according to this\n\
 Struct's format. See struct.__doc__ for more on format strings.");
 
 static PyObject *
@@ -1944,7 +1944,7 @@ calcsize(PyObject *self, PyObject *fmt)
 }
 
 PyDoc_STRVAR(pack_doc,
-"Return string containing values v1, v2, ... packed according to fmt.");
+"Return bytes containing values v1, v2, ... packed according to fmt.");
 
 static PyObject *
 pack(PyObject *self, PyObject *args)
@@ -2003,8 +2003,8 @@ pack_into(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(unpack_doc,
-"Unpack the string containing packed C structure data, according to fmt.\n\
-Requires len(string) == calcsize(fmt).");
+"Unpack the bytes containing packed C structure data, according to fmt.\n\
+Requires len(bytes) == calcsize(fmt).");
 
 static PyObject *
 unpack(PyObject *self, PyObject *args)
@@ -2068,7 +2068,7 @@ static struct PyMethodDef module_functions[] = {
 
 PyDoc_STRVAR(module_doc,
 "Functions to convert between Python values and C structs.\n\
-Python strings are used to hold the data representing the C struct\n\
+Python bytes objects are used to hold the data representing the C struct\n\
 and also as format strings to describe the layout of data in the C struct.\n\
 \n\
 The optional first format char indicates byte order, size and alignment:\n\
