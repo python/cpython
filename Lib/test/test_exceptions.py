@@ -6,12 +6,20 @@ import unittest
 import pickle, cPickle
 
 from test.test_support import (TESTFN, unlink, run_unittest,
-                                catch_warning)
+                                catch_warning, captured_output)
 from test.test_pep352 import ignore_message_warning
 
 # XXX This is not really enough, each *operation* should be tested!
 
 class ExceptionTests(unittest.TestCase):
+
+    def test00(self):
+        try:
+            sys.exit(ValueError('aaa'))
+        except SystemExit:
+            pass
+        finally:
+            pass
 
     def testReload(self):
         # Reloading the built-in exceptions module failed prior to Py2.2, while it
@@ -344,6 +352,31 @@ class ExceptionTests(unittest.TestCase):
         self.failUnless(unicode(Exception(u'a')))
         self.failUnless(unicode(Exception(u'\xe1')))
 
+    def test_badisinstance(self):
+        # Bug #2542: if issubclass(e, MyException) raises an exception,
+        # it should be ignored
+        class Meta(type):
+            def __subclasscheck__(cls, subclass):
+                raise ValueError()
+
+        class MyException(Exception):
+            __metaclass__ = Meta
+            pass
+
+        with captured_output("stderr") as stderr:
+            try:
+                raise KeyError()
+            except MyException, e:
+                self.fail("exception should not be a MyException")
+            except KeyError:
+                pass
+            except:
+                self.fail("Should have raised TypeError")
+            else:
+                self.fail("Should have raised TypeError")
+        self.assertEqual(stderr.getvalue(),
+                         "Exception ValueError: ValueError() in "
+                         "<type 'exceptions.KeyError'> ignored\n")
 
 def test_main():
     run_unittest(ExceptionTests)
