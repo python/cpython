@@ -157,9 +157,18 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
 		err = PyExceptionInstance_Class(err);
 
 	if (PyExceptionClass_Check(err) && PyExceptionClass_Check(exc)) {
-		/* problems here!?  not sure PyObject_IsSubclass expects to
-		   be called with an exception pending... */
-		return PyObject_IsSubclass(err, exc);
+		int res = 0;
+		PyObject *exception, *value, *tb;
+		PyErr_Fetch(&exception, &value, &tb);
+		res = PyObject_IsSubclass(err, exc);
+		/* This function must not fail, so print the error here */
+		if (res == -1) {
+			PyErr_WriteUnraisable(err);
+			/* issubclass did not succeed */
+			res = 0;
+		}
+		PyErr_Restore(exception, value, tb);
+		return res;
 	}
 
 	return err == exc;

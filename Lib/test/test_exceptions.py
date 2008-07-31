@@ -6,11 +6,19 @@ import unittest
 import pickle
 import weakref
 
-from test.support import TESTFN, unlink, run_unittest
+from test.support import TESTFN, unlink, run_unittest, captured_output
 
 # XXX This is not really enough, each *operation* should be tested!
 
 class ExceptionTests(unittest.TestCase):
+
+    def test00(self):
+        try:
+            sys.exit(ValueError('aaa'))
+        except SystemExit:
+            pass
+        finally:
+            pass
 
     def raise_catch(self, exc, excname):
         try:
@@ -404,7 +412,6 @@ class ExceptionTests(unittest.TestCase):
     def testExceptionCleanupNames(self):
         # Make sure the local variable bound to the exception instance by
         # an "except" statement is only visible inside the except block.
-
         try:
             raise Exception()
         except Exception as e:
@@ -564,6 +571,30 @@ class ExceptionTests(unittest.TestCase):
         except:
             pass
         self.assertEquals(e, (None, None, None))
+
+    def test_badisinstance(self):
+        # Bug #2542: if issubclass(e, MyException) raises an exception,
+        # it should be ignored
+        class Meta(type):
+            def __subclasscheck__(cls, subclass):
+                raise ValueError()
+        class MyException(Exception, metaclass=Meta):
+            pass
+
+        with captured_output("stderr") as stderr:
+            try:
+                raise KeyError()
+            except MyException as e:
+                self.fail("exception should not be a MyException")
+            except KeyError:
+                pass
+            except:
+                self.fail("Should have raised TypeError")
+            else:
+                self.fail("Should have raised TypeError")
+        self.assertEqual(stderr.getvalue(),
+                         "Exception ValueError: ValueError() "
+                         "in <class 'KeyError'> ignored\n")
 
 def test_main():
     run_unittest(ExceptionTests)
