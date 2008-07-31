@@ -13,14 +13,6 @@ from test.test_pep352 import ignore_message_warning
 
 class ExceptionTests(unittest.TestCase):
 
-    def test00(self):
-        try:
-            sys.exit(ValueError('aaa'))
-        except SystemExit:
-            pass
-        finally:
-            pass
-
     def testReload(self):
         # Reloading the built-in exceptions module failed prior to Py2.2, while it
         # should act the same as reloading built-in sys.
