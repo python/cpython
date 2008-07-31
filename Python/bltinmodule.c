@@ -394,9 +394,9 @@ Return a string of one character with ordinal i; 0 <= i < 256.");
 static PyObject *
 builtin_unichr(PyObject *self, PyObject *args)
 {
-	long x;
+	int x;
 
-	if (!PyArg_ParseTuple(args, "l:unichr", &x))
+	if (!PyArg_ParseTuple(args, "i:unichr", &x))
 		return NULL;
 
 	return PyUnicode_FromOrdinal(x);
