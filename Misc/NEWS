@@ -12,6 +12,9 @@ What's New in Python 2.6 beta 3?
 Core and Builtins
 -----------------
 
+- Issue #2542: Now that issubclass() may call arbitrary code, ensure that
+  PyErr_ExceptionMatches returns 0 when an exception occurs there.
+
 - Issue #1819: function calls with several named parameters are now on
   average 35% faster (as measured by pybench).
 
