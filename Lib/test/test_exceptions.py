@@ -596,6 +596,24 @@ class ExceptionTests(unittest.TestCase):
                          "Exception ValueError: ValueError() "
                          "in <class 'KeyError'> ignored\n")
 
+
+    def test_MemoryError(self):
+        # PyErr_NoMemory always raises the same exception instance.
+        # Check that the traceback is not doubled.
+        import traceback
+        def raiseMemError():
+            try:
+                "a" * (sys.maxsize // 2)
+            except MemoryError as e:
+                tb = e.__traceback__
+            else:
+                self.fail("Should have raises a MemoryError")
+            return traceback.format_tb(tb)
+
+        tb1 = raiseMemError()
+        tb2 = raiseMemError()
+        self.assertEqual(tb1, tb2)
+
 def test_main():
     run_unittest(ExceptionTests)
 
