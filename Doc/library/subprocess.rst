@@ -33,9 +33,10 @@ This module defines one class called :class:`Popen`:
 
    Arguments are:
 
-   *args* should be a string, or a sequence of program arguments.  The program to
-   execute is normally the first item in the args sequence or string, but can be
-   explicitly set by using the executable argument.
+   *args* should be a string, or a sequence of program arguments.  The program
+   to execute is normally the first item in the args sequence or the string if a
+   string is given, but can be explicitly set by using the *executable*
+   argument.
 
    On Unix, with *shell=False* (default): In this case, the Popen class uses
    :meth:`os.execvp` to execute the child program. *args* should normally be a
