@@ -12,6 +12,8 @@ What's New in Python 2.6 beta 3?
 Core and Builtins
 -----------------
 
+- Apply security patches from Apple.
+
 - Issue #2542: Now that issubclass() may call arbitrary code, ensure that
   PyErr_ExceptionMatches returns 0 when an exception occurs there.
 
