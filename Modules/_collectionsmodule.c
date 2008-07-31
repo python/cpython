@@ -52,20 +52,20 @@ typedef struct BLOCK {
 } block;
 
 #define MAXFREEBLOCKS 10
-static int numfreeblocks = 0;
+static Py_ssize_t numfreeblocks = 0;
 static block *freeblocks[MAXFREEBLOCKS];
 
 static block *
-newblock(block *leftlink, block *rightlink, int len) {
+newblock(block *leftlink, block *rightlink, Py_ssize_t len) {
 	block *b;
-	/* To prevent len from overflowing INT_MAX on 64-bit machines, we
+	/* To prevent len from overflowing PY_SSIZE_T_MAX on 64-bit machines, we
 	 * refuse to allocate new blocks if the current len is dangerously
 	 * close.  There is some extra margin to prevent spurious arithmetic
 	 * overflows at various places.  The following check ensures that
 	 * the blocks allocated to the deque, in the worst case, can only
-	 * have INT_MAX-2 entries in total.
+	 * have PY_SSIZE_T_MAX-2 entries in total.
 	 */
-	if (len >= INT_MAX - 2*BLOCKLEN) {
+	if (len >= PY_SSIZE_T_MAX - 2*BLOCKLEN) {
 		PyErr_SetString(PyExc_OverflowError,
 				"cannot add more blocks to the deque");
 		return NULL;
@@ -100,10 +100,10 @@ typedef struct {
 	PyObject_HEAD
 	block *leftblock;
 	block *rightblock;
-	int leftindex;	/* in range(BLOCKLEN) */
-	int rightindex;	/* in range(BLOCKLEN) */
-	int len;
-	int maxlen;
+	Py_ssize_t leftindex;	/* in range(BLOCKLEN) */
+	Py_ssize_t rightindex;	/* in range(BLOCKLEN) */
+	Py_ssize_t len;
+	Py_ssize_t maxlen;
 	long state;	/* incremented whenever the indices move */
 	PyObject *weakreflist; /* List of weak references */
 } dequeobject;
@@ -355,7 +355,7 @@ PyDoc_STRVAR(extendleft_doc,
 static int
 _deque_rotate(dequeobject *deque, Py_ssize_t n)
 {
-	int i, len=deque->len, halflen=(len+1)>>1;
+	Py_ssize_t i, len=deque->len, halflen=(len+1)>>1;
 	PyObject *item, *rv;
 
 	if (len == 0)
@@ -392,9 +392,9 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
 static PyObject *
 deque_rotate(dequeobject *deque, PyObject *args)
 {
-	int n=1;
+	Py_ssize_t n=1;
 
-	if (!PyArg_ParseTuple(args, "|i:rotate", &n))
+	if (!PyArg_ParseTuple(args, "|n:rotate", &n))
 		return NULL;
 	if (_deque_rotate(deque, n) == 0)
 		Py_RETURN_NONE;
@@ -462,11 +462,11 @@ deque_clear(dequeobject *deque)
 }
 
 static PyObject *
-deque_item(dequeobject *deque, int i)
+deque_item(dequeobject *deque, Py_ssize_t i)
 {
 	block *b;
 	PyObject *item;
-	int n, index=i;
+	Py_ssize_t n, index=i;
 
 	if (i < 0 || i >= deque->len) {
 		PyErr_SetString(PyExc_IndexError,
@@ -591,11 +591,11 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 {
 	block *b;
 	PyObject *item;
-	int index;
-	int indexlo = deque->leftindex;
+	Py_ssize_t index;
+	Py_ssize_t indexlo = deque->leftindex;
 
 	for (b = deque->leftblock; b != NULL; b = b->rightlink) {
-		const int indexhi = b == deque->rightblock ?
+		const Py_ssize_t indexhi = b == deque->rightblock ?
 					 deque->rightindex :
 				    	 BLOCKLEN - 1;
 
@@ -637,12 +637,12 @@ deque_reduce(dequeobject *deque)
 		if (deque->maxlen == -1)
 			result = Py_BuildValue("O(O)", Py_TYPE(deque), aslist);
 		else
-			result = Py_BuildValue("O(Oi)", Py_TYPE(deque), aslist, deque->maxlen);
+			result = Py_BuildValue("O(On)", Py_TYPE(deque), aslist, deque->maxlen);
 	} else {
 		if (deque->maxlen == -1)
 			result = Py_BuildValue("O(OO)O", Py_TYPE(deque), aslist, Py_None, dict);
 		else
-			result = Py_BuildValue("O(Oi)O", Py_TYPE(deque), aslist, deque->maxlen, dict);
+			result = Py_BuildValue("O(On)O", Py_TYPE(deque), aslist, deque->maxlen, dict);
 	}
 	Py_XDECREF(dict);
 	Py_DECREF(aslist);
@@ -683,7 +683,8 @@ static PyObject *
 deque_richcompare(PyObject *v, PyObject *w, int op)
 {
 	PyObject *it1=NULL, *it2=NULL, *x, *y;
-	int b, vs, ws, cmp=-1;
+	Py_ssize_t vs, ws;
+	int b, cmp=-1;
 
 	if (!PyObject_TypeCheck(v, &deque_type) ||
 	    !PyObject_TypeCheck(w, &deque_type)) {
@@ -762,13 +763,13 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
 {
 	PyObject *iterable = NULL;
 	PyObject *maxlenobj = NULL;
-	int maxlen = -1;
+	Py_ssize_t maxlen = -1;
 	char *kwlist[] = {"iterable", "maxlen", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist, &iterable, &maxlenobj))
 		return -1;
 	if (maxlenobj != NULL && maxlenobj != Py_None) {
-		maxlen = PyLong_AsLong(maxlenobj);
+		maxlen = PyLong_AsSsize_t(maxlenobj);
 		if (maxlen == -1 && PyErr_Occurred())
 			return -1;
 		if (maxlen < 0) {
@@ -884,11 +885,11 @@ static PyTypeObject deque_type = {
 
 typedef struct {
 	PyObject_HEAD
-	int index;
+	Py_ssize_t index;
 	block *b;
 	dequeobject *deque;
 	long state;	/* state when the iterator is created */
-	int counter;    /* number of items remaining for iteration */
+	Py_ssize_t counter;    /* number of items remaining for iteration */
 } dequeiterobject;
 
 static PyTypeObject dequeiter_type;

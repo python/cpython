@@ -1,0 +1,75 @@
+.. _2to3-reference:
+
+2to3 - Automated Python 2 to 3 code translation
+===============================================
+
+.. sectionauthor:: Benjamin Peterson
+
+2to3 is a Python program that reads your Python 2.x source code and applies a
+series of *fixers* to transform it into valid Python 3.x code.
+
+
+Using 2to3
+----------
+
+2to3 can be run with a list of files to transform or a directory to recursively
+traverse looking for files with the ``.py`` extension.
+
+Here is a sample Python 2.x source file, :file:`example.py`::
+
+   def greet(name):
+       print "Hello, {0}!".format(name)
+   print "What's your name?"
+   name = raw_input()
+   greet(name)
+
+It can be converted to Python 3.x code via 2to3 on the command line::
+
+   $ 2to3 example.py
+
+A diff against the original source file will be printed.  2to3 can also write
+the needed modifications right back to the source file.  (A backup of the
+original file will also be made.)  This is done with the :option:`-w` flag::
+
+   $ 2to3 -w example.py
+
+:file:`example.py` will now look like this::
+
+   def greet(name):
+       print("Hello, {0}!".format(name))
+   print("What's your name?")
+   name = input()
+   greet(name)
+
+Comments and and exact indentation will be preserved throughout the translation
+process.
+
+By default, 2to3 will run a set of predefined fixers.  The :option:`-l` flag
+lists all avaible fixers.  An explicit set of fixers to run can be given by use
+of the :option:`-f` flag.  The following example runs only the ``imports`` and
+``has_key`` fixers::
+
+   $ 2to3 -f imports -f has_key example.py
+
+Some fixers are *explicit*, meaning they aren't run be default and must be
+listed on the command line.  Here, in addition to the default fixers, the
+``idioms`` fixer is run::
+
+   $ 2to3 -f all -f idioms example.py
+
+Notice how ``all`` enables all default fixers.
+
+Sometimes 2to3 will find will find a place in your source code that needs to be
+changed, but 2to3 cannot fix automatically.  In this case, 2to3 will print a
+warning beneath the diff for a file.
+
+
+:mod:`lib2to3` - 2to3's library
+-------------------------------
+
+.. module:: lib2to3
+   :synopsis: the 2to3 library
+.. moduleauthor:: Guido van Rossum
+.. moduleauthor:: Collin Winter
+
+.. XXX What is the public interface anyway?

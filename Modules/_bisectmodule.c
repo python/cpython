@@ -5,7 +5,7 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 
 #include "Python.h"
 
-static int
+static Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
 {
 	PyObject *litem;
@@ -41,18 +41,18 @@ static PyObject *
 bisect_right(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item;
-	int lo = 0;
-	int hi = -1;
-	int index;
+	Py_ssize_t lo = 0;
+	Py_ssize_t hi = -1;
+	Py_ssize_t index;
 	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:bisect_right",
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_right",
 		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_right(list, item, lo, hi);
 	if (index < 0)
 		return NULL;
-	return PyLong_FromLong(index);
+	return PyLong_FromSsize_t(index);
 }
 
 PyDoc_STRVAR(bisect_right_doc,
@@ -71,12 +71,12 @@ static PyObject *
 insort_right(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item, *result;
-	int lo = 0;
-	int hi = -1;
-	int index;
+	Py_ssize_t lo = 0;
+	Py_ssize_t hi = -1;
+	Py_ssize_t index;
 	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:insort_right",
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_right",
 		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_right(list, item, lo, hi);
@@ -86,7 +86,7 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
 		if (PyList_Insert(list, index, item) < 0)
 			return NULL;
 	} else {
-		result = PyObject_CallMethod(list, "insert", "iO",
+		result = PyObject_CallMethod(list, "insert", "nO",
 					     index, item);
 		if (result == NULL)
 			return NULL;
@@ -106,11 +106,11 @@ If x is already in a, insert it to the right of the rightmost x.\n\
 Optional args lo (default 0) and hi (default len(a)) bound the\n\
 slice of a to be searched.\n");
 
-static int
-internal_bisect_left(PyObject *list, PyObject *item, int lo, int hi)
+static Py_ssize_t
+internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
 {
 	PyObject *litem;
-	int mid, res;
+	Py_ssize_t mid, res;
 
 	if (lo < 0) {
 		PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
@@ -142,18 +142,18 @@ static PyObject *
 bisect_left(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item;
-	int lo = 0;
-	int hi = -1;
-	int index;
+	Py_ssize_t lo = 0;
+	Py_ssize_t hi = -1;
+	Py_ssize_t index;
 	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:bisect_left",
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_left",
 		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_left(list, item, lo, hi);
 	if (index < 0)
 		return NULL;
-	return PyLong_FromLong(index);
+	return PyLong_FromSsize_t(index);
 }
 
 PyDoc_STRVAR(bisect_left_doc,
@@ -172,12 +172,12 @@ static PyObject *
 insort_left(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item, *result;
-	int lo = 0;
-	int hi = -1;
-	int index;
+	Py_ssize_t lo = 0;
+	Py_ssize_t hi = -1;
+	Py_ssize_t index;
 	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:insort_left",
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_left",
 		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_left(list, item, lo, hi);
