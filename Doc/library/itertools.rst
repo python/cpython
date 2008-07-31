@@ -295,9 +295,10 @@ loops that truncate the stream.
           except IndexError:
               pass
 
-   If one of the iterables is potentially infinite, then the :func:`zip_longest`
-   function should be wrapped with something that limits the number of calls (for
-   example :func:`islice` or :func:`takewhile`).
+   If one of the iterables is potentially infinite, then the
+   :func:`izip_longest` function should be wrapped with something that limits
+   the number of calls (for example :func:`islice` or :func:`takewhile`).  If
+   not specified, *fillvalue* defaults to ``None``.
 
 
 .. function:: permutations(iterable[, r])

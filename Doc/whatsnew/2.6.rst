@@ -1144,7 +1144,7 @@ The :meth:`register`  method is useful when you've written a new
 ABC that can describe an existing type or class, or if you want
 to declare that some third-party class implements an ABC.
 For example, if you defined a :class:`PrintableType` ABC,
-it's legal to do:
+it's legal to do::
 
   # Register Python's types
   PrintableType.register(int)

@@ -31,6 +31,7 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			Py_DECREF(en);
 			return NULL;
 		}
+		assert(PyLong_Check(start));
 		en->en_index = PyLong_AsSsize_t(start);
 		if (en->en_index == -1 && PyErr_Occurred()) {
 			PyErr_Clear();
