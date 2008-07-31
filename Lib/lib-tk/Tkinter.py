@@ -41,10 +41,6 @@ tkinter = _tkinter # b/w compat for export
 TclError = _tkinter.TclError
 from types import *
 from Tkconstants import *
-try:
-    import MacOS; _MacOS = MacOS; del MacOS
-except ImportError:
-    _MacOS = None
 
 wantobjects = 1
 
@@ -1655,12 +1651,6 @@ class Tk(Misc, Wm):
     def _loadtk(self):
         self._tkloaded = 1
         global _default_root
-        if _MacOS and hasattr(_MacOS, 'SchedParams'):
-            # Disable event scanning except for Command-Period
-            _MacOS.SchedParams(1, 0)
-            # Work around nasty MacTk bug
-            # XXX Is this one still needed?
-            self.update()
         # Version sanity checks
         tk_version = self.tk.getvar('tk_version')
         if tk_version != _tkinter.TK_VERSION:
