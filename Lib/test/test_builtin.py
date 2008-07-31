@@ -1297,6 +1297,7 @@ class BuiltinTest(unittest.TestCase):
             )
             self.assertRaises(ValueError, unichr, sys.maxunicode+1)
             self.assertRaises(TypeError, unichr)
+            self.assertRaises((OverflowError, ValueError), unichr, 2**32)
 
     # We don't want self in vars(), so these are static methods
 
