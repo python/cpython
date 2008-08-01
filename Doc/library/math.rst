@@ -92,29 +92,8 @@ Number-theoretic and representation functions:
 
    .. note::
 
-      On platforms where arithmetic results are not correctly rounded,
-      :func:`fsum` may occasionally produce incorrect results; these
-      results should be no less accurate than those from the builtin
-      :func:`sum` function, but nevertheless may have arbitrarily
-      large relative error.
-
-      In particular, this affects some older Intel hardware (for
-      example Pentium and earlier x86 processors) that makes use of
-      'extended precision' floating-point registers with 64 bits of
-      precision instead of the 53 bits of precision provided by a C
-      double.  Arithmetic operations using these registers may be
-      doubly rounded (rounded first to 64 bits, and then rerounded to
-      53 bits), leading to incorrectly rounded results.  To test
-      whether your machine is one of those affected, try the following
-      at a Python prompt::
-
-         >>> 1e16 + 2.9999
-         10000000000000002.0
-
-      Machines subject to the double-rounding problem described above
-      are likely to print ``10000000000000004.0`` instead of
-      ``10000000000000002.0``.
-
+      The accuracy of fsum() may be impaired on builds that use
+      extended precision addition and then double-round the results.
 
    .. versionadded:: 2.6
 
