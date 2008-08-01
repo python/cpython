@@ -26,22 +26,8 @@ Library
   file name rather than a ZipInfo instance, so files are extracted with
   mode 0600 rather than 000 under Unix.
 
-<<<<<<< .working
 - Issue #2523: Fix quadratic behaviour when read()ing a binary file without
   asking for a specific length.
-=======
-Build
------
->>>>>>> .merge-right.r65368
-
-<<<<<<< .working
-=======
-- Generate the PatternGrammar pickle during "make install".
-
-
-What's New in Python 2.6 beta 2?
-================================
->>>>>>> .merge-right.r65368
 
 What's new in Python 3.0b2?
 ===========================
