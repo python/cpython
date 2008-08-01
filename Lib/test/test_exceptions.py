@@ -12,14 +12,6 @@ from test.support import TESTFN, unlink, run_unittest, captured_output
 
 class ExceptionTests(unittest.TestCase):
 
-    def test00(self):
-        try:
-            sys.exit(ValueError('aaa'))
-        except SystemExit:
-            pass
-        finally:
-            pass
-
     def raise_catch(self, exc, excname):
         try:
             raise exc("spam")

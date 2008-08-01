@@ -454,9 +454,9 @@ format_spec defaults to \"\"");
 static PyObject *
 builtin_chr(PyObject *self, PyObject *args)
 {
-	long x;
+	int x;
 
-	if (!PyArg_ParseTuple(args, "l:chr", &x))
+	if (!PyArg_ParseTuple(args, "i:chr", &x))
 		return NULL;
 
 	return PyUnicode_FromOrdinal(x);

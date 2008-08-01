@@ -216,6 +216,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(chr(0x0010FFFF), "\U0010FFFF")
         self.assertRaises(ValueError, chr, -1)
         self.assertRaises(ValueError, chr, 0x00110000)
+        self.assertRaises((OverflowError, ValueError), chr, 2**32)
 
     def test_cmp(self):
         self.assertEqual(cmp(-1, 1), -1)
