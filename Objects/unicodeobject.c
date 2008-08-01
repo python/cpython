@@ -322,7 +322,7 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
 	    if ((unicode->length < length) &&
                 unicode_resize(unicode, length) < 0) {
 		PyObject_DEL(unicode->str);
-		goto onError;
+		unicode->str = NULL;
 	    }
 	}
         else {
@@ -360,6 +360,8 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
     return unicode;
 
  onError:
+    /* XXX UNREF/NEWREF interface should be more symmetrical */
+    _Py_DEC_REFTOTAL;
     _Py_ForgetReference((PyObject *)unicode);
     PyObject_Del(unicode);
     return NULL;
