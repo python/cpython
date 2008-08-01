@@ -396,7 +396,7 @@ FUNC1(tanh, tanh, 0,
    Note 4: A similar implementation is in Modules/cmathmodule.c.
    Be sure to update both when making changes.
 
-   Note 5: The signature of math.sum() differs from __builtin__.sum()
+   Note 5: The signature of math.fsum() differs from __builtin__.sum()
    because the start argument doesn't make sense in the context of
    accurate summation.  Since the partials table is collapsed before
    returning a result, sum(seq2, start=sum(seq1)) may not equal the
@@ -407,7 +407,7 @@ FUNC1(tanh, tanh, 0,
 
 /* Extend the partials array p[] by doubling its size. */
 static int                          /* non-zero on error */
-_sum_realloc(double **p_ptr, Py_ssize_t  n,
+_fsum_realloc(double **p_ptr, Py_ssize_t  n,
              double  *ps,    Py_ssize_t *m_ptr)
 {
 	void *v = NULL;
@@ -425,7 +425,7 @@ _sum_realloc(double **p_ptr, Py_ssize_t  n,
 			v = PyMem_Realloc(p, sizeof(double) * m);
 	}
 	if (v == NULL) {        /* size overflow or no memory */
-		PyErr_SetString(PyExc_MemoryError, "math sum partials");
+		PyErr_SetString(PyExc_MemoryError, "math.fsum partials");
 		return 1;
 	}
 	*p_ptr = (double*) v;
@@ -464,18 +464,19 @@ _sum_realloc(double **p_ptr, Py_ssize_t  n,
 */
 
 static PyObject*
-math_sum(PyObject *self, PyObject *seq)
+math_fsum(PyObject *self, PyObject *seq)
 {
 	PyObject *item, *iter, *sum = NULL;
 	Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
 	double x, y, t, ps[NUM_PARTIALS], *p = ps;
+	double xsave, special_sum = 0.0, inf_sum = 0.0;
 	volatile double hi, yr, lo;
 
 	iter = PyObject_GetIter(seq);
 	if (iter == NULL)
 		return NULL;
 
-	PyFPE_START_PROTECT("sum", Py_DECREF(iter); return NULL)
+	PyFPE_START_PROTECT("fsum", Py_DECREF(iter); return NULL)
 
 	for(;;) {           /* for x in iterable */
 		assert(0 <= n && n <= m);
@@ -485,18 +486,19 @@ math_sum(PyObject *self, PyObject *seq)
 		item = PyIter_Next(iter);
 		if (item == NULL) {
 			if (PyErr_Occurred())
-				goto _sum_error;
+				goto _fsum_error;
 			break;
 		}
 		x = PyFloat_AsDouble(item);
 		Py_DECREF(item);
 		if (PyErr_Occurred())
-			goto _sum_error;
+			goto _fsum_error;
 
+		xsave = x;
 		for (i = j = 0; j < n; j++) {       /* for y in partials */
 			y = p[j];
 			if (fabs(x) < fabs(y)) {
-					t = x; x = y; y = t;
+				t = x; x = y; y = t;
 			}
 			hi = x + y;
 			yr = hi - x;
@@ -505,59 +507,73 @@ math_sum(PyObject *self, PyObject *seq)
 				p[i++] = lo;
 			x = hi;
 		}
-		
-		n = i;                              /* ps[i:] = [x] */                   
+
+		n = i;                              /* ps[i:] = [x] */
 		if (x != 0.0) {
-			/* If non-finite, reset partials, effectively
-			   adding subsequent items without roundoff
-			   and yielding correct non-finite results,
-			   provided IEEE 754 rules are observed */
-			if (! Py_IS_FINITE(x))
+			if (! Py_IS_FINITE(x)) {
+				/* a nonfinite x could arise either as
+				   a result of intermediate overflow, or
+				   as a result of a nan or inf in the
+				   summands */
+				if (Py_IS_FINITE(xsave)) {
+					PyErr_SetString(PyExc_OverflowError,
+					      "intermediate overflow in fsum");
+					goto _fsum_error;
+				}
+				if (Py_IS_INFINITY(xsave))
+					inf_sum += xsave;
+				special_sum += xsave;
+				/* reset partials */
 				n = 0;
-			else if (n >= m && _sum_realloc(&p, n, ps, &m))
-				goto _sum_error;
-			p[n++] = x;
+			}
+			else if (n >= m && _fsum_realloc(&p, n, ps, &m))
+				goto _fsum_error;
+			else
+				p[n++] = x;
 		}
+	}
+
+	if (special_sum != 0.0) {
+		if (Py_IS_NAN(inf_sum))
+			PyErr_SetString(PyExc_ValueError,
+					"-inf + inf in fsum");
+		else
+			sum = PyFloat_FromDouble(special_sum);
+		goto _fsum_error;
 	}
 
 	hi = 0.0;
 	if (n > 0) {
 		hi = p[--n];
-		if (Py_IS_FINITE(hi)) {
-			/* sum_exact(ps, hi) from the top, stop when the sum becomes inexact. */
-			while (n > 0) {
-				x = hi;
-				y = p[--n];
-				assert(fabs(y) < fabs(x));
-				hi = x + y;
-				yr = hi - x;
-				lo = y - yr;
-				if (lo != 0.0)
-					break;
-			}
-			/* Make half-even rounding work across multiple partials.  Needed 
-			   so that sum([1e-16, 1, 1e16]) will round-up the last digit to 
-			   two instead of down to zero (the 1e-16 makes the 1 slightly 
-			   closer to two).  With a potential 1 ULP rounding error fixed-up,
-			   math.sum() can guarantee commutativity. */
-			if (n > 0 && ((lo < 0.0 && p[n-1] < 0.0) ||
-			              (lo > 0.0 && p[n-1] > 0.0))) {
-				y = lo * 2.0;
-				x = hi + y;
-				yr = x - hi;
-				if (y == yr)
-					hi = x;
-			}
+		/* sum_exact(ps, hi) from the top, stop when the sum becomes
+		   inexact. */
+		while (n > 0) {
+			x = hi;
+			y = p[--n];
+			assert(fabs(y) < fabs(x));
+			hi = x + y;
+			yr = hi - x;
+			lo = y - yr;
+			if (lo != 0.0)
+				break;
 		}
-		else {  /* raise exception corresponding to a special value */
-			errno = Py_IS_NAN(hi) ? EDOM : ERANGE;
-			if (is_error(hi))
-				goto _sum_error;
+		/* Make half-even rounding work across multiple partials.
+		   Needed so that sum([1e-16, 1, 1e16]) will round-up the last
+		   digit to two instead of down to zero (the 1e-16 makes the 1
+		   slightly closer to two).  With a potential 1 ULP rounding
+		   error fixed-up, math.fsum() can guarantee commutativity. */
+		if (n > 0 && ((lo < 0.0 && p[n-1] < 0.0) ||
+			      (lo > 0.0 && p[n-1] > 0.0))) {
+			y = lo * 2.0;
+			x = hi + y;
+			yr = x - hi;
+			if (y == yr)
+				hi = x;
 		}
 	}
 	sum = PyFloat_FromDouble(hi);
 
-_sum_error:
+_fsum_error:
 	PyFPE_END_PROTECT(hi)
 	Py_DECREF(iter);
 	if (p != ps)
@@ -567,7 +583,7 @@ _sum_error:
 
 #undef NUM_PARTIALS
 
-PyDoc_STRVAR(math_sum_doc,
+PyDoc_STRVAR(math_fsum_doc,
 "sum(iterable)\n\n\
 Return an accurate floating point sum of values in the iterable.\n\
 Assumes IEEE-754 floating point arithmetic.");
@@ -1078,6 +1094,7 @@ static PyMethodDef math_methods[] = {
 	{"floor",	math_floor,	METH_O,		math_floor_doc},
 	{"fmod",	math_fmod,	METH_VARARGS,	math_fmod_doc},
 	{"frexp",	math_frexp,	METH_O,		math_frexp_doc},
+	{"fsum",	math_fsum,	METH_O,		math_fsum_doc},
 	{"hypot",	math_hypot,	METH_VARARGS,	math_hypot_doc},
 	{"isinf",	math_isinf,	METH_O,		math_isinf_doc},
 	{"isnan",	math_isnan,	METH_O,		math_isnan_doc},
@@ -1091,10 +1108,9 @@ static PyMethodDef math_methods[] = {
 	{"sin",		math_sin,	METH_O,		math_sin_doc},
 	{"sinh",	math_sinh,	METH_O,		math_sinh_doc},
 	{"sqrt",	math_sqrt,	METH_O,		math_sqrt_doc},
-	{"sum",		math_sum,	METH_O,		math_sum_doc},
 	{"tan",		math_tan,	METH_O,		math_tan_doc},
 	{"tanh",	math_tanh,	METH_O,		math_tanh_doc},
- 	{"trunc",	math_trunc,	METH_O,		math_trunc_doc},
+	{"trunc",	math_trunc,	METH_O,		math_trunc_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 

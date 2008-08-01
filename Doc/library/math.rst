@@ -76,6 +76,42 @@ Number-theoretic and representation functions:
    apart" the internal representation of a float in a portable way.
 
 
+.. function:: fsum(iterable)
+
+   Return an accurate floating point sum of values in the iterable.  Avoids
+   loss of precision by tracking multiple intermediate partial sums.  The
+   algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
+   typical case where the rounding mode is half-even.
+
+   .. note::
+
+      On platforms where arithmetic results are not correctly rounded,
+      :func:`fsum` may occasionally produce incorrect results; these
+      results should be no less accurate than those from the builtin
+      :func:`sum` function, but nevertheless may have arbitrarily
+      large relative error.
+
+      In particular, this affects some older Intel hardware (for
+      example Pentium and earlier x86 processors) that makes use of
+      'extended precision' floating-point registers with 64 bits of
+      precision instead of the 53 bits of precision provided by a C
+      double.  Arithmetic operations using these registers may be
+      doubly rounded (rounded first to 64 bits, and then rerounded to
+      53 bits), leading to incorrectly rounded results.  To test
+      whether your machine is one of those affected, try the following
+      at a Python prompt::
+
+         >>> 1e16 + 2.9999
+         10000000000000002.0
+
+      Machines subject to the double-rounding problem described above
+      are likely to print ``10000000000000004.0`` instead of
+      ``10000000000000002.0``.
+
+
+   .. versionadded:: 2.6
+
+
 .. function:: isinf(x)
 
    Checks if the float *x* is positive or negative infinite.
@@ -100,12 +136,6 @@ Number-theoretic and representation functions:
    Return the fractional and integer parts of *x*.  Both results carry the sign of
    *x*, and both are floats.
 
-.. function:: sum(iterable)
-
-   Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums.  The
-   algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
-   typical case where the rounding mode is half-even.
 
 .. function:: trunc(x)
 
