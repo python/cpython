@@ -651,9 +651,9 @@ class _wrap_close:
     def __iter__(self):
         return iter(self._stream)
 
-# Supply os.fdopen() (used by subprocess!)
-def fdopen(fd, mode="r", buffering=-1):
+# Supply os.fdopen()
+def fdopen(fd, *args, **kwargs):
     if not isinstance(fd, int):
         raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
     import io
-    return io.open(fd, mode, buffering)
+    return io.open(fd, *args, **kwargs)
