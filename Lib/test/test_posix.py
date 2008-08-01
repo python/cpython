@@ -89,17 +89,6 @@ class PosixTester(unittest.TestCase):
                 fp1.close()
                 fp2.close()
 
-    def fdopen_helper(self, *args):
-        fd = os.open(support.TESTFN, os.O_RDONLY)
-        fp2 = posix.fdopen(fd, *args)
-        fp2.close()
-
-    def test_fdopen(self):
-        if hasattr(posix, 'fdopen'):
-            self.fdopen_helper()
-            self.fdopen_helper('r')
-            self.fdopen_helper('r', 100)
-
     def test_osexlock(self):
         if hasattr(posix, "O_EXLOCK"):
             fd = os.open(support.TESTFN,

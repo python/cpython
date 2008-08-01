@@ -134,6 +134,16 @@ class TemporaryFileTests(unittest.TestCase):
         else:
             self.check_tempfile(name)
 
+    def fdopen_helper(self, *args):
+        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fp2 = os.fdopen(fd, *args)
+        fp2.close()
+
+    def test_fdopen(self):
+        self.fdopen_helper()
+        self.fdopen_helper('r')
+        self.fdopen_helper('r', 100)
+
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
     def setUp(self):
