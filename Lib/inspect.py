@@ -41,9 +41,10 @@ import linecache
 from abc import ABCMeta
 from operator import attrgetter
 from collections import namedtuple
-from compiler.consts import (CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS,
-    CO_VARKEYWORDS, CO_GENERATOR)
 
+# These constants are from Include/code.h.
+CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS = 0x1, 0x2, 0x4, 0x8
+CO_NESTED, CO_GENERATOR, CO_NOFREE = 0x10, 0x20, 0x40
 # See Include/object.h
 TPFLAGS_IS_ABSTRACT = 1 << 20
 
@@ -428,8 +429,9 @@ ModuleInfo = namedtuple('ModuleInfo', 'name suffix mode module_type')
 def getmoduleinfo(path):
     """Get the module name, suffix, mode, and module type for a given file."""
     filename = os.path.basename(path)
-    suffixes = map(lambda (suffix, mode, mtype):
-                   (-len(suffix), suffix, mode, mtype), imp.get_suffixes())
+    suffixes = map(lambda info:
+                   (-len(info[0]), info[0], info[1], info[2]),
+                    imp.get_suffixes())
     suffixes.sort() # try longest suffixes first, in case they overlap
     for neglen, suffix, mode, mtype in suffixes:
         if filename[neglen:] == suffix:
@@ -630,7 +632,9 @@ class BlockFinder:
         self.passline = False
         self.last = 1
 
-    def tokeneater(self, type, token, (srow, scol), (erow, ecol), line):
+    def tokeneater(self, type, token, srow_scol, erow_ecol, line):
+        srow, scol = srow_scol
+        erow, ecol = erow_ecol
         if not self.started:
             # look for the first "def", "class" or "lambda"
             if token in ("def", "class", "lambda"):
