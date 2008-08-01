@@ -175,7 +175,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         print >>self.stdout, '--Return--'
         self.interaction(frame, None)
 
-    def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
+    def user_exception(self, frame, exc_info):
+        exc_type, exc_value, exc_traceback = exc_info
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
         frame.f_locals['__exception__'] = exc_type, exc_value

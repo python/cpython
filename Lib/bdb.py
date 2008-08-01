@@ -131,8 +131,7 @@ class Bdb:
         raise NotImplementedError, "subclass of bdb must implement do_clear()"
 
     def break_anywhere(self, frame):
-        return self.breaks.has_key(
-            self.canonic(frame.f_code.co_filename))
+        return self.canonic(frame.f_code.co_filename) in self.breaks
 
     # Derived classes should override the user_* methods
     # to gain control.
@@ -150,7 +149,8 @@ class Bdb:
         """This method is called when a return trap is set here."""
         pass
 
-    def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
+    def user_exception(self, frame, exc_info):
+        exc_type, exc_value, exc_traceback = exc_info
         """This method is called if an exception occurs,
         but only if we are to stop at or just below this level."""
         pass
