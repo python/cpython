@@ -18,9 +18,12 @@ static Py_ssize_t
 conn_send_string(ConnectionObject *conn, char *string, size_t length)
 {
 	DWORD amount_written;
+	BOOL ret;
 
-	return WriteFile(conn->handle, string, length, &amount_written, NULL)
-		? MP_SUCCESS : MP_STANDARD_ERROR;
+	Py_BEGIN_ALLOW_THREADS
+	ret = WriteFile(conn->handle, string, length, &amount_written, NULL);
+	Py_END_ALLOW_THREADS
+	return ret ? MP_SUCCESS : MP_STANDARD_ERROR;
 }
 
 /*
@@ -34,11 +37,14 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
 		 size_t buflength, char **newbuffer, size_t maxlength)
 {
 	DWORD left, length, full_length, err;
-
+	BOOL ret;
 	*newbuffer = NULL;
 
-	if (ReadFile(conn->handle, buffer, MIN(buflength, maxlength), 
-		     &length, NULL))
+	Py_BEGIN_ALLOW_THREADS
+	ret = ReadFile(conn->handle, buffer, MIN(buflength, maxlength), 
+		      &length, NULL);
+	Py_END_ALLOW_THREADS
+	if (ret)
 		return length;
 
 	err = GetLastError();
@@ -61,7 +67,10 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
 
 	memcpy(*newbuffer, buffer, length);
 
-	if (ReadFile(conn->handle, *newbuffer+length, left, &length, NULL)) {
+	Py_BEGIN_ALLOW_THREADS
+	ret = ReadFile(conn->handle, *newbuffer+length, left, &length, NULL)
+	Py_END_ALLOW_THREADS
+	if (ret) {
 		assert(length == left);
 		return full_length;
 	} else {
