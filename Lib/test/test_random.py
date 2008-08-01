@@ -5,7 +5,7 @@ import random
 import time
 import pickle
 import warnings
-from math import log, exp, sqrt, pi, sum as msum
+from math import log, exp, sqrt, pi, fsum as msum
 from test import support
 
 class TestBasicOps(unittest.TestCase):
