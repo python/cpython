@@ -113,18 +113,14 @@ class urlopenNetworkTests(unittest.TestCase):
         self.assertEqual(code, 404)
 
     def test_fileno(self):
-        if (sys.platform in ('win32',) or
-            not hasattr(os, 'fdopen')):
+        if sys.platform in ('win32',):
             # On Windows, socket handles are not file descriptors; this
             # test can't pass on Windows.
             return
         # Make sure fd returned by fileno is valid.
         open_url = self.urlopen("http://www.python.org/")
         fd = open_url.fileno()
-        # XXX(nnorwitz): There is currently no way to pass errors, encoding,
-        # etc to fdopen. :-(
-        FILE = os.fdopen(fd)
-        FILE._errors = 'ignore'
+        FILE = os.fdopen(fd, encoding='utf-8')
         try:
             self.assert_(FILE.read(), "reading from file created using fd "
                                       "returned by fileno failed")
@@ -156,7 +152,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
         file_location,info = self.urlretrieve("http://www.python.org/")
         self.assert_(os.path.exists(file_location), "file location returned by"
                         " urlretrieve is not a valid path")
-        FILE = open(file_location, errors='ignore')
+        FILE = open(file_location, encoding='utf-8')
         try:
             self.assert_(FILE.read(), "reading from the file location returned"
                          " by urlretrieve failed")
@@ -170,7 +166,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
                                               support.TESTFN)
         self.assertEqual(file_location, support.TESTFN)
         self.assert_(os.path.exists(file_location))
-        FILE = open(file_location, errors='ignore')
+        FILE = open(file_location, encoding='utf-8')
         try:
             self.assert_(FILE.read(), "reading from temporary file failed")
         finally:

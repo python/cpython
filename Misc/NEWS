@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2491: os.fdopen is now almost an alias for the built-in open(), and
+  accepts the same parameters.  It just checks that its first argument is an
+  integer.
+
 - Issue #3394: zipfile.writestr sets external attributes when passed a
   file name rather than a ZipInfo instance, so files are extracted with
   mode 0600 rather than 000 under Unix.
