@@ -1112,7 +1112,7 @@ class BufferIOTest(SocketConnectedTest):
         SocketConnectedTest.__init__(self, methodName=methodName)
 
     def testRecvInto(self):
-        buf = b" "*1024
+        buf = bytearray(1024)
         nbytes = self.cli_conn.recv_into(buf)
         self.assertEqual(nbytes, len(MSG))
         msg = buf[:len(MSG)]
@@ -1123,7 +1123,7 @@ class BufferIOTest(SocketConnectedTest):
         self.serv_conn.send(buf)
 
     def testRecvFromInto(self):
-        buf = b" "*1024
+        buf = bytearray(1024)
         nbytes, addr = self.cli_conn.recvfrom_into(buf)
         self.assertEqual(nbytes, len(MSG))
         msg = buf[:len(MSG)]
