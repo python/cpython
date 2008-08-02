@@ -1072,18 +1072,18 @@ class Misc:
     def nametowidget(self, name):
         """Return the Tkinter instance of a widget identified by
         its Tcl name NAME."""
+        name = str(name).split('.')
         w = self
-        if name[0] == '.':
+
+        if not name[0]:
             w = w._root()
             name = name[1:]
-        while name:
-            i = name.find('.')
-            if i >= 0:
-                name, tail = name[:i], name[i+1:]
-            else:
-                tail = ''
-            w = w.children[name]
-            name = tail
+
+        for n in name:
+            if not n:
+                break
+            w = w.children[n]
+
         return w
     _nametowidget = nametowidget
     def _register(self, func, subst=None, needcleanup=1):
