@@ -588,7 +588,7 @@ class ConfigParser(RawConfigParser):
                     value = value % vars
                 except KeyError, e:
                     raise InterpolationMissingOptionError(
-                        option, section, rawval, e[0])
+                        option, section, rawval, e.args[0])
             else:
                 break
         if "%(" in value:
