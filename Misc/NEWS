@@ -139,6 +139,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #799428: Fix Tkinter.Misc._nametowidget to unwrap Tcl command objects.
+
 - Issue #3395: fix reference in test_multiprocessing to old debugInfo method
 
 - Issue #3312: Fix two crashes in sqlite3.
