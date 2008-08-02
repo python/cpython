@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3039: Fix tarfile.TarFileCompat.writestr() which always
+  raised an AttributeError.
+
 - Issue #2523: Fix quadratic behaviour when read()ing a binary file without
   asking for a specific length.
 
