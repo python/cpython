@@ -74,6 +74,8 @@ Core and builtins
 Library
 -------
 
+- Issue #799428: Fix Tkinter.Misc._nametowidget to unwrap Tcl command objects.
+
 - Issue #3339: dummy_thread.acquire() could return None which is not a valid
   return value.
 
