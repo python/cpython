@@ -140,6 +140,10 @@ Some facts and figures:
       Constant for a :mod:`gzip` compressed tar archive.
 
 
+   .. deprecated:: 2.6
+      The :class:`TarFileCompat` class has been deprecated for removal in Python 3.0.
+
+
 .. exception:: TarError
 
    Base class for all :mod:`tarfile` exceptions.

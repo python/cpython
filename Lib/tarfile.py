@@ -2468,6 +2468,9 @@ class TarFileCompat:
        ZipFile class.
     """
     def __init__(self, file, mode="r", compression=TAR_PLAIN):
+        from warnings import warnpy3k
+        warnpy3k("the TarFileCompat class has been removed in Python 3.0",
+                stacklevel=2)
         if compression == TAR_PLAIN:
             self.tarfile = TarFile.taropen(file, mode)
         elif compression == TAR_GZIPPED:
@@ -2501,10 +2504,10 @@ class TarFileCompat:
         except ImportError:
             from StringIO import StringIO
         import calendar
-        zinfo.name = zinfo.filename
-        zinfo.size = zinfo.file_size
-        zinfo.mtime = calendar.timegm(zinfo.date_time)
-        self.tarfile.addfile(zinfo, StringIO(bytes))
+        tinfo = TarInfo(zinfo.filename)
+        tinfo.size = len(bytes)
+        tinfo.mtime = calendar.timegm(zinfo.date_time)
+        self.tarfile.addfile(tinfo, StringIO(bytes))
     def close(self):
         self.tarfile.close()
 #class TarFileCompat
