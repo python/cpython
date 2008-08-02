@@ -56,7 +56,7 @@ PyMemoryView_FromObject(PyObject *base)
         if (mview == NULL) return NULL;
 
         mview->base = NULL;
-        if (PyObject_GetBuffer(base, &(mview->view), PyBUF_FULL) < 0) {
+        if (PyObject_GetBuffer(base, &(mview->view), PyBUF_FULL_RO) < 0) {
                 Py_DECREF(mview);
                 return NULL;
         }
@@ -204,9 +204,9 @@ _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
                 a contiguous buffer if it is not. The view will point to
                 the shadow buffer which can be written to and then
                 will be copied back into the other buffer when the memory
-                view is de-allocated.  While the shadow buffer is 
-		being used, it will have an exclusive write lock on 
-		the original buffer. 
+                view is de-allocated.  While the shadow buffer is
+		being used, it will have an exclusive write lock on
+		the original buffer.
  */
 
 PyObject *
@@ -528,7 +528,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 			/* Return a new memory-view object */
 			Py_buffer newview;
 			memset(&newview, 0, sizeof(newview));
-			/* XXX:  This needs to be fixed so it 
+			/* XXX:  This needs to be fixed so it
 			         actually returns a sub-view
 			*/
 			return PyMemoryView_FromMemory(&newview);
