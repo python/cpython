@@ -1329,7 +1329,7 @@ static int
 string_buffer_getbuffer(PyStringObject *self, Py_buffer *view, int flags)
 {
 	return PyBuffer_FillInfo(view, (void *)self->ob_sval, Py_SIZE(self),
-				 0, flags);
+				 1, flags);
 }
 
 static PySequenceMethods string_as_sequence = {

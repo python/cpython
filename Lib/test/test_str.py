@@ -364,6 +364,9 @@ class StrTest(
         self.assertRaises(ValueError, format, "", "-")
         self.assertRaises(ValueError, "{0:=s}".format, '')
 
+    def test_buffer_is_readonly(self):
+        self.assertRaises(TypeError, sys.stdin.readinto, b"")
+
 
 def test_main():
     test_support.run_unittest(StrTest)
