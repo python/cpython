@@ -73,6 +73,7 @@ _conn_recvall(HANDLE h, char *buffer, size_t length)
 static Py_ssize_t
 conn_send_string(ConnectionObject *conn, char *string, size_t length)
 {
+	Py_ssize_t res;
 	/* The "header" of the message is a 32 bit unsigned number (in
 	   network order) which specifies the length of the "body".  If
 	   the message is shorter than about 16kb then it is quicker to
@@ -80,7 +81,6 @@ conn_send_string(ConnectionObject *conn, char *string, size_t length)
 	   them at once. */
 	if (length < (16*1024)) {
 		char *message;
-		int res;
 
 		message = PyMem_Malloc(length+4);
 		if (message == NULL)
@@ -88,9 +88,10 @@ conn_send_string(ConnectionObject *conn, char *string, size_t length)
 
 		*(UINT32*)message = htonl((UINT32)length);     
 		memcpy(message+4, string, length);
+		Py_BEGIN_ALLOW_THREADS
 		res = _conn_sendall(conn->handle, message, length+4);
+		Py_END_ALLOW_THREADS
 		PyMem_Free(message);
-		return res;
 	} else {
 		UINT32 lenbuff;
 
@@ -98,9 +99,12 @@ conn_send_string(ConnectionObject *conn, char *string, size_t length)
 			return MP_BAD_MESSAGE_LENGTH;
 
 		lenbuff = htonl((UINT32)length);
-		return _conn_sendall(conn->handle, (char*)&lenbuff, 4) || 
+		Py_BEGIN_ALLOW_THREADS
+		res = _conn_sendall(conn->handle, (char*)&lenbuff, 4) || 
 			_conn_sendall(conn->handle, string, length);
+		Py_END_ALLOW_THREADS
 	}
+	return res;
 }
 
 /*
@@ -118,7 +122,9 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
 
 	*newbuffer = NULL;
 
+	Py_BEGIN_ALLOW_THREADS
 	res = _conn_recvall(conn->handle, (char*)&ulength, 4);
+	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return res;
 
@@ -127,13 +133,17 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
 		return MP_BAD_MESSAGE_LENGTH;
 
 	if (ulength <= buflength) {
+		Py_BEGIN_ALLOW_THREADS
 		res = _conn_recvall(conn->handle, buffer, (size_t)ulength);
+		Py_END_ALLOW_THREADS
 		return res < 0 ? res : ulength;
 	} else {
 		*newbuffer = PyMem_Malloc((size_t)ulength);
 		if (*newbuffer == NULL)
 			return MP_MEMORY_ERROR;
+		Py_BEGIN_ALLOW_THREADS
 		res = _conn_recvall(conn->handle, *newbuffer, (size_t)ulength);
+		Py_END_ALLOW_THREADS
 		return res < 0 ? (Py_ssize_t)res : (Py_ssize_t)ulength;
 	}
 }
