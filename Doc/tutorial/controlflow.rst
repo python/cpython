@@ -138,9 +138,9 @@ following loop, which searches for prime numbers::
    ...         if n % x == 0:
    ...             print n, 'equals', x, '*', n/x
    ...             break
-   ...     else:
-   ...         # loop fell through without finding a factor
-   ...         print n, 'is a prime number'
+   ... else:
+   ...     # loop fell through without finding a factor
+   ...     print n, 'is a prime number'
    ... 
    2 is a prime number
    3 is a prime number
