@@ -2451,54 +2451,6 @@ class _ringbuffer(list):
         self.idx = idx
         return item
 
-#---------------------------------------------
-# zipfile compatible TarFile class
-#---------------------------------------------
-TAR_PLAIN = 0           # zipfile.ZIP_STORED
-TAR_GZIPPED = 8         # zipfile.ZIP_DEFLATED
-class TarFileCompat:
-    """TarFile class compatible with standard module zipfile's
-       ZipFile class.
-    """
-    def __init__(self, file, mode="r", compression=TAR_PLAIN):
-        if compression == TAR_PLAIN:
-            self.tarfile = TarFile.taropen(file, mode)
-        elif compression == TAR_GZIPPED:
-            self.tarfile = TarFile.gzopen(file, mode)
-        else:
-            raise ValueError("unknown compression constant")
-        if mode[0:1] == "r":
-            members = self.tarfile.getmembers()
-            for m in members:
-                m.filename = m.name
-                m.file_size = m.size
-                m.date_time = time.gmtime(m.mtime)[:6]
-    def namelist(self):
-        return map(lambda m: m.name, self.infolist())
-    def infolist(self):
-        return filter(lambda m: m.type in REGULAR_TYPES,
-                      self.tarfile.getmembers())
-    def printdir(self):
-        self.tarfile.list()
-    def testzip(self):
-        return
-    def getinfo(self, name):
-        return self.tarfile.getmember(name)
-    def read(self, name):
-        return self.tarfile.extractfile(self.tarfile.getmember(name)).read()
-    def write(self, filename, arcname=None, compress_type=None):
-        self.tarfile.add(filename, arcname)
-    def writestr(self, zinfo, bytes):
-        from io import StringIO
-        import calendar
-        zinfo.name = zinfo.filename
-        zinfo.size = zinfo.file_size
-        zinfo.mtime = calendar.timegm(zinfo.date_time)
-        self.tarfile.addfile(zinfo, StringIO(bytes))
-    def close(self):
-        self.tarfile.close()
-#class TarFileCompat
-
 #--------------------
 # exported functions
 #--------------------
