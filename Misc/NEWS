@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Remove the TarFileCompat class from tarfile.py.
+
 - Issue #2491: os.fdopen is now almost an alias for the built-in open(), and
   accepts the same parameters.  It just checks that its first argument is an
   integer.

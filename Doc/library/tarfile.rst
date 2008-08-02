@@ -119,21 +119,7 @@ Some facts and figures:
    module can read.
 
 
-.. class:: TarFileCompat(filename, mode='r', compression=TAR_PLAIN)
-
-   Class for limited access to tar archives with a :mod:`zipfile`\ -like interface.
-   Please consult the documentation of the :mod:`zipfile` module for more details.
-   *compression* must be one of the following constants:
-
-
-   .. data:: TAR_PLAIN
-
-      Constant for an uncompressed tar archive.
-
-
-   .. data:: TAR_GZIPPED
-
-      Constant for a :mod:`gzip` compressed tar archive.
+The :mod:`tarfile` module defines the following exceptions:
 
 
 .. exception:: TarError
