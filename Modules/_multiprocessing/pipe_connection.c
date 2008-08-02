@@ -68,7 +68,7 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
 	memcpy(*newbuffer, buffer, length);
 
 	Py_BEGIN_ALLOW_THREADS
-	ret = ReadFile(conn->handle, *newbuffer+length, left, &length, NULL)
+	ret = ReadFile(conn->handle, *newbuffer+length, left, &length, NULL);
 	Py_END_ALLOW_THREADS
 	if (ret) {
 		assert(length == left);
