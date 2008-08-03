@@ -287,7 +287,7 @@ def decode(encoded, eol=NL):
         n = len(line)
         while i < n:
             c = line[i]
-            if c <> '=':
+            if c != '=':
                 decoded += c
                 i += 1
             # Otherwise, c == "=".  Are we at the end of the line?  If so, add

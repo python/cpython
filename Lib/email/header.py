@@ -249,7 +249,7 @@ class Header:
         elif not isinstance(charset, Charset):
             charset = Charset(charset)
         # If the charset is our faux 8bit charset, leave the string unchanged
-        if charset <> '8bit':
+        if charset != '8bit':
             # We need to test that the string can be converted to unicode and
             # back to a byte string, given the input and output codecs of the
             # charset.
@@ -455,7 +455,7 @@ def _split_ascii(s, firstlen, restlen, continuation_ws, splitchars):
                 # If this part is longer than maxlen and we aren't already
                 # splitting on whitespace, try to recursively split this line
                 # on whitespace.
-                if partlen > maxlen and ch <> ' ':
+                if partlen > maxlen and ch != ' ':
                     subl = _split_ascii(part, maxlen, restlen,
                                         continuation_ws, ' ')
                     lines.extend(subl[:-1])
