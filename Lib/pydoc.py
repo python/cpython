@@ -173,7 +173,8 @@ def visiblename(name, all=None):
 
 def classify_class_attrs(object):
     """Wrap inspect.classify_class_attrs, with fixup for data descriptors."""
-    def fixup((name, kind, cls, value)):
+    def fixup(data):
+        name, kind, cls, value = data
         if inspect.isdatadescriptor(value):
             kind = 'data descriptor'
         return name, kind, cls, value
@@ -230,7 +231,8 @@ def synopsis(filename, cache={}):
 
 class ErrorDuringImport(Exception):
     """Errors that occurred while trying to import something to document it."""
-    def __init__(self, filename, (exc, value, tb)):
+    def __init__(self, filename, exc_info):
+        exc, value, tb = exc_info
         self.filename = filename
         self.exc = exc
         self.value = value
@@ -503,8 +505,9 @@ class HTMLDoc(Doc):
         """Make a link for a module."""
         return '<a href="%s.html">%s</a>' % (object.__name__, object.__name__)
 
-    def modpkglink(self, (name, path, ispackage, shadowed)):
+    def modpkglink(self, data):
         """Make a link for a module or package to display in an index."""
+        name, path, ispackage, shadowed = data
         if shadowed:
             return self.grey(name)
         if path:
@@ -663,12 +666,12 @@ class HTMLDoc(Doc):
                 'Package Contents', '#ffffff', '#aa55cc', contents)
         elif modules:
             contents = self.multicolumn(
-                modules, lambda (key, value), s=self: s.modulelink(value))
+                modules, lambda key_value, s=self: s.modulelink(key_value[1]))
             result = result + self.bigsection(
                 'Modules', '#ffffff', '#aa55cc', contents)
 
         if classes:
-            classlist = map(lambda (key, value): value, classes)
+            classlist = map(lambda key_value: key_value[1], classes)
             contents = [
                 self.formattree(inspect.getclasstree(classlist, 1), name)]
             for key, value in classes:
@@ -755,7 +758,8 @@ class HTMLDoc(Doc):
                 push(msg)
                 for name, kind, homecls, value in ok:
                     base = self.docother(getattr(object, name), name, mod)
-                    if callable(value) or inspect.isdatadescriptor(value):
+                    if (hasattr(value, '__call__') or
+                            inspect.isdatadescriptor(value)):
                         doc = getattr(value, "__doc__", None)
                     else:
                         doc = None
@@ -769,7 +773,7 @@ class HTMLDoc(Doc):
                     push('\n')
             return attrs
 
-        attrs = filter(lambda (name, kind, cls, value): visiblename(name),
+        attrs = filter(lambda data: visiblename(data[0]),
                        classify_class_attrs(object))
         mdict = {}
         for key, kind, homecls, value in attrs:
@@ -1077,7 +1081,7 @@ class TextDoc(Doc):
                 'SUBMODULES', join(submodules, '\n'))
 
         if classes:
-            classlist = map(lambda (key, value): value, classes)
+            classlist = map(lambda key_value: key_value[1], classes)
             contents = [self.formattree(
                 inspect.getclasstree(classlist, 1), name)]
             for key, value in classes:
@@ -1173,7 +1177,8 @@ class TextDoc(Doc):
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    if callable(value) or inspect.isdatadescriptor(value):
+                    if (hasattr(value, '__call__') or
+                            inspect.isdatadescriptor(value)):
                         doc = getdoc(value)
                     else:
                         doc = None
@@ -1181,7 +1186,7 @@ class TextDoc(Doc):
                                        name, mod, maxlen=70, doc=doc) + '\n')
             return attrs
 
-        attrs = filter(lambda (name, kind, cls, value): visiblename(name),
+        attrs = filter(lambda data: visiblename(data[0]),
                        classify_class_attrs(object))
         while attrs:
             if mro:
