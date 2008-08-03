@@ -109,7 +109,7 @@ def parsedate_tz(data):
         return None
     tzoffset = None
     tz = tz.upper()
-    if _timezones.has_key(tz):
+    if tz in _timezones:
         tzoffset = _timezones[tz]
     else:
         try:
