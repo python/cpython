@@ -27,4 +27,4 @@ interfaces available to C/C++ programmers in detail.
    simple_stmts.rst
    compound_stmts.rst
    toplevel_components.rst
-
+   grammar.rst
