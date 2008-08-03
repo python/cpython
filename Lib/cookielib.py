@@ -1258,8 +1258,7 @@ class CookieJar:
 
         """
         # add cookies in order of most specific (ie. longest) path first
-        def decreasing_size(a, b): return cmp(len(b.path), len(a.path))
-        cookies.sort(decreasing_size)
+        cookies.sort(key=lambda arg: len(arg.path), reverse=True)
 
         version_set = False
 
