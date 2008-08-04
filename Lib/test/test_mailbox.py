@@ -716,6 +716,16 @@ class TestMaildir(TestMailbox):
         for msg in self._box:
             pass
 
+    def test_file_perms(self):
+        # From bug #3228, we want to verify that the file created inside a Maildir
+        # subfolder isn't marked as executable.
+        subfolder = self._box.add_folder('subfolder')
+        path = os.path.join(subfolder._path, 'maildirfolder')
+        st = os.stat(path)
+        perms = st.st_mode
+        self.assertFalse((perms & 0111)) # Execute bits should all be off.
+
+
 class _TestMboxMMDF(TestMailbox):
 
     def tearDown(self):
@@ -805,11 +815,27 @@ class _TestMboxMMDF(TestMailbox):
         self._box.close()
 
 
-
 class TestMbox(_TestMboxMMDF):
 
     _factory = lambda self, path, factory=None: mailbox.mbox(path, factory)
 
+    def test_file_perms(self):
+        # From bug #3228, we want to verify that the mailbox file isn't executable,
+        # even if the umask is set to something that would leave executable bits set.
+        # We only run this test on platforms that support umask.
+        if hasattr(os, 'umask'):
+            try:
+                old_umask = os.umask(0077)
+                self._box.close()
+                os.unlink(self._path)
+                self._box = mailbox.mbox(self._path, create=True)
+                self._box.add('')
+                self._box.close()
+                st = os.stat(self._path)
+                perms = st.st_mode
+                self.assertFalse((perms & 0111)) # Execute bits should all be off.
+            finally:
+                os.umask(old_umask)
 
 class TestMMDF(_TestMboxMMDF):
 
