@@ -80,6 +80,14 @@ Build
 
 - Generate the PatternGrammar pickle during "make install".
 
+Documentation
+-------------
+
+- Issue #643841: The language reference now provides more detailed
+  coverage of the lookup process for special methods. The disclaimers
+  regarding lack of coverage of new-style classes have also been
+  removed, since the coverage is now fairly reasonable.
+
 
 What's New in Python 2.6 beta 2?
 ================================
