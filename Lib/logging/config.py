@@ -152,7 +152,7 @@ def _install_handlers(cp, formatters):
             klass = _resolve(klass)
         args = cp.get(sectname, "args")
         args = eval(args, vars(logging))
-        h = apply(klass, args)
+        h = klass(*args)
         if "level" in opts:
             level = cp.get(sectname, "level")
             h.setLevel(logging._levelNames[level])
