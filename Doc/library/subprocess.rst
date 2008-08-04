@@ -193,9 +193,11 @@ Instances of the :class:`Popen` class have the following methods:
    Wait for child process to terminate.  Set and return :attr:`returncode`
    attribute.
 
-   warning:: This will deadlock if the child process generates enough output
-   to a stdout or stderr pipe causing it to block waiting for the OS's pipe
-   buffer to accept more data.
+   .. warning::
+
+      This will deadlock if the child process generates enough output to a
+      stdout or stderr pipe causing it to block waiting for the OS's pipe buffer
+      to accept more data.
 
 
 .. method:: Popen.communicate(input=None)
@@ -249,14 +251,17 @@ Instances of the :class:`Popen` class have the following methods:
 
 The following attributes are also available:
 
+.. warning::
+
+   Use :meth:`communicate` rather than ``.stdin.write()``, ``.stdout.read()`` or
+   ``.stderr.read`` to avoid deadlocks due to any of the other pipe buffers
+   filling up and blocking the child process.
+
+
 .. attribute:: Popen.stdin
 
    If the *stdin* argument is ``PIPE``, this attribute is a file object that
    provides input to the child process.  Otherwise, it is ``None``.
-
-   warning:: Use :meth:`communicate` rather than .stdin.write() to avoid
-   deadlocks due to any of the other pipe buffers filling up and blocking the
-   child process.
 
 
 .. attribute:: Popen.stdout
@@ -264,19 +269,11 @@ The following attributes are also available:
    If the *stdout* argument is ``PIPE``, this attribute is a file object that
    provides output from the child process.  Otherwise, it is ``None``.
 
-   warning:: Use :meth:`communicate` rather than .stdout.read() to avoid
-   deadlocks due to any of the other pipe buffers filling up and blocking the
-   child process.
-
 
 .. attribute:: Popen.stderr
 
    If the *stderr* argument is ``PIPE``, this attribute is file object that
    provides error output from the child process.  Otherwise, it is ``None``.
-
-   warning:: Use :meth:`communicate` rather than .stderr.read() to avoid
-   deadlocks due to any of the other pipe buffers filling up and blocking the
-   child process.
 
 
 .. attribute:: Popen.pid
