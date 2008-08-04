@@ -97,11 +97,20 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 {
 #define IOCTL_BUFSZ 1024
 	int fd;
-	/* In PyArg_ParseTuple below, use the unsigned int 'I' format for
-	   the signed int 'code' variable, because Python turns 0x8000000
-	   into a large positive number (PyLong, or PyInt on 64-bit
-	   platforms,) whereas C expects it to be a negative int */
-	int code;
+	/* In PyArg_ParseTuple below, we use the unsigned non-checked 'I'
+	   format for the 'code' parameter because Python turns 0x8000000
+	   into either a large positive number (PyLong or PyInt on 64-bit
+	   platforms) or a negative number on others (32-bit PyInt)
+	   whereas the system expects it to be a 32bit bit field value
+	   regardless of it being passed as an int or unsigned long on
+	   various platforms.  See the termios.TIOCSWINSZ constant across
+	   platforms for an example of thise.
+
+	   If any of the 64bit platforms ever decide to use more than 32bits
+	   in their unsigned long ioctl codes this will break and need
+	   special casing based on the platform being built on.
+	 */
+	unsigned int code;
 	int arg;
 	int ret;
 	char *str;

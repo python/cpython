@@ -143,6 +143,9 @@ Extension Modules
 
 - Issue #3120: On 64-bit Windows the subprocess module was truncating handles.
 
+- Issue #1471: Arguments to fcntl.ioctl are no longer broken on 64-bit OpenBSD
+  and similar platforms due to sign extension.
+
 Tests
 -----
 
