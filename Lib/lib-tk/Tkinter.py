@@ -1577,7 +1577,7 @@ class Wm:
         """Bind function FUNC to command NAME for this widget.
         Return the function bound to NAME if None is given. NAME could be
         e.g. "WM_SAVE_YOURSELF" or "WM_DELETE_WINDOW"."""
-        if callable(func):
+        if hasattr(func, '__call__'):
             command = self._register(func)
         else:
             command = func
