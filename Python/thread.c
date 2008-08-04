@@ -264,15 +264,25 @@ static int nkeys = 0;  /* PyThread_create_key() hands out nkeys+1 next */
 static struct key *
 find_key(int key, void *value)
 {
-	struct key *p;
+	struct key *p, *prev_p;
 	long id = PyThread_get_thread_ident();
 
 	if (!keymutex)
 		return NULL;
 	PyThread_acquire_lock(keymutex, 1);
+	prev_p = NULL;
 	for (p = keyhead; p != NULL; p = p->next) {
 		if (p->id == id && p->key == key)
 			goto Done;
+		/* Sanity check.  These states should never happen but if
+		 * they do we must abort.  Otherwise we'll end up spinning in
+		 * in a tight loop with the lock held.  A similar check is done
+		 * in pystate.c tstate_delete_common().  */
+		if (p == prev_p)
+			Py_FatalError("tls find_key: small circular list(!)");
+		prev_p = p;
+		if (p->next == keyhead)
+			Py_FatalError("tls find_key: circular list(!)");
 	}
 	if (value == NULL) {
 		assert(p == NULL);
