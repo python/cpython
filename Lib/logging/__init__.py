@@ -898,7 +898,7 @@ class Manager:
         rv = None
         _acquireLock()
         try:
-            if self.loggerDict.has_key(name):
+            if name in self.loggerDict:
                 rv = self.loggerDict[name]
                 if isinstance(rv, PlaceHolder):
                     ph = rv
@@ -926,7 +926,7 @@ class Manager:
         rv = None
         while (i > 0) and not rv:
             substr = name[:i]
-            if not self.loggerDict.has_key(substr):
+            if substr not in self.loggerDict:
                 self.loggerDict[substr] = PlaceHolder(alogger)
             else:
                 obj = self.loggerDict[substr]
@@ -1001,7 +1001,7 @@ class Logger(Filterer):
         logger.debug("Houston, we have a %s", "thorny problem", exc_info=1)
         """
         if self.isEnabledFor(DEBUG):
-            apply(self._log, (DEBUG, msg, args), kwargs)
+            self._log(DEBUG, msg, args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
         """
@@ -1013,7 +1013,7 @@ class Logger(Filterer):
         logger.info("Houston, we have a %s", "interesting problem", exc_info=1)
         """
         if self.isEnabledFor(INFO):
-            apply(self._log, (INFO, msg, args), kwargs)
+            self._log(INFO, msg, args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
         """
@@ -1025,7 +1025,7 @@ class Logger(Filterer):
         logger.warning("Houston, we have a %s", "bit of a problem", exc_info=1)
         """
         if self.isEnabledFor(WARNING):
-            apply(self._log, (WARNING, msg, args), kwargs)
+            self._log(WARNING, msg, args, **kwargs)
 
     warn = warning
 
@@ -1039,13 +1039,13 @@ class Logger(Filterer):
         logger.error("Houston, we have a %s", "major problem", exc_info=1)
         """
         if self.isEnabledFor(ERROR):
-            apply(self._log, (ERROR, msg, args), kwargs)
+            self._log(ERROR, msg, args, **kwargs)
 
     def exception(self, msg, *args):
         """
         Convenience method for logging an ERROR with exception information.
         """
-        apply(self.error, (msg,) + args, {'exc_info': 1})
+        self.error(*((msg,) + args), **{'exc_info': 1})
 
     def critical(self, msg, *args, **kwargs):
         """
@@ -1057,7 +1057,7 @@ class Logger(Filterer):
         logger.critical("Houston, we have a %s", "major disaster", exc_info=1)
         """
         if self.isEnabledFor(CRITICAL):
-            apply(self._log, (CRITICAL, msg, args), kwargs)
+            self._log(CRITICAL, msg, args, **kwargs)
 
     fatal = critical
 
@@ -1076,7 +1076,7 @@ class Logger(Filterer):
             else:
                 return
         if self.isEnabledFor(level):
-            apply(self._log, (level, msg, args), kwargs)
+            self._log(level, msg, args, **kwargs)
 
     def findCaller(self):
         """
@@ -1394,7 +1394,7 @@ def critical(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    apply(root.critical, (msg,)+args, kwargs)
+    root.critical(*((msg,)+args), **kwargs)
 
 fatal = critical
 
@@ -1404,14 +1404,14 @@ def error(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    apply(root.error, (msg,)+args, kwargs)
+    root.error(*((msg,)+args), **kwargs)
 
 def exception(msg, *args):
     """
     Log a message with severity 'ERROR' on the root logger,
     with exception information.
     """
-    apply(error, (msg,)+args, {'exc_info': 1})
+    error(*((msg,)+args), **{'exc_info': 1})
 
 def warning(msg, *args, **kwargs):
     """
@@ -1419,7 +1419,7 @@ def warning(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    apply(root.warning, (msg,)+args, kwargs)
+    root.warning(*((msg,)+args), **kwargs)
 
 warn = warning
 
@@ -1429,7 +1429,7 @@ def info(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    apply(root.info, (msg,)+args, kwargs)
+    root.info(*((msg,)+args), **kwargs)
 
 def debug(msg, *args, **kwargs):
     """
@@ -1437,7 +1437,7 @@ def debug(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    apply(root.debug, (msg,)+args, kwargs)
+    root.debug(*((msg,)+args), **kwargs)
 
 def log(level, msg, *args, **kwargs):
     """
@@ -1445,7 +1445,7 @@ def log(level, msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    apply(root.log, (level, msg)+args, kwargs)
+    root.log(*((level, msg)+args), **kwargs)
 
 def disable(level):
     """
