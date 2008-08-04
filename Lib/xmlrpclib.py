@@ -282,10 +282,13 @@ class Fault(Error):
 # @param value A boolean value.  Any true value is interpreted as True,
 #              all other values are interpreted as False.
 
+from sys import modules
+mod_dict = modules[__name__].__dict__
 if _bool_is_builtin:
     boolean = Boolean = bool
     # to avoid breaking code which references xmlrpclib.{True,False}
-    True, False = True, False
+    mod_dict['True'] = True
+    mod_dict['False'] = False
 else:
     class Boolean:
         """Boolean-value wrapper.
@@ -316,7 +319,8 @@ else:
         def __nonzero__(self):
             return self.value
 
-    True, False = Boolean(1), Boolean(0)
+    mod_dict['True'] = Boolean(1)
+    mod_dict['False'] = Boolean(0)
 
     ##
     # Map true or false value to XML-RPC boolean values.
@@ -332,6 +336,8 @@ else:
     def boolean(value, _truefalse=(False, True)):
         """Convert any Python value to XML-RPC 'boolean'."""
         return _truefalse[operator.truth(value)]
+
+del modules, mod_dict
 
 ##
 # Wrapper for XML-RPC DateTime values.  This converts a time value to
@@ -744,7 +750,7 @@ class Marshaller:
 
     def dump_array(self, value, write):
         i = id(value)
-        if self.memo.has_key(i):
+        if i in self.memo:
             raise TypeError, "cannot marshal recursive sequences"
         self.memo[i] = None
         dump = self.__dump
@@ -758,7 +764,7 @@ class Marshaller:
 
     def dump_struct(self, value, write, escape=escape):
         i = id(value)
-        if self.memo.has_key(i):
+        if i in self.memo:
             raise TypeError, "cannot marshal recursive dictionaries"
         self.memo[i] = None
         dump = self.__dump
