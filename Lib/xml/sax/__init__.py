@@ -81,7 +81,7 @@ def make_parser(parser_list = []):
             return _create_parser(parser_name)
         except ImportError,e:
             import sys
-            if sys.modules.has_key(parser_name):
+            if parser_name in sys.modules:
                 # The parser module was found, but importing it
                 # failed unexpectedly, pass this exception through
                 raise
