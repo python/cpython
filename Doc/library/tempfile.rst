@@ -207,21 +207,8 @@ the appropriate function arguments, instead.
    the search described above is performed, and the result returned.
 
 
-.. data:: template
-
-   .. deprecated:: 2.0
-      Use :func:`gettempprefix` instead.
-
-   When set to a value other than ``None``, this variable defines the prefix of the
-   final component of the filenames returned by :func:`mktemp`.  A string of six
-   random letters and digits is appended to the prefix to make the filename unique.
-   On Windows, the default prefix is :file:`~T`; on all other systems it is
-   :file:`tmp`.
-
-
 .. function:: gettempprefix()
 
    Return the filename prefix used to create temporary files.  This does not
-   contain the directory component.  Using this function is preferred over reading
-   the *template* variable directly.
+   contain the directory component.
 
