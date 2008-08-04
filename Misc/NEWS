@@ -41,6 +41,13 @@ Core and Builtins
 Library
 -------
 
+- Changed code in the following modules/packages to remove warnings raised
+  while running under the ``-3`` flag: aifc, asyncore, bdb, bsddb,
+  ConfigParser, cookielib, DocXMLRPCServer, email, filecmp, fileinput, inspect,
+  logging, modulefinder, pdb, pickle, profile, pstats, pydoc, re, rlcompleter,
+  SimpleXMLRPCServer, shelve, sqlite3, tarfile, Tkinter, test.test_support,
+  textwrap, threading, tokenize, traceback, urlparse, wsgiref, xml, xmlrpclib.
+
 - Issue #3039: Fix tarfile.TarFileCompat.writestr() which always
   raised an AttributeError.
 
