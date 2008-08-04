@@ -1577,17 +1577,6 @@ class TarFile(object):
                 self.fileobj.write(buf)
                 self.offset += len(buf)
 
-    def _getposix(self):
-        return self.format == USTAR_FORMAT
-    def _setposix(self, value):
-        import warnings
-        warnings.warn("use the format attribute instead", DeprecationWarning)
-        if value:
-            self.format = USTAR_FORMAT
-        else:
-            self.format = GNU_FORMAT
-    posix = property(_getposix, _setposix)
-
     #--------------------------------------------------------------------------
     # Below are the classmethods which act as alternate constructors to the
     # TarFile class. The open() method is the only one that is needed for
