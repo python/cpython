@@ -126,6 +126,10 @@ Library
   in the common case when the data is returned from the underlying socket
   in increments much smaller than bignumber.
 
+- Issue #1857: subprocess.Popen.poll gained an additional _deadstate keyword
+  argument in python 2.5, this broke code that subclassed Popen to include its
+  own poll method.  Fixed my moving _deadstate to an _internal_poll method.
+
 Extension Modules
 -----------------
 
