@@ -12,6 +12,9 @@ What's New in Python 2.6 beta 3?
 Core and Builtins
 -----------------
 
+- Issue #1481296: Make long(float('nan')) and int(float('nan')) raise
+  ValueError consistently across platforms.
+
 - Issue #3479: On platforms where sizeof(int) is smaller than sizeof(long)
   (64bit Unix, for example), unichr() would truncate its argument and return
   u'\x00' for unichr(2**32). Now it properly raises an OverflowError.
