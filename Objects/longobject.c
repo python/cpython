@@ -176,11 +176,13 @@ PyLong_FromDouble(double dval)
 	neg = 0;
 	if (Py_IS_INFINITY(dval)) {
 		PyErr_SetString(PyExc_OverflowError,
-			"cannot convert float infinity to long");
+			"cannot convert float infinity to integer");
 		return NULL;
 	}
 	if (Py_IS_NAN(dval)) {
-		return PyLong_FromLong(0L);
+		PyErr_SetString(PyExc_ValueError,
+			"cannot convert float NaN to integer");
+		return NULL;
 	}
 	if (dval < 0.0) {
 		neg = 1;
