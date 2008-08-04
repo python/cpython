@@ -17,12 +17,13 @@ except NameError:
             d[k] = v
         return d
 
-try:
-    True
-    False
-except NameError:
-    True = not None
-    False = not True
+# Uncomment for 2.2 compatibility.
+#try:
+#    True
+#    False
+#except NameError:
+#    True = not None
+#    False = not True
 
 
 # Weekday and month names for HTTP date/time formatting; always English!
