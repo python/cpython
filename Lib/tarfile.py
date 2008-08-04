@@ -51,6 +51,7 @@ import time
 import struct
 import copy
 import re
+import operator
 
 if sys.platform == 'mac':
     # This module needs work for MacOS9, especially in the area of pathname
@@ -1401,7 +1402,7 @@ class TarInfo(object):
             next._apply_pax_info(pax_headers, tarfile.encoding, tarfile.errors)
             next.offset = self.offset
 
-            if pax_headers.has_key("size"):
+            if "size" in pax_headers:
                 # If the extended header replaces the size field,
                 # we need to recalculate the offset where the next
                 # header starts.
@@ -2027,7 +2028,7 @@ class TarFile(object):
             self.extract(tarinfo, path)
 
         # Reverse sort directories.
-        directories.sort(lambda a, b: cmp(a.name, b.name))
+        directories.sort(key=operator.attrgetter('name'))
         directories.reverse()
 
         # Set correct owner, mtime and filemode on directories.
