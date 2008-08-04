@@ -141,6 +141,8 @@ Extension Modules
 - issue2858: Fix potential memory corruption when bsddb.db.DBEnv.lock_get
   and other bsddb.db object constructors raised an exception.
 
+- Issue #3120: On 64-bit Windows the subprocess module was truncating handles.
+
 Tests
 -----
 

@@ -69,6 +69,14 @@ sp_handle_new(HANDLE handle)
 	return (PyObject*) self;
 }
 
+#if defined(MS_WIN32) && !defined(MS_WIN64)
+#define HANDLE_TO_PYNUM(handle)	PyInt_FromLong((long) handle)
+#define PY_HANDLE_PARAM	"l"
+#else
+#define HANDLE_TO_PYNUM(handle)	PyLong_FromLongLong((long long) handle)
+#define PY_HANDLE_PARAM	"L"
+#endif
+
 static PyObject*
 sp_handle_detach(sp_handle_object* self, PyObject* args)
 {
@@ -82,7 +90,7 @@ sp_handle_detach(sp_handle_object* self, PyObject* args)
 	self->handle = NULL;
 
 	/* note: return the current handle, as an integer */
-	return PyInt_FromLong((long) handle);
+	return HANDLE_TO_PYNUM(handle);
 }
 
 static PyObject*
@@ -122,7 +130,7 @@ sp_handle_getattr(sp_handle_object* self, char* name)
 static PyObject*
 sp_handle_as_int(sp_handle_object* self)
 {
-	return PyInt_FromLong((long) self->handle);
+	return HANDLE_TO_PYNUM(self->handle);
 }
 
 static PyNumberMethods sp_handle_as_number;
@@ -168,7 +176,7 @@ sp_GetStdHandle(PyObject* self, PyObject* args)
 	}
 
 	/* note: returns integer, not handle object */
-	return PyInt_FromLong((long) handle);
+	return HANDLE_TO_PYNUM(handle);
 }
 
 static PyObject *
@@ -186,14 +194,16 @@ sp_DuplicateHandle(PyObject* self, PyObject* args)
 	HANDLE target_handle;
 	BOOL result;
 
-	long source_process_handle;
-	long source_handle;
-	long target_process_handle;
+	HANDLE source_process_handle;
+	HANDLE source_handle;
+	HANDLE target_process_handle;
 	int desired_access;
 	int inherit_handle;
 	int options = 0;
 
-	if (! PyArg_ParseTuple(args, "lllii|i:DuplicateHandle",
+	if (! PyArg_ParseTuple(args,
+			       PY_HANDLE_PARAM PY_HANDLE_PARAM PY_HANDLE_PARAM
+			       "ii|i:DuplicateHandle",
 	                       &source_process_handle,
 	                       &source_handle,
 	                       &target_process_handle,
@@ -204,9 +214,9 @@ sp_DuplicateHandle(PyObject* self, PyObject* args)
 
 	Py_BEGIN_ALLOW_THREADS
 	result = DuplicateHandle(
-		(HANDLE) source_process_handle,
-		(HANDLE) source_handle,
-		(HANDLE) target_process_handle,
+		source_process_handle,
+		source_handle,
+		target_process_handle,
 		&target_handle,
 		desired_access,
 		inherit_handle,
@@ -436,13 +446,13 @@ sp_TerminateProcess(PyObject* self, PyObject* args)
 {
 	BOOL result;
 
-	long process;
+	HANDLE process;
 	int exit_code;
-	if (! PyArg_ParseTuple(args, "li:TerminateProcess", &process,
-			       &exit_code))
+	if (! PyArg_ParseTuple(args, PY_HANDLE_PARAM "i:TerminateProcess",
+			       &process, &exit_code))
 		return NULL;
 
-	result = TerminateProcess((HANDLE) process, exit_code);
+	result = TerminateProcess(process, exit_code);
 
 	if (! result)
 		return PyErr_SetFromWindowsErr(GetLastError());
@@ -457,11 +467,11 @@ sp_GetExitCodeProcess(PyObject* self, PyObject* args)
 	DWORD exit_code;
 	BOOL result;
 
-	long process;
-	if (! PyArg_ParseTuple(args, "l:GetExitCodeProcess", &process))
+	HANDLE process;
+	if (! PyArg_ParseTuple(args, PY_HANDLE_PARAM ":GetExitCodeProcess", &process))
 		return NULL;
 
-	result = GetExitCodeProcess((HANDLE) process, &exit_code);
+	result = GetExitCodeProcess(process, &exit_code);
 
 	if (! result)
 		return PyErr_SetFromWindowsErr(GetLastError());
@@ -474,15 +484,15 @@ sp_WaitForSingleObject(PyObject* self, PyObject* args)
 {
 	DWORD result;
 
-	long handle;
+	HANDLE handle;
 	int milliseconds;
-	if (! PyArg_ParseTuple(args, "li:WaitForSingleObject",
+	if (! PyArg_ParseTuple(args, PY_HANDLE_PARAM "i:WaitForSingleObject",
 	                  	     &handle,
 	                  	     &milliseconds))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	result = WaitForSingleObject((HANDLE) handle, (DWORD) milliseconds);
+	result = WaitForSingleObject(handle, (DWORD) milliseconds);
 	Py_END_ALLOW_THREADS
 
 	if (result == WAIT_FAILED)
@@ -504,13 +514,14 @@ static PyObject *
 sp_GetModuleFileName(PyObject* self, PyObject* args)
 {
 	BOOL result;
-	long module;
+	HMODULE module;
 	TCHAR filename[MAX_PATH];
 
-	if (! PyArg_ParseTuple(args, "l:GetModuleFileName", &module))
+	if (! PyArg_ParseTuple(args, PY_HANDLE_PARAM ":GetModuleFileName",
+			       &module))
 		return NULL;
 
-	result = GetModuleFileName((HMODULE)module, filename, MAX_PATH);
+	result = GetModuleFileName(module, filename, MAX_PATH);
 	filename[MAX_PATH-1] = '\0';
 
 	if (! result)
