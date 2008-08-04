@@ -233,8 +233,7 @@ the appropriate function arguments, instead.
    When set to a value other than ``None``, this variable defines the prefix of the
    final component of the filenames returned by :func:`mktemp`.  A string of six
    random letters and digits is appended to the prefix to make the filename unique.
-   On Windows, the default prefix is :file:`~T`; on all other systems it is
-   :file:`tmp`.
+   The default prefix is :file:`tmp`.
 
    Older versions of this module used to require that ``template`` be set to
    ``None`` after a call to :func:`os.fork`; this has not been necessary since
