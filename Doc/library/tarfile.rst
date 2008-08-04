@@ -393,18 +393,6 @@ object, see :ref:`tarinfo-objects` for details.
    appended to the archive.
 
 
-.. attribute:: TarFile.posix
-
-   Setting this to :const:`True` is equivalent to setting the :attr:`format`
-   attribute to :const:`USTAR_FORMAT`, :const:`False` is equivalent to
-   :const:`GNU_FORMAT`.
-
-   *posix* defaults to :const:`False`.
-
-   .. deprecated:: 2.6
-      Use the :attr:`format` attribute instead.
-
-
 .. attribute:: TarFile.pax_headers
 
    A dictionary containing key-value pairs of pax global headers.
