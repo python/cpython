@@ -130,6 +130,10 @@ Library
   argument in python 2.5, this broke code that subclassed Popen to include its
   own poll method.  Fixed my moving _deadstate to an _internal_poll method.
 
+- Issue #2113: Fix error in subprocess.Popen if the select system call is
+  interrupted by a signal.
+
+
 Extension Modules
 -----------------
 

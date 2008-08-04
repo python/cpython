@@ -1153,7 +1153,12 @@ class Popen(object):
 
             input_offset = 0
             while read_set or write_set:
-                rlist, wlist, xlist = select.select(read_set, write_set, [])
+                try:
+                    rlist, wlist, xlist = select.select(read_set, write_set, [])
+                except select.error, e:
+                    if e.args[0] == errno.EINTR:
+                        continue
+                    raise
 
                 if self.stdin in wlist:
                     # When select has indicated that the file is writable,
