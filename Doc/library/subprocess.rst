@@ -196,8 +196,8 @@ Instances of the :class:`Popen` class have the following methods:
    .. warning::
 
       This will deadlock if the child process generates enough output to a
-      stdout or stderr pipe causing it to block waiting for the OS's pipe buffer
-      to accept more data.
+      stdout or stderr pipe such that it blocks waiting for the OS pipe buffer
+      to accept more data.  Use :meth:`communicate` to avoid that.
 
 
 .. method:: Popen.communicate(input=None)
@@ -253,9 +253,10 @@ The following attributes are also available:
 
 .. warning::
 
-   Use :meth:`communicate` rather than ``.stdin.write()``, ``.stdout.read()`` or
-   ``.stderr.read`` to avoid deadlocks due to any of the other pipe buffers
-   filling up and blocking the child process.
+   Use :meth:`communicate` rather than :meth:`.stdin.write`,
+   :meth:`.stdout.read` or :meth:`.stderr.read` to avoid deadlocks due
+   to any of the other OS pipe buffers filling up and blocking the child
+   process.
 
 
 .. attribute:: Popen.stdin
