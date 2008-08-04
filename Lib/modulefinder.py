@@ -258,7 +258,7 @@ class ModuleFinder:
         else:
             self.msgout(3, "import_module ->", m)
             return m
-        if self.badmodules.has_key(fqname):
+        if fqname in self.badmodules:
             self.msgout(3, "import_module -> None")
             return None
         if parent and parent.__path__ is None:
@@ -279,7 +279,8 @@ class ModuleFinder:
         self.msgout(3, "import_module ->", m)
         return m
 
-    def load_module(self, fqname, fp, pathname, (suffix, mode, type)):
+    def load_module(self, fqname, fp, pathname, file_info):
+        suffix, mode, type = file_info
         self.msgin(2, "load_module", fqname, fp and "fp", pathname)
         if type == imp.PKG_DIRECTORY:
             m = self.load_package(fqname, pathname)
@@ -460,7 +461,7 @@ class ModuleFinder:
         return m
 
     def add_module(self, fqname):
-        if self.modules.has_key(fqname):
+        if fqname in self.modules:
             return self.modules[fqname]
         self.modules[fqname] = m = Module(fqname)
         return m
