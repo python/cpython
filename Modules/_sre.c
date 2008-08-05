@@ -2658,6 +2658,8 @@ statichere PyTypeObject Pattern_Type = {
     offsetof(PatternObject, weakreflist),	/* tp_weaklistoffset */
 };
 
+static int _validate(PatternObject *self); /* Forward */
+
 static PyObject *
 _compile(PyObject* self_, PyObject* args)
 {
@@ -2717,7 +2719,479 @@ _compile(PyObject* self_, PyObject* args)
 
     self->weakreflist = NULL;
 
+    if (!_validate(self)) {
+        Py_DECREF(self);
+        return NULL;
+    }
+
     return (PyObject*) self;
+}
+
+/* -------------------------------------------------------------------- */
+/* Code validation */
+
+/* To learn more about this code, have a look at the _compile() function in
+   Lib/sre_compile.py.  The validation functions below checks the code array
+   for conformance with the code patterns generated there.
+
+   The nice thing about the generated code is that it is position-independent:
+   all jumps are relative jumps forward.  Also, jumps don't cross each other:
+   the target of a later jump is always earlier than the target of an earlier
+   jump.  IOW, this is okay:
+
+   J---------J-------T--------T
+    \         \_____/        /
+     \______________________/
+
+   but this is not:
+
+   J---------J-------T--------T
+    \_________\_____/        /
+               \____________/
+
+   It also helps that SRE_CODE is always an unsigned type, either 2 bytes or 4
+   bytes wide (the latter if Python is compiled for "wide" unicode support).
+*/
+
+/* Defining this one enables tracing of the validator */
+#undef VVERBOSE
+
+/* Trace macro for the validator */
+#if defined(VVERBOSE)
+#define VTRACE(v) printf v
+#else
+#define VTRACE(v)
+#endif
+
+/* Report failure */
+#define FAIL do { VTRACE(("FAIL: %d\n", __LINE__)); return 0; } while (0)
+
+/* Extract opcode, argument, or skip count from code array */
+#define GET_OP                                          \
+    do {                                                \
+        VTRACE(("%p: ", code));                         \
+        if (code >= end) FAIL;                          \
+        op = *code++;                                   \
+        VTRACE(("%lu (op)\n", (unsigned long)op));      \
+    } while (0)
+#define GET_ARG                                         \
+    do {                                                \
+        VTRACE(("%p= ", code));                         \
+        if (code >= end) FAIL;                          \
+        arg = *code++;                                  \
+        VTRACE(("%lu (arg)\n", (unsigned long)arg));    \
+    } while (0)
+#define GET_SKIP                                        \
+    do {                                                \
+        VTRACE(("%p= ", code));                         \
+        if (code >= end) FAIL;                          \
+        skip = *code;                                   \
+        VTRACE(("%lu (skip to %p)\n",                   \
+               (unsigned long)skip, code+skip));        \
+        if (code+skip < code || code+skip > end)        \
+            FAIL;                                       \
+        code++;                                         \
+    } while (0)
+
+static int
+_validate_charset(SRE_CODE *code, SRE_CODE *end)
+{
+    /* Some variables are manipulated by the macros above */
+    SRE_CODE op;
+    SRE_CODE arg;
+    SRE_CODE offset;
+    int i;
+
+    while (code < end) {
+        GET_OP;
+        switch (op) {
+
+        case SRE_OP_NEGATE:
+            break;
+
+        case SRE_OP_LITERAL:
+            GET_ARG;
+            break;
+
+        case SRE_OP_RANGE:
+            GET_ARG;
+            GET_ARG;
+            break;
+
+        case SRE_OP_CHARSET:
+            offset = 32/sizeof(SRE_CODE); /* 32-byte bitmap */
+            if (code+offset < code || code+offset > end)
+                FAIL;
+            code += offset;
+            break;
+
+        case SRE_OP_BIGCHARSET:
+            GET_ARG; /* Number of blocks */
+            offset = 256/sizeof(SRE_CODE); /* 256-byte table */
+            if (code+offset < code || code+offset > end)
+                FAIL;
+            /* Make sure that each byte points to a valid block */
+            for (i = 0; i < 256; i++) {
+                if (((unsigned char *)code)[i] >= arg)
+                    FAIL;
+            }
+            code += offset;
+            offset = arg * 32/sizeof(SRE_CODE); /* 32-byte bitmap times arg */
+            if (code+offset < code || code+offset > end)
+                FAIL;
+            code += offset;
+            break;
+
+        case SRE_OP_CATEGORY:
+            GET_ARG;
+            switch (arg) {
+            case SRE_CATEGORY_DIGIT:
+            case SRE_CATEGORY_NOT_DIGIT:
+            case SRE_CATEGORY_SPACE:
+            case SRE_CATEGORY_NOT_SPACE:
+            case SRE_CATEGORY_WORD:
+            case SRE_CATEGORY_NOT_WORD:
+            case SRE_CATEGORY_LINEBREAK:
+            case SRE_CATEGORY_NOT_LINEBREAK:
+            case SRE_CATEGORY_LOC_WORD:
+            case SRE_CATEGORY_LOC_NOT_WORD:
+            case SRE_CATEGORY_UNI_DIGIT:
+            case SRE_CATEGORY_UNI_NOT_DIGIT:
+            case SRE_CATEGORY_UNI_SPACE:
+            case SRE_CATEGORY_UNI_NOT_SPACE:
+            case SRE_CATEGORY_UNI_WORD:
+            case SRE_CATEGORY_UNI_NOT_WORD:
+            case SRE_CATEGORY_UNI_LINEBREAK:
+            case SRE_CATEGORY_UNI_NOT_LINEBREAK:
+                break;
+            default:
+                FAIL;
+            }
+            break;
+
+        default:
+            FAIL;
+
+        }
+    }
+
+    return 1;
+}
+
+static int
+_validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
+{
+    /* Some variables are manipulated by the macros above */
+    SRE_CODE op;
+    SRE_CODE arg;
+    SRE_CODE skip;
+
+    VTRACE(("code=%p, end=%p\n", code, end));
+
+    if (code > end)
+        FAIL;
+
+    while (code < end) {
+        GET_OP;
+        switch (op) {
+
+        case SRE_OP_MARK:
+            /* We don't check whether marks are properly nested; the
+               sre_match() code is robust even if they don't, and the worst
+               you can get is nonsensical match results. */
+            GET_ARG;
+            if (arg > 2*groups+1) {
+                VTRACE(("arg=%d, groups=%d\n", (int)arg, (int)groups));
+                FAIL;
+            }
+            break;
+
+        case SRE_OP_LITERAL:
+        case SRE_OP_NOT_LITERAL:
+        case SRE_OP_LITERAL_IGNORE:
+        case SRE_OP_NOT_LITERAL_IGNORE:
+            GET_ARG;
+            /* The arg is just a character, nothing to check */
+            break;
+
+        case SRE_OP_SUCCESS:
+        case SRE_OP_FAILURE:
+            /* Nothing to check; these normally end the matching process */
+            break;
+
+        case SRE_OP_AT:
+            GET_ARG;
+            switch (arg) {
+            case SRE_AT_BEGINNING:
+            case SRE_AT_BEGINNING_STRING:
+            case SRE_AT_BEGINNING_LINE:
+            case SRE_AT_END:
+            case SRE_AT_END_LINE:
+            case SRE_AT_END_STRING:
+            case SRE_AT_BOUNDARY:
+            case SRE_AT_NON_BOUNDARY:
+            case SRE_AT_LOC_BOUNDARY:
+            case SRE_AT_LOC_NON_BOUNDARY:
+            case SRE_AT_UNI_BOUNDARY:
+            case SRE_AT_UNI_NON_BOUNDARY:
+                break;
+            default:
+                FAIL;
+            }
+            break;
+
+        case SRE_OP_ANY:
+        case SRE_OP_ANY_ALL:
+            /* These have no operands */
+            break;
+
+        case SRE_OP_IN:
+        case SRE_OP_IN_IGNORE:
+            GET_SKIP;
+            /* Stop 1 before the end; we check the FAILURE below */
+            if (!_validate_charset(code, code+skip-2))
+                FAIL;
+            if (code[skip-2] != SRE_OP_FAILURE)
+                FAIL;
+            code += skip-1;
+            break;
+
+        case SRE_OP_INFO:
+            {
+                /* A minimal info field is
+                   <INFO> <1=skip> <2=flags> <3=min> <4=max>;
+                   If SRE_INFO_PREFIX or SRE_INFO_CHARSET is in the flags,
+                   more follows. */
+                SRE_CODE flags, min, max, i;
+                SRE_CODE *newcode;
+                GET_SKIP;
+                newcode = code+skip-1;
+                GET_ARG; flags = arg;
+                GET_ARG; min = arg;
+                GET_ARG; max = arg;
+                /* Check that only valid flags are present */
+                if ((flags & ~(SRE_INFO_PREFIX |
+                               SRE_INFO_LITERAL |
+                               SRE_INFO_CHARSET)) != 0)
+                    FAIL;
+                /* PREFIX and CHARSET are mutually exclusive */
+                if ((flags & SRE_INFO_PREFIX) &&
+                    (flags & SRE_INFO_CHARSET))
+                    FAIL;
+                /* LITERAL implies PREFIX */
+                if ((flags & SRE_INFO_LITERAL) &&
+                    !(flags & SRE_INFO_PREFIX))
+                    FAIL;
+                /* Validate the prefix */
+                if (flags & SRE_INFO_PREFIX) {
+                    SRE_CODE prefix_len, prefix_skip;
+                    GET_ARG; prefix_len = arg;
+                    GET_ARG; prefix_skip = arg;
+                    /* Here comes the prefix string */
+                    if (code+prefix_len < code || code+prefix_len > newcode)
+                        FAIL;
+                    code += prefix_len;
+                    /* And here comes the overlap table */
+                    if (code+prefix_len < code || code+prefix_len > newcode)
+                        FAIL;
+                    /* Each overlap value should be < prefix_len */
+                    for (i = 0; i < prefix_len; i++) {
+                        if (code[i] >= prefix_len)
+                            FAIL;
+                    }
+                    code += prefix_len;
+                }
+                /* Validate the charset */
+                if (flags & SRE_INFO_CHARSET) {
+                    if (!_validate_charset(code, newcode-1))
+                        FAIL;
+                    if (newcode[-1] != SRE_OP_FAILURE)
+                        FAIL;
+                    code = newcode;
+                }
+                else if (code != newcode) {
+                  VTRACE(("code=%p, newcode=%p\n", code, newcode));
+                    FAIL;
+                }
+            }
+            break;
+
+        case SRE_OP_BRANCH:
+            {
+                SRE_CODE *target = NULL;
+                for (;;) {
+                    GET_SKIP;
+                    if (skip == 0)
+                        break;
+                    /* Stop 2 before the end; we check the JUMP below */
+                    if (!_validate_inner(code, code+skip-3, groups))
+                        FAIL;
+                    code += skip-3;
+                    /* Check that it ends with a JUMP, and that each JUMP
+                       has the same target */
+                    GET_OP;
+                    if (op != SRE_OP_JUMP)
+                        FAIL;
+                    GET_SKIP;
+                    if (target == NULL)
+                        target = code+skip-1;
+                    else if (code+skip-1 != target)
+                        FAIL;
+                }
+            }
+            break;
+
+        case SRE_OP_REPEAT_ONE:
+        case SRE_OP_MIN_REPEAT_ONE:
+            {
+                SRE_CODE min, max;
+                GET_SKIP;
+                GET_ARG; min = arg;
+                GET_ARG; max = arg;
+                if (min > max)
+                    FAIL;
+#ifdef Py_UNICODE_WIDE
+                if (max > 65535)
+                    FAIL;
+#endif
+                if (!_validate_inner(code, code+skip-4, groups))
+                    FAIL;
+                code += skip-4;
+                GET_OP;
+                if (op != SRE_OP_SUCCESS)
+                    FAIL;
+            }
+            break;
+
+        case SRE_OP_REPEAT:
+            {
+                SRE_CODE min, max;
+                GET_SKIP;
+                GET_ARG; min = arg;
+                GET_ARG; max = arg;
+                if (min > max)
+                    FAIL;
+#ifdef Py_UNICODE_WIDE
+                if (max > 65535)
+                    FAIL;
+#endif
+                if (!_validate_inner(code, code+skip-3, groups))
+                    FAIL;
+                code += skip-3;
+                GET_OP;
+                if (op != SRE_OP_MAX_UNTIL && op != SRE_OP_MIN_UNTIL)
+                    FAIL;
+            }
+            break;
+
+        case SRE_OP_GROUPREF:
+        case SRE_OP_GROUPREF_IGNORE:
+            GET_ARG;
+            if (arg >= groups)
+                FAIL;
+            break;
+
+        case SRE_OP_GROUPREF_EXISTS:
+            /* The regex syntax for this is: '(?(group)then|else)', where
+               'group' is either an integer group number or a group name,
+               'then' and 'else' are sub-regexes, and 'else' is optional. */
+            GET_ARG;
+            if (arg >= groups)
+                FAIL;
+            GET_SKIP;
+            code--; /* The skip is relative to the first arg! */
+            /* There are two possibilities here: if there is both a 'then'
+               part and an 'else' part, the generated code looks like:
+
+               GROUPREF_EXISTS
+               <group>
+               <skipyes>
+               ...then part...
+               JUMP
+               <skipno>
+               (<skipyes> jumps here)
+               ...else part...
+               (<skipno> jumps here)
+
+               If there is only a 'then' part, it looks like:
+
+               GROUPREF_EXISTS
+               <group>
+               <skip>
+               ...then part...
+               (<skip> jumps here)
+
+               There is no direct way to decide which it is, and we don't want
+               to allow arbitrary jumps anywhere in the code; so we just look
+               for a JUMP opcode preceding our skip target.
+            */
+            if (skip >= 3 && code+skip-3 >= code &&
+                code[skip-3] == SRE_OP_JUMP)
+            {
+                VTRACE(("both then and else parts present\n"));
+                if (!_validate_inner(code+1, code+skip-3, groups))
+                    FAIL;
+                code += skip-2; /* Position after JUMP, at <skipno> */
+                GET_SKIP;
+                if (!_validate_inner(code, code+skip-1, groups))
+                    FAIL;
+                code += skip-1;
+            }
+            else {
+                VTRACE(("only a then part present\n"));
+                if (!_validate_inner(code+1, code+skip-1, groups))
+                    FAIL;
+                code += skip-1;
+            }
+            break;
+
+        case SRE_OP_ASSERT:
+        case SRE_OP_ASSERT_NOT:
+            GET_SKIP;
+            GET_ARG; /* 0 for lookahead, width for lookbehind */
+            code--; /* Back up over arg to simplify math below */
+            if (arg & 0x80000000)
+                FAIL; /* Width too large */
+            /* Stop 1 before the end; we check the SUCCESS below */
+            if (!_validate_inner(code+1, code+skip-2, groups))
+                FAIL;
+            code += skip-2;
+            GET_OP;
+            if (op != SRE_OP_SUCCESS)
+                FAIL;
+            break;
+
+        default:
+            FAIL;
+
+        }
+    }
+
+    VTRACE(("okay\n"));
+    return 1;
+}
+
+static int
+_validate_outer(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
+{
+    if (groups < 0 || groups > 100 || code >= end || end[-1] != SRE_OP_SUCCESS)
+        FAIL;
+    if (groups == 0)  /* fix for simplejson */
+        groups = 100; /* 100 groups should always be safe */
+    return _validate_inner(code, end-1, groups);
+}
+
+static int
+_validate(PatternObject *self)
+{
+    if (!_validate_outer(self->code, self->code+self->codesize, self->groups))
+    {
+        PyErr_SetString(PyExc_RuntimeError, "invalid SRE code");
+        return 0;
+    }
+    else
+        VTRACE(("Success!\n"));
+    return 1;
 }
 
 /* -------------------------------------------------------------------- */
