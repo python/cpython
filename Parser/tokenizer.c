@@ -1117,7 +1117,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	register int c;
 	int blankline;
 
-	tok->line_start = *p_start = *p_end = NULL;
+	*p_start = *p_end = NULL;
   nextline:
 	tok->start = NULL;
 	blankline = 0;
