@@ -208,7 +208,7 @@ to the right argument, and returns the string resulting from this formatting
 operation. For example::
 
    >>> import math
-   >>> print 'The value of PI is approximately %5.3f.' % math.pi
+   >>> print('The value of PI is approximately %5.3f.' % math.pi)
    The value of PI is approximately 3.142.
 
 Since :meth:`str.format` is quite new, a lot of Python code still uses the ``%``
