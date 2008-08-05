@@ -32,6 +32,7 @@ called :file:`fibo.py` in the current directory with the following contents::
        while b < n:
            print(b, end=' ')
            a, b = b, a+b
+       print()
 
    def fib2(n): # return Fibonacci series up to n
        result = []

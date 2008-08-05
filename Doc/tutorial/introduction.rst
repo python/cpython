@@ -599,16 +599,12 @@ This example introduces several new features.
      >>> print('The value of i is', i)
      The value of i is 65536
 
-   The keyword end can be used to avoid the newline after the output::
+  The keyword *end* can be used to avoid the newline after the output, or end
+  the output with a different string::
 
      >>> a, b = 0, 1
      >>> while b < 1000:
-     ...     print(b, ' ', end='')
+     ...     print(b, end=' ')
      ...     a, b = b, a+b
      ... 
-     >>> print()
      1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
-
- Note that nothing appeared after the loop ended, until we printed
- a newline.
-
