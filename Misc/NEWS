@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2338: Create imp.reload() to help with transitioning to Python 3.0 as
+  the reload() built-in has been removed.
+
 - Changed code in the following modules/packages to remove warnings raised
   while running under the ``-3`` flag: aifc, asyncore, bdb, bsddb,
   ConfigParser, cookielib, DocXMLRPCServer, email, filecmp, fileinput, inspect,
