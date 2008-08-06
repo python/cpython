@@ -22,7 +22,6 @@ import multiprocessing.dummy
 import multiprocessing.connection
 import multiprocessing.managers
 import multiprocessing.heap
-import multiprocessing.managers
 import multiprocessing.pool
 import _multiprocessing
 
