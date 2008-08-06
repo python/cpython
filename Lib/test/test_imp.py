@@ -37,9 +37,28 @@ class LockTests(unittest.TestCase):
                 self.fail("release_lock() without lock should raise "
                             "RuntimeError")
 
+class ReloadTests(unittest.TestCase):
+
+    """Very basic tests to make sure that imp.reload() operates just like
+    reload()."""
+
+    def test_source(self):
+        import os
+        imp.reload(os)
+
+    def test_extension(self):
+        import time
+        imp.reload(time)
+
+    def test_builtin(self):
+        import marshal
+        imp.reload(marshal)
+
+
 def test_main():
     test_support.run_unittest(
                 LockTests,
+                ReloadTests,
             )
 
 if __name__ == "__main__":

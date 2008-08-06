@@ -3030,11 +3030,23 @@ imp_new_module(PyObject *self, PyObject *args)
 	return PyModule_New(name);
 }
 
+static PyObject *
+imp_reload(PyObject *self, PyObject *v)
+{
+	return PyImport_ReloadModule(v);
+}
+
+
 /* Doc strings */
 
 PyDoc_STRVAR(doc_imp,
 "This module provides the components needed to build your own\n\
 __import__ function.  Undocumented functions are obsolete.");
+
+PyDoc_STRVAR(doc_reload,
+"reload(module) -> module\n\
+\n\
+Reload the module.  The module must have been successfully imported before.");
 
 PyDoc_STRVAR(doc_find_module,
 "find_module(name, [path]) -> (file, filename, (suffix, mode, type))\n\
@@ -3080,6 +3092,7 @@ Release the interpreter's import lock.\n\
 On platforms without threads, this function does nothing.");
 
 static PyMethodDef imp_methods[] = {
+	{"reload",	 imp_reload,	   METH_O,	 doc_reload},
 	{"find_module",	 imp_find_module,  METH_VARARGS, doc_find_module},
 	{"get_magic",	 imp_get_magic,	   METH_NOARGS,  doc_get_magic},
 	{"get_suffixes", imp_get_suffixes, METH_NOARGS,  doc_get_suffixes},
