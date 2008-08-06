@@ -424,7 +424,7 @@ String literals are described by the following lexical definitions:
    stringliteral: [`stringprefix`](`shortstring` | `longstring`)
    stringprefix: "r" | "u" | "ur" | "R" | "U" | "UR" | "Ur" | "uR"
    shortstring: "'" `shortstringitem`* "'" | '"' `shortstringitem`* '"'
-   longstring: ""'" `longstringitem`* ""'"
+   longstring: "'''" `longstringitem`* "'''"
              : | '"""' `longstringitem`* '"""'
    shortstringitem: `shortstringchar` | `escapeseq`
    longstringitem: `longstringchar` | `escapeseq`
