@@ -261,84 +261,74 @@ def urldefrag(url):
         return url, ''
 
 
-_hextochr = dict(('%02x' % i, chr(i)) for i in range(256))
-_hextochr.update(('%02X' % i, chr(i)) for i in range(256))
+def unquote_as_string (s, plus=False, charset=None):
+    if charset is None:
+        charset = "UTF-8"
+    return str(unquote_as_bytes(s, plus=plus), charset, 'strict')
+
+def unquote_as_bytes (s, plus=False):
+    """unquote('abc%20def') -> 'abc def'."""
+    if plus:
+        s = s.replace('+', ' ')
+    res = s.split('%')
+    res[0] = res[0].encode('ASCII', 'strict')
+    for i in range(1, len(res)):
+        res[i] = (bytes.fromhex(res[i][:2]) +
+                  res[i][2:].encode('ASCII', 'strict'))
+    return b''.join(res)
+
+_always_safe = (b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                b'abcdefghijklmnopqrstuvwxyz'
+                b'0123456789'
+                b'_.-')
+
+_percent_code = ord('%')
+
+_hextable = b'0123456789ABCDEF'
+
+def quote_as_bytes(s, safe = '/', plus=False):
+    """quote(b'abc@def') -> 'abc%40def'"""
+
+    if isinstance(s, str):
+        s = s.encode("UTF-8", "strict")
+    if not (isinstance(s, bytes) or isinstance(s, bytearray)):
+        raise ValueError("Argument to quote must be either bytes "
+                         "or bytearray; string arguments will be "
+                         "converted to UTF-8 bytes")
+
+    safeset = _always_safe + safe.encode('ASCII', 'strict')
+    if plus:
+        safeset += b' '
+
+    result = bytearray()
+    for i in s:
+        if i not in safeset:
+            result.append(_percent_code)
+            result.append(_hextable[(i >> 4) & 0xF])
+            result.append(_hextable[i & 0xF])
+        else:
+            result.append(i)
+    if plus:
+        result = result.replace(b' ', b'+')
+    return result
+
+def quote_as_string(s, safe = '/', plus=False):
+    return str(quote_as_bytes(s, safe=safe, plus=plus), 'ASCII', 'strict')
+
+# finally, define defaults for 'quote' and 'unquote'
+
+def quote(s, safe='/'):
+    return quote_as_string(s, safe=safe)
+
+def quote_plus(s, safe=''):
+    return quote_as_string(s, safe=safe, plus=True)
 
 def unquote(s):
-    """unquote('abc%20def') -> 'abc def'."""
-    res = s.split('%')
-    for i in range(1, len(res)):
-        item = res[i]
-        try:
-            res[i] = _hextochr[item[:2]] + item[2:]
-        except KeyError:
-            res[i] = '%' + item
-        except UnicodeDecodeError:
-            res[i] = chr(int(item[:2], 16)) + item[2:]
-    return "".join(res)
+    return unquote_as_string(s)
 
 def unquote_plus(s):
-    """unquote('%7e/abc+def') -> '~/abc def'"""
-    s = s.replace('+', ' ')
-    return unquote(s)
+    return unquote_as_string(s, plus=True)
 
-always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-               'abcdefghijklmnopqrstuvwxyz'
-               '0123456789' '_.-')
-_safe_quoters= {}
-
-class Quoter:
-    def __init__(self, safe):
-        self.cache = {}
-        self.safe = safe + always_safe
-
-    def __call__(self, c):
-        try:
-            return self.cache[c]
-        except KeyError:
-            if ord(c) < 256:
-                res = (c in self.safe) and c or ('%%%02X' % ord(c))
-                self.cache[c] = res
-                return res
-            else:
-                return "".join(['%%%02X' % i for i in c.encode("utf-8")])
-
-def quote(s, safe = '/'):
-    """quote('abc def') -> 'abc%20def'
-
-    Each part of a URL, e.g. the path info, the query, etc., has a
-    different set of reserved characters that must be quoted.
-
-    RFC 2396 Uniform Resource Identifiers (URI): Generic Syntax lists
-    the following reserved characters.
-
-    reserved    = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
-                  "$" | ","
-
-    Each of these characters is reserved in some component of a URL,
-    but not necessarily in all of them.
-
-    By default, the quote function is intended for quoting the path
-    section of a URL.  Thus, it will not encode '/'.  This character
-    is reserved, but in typical usage the quote function is being
-    called on a path where the existing slash characters are used as
-    reserved characters.
-    """
-    cachekey = (safe, always_safe)
-    try:
-        quoter = _safe_quoters[cachekey]
-    except KeyError:
-        quoter = Quoter(safe)
-        _safe_quoters[cachekey] = quoter
-    res = map(quoter, s)
-    return ''.join(res)
-
-def quote_plus(s, safe = ''):
-    """Quote the query fragment of a URL; replacing ' ' with '+'"""
-    if ' ' in s:
-        s = quote(s, safe + ' ')
-        return s.replace(' ', '+')
-    return quote(s, safe)
 
 def urlencode(query,doseq=0):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
@@ -387,7 +377,7 @@ def urlencode(query,doseq=0):
                 # is there a reasonable way to convert to ASCII?
                 # encode generates a string, but "replace" or "ignore"
                 # lose information and "strict" can raise UnicodeError
-                v = quote_plus(v.encode("ASCII","replace"))
+                v = quote_plus(v)
                 l.append(k + '=' + v)
             else:
                 try:
@@ -474,7 +464,8 @@ def splituser(host):
         _userprog = re.compile('^(.*)@(.*)$')
 
     match = _userprog.match(host)
-    if match: return map(unquote, match.group(1, 2))
+    if match:
+        return map(unquote, match.group(1, 2))
     return None, host
 
 _passwdprog = None
