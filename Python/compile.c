@@ -1300,7 +1300,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, int args)
 				PyObject_REPR(name), 
 				PyBytes_AS_STRING(c->u->u_name), 
 				reftype, arg,
-				PyUnicode_AsString(co->co_name),
+				_PyUnicode_AsString(co->co_name),
 				PyObject_REPR(co->co_freevars));
 			Py_FatalError("compiler_make_closure()");
 		}

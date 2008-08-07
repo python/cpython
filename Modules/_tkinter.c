@@ -1424,7 +1424,7 @@ varname_converter(PyObject *in, void *_out)
 		return 1;
 	}
         if (PyUnicode_Check(in)) {
-		*out = PyUnicode_AsString(in);
+		*out = _PyUnicode_AsString(in);
 		return 1;
 	}
 	if (PyTclObject_Check(in)) {

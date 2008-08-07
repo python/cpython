@@ -788,7 +788,7 @@ test_string_from_format(PyObject *self, PyObject *args)
 	result = PyUnicode_FromFormat(FORMAT, (TYPE)1);	\
 	if (result == NULL)				\
 		return NULL;				\
-	if (strcmp(PyUnicode_AsString(result), "1")) {	\
+	if (strcmp(_PyUnicode_AsString(result), "1")) {	\
 		msg = FORMAT " failed at 1";		\
 		goto Fail;				\
 	}						\

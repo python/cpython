@@ -132,7 +132,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
             return NULL;
 
         if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln))
-            return PyUnicode_AsString(action);
+            return _PyUnicode_AsString(action);
     }
 
     m = PyImport_ImportModule(MODULE_NAME);
@@ -144,7 +144,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         return NULL;
     action = PyDict_GetItemString(d, DEFAULT_ACTION_NAME);
     if (action != NULL)
-        return PyUnicode_AsString(action);
+        return _PyUnicode_AsString(action);
 
     PyErr_SetString(PyExc_ValueError,
                     MODULE_NAME "." DEFAULT_ACTION_NAME " not found");
@@ -186,7 +186,7 @@ normalize_module(PyObject *filename)
     else if (rc == 0)
         return PyUnicode_FromString("<unknown>");
 
-    mod_str = PyUnicode_AsString(filename);
+    mod_str = _PyUnicode_AsString(filename);
     if (mod_str == NULL)
 	    return NULL;
     len = PyUnicode_GetSize(filename);
@@ -257,7 +257,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
 
     /* Print "  source_line\n" */
     if (sourceline) {
-        char *source_line_str = PyUnicode_AsString(sourceline);
+        char *source_line_str = _PyUnicode_AsString(sourceline);
         while (*source_line_str == ' ' || *source_line_str == '\t' ||
                 *source_line_str == '\014')
             source_line_str++;
@@ -266,7 +266,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
         PyFile_WriteString("\n", f_stderr);
     }
     else
-        _Py_DisplaySourceLine(f_stderr, PyUnicode_AsString(filename),
+        _Py_DisplaySourceLine(f_stderr, _PyUnicode_AsString(filename),
                               lineno, 2);
     PyErr_Clear();
 }
@@ -367,7 +367,7 @@ warn_explicit(PyObject *category, PyObject *message,
             const char *err_str = "???";
 
             if (to_str != NULL)
-                err_str = PyUnicode_AsString(to_str);
+                err_str = _PyUnicode_AsString(to_str);
             PyErr_Format(PyExc_RuntimeError,
                         "Unrecognized action (%s) in warnings.filters:\n %s",
                         action, err_str);
@@ -388,7 +388,7 @@ warn_explicit(PyObject *category, PyObject *message,
         else {
             const char *msg = "functions overriding warnings.showwarning() "
                                 "must support the 'line' argument";
-            const char *text_char = PyUnicode_AsString(text);
+            const char *text_char = _PyUnicode_AsString(text);
 
             if (strcmp(msg, text_char) == 0) {
                 /* Prevent infinite recursion by using built-in implementation
@@ -503,7 +503,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     *filename = PyDict_GetItemString(globals, "__file__");
     if (*filename != NULL) {
         Py_ssize_t len = PyUnicode_GetSize(*filename);
-        const char *file_str = PyUnicode_AsString(*filename);
+        const char *file_str = _PyUnicode_AsString(*filename);
 	    if (file_str == NULL || (len < 0 && PyErr_Occurred()))
             goto handle_error;
 
@@ -523,7 +523,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             Py_INCREF(*filename);
     }
     else {
-        const char *module_str = PyUnicode_AsString(*module);
+        const char *module_str = _PyUnicode_AsString(*module);
         if (module_str && strcmp(module_str, "__main__") == 0) {
             PyObject *argv = PySys_GetObject("argv");
             if (argv != NULL && PyList_Size(argv) > 0) {

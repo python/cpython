@@ -187,7 +187,7 @@ PyModule_GetName(PyObject *m)
 		PyErr_SetString(PyExc_SystemError, "nameless module");
 		return NULL;
 	}
-	return PyUnicode_AsString(nameobj);
+	return _PyUnicode_AsString(nameobj);
 }
 
 const char *
@@ -207,7 +207,7 @@ PyModule_GetFilename(PyObject *m)
 		PyErr_SetString(PyExc_SystemError, "module filename missing");
 		return NULL;
 	}
-	return PyUnicode_AsString(fileobj);
+	return _PyUnicode_AsString(fileobj);
 }
 
 PyModuleDef*
@@ -252,7 +252,7 @@ _PyModule_Clear(PyObject *m)
 	pos = 0;
 	while (PyDict_Next(d, &pos, &key, &value)) {
 		if (value != Py_None && PyUnicode_Check(key)) {
-			const char *s = PyUnicode_AsString(key);
+			const char *s = _PyUnicode_AsString(key);
 			if (s[0] == '_' && s[1] != '_') {
 				if (Py_VerboseFlag > 1)
 				    PySys_WriteStderr("#   clear[1] %s\n", s);
@@ -265,7 +265,7 @@ _PyModule_Clear(PyObject *m)
 	pos = 0;
 	while (PyDict_Next(d, &pos, &key, &value)) {
 		if (value != Py_None && PyUnicode_Check(key)) {
-			const char *s = PyUnicode_AsString(key);
+			const char *s = _PyUnicode_AsString(key);
 			if (s[0] != '_' || strcmp(s, "__builtins__") != 0) {
 				if (Py_VerboseFlag > 1)
 				    PySys_WriteStderr("#   clear[2] %s\n", s);

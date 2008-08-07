@@ -5566,7 +5566,7 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
                             "configuration names must be strings or integers");
             return 0;
         }
-        confname = PyUnicode_AsString(arg);
+        confname = _PyUnicode_AsString(arg);
         if (confname == NULL)
             return 0;
         while (lo < hi) {
@@ -5897,7 +5897,7 @@ posix_confstr(PyObject *self, PyObject *args)
 	    if ((unsigned int)len >= sizeof(buffer)) {
                 result = PyUnicode_FromStringAndSize(NULL, len-1);
                 if (result != NULL)
-                    confstr(name, PyUnicode_AsString(result), len);
+                    confstr(name, _PyUnicode_AsString(result), len);
             }
             else
                 result = PyUnicode_FromStringAndSize(buffer, len-1);

@@ -1303,7 +1303,7 @@ element_getattro(ElementObject* self, PyObject* nameobj)
     char *name = "";
 
     if (PyUnicode_Check(nameobj))
-	name = PyUnicode_AsString(nameobj);
+	name = _PyUnicode_AsString(nameobj);
 
     if (strcmp(name, "tag") == 0)
 	res = self->tag;
@@ -2529,7 +2529,7 @@ xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
     char *name = "";
 
     if (PyUnicode_Check(nameobj))
-	name = PyUnicode_AsString(nameobj);
+	name = _PyUnicode_AsString(nameobj);
 
     PyErr_Clear();
 

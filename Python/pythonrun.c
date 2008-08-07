@@ -803,7 +803,7 @@ initstdio(void)
 	encoding_attr = PyObject_GetAttrString(std, "encoding");
 	if (encoding_attr != NULL) {
 		const char * encoding;
-		encoding = PyUnicode_AsString(encoding_attr);
+		encoding = _PyUnicode_AsString(encoding_attr);
 		if (encoding != NULL) {
 			_PyCodec_Lookup(encoding);
 		}
@@ -909,7 +909,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 		oenc = PyObject_GetAttrString(v, "encoding");
 		if (!oenc)
 			return -1;
-		enc = PyUnicode_AsString(oenc);
+		enc = _PyUnicode_AsString(oenc);
 	}
 	v = PySys_GetObject("ps1");
 	if (v != NULL) {
@@ -917,7 +917,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 		if (v == NULL)
 			PyErr_Clear();
 		else if (PyUnicode_Check(v))
-			ps1 = PyUnicode_AsString(v);
+			ps1 = _PyUnicode_AsString(v);
 	}
 	w = PySys_GetObject("ps2");
 	if (w != NULL) {
@@ -925,7 +925,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 		if (w == NULL)
 			PyErr_Clear();
 		else if (PyUnicode_Check(w))
-			ps2 = PyUnicode_AsString(w);
+			ps2 = _PyUnicode_AsString(w);
 	}
 	arena = PyArena_New();
 	if (arena == NULL) {
@@ -1101,7 +1101,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 		goto finally;
 	if (v == Py_None)
 		*filename = NULL;
-	else if (! (*filename = PyUnicode_AsString(v)))
+	else if (! (*filename = _PyUnicode_AsString(v)))
 		goto finally;
 
 	Py_DECREF(v);
@@ -1134,7 +1134,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 	if (v == Py_None)
 		*text = NULL;
         else if (!PyUnicode_Check(v) ||
-		 !(*text = PyUnicode_AsString(v)))
+		 !(*text = _PyUnicode_AsString(v)))
 		goto finally;
 	Py_DECREF(v);
 	return 1;
@@ -1357,7 +1357,7 @@ print_exception(PyObject *f, PyObject *value)
 			err = PyFile_WriteString("<unknown>", f);
 		}
 		else {
-			char* modstr = PyUnicode_AsString(moduleName);
+			char* modstr = _PyUnicode_AsString(moduleName);
 			if (modstr && strcmp(modstr, "builtins"))
 			{
 				err = PyFile_WriteString(modstr, f);
@@ -1806,7 +1806,7 @@ err_input(perrdetail *err)
 		if (value != NULL) {
 			u = PyObject_Str(value);
 			if (u != NULL) {
-				msg = PyUnicode_AsString(u);
+				msg = _PyUnicode_AsString(u);
 			}
 		}
 		if (msg == NULL)

@@ -859,7 +859,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
 #endif
 #if defined(Py_DEBUG) || defined(LLTRACE)
-	filename = PyUnicode_AsString(co->co_filename);
+	filename = _PyUnicode_AsString(co->co_filename);
 #endif
 
 	why = WHY_NOT;
@@ -3291,7 +3291,7 @@ PyEval_GetFuncName(PyObject *func)
 	if (PyMethod_Check(func))
 		return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
 	else if (PyFunction_Check(func))
-		return PyUnicode_AsString(((PyFunctionObject*)func)->func_name);
+		return _PyUnicode_AsString(((PyFunctionObject*)func)->func_name);
 	else if (PyCFunction_Check(func))
 		return ((PyCFunctionObject*)func)->m_ml->ml_name;
 	else
@@ -3527,7 +3527,7 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
 				     "for keyword argument '%.200s'",
 				     PyEval_GetFuncName(func),
 				     PyEval_GetFuncDesc(func),
-				     PyUnicode_AsString(key));
+				     _PyUnicode_AsString(key));
 			Py_DECREF(key);
 			Py_DECREF(value);
 			Py_DECREF(kwdict);
@@ -3874,7 +3874,7 @@ format_exc_check_arg(PyObject *exc, const char *format_str, PyObject *obj)
 	if (!obj)
 		return;
 
-	obj_str = PyUnicode_AsString(obj);
+	obj_str = _PyUnicode_AsString(obj);
 	if (!obj_str)
 		return;
 

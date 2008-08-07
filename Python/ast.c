@@ -1324,7 +1324,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 if (errstr) {
                     char *s = "";
                     char buf[128];
-                    s = PyUnicode_AsString(errstr);
+                    s = _PyUnicode_AsString(errstr);
                     PyOS_snprintf(buf, sizeof(buf), "(unicode error) %s", s);
                     ast_error(n, buf);
                 } else {

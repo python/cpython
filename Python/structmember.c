@@ -247,7 +247,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 			PyErr_BadArgument();
 			return -1;
 		}
-		string = PyUnicode_AsStringAndSize(v, &len);
+		string = _PyUnicode_AsStringAndSize(v, &len);
 		if (len != 1) {
 			PyErr_BadArgument();
 			return -1;

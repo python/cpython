@@ -82,12 +82,12 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
         Py_XINCREF(item);
         return item;
     } else if (PyUnicode_Check(idx)) {
-        key = PyUnicode_AsString(idx);
+        key = _PyUnicode_AsString(idx);
 
         nitems = PyTuple_Size(self->description);
 
         for (i = 0; i < nitems; i++) {
-            compare_key = PyUnicode_AsString(PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0));
+            compare_key = _PyUnicode_AsString(PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0));
             if (!compare_key) {
                 return NULL;
             }

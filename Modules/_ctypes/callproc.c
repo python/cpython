@@ -1750,7 +1750,7 @@ POINTER(PyObject *self, PyObject *cls)
 		return result;
 	}
 	if (PyUnicode_CheckExact(cls)) {
-		char *name = PyUnicode_AsString(cls);
+		char *name = _PyUnicode_AsString(cls);
 		buf = alloca(strlen(name) + 3 + 1);
 		sprintf(buf, "LP_%s", name);
 		result = PyObject_CallFunction((PyObject *)Py_TYPE(&Pointer_Type),

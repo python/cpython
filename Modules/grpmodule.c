@@ -113,7 +113,7 @@ grp_getgrnam(PyObject *self, PyObject *pyo_name)
     py_str_name = PyObject_Str(pyo_name);
     if (!py_str_name)
 	    return NULL;
-    name = PyUnicode_AsString(py_str_name);
+    name = _PyUnicode_AsString(py_str_name);
     
     if ((p = getgrnam(name)) == NULL) {
 	PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name);

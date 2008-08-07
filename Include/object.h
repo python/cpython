@@ -466,7 +466,7 @@ PyAPI_FUNC(long) _Py_HashDouble(double);
 PyAPI_FUNC(long) _Py_HashPointer(void*);
 
 /* Helper for passing objects to printf and the like */
-#define PyObject_REPR(obj) PyUnicode_AsString(PyObject_Repr(obj))
+#define PyObject_REPR(obj) _PyUnicode_AsString(PyObject_Repr(obj))
 
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */

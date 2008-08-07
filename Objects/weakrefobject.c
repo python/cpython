@@ -167,7 +167,7 @@ weakref_repr(PyWeakReference *self)
 	if (nameobj == NULL)
 		PyErr_Clear();
 	else if (PyUnicode_Check(nameobj))
-		name = PyUnicode_AsString(nameobj);
+		name = _PyUnicode_AsString(nameobj);
         PyOS_snprintf(buffer, sizeof(buffer),
 		      name ? "<weakref at %p; to '%.50s' at %p (%s)>"
 		           : "<weakref at %p; to '%.50s' at %p>",

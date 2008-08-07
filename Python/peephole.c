@@ -407,7 +407,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 			case LOAD_NAME:
 			case LOAD_GLOBAL:
 				j = GETARG(codestr, i);
-				name = PyUnicode_AsString(PyTuple_GET_ITEM(names, j));
+				name = _PyUnicode_AsString(PyTuple_GET_ITEM(names, j));
 				h = load_global(codestr, i, name, consts);
 				if (h < 0)
 					goto exitUnchanged;

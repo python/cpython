@@ -59,7 +59,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     self->st = NULL;
     self->in_use = 0;
 
-    sql_cstr = PyUnicode_AsStringAndSize(sql, &sql_cstr_len);
+    sql_cstr = _PyUnicode_AsStringAndSize(sql, &sql_cstr_len);
     if (sql_cstr == NULL) {
         rc = PYSQLITE_SQL_WRONG_TYPE;
         return rc;
@@ -140,7 +140,7 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
             rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));
             break;
         case TYPE_UNICODE:
-            string = PyUnicode_AsString(parameter);
+            string = _PyUnicode_AsString(parameter);
             rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
             break;
         case TYPE_BUFFER:
@@ -296,7 +296,7 @@ int pysqlite_statement_recompile(pysqlite_Statement* self, PyObject* params)
     Py_ssize_t sql_len;
     sqlite3_stmt* new_st;
 
-    sql_cstr = PyUnicode_AsStringAndSize(self->sql, &sql_len);
+    sql_cstr = _PyUnicode_AsStringAndSize(self->sql, &sql_len);
     if (sql_cstr == NULL) {
         rc = PYSQLITE_SQL_WRONG_TYPE;
         return rc;

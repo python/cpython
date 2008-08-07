@@ -38,7 +38,7 @@ convert_to_OSType(PyObject *v, OSType *pr)
 			"OSType arg must be string of 4 chars");
         return 0;
     }
-    memcpy((char *)&tmp, PyUnicode_AsString(v), 4);
+    memcpy((char *)&tmp, _PyUnicode_AsString(v), 4);
     *pr = (OSType)ntohl(tmp);
     return 1;
 }

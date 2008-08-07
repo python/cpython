@@ -943,7 +943,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
        lineno here */
 
     if (self->filename && PyUnicode_Check(self->filename)) {
-	    filename = PyUnicode_AsString(self->filename);
+	    filename = _PyUnicode_AsString(self->filename);
     }
     have_lineno = (self->lineno != NULL) && PyLong_CheckExact(self->lineno);
 
