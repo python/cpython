@@ -232,6 +232,10 @@ class InteractiveConsole(InteractiveInterpreter):
                     prompt = sys.ps1
                 try:
                     line = self.raw_input(prompt)
+                    # Can be None if sys.stdin was redefined
+                    encoding = getattr(sys.stdin, "encoding", None)
+                    if encoding and not isinstance(line, unicode):
+                        line = line.decode(encoding)
                 except EOFError:
                     self.write("\n")
                     break
