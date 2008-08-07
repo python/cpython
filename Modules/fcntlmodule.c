@@ -530,6 +530,11 @@ all_ins(PyObject* d)
         if (ins(d, "F_SHLCK", (long)F_SHLCK)) return -1;
 #endif
 
+/* OS X (and maybe others) let you tell the storage device to flush to physical media */
+#ifdef F_FULLFSYNC
+        if (ins(d, "F_FULLFSYNC", (long)F_FULLFSYNC)) return -1;
+#endif
+
 /* For F_{GET|SET}FL */
 #ifdef FD_CLOEXEC
         if (ins(d, "FD_CLOEXEC", (long)FD_CLOEXEC)) return -1;
