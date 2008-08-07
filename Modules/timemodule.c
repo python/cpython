@@ -509,7 +509,7 @@ time_strftime(PyObject *self, PyObject *args)
         }
 
     /* Convert the unicode string to an ascii one */
-    fmt = PyUnicode_AsString(format);
+    fmt = _PyUnicode_AsString(format);
 
 	fmtlen = strlen(fmt);
 

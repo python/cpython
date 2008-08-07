@@ -470,7 +470,7 @@ PyImport_Cleanup(void)
 			if (value->ob_refcnt != 1)
 				continue;
 			if (PyUnicode_Check(key) && PyModule_Check(value)) {
-				name = PyUnicode_AsString(key);
+				name = _PyUnicode_AsString(key);
 				if (strcmp(name, "builtins") == 0)
 					continue;
 				if (strcmp(name, "sys") == 0)
@@ -489,7 +489,7 @@ PyImport_Cleanup(void)
 	pos = 0;
 	while (PyDict_Next(modules, &pos, &key, &value)) {
 		if (PyUnicode_Check(key) && PyModule_Check(value)) {
-			name = PyUnicode_AsString(key);
+			name = _PyUnicode_AsString(key);
 			if (strcmp(name, "builtins") == 0)
 				continue;
 			if (strcmp(name, "sys") == 0)
@@ -1296,7 +1296,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 	if (path != NULL && PyUnicode_Check(path)) {
 		/* The only type of submodule allowed inside a "frozen"
 		   package are other frozen modules or packages. */
-		char *p = PyUnicode_AsString(path);
+		char *p = _PyUnicode_AsString(path);
 		if (strlen(p) + 1 + strlen(name) >= (size_t)buflen) {
 			PyErr_SetString(PyExc_ImportError,
 					"full frozen module name too long");
@@ -2197,7 +2197,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 					"__package__ set to non-string");
 			return NULL;
 		}
-		pkgname_str = PyUnicode_AsStringAndSize(pkgname, &len);
+		pkgname_str = _PyUnicode_AsStringAndSize(pkgname, &len);
 		if (len == 0) {
 			if (level > 0) {
 				PyErr_SetString(PyExc_ValueError,
@@ -2225,7 +2225,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 			Py_ssize_t len;
 			int error;
 
-			modname_str = PyUnicode_AsStringAndSize(modname, &len);
+			modname_str = _PyUnicode_AsStringAndSize(modname, &len);
 			if (len > MAXPATHLEN) {
 				PyErr_SetString(PyExc_ValueError,
 						"Module name too long");
@@ -2240,7 +2240,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 			}
 		} else {
 			/* Normal module, so work out the package name if any */
-			char *start = PyUnicode_AsString(modname);
+			char *start = _PyUnicode_AsString(modname);
 			char *lastdot = strrchr(start, '.');
 			size_t len;
 			int error;
@@ -2635,7 +2635,7 @@ PyImport_ReloadModule(PyObject *m)
 		if (parent == NULL) {
 			PyErr_Format(PyExc_ImportError,
 			    "reload(): parent %.200s not in sys.modules",
-			     PyUnicode_AsString(parentname));
+			     _PyUnicode_AsString(parentname));
 			Py_DECREF(parentname);
 			imp_modules_reloading_clear();
 			return NULL;

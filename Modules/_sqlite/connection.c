@@ -434,7 +434,7 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
     } else if (PyUnicode_Check(py_val)) {
-        sqlite3_result_text(context, PyUnicode_AsString(py_val), -1, SQLITE_TRANSIENT);
+        sqlite3_result_text(context, _PyUnicode_AsString(py_val), -1, SQLITE_TRANSIENT);
     } else if (PyObject_CheckBuffer(py_val)) {
         if (PyObject_AsCharBuffer(py_val, &buffer, &buflen) != 0) {
             PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
@@ -901,7 +901,7 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
             return -1;
         }
 
-        statement = PyUnicode_AsStringAndSize(begin_statement, &size);
+        statement = _PyUnicode_AsStringAndSize(begin_statement, &size);
         if (!statement) {
             Py_DECREF(statement);
             return -1;
@@ -1194,7 +1194,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    chk = PyUnicode_AsString(uppercase_name);
+    chk = _PyUnicode_AsString(uppercase_name);
     while (*chk) {
         if ((*chk >= '0' && *chk <= '9')
          || (*chk >= 'A' && *chk <= 'Z')
@@ -1219,7 +1219,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     }
 
     rc = sqlite3_create_collation(self->db,
-                                  PyUnicode_AsString(uppercase_name),
+                                  _PyUnicode_AsString(uppercase_name),
                                   SQLITE_UTF8,
                                   (callable != Py_None) ? callable : NULL,
                                   (callable != Py_None) ? pysqlite_collation_callback : NULL);

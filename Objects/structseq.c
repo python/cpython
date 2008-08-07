@@ -270,7 +270,7 @@ structseq_repr(PyStructSequence *obj)
 			Py_DECREF(tup);
 			return NULL;
 		}
-		crepr = PyUnicode_AsString(repr);
+		crepr = _PyUnicode_AsString(repr);
 		if (crepr == NULL) {
 			Py_DECREF(tup);
 			Py_DECREF(repr);

@@ -724,7 +724,7 @@ on_completion(const char *text, int state)
 			result = NULL;
 		}
 		else {
-			char *s = PyUnicode_AsString(r);
+			char *s = _PyUnicode_AsString(r);
 			if (s == NULL)
 				goto error;
 			result = strdup(s);

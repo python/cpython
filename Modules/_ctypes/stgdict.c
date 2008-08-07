@@ -479,7 +479,7 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 			bitsize = 0;
 		if (isStruct && !isPacked) {
 			char *fieldfmt = dict->format ? dict->format : "B";
-			char *fieldname = PyUnicode_AsString(name);
+			char *fieldname = _PyUnicode_AsString(name);
 			char *ptr;
 			Py_ssize_t len = strlen(fieldname) + strlen(fieldfmt);
 			char *buf = alloca(len + 2 + 1);

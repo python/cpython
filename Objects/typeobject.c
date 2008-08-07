@@ -258,7 +258,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 	}
 	Py_DECREF(tmp);
 
-	tp_name = PyUnicode_AsString(value);
+	tp_name = _PyUnicode_AsString(value);
 	if (tp_name == NULL)
 		return -1;
 
@@ -1255,7 +1255,7 @@ check_duplicates(PyObject *list)
 				o = class_name(o);
 				PyErr_Format(PyExc_TypeError,
 					     "duplicate base class %.400s",
-					     o ? PyUnicode_AsString(o) : "?");
+					     o ? _PyUnicode_AsString(o) : "?");
 				Py_XDECREF(o);
 				return -1;
 			}
@@ -1301,7 +1301,7 @@ consistent method resolution\norder (MRO) for bases");
 	while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
 		PyObject *name = class_name(k);
 		off += PyOS_snprintf(buf + off, sizeof(buf) - off, " %s",
-				     name ? PyUnicode_AsString(name) : "?");
+				     name ? _PyUnicode_AsString(name) : "?");
 		Py_XDECREF(name);
 		if (--n && (size_t)(off+1) < sizeof(buf)) {
 			buf[off++] = ',';
@@ -2094,7 +2094,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	type->tp_as_sequence = &et->as_sequence;
 	type->tp_as_mapping = &et->as_mapping;
 	type->tp_as_buffer = &et->as_buffer;
-	type->tp_name = PyUnicode_AsString(name);
+	type->tp_name = _PyUnicode_AsString(name);
 	if (!type->tp_name) {
 		Py_DECREF(type);
 		return NULL;
@@ -2136,7 +2136,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			char *doc_str;
 			char *tp_doc;
 
-			doc_str = PyUnicode_AsStringAndSize(doc, &len);
+			doc_str = _PyUnicode_AsStringAndSize(doc, &len);
 			if (doc_str == NULL) {
 				Py_DECREF(type);
 				return NULL;
@@ -2175,7 +2175,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	slotoffset = base->tp_basicsize;
 	if (slots != NULL) {
 		for (i = 0; i < nslots; i++, mp++) {
-			mp->name = PyUnicode_AsString(
+			mp->name = _PyUnicode_AsString(
 				PyTuple_GET_ITEM(slots, i));
 			mp->type = T_OBJECT_EX;
 			mp->offset = slotoffset;

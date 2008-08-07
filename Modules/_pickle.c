@@ -927,7 +927,7 @@ save_long(PicklerObject *self, PyObject *obj)
         repr = PyUnicode_FromStringAndSize(NULL, (int)nbytes);
         if (repr == NULL)
             goto error;
-        pdata = (unsigned char *)PyUnicode_AsString(repr);
+        pdata = (unsigned char *)_PyUnicode_AsString(repr);
         i = _PyLong_AsByteArray((PyLongObject *)obj,
                                 pdata, nbytes,
                                 1 /* little endian */ , 1 /* signed */ );
@@ -972,7 +972,7 @@ save_long(PicklerObject *self, PyObject *obj)
         if (repr == NULL)
             goto error;
 
-        string = PyUnicode_AsStringAndSize(repr, &size);
+        string = _PyUnicode_AsStringAndSize(repr, &size);
         if (string == NULL)
             goto error;
 
@@ -1869,7 +1869,7 @@ save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
             /* XXX: Should it check whether the persistent id only contains
                ASCII characters? And what if the pid contains embedded
                newlines? */
-            pid_ascii_bytes = PyUnicode_AsStringAndSize(pid_str, &size);
+            pid_ascii_bytes = _PyUnicode_AsStringAndSize(pid_str, &size);
             Py_DECREF(pid_str);
             if (pid_ascii_bytes == NULL)
                 goto error;

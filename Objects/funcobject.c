@@ -297,7 +297,7 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 		PyErr_Format(PyExc_ValueError,
 			     "%s() requires a code object with %zd free vars,"
 			     " not %zd",
-			     PyUnicode_AsString(op->func_name),
+			     _PyUnicode_AsString(op->func_name),
 			     nclosure, nfree);
 		return -1;
 	}

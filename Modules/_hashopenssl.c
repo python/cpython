@@ -241,7 +241,7 @@ EVP_repr(PyObject *self)
 {
     char buf[100];
     PyOS_snprintf(buf, sizeof(buf), "<%s HASH object @ %p>",
-            PyUnicode_AsString(((EVPobject *)self)->name), self);
+            _PyUnicode_AsString(((EVPobject *)self)->name), self);
     return PyUnicode_FromString(buf);
 }
 

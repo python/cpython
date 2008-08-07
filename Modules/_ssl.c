@@ -1461,7 +1461,7 @@ PySSL_RAND_egd(PyObject *self, PyObject *arg)
 	return PyErr_Format(PyExc_TypeError,
 			    "RAND_egd() expected string, found %s",
 			    Py_TYPE(arg)->tp_name);
-    bytes = RAND_egd(PyUnicode_AsString(arg));
+    bytes = RAND_egd(_PyUnicode_AsString(arg));
     if (bytes == -1) {
 	PyErr_SetString(PySSLErrorObject,
 			"EGD connection failed or EGD did not return "

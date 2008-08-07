@@ -406,7 +406,7 @@ _range_error(const formatdef *f, int is_unsigned)
 		if (msg == NULL)
 			return -1;
 		rval = PyErr_WarnEx(PyExc_DeprecationWarning,
-				    PyUnicode_AsString(msg), 2);
+				    _PyUnicode_AsString(msg), 2);
 		Py_DECREF(msg);
 		if (rval == 0)
 			return 0;

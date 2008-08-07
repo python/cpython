@@ -1142,7 +1142,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		asdl_seq *seq = s->v.Global.names;
 		for (i = 0; i < asdl_seq_LEN(seq); i++) {
 			identifier name = (identifier)asdl_seq_GET(seq, i);
-			char *c_name = PyUnicode_AsString(name);
+			char *c_name = _PyUnicode_AsString(name);
 			long cur = symtable_lookup(st, name);
 			if (cur < 0)
 				return 0;
@@ -1169,7 +1169,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		asdl_seq *seq = s->v.Nonlocal.names;
 		for (i = 0; i < asdl_seq_LEN(seq); i++) {
 			identifier name = (identifier)asdl_seq_GET(seq, i);
-			char *c_name = PyUnicode_AsString(name);
+			char *c_name = _PyUnicode_AsString(name);
 			long cur = symtable_lookup(st, name);
 			if (cur < 0)
 				return 0;

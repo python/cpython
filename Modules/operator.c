@@ -449,7 +449,7 @@ dotted_getattr(PyObject *obj, PyObject *attr)
 		return NULL;
 	}
 
-	s = PyUnicode_AsString(attr);
+	s = _PyUnicode_AsString(attr);
 	Py_INCREF(obj);
 	for (;;) {
 		PyObject *newobj, *str;

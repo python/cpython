@@ -3744,7 +3744,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 		PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", value);
 		pptr = pbuf;
 	} else if (PyUnicode_Check(pobj)) {
-		pptr = PyUnicode_AsString(pobj);
+		pptr = _PyUnicode_AsString(pobj);
 	} else if (PyBytes_Check(pobj)) {
 		pptr = PyBytes_AsString(pobj);
 	} else if (pobj == Py_None) {

@@ -1338,7 +1338,7 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
     int handlernum = -1;
 
     if (PyUnicode_Check(nameobj))
-	name = PyUnicode_AsString(nameobj);
+	name = _PyUnicode_AsString(nameobj);
     
     handlernum = handlername2int(name);
 

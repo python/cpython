@@ -1452,7 +1452,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 }
 
 char*
-PyUnicode_AsStringAndSize(PyObject *unicode, Py_ssize_t *psize)
+_PyUnicode_AsStringAndSize(PyObject *unicode, Py_ssize_t *psize)
 {
     PyObject *bytes;
     if (!PyUnicode_Check(unicode)) {
@@ -1468,9 +1468,9 @@ PyUnicode_AsStringAndSize(PyObject *unicode, Py_ssize_t *psize)
 }
 
 char*
-PyUnicode_AsString(PyObject *unicode)
+_PyUnicode_AsString(PyObject *unicode)
 {
-    return PyUnicode_AsStringAndSize(unicode, NULL);
+    return _PyUnicode_AsStringAndSize(unicode, NULL);
 }
 
 Py_UNICODE *PyUnicode_AsUnicode(PyObject *unicode)

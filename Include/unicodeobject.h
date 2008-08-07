@@ -704,9 +704,15 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
 
    In case of an error, no *size is set.
 
+   *** This API is for interpreter INTERNAL USE ONLY and will likely
+   *** be removed or changed for Python 3.1.
+
+   *** If you need to access the Unicode object as UTF-8 bytes string,
+   *** please use PyUnicode_AsUTF8String() instead.
+
 */
 
-PyAPI_FUNC(char *) PyUnicode_AsStringAndSize(
+PyAPI_FUNC(char *) _PyUnicode_AsStringAndSize(
     PyObject *unicode, 
     Py_ssize_t *size);
 
@@ -714,12 +720,17 @@ PyAPI_FUNC(char *) PyUnicode_AsStringAndSize(
    Unicode object unicode.
 
    Use of this API is DEPRECATED since no size information can be
-   extracted from the returned data. Use PyUnicode_AsStringAndSize()
-   instead.
+   extracted from the returned data.
+
+   *** This API is for interpreter INTERNAL USE ONLY and will likely
+   *** be removed or changed for Python 3.1.
+
+   *** If you need to access the Unicode object as UTF-8 bytes string,
+   *** please use PyUnicode_AsUTF8String() instead.
 
 */
 
-PyAPI_FUNC(char *) PyUnicode_AsString(PyObject *unicode);
+PyAPI_FUNC(char *) _PyUnicode_AsString(PyObject *unicode);
 
 /* Returns the currently active default encoding.
 

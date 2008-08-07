@@ -180,7 +180,7 @@ normalizeUserObj(PyObject *obj)
 		PyObject *mod = fn->m_module;
 		const char *modname;
 		if (mod && PyUnicode_Check(mod)) {
-			modname = PyUnicode_AsString(mod);
+			modname = _PyUnicode_AsString(mod);
 		}
 		else if (mod && PyModule_Check(mod)) {
 			modname = PyModule_GetName(mod);

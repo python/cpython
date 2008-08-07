@@ -490,7 +490,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         rc = pysqlite_statement_reset(self->statement);
     }
 
-    operation_cstr = PyUnicode_AsStringAndSize(operation, &operation_len);
+    operation_cstr = _PyUnicode_AsStringAndSize(operation, &operation_len);
     if (operation == NULL)
         goto error;
 
@@ -793,7 +793,7 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
     }
 
     if (PyUnicode_Check(script_obj)) {
-        script_cstr = PyUnicode_AsString(script_obj);
+        script_cstr = _PyUnicode_AsString(script_obj);
         if (!script_cstr) {
             return NULL;
         }

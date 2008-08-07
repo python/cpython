@@ -15,6 +15,14 @@ Core and Builtins
 - Issue #1819: function calls with several named parameters are now on
   average 35% faster (as measured by pybench).
 
+- The undocumented C APIs PyUnicode_AsString() and
+  PyUnicode_AsStringAndSize() were made private to the interpreter, in
+  order to be able to refine their interfaces for Python 3.1.
+
+  If you need to access the UTF-8 representation of a Unicode object
+  as bytes string, please use PyUnicode_AsUTF8String() instead.
+
+
 Library
 -------
 

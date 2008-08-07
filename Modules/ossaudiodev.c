@@ -809,7 +809,7 @@ oss_getattro(oss_audio_t *self, PyObject *nameobj)
     PyObject * rval = NULL;
 
     if (PyUnicode_Check(nameobj))
-	name = PyUnicode_AsString(nameobj);
+	name = _PyUnicode_AsString(nameobj);
     
     if (strcmp(name, "closed") == 0) {
         rval = (self->fd == -1) ? Py_True : Py_False;

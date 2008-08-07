@@ -391,7 +391,7 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	}
 	if (PyUnicode_CheckExact(bufobj))
 	{
-		buf = PyUnicode_AsStringAndSize(bufobj, &buflen);
+		buf = _PyUnicode_AsStringAndSize(bufobj, &buflen);
 		if (buf == NULL) {
 			goto error;
 		}

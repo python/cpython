@@ -3230,7 +3230,7 @@ _PyBytes_FormatLong(PyObject *val, int flags, int prec, int type,
 	if (!result)
 		return NULL;
 
-	buf = PyUnicode_AsString(result);
+	buf = _PyUnicode_AsString(result);
 	if (!buf) {
 		Py_DECREF(result);
 		return NULL;

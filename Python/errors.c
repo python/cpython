@@ -709,7 +709,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 			if (moduleName == NULL)
 				PyFile_WriteString("<unknown>", f);
 			else {
-				char* modstr = PyUnicode_AsString(moduleName);
+				char* modstr = _PyUnicode_AsString(moduleName);
 				if (modstr &&
 				    strcmp(modstr, "builtins") != 0)
 				{

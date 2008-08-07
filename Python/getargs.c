@@ -1537,7 +1537,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 					        "keywords must be strings");
 				return cleanreturn(0, freelist);
 			}
-			ks = PyUnicode_AsString(key);
+			ks = _PyUnicode_AsString(key);
 			for (i = 0; i < len; i++) {
 				if (!strcmp(ks, kwlist[i])) {
 					match = 1;

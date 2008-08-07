@@ -72,7 +72,7 @@ syslog_openlog(PyObject * self, PyObject * args)
 	S_ident_o = new_S_ident_o;
 	Py_INCREF(S_ident_o);
 
-	ident = PyUnicode_AsString(S_ident_o);
+	ident = _PyUnicode_AsString(S_ident_o);
 	if (ident == NULL)
 		return NULL;
 	openlog(ident, logopt, facility);
@@ -97,7 +97,7 @@ syslog_syslog(PyObject * self, PyObject * args)
 			return NULL;
 	}
 
-	message = PyUnicode_AsString(message_object);
+	message = _PyUnicode_AsString(message_object);
 	if (message == NULL)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS;
