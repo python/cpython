@@ -5619,78 +5619,70 @@ int fixtitle(PyUnicodeObject *self)
 PyObject *
 PyUnicode_Join(PyObject *separator, PyObject *seq)
 {
-    PyObject *internal_separator = NULL;
     const Py_UNICODE blank = ' ';
     const Py_UNICODE *sep = &blank;
     Py_ssize_t seplen = 1;
     PyUnicodeObject *res = NULL; /* the result */
-    Py_ssize_t res_alloc = 100;  /* # allocated bytes for string in res */
-    Py_ssize_t res_used;         /* # used bytes */
     Py_UNICODE *res_p;       /* pointer to free byte in res's string area */
     PyObject *fseq;          /* PySequence_Fast(seq) */
-    Py_ssize_t seqlen;              /* len(fseq) -- number of items in sequence */
+    Py_ssize_t seqlen;       /* len(fseq) -- number of items in sequence */
+    PyObject **items;
     PyObject *item;
-    Py_ssize_t i;
+    Py_ssize_t sz, i;
 
     fseq = PySequence_Fast(seq, "");
     if (fseq == NULL) {
     	return NULL;
     }
 
-    /* Grrrr.  A codec may be invoked to convert str objects to
-     * Unicode, and so it's possible to call back into Python code
-     * during PyUnicode_FromObject(), and so it's possible for a sick
-     * codec to change the size of fseq (if seq is a list).  Therefore
-     * we have to keep refetching the size -- can't assume seqlen
-     * is invariant.
+    /* NOTE: the following code can't call back into Python code,
+     * so we are sure that fseq won't be mutated.
      */
+
     seqlen = PySequence_Fast_GET_SIZE(fseq);
     /* If empty sequence, return u"". */
     if (seqlen == 0) {
     	res = _PyUnicode_New(0);  /* empty sequence; return u"" */
     	goto Done;
     }
+    items = PySequence_Fast_ITEMS(fseq);
     /* If singleton sequence with an exact Unicode, return that. */
     if (seqlen == 1) {
-	item = PySequence_Fast_GET_ITEM(fseq, 0);
+	item = items[0];
 	if (PyUnicode_CheckExact(item)) {
 	    Py_INCREF(item);
 	    res = (PyUnicodeObject *)item;
 	    goto Done;
 	}
     }
-
-    /* At least two items to join, or one that isn't exact Unicode. */
-    if (seqlen > 1) {
-        /* Set up sep and seplen -- they're needed. */
-    	if (separator == NULL) {
-	    sep = &blank;
-	    seplen = 1;
+    else {
+        /* Set up sep and seplen */
+        if (separator == NULL) {
+            sep = &blank;
+            seplen = 1;
         }
-    	else {
-	    internal_separator = PyUnicode_FromObject(separator);
-	    if (internal_separator == NULL)
-	        goto onError;
-	    sep = PyUnicode_AS_UNICODE(internal_separator);
-	    seplen = PyUnicode_GET_SIZE(internal_separator);
-	    /* In case PyUnicode_FromObject() mutated seq. */
-	    seqlen = PySequence_Fast_GET_SIZE(fseq);
+        else {
+            if (!PyUnicode_Check(separator)) {
+                PyErr_Format(PyExc_TypeError,
+                             "separator: expected str instance,"
+                             " %.80s found",
+                             Py_TYPE(separator)->tp_name);
+                goto onError;
+            }
+            sep = PyUnicode_AS_UNICODE(separator);
+            seplen = PyUnicode_GET_SIZE(separator);
         }
     }
 
-    /* Get space. */
-    res = _PyUnicode_New(res_alloc);
-    if (res == NULL)
-        goto onError;
-    res_p = PyUnicode_AS_UNICODE(res);
-    res_used = 0;
-
-    for (i = 0; i < seqlen; ++i) {
-	Py_ssize_t itemlen;
-	Py_ssize_t new_res_used;
-
-	item = PySequence_Fast_GET_ITEM(fseq, i);
-	/* Convert item to Unicode. */
+    /* There are at least two things to join, or else we have a subclass
+     * of str in the sequence.
+     * Do a pre-pass to figure out the total amount of space we'll
+     * need (sz), and see whether all argument are strings.
+     */
+    sz = 0;
+    for (i = 0; i < seqlen; i++) {
+        const Py_ssize_t old_sz = sz;
+        item = items[i];
 	if (!PyUnicode_Check(item)) {
 	    PyErr_Format(PyExc_TypeError,
 			 "sequence item %zd: expected str instance,"
@@ -5698,68 +5690,40 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 			 i, Py_TYPE(item)->tp_name);
 	    goto onError;
 	}
-	item = PyUnicode_FromObject(item);
-	if (item == NULL)
-	    goto onError;
-	/* We own a reference to item from here on. */
+        sz += PyUnicode_GET_SIZE(item);
+        if (i != 0)
+            sz += seplen;
+        if (sz < old_sz || sz > PY_SSIZE_T_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                "join() result is too long for a Python string");
+            goto onError;
+        }
+    }
 
-	/* In case PyUnicode_FromObject() mutated seq. */
-	seqlen = PySequence_Fast_GET_SIZE(fseq);
+    res = _PyUnicode_New(sz);
+    if (res == NULL)
+        goto onError;
 
-        /* Make sure we have enough space for the separator and the item. */
-	itemlen = PyUnicode_GET_SIZE(item);
-	new_res_used = res_used + itemlen;
-	if (new_res_used < 0)
-	    goto Overflow;
-	if (i < seqlen - 1) {
-	    new_res_used += seplen;
-	    if (new_res_used < 0)
-		goto Overflow;
-	}
-	if (new_res_used > res_alloc) {
-	    /* double allocated size until it's big enough */
-	    do {
-	        res_alloc += res_alloc;
-	        if (res_alloc <= 0)
-	            goto Overflow;
-	    } while (new_res_used > res_alloc);
-	    if (_PyUnicode_Resize(&res, res_alloc) < 0) {
-		Py_DECREF(item);
-		goto onError;
-	    }
-            res_p = PyUnicode_AS_UNICODE(res) + res_used;
-	}
-
+    /* Catenate everything. */
+    res_p = PyUnicode_AS_UNICODE(res);
+    for (i = 0; i < seqlen; ++i) {
+        Py_ssize_t itemlen;
+        item = items[i];
+        itemlen = PyUnicode_GET_SIZE(item);
 	/* Copy item, and maybe the separator. */
-	Py_UNICODE_COPY(res_p, PyUnicode_AS_UNICODE(item), itemlen);
-	res_p += itemlen;
-	if (i < seqlen - 1) {
+	if (i) {
 	    Py_UNICODE_COPY(res_p, sep, seplen);
 	    res_p += seplen;
 	}
-	Py_DECREF(item);
-	res_used = new_res_used;
+	Py_UNICODE_COPY(res_p, PyUnicode_AS_UNICODE(item), itemlen);
+	res_p += itemlen;
     }
 
-    /* Shrink res to match the used area; this probably can't fail,
-     * but it's cheap to check.
-     */
-    if (_PyUnicode_Resize(&res, res_used) < 0)
-	goto onError;
-
  Done:
-    Py_XDECREF(internal_separator);
     Py_DECREF(fseq);
     return (PyObject *)res;
 
- Overflow:
-    PyErr_SetString(PyExc_OverflowError,
-                    "join() result is too long for a Python string");
-    Py_DECREF(item);
-    /* fall through */
-
  onError:
-    Py_XDECREF(internal_separator);
     Py_DECREF(fseq);
     Py_XDECREF(res);
     return NULL;

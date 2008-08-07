@@ -22,6 +22,10 @@ Core and Builtins
   If you need to access the UTF-8 representation of a Unicode object
   as bytes string, please use PyUnicode_AsUTF8String() instead.
 
+- Issue #3460: PyUnicode_Join() implementation is 10% to 80% faster thanks
+  to Python 3.0's stricter semantics which allow to avoid successive
+  reallocations of the result string (this also affects str.join()).
+
 
 Library
 -------
