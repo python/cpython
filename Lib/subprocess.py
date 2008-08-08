@@ -411,11 +411,11 @@ except:
     MAXFD = 256
 
 # True/False does not exist on 2.2.0
-try:
-    False
-except NameError:
-    False = 0
-    True = 1
+#try:
+#    False
+#except NameError:
+#    False = 0
+#    True = 1
 
 _active = []
 
@@ -1066,7 +1066,7 @@ class Popen(object):
                         os.chdir(cwd)
 
                     if preexec_fn:
-                        apply(preexec_fn)
+                        preexec_fn()
 
                     if env is None:
                         os.execvp(executable, args)
@@ -1173,7 +1173,8 @@ class Popen(object):
                     # When select has indicated that the file is writable,
                     # we can write up to PIPE_BUF bytes without risk
                     # blocking.  POSIX defines PIPE_BUF >= 512
-                    bytes_written = os.write(self.stdin.fileno(), buffer(input, input_offset, 512))
+                    chunk = input[input_offset : input_offset + 512]
+                    bytes_written = os.write(self.stdin.fileno(), chunk)
                     input_offset += bytes_written
                     if input_offset >= len(input):
                         self.stdin.close()
