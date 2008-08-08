@@ -48,7 +48,7 @@ Library
   while running under the ``-3`` flag: aifc, asyncore, bdb, bsddb,
   ConfigParser, cookielib, DocXMLRPCServer, email, filecmp, fileinput, inspect,
   logging, modulefinder, pdb, pickle, profile, pstats, pydoc, re, rlcompleter,
-  SimpleXMLRPCServer, shelve, subprocess, sqlite3, tarfile, Tkinter,
+  SimpleXMLRPCServer, shelve, socket, subprocess, sqlite3, tarfile, Tkinter,
   test.test_support, textwrap, threading, tokenize, traceback, urlparse,
   wsgiref, xml, xmlrpclib.
 
