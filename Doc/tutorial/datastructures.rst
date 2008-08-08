@@ -257,7 +257,7 @@ A more verbose version of this snippet shows the flow explicitly::
 In real world, you should prefer builtin functions to complex flow statements. 
 The :func:`zip` function would do a great job for this use case::
 
-    >>> zip(*mat)
+    >>> list(zip(*mat))
     [(1, 4, 7), (2, 5, 8), (3, 6, 9)]
 
 See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
