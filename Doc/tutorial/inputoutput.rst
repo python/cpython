@@ -228,6 +228,9 @@ arguments: ``open(filename, mode)``.
 ::
 
    >>> f = open('/tmp/workfile', 'w')
+
+.. XXX str(f) is <io.TextIOWrapper object at 0x82e8dc4>
+
    >>> print(f)
    <open file '/tmp/workfile', mode 'w' at 80a0960>
 
@@ -240,19 +243,18 @@ automatically added to the end.  ``'r+'`` opens the file for both reading and
 writing. The *mode* argument is optional; ``'r'`` will be assumed if it's
 omitted.
 
-On Windows and the Macintosh, ``'b'`` appended to the mode opens the file in
-binary mode, so there are also modes like ``'rb'``, ``'wb'``, and ``'r+b'``.
-Windows makes a distinction between text and binary files; the end-of-line
-characters in text files are automatically altered slightly when data is read or
-written.  This behind-the-scenes modification to file data is fine for ASCII
-text files, but it'll corrupt binary data like that in :file:`JPEG` or
-:file:`EXE` files.  Be very careful to use binary mode when reading and writing
-such files.  On Unix, it doesn't hurt to append a ``'b'`` to the mode, so
-you can use it platform-independently for all binary files.
+Normally, files are opened in :dfn:`text mode`, that means, you read and write
+strings from and to the file, which are encoded in a specific encoding (the
+default being UTF-8).  ``'b'`` appended to the mode opens the file in
+:dfn:`binary mode`: now the data is read and written in the form of bytes
+objects.  This mode should be used for all files that don't contain text.
 
-This behind-the-scenes modification to file data is fine for text files, but
-will corrupt binary data like that in :file:`JPEG` or :file:`EXE` files.  Be
-very careful to use binary mode when reading and writing such files.
+In text mode, the default is to convert platform-specific line endings (``\n``
+on Unix, ``\r\n`` on Windows) to just ``\n`` on reading and ``\n`` back to
+platform-specific line endings on writing.  This behind-the-scenes modification
+to file data is fine for text files, but will corrupt binary data like that in
+:file:`JPEG` or :file:`EXE` files.  Be very careful to use binary mode when
+reading and writing such files.
 
 
 .. _tut-filemethods:
@@ -264,12 +266,12 @@ The rest of the examples in this section will assume that a file object called
 ``f`` has already been created.
 
 To read a file's contents, call ``f.read(size)``, which reads some quantity of
-data and returns it as a string.  *size* is an optional numeric argument.  When
-*size* is omitted or negative, the entire contents of the file will be read and
-returned; it's your problem if the file is twice as large as your machine's
-memory. Otherwise, at most *size* bytes are read and returned.  If the end of
-the file has been reached, ``f.read()`` will return an empty string (``""``).
-::
+data and returns it as a string or bytes object.  *size* is an optional numeric
+argument.  When *size* is omitted or negative, the entire contents of the file
+will be read and returned; it's your problem if the file is twice as large as
+your machine's memory. Otherwise, at most *size* bytes are read and returned.
+If the end of the file has been reached, ``f.read()`` will return an empty
+string (``''``).  ::
 
    >>> f.read()
    'This is the entire file.\n'
@@ -281,7 +283,7 @@ is left at the end of the string, and is only omitted on the last line of the
 file if the file doesn't end in a newline.  This makes the return value
 unambiguous; if ``f.readline()`` returns an empty string, the end of the file
 has been reached, while a blank line is represented by ``'\n'``, a string
-containing only a single newline.   ::
+containing only a single newline.  ::
 
    >>> f.readline()
    'This is the first line of the file.\n'
@@ -304,8 +306,8 @@ An alternative approach to reading lines is to loop over the file object. This i
 memory efficient, fast, and leads to simpler code::
 
    >>> for line in f:
-           print(line, end='')
-
+   ...     print(line, end='')
+   ...
    This is the first line of the file.
    Second line of the file
 
@@ -314,9 +316,10 @@ control.  Since the two approaches manage line buffering differently, they
 should not be mixed.
 
 ``f.write(string)`` writes the contents of *string* to the file, returning
-``None``.   ::
+the number of characters written. ::
 
    >>> f.write('This is a test\n')
+   15
 
 To write something other than a string, it needs to be converted to a string
 first::
@@ -324,6 +327,7 @@ first::
    >>> value = ('the answer', 42)
    >>> s = str(value)
    >>> f.write(s)
+   18
 
 ``f.tell()`` returns an integer giving the file object's current position in the
 file, measured in bytes from the beginning of the file.  To change the file
@@ -334,15 +338,22 @@ of the file, 1 uses the current file position, and 2 uses the end of the file as
 the reference point.  *from_what* can be omitted and defaults to 0, using the
 beginning of the file as the reference point. ::
 
-   >>> f = open('/tmp/workfile', 'r+')
-   >>> f.write('0123456789abcdef')
+   >>> f = open('/tmp/workfile', 'rb+')
+   >>> f.write(b'0123456789abcdef')
+   16
    >>> f.seek(5)     # Go to the 6th byte in the file
+   5
    >>> f.read(1)        
-   '5'
+   b'5'
    >>> f.seek(-3, 2) # Go to the 3rd byte before the end
+   13
    >>> f.read(1)
-   'd'
+   b'd'
 
+In text files (those opened without a ``b`` in the mode string), only seeks
+relative to the beginning of the file are allowed (the exception being seeking
+to the very file end with ``seek(0, 2)``).
+   
 When you're done with a file, call ``f.close()`` to close it and free up any
 system resources taken up by the open file.  After calling ``f.close()``,
 attempts to use the file object will automatically fail. ::
