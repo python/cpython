@@ -1244,7 +1244,7 @@ their suffixes::
    (expr1, expr2, expr3, expr4)
    {expr1: expr2, expr3: expr4}
    expr1 + expr2 * (expr3 - expr4)
-   func(expr1, expr2, *expr3, **expr4)
+   expr1(expr2, expr3, *expr4, **expr5)
    expr3, expr4 = expr1, expr2
 
 
