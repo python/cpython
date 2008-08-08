@@ -407,8 +407,8 @@ class _fileobject(object):
                 nl = data.find('\n')
                 if nl >= 0:
                     nl += 1
-                    buf.write(buffer(data, 0, nl))
-                    self._rbuf.write(buffer(data, nl))
+                    buf.write(data[:nl])
+                    self._rbuf.write(data[nl:])
                     del data
                     break
                 buf.write(data)
@@ -434,9 +434,9 @@ class _fileobject(object):
                 if nl >= 0:
                     nl += 1
                     # save the excess data to _rbuf
-                    self._rbuf.write(buffer(data, nl))
+                    self._rbuf.write(data[nl:])
                     if buf_len:
-                        buf.write(buffer(data, 0, nl))
+                        buf.write(data[:nl])
                         break
                     else:
                         # Shortcut.  Avoid data copy through buf when returning
@@ -448,8 +448,8 @@ class _fileobject(object):
                     # returning exactly all of our first recv().
                     return data
                 if n >= left:
-                    buf.write(buffer(data, 0, left))
-                    self._rbuf.write(buffer(data, left))
+                    buf.write(data[:left])
+                    self._rbuf.write(data[left:])
                     break
                 buf.write(data)
                 buf_len += n
