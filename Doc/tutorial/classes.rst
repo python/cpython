@@ -671,7 +671,7 @@ class or a base class thereof (but not the other way around --- an except clause
 listing a derived class is not compatible with a base class).  For example, the
 following code will print B, C, D in that order::
 
-   class B:
+   class B(Exception):
        pass
    class C(B):
        pass
