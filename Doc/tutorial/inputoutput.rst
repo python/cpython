@@ -34,9 +34,7 @@ to substitute values into strings.
 
 One question remains, of course: how do you convert values to strings? Luckily,
 Python has ways to convert any value to a string: pass it to the :func:`repr`
-or :func:`str` functions.  Reverse quotes (``````) are equivalent to
-:func:`repr`, but they are no longer used in modern Python code and are removed
-in future versions of the language.
+or :func:`str` functions.
 
 The :func:`str` function is meant to return representations of values which are
 fairly human-readable, while :func:`repr` is meant to generate representations
@@ -70,9 +68,6 @@ Some examples::
    'hello, world\n'
    >>> # The argument to repr() may be any Python object:
    ... repr((x, y, ('spam', 'eggs')))
-   "(32.5, 40000, ('spam', 'eggs'))"
-   >>> # reverse quotes are convenient in interactive sessions:
-   ... `x, y, ('spam', 'eggs')`
    "(32.5, 40000, ('spam', 'eggs'))"
 
 Here are two ways to write a table of squares and cubes::
