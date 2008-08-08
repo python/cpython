@@ -41,6 +41,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3436: Make csv.DictReader's fieldnames attribute a property so that
+  upon first access it can be automatically initialized from the csv file if
+  it wasn't initialized during instantiation.
+
 - Issue #2338: Create imp.reload() to help with transitioning to Python 3.0 as
   the reload() built-in has been removed.
 
