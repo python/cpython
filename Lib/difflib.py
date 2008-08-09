@@ -34,6 +34,7 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
 
 import heapq
 from collections import namedtuple as _namedtuple
+from functools import reduce
 
 Match = _namedtuple('Match', 'a b size')
 
