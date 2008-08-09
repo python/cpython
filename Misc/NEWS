@@ -60,7 +60,8 @@ Library
   raised an AttributeError.
 
 - Issue #2523: Fix quadratic behaviour when read()ing a binary file without
-  asking for a specific length.
+  asking for a specific length. This problem only affected files opened
+  using the new "io" module, not the built-in open() function.
 
 - Issue #3449: Update decimal module to use most recent specification
   (v. 1.68) and tests (v. 2.58) from IBM.
