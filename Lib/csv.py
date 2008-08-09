@@ -4,6 +4,7 @@ csv.py - read/write/investigate CSV files
 """
 
 import re
+from functools import reduce
 from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  field_size_limit, \
