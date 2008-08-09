@@ -267,6 +267,48 @@ class TestWraps(TestUpdateWrapper):
         self.assertEqual(wrapper.dict_attr, f.dict_attr)
 
 
+class TestReduce(unittest.TestCase):
+
+    def test_reduce(self):
+        class Squares:
+
+            def __init__(self, max):
+                self.max = max
+                self.sofar = []
+
+            def __len__(self): return len(self.sofar)
+
+            def __getitem__(self, i):
+                if not 0 <= i < self.max: raise IndexError
+                n = len(self.sofar)
+                while n <= i:
+                    self.sofar.append(n*n)
+                    n += 1
+                return self.sofar[i]
+
+        reduce = functools.reduce
+        self.assertEqual(reduce(lambda x, y: x+y, ['a', 'b', 'c'], ''), 'abc')
+        self.assertEqual(
+            reduce(lambda x, y: x+y, [['a', 'c'], [], ['d', 'w']], []),
+            ['a','c','d','w']
+        )
+        self.assertEqual(reduce(lambda x, y: x*y, range(2,8), 1), 5040)
+        self.assertEqual(
+            reduce(lambda x, y: x*y, range(2,21), 1L),
+            2432902008176640000L
+        )
+        self.assertEqual(reduce(lambda x, y: x+y, Squares(10)), 285)
+        self.assertEqual(reduce(lambda x, y: x+y, Squares(10), 0), 285)
+        self.assertEqual(reduce(lambda x, y: x+y, Squares(0), 0), 0)
+        self.assertRaises(TypeError, reduce)
+        self.assertRaises(TypeError, reduce, 42, 42)
+        self.assertRaises(TypeError, reduce, 42, 42, 42)
+        self.assertEqual(reduce(42, "1"), "1") # func is never called with one item
+        self.assertEqual(reduce(42, "", "1"), "1") # func is never called with one item
+        self.assertRaises(TypeError, reduce, 42, (42, 42))
+
+
+
 
 def test_main(verbose=None):
     import sys
@@ -275,7 +317,8 @@ def test_main(verbose=None):
         TestPartialSubclass,
         TestPythonPartial,
         TestUpdateWrapper,
-        TestWraps
+        TestWraps,
+        TestReduce,
     )
     test_support.run_unittest(*test_classes)
 

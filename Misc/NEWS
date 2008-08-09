@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Copied the implementation of reduce() to _functools.reduce() to have a
+  version that did not raise a DeprecationWarning under -3.
+
 - Issue #3205: When iterating over a BZ2File fails allocating memory, raise
   a MemoryError rather than silently stop the iteration.
 
