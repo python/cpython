@@ -544,6 +544,29 @@ class TestDictFields(unittest.TestCase):
             fileobj.seek(0)
             reader = csv.DictReader(fileobj)
             self.assertEqual(next(reader), {"f1": '1', "f2": '2', "f3": 'abc'})
+            self.assertEqual(reader.fieldnames, ["f1", "f2", "f3"])
+
+    # Two test cases to make sure existing ways of implicitly setting
+    # fieldnames continue to work.  Both arise from discussion in issue3436.
+    def test_read_dict_fieldnames_from_file(self):
+        with TemporaryFile("w+") as fileobj:
+            fileobj.write("f1,f2,f3\r\n1,2,abc\r\n")
+            fileobj.seek(0)
+            reader = csv.DictReader(fileobj,
+                                    fieldnames=next(csv.reader(fileobj)))
+            self.assertEqual(reader.fieldnames, ["f1", "f2", "f3"])
+            self.assertEqual(next(reader), {"f1": '1', "f2": '2', "f3": 'abc'})
+
+    def test_read_dict_fieldnames_chain(self):
+        import itertools
+        with TemporaryFile("w+") as fileobj:
+            fileobj.write("f1,f2,f3\r\n1,2,abc\r\n")
+            fileobj.seek(0)
+            reader = csv.DictReader(fileobj)
+            first = next(reader)
+            for row in itertools.chain([first], reader):
+                self.assertEqual(reader.fieldnames, ["f1", "f2", "f3"])
+                self.assertEqual(row, {"f1": '1', "f2": '2', "f3": 'abc'})
 
     def test_read_long(self):
         with TemporaryFile("w+") as fileobj:
@@ -568,6 +591,7 @@ class TestDictFields(unittest.TestCase):
             fileobj.write("f1,f2\r\n1,2,abc,4,5,6\r\n")
             fileobj.seek(0)
             reader = csv.DictReader(fileobj, restkey="_rest")
+            self.assertEqual(reader.fieldnames, ["f1", "f2"])
             self.assertEqual(next(reader), {"f1": '1', "f2": '2',
                                              "_rest": ["abc", "4", "5", "6"]})
 
