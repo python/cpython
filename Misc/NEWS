@@ -41,6 +41,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3487: sre "bytecode" validator.  Passing invalid "re-bytecode"
+  to _sre.compile() will now be rejected.  This should not affect anybody
+  since the re.compile() function never generates invalid re-bytecode.
+
 - Issue #3436: Make csv.DictReader's fieldnames attribute a property so that
   upon first access it can be automatically initialized from the csv file if
   it wasn't initialized during instantiation.
