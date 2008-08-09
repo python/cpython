@@ -56,7 +56,7 @@ Library
   the reload() built-in has been removed.
 
 - Changed code in the following modules/packages to remove warnings raised
-  while running under the ``-3`` flag: aifc, asyncore, bdb, bsddb,
+  while running under the ``-3`` flag: aifc, asynchat, asyncore, bdb, bsddb,
   ConfigParser, cookielib, DocXMLRPCServer, email, filecmp, fileinput, inspect,
   logging, modulefinder, pdb, pickle, profile, pstats, pydoc, re, rlcompleter,
   SimpleXMLRPCServer, shelve, socket, subprocess, sqlite3, tarfile, Tkinter,
