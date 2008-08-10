@@ -2659,7 +2659,17 @@ class Menu(Widget):
         self.insert(index, 'separator', cnf or kw)
     def delete(self, index1, index2=None):
         """Delete menu items between INDEX1 and INDEX2 (not included)."""
+        if index2 is None:
+            index2 = index1
+        cmds = []
+        for i in range(self.index(index1), self.index(index2)+1):
+            if 'command' in self.entryconfig(i):
+                c = str(self.entrycget(i, 'command'))
+                if c in self._tclCommands:
+                    cmds.append(c)
         self.tk.call(self._w, 'delete', index1, index2)
+        for c in cmds:
+            self.deletecommand(c)
     def entrycget(self, index, option):
         """Return the resource value of an menu item for OPTION at INDEX."""
         return self.tk.call(self._w, 'entrycget', index, '-' + option)
