@@ -74,6 +74,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1342811: Fix leak in Tkinter.Menu.delete. Commands associated to
+  menu entries were not deleted.
+
 - Issue #799428: Fix Tkinter.Misc._nametowidget to unwrap Tcl command objects.
 
 - Issue #3339: dummy_thread.acquire() could return None which is not a valid
