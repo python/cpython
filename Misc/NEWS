@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1342811: Fix leak in Tkinter.Menu.delete. Commands associated to
+  menu entries were not deleted.
+
 - Copied the implementation of reduce() to _functools.reduce() to have a
   version that did not raise a DeprecationWarning under -3.
 
