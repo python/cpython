@@ -11,6 +11,7 @@ __all__ = [ 'Client', 'Listener', 'Pipe' ]
 import os
 import sys
 import socket
+import errno
 import time
 import tempfile
 import itertools
@@ -250,7 +251,7 @@ def SocketClient(address):
         try:
             s.connect(address)
         except socket.error, e:
-            if e.args[0] != 10061:    # 10061 => connection refused
+            if e.args[0] != errno.ECONNREFUSED: # connection refused
                 debug('failed to connect to address %s', address)
                 raise
             time.sleep(0.01)
