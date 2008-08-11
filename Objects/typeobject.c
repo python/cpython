@@ -3648,6 +3648,22 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 		type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
 }
 
+static int
+overrides_name(PyTypeObject *type, char *name)
+{
+	PyObject *dict = type->tp_dict;
+
+	assert(dict != NULL);
+	if (PyDict_GetItemString(dict, name) != NULL) {
+		return 1;
+	}
+	return 0;
+}
+
+#define OVERRIDES_HASH(x)       overrides_name(x, "__hash__")
+#define OVERRIDES_CMP(x)        overrides_name(x, "__cmp__")
+#define OVERRIDES_EQ(x)         overrides_name(x, "__eq__")
+
 static void
 inherit_slots(PyTypeObject *type, PyTypeObject *base)
 {
@@ -3786,6 +3802,25 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 			type->tp_compare = base->tp_compare;
 			type->tp_richcompare = base->tp_richcompare;
 			type->tp_hash = base->tp_hash;
+			/* Check for changes to inherited methods in Py3k*/
+			if (Py_Py3kWarningFlag) {
+				if (base->tp_hash &&
+						(base->tp_hash != PyObject_HashNotImplemented) &&
+						!OVERRIDES_HASH(type)) {
+					if (OVERRIDES_CMP(type)) {
+						PyErr_WarnPy3k("Overriding "
+						  "__cmp__ blocks inheritance "
+						  "of __hash__ in 3.x",
+						  1);
+					}
+					if (OVERRIDES_EQ(type)) {
+						PyErr_WarnPy3k("Overriding "
+						  "__eq__ blocks inheritance "
+						  "of __hash__ in 3.x",
+						  1);
+					}
+				}
+			}
 		}
 	}
 	else {

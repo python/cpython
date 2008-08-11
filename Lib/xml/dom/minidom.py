@@ -516,6 +516,7 @@ class NamedNodeMap(object):
 
     __len__ = _get_length
 
+    __hash__ = None # Mutable type can't be correctly hashed
     def __cmp__(self, other):
         if self._attrs is getattr(other, "_attrs", None):
             return 0

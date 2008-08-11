@@ -52,6 +52,9 @@ class FixedHash(object):
 class OnlyEquality(object):
     def __eq__(self, other):
         return self is other
+    # Trick to suppress Py3k warning in 2.x
+    __hash__ = None
+del OnlyEquality.__hash__
 
 class OnlyInequality(object):
     def __ne__(self, other):
@@ -60,6 +63,9 @@ class OnlyInequality(object):
 class OnlyCmp(object):
     def __cmp__(self, other):
         return cmp(id(self), id(other))
+    # Trick to suppress Py3k warning in 2.x
+    __hash__ = None
+del OnlyCmp.__hash__
 
 class InheritedHashWithEquality(FixedHash, OnlyEquality): pass
 class InheritedHashWithInequality(FixedHash, OnlyInequality): pass
@@ -71,18 +77,15 @@ class NoHash(object):
 class HashInheritanceTestCase(unittest.TestCase):
     default_expected = [object(),
                         DefaultHash(),
+                        OnlyEquality(),
+                        OnlyInequality(),
+                        OnlyCmp(),
                        ]
     fixed_expected = [FixedHash(),
                       InheritedHashWithEquality(),
                       InheritedHashWithInequality(),
                       InheritedHashWithCmp(),
                       ]
-    # TODO: Change these to expecting an exception
-    # when forward porting to Py3k
-    warning_expected = [OnlyEquality(),
-                        OnlyInequality(),
-                        OnlyCmp(),
-                       ]
     error_expected = [NoHash()]
 
     def test_default_hash(self):
@@ -93,20 +96,13 @@ class HashInheritanceTestCase(unittest.TestCase):
         for obj in self.fixed_expected:
             self.assertEqual(hash(obj), _FIXED_HASH_VALUE)
 
-    def test_warning_hash(self):
-        for obj in self.warning_expected:
-            # TODO: Check for the expected Py3k warning here
-            obj_hash = hash(obj)
-            self.assertEqual(obj_hash, _default_hash(obj))
-
     def test_error_hash(self):
         for obj in self.error_expected:
             self.assertRaises(TypeError, hash, obj)
 
     def test_hashable(self):
         objects = (self.default_expected +
-                   self.fixed_expected +
-                   self.warning_expected)
+                   self.fixed_expected)
         for obj in objects:
             self.assert_(isinstance(obj, Hashable), repr(obj))
 

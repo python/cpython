@@ -33,6 +33,7 @@ class SliceTest(unittest.TestCase):
         class BadCmp(object):
             def __eq__(self, other):
                 raise Exc
+            __hash__ = None # Silence Py3k warning
 
         s1 = slice(BadCmp())
         s2 = slice(BadCmp())

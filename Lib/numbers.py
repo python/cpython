@@ -18,6 +18,9 @@ class Number(object):
     """
     __metaclass__ = ABCMeta
 
+    # Concrete numeric types must provide their own hash implementation
+    __hash__ = None
+
 
 ## Notes on Decimal
 ## ----------------

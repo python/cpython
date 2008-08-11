@@ -425,6 +425,9 @@ class TestSuite:
     def __ne__(self, other):
         return not self == other
 
+    # Can't guarantee hash invariant, so flag as unhashable
+    __hash__ = None
+
     def __iter__(self):
         return iter(self._tests)
 
