@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #3537: Fix an assertion failure when an empty but presized dict
+  object was stored in the freelist.
+
 - Apply security patches from Apple.
 
 - Issue #2620: Overflow checking when allocating or reallocating memory
