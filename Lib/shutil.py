@@ -16,6 +16,11 @@ __all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
 class Error(EnvironmentError):
     pass
 
+try:
+    WindowsError
+except NameError:
+    WindowsError = None
+
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
     while 1:
@@ -162,11 +167,12 @@ def copytree(src, dst, symlinks=False, ignore=None):
             errors.extend(err.args[0])
     try:
         copystat(src, dst)
-    except WindowsError:
-        # can't copy file access times on Windows
-        pass
     except OSError, why:
-        errors.extend((src, dst, str(why)))
+        if WindowsError is not None and isinstance(why, WindowsError):
+            # Copying file access times may fail on Windows
+            pass
+        else:
+            errors.extend((src, dst, str(why)))
     if errors:
         raise Error, errors
 
