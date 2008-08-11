@@ -215,10 +215,7 @@ class SocketListener(object):
         self._socket = socket.socket(getattr(socket, family))
         self._socket.bind(address)
         self._socket.listen(backlog)
-        address = self._socket.getsockname()
-        if type(address) is tuple:
-            address = (socket.getfqdn(address[0]),) + address[1:]
-        self._address = address
+        self._address = self._socket.getsockname()
         self._family = family
         self._last_accepted = None
 
