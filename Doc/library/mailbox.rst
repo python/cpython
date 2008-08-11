@@ -1482,7 +1482,7 @@ The following exception classes are defined in the :mod:`mailbox` module:
    parameter set to ``False``), or when opening a folder that does not exist.
 
 
-.. exception:: NotEmptyErrorError()
+.. exception:: NotEmptyError()
 
    Raised when a mailbox is not empty but is expected to be, such as when deleting
    a folder that contains messages.
