@@ -12,6 +12,9 @@ What's New in Python 2.6 beta 3?
 Core and Builtins
 -----------------
 
+- Issue #3537: Fix an assertion failure when an empty but presized dict
+  object was stored in the freelist.
+
 - Issue #1481296: Make long(float('nan')) and int(float('nan')) raise
   ValueError consistently across platforms.
 

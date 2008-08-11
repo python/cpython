@@ -544,6 +544,17 @@ class DictTest(unittest.TestCase):
         resizing = True
         d[9] = 6
 
+    def test_empty_presized_dict_in_freelist(self):
+        # Bug #3537: if an empty but presized dict with a size larger
+        # than 7 was in the freelist, it triggered an assertion failure
+        try:
+            d = {'a': 1/0,  'b': None, 'c': None, 'd': None, 'e': None,
+                 'f': None, 'g': None, 'h': None}
+        except ZeroDivisionError:
+            pass
+        d = {}
+
+
 
 from test import mapping_tests
 
