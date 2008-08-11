@@ -207,6 +207,9 @@ class Set(Sized, Iterable, Container):
             other = self._from_iterable(other)
         return (self - other) | (other - self)
 
+    # Sets are not hashable by default, but subclasses can change this
+    __hash__ = None
+
     def _hash(self):
         """Compute the hash value of a set.
 
@@ -349,6 +352,9 @@ class Mapping(Sized, Iterable, Container):
 
     def values(self):
         return [self[key] for key in self]
+
+    # Mappings are not hashable by default, but subclasses can change this
+    __hash__ = None
 
     def __eq__(self, other):
         return isinstance(other, Mapping) and \

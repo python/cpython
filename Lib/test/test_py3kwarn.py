@@ -12,6 +12,9 @@ if not sys.py3kwarning:
 
 class TestPy3KWarnings(unittest.TestCase):
 
+    def assertWarning(self, _, warning, expected_message):
+        self.assertEqual(str(warning.message), expected_message)
+
     def test_backquote(self):
         expected = 'backquote not supported in 3.x; use repr()'
         with catch_warning() as w:
@@ -28,30 +31,41 @@ class TestPy3KWarnings(unittest.TestCase):
         with catch_warning() as w:
             safe_exec("True = False")
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("False = True")
             self.assertWarning(None, w, expected)
+            w.reset()
             try:
                 safe_exec("obj.False = True")
             except NameError: pass
             self.assertWarning(None, w, expected)
+            w.reset()
             try:
                 safe_exec("obj.True = False")
             except NameError: pass
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("def False(): pass")
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("def True(): pass")
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("class False: pass")
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("class True: pass")
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("def f(True=43): pass")
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("def f(False=None): pass")
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("f(False=True)")
             self.assertWarning(None, w, expected)
+            w.reset()
             safe_exec("f(True=1)")
             self.assertWarning(None, w, expected)
 
@@ -60,20 +74,25 @@ class TestPy3KWarnings(unittest.TestCase):
         expected = 'type inequality comparisons not supported in 3.x'
         with catch_warning() as w:
             self.assertWarning(int < str, w, expected)
+            w.reset()
             self.assertWarning(type < object, w, expected)
 
     def test_object_inequality_comparisons(self):
         expected = 'comparing unequal types not supported in 3.x'
         with catch_warning() as w:
             self.assertWarning(str < [], w, expected)
+            w.reset()
             self.assertWarning(object() < (1, 2), w, expected)
 
     def test_dict_inequality_comparisons(self):
         expected = 'dict inequality comparisons not supported in 3.x'
         with catch_warning() as w:
             self.assertWarning({} < {2:3}, w, expected)
+            w.reset()
             self.assertWarning({} <= {}, w, expected)
+            w.reset()
             self.assertWarning({} > {2:3}, w, expected)
+            w.reset()
             self.assertWarning({2:3} >= {}, w, expected)
 
     def test_cell_inequality_comparisons(self):
@@ -86,6 +105,7 @@ class TestPy3KWarnings(unittest.TestCase):
         cell1, = f(1).func_closure
         with catch_warning() as w:
             self.assertWarning(cell0 == cell1, w, expected)
+            w.reset()
             self.assertWarning(cell0 < cell1, w, expected)
 
     def test_code_inequality_comparisons(self):
@@ -96,8 +116,11 @@ class TestPy3KWarnings(unittest.TestCase):
             pass
         with catch_warning() as w:
             self.assertWarning(f.func_code < g.func_code, w, expected)
+            w.reset()
             self.assertWarning(f.func_code <= g.func_code, w, expected)
+            w.reset()
             self.assertWarning(f.func_code >= g.func_code, w, expected)
+            w.reset()
             self.assertWarning(f.func_code > g.func_code, w, expected)
 
     def test_builtin_function_or_method_comparisons(self):
@@ -107,12 +130,12 @@ class TestPy3KWarnings(unittest.TestCase):
         meth = {}.get
         with catch_warning() as w:
             self.assertWarning(func < meth, w, expected)
+            w.reset()
             self.assertWarning(func > meth, w, expected)
+            w.reset()
             self.assertWarning(meth <= func, w, expected)
+            w.reset()
             self.assertWarning(meth >= func, w, expected)
-
-    def assertWarning(self, _, warning, expected_message):
-        self.assertEqual(str(warning.message), expected_message)
 
     def test_sort_cmp_arg(self):
         expected = "the cmp argument is not supported in 3.x"
@@ -121,8 +144,11 @@ class TestPy3KWarnings(unittest.TestCase):
 
         with catch_warning() as w:
             self.assertWarning(lst.sort(cmp=cmp), w, expected)
+            w.reset()
             self.assertWarning(sorted(lst, cmp=cmp), w, expected)
+            w.reset()
             self.assertWarning(lst.sort(cmp), w, expected)
+            w.reset()
             self.assertWarning(sorted(lst, cmp), w, expected)
 
     def test_sys_exc_clear(self):
@@ -156,7 +182,7 @@ class TestPy3KWarnings(unittest.TestCase):
             self.assertWarning(None, w, expected)
 
     def test_buffer(self):
-        expected = 'buffer() not supported in 3.x; use memoryview()'
+        expected = 'buffer() not supported in 3.x'
         with catch_warning() as w:
             self.assertWarning(buffer('a'), w, expected)
 
@@ -166,6 +192,64 @@ class TestPy3KWarnings(unittest.TestCase):
         with file(__file__) as f:
             with catch_warning() as w:
                 self.assertWarning(f.xreadlines(), w, expected)
+
+    def test_hash_inheritance(self):
+        with catch_warning() as w:
+            # With object as the base class
+            class WarnOnlyCmp(object):
+                def __cmp__(self, other): pass
+            self.assertEqual(len(w.warnings), 1)
+            self.assertWarning(None, w,
+                 "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
+            w.reset()
+            class WarnOnlyEq(object):
+                def __eq__(self, other): pass
+            self.assertEqual(len(w.warnings), 1)
+            self.assertWarning(None, w,
+                 "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
+            w.reset()
+            class WarnCmpAndEq(object):
+                def __cmp__(self, other): pass
+                def __eq__(self, other): pass
+            self.assertEqual(len(w.warnings), 2)
+            self.assertWarning(None, w.warnings[-2],
+                 "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
+            self.assertWarning(None, w,
+                 "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
+            w.reset()
+            class NoWarningOnlyHash(object):
+                def __hash__(self): pass
+            self.assertEqual(len(w.warnings), 0)
+            # With an intermediate class in the heirarchy
+            class DefinesAllThree(object):
+                def __cmp__(self, other): pass
+                def __eq__(self, other): pass
+                def __hash__(self): pass
+            class WarnOnlyCmp(DefinesAllThree):
+                def __cmp__(self, other): pass
+            self.assertEqual(len(w.warnings), 1)
+            self.assertWarning(None, w,
+                 "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
+            w.reset()
+            class WarnOnlyEq(DefinesAllThree):
+                def __eq__(self, other): pass
+            self.assertEqual(len(w.warnings), 1)
+            self.assertWarning(None, w,
+                 "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
+            w.reset()
+            class WarnCmpAndEq(DefinesAllThree):
+                def __cmp__(self, other): pass
+                def __eq__(self, other): pass
+            self.assertEqual(len(w.warnings), 2)
+            self.assertWarning(None, w.warnings[-2],
+                 "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
+            self.assertWarning(None, w,
+                 "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
+            w.reset()
+            class NoWarningOnlyHash(DefinesAllThree):
+                def __hash__(self): pass
+            self.assertEqual(len(w.warnings), 0)
+
 
 
 class TestStdlibRemovals(unittest.TestCase):

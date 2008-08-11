@@ -309,6 +309,7 @@ class CoercionTest(unittest.TestCase):
             def __cmp__(slf, other):
                 self.assert_(other == 42, 'expected evil_coercer, got %r' % other)
                 return 0
+            __hash__ = None # Invalid cmp makes this unhashable
         self.assertEquals(cmp(WackyComparer(), evil_coercer), 0)
         # ...and classic classes too, since that code path is a little different
         class ClassicWackyComparer:

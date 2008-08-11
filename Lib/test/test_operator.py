@@ -57,6 +57,7 @@ class OperatorTestCase(unittest.TestCase):
         class C(object):
             def __eq__(self, other):
                 raise SyntaxError
+            __hash__ = None # Silence Py3k warning
         self.failUnlessRaises(TypeError, operator.eq)
         self.failUnlessRaises(SyntaxError, operator.eq, C(), C())
         self.failIf(operator.eq(1, 0))

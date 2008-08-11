@@ -1121,6 +1121,7 @@ order (MRO) for bases """
         class G(object):
             def __cmp__(self, other):
                 return 0
+            __hash__ = None # Silence Py3k warning
         g = G()
         orig_objects = len(gc.get_objects())
         for i in xrange(10):
@@ -2727,6 +2728,7 @@ order (MRO) for bases """
                     if isinstance(other, int) or isinstance(other, long):
                         return cmp(self.value, other)
                     return NotImplemented
+                __hash__ = None # Silence Py3k warning
 
             c1 = C(1)
             c2 = C(2)
@@ -2755,6 +2757,7 @@ order (MRO) for bases """
                     return abs(self - other) <= 1e-6
                 except:
                     return NotImplemented
+            __hash__ = None # Silence Py3k warning
         zz = ZZ(1.0000003)
         self.assertEqual(zz, 1+0j)
         self.assertEqual(1+0j, zz)
@@ -2767,6 +2770,7 @@ order (MRO) for bases """
                     self.value = int(value)
                 def __cmp__(self_, other):
                     self.fail("shouldn't call __cmp__")
+                __hash__ = None # Silence Py3k warning
                 def __eq__(self, other):
                     if isinstance(other, C):
                         return self.value == other.value
@@ -3262,6 +3266,7 @@ order (MRO) for bases """
         class S(str):
             def __eq__(self, other):
                 return self.lower() == other.lower()
+            __hash__ = None # Silence Py3k warning
 
     def test_subclass_propagation(self):
         # Testing propagation of slot functions to subclasses...

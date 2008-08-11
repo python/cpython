@@ -6,6 +6,8 @@ class MyInt(c_int):
         if type(other) != MyInt:
             return -1
         return cmp(self.value, other.value)
+    def __hash__(self): # Silence Py3k warning
+        return hash(self.value)
 
 class Test(unittest.TestCase):
 

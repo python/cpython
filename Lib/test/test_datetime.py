@@ -986,6 +986,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 # compare-by-address (which never says "equal" for distinct
                 # objects).
                 return 0
+            __hash__ = None # Silence Py3k warning
 
         # This still errors, because date and datetime comparison raise
         # TypeError instead of NotImplemented when they don't know what to

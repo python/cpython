@@ -172,6 +172,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         class H(Hashable):
             def __hash__(self):
                 return super(H, self).__hash__()
+            __eq__ = Hashable.__eq__ # Silence Py3k warning
         self.assertEqual(hash(H()), 0)
         self.failIf(issubclass(int, H))
 
