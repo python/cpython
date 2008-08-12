@@ -1370,6 +1370,42 @@ PyDoc_STRVAR(PySSL_SSLread_doc,
 \n\
 Read up to len bytes from the SSL socket.");
 
+static PyObject *PySSL_SSLshutdown(PySSLObject *self)
+{
+	int err;
+        PySocketSockObject *sock
+          = (PySocketSockObject *) PyWeakref_GetObject(self->Socket);
+
+	/* Guard against closed socket */
+        if ((((PyObject*)sock) == Py_None) || (sock->sock_fd < 0)) {
+                _setSSLError("Underlying socket connection gone",
+                             PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
+                return NULL;
+        }
+
+	PySSL_BEGIN_ALLOW_THREADS
+	err = SSL_shutdown(self->ssl);
+	if (err == 0) {
+		/* we need to call it again to finish the shutdown */
+		err = SSL_shutdown(self->ssl);
+	}
+	PySSL_END_ALLOW_THREADS
+
+	if (err < 0)
+		return PySSL_SetError(self, err, __FILE__, __LINE__);
+	else {
+                Py_INCREF(sock);
+                return (PyObject *) sock;
+	}
+}
+
+PyDoc_STRVAR(PySSL_SSLshutdown_doc,
+"shutdown(s) -> socket\n\
+\n\
+Does the SSL shutdown handshake with the remote end, and returns\n\
+the underlying socket object.");
+
+
 static PyMethodDef PySSLMethods[] = {
 	{"do_handshake", (PyCFunction)PySSL_SSLdo_handshake, METH_NOARGS},
 	{"write", (PyCFunction)PySSL_SSLwrite, METH_VARARGS,
@@ -1381,6 +1417,8 @@ static PyMethodDef PySSLMethods[] = {
 	{"peer_certificate", (PyCFunction)PySSL_peercert, METH_VARARGS,
 	 PySSL_peercert_doc},
 	{"cipher", (PyCFunction)PySSL_cipher, METH_NOARGS},
+	{"shutdown", (PyCFunction)PySSL_SSLshutdown, METH_NOARGS,
+	 PySSL_SSLshutdown_doc},
 	{NULL, NULL}
 };
 
@@ -1479,6 +1517,8 @@ Returns number of bytes read.  Raises SSLError if connection to EGD\n\
 fails or if it does provide enough data to seed PRNG.");
 
 #endif
+
+
 
 /* List of functions exported by this module. */
 

@@ -279,6 +279,15 @@ else:
                             self.write("OK\n".encode("ASCII", "strict"))
                             if not self.wrap_conn():
                                 return
+                        elif (self.server.starttls_server and self.sslconn
+                              and amsg.strip() == 'ENDTLS'):
+                            if support.verbose and self.server.connectionchatty:
+                                sys.stdout.write(" server: read ENDTLS from client, sending OK...\n")
+                            self.write("OK\n".encode("ASCII", "strict"))
+                            self.sock = self.sslconn.unwrap()
+                            self.sslconn = None
+                            if support.verbose and self.server.connectionchatty:
+                                sys.stdout.write(" server: connection is now unencrypted...\n")
                         else:
                             if (support.verbose and
                                 self.server.connectionchatty):
@@ -868,7 +877,7 @@ else:
 
         def testSTARTTLS (self):
 
-            msgs = ("msg 1", "MSG 2", "STARTTLS", "MSG 3", "msg 4")
+            msgs = ("msg 1", "MSG 2", "STARTTLS", "MSG 3", "msg 4", "ENDTLS", "msg 5", "msg 6")
 
             server = ThreadedEchoServer(CERTFILE,
                                         ssl_version=ssl.PROTOCOL_TLSv1,
@@ -910,8 +919,16 @@ else:
                                     " client:  read %s from server, starting TLS...\n"
                                     % repr(msg))
                             conn = ssl.wrap_socket(s, ssl_version=ssl.PROTOCOL_TLSv1)
-
                             wrapped = True
+                        elif (indata == "ENDTLS" and
+                              str(outdata, 'ASCII', 'replace').strip().lower().startswith("ok")):
+                            if support.verbose:
+                                msg = str(outdata, 'ASCII', 'replace')
+                                sys.stdout.write(
+                                    " client:  read %s from server, ending TLS...\n"
+                                    % repr(msg))
+                            s = conn.unwrap()
+                            wrapped = False
                         else:
                             if support.verbose:
                                 msg = str(outdata, 'ASCII', 'replace')
@@ -922,7 +939,7 @@ else:
                     if wrapped:
                         conn.write("over\n".encode("ASCII", "strict"))
                     else:
-                        s.send("over\n")
+                        s.send("over\n".encode("ASCII", "strict"))
                 if wrapped:
                     conn.close()
                 else:
