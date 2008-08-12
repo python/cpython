@@ -234,13 +234,17 @@ class SSLSocket (socket):
         else:
             return 0
 
+    def unwrap (self):
+        if self._sslobj:
+            s = self._sslobj.shutdown()
+            self._sslobj = None
+            return s
+        else:
+            raise ValueError("No SSL wrapper around " + str(self))
+
     def shutdown (self, how):
         self._sslobj = None
         socket.shutdown(self, how)
-
-    def close (self):
-        self._sslobj = None
-        socket.close(self)
 
     def close (self):
         if self._makefile_refs < 1:
