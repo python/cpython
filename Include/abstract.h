@@ -549,24 +549,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         */
 
 
-     PyAPI_FUNC(void) PyObject_ReleaseBuffer(PyObject *obj, Py_buffer *view);
-
-
-	/* C-API version of the releasebuffer function call.  It
-	   checks to make sure the object has the required function
-	   pointer and issues the call.  The obj must have the buffer
-	   interface or this function will cause a segfault (i.e. it
-	   is assumed to be called only after a corresponding
-	   getbuffer which already verified the existence of the
-	   tp_as_buffer pointer).
-           
-           Returns 0 on success and -1 (with an error raised) on
-           failure.  This function always succeeds (as a NO-OP) if
-           there is no releasebuffer function for the object so that
-           it can always be called when the consumer is done with the
-           buffer
-        */
-
      PyAPI_FUNC(void *) PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
         
         /* Get the memory area pointed to by the indices for the buffer given. 
@@ -623,7 +605,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
             per element.
         */
 
-     PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, void *buf,
+     PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, PyObject *o, void *buf,
 		             	       Py_ssize_t len, int readonly,
 				       int flags);
 
@@ -632,6 +614,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
            "unsigned bytes" of the given length. Returns 0 on success
            and -1 (with raising an error) on error.
          */
+
+     PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
+
+       /* Releases a Py_buffer obtained from getbuffer ParseTuple's s*.
+        */
 
      PyAPI_FUNC(PyObject *) PyObject_Format(PyObject* obj,
 					    PyObject *format_spec);

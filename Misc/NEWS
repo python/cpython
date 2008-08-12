@@ -12,6 +12,10 @@ What's New in Python 2.6 beta 3?
 Core and Builtins
 -----------------
 
+- Issue #3139: Make buffer-interface thread-safe wrt. PyArg_ParseTuple,
+  by denying s# to parse objects that have a releasebuffer procedure,
+  and introducing s*.
+
 - Issue #3537: Fix an assertion failure when an empty but presized dict
   object was stored in the freelist.
 

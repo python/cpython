@@ -6334,15 +6334,16 @@ Write a string to a file descriptor.");
 static PyObject *
 posix_write(PyObject *self, PyObject *args)
 {
+	Py_buffer pbuf;
 	int fd;
 	Py_ssize_t size;
-	char *buffer;
 
-	if (!PyArg_ParseTuple(args, "is#:write", &fd, &buffer, &size))
+	if (!PyArg_ParseTuple(args, "is*:write", &fd, &pbuf))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	size = write(fd, buffer, (size_t)size);
+	size = write(fd, pbuf.buf, (size_t)pbuf.len);
 	Py_END_ALLOW_THREADS
+		PyBuffer_Release(&pbuf);
 	if (size < 0)
 		return posix_error();
 	return PyInt_FromSsize_t(size);

@@ -1328,7 +1328,8 @@ string_buffer_getcharbuf(PyStringObject *self, Py_ssize_t index, const char **pt
 static int
 string_buffer_getbuffer(PyStringObject *self, Py_buffer *view, int flags)
 {
-	return PyBuffer_FillInfo(view, (void *)self->ob_sval, Py_SIZE(self),
+	return PyBuffer_FillInfo(view, (PyObject*)self,
+				 (void *)self->ob_sval, Py_SIZE(self),
 				 1, flags);
 }
 
@@ -1359,7 +1360,7 @@ static PyBufferProcs string_as_buffer = {
 };
 
 
-
+
 #define LEFTSTRIP 0
 #define RIGHTSTRIP 1
 #define BOTHSTRIP 2
@@ -3996,7 +3997,7 @@ PyDoc_STRVAR(p_format__doc__,
 \n\
 ");
 
-
+
 static PyMethodDef
 string_methods[] = {
 	/* Counterparts of the obsolete stropmodule functions; except
