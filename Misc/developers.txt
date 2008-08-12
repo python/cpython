@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Hirokazu Yamamoto was given SVN access on August 12 2008 by MvL,
+  for contributions to the Windows build.
+
 - Antoine Pitrou was given SVN access on July 16 2008, by recommendation
   from GvR, for general contributions to Python.
 
