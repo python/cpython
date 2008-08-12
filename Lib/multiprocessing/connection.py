@@ -209,7 +209,7 @@ else:
 
 class SocketListener(object):
     '''
-    Represtation of a socket which is bound to an address and listening
+    Representation of a socket which is bound to an address and listening
     '''
     def __init__(self, address, family, backlog=1):
         self._socket = socket.socket(getattr(socket, family))

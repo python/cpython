@@ -215,6 +215,12 @@ Instances of the :class:`Popen` class have the following methods:
    Wait for child process to terminate.  Set and return :attr:`returncode`
    attribute.
 
+   .. warning::
+
+      This will deadlock if the child process generates enough output to a
+      stdout or stderr pipe such that it blocks waiting for the OS pipe buffer
+      to accept more data.  Use :meth:`communicate` to avoid that.
+
 
 .. method:: Popen.communicate(input=None)
 
@@ -260,6 +266,14 @@ Instances of the :class:`Popen` class have the following methods:
 
 
 The following attributes are also available:
+
+.. warning::
+
+   Use :meth:`communicate` rather than :meth:`.stdin.write`,
+   :meth:`.stdout.read` or :meth:`.stderr.read` to avoid deadlocks due
+   to any of the other OS pipe buffers filling up and blocking the child
+   process.
+
 
 .. attribute:: Popen.stdin
 

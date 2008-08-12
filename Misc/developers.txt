@@ -20,7 +20,7 @@ Permissions History
 - Antoine Pitrou was given SVN access on July 16 2008, by recommendation
   from GvR, for general contributions to Python.
 
-- Jesse Noller was given SVN access on 16 June 2008 by Georg Brandl,
+- Jesse Noller was given SVN access on 16 June 2008 by GFB,
   for work on the multiprocessing module.
 
 - Gregor Lingl was given SVN access on 10 June 2008 by MvL,
@@ -45,13 +45,13 @@ Permissions History
   for work on branches (ast/optimizer related).
 
 - Jeroen Ruigrok van der Werven was given SVN access on 12 April 2008
-  by Georg Brandl, for documentation work.
+  by GFB, for documentation work.
 
-- Josiah Carlson was given SVN access on 26 March 2008 by Georg Brandl,
+- Josiah Carlson was given SVN access on 26 March 2008 by GFB,
   for work on asyncore/asynchat.
 
-- Benjamin Peterson was given SVN access on 25 March 2008 by Georg
-  Brandl, for bug triage work.
+- Benjamin Peterson was given SVN access on 25 March 2008 by GFB,
+  for bug triage work.
 
 - Jerry Seutter was given SVN access on 20 March 2008 by BAC, for
   general contributions to Python.
@@ -196,6 +196,12 @@ Permissions History
 Permissions Dropped on Request
 ------------------------------
 
+- Roy Smith, Matt Fleming and Richard Emslie sent drop requests.
+  4 Aug 2008 GFB
+
+- Per note from Andrew Kuchling, the permissions for Gregory K Johnson
+  and the Summer Of Code project are no longer needed.  4 Aug 2008 GFB
+
 - Per note from Andrew Kuchling, the permissions for Gregory K Johnson
   and the Summer Of Code project are no longer needed.  AMK will make
   any future checkins directly.  16 Oct 2005 RDH
@@ -235,3 +241,4 @@ RDH:  Raymond Hettinger
 TGP:  Tim Peters
 DJG:  David Goodger
 MvL:  Martin v. Loewis
+GFB:  Georg Brandl
