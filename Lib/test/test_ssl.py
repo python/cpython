@@ -282,6 +282,14 @@ else:
                             self.write("OK\n")
                             if not self.wrap_conn():
                                 return
+                        elif self.server.starttls_server and self.sslconn and msg.strip() == 'ENDTLS':
+                            if test_support.verbose and self.server.connectionchatty:
+                                sys.stdout.write(" server: read ENDTLS from client, sending OK...\n")
+                            self.write("OK\n")
+                            self.sslconn.unwrap()
+                            self.sslconn = None
+                            if test_support.verbose and self.server.connectionchatty:
+                                sys.stdout.write(" server: connection is now unencrypted...\n")
                         else:
                             if (test_support.verbose and
                                 self.server.connectionchatty):
@@ -867,7 +875,7 @@ else:
 
         def testSTARTTLS (self):
 
-            msgs = ("msg 1", "MSG 2", "STARTTLS", "MSG 3", "msg 4")
+            msgs = ("msg 1", "MSG 2", "STARTTLS", "MSG 3", "msg 4", "ENDTLS", "msg 5", "msg 6")
 
             server = ThreadedEchoServer(CERTFILE,
                                         ssl_version=ssl.PROTOCOL_TLSv1,
@@ -907,8 +915,15 @@ else:
                                     " client:  read %s from server, starting TLS...\n"
                                     % repr(outdata))
                             conn = ssl.wrap_socket(s, ssl_version=ssl.PROTOCOL_TLSv1)
-
                             wrapped = True
+                        elif (indata == "ENDTLS" and
+                            outdata.strip().lower().startswith("ok")):
+                            if test_support.verbose:
+                                sys.stdout.write(
+                                    " client:  read %s from server, ending TLS...\n"
+                                    % repr(outdata))
+                            s = conn.unwrap()
+                            wrapped = False
                         else:
                             if test_support.verbose:
                                 sys.stdout.write(
