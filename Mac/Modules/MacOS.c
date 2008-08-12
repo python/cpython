@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Carbon/Carbon.h>
 #include <ApplicationServices/ApplicationServices.h>
 
-#ifndef HAVE_MACOS105_SDK
+#ifndef HAVE_OSX105_SDK
 typedef SInt16	FSIORefNum;
 #endif
 

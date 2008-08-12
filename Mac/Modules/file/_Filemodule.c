@@ -7,7 +7,7 @@
 
 #include "pymactoolbox.h"
 
-#ifndef HAVE_MACOS105_SDK
+#ifndef HAVE_OSX105_SDK
 typedef SInt16	FSIORefNum;
 #endif
 
