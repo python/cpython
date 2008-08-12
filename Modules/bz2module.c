@@ -317,6 +317,7 @@ Util_ReadAhead(BZ2FileObject *f, int bufsize)
 		return 0;
 	}
 	if ((f->f_buf = PyMem_Malloc(bufsize)) == NULL) {
+		PyErr_NoMemory();
 		return -1;
 	}
 	Py_BEGIN_ALLOW_THREADS

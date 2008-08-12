@@ -291,6 +291,10 @@ tstate_delete_common(PyThreadState *tstate)
 				"PyThreadState_Delete: invalid tstate");
 		if (*p == tstate)
 			break;
+		/* Sanity check.  These states should never happen but if
+		 * they do we must abort.  Otherwise we'll end up spinning in
+		 * in a tight loop with the lock held.  A similar check is done
+		 * in thread.c find_key().  */
 		if (*p == prev_p)
 			Py_FatalError(
 				"PyThreadState_Delete: small circular list(!)"

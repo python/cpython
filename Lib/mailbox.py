@@ -394,7 +394,8 @@ class Maildir(Mailbox):
         result = Maildir(path, factory=self._factory)
         maildirfolder_path = os.path.join(path, 'maildirfolder')
         if not os.path.exists(maildirfolder_path):
-            os.close(os.open(maildirfolder_path, os.O_CREAT | os.O_WRONLY))
+            os.close(os.open(maildirfolder_path, os.O_CREAT | os.O_WRONLY,
+                0o666))
         return result
 
     def remove_folder(self, folder):
@@ -1900,7 +1901,7 @@ def _unlock_file(f):
 
 def _create_carefully(path):
     """Create a file if it doesn't exist and open for reading and writing."""
-    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR, 0o666)
     try:
         return open(path, 'r+', newline='')
     finally:

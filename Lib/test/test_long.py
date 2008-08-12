@@ -768,7 +768,8 @@ class LongTest(unittest.TestCase):
 
     def test_nan_inf(self):
         self.assertRaises(OverflowError, int, float('inf'))
-        self.assertRaises(OverflowError, int, float('nan'))
+        self.assertRaises(OverflowError, int, float('-inf'))
+        self.assertRaises(ValueError, int, float('nan'))
 
     def test_true_division(self):
         huge = 1 << 40000
