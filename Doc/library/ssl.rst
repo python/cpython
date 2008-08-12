@@ -322,6 +322,15 @@ SSLSocket Objects
                 else:
                     raise
 
+.. method:: SSLSocket.unwrap()
+
+   Performs the SSL shutdown handshake, which removes the TLS layer
+   from the underlying socket, and returns the underlying socket
+   object.  This can be used to go from encrypted operation over a
+   connection to unencrypted.  The returned socket should always be
+   used for further communication with the other side of the
+   connection, rather than the original socket
+
 .. index:: single: certificates
 
 .. index:: single: X509 certificate
