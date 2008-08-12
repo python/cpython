@@ -75,10 +75,10 @@ from _ssl import (
     SSL_ERROR_INVALID_ERROR_CODE,
     )
 
-from socket import socket, AF_INET, SOCK_STREAM, error
 from socket import getnameinfo as _getnameinfo
 from socket import error as socket_error
 from socket import dup as _dup
+from socket import socket, AF_INET, SOCK_STREAM
 import base64        # for DER-to-PEM translation
 import traceback
 
@@ -295,6 +295,14 @@ class SSLSocket(socket):
         self._checkClosed()
         self._sslobj = None
         socket.shutdown(self, how)
+
+    def unwrap (self):
+        if self._sslobj:
+            s = self._sslobj.shutdown()
+            self._sslobj = None
+            return s
+        else:
+            raise ValueError("No SSL wrapper around " + str(self))
 
     def _real_close(self):
         self._sslobj = None
