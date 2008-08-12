@@ -240,6 +240,7 @@ tstate_delete_common(PyThreadState *tstate)
 {
 	PyInterpreterState *interp;
 	PyThreadState **p;
+	PyThreadState *prev_p = NULL;
 	if (tstate == NULL)
 		Py_FatalError("PyThreadState_Delete: NULL tstate");
 	interp = tstate->interp;
@@ -252,6 +253,19 @@ tstate_delete_common(PyThreadState *tstate)
 				"PyThreadState_Delete: invalid tstate");
 		if (*p == tstate)
 			break;
+		/* Sanity check.  These states should never happen but if
+		 * they do we must abort.  Otherwise we'll end up spinning in
+		 * in a tight loop with the lock held.  A similar check is done
+		 * in thread.c find_key().  */
+		if (*p == prev_p)
+			Py_FatalError(
+				"PyThreadState_Delete: small circular list(!)"
+                                " and tstate not found.");
+		prev_p = *p;
+		if ((*p)->next == interp->tstate_head)
+			Py_FatalError(
+				"PyThreadState_Delete: circular list(!) and"
+                                " tstate not found.");
 	}
 	*p = tstate->next;
 	HEAD_UNLOCK();
