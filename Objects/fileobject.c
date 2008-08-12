@@ -1007,6 +1007,7 @@ file_readinto(PyFileObject *f, PyObject *args)
 	char *ptr;
 	Py_ssize_t ntodo;
 	Py_ssize_t ndone, nnow;
+	Py_buffer pbuf;
 
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -1015,8 +1016,10 @@ file_readinto(PyFileObject *f, PyObject *args)
 	    (f->f_bufend - f->f_bufptr) > 0 &&
 	    f->f_buf[0] != '\0')
 		return err_iterbuffered();
-	if (!PyArg_ParseTuple(args, "w#", &ptr, &ntodo))
+	if (!PyArg_ParseTuple(args, "w*", &pbuf))
 		return NULL;
+	ptr = pbuf.buf;
+	ntodo = pbuf.len;
 	ndone = 0;
 	while (ntodo > 0) {
 		FILE_BEGIN_ALLOW_THREADS(f)
@@ -1029,11 +1032,13 @@ file_readinto(PyFileObject *f, PyObject *args)
 				break;
 			PyErr_SetFromErrno(PyExc_IOError);
 			clearerr(f->f_fp);
+			PyBuffer_Release(&pbuf);
 			return NULL;
 		}
 		ndone += nnow;
 		ntodo -= nnow;
 	}
+	PyBuffer_Release(&pbuf);
 	return PyInt_FromSsize_t(ndone);
 }
 
@@ -1611,17 +1616,26 @@ error:
 static PyObject *
 file_write(PyFileObject *f, PyObject *args)
 {
+	Py_buffer pbuf;
 	char *s;
 	Py_ssize_t n, n2;
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_ParseTuple(args, f->f_binary ? "s#" : "t#", &s, &n))
+	if (f->f_binary) {
+		if (!PyArg_ParseTuple(args, "s*", &pbuf))
+			return NULL;
+		s = pbuf.buf;
+		n = pbuf.len;
+	} else
+		if (!PyArg_ParseTuple(args, "t#", &s, &n))
 		return NULL;
 	f->f_softspace = 0;
 	FILE_BEGIN_ALLOW_THREADS(f)
 	errno = 0;
 	n2 = fwrite(s, 1, n, f->f_fp);
 	FILE_END_ALLOW_THREADS(f)
+	if (f->f_binary)
+		PyBuffer_Release(&pbuf);
 	if (n2 != n) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		clearerr(f->f_fp);

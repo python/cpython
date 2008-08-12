@@ -162,7 +162,8 @@ typedef Py_ssize_t (*charbufferproc)(PyObject *, Py_ssize_t, char **);
 /* Py3k buffer interface */
 
 typedef struct bufferinfo {
-	void *buf;         
+	void *buf;   
+	PyObject *obj;        /* borrowed reference */
         Py_ssize_t len;
         Py_ssize_t itemsize;  /* This is Py_ssize_t so it can be 
                                  pointed to by strides in simple case.*/

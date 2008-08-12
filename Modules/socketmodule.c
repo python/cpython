@@ -2647,12 +2647,17 @@ sock_send(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
 	int len, n = -1, flags = 0, timeout;
+	Py_buffer pbuf;
 
-	if (!PyArg_ParseTuple(args, "s#|i:send", &buf, &len, &flags))
+	if (!PyArg_ParseTuple(args, "s*|i:send", &pbuf, &flags))
 		return NULL;
 
-	if (!IS_SELECTABLE(s))
+	if (!IS_SELECTABLE(s)) {
+		PyBuffer_Release(&pbuf);
 		return select_error();
+	}
+	buf = pbuf.buf;
+	len = pbuf.len;
 
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 1);
@@ -2663,6 +2668,8 @@ sock_send(PySocketSockObject *s, PyObject *args)
 		n = send(s->sock_fd, buf, len, flags);
 #endif
 	Py_END_ALLOW_THREADS
+
+	PyBuffer_Release(&pbuf);
 
 	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
@@ -2688,12 +2695,17 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
 	int len, n = -1, flags = 0, timeout;
+	Py_buffer pbuf;
 
-	if (!PyArg_ParseTuple(args, "s#|i:sendall", &buf, &len, &flags))
+	if (!PyArg_ParseTuple(args, "s*|i:sendall", &pbuf, &flags))
 		return NULL;
+	buf = pbuf.buf;
+	len = pbuf.len;
 
-	if (!IS_SELECTABLE(s))
+	if (!IS_SELECTABLE(s)) {
+		PyBuffer_Release(&pbuf);
 		return select_error();
+	}
 
 	Py_BEGIN_ALLOW_THREADS
 	do {
@@ -2712,6 +2724,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 		len -= n;
 	} while (len > 0);
 	Py_END_ALLOW_THREADS
+	PyBuffer_Release(&pbuf);
 
 	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
@@ -2738,24 +2751,32 @@ to tell how much data has been sent.");
 static PyObject *
 sock_sendto(PySocketSockObject *s, PyObject *args)
 {
+	Py_buffer pbuf;
 	PyObject *addro;
 	char *buf;
+	Py_ssize_t len;
 	sock_addr_t addrbuf;
-	int addrlen, len, n = -1, flags, timeout;
+	int addrlen, n = -1, flags, timeout;
 
 	flags = 0;
-	if (!PyArg_ParseTuple(args, "s#O:sendto", &buf, &len, &addro)) {
+	if (!PyArg_ParseTuple(args, "s*O:sendto", &pbuf, &addro)) {
 		PyErr_Clear();
-		if (!PyArg_ParseTuple(args, "s#iO:sendto",
-				      &buf, &len, &flags, &addro))
+		if (!PyArg_ParseTuple(args, "s*iO:sendto",
+				      &pbuf, &flags, &addro))
 			return NULL;
 	}
+	buf = pbuf.buf;
+	len = pbuf.len;
 
-	if (!IS_SELECTABLE(s))
+	if (!IS_SELECTABLE(s)) {
+		PyBuffer_Release(&pbuf);
 		return select_error();
+	}
 
-	if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen))
+	if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen)) {
+		PyBuffer_Release(&pbuf);
 		return NULL;
+	}
 
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 1);
@@ -2763,6 +2784,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 		n = sendto(s->sock_fd, buf, len, flags, SAS2SA(&addrbuf), addrlen);
 	Py_END_ALLOW_THREADS
 
+	PyBuffer_Release(&pbuf);
 	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return NULL;
