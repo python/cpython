@@ -77,6 +77,8 @@ Core and builtins
 Library
 -------
 
+- Issue #3134: shutil referenced undefined WindowsError symbol.
+
 - Issue #1342811: Fix leak in Tkinter.Menu.delete. Commands associated to
   menu entries were not deleted.
 
