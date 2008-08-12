@@ -52,19 +52,24 @@ The module defines the following:
    :ref:`kevent-objects` below for the methods supported by kqueue objects.
 
 
-.. function:: select(iwtd, owtd, ewtd[, timeout])
+.. function:: select(rlist, wlist, xlist[, timeout])
 
    This is a straightforward interface to the Unix :cfunc:`select` system call.
    The first three arguments are sequences of 'waitable objects': either
    integers representing file descriptors or objects with a parameterless method
-   named :meth:`fileno` returning such an integer.  The three sequences of
-   waitable objects are for input, output and 'exceptional conditions',
-   respectively.  Empty sequences are allowed, but acceptance of three empty
-   sequences is platform-dependent. (It is known to work on Unix but not on
-   Windows.)  The optional *timeout* argument specifies a time-out as a floating
-   point number in seconds.  When the *timeout* argument is omitted the function
-   blocks until at least one file descriptor is ready.  A time-out value of zero
-   specifies a poll and never blocks.
+   named :meth:`fileno` returning such an integer:
+
+   * *rlist*: wait until ready for reading
+   * *wlist*: wait until ready for writing
+   * *xlist*: wait for an "exceptional condition" (see the manual page for what
+     your system considers such a condition)
+
+   Empty sequences are allowed, but acceptance of three empty sequences is
+   platform-dependent. (It is known to work on Unix but not on Windows.)  The
+   optional *timeout* argument specifies a time-out as a floating point number
+   in seconds.  When the *timeout* argument is omitted the function blocks until
+   at least one file descriptor is ready.  A time-out value of zero specifies a
+   poll and never blocks.
 
    The return value is a triple of lists of objects that are ready: subsets of the
    first three arguments.  When the time-out is reached without a file descriptor
@@ -84,9 +89,10 @@ The module defines the following:
 
       .. index:: single: WinSock
 
-      File objects on Windows are not acceptable, but sockets are.  On Windows, the
-      underlying :cfunc:`select` function is provided by the WinSock library, and does
-      not handle file descriptors that don't originate from WinSock.
+      File objects on Windows are not acceptable, but sockets are.  On Windows,
+      the underlying :cfunc:`select` function is provided by the WinSock
+      library, and does not handle file descriptors that don't originate from
+      WinSock.
 
 
 .. _epoll-objects:

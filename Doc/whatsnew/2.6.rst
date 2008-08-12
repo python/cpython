@@ -785,7 +785,7 @@ documentation for a :ref:`complete list <formatstrings>`; here's a sample::
         '%' - Percentage. Multiplies the number by 100 and displays
               in fixed ('f') format, followed by a percent sign.
 
-Classes and types can define a __format__ method to control how they're
+Classes and types can define a :meth:`__format__` method to control how they're
 formatted.  It receives a single argument, the format specifier::
 
    def __format__(self, format_spec):
@@ -1515,10 +1515,22 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   :func:`isnan`, return true if their floating-point argument is
   infinite or Not A Number.  (:issue:`1640`)
 
-  The float type has a new instance method :meth:`float.hex` and a
-  corresponding new class method :meth:`float.fromhex` to convert
-  floating-point numbers to and from hexadecimal strings,
-  respectively.  (:issue:`3008`)
+  Conversion functions were added to convert floating-point numbers
+  into hexadecimal strings.  (:issue:`3008`) These functions lets you
+  convert floats to and from a string representation without
+  introducing rounding errors from the conversion between decimal and
+  binary.  Floats have a :meth:`hex` method that returns a string
+  representation, and the ``float.fromhex()`` method converts a string
+  back into a number::
+
+      >>> a = 3.75
+      >>> a.hex()
+      '0x1.e000000000000p+1'
+      >>> float.fromhex('0x1.e000000000000p+1')
+      3.75
+      >>> b=1./3
+      >>> b.hex()
+      '0x1.5555555555555p-2'
 
 * The :mod:`math` module has a number of new functions, and the existing
   functions have been improved to give more consistent behaviour
@@ -1632,6 +1644,12 @@ Optimizations
   nature.
   (Original optimization implemented by Armin Rigo, updated for
   Python 2.6 by Kevin Jacobs; :issue:`1700288`.)
+
+* Function calls that use keyword arguments
+  are significantly faster thanks to a patch that does a quick pointer
+  comparison, usually saving the time of a full string comparison.
+  (Contributed by Raymond Hettinger, after an initial implementation by 
+  Antoine Pitrou; :issue:`1819`.)
 
 * All of the functions in the :mod:`struct` module have been rewritten in
   C, thanks to work at the Need For Speed sprint.
