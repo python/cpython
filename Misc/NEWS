@@ -145,6 +145,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #3205: When iterating over a BZ2File fails allocating memory, raise
+  a MemoryError rather than silently stop the iteration.
+
 - Patch #2111: Avoid mmap segfault when modifying a PROT_READ block.
 
 - zlib.decompressobj().flush(value) no longer crashes the interpreter when
