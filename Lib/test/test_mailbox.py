@@ -709,6 +709,38 @@ class TestMaildir(TestMailbox):
         for msg in self._box:
             pass
 
+    def test_file_permissions(self):
+        # Verify that message files are created without execute permissions
+        if not hasattr(os, "stat") or not hasattr(os, "umask"):
+            return
+        msg = mailbox.MaildirMessage(self._template % 0)
+        orig_umask = os.umask(0)
+        try:
+            key = self._box.add(msg)
+        finally:
+            os.umask(orig_umask)
+        path = os.path.join(self._path, self._box._lookup(key))
+        mode = os.stat(path).st_mode
+        self.assert_(mode & 0o111 == 0)
+
+    def test_folder_file_perms(self):
+        # From bug #3228, we want to verify that the file created inside a Maildir
+        # subfolder isn't marked as executable.
+        if not hasattr(os, "stat") or not hasattr(os, "umask"):
+            return
+
+        orig_umask = os.umask(0)
+        try:
+            subfolder = self._box.add_folder('subfolder')
+        finally:
+            os.umask(orig_umask)
+
+        path = os.path.join(subfolder._path, 'maildirfolder')
+        st = os.stat(path)
+        perms = st.st_mode
+        self.assertFalse((perms & 0o111)) # Execute bits should all be off.
+
+
 class _TestMboxMMDF(TestMailbox):
 
     def tearDown(self):
@@ -800,11 +832,28 @@ class _TestMboxMMDF(TestMailbox):
         self._box.close()
 
 
-
 class TestMbox(_TestMboxMMDF):
 
     _factory = lambda self, path, factory=None: mailbox.mbox(path, factory)
 
+    def test_file_perms(self):
+        # From bug #3228, we want to verify that the mailbox file isn't executable,
+        # even if the umask is set to something that would leave executable bits set.
+        # We only run this test on platforms that support umask.
+        if hasattr(os, 'umask') and hasattr(os, 'stat'):
+            try:
+                old_umask = os.umask(0o077)
+                self._box.close()
+                os.unlink(self._path)
+                self._box = mailbox.mbox(self._path, create=True)
+                self._box.add('')
+                self._box.close()
+            finally:
+                os.umask(old_umask)
+
+            st = os.stat(self._path)
+            perms = st.st_mode
+            self.assertFalse((perms & 0o111)) # Execute bits should all be off.
 
 class TestMMDF(_TestMboxMMDF):
 
