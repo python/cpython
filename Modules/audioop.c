@@ -783,20 +783,24 @@ audioop_mul(PyObject *self, PyObject *args)
 static PyObject *
 audioop_tomono(PyObject *self, PyObject *args)
 {
+	Py_buffer pcp;
         signed char *cp, *ncp;
         int len, size, val1 = 0, val2 = 0;
         double fac1, fac2, fval, maxval;
         PyObject *rv;
         int i;
 
-        if ( !PyArg_ParseTuple(args, "s#idd:tomono",
-	                       &cp, &len, &size, &fac1, &fac2 ) )
+        if ( !PyArg_ParseTuple(args, "s*idd:tomono",
+	                       &pcp, &size, &fac1, &fac2 ) )
                 return 0;
+	cp = pcp.buf;
+	len = pcp.len;
     
         if ( size == 1 ) maxval = (double) 0x7f;
         else if ( size == 2 ) maxval = (double) 0x7fff;
         else if ( size == 4 ) maxval = (double) 0x7fffffff;
         else {
+		PyBuffer_Release(&pcp);
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
@@ -822,6 +826,7 @@ audioop_tomono(PyObject *self, PyObject *args)
                 else if ( size == 2 ) *SHORTP(ncp, i/2) = (short)val1;
                 else if ( size == 4 ) *LONGP(ncp, i/2)= (Py_Int32)val1;
         }
+	PyBuffer_Release(&pcp);
         return rv;
 }
 

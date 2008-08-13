@@ -1168,11 +1168,14 @@ static PyObject *
 marshal_loads(PyObject *self, PyObject *args)
 {
 	RFILE rf;
+	Py_buffer p;
 	char *s;
 	Py_ssize_t n;
 	PyObject* result;
-	if (!PyArg_ParseTuple(args, "s#:loads", &s, &n))
+	if (!PyArg_ParseTuple(args, "s*:loads", &p))
 		return NULL;
+	s = p.buf;
+	n = p.len;
 	rf.fp = NULL;
 	rf.ptr = s;
 	rf.end = s + n;
@@ -1180,6 +1183,7 @@ marshal_loads(PyObject *self, PyObject *args)
 	rf.depth = 0;
 	result = read_object(&rf);
 	Py_DECREF(rf.strings);
+	PyBuffer_Release(&p);
 	return result;
 }
 

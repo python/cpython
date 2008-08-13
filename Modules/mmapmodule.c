@@ -651,7 +651,7 @@ static int
 mmap_buffer_getbuf(mmap_object *self, Py_buffer *view, int flags)
 {
 	CHECK_VALID(-1);
-        if (PyBuffer_FillInfo(view, self->data, self->size,
+        if (PyBuffer_FillInfo(view, (PyObject*)self, self->data, self->size,
                               (self->access == ACCESS_READ), flags) < 0)
                 return -1;
         self->exports++;
@@ -843,7 +843,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
 		if (vbuf.len != slicelen) {
 			PyErr_SetString(PyExc_IndexError,
 				"mmap slice assignment is wrong size");
-			PyObject_ReleaseBuffer(value, &vbuf);
+			PyBuffer_Release(&vbuf);
 			return -1;
 		}
 
@@ -862,7 +862,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
 				self->data[cur] = ((char *)vbuf.buf)[i];
 			}
 		}
-		PyObject_ReleaseBuffer(value, &vbuf);
+		PyBuffer_Release(&vbuf);
 		return 0;
 	}
 	else {

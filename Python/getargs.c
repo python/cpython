@@ -44,6 +44,7 @@ static char *converttuple(PyObject *, const char **, va_list *, int,
 static char *convertsimple(PyObject *, const char **, va_list *, int, char *,
 			   size_t, PyObject **);
 static Py_ssize_t convertbuffer(PyObject *, void **p, char **);
+static int getbuffer(PyObject *, Py_buffer *, char**);
 
 static int vgetargskeywords(PyObject *, PyObject *,
 			    const char *, char **, va_list *, int);
@@ -789,7 +790,25 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	   need to be cleaned up! */
 
 	case 's': {/* text string */
-		if (*format == '#') {
+		if (*format == '*') {
+			Py_buffer *p = (Py_buffer *)va_arg(*p_va, Py_buffer *);
+
+			if (PyUnicode_Check(arg)) {
+				uarg = UNICODE_DEFAULT_ENCODING(arg);
+				if (uarg == NULL)
+					return converterr(CONV_UNICODE,
+							  arg, msgbuf, bufsize);
+				PyBuffer_FillInfo(p, arg,
+						  PyBytes_AS_STRING(uarg), PyBytes_GET_SIZE(uarg),
+						  1, 0);
+			}
+			else { /* any buffer-like object */
+				char *buf;
+				if (getbuffer(arg, p, &buf) < 0)
+					return converterr(buf, arg, msgbuf, bufsize);
+			}
+			format++;
+		} else if (*format == '#') {
 			void **p = (void **)va_arg(*p_va, char **);
 			FETCH_SIZE;
 
@@ -832,10 +851,17 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	case 'y': {/* any buffer-like object, but not PyUnicode */
 		void **p = (void **)va_arg(*p_va, char **);
 		char *buf;
-		Py_ssize_t count = convertbuffer(arg, p, &buf);
+		Py_ssize_t count;
+		if (*format == '*') {
+			if (getbuffer(arg, (Py_buffer*)p, &buf) < 0)
+				return converterr(buf, arg, msgbuf, bufsize);
+			format++;
+			break;
+		}
+		count = convertbuffer(arg, p, &buf);
 		if (count < 0)
 			return converterr(buf, arg, msgbuf, bufsize);
-		if (*format == '#') {
+		else if (*format == '#') {
 			FETCH_SIZE;
 			STORE_SIZE(count);
 			format++;
@@ -844,7 +870,27 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	}
 
 	case 'z': {/* like 's' or 's#', but None is okay, stored as NULL */
-		if (*format == '#') { /* any buffer-like object */
+		if (*format == '*') {
+			Py_buffer *p = (Py_buffer *)va_arg(*p_va, Py_buffer *);
+
+			if (arg == Py_None)
+				PyBuffer_FillInfo(p, NULL, NULL, 0, 1, 0);
+			else if (PyUnicode_Check(arg)) {
+				uarg = UNICODE_DEFAULT_ENCODING(arg);
+				if (uarg == NULL)
+					return converterr(CONV_UNICODE,
+							  arg, msgbuf, bufsize);
+				PyBuffer_FillInfo(p, arg,
+						  PyBytes_AS_STRING(uarg), PyBytes_GET_SIZE(uarg),
+						  1, 0);
+			}
+			else { /* any buffer-like object */
+				char *buf;
+				if (getbuffer(arg, p, &buf) < 0)
+					return converterr(buf, arg, msgbuf, bufsize);
+			}
+			format++;
+		} else if (*format == '#') { /* any buffer-like object */
 			void **p = (void **)va_arg(*p_va, char **);
 			FETCH_SIZE;
 
@@ -1189,6 +1235,26 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 int temp=-1;
                 Py_buffer view;
 
+		if (pb && pb->bf_releasebuffer && *format != '*')
+			/* Buffer must be released, yet caller does not use
+			   the Py_buffer protocol. */
+			return converterr("pinned buffer", arg, msgbuf, bufsize);
+
+
+		if (pb && pb->bf_getbuffer && *format == '*') {
+			/* Caller is interested in Py_buffer, and the object
+			   supports it directly. */
+			format++;
+			if (pb->bf_getbuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
+				PyErr_Clear();
+				return converterr("read-write buffer", arg, msgbuf, bufsize);
+			}
+			if (!PyBuffer_IsContiguous((Py_buffer*)p, 'C'))
+				return converterr("contiguous buffer", arg, msgbuf, bufsize);
+			break;
+		}
+
+		/* Here we have processed w*, only w and w# remain. */
 		if (pb == NULL ||
 		    pb->bf_getbuffer == NULL ||
                     ((temp = (*pb->bf_getbuffer)(arg, &view,
@@ -1209,8 +1275,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			STORE_SIZE(count);
 			format++;
 		}
-                if (pb->bf_releasebuffer != NULL)
-                        (*pb->bf_releasebuffer)(arg, &view);
 		break;
 	}
 
@@ -1237,10 +1301,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
                 count = view.len;
                 *p = view.buf;
-                /* XXX : shouldn't really release buffer, but it should be O.K.
-                */
-                if (pb->bf_releasebuffer != NULL)
-                        (*pb->bf_releasebuffer)(arg, &view);
+		if (pb->bf_releasebuffer)
+			return converterr(
+				"string or pinned buffer",
+				arg, msgbuf, bufsize);
+
 		if (count < 0)
 			return converterr("(unspecified)", arg, msgbuf, bufsize);
 		{
@@ -1269,7 +1334,8 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
         *errmsg = NULL;
         *p = NULL;
 	if (pb == NULL ||
-	    pb->bf_getbuffer == NULL) {
+	    pb->bf_getbuffer == NULL ||
+	    pb->bf_releasebuffer != NULL) {
 		*errmsg = "bytes or read-only buffer";
 		return -1;
 	}
@@ -1283,6 +1349,35 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
         if (pb->bf_releasebuffer != NULL)
                 (*pb->bf_releasebuffer)(arg, &view);
 	return count;
+}
+
+/* XXX for 3.x, getbuffer and convertbuffer can probably
+   be merged again. */
+static int
+getbuffer(PyObject *arg, Py_buffer *view, char**errmsg)
+{
+	void *buf;
+	Py_ssize_t count;
+	PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+	if (pb == NULL) {
+		*errmsg = "string or buffer";
+		return -1;
+	}
+	if (pb->bf_getbuffer) {
+		if (pb->bf_getbuffer(arg, view, 0) < 0)
+			return -1;
+		if (!PyBuffer_IsContiguous(view, 'C')) {
+			*errmsg = "contiguous buffer";
+			return -1;
+		}
+		return 0;
+	}
+
+	count = convertbuffer(arg, &buf, errmsg);
+	if (count < 0)
+		return count;
+	PyBuffer_FillInfo(view, NULL, buf, count, 1, 0);
+	return 0;
 }
 
 /* Support for keyword arguments donated by
@@ -1623,6 +1718,8 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 					(void) va_arg(*p_va, Py_ssize_t *);
 				else
 					(void) va_arg(*p_va, int *);
+				format++;
+			} else if ((c == 's' || c == 'z' || c == 'y') && *format == '*') {
 				format++;
 			}
 			break;

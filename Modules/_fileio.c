@@ -357,7 +357,7 @@ fileio_seekable(PyFileIOObject *self)
 static PyObject *
 fileio_readinto(PyFileIOObject *self, PyObject *args)
 {
-	char *ptr;
+	Py_buffer pbuf;
 	Py_ssize_t n;
 
 	if (self->fd < 0)
@@ -365,13 +365,14 @@ fileio_readinto(PyFileIOObject *self, PyObject *args)
 	if (!self->readable)
 		return err_mode("reading");
 
-	if (!PyArg_ParseTuple(args, "w#", &ptr, &n))
+	if (!PyArg_ParseTuple(args, "w*", &pbuf))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
-	n = read(self->fd, ptr, n);
+	n = read(self->fd, pbuf.buf, pbuf.len);
 	Py_END_ALLOW_THREADS
+	PyBuffer_Release(&pbuf);
 	if (n < 0) {
 		if (errno == EAGAIN)
 			Py_RETURN_NONE;
@@ -489,21 +490,23 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 static PyObject *
 fileio_write(PyFileIOObject *self, PyObject *args)
 {
+	Py_buffer pbuf;
 	Py_ssize_t n;
-	char *ptr;
 
 	if (self->fd < 0)
 		return err_closed();
 	if (!self->writable)
 		return err_mode("writing");
 
-	if (!PyArg_ParseTuple(args, "s#", &ptr, &n))
+	if (!PyArg_ParseTuple(args, "s*", &pbuf))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
-	n = write(self->fd, ptr, n);
+	n = write(self->fd, pbuf.buf, pbuf.len);
 	Py_END_ALLOW_THREADS
+
+	PyBuffer_Release(&pbuf);
 
 	if (n < 0) {
 		if (errno == EAGAIN)

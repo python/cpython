@@ -1064,7 +1064,7 @@ about the object's memory representation.  Objects
 can use this operation to lock memory in place
 while an external caller could be modifying the contents,
 so there's a corresponding
-``PyObject_ReleaseBuffer(PyObject *obj, Py_buffer *view)`` to
+``PyBuffer_Release(Py_buffer *view)`` to
 indicate that the external caller is done.
 
 The **flags** argument to :cfunc:`PyObject_GetBuffer` specifies
@@ -2841,7 +2841,7 @@ Changes to Python's build process and to the C API include:
 
 * The new buffer interface, previously described in
   `the PEP 3118 section <#pep-3118-revised-buffer-protocol>`__,
-  adds :cfunc:`PyObject_GetBuffer` and :cfunc:`PyObject_ReleaseBuffer`,
+  adds :cfunc:`PyObject_GetBuffer` and :cfunc:`PyBuffer_Release`,
   as well as a few other functions.
 
 * Python's use of the C stdio library is now thread-safe, or at least

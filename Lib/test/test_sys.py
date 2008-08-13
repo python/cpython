@@ -550,7 +550,7 @@ class SizeofTest(unittest.TestCase):
         check(32768*32768-1, size(vh) + 2*self.H)
         check(32768*32768, size(vh) + 3*self.H)
         # memory
-        check(memoryview(b''), size(h + 'P P2P2i5P'))
+        check(memoryview(b''), size(h + 'P PP2P2i5P'))
         # module
         check(unittest, size(h + '3P'))
         # None

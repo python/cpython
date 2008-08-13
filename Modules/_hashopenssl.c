@@ -164,7 +164,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
                 if ((viewp)->ndim > 1) { \
                     PyErr_SetString(PyExc_BufferError, \
                                     "Buffer must be single dimension"); \
-                    PyObject_ReleaseBuffer((obj), (viewp)); \
+                    PyBuffer_Release((viewp)); \
                     return NULL; \
                 } \
             } while(0);
@@ -186,7 +186,7 @@ EVP_update(EVPobject *self, PyObject *args)
     EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf,
                      Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
 
-    PyObject_ReleaseBuffer(obj, &view);
+    PyBuffer_Release(&view);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -267,7 +267,7 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_Parse(name_obj, "s", &nameStr)) {
         PyErr_SetString(PyExc_TypeError, "name must be a string");
         if (data_obj)
-            PyObject_ReleaseBuffer(data_obj, &view);
+            PyBuffer_Release(&view);
         return -1;
     }
 
@@ -275,7 +275,7 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     if (!digest) {
         PyErr_SetString(PyExc_ValueError, "unknown hash function");
         if (data_obj)
-            PyObject_ReleaseBuffer(data_obj, &view);
+            PyBuffer_Release(&view);
         return -1;
     }
     EVP_DigestInit(&self->ctx, digest);
@@ -286,7 +286,7 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     if (data_obj) {
         EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf,
                          Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
-        PyObject_ReleaseBuffer(data_obj, &view);
+        PyBuffer_Release(&view);
     }
 
     return 0;
@@ -421,7 +421,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
                         Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
 
     if (data_obj)
-        PyObject_ReleaseBuffer(data_obj, &view);
+        PyBuffer_Release(&view);
     return ret_obj;
 }
 
@@ -455,7 +455,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
                     Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int)); \
      \
         if (data_obj) \
-            PyObject_ReleaseBuffer(data_obj, &view); \
+            PyBuffer_Release(&view); \
         return ret_obj; \
     }
 

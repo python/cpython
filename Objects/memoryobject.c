@@ -6,19 +6,21 @@
 static int
 memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 {
-        if (view != NULL)
+        if (view != NULL) {
+		if (self->view.obj)
+			Py_INCREF(self->view.obj);
 		*view = self->view;
-	if (self->base == NULL)
+	}
+	if (self->view.obj == NULL)
 		return 0;
-        return self->base->ob_type->tp_as_buffer->bf_getbuffer(self->base, NULL,
+        return self->view.obj->ob_type->tp_as_buffer->bf_getbuffer(self->base, NULL,
                                                                PyBUF_FULL);
 }
 
 static void
 memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
 {
-	if (self->base != NULL)
-		PyObject_ReleaseBuffer(self->base, NULL);
+	PyBuffer_Release(&self->view);
 }
 
 PyDoc_STRVAR(memory_doc,
@@ -36,6 +38,8 @@ PyMemoryView_FromMemory(Py_buffer *info)
 	if (mview == NULL) return NULL;
 	mview->base = NULL;
 	mview->view = *info;
+	if (info->obj)
+		Py_INCREF(mview->view.obj);
 	return (PyObject *)mview;
 }
 
@@ -256,7 +260,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         }
         bytes = PyByteArray_FromStringAndSize(NULL, view->len);
         if (bytes == NULL) {
-                PyObject_ReleaseBuffer(obj, view);
+                PyBuffer_Release(view);
                 return NULL;
         }
         dest = PyByteArray_AS_STRING(bytes);
@@ -271,7 +275,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         else {
                 if (_indirect_copy_nd(dest, view, fort) < 0) {
                         Py_DECREF(bytes);
-                        PyObject_ReleaseBuffer(obj, view);
+                        PyBuffer_Release(view);
                         return NULL;
                 }
         }
@@ -281,12 +285,12 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                 mem->base = PyTuple_Pack(2, obj, bytes);
                 Py_DECREF(bytes);
 		if (mem->base == NULL) {
-			PyObject_ReleaseBuffer(obj, view);
+			PyBuffer_Release(view);
 			return NULL;
 		}
         }
         else {
-                PyObject_ReleaseBuffer(obj, view);
+                PyBuffer_Release(view);
                 /* steal the reference */
                 mem->base = bytes;
         }
@@ -407,7 +411,7 @@ static PyMethodDef memory_methods[] = {
 static void
 memory_dealloc(PyMemoryViewObject *self)
 {
-        if (self->base != NULL) {
+        if (self->view.obj != NULL) {
             if (PyTuple_Check(self->base)) {
                 /* Special case when first element is generic object
                    with buffer interface and the second element is a
@@ -424,11 +428,10 @@ memory_dealloc(PyMemoryViewObject *self)
                    be "locked" and was locked and will be unlocked
                    again after this call.
                 */
-                PyObject_ReleaseBuffer(PyTuple_GET_ITEM(self->base,0),
-                                       &(self->view));
+                PyBuffer_Release(&(self->view));
             }
             else {
-                PyObject_ReleaseBuffer(self->base, &(self->view));
+                PyBuffer_Release(&(self->view));
             }
             Py_CLEAR(self->base);
         }
@@ -453,7 +456,7 @@ memory_str(PyMemoryViewObject *self)
 
 	res = PyByteArray_FromStringAndSize(NULL, view.len);
         PyBuffer_ToContiguous(PyByteArray_AS_STRING(res), &view, view.len, 'C');
-        PyObject_ReleaseBuffer((PyObject *)self, &view);
+        PyBuffer_Release(&view);
         return res;
 }
 
@@ -466,7 +469,7 @@ memory_length(PyMemoryViewObject *self)
 
         if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_FULL) < 0)
                 return -1;
-        PyObject_ReleaseBuffer((PyObject *)self, &view);
+        PyBuffer_Release(&view);
 	return view.len;
 }
 

@@ -1704,7 +1704,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     /* Release the buffer immediately --- possibly dangerous
        but doing something else would require some re-factoring
     */
-    PyObject_ReleaseBuffer(string, &view);
+    PyBuffer_Release(&view);
 
     if (bytes < 0) {
         PyErr_SetString(PyExc_TypeError, "buffer has negative size");

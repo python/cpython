@@ -1820,6 +1820,8 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
         if (view==NULL) goto finish;
 
         view->buf = (void *)self->ob_item;
+	view->obj = (PyObject*)self;
+	Py_INCREF(self);
         if (view->buf == NULL)
                 view->buf = (void *)emptybuf;
         view->len = (Py_SIZE(self)) * self->ob_descr->itemsize;

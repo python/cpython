@@ -2251,15 +2251,19 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 
 	int recvlen = 0, flags = 0;
         ssize_t readlen;
+	Py_buffer pbuf;
 	char *buf;
 	int buflen;
 
 	/* Get the buffer's memory */
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recv_into", kwlist,
-					 &buf, &buflen, &recvlen, &flags))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w*|ii:recv_into", kwlist,
+					 &pbuf, &recvlen, &flags))
 		return NULL;
+	buf = pbuf.buf;
+	buflen = pbuf.len;
 
 	if (recvlen < 0) {
+		PyBuffer_Release(&pbuf);
 		PyErr_SetString(PyExc_ValueError,
 				"negative buffersize in recv_into");
 		return NULL;
@@ -2271,6 +2275,7 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 
 	/* Check if the buffer is large enough */
 	if (buflen < recvlen) {
+		PyBuffer_Release(&pbuf);
 		PyErr_SetString(PyExc_ValueError,
 				"buffer too small for requested bytes");
 		return NULL;
@@ -2280,9 +2285,11 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 	readlen = sock_recv_guts(s, buf, recvlen, flags);
 	if (readlen < 0) {
 		/* Return an error. */
+		PyBuffer_Release(&pbuf);
 		return NULL;
 	}
 
+	PyBuffer_Release(&pbuf);
 	/* Return the number of bytes read.  Note that we do not do anything
 	   special here in the case that readlen < recvlen. */
 	return PyLong_FromSsize_t(readlen);
@@ -2424,18 +2431,22 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 
 	int recvlen = 0, flags = 0;
         ssize_t readlen;
+	Py_buffer pbuf;
 	char *buf;
 	int buflen;
 
 	PyObject *addr = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recvfrom_into",
-					 kwlist, &buf, &buflen,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w*|ii:recvfrom_into",
+					 kwlist, &pbuf,
 					 &recvlen, &flags))
 		return NULL;
+	buf = pbuf.buf;
+	buflen = pbuf.len;
 	assert(buf != 0 && buflen > 0);
 
 	if (recvlen < 0) {
+		PyBuffer_Release(&pbuf);
 		PyErr_SetString(PyExc_ValueError,
 				"negative buffersize in recvfrom_into");
 		return NULL;
@@ -2447,11 +2458,13 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 
 	readlen = sock_recvfrom_guts(s, buf, recvlen, flags, &addr);
 	if (readlen < 0) {
+		PyBuffer_Release(&pbuf);
 		/* Return an error */
 		Py_XDECREF(addr);
 		return NULL;
 	}
 
+	PyBuffer_Release(&pbuf);
 	/* Return the number of bytes read and the address.  Note that we do
 	   not do anything special here in the case that readlen < recvlen. */
  	return Py_BuildValue("lN", readlen, addr);
@@ -2470,12 +2483,17 @@ sock_send(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
 	int len, n = -1, flags = 0, timeout;
+	Py_buffer pbuf;
 
-	if (!PyArg_ParseTuple(args, "y#|i:send", &buf, &len, &flags))
+	if (!PyArg_ParseTuple(args, "y*|i:send", &pbuf, &flags))
 		return NULL;
 
-	if (!IS_SELECTABLE(s))
+	if (!IS_SELECTABLE(s)) {
+		PyBuffer_Release(&pbuf);
 		return select_error();
+	}
+	buf = pbuf.buf;
+	len = pbuf.len;
 
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 1);
@@ -2486,6 +2504,8 @@ sock_send(PySocketSockObject *s, PyObject *args)
 		n = send(s->sock_fd, buf, len, flags);
 #endif
 	Py_END_ALLOW_THREADS
+
+	PyBuffer_Release(&pbuf);
 
 	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
@@ -2511,12 +2531,17 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
 	int len, n = -1, flags = 0, timeout;
+	Py_buffer pbuf;
 
-	if (!PyArg_ParseTuple(args, "y#|i:sendall", &buf, &len, &flags))
+	if (!PyArg_ParseTuple(args, "y*|i:sendall", &pbuf, &flags))
 		return NULL;
+	buf = pbuf.buf;
+	len = pbuf.len;
 
-	if (!IS_SELECTABLE(s))
+	if (!IS_SELECTABLE(s)) {
+		PyBuffer_Release(&pbuf);
 		return select_error();
+	}
 
 	Py_BEGIN_ALLOW_THREADS
 	do {
@@ -2535,6 +2560,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 		len -= n;
 	} while (len > 0);
 	Py_END_ALLOW_THREADS
+	PyBuffer_Release(&pbuf);
 
 	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
@@ -2561,24 +2587,32 @@ to tell how much data has been sent.");
 static PyObject *
 sock_sendto(PySocketSockObject *s, PyObject *args)
 {
+	Py_buffer pbuf;
 	PyObject *addro;
 	char *buf;
+	Py_ssize_t len;
 	sock_addr_t addrbuf;
-	int addrlen, len, n = -1, flags, timeout;
+	int addrlen, n = -1, flags, timeout;
 
 	flags = 0;
-	if (!PyArg_ParseTuple(args, "y#O:sendto", &buf, &len, &addro)) {
+	if (!PyArg_ParseTuple(args, "y*O:sendto", &pbuf, &addro)) {
 		PyErr_Clear();
-		if (!PyArg_ParseTuple(args, "y#iO:sendto",
-				      &buf, &len, &flags, &addro))
+		if (!PyArg_ParseTuple(args, "y*iO:sendto",
+				      &pbuf, &flags, &addro))
 			return NULL;
 	}
+	buf = pbuf.buf;
+	len = pbuf.len;
 
-	if (!IS_SELECTABLE(s))
+	if (!IS_SELECTABLE(s)) {
+		PyBuffer_Release(&pbuf);
 		return select_error();
+	}
 
-	if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen))
+	if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen)) {
+		PyBuffer_Release(&pbuf);
 		return NULL;
+	}
 
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 1);
@@ -2586,6 +2620,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 		n = sendto(s->sock_fd, buf, len, flags, SAS2SA(&addrbuf), addrlen);
 	Py_END_ALLOW_THREADS
 
+	PyBuffer_Release(&pbuf);
 	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return NULL;

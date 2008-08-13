@@ -40,6 +40,12 @@ variable(s) whose address should be passed.
    other read-buffer compatible objects pass back a reference to the raw internal
    data representation.
 
+``s*`` (string, Unicode, or any buffer compatible object) [Py_buffer \*]
+  Similar to ``s#``, this code fills a Py_buffer structure provided by the caller.
+  The buffer gets locked, so that the caller can subsequently use the buffer even
+  inside a ``Py_BEGIN_ALLOW_THREADS`` block; the caller is responsible for calling
+  ``PyBuffer_Release`` with the structure after it has processed the data.
+
 ``y`` (bytes object) [const char \*]
    This variant on ``s`` convert a Python bytes object to a C pointer to a
    character string. The bytes object must not contain embedded NUL bytes; if it
@@ -49,12 +55,18 @@ variable(s) whose address should be passed.
    This variant on ``s#`` stores into two C variables, the first one a pointer to a
    character string, the second one its length.  This only accepts bytes objects.
 
+``y*`` (bytes object) [Py_buffer \*]
+   This is to ``s*`` as ``y`` is to ``s``.
+
 ``z`` (string or ``None``) [const char \*]
    Like ``s``, but the Python object may also be ``None``, in which case the C
    pointer is set to *NULL*.
 
 ``z#`` (string or ``None`` or any read buffer compatible object) [const char \*, int]
    This is to ``s#`` as ``z`` is to ``s``.
+
+``z*`` (string or ``None`` or any buffer compatible object) [Py_buffer*]
+   This is to ``s*`` as ``z`` is to ``s``.
 
 ``u`` (Unicode object) [Py_UNICODE \*]
    Convert a Python Unicode object to a C pointer to a NUL-terminated buffer of
@@ -243,6 +255,9 @@ variable(s) whose address should be passed.
    the buffer, and the :ctype:`int` is set to the length of the buffer.  Only
    single-segment buffer objects are accepted; :exc:`TypeError` is raised for all
    others.
+
+``w*`` (read-write byte-oriented buffer) [Py_buffer \*]
+   This is to ``w`` what ``s*`` is to ``s``.
 
 ``(items)`` (tuple) [*matching-items*]
    The object must be a Python sequence whose length is the number of format units
