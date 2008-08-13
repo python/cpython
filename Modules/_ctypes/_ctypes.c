@@ -1050,10 +1050,10 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 
 	memcpy(self->b_ptr, ptr, size);
 
-	PyObject_ReleaseBuffer(value, &view);
+	PyBuffer_Release(&view);
 	return 0;
  fail:
-	PyObject_ReleaseBuffer(value, &view);
+	PyBuffer_Release(&view);
         return -1;
 }
 
@@ -2462,6 +2462,8 @@ static int CData_GetBuffer(PyObject *_self, Py_buffer *view, int flags)
 	if (view == NULL) return 0;
 
 	view->buf = self->b_ptr;
+	view->obj = _self;
+	Py_INCREF(_self);
 	view->len = self->b_size;
 	view->readonly = 0;
 	/* use default format character if not set */

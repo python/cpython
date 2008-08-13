@@ -261,7 +261,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
         /* Pick up this chunk if it's not zero length */
         if (next != end) {
             PyObject *strchunk;
-            if (PyBuffer_FillInfo(&info, &buf[end], next - end, 1, 0) < 0) {
+            if (PyBuffer_FillInfo(&info, NULL, &buf[end], next - end, 1, 0) < 0) {
                 goto bail;
             }
             strchunk = PyMemoryView_FromMemory(&info);

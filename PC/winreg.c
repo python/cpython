@@ -814,13 +814,13 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 
 				*retDataBuf = (BYTE *)PyMem_NEW(char, view.len);
 				if (*retDataBuf==NULL){
-					PyObject_ReleaseBuffer(value, &view);
+					PyBuffer_Release(&view);
 					PyErr_NoMemory();
 					return FALSE;
 				}
 				*retDataSize = view.len;
 				memcpy(*retDataBuf, view.buf, view.len);
-				PyObject_ReleaseBuffer(value, &view);
+				PyBuffer_Release(&view);
 			}
 			break;
 	}

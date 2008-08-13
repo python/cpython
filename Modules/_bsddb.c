@@ -288,7 +288,7 @@ static void free_dbt(DBT *dbt)
 static void free_buf_view(PyObject *obj, Py_buffer *view)
 {
     if (view) {
-        PyObject_ReleaseBuffer(obj, view);
+        PyBuffer_Release(view);
         PyMem_Free(view);
     }
 }
@@ -319,7 +319,7 @@ static Py_buffer * _malloc_view(PyObject *obj)
     if (view->ndim > 1) {
         PyErr_SetString(PyExc_BufferError,
                         "buffers must be single dimension");
-        PyObject_ReleaseBuffer(obj, view);
+        PyBuffer_Release(view);
         PyMem_Free(view);
         return NULL;
     }

@@ -113,15 +113,18 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	unsigned int code;
 	int arg;
 	int ret;
+	Py_buffer pstr;
 	char *str;
 	Py_ssize_t len;
 	int mutate_arg = 1;
  	char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
-	if (PyArg_ParseTuple(args, "O&Iw#|i:ioctl",
+	if (PyArg_ParseTuple(args, "O&Iw*|i:ioctl",
                              conv_descriptor, &fd, &code, 
-			     &str, &len, &mutate_arg)) {
+			     &pstr, &mutate_arg)) {
 		char *arg;
+		str = pstr.buf;
+		len = pstr.len;
 
 	       	if (mutate_arg) {
 			if (len <= IOCTL_BUFSZ) {
@@ -135,6 +138,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		}
 		else {
 			if (len > IOCTL_BUFSZ) {
+				PyBuffer_Release(&pstr);
 				PyErr_SetString(PyExc_ValueError,
 					"ioctl string arg too long");
 				return NULL;
@@ -156,6 +160,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		if (mutate_arg && (len < IOCTL_BUFSZ)) {
 			memcpy(str, buf, len);
 		}
+		PyBuffer_Release(&pstr); /* No further access to str below this point */
 		if (ret < 0) {
 			PyErr_SetFromErrno(PyExc_IOError);
 			return NULL;
@@ -169,9 +174,12 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	}
 
 	PyErr_Clear();
-	if (PyArg_ParseTuple(args, "O&Is#:ioctl",
-                             conv_descriptor, &fd, &code, &str, &len)) {
+	if (PyArg_ParseTuple(args, "O&Is*:ioctl",
+                             conv_descriptor, &fd, &code, &pstr)) {
+		str = pstr.buf;
+		len = pstr.len;
 		if (len > IOCTL_BUFSZ) {
+			PyBuffer_Release(&pstr);
 			PyErr_SetString(PyExc_ValueError,
 					"ioctl string arg too long");
 			return NULL;
@@ -182,9 +190,11 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		ret = ioctl(fd, code, buf);
 		Py_END_ALLOW_THREADS
 		if (ret < 0) {
+			PyBuffer_Release(&pstr);
 			PyErr_SetFromErrno(PyExc_IOError);
 			return NULL;
 		}
+		PyBuffer_Release(&pstr);
 		return PyBytes_FromStringAndSize(buf, len);
 	}
 

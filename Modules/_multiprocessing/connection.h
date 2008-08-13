@@ -96,21 +96,26 @@ connection_dealloc(ConnectionObject* self)
 static PyObject *
 connection_sendbytes(ConnectionObject *self, PyObject *args)
 {
+	Py_buffer pbuffer;
 	char *buffer;
 	Py_ssize_t length, offset=0, size=PY_SSIZE_T_MIN;
 	int res;
 
-	if (!PyArg_ParseTuple(args, F_RBUFFER "#|" F_PY_SSIZE_T F_PY_SSIZE_T,
-			      &buffer, &length, &offset, &size))
+	if (!PyArg_ParseTuple(args, F_RBUFFER "*|" F_PY_SSIZE_T F_PY_SSIZE_T,
+			      &pbuffer, &offset, &size))
 		return NULL;
+	buffer = pbuffer.buf;
+	length = pbuffer.len;
 
-	CHECK_WRITABLE(self);
+	CHECK_WRITABLE(self); /* XXX release buffer in case of failure */
 
 	if (offset < 0) {
+		PyBuffer_Release(&pbuffer);
 		PyErr_SetString(PyExc_ValueError, "offset is negative");
 		return NULL;
 	}
 	if (length < offset) {
+		PyBuffer_Release(&pbuffer);
 		PyErr_SetString(PyExc_ValueError, "buffer length < offset");
 		return NULL;
 	}
@@ -119,10 +124,12 @@ connection_sendbytes(ConnectionObject *self, PyObject *args)
 		size = length - offset;
 	} else {
 		if (size < 0) {
+			PyBuffer_Release(&pbuffer);
 			PyErr_SetString(PyExc_ValueError, "size is negative");
 			return NULL;		
 		}
 		if (offset + size > length) {
+			PyBuffer_Release(&pbuffer);
 			PyErr_SetString(PyExc_ValueError, 
 					"buffer length < offset + size");
 			return NULL;
@@ -131,6 +138,7 @@ connection_sendbytes(ConnectionObject *self, PyObject *args)
 
 	res = conn_send_string(self, buffer + offset, size);
 
+	PyBuffer_Release(&pbuffer);
 	if (res < 0)
 		return mp_SetError(PyExc_IOError, res);
 
@@ -187,21 +195,25 @@ connection_recvbytes_into(ConnectionObject *self, PyObject *args)
 	char *freeme = NULL, *buffer = NULL;
 	Py_ssize_t res, length, offset = 0;
 	PyObject *result = NULL;
-
-	if (!PyArg_ParseTuple(args, "w#|" F_PY_SSIZE_T, 
-			      &buffer, &length, &offset))
-		return NULL;
+	Py_buffer pbuf;
 
 	CHECK_READABLE(self);
+	
+	if (!PyArg_ParseTuple(args, "w*|" F_PY_SSIZE_T, 
+			      &pbuf, &offset))
+		return NULL;
+
+	buffer = pbuf.buf;
+	length = pbuf.len;
 
 	if (offset < 0) {
 		PyErr_SetString(PyExc_ValueError, "negative offset");
-		return NULL;
+		goto _error;
 	}   
 
 	if (offset > length) {
 		PyErr_SetString(PyExc_ValueError, "offset too large");
-		return NULL;
+		goto _error;
 	}
 
 	res = conn_recv_string(self, buffer+offset, length-offset, 
@@ -231,11 +243,17 @@ connection_recvbytes_into(ConnectionObject *self, PyObject *args)
 				PyErr_SetObject(BufferTooShort, result);
 				Py_DECREF(result);
 			}
-			return NULL;
+			goto _error;
 		}
 	}
 
+_cleanup:
+	PyBuffer_Release(&pbuf);
 	return result;
+
+_error:
+	result = NULL;
+	goto _cleanup;
 }
 
 /*

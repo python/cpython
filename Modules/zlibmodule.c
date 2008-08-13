@@ -118,18 +118,22 @@ static PyObject *
 PyZlib_compress(PyObject *self, PyObject *args)
 {
     PyObject *ReturnVal = NULL;
+    Py_buffer pinput;
     Byte *input, *output;
     int length, level=Z_DEFAULT_COMPRESSION, err;
     z_stream zst;
 
     /* require Python string object, optional 'level' arg */
-    if (!PyArg_ParseTuple(args, "s#|i:compress", &input, &length, &level))
+    if (!PyArg_ParseTuple(args, "s*|i:compress", &pinput, &level))
 	return NULL;
+    input = pinput.buf;
+    length = pinput.len;
 
     zst.avail_out = length + length/1000 + 12 + 1;
 
     output = (Byte*)malloc(zst.avail_out);
     if (output == NULL) {
+	PyBuffer_Release(&pinput);
 	PyErr_SetString(PyExc_MemoryError,
 			"Can't allocate memory to compress data");
 	return NULL;
@@ -180,6 +184,7 @@ PyZlib_compress(PyObject *self, PyObject *args)
 	zlib_error(zst, err, "while finishing compression");
 
  error:
+    PyBuffer_Release(&pinput);
     free(output);
 
     return ReturnVal;
@@ -195,15 +200,18 @@ static PyObject *
 PyZlib_decompress(PyObject *self, PyObject *args)
 {
     PyObject *result_str;
+    Py_buffer pinput;
     Byte *input;
     int length, err;
     int wsize=DEF_WBITS;
     Py_ssize_t r_strlen=DEFAULTALLOC;
     z_stream zst;
 
-    if (!PyArg_ParseTuple(args, "s#|in:decompress",
-			  &input, &length, &wsize, &r_strlen))
+    if (!PyArg_ParseTuple(args, "s*|in:decompress",
+			  &pinput, &wsize, &r_strlen))
 	return NULL;
+    input = pinput.buf;
+    length = pinput.len;
 
     if (r_strlen <= 0)
 	r_strlen = 1;
@@ -211,8 +219,10 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     zst.avail_in = length;
     zst.avail_out = r_strlen;
 
-    if (!(result_str = PyByteArray_FromStringAndSize(NULL, r_strlen)))
+    if (!(result_str = PyByteArray_FromStringAndSize(NULL, r_strlen))) {
+	PyBuffer_Release(&pinput);
 	return NULL;
+    }
 
     zst.zalloc = (alloc_func)NULL;
     zst.zfree = (free_func)Z_NULL;
@@ -281,9 +291,11 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     if (PyByteArray_Resize(result_str, zst.total_out) < 0)
         goto error;
 
+    PyBuffer_Release(&pinput);
     return result_str;
 
  error:
+    PyBuffer_Release(&pinput);
     Py_XDECREF(result_str);
     return NULL;
 }
@@ -396,14 +408,19 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 {
     int err, inplen, length = DEFAULTALLOC;
     PyObject *RetVal;
+    Py_buffer pinput;
     Byte *input;
     unsigned long start_total_out;
 
-    if (!PyArg_ParseTuple(args, "s#:compress", &input, &inplen))
+    if (!PyArg_ParseTuple(args, "s*:compress", &pinput))
 	return NULL;
+    input = pinput.buf;
+    inplen = pinput.len;
 
-    if (!(RetVal = PyByteArray_FromStringAndSize(NULL, length)))
+    if (!(RetVal = PyByteArray_FromStringAndSize(NULL, length))) {
+	PyBuffer_Release(&pinput);
 	return NULL;
+    }
 
     ENTER_ZLIB
 
@@ -452,6 +469,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 
  error:
     LEAVE_ZLIB
+    PyBuffer_Release(&pinput);
     return RetVal;
 }
 
@@ -472,13 +490,17 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     int err, inplen, old_length, length = DEFAULTALLOC;
     int max_length = 0;
     PyObject *RetVal;
+    Py_buffer pinput;
     Byte *input;
     unsigned long start_total_out;
 
-    if (!PyArg_ParseTuple(args, "s#|i:decompress", &input,
-			  &inplen, &max_length))
+    if (!PyArg_ParseTuple(args, "s*|i:decompress", &pinput,
+			  &max_length))
 	return NULL;
+    input = pinput.buf;
+    inplen = pinput.len;
     if (max_length < 0) {
+	PyBuffer_Release(&pinput);
 	PyErr_SetString(PyExc_ValueError,
 			"max_length must be greater than zero");
 	return NULL;
@@ -487,8 +509,10 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     /* limit amount of data allocated to max_length */
     if (max_length && length > max_length)
 	length = max_length;
-    if (!(RetVal = PyByteArray_FromStringAndSize(NULL, length)))
+    if (!(RetVal = PyByteArray_FromStringAndSize(NULL, length))) {
+	PyBuffer_Release(&pinput);
 	return NULL;
+    }
 
     ENTER_ZLIB
 
@@ -577,7 +601,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 
  error:
     LEAVE_ZLIB
-
+    PyBuffer_Release(&pinput);
     return RetVal;
 }
 
@@ -916,12 +940,13 @@ static PyObject *
 PyZlib_crc32(PyObject *self, PyObject *args)
 {
     unsigned int crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
-    Byte *buf;
-    int len, signed_val;
+    Py_buffer pbuf;
+    int signed_val;
 
-    if (!PyArg_ParseTuple(args, "s#|I:crc32", &buf, &len, &crc32val))
+    if (!PyArg_ParseTuple(args, "s*|I:crc32", &pbuf, &crc32val))
 	return NULL;
-    signed_val = crc32(crc32val, buf, len);
+    signed_val = crc32(crc32val, pbuf.buf, pbuf.len);
+    PyBuffer_Release(&pbuf);
     return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
 }
 

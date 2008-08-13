@@ -710,9 +710,9 @@ string_concat(PyObject *a, PyObject *b)
 
   done:
 	if (va.len != -1)
-		PyObject_ReleaseBuffer(a, &va);
+		PyBuffer_Release(&va);
 	if (vb.len != -1)
-		PyObject_ReleaseBuffer(b, &vb);
+		PyBuffer_Release(&vb);
 	return result;
 }
 
@@ -781,7 +781,7 @@ string_contains(PyObject *self, PyObject *arg)
             return -1;
         pos = stringlib_find(PyBytes_AS_STRING(self), Py_SIZE(self),
                              varg.buf, varg.len, 0);
-        PyObject_ReleaseBuffer(arg, &varg);
+        PyBuffer_Release(&varg);
         return pos >= 0;
     }
     if (ival < 0 || ival >= 256) {
@@ -964,7 +964,7 @@ string_subscript(PyBytesObject* self, PyObject* item)
 static int
 string_buffer_getbuffer(PyBytesObject *self, Py_buffer *view, int flags)
 {
-	return PyBuffer_FillInfo(view, (void *)self->ob_sval, Py_SIZE(self),
+	return PyBuffer_FillInfo(view, (PyObject*)self, (void *)self->ob_sval, Py_SIZE(self),
 				 1, flags);
 }
 
@@ -1160,7 +1160,7 @@ string_split(PyBytesObject *self, PyObject *args)
 
 	if (n == 0) {
 		PyErr_SetString(PyExc_ValueError, "empty separator");
-		PyObject_ReleaseBuffer(subobj, &vsub);
+		PyBuffer_Release(&vsub);
 		return NULL;
 	}
 	else if (n == 1)
@@ -1168,7 +1168,7 @@ string_split(PyBytesObject *self, PyObject *args)
 
 	list = PyList_New(PREALLOC_SIZE(maxsplit));
 	if (list == NULL) {
-		PyObject_ReleaseBuffer(subobj, &vsub);
+		PyBuffer_Release(&vsub);
 		return NULL;
 	}
 
@@ -1196,12 +1196,12 @@ string_split(PyBytesObject *self, PyObject *args)
 #endif
 	SPLIT_ADD(s, i, len);
 	FIX_PREALLOC_SIZE(list);
-	PyObject_ReleaseBuffer(subobj, &vsub);
+	PyBuffer_Release(&vsub);
 	return list;
 
  onError:
 	Py_DECREF(list);
-	PyObject_ReleaseBuffer(subobj, &vsub);
+	PyBuffer_Release(&vsub);
 	return NULL;
 }
 
@@ -1376,7 +1376,7 @@ string_rsplit(PyBytesObject *self, PyObject *args)
 
 	if (n == 0) {
 		PyErr_SetString(PyExc_ValueError, "empty separator");
-		PyObject_ReleaseBuffer(subobj, &vsub);
+		PyBuffer_Release(&vsub);
 		return NULL;
 	}
 	else if (n == 1)
@@ -1384,7 +1384,7 @@ string_rsplit(PyBytesObject *self, PyObject *args)
 
 	list = PyList_New(PREALLOC_SIZE(maxsplit));
 	if (list == NULL) {
-		PyObject_ReleaseBuffer(subobj, &vsub);
+		PyBuffer_Release(&vsub);
 		return NULL;
 	}
 
@@ -1406,12 +1406,12 @@ string_rsplit(PyBytesObject *self, PyObject *args)
 	FIX_PREALLOC_SIZE(list);
 	if (PyList_Reverse(list) < 0)
 		goto onError;
-	PyObject_ReleaseBuffer(subobj, &vsub);
+	PyBuffer_Release(&vsub);
 	return list;
 
 onError:
 	Py_DECREF(list);
-	PyObject_ReleaseBuffer(subobj, &vsub);
+	PyBuffer_Release(&vsub);
 	return NULL;
 }
 
@@ -1690,7 +1690,7 @@ do_xstrip(PyBytesObject *self, int striptype, PyObject *sepobj)
 		j++;
 	}
 
-	PyObject_ReleaseBuffer(sepobj, &vsep);
+	PyBuffer_Release(&vsep);
 
 	if (i == 0 && j == len && PyBytes_CheckExact(self)) {
 		Py_INCREF(self);
@@ -2945,11 +2945,11 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (PyBuffer_ToContiguous(((PyBytesObject *)new)->ob_sval,
 					  &view, view.len, 'C') < 0)
 			goto fail;
-		PyObject_ReleaseBuffer(x, &view);
+		PyBuffer_Release(&view);
 		return new;
 	  fail:
 		Py_XDECREF(new);
-		PyObject_ReleaseBuffer(x, &view);
+		PyBuffer_Release(&view);
 		return NULL;
 	}
 
