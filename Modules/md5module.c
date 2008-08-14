@@ -411,14 +411,14 @@ PyDoc_STRVAR(MD5_update__doc__,
 static PyObject *
 MD5_update(MD5object *self, PyObject *args)
 {
-    unsigned char *cp;
-    int len;
-
-    if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
+    Py_buffer buf;
+ 
+    if (!PyArg_ParseTuple(args, "s*:update", &buf))
         return NULL;
 
-    md5_process(&self->hash_state, cp, len);
+    md5_process(&self->hash_state, buf.buf, buf.len);
 
+    PyBuffer_Release(&buf);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -511,11 +511,11 @@ MD5_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
     static char *kwlist[] = {"string", NULL};
     MD5object *new;
-    unsigned char *cp = NULL;
-    int len;
+    Py_buffer buf;
+    buf.buf = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s#:new", kwlist,
-                                     &cp, &len)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s*:new", kwlist,
+                                     &buf)) {
         return NULL;
     }
 
@@ -528,8 +528,10 @@ MD5_new(PyObject *self, PyObject *args, PyObject *kwdict)
         Py_DECREF(new);
         return NULL;
     }
-    if (cp)
-        md5_process(&new->hash_state, cp, len);
+    if (buf.buf) {
+        md5_process(&new->hash_state, buf.buf, buf.len);
+	PyBuffer_Release(&buf);
+    }
 
     return (PyObject *)new;
 }
