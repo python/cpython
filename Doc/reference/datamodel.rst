@@ -1710,7 +1710,7 @@ left undefined.
    These methods are called to implement the binary arithmetic operations (``+``,
    ``-``, ``*``, ``//``, ``%``, :func:`divmod`, :func:`pow`, ``**``, ``<<``,
    ``>>``, ``&``, ``^``, ``|``).  For instance, to evaluate the expression
-   *x*``+``*y*, where *x* is an instance of a class that has an :meth:`__add__`
+   ``x + y``, where *x* is an instance of a class that has an :meth:`__add__`
    method, ``x.__add__(y)`` is called.  The :meth:`__divmod__` method should be the
    equivalent to using :meth:`__floordiv__` and :meth:`__mod__`; it should not be
    related to :meth:`__truediv__` (described below).  Note that :meth:`__pow__`
@@ -1755,7 +1755,7 @@ left undefined.
    ``&``, ``^``, ``|``) with reflected (swapped) operands.  These functions are
    only called if the left operand does not support the corresponding operation and
    the operands are of different types. [#]_  For instance, to evaluate the
-   expression *x*``-``*y*, where *y* is an instance of a class that has an
+   expression ``x - y``, where *y* is an instance of a class that has an
    :meth:`__rsub__` method, ``y.__rsub__(x)`` is called if ``x.__sub__(y)`` returns
    *NotImplemented*.
 
@@ -1792,10 +1792,10 @@ left undefined.
    in-place (modifying *self*) and return the result (which could be, but does
    not have to be, *self*).  If a specific method is not defined, the augmented
    operation falls back to the normal methods.  For instance, to evaluate the
-   expression *x*``+=``*y*, where *x* is an instance of a class that has an
+   expression ``x += y``, where *x* is an instance of a class that has an
    :meth:`__iadd__` method, ``x.__iadd__(y)`` is called.  If *x* is an instance
    of a class that does not define a :meth:`__iadd__` method, ``x.__add__(y)``
-   and ``y.__radd__(x)`` are considered, as with the evaluation of *x*``+``*y*.
+   and ``y.__radd__(x)`` are considered, as with the evaluation of ``x + y``.
 
 
 .. method:: object.__neg__(self)
