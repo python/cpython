@@ -185,11 +185,15 @@ SOURCE=..\..\PC\_subprocess.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\_weakref.c
+SOURCE=..\..\Modules\_threadmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\winreg.c
+SOURCE=..\..\Python\_warnings.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\_weakref.c
 # End Source File
 # Begin Source File
 
@@ -206,10 +210,6 @@ SOURCE=..\..\Modules\zlib\adler32.c
 # Begin Source File
 
 SOURCE=..\..\Modules\arraymodule.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Python\_warnings.c
 # End Source File
 # Begin Source File
 
@@ -310,14 +310,6 @@ SOURCE=..\..\Modules\datetimemodule.c
 # Begin Source File
 
 SOURCE=..\..\Modules\zlib\deflate.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\zlib\gzio.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\zlib\infback.c
 # End Source File
 # Begin Source File
 
@@ -442,6 +434,10 @@ SOURCE=..\..\Parser\grammar1.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\zlib\gzio.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\import.c
 # End Source File
 # Begin Source File
@@ -452,6 +448,10 @@ SOURCE=..\import_nt.c
 # Begin Source File
 
 SOURCE=..\..\Python\importdl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\zlib\infback.c
 # End Source File
 # Begin Source File
 
@@ -503,11 +503,11 @@ SOURCE=..\..\Modules\md5module.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Parser\metagrammar.c
+SOURCE=..\..\Objects\memoryobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Objects\memoryobject.c
+SOURCE=..\..\Parser\metagrammar.c
 # End Source File
 # Begin Source File
 
@@ -631,15 +631,15 @@ SOURCE=..\..\Objects\setobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\sha1module.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\sha256module.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Modules\sha512module.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\sha1module.c
 # End Source File
 # Begin Source File
 
@@ -675,10 +675,6 @@ SOURCE=..\..\Python\thread.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\_threadmodule.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\timemodule.c
 # End Source File
 # Begin Source File
@@ -695,15 +691,15 @@ SOURCE=..\..\Modules\zlib\trees.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\zlib\uncompr.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Objects\tupleobject.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Objects\typeobject.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\zlib\uncompr.c
 # End Source File
 # Begin Source File
 
@@ -716,6 +712,10 @@ SOURCE=..\..\Objects\unicodeobject.c
 # Begin Source File
 
 SOURCE=..\..\Objects\weakrefobject.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\winreg.c
 # End Source File
 # Begin Source File
 
