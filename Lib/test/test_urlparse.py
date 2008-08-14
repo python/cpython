@@ -6,6 +6,7 @@ import urlparse
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
+RFC3986_BASE = "http://a/b/c/d;p?q"
 
 class UrlParseTestCase(unittest.TestCase):
 
@@ -167,8 +168,6 @@ class UrlParseTestCase(unittest.TestCase):
     def test_RFC2396(self):
         # cases from RFC 2396
 
-        self.checkJoin(RFC2396_BASE, '?y', 'http://a/b/c/?y')
-        self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
 
         self.checkJoin(RFC2396_BASE, 'g:h', 'g:h')
         self.checkJoin(RFC2396_BASE, 'g', 'http://a/b/c/g')
@@ -209,6 +208,14 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC2396_BASE, 'g?y/../x', 'http://a/b/c/g?y/../x')
         self.checkJoin(RFC2396_BASE, 'g#s/./x', 'http://a/b/c/g#s/./x')
         self.checkJoin(RFC2396_BASE, 'g#s/../x', 'http://a/b/c/g#s/../x')
+
+        #The following scenarios have been updated in RFC3986
+        #self.checkJoin(RFC2396_BASE, '?y', 'http://a/b/c/?y')
+        #self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
+
+    def test_RFC3986(self):
+        self.checkJoin(RFC3986_BASE, '?y','http://a/b/c/d;p?y')
+        self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
 
     def test_urldefrag(self):
         for url, defrag, frag in [

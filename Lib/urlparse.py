@@ -217,9 +217,18 @@ def urljoin(base, url, allow_fragments=True):
     if path[:1] == '/':
         return urlunparse((scheme, netloc, path,
                            params, query, fragment))
-    if not (path or params or query):
-        return urlunparse((scheme, netloc, bpath,
-                           bparams, bquery, fragment))
+    if not path:
+        path = bpath
+        if not params:
+            params = bparams
+        else:
+            path = path[:-1]
+            return urlunparse((scheme, netloc, path,
+                                params, query, fragment))
+        if not query:
+            query = bquery
+        return urlunparse((scheme, netloc, path,
+                           params, query, fragment))
     segments = bpath.split('/')[:-1] + path.split('/')
     # XXX The stuff below is bogus in various ways...
     if segments[-1] == '.':
