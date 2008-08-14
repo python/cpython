@@ -3,11 +3,15 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import test.support, unittest
+import os
 import sys
 import subprocess
 
 def _spawn_python(*args):
-    cmd_line = [sys.executable, '-E']
+    cmd_line = [sys.executable]
+    # When testing -S, we need PYTHONPATH to work (see test_site_flag())
+    if '-S' not in args:
+        cmd_line.append('-E')
     cmd_line.extend(args)
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -59,6 +63,16 @@ class CmdLineTest(unittest.TestCase):
         self.verify_valid_flag('-Qwarnall')
 
     def test_site_flag(self):
+        if os.name == 'posix':
+            # Workaround bug #586680 by adding the extension dir to PYTHONPATH
+            from distutils.util import get_platform
+            s = "./build/lib.%s-%.3s" % (get_platform(), sys.version)
+            if hasattr(sys, 'gettotalrefcount'):
+                s += '-pydebug'
+            p = os.environ.get('PYTHONPATH', '')
+            if p:
+                p += ':'
+            os.environ['PYTHONPATH'] = p + s
         self.verify_valid_flag('-S')
 
     def test_usage(self):

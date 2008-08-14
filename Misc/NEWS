@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3476: binary buffered reading through the new "io" library is now
+  thread-safe.
+
 - Issue #1342811: Fix leak in Tkinter.Menu.delete. Commands associated to
   menu entries were not deleted.
 
