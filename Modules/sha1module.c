@@ -387,14 +387,14 @@ PyDoc_STRVAR(SHA1_update__doc__,
 static PyObject *
 SHA1_update(SHA1object *self, PyObject *args)
 {
-    unsigned char *cp;
-    int len;
+    Py_buffer buf;
 
-    if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
+    if (!PyArg_ParseTuple(args, "s*:update", &buf))
         return NULL;
 
-    sha1_process(&self->hash_state, cp, len);
+    sha1_process(&self->hash_state, buf.buf, buf.len);
 
+    PyBuffer_Release(&buf);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -487,11 +487,10 @@ SHA1_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
     static char *kwlist[] = {"string", NULL};
     SHA1object *new;
-    unsigned char *cp = NULL;
-    int len;
+    Py_buffer buf;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s#:new", kwlist,
-                                     &cp, &len)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s*:new", kwlist,
+                                     &buf)) {
         return NULL;
     }
 
@@ -504,8 +503,10 @@ SHA1_new(PyObject *self, PyObject *args, PyObject *kwdict)
         Py_DECREF(new);
         return NULL;
     }
-    if (cp)
-        sha1_process(&new->hash_state, cp, len);
+    if (buf.buf) {
+        sha1_process(&new->hash_state, buf.buf, buf.len);
+	PyBuffer_Release(&buf);
+    }
 
     return (PyObject *)new;
 }
