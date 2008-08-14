@@ -488,7 +488,7 @@ _cast = PYFUNCTYPE(py_object, c_void_p, py_object, py_object)(_cast_addr)
 def cast(obj, typ):
     return _cast(obj, obj, typ)
 
-_string_at = CFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
+_string_at = PYFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
 def string_at(ptr, size=-1):
     """string_at(addr[, size]) -> string
 
@@ -500,7 +500,7 @@ try:
 except ImportError:
     pass
 else:
-    _wstring_at = CFUNCTYPE(py_object, c_void_p, c_int)(_wstring_at_addr)
+    _wstring_at = PYFUNCTYPE(py_object, c_void_p, c_int)(_wstring_at_addr)
     def wstring_at(ptr, size=-1):
         """wstring_at(addr[, size]) -> string
 
