@@ -670,6 +670,8 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
 	}
 
 	view->obj = obj;
+	if (obj)
+		Py_INCREF(obj);
 	view->buf = buf;
 	view->len = len;
 	view->readonly = readonly;
@@ -693,11 +695,10 @@ void
 PyBuffer_Release(Py_buffer *view)
 {
 	PyObject *obj = view->obj;
-	if (!obj || !Py_TYPE(obj)->tp_as_buffer || !Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer)
-		/* Unmanaged buffer */
-		return;
-	Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer(obj, view);
-	
+	if (obj && Py_TYPE(obj)->tp_as_buffer && Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer)
+		Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer(obj, view);
+	Py_XDECREF(obj);
+	view->obj = NULL;
 }
 
 PyObject *
