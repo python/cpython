@@ -372,7 +372,7 @@ The module :mod:`socket` exports the following constants and functions:
 .. function:: inet_aton(ip_string)
 
    Convert an IPv4 address from dotted-quad string format (for example,
-   '123.45.67.89') to 32-bit packed binary format, as a string four characters in
+   '123.45.67.89') to 32-bit packed binary format, as a bytes object four characters in
    length.  This is useful when conversing with a program that uses the standard C
    library and needs objects of type :ctype:`struct in_addr`, which is the C type
    for the 32-bit packed binary this function returns.
@@ -387,23 +387,25 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. function:: inet_ntoa(packed_ip)
 
-   Convert a 32-bit packed IPv4 address (a string four characters in length) to its
-   standard dotted-quad string representation (for example, '123.45.67.89').  This
-   is useful when conversing with a program that uses the standard C library and
-   needs objects of type :ctype:`struct in_addr`, which is the C type for the
-   32-bit packed binary data this function takes as an argument.
+   Convert a 32-bit packed IPv4 address (a bytes object four characters in
+   length) to its standard dotted-quad string representation (for example,
+   '123.45.67.89').  This is useful when conversing with a program that uses the
+   standard C library and needs objects of type :ctype:`struct in_addr`, which
+   is the C type for the 32-bit packed binary data this function takes as an
+   argument.
 
-   If the string passed to this function is not exactly 4 bytes in length,
-   :exc:`socket.error` will be raised. :func:`inet_ntoa` does not support IPv6, and
-   :func:`getnameinfo` should be used instead for IPv4/v6 dual stack support.
+   If the byte sequence passed to this function is not exactly 4 bytes in
+   length, :exc:`socket.error` will be raised. :func:`inet_ntoa` does not
+   support IPv6, and :func:`getnameinfo` should be used instead for IPv4/v6 dual
+   stack support.
 
 
 .. function:: inet_pton(address_family, ip_string)
 
-   Convert an IP address from its family-specific string format to a packed, binary
-   format. :func:`inet_pton` is useful when a library or network protocol calls for
-   an object of type :ctype:`struct in_addr` (similar to :func:`inet_aton`) or
-   :ctype:`struct in6_addr`.
+   Convert an IP address from its family-specific string format to a packed,
+   binary format. :func:`inet_pton` is useful when a library or network protocol
+   calls for an object of type :ctype:`struct in_addr` (similar to
+   :func:`inet_aton`) or :ctype:`struct in6_addr`.
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the IP address string *ip_string* is invalid,
@@ -416,9 +418,9 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. function:: inet_ntop(address_family, packed_ip)
 
-   Convert a packed IP address (a string of some number of characters) to its
+   Convert a packed IP address (a bytes object of some number of characters) to its
    standard, family-specific string representation (for example, ``'7.10.0.5'`` or
-   ``'5aef:2b::8'``) :func:`inet_ntop` is useful when a library or network protocol
+   ``'5aef:2b::8'``). :func:`inet_ntop` is useful when a library or network protocol
    returns an object of type :ctype:`struct in_addr` (similar to :func:`inet_ntoa`)
    or :ctype:`struct in6_addr`.
 
@@ -534,9 +536,9 @@ correspond to Unix system calls applicable to sockets.
    are defined in this module.  If *buflen* is absent, an integer option is assumed
    and its integer value is returned by the function.  If *buflen* is present, it
    specifies the maximum length of the buffer used to receive the option in, and
-   this buffer is returned as a string.  It is up to the caller to decode the
+   this buffer is returned as a bytes object.  It is up to the caller to decode the
    contents of the buffer (see the optional built-in module :mod:`struct` for a way
-   to decode C structures encoded as strings).
+   to decode C structures encoded as byte strings).
 
    
 .. method:: socket.ioctl(control, option)
@@ -569,7 +571,7 @@ correspond to Unix system calls applicable to sockets.
 
 .. method:: socket.recv(bufsize[, flags])
 
-   Receive data from the socket.  The return value is a string representing the
+   Receive data from the socket.  The return value is a bytes object representing the
    data received.  The maximum amount of data to be received at once is specified
    by *bufsize*.  See the Unix manual page :manpage:`recv(2)` for the meaning of
    the optional argument *flags*; it defaults to zero.
@@ -582,8 +584,8 @@ correspond to Unix system calls applicable to sockets.
 
 .. method:: socket.recvfrom(bufsize[, flags])
 
-   Receive data from the socket.  The return value is a pair ``(string, address)``
-   where *string* is a string representing the data received and *address* is the
+   Receive data from the socket.  The return value is a pair ``(bytes, address)``
+   where *bytes* is a bytes object representing the data received and *address* is the
    address of the socket sending the data.  See the Unix manual page
    :manpage:`recv(2)` for the meaning of the optional argument *flags*; it defaults
    to zero. (The format of *address* depends on the address family --- see above.)
@@ -591,8 +593,8 @@ correspond to Unix system calls applicable to sockets.
 
 .. method:: socket.recvfrom_into(buffer[, nbytes[, flags]])
 
-   Receive data from the socket, writing it into *buffer* instead of  creating a
-   new string.  The return value is a pair ``(nbytes, address)`` where *nbytes* is
+   Receive data from the socket, writing it into *buffer* instead of creating a
+   new bytestring.  The return value is a pair ``(nbytes, address)`` where *nbytes* is
    the number of bytes received and *address* is the address of the socket sending
    the data.  See the Unix manual page :manpage:`recv(2)` for the meaning of the
    optional argument *flags*; it defaults to zero.  (The format of *address*
@@ -602,13 +604,13 @@ correspond to Unix system calls applicable to sockets.
 .. method:: socket.recv_into(buffer[, nbytes[, flags]])
 
    Receive up to *nbytes* bytes from the socket, storing the data into a buffer
-   rather than creating a new string.     If *nbytes* is not specified (or 0),
+   rather than creating a new bytestring.  If *nbytes* is not specified (or 0),
    receive up to the size available in the given buffer. See the Unix manual page
    :manpage:`recv(2)` for the meaning of the optional argument *flags*; it defaults
    to zero.
 
 
-.. method:: socket.send(string[, flags])
+.. method:: socket.send(bytes[, flags])
 
    Send data to the socket.  The socket must be connected to a remote socket.  The
    optional *flags* argument has the same meaning as for :meth:`recv` above.
@@ -617,17 +619,17 @@ correspond to Unix system calls applicable to sockets.
    application needs to attempt delivery of the remaining data.
 
 
-.. method:: socket.sendall(string[, flags])
+.. method:: socket.sendall(bytes[, flags])
 
    Send data to the socket.  The socket must be connected to a remote socket.  The
    optional *flags* argument has the same meaning as for :meth:`recv` above.
-   Unlike :meth:`send`, this method continues to send data from *string* until
+   Unlike :meth:`send`, this method continues to send data from *bytes* until
    either all data has been sent or an error occurs.  ``None`` is returned on
    success.  On error, an exception is raised, and there is no way to determine how
    much data, if any, was successfully sent.
 
 
-.. method:: socket.sendto(string[, flags], address)
+.. method:: socket.sendto(bytes[, flags], address)
 
    Send data to the socket.  The socket should not be connected to a remote socket,
    since the destination socket is specified by *address*.  The optional *flags*
@@ -693,9 +695,9 @@ in general it is recommended to call :meth:`settimeout` before calling
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
    :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer or a
-   string representing a buffer.  In the latter case it is up to the caller to
-   ensure that the string contains the proper bits (see the optional built-in
-   module :mod:`struct` for a way to encode C structures as strings).
+   bytes object representing a buffer.  In the latter case it is up to the caller to
+   ensure that the bytestring contains the proper bits (see the optional built-in
+   module :mod:`struct` for a way to encode C structures as bytestrings).
 
 
 .. method:: socket.shutdown(how)
@@ -768,7 +770,7 @@ The first two examples support IPv4 only. ::
    PORT = 50007              # The same port as used by the server
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    s.connect((HOST, PORT))
-   s.send('Hello, world')
+   s.send(b'Hello, world')
    data = s.recv(1024)
    s.close()
    print('Received', repr(data))
@@ -787,7 +789,8 @@ sends traffic to the first one connected successfully. ::
    HOST = None               # Symbolic name meaning all available interfaces
    PORT = 50007              # Arbitrary non-privileged port
    s = None
-   for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+   for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC,
+                                 socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
        af, socktype, proto, canonname, sa = res
        try:
    	s = socket.socket(af, socktype, proto)
@@ -839,7 +842,7 @@ sends traffic to the first one connected successfully. ::
    if s is None:
        print('could not open socket')
        sys.exit(1)
-   s.send('Hello, world')
+   s.send(b'Hello, world')
    data = s.recv(1024)
    s.close()
    print('Received', repr(data))
