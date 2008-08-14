@@ -48,6 +48,10 @@ Core and Builtins
 Library
 -------
 
+- Silence the DeprecationWarning of rfc822 when it is imported by mimetools
+  since mimetools itself is deprecated. Because modules are cached, all
+  subsequent imports of rfc822 will not raise a visible DeprecationWarning.
+
 - Issue #3134: shutil referenced undefined WindowsError symbol.
 
 - Issue #1342811: Fix leak in Tkinter.Menu.delete. Commands associated to
