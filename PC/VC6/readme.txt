@@ -1,7 +1,7 @@
 Building Python using VC++ 6.0 or 5.0
 -------------------------------------
 This directory is used to build Python for Win32 platforms, e.g. Windows
-95, 98 and NT.  It requires Microsoft Visual C++ 6.x or 5.x.
+2000 and XP.  It requires Microsoft Visual C++ 6.x or 5.x.
 (For other Windows platforms and compilers, see ../readme.txt.)
 
 All you need to do is open the workspace "pcbuild.dsw" in MSVC++, select
@@ -11,9 +11,7 @@ and build the projects.
 The proper order to build subprojects:
 
 1) pythoncore (this builds the main Python DLL and library files,
-               python21.{dll, lib} in Release mode)
-              NOTE:  in previous releases, this subproject was
-              named after the release number, e.g. python20.
+               python26.{dll, lib} in Release mode)
 
 2) python (this builds the main Python executable,
            python.exe in Release mode)
@@ -24,7 +22,7 @@ The proper order to build subprojects:
    to the subsystems they implement; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python21_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name:  python26_d.dll, python_d.exe, pyexpat_d.pyd, and so on.
 
 SUBPROJECTS
 -----------
@@ -39,6 +37,9 @@ python
     .exe
 pythonw
     pythonw.exe, a variant of python.exe that doesn't pop up a DOS box
+_msi
+    _msi.c. You need to install Windows Installer SDK to build this module.
+    http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm
 _socket
     socketmodule.c
 _testcapi
@@ -177,6 +178,17 @@ _bsddb
     XXX threads are invisible to unittest).
 
 
+_sqlite3
+    Python wrapper for SQLite library.
+    
+    Get the source code through
+    
+    svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
+    
+    To use the extension module in a Python build tree, copy sqlite3.dll into
+    the PC/VC6 folder.
+
+
 _ssl
     Python wrapper for the secure sockets library.
 
@@ -199,11 +211,9 @@ _ssl
         http://www.activestate.com/Products/ActivePerl/
     as this is used by the OpenSSL build process.  Complain to them <wink>.
 
-    The MSVC project simply invokes PCBuild/build_ssl.py to perform
+    The MSVC project simply invokes PC/VC6/build_ssl.py to perform
     the build.  This Python script locates and builds your OpenSSL
     installation, then invokes a simple makefile to build the final .pyd.
-
-    Win9x users:  see "Win9x note" below.
 
     build_ssl.py attempts to catch the most common errors (such as not
     being able to find OpenSSL sources, or not being able to find a Perl
@@ -215,30 +225,6 @@ _ssl
 
     build_ssl.py/MSVC isn't clever enough to clean OpenSSL - you must do
     this by hand.
-
-    Win9x note:  If, near the start of the build process, you see
-    something like
-
-        C:\Code\openssl-0.9.6g>set OPTS=no-asm
-        Out of environment space
-
-    then you're in trouble, and will probably also see these errors near
-    the end of the process:
-
-        NMAKE : fatal error U1073: don't know how to make
-            'crypto\md5\asm\m5_win32.asm'
-        Stop.
-        NMAKE : fatal error U1073: don't know how to make
-            'C:\Code\openssl-0.9.6g/out32/libeay32.lib'
-        Stop.
-
-    You need more environment space.  Win9x only has room for 256 bytes
-    by default, and especially after installing ActivePerl (which fiddles
-    the PATH envar), you're likely to run out.  KB Q230205
-
-        http://support.microsoft.com/default.aspx?scid=KB;en-us;q230205
-
-    explains how to edit CONFIG.SYS to cure this.
 
 
 YOUR OWN EXTENSION DLLs
