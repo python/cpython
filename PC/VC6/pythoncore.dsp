@@ -181,6 +181,10 @@ SOURCE=..\..\PC\_subprocess.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\_warnings.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_weakref.c
 # End Source File
 # Begin Source File
@@ -202,10 +206,6 @@ SOURCE=..\..\Modules\zlib\adler32.c
 # Begin Source File
 
 SOURCE=..\..\Modules\arraymodule.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Python\_warnings.c
 # End Source File
 # Begin Source File
 
@@ -242,10 +242,6 @@ SOURCE=..\..\Objects\bufferobject.c
 # Begin Source File
 
 SOURCE=..\..\Objects\bytearrayobject.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Objects\stringobject.c
 # End Source File
 # Begin Source File
 
@@ -353,6 +349,10 @@ SOURCE=..\..\Objects\fileobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Parser\firstsets.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Objects\floatobject.c
 # End Source File
 # Begin Source File
@@ -434,7 +434,15 @@ SOURCE=..\..\Python\graminit.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Parser\grammar.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Parser\grammar1.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\zlib\gzio.c
 # End Source File
 # Begin Source File
 
@@ -452,6 +460,10 @@ SOURCE=..\import_nt.c
 # Begin Source File
 
 SOURCE=..\..\Python\importdl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\zlib\infback.c
 # End Source File
 # Begin Source File
 
@@ -603,6 +615,10 @@ SOURCE=..\..\Python\pystate.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\pystrcmp.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\pystrtod.c
 # End Source File
 # Begin Source File
@@ -648,6 +664,10 @@ SOURCE=..\..\Modules\signalmodule.c
 # Begin Source File
 
 SOURCE=..\..\Objects\sliceobject.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Objects\stringobject.c
 # End Source File
 # Begin Source File
 
@@ -704,6 +724,10 @@ SOURCE=..\..\Objects\tupleobject.c
 # Begin Source File
 
 SOURCE=..\..\Objects\typeobject.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\zlib\uncompr.c
 # End Source File
 # Begin Source File
 
