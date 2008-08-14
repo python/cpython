@@ -4,8 +4,10 @@ import os
 import sys
 import time
 import array
+import threading
+import random
 import unittest
-from itertools import chain
+from itertools import chain, cycle
 from test import support
 
 import codecs
@@ -390,6 +392,49 @@ class BufferedReaderTest(unittest.TestCase):
         # this test. Else, write it.
         pass
 
+    def testThreads(self):
+        try:
+            # Write out many bytes with exactly the same number of 0's,
+            # 1's... 255's. This will help us check that concurrent reading
+            # doesn't duplicate or forget contents.
+            N = 1000
+            l = list(range(256)) * N
+            random.shuffle(l)
+            s = bytes(bytearray(l))
+            with io.open(support.TESTFN, "wb") as f:
+                f.write(s)
+            with io.open(support.TESTFN, "rb", buffering=0) as raw:
+                bufio = io.BufferedReader(raw, 8)
+                errors = []
+                results = []
+                def f():
+                    try:
+                        # Intra-buffer read then buffer-flushing read
+                        for n in cycle([1, 19]):
+                            s = bufio.read(n)
+                            if not s:
+                                break
+                            # list.append() is atomic
+                            results.append(s)
+                    except Exception as e:
+                        errors.append(e)
+                        raise
+                threads = [threading.Thread(target=f) for x in range(20)]
+                for t in threads:
+                    t.start()
+                time.sleep(0.02) # yield
+                for t in threads:
+                    t.join()
+                self.assertFalse(errors,
+                    "the following exceptions were caught: %r" % errors)
+                s = b''.join(results)
+                for i in range(256):
+                    c = bytes(bytearray([i]))
+                    self.assertEqual(s.count(c), N)
+        finally:
+            support.unlink(support.TESTFN)
+
+
 
 class BufferedWriterTest(unittest.TestCase):
 
@@ -445,6 +490,38 @@ class BufferedWriterTest(unittest.TestCase):
         bufio.flush()
 
         self.assertEquals(b"abc", writer._write_stack[0])
+
+    def testThreads(self):
+        # BufferedWriter should not raise exceptions or crash
+        # when called from multiple threads.
+        try:
+            # We use a real file object because it allows us to
+            # exercise situations where the GIL is released before
+            # writing the buffer to the raw streams. This is in addition
+            # to concurrency issues due to switching threads in the middle
+            # of Python code.
+            with io.open(support.TESTFN, "wb", buffering=0) as raw:
+                bufio = io.BufferedWriter(raw, 8)
+                errors = []
+                def f():
+                    try:
+                        # Write enough bytes to flush the buffer
+                        s = b"a" * 19
+                        for i in range(50):
+                            bufio.write(s)
+                    except Exception as e:
+                        errors.append(e)
+                        raise
+                threads = [threading.Thread(target=f) for x in range(20)]
+                for t in threads:
+                    t.start()
+                time.sleep(0.02) # yield
+                for t in threads:
+                    t.join()
+                self.assertFalse(errors,
+                    "the following exceptions were caught: %r" % errors)
+        finally:
+            support.unlink(support.TESTFN)
 
 
 class BufferedRWPairTest(unittest.TestCase):
