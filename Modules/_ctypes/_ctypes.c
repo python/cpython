@@ -2516,6 +2516,8 @@ static int CData_NewGetBuffer(PyObject *_self, Py_buffer *view, int flags)
 	if (view == NULL) return 0;
 
 	view->buf = self->b_ptr;
+	view->obj = _self;
+	Py_INCREF(_self);
 	view->len = self->b_size;
 	view->readonly = 0;
 	/* use default format character if not set */
