@@ -683,6 +683,8 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
 	}
 
 	view->obj = obj;
+	if (obj)
+		Py_INCREF(obj);
 	view->buf = buf;
 	view->len = len;
 	view->readonly = readonly;
@@ -710,7 +712,8 @@ PyBuffer_Release(Py_buffer *view)
 		/* Unmanaged buffer */
 		return;
 	Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer(obj, view);
-	
+	Py_DECREF(obj);
+	view->obj = NULL;
 }
 
 PyObject *
