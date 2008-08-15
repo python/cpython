@@ -61,24 +61,23 @@ def alternates(members):
 
 
 def build_pattern(mapping=MAPPING):
-    bare = set()
-    for old_module, new_module in mapping.items():
-        bare.add(old_module)
-        yield """import_name< 'import' (module=%r
-                              | dotted_as_names< any* module=%r any* >) >
-              """ % (old_module, old_module)
-        yield """import_from< 'from' module_name=%r 'import'
-                  ( any | import_as_name< any 'as' any > |
-                    import_as_names< any* >) >
-              """ % old_module
-        yield """import_name< 'import'
-                              dotted_as_name< module_name=%r 'as' any > >
-              """ % old_module
-        # Find usages of module members in code e.g. urllib.foo(bar)
-        yield """power< module_name=%r
-                 trailer<'.' any > any* >
-              """ % old_module
-    yield """bare_name=%s""" % alternates(bare)
+    mod_list = ' | '.join(["module='" + key + "'" for key in mapping.keys()])
+    mod_name_list = ' | '.join(["module_name='" + key + "'" for key in mapping.keys()])
+    yield """import_name< 'import' ((%s)
+                          | dotted_as_names< any* (%s) any* >) >
+          """ % (mod_list, mod_list)
+    yield """import_from< 'from' (%s) 'import'
+              ( any | import_as_name< any 'as' any > |
+                import_as_names< any* >) >
+          """ % mod_name_list
+    yield """import_name< 'import'
+                          dotted_as_name< (%s) 'as' any > >
+          """ % mod_name_list
+    # Find usages of module members in code e.g. urllib.foo(bar)
+    yield """power< (%s)
+             trailer<'.' any > any* >
+          """ % mod_name_list
+    yield """bare_name=%s""" % alternates(mapping.keys())
 
 class FixImports(fixer_base.BaseFix):
     PATTERN = "|".join(build_pattern())
