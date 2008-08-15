@@ -1028,7 +1028,7 @@ binascii_crc32(PyObject *self, PyObject *args)
 	}
 
 	result = (crc ^ 0xFFFFFFFF);
-	PyBuffer_Release(&pbuf);
+	PyBuffer_Release(&pbin);
 	return PyLong_FromUnsignedLong(result & 0xffffffff);
 }
 #endif  /* USE_ZLIB_CRC32 */
