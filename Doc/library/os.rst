@@ -1883,6 +1883,9 @@ written in Python, such as a mail server's external command delivery program.
    ``-1``, status is requested for any process in the process group ``-pid`` (the
    absolute value of *pid*).
 
+   An :exc:`OSError` is raised with the value of errno when the syscall
+   returns -1.
+
    On Windows: Wait for completion of a process given by process handle *pid*, and
    return a tuple containing *pid*, and its exit status shifted left by 8 bits
    (shifting makes cross-platform use of the function easier). A *pid* less than or
