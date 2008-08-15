@@ -48,6 +48,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2676: in the email package, content-type parsing was hanging on
+  pathological input because of quadratic or exponential behaviour of a
+  regular expression.
+
 - Issue #3476: binary buffered reading through the new "io" library is now
   thread-safe.
 
