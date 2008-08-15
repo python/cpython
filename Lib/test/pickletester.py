@@ -868,6 +868,14 @@ class AbstractPickleTests(unittest.TestCase):
             y = self.loads(s)
             self.assertEqual(y._reduce_called, 1)
 
+    def test_bad_getattr(self):
+        x = BadGetattr()
+        for proto in 0, 1:
+            self.assertRaises(RuntimeError, self.dumps, x, proto)
+        # protocol 2 don't raise a RuntimeError.
+        d = self.dumps(x, 2)
+        self.assertRaises(RuntimeError, self.loads, d)
+
 # Test classes for reduce_ex
 
 class REX_one(object):
@@ -948,6 +956,10 @@ class SimpleNewObj(object):
     def __init__(self, a, b, c):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
+
+class BadGetattr:
+    def __getattr__(self, key):
+        self.foo
 
 class AbstractPickleModuleTests(unittest.TestCase):
 

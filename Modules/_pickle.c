@@ -3834,8 +3834,11 @@ load_build(UnpicklerObject *self)
     inst = self->stack->data[self->stack->length - 1];
 
     setstate = PyObject_GetAttrString(inst, "__setstate__");
-    if (setstate == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
+    if (setstate == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+            PyErr_Clear();
+        else
+            return -1;
     }
     else {
         PyObject *result;
