@@ -19,18 +19,22 @@ from email import errors
 
 SEMISPACE = '; '
 
-# Regular expression used to split header parameters.  BAW: this may be too
-# simple.  It isn't strictly RFC 2045 (section 5.1) compliant, but it catches
-# most headers found in the wild.  We may eventually need a full fledged
-# parser eventually.
-paramre = re.compile(r'\s*;\s*')
 # Regular expression that matches `special' characters in parameters, the
 # existance of which force quoting of the parameter value.
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
 
 
-
 # Helper functions
+def _splitparam(param):
+    # Split header parameters.  BAW: this may be too simple.  It isn't
+    # strictly RFC 2045 (section 5.1) compliant, but it catches most headers
+    # found in the wild.  We may eventually need a full fledged parser
+    # eventually.
+    a, sep, b = param.partition(';')
+    if not sep:
+        return a.strip(), None
+    return a.strip(), b.strip()
+
 def _formatparam(param, value=None, quote=True):
     """Convenience function to format and return a key=value pair.
 
@@ -436,7 +440,7 @@ class Message:
         if value is missing:
             # This should have no parameters
             return self.get_default_type()
-        ctype = paramre.split(value)[0].lower().strip()
+        ctype = _splitparam(value)[0].lower()
         # RFC 2045, section 5.2 says if its invalid, use text/plain
         if ctype.count('/') != 1:
             return 'text/plain'
