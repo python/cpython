@@ -488,6 +488,7 @@ SHA1_new(PyObject *self, PyObject *args, PyObject *kwdict)
     static char *kwlist[] = {"string", NULL};
     SHA1object *new;
     Py_buffer buf;
+    buf.buf = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s*:new", kwlist,
                                      &buf)) {
