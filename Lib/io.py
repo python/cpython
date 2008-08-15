@@ -61,7 +61,7 @@ import sys
 import codecs
 import _fileio
 import warnings
-import threading
+from _thread import allocate_lock as Lock
 
 # open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
@@ -896,7 +896,7 @@ class BufferedReader(_BufferedIOMixin):
         _BufferedIOMixin.__init__(self, raw)
         self.buffer_size = buffer_size
         self._reset_read_buf()
-        self._read_lock = threading.Lock()
+        self._read_lock = Lock()
 
     def _reset_read_buf(self):
         self._read_buf = b""
@@ -1022,7 +1022,7 @@ class BufferedWriter(_BufferedIOMixin):
                                 if max_buffer_size is None
                                 else max_buffer_size)
         self._write_buf = bytearray()
-        self._write_lock = threading.Lock()
+        self._write_lock = Lock()
 
     def write(self, b):
         if self.closed:
