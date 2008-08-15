@@ -60,8 +60,12 @@ import abc
 import sys
 import codecs
 import _fileio
-import warnings
-from _thread import allocate_lock as Lock
+# Import _thread instead of threading to reduce startup cost
+try:
+    from _thread import allocate_lock as Lock
+except ImportError:
+    from _dummy_thread import allocate_lock as Lock
+
 
 # open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes

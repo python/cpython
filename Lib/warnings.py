@@ -5,7 +5,6 @@
 # See bug 683658.
 import linecache
 import sys
-import types
 
 __all__ = ["warn", "showwarning", "formatwarning", "filterwarnings",
            "resetwarnings"]
