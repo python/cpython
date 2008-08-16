@@ -1,6 +1,5 @@
-
-:mod:`symtable` -- Access to the compiler's symbol tables
-=========================================================
+:mod:`symtable` --- Access to the compiler's symbol tables
+==========================================================
 
 .. module:: symtable
    :synopsis: Interface to the compiler's internal symbol tables.
@@ -20,7 +19,7 @@ Generating Symbol Tables
 
 .. function:: symtable(code, filename, compile_type)
 
-   Return the toplevel :class:`SymbolTable` for the Python source, *code*.
+   Return the toplevel :class:`SymbolTable` for the Python source *code*.
    *filename* is the name of the file containing the code.  *compile_type* is
    like the *mode* argument to :func:`compile`.
 
@@ -31,7 +30,6 @@ Examining Symbol Tables
 .. class:: SymbolTable
 
    A namespace table for a block.  The constructor is not public.
-
 
    .. method:: get_type()
 
@@ -46,7 +44,7 @@ Examining Symbol Tables
 
       Return the table's name.  This is the name of the class if the table is
       for a class, the name of the function if the table is for a function, or
-      ``'top'`` if the table is global.
+      ``'top'`` if the table is global (type ``'module'``).
 
    .. method:: get_lineno()
 
@@ -71,7 +69,7 @@ Examining Symbol Tables
 
    .. method:: has_import_start()
 
-      Return ``True`` if the block uses a starred import.
+      Return ``True`` if the block uses a starred from-import.
 
    .. method:: get_identifiers()
 
@@ -94,7 +92,6 @@ Examining Symbol Tables
 
    A namespace for a function or method.  This class inherits
    :class:`SymbolTable`.
-
 
    .. method:: get_parameters()
 
@@ -124,7 +121,7 @@ Examining Symbol Tables
 
 .. class:: Symbol
 
-   An entry in a :class:`SymbolTable` corresponding to a identifier in the
+   An entry in a :class:`SymbolTable` corresponding to an identifier in the
    source.  The constructor is not public.
 
    .. method:: get_name()
@@ -153,7 +150,8 @@ Examining Symbol Tables
 
    .. method:: is_kewordarg()
 
-      Return ``True`` if symbol is a starred arg (receives keywrod arguments).
+      Return ``True`` if the symbol is a two-star arg (receives keyword
+      arguments).
 
    .. method:: is_local()
 
@@ -161,7 +159,8 @@ Examining Symbol Tables
 
    .. method:: is_free()
 
-      Return ``True`` if the symbol is used in its block, but not declared.
+      Return ``True`` if the symbol is referenced in its block, but not assigned
+      to.
 
    .. method:: is_assigned()
 
