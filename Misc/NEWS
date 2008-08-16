@@ -49,6 +49,11 @@ Library
 - Issue #2523: Fix quadratic behaviour when read()ing a binary file without
   asking for a specific length.
 
+Extension Modules
+-----------------
+
+- Bug #3542: Support Unicode strings in _msi module.
+
 What's new in Python 3.0b2?
 ===========================
 

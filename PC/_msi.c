@@ -18,7 +18,7 @@ static PyObject*
 uuidcreate(PyObject* obj, PyObject*args)
 {
     UUID result;
-    char *cresult;
+    RPC_WSTR cresult;
     PyObject *oresult;
     
     /* May return ok, local only, and no address.
@@ -30,13 +30,13 @@ uuidcreate(PyObject* obj, PyObject*args)
 	return NULL;
     }
 
-    if (UuidToString(&result, &cresult) == RPC_S_OUT_OF_MEMORY) {
+    if (UuidToStringW(&result, &cresult) == RPC_S_OUT_OF_MEMORY) {
 	PyErr_SetString(PyExc_MemoryError, "out of memory in uuidgen");
 	return NULL;
     }
 
-    oresult = PyBytes_FromString(cresult);
-    RpcStringFree(&cresult);
+    oresult = PyUnicode_FromUnicode(cresult, wcslen(cresult));
+    RpcStringFreeW(&cresult);
     return oresult;
 
 }
@@ -359,23 +359,23 @@ record_getstring(msiobj* record, PyObject* args)
 {
     unsigned int field;
     unsigned int status;
-    char buf[2000];
-    char *res = buf;
+    WCHAR buf[2000];
+    WCHAR *res = buf;
     DWORD size = sizeof(buf);
     PyObject* string;
     
     if (!PyArg_ParseTuple(args, "I:GetString", &field))
         return NULL;
-    status = MsiRecordGetString(record->h, field, res, &size);
+    status = MsiRecordGetStringW(record->h, field, res, &size);
     if (status == ERROR_MORE_DATA) {
-        res = (char*) malloc(size + 1);
+        res = (WCHAR*) malloc((size + 1)*sizeof(WCHAR));
         if (res == NULL)
             return PyErr_NoMemory();
-        status = MsiRecordGetString(record->h, field, res, &size);
+        status = MsiRecordGetStringW(record->h, field, res, &size);
     }
     if (status != ERROR_SUCCESS)
         return msierror((int) status);
-    string = PyUnicode_FromString(res);
+    string = PyUnicode_FromUnicode(res, size);
     if (buf != res)
         free(res);
     return string;
@@ -397,12 +397,12 @@ record_setstring(msiobj* record, PyObject *args)
 {
     int status;
     int field;
-    char *data;
+    Py_UNICODE *data;
 
-    if (!PyArg_ParseTuple(args, "is:SetString", &field, &data))
+    if (!PyArg_ParseTuple(args, "iu:SetString", &field, &data))
 	return NULL;
 
-    if ((status = MsiRecordSetString(record->h, field, data)) != ERROR_SUCCESS)
+    if ((status = MsiRecordSetStringW(record->h, field, data)) != ERROR_SUCCESS)
 	return msierror(status);
 
     Py_INCREF(Py_None);
@@ -414,12 +414,12 @@ record_setstream(msiobj* record, PyObject *args)
 {
     int status;
     int field;
-    char *data;
+    Py_UNICODE *data;
 
-    if (!PyArg_ParseTuple(args, "is:SetStream", &field, &data))
+    if (!PyArg_ParseTuple(args, "iu:SetStream", &field, &data))
 	return NULL;
 
-    if ((status = MsiRecordSetStream(record->h, field, data)) != ERROR_SUCCESS)
+    if ((status = MsiRecordSetStreamW(record->h, field, data)) != ERROR_SUCCESS)
 	return msierror(status);
 
     Py_INCREF(Py_None);
@@ -586,9 +586,9 @@ summary_setproperty(msiobj* si, PyObject *args)
     if (!PyArg_ParseTuple(args, "iO:SetProperty", &field, &data))
 	return NULL;
 
-    if (PyBytes_Check(data)) {
-	status = MsiSummaryInfoSetProperty(si->h, field, VT_LPSTR,
-	    0, NULL, PyBytes_AsString(data));
+    if (PyUnicode_Check(data)) {
+	status = MsiSummaryInfoSetPropertyW(si->h, field, VT_LPSTR,
+	    0, NULL, PyUnicode_AsUnicode(data));
     } else if (PyLong_CheckExact(data)) {
 	long value = PyLong_AsLong(data);
 	if (value == -1 && PyErr_Occurred()) {
