@@ -770,6 +770,34 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 
+    def test_http_doubleslash(self):
+        # Checks the presence of any unnecessary double slash in url does not
+        # break anything. Previously, a double slash directly after the host
+        # could could cause incorrect parsing.
+        h = urllib.request.AbstractHTTPHandler()
+        o = h.parent = MockOpener()
+
+        data = ""
+        ds_urls = [
+            "http://example.com/foo/bar/baz.html",
+            "http://example.com//foo/bar/baz.html",
+            "http://example.com/foo//bar/baz.html",
+            "http://example.com/foo/bar//baz.html"
+            ]
+
+        for ds_url in ds_urls:
+            ds_req = Request(ds_url, data)
+
+            # Check whether host is determined correctly if there is no proxy
+            np_ds_req = h.do_request_(ds_req)
+            self.assertEqual(np_ds_req.unredirected_hdrs["Host"],"example.com")
+
+            # Check whether host is determined correctly if there is a proxy
+            ds_req.set_proxy("someproxy:3128",None)
+            p_ds_req = h.do_request_(ds_req)
+            self.assertEqual(p_ds_req.unredirected_hdrs["Host"],"example.com")
+
+
     def test_errors(self):
         h = urllib.request.HTTPErrorProcessor()
         o = h.parent = MockOpener()
