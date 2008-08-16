@@ -373,6 +373,9 @@ analyze_name(PySTEntryObject *ste, PyObject *dict, PyObject *name, long flags,
 			PyErr_Format(PyExc_SyntaxError,
 				     "name '%s' is local and global",
 				     PyString_AS_STRING(name));
+			PyErr_SyntaxLocation(ste->ste_table->st_filename,
+					     ste->ste_lineno);
+			
 			return 0;
 		}
 		SET_SCOPE(dict, name, GLOBAL_EXPLICIT);
