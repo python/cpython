@@ -88,8 +88,6 @@ Number-theoretic and representation functions:
       The accuracy of fsum() may be impaired on builds that use
       extended precision addition and then double-round the results.
 
-   .. versionadded:: 2.6
-
 
 .. function:: isinf(x)
 

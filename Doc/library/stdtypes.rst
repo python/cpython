@@ -1651,24 +1651,15 @@ The constructors for both classes work the same:
 
       Update the set, adding elements from *other*.
 
-      .. versionchanged:: 2.6
-         Accepts multiple input iterables.
-
    .. method:: intersection_update(other, ...)
                set &= other & ...
 
       Update the set, keeping only elements found in it and *other*.
 
-      .. versionchanged:: 2.6
-         Accepts multiple input iterables.
-
    .. method:: difference_update(other, ...)
                set -= other | ...
 
       Update the set, removing elements found in others.
-
-      .. versionchanged:: 2.6
-         Accepts multiple input iterables.
 
    .. method:: symmetric_difference_update(other)
                set ^= other
