@@ -73,7 +73,12 @@ __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 import sys
 import time
 import socket # For gethostbyaddr()
-import mimetools
+from test.test_support import catch_warning
+from warnings import filterwarnings
+with catch_warning(record=False):
+    filterwarnings("ignore", ".*mimetools has been removed",
+                    DeprecationWarning)
+    import mimetools
 import SocketServer
 
 # Default error message template
