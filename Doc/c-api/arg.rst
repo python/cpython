@@ -57,6 +57,7 @@ variable(s) whose address should be passed.
 
 ``z*`` (string or ``None`` or any buffer compatible object) [Py_buffer*]
    This is to ``s*`` as ``z`` is to ``s``.
+
   .. versionadded:: 2.6
 
 ``u`` (Unicode object) [Py_UNICODE \*]
