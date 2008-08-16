@@ -454,7 +454,8 @@ class BytesTest(BaseBytesTest):
     type2test = bytes
 
     def test_buffer_is_readonly(self):
-        with open(sys.stdin.fileno(), "rb", buffering=0) as f:
+        fd = os.dup(sys.stdin.fileno())
+        with open(fd, "rb", buffering=0) as f:
             self.assertRaises(TypeError, f.readinto, b"")
 
 
