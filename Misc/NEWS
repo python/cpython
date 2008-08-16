@@ -49,7 +49,7 @@ Library
 -------
 
 - Silence the DeprecationWarning raised when importing mimetools in
-  BaseHTTPServer, httplib.
+  BaseHTTPServer, cgi (and rfc822), httplib.
 
 - Issue #2776: fixed small issue when handling an URL with double slash
   after a 302 response in the case of not going through a proxy.

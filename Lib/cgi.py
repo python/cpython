@@ -38,9 +38,16 @@ from operator import attrgetter
 import sys
 import os
 import urllib
-import mimetools
-import rfc822
 import UserDict
+from test.test_support import catch_warning
+from warnings import filterwarnings
+with catch_warning(record=False):
+    filterwarnings("ignore", ".*mimetools has been removed",
+                    DeprecationWarning)
+    import mimetools
+    filterwarnings("ignore", ".*rfc822 has been removed", DeprecationWarning)
+    import rfc822
+
 try:
     from cStringIO import StringIO
 except ImportError:
