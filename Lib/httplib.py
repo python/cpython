@@ -66,10 +66,14 @@ Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
-import mimetools
 import socket
 from urlparse import urlsplit
 import warnings
+from test.test_support import catch_warning
+with catch_warning(record=False):
+    warnings.filterwarnings("ignore", ".*mimetools has been removed",
+                            DeprecationWarning)
+    import mimetools
 
 try:
     from cStringIO import StringIO
