@@ -255,6 +255,9 @@ class Request:
         self.host, self.type = host, type
         self.__r_host = self.__original
 
+    def has_proxy(self):
+        return self.__r_host == self.__original
+
     def get_origin_req_host(self):
         return self.origin_req_host
 
@@ -1045,10 +1048,13 @@ class AbstractHTTPHandler(BaseHandler):
                 request.add_unredirected_header(
                     'Content-length', '%d' % len(data))
 
-        scheme, sel = splittype(request.get_selector())
-        sel_host, sel_path = splithost(sel)
+        sel_host = host
+        if request.has_proxy():
+            scheme, sel = splittype(request.get_selector())
+            sel_host, sel_path = splithost(sel)
+
         if not request.has_header('Host'):
-            request.add_unredirected_header('Host', sel_host or host)
+            request.add_unredirected_header('Host', sel_host)
         for name, value in self.parent.addheaders:
             name = name.capitalize()
             if not request.has_header(name):
