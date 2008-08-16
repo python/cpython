@@ -364,8 +364,6 @@ Retrieving source code
    of code.  Any whitespace that can be uniformly removed from the second line
    onwards is removed.  Also, all tabs are expanded to spaces.
 
-   .. versionadded:: 2.6
-
 
 .. _inspect-classes-functions:
 

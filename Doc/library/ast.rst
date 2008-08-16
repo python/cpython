@@ -9,12 +9,6 @@ Abstract Syntax Trees
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 .. sectionauthor:: Georg Brandl <georg@python.org>
 
-.. versionadded:: 2.5
-   The low-level ``_ast`` module containing only the node classes.
-
-.. versionadded:: 2.6
-   The high-level ``ast`` module containing all helpers.
-
 
 The :mod:`ast` module helps Python applications to process trees of the Python
 abstract syntax grammar.  The abstract syntax itself might change with each
@@ -112,8 +106,6 @@ The abstract grammar is currently defined as follows:
 
 :mod:`ast` Helpers
 ------------------
-
-.. versionadded:: 2.6
 
 Apart from the node classes, :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:

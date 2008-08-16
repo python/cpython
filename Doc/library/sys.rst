@@ -332,8 +332,6 @@ always available.
    func:`getsizeof` calls the object's __sizeof__ method and adds an additional
    garbage collector overhead if the object is managed by the garbage collector.
 
-   .. versionadded:: 2.6
-
 
 .. function:: _getframe([depth])
 

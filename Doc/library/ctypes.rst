@@ -1859,10 +1859,6 @@ Utility functions
 
    The exact functionality is system dependent.
 
-   .. versionchanged:: 2.6
-      Windows only: ``find_library("m")`` or
-      ``find_library("c")`` return the result of a call to
-      ``find_msvcrt()``.
 
 .. function:: find_msvcrt()
    :module: ctypes.util

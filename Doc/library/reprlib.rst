@@ -62,9 +62,6 @@ which format specific object types.
    default is ``4`` for :attr:`maxdict`, ``5`` for :attr:`maxarray`, and  ``6`` for
    the others.
 
-   .. versionadded:: 2.4
-      :attr:`maxset`, :attr:`maxfrozenset`, and :attr:`set`.
-
 
 .. attribute:: Repr.maxlong
 

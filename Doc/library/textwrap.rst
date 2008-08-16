@@ -181,8 +181,6 @@ indentation from strings that have unwanted whitespace to the left of the text.
       you want truly insecable words.  Default behaviour in previous versions
       was to always allow breaking hyphenated words.
 
-      .. versionadded:: 2.6
-
 
    :class:`TextWrapper` also provides two public methods, analogous to the
    module-level convenience functions:
