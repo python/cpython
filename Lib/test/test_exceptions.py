@@ -593,9 +593,10 @@ class ExceptionTests(unittest.TestCase):
         # PyErr_NoMemory always raises the same exception instance.
         # Check that the traceback is not doubled.
         import traceback
+        from _testcapi import raise_memoryerror
         def raiseMemError():
             try:
-                "a" * (sys.maxsize // 2)
+                raise_memoryerror()
             except MemoryError as e:
                 tb = e.__traceback__
             else:

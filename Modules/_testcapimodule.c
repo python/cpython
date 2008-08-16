@@ -971,8 +971,19 @@ exception_print(PyObject *self, PyObject *args)
 
 
 
+
+/* reliably raise a MemoryError */
+static PyObject *
+raise_memoryerror(PyObject *self)
+{
+	PyErr_NoMemory();
+	return NULL;
+}
+
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
+	{"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
 	{"test_list_api",	(PyCFunction)test_list_api,	 METH_NOARGS},
 	{"test_dict_iteration",	(PyCFunction)test_dict_iteration,METH_NOARGS},
