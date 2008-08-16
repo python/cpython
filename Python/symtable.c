@@ -16,9 +16,9 @@
 #define RETURN_VAL_IN_GENERATOR \
     "'return' with argument inside generator"
 
-/* XXX(nnorwitz): change name since static? */
+
 static PySTEntryObject *
-PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
+ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 	      void *key, int lineno)
 {
 	PySTEntryObject *ste = NULL;
@@ -722,7 +722,7 @@ symtable_warn(struct symtable *st, char *msg, int lineno)
 	return 1;
 }
 
-/* symtable_enter_block() gets a reference via PySTEntry_New().
+/* symtable_enter_block() gets a reference via ste_new.
    This reference is released when the block is exited, via the DECREF
    in symtable_exit_block().
 */
@@ -759,7 +759,7 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
 		}
 		Py_DECREF(st->st_cur);
 	}
-	st->st_cur = PySTEntry_New(st, name, block, ast, lineno);
+	st->st_cur = ste_new(st, name, block, ast, lineno);
 	if (st->st_cur == NULL)
 		return 0;
 	if (name == GET_IDENTIFIER(top))
