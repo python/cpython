@@ -1076,15 +1076,16 @@ Files and Directories
 
 .. function:: utime(path, times)
 
-   Set the access and modified times of the file specified by *path*. If *times* is
-   ``None``, then the file's access and modified times are set to the current time.
-   Otherwise, *times* must be a 2-tuple of numbers, of the form ``(atime, mtime)``
-   which is used to set the access and modified times, respectively. Whether a
-   directory can be given for *path* depends on whether the operating system
-   implements directories as files (for example, Windows does not).  Note that the
-   exact times you set here may not be returned by a subsequent :func:`stat` call,
-   depending on the resolution with which your operating system records access and
-   modification times; see :func:`stat`.
+   Set the access and modified times of the file specified by *path*. If *times*
+   is ``None``, then the file's access and modified times are set to the current
+   time. (The effect is similar to running the Unix program :program:`touch` on
+   the path.)  Otherwise, *times* must be a 2-tuple of numbers, of the form
+   ``(atime, mtime)`` which is used to set the access and modified times,
+   respectively. Whether a directory can be given for *path* depends on whether
+   the operating system implements directories as files (for example, Windows
+   does not).  Note that the exact times you set here may not be returned by a
+   subsequent :func:`stat` call, depending on the resolution with which your
+   operating system records access and modification times; see :func:`stat`.
 
    Availability: Macintosh, Unix, Windows.
 
@@ -1595,6 +1596,9 @@ written in Python, such as a mail server's external command delivery program.
    request pertains to any child of the current process.  If *pid* is less than
    ``-1``, status is requested for any process in the process group ``-pid`` (the
    absolute value of *pid*).
+
+   An :exc:`OSError` is raised with the value of errno when the syscall
+   returns -1.
 
    On Windows: Wait for completion of a process given by process handle *pid*, and
    return a tuple containing *pid*, and its exit status shifted left by 8 bits
