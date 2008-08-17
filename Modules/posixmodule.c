@@ -473,24 +473,18 @@ static PyObject *_PyUnicode_FromFileSystemEncodedObject(register PyObject *obj)
 {
 }
 
-/* Function suitable for O& conversion */
 static int
-convert_to_unicode(PyObject *arg, void* _param)
+convert_to_unicode(PyObject **param)
 {
-	PyObject **param = (PyObject**)_param;
-	if (PyUnicode_CheckExact(arg)) {
-		Py_INCREF(arg);
-		*param = arg;
-	} 
-	else if (PyUnicode_Check(arg)) {
+	if (PyUnicode_CheckExact(*param))
+		Py_INCREF(*param);
+	else if (PyUnicode_Check(*param))
 		/* For a Unicode subtype that's not a Unicode object,
 		   return a true Unicode object with the same data. */
-		*param = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(arg),
-					       PyUnicode_GET_SIZE(arg));
-		return *param != NULL;
-	}
+		*param = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(*param),
+					       PyUnicode_GET_SIZE(*param));
 	else
-		*param = PyUnicode_FromEncodedObject(arg,
+		*param = PyUnicode_FromEncodedObject(*param,
 				                     Py_FileSystemDefaultEncoding,
 					             "strict");
 	return (*param) != NULL;
@@ -2397,22 +2391,26 @@ posix_rename(PyObject *self, PyObject *args)
 	char *p1, *p2;
 	BOOL result;
 	if (unicode_file_names()) {
-	    if (!PyArg_ParseTuple(args, "O&O&:rename", 
-		convert_to_unicode, &o1,
-		convert_to_unicode, &o2))
-		    PyErr_Clear();
-	    else {
-		    Py_BEGIN_ALLOW_THREADS
-		    result = MoveFileW(PyUnicode_AsUnicode(o1),
-				       PyUnicode_AsUnicode(o2));
-		    Py_END_ALLOW_THREADS
-		    Py_DECREF(o1);
-		    Py_DECREF(o2);
-		    if (!result)
-			    return win32_error("rename", NULL);
-		    Py_INCREF(Py_None);
-		    return Py_None;
+	    if (!PyArg_ParseTuple(args, "OO:rename", &o1, &o2))
+		goto error;
+	    if (!convert_to_unicode(&o1))
+		goto error;
+	    if (!convert_to_unicode(&o2)) {
+		Py_DECREF(o1);
+		goto error;
 	    }
+	    Py_BEGIN_ALLOW_THREADS
+	    result = MoveFileW(PyUnicode_AsUnicode(o1),
+			       PyUnicode_AsUnicode(o2));
+	    Py_END_ALLOW_THREADS
+	    Py_DECREF(o1);
+	    Py_DECREF(o2);
+	    if (!result)
+		    return win32_error("rename", NULL);
+	    Py_INCREF(Py_None);
+	    return Py_None;
+error:
+	    PyErr_Clear();
 	}
 	if (!PyArg_ParseTuple(args, "ss:rename", &p1, &p2))
 		return NULL;
