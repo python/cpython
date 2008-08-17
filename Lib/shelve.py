@@ -60,7 +60,6 @@ from pickle import Pickler, Unpickler
 from io import BytesIO
 
 import collections
-import warnings
 
 __all__ = ["Shelf","BsdDbShelf","DbfilenameShelf","open"]
 
