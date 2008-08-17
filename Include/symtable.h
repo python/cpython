@@ -36,7 +36,7 @@ typedef struct _symtable_entry {
 	PyObject *ste_children;  /* list of child blocks */
 	_Py_block_ty ste_type;   /* module, class, or function */
 	int ste_unoptimized;     /* false if namespace is optimized */
-	unsigned ste_nested : 1;      /* true if block is nested */
+	int ste_nested;      /* true if block is nested */
 	unsigned ste_free : 1;        /* true if block has free variables */
 	unsigned ste_child_free : 1;  /* true if a child block has free vars,
 				         including free refs to globals */

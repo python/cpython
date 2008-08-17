@@ -92,6 +92,10 @@ PyInit__symtable(void)
 	PyModule_AddIntConstant(m, "GLOBAL_IMPLICIT", GLOBAL_IMPLICIT);
 	PyModule_AddIntConstant(m, "FREE", FREE);
 	PyModule_AddIntConstant(m, "CELL", CELL);
+
+	PyModule_AddIntConstant(m, "SCOPE_OFF", SCOPE_OFFSET);
+	PyModule_AddIntConstant(m, "SCOPE_MASK", SCOPE_MASK);
+
 	if (PyErr_Occurred()) {
 		Py_DECREF(m);
 		m = 0;
