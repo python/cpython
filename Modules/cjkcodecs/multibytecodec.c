@@ -600,18 +600,24 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
 	MultibyteCodec_State state;
 	MultibyteDecodeBuffer buf;
 	PyObject *errorcb;
+	Py_buffer pdata;
 	const char *data, *errors = NULL;
 	Py_ssize_t datalen, finalsize;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|z:decode",
-				codeckwarglist, &data, &datalen, &errors))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|z:decode",
+				codeckwarglist, &pdata, &errors))
 		return NULL;
+	data = pdata.buf;
+	datalen = pdata.len;
 
 	errorcb = internal_error_callback(errors);
-	if (errorcb == NULL)
+	if (errorcb == NULL) {
+		PyBuffer_Release(&pdata);
 		return NULL;
+	}
 
 	if (datalen == 0) {
+		PyBuffer_Release(&pdata);
 		ERROR_DECREF(errorcb);
 		return make_tuple(PyUnicode_FromUnicode(NULL, 0), 0);
 	}
@@ -651,11 +657,13 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
 		if (PyUnicode_Resize(&buf.outobj, finalsize) == -1)
 			goto errorexit;
 
+	PyBuffer_Release(&pdata);
 	Py_XDECREF(buf.excobj);
 	ERROR_DECREF(errorcb);
 	return make_tuple(buf.outobj, datalen);
 
 errorexit:
+	PyBuffer_Release(&pdata);
 	ERROR_DECREF(errorcb);
 	Py_XDECREF(buf.excobj);
 	Py_XDECREF(buf.outobj);
@@ -1018,12 +1026,15 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
 {
 	MultibyteDecodeBuffer buf;
 	char *data, *wdata = NULL;
+	Py_buffer pdata;
 	Py_ssize_t wsize, finalsize = 0, size, origpending;
 	int final = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "t#|i:decode",
-			incrementalkwarglist, &data, &size, &final))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|i:decode",
+			incrementalkwarglist, &pdata, &final))
 		return NULL;
+	data = pdata.buf;
+	size = pdata.len;
 
 	buf.outobj = buf.excobj = NULL;
 	origpending = self->pendingsize;
@@ -1072,12 +1083,14 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
 		if (PyUnicode_Resize(&buf.outobj, finalsize) == -1)
 			goto errorexit;
 
+	PyBuffer_Release(&pdata);
 	if (wdata != data)
 		PyMem_Del(wdata);
 	Py_XDECREF(buf.excobj);
 	return buf.outobj;
 
 errorexit:
+	PyBuffer_Release(&pdata);
 	if (wdata != NULL && wdata != data)
 		PyMem_Del(wdata);
 	Py_XDECREF(buf.excobj);
