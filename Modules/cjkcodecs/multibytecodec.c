@@ -1034,12 +1034,15 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
 {
 	MultibyteDecodeBuffer buf;
 	char *data, *wdata = NULL;
+	Py_buffer pdata;
 	Py_ssize_t wsize, finalsize = 0, size, origpending;
 	int final = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "t#|i:decode",
-			incrementalkwarglist, &data, &size, &final))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|i:decode",
+			incrementalkwarglist, &pdata, &final))
 		return NULL;
+	data = pdata.buf;
+	size = pdata.len;
 
 	buf.outobj = buf.excobj = NULL;
 	origpending = self->pendingsize;
@@ -1088,12 +1091,14 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
 		if (PyUnicode_Resize(&buf.outobj, finalsize) == -1)
 			goto errorexit;
 
+	PyBuffer_Release(&pdata);
 	if (wdata != data)
 		PyMem_Del(wdata);
 	Py_XDECREF(buf.excobj);
 	return buf.outobj;
 
 errorexit:
+	PyBuffer_Release(&pdata);
 	if (wdata != NULL && wdata != data)
 		PyMem_Del(wdata);
 	Py_XDECREF(buf.excobj);
