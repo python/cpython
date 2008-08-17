@@ -24,10 +24,28 @@ class FileTests(unittest.TestCase):
         self.assert_(os.access(test_support.TESTFN, os.W_OK))
 
     def test_closerange(self):
-        f = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
+        first = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
+        # We must allocate two consecutive file descriptors, otherwise
+        # it will mess up other file descriptors (perhaps even the three
+        # standard ones).
+        second = os.dup(first)
+        try:
+            retries = 0
+            while second != first + 1:
+                os.close(first)
+                retries += 1
+                if retries > 10:
+                    # XXX test skipped
+                    print >> sys.stderr, (
+                        "couldn't allocate two consecutive fds, "
+                        "skipping test_closerange")
+                    return
+                first, second = second, os.dup(second)
+        finally:
+            os.close(second)
         # close a fd that is open, and one that isn't
-        os.closerange(f, f+2)
-        self.assertRaises(OSError, os.write, f, "a")
+        os.closerange(first, first + 2)
+        self.assertRaises(OSError, os.write, first, "a")
 
 
 class TemporaryFileTests(unittest.TestCase):
