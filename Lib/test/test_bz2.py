@@ -110,6 +110,17 @@ class BZ2FileTest(BaseTest):
         self.assertEqual(list(iter(bz2f)), sio.readlines())
         bz2f.close()
 
+    def testClosedIteratorDeadlock(self):
+        # "Test that iteration on a closed bz2file releases the lock."
+        # http://bugs.python.org/issue3309
+        self.createTempFile()
+        bz2f = BZ2File(self.filename)
+        bz2f.close()
+        self.assertRaises(ValueError, bz2f.next)
+        # This call will deadlock of the above .next call failed to
+        # release the lock.
+        self.assertRaises(ValueError, bz2f.readlines)
+
     def testXReadLines(self):
         # "Test BZ2File.xreadlines()"
         self.createTempFile()
