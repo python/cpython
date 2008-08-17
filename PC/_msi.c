@@ -18,7 +18,7 @@ static PyObject*
 uuidcreate(PyObject* obj, PyObject*args)
 {
     UUID result;
-    RPC_WSTR cresult;
+    unsigned short *cresult;
     PyObject *oresult;
     
     /* May return ok, local only, and no address.
