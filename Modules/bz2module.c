@@ -1437,6 +1437,7 @@ BZ2File_iternext(BZ2FileObject *self)
 	PyStringObject* ret;
 	ACQUIRE_LOCK(self);
 	if (self->mode == MODE_CLOSED) {
+                RELEASE_LOCK(self);
 		PyErr_SetString(PyExc_ValueError,
 				"I/O operation on closed file");
 		return NULL;
