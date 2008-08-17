@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 2464. urllib2 now supports a malformation in the URL received
+  in a redirect.
+
 - Silence the DeprecationWarning raised when importing mimetools in
   BaseHTTPServer, cgi (and rfc822), httplib.
 

@@ -560,6 +560,14 @@ class HTTPRedirectHandler(BaseHandler):
             newurl = headers.getheaders('uri')[0]
         else:
             return
+
+        # fix a possible malformed URL
+        urlparts = urlparse.urlparse(newurl)
+        if not urlparts.path:
+            urlparts = list(urlparts)
+            urlparts[2] = "/"
+        newurl = urlparse.urlunparse(urlparts)
+
         newurl = urlparse.urljoin(req.get_full_url(), newurl)
 
         # XXX Probably want to forget about the state of the current
