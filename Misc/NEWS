@@ -77,6 +77,9 @@ Core and builtins
 Library
 -------
 
+- Issue #2222: Fixed reference leak when occured os.rename()
+  fails unicode conversion on 2nd parameter. (windows only)
+
 - Issue #3134: shutil referenced undefined WindowsError symbol.
 
 - Issue #1342811: Fix leak in Tkinter.Menu.delete. Commands associated to
