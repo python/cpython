@@ -100,7 +100,7 @@ from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
     urlparse, urlsplit, urljoin, unwrap, quote, unquote,
     splittype, splithost, splitport, splituser, splitpasswd,
-    splitattr, splitquery, splitvalue, to_bytes)
+    splitattr, splitquery, splitvalue, to_bytes, urlunparse)
 from urllib.response import addinfourl, addclosehook
 
 # check for SSL
@@ -535,6 +535,14 @@ class HTTPRedirectHandler(BaseHandler):
             newurl = headers["uri"]
         else:
             return
+
+        # fix a possible malformed URL
+        urlparts = urlparse(newurl)
+        if not urlparts.path:
+            urlparts = list(urlparts)
+            urlparts[2] = "/"
+        newurl = urlunparse(urlparts)
+
         newurl = urljoin(req.get_full_url(), newurl)
 
         # XXX Probably want to forget about the state of the current
