@@ -180,7 +180,7 @@ Initialization, Finalization, and Threads
    interpreter will change the contents of this storage.
 
 
-.. cfunction:: char* Py_GetProgramName()
+.. cfunction:: wchar* Py_GetProgramName()
 
    .. index:: single: Py_SetProgramName()
 
