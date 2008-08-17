@@ -44,7 +44,7 @@ Examining Symbol Tables
 
       Return the table's name.  This is the name of the class if the table is
       for a class, the name of the function if the table is for a function, or
-      ``'top'`` if the table is global (type ``'module'``).
+      ``'top'`` if the table is global (:meth:`get_type` returns ``'module'``).
 
    .. method:: get_lineno()
 
@@ -56,7 +56,7 @@ Examining Symbol Tables
 
    .. method:: is_nested()
 
-      Return ``True`` if the block is nested in another.
+      Return ``True`` if the block is a nested class or function.
 
    .. method:: has_children()
 
