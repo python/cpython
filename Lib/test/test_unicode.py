@@ -1118,14 +1118,9 @@ class UnicodeTest(
         # when a string allocation fails with a MemoryError.
         # This used to crash the interpreter,
         # or leak references when the number was smaller.
-        try:
-            u"a" * (sys.maxint // 2 - 100)
-        except MemoryError:
-            pass
-        try:
-            u"a" * (sys.maxint // 2 - 100)
-        except MemoryError:
-            pass
+        alloc = lambda: u"a" * (sys.maxsize - 100)
+        self.assertRaises(MemoryError, alloc)
+        self.assertRaises(MemoryError, alloc)
 
 def test_main():
     test_support.run_unittest(__name__)
