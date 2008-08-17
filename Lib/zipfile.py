@@ -807,9 +807,14 @@ class ZipFile:
 
     def testzip(self):
         """Read all the files and check the CRC."""
+        chunk_size = 2 ** 20
         for zinfo in self.filelist:
             try:
-                self.read(zinfo.filename)       # Check CRC-32
+                # Read by chunks, to avoid an OverflowError or a
+                # MemoryError with very large embedded files.
+                f = self.open(zinfo.filename, "r")
+                while f.read(chunk_size):     # Check CRC-32
+                    pass
             except BadZipfile:
                 return zinfo.filename
 
