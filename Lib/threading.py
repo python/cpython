@@ -766,6 +766,40 @@ except ImportError:
     from _threading_local import local
 
 
+def _after_fork():
+    # This function is called by Python/ceval.c:PyEval_ReInitThreads which
+    # is called from PyOS_AfterFork.  Here we cleanup threading module state
+    # that should not exist after a fork.
+
+    # Reset _active_limbo_lock, in case we forked while the lock was held
+    # by another (non-forked) thread.  http://bugs.python.org/issue874900
+    global _active_limbo_lock
+    _active_limbo_lock = _allocate_lock()
+
+    # fork() only copied the current thread; clear references to others.
+    new_active = {}
+    current = currentThread()
+    _active_limbo_lock.acquire()
+    try:
+        for ident, thread in _active.iteritems():
+            if thread is current:
+                # There is only one active thread.
+                new_active[ident] = thread
+            else:
+                # All the others are already stopped.
+                # We don't call _Thread__stop() because it tries to acquire
+                # thread._Thread__block which could also have been held while
+                # we forked.
+                thread._Thread__stopped = True
+
+        _limbo.clear()
+        _active.clear()
+        _active.update(new_active)
+        assert len(_active) == 1
+    finally:
+        _active_limbo_lock.release()
+
+
 # Self-test code
 
 def _test():

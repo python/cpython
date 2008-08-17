@@ -144,6 +144,10 @@ Library
 - Issue #2113: Fix error in subprocess.Popen if the select system call is
   interrupted by a signal.
 
+- Issue #874900: after an os.fork() call the threading module state is cleaned
+  up in the child process to prevent deadlock and report proper thread counts
+  if the new process uses the threading module.
+
 
 Extension Modules
 -----------------
