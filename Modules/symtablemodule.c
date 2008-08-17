@@ -81,4 +81,7 @@ init_symtable(void)
 	PyModule_AddIntConstant(m, "GLOBAL_IMPLICIT", GLOBAL_IMPLICIT);
 	PyModule_AddIntConstant(m, "FREE", FREE);
 	PyModule_AddIntConstant(m, "CELL", CELL);
+
+	PyModule_AddIntConstant(m, "SCOPE_OFF", SCOPE_OFF);
+	PyModule_AddIntConstant(m, "SCOPE_MASK", SCOPE_MASK);
 }
