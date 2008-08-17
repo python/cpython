@@ -112,6 +112,7 @@ static PyMemberDef ste_memberlist[] = {
 	{"symbols",  T_OBJECT, OFF(ste_symbols), READONLY},
 	{"varnames", T_OBJECT, OFF(ste_varnames), READONLY},
 	{"children", T_OBJECT, OFF(ste_children), READONLY},
+        {"optimized",T_INT,    OFF(ste_unoptimized), READONLY},
 	{"nested",   T_INT,    OFF(ste_nested), READONLY},
 	{"type",     T_INT,    OFF(ste_type), READONLY},
 	{"lineno",   T_INT,    OFF(ste_lineno), READONLY},
