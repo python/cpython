@@ -1155,20 +1155,15 @@ class UnicodeTest(
             return
         self.assertRaises(OverflowError, 't\tt\t'.expandtabs, sys.maxsize)
 
-
     def test_raiseMemError(self):
         # Ensure that the freelist contains a consistent object, even
         # when a string allocation fails with a MemoryError.
         # This used to crash the interpreter,
         # or leak references when the number was smaller.
-        try:
-            "a" * (sys.maxsize // 2 - 100)
-        except MemoryError:
-            pass
-        try:
-            "a" * (sys.maxsize // 2 - 100)
-        except MemoryError:
-            pass
+        alloc = lambda: "a" * (sys.maxsize - 100)
+        self.assertRaises(MemoryError, alloc)
+        self.assertRaises(MemoryError, alloc)
+
 
 def test_main():
     support.run_unittest(__name__)
