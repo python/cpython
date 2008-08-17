@@ -135,7 +135,7 @@ def _read_u32(file):
     x = 0
     for i in range(4):
         byte = file.read(1)
-        if byte == '':
+        if not byte:
             raise EOFError
         x = x*256 + ord(byte)
     return x
@@ -144,10 +144,9 @@ def _write_u32(file, x):
     data = []
     for i in range(4):
         d, m = divmod(x, 256)
-        data.insert(0, m)
+        data.insert(0, int(m))
         x = d
-    for i in range(4):
-        file.write(chr(int(data[i])))
+    file.write(bytes(data))
 
 class Au_read:
 
@@ -198,7 +197,7 @@ class Au_read:
         if self._hdr_size > 24:
             self._info = file.read(self._hdr_size - 24)
             for i in range(len(self._info)):
-                if self._info[i] == '\0':
+                if self._info[i] == b'\0':
                     self._info = self._info[:i]
                     break
         else:
@@ -451,7 +450,7 @@ class Au_write:
         _write_u32(self._file, self._framerate)
         _write_u32(self._file, self._nchannels)
         self._file.write(self._info)
-        self._file.write('\0'*(header_size - len(self._info) - 24))
+        self._file.write(b'\0'*(header_size - len(self._info) - 24))
 
     def _patchheader(self):
         self._file.seek(8)

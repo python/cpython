@@ -57,7 +57,7 @@ class OSSAudioDevTests(unittest.TestCase):
         dsp.fileno()
 
         # Make sure the read-only attributes work.
-        self.failUnless(dsp.close)
+        self.failIf(dsp.closed)
         self.assertEqual(dsp.name, "/dev/dsp")
         self.assertEqual(dsp.mode, "w", "bad dsp.mode: %r" % dsp.mode)
 
@@ -65,7 +65,7 @@ class OSSAudioDevTests(unittest.TestCase):
         for attr in ('closed', 'name', 'mode'):
             try:
                 setattr(dsp, attr, 42)
-            except TypeError:
+            except (TypeError, AttributeError):
                 pass
             else:
                 self.fail("dsp.%s not read-only" % attr)
@@ -75,7 +75,7 @@ class OSSAudioDevTests(unittest.TestCase):
 
         # set parameters based on .au file headers
         dsp.setparameters(AFMT_S16_NE, nchannels, rate)
-        self.assertEquals("%.2f" % expected_time, "2.93")
+        self.assertTrue(abs(expected_time - 2.94) < 1e-2, expected_time)
         t1 = time.time()
         dsp.write(data)
         dsp.close()
