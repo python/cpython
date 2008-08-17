@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2222: Fixed reference leak when occured os.rename()
+  fails unicode conversion on 2nd parameter. (windows only)
+
 - Issue 2464. urllib2 now supports a malformation in the URL received
   in a redirect.
 
