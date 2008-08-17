@@ -69,7 +69,6 @@ except ImportError:
     from StringIO import StringIO
 
 import UserDict
-import warnings
 
 __all__ = ["Shelf","BsdDbShelf","DbfilenameShelf","open"]
 

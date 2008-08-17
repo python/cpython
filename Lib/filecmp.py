@@ -11,7 +11,6 @@ Functions:
 
 import os
 import stat
-import warnings
 from itertools import ifilter, ifilterfalse, imap, izip
 
 __all__ = ["cmp","dircmp","cmpfiles"]
