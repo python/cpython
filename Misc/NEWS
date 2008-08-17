@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2222: Fixed reference leak when occured os.rename()
+  fails unicode conversion on 2nd parameter. (windows only)
+
 - Issue #3476: binary buffered reading through the new "io" library is now
   thread-safe.
 
