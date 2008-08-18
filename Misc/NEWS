@@ -327,8 +327,8 @@ Library
 
 - The test.test_support module has been renamed to test.support.
 
-- The threading module API was renamed to be PEP 8 complaint.  The old names are
-  still present, but will be removed in the near future.
+- The threading module API was renamed to be PEP 8 compliant.  The
+  old names are still present, but will be removed in the near future.
 
 Tools/Demos
 -----------
