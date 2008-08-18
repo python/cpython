@@ -40,7 +40,7 @@ if __debug__:
             if self._verbose:
                 format = format % args
                 format = "%s: %s\n" % (
-                    current_thread().get_name(), format)
+                    current_thread().name, format)
                 _sys.stderr.write(format)
 
 else:
@@ -83,7 +83,7 @@ class _RLock(_Verbose):
         owner = self._owner
         return "<%s(%s, %d)>" % (
                 self.__class__.__name__,
-                owner and owner.get_name(),
+                owner and owner.name,
                 self._count)
 
     def acquire(self, blocking=1):
@@ -412,7 +412,7 @@ class Thread(_Verbose):
 
     def _set_daemon(self):
         # Overridden in _MainThread and _DummyThread
-        return current_thread().is_daemon()
+        return current_thread().daemon
 
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
@@ -502,7 +502,7 @@ class Thread(_Verbose):
                 # self.
                 if _sys:
                     _sys.stderr.write("Exception in thread %s:\n%s\n" %
-                                      (self.get_name(), _format_exc()))
+                                      (self.name, _format_exc()))
                 else:
                     # Do the best job possible w/o a huge amt. of code to
                     # approximate a traceback (code ideas from
@@ -510,7 +510,7 @@ class Thread(_Verbose):
                     exc_type, exc_value, exc_tb = self._exc_info()
                     try:
                         print((
-                            "Exception in thread " + self.get_name() +
+                            "Exception in thread " + self.name +
                             " (most likely raised during interpreter shutdown):"), file=self._stderr)
                         print((
                             "Traceback (most recent call last):"), file=self._stderr)
@@ -621,11 +621,13 @@ class Thread(_Verbose):
         finally:
             self._block.release()
 
-    def get_name(self):
+    @property
+    def name(self):
         assert self._initialized, "Thread.__init__() not called"
         return self._name
 
-    def set_name(self, name):
+    @name.setter
+    def name(self, name):
         assert self._initialized, "Thread.__init__() not called"
         self._name = str(name)
 
@@ -638,11 +640,13 @@ class Thread(_Verbose):
         assert self._initialized, "Thread.__init__() not called"
         return self._started.is_set() and not self._stopped
 
-    def is_daemon(self):
+    @property
+    def daemon(self):
         assert self._initialized, "Thread.__init__() not called"
         return self._daemonic
 
-    def set_daemon(self, daemonic):
+    @daemon.setter
+    def daemon(self, daemonic):
         if not self._initialized:
             raise RuntimeError("Thread.__init__() not called")
         if self._started.is_set():
@@ -710,7 +714,7 @@ class _MainThread(Thread):
 
 def _pickSomeNonDaemonThread():
     for t in enumerate():
-        if not t.is_daemon() and t.is_alive():
+        if not t.daemon and t.is_alive():
             return t
     return None
 
@@ -863,7 +867,7 @@ def _test():
             counter = 0
             while counter < self.quota:
                 counter = counter + 1
-                self.queue.put("%s.%d" % (self.get_name(), counter))
+                self.queue.put("%s.%d" % (self.name, counter))
                 _sleep(random() * 0.00001)
 
 
@@ -888,7 +892,7 @@ def _test():
     P = []
     for i in range(NP):
         t = ProducerThread(Q, NI)
-        t.set_name("Producer-%d" % (i+1))
+        t.name = "Producer-%d" % (i+1)
         P.append(t)
     C = ConsumerThread(Q, NI*NP)
     for t in P:
