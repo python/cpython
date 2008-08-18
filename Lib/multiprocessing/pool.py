@@ -99,15 +99,15 @@ class Pool(object):
                 args=(self._inqueue, self._outqueue, initializer, initargs)
                 )
             self._pool.append(w)
-            w.set_name(w.get_name().replace('Process', 'PoolWorker'))
-            w.set_daemon(True)
+            w.name = w.get_name().replace('Process', 'PoolWorker')
+            w.daemon = True
             w.start()
 
         self._task_handler = threading.Thread(
             target=Pool._handle_tasks,
             args=(self._taskqueue, self._quick_put, self._outqueue, self._pool)
             )
-        self._task_handler.set_daemon(True)
+        self._task_handler.daemon = True
         self._task_handler._state = RUN
         self._task_handler.start()
 
@@ -115,7 +115,7 @@ class Pool(object):
             target=Pool._handle_results,
             args=(self._outqueue, self._quick_get, self._cache)
             )
-        self._result_handler.set_daemon(True)
+        self._result_handler.daemon = True
         self._result_handler._state = RUN
         self._result_handler.start()
 
