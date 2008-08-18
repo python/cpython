@@ -269,6 +269,16 @@ is considered sufficient for this determination.
    This is the equivalent of the Python expression ``hash(o)``.
 
 
+.. cfunction:: long PyObject_HashNotImplemented(PyObject *o)
+
+   Set a TypeError indicating that ``type(o)`` is not hashable and return ``-1``.
+   This function receives special treatment when stored in a ``tp_hash`` slot,
+   allowing a type to explicit indicate to the interpreter that it is not
+   hashable.
+
+   .. versionadded:: 2.6
+
+
 .. cfunction:: int PyObject_IsTrue(PyObject *o)
 
    Returns ``1`` if the object *o* is considered to be true, and ``0`` otherwise.
