@@ -59,10 +59,8 @@ __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
 
 import os
 import abc
-import sys
 import codecs
 import _fileio
-import warnings
 import threading
 
 # open() uses st_blksize whenever we can
