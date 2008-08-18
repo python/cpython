@@ -483,13 +483,49 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
 {
     int ok = 0;
     PyObject *result = NULL;
+    PyObject *format_spec_object = NULL;
+    PyObject *(*formatter)(PyObject *, STRINGLIB_CHAR *, Py_ssize_t) = NULL;
+    STRINGLIB_CHAR* format_spec_start = format_spec->ptr ?
+	    format_spec->ptr : NULL;
+    Py_ssize_t format_spec_len = format_spec->ptr ?
+	    format_spec->end - format_spec->ptr : 0;
 
-    /* we need to create an object out of the pointers we have */
-    PyObject *format_spec_object = SubString_new_object_or_empty(format_spec);
-    if (format_spec_object == NULL)
-        goto done;
+    /* If we know the type exactly, skip the lookup of __format__ and just
+       call the formatter directly. */
+#if STRINGLIB_IS_UNICODE
+    if (PyUnicode_CheckExact(fieldobj))
+	formatter = _PyUnicode_FormatAdvanced;
+    /* Unfortunately, there's a problem with checking for int, long,
+       and float here.  If we're being included as unicode, their
+       formatters expect string format_spec args.  For now, just skip
+       this optimization for unicode.  This could be fixed, but it's a
+       hassle. */
+#else
+    if (PyString_CheckExact(fieldobj))
+	formatter = _PyBytes_FormatAdvanced;
+    else if (PyInt_CheckExact(fieldobj))
+	formatter =_PyInt_FormatAdvanced;
+    else if (PyLong_CheckExact(fieldobj))
+	formatter =_PyLong_FormatAdvanced;
+    else if (PyFloat_CheckExact(fieldobj))
+	formatter = _PyFloat_FormatAdvanced;
+#endif
 
-    result = PyObject_Format(fieldobj, format_spec_object);
+    if (formatter) {
+	/* we know exactly which formatter will be called when __format__ is
+	   looked up, so call it directly, instead. */
+	result = formatter(fieldobj, format_spec_start, format_spec_len);
+    }
+    else {
+	/* We need to create an object out of the pointers we have, because
+	   __format__ takes a string/unicode object for format_spec. */
+	format_spec_object = STRINGLIB_NEW(format_spec_start,
+					   format_spec_len);
+	if (format_spec_object == NULL)
+	    goto done;
+
+	result = PyObject_Format(fieldobj, format_spec_object);
+    }
     if (result == NULL)
         goto done;
 
@@ -512,7 +548,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
     ok = output_data(output,
                      STRINGLIB_STR(result), STRINGLIB_LEN(result));
 done:
-    Py_DECREF(format_spec_object);
+    Py_XDECREF(format_spec_object);
     Py_XDECREF(result);
     return ok;
 }
