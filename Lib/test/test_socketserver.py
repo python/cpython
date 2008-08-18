@@ -139,7 +139,7 @@ class SocketServerTest(unittest.TestCase):
             # Time between requests is short enough that we won't wake
             # up spuriously too many times.
             kwargs={'poll_interval':0.01})
-        t.set_daemon(True)  # In case this function raises.
+        t.daemon = True  # In case this function raises.
         t.start()
         if verbose: print("server running")
         for i in range(3):
