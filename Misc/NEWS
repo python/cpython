@@ -48,6 +48,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2234: distutils failed for some versions of the cygwin compiler. The
+  version reported by these tools does not necessarily follow the python
+  version numbering scheme, so the module is less strict when parsing it.
+
 - Issue #2235: Added Py3k warnings for types which will become unhashable
   under the stricter __hash__ inheritance rules in 3.0. Several types
   which did not meet the rules for hash invariants and were already
