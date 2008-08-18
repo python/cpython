@@ -539,6 +539,8 @@ class CookieTests(TestCase):
             # unquoted unsafe
             ("/foo\031/bar", "/foo%19/bar"),
             ("/\175foo/bar", "/%7Dfoo/bar"),
+            # unicode, latin-1 range
+            ("/foo/bar\u00fc", "/foo/bar%C3%BC"),     # UTF-8 encoded
             # unicode
             ("/foo/bar\uabcd", "/foo/bar%EA%AF%8D"),  # UTF-8 encoded
             ]
@@ -1444,7 +1446,8 @@ class LWPCookieTests(TestCase):
         # Try some URL encodings of the PATHs.
         # (the behaviour here has changed from libwww-perl)
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
-        interact_2965(c, "http://www.acme.com/foo%2f%25/%3c%3c%0Anew%E5/%E5",
+        interact_2965(c, "http://www.acme.com/foo%2f%25/"
+                         "%3c%3c%0Anew%C3%A5/%C3%A5",
                       "foo  =   bar; version    =   1")
 
         cookie = interact_2965(

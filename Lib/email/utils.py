@@ -219,7 +219,7 @@ def encode_rfc2231(s, charset=None, language=None):
     charset is given but not language, the string is encoded using the empty
     string for language.
     """
-    s = urllib.parse.quote(s, safe='')
+    s = urllib.parse.quote(s, safe='', encoding=charset or 'ascii')
     if charset is None and language is None:
         return s
     if language is None:
@@ -271,7 +271,10 @@ def decode_params(params):
             # language specifiers at the beginning of the string.
             for num, s, encoded in continuations:
                 if encoded:
-                    s = urllib.parse.unquote(s)
+                    # Decode as "latin-1", so the characters in s directly
+                    # represent the percent-encoded octet values.
+                    # collapse_rfc2231_value treats this as an octet sequence.
+                    s = urllib.parse.unquote(s, encoding="latin-1")
                     extended = True
                 value.append(s)
             value = quote(EMPTYSTRING.join(value))

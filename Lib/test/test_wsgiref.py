@@ -291,6 +291,7 @@ class UtilityTests(TestCase):
     def testAppURIs(self):
         self.checkAppURI("http://127.0.0.1/")
         self.checkAppURI("http://127.0.0.1/spam", SCRIPT_NAME="/spam")
+        self.checkAppURI("http://127.0.0.1/sp%C3%A4m", SCRIPT_NAME="/späm")
         self.checkAppURI("http://spam.example.com:2071/",
             HTTP_HOST="spam.example.com:2071", SERVER_PORT="2071")
         self.checkAppURI("http://spam.example.com/",
@@ -304,6 +305,7 @@ class UtilityTests(TestCase):
     def testReqURIs(self):
         self.checkReqURI("http://127.0.0.1/")
         self.checkReqURI("http://127.0.0.1/spam", SCRIPT_NAME="/spam")
+        self.checkReqURI("http://127.0.0.1/sp%C3%A4m", SCRIPT_NAME="/späm")
         self.checkReqURI("http://127.0.0.1/spammity/spam",
             SCRIPT_NAME="/spammity", PATH_INFO="/spam")
         self.checkReqURI("http://127.0.0.1/spammity/spam?say=ni",

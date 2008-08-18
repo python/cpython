@@ -30,6 +30,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #3300: make urllib.parse.[un]quote() default to UTF-8.
+  Code contributed by Matt Giuca.  quote() now encodes the input
+  before quoting, unquote() decodes after unquoting.  There are
+  new arguments to change the encoding and errors settings.
+  There are also new APIs to skip the encode/decode steps.
+  [un]quote_plus() are also affected.
+
 - Issue #2235: numbers.Number now blocks inheritance of the default id()
   based hash because that hash mechanism is not correct for numeric types.
   All concrete numeric types that inherit from Number (rather than just

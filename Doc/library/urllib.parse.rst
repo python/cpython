@@ -182,35 +182,83 @@ The :mod:`urllib.parse` module defines the following functions:
    string.  If there is no fragment identifier in *url*, return *url* unmodified
    and an empty string.
 
-.. function:: quote(string[, safe])
+.. function:: quote(string[, safe[, encoding[, errors]]])
 
    Replace special characters in *string* using the ``%xx`` escape. Letters,
    digits, and the characters ``'_.-'`` are never quoted. The optional *safe*
-   parameter specifies additional characters that should not be quoted --- its
-   default value is ``'/'``.
+   parameter specifies additional ASCII characters that should not be quoted
+   --- its default value is ``'/'``.
 
-   Example: ``quote('/~connolly/')`` yields ``'/%7econnolly/'``.
+   *string* may be either a :class:`str` or a :class:`bytes`.
+
+   The optional *encoding* and *errors* parameters specify how to deal with
+   non-ASCII characters, as accepted by the :meth:`str.encode` method.
+   *encoding* defaults to ``'utf-8'``.
+   *errors* defaults to ``'strict'``, meaning unsupported characters raise a
+   :class:`UnicodeEncodeError`.
+   *encoding* and *errors* must not be supplied if *string* is a
+   :class:`bytes`, or a :class:`TypeError` is raised.
+
+   Note that ``quote(string, safe, encoding, errors)`` is equivalent to
+   ``quote_from_bytes(string.encode(encoding, errors), safe)``.
+
+   Example: ``quote('/El Niño/')`` yields ``'/El%20Ni%C3%B1o/'``.
 
 
-.. function:: quote_plus(string[, safe])
+.. function:: quote_plus(string[, safe[, encoding[, errors]]])
 
    Like :func:`quote`, but also replace spaces by plus signs, as required for
    quoting HTML form values.  Plus signs in the original string are escaped
    unless they are included in *safe*.  It also does not have *safe* default to
    ``'/'``.
 
+   Example: ``quote_plus('/El Niño/')`` yields ``'%2FEl+Ni%C3%B1o%2F'``.
 
-.. function:: unquote(string)
+.. function:: quote_from_bytes(bytes[, safe])
+
+   Like :func:`quote`, but accepts a :class:`bytes` object rather than a
+   :class:`str`, and does not perform string-to-bytes encoding.
+
+   Example: ``quote_from_bytes(b'a&\xef')`` yields
+   ``'a%26%EF'``.
+
+.. function:: unquote(string[, encoding[, errors]])
 
    Replace ``%xx`` escapes by their single-character equivalent.
+   The optional *encoding* and *errors* parameters specify how to decode
+   percent-encoded sequences into Unicode characters, as accepted by the
+   :meth:`bytes.decode` method.
 
-   Example: ``unquote('/%7Econnolly/')`` yields ``'/~connolly/'``.
+   *string* must be a :class:`str`.
+
+   *encoding* defaults to ``'utf-8'``.
+   *errors* defaults to ``'replace'``, meaning invalid sequences are replaced
+   by a placeholder character.
+
+   Example: ``unquote('/El%20Ni%C3%B1o/')`` yields ``'/El Niño/'``.
 
 
-.. function:: unquote_plus(string)
+.. function:: unquote_plus(string[, encoding[, errors]])
 
    Like :func:`unquote`, but also replace plus signs by spaces, as required for
    unquoting HTML form values.
+
+   *string* must be a :class:`str`.
+
+   Example: ``unquote_plus('/El+Ni%C3%B1o/')`` yields ``'/El Niño/'``.
+
+.. function:: unquote_to_bytes(string)
+
+   Replace ``%xx`` escapes by their single-octet equivalent, and return a
+   :class:`bytes` object.
+
+   *string* may be either a :class:`str` or a :class:`bytes`.
+
+   If it is a :class:`str`, unescaped non-ASCII characters in *string*
+   are encoded into UTF-8 bytes.
+
+   Example: ``unquote_to_bytes('a%26%EF')`` yields
+   ``b'a&\xef'``.
 
 
 .. function:: urlencode(query[, doseq])
