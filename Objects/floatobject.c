@@ -1918,7 +1918,7 @@ PyFloat_ClearFreeList(void)
 	PyFloatObject *p;
 	PyFloatBlock *list, *next;
 	int i;
-	int u;			/* remaining unfreed ints per block */
+	int u;			/* remaining unfreed floats per block */
 	int freelist_size = 0;
 
 	list = block_list;
