@@ -89,20 +89,20 @@ class BaseThreadedTestCase(unittest.TestCase):
             self._writerThread(*args, **kwargs)
         except db.DBLockDeadlockError:
             if verbose:
-                print(current_thread().get_name(), 'died from', e)
+                print(current_thread().name, 'died from', e)
         else:
             if verbose:
-                print(current_thread().get_name(), "finished.")
+                print(current_thread().name, "finished.")
 
     def readerThread(self, *args, **kwargs):
         try:
             self._readerThread(*args, **kwargs)
         except db.DBLockDeadlockError as e:
             if verbose:
-                print(current_thread().get_name(), 'died from', e)
+                print(current_thread().name, 'died from', e)
         else:
             if verbose:
-                print(current_thread().get_name(), "finished.")
+                print(current_thread().name, "finished.")
 
 
 
@@ -143,7 +143,7 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
             t.join()
 
     def _writerThread(self, d, howMany):
-        name = current_thread().get_name()
+        name = current_thread().name
         start = 0
         stop = howMany
         if verbose:
@@ -172,7 +172,7 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
 
     def _readerThread(self, d, readerNum):
         time.sleep(0.01 * readerNum)
-        name = current_thread().get_name()
+        name = current_thread().name
 
         for loop in range(5):
             c = d.cursor()
@@ -240,7 +240,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             t.join()
 
     def _writerThread(self, d, howMany, writerNum):
-        name = current_thread().get_name()
+        name = current_thread().name
         start = howMany * writerNum
         stop = howMany * (writerNum + 1) - 1
         if verbose:
@@ -286,7 +286,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
 
     def _readerThread(self, d, readerNum):
         time.sleep(0.01 * readerNum)
-        name = current_thread().get_name()
+        name = current_thread().name
 
         for loop in range(5):
             c = d.cursor()
@@ -385,7 +385,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 time.sleep(0.05)
 
     def _writerThread(self, d, howMany, writerNum):
-        name = current_thread().get_name()
+        name = current_thread().name
         start = howMany * writerNum
         stop = howMany * (writerNum + 1) - 1
         if verbose:
@@ -427,7 +427,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
 
     def _readerThread(self, d, readerNum):
         time.sleep(0.01 * readerNum + 0.05)
-        name = current_thread().get_name()
+        name = current_thread().name
 
         for loop in range(5):
             finished = False
