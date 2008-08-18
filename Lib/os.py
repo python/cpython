@@ -27,7 +27,7 @@ import sys, errno
 _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
-__all__ = ["altsep", "curdir", "pardir", "sep", "extsep", "pathsep", "linesep",
+__all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
            "defpath", "name", "path", "devnull",
            "SEEK_SET", "SEEK_CUR", "SEEK_END"]
 
