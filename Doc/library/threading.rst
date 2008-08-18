@@ -661,12 +661,12 @@ impossible to detect the termination of alien threads.
    constructor.
 
 
-.. method:: Thread.get_ident()
+.. attribute:: Thread.ident
 
-   Return the 'thread identifier' of this thread or None if the thread has not
-   been started.  This is a nonzero integer.  See the :func:`thread.get_ident()`
+   The 'thread identifier' of this thread or ``None`` if the thread has not been
+   started.  This is a nonzero integer.  See the :func:`thread.get_ident()`
    function.  Thread identifiers may be recycled when a thread exits and another
-   thread is created.  The identifier is returned even after the thread has
+   thread is created.  The identifier is available even after the thread has
    exited.
 
    .. versionadded:: 2.6

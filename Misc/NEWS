@@ -422,7 +422,7 @@ Extension Modules
 
 - Issue #2870: cmathmodule.c compile error.
 
-- Added a threading.Thread.getIdent() method.
+- Added a threading.Thread.ident property.
 
 Library
 -------
