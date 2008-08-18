@@ -321,6 +321,14 @@ type objects) *must* have the :attr:`ob_size` field.
    error occurs during the computation of the hash value, the function should set
    an exception and return ``-1``.
 
+   This field can be set explicitly to :cfunc:`PyObject_HashNotImplemented` to
+   block inheritance of the hash method from a parent type. This is interpreted
+   as the equivalent of ``__hash__ = None`` at the Python level, causing
+   ``isinstance(o, collections.Hashable)`` to correctly return ``False``. Note
+   that the converse is also true - setting ``__hash__ = None`` on a class at
+   the Python level will result in the ``tp_hash`` slot being set to
+   :cfunc:`PyObject_HashNotImplemented`.
+
    When this field is not set, two possibilities exist: if the :attr:`tp_compare`
    and :attr:`tp_richcompare` fields are both *NULL*, a default hash value based on
    the object's address is returned; otherwise, a :exc:`TypeError` is raised.
