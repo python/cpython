@@ -39,7 +39,7 @@ def _old_api(callable, old_name):
         return callable
     @wraps(callable)
     def old(*args, **kwargs):
-        warnings.warnpy3k("In 3.x, {0} is renamed to {1}."
+        warnings.warnpy3k("{0}() is deprecated in favor of {1}()"
                           .format(old_name, callable.__name__),
                           stacklevel=3)
         return callable(*args, **kwargs)
@@ -670,6 +670,8 @@ class Thread(_Verbose):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__started.is_set() and not self.__stopped
 
+    isAlive = _old_api(is_alive, "isAlive")
+
     @property
     def daemon(self):
         assert self.__initialized, "Thread.__init__() not called"
@@ -684,15 +686,23 @@ class Thread(_Verbose):
         self.__daemonic = daemonic
 
     def isDaemon(self):
+        warnings.warnpy3k("isDaemon() is deprecated in favor of the " \
+                          "Thread.daemon property")
         return self.daemon
 
     def setDaemon(self, daemonic):
+        warnings.warnpy3k("setDaemon() is deprecated in favor of the " \
+                          "Thread.daemon property")
         self.daemon = daemonic
 
     def getName(self):
+        warnings.warnpy3k("getName() is deprecated in favor of the " \
+                          "Thread.name property")
         return self.name
 
     def setName(self, name):
+        warnings.warnpy3k("setName() is deprecated in favor of the " \
+                          "Thread.name property")
         self.name = name
 
 # The timer class was contributed by Itamar Shtull-Trauring

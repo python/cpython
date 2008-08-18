@@ -250,6 +250,40 @@ class TestPy3KWarnings(unittest.TestCase):
                 def __hash__(self): pass
             self.assertEqual(len(w.warnings), 0)
 
+    def test_pep8ified_threading(self):
+        import threading
+
+        t = threading.Thread()
+        with catch_warning() as w:
+            msg = "isDaemon() is deprecated in favor of the " \
+                  "Thread.daemon property"
+            self.assertWarning(t.isDaemon(), w, msg)
+            w.reset()
+            msg = "setDaemon() is deprecated in favor of the " \
+                  "Thread.daemon property"
+            self.assertWarning(t.setDaemon(True), w, msg)
+            w.reset()
+            msg = "getName() is deprecated in favor of the " \
+                  "Thread.name property"
+            self.assertWarning(t.getName(), w, msg)
+            w.reset()
+            msg = "setName() is deprecated in favor of the " \
+                  "Thread.name property"
+            self.assertWarning(t.setName("name"), w, msg)
+            w.reset()
+            msg = "isAlive() is deprecated in favor of is_alive()"
+            self.assertWarning(t.isAlive(), w, msg)
+            w.reset()
+            e = threading.Event()
+            msg = "isSet() is deprecated in favor of is_set()"
+            self.assertWarning(e.isSet(), w, msg)
+            w.reset()
+            msg = "currentThread() is deprecated in favor of current_thread()"
+            self.assertWarning(threading.currentThread(), w, msg)
+            w.reset()
+            msg = "activeCount() is deprecated in favor of active_count()"
+            self.assertWarning(threading.activeCount(), w, msg)
+
 
 
 class TestStdlibRemovals(unittest.TestCase):
