@@ -1,7 +1,7 @@
 # Very rudimentary test of threading module
 
 import test.support
-from test.support import verbose
+from test.support import verbose, catch_warning
 import random
 import re
 import sys
@@ -322,6 +322,43 @@ class ThreadTests(unittest.TestCase):
         self.assertEquals(None, weak_raising_cyclic_object(),
                           msg=('%d references still around' %
                                sys.getrefcount(weak_raising_cyclic_object())))
+
+    def test_pep8ified_threading(self):
+        import threading
+
+        def check(_, w, msg):
+            self.assertEqual(str(w.message), msg)
+
+        t = threading.Thread()
+        with catch_warning() as w:
+            msg = "isDaemon() is deprecated in favor of the " \
+                  "Thread.daemon property"
+            check(t.isDaemon(), w, msg)
+            w.reset()
+            msg = "setDaemon() is deprecated in favor of the " \
+                  "Thread.daemon property"
+            check(t.setDaemon(True), w, msg)
+            w.reset()
+            msg = "getName() is deprecated in favor of the " \
+                  "Thread.name property"
+            check(t.getName(), w, msg)
+            w.reset()
+            msg = "setName() is deprecated in favor of the " \
+                  "Thread.name property"
+            check(t.setName("name"), w, msg)
+            w.reset()
+            msg = "isAlive() is deprecated in favor of is_alive()"
+            check(t.isAlive(), w, msg)
+            w.reset()
+            e = threading.Event()
+            msg = "isSet() is deprecated in favor of is_set()"
+            check(e.isSet(), w, msg)
+            w.reset()
+            msg = "currentThread() is deprecated in favor of current_thread()"
+            check(threading.currentThread(), w, msg)
+            w.reset()
+            msg = "activeCount() is deprecated in favor of active_count()"
+            check(threading.activeCount(), w, msg)
 
 
 class ThreadJoinOnShutdown(unittest.TestCase):

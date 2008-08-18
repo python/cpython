@@ -2,6 +2,7 @@
 
 import sys as _sys
 import _thread
+import warnings
 
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
@@ -340,6 +341,11 @@ class _Event(_Verbose):
     def is_set(self):
         return self._flag
 
+    def isSet(self):
+        warnings.warn("isSet() is deprecated in favor of is_set()",
+                      DeprecationWarning)
+        return self.is_set()
+
     def set(self):
         self._cond.acquire()
         try:
@@ -640,6 +646,11 @@ class Thread(_Verbose):
         assert self._initialized, "Thread.__init__() not called"
         return self._started.is_set() and not self._stopped
 
+    def isAlive(self):
+        warnings.warn("isAlive() is deprecated in favor of is_alive()",
+                      DeprecationWarning)
+        return self.is_alive()
+
     @property
     def daemon(self):
         assert self._initialized, "Thread.__init__() not called"
@@ -654,15 +665,23 @@ class Thread(_Verbose):
         self._daemonic = daemonic
 
     def isDaemon(self):
+        warnings.warn("isDaemon() is deprecated in favor of the " \
+                      "Thread.daemon property", DeprecationWarning)
         return self.daemon
 
     def setDaemon(self, daemonic):
+        warnings.warn("setDaemon() is deprecated in favor of the " \
+                      "Thread.daemon property", DeprecationWarning)
         self.daemon = daemonic
 
     def getName(self):
+        warnings.warn("getName() is deprecated in favor of the " \
+                      "Thread.name property", DeprecationWarning)
         return self.name
 
     def setName(self, name):
+        warnings.warn("setName() is deprecated in favor of the " \
+                      "Thread.name property", DeprecationWarning)
         self.name = name
 
 # The timer class was contributed by Itamar Shtull-Trauring
@@ -771,11 +790,20 @@ def current_thread():
         ##print "current_thread(): no current thread for", _get_ident()
         return _DummyThread()
 
+def currentThread():
+    warnings.warn("currentThread() is deprecated in favor of current_thread()",
+                  DeprecationWarning)
+
 def active_count():
     _active_limbo_lock.acquire()
     count = len(_active) + len(_limbo)
     _active_limbo_lock.release()
     return count
+
+def activeCount():
+    warnings.warn("activeCount() is deprecated in favor of active_count()",
+                  DeprecationWarning)
+    return active_count()
 
 def enumerate():
     _active_limbo_lock.acquire()
