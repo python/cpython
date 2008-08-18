@@ -54,10 +54,10 @@ class DummyProcess(threading.Thread):
             return None
 
     is_alive = threading.Thread.is_alive.im_func
-    get_name = threading.Thread.get_name.im_func
-    set_name = threading.Thread.set_name.im_func
-    is_daemon = threading.Thread.is_daemon.im_func
-    set_daemon = threading.Thread.set_daemon.im_func
+    get_name = threading.Thread.getName.im_func
+    set_name = threading.Thread.setName.im_func
+    is_daemon = threading.Thread.isDaemon.im_func
+    set_daemon = threading.Thread.setDaemon.im_func
 
 #
 #
