@@ -48,6 +48,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #2235: Added Py3k warnings for types which will become unhashable
+  under the stricter __hash__ inheritance rules in 3.0. Several types
+  which did not meet the rules for hash invariants and were already
+  unhashable in 3.0 have now been explicitly flagged as unhashable in
+  2.6 as well (collections.Mapping, collections.Set, unittest.TestSuite,
+  xml.dom.minidom.NamedNodeMap, numbers.Number, UserList.UserList)
+
 - Update __all__ for cookielib, csv, os, urllib2, and weakref to include things
   imported into the module but exposed as part of the module's API.
 
