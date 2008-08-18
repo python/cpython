@@ -107,8 +107,8 @@ except ImportError:
     from StringIO import StringIO
 
 from urllib import (unwrap, unquote, splittype, splithost, quote,
-     addinfourl, splitport, splitquery,
-     splitattr, ftpwrapper, noheaders, splituser, splitpasswd, splitvalue)
+     addinfourl, splitport,
+     splitattr, ftpwrapper, splituser, splitpasswd, splitvalue)
 
 # support for FileHandler, proxies via environment variables
 from urllib import localhost, url2pathname, getproxies

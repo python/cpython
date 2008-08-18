@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Update __all__ for cookielib, csv, os, urllib2, and weakref to include things
+  imported into the module but exposed as part of the module's API.
+
 - Remove an unneeded import of abc.ABCMeta from 'inspect'.
 
 - Remove unneeded imports of 'sys' and 'warnings' from 'io'.
