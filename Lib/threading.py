@@ -683,6 +683,18 @@ class Thread(_Verbose):
             raise RuntimeError("cannot set daemon status of active thread");
         self.__daemonic = daemonic
 
+    def isDaemon(self):
+        return self.daemon
+
+    def setDaemon(self, daemonic):
+        self.daemon = daemonic
+
+    def getName(self):
+        return self.name
+
+    def setName(self, name):
+        self.name = name
+
 # The timer class was contributed by Itamar Shtull-Trauring
 
 def Timer(*args, **kwargs):
