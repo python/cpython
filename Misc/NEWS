@@ -30,6 +30,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #2235: numbers.Number now blocks inheritance of the default id()
+  based hash because that hash mechanism is not correct for numeric types.
+  All concrete numeric types that inherit from Number (rather than just
+  registering with it) must explicitly provide a hash implementation in
+  order for their instances to be hashable.
+
 - Issue #2676: in the email package, content-type parsing was hanging on
   pathological input because of quadratic or exponential behaviour of a
   regular expression.

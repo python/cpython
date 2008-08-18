@@ -15,6 +15,8 @@ class Number(metaclass=ABCMeta):
     If you just want to check if an argument x is a number, without
     caring what kind, use isinstance(x, Number).
     """
+    # Concrete numeric types must provide their own hash implementation
+    __hash__ = None
 
 
 ## Notes on Decimal
