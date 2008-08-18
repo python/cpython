@@ -670,7 +670,7 @@ class _TestCondition(BaseTestCase):
 
             t = threading.Thread(target=self.f,
                                  args=(cond, sleeping, woken, TIMEOUT1))
-            t.set_daemon(True)
+            t.daemon = True
             t.start()
 
         # wait for them all to sleep
@@ -692,7 +692,7 @@ class _TestCondition(BaseTestCase):
             p.start()
 
             t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
-            t.set_daemon(True)
+            t.daemon = True
             t.start()
 
         # wait for them to all sleep
