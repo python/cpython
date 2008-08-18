@@ -629,7 +629,8 @@ class Thread(_Verbose):
         assert self._initialized, "Thread.__init__() not called"
         self._name = str(name)
 
-    def get_ident(self):
+    @property
+    def ident(self):
         assert self._initialized, "Thread.__init__() not called"
         return self._ident
 

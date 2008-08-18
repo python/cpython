@@ -74,7 +74,7 @@ class ThreadTests(unittest.TestCase):
         for i in range(NUMTASKS):
             t = TestThread("<thread %d>"%i, self, sema, mutex, numrunning)
             threads.append(t)
-            self.failUnlessEqual(t.get_ident(), None)
+            self.failUnlessEqual(t.ident, None)
             self.assert_(re.match('<TestThread\(.*, initial\)>', repr(t)))
             t.start()
 
@@ -83,7 +83,7 @@ class ThreadTests(unittest.TestCase):
         for t in threads:
             t.join(NUMTASKS)
             self.assert_(not t.is_alive())
-            self.failIfEqual(t.get_ident(), 0)
+            self.failIfEqual(t.ident, 0)
             self.assert_(re.match('<TestThread\(.*, \w+ -?\d+\)>', repr(t)))
         if verbose:
             print('all tasks done')
