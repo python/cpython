@@ -620,11 +620,17 @@ class _TestCondition(BaseTestCase):
         woken = self.Semaphore(0)
 
         p = self.Process(target=self.f, args=(cond, sleeping, woken))
-        p.set_daemon(True)
+        try:
+            p.set_daemon(True)
+        except AttributeError:
+            p.daemon = True
         p.start()
 
         p = threading.Thread(target=self.f, args=(cond, sleeping, woken))
-        p.set_daemon(True)
+        try:
+            p.set_daemon(True)
+        except AttributeError:
+            p.daemon = True
         p.start()
 
         # wait for both children to start sleeping

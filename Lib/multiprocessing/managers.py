@@ -160,7 +160,7 @@ class Server(object):
                     except (OSError, IOError):
                         continue
                     t = threading.Thread(target=self.handle_request, args=(c,))
-                    t.set_daemon(True)
+                    t.daemon = True
                     t.start()
             except (KeyboardInterrupt, SystemExit):
                 pass
