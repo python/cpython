@@ -155,7 +155,7 @@ class Queue(object):
                   self._wlock, self._writer.close),
             name='QueueFeederThread'
             )
-        self._thread.set_daemon(True)
+        self._thread.daemon = True
 
         debug('doing self._thread.start()')
         self._thread.start()
