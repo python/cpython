@@ -166,6 +166,9 @@ Build
 Documentation
 -------------
 
+- Issue #2235: the C API function PyObject_HashNotImplemented and its
+  interaction with the tp_hash slot (added in 2.6b2) are now documented
+
 - Issue #643841: The language reference now provides more detailed
   coverage of the lookup process for special methods. The disclaimers
   regarding lack of coverage of new-style classes have also been
