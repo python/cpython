@@ -57,7 +57,6 @@ __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
 
 import os
 import abc
-import sys
 import codecs
 import _fileio
 # Import _thread instead of threading to reduce startup cost
