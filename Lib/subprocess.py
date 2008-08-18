@@ -876,13 +876,13 @@ class Popen(object):
                 stdout = []
                 stdout_thread = threading.Thread(target=self._readerthread,
                                                  args=(self.stdout, stdout))
-                stdout_thread.set_daemon(True)
+                stdout_thread.daemon = True
                 stdout_thread.start()
             if self.stderr:
                 stderr = []
                 stderr_thread = threading.Thread(target=self._readerthread,
                                                  args=(self.stderr, stderr))
-                stderr_thread.set_daemon(True)
+                stderr_thread.daemon = True
                 stderr_thread.start()
 
             if self.stdin:
