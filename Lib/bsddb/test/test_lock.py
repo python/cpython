@@ -117,7 +117,7 @@ class LockingTestCase(unittest.TestCase):
         deadlock_detection.end=False
         deadlock_detection.count=0
         t=Thread(target=deadlock_detection)
-        t.set_daemon(True)
+        t.daemon = True
         t.start()
         self.env.set_timeout(100000, db.DB_SET_LOCK_TIMEOUT)
         anID = self.env.lock_id()
@@ -143,7 +143,7 @@ class LockingTestCase(unittest.TestCase):
             self.assertTrue(deadlock_detection.count>0)
 
     def theThread(self, sleepTime, lockType):
-        name = current_thread().get_name()
+        name = current_thread().name
         if lockType ==  db.DB_LOCK_WRITE:
             lt = "write"
         else:
