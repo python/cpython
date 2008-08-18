@@ -34,7 +34,7 @@ class TestThread(threading.Thread):
         delay = random.random() / 10000.0
         if verbose:
             print('task %s will run for %.1f usec' %
-                  (self.get_name(), delay * 1e6))
+                  (self.name, delay * 1e6))
 
         with self.sema:
             with self.mutex:
@@ -45,14 +45,14 @@ class TestThread(threading.Thread):
 
             time.sleep(delay)
             if verbose:
-                print('task', self.get_name(), 'done')
+                print('task', self.name, 'done')
 
             with self.mutex:
                 self.nrunning.dec()
                 self.testcase.assert_(self.nrunning.get() >= 0)
                 if verbose:
                     print('%s is finished. %d tasks are running' %
-                          (self.get_name(), self.nrunning.get()))
+                          (self.name, self.nrunning.get()))
 
 
 class ThreadTests(unittest.TestCase):
@@ -173,7 +173,7 @@ class ThreadTests(unittest.TestCase):
                     worker_saw_exception.set()
 
         t = Worker()
-        t.set_daemon(True) # so if this fails, we don't hang Python at shutdown
+        t.daemon = True # so if this fails, we don't hang Python at shutdown
         t.start()
         if verbose:
             print("    started worker thread")
@@ -259,7 +259,7 @@ class ThreadTests(unittest.TestCase):
                 print('program blocked; aborting')
                 os._exit(2)
             t = threading.Thread(target=killer)
-            t.set_daemon(True)
+            t.daemon = True
             t.start()
 
             # This is the trace function
@@ -437,7 +437,7 @@ class ThreadingExceptionTests(unittest.TestCase):
     def test_daemonize_active_thread(self):
         thread = threading.Thread()
         thread.start()
-        self.assertRaises(RuntimeError, thread.set_daemon, True)
+        self.assertRaises(RuntimeError, setattr, thread, "daemon", True)
 
 
 def test_main():
