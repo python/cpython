@@ -445,7 +445,7 @@ class Thread(_Verbose):
 
     def _set_daemon(self):
         # Overridden in _MainThread and _DummyThread
-        return current_thread().is_daemon()
+        return current_thread().daemon
 
     def __repr__(self):
         assert self.__initialized, "Thread.__init__() was not called"
@@ -651,17 +651,15 @@ class Thread(_Verbose):
         finally:
             self.__block.release()
 
-    def get_name(self):
+    @property
+    def name(self):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__name
 
-    getName = _old_api(get_name, "getName")
-
-    def set_name(self, name):
+    @name.setter
+    def name(self, name):
         assert self.__initialized, "Thread.__init__() not called"
         self.__name = str(name)
-
-    setName = _old_api(set_name, "setName")
 
     @property
     def ident(self):
@@ -672,22 +670,18 @@ class Thread(_Verbose):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__started.is_set() and not self.__stopped
 
-    isAlive = _old_api(is_alive, "isAlive")
-
-    def is_daemon(self):
+    @property
+    def daemon(self):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__daemonic
 
-    isDaemon = _old_api(is_daemon, "isDaemon")
-
-    def set_daemon(self, daemonic):
+    @daemon.setter
+    def daemon(self, daemonic):
         if not self.__initialized:
             raise RuntimeError("Thread.__init__() not called")
         if self.__started.is_set():
             raise RuntimeError("cannot set daemon status of active thread");
         self.__daemonic = daemonic
-
-    setDaemon = _old_api(set_daemon, "setDaemon")
 
 # The timer class was contributed by Itamar Shtull-Trauring
 
@@ -750,7 +744,7 @@ class _MainThread(Thread):
 
 def _pickSomeNonDaemonThread():
     for t in enumerate():
-        if not t.is_daemon() and t.is_alive():
+        if not t.daemon and t.is_alive():
             return t
     return None
 
@@ -906,7 +900,7 @@ def _test():
             counter = 0
             while counter < self.quota:
                 counter = counter + 1
-                self.queue.put("%s.%d" % (self.get_name(), counter))
+                self.queue.put("%s.%d" % (self.name, counter))
                 _sleep(random() * 0.00001)
 
 
@@ -931,7 +925,7 @@ def _test():
     P = []
     for i in range(NP):
         t = ProducerThread(Q, NI)
-        t.setName("Producer-%d" % (i+1))
+        t.name = ("Producer-%d" % (i+1))
         P.append(t)
     C = ConsumerThread(Q, NI*NP)
     for t in P:
