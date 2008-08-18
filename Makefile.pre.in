@@ -556,9 +556,9 @@ BYTESTR_DEPS = \
 		$(srcdir)/Objects/stringlib/unicodedefs.h \
 		$(srcdir)/Objects/stringlib/localeutil.h
 
-Objects/stringobject.o: $(srcdir)/Objects/stringobject.c $(BYTESTR_DEPS)
+Objects/stringobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
 
-Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS) 
+Objects/bytesobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS) 
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
                                              $(BYTESTR_DEPS) \
