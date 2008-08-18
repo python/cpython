@@ -262,7 +262,7 @@ class LogRecord:
         self.relativeCreated = (self.created - _startTime) * 1000
         if logThreads and thread:
             self.thread = thread.get_ident()
-            self.threadName = threading.current_thread().get_name()
+            self.threadName = threading.current_thread().name
         else:
             self.thread = None
             self.threadName = None
