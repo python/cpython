@@ -5,9 +5,12 @@ UC Irvine, June 1995.
 """
 
 import sys
+import collections
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
-           "urlsplit", "urlunsplit"]
+           "urlsplit", "urlunsplit",
+           "quote", "quote_plus", "quote_from_bytes",
+           "unquote", "unquote_plus", "unquote_to_bytes"]
 
 # A classification of schemes ('' means apply by default)
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
@@ -269,50 +272,101 @@ def urldefrag(url):
     else:
         return url, ''
 
-
-_hextochr = dict(('%02x' % i, chr(i)) for i in range(256))
-_hextochr.update(('%02X' % i, chr(i)) for i in range(256))
-
-def unquote(s):
-    """unquote('abc%20def') -> 'abc def'."""
-    res = s.split('%')
+def unquote_to_bytes(string):
+    """unquote_to_bytes('abc%20def') -> b'abc def'."""
+    # Note: strings are encoded as UTF-8. This is only an issue if it contains
+    # unescaped non-ASCII characters, which URIs should not.
+    if isinstance(string, str):
+        string = string.encode('utf-8')
+    res = string.split(b'%')
+    res[0] = res[0]
     for i in range(1, len(res)):
         item = res[i]
         try:
-            res[i] = _hextochr[item[:2]] + item[2:]
-        except KeyError:
-            res[i] = '%' + item
-        except UnicodeDecodeError:
-            res[i] = chr(int(item[:2], 16)) + item[2:]
-    return "".join(res)
+            res[i] = bytes([int(item[:2], 16)]) + item[2:]
+        except ValueError:
+            res[i] = b'%' + item
+    return b''.join(res)
 
-def unquote_plus(s):
-    """unquote('%7e/abc+def') -> '~/abc def'"""
-    s = s.replace('+', ' ')
-    return unquote(s)
+def unquote(string, encoding='utf-8', errors='replace'):
+    """Replace %xx escapes by their single-character equivalent. The optional
+    encoding and errors parameters specify how to decode percent-encoded
+    sequences into Unicode characters, as accepted by the bytes.decode()
+    method.
+    By default, percent-encoded sequences are decoded with UTF-8, and invalid
+    sequences are replaced by a placeholder character.
 
-always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-               'abcdefghijklmnopqrstuvwxyz'
-               '0123456789' '_.-')
+    unquote('abc%20def') -> 'abc def'.
+    """
+    if encoding is None: encoding = 'utf-8'
+    if errors is None: errors = 'replace'
+    # pct_sequence: contiguous sequence of percent-encoded bytes, decoded
+    # (list of single-byte bytes objects)
+    pct_sequence = []
+    res = string.split('%')
+    for i in range(1, len(res)):
+        item = res[i]
+        try:
+            if not item: raise ValueError
+            pct_sequence.append(bytes.fromhex(item[:2]))
+            rest = item[2:]
+        except ValueError:
+            rest = '%' + item
+        if not rest:
+            # This segment was just a single percent-encoded character.
+            # May be part of a sequence of code units, so delay decoding.
+            # (Stored in pct_sequence).
+            res[i] = ''
+        else:
+            # Encountered non-percent-encoded characters. Flush the current
+            # pct_sequence.
+            res[i] = b''.join(pct_sequence).decode(encoding, errors) + rest
+            pct_sequence = []
+    if pct_sequence:
+        # Flush the final pct_sequence
+        # res[-1] will always be empty if pct_sequence != []
+        assert not res[-1], "string=%r, res=%r" % (string, res)
+        res[-1] = b''.join(pct_sequence).decode(encoding, errors)
+    return ''.join(res)
+
+def unquote_plus(string, encoding='utf-8', errors='replace'):
+    """Like unquote(), but also replace plus signs by spaces, as required for
+    unquoting HTML form values.
+
+    unquote_plus('%7e/abc+def') -> '~/abc def'
+    """
+    string = string.replace('+', ' ')
+    return unquote(string, encoding, errors)
+
+_ALWAYS_SAFE = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz'
+                         b'0123456789'
+                         b'_.-')
 _safe_quoters= {}
 
-class Quoter:
+class Quoter(collections.defaultdict):
+    """A mapping from bytes (in range(0,256)) to strings.
+
+    String values are percent-encoded byte values, unless the key < 128, and
+    in the "safe" set (either the specified safe set, or default set).
+    """
+    # Keeps a cache internally, using defaultdict, for efficiency (lookups
+    # of cached keys don't call Python code at all).
     def __init__(self, safe):
-        self.cache = {}
-        self.safe = safe + always_safe
+        """safe: bytes object."""
+        self.safe = _ALWAYS_SAFE.union(c for c in safe if c < 128)
 
-    def __call__(self, c):
-        try:
-            return self.cache[c]
-        except KeyError:
-            if ord(c) < 256:
-                res = (c in self.safe) and c or ('%%%02X' % ord(c))
-                self.cache[c] = res
-                return res
-            else:
-                return "".join(['%%%02X' % i for i in c.encode("utf-8")])
+    def __repr__(self):
+        # Without this, will just display as a defaultdict
+        return "<Quoter %r>" % dict(self)
 
-def quote(s, safe = '/'):
+    def __missing__(self, b):
+        # Handle a cache miss. Store quoted string in cache and return.
+        res = b in self.safe and chr(b) or ('%%%02X' % b)
+        self[b] = res
+        return res
+
+def quote(string, safe='/', encoding=None, errors=None):
     """quote('abc def') -> 'abc%20def'
 
     Each part of a URL, e.g. the path info, the query, etc., has a
@@ -332,22 +386,57 @@ def quote(s, safe = '/'):
     is reserved, but in typical usage the quote function is being
     called on a path where the existing slash characters are used as
     reserved characters.
+
+    string and safe may be either str or bytes objects. encoding must
+    not be specified if string is a str.
+
+    The optional encoding and errors parameters specify how to deal with
+    non-ASCII characters, as accepted by the str.encode method.
+    By default, encoding='utf-8' (characters are encoded with UTF-8), and
+    errors='strict' (unsupported characters raise a UnicodeEncodeError).
     """
-    cachekey = (safe, always_safe)
+    if isinstance(string, str):
+        if encoding is None:
+            encoding = 'utf-8'
+        if errors is None:
+            errors = 'strict'
+        string = string.encode(encoding, errors)
+    else:
+        if encoding is not None:
+            raise TypeError("quote() doesn't support 'encoding' for bytes")
+        if errors is not None:
+            raise TypeError("quote() doesn't support 'errors' for bytes")
+    return quote_from_bytes(string, safe)
+
+def quote_plus(string, safe='', encoding=None, errors=None):
+    """Like quote(), but also replace ' ' with '+', as required for quoting
+    HTML form values. Plus signs in the original string are escaped unless
+    they are included in safe. It also does not have safe default to '/'.
+    """
+    # Check if ' ' in string, where string may either be a str or bytes
+    if ' ' in string if isinstance(string, str) else b' ' in string:
+        string = quote(string,
+                       safe + ' ' if isinstance(safe, str) else safe + b' ')
+        return string.replace(' ', '+')
+    return quote(string, safe, encoding, errors)
+
+def quote_from_bytes(bs, safe='/'):
+    """Like quote(), but accepts a bytes object rather than a str, and does
+    not perform string-to-bytes encoding.  It always returns an ASCII string.
+    quote_from_bytes(b'abc def\xab') -> 'abc%20def%AB'
+    """
+    if isinstance(safe, str):
+        # Normalize 'safe' by converting to bytes and removing non-ASCII chars
+        safe = safe.encode('ascii', 'ignore')
+    cachekey = bytes(safe)  # In case it was a bytearray
+    if not (isinstance(bs, bytes) or isinstance(bs, bytearray)):
+        raise TypeError("quote_from_bytes() expected a bytes")
     try:
         quoter = _safe_quoters[cachekey]
     except KeyError:
         quoter = Quoter(safe)
         _safe_quoters[cachekey] = quoter
-    res = map(quoter, s)
-    return ''.join(res)
-
-def quote_plus(s, safe = ''):
-    """Quote the query fragment of a URL; replacing ' ' with '+'"""
-    if ' ' in s:
-        s = quote(s, safe + ' ')
-        return s.replace(' ', '+')
-    return quote(s, safe)
+    return ''.join(map(quoter.__getitem__, bs))
 
 def urlencode(query,doseq=0):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
