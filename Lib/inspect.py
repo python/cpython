@@ -38,7 +38,6 @@ import dis
 import imp
 import tokenize
 import linecache
-from abc import ABCMeta
 from operator import attrgetter
 from collections import namedtuple
 
