@@ -77,6 +77,10 @@ Core and builtins
 Library
 -------
 
+- Issue #2234: distutils failed for some versions of the cygwin compiler. The
+  version reported by these tools does not necessarily follow the python
+  version numbering scheme, so the module is less strict when parsing it.
+
 - Issue #2222: Fixed reference leak when occured os.rename()
   fails unicode conversion on 2nd parameter. (windows only)
 
