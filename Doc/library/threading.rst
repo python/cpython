@@ -12,6 +12,14 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
 The :mod:`dummy_threading` module is provided for situations where
 :mod:`threading` cannot be used because :mod:`_thread` is missing.
 
+.. note::
+
+   Some name ``camelCase`` names have been converted to their underscored
+   equivalents. Others have been replaced by properties.  Using the old methods
+   in 2.6 will trigger a :exc:`DeprecationWarning` when Python is run with the
+   :option:`-3` flag and a full :exc:`DeprecationWarning` in 3.0.  The old names
+   will be removed early in the 3.x series.
+
 This module defines the following functions and objects:
 
 
@@ -543,13 +551,13 @@ thread is alive.
 Other threads can call a thread's :meth:`join` method.  This blocks the calling
 thread until the thread whose :meth:`join` method is called is terminated.
 
-A thread has a name.  The name can be passed to the constructor, set with the
-:meth:`set_name` method, and retrieved with the :meth:`get_name` method.
+A thread has a name.  The name can be passed to the constructor, and read or
+changed through the :attr:`name` attribute.
 
 A thread can be flagged as a "daemon thread".  The significance of this flag is
 that the entire Python program exits when only daemon threads are left.  The
-initial value is inherited from the creating thread.  The flag can be set with
-the :meth:`set_daemon` method and retrieved with the :meth:`is_daemon` method.
+initial value is inherited from the creating thread.  The flag can be set
+through the :attr:`daemon` attribute.
 
 There is a "main thread" object; this corresponds to the initial thread of
 control in the Python program.  It is not a daemon thread.
@@ -629,16 +637,15 @@ impossible to detect the termination of alien threads.
    raises the same exception.
 
 
-.. method:: Thread.get_name()
+.. method:: Thread.getName()
+            Thread.setName()
 
-   Return the thread's name.
+   Old API for :attr:`~Thread.name`.
 
 
-.. method:: Thread.set_name(name)
+.. attribute:: Thread.name
 
-   Set the thread's name.
-
-   The name is a string used for identification purposes only. It has no semantics.
+   A string used for identification purposes only. It has no semantics.
    Multiple threads may be given the same name.  The initial name is set by the
    constructor.
 
@@ -661,15 +668,16 @@ impossible to detect the termination of alien threads.
    returns a list of all alive threads.
 
 
-.. method:: Thread.is_daemon()
+.. method:: Thread.isDaemon()
+            Thread.setDaemon()
 
-   Return the thread's daemon flag.
+   Old API for :attr:`~Thread.daemon`.
 
 
-.. method:: Thread.set_daemon(daemonic)
+.. attribute:: Thread.daemon
 
-   Set the thread's daemon flag to the Boolean value *daemonic*. This must be
-   called before :meth:`start` is called, otherwise :exc:`RuntimeError` is raised.
+   The thread's daemon flag. This must be set before :meth:`start` is called,
+   otherwise :exc:`RuntimeError` is raised.
 
    The initial value is inherited from the creating thread.
 
