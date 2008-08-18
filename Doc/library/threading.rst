@@ -14,7 +14,7 @@ The :mod:`dummy_threading` module is provided for situations where
 
 .. note::
 
-   Some name ``camelCase`` names have been converted to their underscored
+   Some ``camelCase`` names have been converted to their underscored
    equivalents. Others have been replaced by properties.  Using the old methods
    in 2.6 will trigger a :exc:`DeprecationWarning` when Python is run with the
    :option:`-3` flag and a full :exc:`DeprecationWarning` in 3.0.  The old names
