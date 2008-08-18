@@ -663,7 +663,8 @@ class Thread(_Verbose):
 
     setName = _old_api(set_name, "setName")
 
-    def get_ident(self):
+    @property
+    def ident(self):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__ident
 
