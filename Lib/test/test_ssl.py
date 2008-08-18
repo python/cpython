@@ -200,7 +200,7 @@ else:
                 self.sock.setblocking(1)
                 self.sslconn = None
                 threading.Thread.__init__(self)
-                self.setDaemon(True)
+                self.daemon = True
 
             def show_conn_details(self):
                 if self.server.certreqs == ssl.CERT_REQUIRED:
@@ -338,7 +338,7 @@ else:
             self.port = test_support.bind_port(self.sock)
             self.active = False
             threading.Thread.__init__(self)
-            self.setDaemon(False)
+            self.daemon = True
 
         def start (self, flag=None):
             self.flag = flag
@@ -423,7 +423,7 @@ else:
             self.server = self.EchoServer(certfile)
             self.port = self.server.port
             threading.Thread.__init__(self)
-            self.setDaemon(True)
+            self.daemon = True
 
         def __str__(self):
             return "<%s %s>" % (self.__class__.__name__, self.server)
@@ -567,7 +567,7 @@ else:
             self.server = self.HTTPSServer(
                 (HOST, self.port), self.RootedHTTPRequestHandler, certfile)
             threading.Thread.__init__(self)
-            self.setDaemon(True)
+            self.daemon = True
 
         def __str__(self):
             return "<%s %s>" % (self.__class__.__name__, self.server)
