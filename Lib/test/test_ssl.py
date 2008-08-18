@@ -201,7 +201,7 @@ else:
                 self.sock.setblocking(1)
                 self.sslconn = None
                 threading.Thread.__init__(self)
-                self.set_daemon(True)
+                self.daemon = True
 
             def wrap_conn (self):
                 try:
@@ -326,7 +326,7 @@ else:
             self.flag = None
             self.active = False
             threading.Thread.__init__(self)
-            self.set_daemon(False)
+            self.daemon = True
 
         def start (self, flag=None):
             self.flag = flag
@@ -482,7 +482,7 @@ else:
             self.server = self.HTTPSServer(
                 (HOST, self.port), self.RootedHTTPRequestHandler, certfile)
             threading.Thread.__init__(self)
-            self.set_daemon(True)
+            self.daemon = True
 
         def __str__(self):
             return "<%s %s>" % (self.__class__.__name__, self.server)
@@ -568,7 +568,7 @@ else:
             self.port = support.find_unused_port()
             self.server = self.EchoServer(self.port, certfile)
             threading.Thread.__init__(self)
-            self.set_daemon(True)
+            self.daemon = True
 
         def __str__(self):
             return "<%s %s>" % (self.__class__.__name__, self.server)
