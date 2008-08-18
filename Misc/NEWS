@@ -48,6 +48,8 @@ Core and Builtins
 Library
 -------
 
+- Remove unneeded imports of 'sys' and 'warnings' from 'io'.
+
 - Remove unneeded imports of 'warnings' from shelve, filecmp, and dummy_thread.
 
 - Issue #3575: Incremental decoder's decode function now takes bytearray
