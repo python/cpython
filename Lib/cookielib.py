@@ -26,7 +26,8 @@ http://wwwsearch.sf.net/):
 """
 
 __all__ = ['Cookie', 'CookieJar', 'CookiePolicy', 'DefaultCookiePolicy',
-           'FileCookieJar', 'LWPCookieJar', 'LoadError', 'MozillaCookieJar']
+           'FileCookieJar', 'LWPCookieJar', 'lwp_cookie_str', 'LoadError',
+           'MozillaCookieJar']
 
 import re, urlparse, copy, time, urllib
 try:
