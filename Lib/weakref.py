@@ -25,7 +25,7 @@ from _weakrefset import WeakSet
 ProxyTypes = (ProxyType, CallableProxyType)
 
 __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
-           "WeakKeyDictionary", "ReferenceType", "ProxyType",
+           "WeakKeyDictionary", "ReferenceError", "ReferenceType", "ProxyType",
            "CallableProxyType", "ProxyTypes", "WeakValueDictionary",
            "WeakSet"]
 

@@ -14,7 +14,8 @@ from _csv import Dialect as _Dialect
 from io import StringIO
 
 __all__ = [ "QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
-            "Error", "Dialect", "excel", "excel_tab", "reader", "writer",
+            "Error", "Dialect", "__doc__", "excel", "excel_tab",
+            "field_size_limit", "reader", "writer",
             "register_dialect", "get_dialect", "list_dialects", "Sniffer",
             "unregister_dialect", "__version__", "DictReader", "DictWriter" ]
 
