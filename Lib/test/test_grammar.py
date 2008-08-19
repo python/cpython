@@ -282,6 +282,14 @@ class GrammarTests(unittest.TestCase):
         def d32v((x,)): pass
         d32v((1,))
 
+        # keyword arguments after *arglist
+        def f(*args, **kwargs):
+            return args, kwargs
+        self.assertEquals(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
+                                                    {'x':2, 'y':5}))
+        self.assertRaises(SyntaxError, eval, "f(1, *(2,3), 4)")
+        self.assertRaises(SyntaxError, eval, "f(1, x=2, *(3,4), x=5)")
+
         # Check ast errors in *args and *kwargs
         check_syntax_error(self, "f(*g(1=2))")
         check_syntax_error(self, "f(**g(1=2))")
