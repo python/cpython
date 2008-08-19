@@ -78,7 +78,7 @@ imageop_crop(PyObject *self, PyObject *args)
 	char *cp, *ncp;
 	short *nsp;
 	Py_Int32 *nlp;
-	int len, size, x, y, newx1, newx2, newy1, newy2;
+	int len, size, x, y, newx1, newx2, newy1, newy2, nlen;
 	int ix, iy, xstep, ystep;
 	PyObject *rv;
 
@@ -90,13 +90,19 @@ imageop_crop(PyObject *self, PyObject *args)
 		PyErr_SetString(ImageopError, "Size should be 1, 2 or 4");
 		return 0;
 	}
-	if ( len != size*x*y ) {
+	if (( len != size*x*y ) ||
+            ( size != ((len / x) / y) )) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
 	}
 	xstep = (newx1 < newx2)? 1 : -1;
 	ystep = (newy1 < newy2)? 1 : -1;
     
+        nlen = (abs(newx2-newx1)+1)*(abs(newy2-newy1)+1)*size;
+        if ( size != ((nlen / (abs(newx2-newx1)+1)) / (abs(newy2-newy1)+1)) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
 	rv = PyString_FromStringAndSize(NULL,
 			     (abs(newx2-newx1)+1)*(abs(newy2-newy1)+1)*size);
 	if ( rv == 0 )
@@ -132,7 +138,7 @@ imageop_scale(PyObject *self, PyObject *args)
 	char *cp, *ncp;
 	short *nsp;
 	Py_Int32 *nlp;
-	int len, size, x, y, newx, newy;
+	int len, size, x, y, newx, newy, nlen;
 	int ix, iy;
 	int oix, oiy;
 	PyObject *rv;
@@ -145,12 +151,18 @@ imageop_scale(PyObject *self, PyObject *args)
 		PyErr_SetString(ImageopError, "Size should be 1, 2 or 4");
 		return 0;
 	}
-	if ( len != size*x*y ) {
+	if ( ( len != size*x*y ) ||
+             ( size != ((len / x) / y) ) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
+        nlen = newx*newy*size;
+	if ( size != ((nlen / newx) / newy) ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
 	}
     
-	rv = PyString_FromStringAndSize(NULL, newx*newy*size);
+	rv = PyString_FromStringAndSize(NULL, nlen);
 	if ( rv == 0 )
 		return 0;
 	ncp = (char *)PyString_AsString(rv);
@@ -190,7 +202,8 @@ imageop_tovideo(PyObject *self, PyObject *args)
 		PyErr_SetString(ImageopError, "Size should be 1 or 4");
 		return 0;
 	}
-	if ( maxx*maxy*width != len ) {
+	if ( ( maxx*maxy*width != len ) ||
+             ( maxx != ((len / maxy) / width) ) ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
 	}
@@ -240,7 +253,8 @@ imageop_grey2mono(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#iii", &cp, &len, &x, &y, &tres) )
 		return 0;
 
-	if ( x*y != len ) {
+	if ( ( x*y != len ) ||
+             ( x != len / y ) ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
 	}
@@ -281,7 +295,8 @@ imageop_grey2grey4(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
-	if ( x*y != len ) {
+	if ( ( x*y != len ) ||
+             ( x != len / y ) ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
 	}
@@ -320,7 +335,8 @@ imageop_grey2grey2(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
-	if ( x*y != len ) {
+	if ( ( x*y != len ) ||
+             ( x != len / y ) ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
 	}
@@ -358,7 +374,8 @@ imageop_dither2mono(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
-	if ( x*y != len ) {
+	if ( ( x*y != len ) ||
+             ( x != len / y ) ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
 	}
@@ -404,7 +421,8 @@ imageop_dither2grey2(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
-	if ( x*y != len ) {
+	if ( ( x*y != len ) ||
+             ( x != len / y ) ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
 	}
@@ -443,7 +461,11 @@ imageop_mono2grey(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#iiii", &cp, &len, &x, &y, &v0, &v1) )
 		return 0;
 
-	nlen = x*y;
+        nlen = x*y;
+	if ( x != (nlen / y) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
 	if ( (nlen+7)/8 != len ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
@@ -481,6 +503,10 @@ imageop_grey22grey(PyObject *self, PyObject *args)
 		return 0;
 
 	nlen = x*y;
+	if ( x != (nlen / y) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
 	if ( (nlen+3)/4 != len ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
@@ -517,6 +543,10 @@ imageop_grey42grey(PyObject *self, PyObject *args)
 		return 0;
 
 	nlen = x*y;
+	if ( x != (nlen / y) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
 	if ( (nlen+1)/2 != len ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
@@ -554,6 +584,10 @@ imageop_rgb2rgb8(PyObject *self, PyObject *args)
 		return 0;
 
 	nlen = x*y;
+	if ( x != (nlen / y) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
 	if ( nlen*4 != len ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
@@ -598,8 +632,17 @@ imageop_rgb82rgb(PyObject *self, PyObject *args)
 		return 0;
 
 	nlen = x*y;
+	if ( x != (nlen / y) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
 	if ( nlen != len ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
+	
+	if ( nlen / x != y || nlen > INT_MAX / 4) {
+		PyErr_SetString(ImageopError, "Image is too large");
 		return 0;
 	}
     
@@ -648,6 +691,10 @@ imageop_rgb2grey(PyObject *self, PyObject *args)
 		return 0;
 
 	nlen = x*y;
+	if ( x != (nlen / y) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
 	if ( nlen*4 != len ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
 		return 0;
@@ -693,8 +740,17 @@ imageop_grey2rgb(PyObject *self, PyObject *args)
 		return 0;
 
 	nlen = x*y;
+	if ( x != (nlen / y) ) {
+		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
 	if ( nlen != len ) {
 		PyErr_SetString(ImageopError, "String has incorrect length");
+		return 0;
+	}
+	
+	if ( nlen / x != y || nlen > INT_MAX / 4) {
+		PyErr_SetString(ImageopError, "Image is too large");
 		return 0;
 	}
     
