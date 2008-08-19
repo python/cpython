@@ -8,7 +8,6 @@
 
 import itertools
 import weakref
-import copyreg
 import atexit
 import threading        # we want threading to install it's
                         # cleanup function before multiprocessing does
@@ -302,35 +301,3 @@ class ForkAwareLocal(threading.local):
         register_after_fork(self, lambda obj : obj.__dict__.clear())
     def __reduce__(self):
         return type(self), ()
-
-#
-# Try making some callable types picklable
-#
-
-def _reduce_method(m):
-    if m.__self__ is None:
-        return getattr, (m.__self__.__class__, m.__func__.__name__)
-    else:
-        return getattr, (m.__self__, m.__func__.__name__)
-copyreg.pickle(type(Finalize.__init__), _reduce_method)
-
-def _reduce_method_descriptor(m):
-    return getattr, (m.__objclass__, m.__name__)
-copyreg.pickle(type(list.append), _reduce_method_descriptor)
-copyreg.pickle(type(int.__add__), _reduce_method_descriptor)
-
-def _reduce_builtin_function_or_method(m):
-    return getattr, (m.__self__, m.__name__)
-copyreg.pickle(type(list().append), _reduce_builtin_function_or_method)
-copyreg.pickle(type(int().__add__), _reduce_builtin_function_or_method)
-
-try:
-    from functools import partial
-except ImportError:
-    pass
-else:
-    def _reduce_partial(p):
-        return _rebuild_partial, (p.func, p.args, p.keywords or {})
-    def _rebuild_partial(func, args, keywords):
-        return partial(func, *args, **keywords)
-    copyreg.pickle(partial, _reduce_partial)

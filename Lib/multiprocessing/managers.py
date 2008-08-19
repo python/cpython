@@ -18,13 +18,12 @@ import sys
 import weakref
 import threading
 import array
-import copyreg
 import queue
 
 from traceback import format_exc
 from multiprocessing import Process, current_process, active_children, Pool, util, connection
 from multiprocessing.process import AuthenticationString
-from multiprocessing.forking import exit, Popen, assert_spawning
+from multiprocessing.forking import exit, Popen, assert_spawning, ForkingPickler
 from multiprocessing.util import Finalize, info
 
 try:
@@ -38,14 +37,14 @@ except ImportError:
 
 def reduce_array(a):
     return array.array, (a.typecode, a.tostring())
-copyreg.pickle(array.array, reduce_array)
+ForkingPickler.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
 if view_types[0] is not list:       # only needed in Py3.0
     def rebuild_as_list(obj):
         return list, (list(obj),)
     for view_type in view_types:
-        copyreg.pickle(view_type, rebuild_as_list)
+        ForkingPickler.register(view_type, rebuild_as_list)
 
 #
 # Type for identifying shared objects
