@@ -1609,7 +1609,8 @@ static arc arcs_74_5[2] = {
 static arc arcs_74_6[1] = {
 	{0, 6},
 };
-static arc arcs_74_7[1] = {
+static arc arcs_74_7[2] = {
+	{162, 5},
 	{31, 3},
 };
 static state states_74[8] = {
@@ -1620,7 +1621,7 @@ static state states_74[8] = {
 	{4, arcs_74_4},
 	{2, arcs_74_5},
 	{1, arcs_74_6},
-	{1, arcs_74_7},
+	{2, arcs_74_7},
 };
 static arc arcs_75_0[1] = {
 	{28, 1},
