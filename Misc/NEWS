@@ -77,6 +77,10 @@ Core and builtins
 Library
 -------
 
+- Issue #3554: ctypes.string_at and ctypes.wstring_at did call Python
+  api functions without holding the GIL, which could lead to a fatal
+  error when they failed.
+
 - Issue #2234: distutils failed for some versions of the cygwin compiler. The
   version reported by these tools does not necessarily follow the python
   version numbering scheme, so the module is less strict when parsing it.
