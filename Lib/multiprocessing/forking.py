@@ -12,7 +12,7 @@ import signal
 
 from multiprocessing import util, process
 
-__all__ = ['Popen', 'assert_spawning', 'exit', 'duplicate', 'close']
+__all__ = ['Popen', 'assert_spawning', 'exit', 'duplicate', 'close', 'ForkingPickler']
 
 #
 # Check that the current thread is spawning a child process
@@ -24,6 +24,50 @@ def assert_spawning(self):
             '%s objects should only be shared between processes'
             ' through inheritance' % type(self).__name__
             )
+
+#
+# Try making some callable types picklable
+#
+
+from pickle import _Pickler as Pickler
+class ForkingPickler(Pickler):
+    dispatch = Pickler.dispatch.copy()
+    @classmethod
+    def register(cls, type, reduce):
+        def dispatcher(self, obj):
+            rv = reduce(obj)
+            if isinstance(rv, str):
+                self.save_global(obj, rv)
+            else:
+                self.save_reduce(obj=obj, *rv)
+        cls.dispatch[type] = dispatcher
+
+def _reduce_method(m):
+    if m.__self__ is None:
+        return getattr, (m.__class__, m.__func__.__name__)
+    else:
+        return getattr, (m.__self__, m.__func__.__name__)
+class _C:
+    def f(self):
+        pass
+ForkingPickler.register(type(_C().f), _reduce_method)
+
+
+def _reduce_method_descriptor(m):
+    return getattr, (m.__objclass__, m.__name__)
+ForkingPickler.register(type(list.append), _reduce_method_descriptor)
+ForkingPickler.register(type(int.__add__), _reduce_method_descriptor)
+
+try:
+    from functools import partial
+except ImportError:
+    pass
+else:
+    def _reduce_partial(p):
+        return _rebuild_partial, (p.func, p.args, p.keywords or {})
+    def _rebuild_partial(func, args, keywords):
+        return partial(func, *args, **keywords)
+    ForkingPickler.register(partial, _reduce_partial)
 
 #
 # Unix
@@ -105,16 +149,18 @@ else:
     import _thread
     import msvcrt
     import _subprocess
-    import copyreg
     import time
 
     from ._multiprocessing import win32, Connection, PipeConnection
     from .util import Finalize
 
-    try:
-        from cPickle import dump, load, HIGHEST_PROTOCOL
-    except ImportError:
-        from pickle import dump, load, HIGHEST_PROTOCOL
+    #try:
+    #    from cPickle import dump, load, HIGHEST_PROTOCOL
+    #except ImportError:
+    from pickle import load, HIGHEST_PROTOCOL
+
+    def dump(obj, file, protocol=None):
+        ForkingPickler(file, protocol).dump(obj)
 
     #
     #
@@ -346,9 +392,8 @@ else:
         return type(conn), (Popen.duplicate_for_child(conn.fileno()),
                             conn.readable, conn.writable)
 
-    copyreg.pickle(Connection, reduce_connection)
-    copyreg.pickle(PipeConnection, reduce_connection)
-
+    ForkingPickler.register(Connection, reduce_connection)
+    ForkingPickler.register(PipeConnection, reduce_connection)
 
 #
 # Prepare current process
