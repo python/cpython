@@ -871,7 +871,7 @@ yes)
 
 	         elif test "$UNIVERSAL_ARCHS" = "all" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
-		   ARCH_RUN_32BIT="arch -386 -ppc"
+		   ARCH_RUN_32BIT="arch -i386 -ppc"
 
 		 else
 	           AC_MSG_ERROR([proper usage is --with-universalarch=32-bit|64-bit|all])
