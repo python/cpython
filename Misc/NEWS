@@ -18,6 +18,9 @@ Core and Builtins
   without relying on a particular implementation; remove the ill-named
   PyMemoryView() function (PyMemoryView_GET_BUFFER() can be used instead).
 
+- ctypes function pointers that are COM methods have a boolean True
+  value again.
+
 - Issue #1819: function calls with several named parameters are now on
   average 35% faster (as measured by pybench).
 
