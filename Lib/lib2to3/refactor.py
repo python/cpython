@@ -172,9 +172,11 @@ class RefactoringTool(object):
           want a pre-order AST traversal, and post_order is the list that want
           post-order traversal.
         """
-        fixer_pkg = self.fixer_dir.replace(os.path.sep, ".")
-        if os.path.altsep:
-            fixer_pkg = fixer_pkg.replace(os.path.altsep, ".")
+        if os.path.isabs(self.fixer_dir):
+            fixer_pkg = os.path.relpath(self.fixer_dir, os.path.join(os.path.dirname(__file__), '..'))
+        else:
+            fixer_pkg = self.fixer_dir
+        fixer_pkg = fixer_pkg.replace(os.path.sep, ".")
         pre_order_fixers = []
         post_order_fixers = []
         fix_names = self.options.fix
