@@ -173,8 +173,8 @@ class TableDBTestCase(unittest.TestCase):
 
         # this should return two rows
         values = self.tdb.Select(tabname, ['b', 'a', 'd'],
-            conditions={'e': re.compile('wuzzy').search,
-                        'a': re.compile('^[0-9]+$').match})
+            conditions={'e': re.compile(b'wuzzy').search,
+                        'a': re.compile(b'^[0-9]+$').match})
         self.assertEquals(len(values), 2)
 
         # now lets delete one of them and try again
