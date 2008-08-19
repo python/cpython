@@ -329,7 +329,10 @@ class ThreadTests(unittest.TestCase):
 
         t = threading.Thread()
         with catch_warning() as w:
-            del threading.__warningregistry__
+            try:
+                del threading.__warningregistry__
+            except AttributeError:
+                pass
             msg = "isDaemon() is deprecated in favor of the " \
                   "Thread.daemon property"
             check(t.isDaemon(), w, msg)
