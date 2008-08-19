@@ -324,13 +324,14 @@ class ThreadTests(unittest.TestCase):
                                sys.getrefcount(weak_raising_cyclic_object())))
 
     def test_pep8ified_threading(self):
-        import threading
+        import warnings
 
         def check(_, w, msg):
             self.assertEqual(str(w.message), msg)
 
         t = threading.Thread()
         with catch_warning() as w:
+            warnings.simplefilter("always", DeprecationWarning)
             msg = "isDaemon() is deprecated in favor of the " \
                   "Thread.daemon property"
             check(t.isDaemon(), w, msg)
