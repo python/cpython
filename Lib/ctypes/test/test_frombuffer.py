@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
         self.assertRaises(ValueError, lambda: (c_int * 16).from_buffer(a, sizeof(c_int)))
         self.assertRaises(ValueError, lambda: (c_int * 1).from_buffer(a, 16 * sizeof(c_int)))
 
-    def BROKEN_test_from_buffer_copy(self):
+    def test_from_buffer_copy(self):
         a = array.array("i", range(16))
         x = (c_int * 16).from_buffer_copy(a)
 
@@ -64,8 +64,8 @@ class Test(unittest.TestCase):
         del a; gc.collect(); gc.collect(); gc.collect()
         self.assertEqual(x[:], list(range(16)))
 
-        x = (c_char * 16).from_buffer_copy("a" * 16)
-        self.assertEqual(x[:], "a" * 16)
+        x = (c_char * 16).from_buffer_copy(b"a" * 16)
+        self.assertEqual(x[:], b"a" * 16)
 
     def test_fom_buffer_copy_with_offset(self):
         a = array.array("i", range(16))
