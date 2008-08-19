@@ -1135,6 +1135,7 @@ class _ExpectedSkips:
             # These are broken tests, for now skipped on every platform.
             # XXX Fix these!
             self.expected.add('test_cProfile')
+            self.expected.add('test_nis')
 
             # expected to be skipped on every platform, even Linux
             if not os.path.supports_unicode_filenames:
