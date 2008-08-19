@@ -54,7 +54,7 @@ class MmapTests(unittest.TestCase):
         m.flush()
 
         # Test doing a regular expression match in an mmap'ed file
-        match = re.search('[A-Za-z]+', m)
+        match = re.search(b'[A-Za-z]+', m)
         if match is None:
             self.fail('regex match on mmap failed!')
         else:

@@ -30,6 +30,7 @@ typedef struct {
     PyObject* pattern; /* pattern source (or None) */
     int flags; /* flags used when compiling pattern source */
     PyObject *weakreflist; /* List of weak references */
+	int charsize; /* pattern charsize (or -1) */
     /* pattern code */
     Py_ssize_t codesize;
     SRE_CODE code[1];

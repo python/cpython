@@ -11,9 +11,13 @@
 
 
 This module provides regular expression matching operations similar to
-those found in Perl. Both patterns and strings to be searched can be
-Unicode strings as well as 8-bit strings.  The :mod:`re` module is
-always available.
+those found in Perl.  The :mod:`re` module is always available.
+
+Both patterns and strings to be searched can be Unicode strings as well as
+8-bit strings. However, Unicode strings and 8-bit strings cannot be mixed:
+that is, you cannot match an Unicode string with a byte pattern or
+vice-versa; similarly, when asking for a substition, the replacement
+string must be of the same type as both the pattern and the search string.
 
 Regular expressions use the backslash character (``'\'``) to indicate
 special forms or to allow special characters to be used without invoking
@@ -212,12 +216,12 @@ The special characters are:
    group; ``(?P<name>...)`` is the only exception to this rule. Following are the
    currently supported extensions.
 
-``(?iLmsux)``
-   (One or more letters from the set ``'i'``, ``'L'``, ``'m'``, ``'s'``,
-   ``'u'``, ``'x'``.)  The group matches the empty string; the letters
-   set the corresponding flags: :const:`re.I` (ignore case),
-   :const:`re.L` (locale dependent), :const:`re.M` (multi-line),
-   :const:`re.S` (dot matches all), :const:`re.U` (Unicode dependent),
+``(?aiLmsux)``
+   (One or more letters from the set ``'a'``, ``'i'``, ``'L'``, ``'m'``,
+   ``'s'``, ``'u'``, ``'x'``.)  The group matches the empty string; the
+   letters set the corresponding flags: :const:`re.a` (ASCII-only matching),
+   :const:`re.I` (ignore case), :const:`re.L` (locale dependent),
+   :const:`re.M` (multi-line), :const:`re.S` (dot matches all), 
    and :const:`re.X` (verbose), for the entire regular expression. (The
    flags are described in :ref:`contents-of-module-re`.) This
    is useful if you wish to include the flags as part of the regular
@@ -324,56 +328,62 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
    word is indicated by whitespace or a non-alphanumeric, non-underscore character.
    Note that  ``\b`` is defined as the boundary between ``\w`` and ``\ W``, so the
    precise set of characters deemed to be alphanumeric depends on the values of the
-   ``UNICODE`` and ``LOCALE`` flags.  Inside a character range, ``\b`` represents
+   ``ASCII`` and ``LOCALE`` flags.  Inside a character range, ``\b`` represents
    the backspace character, for compatibility with Python's string literals.
 
 ``\B``
    Matches the empty string, but only when it is *not* at the beginning or end of a
    word.  This is just the opposite of ``\b``, so is also subject to the settings
-   of ``LOCALE`` and ``UNICODE``.
+   of ``ASCII`` and ``LOCALE`` .
 
 ``\d``
-   When the :const:`UNICODE` flag is not specified, matches any decimal digit; this
-   is equivalent to the set ``[0-9]``.  With :const:`UNICODE`, it will match
-   whatever is classified as a digit in the Unicode character properties database.
+   For Unicode (str) patterns:
+      When the :const:`ASCII` flag is specified, matches any decimal digit; this
+      is equivalent to the set ``[0-9]``.  Otherwise, it will match whatever
+      is classified as a digit in the Unicode character properties database
+      (but this does include the standard ASCII digits and is thus a superset
+      of [0-9]).
+   For 8-bit (bytes) patterns:
+      Matches any decimal digit; this is equivalent to the set ``[0-9]``.
 
 ``\D``
-   When the :const:`UNICODE` flag is not specified, matches any non-digit
-   character; this is equivalent to the set  ``[^0-9]``.  With :const:`UNICODE`, it
-   will match  anything other than character marked as digits in the Unicode
-   character  properties database.
+   Matches any character which is not a decimal digit. This is the
+   opposite of ``\d`` and is therefore similarly subject to the settings of
+   ``ASCII`` and ``LOCALE``.
 
 ``\s``
-   When the :const:`LOCALE` and :const:`UNICODE` flags are not specified, matches
-   any whitespace character; this is equivalent to the set ``[ \t\n\r\f\v]``. With
-   :const:`LOCALE`, it will match this set plus whatever characters are defined as
-   space for the current locale. If :const:`UNICODE` is set, this will match the
-   characters ``[ \t\n\r\f\v]`` plus whatever is classified as space in the Unicode
-   character properties database.
+   For Unicode (str) patterns:
+      When the :const:`ASCII` flag is specified, matches only ASCII whitespace
+      characters; this is equivalent to the set ``[ \t\n\r\f\v]``. Otherwise,
+      it will match this set whatever is classified as space in the Unicode
+      character properties database (including for example the non-breaking
+      spaces mandated by typography rules in many languages).
+   For 8-bit (bytes) patterns:
+      Matches characters considered whitespace in the ASCII character set;
+      this is equivalent to the set ``[ \t\n\r\f\v]``.
 
 ``\S``
-   When the :const:`LOCALE` and :const:`UNICODE` flags are not specified, matches
-   any non-whitespace character; this is equivalent to the set ``[^ \t\n\r\f\v]``
-   With :const:`LOCALE`, it will match any character not in this set, and not
-   defined as space in the current locale. If :const:`UNICODE` is set, this will
-   match anything other than ``[ \t\n\r\f\v]`` and characters marked as space in
-   the Unicode character properties database.
+   Matches any character which is not a whitespace character. This is the
+   opposite of ``\s`` and is therefore similarly subject to the settings of
+   ``ASCII`` and ``LOCALE``.
 
 ``\w``
-   When the :const:`LOCALE` and :const:`UNICODE` flags are not specified, matches
-   any alphanumeric character and the underscore; this is equivalent to the set
-   ``[a-zA-Z0-9_]``.  With :const:`LOCALE`, it will match the set ``[0-9_]`` plus
-   whatever characters are defined as alphanumeric for the current locale.  If
-   :const:`UNICODE` is set, this will match the characters ``[0-9_]`` plus whatever
-   is classified as alphanumeric in the Unicode character properties database.
+   For Unicode (str) patterns:
+      When the :const:`ASCII` flag is specified, this is equivalent to the set
+      ``[a-zA-Z0-9_]``. Otherwise, it will match whatever is classified as
+      alphanumeric in the Unicode character properties database (it will
+      include most characters that can be part of a word in whatever language,
+      as well as numbers and the underscore sign).
+   For 8-bit (bytes) patterns:
+      Matches characters considered alphanumeric in the ASCII character set;
+      this is equivalent to the set ``[a-zA-Z0-9_]``. With :const:`LOCALE`, 
+      it will additionally match whatever characters are defined as
+      alphanumeric for the current locale.
 
 ``\W``
-   When the :const:`LOCALE` and :const:`UNICODE` flags are not specified, matches
-   any non-alphanumeric character; this is equivalent to the set ``[^a-zA-Z0-9_]``.
-   With :const:`LOCALE`, it will match any character not in the set ``[0-9_]``, and
-   not defined as alphanumeric for the current locale. If :const:`UNICODE` is set,
-   this will match anything other than ``[0-9_]`` and characters marked as
-   alphanumeric in the Unicode character properties database.
+   Matches any character which is not an alphanumeric character. This is the
+   opposite of ``\w`` and is therefore similarly subject to the settings of
+   ``ASCII`` and ``LOCALE``.
 
 ``\Z``
    Matches only at the end of the string.
@@ -454,6 +464,25 @@ form.
       expression at a time needn't worry about compiling regular expressions.)
 
 
+.. data:: A
+          ASCII
+
+   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\s`` and ``\S`` perform ASCII-only
+   matching instead of full Unicode matching. This is only meaningful for
+   Unicode patterns, and is ignored for byte patterns.
+
+   Note that the :const:`re.U` flag still exists (as well as its synonym
+   :const:`re.UNICODE` and its embedded counterpart ``(?u)``), but it has
+   become useless in Python 3.0.
+   In previous Python versions, it was used to specify that 
+   matching had to be Unicode dependent (the default was ASCII matching in
+   all circumstances). Starting from Python 3.0, the default is Unicode 
+   matching for Unicode strings (which can be changed by specifying the
+   ``'a'`` flag), and ASCII matching for 8-bit strings. Further, Unicode
+   dependent matching for 8-bit strings isn't allowed anymore and results
+   in a ValueError.
+
+
 .. data:: I
           IGNORECASE
 
@@ -465,7 +494,10 @@ form.
           LOCALE
 
    Make ``\w``, ``\W``, ``\b``, ``\B``, ``\s`` and ``\S`` dependent on the
-   current locale.
+   current locale. The use of this flag is discouraged as the locale mechanism
+   is very unreliable, and it only handles one "culture" at a time anyway;
+   you should use Unicode matching instead, which is the default in Python 3.0
+   for Unicode (str) patterns.
 
 
 .. data:: M
@@ -486,13 +518,6 @@ form.
    newline; without this flag, ``'.'`` will match anything *except* a newline.
 
 
-.. data:: U
-          UNICODE
-
-   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S`` dependent
-   on the Unicode character properties database.
-
-
 .. data:: X
           VERBOSE
 
@@ -509,6 +534,8 @@ form.
                          \.    # the decimal point
                          \d *  # some fractional digits""", re.X)
       b = re.compile(r"\d+\.\d*")
+
+
 
 
 .. function:: search(pattern, string[, flags])

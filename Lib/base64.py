@@ -39,7 +39,7 @@ def _translate(s, altchars):
     return s.translate(translation)
 
 
-
+
 # Base64 encoding/decoding uses binascii
 
 def b64encode(s, altchars=None):
@@ -126,7 +126,7 @@ def urlsafe_b64decode(s):
     return b64decode(s, b'-_')
 
 
-
+
 # Base32 encoding/decoding must be done in Python
 _b32alphabet = {
     0: b'A',  9: b'J', 18: b'S', 27: b'3',
@@ -225,7 +225,7 @@ def b32decode(s, casefold=False, map01=None):
     # characters because this will tell us how many null bytes to remove from
     # the end of the decoded string.
     padchars = 0
-    mo = re.search('(?P<pad>[=]*)$', s)
+    mo = re.search(b'(?P<pad>[=]*)$', s)
     if mo:
         padchars = len(mo.group('pad'))
         if padchars > 0:
@@ -262,7 +262,7 @@ def b32decode(s, casefold=False, map01=None):
     return b''.join(parts)
 
 
-
+
 # RFC 3548, Base 16 Alphabet specifies uppercase, but hexlify() returns
 # lowercase.  The RFC also recommends against accepting input case
 # insensitively.
@@ -291,12 +291,12 @@ def b16decode(s, casefold=False):
         raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     if casefold:
         s = s.upper()
-    if re.search('[^0-9A-F]', s):
+    if re.search(b'[^0-9A-F]', s):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 
 
-
+
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it
 # though.  The files should be opened in binary mode.
@@ -353,7 +353,7 @@ def decodestring(s):
     return binascii.a2b_base64(s)
 
 
-
+
 # Usable as a script...
 def main():
     """Small main program"""

@@ -134,7 +134,7 @@ class StrictVersion (Version):
     """
 
     version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
-                            re.VERBOSE)
+                            re.VERBOSE | re.ASCII)
 
 
     def parse (self, vstring):

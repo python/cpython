@@ -47,21 +47,23 @@ def group(*choices): return '(' + '|'.join(choices) + ')'
 def any(*choices): return group(*choices) + '*'
 def maybe(*choices): return group(*choices) + '?'
 
+# Note: we use unicode matching for names ("\w") but ascii matching for
+# number literals.
 Whitespace = r'[ \f\t]*'
 Comment = r'#[^\r\n]*'
 Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
 Name = r'[a-zA-Z_]\w*'
 
-Hexnumber = r'0[xX][\da-fA-F]+'
+Hexnumber = r'0[xX][0-9a-fA-F]+'
 Binnumber = r'0[bB][01]+'
 Octnumber = r'0[oO][0-7]+'
-Decnumber = r'(?:0+|[1-9]\d*)'
+Decnumber = r'(?:0+|[1-9][0-9]*)'
 Intnumber = group(Hexnumber, Binnumber, Octnumber, Decnumber)
-Exponent = r'[eE][-+]?\d+'
-Pointfloat = group(r'\d+\.\d*', r'\.\d+') + maybe(Exponent)
-Expfloat = r'\d+' + Exponent
+Exponent = r'[eE][-+]?[0-9]+'
+Pointfloat = group(r'[0-9]+\.[0-9]*', r'\.[0-9]+') + maybe(Exponent)
+Expfloat = r'[0-9]+' + Exponent
 Floatnumber = group(Pointfloat, Expfloat)
-Imagnumber = group(r'\d+[jJ]', Floatnumber + r'[jJ]')
+Imagnumber = group(r'[0-9]+[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
 # Tail end of ' string.

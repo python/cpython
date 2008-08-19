@@ -445,7 +445,7 @@ _CookiePattern = re.compile(
     ""+ _LegalCharsPatt +"*"        # Any word or empty string
     r")"                          # End of group 'val'
     r"\s*;?"                      # Probably ending in a semi-colon
-    )
+    , re.ASCII)                   # May be removed if safe.
 
 
 # At long last, here is the cookie class.

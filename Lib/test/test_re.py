@@ -83,23 +83,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('\r\n', '\n', 'abc\r\ndef\r\n'),
                          'abc\ndef\n')
 
-    def test_bug_1140(self):
-        # re.sub(x, y, b'') should return b'', not '', and
-        # re.sub(x, y, '') should return '', not b''.
-        # Also:
-        # re.sub(x, y, str(x)) should return str(y), and
-        # re.sub(x, y, bytes(x)) should return
-        #     str(y) if isinstance(y, str) else unicode(y).
-        for x in 'x',  b'x':
-            for y in 'y', b'y':
-                z = re.sub(x, y, b'')
-                self.assertEqual(z, b'')
-                self.assertEqual(type(z), bytes)
-                #
-                z = re.sub(x, y, '')
-                self.assertEqual(z, '')
-                self.assertEqual(type(z), str)
-
     def test_bug_1661(self):
         # Verify that flags do not get silently ignored with compiled patterns
         pattern = re.compile('.')
@@ -327,7 +310,7 @@ class ReTests(unittest.TestCase):
 
     def test_getattr(self):
         self.assertEqual(re.compile("(?i)(a)(b)").pattern, "(?i)(a)(b)")
-        self.assertEqual(re.compile("(?i)(a)(b)").flags, re.I)
+        self.assertEqual(re.compile("(?i)(a)(b)").flags, re.I | re.U)
         self.assertEqual(re.compile("(?i)(a)(b)").groups, 2)
         self.assertEqual(re.compile("(?i)(a)(b)").groupindex, {})
         self.assertEqual(re.compile("(?i)(?P<first>a)(?P<other>b)").groupindex,
@@ -614,8 +597,8 @@ class ReTests(unittest.TestCase):
         import array
         for typecode in 'bBuhHiIlLfd':
             a = array.array(typecode)
-            self.assertEqual(re.compile("bla").match(a), None)
-            self.assertEqual(re.compile("").match(a).groups(), ())
+            self.assertEqual(re.compile(b"bla").match(a), None)
+            self.assertEqual(re.compile(b"").match(a).groups(), ())
 
     def test_inline_flags(self):
         # Bug #1700
@@ -657,6 +640,48 @@ class ReTests(unittest.TestCase):
         self.assertEqual(pattern.sub('#', 'a\nb\n' ), 'a#\nb#\n#' )
         self.assertEqual(pattern.sub('#', 'a\nb\nc'), 'a#\nb#\nc#')
         self.assertEqual(pattern.sub('#', '\n'), '#\n#')
+
+    def test_bytes_str_mixing(self):
+        # Mixing str and bytes is disallowed
+        pat = re.compile('.')
+        bpat = re.compile(b'.')
+        self.assertRaises(TypeError, pat.match, b'b')
+        self.assertRaises(TypeError, bpat.match, 'b')
+        self.assertRaises(TypeError, pat.sub, b'b', 'c')
+        self.assertRaises(TypeError, pat.sub, 'b', b'c')
+        self.assertRaises(TypeError, pat.sub, b'b', b'c')
+        self.assertRaises(TypeError, bpat.sub, b'b', 'c')
+        self.assertRaises(TypeError, bpat.sub, 'b', b'c')
+        self.assertRaises(TypeError, bpat.sub, 'b', 'c')
+
+    def test_ascii_and_unicode_flag(self):
+        # String patterns
+        for flags in (0, re.UNICODE):
+            pat = re.compile('\xc0', flags | re.IGNORECASE)
+            self.assertNotEqual(pat.match('\xe0'), None)
+            pat = re.compile('\w', flags)
+            self.assertNotEqual(pat.match('\xe0'), None)
+        pat = re.compile('\xc0', re.ASCII | re.IGNORECASE)
+        self.assertEqual(pat.match('\xe0'), None)
+        pat = re.compile('(?a)\xc0', re.IGNORECASE)
+        self.assertEqual(pat.match('\xe0'), None)
+        pat = re.compile('\w', re.ASCII)
+        self.assertEqual(pat.match('\xe0'), None)
+        pat = re.compile('(?a)\w')
+        self.assertEqual(pat.match('\xe0'), None)
+        # Bytes patterns
+        for flags in (0, re.ASCII):
+            pat = re.compile(b'\xc0', re.IGNORECASE)
+            self.assertEqual(pat.match(b'\xe0'), None)
+            pat = re.compile(b'\w')
+            self.assertEqual(pat.match(b'\xe0'), None)
+        # Incompatibilities
+        self.assertRaises(ValueError, re.compile, b'\w', re.UNICODE)
+        self.assertRaises(ValueError, re.compile, b'(?u)\w')
+        self.assertRaises(ValueError, re.compile, '\w', re.UNICODE | re.ASCII)
+        self.assertRaises(ValueError, re.compile, '(?u)\w', re.ASCII)
+        self.assertRaises(ValueError, re.compile, '(?a)\w', re.UNICODE)
+        self.assertRaises(ValueError, re.compile, '(?au)\w')
 
 
 def run_re_tests():

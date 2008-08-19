@@ -5,7 +5,8 @@ import distutils.version
 import operator
 
 
-re_validPackage = re.compile(r"(?i)^\s*([a-z_]\w*(?:\.[a-z_]\w*)*)(.*)")
+re_validPackage = re.compile(r"(?i)^\s*([a-z_]\w*(?:\.[a-z_]\w*)*)(.*)",
+    re.ASCII)
 # (package) (rest)
 
 re_paren = re.compile(r"^\s*\((.*)\)\s*$") # (list) inside of parentheses
@@ -153,7 +154,8 @@ def split_provision(value):
     global _provision_rx
     if _provision_rx is None:
         _provision_rx = re.compile(
-            "([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)*)(?:\s*\(\s*([^)\s]+)\s*\))?$")
+            "([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)*)(?:\s*\(\s*([^)\s]+)\s*\))?$",
+            re.ASCII)
     value = value.strip()
     m = _provision_rx.match(value)
     if not m:

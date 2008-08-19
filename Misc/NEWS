@@ -30,6 +30,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #2834: update the regular expression library to match the unicode
+  standards of py3k. In other words, mixing bytes and unicode strings
+  (be it as pattern, search string or replacement string) raises a TypeError.
+  Moreover, the re.UNICODE flag is enabled automatically for unicode patterns,
+  and can be disabled by specifying a new re.ASCII flag; as for bytes
+  patterns, ASCII matching is the only option and trying to specify re.UNICODE
+  for such patterns raises a ValueError.
+
 - Issue #3300: make urllib.parse.[un]quote() default to UTF-8.
   Code contributed by Matt Giuca.  quote() now encodes the input
   before quoting, unquote() decodes after unquoting.  There are

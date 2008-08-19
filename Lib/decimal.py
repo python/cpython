@@ -5415,7 +5415,7 @@ ExtendedContext = Context(
 # 2. For finite numbers (not infinities and NaNs) the body of the
 # number between the optional sign and the optional exponent must have
 # at least one decimal digit, possibly after the decimal point.  The
-# lookahead expression '(?=\d|\.\d)' checks this.
+# lookahead expression '(?=[0-9]|\.[0-9])' checks this.
 #
 # As the flag UNICODE is not enabled here, we're explicitly avoiding any
 # other meaning for \d than the numbers [0-9].

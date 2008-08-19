@@ -176,12 +176,10 @@ class Codec(codecs.Codec):
             return "", 0
 
         # IDNA allows decoding to operate on Unicode strings, too.
-        if isinstance(input, bytes):
-            labels = dots.split(input)
-        else:
-            # Force to bytes
+        if not isinstance(input, bytes):
+            # XXX obviously wrong, see #3232
             input = bytes(input)
-            labels = input.split(b".")
+        labels = input.split(b".")
 
         if labels and len(labels[-1]) == 0:
             trailing_dot = '.'

@@ -88,11 +88,12 @@ InternalDate = re.compile(r'.*INTERNALDATE "'
         r' (?P<hour>[0-9][0-9]):(?P<min>[0-9][0-9]):(?P<sec>[0-9][0-9])'
         r' (?P<zonen>[-+])(?P<zoneh>[0-9][0-9])(?P<zonem>[0-9][0-9])'
         r'"')
-Literal = re.compile(r'.*{(?P<size>\d+)}$')
+Literal = re.compile(r'.*{(?P<size>\d+)}$', re.ASCII)
 MapCRLF = re.compile(r'\r\n|\r|\n')
 Response_code = re.compile(r'\[(?P<type>[A-Z-]+)( (?P<data>[^\]]*))?\]')
 Untagged_response = re.compile(r'\* (?P<type>[A-Z-]+)( (?P<data>.*))?')
-Untagged_status = re.compile(r'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?')
+Untagged_status = re.compile(
+    r'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?', re.ASCII)
 
 
 
@@ -146,7 +147,7 @@ class IMAP4:
     class abort(error): pass        # Service errors - close and retry
     class readonly(abort): pass     # Mailbox status changed to READ-ONLY
 
-    mustquote = re.compile(r"[^\w!#$%&'*+,.:;<=>?^`|~-]")
+    mustquote = re.compile(r"[^\w!#$%&'*+,.:;<=>?^`|~-]", re.ASCII)
 
     def __init__(self, host = '', port = IMAP4_PORT):
         self.debug = Debug
@@ -168,7 +169,7 @@ class IMAP4:
         self.tagpre = Int2AP(random.randint(4096, 65535))
         self.tagre = re.compile(r'(?P<tag>'
                         + self.tagpre
-                        + r'\d+) (?P<type>[A-Z]+) (?P<data>.*)')
+                        + r'\d+) (?P<type>[A-Z]+) (?P<data>.*)', re.ASCII)
 
         # Get server welcome message,
         # request and store CAPABILITY response.

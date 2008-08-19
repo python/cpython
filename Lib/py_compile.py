@@ -86,7 +86,7 @@ def read_encoding(file, default):
             line = f.readline()
             if not line:
                 break
-            m = re.match(r".*\bcoding:\s*(\S+)\b", line)
+            m = re.match(br".*\bcoding:\s*(\S+)\b", line)
             if m:
                 return m.group(1).decode("ascii")
         return default
