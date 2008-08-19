@@ -29,7 +29,7 @@ PyDoc_STRVAR(memory_doc,
 Create a new memoryview object which references the given object.");
 
 PyObject *
-PyMemoryView_FromMemory(Py_buffer *info)
+PyMemoryView_FromBuffer(Py_buffer *info)
 {
 	PyMemoryViewObject *mview;
 
@@ -231,7 +231,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         mem = PyObject_New(PyMemoryViewObject, &PyMemoryView_Type);
         if (mem == NULL) return NULL;
 
-        view = &PyMemoryView(mem);
+        view = &mem->view;
         flags = PyBUF_FULL_RO;
         switch(buffertype) {
         case PyBUF_WRITE:
@@ -534,7 +534,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 			/* XXX:  This needs to be fixed so it
 			         actually returns a sub-view
 			*/
-			return PyMemoryView_FromMemory(&newview);
+			return PyMemoryView_FromBuffer(&newview);
 		}
 	}
 

@@ -12,6 +12,12 @@ What's new in Python 3.0b3?
 Core and Builtins
 -----------------
 
+- Issue #3560: clean up the new C PyMemoryView API so that naming is
+  internally consistent; add macros PyMemoryView_GET_BASE() and
+  PyMemoryView_GET_BUFFER() to access useful properties of a memory views
+  without relying on a particular implementation; remove the ill-named
+  PyMemoryView() function (PyMemoryView_GET_BUFFER() can be used instead).
+
 - Issue #1819: function calls with several named parameters are now on
   average 35% faster (as measured by pybench).
 

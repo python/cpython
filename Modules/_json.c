@@ -264,7 +264,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
             if (PyBuffer_FillInfo(&info, NULL, &buf[end], next - end, 1, 0) < 0) {
                 goto bail;
             }
-            strchunk = PyMemoryView_FromMemory(&info);
+            strchunk = PyMemoryView_FromBuffer(&info);
             if (strchunk == NULL) {
                 goto bail;
             }

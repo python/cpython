@@ -1200,7 +1200,7 @@ PyObject *PyUnicode_Decode(const char *s,
     buffer = NULL;
     if (PyBuffer_FillInfo(&info, NULL, (void *)s, size, 1, PyBUF_SIMPLE) < 0)
         goto onError;
-    buffer = PyMemoryView_FromMemory(&info);
+    buffer = PyMemoryView_FromBuffer(&info);
     if (buffer == NULL)
         goto onError;
     unicode = PyCodec_Decode(buffer, encoding, errors);
