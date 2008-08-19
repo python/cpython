@@ -82,9 +82,9 @@ def _get_listener():
         try:
             if _listener is None:
                 debug('starting listener and thread for sending handles')
-                _listener = Listener(authkey=current_process().get_authkey())
+                _listener = Listener(authkey=current_process().authkey)
                 t = threading.Thread(target=_serve)
-                t.set_daemon(True)
+                t.daemon = True
                 t.start()
         finally:
             _lock.release()
@@ -127,7 +127,7 @@ def rebuild_handle(pickled_data):
     if inherited:
         return handle
     sub_debug('rebuilding handle %d', handle)
-    conn = Client(address, authkey=current_process().get_authkey())
+    conn = Client(address, authkey=current_process().authkey)
     conn.send((handle, os.getpid()))
     new_handle = recv_handle(conn)
     conn.close()

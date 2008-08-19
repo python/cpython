@@ -290,11 +290,11 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       A process cannot join itself because this would cause a deadlock.  It is
       an error to attempt to join a process before it has been started.
 
-   .. method:: get_name()
+   .. attribute:: Process.name
 
       Return the process's name.
 
-   .. method:: set_name(name)
+   .. attribute:: Process.name = name
 
       Set the process's name.
 
@@ -309,11 +309,11 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Roughly, a process object is alive from the moment the :meth:`start`
       method returns until the child process terminates.
 
-   .. method:: is_daemon()
+   .. attribute:: Process.daemon
 
-      Return the process's daemon flag.
+      Return the process's daemon flag., this is a boolean.
 
-   .. method:: set_daemon(daemonic)
+   .. attribute:: Process.daemon = daemonic
 
       Set the process's daemon flag to the Boolean value *daemonic*.  This must
       be called before :meth:`start` is called.
@@ -329,18 +329,18 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    In addition process objects also support the following methods:
 
-   .. method:: get_pid()
+   .. attribute:: Process.pid
 
       Return the process ID.  Before the process is spawned, this will be
       ``None``.
 
-   .. method:: get_exit_code()
+   .. attribute:: Process.exitcode
 
       Return the child's exit code.  This will be ``None`` if the process has
       not yet terminated.  A negative value *-N* indicates that the child was
       terminated by signal *N*.
 
-   .. method:: get_auth_key()
+   .. attribute:: Process.authkey
 
       Return the process's authentication key (a byte string).
 
@@ -349,11 +349,11 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       When a :class:`Process` object is created, it will inherit the
       authentication key of its parent process, although this may be changed
-      using :meth:`set_auth_key` below.
+      using :attr:`Process.authkey` below.
 
       See :ref:`multiprocessing-auth-keys`.
 
-   .. method:: set_auth_key(authkey)
+   .. attribute:: Process.authkey = authkey
 
       Set the process's authentication key which must be a byte string.
 

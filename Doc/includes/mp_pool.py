@@ -14,7 +14,7 @@ import sys
 def calculate(func, args):
     result = func(*args)
     return '%s says that %s%s = %s' % (
-        multiprocessing.current_process().get_name(),
+        multiprocessing.current_process().name,
         func.__name__, args, result
         )
 

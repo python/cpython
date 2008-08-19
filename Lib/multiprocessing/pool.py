@@ -99,7 +99,7 @@ class Pool(object):
                 args=(self._inqueue, self._outqueue, initializer, initargs)
                 )
             self._pool.append(w)
-            w.name = w.get_name().replace('Process', 'PoolWorker')
+            w.name = w.name.replace('Process', 'PoolWorker')
             w.daemon = True
             w.start()
 

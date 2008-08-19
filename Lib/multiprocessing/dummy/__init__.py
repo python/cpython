@@ -47,7 +47,8 @@ class DummyProcess(threading.Thread):
         self._parent._children[self] = None
         threading.Thread.start(self)
 
-    def get_exitcode(self):
+    @property
+    def exitcode(self):
         if self._start_called and not self.is_alive():
             return 0
         else:
