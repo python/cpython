@@ -113,7 +113,9 @@ dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
 
 classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 
-arglist: (argument ',')* (argument [',']| '*' test [',' '**' test] | '**' test)
+arglist: (argument ',')* (argument [',']
+                         |'*' test (',' argument)* [',' '**' test] 
+                         |'**' test)
 argument: test [comp_for] | test '=' test  # Really [keyword '='] test
 
 comp_iter: comp_for | comp_if

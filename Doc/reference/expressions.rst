@@ -612,11 +612,11 @@ of arguments:
    call: `primary` "(" [`argument_list` [","]
        : | `expression` `genexpr_for`] ")"
    argument_list: `positional_arguments` ["," `keyword_arguments`]
-                : ["," "*" `expression`]
-                : ["," "**" `expression`]
+                :   ["," "*" `expression`] ["," `keyword_arguments`]
+                :   ["," "**" `expression`]
                 : | `keyword_arguments` ["," "*" `expression`]
-                : ["," "**" `expression`]
-                : | "*" `expression` ["," "**" `expression`]
+                :   ["," `keyword_arguments`] ["," "**" `expression`]
+                : | "*" `expression` ["," `keyword_arguments`] ["," "**" `expression`]
                 : | "**" `expression`
    positional_arguments: `expression` ("," `expression`)*
    keyword_arguments: `keyword_item` ("," `keyword_item`)*
@@ -674,12 +674,13 @@ there were no excess keyword arguments.
 
 If the syntax ``*expression`` appears in the function call, ``expression`` must
 evaluate to a sequence.  Elements from this sequence are treated as if they were
-additional positional arguments; if there are positional arguments *x1*,...,*xN*
-, and ``expression`` evaluates to a sequence *y1*,...,*yM*, this is equivalent
-to a call with M+N positional arguments *x1*,...,*xN*,*y1*,...,*yM*.
+additional positional arguments; if there are positional arguments *x1*,...,
+*xN*, and ``expression`` evaluates to a sequence *y1*, ..., *yM*, this is
+equivalent to a call with M+N positional arguments *x1*, ..., *xN*, *y1*, ...,
+*yM*.
 
-A consequence of this is that although the ``*expression`` syntax appears
-*after* any keyword arguments, it is processed *before* the keyword arguments
+A consequence of this is that although the ``*expression`` syntax may appear
+*after* some keyword arguments, it is processed *before* the keyword arguments
 (and the ``**expression`` argument, if any -- see below).  So::
 
    >>> def f(a, b):
