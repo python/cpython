@@ -1,4 +1,4 @@
-import unittest
+import unittest, sys
 
 from ctypes import *
 import _ctypes_test
@@ -182,6 +182,11 @@ class PointersTestCase(unittest.TestCase):
 
         self.failUnlessEqual(bool(CFUNCTYPE(None)(0)), False)
         self.failUnlessEqual(bool(CFUNCTYPE(None)(42)), True)
+
+        # COM methods are boolean True:
+        if sys.platform == "win32":
+            mth = WINFUNCTYPE(None)(42, "name", (), None)
+            self.failUnlessEqual(bool(mth), True)
 
 if __name__ == '__main__':
     unittest.main()
