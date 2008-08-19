@@ -273,11 +273,11 @@ def _exit_function():
 
     for p in active_children():
         if p._daemonic:
-            info('calling terminate() for daemon %s', p.get_name())
+            info('calling terminate() for daemon %s', p.name)
             p._popen.terminate()
 
     for p in active_children():
-        info('calling join() for process %s', p.get_name())
+        info('calling join() for process %s', p.name)
         p.join()
 
     debug('running the remaining "atexit" finalizers')

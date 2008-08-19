@@ -152,7 +152,7 @@ class DistributedPool(pool.Pool):
 
 def LocalProcess(**kwds):
     p = Process(**kwds)
-    p.set_name('localhost/' + p.get_name())
+    p.set_name('localhost/' + p.name)
     return p
 
 class Cluster(managers.SyncManager):
