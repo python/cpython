@@ -21,7 +21,7 @@ if sys.platform == 'win32':
 
 
 def note(format, *args):
-    sys.stderr.write('[%s]\t%s\n' % (current_process().get_name(),format%args))
+    sys.stderr.write('[%s]\t%s\n' % (current_process().name, format%args))
 
 
 class RequestHandler(SimpleHTTPRequestHandler):

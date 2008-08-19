@@ -17,10 +17,10 @@ import shutil
 import subprocess
 import logging
 import itertools
-import Queue
+import queue
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -152,7 +152,7 @@ class DistributedPool(pool.Pool):
 
 def LocalProcess(**kwds):
     p = Process(**kwds)
-    p.set_name('localhost/' + p.get_name())
+    p.set_name('localhost/' + p.name)
     return p
 
 class Cluster(managers.SyncManager):
@@ -210,7 +210,7 @@ class Cluster(managers.SyncManager):
         self._base_shutdown()
 
     def Process(self, group=None, target=None, name=None, args=(), kwargs={}):
-        slot = self._slot_iterator.next()
+        slot = next(self._slot_iterator)
         return slot.Process(
             group=group, target=target, name=name, args=args, kwargs=kwargs
             )
@@ -231,7 +231,7 @@ class Cluster(managers.SyncManager):
 # Queue subclass used by distributed pool
 #
 
-class SettableQueue(Queue.Queue):
+class SettableQueue(queue.Queue):
     def empty(self):
         return not self.queue
     def full(self):
@@ -243,7 +243,7 @@ class SettableQueue(Queue.Queue):
         try:
             self.queue.clear()
             self.queue.extend(contents)
-            self.not_empty.notify_all()
+            self.not_empty.notifyAll()
         finally:
             self.not_empty.release()
 

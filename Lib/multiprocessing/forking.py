@@ -315,7 +315,7 @@ else:
             sys_argv=sys.argv,
             log_to_stderr=_log_to_stderr,
             orig_dir=process.ORIGINAL_DIR,
-            authkey=process.current_process().get_authkey(),
+            authkey=process.current_process().authkey,
             )
 
         if _logger is not None:
@@ -363,7 +363,7 @@ def prepare(data):
     old_main_modules.append(sys.modules['__main__'])
 
     if 'name' in data:
-        process.current_process().set_name(data['name'])
+        process.current_process().name = data['name']
 
     if 'authkey' in data:
         process.current_process()._authkey = data['authkey']

@@ -224,7 +224,7 @@ def test_sharedvalues():
     p.start()
     p.join()
 
-    assert p.get_exitcode() == 0
+    assert p.exitcode == 0
 
 
 ####
