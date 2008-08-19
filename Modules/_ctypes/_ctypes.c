@@ -3941,7 +3941,10 @@ static int
 CFuncPtr_nonzero(CFuncPtrObject *self)
 {
 	return ((*(void **)self->b_ptr != NULL)
-		|| (self->index != 0));
+#ifdef MS_WIN32
+		|| (self->index != 0)
+#endif
+		);
 }
 
 static PyNumberMethods CFuncPtr_as_number = {
