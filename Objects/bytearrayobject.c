@@ -2215,8 +2215,11 @@ bytes_split(PyByteArrayObject *self, PyObject *args)
         PyBuffer_Release(&vsub);
         return NULL;
     }
-    if (n == 1)
-        return split_char(s, len, sub[0], maxsplit);
+    if (n == 1) {
+        list = split_char(s, len, sub[0], maxsplit);
+        PyBuffer_Release(&vsub);
+        return list;
+    }
 
     list = PyList_New(PREALLOC_SIZE(maxsplit));
     if (list == NULL) {
@@ -2447,8 +2450,11 @@ bytes_rsplit(PyByteArrayObject *self, PyObject *args)
         PyBuffer_Release(&vsub);
         return NULL;
     }
-    else if (n == 1)
-        return rsplit_char(s, len, sub[0], maxsplit);
+    else if (n == 1) {
+        list = rsplit_char(s, len, sub[0], maxsplit);
+        PyBuffer_Release(&vsub);
+        return list;
+    }
 
     list = PyList_New(PREALLOC_SIZE(maxsplit));
     if (list == NULL) {

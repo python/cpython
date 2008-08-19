@@ -261,7 +261,7 @@ is considered sufficient for this determination.
 
    Set a TypeError indicating that ``type(o)`` is not hashable and return ``-1``.
    This function receives special treatment when stored in a ``tp_hash`` slot,
-   allowing a type to explicit indicate to the interpreter that it is not
+   allowing a type to explicitly indicate to the interpreter that it is not
    hashable.
 
    .. versionadded:: 2.6

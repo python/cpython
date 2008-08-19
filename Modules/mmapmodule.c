@@ -913,7 +913,7 @@ and returns a mmap object.  If length is 0, the maximum length of the map\n\
 will be the current size of the file when mmap is called.\n\
 flags specifies the nature of the mapping. MAP_PRIVATE creates a\n\
 private copy-on-write mapping, so changes to the contents of the mmap\n\
-object will be private to this process, and MAP_SHARED`creates a mapping\n\
+object will be private to this process, and MAP_SHARED creates a mapping\n\
 that's shared with all other processes mapping the same areas of the file.\n\
 The default value is MAP_SHARED.\n\
 \n\
