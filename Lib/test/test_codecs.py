@@ -621,7 +621,7 @@ class UTF8SigTest(ReadTest):
 
     def test_bug1601501(self):
         # SF bug #1601501: check that the codec works with a buffer
-        str(b"\xef\xbb\xbf", "utf-8-sig")
+        self.assertEquals(str(b"\xef\xbb\xbf", "utf-8-sig"), "")
 
     def test_bom(self):
         d = codecs.getincrementaldecoder("utf-8-sig")()
