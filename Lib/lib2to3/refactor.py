@@ -177,6 +177,8 @@ class RefactoringTool(object):
         else:
             fixer_pkg = self.fixer_dir
         fixer_pkg = fixer_pkg.replace(os.path.sep, ".")
+        if os.path.altsep:
+            fixer_pkg = self.fixer_dir.replace(os.path.altsep, ".")
         pre_order_fixers = []
         post_order_fixers = []
         fix_names = self.options.fix
