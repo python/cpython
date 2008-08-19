@@ -196,7 +196,7 @@ class Unparser:
         self.dispatch(t.finalbody)
         self.leave()
 
-    def _excepthandler(self, t):
+    def _ExceptHandler(self, t):
         self.fill("except")
         if t.type:
             self.write(" ")
@@ -223,7 +223,7 @@ class Unparser:
 
     def _FunctionDef(self, t):
         self.write("\n")
-        for deco in t.decorators:
+        for deco in t.decorator_list:
             self.fill("@")
             self.dispatch(deco)
         self.fill("def "+t.name + "(")
