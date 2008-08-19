@@ -19,7 +19,7 @@ functions and constants
  *Note: PC/pyconfig.h defines copysign as _copysign
  */
 #ifndef HAVE_COPYSIGN
-extern double copysign(doube, double);
+extern double copysign(double, double);
 #endif
 
 #ifndef HAVE_ACOSH
