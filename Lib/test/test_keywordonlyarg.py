@@ -75,7 +75,7 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
 
     def testSyntaxErrorForFunctionCall(self):
         self.assertRaisesSyntaxError("f(p, k=1, p2)")
-        self.assertRaisesSyntaxError("f(p, *(1,2), k1=100)")
+        self.assertRaisesSyntaxError("f(p, k1=50, *(1,2), k1=100)")
 
     def testRaiseErrorFuncallWithUnexpectedKeywordArgument(self):
         self.assertRaises(TypeError, keywordonly_sum, ())

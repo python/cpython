@@ -284,6 +284,14 @@ class GrammarTests(unittest.TestCase):
         pos2key2dict(1,2,k2=100,tokwarg1=100,tokwarg2=200)
         pos2key2dict(1,2,tokwarg1=100,tokwarg2=200, k2=100)
 
+        # keyword arguments after *arglist
+        def f(*args, **kwargs):
+            return args, kwargs
+        self.assertEquals(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
+                                                    {'x':2, 'y':5}))
+        self.assertRaises(SyntaxError, eval, "f(1, *(2,3), 4)")
+        self.assertRaises(SyntaxError, eval, "f(1, x=2, *(3,4), x=5)")
+
         # argument annotation tests
         def f(x) -> list: pass
         self.assertEquals(f.__annotations__, {'return': list})
