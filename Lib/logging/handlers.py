@@ -199,7 +199,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         else:
             raise ValueError("Invalid rollover interval specified: %s" % self.when)
 
-        self.extMatch = re.compile(self.extMatch)
+        self.extMatch = re.compile(self.extMatch, re.ASCII)
         self.interval = self.interval * interval # multiply by units requested
         self.rolloverAt = currentTime + self.interval
 

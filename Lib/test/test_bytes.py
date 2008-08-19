@@ -506,7 +506,7 @@ class ByteArrayTest(BaseBytesTest):
         def by(s):
             return bytearray(map(ord, s))
         b = by("Hello, world")
-        self.assertEqual(re.findall(r"\w+", b), [by("Hello"), by("world")])
+        self.assertEqual(re.findall(br"\w+", b), [by("Hello"), by("world")])
 
     def test_setitem(self):
         b = bytearray([1, 2, 3])

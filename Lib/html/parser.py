@@ -385,4 +385,4 @@ class HTMLParser(_markupbase.ParserBase):
                     return '&'+s+';'
 
         return re.sub(r"&(#?[xX]?(?:[0-9a-fA-F]+|\w{1,8}));",
-                      replaceEntities, s)
+                      replaceEntities, s, re.ASCII)

@@ -64,6 +64,7 @@ FLAGS = {
     "s": SRE_FLAG_DOTALL,
     "x": SRE_FLAG_VERBOSE,
     # extensions
+    "a": SRE_FLAG_ASCII,
     "t": SRE_FLAG_TEMPLATE,
     "u": SRE_FLAG_UNICODE,
 }
@@ -672,6 +673,18 @@ def _parse(source, state):
 
     return subpattern
 
+def fix_flags(src, flags):
+    # Check and fix flags according to the type of pattern (str or bytes)
+    if isinstance(src, str):
+        if not flags & SRE_FLAG_ASCII:
+            flags |= SRE_FLAG_UNICODE
+        elif flags & SRE_FLAG_UNICODE:
+            raise ValueError("ASCII and UNICODE flags are incompatible")
+    else:
+        if flags & SRE_FLAG_UNICODE:
+            raise ValueError("can't use UNICODE flag with a bytes pattern")
+    return flags
+
 def parse(str, flags=0, pattern=None):
     # parse 're' pattern into list of (opcode, argument) tuples
 
@@ -683,6 +696,7 @@ def parse(str, flags=0, pattern=None):
     pattern.str = str
 
     p = _parse_sub(source, pattern, 0)
+    p.pattern.flags = fix_flags(str, p.pattern.flags)
 
     tail = source.get()
     if tail == ")":

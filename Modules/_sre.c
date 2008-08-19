@@ -1691,7 +1691,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     /* get pointer to string buffer */
     view.len = -1;
     buffer = Py_TYPE(string)->tp_as_buffer;
-    if (!buffer || !buffer->bf_getbuffer || 
+    if (!buffer || !buffer->bf_getbuffer ||
         (*buffer->bf_getbuffer)(string, &view, PyBUF_SIMPLE) < 0) {
             PyErr_SetString(PyExc_TypeError, "expected string or buffer");
             return NULL;
@@ -1717,7 +1717,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     if (PyBytes_Check(string) || bytes == size)
         charsize = 1;
 #if defined(HAVE_UNICODE)
-    else if (bytes == (Py_ssize_t) (size * sizeof(Py_UNICODE))) 
+    else if (bytes == (Py_ssize_t) (size * sizeof(Py_UNICODE)))
         charsize = sizeof(Py_UNICODE);
 #endif
     else {
@@ -1729,7 +1729,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     *p_charsize = charsize;
 
     if (ptr == NULL) {
-            PyErr_SetString(PyExc_ValueError, 
+            PyErr_SetString(PyExc_ValueError,
                             "Buffer is NULL");
     }
     return ptr;
@@ -1753,6 +1753,17 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     ptr = getstring(string, &length, &charsize);
     if (!ptr)
         return NULL;
+
+	if (charsize == 1 && pattern->charsize > 1) {
+		PyErr_SetString(PyExc_TypeError,
+			"can't use a string pattern on a bytes-like object");
+		return NULL;
+	}
+	if (charsize > 1 && pattern->charsize == 1) {
+		PyErr_SetString(PyExc_TypeError,
+			"can't use a bytes pattern on a string-like object");
+		return NULL;
+	}
 
     /* adjust boundaries */
     if (start < 0)
@@ -2681,6 +2692,16 @@ _compile(PyObject* self_, PyObject* args)
         PyObject_DEL(self);
         return NULL;
     }
+
+	if (pattern == Py_None)
+		self->charsize = -1;
+	else {
+		Py_ssize_t p_length;
+		if (!getstring(pattern, &p_length, &self->charsize)) {
+			PyObject_DEL(self);
+			return NULL;
+		}
+	}
 
     Py_INCREF(pattern);
     self->pattern = pattern;

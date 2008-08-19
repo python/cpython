@@ -81,7 +81,7 @@ def get_platform ():
         return "%s-%s.%s" % (osname, version, release)
     elif osname[:6] == "cygwin":
         osname = "cygwin"
-        rel_re = re.compile (r'[\d.]+')
+        rel_re = re.compile (r'[\d.]+', re.ASCII)
         m = rel_re.match(release)
         if m:
             release = m.group()

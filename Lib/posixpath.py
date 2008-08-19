@@ -241,7 +241,7 @@ def expandvars(path):
         return path
     if not _varprog:
         import re
-        _varprog = re.compile(r'\$(\w+|\{[^}]*\})')
+        _varprog = re.compile(r'\$(\w+|\{[^}]*\})', re.ASCII)
     i = 0
     while True:
         m = _varprog.search(path, i)

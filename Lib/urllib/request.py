@@ -141,7 +141,7 @@ def urlcleanup():
         _opener = None
 
 # copied from cookielib.py
-_cut_port_re = re.compile(r":\d+$")
+_cut_port_re = re.compile(r":\d+$", re.ASCII)
 def request_host(request):
     """Return request-host, as defined by RFC 2965.
 

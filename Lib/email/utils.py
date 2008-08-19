@@ -52,7 +52,7 @@ specialsre = re.compile(r'[][\\()<>@,:;".]')
 escapesre = re.compile(r'[][\\()"]')
 
 
-
+
 # Helpers
 
 def formataddr(pair):
@@ -73,7 +73,7 @@ def formataddr(pair):
     return address
 
 
-
+
 def getaddresses(fieldvalues):
     """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
     all = COMMASPACE.join(fieldvalues)
@@ -81,7 +81,7 @@ def getaddresses(fieldvalues):
     return a.addresslist
 
 
-
+
 ecre = re.compile(r'''
   =\?                   # literal =?
   (?P<charset>[^?]*?)   # non-greedy up to the next ? is the charset
@@ -93,7 +93,7 @@ ecre = re.compile(r'''
   ''', re.VERBOSE | re.IGNORECASE)
 
 
-
+
 def formatdate(timeval=None, localtime=False, usegmt=False):
     """Returns a date string as specified by RFC 2822, e.g.:
 
@@ -146,7 +146,7 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
         zone)
 
 
-
+
 def make_msgid(idstring=None):
     """Returns a string suitable for RFC 2822 compliant Message-ID, e.g:
 
@@ -168,7 +168,7 @@ def make_msgid(idstring=None):
     return msgid
 
 
-
+
 # These functions are in the standalone mimelib version only because they've
 # subsequently been fixed in the latest Python versions.  We use this to worm
 # around broken older Pythons.
@@ -202,7 +202,7 @@ def unquote(str):
     return str
 
 
-
+
 # RFC2231-related functions - parameter encoding and decoding
 def decode_rfc2231(s):
     """Decode string according to RFC 2231"""
@@ -227,7 +227,8 @@ def encode_rfc2231(s, charset=None, language=None):
     return "%s'%s'%s" % (charset, language, s)
 
 
-rfc2231_continuation = re.compile(r'^(?P<name>\w+)\*((?P<num>[0-9]+)\*?)?$')
+rfc2231_continuation = re.compile(r'^(?P<name>\w+)\*((?P<num>[0-9]+)\*?)?$',
+    re.ASCII)
 
 def decode_params(params):
     """Decode parameters list according to RFC 2231.

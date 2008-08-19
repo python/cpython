@@ -67,7 +67,7 @@ def JSONNumber(match, context):
         fn = getattr(context, 'parse_int', None) or int
         res = fn(integer)
     return res, None
-pattern(r'(-?(?:0|[1-9]\d*))(\.\d+)?([eE][-+]?\d+)?')(JSONNumber)
+pattern(r'(-?(?:0|[1-9][0-9]*))(\.[0-9]+)?([eE][-+]?[0-9]+)?')(JSONNumber)
 
 
 STRINGCHUNK = re.compile(r'(.*?)(["\\\x00-\x1f])', FLAGS)

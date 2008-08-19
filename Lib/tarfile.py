@@ -1368,7 +1368,7 @@ class TarInfo(object):
         # "%d %s=%s\n" % (length, keyword, value). length is the size
         # of the complete record including the length field itself and
         # the newline. keyword and value are both UTF-8 encoded strings.
-        regex = re.compile(r"(\d+) ([^=]+)=", re.U)
+        regex = re.compile(br"(\d+) ([^=]+)=")
         pos = 0
         while True:
             match = regex.match(buf, pos)

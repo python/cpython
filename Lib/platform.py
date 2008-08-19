@@ -118,7 +118,7 @@ _libc_search = re.compile(r'(__libc_init)'
                           '|'
                           '(GLIBC_([0-9.]+))'
                           '|'
-                          '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)')
+                          '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
 def libc_ver(executable=sys.executable,lib='',version='',
 
@@ -223,15 +223,15 @@ def _dist_try_harder(distname,version,id):
 
     return distname,version,id
 
-_release_filename = re.compile(r'(\w+)[-_](release|version)')
+_release_filename = re.compile(r'(\w+)[-_](release|version)', re.ASCII)
 _lsb_release_version = re.compile(r'(.+)'
                                    ' release '
                                    '([\d.]+)'
-                                   '[^(]*(?:\((.+)\))?')
+                                   '[^(]*(?:\((.+)\))?', re.ASCII)
 _release_version = re.compile(r'([^0-9]+)'
                                '(?: release )?'
                                '([\d.]+)'
-                               '[^(]*(?:\((.+)\))?')
+                               '[^(]*(?:\((.+)\))?', re.ASCII)
 
 # See also http://www.novell.com/coolsolutions/feature/11251.html
 # and http://linuxmafia.com/faq/Admin/release-files.html
@@ -464,7 +464,7 @@ def _norm_version(version, build=''):
 
 _ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
                          '.*'
-                         'Version ([\d.]+))')
+                         'Version ([\d.]+))', re.ASCII)
 
 def _syscmd_ver(system='', release='', version='',
 
@@ -1253,16 +1253,16 @@ def processor():
 _sys_version_parser = re.compile(
     r'([\w.+]+)\s*'
     '\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
-    '\[([^\]]+)\]?')
+    '\[([^\]]+)\]?', re.ASCII)
 
 _jython_sys_version_parser = re.compile(
-    r'([\d\.]+)')
+    r'([\d\.]+)', re.ASCII)
 
 _ironpython_sys_version_parser = re.compile(
     r'IronPython\s*'
     '([\d\.]+)'
     '(?: \(([\d\.]+)\))?'
-    ' on (.NET [\d\.]+)')
+    ' on (.NET [\d\.]+)', re.ASCII)
 
 _sys_version_cache = {}
 

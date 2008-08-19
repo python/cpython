@@ -70,7 +70,7 @@ for c in (b' !"#$%&\'()*+,-./0123456789:;<>'
     _QUOPRI_BODY_MAP[c] = chr(c)
 
 
-
+
 # Helpers
 def header_check(octet):
     """Return True if the octet should be escaped with header quopri."""
@@ -125,7 +125,7 @@ def quote(c):
     return '=%02X' % ord(c)
 
 
-
+
 def header_encode(header_bytes, charset='iso-8859-1'):
     """Encode a single header line with quoted-printable (like) encoding.
 
@@ -149,7 +149,7 @@ def header_encode(header_bytes, charset='iso-8859-1'):
     return '=?%s?q?%s?=' % (charset, EMPTYSTRING.join(encoded))
 
 
-
+
 def body_encode(body, maxlinelen=76, eol=NL):
     """Encode with quoted-printable, wrapping at maxlinelen characters.
 
@@ -225,7 +225,7 @@ def body_encode(body, maxlinelen=76, eol=NL):
     return encoded_body
 
 
-
+
 # BAW: I'm not sure if the intent was for the signature of this function to be
 # the same as base64MIME.decode() or not...
 def decode(encoded, eol=NL):
@@ -280,7 +280,7 @@ body_decode = decode
 decodestring = decode
 
 
-
+
 def _unquote_match(match):
     """Turn a match in the form =AB to the ASCII character with value 0xab"""
     s = match.group(0)
@@ -296,4 +296,4 @@ def header_decode(s):
     the high level email.Header class for that functionality.
     """
     s = s.replace('_', ' ')
-    return re.sub(r'=\w{2}', _unquote_match, s)
+    return re.sub(r'=\w{2}', _unquote_match, s, re.ASCII)

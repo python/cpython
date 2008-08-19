@@ -207,9 +207,10 @@ SRE_FLAG_IGNORECASE = 2 # case insensitive
 SRE_FLAG_LOCALE = 4 # honour system locale
 SRE_FLAG_MULTILINE = 8 # treat target as multiline string
 SRE_FLAG_DOTALL = 16 # treat target as a single string
-SRE_FLAG_UNICODE = 32 # use unicode locale
+SRE_FLAG_UNICODE = 32 # use unicode "locale"
 SRE_FLAG_VERBOSE = 64 # ignore whitespace and comments
 SRE_FLAG_DEBUG = 128 # debugging
+SRE_FLAG_ASCII = 256 # use ascii "locale"
 
 # flags for INFO primitive
 SRE_INFO_PREFIX = 1 # has prefix

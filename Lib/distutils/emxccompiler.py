@@ -300,7 +300,7 @@ def get_versions():
         out = os.popen(gcc_exe + ' -dumpversion','r')
         out_string = out.read()
         out.close()
-        result = re.search('(\d+\.\d+\.\d+)',out_string)
+        result = re.search('(\d+\.\d+\.\d+)', out_string, re.ASCII)
         if result:
             gcc_version = StrictVersion(result.group(1))
         else:

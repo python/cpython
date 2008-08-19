@@ -590,7 +590,8 @@ def parse150(resp):
     global _150_re
     if _150_re is None:
         import re
-        _150_re = re.compile("150 .* \((\d+) bytes\)", re.IGNORECASE)
+        _150_re = re.compile(
+            "150 .* \((\d+) bytes\)", re.IGNORECASE | re.ASCII)
     m = _150_re.match(resp)
     if not m:
         return None
@@ -613,7 +614,7 @@ def parse227(resp):
     global _227_re
     if _227_re is None:
         import re
-        _227_re = re.compile(r'(\d+),(\d+),(\d+),(\d+),(\d+),(\d+)')
+        _227_re = re.compile(r'(\d+),(\d+),(\d+),(\d+),(\d+),(\d+)', re.ASCII)
     m = _227_re.search(resp)
     if not m:
         raise error_proto(resp)
