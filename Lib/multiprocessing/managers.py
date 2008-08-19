@@ -444,7 +444,7 @@ class BaseManager(object):
 
     def __init__(self, address=None, authkey=None, serializer='pickle'):
         if authkey is None:
-            authkey = current_process().get_authkey()
+            authkey = current_process().authkey
         self._address = address     # XXX not final address if eg ('', 0)
         self._authkey = AuthenticationString(authkey)
         self._state = State()
@@ -489,7 +489,7 @@ class BaseManager(object):
                   self._serializer, writer),
             )
         ident = ':'.join(str(i) for i in self._process._identity)
-        self._process.set_name(type(self).__name__  + '-' + ident)
+        self._process.name = type(self).__name__  + '-' + ident
         self._process.start()
 
         # get address of server
@@ -690,7 +690,7 @@ class BaseProxy(object):
         elif self._manager is not None:
             self._authkey = self._manager._authkey
         else:
-            self._authkey = current_process().get_authkey()
+            self._authkey = current_process().authkey
 
         if incref:
             self._incref()
@@ -699,7 +699,7 @@ class BaseProxy(object):
 
     def _connect(self):
         util.debug('making connection to manager')
-        name = current_process().get_name()
+        name = current_process().name
         if threading.current_thread().name != 'MainThread':
             name += '|' + threading.current_thread().name
         conn = self._Client(self._token.address, authkey=self._authkey)
@@ -880,7 +880,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
     if authkey is None and manager is not None:
         authkey = manager._authkey
     if authkey is None:
-        authkey = current_process().get_authkey()
+        authkey = current_process().authkey
 
     ProxyType = MakeProxyType('AutoProxy[%s]' % token.typeid, exposed)
     proxy = ProxyType(token, serializer, manager=manager, authkey=authkey,

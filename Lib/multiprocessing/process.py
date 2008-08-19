@@ -132,45 +132,43 @@ class Process(object):
         self._popen.poll()
         return self._popen.returncode is None
 
-    def get_name(self):
-        '''
-        Return name of process
-        '''
+    @property
+    def name(self):
         return self._name
 
-    def set_name(self, name):
-        '''
-        Set name of process
-        '''
+    @name.setter
+    def name(self, name):
         assert isinstance(name, str), 'name must be a string'
         self._name = name
 
-    def is_daemon(self):
+    @property
+    def daemon(self):
         '''
         Return whether process is a daemon
         '''
         return self._daemonic
 
-    def set_daemon(self, daemonic):
+    @daemon.setter
+    def daemon(self, daemonic):
         '''
         Set whether process is a daemon
         '''
         assert self._popen is None, 'process has already started'
         self._daemonic = daemonic
 
-    def get_authkey(self):
-        '''
-        Return authorization key of process
-        '''
+    @property
+    def authkey(self):
         return self._authkey
 
-    def set_authkey(self, authkey):
+    @authkey.setter
+    def authkey(self, authkey):
         '''
         Set authorization key of process
         '''
         self._authkey = AuthenticationString(authkey)
 
-    def get_exitcode(self):
+    @property
+    def exitcode(self):
         '''
         Return exit code of process or `None` if it has yet to stop
         '''
@@ -178,7 +176,8 @@ class Process(object):
             return self._popen
         return self._popen.poll()
 
-    def get_ident(self):
+    @property
+    def ident(self):
         '''
         Return indentifier (PID) of process or `None` if it has yet to start
         '''
@@ -187,7 +186,7 @@ class Process(object):
         else:
             return self._popen and self._popen.pid
 
-    pid = property(get_ident)
+    pid = ident
 
     def __repr__(self):
         if self is _current_process:
@@ -198,7 +197,7 @@ class Process(object):
             status = 'initial'
         else:
             if self._popen.poll() is not None:
-                status = self.get_exitcode()
+                status = self.exitcode
             else:
                 status = 'started'
 
@@ -245,7 +244,7 @@ class Process(object):
         except:
             exitcode = 1
             import traceback
-            sys.stderr.write('Process %s:\n' % self.get_name())
+            sys.stderr.write('Process %s:\n' % self.name)
             sys.stderr.flush()
             traceback.print_exc()
 

@@ -29,7 +29,7 @@ def worker(input, output):
 def calculate(func, args):
     result = func(*args)
     return '%s says that %s%s = %s' % \
-        (current_process().get_name(), func.__name__, args, result)
+        (current_process().name, func.__name__, args, result)
 
 #
 # Functions referenced by tasks
