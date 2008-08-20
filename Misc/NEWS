@@ -164,6 +164,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue 1179: [CVE-2007-4965] Integer overflow in imageop module.
+  Also fixes rgbimg module.
+
 - Issue #3205: When iterating over a BZ2File fails allocating memory, raise
   a MemoryError rather than silently stop the iteration.
 
