@@ -564,6 +564,28 @@ class ExceptionTests(unittest.TestCase):
             pass
         self.assertEquals(e, (None, None, None))
 
+    def test_3118(self):
+        def gen():
+            try:
+                yield 1
+            finally:
+                pass
+
+        def f():
+            g = gen()
+            next(g)
+            try:
+                try:
+                    raise ValueError
+                except:
+                    del g
+                    raise KeyError
+            except Exception as e:
+                self.assert_(isinstance(e.__context__, ValueError))
+
+        f()
+
+
     def test_badisinstance(self):
         # Bug #2542: if issubclass(e, MyException) raises an exception,
         # it should be ignored
