@@ -1203,7 +1203,7 @@ class Transport:
         headers = {}
         if extra_headers:
             for key, val in extra_headers:
-                header[key] = val
+                headers[key] = val
         headers["Content-Type"] = "text/xml"
         headers["User-Agent"] = self.user_agent
         connection.request("POST", handler, request_body, headers)
@@ -1271,7 +1271,7 @@ class SafeTransport(Transport):
         headers = {}
         if extra_headers:
             for key, val in extra_headers:
-                header[key] = val
+                headers[key] = val
         headers["Content-Type"] = "text/xml"
         headers["User-Agent"] = self.user_agent
         connection.request("POST", handler, request_body, headers)

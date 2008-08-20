@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3614: Corrected a typo in xmlrpc.client, leading to a NameError
+  "global name 'header' is not defined".
+
 - Issue #2834: update the regular expression library to match the unicode
   standards of py3k. In other words, mixing bytes and unicode strings
   (be it as pattern, search string or replacement string) raises a TypeError.
