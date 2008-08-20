@@ -95,19 +95,19 @@ Examining Symbol Tables
 
    .. method:: get_parameters()
 
-      Return a set containing names of parameters to this function.
+      Return a tuple containing names of parameters to this function.
 
    .. method:: get_locals()
 
-      Return a set containing names of locals in this function.
+      Return a tuple containing names of locals in this function.
 
    .. method:: get_globals()
 
-      Return a set containing names of globals in this function.
+      Return a tuple containing names of globals in this function.
 
    .. method:: get_frees()
 
-      Return a set containing names of free variables in this function.
+      Return a tuple containing names of free variables in this function.
 
 
 .. class:: Class
@@ -116,7 +116,7 @@ Examining Symbol Tables
 
    .. method:: get_methods()
 
-      Return a set containing the names of methods declared in the class.
+      Return a tuple containing the names of methods declared in the class.
 
 
 .. class:: Symbol

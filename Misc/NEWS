@@ -249,9 +249,6 @@ Extension Modules
 Library
 -------
 
-- symtable.Function's ``get_locals()``, ``get_globals()``, ``get_parameters()``,
-  and ``get_frees()`` and symtable.Class's ``get_methods()`` now return sets.
-
 - The methods ``is_in_tuple()``, ``is_vararg()``, and ``is_keywordarg()`` of
   symtable.Symbol have been removed.
 
