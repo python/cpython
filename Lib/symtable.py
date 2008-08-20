@@ -8,15 +8,14 @@ from _symtable import (USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM,
 
 import weakref
 
-__all__ = ["symtable", "SymbolTable", "newSymbolTable", "Class",
-           "Function", "Symbol"]
+__all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
 
 def symtable(code, filename, compile_type):
     raw = _symtable.symtable(code, filename, compile_type)
     for top in raw.values():
         if top.name == 'top':
             break
-    return newSymbolTable(top, filename)
+    return _newSymbolTable(top, filename)
 
 class SymbolTableFactory:
     def __init__(self):
@@ -36,7 +35,7 @@ class SymbolTableFactory:
             obj = self.__memo[key] = self.new(table, filename)
         return obj
 
-newSymbolTable = SymbolTableFactory()
+_newSymbolTable = SymbolTableFactory()
 
 
 class SymbolTable(object):
@@ -111,12 +110,12 @@ class SymbolTable(object):
         return [self.lookup(ident) for ident in self.get_identifiers()]
 
     def __check_children(self, name):
-        return [newSymbolTable(st, self._filename)
+        return [_newSymbolTable(st, self._filename)
                 for st in self._table.children
                 if st.name == name]
 
     def get_children(self):
-        return [newSymbolTable(st, self._filename)
+        return [_newSymbolTable(st, self._filename)
                 for st in self._table.children]
 
 
