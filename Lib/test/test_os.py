@@ -296,13 +296,9 @@ class StatAttributeTests(unittest.TestCase):
         def get_file_system(path):
             root = os.path.splitdrive(os.path.abspath(path))[0] + '\\'
             import ctypes
-            from ctypes.wintypes import LPCWSTR, LPWSTR, DWORD
-            LPDWORD = ctypes.POINTER(DWORD)
-            f = ctypes.windll.kernel32.GetVolumeInformationW
-            f.argtypes = (LPCWSTR, LPWSTR, DWORD,
-                LPDWORD, LPDWORD, LPDWORD, LPWSTR, DWORD)
-            buf = ctypes.create_unicode_buffer("", 100)
-            if f(root, None, 0, None, None, None, buf, len(buf)):
+            kernel32 = ctypes.windll.kernel32
+            buf = ctypes.create_string_buffer("", 100)
+            if kernel32.GetVolumeInformationA(root, None, 0, None, None, None, buf, len(buf)):
                 return buf.value
 
         if get_file_system(test_support.TESTFN) == "NTFS":
