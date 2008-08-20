@@ -80,11 +80,11 @@ class SymtableTest(unittest.TestCase):
 
     def test_function_info(self):
         func = self.spam
-        self.assertEqual(func.get_parameters(), ("a", "b", "kw", "var"))
+        self.assertEqual(func.get_parameters(), {"a", "b", "kw", "var"})
         self.assertEqual(func.get_locals(),
-                         ("a", "b", "bar", "glob", "internal", "kw", "var", "x"))
-        self.assertEqual(func.get_globals(), ("bar", "glob"))
-        self.assertEqual(self.internal.get_frees(), ("x",))
+                         {"a", "b", "bar", "glob", "internal", "kw", "var", "x"})
+        self.assertEqual(func.get_globals(), {"bar", "glob"})
+        self.assertEqual(self.internal.get_frees(), {"x"})
 
     def test_globals(self):
         self.assertTrue(self.spam.lookup("glob").is_global())
@@ -142,7 +142,7 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.Mine.get_name(), "Mine")
 
     def test_class_info(self):
-        self.assertEqual(self.Mine.get_methods(), ('a_method',))
+        self.assertEqual(self.Mine.get_methods(), {'a_method'})
 
     def test_filename_correct(self):
         ### Bug tickler: SyntaxError file name correct whether error raised

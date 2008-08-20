@@ -129,8 +129,8 @@ class Function(SymbolTable):
     __globals = None
 
     def __idents_matching(self, test_func):
-        return tuple([ident for ident in self.get_identifiers()
-                      if test_func(self._table.symbols[ident])])
+        return frozenset(ident for ident in self.get_identifiers()
+                         if test_func(self._table.symbols[ident]))
 
     def get_parameters(self):
         if self.__params is None:
@@ -165,7 +165,7 @@ class Class(SymbolTable):
             d = {}
             for st in self._table.children:
                 d[st.name] = 1
-            self.__methods = tuple(d)
+            self.__methods = frozenset(d)
         return self.__methods
 
 
