@@ -54,6 +54,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3612: Added some missing basic types in ctypes.wintypes.
+
 - The methods ``is_in_tuple()``, ``is_vararg()``, and ``is_keywordarg()`` of
   symtable.Symbol have been deprecated for removal in 3.0 and the next release.
 

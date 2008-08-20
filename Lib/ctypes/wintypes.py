@@ -11,8 +11,10 @@ DWORD = c_ulong
 
 WCHAR = c_wchar
 UINT = c_uint
+INT = c_int
 
 DOUBLE = c_double
+FLOAT = c_float
 
 BOOLEAN = BYTE
 BOOL = c_long
@@ -26,6 +28,9 @@ class VARIANT_BOOL(_SimpleCData):
 ULONG = c_ulong
 LONG = c_long
 
+USHORT = c_ushort
+SHORT = c_short
+
 # in the windows header files, these are structures.
 _LARGE_INTEGER = LARGE_INTEGER = c_longlong
 _ULARGE_INTEGER = ULARGE_INTEGER = c_ulonglong
@@ -33,6 +38,7 @@ _ULARGE_INTEGER = ULARGE_INTEGER = c_ulonglong
 LPCOLESTR = LPOLESTR = OLESTR = c_wchar_p
 LPCWSTR = LPWSTR = c_wchar_p
 LPCSTR = LPSTR = c_char_p
+LPCVOID = LPVOID = c_void_p
 
 # WPARAM is defined as UINT_PTR (unsigned type)
 # LPARAM is defined as LONG_PTR (signed type)
@@ -161,18 +167,19 @@ class WIN32_FIND_DATAW(Structure):
                 ("cFileName", c_wchar * MAX_PATH),
                 ("cAlternateFileName", c_wchar * 14)]
 
-__all__ = ['ATOM', 'BOOL', 'BOOLEAN', 'BYTE', 'COLORREF', 'DOUBLE',
-           'DWORD', 'FILETIME', 'HACCEL', 'HANDLE', 'HBITMAP', 'HBRUSH',
+__all__ = ['ATOM', 'BOOL', 'BOOLEAN', 'BYTE', 'COLORREF', 'DOUBLE', 'DWORD',
+           'FILETIME', 'FLOAT', 'HACCEL', 'HANDLE', 'HBITMAP', 'HBRUSH',
            'HCOLORSPACE', 'HDC', 'HDESK', 'HDWP', 'HENHMETAFILE', 'HFONT',
            'HGDIOBJ', 'HGLOBAL', 'HHOOK', 'HICON', 'HINSTANCE', 'HKEY',
            'HKL', 'HLOCAL', 'HMENU', 'HMETAFILE', 'HMODULE', 'HMONITOR',
            'HPALETTE', 'HPEN', 'HRGN', 'HRSRC', 'HSTR', 'HTASK', 'HWINSTA',
-           'HWND', 'LANGID', 'LARGE_INTEGER', 'LCID', 'LCTYPE', 'LGRPID',
-           'LONG', 'LPARAM', 'LPCOLESTR', 'LPCSTR', 'LPCWSTR', 'LPOLESTR',
-           'LPSTR', 'LPWSTR', 'MAX_PATH', 'MSG', 'OLESTR', 'POINT',
-           'POINTL', 'RECT', 'RECTL', 'RGB', 'SC_HANDLE',
-           'SERVICE_STATUS_HANDLE', 'SIZE', 'SIZEL', 'SMALL_RECT', 'UINT',
-           'ULARGE_INTEGER', 'ULONG', 'VARIANT_BOOL', 'WCHAR',
-           'WIN32_FIND_DATAA', 'WIN32_FIND_DATAW', 'WORD', 'WPARAM', '_COORD',
-           '_FILETIME', '_LARGE_INTEGER', '_POINTL', '_RECTL', '_SMALL_RECT',
-           '_ULARGE_INTEGER', 'tagMSG', 'tagPOINT', 'tagRECT', 'tagSIZE']
+           'HWND', 'INT', 'LANGID', 'LARGE_INTEGER', 'LCID', 'LCTYPE',
+           'LGRPID', 'LONG', 'LPARAM', 'LPCOLESTR', 'LPCSTR', 'LPCVOID',
+           'LPCWSTR', 'LPOLESTR', 'LPSTR', 'LPVOID', 'LPWSTR', 'MAX_PATH',
+           'MSG', 'OLESTR', 'POINT', 'POINTL', 'RECT', 'RECTL', 'RGB',
+           'SC_HANDLE', 'SERVICE_STATUS_HANDLE', 'SHORT', 'SIZE', 'SIZEL',
+           'SMALL_RECT', 'UINT', 'ULARGE_INTEGER', 'ULONG', 'USHORT',
+           'VARIANT_BOOL', 'WCHAR', 'WIN32_FIND_DATAA', 'WIN32_FIND_DATAW',
+           'WORD', 'WPARAM', '_COORD', '_FILETIME', '_LARGE_INTEGER',
+           '_POINTL', '_RECTL', '_SMALL_RECT', '_ULARGE_INTEGER', 'tagMSG',
+           'tagPOINT', 'tagRECT', 'tagSIZE']
