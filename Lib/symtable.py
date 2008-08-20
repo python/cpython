@@ -2,7 +2,6 @@
 
 import _symtable
 from _symtable import (USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM,
-     DEF_STAR, DEF_DOUBLESTAR, DEF_INTUPLE, DEF_FREE,
      DEF_FREE_GLOBAL, DEF_FREE_CLASS, DEF_IMPORT, DEF_BOUND,
      OPT_IMPORT_STAR, SCOPE_OFF, SCOPE_MASK, FREE,
      GLOBAL_IMPLICIT, GLOBAL_EXPLICIT)
@@ -193,12 +192,6 @@ class Symbol(object):
     def is_global(self):
         return bool(self.__scope in (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT))
 
-    def is_vararg(self):
-        return bool(self.__flags & DEF_STAR)
-
-    def is_keywordarg(self):
-        return bool(self.__flags & DEF_DOUBLESTAR)
-
     def is_local(self):
         return bool(self.__flags & DEF_BOUND)
 
@@ -210,9 +203,6 @@ class Symbol(object):
 
     def is_assigned(self):
         return bool(self.__flags & DEF_LOCAL)
-
-    def is_in_tuple(self):
-        return bool(self.__flags & DEF_INTUPLE)
 
     def is_namespace(self):
         """Returns true if name binding introduces new namespace.

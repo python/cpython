@@ -249,6 +249,9 @@ Extension Modules
 Library
 -------
 
+- The methods ``is_in_tuple()``, ``is_vararg()``, and ``is_keywordarg()`` of
+  symtable.Symbol have been removed.
+
 - Patch #3133: http.server.CGIHTTPRequestHandler did not work on windows.
 
 - a new ``urllib`` package was created.  It consists of code from
