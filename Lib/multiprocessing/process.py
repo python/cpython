@@ -219,10 +219,11 @@ class Process(object):
         try:
             self._children = set()
             self._counter = itertools.count(1)
-            try:
-                os.close(sys.stdin.fileno())
-            except (OSError, ValueError):
-                pass
+            if sys.stdin is not None:
+                try:
+                    os.close(sys.stdin.fileno())
+                except (OSError, ValueError):
+                    pass
             _current_process = self
             util._finalizer_registry.clear()
             util._run_after_forkers()
