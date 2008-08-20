@@ -405,6 +405,7 @@ Core and Builtins
 
 Extension Modules
 -----------------
+- Issue #1179: [CVE-2007-4965] Integer overflow in imageop module.
 
 - Issue #3116:  marshal.dumps() had quadratic behavior for strings > 32Mb.
 
