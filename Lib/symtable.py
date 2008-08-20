@@ -15,7 +15,7 @@ def symtable(code, filename, compile_type):
     for top in raw.itervalues():
         if top.name == 'top':
             break
-    return newSymbolTable(top, filename)
+    return _newSymbolTable(top, filename)
 
 class SymbolTableFactory:
     def __init__(self):
@@ -110,12 +110,12 @@ class SymbolTable(object):
         return [self.lookup(ident) for ident in self.get_identifiers()]
 
     def __check_children(self, name):
-        return [newSymbolTable(st, self._filename)
+        return [_newSymbolTable(st, self._filename)
                 for st in self._table.children
                 if st.name == name]
 
     def get_children(self):
-        return [newSymbolTable(st, self._filename)
+        return [_newSymbolTable(st, self._filename)
                 for st in self._table.children]
 
 
