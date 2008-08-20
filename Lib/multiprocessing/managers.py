@@ -45,6 +45,8 @@ if view_types[0] is not list:       # only needed in Py3.0
         return list, (list(obj),)
     for view_type in view_types:
         ForkingPickler.register(view_type, rebuild_as_list)
+        import copyreg
+        copyreg.pickle(view_type, rebuild_as_list)
 
 #
 # Type for identifying shared objects
