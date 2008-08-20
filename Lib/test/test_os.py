@@ -294,12 +294,15 @@ class StatAttributeTests(unittest.TestCase):
     # systems support centiseconds
     if sys.platform == 'win32':
         def get_file_system(path):
-            import os
-            root = os.path.splitdrive(os.path.realpath("."))[0] + '\\'
+            root = os.path.splitdrive(os.path.abspath(path))[0] + '\\'
             import ctypes
-            kernel32 = ctypes.windll.kernel32
-            buf = ctypes.create_string_buffer("", 100)
-            if kernel32.GetVolumeInformationA(root, None, 0, None, None, None, buf, len(buf)):
+            from ctypes.wintypes import LPCWSTR, LPWSTR, DWORD
+            LPDWORD = ctypes.POINTER(DWORD)
+            f = ctypes.windll.kernel32.GetVolumeInformationW
+            f.argtypes = (LPCWSTR, LPWSTR, DWORD,
+                LPDWORD, LPDWORD, LPDWORD, LPWSTR, DWORD)
+            buf = ctypes.create_unicode_buffer("", 100)
+            if f(root, None, 0, None, None, None, buf, len(buf)):
                 return buf.value
 
         if get_file_system(test_support.TESTFN) == "NTFS":
