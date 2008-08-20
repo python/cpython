@@ -64,6 +64,15 @@ class CompilerTest(unittest.TestCase):
     def testYieldExpr(self):
         compiler.compile("def g(): yield\n\n", "<string>", "exec")
 
+    def testKeywordAfterStarargs(self):
+        def f(*args, **kwargs):
+            self.assertEqual((args, kwargs), ((2,3), {'x': 1, 'y': 4}))
+        c = compiler.compile('f(x=1, *(2, 3), y=4)', '<string>', 'exec')
+        exec c in {'f': f}
+
+        self.assertRaises(SyntaxError, compiler.parse, "foo(a=1, b)")
+        self.assertRaises(SyntaxError, compiler.parse, "foo(1, *args, 3)")
+
     def testTryExceptFinally(self):
         # Test that except and finally clauses in one try stmt are recognized
         c = compiler.compile("try:\n 1/0\nexcept:\n e = 1\nfinally:\n f = 1",
