@@ -66,6 +66,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr("foo(a, b, c, *args)")
         self.check_expr("foo(a, b, c, *args, **kw)")
         self.check_expr("foo(a, b, c, **kw)")
+        self.check_expr("foo(a, *args, keyword=23)")
         self.check_expr("foo + bar")
         self.check_expr("foo - bar")
         self.check_expr("foo * bar")
