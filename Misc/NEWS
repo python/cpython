@@ -12,6 +12,14 @@ What's New in Python 2.6 beta 3?
 Core and Builtins
 -----------------
 
+- Issue #1878: Remove Py_TPFLAGS_HAVE_VERSION_TAG from
+  Py_TPFLAGS_DEFAULT when not building the core.  This means 3rd party
+  extensions do not automatically benefit from the class attribute
+  cache; they will have to explicitly add Py_TPFLAGS_HAVE_VERSION_TAG
+  to their tp_flags field if they care.  This is a backwards
+  compatibility feature; in 3.0, all types will use the cache by
+  default.
+
 - Keyword arguments can now follow starred arguments. (``f(a, *args,
   keyword=23)`` is now valid syntax.)
 
