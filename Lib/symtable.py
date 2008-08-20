@@ -8,8 +8,7 @@ from _symtable import (USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM,
 import warnings
 import weakref
 
-__all__ = ["symtable", "SymbolTable", "newSymbolTable", "Class",
-           "Function", "Symbol"]
+__all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
 
 def symtable(code, filename, compile_type):
     raw = _symtable.symtable(code, filename, compile_type)
@@ -36,7 +35,7 @@ class SymbolTableFactory:
             obj = self.__memo[key] = self.new(table, filename)
         return obj
 
-newSymbolTable = SymbolTableFactory()
+_newSymbolTable = SymbolTableFactory()
 
 
 class SymbolTable(object):
