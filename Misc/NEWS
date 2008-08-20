@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- The methods ``is_in_tuple()``, ``is_vararg()``, and ``is_keywordarg()`` of
+  symtable.Symbol have been deprecated for removal in 3.0 and the next release.
+
 - Issue #2234: distutils failed for some versions of the cygwin compiler. The
   version reported by these tools does not necessarily follow the python
   version numbering scheme, so the module is less strict when parsing it.

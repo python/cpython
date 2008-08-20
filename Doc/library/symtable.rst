@@ -144,15 +144,6 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is global.
 
-   .. method:: is_vararg()
-
-      Return ``True`` if the symbol is a star arg (receives varargs).
-
-   .. method:: is_kewordarg()
-
-      Return ``True`` if the symbol is a two-star arg (receives keyword
-      arguments).
-
    .. method:: is_local()
 
       Return ``True`` if the symbol is local to its block.
