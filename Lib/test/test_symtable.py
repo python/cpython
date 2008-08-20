@@ -55,6 +55,22 @@ class SymtableTest(unittest.TestCase):
     internal = find_block(spam, "internal")
     foo = find_block(top, "foo")
 
+    def test_noops(self):
+        # Check methods that don't work. They should warn and return False.
+        def check(w, msg):
+            self.assertEqual(str(w.message), msg)
+        sym = self.top.lookup("glob")
+        with test_support.catch_warning() as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            self.assertFalse(sym.is_vararg())
+            check(w, "is_vararg() is obsolete and will be removed")
+            w.reset()
+            self.assertFalse(sym.is_keywordarg())
+            check(w, "is_keywordarg() is obsolete and will be removed")
+            w.reset()
+            self.assertFalse(sym.is_in_tuple())
+            check(w, "is_in_tuple() is obsolete and will be removed")
+
     def test_type(self):
         self.assertEqual(self.top.get_type(), "module")
         self.assertEqual(self.Mine.get_type(), "class")
