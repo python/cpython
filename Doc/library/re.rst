@@ -173,11 +173,11 @@ The special characters are:
    ``'m'``, or ``'$'``; ``[a-z]`` will match any lowercase letter, and
    ``[a-zA-Z0-9]`` matches any letter or digit.  Character classes such
    as ``\w`` or ``\S`` (defined below) are also acceptable inside a
-   range, although the characters they match depends on whether :const:`LOCALE`
-   or  :const:`UNICODE` mode is in force.  If you want to include a
-   ``']'`` or a ``'-'`` inside a set, precede it with a backslash, or
-   place it as the first character.  The pattern ``[]]`` will match
-   ``']'``, for example.
+   range, although the characters they match depends on whether
+   :const:`ASCII` or  :const:`LOCALE` mode is in force.  If you want to
+   include a ``']'`` or a ``'-'`` inside a set, precede it with a
+   backslash, or place it as the first character.  The pattern ``[]]``
+   will match ``']'``, for example.
 
    You can match the characters not within a range by :dfn:`complementing` the set.
    This is indicated by including a ``'^'`` as the first character of the set;
@@ -493,7 +493,8 @@ form.
           IGNORECASE
 
    Perform case-insensitive matching; expressions like ``[A-Z]`` will match
-   lowercase letters, too.  This is not affected by the current locale.
+   lowercase letters, too.  This is not affected by the current locale
+   and works for Unicode characters as expected.
 
 
 .. data:: L
