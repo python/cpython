@@ -140,16 +140,6 @@ Object Protocol
    and, therefore, by the :func:`print` function.
 
 
-.. cfunction:: PyObject* PyObject_Unicode(PyObject *o)
-
-   .. index:: builtin: unicode
-
-   Compute a Unicode string representation of object *o*.  Returns the Unicode
-   string representation on success, *NULL* on failure. This is the equivalent of
-   the Python expression ``unicode(o)``.  Called by the :func:`unicode` built-in
-   function.
-
-
 .. cfunction:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 
    Returns ``1`` if *inst* is an instance of the class *cls* or a subclass of
