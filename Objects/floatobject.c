@@ -1041,7 +1041,6 @@ char_from_hex(int x)
 static int
 hex_from_char(char c) {
 	int x;
-	assert(isxdigit(c));
 	switch(c) {
 	case '0':
 		x = 0;
@@ -1271,12 +1270,12 @@ float_fromhex(PyObject *cls, PyObject *arg)
 
 	/* coefficient: <integer> [. <fraction>] */
 	coeff_start = s;
-	while (isxdigit(*s))
+	while (hex_from_char(*s) >= 0)
 		s++;
 	s_store = s;
 	if (*s == '.') {
 		s++;
-		while (isxdigit(*s))
+		while (hex_from_char(*s) >= 0)
 			s++;
 		coeff_end = s-1;
 	}
@@ -1298,10 +1297,10 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		exp_start = s;
 		if (*s == '-' || *s == '+')
 			s++;
-		if (!isdigit(*s))
+		if (!('0' <= *s && *s <= '9'))
 			goto parse_error;
 		s++;
-		while (isdigit(*s))
+		while ('0' <= *s && *s <= '9')
 			s++;
 		exp = strtol(exp_start, NULL, 10);
 	}
