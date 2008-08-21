@@ -302,6 +302,28 @@ class TestContext(unittest.TestCase):
         except NameError as e:
             self.failUnless(e.__context__.__context__ is None)
 
+    def test_3118(self):
+        # deleting the generator caused the __context__ to be cleared
+        def gen():
+            try:
+                yield 1
+            finally:
+                pass
+
+        def f():
+            g = gen()
+            next(g)
+            try:
+                try:
+                    raise ValueError
+                except:
+                    del g
+                    raise KeyError
+            except Exception as e:
+                self.assert_(isinstance(e.__context__, ValueError))
+
+        f()
+
 
 class TestRemovedFunctionality(unittest.TestCase):
     def test_tuples(self):
