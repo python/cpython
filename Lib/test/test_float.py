@@ -417,7 +417,13 @@ class HexFloatTestCase(unittest.TestCase):
             '0x1p0\0 0x1p0',  # embedded null byte is not end of string
             ]
         for x in invalid_inputs:
-            self.assertRaises(ValueError, fromHex, x)
+            try:
+                result = fromHex(x)
+            except ValueError:
+                pass
+            else:
+                self.fail('Expected float.fromhex(%r) to raise ValueError; '
+                          'got %r instead' % (x, result))
 
 
     def test_from_hex(self):
