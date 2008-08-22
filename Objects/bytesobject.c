@@ -1163,8 +1163,11 @@ string_split(PyBytesObject *self, PyObject *args)
 		PyBuffer_Release(&vsub);
 		return NULL;
 	}
-	else if (n == 1)
-		return split_char(self, len, sub[0], maxsplit);
+	else if (n == 1) {
+		list = split_char(self, len, sub[0], maxsplit);
+		PyBuffer_Release(&vsub);
+		return list;
+	}
 
 	list = PyList_New(PREALLOC_SIZE(maxsplit));
 	if (list == NULL) {
@@ -1379,8 +1382,11 @@ string_rsplit(PyBytesObject *self, PyObject *args)
 		PyBuffer_Release(&vsub);
 		return NULL;
 	}
-	else if (n == 1)
-		return rsplit_char(self, len, sub[0], maxsplit);
+	else if (n == 1) {
+		list = rsplit_char(self, len, sub[0], maxsplit);
+		PyBuffer_Release(&vsub);
+		return list;
+	}
 
 	list = PyList_New(PREALLOC_SIZE(maxsplit));
 	if (list == NULL) {
