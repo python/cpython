@@ -517,7 +517,7 @@ new_arena(void)
 #endif
 	if (unused_arena_objects == NULL) {
 		uint i;
-		uint numarenas;
+		size_t numarenas;
 		size_t nbytes;
 
 		/* Double the number of arena objects on each allocation.
