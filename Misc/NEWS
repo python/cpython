@@ -12,6 +12,8 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #3650: Fixed a reference leak in bytes.split('x').
+
 Library
 -------
 
