@@ -1098,6 +1098,7 @@ bytes_dealloc(PyByteArrayObject *self)
 #define STRINGLIB_EMPTY nullbytes
 #define STRINGLIB_CHECK_EXACT PyByteArray_CheckExact
 #define STRINGLIB_MUTABLE 1
+#define FROM_BYTEARRAY 1
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"

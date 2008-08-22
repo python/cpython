@@ -15,6 +15,9 @@ Core and Builtins
 - Issue #3642: Changed type of numarenas from uint to size_t
   in order to silence a compilier warning on 64bit OSes.
 
+- Silenced another compiler warning about a used but not defined
+  function 'stringlib_contains_obj'.
+
 Library
 -------
 
