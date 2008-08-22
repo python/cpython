@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Silenced a trivial compiler warning in the sqlite module.
+
 
 What's New in Python 2.6 beta 3?
 ================================
