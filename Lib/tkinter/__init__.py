@@ -2654,11 +2654,13 @@ class Menu(Widget):
         if index2 is None:
             index2 = index1
         cmds = []
-        for i in range(self.index(index1), self.index(index2)+1):
-            if 'command' in self.entryconfig(i):
-                c = str(self.entrycget(i, 'command'))
-                if c in self._tclCommands:
-                    cmds.append(c)
+        (num_index1, num_index2) = (self.index(index1), self.index(index2))
+        if (num_index1 is not None) and (num_index2 is not None):
+            for i in range(num_index1, num_index2 + 1):
+                if 'command' in self.entryconfig(i):
+                    c = str(self.entrycget(i, 'command'))
+                    if c in self._tclCommands:
+                        cmds.append(c)
         self.tk.call(self._w, 'delete', index1, index2)
         for c in cmds:
             self.deletecommand(c)
