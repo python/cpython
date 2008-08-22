@@ -670,7 +670,7 @@ deque_repr(PyObject *deque)
 		return NULL;
 	}
 	if (((dequeobject *)deque)->maxlen != -1)
-		fmt = PyString_FromFormat("deque(%%r, maxlen=%" PY_FORMAT_SIZE_T "i)", 
+		fmt = PyString_FromFormat("deque(%%r, maxlen=%" PY_FORMAT_SIZE_T "d)", 
 					((dequeobject *)deque)->maxlen);
 	else
 		fmt = PyString_FromString("deque(%r)");  
