@@ -670,7 +670,7 @@ deque_repr(PyObject *deque)
 		return NULL;
 	}
 	if (((dequeobject *)deque)->maxlen != -1)
-		fmt = PyString_FromFormat("deque(%%r, maxlen=%i)", 
+		fmt = PyString_FromFormat("deque(%%r, maxlen=%" PY_FORMAT_SIZE_T "i)", 
 					((dequeobject *)deque)->maxlen);
 	else
 		fmt = PyString_FromString("deque(%r)");  
@@ -733,7 +733,7 @@ deque_tp_print(PyObject *deque, FILE *fp, int flags)
 	if (((dequeobject *)deque)->maxlen == -1)
 		fputs("])", fp);
 	else
-		fprintf(fp, "], maxlen=%d)", ((dequeobject *)deque)->maxlen);
+		fprintf(fp, "], maxlen=%" PY_FORMAT_SIZE_T "d)", ((dequeobject *)deque)->maxlen);
 	Py_END_ALLOW_THREADS
 	return 0;
 }
