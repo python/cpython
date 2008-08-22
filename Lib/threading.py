@@ -67,7 +67,7 @@ if __debug__:
             if self.__verbose:
                 format = format % args
                 format = "%s: %s\n" % (
-                    current_thread().get_name(), format)
+                    current_thread().name, format)
                 _sys.stderr.write(format)
 
 else:
@@ -110,7 +110,7 @@ class _RLock(_Verbose):
         owner = self.__owner
         return "<%s(%s, %d)>" % (
                 self.__class__.__name__,
-                owner and owner.get_name(),
+                owner and owner.name,
                 self.__count)
 
     def acquire(self, blocking=1):
@@ -534,7 +534,7 @@ class Thread(_Verbose):
                 # self.
                 if _sys:
                     _sys.stderr.write("Exception in thread %s:\n%s\n" %
-                                      (self.get_name(), _format_exc()))
+                                      (self.name, _format_exc()))
                 else:
                     # Do the best job possible w/o a huge amt. of code to
                     # approximate a traceback (code ideas from
@@ -542,7 +542,7 @@ class Thread(_Verbose):
                     exc_type, exc_value, exc_tb = self.__exc_info()
                     try:
                         print>>self.__stderr, (
-                            "Exception in thread " + self.get_name() +
+                            "Exception in thread " + self.name +
                             " (most likely raised during interpreter shutdown):")
                         print>>self.__stderr, (
                             "Traceback (most recent call last):")
