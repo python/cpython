@@ -139,7 +139,7 @@ The module defines the following names:
 
 .. data:: ClassType
 
-   The type of user-defined :term:`old-style class`\es.
+   The type of user-defined old-style classes.
 
 
 .. data:: InstanceType
