@@ -9,32 +9,8 @@ File Objects
 
 Python's built-in file objects are implemented entirely on the :ctype:`FILE\*`
 support from the C standard library.  This is an implementation detail and may
-change in future releases of Python.
-
-
-.. ctype:: PyFileObject
-
-   This subtype of :ctype:`PyObject` represents a Python file object.
-
-
-.. cvar:: PyTypeObject PyFile_Type
-
-   .. index:: single: FileType (in module types)
-
-   This instance of :ctype:`PyTypeObject` represents the Python file type.  This is
-   exposed to Python programs as ``file`` and ``types.FileType``.
-
-
-.. cfunction:: int PyFile_Check(PyObject *p)
-
-   Return true if its argument is a :ctype:`PyFileObject` or a subtype of
-   :ctype:`PyFileObject`.
-
-
-.. cfunction:: int PyFile_CheckExact(PyObject *p)
-
-   Return true if its argument is a :ctype:`PyFileObject`, but not a subtype of
-   :ctype:`PyFileObject`.
+change in future releases of Python.  The ``PyFile_`` APIs are a wrapper over
+the :mod:`io` module.
 
 
 .. cfunction:: PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding, char *newline, int closefd)
@@ -72,39 +48,6 @@ change in future releases of Python.
    is returned if the end of the file is reached immediately.  If *n* is less than
    ``0``, however, one line is read regardless of length, but :exc:`EOFError` is
    raised if the end of the file is reached immediately.
-
-
-.. cfunction:: PyObject* PyFile_Name(PyObject *p)
-
-   Return the name of the file specified by *p* as a string object.
-
-
-.. cfunction:: void PyFile_SetBufSize(PyFileObject *p, int n)
-
-   .. index:: single: setvbuf()
-
-   Available on systems with :cfunc:`setvbuf` only.  This should only be called
-   immediately after file object creation.
-
-
-.. cfunction:: int PyFile_SetEncoding(PyFileObject *p, const char *enc)
-
-   Set the file's encoding for Unicode output to *enc*. Return 1 on success and 0
-   on failure.
-
-
-.. cfunction:: int PyFile_SoftSpace(PyObject *p, int newflag)
-
-   .. index:: single: softspace (file attribute)
-
-   This function exists for internal use by the interpreter.  Set the
-   :attr:`softspace` attribute of *p* to *newflag* and return the previous value.
-   *p* does not have to be a file object for this function to work properly; any
-   object is supported (thought its only interesting if the :attr:`softspace`
-   attribute can be set).  This function clears any errors, and will return ``0``
-   as the previous value if the attribute either does not exist or if there were
-   errors in retrieving it.  There is no way to detect errors from this function,
-   but doing so should not be needed.
 
 
 .. cfunction:: int PyFile_WriteObject(PyObject *obj, PyObject *p, int flags)
