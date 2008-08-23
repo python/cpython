@@ -60,6 +60,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #1276: Added temporary aliases for CJK Mac encodings to resolve
+  a build problem on MacOS with CJK locales.  It adds four temporary
+  mappings to existing legacy codecs that are virtually compatible
+  with Mac encodings.  They will be replaced by codecs correctly
+  implemented in 3.1.
+
 - Issue #3614: Corrected a typo in xmlrpc.client, leading to a NameError
   "global name 'header' is not defined".
 

@@ -519,4 +519,9 @@ aliases = {
     #'zip'                : 'zlib_codec',
     #'zlib'               : 'zlib_codec',
 
+    # temporary mac CJK aliases, will be replaced by proper codecs in 3.1
+    'x_mac_japanese'      : 'shift_jis',
+    'x_mac_korean'        : 'euc_kr',
+    'x_mac_simp_chinese'  : 'gb2312',
+    'x_mac_trad_chinese'  : 'big5',
 }
