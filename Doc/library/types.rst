@@ -1,4 +1,3 @@
-
 :mod:`types` --- Names for built-in types
 =========================================
 
@@ -7,41 +6,19 @@
 
 
 This module defines names for some object types that are used by the standard
-Python interpreter, but not for the types defined by various extension modules.
-Also, it does not include some of the types that arise during processing such as
-the ``listiterator`` type. New names exported by future versions of this module
-will all end in ``Type``.
+Python interpreter, but not exposed as builtins like :class:`int` or
+:class:`str` are.  Also, it does not include some of the types that arise
+transparently during processing such as the ``listiterator`` type.
 
-Typical use is for functions that do different things depending on their
-argument types, like the following::
-
-   from types import IntType
-   def delete(mylist, item):
-       if type(item) is IntType:
-          del mylist[item]
-       else:
-          mylist.remove(item)
-
-Starting in Python 2.2, built-in factory functions such as :func:`int` and
-:func:`str` are also names for the corresponding types.  This is now the
-preferred way to access the type instead of using the :mod:`types` module.
-Accordingly, the example above should be written as follows::
-
-   def delete(mylist, item):
-       if isinstance(item, int):
-          del mylist[item]
-       else:
-          mylist.remove(item)
-
-Starting in Python 3.0 all types that are also available as builtins are no
-longer exposed through the types module.
+Typical use is for :func:`isinstance` or :func:`issubclass` checks.
 
 The module defines the following names:
 
 .. data:: FunctionType
           LambdaType
 
-   The type of user-defined functions and lambdas.
+   The type of user-defined functions and functions created by :keyword:`lambda`
+   expressions.
 
 
 .. data:: GeneratorType
@@ -65,7 +42,9 @@ The module defines the following names:
 .. data:: BuiltinFunctionType
           BuiltinMethodType
 
-   The type of built-in functions like :func:`len` or :func:`sys.exit`.
+   The type of built-in functions like :func:`len` or :func:`sys.exit`, and
+   methods of built-in classes.  (Here, the term "built-in" means "written in
+   C".)
 
 
 .. data:: ModuleType
