@@ -213,7 +213,7 @@ class BaseBytesTest(unittest.TestCase):
             self.assertRaises(TypeError, lambda: 3.14 * b)
             # XXX Shouldn't bytes and bytearray agree on what to raise?
             self.assertRaises((OverflowError, MemoryError),
-                              lambda: b * sys.maxint)
+                              lambda: b * sys.maxsize)
 
     def test_repeat_1char(self):
         self.assertEqual(self.type2test(b'x')*100, self.type2test([ord('x')]*100))
