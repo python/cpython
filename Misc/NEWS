@@ -17,6 +17,12 @@ Core and Builtins
 Library
 -------
 
+Extension Modules
+-----------------
+
+- Issue #3643: Added a few more checks to _testcapi to prevent segfaults by
+  exploitation of poor argument checking.
+
 
 What's new in Python 3.0b3?
 ===========================

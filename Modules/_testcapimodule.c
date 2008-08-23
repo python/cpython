@@ -961,6 +961,10 @@ exception_print(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O:exception_print",
 				&value))
 		return NULL;
+	if (!PyExceptionInstance_Check(value)) {
+		PyErr_Format(PyExc_TypeError, "an exception instance is required");
+		return NULL;
+	}
 
 	tb = PyException_GetTraceback(value);
 	PyErr_Display((PyObject *) Py_TYPE(value), value, tb);
