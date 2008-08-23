@@ -1300,6 +1300,13 @@ print_exception(PyObject *f, PyObject *value)
 	int err = 0;
 	PyObject *type, *tb;
 
+	if (!PyExceptionInstance_Check(value)) {
+		PyFile_WriteString("TypeError: print_exception(): Exception expected for value, ", f);
+		PyFile_WriteString(Py_TYPE(value)->tp_name, f);
+		PyFile_WriteString(" found\n", f);
+		return;
+	}
+
 	Py_INCREF(value);
 	fflush(stdout);
 	type = (PyObject *) Py_TYPE(value);
