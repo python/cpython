@@ -1,4 +1,3 @@
-
 :mod:`types` --- Names for built-in types
 =========================================
 
@@ -117,13 +116,10 @@ The module defines the following names:
 
 
 .. data:: FunctionType
+          LambdaType
 
-   The type of user-defined functions and lambdas.
-
-
-.. data:: LambdaType
-
-   An alternate name for ``FunctionType``.
+   The type of user-defined functions and functions created by :keyword:`lambda`
+   expressions.
 
 
 .. data:: GeneratorType
@@ -143,7 +139,7 @@ The module defines the following names:
 
 .. data:: ClassType
 
-   The type of user-defined classes.
+   The type of user-defined :term:`old-style class`\es.
 
 
 .. data:: InstanceType
@@ -162,13 +158,11 @@ The module defines the following names:
 
 
 .. data:: BuiltinFunctionType
+          BuiltinMethodType
 
-   The type of built-in functions like :func:`len` or :func:`sys.exit`.
-
-
-.. data:: BuiltinMethodType
-
-   An alternate name for ``BuiltinFunction``.
+   The type of built-in functions like :func:`len` or :func:`sys.exit`, and
+   methods of built-in classes.  (Here, the term "built-in" means "written in
+   C".)
 
 
 .. data:: ModuleType
