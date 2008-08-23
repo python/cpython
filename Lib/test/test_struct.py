@@ -8,7 +8,7 @@ from test.test_support import TestFailed, verbose, run_unittest, catch_warning
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
-IS32BIT = sys.maxint == 0x7fffffff
+IS32BIT = sys.maxsize == 0x7fffffff
 del sys
 
 try:
