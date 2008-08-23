@@ -62,6 +62,12 @@ class SysModuleTest(unittest.TestCase):
 
         self.assert_(err.getvalue().endswith("ValueError: 42\n"))
 
+    def test_excepthook(self):
+        with test.support.captured_output("stderr") as stderr:
+            sys.excepthook(1, '1', 1)
+        self.assert_("TypeError: print_exception(): Exception expected for " \
+                         "value, str found" in stderr.getvalue())
+
     # FIXME: testing the code for a lost or replaced excepthook in
     # Python/pythonrun.c::PyErr_PrintEx() is tricky.
 

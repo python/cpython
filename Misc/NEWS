@@ -26,6 +26,9 @@ What's new in Python 3.0b3?
 Core and Builtins
 -----------------
 
+- Issue #3653: Fix a segfault when sys.excepthook was called with invalid
+  arguments.
+
 - Issue #2394: implement more of the memoryview API, with the caveat that
   only one-dimensional contiguous buffers are supported and exercised right
   now. Slicing, slice assignment and comparison (equality and inequality)
