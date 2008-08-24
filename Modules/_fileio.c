@@ -175,7 +175,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 						 kwlist,
 						 Py_FileSystemDefaultEncoding,
 						 &name, &mode, &closefd))
-			goto error;
+			return -1;
 	    }
 	}
 
