@@ -12,6 +12,8 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Apply security patches from Apple.
+
 - Fix crashes on memory allocation failure found with failmalloc.
 
 - Fix memory leaks found with valgrind and update suppressions file.

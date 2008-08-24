@@ -139,6 +139,8 @@ _PyLong_New(Py_ssize_t size)
 		PyErr_NoMemory();
 		return NULL;
 	}
+	/* XXX(nnorwitz): This can overflow --
+           PyObject_NEW_VAR / _PyObject_VAR_SIZE need to detect overflow */
 	return (PyLongObject*)PyObject_INIT_VAR(result, &PyLong_Type, size);
 }
 

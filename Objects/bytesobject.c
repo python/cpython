@@ -83,6 +83,12 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
 		return (PyObject *)op;
 	}
 
+	if (size > PY_SSIZE_T_MAX - sizeof(PyBytesObject)) {
+		PyErr_SetString(PyExc_OverflowError,
+				"byte string is too large");
+		return NULL;
+	}
+
 	/* Inline PyObject_NewVar */
 	op = (PyBytesObject *)PyObject_MALLOC(sizeof(PyBytesObject) + size);
 	if (op == NULL)
@@ -111,7 +117,7 @@ PyBytes_FromString(const char *str)
 
 	assert(str != NULL);
 	size = strlen(str);
-	if (size > PY_SSIZE_T_MAX) {
+	if (size > PY_SSIZE_T_MAX - sizeof(PyBytesObject)) {
 		PyErr_SetString(PyExc_OverflowError,
 			"byte string is too long");
 		return NULL;
