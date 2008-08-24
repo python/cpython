@@ -33,6 +33,11 @@ Extension Modules
 - Issue #3643: Added a few more checks to _testcapi to prevent segfaults by
   exploitation of poor argument checking.
 
+Tools/Demos
+-----------
+
+- Fix Misc/gdbinit so it works.
+
 
 What's new in Python 3.0b3?
 ===========================
