@@ -12,6 +12,14 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Fix crashes on memory allocation failure found with failmalloc.
+
+- Fix memory leaks found with valgrind and update suppressions file.
+
+- Fix compiler warnings in opt mode which would lead to invalid memory reads.
+
+- Fix problem using wrong name in decimal module reported by pychecker.
+
 - Issue #3650: Fixed a reference leak in bytes.split('x').
 
 Library
