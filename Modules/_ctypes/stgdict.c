@@ -416,6 +416,7 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 		ffi_ofs = 0;
 	}
 
+	assert(stgdict->format == NULL);
 	if (isStruct && !isPacked) {
 		stgdict->format = alloc_format_string(NULL, "T{");
 	} else {
@@ -539,7 +540,9 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 #undef realdict
 
 	if (isStruct && !isPacked) {
+		char *ptr = stgdict->format;
 		stgdict->format = alloc_format_string(stgdict->format, "}");
+		PyMem_Free(ptr);
 		if (stgdict->format == NULL)
 			return -1;
 	}

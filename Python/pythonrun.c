@@ -132,8 +132,8 @@ Py_InitializeEx(int install_sigs)
 	PyThreadState *tstate;
 	PyObject *bimod, *sysmod;
 	char *p;
-	char *icodeset; /* On Windows, input codeset may theoretically 
-			   differ from output codeset. */
+	char *icodeset = NULL; /* On Windows, input codeset may theoretically 
+			          differ from output codeset. */
 	char *codeset = NULL;
 	char *errors = NULL;
 	int free_codeset = 0;

@@ -1312,7 +1312,7 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
 }
 
 static int
-getbuffer(PyObject *arg, Py_buffer *view, char**errmsg)
+getbuffer(PyObject *arg, Py_buffer *view, char **errmsg)
 {
 	void *buf;
 	Py_ssize_t count;
@@ -1322,8 +1322,10 @@ getbuffer(PyObject *arg, Py_buffer *view, char**errmsg)
 		return -1;
 	}
 	if (pb->bf_getbuffer) {
-		if (pb->bf_getbuffer(arg, view, 0) < 0)
+		if (pb->bf_getbuffer(arg, view, 0) < 0) {
+			*errmsg = "convertible to a buffer";
 			return -1;
+		}
 		if (!PyBuffer_IsContiguous(view, 'C')) {
 			*errmsg = "contiguous buffer";
 			return -1;
@@ -1332,8 +1334,10 @@ getbuffer(PyObject *arg, Py_buffer *view, char**errmsg)
 	}
 
 	count = convertbuffer(arg, &buf, errmsg);
-	if (count < 0)
+	if (count < 0) {
+		*errmsg = "convertible to a buffer";
 		return count;
+	}
 	PyBuffer_FillInfo(view, NULL, buf, count, 1, 0);
 	return 0;
 }
