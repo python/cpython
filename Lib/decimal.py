@@ -5061,7 +5061,7 @@ def _dlog10(c, e, p):
         log_tenpower = f*M # exact
     else:
         log_d = 0  # error < 2.31
-        log_tenpower = div_nearest(f, 10**-p) # error < 0.5
+        log_tenpower = _div_nearest(f, 10**-p) # error < 0.5
 
     return _div_nearest(log_tenpower+log_d, 100)
 

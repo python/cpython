@@ -32,6 +32,8 @@ PyStructSequence_New(PyTypeObject *type)
 	PyStructSequence *obj;
 
 	obj = PyObject_New(PyStructSequence, type);
+	if (obj == NULL)
+		return NULL;
 	Py_SIZE(obj) = VISIBLE_SIZE_TP(type);
 
 	return (PyObject*) obj;
@@ -522,10 +524,16 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 	Py_INCREF(type);
 
 	dict = type->tp_dict;
-	PyDict_SetItemString(dict, visible_length_key, 
-		       PyInt_FromLong((long) desc->n_in_sequence));
-	PyDict_SetItemString(dict, real_length_key, 
-		       PyInt_FromLong((long) n_members));
-	PyDict_SetItemString(dict, unnamed_fields_key, 
-		       PyInt_FromLong((long) n_unnamed_members));
+#define SET_DICT_FROM_INT(key, value)				\
+	do {							\
+		PyObject *v = PyInt_FromLong((long) value);	\
+		if (v != NULL) {				\
+			PyDict_SetItemString(dict, key, v);	\
+			Py_DECREF(v);				\
+		}						\
+	} while (0)
+
+	SET_DICT_FROM_INT(visible_length_key, desc->n_in_sequence);
+	SET_DICT_FROM_INT(real_length_key, n_members);
+	SET_DICT_FROM_INT(unnamed_fields_key, n_unnamed_members);
 }

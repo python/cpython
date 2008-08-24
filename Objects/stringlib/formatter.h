@@ -641,7 +641,10 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 	    /* We know this can't fail, since we've already
 	       reserved enough space. */
 	    STRINGLIB_CHAR *pstart = p + n_leading_chars;
-	    int r = STRINGLIB_GROUPING(pstart, n_digits, n_digits,
+#ifndef NDEBUG
+	    int r =
+#endif
+		STRINGLIB_GROUPING(pstart, n_digits, n_digits,
 			   spec.n_total+n_grouping_chars-n_leading_chars,
 			   NULL, 0);
 	    assert(r);
