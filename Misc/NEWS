@@ -12,6 +12,9 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #3657: Fix uninitialized memory read when pickling longs.
+  Found by valgrind.
+
 - Apply security patches from Apple.
 
 - Fix crashes on memory allocation failure found with failmalloc.
