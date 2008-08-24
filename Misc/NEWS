@@ -26,6 +26,9 @@ Core and Builtins
 - Silenced another compiler warning about a used but not defined
   function 'stringlib_contains_obj'.
 
+- Added warnings on the use of ``__getslice__``, ``__setslice__``, or
+  ``__delslice__``.
+
 Library
 -------
 

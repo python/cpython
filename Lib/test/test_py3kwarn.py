@@ -175,6 +175,28 @@ class TestPy3KWarnings(unittest.TestCase):
             with catch_warning() as w:
                 self.assertWarning(set(), w, expected)
 
+    def test_slice_methods(self):
+        class Spam(object):
+            def __getslice__(self, i, j): pass
+            def __setslice__(self, i, j, what): pass
+            def __delslice__(self, i, j): pass
+        class Egg:
+            def __getslice__(self, i, h): pass
+            def __setslice__(self, i, j, what): pass
+            def __delslice__(self, i, j): pass
+
+        expected = "in 3.x, __{0}slice__ has been removed; use __{0}item__"
+
+        for obj in (Spam(), Egg()):
+            with catch_warning() as w:
+                self.assertWarning(obj[1:2], w, expected.format('get'))
+                w.reset()
+                del obj[3:4]
+                self.assertWarning(None, w, expected.format('del'))
+                w.reset()
+                obj[4:5] = "eggs"
+                self.assertWarning(None, w, expected.format('set'))
+
     def test_tuple_parameter_unpacking(self):
         expected = "tuple parameter unpacking has been removed in 3.x"
         with catch_warning() as w:

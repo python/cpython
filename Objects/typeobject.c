@@ -4897,7 +4897,17 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
 	return NULL;
 }
 
-SLOT2(slot_sq_slice, "__getslice__", Py_ssize_t, Py_ssize_t, "nn")
+static PyObject*
+slot_sq_slice(PyObject *self, Py_ssize_t i, Py_ssize_t j)
+{
+	static PyObject *getslice_str;
+	
+	if (PyErr_WarnPy3k("in 3.x, __getslice__ has been removed; "
+			    "use __getitem__", 1) < 0)
+		return NULL;
+	return call_method(self, "__getslice__", &getslice_str,
+		"nn", i, j);
+}
 
 static int
 slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
@@ -4922,13 +4932,21 @@ slot_sq_ass_slice(PyObject *self, Py_ssize_t i, Py_ssize_t j, PyObject *value)
 {
 	PyObject *res;
 	static PyObject *delslice_str, *setslice_str;
-
-	if (value == NULL)
+	
+	if (value == NULL) {
+		if (PyErr_WarnPy3k("in 3.x, __delslice__ has been removed; "
+				   "use __delitem__", 1) < 0)
+			return -1;
 		res = call_method(self, "__delslice__", &delslice_str,
 				  "(nn)", i, j);
-	else
+	}
+	else {
+		if (PyErr_WarnPy3k("in 3.x, __setslice__ has been removed; "
+					"use __setitem__", 1) < 0)
+			return -1;		
 		res = call_method(self, "__setslice__", &setslice_str,
-				  "(nnO)", i, j, value);
+			  "(nnO)", i, j, value);
+	}
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
