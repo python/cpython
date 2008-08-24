@@ -1174,8 +1174,15 @@ instance_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j)
 		if (func == NULL)
 			return NULL;
 		arg = Py_BuildValue("(N)", _PySlice_FromIndices(i, j));
-	} else
+	}
+	else {
+		if (PyErr_WarnPy3k("in 3.x, __getslice__ has been removed; "
+				   "use __getitem__", 1) < 0) {
+			Py_DECREF(func);
+			return NULL;
+		}
 		arg = Py_BuildValue("(nn)", i, j);
+	}
 
 	if (arg == NULL) {
 		Py_DECREF(func);
@@ -1257,8 +1264,15 @@ instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject 
 
 			arg = Py_BuildValue("(N)",
 					    _PySlice_FromIndices(i, j));
-		} else
+		}
+		else {
+			if (PyErr_WarnPy3k("in 3.x, __delslice__ has been "
+				            "removed; use __delitem__", 1) < 0) {
+				Py_DECREF(func);
+				return -1;
+			}
 			arg = Py_BuildValue("(nn)", i, j);
+		}
 	}
 	else {
 		if (setslicestr == NULL) {
@@ -1284,8 +1298,15 @@ instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject 
 
 			arg = Py_BuildValue("(NO)",
 					    _PySlice_FromIndices(i, j), value);
-		} else
+		}
+		else {
+			if (PyErr_WarnPy3k("in 3.x, __setslice__ has been "
+					   "removed; use __setitem__", 1) < 0) {
+				Py_DECREF(func);
+				return -1;
+			}
 			arg = Py_BuildValue("(nnO)", i, j, value);
+		}
 	}
 	if (arg == NULL) {
 		Py_DECREF(func);
