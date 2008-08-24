@@ -321,7 +321,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Otherwise a daemonic process would leave its children orphaned if it gets
       terminated when its parent process exits.
 
-   In addition process objects also support the following methods:
+   In addition to the  :class:`Threading.Thread` API, :class:`Process` objects
+   also support the following attributes and methods:
 
    .. attribute:: pid
 
