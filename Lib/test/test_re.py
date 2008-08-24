@@ -370,10 +370,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
                                    "1aa! a", re.UNICODE).group(0), "1aa! a")
 
-    def test_ignore_case(self):
-        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
-        self.assertEqual(re.match("abc", u"ABC", re.I).group(0), "ABC")
-
     def test_bigcharset(self):
         self.assertEqual(re.match(u"([\u2222\u2223])",
                                   u"\u2222").group(1), u"\u2222")
@@ -401,6 +397,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"(a)(?!\s(abc|a))", "a b").group(1), "a")
 
     def test_ignore_case(self):
+        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
+        self.assertEqual(re.match("abc", u"ABC", re.I).group(0), "ABC")
         self.assertEqual(re.match(r"(a\s[^a])", "a b", re.I).group(1), "a b")
         self.assertEqual(re.match(r"(a\s[^a]*)", "a bb", re.I).group(1), "a bb")
         self.assertEqual(re.match(r"(a\s[abc])", "a b", re.I).group(1), "a b")
