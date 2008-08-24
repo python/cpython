@@ -226,6 +226,10 @@ class OtherFileTests(unittest.TestCase):
             except:
                 pass
 
+    def testInvalidInit(self):
+        self.assertRaises(TypeError, _fileio._FileIO, "1", 0, 0)
+
+
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
