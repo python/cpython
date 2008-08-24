@@ -924,10 +924,10 @@ save_long(PicklerObject *self, PyObject *obj)
                             "long too large to pickle");
             goto error;
         }
-        repr = PyUnicode_FromStringAndSize(NULL, (int)nbytes);
+        repr = PyBytes_FromStringAndSize(NULL, (Py_ssize_t)nbytes);
         if (repr == NULL)
             goto error;
-        pdata = (unsigned char *)_PyUnicode_AsString(repr);
+        pdata = (unsigned char *)PyBytes_AS_STRING(repr);
         i = _PyLong_AsByteArray((PyLongObject *)obj,
                                 pdata, nbytes,
                                 1 /* little endian */ , 1 /* signed */ );
