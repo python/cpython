@@ -8,11 +8,7 @@ Python is a mature programming language which has established a reputation for
 stability.  In order to maintain this reputation, the developers would like to
 know of any deficiencies you find in Python.
 
-If you find errors in the documentation, please use either the "Add a comment"
-or the "Suggest a change" features of the relevant page in the most recent
-online documentation at http://docs.python.org/.
-
-All other bug reports should be submitted via the Python Bug Tracker
+Bug reports should be submitted via the Python Bug Tracker
 (http://bugs.python.org/).  The bug tracker offers a Web form which allows
 pertinent information to be entered and submitted to the developers.
 
