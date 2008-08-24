@@ -121,6 +121,11 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
         return NULL;
     }
 
+    /* Prevent buffer overflow when setting alloc to size+1. */
+    if (size == PY_SSIZE_T_MAX) {
+        return PyErr_NoMemory();
+    }
+
     new = PyObject_New(PyByteArrayObject, &PyByteArray_Type);
     if (new == NULL)
         return NULL;
