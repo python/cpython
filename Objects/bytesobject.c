@@ -3212,7 +3212,7 @@ _PyBytes_FormatLong(PyObject *val, int flags, int prec, int type,
 	int numnondigits = 0;
 
 	/* Avoid exceeding SSIZE_T_MAX */
-	if (prec > PY_SSIZE_T_MAX-3) {
+	if (prec > INT_MAX-3) {
 		PyErr_SetString(PyExc_OverflowError,
 				"precision too large");
 		return NULL;
