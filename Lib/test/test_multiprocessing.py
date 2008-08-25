@@ -1742,7 +1742,7 @@ class OtherTest(unittest.TestCase):
     def test_deliver_challenge_auth_failure(self):
         class _FakeConnection(object):
             def recv_bytes(self, size):
-                return 'something bogus'
+                return b'something bogus'
             def send_bytes(self, data):
                 pass
         self.assertRaises(multiprocessing.AuthenticationError,
@@ -1758,8 +1758,8 @@ class OtherTest(unittest.TestCase):
                 if self.count == 1:
                     return multiprocessing.connection.CHALLENGE
                 elif self.count == 2:
-                    return 'something bogus'
-                return ''
+                    return b'something bogus'
+                return b''
             def send_bytes(self, data):
                 pass
         self.assertRaises(multiprocessing.AuthenticationError,
