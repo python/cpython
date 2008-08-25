@@ -17,7 +17,7 @@ import tempfile
 import itertools
 
 import _multiprocessing
-from multiprocessing import current_process
+from multiprocessing import current_process, AuthenticationError
 from multiprocessing.util import get_temp_dir, Finalize, sub_debug, debug
 from multiprocessing.forking import duplicate, close
 
