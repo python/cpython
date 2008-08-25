@@ -714,14 +714,17 @@ raise_exception(PyObject *self, PyObject *args)
  */
 static PyThread_type_lock thread_done = NULL;
 
-static void
+static int
 _make_call(void *callable)
 {
 	PyObject *rc;
+	int success;
 	PyGILState_STATE s = PyGILState_Ensure();
 	rc = PyObject_CallFunction((PyObject *)callable, "");
+	success = (rc != NULL);
 	Py_XDECREF(rc);
 	PyGILState_Release(s);
+	return success;
 }
 
 /* Same thing, but releases `thread_done` when it returns.  This variant
@@ -738,9 +741,16 @@ static PyObject *
 test_thread_state(PyObject *self, PyObject *args)
 {
 	PyObject *fn;
+	int success = 1;
 
 	if (!PyArg_ParseTuple(args, "O:test_thread_state", &fn))
 		return NULL;
+
+	if (!PyCallable_Check(fn)) {
+		PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
+			fn->ob_type->tp_name);
+		return NULL;
+	}
 
 	/* Ensure Python is set up for threading */
 	PyEval_InitThreads();
@@ -752,10 +762,10 @@ test_thread_state(PyObject *self, PyObject *args)
 	/* Start a new thread with our callback. */
 	PyThread_start_new_thread(_make_call_from_thread, fn);
 	/* Make the callback with the thread lock held by this thread */
-	_make_call(fn);
+	success &= _make_call(fn);
 	/* Do it all again, but this time with the thread-lock released */
 	Py_BEGIN_ALLOW_THREADS
-	_make_call(fn);
+	success &= _make_call(fn);
 	PyThread_acquire_lock(thread_done, 1);  /* wait for thread to finish */
 	Py_END_ALLOW_THREADS
 
@@ -765,7 +775,7 @@ test_thread_state(PyObject *self, PyObject *args)
 	*/
 	Py_BEGIN_ALLOW_THREADS
 	PyThread_start_new_thread(_make_call_from_thread, fn);
-	_make_call(fn);
+	success &= _make_call(fn);
 	PyThread_acquire_lock(thread_done, 1);  /* wait for thread to finish */
 	Py_END_ALLOW_THREADS
 
@@ -773,6 +783,8 @@ test_thread_state(PyObject *self, PyObject *args)
 	PyThread_release_lock(thread_done);
 
 	PyThread_free_lock(thread_done);
+	if (!success)
+		return NULL;
 	Py_RETURN_NONE;
 }
 #endif

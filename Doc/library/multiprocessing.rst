@@ -248,7 +248,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    The constructor should always be called with keyword arguments. *group*
    should always be ``None``; it exists solely for compatibility with
-   :class:`~threading.Thread`.  *target* is the callable object to be invoked by
+   :class:`threading.Thread`.  *target* is the callable object to be invoked by
    the :meth:`run()` method.  It defaults to ``None``, meaning nothing is
    called. *name* is the process name.  By default, a unique name is constructed
    of the form 'Process-N\ :sub:`1`:N\ :sub:`2`:...:N\ :sub:`k`' where N\
@@ -290,13 +290,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       A process cannot join itself because this would cause a deadlock.  It is
       an error to attempt to join a process before it has been started.
 
-   .. attribute:: Process.name
+   .. attribute:: name
 
-      Return the process's name.
-
-   .. attribute:: Process.name = name
-
-      Set the process's name.
+      The process's name.
 
       The name is a string used for identification purposes only.  It has no
       semantics.  Multiple processes may be given the same name.  The initial
@@ -309,14 +305,10 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Roughly, a process object is alive from the moment the :meth:`start`
       method returns until the child process terminates.
 
-   .. attribute:: Process.daemon
+   .. attribute:: daemon
 
-      Return the process's daemon flag., this is a boolean.
-
-   .. attribute:: Process.daemon = daemonic
-
-      Set the process's daemon flag to the Boolean value *daemonic*.  This must
-      be called before :meth:`start` is called.
+      The process's daemon flag, a Boolean value.  This must be called before
+      :meth:`start` is called.
 
       The initial value is inherited from the creating process.
 
@@ -327,35 +319,32 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Otherwise a daemonic process would leave its children orphaned if it gets
       terminated when its parent process exits.
 
-   In addition process objects also support the following methods:
+   In addition to the  :class:`Threading.Thread` API, :class:`Process` objects
+   also support the following attributes and methods:
 
-   .. attribute:: Process.pid
+   .. attribute:: pid
 
       Return the process ID.  Before the process is spawned, this will be
       ``None``.
 
-   .. attribute:: Process.exitcode
+   .. attribute:: exitcode
 
-      Return the child's exit code.  This will be ``None`` if the process has
-      not yet terminated.  A negative value *-N* indicates that the child was
-      terminated by signal *N*.
+      The child's exit code.  This will be ``None`` if the process has not yet
+      terminated.  A negative value *-N* indicates that the child was terminated
+      by signal *N*.
 
-   .. attribute:: Process.authkey
+   .. attribute:: authkey
 
-      Return the process's authentication key (a byte string).
+      The process's authentication key (a byte string).
 
       When :mod:`multiprocessing` is initialized the main process is assigned a
       random string using :func:`os.random`.
 
       When a :class:`Process` object is created, it will inherit the
-      authentication key of its parent process, although this may be changed
-      using :attr:`Process.authkey` below.
+      authentication key of its parent process, although this may be changed by
+      setting :attr:`authkey` to another byte string.
 
       See :ref:`multiprocessing-auth-keys`.
-
-   .. attribute:: Process.authkey = authkey
-
-      Set the process's authentication key which must be a byte string.
 
    .. method:: terminate()
 
@@ -375,8 +364,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
          cause other processes to deadlock.
 
    Note that the :meth:`start`, :meth:`join`, :meth:`is_alive` and
-   :meth:`get_exit_code` methods should only be called by the process that
-   created the process object.
+   :attr:`exit_code` methods should only be called by the process that created
+   the process object.
 
    Example usage of some of the methods of :class:`Process`::
 
@@ -390,7 +379,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
        >>> p.terminate()
        >>> print p, p.is_alive()
        <Process(Process-1, stopped[SIGTERM])> False
-       >>> p.get_exit_code() == -signal.SIGTERM
+       >>> p.exitcode == -signal.SIGTERM
        True
 
 
@@ -1075,7 +1064,7 @@ their parent process exits.  The manager classes are defined in the
 
    *authkey* is the authentication key which will be used to check the validity
    of incoming connections to the server process.  If *authkey* is ``None`` then
-   ``current_process().get_auth_key()``.  Otherwise *authkey* is used and it
+   ``current_process().authkey``.  Otherwise *authkey* is used and it
    must be a string.
 
    .. method:: start()
@@ -1599,7 +1588,7 @@ authentication* using the :mod:`hmac` module.
 
    If *authentication* is ``True`` or *authkey* is a string then digest
    authentication is used.  The key used for authentication will be either
-   *authkey* or ``current_process().get_auth_key()`` if *authkey* is ``None``.
+   *authkey* or ``current_process().authkey)`` if *authkey* is ``None``.
    If authentication fails then :exc:`AuthenticationError` is raised.  See
    :ref:`multiprocessing-auth-keys`.
 
@@ -1632,7 +1621,7 @@ authentication* using the :mod:`hmac` module.
    otherwise it must be *None*.
 
    If *authkey* is ``None`` and *authenticate* is ``True`` then
-   ``current_process().get_auth_key()`` is used as the authentication key.  If
+   ``current_process().authkey`` is used as the authentication key.  If
    *authkey* is ``None`` and *authentication* is ``False`` then no
    authentication is done.  If authentication fails then
    :exc:`AuthenticationError` is raised.  See :ref:`multiprocessing-auth-keys`.
@@ -1748,7 +1737,7 @@ authentication key.  (Demonstrating that both ends are using the same key does
 **not** involve sending the key over the connection.)
 
 If authentication is requested but do authentication key is specified then the
-return value of ``current_process().get_auth_key`` is used (see
+return value of ``current_process().authkey`` is used (see
 :class:`~multiprocessing.Process`).  This value will automatically inherited by
 any :class:`~multiprocessing.Process` object that the current process creates.
 This means that (by default) all processes of a multi-process program will share

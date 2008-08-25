@@ -15,6 +15,23 @@ class ListTest(list_tests.CommonTest):
         self.assertEqual(list(''), [])
         self.assertEqual(list('spam'), ['s', 'p', 'a', 'm'])
 
+        if sys.maxsize == 0x7fffffff:
+            # This test can currently only work on 32-bit machines.
+            # XXX If/when PySequence_Length() returns a ssize_t, it should be
+            # XXX re-enabled.
+            # Verify clearing of bug #556025.
+            # This assumes that the max data size (sys.maxint) == max
+            # address size this also assumes that the address size is at
+            # least 4 bytes with 8 byte addresses, the bug is not well
+            # tested
+            #
+            # Note: This test is expected to SEGV under Cygwin 1.3.12 or
+            # earlier due to a newlib bug.  See the following mailing list
+            # thread for the details:
+
+            #     http://sources.redhat.com/ml/newlib/2002/msg00369.html
+            self.assertRaises(MemoryError, list, range(sys.maxsize // 2))
+
         # This code used to segfault in Py2.4a3
         x = []
         x.extend(-y for y in x)
