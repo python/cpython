@@ -24,7 +24,7 @@ class PosixTester(unittest.TestCase):
         fp.close()
 
     def tearDown(self):
-        os.unlink(support.TESTFN)
+        support.unlink(support.TESTFN)
 
     def testNoArgFunctions(self):
         # test posix functions which take no arguments and have
@@ -249,7 +249,7 @@ class PosixTester(unittest.TestCase):
                 _create_and_do_getcwd(dirname)
 
             finally:
-                shutil.rmtree(base_path)
+                support.rmtree(base_path)
                 os.chdir(curdir)
 
 
