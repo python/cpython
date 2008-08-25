@@ -212,6 +212,10 @@ class DebuggingServerTests(TestCase):
         m = 'A test message'
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
         smtp.sendmail('John', 'Sally', m)
+        # XXX(nnorwitz): this test is flaky and dies with a bad file descriptor
+        # in asyncore.  This sleep might help, but should really be fixed
+        # properly by using an Event variable.
+        time.sleep(0.01)
         smtp.quit()
 
         self.client_evt.set()
