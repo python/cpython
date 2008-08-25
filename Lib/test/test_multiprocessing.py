@@ -1736,6 +1736,37 @@ class ThreadsMixin(object):
 testcases_threads = create_test_cases(ThreadsMixin, type='threads')
 globals().update(testcases_threads)
 
+class OtherTest(unittest.TestCase):
+    # TODO: add more tests for deliver/answer challenge.
+    def test_deliver_challenge_auth_failure(self):
+        class _FakeConnection(object):
+            def recv_bytes(self, size):
+                return 'something bogus'
+            def send_bytes(self, data):
+                pass
+        self.assertRaises(multiprocessing.AuthenticationError,
+                          multiprocessing.connection.deliver_challenge,
+                          _FakeConnection(), b'abc')
+
+    def test_answer_challenge_auth_failure(self):
+        class _FakeConnection(object):
+            def __init__(self):
+                self.count = 0
+            def recv_bytes(self, size):
+                self.count += 1
+                if self.count == 1:
+                    return multiprocessing.connection.CHALLENGE
+                elif self.count == 2:
+                    return 'something bogus'
+                return ''
+            def send_bytes(self, data):
+                pass
+        self.assertRaises(multiprocessing.AuthenticationError,
+                          multiprocessing.connection.answer_challenge,
+                          _FakeConnection(), b'abc')
+
+testcases_other = [OtherTest]
+
 #
 #
 #
@@ -1764,7 +1795,8 @@ def test_main(run=None):
     testcases = (
         sorted(testcases_processes.values(), key=lambda tc:tc.__name__) +
         sorted(testcases_threads.values(), key=lambda tc:tc.__name__) +
-        sorted(testcases_manager.values(), key=lambda tc:tc.__name__)
+        sorted(testcases_manager.values(), key=lambda tc:tc.__name__) +
+        testcases_other
         )
 
     loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase
