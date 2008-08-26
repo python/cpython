@@ -584,6 +584,49 @@ type_get_doc(PyTypeObject *type, void *context)
 	return result;
 }
 
+static PyObject *
+type___instancecheck__(PyObject *type, PyObject *inst)
+{
+	switch (_PyObject_RealIsInstance(inst, type)) {
+	case -1:
+		return NULL;
+	case 0:
+		Py_RETURN_FALSE;
+	default:
+		Py_RETURN_TRUE;
+	}
+}
+
+
+static PyObject *
+type_get_instancecheck(PyObject *type, void *context)
+{
+	static PyMethodDef ml = {"__instancecheck__",
+				 type___instancecheck__, METH_O };
+	return PyCFunction_New(&ml, type);
+}
+
+static PyObject *
+type___subclasscheck__(PyObject *type, PyObject *inst)
+{
+	switch (_PyObject_RealIsSubclass(inst, type)) {
+	case -1:
+		return NULL;
+	case 0:
+		Py_RETURN_FALSE;
+	default:
+		Py_RETURN_TRUE;
+	}
+}
+
+static PyObject *
+type_get_subclasscheck(PyObject *type, void *context)
+{
+	static PyMethodDef ml = {"__subclasscheck__",
+				 type___subclasscheck__, METH_O };
+	return PyCFunction_New(&ml, type);
+}
+
 static PyGetSetDef type_getsets[] = {
 	{"__name__", (getter)type_name, (setter)type_set_name, NULL},
 	{"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
@@ -592,6 +635,8 @@ static PyGetSetDef type_getsets[] = {
 	 (setter)type_set_abstractmethods, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
 	{"__doc__", (getter)type_get_doc, NULL, NULL},
+	{"__instancecheck__", (getter)type_get_instancecheck, NULL, NULL},
+	{"__subclasscheck__", (getter)type_get_subclasscheck, NULL, NULL},
 	{0}
 };
 
