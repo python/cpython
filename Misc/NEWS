@@ -12,6 +12,13 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #2534: speed up isinstance() and issubclass() by 50-70%, so as to 
+  match Python 2.5 speed despite the __instancecheck__ / __subclasscheck__
+  mechanism. In the process, fix a bug where isinstance() and issubclass(),
+  when given a tuple of classes as second argument, were looking up
+  __instancecheck__ / __subclasscheck__ on the tuple rather than on each
+  type object.
+
 - Issue #3663: Py_None was decref'd when printing SyntaxErrors.
 
 - Issue #3657: Fix uninitialized memory read when pickling longs.

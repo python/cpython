@@ -582,12 +582,18 @@ class ExceptionTests(unittest.TestCase):
             except KeyError:
                 pass
             except:
-                self.fail("Should have raised TypeError")
+                self.fail("Should have raised KeyError")
             else:
-                self.fail("Should have raised TypeError")
-        self.assertEqual(stderr.getvalue(),
-                         "Exception ValueError: ValueError() "
-                         "in <class 'KeyError'> ignored\n")
+                self.fail("Should have raised KeyError")
+
+        def g():
+            try:
+                return g()
+            except RuntimeError:
+                return sys.exc_info()
+        e, v, tb = g()
+        self.assert_(isinstance(v, RuntimeError), type(v))
+        self.assert_("maximum recursion depth exceeded" in str(v), str(v))
 
 
     def test_MemoryError(self):
