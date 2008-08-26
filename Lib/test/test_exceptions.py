@@ -333,7 +333,19 @@ class ExceptionTests(unittest.TestCase):
                 return g()
             except ValueError:
                 return -1
-        self.assertRaises(RuntimeError, g)
+
+        # The test prints an unraisable recursion error when
+        # doing "except ValueError", this is because subclass
+        # checking has recursion checking too.
+        with captured_output("stderr"):
+            try:
+                g()
+            except RuntimeError:
+                pass
+            except:
+                self.fail("Should have raised KeyError")
+            else:
+                self.fail("Should have raised KeyError")
 
     def testUnicodeStrUsage(self):
         # Make sure both instances and classes have a str and unicode
@@ -363,12 +375,20 @@ class ExceptionTests(unittest.TestCase):
             except KeyError:
                 pass
             except:
-                self.fail("Should have raised TypeError")
+                self.fail("Should have raised KeyError")
             else:
-                self.fail("Should have raised TypeError")
-        self.assertEqual(stderr.getvalue(),
-                         "Exception ValueError: ValueError() in "
-                         "<type 'exceptions.KeyError'> ignored\n")
+                self.fail("Should have raised KeyError")
+
+        with captured_output("stderr") as stderr:
+            def g():
+                try:
+                    return g()
+                except RuntimeError:
+                    return sys.exc_info()
+            e, v, tb = g()
+            self.assert_(e is RuntimeError, e)
+            self.assert_("maximum recursion depth exceeded" in str(v), v)
+
 
 def test_main():
     run_unittest(ExceptionTests)

@@ -2778,39 +2778,38 @@ abstract_get_bases(PyObject *cls)
 static int
 abstract_issubclass(PyObject *derived, PyObject *cls)
 {
-	PyObject *bases;
+	PyObject *bases = NULL;
 	Py_ssize_t i, n;
 	int r = 0;
 
-
-	if (derived == cls)
-		return 1;
-
-	if (PyTuple_Check(cls)) {
-		/* Not a general sequence -- that opens up the road to
-		   recursion and stack overflow. */
-		n = PyTuple_GET_SIZE(cls);
-		for (i = 0; i < n; i++) {
-			if (derived == PyTuple_GET_ITEM(cls, i))
-				return 1;
+	while (1) {
+		if (derived == cls)
+			return 1;
+		bases = abstract_get_bases(derived);
+		if (bases == NULL) {
+			if (PyErr_Occurred())
+				return -1;
+			return 0;
 		}
+		n = PyTuple_GET_SIZE(bases);
+		if (n == 0) {
+			Py_DECREF(bases);
+			return 0;
+		}
+		/* Avoid recursivity in the single inheritance case */
+		if (n == 1) {
+			derived = PyTuple_GET_ITEM(bases, 0);
+			Py_DECREF(bases);
+			continue;
+		}
+		for (i = 0; i < n; i++) {
+			r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls);
+			if (r != 0)
+				break;
+		}
+		Py_DECREF(bases);
+		return r;
 	}
-	bases = abstract_get_bases(derived);
-	if (bases == NULL) {
-		if (PyErr_Occurred())
-			return -1;
-		return 0;
-	}
-	n = PyTuple_GET_SIZE(bases);
-	for (i = 0; i < n; i++) {
-		r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls);
-		if (r != 0)
-			break;
-	}
-
-	Py_DECREF(bases);
-
-	return r;
 }
 
 static int
@@ -2828,7 +2827,7 @@ check_class(PyObject *cls, const char *error)
 }
 
 static int
-recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
+recursive_isinstance(PyObject *inst, PyObject *cls)
 {
 	PyObject *icls;
 	static PyObject *__class__ = NULL;
@@ -2862,25 +2861,6 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 			}
 		}
 	}
-	else if (PyTuple_Check(cls)) {
-		Py_ssize_t i, n;
-
-                if (!recursion_depth) {
-                    PyErr_SetString(PyExc_RuntimeError,
-                                    "nest level of tuple too deep");
-                    return -1;
-                }
-
-		n = PyTuple_GET_SIZE(cls);
-		for (i = 0; i < n; i++) {
-			retval = recursive_isinstance(
-                                    inst,
-                                    PyTuple_GET_ITEM(cls, i),
-                                    recursion_depth-1);
-			if (retval != 0)
-				break;
-		}
-	}
 	else {
 		if (!check_class(cls,
 			"isinstance() arg 2 must be a class, type,"
@@ -2910,6 +2890,24 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	if (Py_TYPE(inst) == (PyTypeObject *)cls)
 		return 1;
 
+	if (PyTuple_Check(cls)) {
+		Py_ssize_t i;
+		Py_ssize_t n;
+		int r = 0;
+
+		if (Py_EnterRecursiveCall(" in __instancecheck__"))
+			return -1;
+		n = PyTuple_GET_SIZE(cls);
+		for (i = 0; i < n; ++i) {
+			PyObject *item = PyTuple_GET_ITEM(cls, i);
+			r = PyObject_IsInstance(inst, item);
+			if (r != 0)
+				/* either found it, or got an error */
+				break;
+		}
+		Py_LeaveRecursiveCall();
+		return r;
+	}
 	if (name == NULL) {
 		name = PyString_InternFromString("__instancecheck__");
 		if (name == NULL)
@@ -2934,47 +2932,28 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 		}
 		return ok;
 	}
-	return recursive_isinstance(inst, cls, Py_GetRecursionLimit());
+	return recursive_isinstance(inst, cls);
 }
 
 static  int
-recursive_issubclass(PyObject *derived, PyObject *cls, int recursion_depth)
+recursive_issubclass(PyObject *derived, PyObject *cls)
 {
 	int retval;
 
+ 	if (PyType_Check(cls) && PyType_Check(derived)) {
+ 		/* Fast path (non-recursive) */
+ 		return PyType_IsSubtype(
+			(PyTypeObject *)derived, (PyTypeObject *)cls);
+ 	}
 	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
 		if (!check_class(derived,
 				 "issubclass() arg 1 must be a class"))
 			return -1;
 
-		if (PyTuple_Check(cls)) {
-			Py_ssize_t i;
-			Py_ssize_t n = PyTuple_GET_SIZE(cls);
-
-                        if (!recursion_depth) {
-                            PyErr_SetString(PyExc_RuntimeError,
-                                            "nest level of tuple too deep");
-                            return -1;
-                        }
-			for (i = 0; i < n; ++i) {
-				retval = recursive_issubclass(
-                                            derived,
-                                            PyTuple_GET_ITEM(cls, i),
-                                            recursion_depth-1);
-				if (retval != 0) {
-					/* either found it, or got an error */
-					return retval;
-				}
-			}
-			return 0;
-		}
-		else {
-			if (!check_class(cls,
-					"issubclass() arg 2 must be a class"
-					" or tuple of classes"))
-				return -1;
-		}
-
+		if (!check_class(cls,
+				"issubclass() arg 2 must be a class"
+				" or tuple of classes"))
+			return -1;
 		retval = abstract_issubclass(derived, cls);
 	}
 	else {
@@ -2992,20 +2971,40 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 	static PyObject *name = NULL;
 	PyObject *t, *v, *tb;
 	PyObject *checker;
-	PyErr_Fetch(&t, &v, &tb);
 	
+ 	if (PyTuple_Check(cls)) {
+ 		Py_ssize_t i;
+ 		Py_ssize_t n;
+ 		int r = 0;
+ 
+ 		if (Py_EnterRecursiveCall(" in __subclasscheck__"))
+ 			return -1;
+ 		n = PyTuple_GET_SIZE(cls);
+ 		for (i = 0; i < n; ++i) {
+ 			PyObject *item = PyTuple_GET_ITEM(cls, i);
+ 			r = PyObject_IsSubclass(derived, item);
+ 			if (r != 0)
+ 				/* either found it, or got an error */
+ 				break;
+ 		}
+ 		Py_LeaveRecursiveCall();
+ 		return r;
+ 	}
 	if (name == NULL) {
 		name = PyString_InternFromString("__subclasscheck__");
 		if (name == NULL)
 			return -1;
 	}
+	PyErr_Fetch(&t, &v, &tb);
 	checker = PyObject_GetAttr(cls, name);
 	PyErr_Restore(t, v, tb);
 	if (checker != NULL) {
 		PyObject *res;
 		int ok = -1;
-		if (Py_EnterRecursiveCall(" in __subclasscheck__"))
+		if (Py_EnterRecursiveCall(" in __subclasscheck__")) {
+			Py_DECREF(checker);
 			return ok;
+		}
 		res = PyObject_CallFunctionObjArgs(checker, derived, NULL);
 		Py_LeaveRecursiveCall();
 		Py_DECREF(checker);
@@ -3015,7 +3014,19 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 		}
 		return ok;
 	}
-	return recursive_issubclass(derived, cls, Py_GetRecursionLimit());
+	return recursive_issubclass(derived, cls);
+}
+
+int
+_PyObject_RealIsInstance(PyObject *inst, PyObject *cls)
+{
+	return recursive_isinstance(inst, cls);
+}
+
+int
+_PyObject_RealIsSubclass(PyObject *derived, PyObject *cls)
+{
+	return recursive_issubclass(derived, cls);
 }
 
 

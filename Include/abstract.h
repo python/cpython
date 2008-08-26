@@ -1377,6 +1377,11 @@ PyAPI_FUNC(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
       /* issubclass(object, typeorclass) */
 
 
+PyAPI_FUNC(int) _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
+
+PyAPI_FUNC(int) _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
+
+
 #ifdef __cplusplus
 }
 #endif

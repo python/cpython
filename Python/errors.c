@@ -113,7 +113,6 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
 		/* This function must not fail, so print the error here */
 		if (res == -1) {
 			PyErr_WriteUnraisable(err);
-			/* issubclass did not succeed */
 			res = 0;
 		}
 		PyErr_Restore(exception, value, tb);

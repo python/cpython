@@ -41,26 +41,39 @@ class TypeChecksTest(unittest.TestCase):
 
     def testIsSubclassBuiltin(self):
         self.assertEqual(issubclass(int, Integer), True)
+        self.assertEqual(issubclass(int, (Integer,)), True)
         self.assertEqual(issubclass(float, Integer), False)
+        self.assertEqual(issubclass(float, (Integer,)), False)
 
     def testIsInstanceBuiltin(self):
         self.assertEqual(isinstance(42, Integer), True)
+        self.assertEqual(isinstance(42, (Integer,)), True)
         self.assertEqual(isinstance(3.14, Integer), False)
+        self.assertEqual(isinstance(3.14, (Integer,)), False)
 
     def testIsInstanceActual(self):
         self.assertEqual(isinstance(Integer(), Integer), True)
+        self.assertEqual(isinstance(Integer(), (Integer,)), True)
 
     def testIsSubclassActual(self):
         self.assertEqual(issubclass(Integer, Integer), True)
+        self.assertEqual(issubclass(Integer, (Integer,)), True)
 
     def testSubclassBehavior(self):
         self.assertEqual(issubclass(SubInt, Integer), True)
+        self.assertEqual(issubclass(SubInt, (Integer,)), True)
         self.assertEqual(issubclass(SubInt, SubInt), True)
+        self.assertEqual(issubclass(SubInt, (SubInt,)), True)
         self.assertEqual(issubclass(Integer, SubInt), False)
+        self.assertEqual(issubclass(Integer, (SubInt,)), False)
         self.assertEqual(issubclass(int, SubInt), False)
+        self.assertEqual(issubclass(int, (SubInt,)), False)
         self.assertEqual(isinstance(SubInt(), Integer), True)
+        self.assertEqual(isinstance(SubInt(), (Integer,)), True)
         self.assertEqual(isinstance(SubInt(), SubInt), True)
+        self.assertEqual(isinstance(SubInt(), (SubInt,)), True)
         self.assertEqual(isinstance(42, SubInt), False)
+        self.assertEqual(isinstance(42, (SubInt,)), False)
 
     def testInfiniteRecursionCaughtProperly(self):
         e = Evil()
