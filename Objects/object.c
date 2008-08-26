@@ -453,6 +453,45 @@ PyObject_ASCII(PyObject *v)
 	return res;
 }
 
+PyObject *
+PyObject_Bytes(PyObject *v)
+{
+	PyObject *bytesmeth, *result, *func;
+	static PyObject *bytesstring = NULL;
+
+	if (bytesstring == NULL) {
+		bytesstring = PyUnicode_InternFromString("__bytes__");
+		if (bytesstring == NULL)
+			return NULL;
+	}
+
+	if (v == NULL)
+		return PyBytes_FromString("<NULL>");
+
+	if (PyBytes_CheckExact(v)) {
+		Py_INCREF(v);
+		return v;
+	}
+
+        /* Doesn't create a reference */
+	func = _PyType_Lookup(Py_TYPE(v), bytesstring);
+	if (func != NULL) {
+            result = PyObject_CallFunctionObjArgs(func, v, NULL);
+            if (result == NULL)
+		return NULL;
+            if (!PyBytes_Check(result)) {
+		PyErr_Format(PyExc_TypeError,
+			     "__bytes__ returned non-bytes (type %.200s)",
+			     Py_TYPE(result)->tp_name);
+		Py_DECREF(result);
+		return NULL;
+            }
+            return result;
+	}
+        PyErr_Clear();
+	return PyBytes_FromObject(v);
+}
+
 /* The new comparison philosophy is: we completely separate three-way
    comparison from rich comparison.  That is, PyObject_Compare() and
    PyObject_Cmp() *just* use the tp_compare slot.  And PyObject_RichCompare()

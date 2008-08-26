@@ -118,6 +118,12 @@ called with a non-bytes parameter.
    arguments.
 
 
+.. cfunction:: PyObject* PyBytes_FromObject(PyObject *o)
+
+   Return the bytes representation of object *o* that implements the buffer
+   protocol.
+
+
 .. cfunction:: Py_ssize_t PyBytes_Size(PyObject *o)
 
    Return the length of the bytes in bytes object *o*.

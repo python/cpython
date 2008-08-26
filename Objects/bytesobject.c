@@ -2882,11 +2882,10 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static PyObject *
 string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *x = NULL, *it;
+	PyObject *x = NULL;
 	const char *encoding = NULL;
 	const char *errors = NULL;
 	PyObject *new = NULL;
-	Py_ssize_t i, size;
 	static char *kwlist[] = {"source", "encoding", "errors", 0};
 
 	if (type != &PyBytes_Type)
@@ -2924,6 +2923,14 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			"encoding or errors without a string argument");
 		return NULL;
 	}
+        return PyObject_Bytes(x);
+}
+
+PyObject *
+PyBytes_FromObject(PyObject *x)
+{
+	PyObject *new, *it;
+	Py_ssize_t i, size;
 
 	/* Is it an int? */
 	size = PyNumber_AsSsize_t(x, PyExc_ValueError);

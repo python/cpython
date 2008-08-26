@@ -139,6 +139,14 @@ Object Protocol
    Python expression ``str(o)``.  Called by the :func:`str` built-in function
    and, therefore, by the :func:`print` function.
 
+.. cfunction:: PyObject* PyObject_Bytes(PyObject *o)
+
+   .. index:: builtin: bytes
+
+   Compute a bytes representation of object *o*.  *NULL* is returned on failure
+   and a bytes object on success.  This is equivalent to the Python expression
+   ``bytes(o)``.
+
 
 .. cfunction:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 
