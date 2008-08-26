@@ -458,6 +458,18 @@ class BytesTest(BaseBytesTest):
         with open(fd, "rb", buffering=0) as f:
             self.assertRaises(TypeError, f.readinto, b"")
 
+    def test_custom(self):
+        class A:
+            def __bytes__(self):
+                return b'abc'
+        self.assertEqual(bytes(A()), b'abc')
+        class A: pass
+        self.assertRaises(TypeError, bytes, A())
+        class A:
+            def __bytes__(self):
+                return None
+        self.assertRaises(TypeError, bytes, A())
+
 
 class ByteArrayTest(BaseBytesTest):
     type2test = bytearray

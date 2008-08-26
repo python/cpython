@@ -27,6 +27,13 @@ Core and Builtins
 
 - Issue #3650: Fixed a reference leak in bytes.split('x').
 
+- bytes(o) now tries to use o.__bytes__() before using fallbacks.
+
+C API
+-----
+
+- PyObject_Bytes and PyBytes_FromObject were added.
+
 Library
 -------
 
