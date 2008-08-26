@@ -1242,7 +1242,10 @@ PyErr_PrintEx(int set_sys_last_vars)
 	if (exception == NULL)
 		return;
 	PyErr_NormalizeException(&exception, &v, &tb);
-	tb = tb ? tb : Py_None;
+	if (tb == NULL) {
+		tb = Py_None;
+		Py_INCREF(tb);
+	}
 	PyException_SetTraceback(v, tb);
 	if (exception == NULL)
 		return;
