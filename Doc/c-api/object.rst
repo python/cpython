@@ -130,6 +130,14 @@ Object Protocol
    by the :keyword:`print` statement.
 
 
+.. cfunction:: PyObject* PyObject_Bytes(PyObject *o)
+
+   .. index:: builtin: bytes
+
+   Compute a bytes representation of object *o*.  In 2.x, this is just a alias
+   for :cfunc:`PyObject_Str`.
+
+
 .. cfunction:: PyObject* PyObject_Unicode(PyObject *o)
 
    .. index:: builtin: unicode

@@ -458,6 +458,7 @@ PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_Str(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_Str(PyObject *);
+#define PyObject_Bytes PyObject_Str
 #ifdef Py_USING_UNICODE
 PyAPI_FUNC(PyObject *) PyObject_Unicode(PyObject *);
 #endif

@@ -29,6 +29,11 @@ Core and Builtins
 - Added warnings on the use of ``__getslice__``, ``__setslice__``, or
   ``__delslice__``.
 
+C-API
+-----
+
+- Aliased PyObject_Bytes to PyObject_Str.
+
 Library
 -------
 
