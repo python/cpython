@@ -231,6 +231,7 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 			*/
 			if ( this_ch < ' ' || this_ch > (' ' + 64)) {
 				PyErr_SetString(Error, "Illegal char");
+				PyBuffer_Release(&pascii);
 				Py_DECREF(rv);
 				return NULL;
 			}
@@ -259,6 +260,7 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 		if ( this_ch != ' ' && this_ch != ' '+64 &&
 		     this_ch != '\n' && this_ch != '\r' ) {
 			PyErr_SetString(Error, "Trailing garbage");
+			PyBuffer_Release(&pascii);
 			Py_DECREF(rv);
 			return NULL;
 		}
@@ -805,6 +807,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
 			** of the string only). This is a programmer error.
 			*/
 			PyErr_SetString(Error, "Orphaned RLE code at start");
+			PyBuffer_Release(&pin);
 			Py_DECREF(rv);
 			return NULL;
 		}

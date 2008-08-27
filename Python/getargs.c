@@ -1245,7 +1245,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			/* Caller is interested in Py_buffer, and the object
 			   supports it directly. */
 			format++;
-			if (pb->bf_getbuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
+			if (PyObject_GetBuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
 				PyErr_Clear();
 				return converterr("read-write buffer", arg, msgbuf, bufsize);
 			}
@@ -1257,11 +1257,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		/* Here we have processed w*, only w and w# remain. */
 		if (pb == NULL ||
 		    pb->bf_getbuffer == NULL ||
-                    ((temp = (*pb->bf_getbuffer)(arg, &view,
-                                                 PyBUF_SIMPLE)) != 0) ||
+                    ((temp = PyObject_GetBuffer(arg, &view,
+						PyBUF_SIMPLE)) != 0) ||
                     view.readonly == 1) {
-                        if (temp==0 && pb->bf_releasebuffer != NULL) {
-                                (*pb->bf_releasebuffer)(arg, &view);
+                        if (temp==0) {
+                                PyBuffer_Release(&view);
                         }
 			return converterr("single-segment read-write buffer",
 					  arg, msgbuf, bufsize);
@@ -1295,7 +1295,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				"bytes or read-only character buffer",
 				arg, msgbuf, bufsize);
 
-		if ((*pb->bf_getbuffer)(arg, &view, PyBUF_SIMPLE) != 0)
+		if (PyObject_GetBuffer(arg, &view, PyBUF_SIMPLE) != 0)
 			return converterr("string or single-segment read-only buffer",
                                           arg, msgbuf, bufsize);
 
@@ -1305,6 +1305,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			return converterr(
 				"string or pinned buffer",
 				arg, msgbuf, bufsize);
+
+		PyBuffer_Release(&view);
 
 		if (count < 0)
 			return converterr("(unspecified)", arg, msgbuf, bufsize);
@@ -1340,14 +1342,13 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
 		return -1;
 	}
 
-	if ((*pb->bf_getbuffer)(arg, &view, PyBUF_SIMPLE) != 0) {
+	if (PyObject_GetBuffer(arg, &view, PyBUF_SIMPLE) != 0) {
 		*errmsg = "bytes or single-segment read-only buffer";
 		return -1;
 	}
         count = view.len;
         *p = view.buf;
-        if (pb->bf_releasebuffer != NULL)
-                (*pb->bf_releasebuffer)(arg, &view);
+	PyBuffer_Release(&view);
 	return count;
 }
 
@@ -1364,7 +1365,7 @@ getbuffer(PyObject *arg, Py_buffer *view, char **errmsg)
 		return -1;
 	}
 	if (pb->bf_getbuffer) {
-		if (pb->bf_getbuffer(arg, view, 0) < 0) {
+		if (PyObject_GetBuffer(arg, view, 0) < 0) {
 			*errmsg = "convertible to a buffer";
 			return -1;
 		}
