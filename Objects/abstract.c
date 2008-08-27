@@ -260,6 +260,7 @@ PyObject_AsCharBuffer(PyObject *obj,
 	*buffer_len = view.len;
 	if (pb->bf_releasebuffer != NULL)
 		(*pb->bf_releasebuffer)(obj, &view);
+	Py_XDECREF(view.obj);
 	return 0;
 }
 
@@ -305,6 +306,7 @@ int PyObject_AsReadBuffer(PyObject *obj,
 	*buffer_len = view.len;
 	if (pb->bf_releasebuffer != NULL)
 		(*pb->bf_releasebuffer)(obj, &view);
+	Py_XDECREF(view.obj);
 	return 0;
 }
 
@@ -332,6 +334,7 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 	*buffer_len = view.len;
 	if (pb->bf_releasebuffer != NULL)
 		(*pb->bf_releasebuffer)(obj, &view);
+	Py_XDECREF(view.obj);
 	return 0;
 }
 

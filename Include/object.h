@@ -143,7 +143,7 @@ typedef int(*objobjargproc)(PyObject *, PyObject *, PyObject *);
 /* buffer interface */
 typedef struct bufferinfo {
 	void *buf;   
-	PyObject *obj;        /* borrowed reference */
+	PyObject *obj;        /* owned reference */
         Py_ssize_t len;
         Py_ssize_t itemsize;  /* This is Py_ssize_t so it can be 
                                  pointed to by strides in simple case.*/

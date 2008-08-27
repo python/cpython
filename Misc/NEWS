@@ -21,6 +21,10 @@ Core and Builtins
 
 - Issue #3663: Py_None was decref'd when printing SyntaxErrors.
 
+- Issue #3651: Fix various memory leaks when using the buffer
+  interface, or when the "s#" code of PyArg_ParseTuple is given a
+  bytes object.
+
 - Issue #3657: Fix uninitialized memory read when pickling longs.
   Found by valgrind.
 
