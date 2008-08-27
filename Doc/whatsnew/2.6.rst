@@ -951,6 +951,11 @@ and some of the methods of lists, such as :meth:`append`,
     >>> b
     bytearray(b'ABCde')
 
+There's also a corresponding C API, with
+:cfunc:`PyByteArray_FromObject`,
+:cfunc:`PyByteArray_FromStringAndSize`,
+and various other functions.
+
 .. seealso::
 
    :pep:`3112` - Bytes literals in Python 3000
@@ -993,14 +998,14 @@ the :mod:`io` module:
   It supports all of the methods of :class:`RawIOBase`,
   and adds a :attr:`raw` attribute holding the underlying raw object.
 
-  There are four concrete classes implementing this ABC:
-  :class:`BufferedWriter` and
-  :class:`BufferedReader` for objects that only support
-  writing or reading and don't support random access,
-  :class:`BufferedRandom` for objects that support the :meth:`seek` method
-  for random access,
-  and :class:`BufferedRWPair` for objects such as TTYs that have
-  both read and write operations that act upon unconnected streams of data.
+  There are five concrete classes implementing this ABC.
+  :class:`BufferedWriter` and :class:`BufferedReader` are for objects
+  that only support writing or reading and don't support random
+  access.  :class:`BufferedRandom` adds the :meth:`seek` method for
+  random access, and :class:`BufferedRWPair` is for objects such as
+  TTYs that have both read and write operations that act upon
+  unconnected streams of data.  The :class:`BytesIO`
+  class supports reading, writing, and seeking over an in-memory buffer.
 
 * :class:`TextIOBase`: Provides functions for reading and writing
   strings (remember, strings will be Unicode in Python 3.0),
@@ -2806,6 +2811,13 @@ where various combinations of ``(start, stop, step)`` are supplied.
 (Implemented by Thomas Wouters.)
 
 .. Revision 57769
+
+All :mod:`ctypes` data types now support
+:meth:`from_buffer` and :meth:`from_buffer_copy`
+methods that create a ctypes instance based on a
+provided buffer object.  :meth:`from_buffer_copy` copies
+the contents of the object,
+while :meth:`from_buffer` will share the same memory area.
 
 A new calling convention tells :mod:`ctypes` to clear the ``errno`` or
 Win32 LastError variables at the outset of each wrapped call.
