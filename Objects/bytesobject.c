@@ -2932,6 +2932,11 @@ PyBytes_FromObject(PyObject *x)
 	PyObject *new, *it;
 	Py_ssize_t i, size;
 
+	if (x == NULL) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+
 	/* Is it an int? */
 	size = PyNumber_AsSsize_t(x, PyExc_ValueError);
 	if (size == -1 && PyErr_Occurred()) {
