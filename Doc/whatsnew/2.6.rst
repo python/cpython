@@ -1053,8 +1053,7 @@ packages such as NumPy, which can expose the internal representation
 of arrays so that callers can write data directly into an array instead
 of going through a slower API.  This PEP updates the buffer protocol in light of experience
 from NumPy development, adding a number of new features
-such as indicating the shape of an array,
-locking memory .
+such as indicating the shape of an array or locking a memory region.
 
 The most important new C API function is
 ``PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)``, which
@@ -1063,9 +1062,10 @@ takes an object and a set of flags, and fills in the
 about the object's memory representation.  Objects
 can use this operation to lock memory in place
 while an external caller could be modifying the contents,
-so there's a corresponding
-``PyBuffer_Release(Py_buffer *view)`` to
+so there's a corresponding ``PyBuffer_Release(Py_buffer *view)`` to
 indicate that the external caller is done.
+
+.. XXX PyObject_GetBuffer not documented in c-api
 
 The **flags** argument to :cfunc:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
@@ -1078,7 +1078,8 @@ constraints upon the memory returned.  Some examples are:
    requests a C-contiguous (last dimension varies the fastest) or
    Fortran-contiguous (first dimension varies the fastest) layout.
 
-.. XXX this feature is not in 2.6 docs yet
+Two new argument codes for :cfunc:`PyArg_ParseTuple`,
+``s*`` and ``z*``, return locked buffer objects for a parameter.
 
 .. seealso::
 
