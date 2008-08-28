@@ -495,7 +495,7 @@ Return negative if x<y, zero if x==y, positive if x>y.");
 
 
 static char *
-source_as_string(PyObject *cmd)
+source_as_string(PyObject *cmd, char *funcname, char *what)
 {
 	char *str;
 	Py_ssize_t size;
@@ -506,8 +506,9 @@ source_as_string(PyObject *cmd)
 			return NULL;
 	}
 	else if (!PyObject_CheckReadBuffer(cmd)) {
-		PyErr_SetString(PyExc_TypeError,
-		  "eval()/exec() arg 1 must be a string, bytes or code object");
+		PyErr_Format(PyExc_TypeError,
+		  "%s() arg 1 must be a %s object",
+		  funcname, what);
 		return NULL;
 	}
 	if (PyObject_AsReadBuffer(cmd, (const void **)&str, &size) < 0) {
@@ -591,7 +592,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 		return result;
 	}
 
-	str = source_as_string(cmd);
+	str = source_as_string(cmd, "compile", "string, bytes, AST or code");
 	if (str == NULL)
 		return NULL;
 
@@ -703,7 +704,7 @@ builtin_eval(PyObject *self, PyObject *args)
 		return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
 	}
 
-	str = source_as_string(cmd);
+	str = source_as_string(cmd, "eval", "string, bytes or code");
 	if (str == NULL)
 		return NULL;
 
@@ -751,13 +752,7 @@ builtin_exec(PyObject *self, PyObject *args)
 	}
 	else if (locals == Py_None)
 		locals = globals;
-	if (!PyUnicode_Check(prog) &&
-	    !PyCode_Check(prog)) {
-		PyErr_Format(PyExc_TypeError,
-			"exec() arg 1 must be a string, file, or code "
-			"object, not %.100s", prog->ob_type->tp_name);
-		return NULL;
-	}
+
 	if (!PyDict_Check(globals)) {
 		PyErr_Format(PyExc_TypeError, "exec() arg 2 must be a dict, not %.100s",
 			     globals->ob_type->tp_name);
@@ -785,7 +780,8 @@ builtin_exec(PyObject *self, PyObject *args)
 		v = PyEval_EvalCode((PyCodeObject *) prog, globals, locals);
 	}
 	else {
-		char *str = source_as_string(prog);
+		char *str = source_as_string(prog, "exec",
+					     "string, bytes or code");
 		PyCompilerFlags cf;
 		if (str == NULL)
 			return NULL;
