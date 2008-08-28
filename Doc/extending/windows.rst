@@ -102,10 +102,14 @@ described here are distributed with the Python sources in the
    and it should call :cfunc:`Py_InitModule` with the string ``"spam"`` as its
    first argument (use the minimal :file:`example.c` in this directory as a guide).
    By convention, it lives in a file called :file:`spam.c` or :file:`spammodule.c`.
-   The output file should be called :file:`spam.dll` or :file:`spam.pyd` (the
-   latter is supported to avoid confusion with a system library :file:`spam.dll` to
-   which your module could be a Python interface) in Release mode, or
-   :file:`spam_d.dll` or :file:`spam_d.pyd` in Debug mode.
+   The output file should be called :file:`spam.pyd` (in Release mode) or  
+   :file:`spam_d.pyd` (in Debug mode). The extension :file:`.pyd` was chosen
+   to avoid confusion with a system library :file:`spam.dll` to which your module
+   could be a Python interface.
+
+   .. versionchanged:: 2.5
+      Previously, file names like :file:`spam.dll` (in release mode) or
+      :file:`spam_d.dll` (in debug mode) were also recognized.
 
    Now your options are:
 
