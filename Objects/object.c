@@ -456,7 +456,7 @@ PyObject_ASCII(PyObject *v)
 PyObject *
 PyObject_Bytes(PyObject *v)
 {
-	PyObject *bytesmeth, *result, *func;
+	PyObject *result, *func;
 	static PyObject *bytesstring = NULL;
 
 	if (bytesstring == NULL) {
