@@ -53,6 +53,7 @@ void
 PyErr_SetObject(PyObject *exception, PyObject *value)
 {
 	PyThreadState *tstate = PyThreadState_GET();
+	PyObject *exc_value;
 	PyObject *tb = NULL;
 
 	if (exception != NULL &&
@@ -63,8 +64,10 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 		return;
 	}
 	Py_XINCREF(value);
-	if (tstate->exc_value != NULL && tstate->exc_value != Py_None) {
+	exc_value = tstate->exc_value;
+	if (exc_value != NULL && exc_value != Py_None) {
 		/* Implicit exception chaining */
+		Py_INCREF(exc_value);
 		if (value == NULL || !PyExceptionInstance_Check(value)) {
 			/* We must normalize the value right now */
 			PyObject *args, *fixed_value;
@@ -88,8 +91,8 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 		   This is O(chain length) but context chains are
 		   usually very short. Sensitive readers may try
 		   to inline the call to PyException_GetContext. */
-		if (tstate->exc_value != value) {
-			PyObject *o = tstate->exc_value, *context;
+		if (exc_value != value) {
+			PyObject *o = exc_value, *context;
 			while ((context = PyException_GetContext(o))) {
 				Py_DECREF(context);
 				if (context == value) {
@@ -98,8 +101,9 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 				}
 				o = context;
 			}
-			Py_INCREF(tstate->exc_value);
-			PyException_SetContext(value, tstate->exc_value);
+ 			PyException_SetContext(value, exc_value);
+		} else {
+			Py_DECREF(exc_value);
 		}
 	}
 	if (value != NULL && PyExceptionInstance_Check(value))

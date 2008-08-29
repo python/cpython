@@ -2453,11 +2453,6 @@ fast_block_end:
 
 			if (b->b_type == EXCEPT_HANDLER) {
 				UNWIND_EXCEPT_HANDLER(b);
-				if (why == WHY_EXCEPTION && !throwflag) {
-					Py_CLEAR(tstate->exc_type);
-					Py_CLEAR(tstate->exc_value);
-					Py_CLEAR(tstate->exc_traceback);
-				}
 				continue;
 			}
 			UNWIND_BLOCK(b);
