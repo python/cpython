@@ -48,6 +48,15 @@ PyAPI_FUNC(void *) PyCObject_Import(char *module_name, char *cobject_name);
 /* Modify a C object. Fails (==0) if object has a destructor. */
 PyAPI_FUNC(int) PyCObject_SetVoidPtr(PyObject *self, void *cobj);
 
+
+typedef struct {
+    PyObject_HEAD
+    void *cobject;
+    void *desc;
+    void (*destructor)(void *);
+} PyCObject;
+
+
 #ifdef __cplusplus
 }
 #endif
