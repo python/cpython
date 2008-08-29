@@ -324,6 +324,30 @@ class TestContext(unittest.TestCase):
 
         f()
 
+    def test_3611(self):
+        # A re-raised exception in a __del__ caused the __context__
+        # to be cleared
+        class C:
+            def __del__(self):
+                try:
+                    1/0
+                except:
+                    raise
+
+        def f():
+            x = C()
+            try:
+                try:
+                    x.x
+                except AttributeError:
+                    del x
+                    raise TypeError
+            except Exception as e:
+                self.assertNotEqual(e.__context__, None)
+                self.assert_(isinstance(e.__context__, AttributeError))
+
+        with support.captured_output("stderr"):
+            f()
 
 class TestRemovedFunctionality(unittest.TestCase):
     def test_tuples(self):

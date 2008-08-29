@@ -12,6 +12,9 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #3611: An exception __context__ could be cleared in a complex pattern
+  involving a __del__ method re-raising an exception.
+
 - Issue #2534: speed up isinstance() and issubclass() by 50-70%, so as to 
   match Python 2.5 speed despite the __instancecheck__ / __subclasscheck__
   mechanism. In the process, fix a bug where isinstance() and issubclass(),
