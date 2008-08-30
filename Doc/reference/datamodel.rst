@@ -1431,7 +1431,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
    :meth:`__getattr__` and :meth:`__setattr__`.) This is done both for efficiency
-   reasons and because otherwise :meth:`__setattr__` would have no way to access
+   reasons and because otherwise :meth:`__getattr__` would have no way to access
    other attributes of the instance.  Note that at least for instance variables,
    you can fake total control by not inserting any values in the instance attribute
    dictionary (but instead inserting them in another object).  See the
