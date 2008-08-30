@@ -1025,12 +1025,13 @@ the :mod:`io` module:
 
   There are five concrete classes implementing this ABC.
   :class:`BufferedWriter` and :class:`BufferedReader` are for objects
-  that only support writing or reading and don't support random
-  access.  :class:`BufferedRandom` adds the :meth:`seek` method for
-  random access, and :class:`BufferedRWPair` is for objects such as
-  TTYs that have both read and write operations that act upon
-  unconnected streams of data.  The :class:`BytesIO`
-  class supports reading, writing, and seeking over an in-memory buffer.
+  that support write-only or read-only usage that have a :meth:`seek`
+  method for random access.  :class:`BufferedRandom` objects support
+  read and write access upon the same underlying stream, and
+  :class:`BufferedRWPair` is for objects such as TTYs that have both
+  read and write operations acting upon unconnected streams of data.
+  The :class:`BytesIO` class supports reading, writing, and seeking
+  over an in-memory buffer.
 
 * :class:`TextIOBase`: Provides functions for reading and writing
   strings (remember, strings will be Unicode in Python 3.0),
@@ -3152,5 +3153,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article:
-Georg Brandl, Jim Jewett.
+Georg Brandl, Jim Jewett, Antoine Pitrou.
 
