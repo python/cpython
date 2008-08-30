@@ -68,6 +68,11 @@ to a handler.  Code to create and run the server looks like this::
       address.
 
 
+   .. attribute:: server
+
+      Contains the server instance.
+
+
    .. attribute:: command
 
       Contains the command (request type). For example, ``'GET'``.
