@@ -10,7 +10,7 @@
 .. versionadded:: 2.5
 
 ``ctypes`` is a foreign function library for Python.  It provides C compatible
-data types, and allows calling functions in dlls/shared libraries.  It can be
+data types, and allows calling functions in DLLs or shared libraries.  It can be
 used to wrap these libraries in pure Python.
 
 
@@ -23,8 +23,8 @@ Note: The code samples in this tutorial use ``doctest`` to make sure that they
 actually work.  Since some code samples behave differently under Linux, Windows,
 or Mac OS X, they contain doctest directives in comments.
 
-Note: Some code sample references the ctypes :class:`c_int` type. This type is
-an alias to the :class:`c_long` type on 32-bit systems.  So, you should not be
+Note: Some code samples reference the ctypes :class:`c_int` type. This type is
+an alias for the :class:`c_long` type on 32-bit systems.  So, you should not be
 confused if :class:`c_long` is printed if you would expect :class:`c_int` ---
 they are actually the same type.
 
@@ -34,8 +34,8 @@ they are actually the same type.
 Loading dynamic link libraries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``ctypes`` exports the *cdll*, and on Windows also *windll* and *oledll* objects
-to load dynamic link libraries.
+``ctypes`` exports the *cdll*, and on Windows *windll* and *oledll*
+objects, for loading dynamic link libraries.
 
 You load libraries by accessing them as attributes of these objects. *cdll*
 loads libraries which export functions using the standard ``cdecl`` calling
@@ -317,7 +317,7 @@ property::
    >>> p = create_string_buffer("Hello", 10)  # create a 10 byte buffer
    >>> print sizeof(p), repr(p.raw)
    10 'Hello\x00\x00\x00\x00\x00'
-   >>> p.value = "Hi"      
+   >>> p.value = "Hi"
    >>> print sizeof(p), repr(p.raw)
    10 'Hi\x00lo\x00\x00\x00\x00\x00'
    >>>
@@ -908,7 +908,7 @@ other, and finally follow the pointer chain a few times::
    ...     p = p.next[0]
    ...
    foo bar foo bar foo bar foo bar
-   >>>    
+   >>>
 
 
 .. _ctypes-callback-functions:
@@ -2045,7 +2045,7 @@ Data types
 
    .. method:: _CData.from_buffer_copy(source[, offset])
 
-      This method creates a ctypes instance, the buffer is copied from
+      This method creates a ctypes instance, copying the buffer from
       the source object buffer which must be readable.  The optional
       ``offset`` parameter specifies an offset into the source buffer
       in bytes; the default is zero.  If the source buffer is not
@@ -2062,13 +2062,13 @@ Data types
 
    .. method:: from_param(obj)
 
-      This method adapts obj to a ctypes type.  It is called with the actual
-      object used in a foreign function call, when the type is present in the
-      foreign functions :attr:`argtypes` tuple; it must return an object that
-      can be used as function call parameter.
+      This method adapts *obj* to a ctypes type.  It is called with the actual
+      object used in a foreign function call when the type is present in the
+      foreign function's :attr:`argtypes` tuple; it must return an object that
+      can be used as a function call parameter.
 
-      All ctypes data types have a default implementation of this classmethod,
-      normally it returns ``obj`` if that is an instance of the type.  Some
+      All ctypes data types have a default implementation of this classmethod
+      that normally returns ``obj`` if that is an instance of the type.  Some
       types accept other objects as well.
 
 
