@@ -855,8 +855,8 @@ PEP 3105: ``print`` As a Function
 =====================================================
 
 The ``print`` statement becomes the :func:`print` function in Python 3.0.
-Making :func:`print` a function makes it easier to change
-by doing 'def print(...)' or importing a new function from somewhere else.
+Making :func:`print` a function makes it possible to replace the function
+by doing ``def print(...)`` or importing a new function from somewhere else.
 
 Python 2.6 has a ``__future__`` import that removes ``print`` as language
 syntax, letting you use the functional form instead.  For example::
@@ -870,11 +870,11 @@ The signature of the new function is::
 
 The parameters are:
 
- * **args**: positional arguments whose values will be printed out.
- * **sep**: the separator, which will be printed between arguments.
- * **end**: the ending text, which will be printed after all of the
+ * *args*: positional arguments whose values will be printed out.
+ * *sep*: the separator, which will be printed between arguments.
+ * *end*: the ending text, which will be printed after all of the
    arguments have been output.
- * **file**: the file object to which the output will be sent.
+ * *file*: the file object to which the output will be sent.
 
 .. seealso::
 
@@ -889,32 +889,32 @@ PEP 3110: Exception-Handling Changes
 =====================================================
 
 One error that Python programmers occasionally make
-is the following::
+is writing the following code::
 
     try:
         ...
-    except TypeError, ValueError:
+    except TypeError, ValueError:  # Wrong!
         ...
 
-The author is probably trying to catch both
-:exc:`TypeError` and :exc:`ValueError` exceptions, but this code
-actually does something different: it will catch
-:exc:`TypeError` and bind the resulting exception object
-to the local name ``"ValueError"``.  The correct code
-would have specified a tuple::
+The author is probably trying to catch both :exc:`TypeError` and
+:exc:`ValueError` exceptions, but this code actually does something
+different: it will catch :exc:`TypeError` and bind the resulting
+exception object to the local name ``"ValueError"``.  The
+:exc:`ValueError` exception will not be caught at all.  The correct
+code specifies a tuple of exceptions::
 
     try:
         ...
     except (TypeError, ValueError):
         ...
 
-This error is possible because the use of the comma here is ambiguous:
+This error happens because the use of the comma here is ambiguous:
 does it indicate two different nodes in the parse tree, or a single
-node that's a tuple.
+node that's a tuple?
 
-Python 3.0 changes the syntax to make this unambiguous by replacing
-the comma with the word "as".  To catch an exception and store the
-exception object in the variable ``exc``, you must write::
+Python 3.0 makes this unambiguous by replacing the comma with the word
+"as".  To catch an exception and store the exception object in the
+variable ``exc``, you must write::
 
     try:
         ...
@@ -924,7 +924,8 @@ exception object in the variable ``exc``, you must write::
 Python 3.0 will only support the use of "as", and therefore interprets
 the first example as catching two different exceptions.  Python 2.6
 supports both the comma and "as", so existing code will continue to
-work.
+work.  We therefore suggest using "as" when writing new Python code
+that will only be executed with 2.6.
 
 .. seealso::
 
@@ -1009,14 +1010,15 @@ PEP 3116: New I/O Library
 Python's built-in file objects support a number of methods, but
 file-like objects don't necessarily support all of them.  Objects that
 imitate files usually support :meth:`read` and :meth:`write`, but they
-may not support :meth:`readline`.  Python 3.0 introduces a layered I/O
-library in the :mod:`io` module that separates buffering and
-text-handling features from the fundamental read and write operations.
+may not support :meth:`readline`, for example.  Python 3.0 introduces
+a layered I/O library in the :mod:`io` module that separates buffering
+and text-handling features from the fundamental read and write
+operations.
 
 There are three levels of abstract base classes provided by
 the :mod:`io` module:
 
-* :class:`RawIOBase`: defines raw I/O operations: :meth:`read`,
+* :class:`RawIOBase` defines raw I/O operations: :meth:`read`,
   :meth:`readinto`,
   :meth:`write`, :meth:`seek`, :meth:`tell`, :meth:`truncate`,
   and :meth:`close`.
@@ -1030,7 +1032,7 @@ the :mod:`io` module:
 
   .. XXX should 2.6 register them in io.py?
 
-* :class:`BufferedIOBase`: is an abstract base class that
+* :class:`BufferedIOBase` is an abstract base class that
   buffers data in memory to reduce the number of
   system calls used, making I/O processing more efficient.
   It supports all of the methods of :class:`RawIOBase`,
@@ -1058,7 +1060,7 @@ the :mod:`io` module:
   to the underlying object.  :class:`StringIO` simply buffers
   everything in memory without ever writing anything to disk.
 
-  (In current 2.6 alpha releases, :class:`io.StringIO` is implemented in
+  (In Python 2.6, :class:`io.StringIO` is implemented in
   pure Python, so it's pretty slow.   You should therefore stick with the
   existing :mod:`StringIO` module or :mod:`cStringIO` for now.  At some
   point Python 3.0's :mod:`io` module will be rewritten into C for speed,
@@ -1091,7 +1093,7 @@ example, and this lets another module such as :mod:`re`
 treat memory-mapped files as a string of characters to be searched.
 
 The primary users of the buffer protocol are numeric-processing
-packages such as NumPy, which can expose the internal representation
+packages such as NumPy, which expose the internal representation
 of arrays so that callers can write data directly into an array instead
 of going through a slower API.  This PEP updates the buffer protocol in light of experience
 from NumPy development, adding a number of new features
@@ -1109,7 +1111,7 @@ indicate that the external caller is done.
 
 .. XXX PyObject_GetBuffer not documented in c-api
 
-The **flags** argument to :cfunc:`PyObject_GetBuffer` specifies
+The *flags* argument to :cfunc:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
 
  * :const:`PyBUF_WRITABLE` indicates that the memory must be writable.
@@ -1118,7 +1120,7 @@ constraints upon the memory returned.  Some examples are:
 
  * :const:`PyBUF_C_CONTIGUOUS` and :const:`PyBUF_F_CONTIGUOUS`
    requests a C-contiguous (last dimension varies the fastest) or
-   Fortran-contiguous (first dimension varies the fastest) layout.
+   Fortran-contiguous (first dimension varies the fastest) array layout.
 
 Two new argument codes for :cfunc:`PyArg_ParseTuple`,
 ``s*`` and ``z*``, return locked buffer objects for a parameter.
@@ -1137,14 +1139,15 @@ Two new argument codes for :cfunc:`PyArg_ParseTuple`,
 PEP 3119: Abstract Base Classes
 =====================================================
 
-Some object-oriented languages such as Java support interfaces: declarations
-that a class has a given set of methods or supports a given access protocol.
-Abstract Base Classes (or ABCs) are an equivalent feature for Python. The ABC
-support consists of an :mod:`abc` module containing a metaclass called
-:class:`ABCMeta`, special handling
-of this metaclass by the :func:`isinstance` and :func:`issubclass` built-ins,
-and a collection of basic ABCs that the Python developers think will be widely
-useful.
+Some object-oriented languages such as Java support interfaces,
+declaring that a class has a given set of methods or supports a given
+access protocol.  Abstract Base Classes (or ABCs) are an equivalent
+feature for Python. The ABC support consists of an :mod:`abc` module
+containing a metaclass called :class:`ABCMeta`, special handling of
+this metaclass by the :func:`isinstance` and :func:`issubclass`
+built-ins, and a collection of basic ABCs that the Python developers
+think will be widely useful.  Future versions of Python will probably
+add more ABCs.
 
 Let's say you have a particular class and wish to know whether it supports
 dictionary-style access.  The phrase "dictionary-style" is vague, however.
@@ -1154,11 +1157,12 @@ Or that the object will have :meth:`keys`, :meth:`values`, and :meth:`items`
 methods?  What about the iterative variants  such as :meth:`iterkeys`?  :meth:`copy`
 and :meth:`update`?  Iterating over the object with :func:`iter`?
 
-Python 2.6 includes a number of different ABCs in the :mod:`collections`
-module.  :class:`Iterable` indicates that a class defines :meth:`__iter__`,
-and :class:`Container` means the class supports  ``x in y`` expressions
-by defining a :meth:`__contains__` method.  The basic dictionary interface of
-getting items, setting items, and
+The Python 2.6 :mod:`collections` module includes a number of
+different ABCs that represent these distinctions.  :class:`Iterable`
+indicates that a class defines :meth:`__iter__`, and
+:class:`Container` means the class defines a :meth:`__contains__`
+method and therefore supports ``x in y`` expressions.  The basic
+dictionary interface of getting items, setting items, and
 :meth:`keys`, :meth:`values`, and :meth:`items`, is defined by the
 :class:`MutableMapping` ABC.
 
@@ -1205,12 +1209,12 @@ now write::
 	if not isinstance(d, collections.MutableMapping):
 	    raise ValueError("Mapping object expected, not %r" % d)
 
-(Don't feel that you must now begin writing lots of checks as in the
+Don't feel that you must now begin writing lots of checks as in the
 above example.  Python has a strong tradition of duck-typing, where
-explicit type-checking isn't done and code simply calls methods on
+explicit type-checking is never done and code simply calls methods on
 an object, trusting that those methods will be there and raising an
-exception if they aren't.  Be judicious in checking for ABCs
-and only do it where it helps.)
+exception if they aren't.  Be judicious in checking for ABCs and only
+do it where it's absolutely necessary.
 
 You can write your own ABCs by using ``abc.ABCMeta`` as the
 metaclass in a class definition::
@@ -1220,6 +1224,7 @@ metaclass in a class definition::
   class Drawable():
       __metaclass__ = ABCMeta
 
+      @abstractmethod
       def draw(self, x, y, scale=1.0):
 	  pass
 
@@ -1238,21 +1243,13 @@ of other methods described in :class:`Drawable`.  Classes implementing
 this ABC therefore don't need to provide their own implementation
 of :meth:`draw_doubled`, though they can do so.  An implementation
 of :meth:`draw` is necessary, though; the ABC can't provide
-a useful generic implementation.  You
-can apply the ``@abstractmethod`` decorator to methods such as
-:meth:`draw` that must be implemented; Python will
-then raise an exception for classes that
-don't define the method::
+a useful generic implementation.
 
-    class Drawable():
-	__metaclass__ = ABCMeta
-
-	@abstractmethod
-	def draw(self, x, y, scale):
-	    pass
-
+You can apply the ``@abstractmethod`` decorator to methods such as
+:meth:`draw` that must be implemented; Python will then raise an
+exception for classes that don't define the method.
 Note that the exception is only raised when you actually
-try to create an instance of a subclass without the method::
+try to create an instance of a subclass lacking the method::
 
     >>> s=Square()
     Traceback (most recent call last):
@@ -1260,13 +1257,14 @@ try to create an instance of a subclass without the method::
     TypeError: Can't instantiate abstract class Square with abstract methods draw
     >>>
 
-Abstract data attributes can be declared using the ``@abstractproperty`` decorator::
+Abstract data attributes can be declared using the
+``@abstractproperty`` decorator::
 
     @abstractproperty
     def readonly(self):
        return self._x
 
-Subclasses must then define a :meth:`readonly` property
+Subclasses must then define a :meth:`readonly` property.
 
 .. seealso::
 
@@ -1283,9 +1281,9 @@ PEP 3127: Integer Literal Support and Syntax
 =====================================================
 
 Python 3.0 changes the syntax for octal (base-8) integer literals,
-which are now prefixed by "0o" or "0O" instead of a leading zero, and
-adds support for binary (base-2) integer literals, signalled by a "0b"
-or "0B" prefix.
+prefixing them with "0o" or "0O" instead of a leading zero, and adds
+support for binary (base-2) integer literals, signalled by a "0b" or
+"0B" prefix.
 
 Python 2.6 doesn't drop support for a leading 0 signalling
 an octal number, but it does add support for "0o" and "0b"::
@@ -1301,13 +1299,15 @@ built-in returns the binary representation for a number::
 
     >>> oct(42)
     '052'
+    >>> future_builtins.oct(42)
+    '0o52'
     >>> bin(173)
     '0b10101101'
 
 The :func:`int` and :func:`long` built-ins will now accept the "0o"
 and "0b" prefixes when base-8 or base-2 are requested, or when the
-**base** argument is zero (meaning the base used is determined from
-the string):
+*base* argument is zero (signalling that the base used should be
+determined from the string):
 
     >>> int ('0o52', 0)
     42
@@ -1768,9 +1768,9 @@ Norwitz and Georg Brandl.)
 The encoding used for standard input, output, and standard error can
 be specified by setting the :envvar:`PYTHONIOENCODING` environment
 variable before running the interpreter.  The value should be a string
-in the form ``**encoding**`` or ``**encoding**:**errorhandler**``.
-The **encoding** part specifies the encoding's name, e.g. ``utf-8`` or
-``latin-1``; the optional **errorhandler** part specifies
+in the form ``*encoding*`` or ``*encoding*:*errorhandler*``.
+The *encoding* part specifies the encoding's name, e.g. ``utf-8`` or
+``latin-1``; the optional *errorhandler* part specifies
 what to do with characters that can't be handled by the encoding,
 and  should be one of "error", "ignore", or "replace".   (Contributed
 by Martin von Loewis.)
@@ -2342,7 +2342,7 @@ details.
 * The :mod:`sets` module has been deprecated; it's better to
   use the built-in :class:`set` and :class:`frozenset` types.
 
-* The :func:`shutil.copytree` function now has an optional **ignore** argument
+* The :func:`shutil.copytree` function now has an optional *ignore* argument
   that takes a callable object.  This callable will receive each directory path
   and a list of the directory's contents, and returns a list of names that
   will be ignored, not copied.
@@ -2751,15 +2751,15 @@ of these built-in functions that can be imported when writing
 
 The functions in this module currently include:
 
-* ``ascii(**obj**)``: equivalent to :func:`repr`.  In Python 3.0,
+* ``ascii(*obj*)``: equivalent to :func:`repr`.  In Python 3.0,
   :func:`repr` will return a Unicode string, while :func:`ascii` will
   return a pure ASCII bytestring.
 
-* ``filter(**predicate**, **iterable**)``,
-  ``map(**func**, **iterable1**, ...)``: the 3.0 versions
+* ``filter(*predicate*, *iterable*)``,
+  ``map(*func*, *iterable1*, ...)``: the 3.0 versions
   return iterators, differing from the 2.x built-ins that return lists.
 
-* ``hex(**value**)``, ``oct(**value**)``: instead of calling the
+* ``hex(*value*)``, ``oct(*value*)``: instead of calling the
   :meth:`__hex__` or :meth:`__oct__` methods, these versions will
   call the :meth:`__index__` method and convert the result to hexadecimal
   or octal.
@@ -2873,7 +2873,7 @@ and then call the module-level methods :meth:`set_last_error`
 and :meth:`get_last_error`.
 
 The :func:`byref` function, used to retrieve a pointer to a ctypes
-instance, now has an optional **offset** parameter that is a byte
+instance, now has an optional *offset* parameter that is a byte
 count that will be added to the returned pointer.
 
 .. ======================================================================
