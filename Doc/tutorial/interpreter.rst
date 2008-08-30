@@ -10,16 +10,16 @@ Using the Python Interpreter
 Invoking the Interpreter
 ========================
 
-The Python interpreter is usually installed as :file:`/usr/local/bin/python` on
-those machines where it is available; putting :file:`/usr/local/bin` in your
+The Python interpreter is usually installed as :file:`/usr/local/bin/python3.0`
+on those machines where it is available; putting :file:`/usr/local/bin` in your
 Unix shell's search path makes it possible to start it by typing the command ::
 
-   python
+   python3.0
 
-to the shell.  Since the choice of the directory where the interpreter lives is
-an installation option, other places are possible; check with your local Python
-guru or system administrator.  (E.g., :file:`/usr/local/python` is a popular
-alternative location.)
+to the shell. [#]_ Since the choice of the directory where the interpreter lives
+is an installation option, other places are possible; check with your local
+Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
+popular alternative location.)
 
 On Windows machines, the Python installation is usually placed in
 :file:`C:\Python30`, though you can change this when you're running the
@@ -58,8 +58,8 @@ Some Python modules are also useful as scripts.  These can be invoked using
 ``python -m module [arg] ...``, which executes the source file for *module* as
 if you had spelled out its full name on the command line.
 
-Note that there is a difference between ``python file`` and ``python <file``.
-In the latter case, input requests from the program, such as calling
+Note that there is a difference between ``python file`` and ``python
+<file``.  In the latter case, input requests from the program, such as calling
 ``sys.stdin.read()``, are satisfied from *file*.  Since this file has already
 been read until the end by the parser before the program starts executing, the
 program will encounter end-of-file immediately.  In the former case (which is
@@ -101,7 +101,7 @@ with the *secondary prompt*, by default three dots (``...``). The interpreter
 prints a welcome message stating its version number and a copyright notice
 before printing the first prompt::
 
-   $ python
+   $ python3.0
    Python 3.0a1 (py3k, Sep 12 2007, 12:21:02)
    [GCC 3.4.6 20060404 (Red Hat 3.4.6-8)] on linux2
    Type "help", "copyright", "credits" or "license" for more information.
@@ -155,7 +155,7 @@ Executable Python Scripts
 On BSD'ish Unix systems, Python scripts can be made directly executable, like
 shell scripts, by putting the line ::
 
-   #! /usr/bin/env python
+   #! /usr/bin/env python3.0
 
 (assuming that the interpreter is on the user's :envvar:`PATH`) at the beginning
 of the script and giving the file an executable mode.  The ``#!`` must be the
@@ -242,6 +242,10 @@ in the script::
 
 
 .. rubric:: Footnotes
+
+.. [#] On Unix, the 3.0 interpreter is by default not installed with the
+   executable named ``python``, so that it does not conflict with a
+   simultaneously installed Python 2.x executable.
 
 .. [#] A problem with the GNU Readline package may prevent this.
 
