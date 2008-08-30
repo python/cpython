@@ -173,7 +173,6 @@ PyTypeObject PyBool_Type = {
 
 /* The objects representing bool values False and True */
 
-/* Named Zero for link-level compatibility */
 struct _longobject _Py_FalseStruct = {
 	PyVarObject_HEAD_INIT(&PyBool_Type, 0)
 	{ 0 }
