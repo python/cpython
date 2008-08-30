@@ -317,7 +317,7 @@ The module also defines two mathematical constants:
    :exc:`OverflowError`, ``math.log(0L)`` may raise :exc:`ValueError` instead.
 
    All functions return a quiet *NaN* if at least one of the args is *NaN*.
-   Signaling *NaN*s raise an exception. The exception type still depends on the
+   Signaling *NaN*\s raise an exception. The exception type still depends on the
    platform and libm implementation. It's usually :exc:`ValueError` for *EDOM*
    and :exc:`OverflowError` for errno *ERANGE*.
 
