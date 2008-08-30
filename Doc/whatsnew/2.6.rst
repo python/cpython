@@ -53,6 +53,20 @@ This article explains the new features in Python 2.6.  The release
 schedule is described in :pep:`361`; currently the final release is
 scheduled for October 1 2008.
 
+The major theme of Python 2.6 is preparing the migration path to
+Python 3.0, a major redesign of the language.  Whenever possible,
+Python 2.6 incorporates new features and syntax from 3.0 while
+remaining compatible with existing code by not removing older features
+or syntax.  When it's not possible to do that, Python 2.6 tries to do
+what it can, adding compatibility functions in a
+:mod:`future_builtins` module and a :option:`-3` switch to warn about
+usages that will become unsupported in 3.0.
+
+Some significant new packages have been added to the standard library,
+such as the :mod:`multiprocessing` and :mod:`jsonlib` modules, but
+there aren't many new features that aren't related to Python 3.0 in
+some way.
+
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
 full details, you should refer to the documentation for Python 2.6. If
@@ -73,9 +87,10 @@ for each change.
 Python 3.0
 ================
 
-The development cycle for Python 2.6 also saw the release of the first
-alphas of Python 3.0, and the development of 3.0 has influenced
-a number of features in 2.6.
+The development cycle for Python versions 2.6 and 3.0 was
+synchronized, with the alpha and beta releases for both versions being
+made on the same days.  The development of 3.0 has influenced many
+features in 2.6.
 
 Python 3.0 is a far-ranging redesign of Python that breaks
 compatibility with the 2.x series.  This means that existing Python
@@ -91,6 +106,14 @@ are:
 * The addition of :func:`functools.reduce` as a synonym for the built-in
   :func:`reduce` function.
 
+Python 3.0 adds several new built-in functions and changes the
+semantics of some existing built-ins.  Functions that are new in 3.0
+such as :func:`bin` have simply been added to Python 2.6, but existing
+built-ins haven't been changed; instead, the :mod:`future_builtins`
+module has versions with the new 3.0 semantics.  Code written to be
+compatible with 3.0 can do ``from future_builtins import hex, map`` as
+necessary.
+
 A new command-line switch, :option:`-3`, enables warnings
 about features that will be removed in Python 3.0.  You can run code
 with this switch to see how much work will be necessary to port
@@ -98,35 +121,28 @@ code to 3.0.  The value of this switch is available
 to Python code as the boolean variable :data:`sys.py3kwarning`,
 and to C extension code as :cdata:`Py_Py3kWarningFlag`.
 
-Python 3.0 adds several new built-in functions and change the
-semantics of some existing built-ins.  Entirely new functions such as
-:func:`bin` have simply been added to Python 2.6, but existing
-built-ins haven't been changed; instead, the :mod:`future_builtins`
-module has versions with the new 3.0 semantics.  Code written to be
-compatible with 3.0 can do ``from future_builtins import hex, map``
-as necessary.
-
 .. seealso::
 
-   The 3xxx series of PEPs, which describes the development process for
-   Python 3.0 and various features that have been accepted, rejected,
-   or are still under consideration.
+   The 3xxx series of PEPs, which contains proposals for Python 3.0.
+   :pep:`3000` describes the development process for Python 3.0.
+   Start with :pep:`3100` that describes the general goals for Python
+   3.0, and then explore the higher-numbered PEPS that propose
+   specific features.
 
 
-Development Changes
+Changes to the Development Process
 ==================================================
 
 While 2.6 was being developed, the Python development process
-underwent two significant changes: the developer group
-switched from SourceForge's issue tracker to a customized
-Roundup installation, and the documentation was converted from
-LaTeX to reStructuredText.
+underwent two significant changes: we switched from SourceForge's
+issue tracker to a customized Roundup installation, and the
+documentation was converted from LaTeX to reStructuredText.
 
 
 New Issue Tracker: Roundup
 --------------------------------------------------
 
-For a long time, the Python developers have been growing increasingly
+For a long time, the Python developers had been growing increasingly
 annoyed by SourceForge's bug tracker.  SourceForge's hosted solution
 doesn't permit much customization; for example, it wasn't possible to
 customize the life cycle of issues.
@@ -134,14 +150,14 @@ customize the life cycle of issues.
 The infrastructure committee of the Python Software Foundation
 therefore posted a call for issue trackers, asking volunteers to set
 up different products and import some of the bugs and patches from
-SourceForge.  Four different trackers were examined: Atlassian's `Jira
+SourceForge.  Four different trackers were examined: `Jira
 <http://www.atlassian.com/software/jira/>`__,
 `Launchpad <http://www.launchpad.net>`__,
 `Roundup <http://roundup.sourceforge.net/>`__, and
 `Trac <http://trac.edgewall.org/>`__.
 The committee eventually settled on Jira
 and Roundup as the two candidates.  Jira is a commercial product that
-offers a no-cost hosted instance to free-software projects; Roundup
+offers no-cost hosted instances to free-software projects; Roundup
 is an open-source project that requires volunteers
 to administer it and a server to host it.
 
@@ -153,12 +169,13 @@ other uses in the future.  Where possible,
 this edition of "What's New in Python" links to the bug/patch
 item for each change.
 
-Hosting is kindly provided by
+Hosting of the Python bug tracker is kindly provided by
 `Upfront Systems <http://www.upfrontsystems.co.za/>`__
 of Stellenbosch, South Africa.  Martin von Loewis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at
-http://svn.python.org/view/tracker/importer/.
+http://svn.python.org/view/tracker/importer/ and may be useful to
+other projects wished to move from SourceForge to Roundup.
 
 .. seealso::
 
@@ -171,37 +188,45 @@ http://svn.python.org/view/tracker/importer/.
   http://roundup.sourceforge.net/
     Roundup downloads and documentation.
 
+  http://svn.python.org/view/tracker/importer/
+    Martin von Loewis's conversion scripts.
 
 New Documentation Format: reStructuredText Using Sphinx
 -----------------------------------------------------------
 
-Since the Python project's inception around 1989, the documentation
-had been written using LaTeX.  At that time, most documentation was
-printed out for later study, not viewed online. LaTeX was widely used
-because it provided attractive printed output while remaining
-straightforward to write, once the basic rules of the markup have been
+The Python documentation was written using LaTeX since the project
+started around 1989.  In the 1980s and early 1990s, most documentation
+was printed out for later study, not viewed online. LaTeX was widely
+used because it provided attractive printed output while remaining
+straightforward to write once the basic rules of the markup werw
 learned.
 
-LaTeX is still used today for writing technical publications destined
-for printing, but the landscape for programming tools has shifted.  We
-no longer print out reams of documentation; instead, we browse through
-it online and HTML has become the most important format to support.
-Unfortunately, converting LaTeX to HTML is fairly complicated, and
-Fred L. Drake Jr., the Python documentation editor for many years,
-spent a lot of time wrestling the conversion process into shape.
-Occasionally people would suggest converting the documentation into
-SGML or, later, XML, but performing a good conversion is a major task
-and no one pursued the task to completion.
+Today LaTeX is still used for writing publications destined for
+printing, but the landscape for programming tools has shifted.  We no
+longer print out reams of documentation; instead, we browse through it
+online and HTML has become the most important format to support.
+Unfortunately, converting LaTeX to HTML is fairly complicated and Fred
+L. Drake Jr., the long-time Python documentation editor, spent a lot
+of time maintaining the conversion process.  Occasionally people would
+suggest converting the documentation into SGML and later XML, but
+performing a good conversion is a major task and no one ever committed
+the time required to finish the job.
 
-During the 2.6 development cycle, Georg Brandl put a substantial
-effort into building a new toolchain for processing the documentation.
-The resulting package is called Sphinx, and is available from
-http://sphinx.pocoo.org/.  The input format is reStructuredText, a
-markup commonly used in the Python community that supports custom
-extensions and directives.  Sphinx concentrates on HTML output,
-producing attractively styled and modern HTML, though printed output
-is still supported through conversion to LaTeX.  Sphinx is a
-standalone package that can be used in documenting other projects.
+During the 2.6 development cycle, Georg Brandl put a lot of effort
+into building a new toolchain for processing the documentation.  The
+resulting package is called Sphinx, and is available from
+http://sphinx.pocoo.org/.
+
+Sphinx concentrates on HTML output, producing attractively styled and
+modern HTML; printed output is still supported through conversion to
+LaTeX.  The input format is reStructuredText, a markup syntax
+supporting custom extensions and directives that is commonly used in
+the Python community.
+
+Sphinx is a standalone package that can be used for writing, and
+almost two dozen other projects
+(`listed on the Sphinx web site <http://sphinx.pocoo.org/examples.html>`__)
+have adopted Sphinx as their documentation tool.
 
 .. seealso::
 
@@ -219,13 +244,13 @@ PEP 343: The 'with' statement
 =============================
 
 The previous version, Python 2.5, added the ':keyword:`with`'
-statement an optional feature, to be enabled by a ``from __future__
+statement as an optional feature, to be enabled by a ``from __future__
 import with_statement`` directive.  In 2.6 the statement no longer needs to
 be specially enabled; this means that :keyword:`with` is now always a
 keyword.  The rest of this section is a copy of the corresponding
-section from "What's New in Python 2.5" document; if you read
-it back when Python 2.5 came out, you can skip the rest of this
-section.
+section from the "What's New in Python 2.5" document; if you're
+familiar with the ':keyword:`with`' statement
+from Python 2.5, you can skip this section.
 
 The ':keyword:`with`' statement clarifies code that previously would use
 ``try...finally`` blocks to ensure that clean-up code is executed.  In this
@@ -233,7 +258,7 @@ section, I'll discuss the statement as it will commonly be used.  In the next
 section, I'll examine the implementation details and show how to write objects
 for use with this statement.
 
-The ':keyword:`with`' statement is a new control-flow structure whose basic
+The ':keyword:`with`' statement is a control-flow structure whose basic
 structure is::
 
    with expression [as variable]:
@@ -280,7 +305,7 @@ The :mod:`threading` module's locks and condition variables  also support the
 The lock is acquired before the block is executed and always released once  the
 block is complete.
 
-The new :func:`localcontext` function in the :mod:`decimal` module makes it easy
+The :func:`localcontext` function in the :mod:`decimal` module makes it easy
 to save and restore the current decimal context, which encapsulates the desired
 precision and rounding characteristics for computations::
 
@@ -400,8 +425,8 @@ add a :keyword:`return` statement at the marked location. ::
 The contextlib module
 ---------------------
 
-The new :mod:`contextlib` module provides some functions and a decorator that
-are useful for writing objects for use with the ':keyword:`with`' statement.
+The :mod:`contextlib` module provides some functions and a decorator that
+are useful when writing objects for use with the ':keyword:`with`' statement.
 
 The decorator is called :func:`contextmanager`, and lets you write a single
 generator function instead of defining a new class.  The generator should yield
@@ -412,8 +437,8 @@ value that will get bound to the variable in the ':keyword:`with`' statement's
 executed in the :meth:`__exit__` method.  Any exception raised in the block will
 be raised by the :keyword:`yield` statement.
 
-Our database example from the previous section could be written  using this
-decorator as::
+Using this decorator, our database example from the previous section
+could be written as::
 
    from contextlib import contextmanager
 
@@ -1024,8 +1049,6 @@ the :mod:`io` module:
   existing :mod:`StringIO` module or :mod:`cStringIO` for now.  At some
   point Python 3.0's :mod:`io` module will be rewritten into C for speed,
   and perhaps the C implementation will be  backported to the 2.x releases.)
-
-  .. XXX check before final release: is io.py still written in Python?
 
 In Python 2.6, the underlying implementations haven't been
 restructured to build on top of the :mod:`io` module's classes.  The
