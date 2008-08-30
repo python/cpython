@@ -498,12 +498,15 @@ Python's :option:`-m` switch allows running a module as a script.
 When you ran a module that was located inside a package, relative
 imports didn't work correctly.
 
-The fix in Python 2.6 adds a :attr:`__package__` attribute to modules.
-When present, relative imports will be relative to the value of this
-attribute instead of the :attr:`__name__` attribute.  PEP 302-style
-importers can then set :attr:`__package__`.  The :mod:`runpy` module
-that implements the :option:`-m` switch now does this, so relative imports
-can now be used in scripts running from inside a package.
+The fix for Python 2.6 adds a :attr:`__package__` attribute to
+modules.  When this attribute is present, relative imports will be
+relative to the value of this attribute instead of the
+:attr:`__name__` attribute.
+
+PEP 302-style importers can then set :attr:`__package__` as necessary.
+The :mod:`runpy` module that implements the :option:`-m` switch now
+does this, so relative imports will now work correctly in scripts
+running from inside a package.
 
 .. ======================================================================
 
@@ -512,10 +515,10 @@ can now be used in scripts running from inside a package.
 PEP 370: Per-user ``site-packages`` Directory
 =====================================================
 
-When you run Python, the module search path ``sys.modules`` usually
+When you run Python, the module search path ``sys.path`` usually
 includes a directory whose path ends in ``"site-packages"``.  This
 directory is intended to hold locally-installed packages available to
-all users on a machine or using a particular site installation.
+all users using a machine or a particular site installation.
 
 Python 2.6 introduces a convention for user-specific site directories.
 The directory varies depending on the platform:
@@ -568,8 +571,8 @@ the :meth:`is_alive` method to check whether the subprocess is still running
 and the :meth:`join` method to wait for the process to exit.
 
 Here's a simple example where the subprocess will calculate a
-factorial.  The function doing the calculation is a bit strange; it's
-written to take significantly longer when the input argument is a
+factorial.  The function doing the calculation is written strangely so
+that it takes significantly longer when the input argument is a
 multiple of 4.
 
 ::
@@ -604,28 +607,31 @@ multiple of 4.
 	result = queue.get()
 	print 'Factorial', N, '=', result
 
-A :class:`Queue` object is created and stored as a global.  The child
-process will use the value of the variable when the child was created;
-because it's a :class:`Queue`, parent and child can use the object to
-communicate.  (If the parent were to change the value of the global
-variable, the child's value would be unaffected, and vice versa.)
+A :class:`Queue` is used to communicate the input parameter *N* and
+the result.  The :class:`Queue` object is stored in a global variable.
+The child process will use the value of the variable when the child
+was created; because it's a :class:`Queue`, parent and child can use
+the object to communicate.  (If the parent were to change the value of
+the global variable, the child's value would be unaffected, and vice
+versa.)
 
 Two other classes, :class:`Pool` and :class:`Manager`, provide
 higher-level interfaces.  :class:`Pool` will create a fixed number of
 worker processes, and requests can then be distributed to the workers
-by calling :meth:`apply` or `apply_async`, adding a single request,
-and :meth:`map` or :meth:`map_async` to distribute a number of
+by calling :meth:`apply` or `apply_async` to add a single request,
+and :meth:`map` or :meth:`map_async` to add a number of
 requests.  The following code uses a :class:`Pool` to spread requests
-across 5 worker processes, receiving a list of results back.
+across 5 worker processes and retrieve a list of results::
 
-::
+    from multiprocessing import Pool
 
-   from multiprocessing import Pool
-
+    def factorial(N, dictionary):
+	"Compute a factorial."
+	...
     p = Pool(5)
     result = p.map(factorial, range(1, 1000, 10))
     for v in result:
-        print v
+	print v
 
 This produces the following output::
 
@@ -636,14 +642,15 @@ This produces the following output::
     33452526613163807108170062053440751665152000000000
     ...
 
-The :class:`Manager` class creates a separate server process that can
-hold master copies of Python data structures.  Other processes can
-then access and modify these data structures by using proxy objects.
-The following example creates a shared dictionary by calling the
-:meth:`dict` method; the worker processes then insert values into the
-dictionary.  (No locking is done automatically, which doesn't matter
-in this example.  :class:`Manager`'s methods also include
-:meth:`Lock`, :meth:`RLock`, and :meth:`Semaphore` to create shared locks.
+The other high-level interface, the :class:`Manager` class, creates a
+separate server process that can hold master copies of Python data
+structures.  Other processes can then access and modify these data
+structures using proxy objects.  The following example creates a
+shared dictionary by calling the :meth:`dict` method; the worker
+processes then insert values into the dictionary.  (Locking is not
+done for you automatically, which doesn't matter in this example.
+:class:`Manager`'s methods also include :meth:`Lock`, :meth:`RLock`,
+and :meth:`Semaphore` to create shared locks.)
 
 ::
 
@@ -686,7 +693,7 @@ This will produce the output::
     21 51090942171709440000
     31 8222838654177922817725562880000000
     41 33452526613163807108170062053440751665152000000000
-    51 1551118753287382280224243016469303211063259720016986112000000000000
+    51 15511187532873822802242430164693032110632597200169861120000...
 
 .. seealso::
 
@@ -716,9 +723,8 @@ The formatting template uses curly brackets (`{`, `}`) as special characters::
      "User ID: {0}".format("root") -> "User ID: root"
 
      # Use the named keyword arguments
-     uid = 'root'
-
-     'User ID: {uid}   Last seen: {last_login}'.format(uid='root',
+     'User ID: {uid}   Last seen: {last_login}'.format(
+            uid='root',
             last_login = '5 Mar 2008 07:20') ->
        'User ID: root   Last seen: 5 Mar 2008 07:20'
 
@@ -736,9 +742,9 @@ supply compound field names that read attributes or access dictionary keys::
          Python version: 2.6a1+ (trunk:61261M, Mar  5 2008, 20:29:41) \n
          [GCC 4.0.1 (Apple Computer, Inc. build 5367)]'
 
-     import mimetypes
-     'Content-type: {0[.mp4]}'.format(mimetypes.types_map) ->
-       'Content-type: video/mp4'
+    import mimetypes
+    'Content-type: {0[.mp4]}'.format(mimetypes.types_map) ->
+        'Content-type: video/mp4'
 
 Note that when using dictionary-style notation such as ``[.mp4]``, you
 don't need to put any quotation marks around the string; it will look
@@ -753,18 +759,24 @@ adding a colon followed by a format specifier.  For example::
      # Field 0: left justify, pad to 15 characters
      # Field 1: right justify, pad to 6 characters
      fmt = '{0:15} ${1:>6}'
+
      fmt.format('Registration', 35) ->
        'Registration    $    35'
+
      fmt.format('Tutorial', 50) ->
        'Tutorial        $    50'
+
      fmt.format('Banquet', 125) ->
        'Banquet         $   125'
 
 Format specifiers can reference other fields through nesting::
 
     fmt = '{0:{1}}'
-    fmt.format('Invoice #1234', 15) ->
+
+    width = 15
+    fmt.format('Invoice #1234', width) ->
       'Invoice #1234  '
+
     width = 35
     fmt.format('Invoice #1234', width) ->
       'Invoice #1234                      '
@@ -819,8 +831,9 @@ formatted.  It receives a single argument, the format specifier::
        else:
            return str(self)
 
-There's also a format() built-in that will format a single value.  It calls
-the type's :meth:`__format__` method with the provided specifier::
+There's also a :func:`format` built-in that will format a single
+value.  It calls the type's :meth:`__format__` method with the
+provided specifier::
 
     >>> format(75.6564, '.2f')
     '75.66'
@@ -829,7 +842,7 @@ the type's :meth:`__format__` method with the provided specifier::
 .. seealso::
 
    :ref:`formatstrings`
-      The reference format fields.
+      The reference documentation for format fields.
 
    :pep:`3101` - Advanced String Formatting
       PEP written by Talin. Implemented by Eric Smith.
