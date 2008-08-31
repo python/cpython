@@ -68,8 +68,8 @@ there aren't many new features that aren't related to Python 3.0 in
 some way.
 
 Python 2.6 also sees a number of improvements and bugfixes throughout
-the source.  A search through the change logs finds there were XXX
-patches applied and YYY bugs fixed between Python 2.5 and 2.6.  Both
+the source.  A search through the change logs finds there were 259
+patches applied and 612 bugs fixed between Python 2.5 and 2.6.  Both
 figures are likely to be underestimates.
 
 This article doesn't attempt to provide a complete specification of
