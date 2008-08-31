@@ -36,7 +36,7 @@ Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
 memory.  The ':keyword:`is`' operator compares the identity of two objects; the
 :func:`id` function returns an integer representing its identity (currently
-implemented as its address). An object's :dfn:`type` is also unchangeable.
+implemented as its address). An object's :dfn:`type` is also unchangeable. [#]_
 An object's type determines the operations that the object supports (e.g., "does
 it have a length?") and also defines the possible values for objects of that
 type.  The :func:`type` function returns an object's type (which is an object
@@ -77,7 +77,7 @@ garbage-collected, but since garbage collection is not guaranteed to happen,
 such objects also provide an explicit way to release the external resource,
 usually a :meth:`close` method. Programs are strongly recommended to explicitly
 close such objects.  The ':keyword:`try`...\ :keyword:`finally`' statement
-provides a convenient way to do this.
+and the ':keyword:`with`' statement provide convenient ways to do this.
 
 .. index:: single: container
 
@@ -116,7 +116,8 @@ The standard type hierarchy
 Below is a list of the types that are built into Python.  Extension modules
 (written in C, Java, or other languages, depending on the implementation) can
 define additional types.  Future versions of Python may add types to the type
-hierarchy (e.g., rational numbers, efficiently stored arrays of integers, etc.).
+hierarchy (e.g., rational numbers, efficiently stored arrays of integers, etc.),
+although such additions will often be provided via the standard library instead.
 
 .. index::
    single: attribute
@@ -172,7 +173,7 @@ Ellipsis
 
       There are two types of integers:
 
-      Integers
+      Integers (:class:`int`)
 
          These represent numbers in an unlimited range, subject to available (virtual)
          memory only.  For the purpose of shift and mask operations, a binary
@@ -180,7 +181,7 @@ Ellipsis
          2's complement which gives the illusion of an infinite string of sign bits
          extending to the left.
 
-      Booleans
+      Booleans (:class:`bool`)
          .. index::
             object: Boolean
             single: False
@@ -212,7 +213,7 @@ Ellipsis
       overhead of using objects in Python, so there is no reason to complicate the
       language with two kinds of floating point numbers.
 
-   :class:`numbers.Complex`
+   :class:`numbers.Complex` (:class:`complex`)
       .. index::
          object: complex
          pair: complex; number
@@ -293,6 +294,15 @@ Sequences
          parentheses must be usable for grouping of expressions).  An empty
          tuple can be formed by an empty pair of parentheses.
 
+      Bytes
+         .. index:: bytes, byte
+
+         A bytes object is an immutable array.  The items are 8-bit bytes,
+         represented by integers in the range 0 <= x < 256.  Bytes literals
+         (like ``b'abc'`` and the built-in function :func:`bytes` can be used to
+         construct bytes objects.  Also, bytes objects can be decoded to strings
+         via the :meth:`decode` method.
+
    Mutable sequences
       .. index::
          object: mutable sequence
@@ -316,19 +326,18 @@ Sequences
          placing a comma-separated list of expressions in square brackets. (Note
          that there are no special cases needed to form lists of length 0 or 1.)
 
-      Bytes
-         .. index:: bytes, byte
+      Byte Arrays
+         .. index:: bytearray
 
-         A bytes object is a mutable array.  The items are 8-bit bytes,
-         represented by integers in the range 0 <= x < 256.  Bytes literals
-         (like ``b'abc'`` and the built-in function :func:`bytes` can be used to
-         construct bytes objects.  Also, bytes objects can be decoded to strings
-         via the :meth:`decode` method.
+         A bytearray object is a mutable array. They are created by the built-in
+         :func:`bytearray` constructor.  Aside from being mutable (and hence
+         unhashable), byte arrays otherwise provide the same interface and
+         functionality as immutable bytes objects.
 
       .. index:: module: array
 
       The extension module :mod:`array` provides an additional example of a
-      mutable sequence type.
+      mutable sequence type, as does the :mod:`collections` module.
 
 Set types
    .. index::
@@ -399,7 +408,8 @@ Mappings
          module: bsddb
 
       The extension modules :mod:`dbm.ndbm`, :mod:`dbm.gnu`, and :mod:`bsddb`
-      provide additional examples of mapping types.
+      provide additional examples of mapping types, as does the :mod:`collections`
+      module.
 
 Callable types
    .. index::
@@ -524,7 +534,7 @@ Callable types
       User-defined method objects may be created when getting an attribute of a
       class (perhaps via an instance of that class), if that attribute is a
       user-defined function object or a class method object.
-      
+
       When an instance method object is created by retrieving a user-defined
       function object from a class via one of its instances, its
       :attr:`__self__` attribute is the instance, and the method object is said
@@ -571,11 +581,11 @@ Callable types
          single: generator; iterator
 
       A function or method which uses the :keyword:`yield` statement (see section
-      :ref:`yield`) is called a :dfn:`generator
-      function`.  Such a function, when called, always returns an iterator object
-      which can be used to execute the body of the function:  calling the iterator's
-      :meth:`__next__` method will cause the function to execute until it provides a
-      value using the :keyword:`yield` statement.  When the function executes a
+      :ref:`yield`) is called a :dfn:`generator function`.  Such a function, when
+      called, always returns an iterator object which can be used to execute the
+      body of the function:  calling the iterator's :meth:`__next__` method will
+      cause the function to execute until it provides a value using the
+      :keyword:`yield` statement.  When the function executes a
       :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
       exception is raised and the iterator will have reached the end of the set of
       values to be returned.
@@ -655,18 +665,21 @@ Modules
    extension modules loaded dynamically from a shared library, it is the pathname
    of the shared library file.
 
-.. XXX "Classes" and "Instances" is outdated!
-   see http://www.python.org/doc/newstyle.html for newstyle information
-
 Custom classes
-   Class objects are created by class definitions (see section :ref:`class`).  A
-   class has a namespace implemented by a dictionary object. Class attribute
-   references are translated to lookups in this dictionary, e.g., ``C.x`` is
-   translated to ``C.__dict__["x"]``. When the attribute name is not found
-   there, the attribute search continues in the base classes.  The search is
-   depth-first, left-to-right in the order of occurrence in the base class list.
+   Custon class types are typically created by class definitions (see section
+   :ref:`class`).  A class has a namespace implemented by a dictionary object.
+   Class attribute references are translated to lookups in this dictionary, e.g.,
+   ``C.x`` is translated to ``C.__dict__["x"]`` (although there are a number of
+   hooks which allow for other means of locating attributes). When the attribute
+   name is not found there, the attribute search continues in the base classes.
+   This search of the base classes uses the C3 method resolution order which
+   behaves correctly even in the presence of 'diamond' inheritance structures
+   where there are multiple inheritance paths leading back to a common ancestor.
+   Additional details on the C3 MRO used by Python can be found in the
+   documentation accompanying the 2.3 release at
+   http://www.python.org/download/releases/2.3/mro/.
 
-   .. XXX document descriptors and new MRO
+   .. XXX: Could we add that MRO doc as an appendix to the language ref?
 
    .. index::
       object: class
@@ -980,25 +993,10 @@ A class can implement certain operations that are invoked by special syntax
 with special names. This is Python's approach to :dfn:`operator overloading`,
 allowing classes to define their own behavior with respect to language
 operators.  For instance, if a class defines a method named :meth:`__getitem__`,
-and ``x`` is an instance of this class, then ``x[i]`` is equivalent to
-``x.__getitem__(i)``.  Except where mentioned, attempts to execute an operation
-raise an exception when no appropriate method is defined.
-
-.. XXX above translation is not correct for new-style classes!
-
-Special methods are only guaranteed to work if defined in an object's class, not
-in the object's instance dictionary.  That explains why this won't work::
-
-   >>> class C:
-   ...     pass
-   ...
-   >>> c = C()
-   >>> c.__len__ = lambda: 5
-   >>> len(c)
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   TypeError: object of type 'C' has no len()
-
+and ``x`` is an instance of this class, then ``x[i]`` is roughly equivalent
+to ``type(x).__getitem__(x, i)``.  Except where mentioned, attempts to execute an
+operation raise an exception when no appropriate method is defined (typically
+:exc:`AttributeError` or :exc:`TypeError`).
 
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
@@ -1277,7 +1275,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
    :meth:`__getattr__` and :meth:`__setattr__`.) This is done both for efficiency
-   reasons and because otherwise :meth:`__setattr__` would have no way to access
+   reasons and because otherwise :meth:`__getattr__` would have no way to access
    other attributes of the instance.  Note that at least for instance variables,
    you can fake total control by not inserting any values in the instance attribute
    dictionary (but instead inserting them in another object).  See the
@@ -1295,6 +1293,12 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    recursion in this method, its implementation should always call the base class
    method with the same name to access any attributes it needs, for example,
    ``object.__getattribute__(self, name)``.
+
+   .. note::
+
+      This method may still be bypassed when looking up special methods as the
+      result of implicit invocation via language syntax or builtin functions.
+      See :ref:`special-lookup`.
 
 
 .. method:: object.__setattr__(self, name, value)
@@ -1881,7 +1885,88 @@ For more information on context managers, see :ref:`typecontextmanager`.
       The specification, background, and examples for the Python :keyword:`with`
       statement.
 
+
+.. _special-lookup:
+
+Special method lookup
+---------------------
+
+For custom classes, implicit invocations of special methods are only guaranteed
+to work correctly if defined on an object's type, not in the object's instance
+dictionary.  That behaviour is the reason why the following code raises an
+exception::
+
+   >>> class C(object):
+   ...     pass
+   ...
+   >>> c = C()
+   >>> c.__len__ = lambda: 5
+   >>> len(c)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: object of type 'C' has no len()
+
+The rationale behind this behaviour lies with a number of special methods such
+as :meth:`__hash__` and :meth:`__repr__` that are implemented by all objects,
+including type objects. If the implicit lookup of these methods used the
+conventional lookup process, they would fail when invoked on the type object
+itself::
+
+   >>> 1 .__hash__() == hash(1)
+   True
+   >>> int.__hash__() == hash(int)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: descriptor '__hash__' of 'int' object needs an argument
+
+Incorrectly attempting to invoke an unbound method of a class in this way is
+sometimes referred to as 'metaclass confusion', and is avoided by bypassing
+the instance when looking up special methods::
+
+   >>> type(1).__hash__(1) == hash(1)
+   True
+   >>> type(int).__hash__(int) == hash(int)
+   True
+
+In addition to bypassing any instance attributes in the interest of
+correctness, implicit special method lookup may also bypass the
+:meth:`__getattribute__` method even of the object's metaclass::
+
+   >>> class Meta(type):
+   ...    def __getattribute__(*args):
+   ...       print "Metaclass getattribute invoked"
+   ...       return type.__getattribute__(*args)
+   ...
+   >>> class C(object):
+   ...     __metaclass__ = Meta
+   ...     def __len__(self):
+   ...         return 10
+   ...     def __getattribute__(*args):
+   ...         print "Class getattribute invoked"
+   ...         return object.__getattribute__(*args)
+   ...
+   >>> c = C()
+   >>> c.__len__()                 # Explicit lookup via instance
+   Class getattribute invoked
+   10
+   >>> type(c).__len__(c)          # Explicit lookup via type
+   Metaclass getattribute invoked
+   10
+   >>> len(c)                      # Implicit lookup
+   10
+
+Bypassing the :meth:`__getattribute__` machinery in this fashion
+provides significant scope for speed optimisations within the
+interpreter, at the cost of some flexibility in the handling of
+special methods (the special method *must* be set on the class
+object itself in order to be consistently invoked by the interpreter).
+
+
 .. rubric:: Footnotes
+
+.. [#] It *is* possible in some cases to change an object's type, under certain
+   controlled conditions. It generally isn't a good idea though, since it can
+   lead to some very strange behaviour if it is handled incorrectly.
 
 .. [#] A descriptor can define any combination of :meth:`__get__`,
    :meth:`__set__` and :meth:`__delete__`.  If it does not define :meth:`__get__`,
