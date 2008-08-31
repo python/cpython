@@ -29,6 +29,7 @@ From:
 """
 
 import errno
+import string
 
 class DBRecIO:
     def __init__(self, db, key, txn=None):
@@ -38,6 +39,7 @@ class DBRecIO:
         self.len = None
         self.pos = 0
         self.closed = 0
+        self.softspace = 0
 
     def close(self):
         if not self.closed:
@@ -82,9 +84,9 @@ class DBRecIO:
         if self.closed:
             raise ValueError, "I/O operation on closed file"
         if self.buflist:
-            self.buf = self.buf + ''.join(self.buflist)
+            self.buf = self.buf + string.joinfields(self.buflist, '')
             self.buflist = []
-        i = self.buf.find('\n', self.pos)
+        i = string.find(self.buf, '\n', self.pos)
         if i < 0:
             newpos = self.len
         else:
@@ -133,7 +135,7 @@ class DBRecIO:
         self.pos = newpos
 
     def writelines(self, list):
-        self.write(''.join(list))
+        self.write(string.joinfields(list, ''))
 
     def flush(self):
         if self.closed:
@@ -158,14 +160,14 @@ def _test():
     if f.getvalue() != text:
         raise RuntimeError, 'write failed'
     length = f.tell()
-    print('File length =', length)
+    print 'File length =', length
     f.seek(len(lines[0]))
     f.write(lines[1])
     f.seek(0)
-    print('First line =', repr(f.readline()))
+    print 'First line =', repr(f.readline())
     here = f.tell()
     line = f.readline()
-    print('Second line =', repr(line))
+    print 'Second line =', repr(line)
     f.seek(-len(line), 1)
     line2 = f.read(len(line))
     if line != line2:
@@ -177,8 +179,8 @@ def _test():
     line2 = f.read()
     if line != line2:
         raise RuntimeError, 'bad result after seek back from EOF'
-    print('Read', len(list), 'more lines')
-    print('File length =', f.tell())
+    print 'Read', len(list), 'more lines'
+    print 'File length =', f.tell()
     if f.tell() != length:
         raise RuntimeError, 'bad length'
     f.close()

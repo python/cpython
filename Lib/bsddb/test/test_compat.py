@@ -3,18 +3,16 @@ Test cases adapted from the test_bsddb.py module in Python's
 regression test suite.
 """
 
-import sys, os
+import os, string
 import unittest
-import tempfile
 
-from bsddb.test.test_all import verbose
-
-from bsddb import db, hashopen, btopen, rnopen
+from .test_all import db, hashopen, btopen, rnopen, verbose, \
+        get_new_database_path
 
 
 class CompatibilityTestCase(unittest.TestCase):
     def setUp(self):
-        self.filename = tempfile.mktemp()
+        self.filename = get_new_database_path()
 
     def tearDown(self):
         try:
@@ -36,31 +34,31 @@ class CompatibilityTestCase(unittest.TestCase):
 
         f = rnopen(self.filename, 'c')
         for x in range(len(data)):
-            f[x+1] = data[x].encode("ascii")
+            f[x+1] = data[x]
 
         getTest = (f[1], f[2], f[3])
         if verbose:
             print('%s %s %s' % getTest)
 
-        assert getTest[1] == b'quick', 'data mismatch!'
+        self.assertEqual(getTest[1], 'quick', 'data mismatch!')
 
         rv = f.set_location(3)
-        if rv != (3, b'brown'):
+        if rv != (3, 'brown'):
             self.fail('recno database set_location failed: '+repr(rv))
 
-        f[25] = b'twenty-five'
+        f[25] = 'twenty-five'
         f.close()
         del f
 
         f = rnopen(self.filename, 'w')
-        f[20] = b'twenty'
+        f[20] = 'twenty'
 
         def noRec(f):
             rec = f[15]
         self.assertRaises(KeyError, noRec, f)
 
         def badKey(f):
-            rec = f[b'a string']
+            rec = f['a string']
         self.assertRaises(TypeError, badKey, f)
 
         del f[3]
@@ -70,7 +68,7 @@ class CompatibilityTestCase(unittest.TestCase):
             if verbose:
                 print(rec)
             try:
-                rec = f.next()
+                rec = next(f)
             except KeyError:
                 break
 
@@ -96,42 +94,42 @@ class CompatibilityTestCase(unittest.TestCase):
         else:
             if verbose: print("truth test: false")
 
-        f[b'0'] = b''
-        f[b'a'] = b'Guido'
-        f[b'b'] = b'van'
-        f[b'c'] = b'Rossum'
-        f[b'd'] = b'invented'
+        f['0'] = ''
+        f['a'] = 'Guido'
+        f['b'] = 'van'
+        f['c'] = 'Rossum'
+        f['d'] = 'invented'
         # 'e' intentionally left out
-        f[b'f'] = b'Python'
+        f['f'] = 'Python'
         if verbose:
             print('%s %s %s' % (f['a'], f['b'], f['c']))
 
         if verbose:
             print('key ordering...')
         start = f.set_location(f.first()[0])
-        if start != (b'0', b''):
+        if start != ('0', ''):
             self.fail("incorrect first() result: "+repr(start))
         while 1:
             try:
-                rec = f.next()
+                rec = next(f)
             except KeyError:
-                assert rec == f.last(), 'Error, last != last!'
+                self.assertEqual(rec, f.last(), 'Error, last <> last!')
                 f.previous()
                 break
             if verbose:
                 print(rec)
 
-        assert f.has_key(b'f'), 'Error, missing key!'
+        self.assert_('f' in f, 'Error, missing key!')
 
         # test that set_location() returns the next nearest key, value
         # on btree databases and raises KeyError on others.
         if factory == btopen:
-            e = f.set_location(b'e')
-            if e != (b'f', b'Python'):
+            e = f.set_location('e')
+            if e != ('f', 'Python'):
                 self.fail('wrong key,value returned: '+repr(e))
         else:
             try:
-                e = f.set_location(b'e')
+                e = f.set_location('e')
             except KeyError:
                 pass
             else:
@@ -155,17 +153,17 @@ class CompatibilityTestCase(unittest.TestCase):
         if verbose:
             print('modification...')
         f = factory(self.filename, 'w')
-        f[b'd'] = b'discovered'
+        f['d'] = 'discovered'
 
         if verbose:
             print('access...')
-        for key in f.keys():
+        for key in list(f.keys()):
             word = f[key]
             if verbose:
                 print(word)
 
         def noRec(f):
-            rec = f[b'no such key']
+            rec = f['no such key']
         self.assertRaises(KeyError, noRec, f)
 
         def badKey(f):

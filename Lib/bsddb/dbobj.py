@@ -21,12 +21,24 @@
 # added to _bsddb.c.
 #
 
-from . import db
+import sys
+absolute_import = (sys.version_info[0] >= 3)
+if absolute_import :
+    # Because this syntaxis is not valid before Python 2.5
+    exec("from . import db")
+else :
+    from . import db
 
-try:
-    from collections import MutableMapping
-except ImportError:
-    class MutableMapping: pass
+if sys.version_info[0:2] <= (2, 5) :
+    try:
+        from UserDict import DictMixin
+    except ImportError:
+        # DictMixin is new in Python 2.3
+        class DictMixin: pass
+    MutableMapping = DictMixin
+else :
+    import collections
+    MutableMapping = collections.MutableMapping
 
 class DBEnv:
     def __init__(self, *args, **kwargs):
@@ -95,9 +107,8 @@ class DBEnv:
     def set_get_returns_none(self, *args, **kwargs):
         return self._cobj.set_get_returns_none(*args, **kwargs)
 
-    if db.version() >= (4,0):
-        def log_stat(self, *args, **kwargs):
-            return self._cobj.log_stat(*args, **kwargs)
+    def log_stat(self, *args, **kwargs):
+        return self._cobj.log_stat(*args, **kwargs)
 
     if db.version() >= (4,1):
         def dbremove(self, *args, **kwargs):
@@ -115,7 +126,7 @@ class DBEnv:
 class DB(MutableMapping):
     def __init__(self, dbenv, *args, **kwargs):
         # give it the proper DBEnv C object that its expecting
-        self._cobj = db.DB(dbenv._cobj, *args, **kwargs)
+        self._cobj = db.DB(*(dbenv._cobj,) + args, **kwargs)
 
     # TODO are there other dict methods that need to be overridden?
     def __len__(self):
@@ -126,8 +137,10 @@ class DB(MutableMapping):
         self._cobj[key] = value
     def __delitem__(self, arg):
         del self._cobj[arg]
-    def __iter__(self):
-        return iter(self.keys())
+
+    if sys.version_info[0:2] >= (2, 6) :
+        def __iter__(self) :
+            return self._cobj.__iter__()
 
     def append(self, *args, **kwargs):
         return self._cobj.append(*args, **kwargs)
@@ -163,8 +176,6 @@ class DB(MutableMapping):
         return self._cobj.key_range(*args, **kwargs)
     def has_key(self, *args, **kwargs):
         return self._cobj.has_key(*args, **kwargs)
-    def __contains__(self, key):
-        return self._cobj.has_key(key)
     def items(self, *args, **kwargs):
         return self._cobj.items(*args, **kwargs)
     def keys(self, *args, **kwargs):

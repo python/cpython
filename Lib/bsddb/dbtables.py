@@ -13,30 +13,29 @@
 #   --  Gregory P. Smith <greg@krypto.org>
 
 # This provides a simple database table interface built on top of
-# the Python BerkeleyDB 3 interface.
+# the Python Berkeley DB 3 interface.
 #
 _cvsid = '$Id$'
 
 import re
 import sys
 import copy
-import struct
 import random
-import pickle
+import struct
+import pickle as pickle
 
-from bsddb.db import *
-
-# All table names, row names etc. must be ASCII strings
-# However, rowids, when represented as strings, are latin-1 encoded
-def _E(s):
-    return s.encode("ascii")
+try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db
+except ImportError:
+    # For Python 2.3
+    from bsddb import db
 
 # XXX(nnorwitz): is this correct? DBIncompleteError is conditional in _bsddb.c
-try:
-    DBIncompleteError
-except NameError:
+if not hasattr(db,"DBIncompleteError") :
     class DBIncompleteError(Exception):
         pass
+    db.DBIncompleteError = DBIncompleteError
 
 class TableDBError(Exception):
     pass
@@ -51,22 +50,22 @@ class Cond:
 
 class ExactCond(Cond):
     """Acts as an exact match condition function"""
-    def __init__(self, strtomatch, encoding="utf-8"):
-        self.strtomatch = strtomatch.encode(encoding)
+    def __init__(self, strtomatch):
+        self.strtomatch = strtomatch
     def __call__(self, s):
         return s == self.strtomatch
 
 class PrefixCond(Cond):
     """Acts as a condition function for matching a string prefix"""
-    def __init__(self, prefix, encoding="utf-8"):
-        self.prefix = prefix.encode(encoding)
+    def __init__(self, prefix):
+        self.prefix = prefix
     def __call__(self, s):
         return s[:len(self.prefix)] == self.prefix
 
 class PostfixCond(Cond):
     """Acts as a condition function for matching a string postfix"""
-    def __init__(self, postfix, encoding="utf-8"):
-        self.postfix = postfix.encode(encoding)
+    def __init__(self, postfix):
+        self.postfix = postfix
     def __call__(self, s):
         return s[-len(self.postfix):] == self.postfix
 
@@ -76,7 +75,7 @@ class LikeCond(Cond):
     string.  Case insensitive and % signs are wild cards.
     This isn't perfect but it should work for the simple common cases.
     """
-    def __init__(self, likestr, re_flags=re.IGNORECASE, encoding="utf-8"):
+    def __init__(self, likestr, re_flags=re.IGNORECASE):
         # escape python re characters
         chars_to_escape = '.*+()[]?'
         for char in chars_to_escape :
@@ -84,18 +83,8 @@ class LikeCond(Cond):
         # convert %s to wildcards
         self.likestr = likestr.replace('%', '.*')
         self.re = re.compile('^'+self.likestr+'$', re_flags)
-        self.encoding = encoding
     def __call__(self, s):
-        return self.re.match(s.decode(self.encoding))
-
-def CmpToKey(mycmp):
-    'Convert a cmp= function into a key= function'
-    class K(object):
-        def __init__(self, obj, *args):
-            self.obj = obj
-        def __lt__(self, other):
-            return mycmp(self.obj, other.obj) == -1
-    return K
+        return self.re.match(s)
 
 #
 # keys used to store database metadata
@@ -104,7 +93,7 @@ _table_names_key = '__TABLE_NAMES__'  # list of the tables in this db
 _columns = '._COLUMNS__'  # table_name+this key contains a list of columns
 
 def _columns_key(table):
-    return _E(table + _columns)
+    return table + _columns
 
 #
 # these keys are found within table sub databases
@@ -114,20 +103,21 @@ _rowid = '._ROWID_.' # this+rowid+this key contains a unique entry for each
                      # row in the table.  (no data is stored)
 _rowid_str_len = 8   # length in bytes of the unique rowid strings
 
+
 def _data_key(table, col, rowid):
-    return _E(table + _data + col + _data) + rowid
+    return table + _data + col + _data + rowid
 
 def _search_col_data_key(table, col):
-    return _E(table + _data + col + _data)
+    return table + _data + col + _data
 
 def _search_all_data_key(table):
-    return _E(table + _data)
+    return table + _data
 
 def _rowid_key(table, rowid):
-    return _E(table + _rowid) + rowid + _E(_rowid)
+    return table + _rowid + rowid + _rowid
 
 def _search_rowid_key(table):
-    return _E(table + _rowid)
+    return table + _rowid
 
 def contains_metastrings(s) :
     """Verify that the given string does not contain any
@@ -146,43 +136,110 @@ def contains_metastrings(s) :
 class bsdTableDB :
     def __init__(self, filename, dbhome, create=0, truncate=0, mode=0o600,
                  recover=0, dbflags=0):
-        """bsdTableDB(filename, dbhome, create=0, truncate=0, mode=0o600)
+        """bsdTableDB(filename, dbhome, create=0, truncate=0, mode=0600)
 
-        Open database name in the dbhome BerkeleyDB directory.
+        Open database name in the dbhome Berkeley DB directory.
         Use keyword arguments when calling this constructor.
         """
         self.db = None
-        myflags = DB_THREAD
+        myflags = db.DB_THREAD
         if create:
-            myflags |= DB_CREATE
-        flagsforenv = (DB_INIT_MPOOL | DB_INIT_LOCK | DB_INIT_LOG |
-                       DB_INIT_TXN | dbflags)
+            myflags |= db.DB_CREATE
+        flagsforenv = (db.DB_INIT_MPOOL | db.DB_INIT_LOCK | db.DB_INIT_LOG |
+                       db.DB_INIT_TXN | dbflags)
         # DB_AUTO_COMMIT isn't a valid flag for env.open()
         try:
-            dbflags |= DB_AUTO_COMMIT
+            dbflags |= db.DB_AUTO_COMMIT
         except AttributeError:
             pass
         if recover:
-            flagsforenv = flagsforenv | DB_RECOVER
-        self.env = DBEnv()
+            flagsforenv = flagsforenv | db.DB_RECOVER
+        self.env = db.DBEnv()
         # enable auto deadlock avoidance
-        self.env.set_lk_detect(DB_LOCK_DEFAULT)
+        self.env.set_lk_detect(db.DB_LOCK_DEFAULT)
         self.env.open(dbhome, myflags | flagsforenv)
         if truncate:
-            myflags |= DB_TRUNCATE
-        self.db = DB(self.env)
+            myflags |= db.DB_TRUNCATE
+        self.db = db.DB(self.env)
         # this code relies on DBCursor.set* methods to raise exceptions
         # rather than returning None
         self.db.set_get_returns_none(1)
         # allow duplicate entries [warning: be careful w/ metadata]
-        self.db.set_flags(DB_DUP)
-        self.db.open(filename, DB_BTREE, dbflags | myflags, mode)
+        self.db.set_flags(db.DB_DUP)
+        self.db.open(filename, db.DB_BTREE, dbflags | myflags, mode)
         self.dbfilename = filename
+
+        if sys.version_info[0] >= 3 :
+            class cursor_py3k(object) :
+                def __init__(self, dbcursor) :
+                    self._dbcursor = dbcursor
+
+                def close(self) :
+                    return self._dbcursor.close()
+
+                def set_range(self, search) :
+                    v = self._dbcursor.set_range(bytes(search, "iso8859-1"))
+                    if v != None :
+                        v = (v[0].decode("iso8859-1"),
+                                v[1].decode("iso8859-1"))
+                    return v
+
+                def __next__(self) :
+                    v = getattr(self._dbcursor, "next")()
+                    if v != None :
+                        v = (v[0].decode("iso8859-1"),
+                                v[1].decode("iso8859-1"))
+                    return v
+
+            class db_py3k(object) :
+                def __init__(self, db) :
+                    self._db = db
+
+                def cursor(self, txn=None) :
+                    return cursor_py3k(self._db.cursor(txn=txn))
+
+                def has_key(self, key, txn=None) :
+                    return getattr(self._db,"has_key")(bytes(key, "iso8859-1"),
+                            txn=txn)
+
+                def put(self, key, value, flags=0, txn=None) :
+                    key = bytes(key, "iso8859-1")
+                    if value != None :
+                        value = bytes(value, "iso8859-1")
+                    return self._db.put(key, value, flags=flags, txn=txn)
+
+                def put_bytes(self, key, value, txn=None) :
+                    key = bytes(key, "iso8859-1")
+                    return self._db.put(key, value, txn=txn)
+
+                def get(self, key, txn=None, flags=0) :
+                    key = bytes(key, "iso8859-1")
+                    v = self._db.get(key, txn=txn, flags=flags)
+                    if v != None :
+                        v = v.decode("iso8859-1")
+                    return v
+
+                def get_bytes(self, key, txn=None, flags=0) :
+                    key = bytes(key, "iso8859-1")
+                    return self._db.get(key, txn=txn, flags=flags)
+
+                def delete(self, key, txn=None) :
+                    key = bytes(key, "iso8859-1")
+                    return self._db.delete(key, txn=txn)
+
+                def close (self) :
+                    return self._db.close()
+
+            self.db = db_py3k(self.db)
+        else :  # Python 2.x
+            pass
+
         # Initialize the table names list if this is a new database
         txn = self.env.txn_begin()
         try:
-            if not self.db.has_key(_E(_table_names_key), txn):
-                self.db.put(_E(_table_names_key), pickle.dumps([], 1), txn=txn)
+            if not getattr(self.db, "has_key")(_table_names_key, txn):
+                getattr(self.db, "put_bytes", self.db.put) \
+                        (_table_names_key, pickle.dumps([], 1), txn=txn)
         # Yes, bare except
         except:
             txn.abort()
@@ -206,13 +263,13 @@ class bsdTableDB :
     def checkpoint(self, mins=0):
         try:
             self.env.txn_checkpoint(mins)
-        except DBIncompleteError:
+        except db.DBIncompleteError:
             pass
 
     def sync(self):
         try:
             self.db.sync()
-        except DBIncompleteError:
+        except db.DBIncompleteError:
             pass
 
     def _db_print(self) :
@@ -223,13 +280,13 @@ class bsdTableDB :
             key, data = cur.first()
             while 1:
                 print(repr({key: data}))
-                next = cur.next()
+                next = next(cur)
                 if next:
                     key, data = next
                 else:
                     cur.close()
                     return
-        except DBNotFoundError:
+        except db.DBNotFoundError:
             cur.close()
 
 
@@ -239,6 +296,7 @@ class bsdTableDB :
         raises TableDBError if it already exists or for other DB errors.
         """
         assert isinstance(columns, list)
+
         txn = None
         try:
             # checking sanity of the table and column names here on
@@ -252,29 +310,33 @@ class bsdTableDB :
                         "bad column name: contains reserved metastrings")
 
             columnlist_key = _columns_key(table)
-            if self.db.has_key(columnlist_key):
+            if getattr(self.db, "has_key")(columnlist_key):
                 raise TableAlreadyExists("table already exists")
 
             txn = self.env.txn_begin()
             # store the table's column info
-            self.db.put(columnlist_key, pickle.dumps(columns, 1), txn=txn)
+            getattr(self.db, "put_bytes", self.db.put)(columnlist_key,
+                    pickle.dumps(columns, 1), txn=txn)
 
             # add the table name to the tablelist
-            tablelist = pickle.loads(self.db.get(_E(_table_names_key), txn=txn,
-                                                 flags=DB_RMW))
+            tablelist = pickle.loads(getattr(self.db, "get_bytes",
+                self.db.get) (_table_names_key, txn=txn, flags=db.DB_RMW))
             tablelist.append(table)
             # delete 1st, in case we opened with DB_DUP
-            self.db.delete(_E(_table_names_key), txn=txn)
-            self.db.put(_E(_table_names_key), pickle.dumps(tablelist, 1), txn=txn)
+            self.db.delete(_table_names_key, txn=txn)
+            getattr(self.db, "put_bytes", self.db.put)(_table_names_key,
+                    pickle.dumps(tablelist, 1), txn=txn)
 
             txn.commit()
             txn = None
-        except DBError as dberror:
-            raise TableDBError(dberror.args[1])
-        finally:
+        except db.DBError as dberror:
             if txn:
                 txn.abort()
-                txn = None
+            if sys.version_info[0] < 3 :
+                raise TableDBError(dberror[1])
+            else :
+                raise TableDBError(dberror.args[1])
+
 
     def ListTableColumns(self, table):
         """Return a list of columns in the given table.
@@ -285,9 +347,10 @@ class bsdTableDB :
             raise ValueError("bad table name: contains reserved metastrings")
 
         columnlist_key = _columns_key(table)
-        if not self.db.has_key(columnlist_key):
+        if not getattr(self.db, "has_key")(columnlist_key):
             return []
-        pickledcolumnlist = self.db.get(columnlist_key)
+        pickledcolumnlist = getattr(self.db, "get_bytes",
+                self.db.get)(columnlist_key)
         if pickledcolumnlist:
             return pickle.loads(pickledcolumnlist)
         else:
@@ -295,7 +358,7 @@ class bsdTableDB :
 
     def ListTables(self):
         """Return a list of tables in this database."""
-        pickledtablelist = self.db.get(_E(_table_names_key))
+        pickledtablelist = self.db.get_get(_table_names_key)
         if pickledtablelist:
             return pickle.loads(pickledtablelist)
         else:
@@ -311,6 +374,7 @@ class bsdTableDB :
         all of its current columns.
         """
         assert isinstance(columns, list)
+
         try:
             self.CreateTable(table, columns)
         except TableAlreadyExists:
@@ -322,7 +386,8 @@ class bsdTableDB :
 
                 # load the current column list
                 oldcolumnlist = pickle.loads(
-                    self.db.get(columnlist_key, txn=txn, flags=DB_RMW))
+                    getattr(self.db, "get_bytes",
+                        self.db.get)(columnlist_key, txn=txn, flags=db.DB_RMW))
                 # create a hash table for fast lookups of column names in the
                 # loop below
                 oldcolumnhash = {}
@@ -340,7 +405,7 @@ class bsdTableDB :
                 if newcolumnlist != oldcolumnlist :
                     # delete the old one first since we opened with DB_DUP
                     self.db.delete(columnlist_key, txn=txn)
-                    self.db.put(columnlist_key,
+                    getattr(self.db, "put_bytes", self.db.put)(columnlist_key,
                                 pickle.dumps(newcolumnlist, 1),
                                 txn=txn)
 
@@ -348,19 +413,22 @@ class bsdTableDB :
                 txn = None
 
                 self.__load_column_info(table)
-            except DBError as dberror:
-                raise TableDBError(dberror.args[1])
-            finally:
+            except db.DBError as dberror:
                 if txn:
                     txn.abort()
+                if sys.version_info[0] < 3 :
+                    raise TableDBError(dberror[1])
+                else :
+                    raise TableDBError(dberror.args[1])
 
 
     def __load_column_info(self, table) :
         """initialize the self.__tablecolumns dict"""
         # check the column names
         try:
-            tcolpickles = self.db.get(_columns_key(table))
-        except DBNotFoundError:
+            tcolpickles = getattr(self.db, "get_bytes",
+                    self.db.get)(_columns_key(table))
+        except db.DBNotFoundError:
             raise TableDBError("unknown table: %r" % (table,))
         if not tcolpickles:
             raise TableDBError("unknown table: %r" % (table,))
@@ -376,13 +444,16 @@ class bsdTableDB :
             blist = []
             for x in range(_rowid_str_len):
                 blist.append(random.randint(0,255))
-            newid = bytes(blist)
+            newid = struct.pack('B'*_rowid_str_len, *blist)
+
+            if sys.version_info[0] >= 3 :
+                newid = newid.decode("iso8859-1")  # 8 bits
 
             # Guarantee uniqueness by adding this key to the database
             try:
                 self.db.put(_rowid_key(table, newid), None, txn=txn,
-                            flags=DB_NOOVERWRITE)
-            except DBKeyExistError:
+                            flags=db.DB_NOOVERWRITE)
+            except db.DBKeyExistError:
                 pass
             else:
                 unique = 1
@@ -394,15 +465,16 @@ class bsdTableDB :
         """Insert(table, datadict) - Insert a new row into the table
         using the keys+values from rowdict as the column values.
         """
+
         txn = None
         try:
-            if not self.db.has_key(_columns_key(table)):
+            if not getattr(self.db, "has_key")(_columns_key(table)):
                 raise TableDBError("unknown table")
 
             # check the validity of each column name
             if table not in self.__tablecolumns:
                 self.__load_column_info(table)
-            for column in rowdict.keys() :
+            for column in list(rowdict.keys()) :
                 if not self.__tablecolumns[table].count(column):
                     raise TableDBError("unknown column: %r" % (column,))
 
@@ -411,14 +483,14 @@ class bsdTableDB :
             rowid = self.__new_rowid(table, txn=txn)
 
             # insert the row values into the table database
-            for column, dataitem in rowdict.items():
+            for column, dataitem in list(rowdict.items()):
                 # store the value
                 self.db.put(_data_key(table, column, rowid), dataitem, txn=txn)
 
             txn.commit()
             txn = None
 
-        except DBError as dberror:
+        except db.DBError as dberror:
             # WIBNI we could just abort the txn and re-raise the exception?
             # But no, because TableDBError is not related to DBError via
             # inheritance, so it would be backwards incompatible.  Do the next
@@ -427,11 +499,10 @@ class bsdTableDB :
             if txn:
                 txn.abort()
                 self.db.delete(_rowid_key(table, rowid))
-                txn = None
-            raise TableDBError(dberror.args[1]).with_traceback(info[2])
-        finally:
-            if txn:
-                txn.abort()
+            if sys.version_info[0] < 3 :
+                raise TableDBError(dberror[1]).with_traceback(info[2])
+            else :
+                raise TableDBError(dberror.args[1]).with_traceback(info[2])
 
 
     def Modify(self, table, conditions={}, mappings={}):
@@ -445,13 +516,13 @@ class bsdTableDB :
           condition callable expecting the data string as an argument and
           returning the new string for that column.
         """
+
         try:
             matching_rowids = self.__Select(table, [], conditions)
 
             # modify only requested columns
-            columns = mappings.keys()
-            for rowid in matching_rowids.keys():
-                rowid = rowid.encode("latin-1")
+            columns = list(mappings.keys())
+            for rowid in list(matching_rowids.keys()):
                 txn = None
                 try:
                     for column in columns:
@@ -464,7 +535,7 @@ class bsdTableDB :
                             self.db.delete(
                                 _data_key(table, column, rowid),
                                 txn=txn)
-                        except DBNotFoundError:
+                        except db.DBNotFoundError:
                              # XXXXXXX row key somehow didn't exist, assume no
                              # error
                             dataitem = None
@@ -477,12 +548,16 @@ class bsdTableDB :
                         txn = None
 
                 # catch all exceptions here since we call unknown callables
-                finally:
+                except:
                     if txn:
                         txn.abort()
+                    raise
 
-        except DBError as dberror:
-            raise TableDBError(dberror.args[1])
+        except db.DBError as dberror:
+            if sys.version_info[0] < 3 :
+                raise TableDBError(dberror[1])
+            else :
+                raise TableDBError(dberror.args[1])
 
     def Delete(self, table, conditions={}):
         """Delete(table, conditions) - Delete items matching the given
@@ -492,37 +567,41 @@ class bsdTableDB :
           condition functions expecting the data string as an
           argument and returning a boolean.
         """
+
         try:
             matching_rowids = self.__Select(table, [], conditions)
 
             # delete row data from all columns
             columns = self.__tablecolumns[table]
-            for rowid in matching_rowids.keys():
+            for rowid in list(matching_rowids.keys()):
                 txn = None
                 try:
                     txn = self.env.txn_begin()
                     for column in columns:
                         # delete the data key
                         try:
-                            self.db.delete(_data_key(table, column,
-                                                     rowid.encode("latin-1")),
+                            self.db.delete(_data_key(table, column, rowid),
                                            txn=txn)
-                        except DBNotFoundError:
+                        except db.DBNotFoundError:
                             # XXXXXXX column may not exist, assume no error
                             pass
 
                     try:
-                        self.db.delete(_rowid_key(table, rowid.encode("latin-1")), txn=txn)
-                    except DBNotFoundError:
+                        self.db.delete(_rowid_key(table, rowid), txn=txn)
+                    except db.DBNotFoundError:
                         # XXXXXXX row key somehow didn't exist, assume no error
                         pass
                     txn.commit()
                     txn = None
-                finally:
+                except db.DBError as dberror:
                     if txn:
                         txn.abort()
-        except DBError as dberror:
-            raise TableDBError(dberror.args[1])
+                    raise
+        except db.DBError as dberror:
+            if sys.version_info[0] < 3 :
+                raise TableDBError(dberror[1])
+            else :
+                raise TableDBError(dberror.args[1])
 
 
     def Select(self, table, columns, conditions={}):
@@ -541,10 +620,13 @@ class bsdTableDB :
             if columns is None:
                 columns = self.__tablecolumns[table]
             matching_rowids = self.__Select(table, columns, conditions)
-        except DBError as dberror:
-            raise TableDBError(dberror.args[1])
+        except db.DBError as dberror:
+            if sys.version_info[0] < 3 :
+                raise TableDBError(dberror[1])
+            else :
+                raise TableDBError(dberror.args[1])
         # return the matches as a list of dictionaries
-        return matching_rowids.values()
+        return list(matching_rowids.values())
 
 
     def __Select(self, table, columns, conditions):
@@ -595,8 +677,19 @@ class bsdTableDB :
             # leave all unknown condition callables alone as equals
             return 0
 
-        conditionlist = list(conditions.items())
-        conditionlist.sort(key=CmpToKey(cmp_conditions))
+        if sys.version_info[0] < 3 :
+            conditionlist = list(conditions.items())
+            conditionlist.sort(cmp_conditions)
+        else :  # Insertion Sort. Please, improve
+            conditionlist = []
+            for i in list(conditions.items()) :
+                for j, k in enumerate(conditionlist) :
+                    r = cmp_conditions(k, i)
+                    if r == 1 :
+                        conditionlist.insert(j, i)
+                        break
+                else :
+                    conditionlist.append(i)
 
         # Apply conditions to column data to find what we want
         cur = self.db.cursor()
@@ -614,7 +707,7 @@ class bsdTableDB :
                 key, data = cur.set_range(searchkey)
                 while key[:len(searchkey)] == searchkey:
                     # extract the rowid from the key
-                    rowid = key[-_rowid_str_len:].decode("latin-1")
+                    rowid = key[-_rowid_str_len:]
 
                     if rowid not in rejected_rowids:
                         # if no condition was specified or the condition
@@ -629,11 +722,15 @@ class bsdTableDB :
                                 del matching_rowids[rowid]
                             rejected_rowids[rowid] = rowid
 
-                    key, data = cur.next()
+                    key, data = next(cur)
 
-            except DBError as dberror:
-                if dberror.args[0] != DB_NOTFOUND:
-                    raise
+            except db.DBError as dberror:
+                if sys.version_info[0] < 3 :
+                    if dberror[0] != db.DB_NOTFOUND:
+                        raise
+                else :
+                    if dberror.args[0] != db.DB_NOTFOUND:
+                        raise
                 continue
 
         cur.close()
@@ -644,17 +741,20 @@ class bsdTableDB :
         # extract any remaining desired column data from the
         # database for the matching rows.
         if len(columns) > 0:
-            for rowid, rowdata in matching_rowids.items():
-                rowid = rowid.encode("latin-1")
+            for rowid, rowdata in list(matching_rowids.items()):
                 for column in columns:
                     if column in rowdata:
                         continue
                     try:
                         rowdata[column] = self.db.get(
                             _data_key(table, column, rowid))
-                    except DBError as dberror:
-                        if dberror.args[0] != DB_NOTFOUND:
-                            raise
+                    except db.DBError as dberror:
+                        if sys.version_info[0] < 3 :
+                            if dberror[0] != db.DB_NOTFOUND:
+                                raise
+                        else :
+                            if dberror.args[0] != db.DB_NOTFOUND:
+                                raise
                         rowdata[column] = None
 
         # return the matches
@@ -677,7 +777,7 @@ class bsdTableDB :
             while 1:
                 try:
                     key, data = cur.set_range(table_key)
-                except DBNotFoundError:
+                except db.DBNotFoundError:
                     break
                 # only delete items in this table
                 if key[:len(table_key)] != table_key:
@@ -689,7 +789,7 @@ class bsdTableDB :
             while 1:
                 try:
                     key, data = cur.set_range(table_key)
-                except DBNotFoundError:
+                except db.DBNotFoundError:
                     break
                 # only delete items in this table
                 if key[:len(table_key)] != table_key:
@@ -700,15 +800,17 @@ class bsdTableDB :
 
             # delete the tablename from the table name list
             tablelist = pickle.loads(
-                self.db.get(_E(_table_names_key), txn=txn, flags=DB_RMW))
+                getattr(self.db, "get_bytes", self.db.get)(_table_names_key,
+                    txn=txn, flags=db.DB_RMW))
             try:
                 tablelist.remove(table)
             except ValueError:
                 # hmm, it wasn't there, oh well, that's what we want.
                 pass
             # delete 1st, incase we opened with DB_DUP
-            self.db.delete(_E(_table_names_key), txn=txn)
-            self.db.put(_E(_table_names_key), pickle.dumps(tablelist, 1), txn=txn)
+            self.db.delete(_table_names_key, txn=txn)
+            getattr(self.db, "put_bytes", self.db.put)(_table_names_key,
+                    pickle.dumps(tablelist, 1), txn=txn)
 
             txn.commit()
             txn = None
@@ -716,8 +818,10 @@ class bsdTableDB :
             if table in self.__tablecolumns:
                 del self.__tablecolumns[table]
 
-        except DBError as dberror:
-            raise TableDBError(dberror.args[1])
-        finally:
+        except db.DBError as dberror:
             if txn:
                 txn.abort()
+            if sys.version_info[0] < 3 :
+                raise TableDBError(dberror[1])
+            else :
+                raise TableDBError(dberror.args[1])

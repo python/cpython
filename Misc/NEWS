@@ -63,6 +63,12 @@ Extension Modules
 - Issue #3643: Added a few more checks to _testcapi to prevent segfaults by
   exploitation of poor argument checking.
 
+- bsddb code updated to version 4.7.3pre2. This code is the same than
+  Python 2.6 one, since the intention is to keep an unified 2.x/3.x codebase.
+  The Python code is automatically translated using "2to3". Please, do not
+  update this code in Python 3.0 by hand. Update the 2.6 one and then
+  do "2to3".
+
 Tools/Demos
 -----------
 
