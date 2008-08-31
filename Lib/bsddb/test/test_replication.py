@@ -5,21 +5,9 @@ import os
 import time
 import unittest
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db
-except ImportError:
-    # For Python 2.3
-    from bsddb import db
+from test_all import db, test_support, have_threads, verbose, \
+        get_new_environment_path, get_new_database_path
 
-from test_all import have_threads, get_new_environment_path, get_new_database_path
-
-try:
-    from bsddb3 import test_support
-except ImportError:
-    from test import test_support
-
-from test_all import verbose
 
 #----------------------------------------------------------------------
 
@@ -254,9 +242,14 @@ class DBBaseReplication(DBReplicationManager):
 
         from threading import Thread
         t_m=Thread(target=thread_master)
-        t_m.setDaemon(True)
         t_c=Thread(target=thread_client)
-        t_c.setDaemon(True)
+        import sys
+        if sys.version_info[0] < 3 :
+            t_m.setDaemon(True)
+            t_c.setDaemon(True)
+        else :
+            t_m.daemon = True
+            t_c.daemon = True
 
         self.t_m = t_m
         self.t_c = t_c
@@ -400,7 +393,11 @@ class DBBaseReplication(DBReplicationManager):
                             from threading import Thread
                             election_status[0] = True
                             t=Thread(target=elect)
-                            t.setDaemon(True)
+                            import sys
+                            if sys.version_info[0] < 3 :
+                                t.setDaemon(True)
+                            else :
+                                t.daemon = True
                             t.start()
 
             self.thread_do = thread_do

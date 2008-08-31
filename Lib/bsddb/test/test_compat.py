@@ -6,15 +6,9 @@ regression test suite.
 import os, string
 import unittest
 
-from test_all import verbose, get_new_database_path
+from test_all import db, hashopen, btopen, rnopen, verbose, \
+        get_new_database_path
 
-
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db, hashopen, btopen, rnopen
-except ImportError:
-    # For Python 2.3
-    from bsddb import db, hashopen, btopen, rnopen
 
 class CompatibilityTestCase(unittest.TestCase):
     def setUp(self):
@@ -34,7 +28,7 @@ class CompatibilityTestCase(unittest.TestCase):
         self.do_bthash_test(hashopen, 'hashopen')
 
     def test03_rnopen(self):
-        data = string.split("The quick brown fox jumped over the lazy dog.")
+        data = "The quick brown fox jumped over the lazy dog.".split()
         if verbose:
             print "\nTesting: rnopen"
 

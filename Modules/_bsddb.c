@@ -396,7 +396,11 @@ static int make_dbt(PyObject* obj, DBT* dbt)
     }
     else if (!PyArg_Parse(obj, "s#", &dbt->data, &dbt->size)) {
         PyErr_SetString(PyExc_TypeError,
+#if (PY_VERSION_HEX < 0x03000000)
                         "Data values must be of type string or None.");
+#else
+                        "Data values must be of type bytes or None.");
+#endif
         return 0;
     }
     return 1;
@@ -435,7 +439,11 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
         if (type == DB_RECNO || type == DB_QUEUE) {
             PyErr_SetString(
                 PyExc_TypeError,
+#if (PY_VERSION_HEX < 0x03000000)
                 "String keys not allowed for Recno and Queue DB's");
+#else
+                "Bytes keys not allowed for Recno and Queue DB's");
+#endif
             return 0;
         }
 
@@ -488,7 +496,11 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
     }
     else {
         PyErr_Format(PyExc_TypeError,
+#if (PY_VERSION_HEX < 0x03000000)
                      "String or Integer object expected for key, %s found",
+#else
+                     "Bytes or Integer object expected for key, %s found",
+#endif
                      Py_TYPE(keyobj)->tp_name);
         return 0;
     }
@@ -573,11 +585,13 @@ static PyObject *BuildValue_S(const void *p,int s)
     p=DummyString;
     assert(s==0);
   }
-  return Py_BuildValue("s#",p,s);
+  return PyBytes_FromStringAndSize(p, s);
 }
 
 static PyObject *BuildValue_SS(const void *p1,int s1,const void *p2,int s2)
 {
+PyObject *a, *b, *r;
+
   if (!p1) {
     p1=DummyString;
     assert(s1==0);
@@ -586,25 +600,59 @@ static PyObject *BuildValue_SS(const void *p1,int s1,const void *p2,int s2)
     p2=DummyString;
     assert(s2==0);
   }
-  return Py_BuildValue("s#s#",p1,s1,p2,s2);
+
+  if (!(a = PyBytes_FromStringAndSize(p1, s1))) {
+      return NULL;
+  }
+  if (!(b = PyBytes_FromStringAndSize(p2, s2))) {
+      Py_DECREF(a);
+      return NULL;
+  }
+
+#if (PY_VERSION_HEX >= 0x02040000)
+  r = PyTuple_Pack(2, a, b) ;
+#else
+  r = Py_BuildValue("OO", a, b);
+#endif
+  Py_DECREF(a);
+  Py_DECREF(b);
+  return r;
 }
 
 static PyObject *BuildValue_IS(int i,const void *p,int s)
 {
+  PyObject *a, *r;
+
   if (!p) {
     p=DummyString;
     assert(s==0);
   }
-  return Py_BuildValue("is#",i,p,s);
+
+  if (!(a = PyBytes_FromStringAndSize(p, s))) {
+      return NULL;
+  }
+
+  r = Py_BuildValue("iO", i, a);
+  Py_DECREF(a);
+  return r;
 }
 
-static PyObject *BuildValue_LS(long i,const void *p,int s)
+static PyObject *BuildValue_LS(long l,const void *p,int s)
 {
+  PyObject *a, *r;
+
   if (!p) {
     p=DummyString;
     assert(s==0);
   }
-  return Py_BuildValue("ls#",i,p,s);
+
+  if (!(a = PyBytes_FromStringAndSize(p, s))) {
+      return NULL;
+  }
+
+  r = Py_BuildValue("lO", l, a);
+  Py_DECREF(a);
+  return r;
 }
 
 
@@ -895,7 +943,7 @@ newDBObject(DBEnvObject* arg, int flags)
     self->btCompareCallback = NULL;
     self->primaryDBType = 0;
     Py_INCREF(Py_None);
-    self->private = Py_None;
+    self->private_obj = Py_None;
     self->in_weakreflist = NULL;
 
     /* keep a reference to our python DBEnv object */
@@ -967,7 +1015,7 @@ DB_dealloc(DBObject* self)
         Py_DECREF(self->btCompareCallback);
         self->btCompareCallback = NULL;
     }
-    Py_DECREF(self->private);
+    Py_DECREF(self->private_obj);
     PyObject_Del(self);
 }
 
@@ -1030,7 +1078,7 @@ newDBEnvObject(int flags)
     self->children_dbs = NULL;
     self->children_txns = NULL;
     Py_INCREF(Py_None);
-    self->private = Py_None;
+    self->private_obj = Py_None;
     Py_INCREF(Py_None);
     self->rep_transport = Py_None;
     self->in_weakreflist = NULL;
@@ -1045,7 +1093,7 @@ newDBEnvObject(int flags)
     }
     else {
         self->db_env->set_errcall(self->db_env, _db_errorCallback);
-        self->db_env->app_private=self;
+        self->db_env->app_private = self;
     }
     return self;
 }
@@ -1069,7 +1117,7 @@ DBEnv_dealloc(DBEnvObject* self)
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
     }
-    Py_DECREF(self->private);
+    Py_DECREF(self->private_obj);
     Py_DECREF(self->rep_transport);
     PyObject_Del(self);
 }
@@ -1248,15 +1296,17 @@ DBSequence_dealloc(DBSequenceObject* self)
 /* DB methods */
 
 static PyObject*
-DB_append(DBObject* self, PyObject* args)
+DB_append(DBObject* self, PyObject* args, PyObject* kwargs)
 {
     PyObject* txnobj = NULL;
     PyObject* dataobj;
     db_recno_t recno;
     DBT key, data;
     DB_TXN *txn = NULL;
+    static char* kwnames[] = { "data", "txn", NULL };
 
-    if (!PyArg_UnpackTuple(args, "append", 1, 2, &dataobj, &txnobj))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:append", kwnames,
+                                     &dataobj, &txnobj))
         return NULL;
 
     CHECK_DB_NOT_CLOSED(self);
@@ -1443,6 +1493,7 @@ DB_close_internal(DBObject* self, int flags)
     if (self->db != NULL) {
         /* Can be NULL if db is not in an environment */
         EXTRACT_FROM_DOUBLE_LINKED_LIST_MAYBE_NULL(self);
+
         if (self->txn) {
             EXTRACT_FROM_DOUBLE_LINKED_LIST_TXN(self);
             self->txn=NULL;
@@ -2168,7 +2219,12 @@ DB_remove(DBObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
     CHECK_DB_NOT_CLOSED(self);
 
+    EXTRACT_FROM_DOUBLE_LINKED_LIST_MAYBE_NULL(self);
+
+    MYDB_BEGIN_ALLOW_THREADS;
     err = self->db->remove(self->db, filename, database, flags);
+    MYDB_END_ALLOW_THREADS;
+
     self->db = NULL;
     RETURN_IF_ERR();
     RETURN_NONE();
@@ -2201,17 +2257,17 @@ static PyObject*
 DB_get_private(DBObject* self)
 {
     /* We can give out the private field even if db is closed */
-    Py_INCREF(self->private);
-    return self->private;
+    Py_INCREF(self->private_obj);
+    return self->private_obj;
 }
 
 static PyObject*
-DB_set_private(DBObject* self, PyObject* private)
+DB_set_private(DBObject* self, PyObject* private_obj)
 {
     /* We can set the private field even if db is closed */
-    Py_DECREF(self->private);
-    Py_INCREF(private);
-    self->private = private;
+    Py_DECREF(self->private_obj);
+    Py_INCREF(private_obj);
+    self->private_obj = private_obj;
     RETURN_NONE();
 }
 
@@ -2990,16 +3046,19 @@ DB_ass_sub(DBObject* self, PyObject* keyobj, PyObject* dataobj)
 
 
 static PyObject*
-DB_has_key(DBObject* self, PyObject* args)
+DB_has_key(DBObject* self, PyObject* args, PyObject* kwargs)
 {
     int err;
     PyObject* keyobj;
     DBT key, data;
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
+    static char* kwnames[] = {"key","txn", NULL};
 
-    if (!PyArg_UnpackTuple(args,"has_key", 1, 2, &keyobj, &txnobj))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:has_key", kwnames,
+                &keyobj, &txnobj))
         return NULL;
+
     CHECK_DB_NOT_CLOSED(self);
     if (!make_key_dbt(self, keyobj, &key, NULL))
         return NULL;
@@ -3308,7 +3367,7 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     {
         PyErr_Clear();
         if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi|ii:get",
-                                         &kwnames[1], 
+                                         &kwnames[1],
 					 &keyobj, &flags, &dlen, &doff))
         {
             PyErr_Clear();
@@ -4920,17 +4979,17 @@ static PyObject*
 DBEnv_get_private(DBEnvObject* self)
 {
     /* We can give out the private field even if dbenv is closed */
-    Py_INCREF(self->private);
-    return self->private;
+    Py_INCREF(self->private_obj);
+    return self->private_obj;
 }
 
 static PyObject*
-DBEnv_set_private(DBEnvObject* self, PyObject* private)
+DBEnv_set_private(DBEnvObject* self, PyObject* private_obj)
 {
     /* We can set the private field even if dbenv is closed */
-    Py_DECREF(self->private);
-    Py_INCREF(private);
-    self->private = private;
+    Py_DECREF(self->private_obj);
+    Py_INCREF(private_obj);
+    self->private_obj = private_obj;
     RETURN_NONE();
 }
 
@@ -5116,8 +5175,18 @@ DBEnv_rep_process_message(DBEnvObject* self, PyObject* args)
             return Py_BuildValue("(iO)", err, Py_None);
             break;
         case DB_REP_NEWSITE :
-            return Py_BuildValue("(is#)", err, rec.data, rec.size);
-            break;
+            {
+                PyObject *tmp, *r;
+
+                if (!(tmp = PyBytes_FromStringAndSize(rec.data, rec.size))) {
+                    return NULL;
+                }
+
+                r = Py_BuildValue("(iO)", err, tmp);
+                Py_DECREF(tmp);
+                return r;
+                break;
+            }
 #if (DBVER >= 42)
         case DB_REP_NOTPERM :
         case DB_REP_ISPERM :
@@ -5136,6 +5205,7 @@ _DBEnv_rep_transportCallback(DB_ENV* db_env, const DBT* control, const DBT* rec,
     DBEnvObject *dbenv;
     PyObject* rep_transport;
     PyObject* args;
+    PyObject *a, *b;
     PyObject* result = NULL;
     int ret=0;
 
@@ -5143,15 +5213,21 @@ _DBEnv_rep_transportCallback(DB_ENV* db_env, const DBT* control, const DBT* rec,
     dbenv = (DBEnvObject *)db_env->app_private;
     rep_transport = dbenv->rep_transport;
 
+    /*
+    ** The errors in 'a' or 'b' are detected in "Py_BuildValue".
+    */
+    a = PyBytes_FromStringAndSize(control->data, control->size);
+    b = PyBytes_FromStringAndSize(rec->data, rec->size);
+
     args = Py_BuildValue(
 #if (PY_VERSION_HEX >= 0x02040000)
-            "(Os#s#(ll)iI)",
+            "(OOO(ll)iI)",
 #else
-            "(Os#s#(ll)ii)",
+            "(OOO(ll)ii)",
 #endif
             dbenv,
-            control->data, control->size,
-            rec->data, rec->size, lsn->file, lsn->offset, envid, flags);
+            a, b,
+            lsn->file, lsn->offset, envid, flags);
     if (args) {
         result = PyEval_CallObject(rep_transport, args);
     }
@@ -5160,6 +5236,8 @@ _DBEnv_rep_transportCallback(DB_ENV* db_env, const DBT* control, const DBT* rec,
         PyErr_Print();
         ret = -1;
     }
+    Py_XDECREF(a);
+    Py_XDECREF(b);
     Py_XDECREF(args);
     Py_XDECREF(result);
     MYDB_END_BLOCK_THREADS;
@@ -6259,7 +6337,7 @@ DBSequence_stat(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
 /* Method definition tables and type objects */
 
 static PyMethodDef DB_methods[] = {
-    {"append",          (PyCFunction)DB_append,         METH_VARARGS},
+    {"append",          (PyCFunction)DB_append,         METH_VARARGS|METH_KEYWORDS},
     {"associate",       (PyCFunction)DB_associate,      METH_VARARGS|METH_KEYWORDS},
     {"close",           (PyCFunction)DB_close,          METH_VARARGS},
     {"consume",         (PyCFunction)DB_consume,        METH_VARARGS|METH_KEYWORDS},
@@ -6275,7 +6353,7 @@ static PyMethodDef DB_methods[] = {
     {"get_type",        (PyCFunction)DB_get_type,       METH_NOARGS},
     {"join",            (PyCFunction)DB_join,           METH_VARARGS},
     {"key_range",       (PyCFunction)DB_key_range,      METH_VARARGS|METH_KEYWORDS},
-    {"has_key",         (PyCFunction)DB_has_key,        METH_VARARGS},
+    {"has_key",         (PyCFunction)DB_has_key,        METH_VARARGS|METH_KEYWORDS},
     {"items",           (PyCFunction)DB_items,          METH_VARARGS},
     {"keys",            (PyCFunction)DB_keys,           METH_VARARGS},
     {"open",            (PyCFunction)DB_open,           METH_VARARGS|METH_KEYWORDS},

@@ -7,19 +7,10 @@ import test_all
 from cStringIO import StringIO
 
 import unittest
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db, dbshelve
-except ImportError:
-    # For Python 2.3
-    from bsddb import db, dbshelve
 
-from test_all import get_new_environment_path, get_new_database_path
+from test_all import db, dbshelve, test_support, \
+        get_new_environment_path, get_new_database_path
 
-try:
-    from bsddb3 import test_support
-except ImportError:
-    from test import test_support
 
 lexical_cmp = cmp
 
@@ -37,7 +28,25 @@ _expected_lowercase_test_data = ['', 'a', 'aaa', 'b', 'c', 'CC', 'cccce', 'ccccf
 class ComparatorTests (unittest.TestCase):
     def comparator_test_helper (self, comparator, expected_data):
         data = expected_data[:]
-        data.sort (comparator)
+
+        import sys
+        if sys.version_info[0] < 3 :
+            if sys.version_info[:3] < (2, 4, 0):
+                data.sort(comparator)
+            else :
+                data.sort(cmp=comparator)
+        else :  # Insertion Sort. Please, improve
+            data2 = []
+            for i in data :
+                for j, k in enumerate(data2) :
+                    r = comparator(k, i)
+                    if r == 1 :
+                        data2.insert(j, i)
+                        break
+                else :
+                    data2.append(i)
+            data = data2
+
         self.failUnless (data == expected_data,
                          "comparator `%s' is not right: %s vs. %s"
                          % (comparator, expected_data, data))

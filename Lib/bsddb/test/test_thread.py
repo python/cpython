@@ -16,23 +16,16 @@ except NameError:
         pass
 
 import unittest
-from test_all import verbose, have_threads, get_new_environment_path, get_new_database_path
+from test_all import db, dbutils, test_support, verbose, have_threads, \
+        get_new_environment_path, get_new_database_path
 
 if have_threads :
-    from threading import Thread, currentThread
-
-
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db, dbutils
-except ImportError:
-    # For Python 2.3
-    from bsddb import db, dbutils
-
-try:
-    from bsddb3 import test_support
-except ImportError:
-    from test import test_support
+    from threading import Thread
+    import sys
+    if sys.version_info[0] < 3 :
+        from threading import currentThread
+    else :
+        from threading import current_thread as currentThread
 
 
 #----------------------------------------------------------------------
@@ -106,7 +99,11 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
                         args = (self.d, x),
                         name = 'reader %d' % x,
                         )#verbose = verbose)
-            rt.setDaemon(True)
+            import sys
+            if sys.version_info[0] < 3 :
+                rt.setDaemon(True)
+            else :
+                rt.daemon = True
             readers.append(rt)
 
         writers=[]
@@ -121,7 +118,11 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
             writers.append(wt)
 
         for t in writers:
-            t.setDaemon(True)
+            import sys
+            if sys.version_info[0] < 3 :
+                t.setDaemon(True)
+            else :
+                t.daemon = True
             t.start()
 
         for t in writers:
@@ -130,7 +131,12 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
             t.join()
 
     def writerThread(self, d, keys, readers):
-        name = currentThread().getName()
+        import sys
+        if sys.version_info[0] < 3 :
+            name = currentThread().getName()
+        else :
+            name = currentThread().name
+
         if verbose:
             print "%s: creating records %d - %d" % (name, start, stop)
 
@@ -155,7 +161,11 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
             print "%s: thread finished" % name
 
     def readerThread(self, d, readerNum):
-        name = currentThread().getName()
+        import sys
+        if sys.version_info[0] < 3 :
+            name = currentThread().getName()
+        else :
+            name = currentThread().name
 
         for i in xrange(5) :
             c = d.cursor()
@@ -221,7 +231,11 @@ class SimpleThreadedBase(BaseThreadedTestCase):
                         args = (self.d, x),
                         name = 'reader %d' % x,
                         )#verbose = verbose)
-            rt.setDaemon(True)
+            import sys
+            if sys.version_info[0] < 3 :
+                rt.setDaemon(True)
+            else :
+                rt.daemon = True
             readers.append(rt)
 
         writers = []
@@ -236,7 +250,11 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             writers.append(wt)
 
         for t in writers:
-            t.setDaemon(True)
+            import sys
+            if sys.version_info[0] < 3 :
+                t.setDaemon(True)
+            else :
+                t.daemon = True
             t.start()
 
         for t in writers:
@@ -245,7 +263,11 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             t.join()
 
     def writerThread(self, d, keys, readers):
-        name = currentThread().getName()
+        import sys
+        if sys.version_info[0] < 3 :
+            name = currentThread().getName()
+        else :
+            name = currentThread().name
         if verbose:
             print "%s: creating records %d - %d" % (name, start, stop)
 
@@ -268,7 +290,11 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             print "%s: thread finished" % name
 
     def readerThread(self, d, readerNum):
-        name = currentThread().getName()
+        import sys
+        if sys.version_info[0] < 3 :
+            name = currentThread().getName()
+        else :
+            name = currentThread().name
 
         c = d.cursor()
         count = 0
@@ -335,7 +361,11 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                         args = (self.d, x),
                         name = 'reader %d' % x,
                         )#verbose = verbose)
-            rt.setDaemon(True)
+            import sys
+            if sys.version_info[0] < 3 :
+                rt.setDaemon(True)
+            else :
+                rt.daemon = True
             readers.append(rt)
 
         writers = []
@@ -349,11 +379,19 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
             writers.append(wt)
 
         dt = Thread(target = self.deadlockThread)
-        dt.setDaemon(True)
+        import sys
+        if sys.version_info[0] < 3 :
+            dt.setDaemon(True)
+        else :
+            dt.daemon = True
         dt.start()
 
         for t in writers:
-            t.setDaemon(True)
+            import sys
+            if sys.version_info[0] < 3 :
+                t.setDaemon(True)
+            else :
+                t.daemon = True
             t.start()
 
         for t in writers:
@@ -365,7 +403,12 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
         dt.join()
 
     def writerThread(self, d, keys, readers):
-        name = currentThread().getName()
+        import sys
+        if sys.version_info[0] < 3 :
+            name = currentThread().getName()
+        else :
+            name = currentThread().name
+
         count=len(keys)//len(readers)
         while len(keys):
             try:
@@ -388,7 +431,11 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
             print "%s: thread finished" % name
 
     def readerThread(self, d, readerNum):
-        name = currentThread().getName()
+        import sys
+        if sys.version_info[0] < 3 :
+            name = currentThread().getName()
+        else :
+            name = currentThread().name
 
         finished = False
         while not finished:

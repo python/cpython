@@ -4,19 +4,8 @@
 import os
 import unittest
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db
-except ImportError:
-    # For Python 2.3
-    from bsddb import db
-
-from test_all import get_new_environment_path, get_new_database_path
-
-try:
-    from bsddb3 import test_support
-except ImportError:
-    from test import test_support
+from test_all import db, test_support, get_new_environment_path, \
+        get_new_database_path
 
 try :
     a=set()
@@ -79,12 +68,16 @@ class DBTxn_distributed(unittest.TestCase):
 
     def test01_distributed_transactions(self) :
         txns=set()
+        adapt = lambda x : x
+        import sys
+        if sys.version_info[0] >= 3 :
+            adapt = lambda x : bytes(x, "ascii")
     # Create transactions, "prepare" them, and
     # let them be garbage collected.
         for i in xrange(self.num_txns) :
-            txn=self.dbenv.txn_begin()
-            gid="%%%dd" %db.DB_XIDDATASIZE
-            gid=gid %i
+            txn = self.dbenv.txn_begin()
+            gid = "%%%dd" %db.DB_XIDDATASIZE
+            gid = adapt(gid %i)
             self.db.put(i, gid, txn=txn, flags=db.DB_APPEND)
             txns.add(gid)
             txn.prepare(gid)

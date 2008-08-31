@@ -5,14 +5,7 @@ TestCases for checking set_get_returns_none.
 import os, string
 import unittest
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db
-except ImportError:
-    # For Python 2.3
-    from bsddb import db
-
-from test_all import verbose, get_new_database_path
+from test_all import db, verbose, get_new_database_path
 
 
 #----------------------------------------------------------------------
@@ -39,8 +32,8 @@ class GetReturnsNoneTestCase(unittest.TestCase):
         data = d.get('bad key')
         self.assertEqual(data, None)
 
-        data = d.get('a')
-        self.assertEqual(data, 'a'*40)
+        data = d.get(string.letters[0])
+        self.assertEqual(data, string.letters[0]*40)
 
         count = 0
         c = d.cursor()
@@ -50,7 +43,7 @@ class GetReturnsNoneTestCase(unittest.TestCase):
             rec = c.next()
 
         self.assertEqual(rec, None)
-        self.assertEqual(count, 52)
+        self.assertEqual(count, len(string.letters))
 
         c.close()
         d.close()
@@ -67,8 +60,8 @@ class GetReturnsNoneTestCase(unittest.TestCase):
         self.assertRaises(db.DBNotFoundError, d.get, 'bad key')
         self.assertRaises(KeyError, d.get, 'bad key')
 
-        data = d.get('a')
-        self.assertEqual(data, 'a'*40)
+        data = d.get(string.letters[0])
+        self.assertEqual(data, string.letters[0]*40)
 
         count = 0
         exceptionHappened = 0
@@ -84,7 +77,7 @@ class GetReturnsNoneTestCase(unittest.TestCase):
 
         self.assertNotEqual(rec, None)
         self.assert_(exceptionHappened)
-        self.assertEqual(count, 52)
+        self.assertEqual(count, len(string.letters))
 
         c.close()
         d.close()

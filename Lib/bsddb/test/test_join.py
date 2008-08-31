@@ -4,22 +4,9 @@
 import os
 
 import unittest
-from test_all import verbose
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db, dbshelve
-except ImportError:
-    # For Python 2.3
-    from bsddb import db, dbshelve
-
-from test_all import get_new_environment_path, get_new_database_path
-
-try:
-    from bsddb3 import test_support
-except ImportError:
-    from test import test_support
-
+from test_all import db, dbshelve, test_support, verbose, \
+        get_new_environment_path, get_new_database_path
 
 #----------------------------------------------------------------------
 
