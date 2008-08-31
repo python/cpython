@@ -44,7 +44,7 @@ spammish repetition':
     >>> m.update(b"Nobody inspects")
     >>> m.update(b" the spammish repetition")
     >>> m.digest()
-    b'\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
+    b'\\xbbd\\x9c\\x83\\xdd\\x1e\\xa5\\xc9\\xd9\\xde\\xc9\\xa1\\x8d\\xf0\\xff\\xe9'
 
 More condensed:
 
