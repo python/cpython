@@ -1382,12 +1382,28 @@ Basic customization
    be in the wrong hash bucket).
 
    User-defined classes have :meth:`__cmp__` and :meth:`__hash__` methods
-   by default; with them, all objects compare unequal and ``x.__hash__()``
-   returns ``id(x)``.
+   by default; with them, all objects compare unequal (except with themselves)
+   and ``x.__hash__()`` returns ``id(x)``.
+
+   Classes which inherit a :meth:`__hash__` method from a parent class but
+   change the meaning of :meth:`__cmp__` or :meth:`__eq__` such that the hash
+   value returned is no longer appropriate (e.g. by switching to a value-based
+   concept of equality instead of the default identity based equality) can
+   explicitly flag themselves as being unhashable by setting
+   ``__hash__ = None`` in the class definition. Doing so means that not only
+   will instances of the class raise an appropriate :exc:`TypeError` when
+   a program attempts to retrieve their hash value, but they will also be
+   correctly identified as unhashable when checking
+   ``isinstance(obj, collections.Hashable)`` (unlike classes which define
+   their own :meth:`__hash__` to explicitly raise :exc:`TypeError`).
 
    .. versionchanged:: 2.5
       :meth:`__hash__` may now also return a long integer object; the 32-bit
       integer is then derived from the hash of that object.
+
+   .. versionchanged:: 2.6
+      :attr:`__hash__` may now be set to :const:`None` to explicitly flag
+      instances of a class as unhashable.
 
 
 .. method:: object.__nonzero__(self)
