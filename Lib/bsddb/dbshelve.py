@@ -218,8 +218,13 @@ class DBShelf(MutableMapping):
 
     def associate(self, secondaryDB, callback, flags=0):
         def _shelf_callback(priKey, priData, realCallback=callback):
-            data = cPickle.loads(priData)
+            # Safe in Python 2.x because expresion short circuit
+            if sys.version_info[0] < 3 or isinstance(priData, bytes) :
+                data = cPickle.loads(priData)
+            else :
+                data = cPickle.loads(bytes(priData, "iso8859-1"))  # 8 bits
             return realCallback(priKey, data)
+
         return self.db.associate(secondaryDB, _shelf_callback, flags)
 
 
@@ -232,7 +237,7 @@ class DBShelf(MutableMapping):
         data = apply(self.db.get, args, kw)
         try:
             return cPickle.loads(data)
-        except (TypeError, cPickle.UnpicklingError):
+        except (EOFError, TypeError, cPickle.UnpicklingError):
             return data  # we may be getting the default value, or None,
                          # so it doesn't need unpickled.
 
@@ -350,7 +355,11 @@ class DBShelfCursor:
             return None
         else:
             key, data = rec
-            return key, cPickle.loads(data)
+            # Safe in Python 2.x because expresion short circuit
+            if sys.version_info[0] < 3 or isinstance(data, bytes) :
+                return key, cPickle.loads(data)
+            else :
+                return key, cPickle.loads(bytes(data, "iso8859-1"))  # 8 bits
 
     #----------------------------------------------
     # Methods allowed to pass-through to self.dbc

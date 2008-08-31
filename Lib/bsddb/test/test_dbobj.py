@@ -2,19 +2,8 @@
 import os, string
 import unittest
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db, dbobj
-except ImportError:
-    # For Python 2.3
-    from bsddb import db, dbobj
-
-from test_all import get_new_environment_path, get_new_database_path
-
-try:
-    from bsddb3 import test_support
-except ImportError:
-    from test import test_support
+from test_all import db, dbobj, test_support, get_new_environment_path, \
+        get_new_database_path
 
 #----------------------------------------------------------------------
 
@@ -36,7 +25,7 @@ class dbobjTestCase(unittest.TestCase):
         class TestDBEnv(dbobj.DBEnv): pass
         class TestDB(dbobj.DB):
             def put(self, key, *args, **kwargs):
-                key = string.upper(key)
+                key = key.upper()
                 # call our parent classes put method with an upper case key
                 return apply(dbobj.DB.put, (self, key) + args, kwargs)
         self.env = TestDBEnv()

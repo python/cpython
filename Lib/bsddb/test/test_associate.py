@@ -7,19 +7,8 @@ import time
 from pprint import pprint
 
 import unittest
-from test_all import verbose, have_threads, get_new_environment_path
-
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db, dbshelve
-except ImportError:
-    # For Python 2.3
-    from bsddb import db, dbshelve
-
-try:
-    from bsddb3 import test_support
-except ImportError:
-    from test import test_support
+from test_all import db, dbshelve, test_support, verbose, have_threads, \
+        get_new_environment_path
 
 
 #----------------------------------------------------------------------
@@ -152,7 +141,7 @@ class AssociateTestCase(unittest.TestCase):
         for key, value in musicdata.items():
             if type(self.keytype) == type(''):
                 key = "%02d" % key
-            d.put(key, string.join(value, '|'), txn=txn)
+            d.put(key, '|'.join(value), txn=txn)
 
     def createDB(self, txn=None):
         self.cur = None
@@ -238,13 +227,13 @@ class AssociateTestCase(unittest.TestCase):
         rec = self.cur.first()
         while rec is not None:
             if type(self.keytype) == type(''):
-                self.assert_(string.atoi(rec[0]))  # for primary db, key is a number
+                self.assert_(int(rec[0]))  # for primary db, key is a number
             else:
                 self.assert_(rec[0] and type(rec[0]) == type(0))
             count = count + 1
             if verbose:
                 print rec
-            rec = self.cur.next()
+            rec = getattr(self.cur, "next")()
         self.assertEqual(count, len(musicdata))  # all items accounted for
 
 
@@ -270,7 +259,7 @@ class AssociateTestCase(unittest.TestCase):
             count = count + 1
             if verbose:
                 print rec
-            rec = self.cur.next()
+            rec = getattr(self.cur, "next")()
         # all items accounted for EXCEPT for 1 with "Blues" genre
         self.assertEqual(count, len(musicdata)-1)
 
@@ -278,9 +267,11 @@ class AssociateTestCase(unittest.TestCase):
 
     def getGenre(self, priKey, priData):
         self.assertEqual(type(priData), type(""))
+        genre = priData.split('|')[2]
+
         if verbose:
             print 'getGenre key: %r data: %r' % (priKey, priData)
-        genre = string.split(priData, '|')[2]
+
         if genre == 'Blues':
             return db.DB_DONOTINDEX
         else:
@@ -404,13 +395,13 @@ class ThreadedAssociateTestCase(AssociateTestCase):
         for key, value in musicdata.items():
             if type(self.keytype) == type(''):
                 key = "%02d" % key
-            d.put(key, string.join(value, '|'))
+            d.put(key, '|'.join(value))
 
     def writer2(self, d):
         for x in range(100, 600):
             key = 'z%2d' % x
             value = [key] * 4
-            d.put(key, string.join(value, '|'))
+            d.put(key, '|'.join(value))
 
 
 class ThreadedAssociateHashTestCase(ShelveAssociateTestCase):

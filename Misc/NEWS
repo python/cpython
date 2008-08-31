@@ -488,8 +488,9 @@ Extension Modules
 
 - Support for Windows 9x has been removed from the winsound module.
 
-- bsddb module updated to version 4.7.0.
-  http://www.jcea.es/programacion/pybsddb.htm#bsddb3-4.7.0
+- bsddb module updated to version 4.7.3pre2.
+  http://www.jcea.es/programacion/pybsddb.htm#bsddb3-4.7.3. This
+  code should be compatible with Python 3.0.
 
 - Issue #2858: Fix potential memory corruption when
   bsddb.db.DBEnv.lock_get and other bsddb.db object constructors
@@ -2655,8 +2656,8 @@ Extension Modules
 - fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
   were transposed.
 
-- Added support for linking the bsddb module against BerkeleyDB 4.5.x
-  and 4.6.x.
+- Added support for linking the bsddb module against BerkeleyDB 4.5.x,
+  4.6.x and 4.7.x.
 
 - Bug #1633621: if curses.resizeterm() or curses.resize_term() is
   called, update _curses.LINES, _curses.COLS, curses.LINES and

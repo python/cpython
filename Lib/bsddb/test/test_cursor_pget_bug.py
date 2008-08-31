@@ -1,19 +1,8 @@
 import unittest
 import os, glob
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db
-except ImportError:
-    # For Python 2.3
-    from bsddb import db
-
-from test_all import get_new_environment_path, get_new_database_path
-
-try:
-    from bsddb3 import test_support
-except ImportError:
-    from test import test_support
+from test_all import db, test_support, get_new_environment_path, \
+        get_new_database_path
 
 #----------------------------------------------------------------------
 
