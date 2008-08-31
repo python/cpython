@@ -67,6 +67,11 @@ such as the :mod:`multiprocessing` and :mod:`jsonlib` modules, but
 there aren't many new features that aren't related to Python 3.0 in
 some way.
 
+Python 2.6 also sees a number of improvements and bugfixes throughout
+the source.  A search through the change logs finds there were XXX
+patches applied and YYY bugs fixed between Python 2.5 and 2.6.  Both
+figures are likely to be underestimates.
+
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
 full details, you should refer to the documentation for Python 2.6. If
@@ -2503,7 +2508,7 @@ changes, or look through the Subversion logs for all the details.
   :meth:`activeCount` method is renamed to :meth:`active_count`.  The
   2.6 version of the module supports the same properties and renamed
   methods, but doesn't remove the old methods.  (Carried out by
-  various people, most notably Benjamin Peterson.)
+  several people, most notably Benjamin Peterson.)
 
   The :mod:`threading` module's :class:`Thread` objects
   gained an :attr:`ident` property that returns the thread's
@@ -2619,11 +2624,12 @@ changes, or look through the Subversion logs for all the details.
 The :mod:`ast` module
 ----------------------
 
-The :mod:`ast` module provides an Abstract Syntax Tree representation
-of Python code.  For Python 2.6, Armin Ronacher contributed a set of
-helper functions that perform various common tasks.  These will be useful
-for HTML templating packages, code analyzers, and similar tools that
-process Python code.
+The :mod:`ast` module provides an Abstract Syntax Tree
+representation of Python code, and Armin Ronacher
+contributed a set of helper functions that perform a variety of
+common tasks.  These will be useful for HTML templating
+packages, code analyzers, and similar tools that process
+Python code.
 
 The :func:`parse` function takes an expression and returns an AST.
 The :func:`dump` function outputs a representation of a tree, suitable
@@ -2639,28 +2645,46 @@ for debugging::
     """)
     print ast.dump(t)
 
-This outputs::
+This outputs a deeply nested tree::
 
-    Module(body=[Assign(targets=[Name(id='d', ctx=Store())],
-    value=Dict(keys=[], values=[])), For(target=Name(id='i',
-    ctx=Store()), iter=Str(s='abcdefghijklm'),
-    body=[Assign(targets=[Subscript(value=Name(id='d', ctx=Load()),
-    slice=Index(value=BinOp(left=Name(id='i', ctx=Load()), op=Add(),
-    right=Name(id='i', ctx=Load()))), ctx=Store())],
-    value=BinOp(left=BinOp(left=Call(func=Name(id='ord', ctx=Load()),
-    args=[Name(id='i', ctx=Load())], keywords=[], starargs=None,
-    kwargs=None), op=Sub(), right=Call(func=Name(id='ord',
-    ctx=Load()), args=[Str(s='a')], keywords=[], starargs=None,
-    kwargs=None)), op=Add(), right=Num(n=1)))], orelse=[]),
-    Print(dest=None, values=[Name(id='d', ctx=Load())], nl=True)])
+    Module(body=[
+      Assign(targets=[
+	Name(id='d', ctx=Store())
+       ], value=Dict(keys=[], values=[]))
+      For(target=Name(id='i', ctx=Store()),
+	  iter=Str(s='abcdefghijklm'), body=[
+	Assign(targets=[
+	  Subscript(value=
+	   Name(id='d', ctx=Load()),
+	     slice=
+	     Index(value=
+	    BinOp(left=Name(id='i', ctx=Load()), op=Add(),
+	     right=Name(id='i', ctx=Load()))), ctx=Store())
+	 ], value=
+	 BinOp(left=
+	  BinOp(left=
+	   Call(func=
+	    Name(id='ord', ctx=Load()), args=[
+	     Name(id='i', ctx=Load())
+	    ], keywords=[], starargs=None, kwargs=None),
+	   op=Sub(), right=Call(func=
+	    Name(id='ord', ctx=Load()), args=[
+	     Str(s='a')
+	    ], keywords=[], starargs=None, kwargs=None)),
+          op=Add(), right=Num(n=1)))
+       ], orelse=[])
+      Print(dest=None, values=[
+	Name(id='d', ctx=Load())
+       ], nl=True)
+     ])
 
 The :func:`literal_eval` method takes a string or an AST
-representing a literal expression, one that contains a Python
-expression containing only strings, numbers, dictionaries, etc. but no
-statements or function calls, and returns the resulting value.  If you
-need to unserialize an expression but need to worry about security
-and can't risk using an :func:`eval` call, :func:`literal_eval` will
-handle it safely::
+representing a literal expression, parses and evaluates it, and
+returns the resulting value.  A literal expression is a Python
+expression containing only strings, numbers, dictionaries,
+etc. but no statements or function calls.  If you need to
+evaluate an expression but accept the security risk of using an
+:func:`eval` call, :func:`literal_eval` will handle it safely::
 
     >>> literal = '("a", "b", {2:4, 3:8, 1:2})'
     >>> print ast.literal_eval(literal)
@@ -2680,7 +2704,7 @@ numbers.
 The :mod:`future_builtins` module
 --------------------------------------
 
-Python 3.0 makes various changes to the repertoire of built-in
+Python 3.0 makes many changes to the repertoire of built-in
 functions, and most of the changes can't be introduced in the Python
 2.x series because they would break compatibility.
 The :mod:`future_builtins` module provides versions
@@ -2695,17 +2719,18 @@ The functions in this module currently include:
 
 * ``filter(*predicate*, *iterable*)``,
   ``map(*func*, *iterable1*, ...)``: the 3.0 versions
-  return iterators, differing from the 2.x built-ins that return lists.
+  return iterators, unlike the 2.x built-ins which return lists.
 
 * ``hex(*value*)``, ``oct(*value*)``: instead of calling the
   :meth:`__hex__` or :meth:`__oct__` methods, these versions will
   call the :meth:`__index__` method and convert the result to hexadecimal
-  or octal.
+  or octal.  :func:`oct` will use the new ``0o`` notation for its
+  result.
 
 .. ======================================================================
 
-The :mod:`json` module
-----------------------
+The :mod:`json` module: JavaScript Object Notation
+--------------------------------------------------------------------
 
 The new :mod:`json` module supports the encoding and decoding of Python types in
 JSON (Javascript Object Notation). JSON is a lightweight interchange format
@@ -2723,21 +2748,22 @@ types. The following example encodes and decodes a dictionary::
        >>> json.loads(in_json) # Decode into a Python object
        {"spam" : "foo", "parrot" : 42}
 
-It is also possible to write your own decoders and encoders to support more
-types. Pretty-printing of the JSON strings is also supported.
+It's also possible to write your own decoders and encoders to support
+more types. Pretty-printing of the JSON strings is also supported.
 
-:mod:`json` (originally called simplejson) was written by Bob Ippolito.
+:mod:`json` (originally called simplejson) was written by Bob
+Ippolito.
 
 
 .. ======================================================================
 
-plistlib: A Property-List Parser
+The :mod:`plistlib` module: A Property-List Parser
 --------------------------------------------------
 
-A commonly-used format on MacOS X is the ``.plist`` format,
-which stores basic data types (numbers, strings, lists,
-and dictionaries) and serializes them into an XML-based format.
-(It's a lot like the XML-RPC serialization of data types.)
+The ``.plist`` format is commonly used on MacOS X to
+store basic data types (numbers, strings, lists,
+and dictionaries) by serializing them into an XML-based format.
+It resembles the XML-RPC serialization of data types.
 
 Despite being primarily used on MacOS X, the format
 has nothing Mac-specific about it and the Python implementation works
@@ -2753,7 +2779,7 @@ Using the module is simple::
     # Create data structure
     data_struct = dict(lastAccessed=datetime.datetime.now(),
 		       version=1,
-		       categories=('Personal', 'Shared', 'Private'))
+		       categories=('Personal','Shared','Private'))
 
     # Create string containing XML.
     plist_str = plistlib.writePlistToString(data_struct)
@@ -2798,13 +2824,13 @@ A new calling convention tells :mod:`ctypes` to clear the ``errno`` or
 Win32 LastError variables at the outset of each wrapped call.
 (Implemented by Thomas Heller; :issue:`1798`.)
 
-For the Unix ``errno`` variable: when creating a wrapped function,
-you can supply ``use_errno=True`` as a keyword parameter
-to the :func:`DLL` function
-and then call the module-level methods :meth:`set_errno`
-and :meth:`get_errno` to set and retrieve the error value.
+You can now retrieve the Unix ``errno`` variable after a function
+call.  When creating a wrapped function, you can supply
+``use_errno=True`` as a keyword parameter to the :func:`DLL` function
+and then call the module-level methods :meth:`set_errno` and
+:meth:`get_errno` to set and retrieve the error value.
 
-The Win32 LastError variable is supported similarly by
+The Win32 LastError variable is similarly supported by
 the :func:`DLL`, :func:`OleDLL`, and :func:`WinDLL` functions.
 You supply ``use_last_error=True`` as a keyword parameter
 and then call the module-level methods :meth:`set_last_error`
@@ -2820,15 +2846,15 @@ Improved SSL Support
 --------------------------------------------------
 
 Bill Janssen made extensive improvements to Python 2.6's support for
-the Secure Sockets Layer by adding a new module, :mod:`ssl`, on top of
-the `OpenSSL <http://www.openssl.org/>`__ library.  This new module
-provides more control over the protocol negotiated, the X.509
-certificates used, and has better support for writing SSL servers (as
-opposed to clients) in Python.  The existing SSL support in the
-:mod:`socket` module hasn't been removed and continues to work,
+the Secure Sockets Layer by adding a new module, :mod:`ssl`, that's
+built atop the `OpenSSL <http://www.openssl.org/>`__ library.
+This new module provides more control over the protocol negotiated,
+the X.509 certificates used, and has better support for writing SSL
+servers (as opposed to clients) in Python.  The existing SSL support
+in the :mod:`socket` module hasn't been removed and continues to work,
 though it will be removed in Python 3.0.
 
-To use the new module, first you must create a TCP connection in the
+To use the new module, you must first create a TCP connection in the
 usual way and then pass it to the :func:`ssl.wrap_socket` function.
 It's possible to specify whether a certificate is required, and to
 obtain certificate info by calling the :meth:`getpeercert` method.
@@ -2845,9 +2871,15 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
-* Python 2.6 can be built with Microsoft Visual Studio 2008.
-  See the :file:`PCbuild9` directory for the build files.
-  (Implemented by Christian Heimes.)
+* Python now must be compiled with C89 compilers (after 19
+  years!).  This means that the Python source tree has dropped its
+  own implementations of :cfunc:`memmove` and :cfunc:`strerror`, which
+  are in the C89 standard library.
+
+* Python 2.6 can be built with Microsoft Visual Studio 2008 (version
+  9.0), and this is the new default compiler.  See the
+  :file:`PCbuild` directory for the build files.  (Implemented by
+  Christian Heimes.)
 
 * On MacOS X, Python 2.6 can be compiled as a 4-way universal build.
   The :program:`configure` script
@@ -2855,11 +2887,6 @@ Changes to Python's build process and to the C API include:
   switch, controlling whether the binaries are built for 32-bit
   architectures (x86, PowerPC), 64-bit (x86-64 and PPC-64), or both.
   (Contributed by Ronald Oussoren.)
-
-* Python now can only be compiled with C89 compilers (after 19
-  years!).  This means that the Python source tree can now drop its
-  own implementations of :cfunc:`memmove` and :cfunc:`strerror`, which
-  are in the C89 standard library.
 
 * The BerkeleyDB module now has a C API object, available as
   ``bsddb.db.api``.   This object can be used by other C extensions
@@ -2889,14 +2916,14 @@ Changes to Python's build process and to the C API include:
   function, :cfunc:`PyImport_ImportModuleNoBlock`, will look for a
   module in ``sys.modules`` first, then try to import it after
   acquiring an import lock.  If the import lock is held by another
-  thread, the :exc:`ImportError` is raised.
+  thread, an :exc:`ImportError` is raised.
   (Contributed by Christian Heimes.)
 
 * Several functions return information about the platform's
   floating-point support.  :cfunc:`PyFloat_GetMax` returns
   the maximum representable floating point value,
   and :cfunc:`PyFloat_GetMin` returns the minimum
-  positive value.  :cfunc:`PyFloat_GetInfo` returns a dictionary
+  positive value.  :cfunc:`PyFloat_GetInfo` returns an object
   containing more information from the :file:`float.h` file, such as
   ``"mant_dig"`` (number of digits in the mantissa), ``"epsilon"``
   (smallest difference between 1.0 and the next largest value
@@ -2939,7 +2966,7 @@ Changes to Python's build process and to the C API include:
   internal free lists of objects that can be re-used.  The data
   structures for these free lists now follow a naming convention: the
   variable is always named ``free_list``, the counter is always named
-  ``numfree``, and a macro :cmacro:`Py<typename>_MAXFREELIST` is
+  ``numfree``, and a macro ``Py<typename>_MAXFREELIST`` is
   always defined.
 
 * A new Makefile target, "make check", prepares the Python source tree
@@ -2963,6 +2990,14 @@ Port-Specific Changes: Windows
 * The support for Windows 95, 98, ME and NT4 has been dropped.
   Python 2.6 requires at least Windows 2000 SP4.
 
+* The new default compiler on Windows is Visual Studio 2008 (version
+  9.0). The build directories for Visual Studio 2003 (version 7.1) and
+  2005 (version 8.0) were moved into the PC/ directory. The new
+  :file:`PCbuild` directory supports cross compilation for X64, debug
+  builds and Profile Guided Optimization (PGO). PGO builds are roughly
+  10% faster than normal builds.  (Contributed by Christian Heimes
+  with help from Amaury Forgeot d'Arc and Martin von Loewis.)
+
 * The :mod:`msvcrt` module now supports
   both the normal and wide char variants of the console I/O
   API.  The :func:`getwch` function reads a keypress and returns a Unicode
@@ -2970,9 +3005,9 @@ Port-Specific Changes: Windows
   takes a Unicode character and writes it to the console.
   (Contributed by Christian Heimes.)
 
-* :func:`os.path.expandvars` will now expand environment variables
-  in the form "%var%", and "~user" will be expanded into the
-  user's home directory path.  (Contributed by Josiah Carlson.)
+* :func:`os.path.expandvars` will now expand environment variables in
+  the form "%var%", and "~user" will be expanded into the user's home
+  directory path.  (Contributed by Josiah Carlson; :issue:`957650`.)
 
 * The :mod:`socket` module's socket objects now have an
   :meth:`ioctl` method that provides a limited interface to the
@@ -2995,14 +3030,6 @@ Port-Specific Changes: Windows
   gained :meth:`GetInteger` and :meth:`GetString` methods that
   return field values as an integer or a string.
   (Contributed by Floris Bruynooghe; :issue:`2125`.)
-
-* The new default compiler on Windows is Visual Studio 2008 (VS 9.0). The
-  build directories for Visual Studio 2003 (VS7.1) and 2005 (VS8.0)
-  were moved into the PC/ directory. The new PCbuild directory supports
-  cross compilation for X64, debug builds and Profile Guided Optimization
-  (PGO). PGO builds are roughly 10% faster than normal builds.
-  (Contributed by Christian Heimes with help from Amaury Forgeot d'Arc and
-  Martin von Loewis.)
 
 .. ======================================================================
 
@@ -3088,32 +3115,6 @@ be removed in Python 3.0:
 :mod:`torgb`,
 :mod:`videoreader`, and
 :mod:`WAIT`.
-
-
-
-.. ======================================================================
-
-
-.. _section-other:
-
-Other Changes and Fixes
-=======================
-
-As usual, there were a bunch of other improvements and bugfixes
-scattered throughout the source tree.  A search through the change
-logs finds there were XXX patches applied and YYY bugs fixed between
-Python 2.5 and 2.6.  Both figures are likely to be underestimates.
-
-Some of the more notable changes are:
-
-* It's now possible to prevent Python from writing any :file:`.pyc`
-  or :file:`.pyo` files by either supplying the :option:`-B` switch
-  or setting the :envvar:`PYTHONDONTWRITEBYTECODE` environment variable
-  to any non-empty string when running the Python interpreter.  These
-  are also used to set the :data:`sys.dont_write_bytecode` attribute;
-  Python code can change this variable to control whether bytecode
-  files are subsequently written.
-  (Contributed by Neal Norwitz and Georg Brandl.)
 
 .. ======================================================================
 
