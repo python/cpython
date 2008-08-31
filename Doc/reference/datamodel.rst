@@ -1239,12 +1239,29 @@ Basic customization
    be in the wrong hash bucket).
 
    User-defined classes have :meth:`__cmp__` and :meth:`__hash__` methods
-   by default; with them, all objects compare unequal and ``x.__hash__()``
-   returns ``id(x)``.
+   by default; with them, all objects compare unequal (except with themselves)
+   and ``x.__hash__()`` returns ``id(x)``.
 
+   Classes which inherit a :meth:`__hash__` method from a parent class but
+   change the meaning of :meth:`__cmp__` or :meth:`__eq__` such that the hash
+   value returned is no longer appropriate (e.g. by switching to a value-based
+   concept of equality instead of the default identity based equality) can
+   explicitly flag themselves as being unhashable by setting
+   ``__hash__ = None`` in the class definition. Doing so means that not only
+   will instances of the class raise an appropriate :exc:`TypeError` when
+   a program attempts to retrieve their hash value, but they will also be
+   correctly identified as unhashable when checking
+   ``isinstance(obj, collections.Hashable)`` (unlike classes which define
+   their own :meth:`__hash__` to explicitly raise :exc:`TypeError`).
+
+   If a class that overrrides :meth:`__cmp__` or :meth:`__eq__` needs to
+   retain the implementation of :meth:`__hash__` from a parent class,
+   the interpreter must be told this explicitly by setting
+   ``__hash__ = <ParentClass>.__hash__``. Otherwise the inheritance of
+   :meth:`__hash__` will be blocked, just as if :attr:`__hash__` had been
+   explicitly set to :const:`None`.
 
 .. method:: object.__bool__(self)
-
    .. index:: single: __len__() (mapping object method)
 
    Called to implement truth value testing, and the built-in operation ``bool()``;
