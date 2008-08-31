@@ -94,7 +94,7 @@ features in 2.6.
 
 Python 3.0 is a far-ranging redesign of Python that breaks
 compatibility with the 2.x series.  This means that existing Python
-code will need a certain amount of conversion in order to run on
+code will need some conversion in order to run on
 Python 3.0.  However, not all the changes in 3.0 necessarily break
 compatibility.  In cases where new features won't cause existing code
 to break, they've been backported to 2.6 and are described in this
@@ -1359,9 +1359,9 @@ This is equivalent to::
 PEP 3141: A Type Hierarchy for Numbers
 =====================================================
 
-In Python 3.0, several abstract base classes for numeric types,
-inspired by Scheme's numeric tower, are being added.
-This change was backported to 2.6 as the :mod:`numbers` module.
+Python 3.0 adds several abstract base classes for numeric types
+inspired by Scheme's numeric tower.  These classes were backported to
+2.6 as the :mod:`numbers` module.
 
 The most general ABC is :class:`Number`.  It defines no operations at
 all, and only exists to allow checking if an object is a number by
@@ -1409,8 +1409,8 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
 The :mod:`fractions` Module
 --------------------------------------------------
 
-To fill out the hierarchy of numeric types, a rational-number class is
-provided by the :mod:`fractions` module.  Rational numbers store their
+To fill out the hierarchy of numeric types, the :mod:`fractions`
+module provides a rational-number class.  Rational numbers store their
 values as a numerator and denominator forming a fraction, and can
 exactly represent numbers such as ``2/3`` that floating-point numbers
 can only approximate.
@@ -1428,8 +1428,8 @@ that will be the numerator and denominator of the resulting fraction. ::
     >>> a/b
     Fraction(5, 3)
 
-To help in converting floating-point numbers to rationals,
-the float type now has a :meth:`as_integer_ratio()` method that returns
+For converting floating-point numbers to rationals,
+the float type now has an :meth:`as_integer_ratio()` method that returns
 the numerator and denominator for a fraction that evaluates to the same
 floating-point value::
 
@@ -1454,11 +1454,11 @@ Yasskin.
 Other Language Changes
 ======================
 
-Here are all of the changes that Python 2.6 makes to the core Python language.
+Some smaller changes made to the core Python language are:
 
 * The :func:`hasattr` function was catching and ignoring all errors,
   under the assumption that they meant a :meth:`__getattr__` method
-  was failing somewhere and the return value of :func:`hasattr` would
+  was failing somehow and the return value of :func:`hasattr` would
   therefore be ``False``.  This logic shouldn't be applied to
   :exc:`KeyboardInterrupt` and :exc:`SystemExit`, however; Python 2.6
   will no longer discard such exceptions when :func:`hasattr`
@@ -1479,7 +1479,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   (Contributed by Alexander Belopolsky; :issue:`1686487`.)
 
-  It's also now legal to provide keyword arguments after a ``*args`` argument
+  It's also become legal to provide keyword arguments after a ``*args`` argument
   to a function call.
 
     >>> def f(*args, **kw):
@@ -1491,31 +1491,34 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   Previously this would have been a syntax error.
   (Contributed by Amaury Forgeot d'Arc; :issue:`3473`.)
 
-* A new built-in, ``next(*iterator*, [*default*])`` returns the next item
+* A new built-in, ``next(iterator, [default])`` returns the next item
   from the specified iterator.  If the *default* argument is supplied,
   it will be returned if *iterator* has been exhausted; otherwise,
-  the :exc:`StopIteration` exception will be raised.  (:issue:`2719`)
+  the :exc:`StopIteration` exception will be raised.  (Backported
+  in :issue:`2719`.)
 
 * Tuples now have :meth:`index` and :meth:`count` methods matching the
   list type's :meth:`index` and :meth:`count` methods::
 
-    >>> t = (0,1,2,3,4)
+    >>> t = (0,1,2,3,4,0,1,2)
     >>> t.index(3)
     3
+    >>> t.count(0)
+    2
 
   (Contributed by Raymond Hettinger)
 
 * The built-in types now have improved support for extended slicing syntax,
-  where various combinations of ``(start, stop, step)`` are supplied.
+  accepting various combinations of ``(start, stop, step)``.
   Previously, the support was partial and certain corner cases wouldn't work.
   (Implemented by Thomas Wouters.)
 
   .. Revision 57619
 
-* Properties now have three attributes, :attr:`getter`,
-  :attr:`setter` and :attr:`deleter`, that are useful shortcuts for
-  adding or modifying a getter, setter or deleter function to an
-  existing property. You would use them like this::
+* Properties now have three attributes, :attr:`getter`, :attr:`setter`
+  and :attr:`deleter`, that are decorators providing useful shortcuts
+  for adding a getter, setter or deleter function to an existing
+  property. You would use them like this::
 
     class C(object):
 	@property
@@ -1555,12 +1558,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   (Contributed by Raymond Hettinger.)
 
-* A numerical nicety: when creating a complex number from two floats
-  on systems that support signed zeros (-0 and +0), the
-  :func:`complex` constructor will now preserve the sign
-  of the zero.  (Fixed by Mark T. Dickinson; :issue:`1507`)
-
-* More floating-point features were also added.  The :func:`float` function
+* Many floating-point features were added.  The :func:`float` function
   will now turn the string ``nan`` into an
   IEEE 754 Not A Number value, and ``+inf`` and ``-inf`` into
   positive or negative infinity.  This works on any platform with
@@ -1571,7 +1569,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   infinite or Not A Number.  (:issue:`1640`)
 
   Conversion functions were added to convert floating-point numbers
-  into hexadecimal strings.  (:issue:`3008`) These functions lets you
+  into hexadecimal strings (:issue:`3008`).  These functions
   convert floats to and from a string representation without
   introducing rounding errors from the conversion between decimal and
   binary.  Floats have a :meth:`hex` method that returns a string
@@ -1587,11 +1585,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
       >>> b.hex()
       '0x1.5555555555555p-2'
 
-* The :mod:`math` module has a number of new functions, and the existing
-  functions have been improved to give more consistent behaviour
-  across platforms, especially with respect to handling of
-  floating-point exceptions and IEEE 754 special values.
-  The new functions are:
+* Several new functions were added to the :mod:`math` module:
 
   * :func:`~math.isinf` and :func:`~math.isnan` determine whether a given float
     is a (positive or negative) infinity or a NaN (Not a Number), respectively.
@@ -1605,31 +1599,39 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
     (Contributed by Raymond Hettinger; :issue:`2138`.)
 
   * :func:`~math.fsum` adds up the stream of numbers from an iterable,
-    and is careful to avoid loss of precision by calculating partial sums.
+    and is careful to avoid loss of precision through using partial sums.
     (Contributed by Jean Brouwers, Raymond Hettinger, and Mark Dickinson;
     :issue:`2819`.)
 
-  * The inverse hyperbolic functions :func:`~math.acosh`, :func:`~math.asinh`
-    and :func:`~math.atanh`.
+  * :func:`~math.acosh`, :func:`~math.asinh`
+    and :func:`~math.atanh` compute the inverse hyperbolic functions.
 
-  * The function :func:`~math.log1p`, returning the natural logarithm of *1+x*
+  * The function :func:`~math.log1p` returns the natural logarithm of *1+x*
     (base *e*).
 
-  There's also a new :func:`trunc` built-in function as a result of the
+  There's also a new :func:`trunc` built-in function from the
   backport of `PEP 3141's type hierarchy for numbers <#pep-3141>`__.
 
-  The existing math functions have been modified to follow the
-  recommendations of the C99 standard with respect to special values
-  whenever possible.  For example, ``sqrt(-1.)`` should now give a
-  :exc:`ValueError` across (nearly) all platforms, while
-  ``sqrt(float('NaN'))`` should return a NaN on all IEEE 754
+* The :mod:`math` module has been improved to give more consistent
+  behaviour across platforms, especially with respect to handling of
+  floating-point exceptions and IEEE 754 special values.
+
+  Whenever possible, the module follows the recommendations of the C99
+  standard about 754's special values.  For example, ``sqrt(-1.)``
+  should now give a :exc:`ValueError` across almost all platforms,
+  while ``sqrt(float('NaN'))`` should return a NaN on all IEEE 754
   platforms.  Where Annex 'F' of the C99 standard recommends signaling
   'divide-by-zero' or 'invalid', Python will raise :exc:`ValueError`.
   Where Annex 'F' of the C99 standard recommends signaling 'overflow',
-  Python will raise :exc:`OverflowError`.  (See :issue:`711019`,
+  Python will raise :exc:`OverflowError`.  (See :issue:`711019` and
   :issue:`1640`.)
 
   (Contributed by Christian Heimes and Mark Dickinson.)
+
+* Another numerical nicety: when creating a complex number from two floats
+  on systems that support signed zeros (-0 and +0), the
+  :func:`complex` constructor will now preserve the sign
+  of the zero.  (Fixed by Mark T. Dickinson; :issue:`1507`.)
 
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6,
@@ -1651,7 +1653,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   :issue:`1444529`.)
 
 * The :func:`complex` constructor now accepts strings containing
-  parenthesized complex numbers, letting ``complex(repr(cmplx))``
+  parenthesized complex numbers, meaning that ``complex(repr(cplx))``
   will now round-trip values.  For example, ``complex('(3+4j)')``
   now returns the value (3+4j).  (:issue:`1491866`)
 
@@ -1672,11 +1674,11 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 * Instance method objects have new attributes for the object and function
   comprising the method; the new synonym for :attr:`im_self` is
   :attr:`__self__`, and :attr:`im_func` is also available as :attr:`__func__`.
-  The old names are still supported in Python 2.6; they're gone in 3.0.
+  The old names are still supported in Python 2.6, but are gone in 3.0.
 
 * An obscure change: when you use the the :func:`locals` function inside a
   :keyword:`class` statement, the resulting dictionary no longer returns free
-  variables.  (Free variables, in this case, are variables referred to in the
+  variables.  (Free variables, in this case, are variables referenced in the
   :keyword:`class` statement  that aren't attributes of the class.)
 
 .. ======================================================================
@@ -1691,7 +1693,7 @@ Optimizations
   (Contributed by Neal Norwitz and Brett Cannon; :issue:`1631171`.)
 
 * Type objects now have a cache of methods that can reduce
-  the amount of work required to find the correct method implementation
+  the work required to find the correct method implementation
   for a particular class; once cached, the interpreter doesn't need to
   traverse base classes to figure out the right method to call.
   The cache is cleared if a base class or the class itself is modified,
@@ -1711,19 +1713,18 @@ Optimizations
   but it's impossible for the Python interpreter to determine that.
   See :issue:`1878` for some discussion.)
 
-* Function calls that use keyword arguments
-  are significantly faster thanks to a patch that does a quick pointer
-  comparison, usually saving the time of a full string comparison.
-  (Contributed by Raymond Hettinger, after an initial implementation by
-  Antoine Pitrou; :issue:`1819`.)
+* Function calls that use keyword arguments are significantly faster
+  by doing a quick pointer comparison, usually saving the time of a
+  full string comparison.  (Contributed by Raymond Hettinger, after an
+  initial implementation by Antoine Pitrou; :issue:`1819`.)
 
 * All of the functions in the :mod:`struct` module have been rewritten in
   C, thanks to work at the Need For Speed sprint.
   (Contributed by Raymond Hettinger.)
 
-* Internally, a bit is now set in type objects to indicate some of the standard
-  built-in types.  This speeds up checking if an object is a subclass of one of
-  these types.  (Contributed by Neal Norwitz.)
+* Some of the standard built-in types now set a bit in their type
+  objects.  This speeds up checking whether an object is a subclass of
+  one of these types.  (Contributed by Neal Norwitz.)
 
 * Unicode strings now use faster code for detecting
   whitespace and line breaks; this speeds up the :meth:`split` method
@@ -2202,7 +2203,7 @@ details.
 * New functions in the :mod:`os` module include
   ``fchmod(fd, mode)``,   ``fchown(fd, uid, gid)``,
   and ``lchmod(path, mode)``, on operating systems that support these
-  functions. :func:`fchmod` and :func:`fchown` let you change the mode
+  functions. :func:`fchmod` and :func:`fchown` change the mode
   and ownership of an opened file, and :func:`lchmod` changes the mode
   of a symlink.
 
@@ -2487,7 +2488,7 @@ details.
 
     tar = tarfile.open("output.tar", "w", format=tarfile.PAX_FORMAT)
 
-  The new ``errors`` parameter lets you specify an error handling
+  The new ``errors`` parameter specifies an error handling
   scheme for character conversions: the three standard ways Python can
   handle errors ``'strict'``, ``'ignore'``, ``'replace'`` , or the
   special value ``'utf-8'``, which replaces bad characters with their
