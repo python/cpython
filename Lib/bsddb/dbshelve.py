@@ -32,21 +32,43 @@ storage.
 import pickle
 import sys
 
+import sys
+absolute_import = (sys.version_info[0] >= 3)
+if absolute_import :
+    # Because this syntaxis is not valid before Python 2.5
+    exec("from . import db")
+else :
+    from . import db
+
 #At version 2.3 cPickle switched to using protocol instead of bin
 if sys.version_info[:3] >= (2, 3, 0):
     HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
-    def _dumps(object, protocol):
-        return pickle.dumps(object, protocol=protocol)
-    from collections import MutableMapping
+# In python 2.3.*, "cPickle.dumps" accepts no
+# named parameters. "pickle.dumps" accepts them,
+# so this seems a bug.
+    if sys.version_info[:3] < (2, 4, 0):
+        def _dumps(object, protocol):
+            return pickle.dumps(object, protocol)
+    else :
+        def _dumps(object, protocol):
+            return pickle.dumps(object, protocol=protocol)
+
 else:
     HIGHEST_PROTOCOL = None
     def _dumps(object, protocol):
         return pickle.dumps(object, bin=protocol)
-    class MutableMapping: pass
 
-from . import db
 
-_unspecified = object()
+if sys.version_info[0:2] <= (2, 5) :
+    try:
+        from UserDict import DictMixin
+    except ImportError:
+        # DictMixin is new in Python 2.3
+        class DictMixin: pass
+    MutableMapping = DictMixin
+else :
+    import collections
+    MutableMapping = collections.MutableMapping
 
 #------------------------------------------------------------------------
 
@@ -135,13 +157,15 @@ class DBShelf(MutableMapping):
 
 
     def keys(self, txn=None):
-        if txn is not None:
+        if txn != None:
             return self.db.keys(txn)
         else:
-            return self.db.keys()
+            return list(self.db.keys())
 
-    def __iter__(self):
-        return iter(self.keys())
+    if sys.version_info[0:2] >= (2, 6) :
+        def __iter__(self) :
+            return self.db.__iter__()
+
 
     def open(self, *args, **kwargs):
         self.db.open(*args, **kwargs)
@@ -157,14 +181,14 @@ class DBShelf(MutableMapping):
         if self._closed:
             return '<DBShelf @ 0x%x - closed>' % (id(self))
         else:
-            return repr(dict(self.iteritems()))
+            return repr(dict(iter(self.items())))
 
 
     def items(self, txn=None):
-        if txn is not None:
+        if txn != None:
             items = self.db.items(txn)
         else:
-            items = self.db.items()
+            items = list(self.db.items())
         newitems = []
 
         for k, v in items:
@@ -172,12 +196,12 @@ class DBShelf(MutableMapping):
         return newitems
 
     def values(self, txn=None):
-        if txn is not None:
+        if txn != None:
             values = self.db.values(txn)
         else:
-            values = self.db.values()
+            values = list(self.db.values())
 
-        return map(pickle.loads, values)
+        return list(map(pickle.loads, values))
 
     #-----------------------------------
     # Other methods
@@ -194,24 +218,28 @@ class DBShelf(MutableMapping):
 
     def associate(self, secondaryDB, callback, flags=0):
         def _shelf_callback(priKey, priData, realCallback=callback):
-            data = pickle.loads(priData)
+            # Safe in Python 2.x because expresion short circuit
+            if sys.version_info[0] < 3 or isinstance(priData, bytes) :
+                data = pickle.loads(priData)
+            else :
+                data = pickle.loads(bytes(priData, "iso8859-1"))  # 8 bits
             return realCallback(priKey, data)
+
         return self.db.associate(secondaryDB, _shelf_callback, flags)
 
 
-    def get(self, key, default=_unspecified, txn=None, flags=0):
-        # If no default is given, we must not pass one to the
-        # extension module, so that an exception can be raised if
-        # set_get_returns_none is turned off.
-        if default is _unspecified:
-            data = self.db.get(key, txn=txn, flags=flags)
-            # if this returns, the default value would be None
-            default = None
-        else:
-            data = self.db.get(key, default, txn=txn, flags=flags)
-        if data is default:
-            return data
-        return pickle.loads(data)
+    #def get(self, key, default=None, txn=None, flags=0):
+    def get(self, *args, **kw):
+        # We do it with *args and **kw so if the default value wasn't
+        # given nothing is passed to the extension module.  That way
+        # an exception can be raised if set_get_returns_none is turned
+        # off.
+        data = self.db.get(*args, **kw)
+        try:
+            return pickle.loads(data)
+        except (EOFError, TypeError, pickle.UnpicklingError):
+            return data  # we may be getting the default value, or None,
+                         # so it doesn't need unpickled.
 
     def get_both(self, key, value, txn=None, flags=0):
         data = _dumps(value, self.protocol)
@@ -232,10 +260,6 @@ class DBShelf(MutableMapping):
 
     def join(self, cursorList, flags=0):
         raise NotImplementedError
-
-
-    def __contains__(self, key):
-        return self.db.has_key(key)
 
 
     #----------------------------------------------
@@ -331,7 +355,11 @@ class DBShelfCursor:
             return None
         else:
             key, data = rec
-            return key, pickle.loads(data)
+            # Safe in Python 2.x because expresion short circuit
+            if sys.version_info[0] < 3 or isinstance(data, bytes) :
+                return key, pickle.loads(data)
+            else :
+                return key, pickle.loads(bytes(data, "iso8859-1"))  # 8 bits
 
     #----------------------------------------------
     # Methods allowed to pass-through to self.dbc

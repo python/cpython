@@ -1,23 +1,13 @@
 
-import shutil
-import sys, os
+import os
 import pickle
-import tempfile
-import unittest
-import tempfile
-
 try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db
-except ImportError as e:
-    # For Python 2.3
-    from bsddb import db
-
-try:
-    from bsddb3 import test_support
+    import pickle
 except ImportError:
-    from test import support as test_support
+    pickle = None
+import unittest
 
+from .test_all import db, test_support, get_new_environment_path, get_new_database_path
 
 #----------------------------------------------------------------------
 
@@ -26,10 +16,7 @@ class pickleTestCase(unittest.TestCase):
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home%d'%os.getpid())
-        self.homeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.homeDir = get_new_environment_path()
 
     def tearDown(self):
         if hasattr(self, 'db'):
@@ -43,10 +30,10 @@ class pickleTestCase(unittest.TestCase):
         self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
         self.db = db.DB(self.env)
         self.db.open(self.db_name, db.DB_HASH, db.DB_CREATE)
-        self.db.put(b'spam', b'eggs')
-        self.assertEqual(self.db[b'spam'], b'eggs')
+        self.db.put('spam', 'eggs')
+        self.assertEqual(self.db['spam'], 'eggs')
         try:
-            self.db.put(b'spam', b'ham', flags=db.DB_NOOVERWRITE)
+            self.db.put('spam', 'ham', flags=db.DB_NOOVERWRITE)
         except db.DBError as egg:
             pickledEgg = pickle.dumps(egg)
             #print repr(pickledEgg)
@@ -54,13 +41,17 @@ class pickleTestCase(unittest.TestCase):
             if rottenEgg.args != egg.args or type(rottenEgg) != type(egg):
                 raise Exception(rottenEgg, '!=', egg)
         else:
-            self.fail("where's my DBError exception?!?")
+            raise Exception("where's my DBError exception?!?")
 
         self.db.close()
         self.env.close()
 
     def test01_pickle_DBError(self):
         self._base_test_pickle_DBError(pickle=pickle)
+
+    if pickle:
+        def test02_cPickle_DBError(self):
+            self._base_test_pickle_DBError(pickle=pickle)
 
 #----------------------------------------------------------------------
 

@@ -36,7 +36,7 @@
 /*
  * Handwritten code to wrap version 3.x of the Berkeley DB library,
  * written to replace a SWIG-generated file.  It has since been updated
- * to compile with BerkeleyDB versions 3.2 through 4.2.
+ * to compile with Berkeley DB versions 3.2 through 4.2.
  *
  * This module was started by Andrew Kuchling to remove the dependency
  * on SWIG in a package by Gregory P. Smith who based his work on a
@@ -105,7 +105,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.6.0"
+#define PY_BSDDB_VERSION "4.7.3pre2"
 
 /* Python object definitions */
 
@@ -119,17 +119,27 @@ struct behaviourFlags {
 };
 
 
+
+struct DBObject;          /* Forward declaration */
+struct DBCursorObject;    /* Forward declaration */
+struct DBTxnObject;       /* Forward declaration */
+struct DBSequenceObject;  /* Forward declaration */
+
 typedef struct {
     PyObject_HEAD
     DB_ENV*     db_env;
     u_int32_t   flags;             /* saved flags from open() */
     int         closed;
     struct behaviourFlags moduleFlags;
+    PyObject*       event_notifyCallback;
+    struct DBObject *children_dbs;
+    struct DBTxnObject *children_txns;
+    PyObject        *private_obj;
+    PyObject        *rep_transport;
     PyObject        *in_weakreflist; /* List of weak references */
 } DBEnvObject;
 
-
-typedef struct {
+typedef struct DBObject {
     PyObject_HEAD
     DB*             db;
     DBEnvObject*    myenvobj;  /* PyObject containing the DB_ENV */
@@ -137,27 +147,48 @@ typedef struct {
     u_int32_t       setflags;  /* saved flags from set_flags() */
     int             haveStat;
     struct behaviourFlags moduleFlags;
-#if (DBVER >= 33)
+    struct DBTxnObject *txn;
+    struct DBCursorObject *children_cursors;
+#if (DBVER >=43)
+    struct DBSequenceObject *children_sequences;
+#endif
+    struct DBObject **sibling_prev_p;
+    struct DBObject *sibling_next;
+    struct DBObject **sibling_prev_p_txn;
+    struct DBObject *sibling_next_txn;
     PyObject*       associateCallback;
     PyObject*       btCompareCallback;
     int             primaryDBType;
-#endif
+    PyObject        *private_obj;
     PyObject        *in_weakreflist; /* List of weak references */
 } DBObject;
 
 
-typedef struct {
+typedef struct DBCursorObject {
     PyObject_HEAD
     DBC*            dbc;
+    struct DBCursorObject **sibling_prev_p;
+    struct DBCursorObject *sibling_next;
+    struct DBCursorObject **sibling_prev_p_txn;
+    struct DBCursorObject *sibling_next_txn;
     DBObject*       mydb;
+    struct DBTxnObject *txn;
     PyObject        *in_weakreflist; /* List of weak references */
 } DBCursorObject;
 
 
-typedef struct {
+typedef struct DBTxnObject {
     PyObject_HEAD
     DB_TXN*         txn;
-    PyObject        *env;
+    DBEnvObject*    env;
+    int             flag_prepare;
+    struct DBTxnObject *parent_txn;
+    struct DBTxnObject **sibling_prev_p;
+    struct DBTxnObject *sibling_next;
+    struct DBTxnObject *children_txns;
+    struct DBObject *children_dbs;
+    struct DBSequenceObject *children_sequences;
+    struct DBCursorObject *children_cursors;
     PyObject        *in_weakreflist; /* List of weak references */
 } DBTxnObject;
 
@@ -170,13 +201,17 @@ typedef struct {
 
 
 #if (DBVER >= 43)
-typedef struct {
+typedef struct DBSequenceObject {
     PyObject_HEAD
     DB_SEQUENCE*     sequence;
     DBObject*        mydb;
+    struct DBTxnObject *txn;
+    struct DBSequenceObject **sibling_prev_p;
+    struct DBSequenceObject *sibling_next;
+    struct DBSequenceObject **sibling_prev_p_txn;
+    struct DBSequenceObject *sibling_next_txn;
     PyObject        *in_weakreflist; /* List of weak references */
 } DBSequenceObject;
-static PyTypeObject DBSequence_Type;
 #endif
 
 
