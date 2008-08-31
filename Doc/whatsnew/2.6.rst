@@ -1585,50 +1585,7 @@ Some smaller changes made to the core Python language are:
       >>> b.hex()
       '0x1.5555555555555p-2'
 
-* Several new functions were added to the :mod:`math` module:
-
-  * :func:`~math.isinf` and :func:`~math.isnan` determine whether a given float
-    is a (positive or negative) infinity or a NaN (Not a Number), respectively.
-
-  * :func:`~math.copysign` copies the sign bit of an IEEE 754 number,
-    returning the absolute value of *x* combined with the sign bit of
-    *y*.  For example, ``math.copysign(1, -0.0)`` returns -1.0.
-    (Contributed by Christian Heimes.)
-
-  * :func:`~math.factorial` computes the factorial of a number.
-    (Contributed by Raymond Hettinger; :issue:`2138`.)
-
-  * :func:`~math.fsum` adds up the stream of numbers from an iterable,
-    and is careful to avoid loss of precision through using partial sums.
-    (Contributed by Jean Brouwers, Raymond Hettinger, and Mark Dickinson;
-    :issue:`2819`.)
-
-  * :func:`~math.acosh`, :func:`~math.asinh`
-    and :func:`~math.atanh` compute the inverse hyperbolic functions.
-
-  * The function :func:`~math.log1p` returns the natural logarithm of *1+x*
-    (base *e*).
-
-  There's also a new :func:`trunc` built-in function from the
-  backport of `PEP 3141's type hierarchy for numbers <#pep-3141>`__.
-
-* The :mod:`math` module has been improved to give more consistent
-  behaviour across platforms, especially with respect to handling of
-  floating-point exceptions and IEEE 754 special values.
-
-  Whenever possible, the module follows the recommendations of the C99
-  standard about 754's special values.  For example, ``sqrt(-1.)``
-  should now give a :exc:`ValueError` across almost all platforms,
-  while ``sqrt(float('NaN'))`` should return a NaN on all IEEE 754
-  platforms.  Where Annex 'F' of the C99 standard recommends signaling
-  'divide-by-zero' or 'invalid', Python will raise :exc:`ValueError`.
-  Where Annex 'F' of the C99 standard recommends signaling 'overflow',
-  Python will raise :exc:`OverflowError`.  (See :issue:`711019` and
-  :issue:`1640`.)
-
-  (Contributed by Christian Heimes and Mark Dickinson.)
-
-* Another numerical nicety: when creating a complex number from two floats
+* A numerical nicety: when creating a complex number from two floats
   on systems that support signed zeros (-0 and +0), the
   :func:`complex` constructor will now preserve the sign
   of the zero.  (Fixed by Mark T. Dickinson; :issue:`1507`.)
@@ -1737,10 +1694,10 @@ Optimizations
 
 * To reduce memory usage, the garbage collector will now clear internal
   free lists when garbage-collecting the highest generation of objects.
-  This may return memory to the OS sooner.
+  This may return memory to the operating system sooner.
 
 The net result of the 2.6 optimizations is that Python 2.6 runs the pystone
-benchmark around XX% faster than Python 2.5.
+benchmark around XXX% faster than Python 2.5.
 
 .. ======================================================================
 
@@ -1751,25 +1708,24 @@ Interpreter Changes
 
 Two command-line options have been reserved for use by other Python
 implementations.  The :option:`-J` switch has been reserved for use by
-Jython for Jython-specific options, such as ones that are passed to
+Jython for Jython-specific options, such as switches that are passed to
 the underlying JVM.  :option:`-X` has been reserved for options
 specific to a particular implementation of Python such as CPython,
 Jython, or IronPython.  If either option is used with Python 2.6, the
 interpreter will report that the option isn't currently used.
 
-It's now possible to prevent Python from writing :file:`.pyc` or
-:file:`.pyo` files on importing a module by supplying the :option:`-B`
-switch to the Python interpreter, or by setting the
-:envvar:`PYTHONDONTWRITEBYTECODE` environment variable before running
-the interpreter.  This setting is available to Python programs as the
-``sys.dont_write_bytecode`` variable, and can be changed by Python
-code to modify the interpreter's behaviour.  (Contributed by Neal
-Norwitz and Georg Brandl.)
+Python can now be prevented from writing :file:`.pyc` or :file:`.pyo`
+files by supplying the :option:`-B` switch to the Python interpreter,
+or by setting the :envvar:`PYTHONDONTWRITEBYTECODE` environment
+variable before running the interpreter.  This setting is available to
+Python programs as the ``sys.dont_write_bytecode`` variable, and
+Python code can change the value to modify the interpreter's
+behaviour.  (Contributed by Neal Norwitz and Georg Brandl.)
 
 The encoding used for standard input, output, and standard error can
 be specified by setting the :envvar:`PYTHONIOENCODING` environment
 variable before running the interpreter.  The value should be a string
-in the form ``*encoding*`` or ``*encoding*:*errorhandler*``.
+in the form ``<encoding>`` or ``<encoding>:<errorhandler>``.
 The *encoding* part specifies the encoding's name, e.g. ``utf-8`` or
 ``latin-1``; the optional *errorhandler* part specifies
 what to do with characters that can't be handled by the encoding,
@@ -1781,14 +1737,14 @@ by Martin von Loewis.)
 New, Improved, and Deprecated Modules
 =====================================
 
-As usual, Python's standard library received a number of enhancements and bug
-fixes.  Here's a partial list of the most notable changes, sorted alphabetically
-by module name. Consult the :file:`Misc/NEWS` file in the source tree for a more
-complete list of changes, or look through the Subversion logs for all the
-details.
+As in every release, Python's standard library received a number of
+enhancements and bug fixes.  Here's a partial list of the most notable
+changes, sorted alphabetically by module name. Consult the
+:file:`Misc/NEWS` file in the source tree for a more complete list of
+changes, or look through the Subversion logs for all the details.
 
 * (3.0-warning mode) Python 3.0 will feature a reorganized standard
-  library; many outdated modules are being dropped.
+  library that will drop many outdated modules and rename others.
   Python 2.6 running in 3.0-warning mode will warn about these modules
   when they are imported.
 
@@ -1815,99 +1771,43 @@ details.
   :mod:`pure`,
   :mod:`statvfs`,
   :mod:`sunaudiodev`,
-  :mod:`test.testall`,
+  :mod:`test.testall`, and
   :mod:`toaiff`.
-
-  Various MacOS modules have been removed:
-  :mod:`_builtinSuites`,
-  :mod:`aepack`,
-  :mod:`aetools`,
-  :mod:`aetypes`,
-  :mod:`applesingle`,
-  :mod:`appletrawmain`,
-  :mod:`appletrunner`,
-  :mod:`argvemulator`,
-  :mod:`Audio_mac`,
-  :mod:`autoGIL`,
-  :mod:`Carbon`,
-  :mod:`cfmfile`,
-  :mod:`CodeWarrior`,
-  :mod:`ColorPicker`,
-  :mod:`EasyDialogs`,
-  :mod:`Explorer`,
-  :mod:`Finder`,
-  :mod:`FrameWork`,
-  :mod:`findertools`,
-  :mod:`ic`,
-  :mod:`icglue`,
-  :mod:`icopen`,
-  :mod:`macerrors`,
-  :mod:`MacOS`,
-  :mod:`macostools`,
-  :mod:`macresource`,
-  :mod:`MiniAEFrame`,
-  :mod:`Nav`,
-  :mod:`Netscape`,
-  :mod:`OSATerminology`,
-  :mod:`pimp`,
-  :mod:`PixMapWrapper`,
-  :mod:`StdSuites`,
-  :mod:`SystemEvents`,
-  :mod:`Terminal`,
-  :mod:`terminalcommand`.
-
-  A number of old IRIX-specific modules were deprecated:
-  :mod:`al` and :mod:`AL`,
-  :mod:`cd`,
-  :mod:`cddb`,
-  :mod:`cdplayer`,
-  :mod:`CL` and :mod:`cl`,
-  :mod:`DEVICE`,
-  :mod:`ERRNO`,
-  :mod:`FILE`,
-  :mod:`FL` and :mod:`fl`,
-  :mod:`flp`,
-  :mod:`fm`,
-  :mod:`GET`,
-  :mod:`GLWS`,
-  :mod:`GL` and :mod:`gl`,
-  :mod:`IN`,
-  :mod:`IOCTL`,
-  :mod:`jpeg`,
-  :mod:`panelparser`,
-  :mod:`readcd`,
-  :mod:`SV` and :mod:`sv`,
-  :mod:`torgb`,
-  :mod:`videoreader`,
-  :mod:`WAIT`.
 
 * The :mod:`asyncore` and :mod:`asynchat` modules are
   being actively maintained again, and a number of patches and bugfixes
   were applied.  (Maintained by Josiah Carlson; see :issue:`1736190` for
   one patch.)
 
+.. |uacute| unicode:: 0xA9
+
+* The :mod:`bsddb` module also has a new maintainer, Jes|uacute|s Cea,
+  and the package is now available as a standalone package.
+  The web page for the package is
+  `www.jcea.es/programacion/pybsddb.htm <http://www.jcea.es/programacion/pybsddb.htm>`__.
+
 * The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes; :issue:`1551443`.)
 
-* The :mod:`cgi` module will now read variables from the query string of an
-  HTTP POST request.  This makes it possible to use form actions with
-  URLs such as "/cgi-bin/add.py?category=1".  (Contributed by
-  Alexandre Fiori and Nubis; :issue:`1817`.)
+* The :mod:`cgi` module will now read variables from the query string
+  of an HTTP POST request.  This makes it possible to use form actions
+  with URLs that include query strings such as
+  "/cgi-bin/add.py?category=1".  (Contributed by Alexandre Fiori and
+  Nubis; :issue:`1817`.)
 
-* The :mod:`cmath` module underwent an extensive set of revisions,
-  thanks to Mark Dickinson and Christian Heimes, that added some new
-  features and greatly improved the accuracy of the computations.
-
+* The :mod:`cmath` module underwent extensive revision,
+  contributed by Mark Dickinson and Christian Heimes.
   Five new functions were added:
 
   * :func:`polar` converts a complex number to polar form, returning
-    the modulus and argument of that complex number.
+    the modulus and argument of the complex number.
 
-  * :func:`rect` does the opposite, turning a (modulus, argument) pair
+  * :func:`rect` does the opposite, turning a modulus, argument pair
     back into the corresponding complex number.
 
-  * :func:`phase` returns the phase or argument of a complex number.
+  * :func:`phase` returns the argument (also called the angle) of a complex
+    number.
 
   * :func:`isnan` returns True if either
     the real or imaginary part of its argument is a NaN.
@@ -1951,8 +1851,8 @@ details.
      >>> v2
      variable(id=1, name='amplitude', type='int', size=4)
 
-  Where the new :class:`namedtuple` type proved suitable, the standard
-  library has been modified to return them.  For example,
+  Several places in the standard library that returned tuples have
+  been modified to return :class:`namedtuple` instances.  For example,
   the :meth:`Decimal.as_tuple` method now returns a named tuple with
   :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
 
@@ -1979,10 +1879,9 @@ details.
 
   (Contributed by Raymond Hettinger.)
 
-* A new method in the :mod:`curses` module: for a window, :meth:`chgat` changes
-  the display characters for a  certain number of characters on a single line.
-  (Contributed by Fabian Kreutz.)
-  ::
+* A new window method in the :mod:`curses` module,
+  :meth:`chgat`, changes the display attributes for a certain number of
+  characters on a single line.  (Contributed by Fabian Kreutz.)  ::
 
      # Boldface text starting at y=0,x=21
      # and affecting the rest of the line.
@@ -2017,32 +1916,29 @@ details.
   support added by Raymond Hettinger.)
 
 * The :mod:`difflib` module's :class:`SequenceMatcher` class
-  now returns named tuples representing matches.
-  In addition to behaving like tuples, the returned values
-  also have :attr:`a`, :attr:`b`, and :attr:`size` attributes.
+  now returns named tuples representing matches,
+  with :attr:`a`, :attr:`b`, and :attr:`size` attributes.
   (Contributed by Raymond Hettinger.)
 
-* An optional ``timeout`` parameter was added to the
-  :class:`ftplib.FTP` class constructor as well as the :meth:`connect`
-  method, specifying a timeout measured in seconds.  (Added by Facundo
-  Batista.)  Also, the :class:`FTP` class's
-  :meth:`storbinary` and :meth:`storlines`
-  now take an optional *callback* parameter that will be called with
-  each block of data after the data has been sent.
+* An optional ``timeout`` parameter, specifying a timeout measured in
+  seconds, was added to the :class:`ftplib.FTP` class constructor as
+  well as the :meth:`connect` method.  (Added by Facundo Batista.)
+  Also, the :class:`FTP` class's :meth:`storbinary` and
+  :meth:`storlines` now take an optional *callback* parameter that
+  will be called with each block of data after the data has been sent.
   (Contributed by Phil Schwartz; :issue:`1221598`.)
 
 * The :func:`reduce` built-in function is also available in the
-  :mod:`functools` module.  In Python 3.0, the built-in is dropped and it's
-  only available from :mod:`functools`; currently there are no plans
-  to drop the built-in in the 2.x series.  (Patched by
-  Christian Heimes; :issue:`1739906`.)
+  :mod:`functools` module.  In Python 3.0, the built-in has been
+  dropped and :func:`reduce` is only available from :mod:`functools`;
+  currently there are no plans to drop the built-in in the 2.x series.
+  (Patched by Christian Heimes; :issue:`1739906`.)
 
 * When possible, the :mod:`getpass` module will now use
-  :file:`/dev/tty` (when available) to print
-  a prompting message and read the password, falling back to using
-  standard error and standard input.    If the password may be echoed to
-  the terminal, a warning is printed before the prompt is displayed.
-  (Contributed by Gregory P. Smith.)
+  :file:`/dev/tty` to print a prompt message and read the password,
+  falling back to standard error and standard input.  If the
+  password may be echoed to the terminal, a warning is printed before
+  the prompt is displayed.  (Contributed by Gregory P. Smith.)
 
 * The :func:`glob.glob` function can now return Unicode filenames if
   a Unicode path was used and Unicode filenames are matched within the
@@ -2050,9 +1946,9 @@ details.
 
 * The :mod:`gopherlib` module has been removed.
 
-* A new function in the :mod:`heapq` module: ``merge(iter1, iter2, ...)``
-  takes any number of iterables that return data *in sorted
-  order*, and returns a new iterator that returns the contents of all
+* A new function in the :mod:`heapq` module, ``merge(iter1, iter2, ...)``,
+  takes any number of iterables returning data in sorted
+  order, and returns a new iterator that returns the contents of all
   the iterators, also in sorted order.  For example::
 
      heapq.merge([1, 3, 5, 9], [2, 8, 16]) ->
@@ -2065,14 +1961,14 @@ details.
 
   :mod:`heapq` is now implemented to only use less-than comparison,
   instead of the less-than-or-equal comparison it previously used.
-  This makes :mod:`heapq`'s usage of a type match that of the
+  This makes :mod:`heapq`'s usage of a type match the
   :meth:`list.sort` method.
   (Contributed by Raymond Hettinger.)
 
-* An optional ``timeout`` parameter was added to the
-  :class:`httplib.HTTPConnection` and :class:`HTTPSConnection`
-  class constructors, specifying a timeout measured in seconds.
-  (Added by Facundo Batista.)
+* An optional ``timeout`` parameter, specifying a timeout measured in
+  seconds, was added to the :class:`httplib.HTTPConnection` and
+  :class:`HTTPSConnection` class constructors.  (Added by Facundo
+  Batista.)
 
 * Most of the :mod:`inspect` module's functions, such as
   :func:`getmoduleinfo` and :func:`getargs`, now return named tuples.
@@ -2157,7 +2053,7 @@ details.
 * The :mod:`logging` module's :class:`FileHandler` class
   and its subclasses :class:`WatchedFileHandler`, :class:`RotatingFileHandler`,
   and :class:`TimedRotatingFileHandler` now
-  have an optional *delay* parameter to its constructor.  If *delay*
+  have an optional *delay* parameter to their constructors.  If *delay*
   is true, opening of the log file is deferred until the first
   :meth:`emit` call is made.  (Contributed by Vinay Sajip.)
 
@@ -2166,15 +2062,55 @@ details.
   in determining when midnight occurs and in generating filenames;
   otherwise local time will be used.
 
-* The :mod:`macfs` module has been removed.  This in turn required the
-  :func:`macostools.touched` function to be removed because it depended on the
-  :mod:`macfs` module.  (:issue:`1490190`)
+* Several new functions were added to the :mod:`math` module:
 
-* :class:`mmap` objects now have a :meth:`rfind` method that finds
-  a substring, beginning at the end of the string and searching
-  backwards.  The :meth:`find` method
-  also gained an *end* parameter containing the index at which to stop
-  the forward search.
+  * :func:`~math.isinf` and :func:`~math.isnan` determine whether a given float
+    is a (positive or negative) infinity or a NaN (Not a Number), respectively.
+
+  * :func:`~math.copysign` copies the sign bit of an IEEE 754 number,
+    returning the absolute value of *x* combined with the sign bit of
+    *y*.  For example, ``math.copysign(1, -0.0)`` returns -1.0.
+    (Contributed by Christian Heimes.)
+
+  * :func:`~math.factorial` computes the factorial of a number.
+    (Contributed by Raymond Hettinger; :issue:`2138`.)
+
+  * :func:`~math.fsum` adds up the stream of numbers from an iterable,
+    and is careful to avoid loss of precision through using partial sums.
+    (Contributed by Jean Brouwers, Raymond Hettinger, and Mark Dickinson;
+    :issue:`2819`.)
+
+  * :func:`~math.acosh`, :func:`~math.asinh`
+    and :func:`~math.atanh` compute the inverse hyperbolic functions.
+
+  * :func:`~math.log1p` returns the natural logarithm of *1+x*
+    (base *e*).
+
+  * :func:`trunc` rounds a number toward zero, returning the closest
+    :class:`Integral` that's between the function's argument and zero.
+    Added as part of the backport of
+    `PEP 3141's type hierarchy for numbers <#pep-3141>`__.
+
+* The :mod:`math` module has been improved to give more consistent
+  behaviour across platforms, especially with respect to handling of
+  floating-point exceptions and IEEE 754 special values.
+
+  Whenever possible, the module follows the recommendations of the C99
+  standard about 754's special values.  For example, ``sqrt(-1.)``
+  should now give a :exc:`ValueError` across almost all platforms,
+  while ``sqrt(float('NaN'))`` should return a NaN on all IEEE 754
+  platforms.  Where Annex 'F' of the C99 standard recommends signaling
+  'divide-by-zero' or 'invalid', Python will raise :exc:`ValueError`.
+  Where Annex 'F' of the C99 standard recommends signaling 'overflow',
+  Python will raise :exc:`OverflowError`.  (See :issue:`711019` and
+  :issue:`1640`.)
+
+  (Contributed by Christian Heimes and Mark Dickinson.)
+
+* :class:`mmap` objects now have a :meth:`rfind` method that searches for a
+  substring beginning at the end of the string and searching
+  backwards.  The :meth:`find` method also gained an *end* parameter
+  giving an index at which to stop searching.
   (Contributed by John Lenton.)
 
 * The :mod:`operator` module gained a
@@ -2192,7 +2128,8 @@ details.
   The :func:`attrgetter` function now accepts dotted names and performs
   the corresponding attribute lookups::
 
-    >>> inst_name = operator.attrgetter('__class__.__name__')
+    >>> inst_name = operator.attrgetter(
+    ...        '__class__.__name__')
     >>> inst_name('')
     'str'
     >>> inst_name(help)
@@ -2200,14 +2137,28 @@ details.
 
   (Contributed by Georg Brandl, after a suggestion by Barry Warsaw.)
 
-* New functions in the :mod:`os` module include
-  ``fchmod(fd, mode)``,   ``fchown(fd, uid, gid)``,
-  and ``lchmod(path, mode)``, on operating systems that support these
-  functions. :func:`fchmod` and :func:`fchown` change the mode
-  and ownership of an opened file, and :func:`lchmod` changes the mode
-  of a symlink.
+* The :mod:`os` module now wraps several new system calls.
+  ``fchmod(fd, mode)`` and ``fchown(fd, uid, gid)`` change the mode
+  and ownership of an opened file, and ``lchmod(path, mode)`` changes
+  the mode of a symlink.  (Contributed by Georg Brandl and Christian
+  Heimes.)
 
-  (Contributed by Georg Brandl and Christian Heimes.)
+  :func:`chflags` and :func:`lchflags` are wrappers for the
+  corresponding system calls (where they're available), changing the
+  flags set on a file.  Constants for the flag values are defined in
+  the :mod:`stat` module; some possible values include
+  :const:`UF_IMMUTABLE` to signal the file may not be changed and
+  :const:`UF_APPEND` to indicate that data can only be appended to the
+  file.  (Contributed by M. Levinson.)
+
+  ``os.closerange(*low*, *high*)`` efficiently closes all file descriptors
+  from *low* to *high*, ignoring any errors and not including *high* itself.
+  This function is now used by the :mod:`subprocess` module to make starting
+  processes faster.  (Contributed by Georg Brandl; :issue:`1663329`.)
+
+* The ``os.environ`` object's :meth:`clear` method will now unset the
+  environment variables using :func:`os.unsetenv` in addition to clearing
+  the object's keys.  (Contributed by Martin Horcicka; :issue:`1181`.)
 
 * The :func:`os.walk` function now has a ``followlinks`` parameter. If
   set to True, it will follow symlinks pointing to directories and
@@ -2216,10 +2167,6 @@ details.
   into an infinite recursion if there's a symlink that points to a
   parent directory.  (:issue:`1273829`)
 
-* The ``os.environ`` object's :meth:`clear` method will now unset the
-  environment variables using :func:`os.unsetenv` in addition to clearing
-  the object's keys.  (Contributed by Martin Horcicka; :issue:`1181`.)
-
 * In the :mod:`os.path` module, the :func:`splitext` function
   has been changed to not split on leading period characters.
   This produces better results when operating on Unix's dot-files.
@@ -2227,22 +2174,22 @@ details.
   now returns ``('.ipython', '')`` instead of ``('', '.ipython')``.
   (:issue:`115886`)
 
-  A new function, :func:`relpath(path, start)` returns a relative path
+  A new function, ``os.path.relpath(path, start='.')``, returns a relative path
   from the ``start`` path, if it's supplied, or from the current
   working directory to the destination ``path``.  (Contributed by
   Richard Barran; :issue:`1339796`.)
 
   On Windows, :func:`os.path.expandvars` will now expand environment variables
-  in the form "%var%", and "~user" will be expanded into the
+  given in the form "%var%", and "~user" will be expanded into the
   user's home directory path.  (Contributed by Josiah Carlson;
   :issue:`957650`.)
 
 * The Python debugger provided by the :mod:`pdb` module
-  gained a new command: "run" restarts the Python program being debugged,
+  gained a new command: "run" restarts the Python program being debugged
   and can optionally take new command-line arguments for the program.
   (Contributed by Rocky Bernstein; :issue:`1393667`.)
 
-  The :func:`post_mortem` function, used to enter debugging of a
+  The :func:`post_mortem` function, used to begin debugging a
   traceback, will now use the traceback returned by :func:`sys.exc_info`
   if no traceback is supplied.   (Contributed by Facundo Batista;
   :issue:`1106316`.)
@@ -2270,24 +2217,12 @@ details.
 
   (Contributed by Paul Moore; :issue:`2439`.)
 
-* New functions in the :mod:`posix` module: :func:`chflags` and :func:`lchflags`
-  are wrappers for the corresponding system calls (where they're available).
-  Constants for the flag values are defined in the :mod:`stat` module; some
-  possible values include :const:`UF_IMMUTABLE` to signal the file may not be
-  changed and :const:`UF_APPEND` to indicate that data can only be appended to the
-  file.  (Contributed by M. Levinson.)
-
-  ``os.closerange(*low*, *high*)`` efficiently closes all file descriptors
-  from *low* to *high*, ignoring any errors and not including *high* itself.
-  This function is now used by the :mod:`subprocess` module to make starting
-  processes faster.  (Contributed by Georg Brandl; :issue:`1663329`.)
-
 * The :mod:`pyexpat` module's :class:`Parser` objects now allow setting
   their :attr:`buffer_size` attribute to change the size of the buffer
   used to hold character data.
   (Contributed by Achim Gaedke; :issue:`1137`.)
 
-* The :mod:`Queue` module now provides queue classes that retrieve entries
+* The :mod:`Queue` module now provides queue variants that retrieve entries
   in different orders.  The :class:`PriorityQueue` class stores
   queued items in a heap and retrieves them in priority order,
   and :class:`LifoQueue` retrieves the most recently added entries first,
@@ -2304,12 +2239,12 @@ details.
   The new ``triangular(low, high, mode)`` function returns random
   numbers following a triangular distribution.   The returned values
   are between *low* and *high*, not including *high* itself, and
-  with *mode* as the mode, the most frequently occurring value
+  with *mode* as the most frequently occurring value
   in the distribution.  (Contributed by Wladmir van der Laan and
   Raymond Hettinger; :issue:`1681432`.)
 
 * Long regular expression searches carried out by the  :mod:`re`
-  module will now check for signals being delivered, so especially
+  module will check for signals being delivered, so
   time-consuming searches can now be interrupted.
   (Contributed by Josh Hoyt and Ralf Schmitt; :issue:`846388`.)
 
@@ -2334,10 +2269,10 @@ details.
 
 * The :mod:`select` module now has wrapper functions
   for the Linux :cfunc:`epoll` and BSD :cfunc:`kqueue` system calls.
-  Also, a :meth:`modify` method was added to the existing :class:`poll`
+  :meth:`modify` method was added to the existing :class:`poll`
   objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
-  or file object and an event mask,
-
+  or file object and an event mask, modifying the recorded event mask
+  for that file.
   (Contributed by Christian Heimes; :issue:`1657`.)
 
 * The :mod:`sets` module has been deprecated; it's better to
@@ -2351,8 +2286,8 @@ details.
   The :mod:`shutil` module also provides an :func:`ignore_patterns`
   function for use with this new parameter.
   :func:`ignore_patterns` takes an arbitrary number of glob-style patterns
-  and will ignore any files and directories that match this pattern.
-  The following example copies a directory tree, but skip both SVN's internal
+  and will ignore any files and directories that match any of these patterns.
+  The following example copies a directory tree, but skips both
   :file:`.svn` directories and Emacs backup
   files, which have names ending with '~'::
 
@@ -2363,7 +2298,8 @@ details.
 
 * Integrating signal handling with GUI handling event loops
   like those used by Tkinter or GTk+ has long been a problem; most
-  software ends up polling, waking up every fraction of a second.
+  software ends up polling, waking up every fraction of a second to check
+  if any GUI events have occurred.
   The :mod:`signal` module can now make this more efficient.
   Calling ``signal.set_wakeup_fd(fd)`` sets a file descriptor
   to be used; when a signal is received, a byte is written to that
@@ -2376,7 +2312,7 @@ details.
   will be added to the list of descriptors monitored by the event loop via
   :cfunc:`select` or :cfunc:`poll`.
   On receiving a signal, a byte will be written and the main event loop
-  will be woken up, without the need to poll.
+  will be woken up, avoiding the need to poll.
 
   (Contributed by Adam Olsen; :issue:`1583`.)
 
@@ -2385,7 +2321,7 @@ details.
   (Contributed by Ralf Schmitt.)
 
   The :func:`setitimer` and :func:`getitimer` functions have also been
-  added on systems that support these system calls.  :func:`setitimer`
+  added (where they're available).  :func:`setitimer`
   allows setting interval timers that will cause a signal to be
   delivered to the process after a specified time, measured in
   wall-clock time, consumed process time, or combined process+system
@@ -2393,22 +2329,20 @@ details.
 
 * The :mod:`smtplib` module now supports SMTP over SSL thanks to the
   addition of the :class:`SMTP_SSL` class. This class supports an
-  interface identical to the existing :class:`SMTP` class.   Both
-  class constructors also have an optional ``timeout`` parameter
-  that specifies a timeout for the initial connection attempt, measured in
-  seconds.
+  interface identical to the existing :class:`SMTP` class.
+  (Contributed by Monty Taylor.)  Both class constructors also have an
+  optional ``timeout`` parameter that specifies a timeout for the
+  initial connection attempt, measured in seconds.  (Contributed by
+  Facundo Batista.)
 
-  An implementation of the LMTP protocol (:rfc:`2033`) was also added to
-  the module.  LMTP is used in place of SMTP when transferring e-mail
-  between agents that don't manage a mail queue.
+  An implementation of the LMTP protocol (:rfc:`2033`) was also added
+  to the module.  LMTP is used in place of SMTP when transferring
+  e-mail between agents that don't manage a mail queue.  (LMTP
+  implemented by Leif Hedstrom; :issue:`957003`.)
 
-  (SMTP over SSL contributed by Monty Taylor; timeout parameter
-  added by Facundo Batista; LMTP implemented by Leif
-  Hedstrom; :issue:`957003`.)
-
-* In the :mod:`smtplib` module, SMTP.starttls() now complies with :rfc:`3207`
-  and forgets any knowledge obtained from the server not obtained from
-  the TLS negotiation itself.  (Patch contributed by Bill Fenner;
+  SMTP.starttls() now complies with :rfc:`3207` and forgets any
+  knowledge obtained from the server not obtained from the TLS
+  negotiation itself.  (Patch contributed by Bill Fenner;
   :issue:`829951`.)
 
 * The :mod:`socket` module now supports TIPC (http://tipc.sf.net),
@@ -2440,15 +2374,13 @@ details.
   :cfunc:`TerminateProcess`.
   (Contributed by Christian Heimes.)
 
-* A new variable in the :mod:`sys` module,
-  :attr:`float_info`, is an object
-  containing information about the platform's floating-point support
-  derived from the :file:`float.h` file.  Attributes of this object
-  include
-  :attr:`mant_dig` (number of digits in the mantissa), :attr:`epsilon`
-  (smallest difference between 1.0 and the next largest value
-  representable), and several others.  (Contributed by Christian Heimes;
-  :issue:`1534`.)
+* A new variable in the :mod:`sys` module, :attr:`float_info`, is an
+  object containing information derived from the :file:`float.h` file
+  about the platform's floating-point support.  Attributes of this
+  object include :attr:`mant_dig` (number of digits in the mantissa),
+  :attr:`epsilon` (smallest difference between 1.0 and the next
+  largest value representable), and several others.  (Contributed by
+  Christian Heimes; :issue:`1534`.)
 
   Another new variable, :attr:`dont_write_bytecode`, controls whether Python
   writes any :file:`.pyc` or :file:`.pyo` files on importing a module.
@@ -2486,16 +2418,17 @@ details.
   is GNU tar; specify the ``format`` parameter to open a file
   using a different format::
 
-    tar = tarfile.open("output.tar", "w", format=tarfile.PAX_FORMAT)
+    tar = tarfile.open("output.tar", "w",
+                       format=tarfile.PAX_FORMAT)
 
-  The new ``errors`` parameter specifies an error handling
-  scheme for character conversions: the three standard ways Python can
-  handle errors ``'strict'``, ``'ignore'``, ``'replace'`` , or the
-  special value ``'utf-8'``, which replaces bad characters with their
-  UTF-8 representation.  Character conversions occur because the PAX
-  format supports Unicode filenames, defaulting to UTF-8 encoding.
+  The new ``errors`` parameter specifies an error handling scheme for
+  character conversions.  ``'strict'``, ``'ignore'``, and
+  ``'replace'`` are the three standard ways Python can handle errors,;
+  ``'utf-8'`` is a special value that replaces bad characters with
+  their UTF-8 representation.  (Character conversions occur because the
+  PAX format supports Unicode filenames, defaulting to UTF-8 encoding.)
 
-  The :meth:`TarFile.add` method now accepts a ``exclude`` argument that's
+  The :meth:`TarFile.add` method now accepts an ``exclude`` argument that's
   a function that can be used to exclude certain filenames from
   an archive.
   The function must take a filename and return true if the file
@@ -2524,9 +2457,9 @@ details.
   ``with tempfile.NamedTemporaryFile() as tmp: ...``.
   (Contributed by Alexander Belopolsky; :issue:`2021`.)
 
-* The :mod:`test.test_support` module now contains a
+* The :mod:`test.test_support` module now contains an
   :func:`EnvironmentVarGuard`
-  context manager that  supports temporarily changing environment variables and
+  context manager that temporarily changes environment variables and
   automatically restores them to their old values.
 
   Another context manager, :class:`TransientResource`, can surround calls
@@ -2535,7 +2468,8 @@ details.
   a network test may ignore certain failures when connecting to an
   external web site::
 
-      with test_support.TransientResource(IOError, errno=errno.ETIMEDOUT):
+      with test_support.TransientResource(IOError,
+                                      errno=errno.ETIMEDOUT):
           f = urllib.urlopen('https://sf.net')
           ...
 
@@ -2546,7 +2480,8 @@ details.
   by specifying ``drop_whitespace=False``
   as an argument::
 
-    >>> S = """This  sentence  has a bunch   of    extra   whitespace."""
+    >>> S = """This  sentence  has a bunch   of
+    ...   extra   whitespace."""
     >>> print textwrap.fill(S, width=15)
     This  sentence
     has a bunch
@@ -2561,7 +2496,7 @@ details.
 
   (Contributed by Dwayne Bailey; :issue:`1581073`.)
 
-* The :mod:`threading` module API is being changed for Python 3.0, to
+* The :mod:`threading` module API is being changed in Python 3.0 to
   use properties such as :attr:`daemon` instead of :meth:`setDaemon`
   and :meth:`isDaemon` methods, and some methods have been renamed to
   use underscores instead of camel-case; for example, the
@@ -2593,11 +2528,11 @@ details.
   Gregor Lingl.  New features in the module include:
 
   * Better animation of turtle movement and rotation.
-  * Control over turtle movement using the new delay(),
-    tracer(), and speed() methods.
+  * Control over turtle movement using the new :meth:`delay`,
+    :meth:`tracer`, and :meth:`speed` methods.
   * The ability to set new shapes for the turtle, and to
     define a new coordinate system.
-  * Turtles now have an undo() method that can roll back actions.
+  * Turtles now have an :meth:`undo()` method that can roll back actions.
   * Simple support for reacting to input events such as mouse and keyboard
     activity, making it possible to write simple games.
   * A :file:`turtle.cfg` file can be used to customize the starting appearance
@@ -2613,7 +2548,8 @@ details.
   :func:`urllib2.urlopen` function.  The parameter specifies a timeout
   measured in seconds.   For example::
 
-     >>> u = urllib2.urlopen("http://slow.example.com", timeout=3)
+     >>> u = urllib2.urlopen("http://slow.example.com",
+                             timeout=3)
      Traceback (most recent call last):
        ...
      urllib2.URLError: <urlopen error timed out>
@@ -2639,7 +2575,7 @@ details.
   attribute; if true, the exception and formatted traceback are returned
   as HTTP headers "X-Exception" and "X-Traceback".  This feature is
   for debugging purposes only and should not be used on production servers
-  because the tracebacks could possibly reveal passwords or other sensitive
+  because the tracebacks might reveal passwords or other sensitive
   information.  (Contributed by Alan McIntyre as part of his
   project for Google's Summer of Code 2007.)
 
@@ -2660,7 +2596,8 @@ details.
 
     z = zipfile.ZipFile('python-251.zip')
 
-    # Unpack a single file, writing it relative to the /tmp directory.
+    # Unpack a single file, writing it relative
+    # to the /tmp directory.
     z.extract('Python/sysmodule.c', '/tmp')
 
     # Unpack all the files in the archive.
@@ -3077,6 +3014,83 @@ Port-Specific Changes: MacOS X
   :option:`--with-framework-name=` option to the
   :program:`configure` script.
 
+* The :mod:`macfs` module has been removed.  This in turn required the
+  :func:`macostools.touched` function to be removed because it depended on the
+  :mod:`macfs` module.  (:issue:`1490190`)
+
+* Many other MacOS modules have been deprecated and will removed in
+  Python 3.0:
+  :mod:`_builtinSuites`,
+  :mod:`aepack`,
+  :mod:`aetools`,
+  :mod:`aetypes`,
+  :mod:`applesingle`,
+  :mod:`appletrawmain`,
+  :mod:`appletrunner`,
+  :mod:`argvemulator`,
+  :mod:`Audio_mac`,
+  :mod:`autoGIL`,
+  :mod:`Carbon`,
+  :mod:`cfmfile`,
+  :mod:`CodeWarrior`,
+  :mod:`ColorPicker`,
+  :mod:`EasyDialogs`,
+  :mod:`Explorer`,
+  :mod:`Finder`,
+  :mod:`FrameWork`,
+  :mod:`findertools`,
+  :mod:`ic`,
+  :mod:`icglue`,
+  :mod:`icopen`,
+  :mod:`macerrors`,
+  :mod:`MacOS`,
+  :mod:`macfs`,
+  :mod:`macostools`,
+  :mod:`macresource`,
+  :mod:`MiniAEFrame`,
+  :mod:`Nav`,
+  :mod:`Netscape`,
+  :mod:`OSATerminology`,
+  :mod:`pimp`,
+  :mod:`PixMapWrapper`,
+  :mod:`StdSuites`,
+  :mod:`SystemEvents`,
+  :mod:`Terminal`, and
+  :mod:`terminalcommand`.
+
+.. ======================================================================
+
+Port-Specific Changes: IRIX
+-----------------------------------
+
+A number of old IRIX-specific modules were deprecated and will
+be removed in Python 3.0:
+:mod:`al` and :mod:`AL`,
+:mod:`cd`,
+:mod:`cddb`,
+:mod:`cdplayer`,
+:mod:`CL` and :mod:`cl`,
+:mod:`DEVICE`,
+:mod:`ERRNO`,
+:mod:`FILE`,
+:mod:`FL` and :mod:`fl`,
+:mod:`flp`,
+:mod:`fm`,
+:mod:`GET`,
+:mod:`GLWS`,
+:mod:`GL` and :mod:`gl`,
+:mod:`IN`,
+:mod:`IOCTL`,
+:mod:`jpeg`,
+:mod:`panelparser`,
+:mod:`readcd`,
+:mod:`SV` and :mod:`sv`,
+:mod:`torgb`,
+:mod:`videoreader`, and
+:mod:`WAIT`.
+
+
+
 .. ======================================================================
 
 
@@ -3113,7 +3127,7 @@ that may require changes to your code:
 * The :meth:`__init__` method of :class:`collections.deque`
   now clears any existing contents of the deque
   before adding elements from the iterable.  This change makes the
-  behavior match that of ``list.__init__()``.
+  behavior match ``list.__init__()``.
 
 * The :class:`Decimal` constructor now accepts leading and trailing
   whitespace when passed a string.  Previously it would raise an
