@@ -14,11 +14,12 @@ The :mod:`dummy_threading` module is provided for situations where
 
 .. note::
 
-   Some ``camelCase`` names have been converted to their underscored
-   equivalents. Others have been replaced by properties.  Using the old methods
-   in 2.6 will trigger a :exc:`DeprecationWarning` when Python is run with the
-   :option:`-3` flag and a full :exc:`DeprecationWarning` in 3.0.  The old names
-   will be removed early in the 3.x series.
+   Starting with Python 2.6, this module provides PEP 8 compliant aliases and
+   properties to replace the ``camelCase`` names that were inspired by Java's
+   threading API. This updated API is compatible with that of the
+   :mod:`multiprocessing` module. However, no schedule has been set for the
+   deprecation of the ``camelCase`` names and they remain fully supported in
+   both Python 2.x and 3.x.
 
 This module defines the following functions and objects:
 
