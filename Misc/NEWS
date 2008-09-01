@@ -60,6 +60,8 @@ C API
 Library
 -------
 
+- The deprecation warnings for the camelCase threading API names were removed.
+
 Extension Modules
 -----------------
 
