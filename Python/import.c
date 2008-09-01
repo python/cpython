@@ -2029,7 +2029,7 @@ PyImport_ImportModuleNoBlock(const char *name)
 	else {
 		PyErr_Clear();
 	}
-
+#ifdef WITH_THREAD
 	/* check the import lock
 	 * me might be -1 but I ignore the error here, the lock function
 	 * takes care of the problem */
@@ -2045,6 +2045,9 @@ PyImport_ImportModuleNoBlock(const char *name)
 			     name);
 		return NULL;
 	}
+#else
+	return PyImport_ImportModule(name);
+#endif
 }
 
 /* Forward declarations for helper routines */

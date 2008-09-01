@@ -12,6 +12,8 @@ What's New in Python 2.6 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #3683: Fix compilation when --without-threads is given.
+
 - Issue #3668: Fix a memory leak with the "s*" argument parser in
   PyArg_ParseTuple and friends, which occurred when the argument for "s*" 
   was correctly parsed but parsing of subsequent arguments failed.
@@ -52,8 +54,8 @@ Library
 
 - Fixed two format strings in the _collections module.
 
-- #3703 _fileio.FileIO gave unhelpful error message when trying to open a
-   directory.
+- Issue #3703: _fileio.FileIO gave unhelpful error message when trying to open a
+  directory.
 
 Extension Modules
 -----------------
