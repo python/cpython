@@ -1504,8 +1504,10 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
 
 .. method:: Handler.close()
 
-   Tidy up any resources used by the handler. This version does nothing and is
-   intended to be implemented by subclasses.
+   Tidy up any resources used by the handler. This version does no output but
+   removes the handler from an internal list of handlers which is closed when
+   :func:`shutdown` is called. Subclasses should ensure that this gets called
+   from overridden :meth:`close` methods.
 
 
 .. method:: Handler.handle(record)
@@ -1567,7 +1569,7 @@ and :meth:`flush` methods).
 
       Flushes the stream by calling its :meth:`flush` method. Note that the
       :meth:`close` method is inherited from :class:`Handler` and so does
-      nothing, so an explicit :meth:`flush` call may be needed at times.
+      no output, so an explicit :meth:`flush` call may be needed at times.
 
 
 FileHandler
@@ -1887,7 +1889,7 @@ extensions for Python installed.
       source of event log entries. However, if you do this, you will not be able
       to see the events as you intended in the Event Log Viewer - it needs to be
       able to access the registry to get the .dll name. The current version does
-      not do this (in fact it doesn't do anything).
+      not do this.
 
 
    .. method:: emit(record)
