@@ -12,6 +12,9 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #3712: The memoryview object had a reference leak and didn't support
+  cyclic garbage collection.
+
 - Issue #3668: Fix a memory leak with the "s*" argument parser in
   PyArg_ParseTuple and friends, which occurred when the argument for "s*" 
   was correctly parsed but parsing of subsequent arguments failed.

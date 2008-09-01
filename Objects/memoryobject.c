@@ -3,24 +3,34 @@
 
 #include "Python.h"
 
+static void
+dup_buffer(Py_buffer *dest, Py_buffer *src)
+{
+	*dest = *src;
+        if (src->shape == &(src->len))
+            dest->shape = &(dest->len);
+        if (src->strides == &(src->itemsize))
+            dest->strides = &(dest->itemsize);
+}
+
 static int
 memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 {
-        if (view != NULL) {
-		if (self->view.obj)
-			Py_INCREF(self->view.obj);
-		*view = self->view;
-	}
-	if (self->view.obj == NULL)
-		return 0;
-        return self->view.obj->ob_type->tp_as_buffer->bf_getbuffer(
-            self->view.obj, NULL, PyBUF_FULL);
+	int res = 0;
+	/* XXX for whatever reason fixing the flags seems necessary */
+	if (self->view.readonly)
+		flags &= ~PyBUF_WRITABLE;
+	if (self->view.obj != NULL)
+		res = PyObject_GetBuffer(self->view.obj, view, flags);
+	if (view)
+		dup_buffer(view, &self->view);
+	return res;
 }
 
 static void
 memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
 {
-	PyBuffer_Release(&self->view);
+	PyBuffer_Release(view);
 }
 
 PyDoc_STRVAR(memory_doc,
@@ -33,18 +43,15 @@ PyMemoryView_FromBuffer(Py_buffer *info)
 {
 	PyMemoryViewObject *mview;
 
-	mview = (PyMemoryViewObject *)PyObject_New(PyMemoryViewObject,
-						   &PyMemoryView_Type);
-	if (mview == NULL) return NULL;
+	mview = (PyMemoryViewObject *)
+		PyObject_GC_New(PyMemoryViewObject, &PyMemoryView_Type);
+	if (mview == NULL)
+		return NULL;
 	mview->base = NULL;
-        /* XXX there should be an API to duplicate a buffer object */
-	mview->view = *info;
-        if (info->shape == &(info->len))
-            mview->view.shape = &(mview->view.len);
-        if (info->strides == &(info->itemsize))
-            mview->view.strides = &(mview->view.itemsize);
+	dup_buffer(&mview->view, info);
         /* NOTE: mview->view.obj should already have been incref'ed as
            part of PyBuffer_FillInfo(). */
+	_PyObject_GC_TRACK(mview);
 	return (PyObject *)mview;
 }
 
@@ -60,9 +67,10 @@ PyMemoryView_FromObject(PyObject *base)
                 return NULL;
         }
 
-        mview = (PyMemoryViewObject *)PyObject_New(PyMemoryViewObject,
-                                                   &PyMemoryView_Type);
-        if (mview == NULL) return NULL;
+	mview = (PyMemoryViewObject *)
+		PyObject_GC_New(PyMemoryViewObject, &PyMemoryView_Type);
+        if (mview == NULL)
+		return NULL;
 
         mview->base = NULL;
         if (PyObject_GetBuffer(base, &(mview->view), PyBUF_FULL_RO) < 0) {
@@ -72,6 +80,7 @@ PyMemoryView_FromObject(PyObject *base)
 
         mview->base = base;
         Py_INCREF(base);
+	_PyObject_GC_TRACK(mview);
         return (PyObject *)mview;
 }
 
@@ -233,8 +242,9 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                 return NULL;
         }
 
-        mem = PyObject_New(PyMemoryViewObject, &PyMemoryView_Type);
-        if (mem == NULL) return NULL;
+        mem = PyObject_GC_New(PyMemoryViewObject, &PyMemoryView_Type);
+        if (mem == NULL)
+		return NULL;
 
         view = &mem->view;
         flags = PyBUF_FULL_RO;
@@ -245,7 +255,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         }
 
         if (PyObject_GetBuffer(obj, view, flags) != 0) {
-                PyObject_DEL(mem);
+                Py_DECREF(mem);
                 return NULL;
         }
 
@@ -253,11 +263,12 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                 /* no copy needed */
                 Py_INCREF(obj);
                 mem->base = obj;
+		_PyObject_GC_TRACK(mem);
                 return (PyObject *)mem;
         }
         /* otherwise a copy is needed */
         if (buffertype == PyBUF_WRITE) {
-                PyObject_DEL(mem);
+                Py_DECREF(mem);
                 PyErr_SetString(PyExc_BufferError,
                                 "writable contiguous buffer requested "
                                 "for a non-contiguousobject.");
@@ -265,7 +276,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         }
         bytes = PyBytes_FromStringAndSize(NULL, view->len);
         if (bytes == NULL) {
-                PyBuffer_Release(view);
+                Py_DECREF(mem);
                 return NULL;
         }
         dest = PyBytes_AS_STRING(bytes);
@@ -280,7 +291,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         else {
                 if (_indirect_copy_nd(dest, view, fort) < 0) {
                         Py_DECREF(bytes);
-                        PyBuffer_Release(view);
+			Py_DECREF(mem);
                         return NULL;
                 }
         }
@@ -290,15 +301,16 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                 mem->base = PyTuple_Pack(2, obj, bytes);
                 Py_DECREF(bytes);
 		if (mem->base == NULL) {
-			PyBuffer_Release(view);
+			Py_DECREF(mem);
 			return NULL;
 		}
         }
         else {
-                PyBuffer_Release(view);
+                PyBuffer_Release(view);  /* XXX ? */
                 /* steal the reference */
                 mem->base = bytes;
         }
+	_PyObject_GC_TRACK(mem);
         return (PyObject *)mem;
 }
 
@@ -444,6 +456,7 @@ static PyMethodDef memory_methods[] = {
 static void
 memory_dealloc(PyMemoryViewObject *self)
 {
+	_PyObject_GC_UNTRACK(self);
         if (self->view.obj != NULL) {
             if (self->base && PyTuple_Check(self->base)) {
                 /* Special case when first element is generic object
@@ -468,7 +481,7 @@ memory_dealloc(PyMemoryViewObject *self)
             }
             Py_CLEAR(self->base);
         }
-        PyObject_DEL(self);
+	PyObject_GC_Del(self);
 }
 
 static PyObject *
@@ -749,6 +762,25 @@ _notimpl:
 }
 
 
+static int
+memory_traverse(PyMemoryViewObject *self, visitproc visit, void *arg)
+{
+	if (self->base != NULL)
+		Py_VISIT(self->base);
+	if (self->view.obj != NULL)
+		Py_VISIT(self->view.obj);
+	return 0;
+}
+
+static int
+memory_clear(PyMemoryViewObject *self)
+{
+	Py_CLEAR(self->base);
+	PyBuffer_Release(&self->view);
+	return 0;
+}
+
+
 /* As mapping */
 static PyMappingMethods memory_as_mapping = {
 	(lenfunc)memory_length, /*mp_length*/
@@ -785,10 +817,10 @@ PyTypeObject PyMemoryView_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&memory_as_buffer,			/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	memory_doc,				/* tp_doc */
-	0,					/* tp_traverse */
-	0,					/* tp_clear */
+	(traverseproc)memory_traverse,		/* tp_traverse */
+	(inquiry)memory_clear,			/* tp_clear */
 	memory_richcompare,                     /* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
