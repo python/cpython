@@ -1340,6 +1340,21 @@ class Test_raw_input(FixerTestCase):
         a = """x = input(foo(a) + 6)"""
         self.check(b, a)
 
+    def test_5(self):
+        b = """x = raw_input(invite).split()"""
+        a = """x = input(invite).split()"""
+        self.check(b, a)
+
+    def test_6(self):
+        b = """x = raw_input(invite) . split ()"""
+        a = """x = input(invite) . split ()"""
+        self.check(b, a)
+
+    def test_8(self):
+        b = "x = int(raw_input())"
+        a = "x = int(input())"
+        self.check(b, a)
+
 class Test_funcattrs(FixerTestCase):
     fixer = "funcattrs"
 
@@ -3329,6 +3344,98 @@ class Test_import(FixerTestCase):
         from . import foo.bar
         """
         self.check_both(b, a)
+
+class Test_sys_exc(FixerTestCase):
+    fixer = "sys_exc"
+
+    def test_0(self):
+        b = "sys.exc_type"
+        a = "sys.exc_info()[0]"
+        self.check(b, a)
+
+    def test_1(self):
+        b = "sys.exc_value"
+        a = "sys.exc_info()[1]"
+        self.check(b, a)
+
+    def test_2(self):
+        b = "sys.exc_traceback"
+        a = "sys.exc_info()[2]"
+        self.check(b, a)
+
+    def test_3(self):
+        b = "sys.exc_type # Foo"
+        a = "sys.exc_info()[0] # Foo"
+        self.check(b, a)
+
+    def test_4(self):
+        b = "sys.  exc_type"
+        a = "sys.  exc_info()[0]"
+        self.check(b, a)
+
+    def test_5(self):
+        b = "sys  .exc_type"
+        a = "sys  .exc_info()[0]"
+        self.check(b, a)
+
+
+class Test_paren(FixerTestCase):
+    fixer = "paren"
+
+    def test_0(self):
+        b = """[i for i in 1, 2 ]"""
+        a = """[i for i in (1, 2) ]"""
+        self.check(b, a)
+
+    def test_1(self):
+        b = """[i for i in 1, 2, ]"""
+        a = """[i for i in (1, 2,) ]"""
+        self.check(b, a)
+
+    def test_2(self):
+        b = """[i for i  in     1, 2 ]"""
+        a = """[i for i  in     (1, 2) ]"""
+        self.check(b, a)
+
+    def test_3(self):
+        b = """[i for i in 1, 2 if i]"""
+        a = """[i for i in (1, 2) if i]"""
+        self.check(b, a)
+
+    def test_4(self):
+        b = """[i for i in 1,    2    ]"""
+        a = """[i for i in (1,    2)    ]"""
+        self.check(b, a)
+
+    def test_5(self):
+        b = """(i for i in 1, 2)"""
+        a = """(i for i in (1, 2))"""
+        self.check(b, a)
+
+    def test_6(self):
+        b = """(i for i in 1   ,2   if i)"""
+        a = """(i for i in (1   ,2)   if i)"""
+        self.check(b, a)
+
+    def test_unchanged_0(self):
+        s = """[i for i in (1, 2)]"""
+        self.unchanged(s)
+
+    def test_unchanged_1(self):
+        s = """[i for i in foo()]"""
+        self.unchanged(s)
+
+    def test_unchanged_2(self):
+        s = """[i for i in (1, 2) if nothing]"""
+        self.unchanged(s)
+
+    def test_unchanged_3(self):
+        s = """(i for i in (1, 2))"""
+        self.unchanged(s)
+
+    def test_unchanged_4(self):
+        s = """[i for i in m]"""
+        self.unchanged(s)
 
 
 if __name__ == "__main__":
