@@ -6,6 +6,8 @@ XXX We need more tests! Some tests are in test_bytes
 import unittest
 import test.support
 import sys
+import gc
+import weakref
 
 
 class CommonMemoryTests:
@@ -156,6 +158,36 @@ class CommonMemoryTests:
     def test_attributes_writable(self):
         m = self.check_attributes_with_type(bytearray)
         self.assertEquals(m.readonly, False)
+
+    def test_getbuffer(self):
+        # Test PyObject_GetBuffer() on a memoryview object.
+        b = self.base_object
+        oldrefcount = sys.getrefcount(b)
+        m = self._view(b)
+        oldviewrefcount = sys.getrefcount(m)
+        s = str(m, "utf-8")
+        self._check_contents(b, s.encode("utf-8"))
+        self.assertEquals(sys.getrefcount(m), oldviewrefcount)
+        m = None
+        self.assertEquals(sys.getrefcount(b), oldrefcount)
+
+    def test_gc(self):
+        class MyBytes(bytes):
+            pass
+        class MyObject:
+            pass
+
+        # Create a reference cycle through a memoryview object
+        b = MyBytes(b'abc')
+        m = self._view(b)
+        o = MyObject()
+        b.m = m
+        b.o = o
+        wr = weakref.ref(o)
+        b = m = o = None
+        # The cycle must be broken
+        gc.collect()
+        self.assert_(wr() is None, wr())
 
 
 class MemoryviewTest(unittest.TestCase, CommonMemoryTests):
