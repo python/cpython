@@ -53,6 +53,8 @@ C-API
 Library
 -------
 
+- The deprecation warnings for the old camelCase threading API were removed.
+
 - logging: fixed lack of use of encoding attribute specified on a stream.
 
 - Silenced a trivial compiler warning in the sqlite module.

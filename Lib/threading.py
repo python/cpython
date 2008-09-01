@@ -15,6 +15,17 @@ from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
 from collections import deque
 
+# Note regarding PEP 8 compliant aliases
+#  This threading model was originally inspired by Java, and inherited
+# the convention of camelCase function and method names from that
+# language. While those names are not in any imminent danger of being
+# deprecated, starting with Python 2.6, the module now provides a
+# PEP 8 compliant alias for any such method name.
+# Using the new PEP 8 compliant names also facilitates substitution
+# with the multiprocessing module, which doesn't provide the old
+# Java inspired names.
+
+
 # Rename some stuff so "from threading import *" is safe
 __all__ = ['activeCount', 'active_count', 'Condition', 'currentThread',
            'current_thread', 'enumerate', 'Event',
@@ -32,19 +43,6 @@ del thread
 # don't fully clear the exception until 3.0.
 warnings.filterwarnings('ignore', category=DeprecationWarning,
                         module='threading', message='sys.exc_clear')
-
-
-def _old_api(callable, old_name):
-    if not _sys.py3kwarning:
-        return callable
-    @wraps(callable)
-    def old(*args, **kwargs):
-        warnings.warnpy3k("{0}() is deprecated in favor of {1}()"
-                          .format(old_name, callable.__name__),
-                          stacklevel=3)
-        return callable(*args, **kwargs)
-    old.__name__ = old_name
-    return old
 
 # Debug support (adapted from ihooks.py).
 # All the major classes here derive from _Verbose.  We force that to
@@ -287,10 +285,10 @@ class _Condition(_Verbose):
             except ValueError:
                 pass
 
-    def notify_all(self):
+    def notifyAll(self):
         self.notify(len(self.__waiters))
 
-    notifyAll = _old_api(notify_all, "notifyAll")
+    notify_all = notifyAll
 
 
 def Semaphore(*args, **kwargs):
@@ -368,10 +366,10 @@ class _Event(_Verbose):
         self.__cond = Condition(Lock())
         self.__flag = False
 
-    def is_set(self):
+    def isSet(self):
         return self.__flag
 
-    isSet = _old_api(is_set, "isSet")
+    is_set = isSet
 
     def set(self):
         self.__cond.acquire()
@@ -666,11 +664,11 @@ class Thread(_Verbose):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__ident
 
-    def is_alive(self):
+    def isAlive(self):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__started.is_set() and not self.__stopped
 
-    isAlive = _old_api(is_alive, "isAlive")
+    is_alive = isAlive
 
     @property
     def daemon(self):
@@ -686,23 +684,15 @@ class Thread(_Verbose):
         self.__daemonic = daemonic
 
     def isDaemon(self):
-        warnings.warnpy3k("isDaemon() is deprecated in favor of the " \
-                          "Thread.daemon property")
         return self.daemon
 
     def setDaemon(self, daemonic):
-        warnings.warnpy3k("setDaemon() is deprecated in favor of the " \
-                          "Thread.daemon property")
         self.daemon = daemonic
 
     def getName(self):
-        warnings.warnpy3k("getName() is deprecated in favor of the " \
-                          "Thread.name property")
         return self.name
 
     def setName(self, name):
-        warnings.warnpy3k("setName() is deprecated in favor of the " \
-                          "Thread.name property")
         self.name = name
 
 # The timer class was contributed by Itamar Shtull-Trauring
@@ -803,22 +793,22 @@ class _DummyThread(Thread):
 
 # Global API functions
 
-def current_thread():
+def currentThread():
     try:
         return _active[_get_ident()]
     except KeyError:
         ##print "current_thread(): no current thread for", _get_ident()
         return _DummyThread()
 
-currentThread = _old_api(current_thread, "currentThread")
+current_thread = currentThread
 
-def active_count():
+def activeCount():
     _active_limbo_lock.acquire()
     count = len(_active) + len(_limbo)
     _active_limbo_lock.release()
     return count
 
-activeCount = _old_api(active_count, "activeCount")
+active_count = activeCount
 
 def enumerate():
     _active_limbo_lock.acquire()
