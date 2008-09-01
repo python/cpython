@@ -54,7 +54,7 @@ def sub_warning(msg, *args):
 
 def get_logger():
     '''
-    Returns logger used by multiprocessing
+    Return package logger -- if it does not already exist then it is created
     '''
     global _logger
 

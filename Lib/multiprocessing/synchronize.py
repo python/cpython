@@ -65,7 +65,9 @@ class SemLock(object):
 #
 
 class Semaphore(SemLock):
-
+    '''
+    A semaphore object
+    '''
     def __init__(self, value=1):
         SemLock.__init__(self, SEMAPHORE, value, SEM_VALUE_MAX)
 
@@ -84,7 +86,9 @@ class Semaphore(SemLock):
 #
 
 class BoundedSemaphore(Semaphore):
-
+    '''
+    A bounded semaphore object
+    '''
     def __init__(self, value=1):
         SemLock.__init__(self, SEMAPHORE, value, value)
 
@@ -101,7 +105,9 @@ class BoundedSemaphore(Semaphore):
 #
 
 class Lock(SemLock):
-
+    '''
+    A non-recursive lock object
+    '''
     def __init__(self):
         SemLock.__init__(self, SEMAPHORE, 1, 1)
 
@@ -126,7 +132,9 @@ class Lock(SemLock):
 #
 
 class RLock(SemLock):
-
+    '''
+    A recursive lock object
+    '''
     def __init__(self):
         SemLock.__init__(self, RECURSIVE_MUTEX, 1, 1)
 
@@ -152,6 +160,9 @@ class RLock(SemLock):
 #
 
 class Condition(object):
+    '''
+    A condition object
+    '''
 
     def __init__(self, lock=None):
         self._lock = lock or RLock()
@@ -252,7 +263,9 @@ class Condition(object):
 #
 
 class Event(object):
-
+    '''
+    An event object
+    '''
     def __init__(self):
         self._cond = Condition(Lock())
         self._flag = Semaphore(0)
