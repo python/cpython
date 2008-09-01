@@ -2,11 +2,21 @@
 
 import sys as _sys
 import _thread
-import warnings
 
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
 from collections import deque
+
+# Note regarding PEP 8 compliant names
+#  This threading model was originally inspired by Java, and inherited
+# the convention of camelCase function and method names from that
+# language. Those originaly names are not in any imminent danger of
+# being deprecated (even for Py3k),so this module provides them as an
+# alias for the PEP 8 compliant names
+# Note that using the new PEP 8 compliant names facilitates substitution
+# with the multiprocessing module, which doesn't provide the old
+# Java inspired names.
+
 
 # Rename some stuff so "from threading import *" is safe
 __all__ = ['active_count', 'Condition', 'current_thread', 'enumerate', 'Event',
@@ -262,6 +272,8 @@ class _Condition(_Verbose):
     def notify_all(self):
         self.notify(len(self._waiters))
 
+    notifyAll = notify_all
+
 
 def Semaphore(*args, **kwargs):
     return _Semaphore(*args, **kwargs)
@@ -341,10 +353,7 @@ class _Event(_Verbose):
     def is_set(self):
         return self._flag
 
-    def isSet(self):
-        warnings.warn("isSet() is deprecated in favor of is_set()",
-                      DeprecationWarning)
-        return self.is_set()
+    isSet = is_set
 
     def set(self):
         self._cond.acquire()
@@ -646,10 +655,7 @@ class Thread(_Verbose):
         assert self._initialized, "Thread.__init__() not called"
         return self._started.is_set() and not self._stopped
 
-    def isAlive(self):
-        warnings.warn("isAlive() is deprecated in favor of is_alive()",
-                      DeprecationWarning)
-        return self.is_alive()
+    isAlive = is_alive
 
     @property
     def daemon(self):
@@ -665,23 +671,15 @@ class Thread(_Verbose):
         self._daemonic = daemonic
 
     def isDaemon(self):
-        warnings.warn("isDaemon() is deprecated in favor of the " \
-                      "Thread.daemon property", DeprecationWarning)
         return self.daemon
 
     def setDaemon(self, daemonic):
-        warnings.warn("setDaemon() is deprecated in favor of the " \
-                      "Thread.daemon property", DeprecationWarning)
         self.daemon = daemonic
 
     def getName(self):
-        warnings.warn("getName() is deprecated in favor of the " \
-                      "Thread.name property", DeprecationWarning)
         return self.name
 
     def setName(self, name):
-        warnings.warn("setName() is deprecated in favor of the " \
-                      "Thread.name property", DeprecationWarning)
         self.name = name
 
 # The timer class was contributed by Itamar Shtull-Trauring
@@ -790,9 +788,7 @@ def current_thread():
         ##print "current_thread(): no current thread for", _get_ident()
         return _DummyThread()
 
-def currentThread():
-    warnings.warn("currentThread() is deprecated in favor of current_thread()",
-                  DeprecationWarning)
+currentThread = current_thread
 
 def active_count():
     _active_limbo_lock.acquire()
@@ -800,10 +796,7 @@ def active_count():
     _active_limbo_lock.release()
     return count
 
-def activeCount():
-    warnings.warn("activeCount() is deprecated in favor of active_count()",
-                  DeprecationWarning)
-    return active_count()
+activeCount = active_count
 
 def enumerate():
     _active_limbo_lock.acquire()
