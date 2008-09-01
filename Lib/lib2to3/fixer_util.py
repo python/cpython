@@ -51,12 +51,12 @@ def Dot():
 
 def ArgList(args, lparen=LParen(), rparen=RParen()):
     """A parenthesised argument list, used by Call()"""
-    return Node(syms.trailer,
-                [lparen.clone(),
-                 Node(syms.arglist, args),
-                 rparen.clone()])
+    node = Node(syms.trailer, [lparen.clone(), rparen.clone()])
+    if args:
+        node.insert_child(1, Node(syms.arglist, args))
+    return node
 
-def Call(func_name, args, prefix=None):
+def Call(func_name, args=None, prefix=None):
     """A function call"""
     node = Node(syms.power, [func_name, ArgList(args)])
     if prefix is not None:
