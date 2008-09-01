@@ -356,7 +356,10 @@ except ImportError:
 try:
     from bsddb3 import test_support
 except ImportError:
-    from test import test_support
+    if sys.version_info[0] < 3 :
+        from test import test_support
+    else :
+        from test import support as test_support
 
 
 try:
