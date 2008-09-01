@@ -63,7 +63,7 @@ def RawArray(typecode_or_type, size_or_initializer):
 
 def Value(typecode_or_type, *args, **kwds):
     '''
-    Return a synchronization wrapper for a RawValue
+    Return a synchronization wrapper for a Value
     '''
     lock = kwds.pop('lock', None)
     if kwds:

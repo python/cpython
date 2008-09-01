@@ -371,7 +371,13 @@ class Server(object):
 
             self.id_to_obj[ident] = (obj, set(exposed), method_to_typeid)
             if ident not in self.id_to_refcount:
-                self.id_to_refcount[ident] = None
+                self.id_to_refcount[ident] = 0
+            # increment the reference count immediately, to avoid
+            # this object being garbage collected before a Proxy
+            # object for it can be created.  The caller of create()
+            # is responsible for doing a decref once the Proxy object
+            # has been created.
+            self.incref(c, ident)
             return ident, tuple(exposed)
         finally:
             self.mutex.release()
@@ -393,11 +399,7 @@ class Server(object):
     def incref(self, c, ident):
         self.mutex.acquire()
         try:
-            try:
-                self.id_to_refcount[ident] += 1
-            except TypeError:
-                assert self.id_to_refcount[ident] is None
-                self.id_to_refcount[ident] = 1
+            self.id_to_refcount[ident] += 1
         finally:
             self.mutex.release()
 
@@ -634,6 +636,8 @@ class BaseManager(object):
                     token, self._serializer, manager=self,
                     authkey=self._authkey, exposed=exp
                     )
+                conn = self._Client(token.address, authkey=self._authkey)
+                dispatch(conn, None, 'decref', (token.id,))
                 return proxy
             temp.__name__ = typeid
             setattr(cls, typeid, temp)
@@ -726,10 +730,13 @@ class BaseProxy(object):
         elif kind == '#PROXY':
             exposed, token = result
             proxytype = self._manager._registry[token.typeid][-1]
-            return proxytype(
+            proxy = proxytype(
                 token, self._serializer, manager=self._manager,
                 authkey=self._authkey, exposed=exposed
                 )
+            conn = self._Client(token.address, authkey=self._authkey)
+            dispatch(conn, None, 'decref', (token.id,))
+            return proxy
         raise convert_to_error(kind, result)
 
     def _getvalue(self):
