@@ -422,6 +422,45 @@ You can see that the config file approach has a few advantages over the Python
 code approach, mainly separation of configuration and code and the ability of
 noncoders to easily modify the logging properties.
 
+Configuring Logging for a Library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When developing a library which uses logging, some consideration needs to be
+given to its configuration. If the using application does not use logging, and
+library code makes logging calls, then a one-off message "No handlers could be
+found for logger X.Y.Z" is printed to the console. This message is intended
+to catch mistakes in logging configuration, but will confuse an application
+developer who is not aware of logging by the library.
+
+In addition to documenting how a library uses logging, a good way to configure
+library logging so that it does not cause a spurious message is to add a
+handler which does nothing. This avoids the message being printed, since a
+handler will be found: it just doesn't produce any output. If the library user
+configures logging for application use, presumably that configuration will add
+some handlers, and if levels are suitably configured then logging calls made
+in library code will send output to those handlers, as normal.
+
+A do-nothing handler can be simply defined as follows::
+
+    import logging
+
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
+An instance of this handler should be added to the top-level logger of the
+logging namespace used by the library. If all logging by a library *foo* is
+done using loggers with names matching "foo.x.y", then the code::
+
+    import logging
+
+    h = NullHandler()
+    logging.getLogger("foo").addHandler(h)
+
+should have the desired effect. If an organisation produces a number of
+libraries, then the logger name specified can be "orgname.foo" rather than
+just "foo".
+
 
 Logging Levels
 --------------
