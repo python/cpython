@@ -719,6 +719,7 @@ class StreamHandler(Handler):
     to a stream. Note that this class does not close the stream, as
     sys.stdout or sys.stderr may be used.
     """
+
     def __init__(self, strm=None):
         """
         Initialize the handler.
@@ -743,10 +744,11 @@ class StreamHandler(Handler):
         Emit a record.
 
         If a formatter is specified, it is used to format the record.
-        The record is then written to the stream with a trailing newline
-        [N.B. this may be removed depending on feedback]. If exception
-        information is present, it is formatted using
-        traceback.print_exception and appended to the stream.
+        The record is then written to the stream with a trailing newline.  If
+        exception information is present, it is formatted using
+        traceback.print_exception and appended to the stream.  If the stream
+        has an 'encoding' attribute, it is used to encode the message before
+        output to the stream.
         """
         try:
             msg = self.format(record)
@@ -755,7 +757,10 @@ class StreamHandler(Handler):
                 self.stream.write(fs % msg)
             else:
                 try:
-                    self.stream.write(fs % msg)
+                    if hasattr(self.stream, 'encoding'):
+                        self.stream.write(fs % msg.encode(self.stream.encoding))
+                    else:
+                        self.stream.write(fs % msg)
                 except UnicodeError:
                     self.stream.write(fs % msg.encode("UTF-8"))
             self.flush()
