@@ -69,13 +69,7 @@ def main(fixer_dir, args=None):
         return 2
 
     # Set up logging handler
-    if sys.version_info < (2, 4):
-        hdlr = logging.StreamHandler()
-        fmt = logging.Formatter('%(name)s: %(message)s')
-        hdlr.setFormatter(fmt)
-        logging.root.addHandler(hdlr)
-    else:
-        logging.basicConfig(format='%(name)s: %(message)s', level=logging.INFO)
+    logging.basicConfig(format='%(name)s: %(message)s', level=logging.INFO)
 
     # Initialize the refactoring tool
     rt = RefactoringTool(fixer_dir, options)
