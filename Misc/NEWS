@@ -52,6 +52,9 @@ Library
 
 - Fixed two format strings in the _collections module.
 
+- #3703 _fileio.FileIO gave unhelpful error message when trying to open a
+   directory.
+
 Extension Modules
 -----------------
 
