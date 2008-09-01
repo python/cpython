@@ -8,7 +8,7 @@ from ..fixer_util import Name
 class FixRawInput(fixer_base.BaseFix):
 
     PATTERN = """
-              power< name='raw_input' trailer< '(' [any] ')' > >
+              power< name='raw_input' trailer< '(' [any] ')' > any* >
               """
 
     def transform(self, node, results):
