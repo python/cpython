@@ -32,41 +32,45 @@ variable(s) whose address should be passed.
    converted to C strings using the default encoding.  If this conversion fails, a
    :exc:`UnicodeError` is raised.
 
-``s#`` (string, Unicode or any read buffer compatible object) [const char \*, int]
-   This variant on ``s`` stores into two C variables, the first one a pointer to a
-   character string, the second one its length.  In this case the Python string may
-   contain embedded null bytes.  Unicode objects pass back a pointer to the default
-   encoded string version of the object if such a conversion is possible.  All
-   other read-buffer compatible objects pass back a reference to the raw internal
-   data representation.
-
 ``s*`` (string, Unicode, or any buffer compatible object) [Py_buffer \*]
-  Similar to ``s#``, this code fills a Py_buffer structure provided by the caller.
-  The buffer gets locked, so that the caller can subsequently use the buffer even
-  inside a ``Py_BEGIN_ALLOW_THREADS`` block; the caller is responsible for calling
-  ``PyBuffer_Release`` with the structure after it has processed the data.
+   This is similar to ``s``, but the code fills a :ctype:`Py_buffer` structure
+   provided by the caller.  In this case the Python string may contain embedded
+   null bytes.  Unicode objects pass back a pointer to the default encoded
+   string version of the object if such a conversion is possible.  The
+   underlying buffer is locked, so that the caller can subsequently use the
+   buffer even inside a ``Py_BEGIN_ALLOW_THREADS`` block.  **The caller is
+   responsible** for calling ``PyBuffer_Release`` with the structure after it
+   has processed the data.
+
+``s#`` (string, Unicode or any read buffer compatible object) [const char \*, int]
+   This variant on ``s*`` stores into two C variables, the first one a pointer
+   to a character string, the second one its length.  All other read-buffer
+   compatible objects pass back a reference to the raw internal data
+   representation.  Since this format doesn't allow writable buffer compatible
+   objects like byte arrays, ``s*`` is to be preferred.
 
 ``y`` (bytes object) [const char \*]
-   This variant on ``s`` convert a Python bytes object to a C pointer to a
-   character string. The bytes object must not contain embedded NUL bytes; if it
-   does, a :exc:`TypeError` exception is raised.
-
-``y#`` (bytes object) [const char \*, int]
-   This variant on ``s#`` stores into two C variables, the first one a pointer to a
-   character string, the second one its length.  This only accepts bytes objects.
+   This variant on ``s`` converts a Python bytes or bytearray object to a C
+   pointer to a character string.  The bytes object must not contain embedded
+   NUL bytes; if it does, a :exc:`TypeError` exception is raised.
 
 ``y*`` (bytes object) [Py_buffer \*]
    This is to ``s*`` as ``y`` is to ``s``.
+
+``y#`` (bytes object) [const char \*, int]
+   This variant on ``s#`` stores into two C variables, the first one a pointer
+   to a character string, the second one its length.  This only accepts bytes
+   objects, no byte arrays.
 
 ``z`` (string or ``None``) [const char \*]
    Like ``s``, but the Python object may also be ``None``, in which case the C
    pointer is set to *NULL*.
 
-``z#`` (string or ``None`` or any read buffer compatible object) [const char \*, int]
-   This is to ``s#`` as ``z`` is to ``s``.
-
 ``z*`` (string or ``None`` or any buffer compatible object) [Py_buffer*]
    This is to ``s*`` as ``z`` is to ``s``.
+
+``z#`` (string or ``None`` or any read buffer compatible object) [const char \*, int]
+   This is to ``s#`` as ``z`` is to ``s``.
 
 ``u`` (Unicode object) [Py_UNICODE \*]
    Convert a Python Unicode object to a C pointer to a NUL-terminated buffer of
@@ -249,15 +253,15 @@ variable(s) whose address should be passed.
    or use ``w#`` instead.  Only single-segment buffer objects are accepted;
    :exc:`TypeError` is raised for all others.
 
+``w*`` (read-write byte-oriented buffer) [Py_buffer \*]
+   This is to ``w`` what ``s*`` is to ``s``.
+
 ``w#`` (read-write character buffer) [char \*, int]
    Like ``s#``, but accepts any object which implements the read-write buffer
    interface.  The :ctype:`char \*` variable is set to point to the first byte of
    the buffer, and the :ctype:`int` is set to the length of the buffer.  Only
    single-segment buffer objects are accepted; :exc:`TypeError` is raised for all
    others.
-
-``w*`` (read-write byte-oriented buffer) [Py_buffer \*]
-   This is to ``w`` what ``s*`` is to ``s``.
 
 ``(items)`` (tuple) [*matching-items*]
    The object must be a Python sequence whose length is the number of format units
