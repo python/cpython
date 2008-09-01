@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #3751: str.rpartition would perform a left-partition when called with
+  a unicode argument.
+
 - Issue #3537: Fix an assertion failure when an empty but presized dict
   object was stored in the freelist.
 

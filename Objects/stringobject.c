@@ -1595,7 +1595,7 @@ string_rpartition(PyStringObject *self, PyObject *sep_obj)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(sep_obj))
-		return PyUnicode_Partition((PyObject *) self, sep_obj);
+		return PyUnicode_RPartition((PyObject *) self, sep_obj);
 #endif
 	else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
 		return NULL;

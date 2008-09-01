@@ -1066,6 +1066,9 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(ValueError, S, 'partition', '')
         self.checkraises(TypeError, S, 'partition', None)
 
+        # mixed use of str and unicode
+        self.assertEqual('a/b/c'.partition(u'/'), ('a', '/', 'b/c'))
+
     def test_rpartition(self):
 
         self.checkequal(('this is the rparti', 'ti', 'on method'),
@@ -1081,6 +1084,8 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(ValueError, S, 'rpartition', '')
         self.checkraises(TypeError, S, 'rpartition', None)
 
+        # mixed use of str and unicode
+        self.assertEqual('a/b/c'.rpartition(u'/'), ('a/b', '/', 'c'))
 
 class MixinStrStringUserStringTest:
     # Additional tests for 8bit strings, i.e. str, UserString and
