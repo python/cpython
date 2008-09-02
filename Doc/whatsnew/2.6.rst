@@ -1595,6 +1595,22 @@ Some smaller changes made to the core Python language are:
   :func:`complex` constructor will now preserve the sign
   of the zero.  (Fixed by Mark T. Dickinson; :issue:`1507`.)
 
+* Classes that inherit a :meth:`__hash__` method from a parent class
+  can set ``__hash__ = None`` to indicate that the class isn't
+  hashable.  This will make ``hash(obj)`` raise a :exc:`TypeError`
+  and the class will not be indicated as implementing the
+  :class:`Hashable` ABC.
+
+  You should do this when you've defined a :meth:`__cmp__` or
+  :meth:`__eq__` method that compares objects by their value rather
+  than by identity.  All objects have a default hash method that uses
+  ``id(obj)`` as the hash value.  There's no tidy way to remove the
+  :meth:`__hash__` method inherited from a parent class, so
+  assigning ``None`` was implemented as an override.  At the
+  C level, extensions can set ``tp_hash`` to
+  :cfunc:`PyObject_HashNotImplemented`.
+  (Fixed by Nick Coghlan and Amaury Forgeot d'Arc; :issue:`2235`.)
+
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6,
   the :attr:`message` attribute is being deprecated in favor of the
@@ -3125,6 +3141,10 @@ Porting to Python 2.6
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
+* Classes that aren't supposed to be hashable should
+  set ``__hash__ = None`` in their definitions to indicate
+  the fact.
+
 * The :meth:`__init__` method of :class:`collections.deque`
   now clears any existing contents of the deque
   before adding elements from the iterable.  This change makes the
@@ -3146,6 +3166,10 @@ that may require changes to your code:
 * C API: the :cfunc:`PyImport_Import` and :cfunc:`PyImport_ImportModule`
   functions now default to absolute imports, not relative imports.
   This will affect C extensions that import other modules.
+
+* C API: extension data types that shouldn't be hashable
+  should define their ``tp_hash`` slot to
+  :cfunc:`PyObject_HashNotImplemented`.
 
 * The :mod:`socket` module exception :exc:`socket.error` now inherits
   from :exc:`IOError`.  Previously it wasn't a subclass of
@@ -3182,5 +3206,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article:
-Georg Brandl, Jim Jewett, Antoine Pitrou.
+Georg Brandl, Nick Coghlan, Jim Jewett, Antoine Pitrou.
 
