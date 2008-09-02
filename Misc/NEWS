@@ -53,6 +53,11 @@ C-API
 Library
 -------
 
+- Issue 3602: Moved test.test_support.catch_warning() to
+  warnings.catch_warnings() along with some API cleanup. Expanding the tests
+  for catch_warnings() also led to an improvement in the raising of a
+  DeprecationWarning related to warnings.warn_explicit().
+
 - The deprecation warnings for the old camelCase threading API were removed.
 
 - logging: fixed lack of use of encoding attribute specified on a stream.

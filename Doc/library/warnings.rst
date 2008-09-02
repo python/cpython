@@ -263,3 +263,53 @@ Available Functions
    :func:`filterwarnings`, including that of the :option:`-W` command line options
    and calls to :func:`simplefilter`.
 
+
+Available Classes
+-----------------
+
+.. class:: catch_warnings([record=False[, module=None]])
+
+    A context manager that guards the warnings filter from being permanentally
+    mutated. The manager returns an instance of :class:`WarningsRecorder`. The 
+    *record* argument specifies whether warnings that would typically be
+    handled by :func:`showwarning` should instead be recorded by the
+    :class:`WarningsRecorder` instance. This argument is typically set when
+    testing for expected warnings behavior. The *module* argument may be a
+    module object that is to be used instead of the :mod:`warnings` module.
+    This argument should only be set when testing the :mod:`warnings` module 
+    or some similar use-case.
+
+    Typical usage of the context manager is like so::
+
+        def fxn():
+            warn("fxn is deprecated", DeprecationWarning)
+            return "spam spam bacon spam"
+
+        # The function 'fxn' is known to raise a DeprecationWarning.
+        with catch_warnings() as w:
+            warnings.filterwarning('ignore', 'fxn is deprecated', DeprecationWarning)
+            fxn()  # DeprecationWarning is temporarily suppressed.
+
+    .. note::
+
+        In Python 3.0, the arguments to the constructor for
+        :class:`catch_warnings` are keyword-only arguments.
+
+    .. versionadded:: 2.6
+
+
+.. class:: WarningsRecorder()
+
+    A subclass of :class:`list` that stores all warnings passed to
+    :func:`showwarning` when returned by a :class:`catch_warnings` context
+    manager created with its *record* argument set to ``True``. Each recorded
+    warning is represented by an object whose attributes correspond to the
+    arguments to :func:`showwarning`. As a convenience, a
+    :class:`WarningsRecorder` instance has the attributes of the last
+    recorded warning set on the :class:`WarningsRecorder` instance as well.
+
+    .. method:: reset()
+
+        Delete all recorded warnings.
+
+    .. versionadded:: 2.6

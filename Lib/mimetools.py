@@ -2,11 +2,12 @@
 
 
 import os
+import sys
 import tempfile
-from test.test_support import catch_warning
-from warnings import filterwarnings
-with catch_warning(record=False):
-    filterwarnings("ignore", ".*rfc822 has been removed", DeprecationWarning)
+from warnings import filterwarnings, catch_warnings
+with catch_warnings(record=False):
+    if sys.py3kwarning:
+        filterwarnings("ignore", ".*rfc822 has been removed", DeprecationWarning)
     import rfc822
 
 from warnings import warnpy3k

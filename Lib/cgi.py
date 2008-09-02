@@ -39,13 +39,14 @@ import sys
 import os
 import urllib
 import UserDict
-from test.test_support import catch_warning
-from warnings import filterwarnings
-with catch_warning(record=False):
-    filterwarnings("ignore", ".*mimetools has been removed",
-                    DeprecationWarning)
+from warnings import filterwarnings, catch_warnings
+with catch_warnings():
+    if sys.py3kwarning:
+        filterwarnings("ignore", ".*mimetools has been removed",
+                        DeprecationWarning)
     import mimetools
-    filterwarnings("ignore", ".*rfc822 has been removed", DeprecationWarning)
+    if sys.py3kwarning:
+        filterwarnings("ignore", ".*rfc822 has been removed", DeprecationWarning)
     import rfc822
 
 try:

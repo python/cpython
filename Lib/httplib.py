@@ -67,12 +67,13 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
 import socket
+from sys import py3kwarning
 from urlparse import urlsplit
 import warnings
-from test.test_support import catch_warning
-with catch_warning(record=False):
-    warnings.filterwarnings("ignore", ".*mimetools has been removed",
-                            DeprecationWarning)
+with warnings.catch_warnings():
+    if py3kwarning:
+        warnings.filterwarnings("ignore", ".*mimetools has been removed",
+                                DeprecationWarning)
     import mimetools
 
 try:

@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "code.h"  /* For DeprecationWarning about adding 'line'. */
 #include "frameobject.h"
 
 #define MODULE_NAME "_warnings"
@@ -416,11 +417,16 @@ warn_explicit(PyObject *category, PyObject *message,
                 /* A proper implementation of warnings.showwarning() should
                     have at least two default arguments. */
                 if ((defaults == NULL) || (PyTuple_Size(defaults) < 2)) {
-                    if (PyErr_WarnEx(PyExc_DeprecationWarning, msg, 1) < 0) {
-                        Py_DECREF(show_fxn);
-                        goto cleanup;
+	            PyCodeObject *code = (PyCodeObject *)
+						PyFunction_GetCode(check_fxn);
+		    if (!(code->co_flags & CO_VARARGS)) {
+		        if (PyErr_WarnEx(PyExc_DeprecationWarning, msg, 1) <
+				0) {
+                            Py_DECREF(show_fxn);
+                            goto cleanup;
+                        }
                     }
-                }
+		}
                 res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
                                                     filename, lineno_obj,
                                                     NULL);
