@@ -372,10 +372,10 @@ are always available.  They are listed here in alphabetical order.
       >>> eval('x+1')
       2
 
-   This function can also be used to execute arbitrary code objects (such as those
-   created by :func:`compile`).  In this case pass a code object instead of a
-   string.  The code object must have been compiled passing ``'eval'`` as the
-   *kind* argument.
+   This function can also be used to execute arbitrary code objects (such as
+   those created by :func:`compile`).  In this case pass a code object instead
+   of a string.  If the code object has been compiled with ``'exec'`` as the
+   *kind* argument, :func:`eval`\'s return value will be ``None``.
 
    Hints: dynamic execution of statements is supported by the :func:`exec`
    function.  The :func:`globals` and :func:`locals` functions
@@ -1086,14 +1086,14 @@ are always available.  They are listed here in alphabetical order.
 
    .. XXX updated as per http://www.artima.com/weblogs/viewpost.jsp?thread=208549 but needs checking
 
-   Return the superclass of *type*.
-   
-   Calling :func:`super()` without arguments is equivalent to
-   ``super(this_class, first_arg)``. If called with one
-   argument the super object returned is unbound.  If called with two
-   arguments and the second argument is an object, ``isinstance(obj,
-   type)`` must be true.  If the second argument is a type,
-   ``issubclass(type2, type)`` must be true.
+
+   Return a "super" object that acts like the superclass of *type*.  If the
+   second argument is omitted the super object returned is unbound.  If the
+   second argument is an object, ``isinstance(obj, type)`` must be true.  If the
+   second argument is a type, ``issubclass(type2, type)`` must be
+   true. :func:`super` only works for :term:`new-style class`\es.  Calling
+   :func:`super()` without arguments is equivalent to ``super(this_class,
+   first_arg)``.
 
    A typical use for calling a cooperative superclass method is::
 
