@@ -13,8 +13,151 @@ class TestBSDDB(unittest.TestCase):
     openflag = 'c'
 
     def do_open(self, *args, **kw):
+        # This code will be vastly improved in future bsddb 4.7.4. Meanwhile,
+        # let's live with this ugliness. XXX - jcea@jcea.es - 20080902
+        class _ExposedProperties:
+            @property
+            def _cursor_refs(self):
+                return self.db._cursor_refs
+
+        import collections
+        class StringKeys(collections.MutableMapping, _ExposedProperties):
+            """Wrapper around DB object that automatically encodes
+            all keys as UTF-8; the keys must be strings."""
+
+            def __init__(self, db):
+                self.db = db
+
+            def __len__(self):
+                return len(self.db)
+
+            def __getitem__(self, key):
+                return self.db[key.encode("utf-8")]
+
+            def __setitem__(self, key, value):
+                self.db[key.encode("utf-8")] = value
+
+            def __delitem__(self, key):
+                del self.db[key.encode("utf-8")]
+
+            def __iter__(self):
+                for k in self.db:
+                    yield k.decode("utf-8")
+
+            def close(self):
+                self.db.close()
+
+            def keys(self):
+                for k in self.db.keys():
+                    yield k.decode("utf-8")
+
+            def has_key(self, key):
+                return self.db.has_key(key.encode("utf-8"))
+
+            __contains__ = has_key
+
+            def values(self):
+                return self.db.values()
+
+            def items(self):
+                for k,v in self.db.items():
+                    yield k.decode("utf-8"), v
+
+            def set_location(self, key):
+                return self.db.set_location(key.encode("utf-8"))
+
+            def next(self):
+                key, value = self.db.next()
+                return key.decode("utf-8"), value
+
+            def previous(self):
+                key, value = self.db.previous()
+                return key.decode("utf-8"), value
+
+            def first(self):
+                key, value = self.db.first()
+                return key.decode("utf-8"), value
+
+            def last(self):
+                key, value = self.db.last()
+                return key.decode("utf-8"), value
+
+            def set_location(self, key):
+                key, value = self.db.set_location(key.encode("utf-8"))
+                return key.decode("utf-8"), value
+
+            def sync(self):
+                return self.db.sync()
+
+        class StringValues(collections.MutableMapping, _ExposedProperties):
+            """Wrapper around DB object that automatically encodes
+            and decodes all values as UTF-8; input values must be strings."""
+
+            def __init__(self, db):
+                self.db = db
+
+            def __len__(self):
+                return len(self.db)
+
+            def __getitem__(self, key):
+                return self.db[key].decode("utf-8")
+
+            def __setitem__(self, key, value):
+                self.db[key] = value.encode("utf-8")
+
+            def __delitem__(self, key):
+                del self.db[key]
+
+            def __iter__(self):
+                return iter(self.db)
+
+            def close(self):
+                self.db.close()
+
+            def keys(self):
+                return self.db.keys()
+
+            def has_key(self, key):
+                return self.db.has_key(key)
+
+            __contains__ = has_key
+
+            def values(self):
+                for v in self.db.values():
+                    yield v.decode("utf-8")
+
+            def items(self):
+                for k,v in self.db.items():
+                    yield k, v.decode("utf-8")
+
+            def set_location(self, key):
+                return self.db.set_location(key)
+
+            def next(self):
+                key, value = self.db.next()
+                return key, value.decode("utf-8")
+
+            def previous(self):
+                key, value = self.db.previous()
+                return key, value.decode("utf-8")
+
+            def first(self):
+                key, value = self.db.first()
+                return key, value.decode("utf-8")
+
+            def last(self):
+                key, value = self.db.last()
+                return key, value.decode("utf-8")
+
+            def set_location(self, key):
+                key, value = self.db.set_location(key)
+                return key, value.decode("utf-8")
+
+            def sync(self):
+                return self.db.sync()
+
         # openmethod is a list so that it's not mistaken as an instance method
-        return bsddb.StringValues(bsddb.StringKeys(self.openmethod[0](*args, **kw)))
+        return StringValues(StringKeys(self.openmethod[0](*args, **kw)))
 
     def setUp(self):
         self.f = self.do_open(self.fname, self.openflag, cachesize=32768)
