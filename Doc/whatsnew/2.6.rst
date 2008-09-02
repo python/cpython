@@ -203,7 +203,7 @@ The Python documentation was written using LaTeX since the project
 started around 1989.  In the 1980s and early 1990s, most documentation
 was printed out for later study, not viewed online. LaTeX was widely
 used because it provided attractive printed output while remaining
-straightforward to write once the basic rules of the markup werw
+straightforward to write once the basic rules of the markup were
 learned.
 
 Today LaTeX is still used for writing publications destined for
