@@ -202,6 +202,16 @@ class WarnTests(unittest.TestCase):
                 self.assertEqual(str(w.message), text)
                 self.assert_(w.category is UserWarning)
 
+    # Issue 3639
+    def test_warn_nonstandard_types(self):
+        # warn() should handle non-standard types without issue.
+        for ob in (Warning, None, 42):
+            with support.catch_warning(self.module) as w:
+                self.module.warn(ob)
+                # Don't directly compare objects since
+                # ``Warning() != Warning()``.
+                self.assertEquals(str(w.message), str(UserWarning(ob)))
+
     def test_filename(self):
         with warnings_state(self.module):
             with support.catch_warning(self.module) as w:
@@ -314,7 +324,6 @@ class WarnTests(unittest.TestCase):
         self.assertRaises((TypeError, AttributeError),
                             self.module.warn_explicit,
                             None, Warning, None, 1, registry=42)
-
 
 class CWarnTests(BaseTest, WarnTests):
     module = c_warnings

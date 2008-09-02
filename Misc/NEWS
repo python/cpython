@@ -12,6 +12,9 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue 3639: The _warnings module could segfault the interpreter when
+  unexpected types were passed in as arguments.
+
 - Issue #3712: The memoryview object had a reference leak and didn't support
   cyclic garbage collection.
 
