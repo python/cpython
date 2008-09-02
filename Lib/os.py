@@ -753,8 +753,10 @@ if not _exists("urandom"):
             _urandomfd = open("/dev/urandom", O_RDONLY)
         except (OSError, IOError):
             raise NotImplementedError("/dev/urandom (or equivalent) not found")
-        bytes = ""
-        while len(bytes) < n:
-            bytes += read(_urandomfd, n - len(bytes))
-        close(_urandomfd)
-        return bytes
+        try:
+            bs = b""
+            while n - len(bs) >= 1:
+                bs += read(_urandomfd, n - len(bs))
+        finally:
+            close(_urandomfd)
+        return bs
