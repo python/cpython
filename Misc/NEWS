@@ -45,6 +45,9 @@ Core and Builtins
 - Added warnings on the use of ``__getslice__``, ``__setslice__``, or
   ``__delslice__``.
 
+- Issue #3678: Correctly pass LDFLAGS and LDLAST to the linker on shared
+  library targets in the Makefile.
+
 C-API
 -----
 
