@@ -56,6 +56,9 @@ C-API
 Library
 -------
 
+- Issue #3719: platform.architecture() fails if there are spaces in the
+  path to the Python binary.
+
 - Issue 3602: Moved test.test_support.catch_warning() to
   warnings.catch_warnings() along with some API cleanup. Expanding the tests
   for catch_warnings() also led to an improvement in the raising of a
