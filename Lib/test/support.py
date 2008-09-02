@@ -19,7 +19,7 @@ __all__ = ["Error", "TestFailed", "TestSkipped", "ResourceDenied", "import_modul
            "is_resource_enabled", "requires", "find_unused_port", "bind_port",
            "fcmp", "is_jython", "TESTFN", "HOST", "FUZZ", "findfile", "verify",
            "vereq", "sortdict", "check_syntax_error", "open_urlresource",
-           "WarningMessage", "catch_warning", "CleanImport", "EnvironmentVarGuard",
+           "catch_warning", "CleanImport", "EnvironmentVarGuard",
            "TransientResource", "captured_output", "captured_stdout",
            "TransientResource", "transient_internet", "run_with_locale",
            "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
@@ -368,47 +368,6 @@ def open_urlresource(url, *args, **kw):
     return open(fn, *args, **kw)
 
 
-class WarningMessage(object):
-    "Holds the result of a single showwarning() call"
-    _WARNING_DETAILS = "message category filename lineno line".split()
-    def __init__(self, message, category, filename, lineno, line=None):
-        for attr in self._WARNING_DETAILS:
-            setattr(self, attr, locals()[attr])
-        self._category_name = category.__name__ if category else None
-
-    def __str__(self):
-        return ("{message : %r, category : %r, filename : %r, lineno : %s, "
-                    "line : %r}" % (self.message, self._category_name,
-                                    self.filename, self.lineno, self.line))
-
-class WarningRecorder(object):
-    "Records the result of any showwarning calls"
-    def __init__(self):
-        self.warnings = []
-        self._set_last(None)
-
-    def _showwarning(self, message, category, filename, lineno,
-                    file=None, line=None):
-        wm = WarningMessage(message, category, filename, lineno, line)
-        self.warnings.append(wm)
-        self._set_last(wm)
-
-    def _set_last(self, last_warning):
-        if last_warning is None:
-            for attr in WarningMessage._WARNING_DETAILS:
-                setattr(self, attr, None)
-        else:
-            for attr in WarningMessage._WARNING_DETAILS:
-                setattr(self, attr, getattr(last_warning, attr))
-
-    def reset(self):
-        self.warnings = []
-        self._set_last(None)
-
-    def __str__(self):
-        return '[%s]' % (', '.join(map(str, self.warnings)))
-
-@contextlib.contextmanager
 def catch_warning(module=warnings, record=True):
     """Guard the warnings filter from being permanently changed and
     optionally record the details of any warnings that are issued.
@@ -419,20 +378,7 @@ def catch_warning(module=warnings, record=True):
             warnings.warn("foo")
             assert str(w.message) == "foo"
     """
-    original_filters = module.filters
-    original_showwarning = module.showwarning
-    if record:
-        recorder = WarningRecorder()
-        module.showwarning = recorder._showwarning
-    else:
-        recorder = None
-    try:
-        # Replace the filters with a copy of the original
-        module.filters = module.filters[:]
-        yield recorder
-    finally:
-        module.showwarning = original_showwarning
-        module.filters = original_filters
+    return warnings.catch_warnings(record=record, module=module)
 
 
 class CleanImport(object):

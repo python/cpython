@@ -79,20 +79,19 @@ class FilterTests(object):
                                 "FilterTests.test_error")
 
     def test_ignore(self):
-        with support.catch_warning(self.module) as w:
+        with support.catch_warning(module=self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("ignore", category=UserWarning)
             self.module.warn("FilterTests.test_ignore", UserWarning)
-            self.assert_(not w.message)
+            self.assertEquals(len(w), 0)
 
     def test_always(self):
-        with support.catch_warning(self.module) as w:
+        with support.catch_warning(module=self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
             message = "FilterTests.test_always"
             self.module.warn(message, UserWarning)
             self.assert_(message, w.message)
-            w.message = None  # Reset.
             self.module.warn(message, UserWarning)
             self.assert_(w.message, message)
 
@@ -107,7 +106,7 @@ class FilterTests(object):
                     self.assertEquals(w.message, message)
                     w.reset()
                 elif x == 1:
-                    self.assert_(not w.message, "unexpected warning: " + str(w))
+                    self.assert_(not len(w), "unexpected warning: " + str(w))
                 else:
                     raise ValueError("loop variant unhandled")
 
@@ -120,7 +119,7 @@ class FilterTests(object):
             self.assertEquals(w.message, message)
             w.reset()
             self.module.warn(message, UserWarning)
-            self.assert_(not w.message, "unexpected message: " + str(w))
+            self.assert_(not len(w), "unexpected message: " + str(w))
 
     def test_once(self):
         with support.catch_warning(self.module) as w:
@@ -133,10 +132,10 @@ class FilterTests(object):
             w.reset()
             self.module.warn_explicit(message, UserWarning, "test_warnings.py",
                                     13)
-            self.assert_(not w.message)
+            self.assertEquals(len(w), 0)
             self.module.warn_explicit(message, UserWarning, "test_warnings2.py",
                                     42)
-            self.assert_(not w.message)
+            self.assertEquals(len(w), 0)
 
     def test_inheritance(self):
         with support.catch_warning(self.module) as w:
@@ -156,7 +155,7 @@ class FilterTests(object):
                 self.module.warn("FilterTests.test_ordering", UserWarning)
             except UserWarning:
                 self.fail("order handling for actions failed")
-            self.assert_(not w.message)
+            self.assertEquals(len(w), 0)
 
     def test_filterwarnings(self):
         # Test filterwarnings().
@@ -317,7 +316,6 @@ class WarnTests(unittest.TestCase):
                             None, Warning, None, 1, registry=42)
 
 
-
 class CWarnTests(BaseTest, WarnTests):
     module = c_warnings
 
@@ -377,7 +375,7 @@ class _WarningsTests(BaseTest):
                 self.failUnlessEqual(w.message, message)
                 w.reset()
                 self.module.warn_explicit(message, UserWarning, "file", 42)
-                self.assert_(not w.message)
+                self.assertEquals(len(w), 0)
                 # Test the resetting of onceregistry.
                 self.module.onceregistry = {}
                 __warningregistry__ = {}
@@ -388,7 +386,7 @@ class _WarningsTests(BaseTest):
                 del self.module.onceregistry
                 __warningregistry__ = {}
                 self.module.warn_explicit(message, UserWarning, "file", 42)
-                self.failUnless(not w.message)
+                self.assertEquals(len(w), 0)
         finally:
             self.module.onceregistry = original_registry
 
@@ -487,45 +485,45 @@ class CWarningsDisplayTests(BaseTest, WarningsDisplayTests):
 class PyWarningsDisplayTests(BaseTest, WarningsDisplayTests):
     module = py_warnings
 
-class WarningsSupportTests(object):
-    """Test the warning tools from test support module"""
+class CatchWarningTests(BaseTest):
 
-    def test_catch_warning_restore(self):
+    """Test catch_warnings()."""
+
+    def test_catch_warnings_restore(self):
         wmod = self.module
         orig_filters = wmod.filters
         orig_showwarning = wmod.showwarning
-        with support.catch_warning(wmod):
+        with support.catch_warning(module=wmod):
             wmod.filters = wmod.showwarning = object()
         self.assert_(wmod.filters is orig_filters)
         self.assert_(wmod.showwarning is orig_showwarning)
-        with support.catch_warning(wmod, record=False):
+        with support.catch_warning(module=wmod, record=False):
             wmod.filters = wmod.showwarning = object()
         self.assert_(wmod.filters is orig_filters)
         self.assert_(wmod.showwarning is orig_showwarning)
 
-    def test_catch_warning_recording(self):
+    def test_catch_warnings_recording(self):
         wmod = self.module
-        with support.catch_warning(wmod) as w:
-            self.assertEqual(w.warnings, [])
+        with support.catch_warning(module=wmod) as w:
+            self.assertEqual(w, [])
             wmod.simplefilter("always")
             wmod.warn("foo")
             self.assertEqual(str(w.message), "foo")
             wmod.warn("bar")
             self.assertEqual(str(w.message), "bar")
-            self.assertEqual(str(w.warnings[0].message), "foo")
-            self.assertEqual(str(w.warnings[1].message), "bar")
+            self.assertEqual(str(w[0].message), "foo")
+            self.assertEqual(str(w[1].message), "bar")
             w.reset()
-            self.assertEqual(w.warnings, [])
+            self.assertEqual(w, [])
         orig_showwarning = wmod.showwarning
-        with support.catch_warning(wmod, record=False) as w:
+        with support.catch_warning(module=wmod, record=False) as w:
             self.assert_(w is None)
             self.assert_(wmod.showwarning is orig_showwarning)
 
-
-class CWarningsSupportTests(BaseTest, WarningsSupportTests):
+class CCatchWarningTests(CatchWarningTests):
     module = c_warnings
 
-class PyWarningsSupportTests(BaseTest, WarningsSupportTests):
+class PyCatchWarningTests(CatchWarningTests):
     module = py_warnings
 
 
@@ -539,7 +537,7 @@ def test_main():
                                 CWCmdLineTests, PyWCmdLineTests,
                                 _WarningsTests,
                                 CWarningsDisplayTests, PyWarningsDisplayTests,
-                                CWarningsSupportTests, PyWarningsSupportTests,
+                                CCatchWarningTests, PyCatchWarningTests,
                              )
 
 
