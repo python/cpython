@@ -42,7 +42,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -56,7 +57,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
-				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -104,7 +104,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -118,7 +119,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
-				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -166,7 +166,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -180,7 +181,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
-				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -229,7 +229,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -243,7 +244,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
-				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -291,7 +291,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -304,7 +305,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
+				OutputFile="$(OutDir)\$(ProjectName).dll"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -353,7 +354,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -366,7 +368,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -414,7 +415,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -427,7 +429,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
+				OutputFile="$(OutDir)\$(ProjectName).dll"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -476,7 +478,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-source-3.3.4"
+				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -489,7 +492,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="..\..\..\sqlite-source-3.3.4\sqlite3.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -521,51 +523,11 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\btree.h"
+				RelativePath="..\..\..\sqlite-3.5.9\sqlite3.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\hash.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\keywordhash.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\opcodes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\os.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\os_common.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\pager.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\parse.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\sqlite3.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\sqliteInt.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\vdbe.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\vdbeInt.h"
+				RelativePath="..\..\..\sqlite-3.5.9\sqlite3ext.h"
 				>
 			</File>
 		</Filter>
@@ -573,167 +535,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\alter.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\analyze.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\attach.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\auth.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\btree.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\build.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\callback.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\complete.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\date.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\delete.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\expr.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\func.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\hash.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\insert.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\legacy.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\main.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\opcodes.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\os.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\os_unix.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\os_win.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\pager.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\parse.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\pragma.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\prepare.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\printf.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\random.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\select.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\shell.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\table.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\tokenize.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\trigger.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\update.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\utf.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\util.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\vacuum.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\vdbe.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\vdbeapi.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\vdbeaux.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\vdbefifo.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\vdbemem.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\sqlite-source-3.3.4\where.c"
+				RelativePath="..\..\..\sqlite-3.5.9\sqlite3.c"
 				>
 			</File>
 		</Filter>
