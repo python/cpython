@@ -72,6 +72,9 @@ Library
 - Issue #3703: _fileio.FileIO gave unhelpful error message when trying to open a
   directory.
 
+- Issue #3708: os.urandom no longer goes into an infinite loop when passed a
+  non-integer floating point number.
+
 Extension Modules
 -----------------
 
