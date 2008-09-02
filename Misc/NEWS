@@ -60,6 +60,9 @@ C API
 Library
 -------
 
+- Issue 3602: As part of the merge of r66135, make the parameters on
+  warnings.catch_warnings() keyword-only. Also remove a DeprecationWarning.
+
 - The deprecation warnings for the camelCase threading API names were removed.
 
 Extension Modules
