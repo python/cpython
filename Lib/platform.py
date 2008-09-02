@@ -969,7 +969,7 @@ def _syscmd_file(target,default=''):
         return default
     target = _follow_symlinks(target)
     try:
-        f = os.popen('file %s 2> /dev/null' % target)
+        f = os.popen('file "%s" 2> /dev/null' % target)
     except (AttributeError,os.error):
         return default
     output = string.strip(f.read())
