@@ -159,12 +159,12 @@ class ABCMeta(type):
         # Check if it's a subclass of a registered class (recursive)
         for rcls in cls._abc_registry:
             if issubclass(subclass, rcls):
-                cls._abc_registry.add(subclass)
+                cls._abc_cache.add(subclass)
                 return True
         # Check if it's a subclass of a subclass (recursive)
         for scls in cls.__subclasses__():
             if issubclass(subclass, scls):
-                cls._abc_registry.add(subclass)
+                cls._abc_cache.add(subclass)
                 return True
         # No dice; update negative cache
         cls._abc_negative_cache.add(subclass)
