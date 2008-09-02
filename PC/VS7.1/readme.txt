@@ -58,8 +58,8 @@ winsound
 
 The following subprojects will generally NOT build out of the box.  They
 wrap code Python doesn't control, and you'll need to download the base
-packages first and unpack them into siblings of PCbuilds's parent
-directory; for example, if your PCbuild is  .......\dist\src\PCbuild\,
+packages first and unpack them into siblings of PC's parent
+directory; for example, if this directory is ....\dist\trunk\PC\VS7.1,
 unpack into new subdirectories of dist\.
 
 _tkinter
@@ -126,7 +126,7 @@ bz2
 
     A custom pre-link step in the bz2 project settings should manage to
     build bzip2-1.0.3\libbz2.lib by magic before bz2.pyd (or bz2_d.pyd) is
-    linked in PCbuild\.
+    linked in VS7.1\.
     However, the bz2 project is not smart enough to remove anything under
     bzip2-1.0.3\ when you do a clean, so if you want to rebuild bzip2.lib
     you need to clean up bzip2-1.0.3\ by hand.
@@ -222,7 +222,7 @@ _sqlite3
     svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
     
     To use the extension module in a Python build tree, copy sqlite3.dll into
-    the PCbuild folder.
+    the VS7.1 folder.
 
 _ssl
     Python wrapper for the secure sockets library.
@@ -239,7 +239,7 @@ _ssl
         http://www.activestate.com/Products/ActivePerl/
     as this is used by the OpenSSL build process.  Complain to them <wink>.
 
-    The MSVC project simply invokes PCBuild/build_ssl.py to perform
+    The MSVC project simply invokes build_ssl.py to perform
     the build.  This Python script locates and builds your OpenSSL
     installation, then invokes a simple makefile to build the final .pyd.
 
@@ -283,11 +283,11 @@ available software.
 Note that Microsoft have withdrawn the free MS Toolkit Compiler, so this can
 no longer be considered a supported option. The instructions are still
 correct, but you need to already have a copy of the compiler in order to use
-them. Microsoft now supply Visual C++ 2005 Express Edition for free, but this
+them. Microsoft now supply Visual C++ 2008 Express Edition for free, but this
 is NOT compatible with Visual C++ 7.1 (it uses a different C runtime), and so
 cannot be used to build a version of Python compatible with the standard
-python.org build. If you are interested in using Visual C++ 2005 Express
-Edition, however, you should look at the PCBuild8 directory.
+python.org build. If you are interested in using Visual C++ 2008 Express
+Edition, however, you should look at the PCBuild directory.
 
 Requirements
 
@@ -358,7 +358,7 @@ Setting up the environment
 
         nant -buildfile:python.build all
 
-    from within the PCBuild directory.
+    from within the VS7.1 directory.
 
 Extension modules
 
