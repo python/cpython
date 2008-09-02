@@ -1224,7 +1224,7 @@ do it where it's absolutely necessary.
 You can write your own ABCs by using ``abc.ABCMeta`` as the
 metaclass in a class definition::
 
-  from abc import ABCMeta
+  from abc import ABCMeta, abstractmethod
 
   class Drawable():
       __metaclass__ = ABCMeta
@@ -1256,14 +1256,20 @@ exception for classes that don't define the method.
 Note that the exception is only raised when you actually
 try to create an instance of a subclass lacking the method::
 
-    >>> s=Square()
+    >>> class Circle(Drawable):
+    ...     pass
+    ...
+    >>> c=Circle()
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: Can't instantiate abstract class Square with abstract methods draw
+    TypeError: Can't instantiate abstract class Circle with abstract methods draw
     >>>
 
 Abstract data attributes can be declared using the
 ``@abstractproperty`` decorator::
+
+    from abc import abstractproperty
+    ...
 
     @abstractproperty
     def readonly(self):
@@ -3206,5 +3212,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article:
-Georg Brandl, Nick Coghlan, Jim Jewett, Antoine Pitrou.
+Georg Brandl, Steve Brown, Nick Coghlan, Jim Jewett, Antoine Pitrou.
 
