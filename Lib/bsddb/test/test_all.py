@@ -33,6 +33,8 @@ if sys.version_info[0] >= 3 :
             v = getattr(self._dbcursor, "next")()
             return self._fix(v)
 
+        next = __next__
+
         def previous(self) :
             v = self._dbcursor.previous()
             return self._fix(v)
