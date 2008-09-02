@@ -56,6 +56,11 @@ of which this module provides three different variants:
       Contains a tuple of the form ``(host, port)`` referring to the client's
       address.
 
+   .. attribute:: server
+
+      Contains the server instance.
+
+
    .. attribute:: command
 
       Contains the command (request type). For example, ``'GET'``.
