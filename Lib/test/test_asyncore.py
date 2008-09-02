@@ -390,6 +390,7 @@ if hasattr(asyncore, 'file_wrapper'):
         def test_recv(self):
             fd = os.open(TESTFN, os.O_RDONLY)
             w = asyncore.file_wrapper(fd)
+            os.close(fd)
 
             self.assertNotEqual(w.fd, fd)
             self.assertNotEqual(w.fileno(), fd)
@@ -403,6 +404,7 @@ if hasattr(asyncore, 'file_wrapper'):
             d2 = "I want to buy some cheese."
             fd = os.open(TESTFN, os.O_WRONLY | os.O_APPEND)
             w = asyncore.file_wrapper(fd)
+            os.close(fd)
 
             w.write(d1)
             w.send(d2)
