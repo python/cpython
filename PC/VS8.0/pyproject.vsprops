@@ -74,11 +74,11 @@
 	/>
 	<UserMacro
 		Name="sqlite3Dir"
-		Value="$(externalsDir)\sqlite-source-3.3.4"
+		Value="$(externalsDir)\sqlite-3.5.9"
 	/>
 	<UserMacro
 		Name="bz2Dir"
-		Value="$(externalsDir)\bzip2-1.0.3"
+		Value="$(externalsDir)\bzip2-1.0.5"
 	/>
 	<UserMacro
 		Name="opensslDir"
@@ -94,18 +94,18 @@
 	/>
 	<UserMacro
 		Name="tcltkLib"
-		Value="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib"
+		Value="$(tcltkDir)\lib\tcl85.lib $(tcltkDir)\lib\tk85.lib"
 	/>
 	<UserMacro
 		Name="tcltkLibDebug"
-		Value="$(tcltkDir)\lib\tcl84g.lib $(tcltkDir)\lib\tk84g.lib"
+		Value="$(tcltkDir)\lib\tcl85g.lib $(tcltkDir)\lib\tk85g.lib"
 	/>
 	<UserMacro
 		Name="tcltk64Lib"
-		Value="$(tcltk64Dir)\lib\tcl84.lib $(tcltk64Dir)\lib\tk84.lib"
+		Value="$(tcltk64Dir)\lib\tcl85.lib $(tcltk64Dir)\lib\tk85.lib"
 	/>
 	<UserMacro
 		Name="tcltk64LibDebug"
-		Value="$(tcltk64Dir)\lib\tcl84g.lib $(tcltk64Dir)\lib\tk84g.lib"
+		Value="$(tcltk64Dir)\lib\tcl85g.lib $(tcltk64Dir)\lib\tk85g.lib"
 	/>
 </VisualStudioPropertySheet>
