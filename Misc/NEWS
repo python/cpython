@@ -81,6 +81,10 @@ Library
 Extension Modules
 -----------------
 
+- Issue #2975: When compiling several extension modules with Visual Studio 2008
+  from the same python interpreter, some environment variables would grow
+  without limit.
+
 - Issue #3643: Added a few more checks to _testcapi to prevent segfaults by
   exploitation of poor argument checking.
 
