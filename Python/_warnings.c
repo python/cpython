@@ -258,6 +258,8 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
     /* Print "  source_line\n" */
     if (sourceline) {
         char *source_line_str = _PyUnicode_AsString(sourceline);
+	if (source_line_str == NULL)
+		return;
         while (*source_line_str == ' ' || *source_line_str == '\t' ||
                 *source_line_str == '\014')
             source_line_str++;
@@ -266,8 +268,9 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
         PyFile_WriteString("\n", f_stderr);
     }
     else
-        _Py_DisplaySourceLine(f_stderr, _PyUnicode_AsString(filename),
-                              lineno, 2);
+        if (_Py_DisplaySourceLine(f_stderr, _PyUnicode_AsString(filename),
+                              lineno, 2) < 0)
+		return;
     PyErr_Clear();
 }
 
@@ -366,8 +369,11 @@ warn_explicit(PyObject *category, PyObject *message,
             PyObject *to_str = PyObject_Str(item);
             const char *err_str = "???";
 
-            if (to_str != NULL)
+            if (to_str != NULL) {
                 err_str = _PyUnicode_AsString(to_str);
+		if (err_str == NULL)
+			goto cleanup;
+	    }
             PyErr_Format(PyExc_RuntimeError,
                         "Unrecognized action (%s) in warnings.filters:\n %s",
                         action, err_str);
@@ -498,7 +504,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         const char *module_str = _PyUnicode_AsString(*module);
-        if (module_str && strcmp(module_str, "__main__") == 0) {
+	if (module_str == NULL)
+		goto handle_error;
+        if (strcmp(module_str, "__main__") == 0) {
             PyObject *argv = PySys_GetObject("argv");
             if (argv != NULL && PyList_Size(argv) > 0) {
                 int is_true;
