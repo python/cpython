@@ -362,6 +362,9 @@
 			RelativePath="..\..\Modules\cjkcodecs\_codecs_tw.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\_bytesio.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\_codecsmodule.c">
 		</File>
 		<File
@@ -380,7 +383,7 @@
 			RelativePath="..\..\Modules\_hotshot.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\json.c">
+			RelativePath="..\..\Modules\_json.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_localemodule.c">
