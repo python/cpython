@@ -22,7 +22,7 @@ by Apache's log4j system.
 Should work under Python versions >= 1.5.2, except that source line
 information is not available unless 'sys._getframe()' is.
 
-Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2008 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -101,6 +101,8 @@ def _resolve(name):
             found = getattr(found, n)
     return found
 
+def _strip_spaces(alist):
+    return map(lambda x: string.strip(x), alist)
 
 def _create_formatters(cp):
     """Create and return formatters"""
@@ -108,9 +110,10 @@ def _create_formatters(cp):
     if not len(flist):
         return {}
     flist = string.split(flist, ",")
+    flist = _strip_spaces(flist)
     formatters = {}
     for form in flist:
-        sectname = "formatter_%s" % string.strip(form)
+        sectname = "formatter_%s" % form
         opts = cp.options(sectname)
         if "format" in opts:
             fs = cp.get(sectname, "format", 1)
@@ -136,10 +139,11 @@ def _install_handlers(cp, formatters):
     if not len(hlist):
         return {}
     hlist = string.split(hlist, ",")
+    hlist = _strip_spaces(hlist)
     handlers = {}
     fixups = [] #for inter-handler references
     for hand in hlist:
-        sectname = "handler_%s" % string.strip(hand)
+        sectname = "handler_%s" % hand
         klass = cp.get(sectname, "class")
         opts = cp.options(sectname)
         if "formatter" in opts:
@@ -192,8 +196,9 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
     hlist = cp.get(sectname, "handlers")
     if len(hlist):
         hlist = string.split(hlist, ",")
+        hlist = _strip_spaces(hlist)
         for hand in hlist:
-            log.addHandler(handlers[string.strip(hand)])
+            log.addHandler(handlers[hand])
 
     #and now the others...
     #we don't want to lose the existing loggers,
@@ -243,8 +248,9 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
         hlist = cp.get(sectname, "handlers")
         if len(hlist):
             hlist = string.split(hlist, ",")
+            hlist = _strip_spaces(hlist)
             for hand in hlist:
-                logger.addHandler(handlers[string.strip(hand)])
+                logger.addHandler(handlers[hand])
 
     #Disable any old loggers. There's no point deleting
     #them as other threads may continue to hold references
