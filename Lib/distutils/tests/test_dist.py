@@ -1,3 +1,5 @@
+# -*- coding: latin-1 -*-
+
 """Tests for distutils.dist."""
 
 import distutils.cmd
@@ -95,6 +97,39 @@ class DistributionTestCase(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
+    def test_write_pkg_file(self):
+        # Check DistributionMetadata handling of Unicode fields
+        my_file = os.path.join(os.path.dirname(__file__), 'f')
+        klass = distutils.dist.Distribution
+
+        dist = klass(attrs={'author': u'Mister Café',
+                            'name': 'my.package',
+                            'maintainer': u'Café Junior',
+                            'description': u'Café torréfié',
+                            'long_description': u'Héhéhé'})
+
+
+        # let's make sure the file can be written
+        # with Unicode fields. they are encoded with
+        # PKG_INFO_ENCODING
+        try:
+            dist.metadata.write_pkg_file(open(my_file, 'w'))
+        finally:
+            if os.path.exists(my_file):
+                os.remove(my_file)
+
+        # regular ascii is of course always usable
+        dist = klass(attrs={'author': 'Mister Cafe',
+                            'name': 'my.package',
+                            'maintainer': 'Cafe Junior',
+                            'description': 'Cafe torrefie',
+                            'long_description': 'Hehehe'})
+
+        try:
+            dist.metadata.write_pkg_file(open(my_file, 'w'))
+        finally:
+            if os.path.exists(my_file):
+                os.remove(my_file)
 
 class MetadataTestCase(unittest.TestCase):
 
