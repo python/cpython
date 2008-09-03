@@ -23,6 +23,9 @@ from distutils.util import check_environ, strtobool, rfc822_escape
 from distutils import log
 from distutils.debug import DEBUG
 
+# Encoding used for the PKG-INFO files
+PKG_INFO_ENCODING = 'utf-8'
+
 # Regex to define acceptable Distutils command names.  This is not *quite*
 # the same as a Python NAME -- I don't allow leading underscores.  The fact
 # that they're very similar is no coincidence; the default naming scheme is
@@ -1084,23 +1087,23 @@ class DistributionMetadata:
         if self.provides or self.requires or self.obsoletes:
             version = '1.1'
 
-        file.write('Metadata-Version: %s\n' % version)
-        file.write('Name: %s\n' % self.get_name() )
-        file.write('Version: %s\n' % self.get_version() )
-        file.write('Summary: %s\n' % self.get_description() )
-        file.write('Home-page: %s\n' % self.get_url() )
-        file.write('Author: %s\n' % self.get_contact() )
-        file.write('Author-email: %s\n' % self.get_contact_email() )
-        file.write('License: %s\n' % self.get_license() )
+        self._write_field(file, 'Metadata-Version', version)
+        self._write_field(file, 'Name', self.get_name())
+        self._write_field(file, 'Version', self.get_version())
+        self._write_field(file, 'Summary', self.get_description())
+        self._write_field(file, 'Home-page', self.get_url())
+        self._write_field(file, 'Author', self.get_contact())
+        self._write_field(file, 'Author-email', self.get_contact_email())
+        self._write_field(file, 'License', self.get_license())
         if self.download_url:
-            file.write('Download-URL: %s\n' % self.download_url)
+            self._write_field(file, 'Download-URL', self.download_url)
 
-        long_desc = rfc822_escape( self.get_long_description() )
-        file.write('Description: %s\n' % long_desc)
+        long_desc = rfc822_escape( self.get_long_description())
+        self._write_field(file, 'Description', long_desc)
 
         keywords = string.join( self.get_keywords(), ',')
         if keywords:
-            file.write('Keywords: %s\n' % keywords )
+            self._write_field(file, 'Keywords', keywords)
 
         self._write_list(file, 'Platform', self.get_platforms())
         self._write_list(file, 'Classifier', self.get_classifiers())
@@ -1110,9 +1113,18 @@ class DistributionMetadata:
         self._write_list(file, 'Provides', self.get_provides())
         self._write_list(file, 'Obsoletes', self.get_obsoletes())
 
+    def _write_field(self, file, name, value):
+
+        if isinstance(value, unicode):
+            value = value.encode(PKG_INFO_ENCODING)
+        else:
+            value = str(value)
+        file.write('%s: %s\n' % (name, value))
+
     def _write_list (self, file, name, values):
+
         for value in values:
-            file.write('%s: %s\n' % (name, value))
+            self._write_field(file, name, value)
 
     # -- Metadata query methods ----------------------------------------
 

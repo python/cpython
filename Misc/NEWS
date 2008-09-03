@@ -56,7 +56,10 @@ C-API
 Library
 -------
 
-- Issue #3726: Allowed spaces in separators in logging configuration files.
+- Issue #2562: Fix distutils PKG-INFO writing logic to allow having
+  non-ascii characters and Unicode in setup.py meta-data.
+
+- Issue #3726: Allow spaces in separators in logging configuration files.
 
 - Issue #3719: platform.architecture() fails if there are spaces in the
   path to the Python binary.
