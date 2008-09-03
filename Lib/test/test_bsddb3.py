@@ -11,9 +11,6 @@ from test.support import requires, verbose, run_unittest, unlink, rmtree
 
 # When running as a script instead of within the regrtest framework, skip the
 # requires test, since it's obvious we want to run them.
-if __name__ != '__main__':
-    requires('bsddb')
-
 verbose = False
 if 'verbose' in sys.argv:
     verbose = True
@@ -52,6 +49,10 @@ class TimingCheck(unittest.TestCase):
 def test_main():
     from bsddb import db
     from bsddb.test import test_all
+
+    # This must be improved...
+    test_all.do_proxy_db_py3k(True)
+
     test_all.set_test_path_prefix(os.path.join(tempfile.gettempdir(),
                                  'z-test_bsddb3-%s' %
                                  os.getpid()))
@@ -72,6 +73,9 @@ def test_main():
             test_all.remove_test_path_directory()
         except:
             pass
+
+        # This must be improved...
+        test_all.do_proxy_db_py3k(False)
 
 
 if __name__ == '__main__':
