@@ -67,6 +67,10 @@ if sys.version_info[0] >= 3 :
             v = self._dbcursor.next_dup()
             return self._fix(v)
 
+        def next_nodup(self) :
+            v = self._dbcursor.next_nodup()
+            return self._fix(v)
+
         def put(self, key, value, flags=0, dlen=-1, doff=-1) :
             if isinstance(key, str) :
                 key = bytes(key, charset)
