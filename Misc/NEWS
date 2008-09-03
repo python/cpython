@@ -71,6 +71,9 @@ Library
 
 - The deprecation warnings for the camelCase threading API names were removed.
 
+- Issue #3110: multiprocessing fails to compiel on solaris 10 due to missing 
+  SEM_VALUE_MAX.
+
 Extension Modules
 -----------------
 
