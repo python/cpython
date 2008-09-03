@@ -56,6 +56,10 @@ C-API
 Library
 -------
 
+- Issue 600362: Relocated parse_qs() and parse_qsl(), from the cgi module
+  to the urlparse one.  Added a PendingDeprecationWarning in the old
+  module, it will be deprecated in the future.
+
 - Issue #2562: Fix distutils PKG-INFO writing logic to allow having
   non-ascii characters and Unicode in setup.py meta-data.
 

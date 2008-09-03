@@ -8,6 +8,23 @@ RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
 RFC3986_BASE = "http://a/b/c/d;p?q"
 
+# A list of test cases.  Each test case is a a two-tuple that contains
+# a string with the query and a dictionary with the expected result.
+
+parse_qsl_test_cases = [
+    ("", []),
+    ("&", []),
+    ("&&", []),
+    ("=", [('', '')]),
+    ("=a", [('', 'a')]),
+    ("a", [('a', '')]),
+    ("a=", [('a', '')]),
+    ("a=", [('a', '')]),
+    ("&a=b", [('a', 'b')]),
+    ("a=a+b&b=b+c", [('a', 'a b'), ('b', 'b c')]),
+    ("a=1&a=2", [('a', '1'), ('a', '2')]),
+]
+
 class UrlParseTestCase(unittest.TestCase):
 
     def checkRoundtrips(self, url, parsed, split):
@@ -60,6 +77,11 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(result3.password, result.password)
         self.assertEqual(result3.hostname, result.hostname)
         self.assertEqual(result3.port,     result.port)
+
+    def test_qsl(self):
+        for orig, expect in parse_qsl_test_cases:
+            result = urlparse.parse_qsl(orig, keep_blank_values=True)
+            self.assertEqual(result, expect, "Error parsing %s" % repr(orig))
 
     def test_roundtrips(self):
         testcases = [
