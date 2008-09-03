@@ -100,6 +100,11 @@ Extension Modules
 - Issue #3643: Added a few more checks to _testcapi to prevent segfaults by
   exploitation of poor argument checking.
 
+Tests
+-----
+
+- Issue 3768: Move test_py3kwarn over to the new API for catch_warnings().
+
 
 What's New in Python 2.6 beta 3?
 ================================

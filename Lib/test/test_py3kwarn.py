@@ -220,28 +220,28 @@ class TestPy3KWarnings(unittest.TestCase):
             # With object as the base class
             class WarnOnlyCmp(object):
                 def __cmp__(self, other): pass
-            self.assertEqual(len(w.warnings), 1)
+            self.assertEqual(len(w), 1)
             self.assertWarning(None, w,
                  "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
             w.reset()
             class WarnOnlyEq(object):
                 def __eq__(self, other): pass
-            self.assertEqual(len(w.warnings), 1)
+            self.assertEqual(len(w), 1)
             self.assertWarning(None, w,
                  "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
             w.reset()
             class WarnCmpAndEq(object):
                 def __cmp__(self, other): pass
                 def __eq__(self, other): pass
-            self.assertEqual(len(w.warnings), 2)
-            self.assertWarning(None, w.warnings[-2],
+            self.assertEqual(len(w), 2)
+            self.assertWarning(None, w[-2],
                  "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
             self.assertWarning(None, w,
                  "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
             w.reset()
             class NoWarningOnlyHash(object):
                 def __hash__(self): pass
-            self.assertEqual(len(w.warnings), 0)
+            self.assertEqual(len(w), 0)
             # With an intermediate class in the heirarchy
             class DefinesAllThree(object):
                 def __cmp__(self, other): pass
@@ -249,28 +249,28 @@ class TestPy3KWarnings(unittest.TestCase):
                 def __hash__(self): pass
             class WarnOnlyCmp(DefinesAllThree):
                 def __cmp__(self, other): pass
-            self.assertEqual(len(w.warnings), 1)
+            self.assertEqual(len(w), 1)
             self.assertWarning(None, w,
                  "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
             w.reset()
             class WarnOnlyEq(DefinesAllThree):
                 def __eq__(self, other): pass
-            self.assertEqual(len(w.warnings), 1)
+            self.assertEqual(len(w), 1)
             self.assertWarning(None, w,
                  "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
             w.reset()
             class WarnCmpAndEq(DefinesAllThree):
                 def __cmp__(self, other): pass
                 def __eq__(self, other): pass
-            self.assertEqual(len(w.warnings), 2)
-            self.assertWarning(None, w.warnings[-2],
+            self.assertEqual(len(w), 2)
+            self.assertWarning(None, w[-2],
                  "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
             self.assertWarning(None, w,
                  "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
             w.reset()
             class NoWarningOnlyHash(DefinesAllThree):
                 def __hash__(self): pass
-            self.assertEqual(len(w.warnings), 0)
+            self.assertEqual(len(w), 0)
 
 
 class TestStdlibRemovals(unittest.TestCase):
