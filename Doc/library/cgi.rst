@@ -257,49 +257,18 @@ algorithms implemented in this module in other circumstances.
 
    Parse a query in the environment or from a file (the file defaults to
    ``sys.stdin``).  The *keep_blank_values* and *strict_parsing* parameters are
-   passed to :func:`parse_qs` unchanged.
+   passed to :func:`urllib.parse.parse_qs` unchanged.
 
 
 .. function:: parse_qs(qs[, keep_blank_values[, strict_parsing]])
 
-   Parse a query string given as a string argument (data of type
-   :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a
-   dictionary.  The dictionary keys are the unique query variable names and the
-   values are lists of values for each name.
-
-   The optional argument *keep_blank_values* is a flag indicating whether blank
-   values in URL encoded queries should be treated as blank strings.   A true value
-   indicates that blanks should be retained as  blank strings.  The default false
-   value indicates that blank values are to be ignored and treated as if they were
-   not included.
-
-   The optional argument *strict_parsing* is a flag indicating what to do with
-   parsing errors.  If false (the default), errors are silently ignored.  If true,
-   errors raise a :exc:`ValueError` exception.
-
-   Use the :func:`urllib.parse.urlencode` function to convert such dictionaries into
-   query strings.
-
+   This function is deprecated in this module. Use :func:`urllib.parse.parse_qs`
+   instead. It is maintained here only for backward compatiblity.
 
 .. function:: parse_qsl(qs[, keep_blank_values[, strict_parsing]])
 
-   Parse a query string given as a string argument (data of type
-   :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a list of
-   name, value pairs.
-
-   The optional argument *keep_blank_values* is a flag indicating whether blank
-   values in URL encoded queries should be treated as blank strings.   A true value
-   indicates that blanks should be retained as  blank strings.  The default false
-   value indicates that blank values are to be ignored and treated as if they were
-   not included.
-
-   The optional argument *strict_parsing* is a flag indicating what to do with
-   parsing errors.  If false (the default), errors are silently ignored.  If true,
-   errors raise a :exc:`ValueError` exception.
-
-   Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
-   query strings.
-
+   This function is deprecated in this module. Use :func:`urllib.parse.parse_qs`
+   instead. It is maintained here only for backward compatiblity.
 
 .. function:: parse_multipart(fp, pdict)
 
@@ -307,7 +276,7 @@ algorithms implemented in this module in other circumstances.
    Arguments are *fp* for the input file and *pdict* for a dictionary containing
    other parameters in the :mailheader:`Content-Type` header.
 
-   Returns a dictionary just like :func:`parse_qs` keys are the field names, each
+   Returns a dictionary just like :func:`urllib.parse.parse_qs` keys are the field names, each
    value is a list of values for that field.  This is easy to use but not much good
    if you are expecting megabytes to be uploaded --- in that case, use the
    :class:`FieldStorage` class instead which is much more flexible.
