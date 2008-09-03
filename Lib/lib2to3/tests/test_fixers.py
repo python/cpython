@@ -21,19 +21,12 @@ from .. import refactor
 from .. import fixer_util
 
 
-class Options:
-    def __init__(self, **kwargs):
-        for k, v in list(kwargs.items()):
-            setattr(self, k, v)
-
-        self.verbose = False
-
 class FixerTestCase(support.TestCase):
     def setUp(self, fix_list=None):
-        if not fix_list:
+        if fix_list is None:
             fix_list = [self.fixer]
-        options = Options(fix=fix_list, print_function=False)
-        self.refactor = refactor.RefactoringTool("lib2to3/fixes", options)
+        options = {"print_function" : False}
+        self.refactor = support.get_refactorer(fix_list, options)
         self.fixer_log = []
         self.filename = "<string>"
 
@@ -70,10 +63,10 @@ class FixerTestCase(support.TestCase):
             self.failUnlessEqual(self.fixer_log, [])
 
     def assert_runs_after(self, *names):
-        fix = [self.fixer]
-        fix.extend(names)
-        options = Options(fix=fix, print_function=False)
-        r = refactor.RefactoringTool("lib2to3/fixes", options)
+        fixes = [self.fixer]
+        fixes.extend(names)
+        options = {"print_function" : False}
+        r = support.get_refactorer(fixes, options)
         (pre, post) = r.get_fixers()
         n = "fix_" + self.fixer
         if post and post[-1].__class__.__module__.endswith(n):

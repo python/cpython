@@ -19,17 +19,11 @@ import unittest
 from .. import pytree
 from .. import refactor
 
-class Options:
-    def __init__(self, **kwargs):
-        for k, v in list(kwargs.items()):
-            setattr(self, k, v)
-        self.verbose = False
 
 class Test_all(support.TestCase):
     def setUp(self):
-        options = Options(fix=["all", "idioms", "ws_comma", "buffer"],
-                          print_function=False)
-        self.refactor = refactor.RefactoringTool("lib2to3/fixes", options)
+        options = {"print_function" : False}
+        self.refactor = support.get_refactorer(options=options)
 
     def test_all_project_files(self):
         for filepath in support.all_project_files():

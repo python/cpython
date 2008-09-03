@@ -5,8 +5,10 @@
 
 .. sectionauthor:: Benjamin Peterson
 
-2to3 is a Python program that reads your Python 2.x source code and applies a
-series of *fixers* to transform it into valid Python 3.x code.
+2to3 is a Python program that reads Python 2.x source code and applies a series
+of *fixers* to transform it into valid Python 3.x code.  The standard library
+contains a rich set of fixers that will handle almost all code.  It is, however,
+possible to write your own fixers.
 
 
 Using 2to3
