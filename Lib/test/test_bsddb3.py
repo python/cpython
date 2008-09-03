@@ -57,7 +57,9 @@ def test_main():
                                  os.getpid()))
     # Please leave this print in, having this show up in the buildbots
     # makes diagnosing problems a lot easier.
-    print(db.DB_VERSION_STRING, file=sys.stderr)
+    # The decode is used to workaround this:
+    # http://mail.python.org/pipermail/python-3000/2008-September/014709.html
+    print(db.DB_VERSION_STRING.decode("iso8859-1"), file=sys.stderr)
     print('Test path prefix: ', test_all.get_test_path_prefix(), file=sys.stderr)
     try:
         run_unittest(test_all.suite(module_prefix='bsddb.test.',
