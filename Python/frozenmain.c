@@ -45,7 +45,12 @@ Py_FrozenMain(int argc, char **argv)
 	oldloc = setlocale(LC_ALL, NULL);
 	setlocale(LC_ALL, "");
 	for (i = 0; i < argc; i++) {
+#ifdef HAVE_BROKEN_MBSTOWCS
+		size_t argsize = strlen(argv[i]);
+#else
 		size_t argsize = mbstowcs(NULL, argv[i], 0);
+#endif
+		size_t count;
 		if (argsize == (size_t)-1) {
 			fprintf(stderr, "Could not convert argument %d to string", i);
 			return 1;
@@ -56,7 +61,11 @@ Py_FrozenMain(int argc, char **argv)
 			fprintf(stderr, "out of memory");
 			return 1;
 		}
-		mbstowcs(argv_copy[i], argv[i], argsize+1);
+		count = mbstowcs(argv_copy[i], argv[i], argsize+1);
+		if (count == (size_t)-1) {
+			fprintf(stderr, "Could not convert argument %d to string", i);
+			return 1;
+		}
 	}
 	setlocale(LC_ALL, oldloc);
 

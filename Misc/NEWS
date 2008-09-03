@@ -12,6 +12,11 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #3696: Error parsing arguments on OpenBSD <= 4.4 and Cygwin. On
+  these systems, the mbstowcs() function is slightly buggy and must be
+  replaced with strlen() for the purpose of counting of number of wide
+  characters needed to represent the multi-byte character string.
+
 - Issue #3697: "Fatal Python error: Cannot recover from stack overflow"
   could be easily encountered under Windows in debug mode when exercising
   the recursion limit checking code, due to bogus handling of recursion

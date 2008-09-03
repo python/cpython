@@ -49,7 +49,11 @@ static PyObject *Error;
 static PyObject*
 str2uni(const char* s)
 {
+#ifdef HAVE_BROKEN_MBSTOWCS
+    size_t needed = strlen(s);
+#else
     size_t needed = mbstowcs(NULL, s, 0);
+#endif
     size_t res1;
     wchar_t smallbuf[30];
     wchar_t *dest;
@@ -67,7 +71,11 @@ str2uni(const char* s)
     }
     /* This shouldn't fail now */
     res1 = mbstowcs(dest, s, needed+1);
+#ifdef HAVE_BROKEN_MBSTOWCS
+    assert(res1 != (size_t)-1);
+#else
     assert(res1 == needed);
+#endif
     res2 = PyUnicode_FromWideChar(dest, res1);
     if (dest != smallbuf)
         PyMem_Free(dest);

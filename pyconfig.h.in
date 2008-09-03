@@ -803,6 +803,10 @@
 /* Define to 1 if you have the `wcsxfrm' function. */
 #undef HAVE_WCSXFRM
 
+/* Define if mbstowcs(NULL, "text", 0) does not return the number of 
+   wide chars that would be converted */
+#undef HAVE_BROKEN_MBSTOWCS
+
 /* Define if tzset() actually switches the local timezone in a meaningful way.
    */
 #undef HAVE_WORKING_TZSET

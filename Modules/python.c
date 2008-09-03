@@ -40,7 +40,16 @@ main(int argc, char **argv)
 	oldloc = setlocale(LC_ALL, NULL);
 	setlocale(LC_ALL, "");
 	for (i = 0; i < argc; i++) {
+#ifdef HAVE_BROKEN_MBSTOWCS
+		/* Some platforms have a broken implementation of
+		 * mbstowcs which does not count the characters that
+		 * would result from conversion.  Use an upper bound.
+		 */
+		size_t argsize = strlen(argv[i]);
+#else
 		size_t argsize = mbstowcs(NULL, argv[i], 0);
+#endif
+		size_t count;
 		if (argsize == (size_t)-1) {
 			fprintf(stderr, "Could not convert argument %d to string", i);
 			return 1;
@@ -51,7 +60,11 @@ main(int argc, char **argv)
 			fprintf(stderr, "out of memory");
 			return 1;
 		}
-		mbstowcs(argv_copy[i], argv[i], argsize+1);
+		count = mbstowcs(argv_copy[i], argv[i], argsize+1);
+		if (count == (size_t)-1) {
+			fprintf(stderr, "Could not convert argument %d to string", i);
+			return 1;
+		}
 	}
 	setlocale(LC_ALL, oldloc);
 	res = Py_Main(argc, argv_copy);

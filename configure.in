@@ -3571,6 +3571,27 @@ AC_CHECK_TYPE(socklen_t,,
 #endif
 ])
 
+AC_MSG_CHECKING(for broken mbstowcs)
+AC_TRY_RUN([
+#include<stdlib.h>
+int main() {
+    size_t len = -1;
+    const char *str = "text";
+    len = mbstowcs(NULL, str, 0);
+    return (len != 4);
+}
+],
+ac_cv_broken_mbstowcs=no,
+ac_cv_broken_mbstowcs=yes,
+ac_cv_broken_mbstowcs=no)
+AC_MSG_RESULT($ac_cv_broken_mbstowcs)
+if test "$ac_cv_broken_mbstowcs" = yes
+then
+  AC_DEFINE(HAVE_BROKEN_MBSTOWCS, 1,
+  [Define if mbstowcs(NULL, "text", 0) does not return the number of 
+   wide chars that would be converted.])
+fi
+
 AC_SUBST(THREADHEADERS)
 
 for h in `(cd $srcdir;echo Python/thread_*.h)`
