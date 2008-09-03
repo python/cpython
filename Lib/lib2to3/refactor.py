@@ -353,7 +353,7 @@ class RefactoringTool(object):
             self.log_debug("Not writing changes to %s", filename)
             return
         if write:
-            self.write_file(next_text, filename, old_text)
+            self.write_file(new_text, filename, old_text)
 
     def write_file(self, new_text, filename, old_text=None):
         """Writes a string to a file.
