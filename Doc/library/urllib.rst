@@ -242,7 +242,7 @@ Utility functions
    of the sequence. When a sequence of two-element tuples is used as the *query*
    argument, the first element of each tuple is a key and the second is a value.
    The order of parameters in the encoded string will match the order of parameter
-   tuples in the sequence. The :mod:`cgi` module provides the functions
+   tuples in the sequence. The :mod:`urlparse` module provides the functions
    :func:`parse_qs` and :func:`parse_qsl` which are used to parse query strings
    into Python data structures.
 

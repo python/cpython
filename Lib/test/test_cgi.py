@@ -55,23 +55,6 @@ def do_test(buf, method):
     except StandardError, err:
         return ComparableException(err)
 
-# A list of test cases.  Each test case is a a two-tuple that contains
-# a string with the query and a dictionary with the expected result.
-
-parse_qsl_test_cases = [
-    ("", []),
-    ("&", []),
-    ("&&", []),
-    ("=", [('', '')]),
-    ("=a", [('', 'a')]),
-    ("a", [('a', '')]),
-    ("a=", [('a', '')]),
-    ("a=", [('a', '')]),
-    ("&a=b", [('a', 'b')]),
-    ("a=a+b&b=b+c", [('a', 'a b'), ('b', 'b c')]),
-    ("a=1&a=2", [('a', '1'), ('a', '2')]),
-]
-
 parse_strict_test_cases = [
     ("", ValueError("bad query field: ''")),
     ("&", ValueError("bad query field: ''")),
@@ -142,11 +125,6 @@ def gen_result(data, environ):
     return result
 
 class CgiTests(unittest.TestCase):
-
-    def test_qsl(self):
-        for orig, expect in parse_qsl_test_cases:
-            result = cgi.parse_qsl(orig, keep_blank_values=True)
-            self.assertEqual(result, expect, "Error parsing %s" % repr(orig))
 
     def test_strict(self):
         for orig, expect in parse_strict_test_cases:
