@@ -1106,7 +1106,7 @@ DBEnv_dealloc(DBEnvObject* self)
 {
   PyObject *dummy;
 
-    if (self->db_env && !self->closed) {
+    if (self->db_env) {
       dummy=DBEnv_close_internal(self,0);
       Py_XDECREF(dummy);
     }
@@ -3981,13 +3981,15 @@ DBEnv_close_internal(DBEnvObject* self, int flags)
           dummy=DB_close_internal(self->children_dbs,0);
           Py_XDECREF(dummy);
         }
+    }
 
+    self->closed = 1;
+    if (self->db_env) {
         MYDB_BEGIN_ALLOW_THREADS;
         err = self->db_env->close(self->db_env, flags);
         MYDB_END_ALLOW_THREADS;
         /* after calling DBEnv->close, regardless of error, this DBEnv
          * may not be accessed again (Berkeley DB docs). */
-        self->closed = 1;
         self->db_env = NULL;
         RETURN_IF_ERR();
     }
@@ -6148,7 +6150,7 @@ DBSequence_open(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
     err = self->sequence->open(self->sequence, txn, &key, flags);
     MYDB_END_ALLOW_THREADS
 
-    CLEAR_DBT(key);
+    FREE_DBT(key);
     RETURN_IF_ERR();
 
     if (txn) {
