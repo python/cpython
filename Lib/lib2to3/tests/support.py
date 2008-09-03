@@ -13,6 +13,7 @@ from textwrap import dedent
 
 # Local imports
 from .. import pytree
+from .. import refactor
 from ..pgen2 import driver
 
 test_dir = os.path.dirname(__file__)
@@ -37,6 +38,21 @@ def run_all_tests(test_mod=None, tests=None):
 
 def reformat(string):
     return dedent(string) + "\n\n"
+
+def get_refactorer(fixers=None, options=None):
+    """
+    A convenience function for creating a RefactoringTool for tests.
+
+    fixers is a list of fixers for the RefactoringTool to use. By default
+    "lib2to3.fixes.*" is used. options is an optional dictionary of options to
+    be passed to the RefactoringTool.
+    """
+    if fixers is not None:
+        fixers = ["lib2to3.fixes.fix_" + fix for fix in fixers]
+    else:
+        fixers = refactor.get_fixers_from_package("lib2to3.fixes")
+    options = options or {}
+    return refactor.RefactoringTool(fixers, options, explicit=True)
 
 def all_project_files():
     for dirpath, dirnames, filenames in os.walk(proj_dir):
