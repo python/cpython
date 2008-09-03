@@ -73,11 +73,11 @@ C API
 Library
 -------
 
+- The bsddb module (and therefore the dbm.bsd module) has been removed.
+
 - Issue 600362:  Relocated parse_qs() and parse_qsl(), from the cgi module
   to the urlparse one.  Added a DeprecationWarning in the old module, it
   will be deprecated in the future.
-
-- The bsddb module has been removed.
 
 - Issue #3719: platform.architecture() fails if there are spaces in the
   path to the Python binary.
