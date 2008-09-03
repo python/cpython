@@ -73,6 +73,8 @@ C API
 Library
 -------
 
+- The bsddb module has been removed.
+
 - Issue #3719: platform.architecture() fails if there are spaces in the
   path to the Python binary.
 
