@@ -587,6 +587,48 @@ class ConfigFileTest(BaseTest):
     # config5 specifies a custom handler class to be loaded
     config5 = config1.replace('class=StreamHandler', 'class=logging.StreamHandler')
 
+    # config6 uses ', ' delimiters in the handlers and formatters sections
+    config6 = """
+    [loggers]
+    keys=root,parser
+
+    [handlers]
+    keys=hand1, hand2
+
+    [formatters]
+    keys=form1, form2
+
+    [logger_root]
+    level=WARNING
+    handlers=
+
+    [logger_parser]
+    level=DEBUG
+    handlers=hand1
+    propagate=1
+    qualname=compiler.parser
+
+    [handler_hand1]
+    class=StreamHandler
+    level=NOTSET
+    formatter=form1
+    args=(sys.stdout,)
+
+    [handler_hand2]
+    class=FileHandler
+    level=NOTSET
+    formatter=form1
+    args=('test.blah', 'a')
+
+    [formatter_form1]
+    format=%(levelname)s ++ %(message)s
+    datefmt=
+
+    [formatter_form2]
+    format=%(message)s
+    datefmt=
+    """
+
     def apply_config(self, conf):
         try:
             fn = tempfile.mktemp(".ini")
@@ -652,6 +694,9 @@ class ConfigFileTest(BaseTest):
 
     def test_config5_ok(self):
         self.test_config1_ok(config=self.config5)
+
+    def test_config6_ok(self):
+        self.test_config1_ok(config=self.config6)
 
 class LogRecordStreamHandler(StreamRequestHandler):
 
