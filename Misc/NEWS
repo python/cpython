@@ -83,6 +83,9 @@ Library
 - Issue #3708: os.urandom no longer goes into an infinite loop when passed a
   non-integer floating point number.
 
+- Issue #3110: multiprocessing fails to compiel on solaris 10 due to missing 
+  SEM_VALUE_MAX.
+
 Extension Modules
 -----------------
 
