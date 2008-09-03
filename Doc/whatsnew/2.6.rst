@@ -2523,14 +2523,14 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Dwayne Bailey; :issue:`1581073`.)
 
-* The :mod:`threading` module API is being changed in Python 3.0 to
-  use properties such as :attr:`daemon` instead of :meth:`setDaemon`
-  and :meth:`isDaemon` methods, and some methods have been renamed to
-  use underscores instead of camel-case; for example, the
-  :meth:`activeCount` method is renamed to :meth:`active_count`.  The
-  2.6 version of the module supports the same properties and renamed
-  methods, but doesn't remove the old methods.  (Carried out by
-  several people, most notably Benjamin Peterson.)
+* The :mod:`threading` module API is being changed to use properties such as
+  :attr:`daemon` instead of :meth:`setDaemon` and :meth:`isDaemon` methods, and
+  some methods have been renamed to use underscores instead of camel-case; for
+  example, the :meth:`activeCount` method is renamed to :meth:`active_count`.
+  The 2.6 version of the module supports the same properties and renamed
+  methods, but doesn't remove the old methods.  3.0 also fully supports both
+  APIs, and a date for the deprecation of the old APIs has not been set yet.
+  (Carried out by several people, most notably Benjamin Peterson.)
 
   The :mod:`threading` module's :class:`Thread` objects
   gained an :attr:`ident` property that returns the thread's
