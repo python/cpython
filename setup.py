@@ -665,6 +665,20 @@ class PyBuildExt(build_ext):
         # implementation independent wrapper for these; dbm/dumb.py provides
         # similar functionality (but slower of course) implemented in Python.
 
+        db_inc_paths = [
+            '/usr/include/db4',
+            '/usr/local/include/db4',
+            '/opt/sfw/include/db4',
+            '/usr/include/db3',
+            '/usr/local/include/db3',
+            '/opt/sfw/include/db3',
+            # Fink defaults (http://fink.sourceforge.net/)
+            '/sw/include/db4',
+            '/sw/include/db3',
+        ]
+
+        db_incs = None
+
         # The sqlite interface
         sqlite_setup_debug = False   # verbose debug prints from this script?
 
