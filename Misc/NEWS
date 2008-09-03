@@ -12,6 +12,11 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #3697: "Fatal Python error: Cannot recover from stack overflow"
+  could be easily encountered under Windows in debug mode when exercising
+  the recursion limit checking code, due to bogus handling of recursion
+  limit when USE_STACKCHEK was enabled.
+
 - Issue 3639: The _warnings module could segfault the interpreter when
   unexpected types were passed in as arguments.
 
