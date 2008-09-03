@@ -47,8 +47,8 @@ class BaseFix(object):
         """Initializer.  Subclass may override.
 
         Args:
-            options: an optparse.Values instance which can be used
-                to inspect the command line options.
+            options: an dict containing the options passed to RefactoringTool
+            that could be used to customize the fixer through the command line.
             log: a list to append warnings and other messages to.
         """
         self.options = options
