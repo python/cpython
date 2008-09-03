@@ -4,7 +4,7 @@
 
 .. XXX add trademark info for Apple, Microsoft, SourceForge.
 
-:Author: A.M. Kuchling
+:Author: A.M. Kuchling (amk at amk.ca)
 :Release: |release|
 :Date: |today|
 
@@ -203,7 +203,7 @@ The Python documentation was written using LaTeX since the project
 started around 1989.  In the 1980s and early 1990s, most documentation
 was printed out for later study, not viewed online. LaTeX was widely
 used because it provided attractive printed output while remaining
-straightforward to write once the basic rules of the markup werw
+straightforward to write once the basic rules of the markup were
 learned.
 
 Today LaTeX is still used for writing publications destined for
@@ -1224,7 +1224,7 @@ do it where it's absolutely necessary.
 You can write your own ABCs by using ``abc.ABCMeta`` as the
 metaclass in a class definition::
 
-  from abc import ABCMeta
+  from abc import ABCMeta, abstractmethod
 
   class Drawable():
       __metaclass__ = ABCMeta
@@ -1256,14 +1256,20 @@ exception for classes that don't define the method.
 Note that the exception is only raised when you actually
 try to create an instance of a subclass lacking the method::
 
-    >>> s=Square()
+    >>> class Circle(Drawable):
+    ...     pass
+    ...
+    >>> c=Circle()
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: Can't instantiate abstract class Square with abstract methods draw
+    TypeError: Can't instantiate abstract class Circle with abstract methods draw
     >>>
 
 Abstract data attributes can be declared using the
 ``@abstractproperty`` decorator::
+
+    from abc import abstractproperty
+    ...
 
     @abstractproperty
     def readonly(self):
@@ -1594,6 +1600,22 @@ Some smaller changes made to the core Python language are:
   on systems that support signed zeros (-0 and +0), the
   :func:`complex` constructor will now preserve the sign
   of the zero.  (Fixed by Mark T. Dickinson; :issue:`1507`.)
+
+* Classes that inherit a :meth:`__hash__` method from a parent class
+  can set ``__hash__ = None`` to indicate that the class isn't
+  hashable.  This will make ``hash(obj)`` raise a :exc:`TypeError`
+  and the class will not be indicated as implementing the
+  :class:`Hashable` ABC.
+
+  You should do this when you've defined a :meth:`__cmp__` or
+  :meth:`__eq__` method that compares objects by their value rather
+  than by identity.  All objects have a default hash method that uses
+  ``id(obj)`` as the hash value.  There's no tidy way to remove the
+  :meth:`__hash__` method inherited from a parent class, so
+  assigning ``None`` was implemented as an override.  At the
+  C level, extensions can set ``tp_hash`` to
+  :cfunc:`PyObject_HashNotImplemented`.
+  (Fixed by Nick Coghlan and Amaury Forgeot d'Arc; :issue:`2235`.)
 
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6,
@@ -2501,14 +2523,14 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Dwayne Bailey; :issue:`1581073`.)
 
-* The :mod:`threading` module API is being changed in Python 3.0 to
-  use properties such as :attr:`daemon` instead of :meth:`setDaemon`
-  and :meth:`isDaemon` methods, and some methods have been renamed to
-  use underscores instead of camel-case; for example, the
-  :meth:`activeCount` method is renamed to :meth:`active_count`.  The
-  2.6 version of the module supports the same properties and renamed
-  methods, but doesn't remove the old methods.  (Carried out by
-  several people, most notably Benjamin Peterson.)
+* The :mod:`threading` module API is being changed to use properties such as
+  :attr:`daemon` instead of :meth:`setDaemon` and :meth:`isDaemon` methods, and
+  some methods have been renamed to use underscores instead of camel-case; for
+  example, the :meth:`activeCount` method is renamed to :meth:`active_count`.
+  The 2.6 version of the module supports the same properties and renamed
+  methods, but doesn't remove the old methods.  3.0 also fully supports both
+  APIs, and a date for the deprecation of the old APIs has not been set yet.
+  (Carried out by several people, most notably Benjamin Peterson.)
 
   The :mod:`threading` module's :class:`Thread` objects
   gained an :attr:`ident` property that returns the thread's
@@ -3125,6 +3147,10 @@ Porting to Python 2.6
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
+* Classes that aren't supposed to be hashable should
+  set ``__hash__ = None`` in their definitions to indicate
+  the fact.
+
 * The :meth:`__init__` method of :class:`collections.deque`
   now clears any existing contents of the deque
   before adding elements from the iterable.  This change makes the
@@ -3146,6 +3172,10 @@ that may require changes to your code:
 * C API: the :cfunc:`PyImport_Import` and :cfunc:`PyImport_ImportModule`
   functions now default to absolute imports, not relative imports.
   This will affect C extensions that import other modules.
+
+* C API: extension data types that shouldn't be hashable
+  should define their ``tp_hash`` slot to
+  :cfunc:`PyObject_HashNotImplemented`.
 
 * The :mod:`socket` module exception :exc:`socket.error` now inherits
   from :exc:`IOError`.  Previously it wasn't a subclass of
@@ -3182,5 +3212,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article:
-Georg Brandl, Jim Jewett, Antoine Pitrou.
+Georg Brandl, Steve Brown, Nick Coghlan, Jim Jewett, Antoine Pitrou.
 
