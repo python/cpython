@@ -251,12 +251,14 @@ case $ac_sys_system/$ac_sys_release in
   # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
   # even though select is a POSIX function. Reported by J. Ribbens.
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
-  OpenBSD/2.* | OpenBSD/3.@<:@0123456789@:>@ | OpenBSD/4.@<:@0123@:>@) 
+  OpenBSD*)
     define_xopen_source=no
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
     # As this has a different meaning on Linux, only define it on OpenBSD
     AC_DEFINE(_BSD_SOURCE, 1, [Define on OpenBSD to activate all library features])
+    # OpenBSD's readline library needs the libcurses
+    READLINE_LIBS="-lcurses"
     ;;
   # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
   # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
@@ -3324,7 +3326,7 @@ fi
 # check where readline lives
 # save the value of LIBS so we don't actually link Python with readline
 LIBS_no_readline=$LIBS
-AC_CHECK_LIB(readline, readline)
+AC_CHECK_LIB(readline, readline, , ,$READLINE_LIBS)
 if test "$ac_cv_have_readline_readline" = no
 then
   AC_CHECK_LIB(termcap, readline)
@@ -3333,7 +3335,7 @@ fi
 # check for readline 2.1
 AC_CHECK_LIB(readline, rl_callback_handler_install,
 	AC_DEFINE(HAVE_RL_CALLBACK, 1,
-        [Define if you have readline 2.1]), , )
+        [Define if you have readline 2.1]), ,$READLINE_LIBS)
 
 # check for readline 2.2
 AC_TRY_CPP([#include <readline/readline.h>],
@@ -3349,17 +3351,17 @@ fi
 # check for readline 4.0
 AC_CHECK_LIB(readline, rl_pre_input_hook,
 	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
-        [Define if you have readline 4.0]), , )
+        [Define if you have readline 4.0]), ,$READLINE_LIBS)
 
 # also in 4.0
 AC_CHECK_LIB(readline, rl_completion_display_matches_hook,
 	AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
-        [Define if you have readline 4.0]), , )
+        [Define if you have readline 4.0]), ,$READLINE_LIBS)
 
 # check for readline 4.2
 AC_CHECK_LIB(readline, rl_completion_matches,
 	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
-        [Define if you have readline 4.2]), , )
+        [Define if you have readline 4.2]), ,$READLINE_LIBS)
 
 # also in readline 4.2
 AC_TRY_CPP([#include <readline/readline.h>],
