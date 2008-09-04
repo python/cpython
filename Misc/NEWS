@@ -77,6 +77,8 @@ C API
 Library
 -------
 
+- Issue #3160: the "bdist_wininst" distutils command didn't work.
+
 - Issue #1658: tkinter changes dict size during iteration in both
     tkinter.BaseWidget and tkinter.scrolledtext.ScrolledText.
 
