@@ -448,8 +448,12 @@ fp_setreadl(struct tok_state *tok, const char* enc)
 	if (io == NULL)
 		goto cleanup;
 
-	stream = PyObject_CallMethod(io, "open", "ssis",
-				     tok->filename, "r", -1, enc);
+	if (tok->filename)
+		stream = PyObject_CallMethod(io, "open", "ssis",
+					     tok->filename, "r", -1, enc);
+	else
+		stream = PyObject_CallMethod(io, "open", "isis",
+				fileno(tok->fp), "r", -1, enc);
 	if (stream == NULL)
 		goto cleanup;
 

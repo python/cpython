@@ -12,6 +12,10 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue 3594: Fix Parser/tokenizer.c:fp_setreadl() to open the file being
+  tokenized by either a file path or file pointer for the benefit of
+  PyTokenizer_FindEncoding().
+
 - Issue #3696: Error parsing arguments on OpenBSD <= 4.4 and Cygwin. On
   these systems, the mbstowcs() function is slightly buggy and must be
   replaced with strlen() for the purpose of counting of number of wide
