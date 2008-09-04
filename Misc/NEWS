@@ -56,6 +56,9 @@ C-API
 Library
 -------
 
+- Issue #3762: platform.architecture() fails if python is lanched via
+  its symbolic link.
+
 - Issue #3772: Fixed regression problem in StreamHandler.emit().
 
 - Issue 600362: Relocated parse_qs() and parse_qsl(), from the cgi module
