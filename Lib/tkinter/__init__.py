@@ -1913,11 +1913,9 @@ class BaseWidget(Misc):
             cnf = _cnfmerge((cnf, kw))
         self.widgetName = widgetName
         BaseWidget._setup(self, master, cnf)
-        classes = []
-        for k in cnf.keys():
-            if isinstance(k, type):
-                classes.append((k, cnf[k]))
-                del cnf[k]
+        classes = [(k, v) for k, v in cnf.items() if isinstance(k, type)]
+        for k, v in classes:
+            del cnf[k]
         self.tk.call(
             (widgetName, self._w) + extra + self._options(cnf))
         for k, v in classes:

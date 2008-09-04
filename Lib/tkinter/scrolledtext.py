@@ -19,11 +19,10 @@ class ScrolledText(Text):
             cnf = {}
         if kw:
             cnf = _cnfmerge((cnf, kw))
-        fcnf = {}
-        for k in cnf.keys():
-            if isinstance(k, type) or k == 'name':
-                fcnf[k] = cnf[k]
-                del cnf[k]
+        fcnf = {k:v for k,v in cnf.items() if isinstance(k,type) or k=='name'}
+        for k in fcnf.keys():
+            del cnf[k]
+
         self.frame = Frame(master, **fcnf)
         self.vbar = Scrollbar(self.frame, name='vbar')
         self.vbar.pack(side=RIGHT, fill=Y)
