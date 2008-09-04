@@ -152,14 +152,9 @@ references that will cause the garbage collector to keep the keys around longer
 than needed.
 
 
-.. method:: WeakKeyDictionary.iterkeyrefs()
-
-   Return an :term:`iterator` that yields the weak references to the keys.
-
-
 .. method:: WeakKeyDictionary.keyrefs()
 
-   Return a list of weak references to the keys.
+   Return an :term:`iterator` that yields the weak references to the keys.
 
 
 .. class:: WeakValueDictionary([dict])
@@ -176,18 +171,13 @@ than needed.
       magic" (as a side effect of garbage collection).
 
 :class:`WeakValueDictionary` objects have the following additional methods.
-These method have the same issues as the :meth:`iterkeyrefs` and :meth:`keyrefs`
-methods of :class:`WeakKeyDictionary` objects.
-
-
-.. method:: WeakValueDictionary.itervaluerefs()
-
-   Return an :term:`iterator` that yields the weak references to the values.
+These method have the same issues as the and :meth:`keyrefs` method of
+:class:`WeakKeyDictionary` objects.
 
 
 .. method:: WeakValueDictionary.valuerefs()
 
-   Return a list of weak references to the values.
+   Return an :term:`iterator` that yields the weak references to the values.
 
 
 .. class:: WeakSet([elements])
@@ -290,7 +280,7 @@ the referent is accessed::
        def __init__(self, ob, callback=None, **annotations):
            super(ExtendedRef, self).__init__(ob, callback)
            self.__counter = 0
-           for k, v in annotations.iteritems():
+           for k, v in annotations.items():
                setattr(self, k, v)
 
        def __call__(self):
