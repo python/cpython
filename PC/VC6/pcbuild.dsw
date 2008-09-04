@@ -3,21 +3,6 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "_bsddb"=".\_bsddb.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "_ctypes"=".\_ctypes.dsp" - Package Owner=<4>
 
 Package=<5>
