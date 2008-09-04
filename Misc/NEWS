@@ -56,6 +56,8 @@ C-API
 Library
 -------
 
+- Issue #3772: Fixed regression problem in StreamHandler.emit().
+
 - Issue 600362: Relocated parse_qs() and parse_qsl(), from the cgi module
   to the urlparse one.  Added a PendingDeprecationWarning in the old
   module, it will be deprecated in the future.
@@ -87,7 +89,7 @@ Library
 - Issue #3708: os.urandom no longer goes into an infinite loop when passed a
   non-integer floating point number.
 
-- Issue #3110: multiprocessing fails to compiel on solaris 10 due to missing 
+- Issue #3110: multiprocessing fails to compiel on solaris 10 due to missing
   SEM_VALUE_MAX.
 
 Extension Modules
