@@ -106,13 +106,13 @@ class WeakValueDictionary(collections.MutableMapping):
                 L.append((key, o))
         return L
 
-    def iteritems(self):
+    def items(self):
         for wr in self.data.values():
             value = wr()
             if value is not None:
                 yield wr.key, value
 
-    def iterkeys(self):
+    def keys(self):
         return iter(self.data.keys())
 
     def __iter__(self):
@@ -130,7 +130,7 @@ class WeakValueDictionary(collections.MutableMapping):
         """
         return self.data.values()
 
-    def itervalues(self):
+    def values(self):
         for wr in self.data.values():
             obj = wr()
             if obj is not None:
@@ -185,14 +185,6 @@ class WeakValueDictionary(collections.MutableMapping):
 
         """
         return self.data.values()
-
-    def values(self):
-        L = []
-        for wr in self.data.values():
-            o = wr()
-            if o is not None:
-                L.append(o)
-        return L
 
 
 class KeyedRef(ref):
@@ -270,20 +262,12 @@ class WeakKeyDictionary(collections.MutableMapping):
         return wr in self.data
 
     def items(self):
-        L = []
-        for key, value in self.data.items():
-            o = key()
-            if o is not None:
-                L.append((o, value))
-        return L
-
-    def iteritems(self):
         for wr, value in self.data.items():
             key = wr()
             if key is not None:
                 yield key, value
 
-    def iterkeyrefs(self):
+    def keyrefs(self):
         """Return an iterator that yields the weak references to the keys.
 
         The references are not guaranteed to be 'live' at the time
@@ -295,7 +279,7 @@ class WeakKeyDictionary(collections.MutableMapping):
         """
         return self.data.keys()
 
-    def iterkeys(self):
+    def keys(self):
         for wr in self.data.keys():
             obj = wr()
             if obj is not None:
@@ -304,7 +288,7 @@ class WeakKeyDictionary(collections.MutableMapping):
     def __iter__(self):
         return iter(self.keys())
 
-    def itervalues(self):
+    def values(self):
         return iter(self.data.values())
 
     def keyrefs(self):
@@ -318,14 +302,6 @@ class WeakKeyDictionary(collections.MutableMapping):
 
         """
         return self.data.keys()
-
-    def keys(self):
-        L = []
-        for wr in self.data.keys():
-            o = wr()
-            if o is not None:
-                L.append(o)
-        return L
 
     def popitem(self):
         while 1:
