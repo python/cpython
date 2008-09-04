@@ -612,7 +612,6 @@ _PyImport_FindExtension(char *name, char *filename)
 		mod = PyImport_AddModule(name);
 		if (mod == NULL)
 			return NULL;
-		Py_INCREF(mod);
 		mdict = PyModule_GetDict(mod);
 		if (mdict == NULL)
 			return NULL;
@@ -626,6 +625,7 @@ _PyImport_FindExtension(char *name, char *filename)
 		if (mod == NULL)
 			return NULL;
 		PyDict_SetItemString(PyImport_GetModuleDict(), name, mod);
+		Py_DECREF(mod);
 	}
 	if (_PyState_AddModule(mod, def) < 0) {
 		PyDict_DelItemString(PyImport_GetModuleDict(), name);
