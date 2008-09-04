@@ -909,7 +909,7 @@ def _follow_symlinks(filepath):
     filepath = os.path.abspath(filepath)
     while os.path.islink(filepath):
         filepath = os.path.normpath(
-            os.path.join(filepath,os.readlink(filepath)))
+            os.path.join(os.path.dirname(filepath),os.readlink(filepath)))
     return filepath
 
 def _syscmd_uname(option,default=''):
