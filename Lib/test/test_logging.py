@@ -859,6 +859,31 @@ class MemoryTest(BaseTest):
             ('foo', 'DEBUG', '3'),
         ])
 
+class EncodingTest(BaseTest):
+    def test_encoding_plain_file(self):
+        # In Python 2.x, a plain file object is treated as having no encoding.
+        log = logging.getLogger("test")
+        fn = tempfile.mktemp(".log")
+        # the non-ascii data we write to the log.
+        data = "foo\x80"
+        try:
+            handler = logging.FileHandler(fn)
+            log.addHandler(handler)
+            try:
+                # write non-ascii data to the log.
+                log.warning(data)
+            finally:
+                log.removeHandler(handler)
+                handler.close()
+            # check we wrote exactly those bytes, ignoring trailing \n etc
+            f = open(fn)
+            try:
+                self.failUnlessEqual(f.read().rstrip(), data)
+            finally:
+                f.close()
+        finally:
+            if os.path.isfile(fn):
+                os.remove(fn)
 
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
@@ -867,7 +892,8 @@ class MemoryTest(BaseTest):
 def test_main():
     run_unittest(BuiltinLevelsTest, BasicFilterTest,
                     CustomLevelsAndFiltersTest, MemoryHandlerTest,
-                    ConfigFileTest, SocketHandlerTest, MemoryTest)
+                    ConfigFileTest, SocketHandlerTest, MemoryTest,
+                    EncodingTest)
 
 if __name__ == "__main__":
     test_main()

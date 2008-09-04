@@ -757,7 +757,7 @@ class StreamHandler(Handler):
                 self.stream.write(fs % msg)
             else:
                 try:
-                    if hasattr(self.stream, 'encoding'):
+                    if getattr(self.stream, 'encoding', None) is not None:
                         self.stream.write(fs % msg.encode(self.stream.encoding))
                     else:
                         self.stream.write(fs % msg)
