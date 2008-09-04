@@ -446,8 +446,7 @@ class ExpatReaderTest(XmlTestBase):
 
     # ===== InputSource support
 
-    def XXXtest_expat_inpsource_filename(self):
-        # FIXME: test blocks indefinitely
+    def test_expat_inpsource_filename(self):
         parser = create_parser()
         result = StringIO()
         xmlgen = XMLGenerator(result)
@@ -457,8 +456,7 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEquals(result.getvalue(), xml_test_out)
 
-    def XXXtest_expat_inpsource_sysid(self):
-        # FIXME: test blocks indefinitely
+    def test_expat_inpsource_sysid(self):
         parser = create_parser()
         result = StringIO()
         xmlgen = XMLGenerator(result)
@@ -531,8 +529,7 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEquals(parser.getPublicId(), None)
         self.assertEquals(parser.getLineNumber(), 1)
 
-    def XXXtest_expat_locator_withinfo(self):
-        # FIXME: test blocks indefinitely
+    def test_expat_locator_withinfo(self):
         result = StringIO()
         xmlgen = XMLGenerator(result)
         parser = create_parser()
