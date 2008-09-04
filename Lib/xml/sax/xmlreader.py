@@ -119,7 +119,7 @@ class IncrementalParser(XMLReader):
         self.prepareParser(source)
         file = source.getByteStream()
         buffer = file.read(self._bufsize)
-        while buffer != "":
+        while buffer:
             self.feed(buffer)
             buffer = file.read(self._bufsize)
         self.close()
