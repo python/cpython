@@ -1612,8 +1612,6 @@ PyTokenizer_FindEncoding(int fd)
             encoding = (char *)PyMem_MALLOC(strlen(tok->encoding) + 1);
             if (encoding)
                 strcpy(encoding, tok->encoding);
-            else
-                PyErr_NoMemory();
         }
 	PyTokenizer_Free(tok);
 	return encoding;
