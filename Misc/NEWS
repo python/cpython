@@ -80,6 +80,9 @@ Core and builtins
 Library
 -------
 
+- Issue #3762: platform.architecture() fails if python is lanched via
+  its symbolic link.
+
 - Issue #3554: ctypes.string_at and ctypes.wstring_at did call Python
   api functions without holding the GIL, which could lead to a fatal
   error when they failed.
