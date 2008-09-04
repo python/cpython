@@ -623,7 +623,7 @@ versa.)
 Two other classes, :class:`Pool` and :class:`Manager`, provide
 higher-level interfaces.  :class:`Pool` will create a fixed number of
 worker processes, and requests can then be distributed to the workers
-by calling :meth:`apply` or `apply_async` to add a single request,
+by calling :meth:`apply` or :meth:`apply_async` to add a single request,
 and :meth:`map` or :meth:`map_async` to add a number of
 requests.  The following code uses a :class:`Pool` to spread requests
 across 5 worker processes and retrieve a list of results::
@@ -977,10 +977,10 @@ sequence of bytes::
     bytearray(b'ABC')
     >>> b = bytearray(u'\u21ef\u3244', 'utf-8')
     >>> b
-    bytearray(b'\xe2\x87\xaf \xe3\x89\x84')
+    bytearray(b'\xe2\x87\xaf\xe3\x89\x84')
     >>> b[0] = '\xe3'
     >>> b
-    bytearray(b'\xe3\x87\xaf \xe3\x89\x84')
+    bytearray(b'\xe3\x87\xaf\xe3\x89\x84')
     >>> unicode(str(b), 'utf-8')
     u'\u31ef \u3244'
 
@@ -1975,7 +1975,7 @@ changes, or look through the Subversion logs for all the details.
 
 * A new function in the :mod:`heapq` module, ``merge(iter1, iter2, ...)``,
   takes any number of iterables returning data in sorted
-  order, and returns a new iterator that returns the contents of all
+  order, and returns a new generator that returns the contents of all
   the iterators, also in sorted order.  For example::
 
      heapq.merge([1, 3, 5, 9], [2, 8, 16]) ->
@@ -2030,7 +2030,7 @@ changes, or look through the Subversion logs for all the details.
   repeated *N* times.  With a single iterable argument, *N*-tuples
   are returned::
 
-     itertools.product([1,2], repeat=3)) ->
+     itertools.product([1,2], repeat=3) ->
        [(1, 1, 1), (1, 1, 2), (1, 2, 1), (1, 2, 2),
         (2, 1, 1), (2, 1, 2), (2, 2, 1), (2, 2, 2)]
 
@@ -2178,7 +2178,7 @@ changes, or look through the Subversion logs for all the details.
   :const:`UF_APPEND` to indicate that data can only be appended to the
   file.  (Contributed by M. Levinson.)
 
-  ``os.closerange(*low*, *high*)`` efficiently closes all file descriptors
+  ``os.closerange(low, high)`` efficiently closes all file descriptors
   from *low* to *high*, ignoring any errors and not including *high* itself.
   This function is now used by the :mod:`subprocess` module to make starting
   processes faster.  (Contributed by Georg Brandl; :issue:`1663329`.)
@@ -2311,12 +2311,12 @@ changes, or look through the Subversion logs for all the details.
   will be ignored, not copied.
 
   The :mod:`shutil` module also provides an :func:`ignore_patterns`
-  function for use with this new parameter.
-  :func:`ignore_patterns` takes an arbitrary number of glob-style patterns
-  and will ignore any files and directories that match any of these patterns.
-  The following example copies a directory tree, but skips both
-  :file:`.svn` directories and Emacs backup
-  files, which have names ending with '~'::
+  function for use with this new parameter.  :func:`ignore_patterns`
+  takes an arbitrary number of glob-style patterns and returns a
+  callable that will ignore any files and directories that match any
+  of these patterns.  The following example copies a directory tree,
+  but skips both :file:`.svn` directories and Emacs backup files,
+  which have names ending with '~'::
 
       shutil.copytree('Doc/library', '/tmp/library',
                       ignore=shutil.ignore_patterns('*~', '.svn'))
@@ -2523,13 +2523,15 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Dwayne Bailey; :issue:`1581073`.)
 
-* The :mod:`threading` module API is being changed to use properties such as
-  :attr:`daemon` instead of :meth:`setDaemon` and :meth:`isDaemon` methods, and
-  some methods have been renamed to use underscores instead of camel-case; for
-  example, the :meth:`activeCount` method is renamed to :meth:`active_count`.
-  The 2.6 version of the module supports the same properties and renamed
-  methods, but doesn't remove the old methods.  3.0 also fully supports both
-  APIs, and a date for the deprecation of the old APIs has not been set yet.
+* The :mod:`threading` module API is being changed to use properties
+  such as :attr:`daemon` instead of :meth:`setDaemon` and
+  :meth:`isDaemon` methods, and some methods have been renamed to use
+  underscores instead of camel-case; for example, the
+  :meth:`activeCount` method is renamed to :meth:`active_count`.  Both
+  the 2.6 and 3.0 versions of the module support the same properties
+  and renamed methods, but don't remove the old methods.  No date has been set
+  for the deprecation of the old APIs in Python 3.x; the old APIs won't 
+  be removed in any 2.x version.
   (Carried out by several people, most notably Benjamin Peterson.)
 
   The :mod:`threading` module's :class:`Thread` objects
@@ -2735,15 +2737,15 @@ of these built-in functions that can be imported when writing
 
 The functions in this module currently include:
 
-* ``ascii(*obj*)``: equivalent to :func:`repr`.  In Python 3.0,
+* ``ascii(obj)``: equivalent to :func:`repr`.  In Python 3.0,
   :func:`repr` will return a Unicode string, while :func:`ascii` will
   return a pure ASCII bytestring.
 
-* ``filter(*predicate*, *iterable*)``,
-  ``map(*func*, *iterable1*, ...)``: the 3.0 versions
+* ``filter(predicate, iterable)``,
+  ``map(func, iterable1, ...)``: the 3.0 versions
   return iterators, unlike the 2.x built-ins which return lists.
 
-* ``hex(*value*)``, ``oct(*value*)``: instead of calling the
+* ``hex(value)``, ``oct(value)``: instead of calling the
   :meth:`__hex__` or :meth:`__oct__` methods, these versions will
   call the :meth:`__index__` method and convert the result to hexadecimal
   or octal.  :func:`oct` will use the new ``0o`` notation for its
@@ -3212,5 +3214,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article:
-Georg Brandl, Steve Brown, Nick Coghlan, Jim Jewett, Antoine Pitrou.
+Georg Brandl, Steve Brown, Nick Coghlan, Jim Jewett, Kent Johnson, Antoine Pitrou.
 
