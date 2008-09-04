@@ -1956,7 +1956,7 @@ An example of dictionary view usage::
 
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
-   {'eggs', 'bacon'}
+   {'bacon'}
 
 
 .. _bltin-file-objects:
