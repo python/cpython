@@ -1,40 +1,20 @@
-Python 3000 Release Notes
-=========================
+Python 3.0 Release Notes
+========================
 
-Release notes describe unfinished work in particular releases.
+These release notes describe unfinished work, or important notes that Python
+3.0 adopters need to be aware of.  This is not a complete list of changes for
+Python 3.0 -- for that, see Misc/NEWS.
 
 Please report bugs to http://bugs.python.org/.
 
+Version 3.0rc1 - Release Date XX-Sep-2008
+-----------------------------------------
 
-Version 3.0b3 - Release Date 20-Aug-2008
-----------------------------------------
+* The bsddb3 package has been removed from the standard library.  It is
+  available as a separate distutils based package from the Python Cheeseshop.
+  If you need bsddb3 support in Python 3.0, you can find it here:
 
-Please search the bug tracker for critical issues in Python 3.0.
-
-
-Version 3.0b2 - Release Date 17-Jul-2008
-----------------------------------------
-
-Please search the bug tracker for critical issues in Python 3.0.
-
-The bsddb3 library is known to be in bad shape.  The Python 2.6 version needs
-to be ported to Python 3.0, but so far, no one has done this.
-
-There are several known deferred blockers (issues that will block the next
-release).  These include, but are not limited to, problems with 2to3,
-multiprocessing, and bytearrays.
-
-
-Version 3.0b1 - Release Date 18-Jun-2008
-----------------------------------------
-
-Please search the bug tracker for critical issues in Python 3.0.
-
-
-Version 3.0a5 - Release Date 08-May-2008
-----------------------------------------
-
-Please search the bug tracker for critical issues in Python 3.0.
+  http://pypi.python.org/pypi/bsddb3
 
 
 Version 3.0a2 - Release Date 07-Dec-2007
