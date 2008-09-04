@@ -390,6 +390,10 @@ details.
   :mod:`strop`, :mod:`sunaudiodev`, :mod:`timing`, and :mod:`xmllib` modules are
   gone.
 
+* The :mod:`bsddb` module is gone.  It is being maintained externally
+  with its own release schedule better mirroring that of BerkeleyDB.
+  See http://www.jcea.es/programacion/pybsddb.htm.
+
 * The :mod:`new` module is gone.
 
 * The functions :func:`os.tmpnam`, :func:`os.tempnam` and :func:`os.tmpfile`
