@@ -260,13 +260,18 @@ class bdist_wininst(Command):
             cfgdata = cfgdata.encode("mbcs")
 
         # Append the pre-install script
-        cfgdata = cfgdata + "\0"
+        cfgdata = cfgdata + b"\0"
         if self.pre_install_script:
-            script_data = open(self.pre_install_script, "r").read()
-            cfgdata = cfgdata + script_data + "\n\0"
+            # We need to normalize newlines, so we open in text mode and
+            # convert back to bytes. "latin1" simply avoids any possible
+            # failures.
+            with open(self.pre_install_script, "r",
+                encoding="latin1") as script:
+                script_data = script.read().encode("latin1")
+            cfgdata = cfgdata + script_data + b"\n\0"
         else:
             # empty pre-install script
-            cfgdata = cfgdata + "\0"
+            cfgdata = cfgdata + b"\0"
         file.write(cfgdata)
 
         # The 'magic number' 0x1234567B is used to make sure that the
