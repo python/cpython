@@ -1610,7 +1610,10 @@ PyTokenizer_FindEncoding(int fd)
 	fclose(fp);
 	if (tok->encoding) {
             encoding = (char *)PyMem_MALLOC(strlen(tok->encoding) + 1);
-            strcpy(encoding, tok->encoding);
+            if (encoding)
+                strcpy(encoding, tok->encoding);
+            else
+                PyErr_NoMemory();
         }
 	PyTokenizer_Free(tok);
 	return encoding;

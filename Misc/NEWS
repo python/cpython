@@ -12,6 +12,9 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue 3774: Added a few more checks in PyTokenizer_FindEncoding to handle
+  error conditions.
+
 - Issue 3594: Fix Parser/tokenizer.c:fp_setreadl() to open the file being
   tokenized by either a file path or file pointer for the benefit of
   PyTokenizer_FindEncoding().
