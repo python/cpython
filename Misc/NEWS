@@ -112,6 +112,12 @@ Tests
 
 - Issue 3768: Move test_py3kwarn over to the new API for catch_warnings().
 
+Build
+-----
+
+- Issue 3758: Rename the 'check' target to 'patchcheck' so as to not clash with
+  GNU build target guidelines.
+
 
 What's New in Python 2.6 beta 3?
 ================================
