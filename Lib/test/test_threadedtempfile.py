@@ -63,7 +63,7 @@ class ThreadedTempFileTest(unittest.TestCase):
             t.join()
             ok += t.ok_count
             if t.error_count:
-                errors.append(str(t.get_name()) + str(t.errors.getvalue()))
+                errors.append(str(t.name) + str(t.errors.getvalue()))
 
         threading_cleanup(*thread_info)
 
