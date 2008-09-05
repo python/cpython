@@ -508,6 +508,7 @@ class CatchWarningTests(BaseTest):
         wmod = self.module
         with wmod.catch_warnings(module=wmod, record=True) as w:
             self.assertEqual(w, [])
+            self.assertRaises(AttributeError, getattr, w, 'message')
             wmod.simplefilter("always")
             wmod.warn("foo")
             self.assertEqual(str(w.message), "foo")

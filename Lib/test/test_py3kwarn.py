@@ -305,7 +305,7 @@ class TestStdlibRemovals(unittest.TestCase):
                            'sunos5' : ('sunaudiodev', 'SUNAUDIODEV'),
                           }
     optional_modules = ('bsddb185', 'Canvas', 'dl', 'linuxaudiodev', 'imageop',
-                        'sv', 'cPickle')
+                        'sv', 'cPickle', 'bsddb', 'dbhash')
 
     def check_removal(self, module_name, optional=False):
         """Make sure the specified module, when imported, raises a
