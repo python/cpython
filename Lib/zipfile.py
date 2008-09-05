@@ -165,6 +165,7 @@ def _EndRecData64(fpin, offset, endrec):
         return endrec
 
     # Update the original endrec using data from the ZIP64 record
+    endrec[_ECD_SIGNATURE] = sig
     endrec[_ECD_DISK_NUMBER] = disk_num
     endrec[_ECD_DISK_START] = disk_dir
     endrec[_ECD_ENTRIES_THIS_DISK] = dircount
@@ -733,9 +734,8 @@ class ZipFile:
 
         # "concat" is zero, unless zip was concatenated to another file
         concat = endrec[_ECD_LOCATION] - size_cd - offset_cd
-        if endrec[_ECD_LOCATION] > ZIP64_LIMIT:
-            # If the offset of the "End of Central Dir" record requires Zip64
-            # extension structures, account for them
+        if endrec[_ECD_SIGNATURE] == stringEndArchive64:
+            # If Zip64 extension structures are present, account for them
             concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
 
         if self.debug > 2:
