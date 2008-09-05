@@ -3837,13 +3837,17 @@ load_build(UnpicklerObject *self)
     if (setstate == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
-        else
+        else {
+            Py_DECREF(state);
             return -1;
+        }
     }
     else {
         PyObject *result;
 
         /* The explicit __setstate__ is responsible for everything. */
+        /* Ugh... this does not leak since unpickler_call() steals the
+           reference to state first. */
         result = unpickler_call(self, setstate, state);
         Py_DECREF(setstate);
         if (result == NULL)

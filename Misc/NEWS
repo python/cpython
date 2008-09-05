@@ -80,6 +80,8 @@ C API
 Library
 -------
 
+- Issue #3660: fix a memory leak in the C accelerator of the pickle module.
+
 - Issue #3160: the "bdist_wininst" distutils command didn't work.
 
 - Issue #1658: tkinter changes dict size during iteration in both
