@@ -267,7 +267,7 @@ Available Functions
 Available Classes
 -----------------
 
-.. class:: catch_warnings([record=False[, module=None]])
+.. class:: catch_warnings([\*, record=False[, module=None]])
 
     A context manager that guards the warnings filter from being permanently
     mutated. The manager returns an instance of :class:`WarningsRecorder`. The 
