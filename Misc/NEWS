@@ -12,6 +12,9 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #3279: Importing site at interpreter was failing silently because the
+  site module uses the open builtin which was not initialized at the time.
+
 - Issue #3660: Corrected a reference leak in str.encode() when the encoder
   does not return a bytes object.
 
@@ -124,6 +127,8 @@ Extension Modules
   The Python code is automatically translated using "2to3". Please, do not
   update this code in Python 3.0 by hand. Update the 2.6 one and then
   do "2to3".
+
+- The _bytesio and _stringio modules are now compiled into the python binary.
 
 Tools/Demos
 -----------
