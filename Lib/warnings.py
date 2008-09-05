@@ -314,7 +314,14 @@ class WarningsRecorder(list):
         self.append(WarningMessage(*args, **kwargs))
 
     def __getattr__(self, attr):
-        return getattr(self[-1], attr)
+        """Return attributes from the last caught warning, or raise
+        AttributeError."""
+        try:
+            return getattr(self[-1], attr)
+        except IndexError:
+            raise AttributeError("no recorded warning to read "
+                                    "{0!r} attribute from".format(attr))
+
 
     def reset(self):
         del self[:]

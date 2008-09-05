@@ -56,6 +56,8 @@ C-API
 Library
 -------
 
+- Issue 3776: Deprecate the bsddb package for removal in 3.0.
+
 - Issue #3762: platform.architecture() fails if python is lanched via
   its symbolic link.
 
