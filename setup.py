@@ -439,9 +439,6 @@ class PyBuildExt(build_ext):
         exts.append( Extension('operator', ['operator.c']) )
         # _functools
         exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
-        # Memory-based IO accelerator modules
-        exts.append( Extension("_bytesio", ["_bytesio.c"]) )
-        exts.append( Extension("_stringio", ["_stringio.c"]) )
         # C-optimized pickle replacement
         exts.append( Extension("_pickle", ["_pickle.c"]) )
         # atexit
