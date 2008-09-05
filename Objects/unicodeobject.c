@@ -1328,7 +1328,7 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
-        goto onError;
+        return NULL;
     }
 
     if (encoding == NULL)
@@ -1351,27 +1351,33 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     /* Encode via the codec registry */
     v = PyCodec_Encode(unicode, encoding, errors);
     if (v == NULL)
-        goto onError;
+        return NULL;
+
+    /* The normal path */
+    if (PyBytes_Check(v))
+        return v;
+
+    /* If the codec returns a buffer, raise a warning and convert to bytes */
     if (PyByteArray_Check(v)) {
         char msg[100];
+        PyObject *b;
         PyOS_snprintf(msg, sizeof(msg),
                       "encoder %s returned buffer instead of bytes",
                       encoding);
         if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0) {
-            v = NULL;
-            goto onError;
+            Py_DECREF(v);
+            return NULL;
         }
-        v = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
-    }
-    else if (!PyBytes_Check(v)) {
-        PyErr_Format(PyExc_TypeError,
-                     "encoder did not return a bytes object (type=%.400s)",
-                     Py_TYPE(v)->tp_name);
-        v = NULL;
-    }
-    return v;
 
- onError:
+        b = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
+        Py_DECREF(v);
+        return b;
+    }
+
+    PyErr_Format(PyExc_TypeError,
+                 "encoder did not return a bytes object (type=%.400s)",
+                 Py_TYPE(v)->tp_name);
+    Py_DECREF(v);
     return NULL;
 }
 
