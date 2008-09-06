@@ -90,12 +90,6 @@ reStructuredText (2.6+) formats; the LaTeX and reStructuredText versions are
 primarily for documentation authors, translators, and people with special
 formatting requirements.
 
-Unfortunately, new-style classes (new in Python 2.2) have not yet been
-integrated into Python's standard documentation.  A collection of
-pointers to what has been written is at:
-
-    http://www.python.org/doc/newstyle.html
-
 
 Web sites
 ---------
