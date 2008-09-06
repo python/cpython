@@ -4,6 +4,8 @@
 #include "osdefs.h"
 #include "import.h"
 
+#include <locale.h>
+
 #ifdef __VMS
 #include <unixlib.h>
 #endif
@@ -174,9 +176,9 @@ static void RunStartupFile(PyCompilerFlags *cf)
 }
 
 
-static int RunModule(char *module, int set_argv0)
+static int RunModule(wchar_t *modname, int set_argv0)
 {
-	PyObject *runpy, *runmodule, *runargs, *result;
+	PyObject *module, *runpy, *runmodule, *runargs, *result;
 	runpy = PyImport_ImportModule("runpy");
 	if (runpy == NULL) {
 		fprintf(stderr, "Could not import runpy module\n");
@@ -188,12 +190,20 @@ static int RunModule(char *module, int set_argv0)
 		Py_DECREF(runpy);
 		return -1;
 	}
-	runargs = Py_BuildValue("(si)", module, set_argv0);
+	module = PyUnicode_FromWideChar(modname, wcslen(modname));
+	if (module == NULL) {
+		fprintf(stderr, "Could not convert module name to unicode\n");
+		Py_DECREF(runpy);
+		Py_DECREF(runmodule);
+		return -1;
+	}
+	runargs = Py_BuildValue("(Oi)", module, set_argv0);
 	if (runargs == NULL) {
 		fprintf(stderr,
 			"Could not create arguments for runpy._run_module_as_main\n");
 		Py_DECREF(runpy);
 		Py_DECREF(runmodule);
+		Py_DECREF(module);
 		return -1;
 	}
 	result = PyObject_Call(runmodule, runargs, NULL);
@@ -202,6 +212,7 @@ static int RunModule(char *module, int set_argv0)
 	}
 	Py_DECREF(runpy);
 	Py_DECREF(runmodule);
+	Py_DECREF(module);
 	Py_DECREF(runargs);
 	if (result == NULL) {
 		return -1;
@@ -227,7 +238,7 @@ static int RunMainFromImporter(wchar_t *filename)
 			Py_INCREF(argv0);
 			Py_DECREF(importer);
 			sys_path = NULL;
-			return RunModule("__main__", 0) != 0;
+			return RunModule(L"__main__", 0) != 0;
 		}
 	}
 	Py_XDECREF(argv0);
@@ -278,7 +289,7 @@ Py_Main(int argc, wchar_t **argv)
 	int sts;
 	char *command = NULL;
 	wchar_t *filename = NULL;
-	char *module = NULL;
+	wchar_t *module = NULL;
 	FILE *fp = stdin;
 	char *p;
 	int unbuffered = 0;
@@ -288,6 +299,7 @@ Py_Main(int argc, wchar_t **argv)
 	int version = 0;
 	int saw_unbuffered_flag = 0;
 	PyCompilerFlags cf;
+	char *oldloc;
 
 	cf.cf_flags = 0;
 
@@ -298,8 +310,17 @@ Py_Main(int argc, wchar_t **argv)
 
 	while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
 		if (c == 'c') {
-			size_t r1 = wcslen(_PyOS_optarg) + 2;
-			size_t r2;
+			size_t r1, r2;
+			oldloc = setlocale(LC_ALL, NULL);
+			setlocale(LC_ALL, "");
+			r1 = wcslen(_PyOS_optarg);
+			r2 = wcstombs(NULL, _PyOS_optarg, r1);
+			if (r2 == (size_t) -1)
+				Py_FatalError(
+				   "cannot convert character encoding of -c argument");
+			if (r2 > r1)
+				r1 = r2;
+			r1 += 2;
 			/* -c is the last option; following arguments
 			   that look like options are left for the
 			   command to interpret. */
@@ -308,10 +329,11 @@ Py_Main(int argc, wchar_t **argv)
 				Py_FatalError(
 				   "not enough memory to copy -c argument");
 			r2 = wcstombs(command, _PyOS_optarg, r1);
-			if (r2 > r1-2)
+			if (r2 > r1-1)
 				Py_FatalError(
 				    "not enough memory to copy -c argument");
 			strcat(command, "\n");
+			setlocale(LC_ALL, oldloc);
 			break;
 		}
 
@@ -319,16 +341,7 @@ Py_Main(int argc, wchar_t **argv)
 			/* -m is the last option; following arguments
 			   that look like options are left for the
 			   module to interpret. */
-			size_t r1 = wcslen(_PyOS_optarg) + 1;
-			size_t r2;
-			module = (char *)malloc(r1);
-			if (module == NULL)
-				Py_FatalError(
-				   "not enough memory to copy -m argument");
-			r2 = wcstombs(module, _PyOS_optarg, r1);
-			if (r2 >= r1)
-				Py_FatalError(
-				   "not enough memory to copy -m argument");
+			module = _PyOS_optarg;
 			break;
 		}
 
@@ -534,7 +547,6 @@ Py_Main(int argc, wchar_t **argv)
 		free(command);
 	} else if (module) {
 		sts = RunModule(module, 1);
-		free(module);
 	}
 	else {
 
