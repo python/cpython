@@ -96,7 +96,7 @@ argument
    ``sys.argv[1:]``, or of some other list provided as a substitute for
    ``sys.argv[1:]``".
 
-option   
+option
    an argument used to supply extra information to guide or customize the execution
    of a program.  There are many different syntaxes for options; the traditional
    Unix syntax is a hyphen ("-") followed by a single letter, e.g. ``"-x"`` or
@@ -468,7 +468,7 @@ user-friendly (documented) options::
                      action="store_true", dest="verbose", default=True,
                      help="make lots of noise [default]")
    parser.add_option("-q", "--quiet",
-                     action="store_false", dest="verbose", 
+                     action="store_false", dest="verbose",
                      help="be vewwy quiet (I'm hunting wabbits)")
    parser.add_option("-f", "--filename",
                      metavar="FILE", help="write output to FILE"),
@@ -1637,7 +1637,7 @@ arguments::
        setattr(parser.values, option.dest, value)
 
    [...]
-   parser.add_option("-c", "--callback",
+   parser.add_option("-c", "--callback", dest="vararg_attr",
                      action="callback", callback=vararg_callback)
 
 The main weakness with this particular implementation is that negative numbers
