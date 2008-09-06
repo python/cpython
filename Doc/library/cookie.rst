@@ -148,7 +148,7 @@ Morsel Objects
 --------------
 
 
-.. class:: Morsel()
+.. class:: Morsel
 
    Abstract a key/value pair, which has some :rfc:`2109` attributes.
 
@@ -162,8 +162,16 @@ Morsel Objects
    * ``max-age``
    * ``secure``
    * ``version``
+   * ``httponly``
+
+   The attribute :attr:`httponly` specifies that the cookie is only transfered
+   in HTTP requests, and is not accessible through JavaScript. This is intended
+   to mitigate some forms of cross-site scripting.
 
    The keys are case-insensitive.
+
+   .. versionadded:: 2.6
+      The :attr:`httponly` attribute was added.
 
 
 .. attribute:: Morsel.value
