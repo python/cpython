@@ -1262,6 +1262,7 @@ Basic customization
    explicitly set to :const:`None`.
 
 .. method:: object.__bool__(self)
+
    .. index:: single: __len__() (mapping object method)
 
    Called to implement truth value testing, and the built-in operation ``bool()``;
