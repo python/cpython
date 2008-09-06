@@ -51,7 +51,7 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
         self.assertRaises(ValueError, float, "  +0x3.p-1  ")
         self.assertEqual(float("  25.e-1  "), 2.5)
-        self.assertEqual(fcmp(float("  .25e-1  "), .025), 0)
+        self.assertEqual(support.fcmp(float("  .25e-1  "), .025), 0)
 
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly
