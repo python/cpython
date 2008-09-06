@@ -56,6 +56,8 @@ C-API
 Library
 -------
 
+- Issue #1638033: Cookie.Morsel gained the httponly attribute.
+
 - Issue #3535: zipfile couldn't read some zip files larger than 2GB.
 
 - Issue #3776: Deprecate the bsddb package for removal in 3.0.

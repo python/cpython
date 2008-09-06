@@ -408,6 +408,9 @@ class Morsel(dict):
     # For historical reasons, these attributes are also reserved:
     #   expires
     #
+    # This is an extension from Microsoft:
+    #   httponly
+    #
     # This dictionary provides a mapping from the lowercase
     # variant on the left to the appropriate traditional
     # formatting on the right.
@@ -417,6 +420,7 @@ class Morsel(dict):
                    "domain"      : "Domain",
                    "max-age" : "Max-Age",
                    "secure"      : "secure",
+                   "httponly"  : "httponly",
                    "version" : "Version",
                    }
 
@@ -498,6 +502,8 @@ class Morsel(dict):
             elif K == "max-age" and type(V) == type(1):
                 RA("%s=%d" % (self._reserved[K], V))
             elif K == "secure":
+                RA(str(self._reserved[K]))
+            elif K == "httponly":
                 RA(str(self._reserved[K]))
             else:
                 RA("%s=%s" % (self._reserved[K], V))
