@@ -1093,7 +1093,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 	}
 	if (wf.str != NULL) {
 		/* XXX Quick hack -- need to do this differently */
-		res = PyByteArray_FromObject(wf.str);
+		res = PyBytes_FromObject(wf.str);
 		Py_DECREF(wf.str);
 	}
 	return res;
@@ -1134,9 +1134,9 @@ marshal_load(PyObject *self, PyObject *f)
 		rf.ptr = PyBytes_AS_STRING(data);
 		rf.end = rf.ptr + PyBytes_GET_SIZE(data);
 	}
-	else if (PyByteArray_Check(data)) {
-		rf.ptr = PyByteArray_AS_STRING(data);
-		rf.end = rf.ptr + PyByteArray_GET_SIZE(data);
+	else if (PyBytes_Check(data)) {
+		rf.ptr = PyBytes_AS_STRING(data);
+		rf.end = rf.ptr + PyBytes_GET_SIZE(data);
 	}
 	else {
 		PyErr_Format(PyExc_TypeError,

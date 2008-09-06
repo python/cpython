@@ -144,6 +144,9 @@ Extension Modules
 - Issue #3492 and #3790: Fixed the zlib module and zipimport module uses of
   mutable bytearray objects where they should have been using immutable bytes.
 
+- Issue #3797: Fixed the dbm, marshal, mmap, ossaudiodev, & winreg modules to
+  return bytes objects instead of bytearray objects.
+
 
 Tools/Demos
 -----------
