@@ -5,6 +5,7 @@ from test import support
 import math
 from math import isinf, isnan, copysign, ldexp
 import operator
+import random, fractions
 
 INF = float("inf")
 NAN = float("nan")
@@ -15,6 +16,7 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertEqual(float(3.14), 3.14)
         self.assertEqual(float(314), 314.0)
         self.assertEqual(float("  3.14  "), 3.14)
+        self.assertEqual(float(b" 3.14  "), 3.14)
         self.assertRaises(ValueError, float, "  0x3.1  ")
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
         self.assertRaises(ValueError, float, "  +0x3.p-1  ")
@@ -22,10 +24,7 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "+-3.14")
         self.assertRaises(ValueError, float, "-+3.14")
         self.assertRaises(ValueError, float, "--3.14")
-        self.assertEqual(float(unicode("  3.14  ")), 3.14)
-        self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
-        # Implementation limitation in PyFloat_FromString()
-        self.assertRaises(ValueError, float, unicode("1"*10000))
+        self.assertEqual(float(b"  \u0663.\u0661\u0664  ".decode('raw-unicode-escape')), 3.14)
 
     @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
@@ -766,6 +765,7 @@ class HexFloatTestCase(unittest.TestCase):
 
 def test_main():
     support.run_unittest(
+        GeneralFloatCases,
         FormatFunctionsTestCase,
         UnknownFormatTestCase,
         IEEEFormatTestCase,
