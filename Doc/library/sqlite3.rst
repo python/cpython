@@ -424,7 +424,7 @@ A :class:`Connection` instance has the following attributes and methods:
       import sqlite3, os
 
       con = sqlite3.connect('existing_db.db')
-      full_dump = os.linesep.join([line for line in con.iterdump()])
+      full_dump = os.linesep.join(con.iterdump())
       f = open('dump.sql', 'w')
       f.writelines(full_dump)
       f.close()
