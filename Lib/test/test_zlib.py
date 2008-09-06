@@ -110,6 +110,8 @@ class CompressObjectTestCase(unittest.TestCase):
         y1 = dco.decompress(x1 + x2)
         y2 = dco.flush()
         self.assertEqual(data, y1 + y2)
+        self.assert_(isinstance(dco.unconsumed_tail, bytes))
+        self.assert_(isinstance(dco.unused_data, bytes))
 
     def test_compressoptions(self):
         # specify lots of options to compressobj()
@@ -152,7 +154,11 @@ class CompressObjectTestCase(unittest.TestCase):
         bufs.append(co.flush())
         combuf = b''.join(bufs)
 
-        self.assertEqual(data, zlib.decompress(combuf))
+        decombuf = zlib.decompress(combuf)
+        # Test type of return value
+        self.assert_(isinstance(decombuf, bytes))
+
+        self.assertEqual(data, decombuf)
 
         dco = zlib.decompressobj()
         bufs = []
@@ -348,6 +354,8 @@ class CompressObjectTestCase(unittest.TestCase):
             # Test copying a decompression object
             data = HAMLET_SCENE
             comp = zlib.compress(data)
+            # Test type of return value
+            self.assert_(isinstance(comp, bytes))
 
             d0 = zlib.decompressobj()
             bufs0 = []

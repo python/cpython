@@ -137,6 +137,10 @@ Extension Modules
 
 - The _bytesio and _stringio modules are now compiled into the python binary.
 
+- Issue #3492 and #3790: Fixed the zlib module and zipimport module uses of
+  mutable bytearray objects where they should have been using immutable bytes.
+
+
 Tools/Demos
 -----------
 
