@@ -63,7 +63,7 @@ what it can, adding compatibility functions in a
 usages that will become unsupported in 3.0.
 
 Some significant new packages have been added to the standard library,
-such as the :mod:`multiprocessing` and :mod:`jsonlib` modules, but
+such as the :mod:`multiprocessing` and :mod:`json` modules, but
 there aren't many new features that aren't related to Python 3.0 in
 some way.
 
@@ -2014,16 +2014,16 @@ changes, or look through the Subversion logs for all the details.
   others, the missing values are set to *fillvalue*.  For example::
 
      itertools.izip_longest([1,2,3], [1,2,3,4,5]) ->
-       [(1, 1), (2, 2), (3, 3), (None, 4), (None, 5)]
+       (1, 1), (2, 2), (3, 3), (None, 4), (None, 5)
 
   ``product(iter1, iter2, ..., [repeat=N])`` returns the Cartesian product
   of the supplied iterables, a set of tuples containing
   every possible combination of the elements returned from each iterable. ::
 
      itertools.product([1,2,3], [4,5,6]) ->
-       [(1, 4), (1, 5), (1, 6),
+        (1, 4), (1, 5), (1, 6),
 	(2, 4), (2, 5), (2, 6),
-	(3, 4), (3, 5), (3, 6)]
+	(3, 4), (3, 5), (3, 6)
 
   The optional *repeat* keyword argument is used for taking the
   product of an iterable or a set of iterables with themselves,
@@ -2031,39 +2031,39 @@ changes, or look through the Subversion logs for all the details.
   are returned::
 
      itertools.product([1,2], repeat=3) ->
-       [(1, 1, 1), (1, 1, 2), (1, 2, 1), (1, 2, 2),
-        (2, 1, 1), (2, 1, 2), (2, 2, 1), (2, 2, 2)]
+        (1, 1, 1), (1, 1, 2), (1, 2, 1), (1, 2, 2),
+        (2, 1, 1), (2, 1, 2), (2, 2, 1), (2, 2, 2)
 
   With two iterables, *2N*-tuples are returned. ::
 
      itertools.product([1,2], [3,4], repeat=2) ->
-       [(1, 3, 1, 3), (1, 3, 1, 4), (1, 3, 2, 3), (1, 3, 2, 4),
+        (1, 3, 1, 3), (1, 3, 1, 4), (1, 3, 2, 3), (1, 3, 2, 4),
         (1, 4, 1, 3), (1, 4, 1, 4), (1, 4, 2, 3), (1, 4, 2, 4),
         (2, 3, 1, 3), (2, 3, 1, 4), (2, 3, 2, 3), (2, 3, 2, 4),
-        (2, 4, 1, 3), (2, 4, 1, 4), (2, 4, 2, 3), (2, 4, 2, 4)]
+        (2, 4, 1, 3), (2, 4, 1, 4), (2, 4, 2, 3), (2, 4, 2, 4)
 
   ``combinations(iterable, r)`` returns sub-sequences of length *r* from
   the elements of *iterable*. ::
 
     itertools.combinations('123', 2) ->
-      [('1', '2'), ('1', '3'), ('2', '3')]
+       ('1', '2'), ('1', '3'), ('2', '3')
 
     itertools.combinations('123', 3) ->
-      [('1', '2', '3')]
+       ('1', '2', '3')
 
     itertools.combinations('1234', 3) ->
-      [('1', '2', '3'), ('1', '2', '4'), ('1', '3', '4'),
-       ('2', '3', '4')]
+       ('1', '2', '3'), ('1', '2', '4'), ('1', '3', '4'),
+       ('2', '3', '4')
 
   ``permutations(iter[, r])`` returns all the permutations of length *r* of
   the iterable's elements.  If *r* is not specified, it will default to the
   number of elements produced by the iterable. ::
 
     itertools.permutations([1,2,3,4], 2) ->
-      [(1, 2), (1, 3), (1, 4),
+       (1, 2), (1, 3), (1, 4),
        (2, 1), (2, 3), (2, 4),
        (3, 1), (3, 2), (3, 4),
-       (4, 1), (4, 2), (4, 3)]
+       (4, 1), (4, 2), (4, 3)
 
   ``itertools.chain(*iterables)`` is an existing function in
   :mod:`itertools` that gained a new constructor in Python 2.6.
@@ -2073,7 +2073,7 @@ changes, or look through the Subversion logs for all the details.
   all the elements of the second, and so on. ::
 
     chain.from_iterable([[1,2,3], [4,5,6]]) ->
-       [1, 2, 3, 4, 5, 6]
+        1, 2, 3, 4, 5, 6
 
   (All contributed by Raymond Hettinger.)
 
