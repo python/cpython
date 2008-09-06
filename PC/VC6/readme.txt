@@ -125,60 +125,6 @@ bz2
     project links in.
 
 
-_bsddb
-    To use the version of bsddb that Python is built with by default, invoke
-    (in the dist directory)
-
-     svn export http://svn.python.org/projects/external/db-4.4.20
-
-    Then open db-4.4.20\build_win32\Berkeley_DB.dsw and build the "db_static"
-    project for "Release" mode.
-
-    Alternatively, if you want to start with the original sources,
-    go to Sleepycat's download page:
-        http://www.sleepycat.com/downloads/releasehistorybdb.html
-
-    and download version 4.4.20.
-
-    With or without strong cryptography? You can choose either with or
-    without strong cryptography, as per the instructions below.  By
-    default, Python is built and distributed WITHOUT strong crypto.
-
-    Unpack the sources; if you downloaded the non-crypto version, rename
-    the directory from db-4.4.20.NC to db-4.4.20.
-
-    Now apply any patches that apply to your version.
-
-    To run extensive tests, pass "-u bsddb" to regrtest.py.  test_bsddb3.py
-    is then enabled.  Running in verbose mode may be helpful.
-
-    XXX The test_bsddb3 tests don't always pass, on Windows (according to
-    XXX me) or on Linux (according to Barry).  (I had much better luck
-    XXX on Win2K than on Win98SE.)  The common failure mode across platforms
-    XXX is
-    XXX     DBAgainError: (11, 'Resource temporarily unavailable -- unable
-    XXX                         to join the environment')
-    XXX
-    XXX and it appears timing-dependent.  On Win2K I also saw this once:
-    XXX
-    XXX test02_SimpleLocks (bsddb.test.test_thread.HashSimpleThreaded) ...
-    XXX Exception in thread reader 1:
-    XXX Traceback (most recent call last):
-    XXX File "C:\Code\python\lib\threading.py", line 411, in __bootstrap
-    XXX    self.run()
-    XXX File "C:\Code\python\lib\threading.py", line 399, in run
-    XXX    apply(self.__target, self.__args, self.__kwargs)
-    XXX File "C:\Code\python\lib\bsddb\test\test_thread.py", line 268, in
-    XXX                  readerThread
-    XXX    rec = c.next()
-    XXX DBLockDeadlockError: (-30996, 'DB_LOCK_DEADLOCK: Locker killed
-    XXX                                to resolve a deadlock')
-    XXX
-    XXX I'm told that DBLockDeadlockError is expected at times.  It
-    XXX doesn't cause a test to fail when it happens (exceptions in
-    XXX threads are invisible to unittest).
-
-
 _sqlite3
     Python wrapper for SQLite library.
     
