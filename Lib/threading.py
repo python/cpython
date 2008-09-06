@@ -847,9 +847,12 @@ def _after_fork():
     new_active = {}
     current = current_thread()
     with _active_limbo_lock:
-        for ident, thread in _active.iteritems():
+        for thread in _active.itervalues():
             if thread is current:
-                # There is only one active thread.
+                # There is only one active thread. We reset the ident to
+                # its new value since it can have changed.
+                ident = _get_ident()
+                thread._Thread__ident = ident
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
