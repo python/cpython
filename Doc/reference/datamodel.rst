@@ -1714,6 +1714,7 @@ left undefined.
 .. method:: object.__add__(self, other)
             object.__sub__(self, other)
             object.__mul__(self, other)
+            object.__truediv__(self, other)
             object.__floordiv__(self, other)
             object.__mod__(self, other)
             object.__divmod__(self, other)
@@ -1730,33 +1731,22 @@ left undefined.
       builtin: pow
 
    These methods are called to implement the binary arithmetic operations (``+``,
-   ``-``, ``*``, ``//``, ``%``, :func:`divmod`, :func:`pow`, ``**``, ``<<``,
+   ``-``, ``*``, ``/``, ``//``, ``%``, :func:`divmod`, :func:`pow`, ``**``, ``<<``,
    ``>>``, ``&``, ``^``, ``|``).  For instance, to evaluate the expression
    ``x + y``, where *x* is an instance of a class that has an :meth:`__add__`
    method, ``x.__add__(y)`` is called.  The :meth:`__divmod__` method should be the
    equivalent to using :meth:`__floordiv__` and :meth:`__mod__`; it should not be
-   related to :meth:`__truediv__` (described below).  Note that :meth:`__pow__`
-   should be defined to accept an optional third argument if the ternary version of
-   the built-in :func:`pow` function is to be supported.
+   related to :meth:`__truediv__`.  Note that :meth:`__pow__` should be defined
+   to accept an optional third argument if the ternary version of the built-in
+   :func:`pow` function is to be supported.
 
    If one of those methods does not support the operation with the supplied
    arguments, it should return ``NotImplemented``.
 
 
-.. method:: object.__div__(self, other)
-            object.__truediv__(self, other)
-
-   The division operator (``/``) is implemented by these methods.  The
-   :meth:`__truediv__` method is used when ``__future__.division`` is in effect,
-   otherwise :meth:`__div__` is used.  If only one of these two methods is defined,
-   the object will not support division in the alternate context; :exc:`TypeError`
-   will be raised instead.
-
-
 .. method:: object.__radd__(self, other)
             object.__rsub__(self, other)
             object.__rmul__(self, other)
-            object.__rdiv__(self, other)
             object.__rtruediv__(self, other)
             object.__rfloordiv__(self, other)
             object.__rmod__(self, other)
@@ -1773,13 +1763,13 @@ left undefined.
       builtin: pow
 
    These methods are called to implement the binary arithmetic operations (``+``,
-   ``-``, ``*``, ``/``, ``%``, :func:`divmod`, :func:`pow`, ``**``, ``<<``, ``>>``,
-   ``&``, ``^``, ``|``) with reflected (swapped) operands.  These functions are
-   only called if the left operand does not support the corresponding operation and
-   the operands are of different types. [#]_  For instance, to evaluate the
-   expression ``x - y``, where *y* is an instance of a class that has an
-   :meth:`__rsub__` method, ``y.__rsub__(x)`` is called if ``x.__sub__(y)`` returns
-   *NotImplemented*.
+   ``-``, ``*``, ``/``, ``//``, ``%``, :func:`divmod`, :func:`pow`, ``**``,
+   ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected (swapped) operands.
+   These functions are only called if the left operand does not support the
+   corresponding operation and the operands are of different types. [#]_  For
+   instance, to evaluate the expression ``x - y``, where *y* is an instance of
+   a class that has an :meth:`__rsub__` method, ``y.__rsub__(x)`` is called if
+   ``x.__sub__(y)`` returns *NotImplemented*.
 
    .. index:: builtin: pow
 
@@ -1797,7 +1787,6 @@ left undefined.
 .. method:: object.__iadd__(self, other)
             object.__isub__(self, other)
             object.__imul__(self, other)
-            object.__idiv__(self, other)
             object.__itruediv__(self, other)
             object.__ifloordiv__(self, other)
             object.__imod__(self, other)
