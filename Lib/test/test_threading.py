@@ -347,6 +347,9 @@ class ThreadJoinOnShutdown(unittest.TestCase):
             def joiningfunc(mainthread):
                 mainthread.join()
                 print('end of thread')
+                # stdout is fully buffered because not a tty, we have to flush
+                # before exit.
+                sys.stdout.flush()
         \n""" + script
 
         import subprocess
@@ -388,8 +391,7 @@ class ThreadJoinOnShutdown(unittest.TestCase):
             """
         self._run_and_join(script)
 
-    # XXX This test hangs!
-    def Xtest_3_join_in_forked_from_thread(self):
+    def test_3_join_in_forked_from_thread(self):
         # Like the test above, but fork() was called from a worker thread
         # In the forked process, the main Thread object must be marked as stopped.
         import os
