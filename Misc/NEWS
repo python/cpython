@@ -76,6 +76,9 @@ Core and builtins
 - Issue #2588, #2589: Fix potential integer underflow and overflow
   conditions in the PyOS_vsnprintf C API function.
 
+- Issue #1204: The configure script now tests for additional libraries
+  that may be required when linking against readline.  This fixes issues
+  with x86_64 builds on some platforms (a few Linux flavors and OpenBSD).
 
 Library
 -------
