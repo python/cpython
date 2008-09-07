@@ -21,4 +21,5 @@ Currently, the HOWTOs are:
    sockets.rst
    unicode.rst
    urllib2.rst
+   webservers.rst
 
