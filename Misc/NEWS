@@ -82,6 +82,10 @@ Core and Builtins
 
 - bytes(o) now tries to use o.__bytes__() before using fallbacks.
 
+- Issue #1204: The configure script now tests for additional libraries
+  that may be required when linking against readline.  This fixes issues
+  with x86_64 builds on some platforms (a few Linux flavors and OpenBSD).
+
 C API
 -----
 
