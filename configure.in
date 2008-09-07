@@ -251,14 +251,12 @@ case $ac_sys_system/$ac_sys_release in
   # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
   # even though select is a POSIX function. Reported by J. Ribbens.
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
-  OpenBSD*)
+  OpenBSD/2.* | OpenBSD/3.@<:@0123456789@:>@ | OpenBSD/4.@<:@0123@:>@) 
     define_xopen_source=no
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
     # As this has a different meaning on Linux, only define it on OpenBSD
     AC_DEFINE(_BSD_SOURCE, 1, [Define on OpenBSD to activate all library features])
-    # OpenBSD's readline library needs the libcurses
-    READLINE_LIBS="-lcurses"
     ;;
   # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
   # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
@@ -3326,10 +3324,34 @@ fi
 # check where readline lives
 # save the value of LIBS so we don't actually link Python with readline
 LIBS_no_readline=$LIBS
-AC_CHECK_LIB(readline, readline, , ,$READLINE_LIBS)
-if test "$ac_cv_have_readline_readline" = no
-then
-  AC_CHECK_LIB(termcap, readline)
+
+# On some systems we need to link readline to a termcap compatible
+# library.  NOTE: Keep the precedence of listed libraries synchronised
+# with setup.py.
+py_cv_lib_readline=no
+AC_MSG_CHECKING([how to link readline libs])
+for py_libtermcap in "" ncursesw ncurses curses termcap; do
+  if test -z "$py_libtermcap"; then
+    READLINE_LIBS="-lreadline"
+  else
+    READLINE_LIBS="-lreadline -l$py_libtermcap"
+  fi
+  LIBS="$READLINE_LIBS $LIBS_no_readline"
+  AC_LINK_IFELSE(
+    [AC_LANG_CALL([],[readline])],
+    [py_cv_lib_readline=yes])
+  if test $py_cv_lib_readline = yes; then
+    break
+  fi
+done
+# Uncomment this line if you want to use READINE_LIBS in Makefile or scripts
+#AC_SUBST([READLINE_LIBS])
+if test $py_cv_lib_readline = !yes; then
+  AC_MSG_RESULT([none])
+else
+  AC_MSG_RESULT([$READLINE_LIBS])
+  AC_DEFINE(HAVE_LIBREADLINE, 1,
+    [Define if you have the readline library (-lreadline).])
 fi
 
 # check for readline 2.1
