@@ -306,6 +306,16 @@ this is the content of the fake file
         v = gen_result(data, environ)
         self.assertEqual(result, v)
 
+    def test_deprecated_parse_qs(self):
+        # this func is moved to urlparse, this is just a sanity check
+        self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
+                         cgi.parse_qs('a=A1&b=B2&B=B3'))
+
+    def test_deprecated_parse_qsl(self):
+        # this func is moved to urlparse, this is just a sanity check
+        self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
+                         cgi.parse_qsl('a=A1&b=B2&B=B3'))
+
 def test_main():
     run_unittest(CgiTests)
 
