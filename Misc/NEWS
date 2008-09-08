@@ -125,6 +125,8 @@ Tests
 Build
 -----
 
+- Allow passing the MSI file name to merge.py.
+
 - Issue #3758: Rename the 'check' target to 'patchcheck' so as to not clash 
   with GNU build target guidelines.
 
