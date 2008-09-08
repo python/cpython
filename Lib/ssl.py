@@ -284,6 +284,14 @@ class SSLSocket(socket):
         else:
             return socket.recvfrom(self, addr, buflen, flags)
 
+    def recvfrom_into(self, buffer, nbytes=None, flags=0):
+        self._checkClosed()
+        if self._sslobj:
+            raise ValueError("recvfrom_into not allowed on instances of %s" %
+                             self.__class__)
+        else:
+            return socket.recvfrom_into(self, buffer, nbytes, flags)
+
     def pending(self):
         self._checkClosed()
         if self._sslobj:
