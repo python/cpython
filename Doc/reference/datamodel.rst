@@ -405,10 +405,9 @@ Mappings
       .. index::
          module: dbm.ndbm
          module: dbm.gnu
-         module: bsddb
 
-      The extension modules :mod:`dbm.ndbm`, :mod:`dbm.gnu`, and :mod:`bsddb`
-      provide additional examples of mapping types, as does the :mod:`collections`
+      The extension modules :mod:`dbm.ndbm` and :mod:`dbm.gnu` provide
+      additional examples of mapping types, as does the :mod:`collections`
       module.
 
 Callable types

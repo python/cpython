@@ -268,9 +268,9 @@ to simplify building this module.
    database modules.
 
 The :mod:`dbm.dumb` module provides a persistent dictionary-like interface which
-is written entirely in Python.  Unlike other modules such as :mod:`gdbm` and
-:mod:`bsddb`, no external library is required.  As with other persistent
-mappings, the keys and values must always be strings.
+is written entirely in Python.  Unlike other modules such as :mod:`gdbm` no
+external library is required.  As with other persistent mappings, the keys and
+values must always be strings.
 
 The module defines the following:
 

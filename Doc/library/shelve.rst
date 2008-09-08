@@ -55,15 +55,14 @@ Restrictions
   .. index::
      module: dbm.ndbm
      module: dbm.gnu
-     module: bsddb
 
-* The choice of which database package will be used (such as :mod:`dbm.ndbm`,
-  :mod:`dbm.gnu` or :mod:`bsddb`) depends on which interface is available.  Therefore
-  it is not safe to open the database directly using :mod:`dbm`.  The database is
-  also (unfortunately) subject to the limitations of :mod:`dbm`, if it is used ---
+* The choice of which database package will be used (such as :mod:`dbm.ndbm` or
+  :mod:`dbm.gnu`) depends on which interface is available.  Therefore it is not
+  safe to open the database directly using :mod:`dbm`.  The database is also
+  (unfortunately) subject to the limitations of :mod:`dbm`, if it is used ---
   this means that (the pickled representation of) the objects stored in the
-  database should be fairly small, and in rare cases key collisions may cause the
-  database to refuse updates.
+  database should be fairly small, and in rare cases key collisions may cause
+  the database to refuse updates.
 
 * Depending on the implementation, closing a persistent dictionary may or may
   not be necessary to flush changes to disk.  The :meth:`__del__` method of the
@@ -154,9 +153,6 @@ object)::
 
    Module :mod:`dbm`
       Generic interface to ``dbm``-style databases.
-
-   Module :mod:`bsddb`
-      BSD ``db`` database interface.
 
    Module :mod:`pickle`
       Object serialization used by :mod:`shelve`.
