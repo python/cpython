@@ -250,6 +250,8 @@ def remove_old_versions(db):
              (upgrade_code_snapshot, start, "%s.%d.0" % (major, int(minor)+1),
               None, migrate_features, None, "REMOVEOLDSNAPSHOT")])
         props = "REMOVEOLDSNAPSHOT;REMOVEOLDVERSION"
+
+    props += ";TARGETDIR;DLLDIR"
     # Installer collects the product codes of the earlier releases in
     # these properties. In order to allow modification of the properties,
     # they must be declared as secure. See "SecureCustomProperties Property"

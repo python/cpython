@@ -125,6 +125,9 @@ Tests
 Build
 -----
 
+- Issue #2271: Set SecureCustomProperties so that installation will properly
+  use the TARGETDIR even for unprivileged users.
+
 - Allow passing the MSI file name to merge.py.
 
 - Issue #3758: Rename the 'check' target to 'patchcheck' so as to not clash 
