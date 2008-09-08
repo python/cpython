@@ -47,6 +47,13 @@ class FileTests(unittest.TestCase):
         os.closerange(first, first + 2)
         self.assertRaises(OSError, os.write, first, "a")
 
+    def test_rename(self):
+        path = unicode(test_support.TESTFN)
+        old = sys.getrefcount(path)
+        self.assertRaises(TypeError, os.rename, path, 0)
+        new = sys.getrefcount(path)
+        self.assertEqual(old, new)
+
 
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
