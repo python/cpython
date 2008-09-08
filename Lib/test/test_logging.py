@@ -587,6 +587,48 @@ class ConfigFileTest(BaseTest):
     # config5 specifies a custom handler class to be loaded
     config5 = config1.replace('class=StreamHandler', 'class=logging.StreamHandler')
 
+    # config6 uses ', ' delimiters in the handlers and formatters sections
+    config6 = """
+    [loggers]
+    keys=root,parser
+
+    [handlers]
+    keys=hand1, hand2
+
+    [formatters]
+    keys=form1, form2
+
+    [logger_root]
+    level=WARNING
+    handlers=
+
+    [logger_parser]
+    level=DEBUG
+    handlers=hand1
+    propagate=1
+    qualname=compiler.parser
+
+    [handler_hand1]
+    class=StreamHandler
+    level=NOTSET
+    formatter=form1
+    args=(sys.stdout,)
+
+    [handler_hand2]
+    class=FileHandler
+    level=NOTSET
+    formatter=form1
+    args=('test.blah', 'a')
+
+    [formatter_form1]
+    format=%(levelname)s ++ %(message)s
+    datefmt=
+
+    [formatter_form2]
+    format=%(message)s
+    datefmt=
+    """
+
     def apply_config(self, conf):
         try:
             fn = tempfile.mktemp(".ini")
@@ -652,6 +694,9 @@ class ConfigFileTest(BaseTest):
 
     def test_config5_ok(self):
         self.test_config1_ok(config=self.config5)
+
+    def test_config6_ok(self):
+        self.test_config1_ok(config=self.config6)
 
 class LogRecordStreamHandler(StreamRequestHandler):
 
@@ -814,6 +859,31 @@ class MemoryTest(BaseTest):
             ('foo', 'DEBUG', '3'),
         ])
 
+class EncodingTest(BaseTest):
+    def test_encoding_plain_file(self):
+        # In Python 2.x, a plain file object is treated as having no encoding.
+        log = logging.getLogger("test")
+        fn = tempfile.mktemp(".log")
+        # the non-ascii data we write to the log.
+        data = "foo\x80"
+        try:
+            handler = logging.FileHandler(fn, encoding="utf8")
+            log.addHandler(handler)
+            try:
+                # write non-ascii data to the log.
+                log.warning(data)
+            finally:
+                log.removeHandler(handler)
+                handler.close()
+            # check we wrote exactly those bytes, ignoring trailing \n etc
+            f = open(fn, encoding="utf8")
+            try:
+                self.failUnlessEqual(f.read().rstrip(), data)
+            finally:
+                f.close()
+        finally:
+            if os.path.isfile(fn):
+                os.remove(fn)
 
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
@@ -822,7 +892,8 @@ class MemoryTest(BaseTest):
 def test_main():
     run_unittest(BuiltinLevelsTest, BasicFilterTest,
                     CustomLevelsAndFiltersTest, MemoryHandlerTest,
-                    ConfigFileTest, SocketHandlerTest, MemoryTest)
+                    ConfigFileTest, SocketHandlerTest, MemoryTest,
+                    EncodingTest)
 
 if __name__ == "__main__":
     test_main()

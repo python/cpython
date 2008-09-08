@@ -171,6 +171,8 @@ An :class:`SMTP` instance has the following methods:
 
    Identify yourself to the SMTP server using ``HELO``.  The hostname argument
    defaults to the fully qualified domain name of the local host.
+   The message returned by the server is stored as the :attr:`helo_resp` attribute
+   of the object.
 
    In normal operation it should not be necessary to call this method explicitly.
    It will be implicitly called by the :meth:`sendmail` when necessary.
@@ -180,7 +182,13 @@ An :class:`SMTP` instance has the following methods:
 
    Identify yourself to an ESMTP server using ``EHLO``.  The hostname argument
    defaults to the fully qualified domain name of the local host.  Examine the
-   response for ESMTP option and store them for use by :meth:`has_extn`.
+   response for ESMTP option and store them for use by :meth:`has_extn`. 
+   Also sets several informational attributes: the message returned by 
+   the server is stored as the :attr:`ehlo_resp` attribute, :attr:`does_esmtp` 
+   is set to true or false depending on whether the server supports ESMTP, and
+   :attr:`esmtp_features` will be a dictionary containing the names of the
+   SMTP service extensions this server supports, and their
+   parameters (if any).
 
    Unless you wish to use :meth:`has_extn` before sending mail, it should not be
    necessary to call this method explicitly.  It will be implicitly called by
