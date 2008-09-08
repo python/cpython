@@ -5,9 +5,10 @@
    :synopsis: Interfaces to various Unix "database" formats.
 
 :mod:`dbm` is a generic interface to variants of the DBM database ---
-:mod:`dbm.bsd` (requires :mod:`bsddb`), :mod:`dbm.gnu`, or :mod:`dbm.ndbm`.  If
-none of these modules is installed, the slow-but-simple implementation in module
-:mod:`dbm.dumb` will be used.
+ :mod:`dbm.gnu` or :mod:`dbm.ndbm`.  If none of these modules is installed, the
+ slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
+ is a `third party interface <http://www.jcea.es/programacion/pybsddb.htm>`_ to
+ the Oracle Berkely DB.
 
 
 .. exception:: error
