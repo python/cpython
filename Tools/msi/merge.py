@@ -1,16 +1,19 @@
-import msilib,os,win32com,tempfile
+import msilib,os,win32com,tempfile,sys
 PCBUILD="PCBuild"
 from config import *
 
 Win64 = "amd64" in PCBUILD
 
 mod_dir = os.path.join(os.environ["ProgramFiles"], "Common Files", "Merge Modules")
+msi = None
+if len(sys.argv)==2:
+    msi = sys.argv[1]
 if Win64:
     modules = ["Microsoft_VC90_CRT_x86.msm", "policy_8_0_Microsoft_VC80_CRT_x86_x64.msm"]
-    msi = "python-%s.amd64.msi" % full_current_version
+    if not msi: msi = "python-%s.amd64.msi" % full_current_version
 else:
     modules = ["Microsoft_VC90_CRT_x86.msm","policy_8_0_Microsoft_VC80_CRT_x86.msm"]
-    msi = "python-%s.msi" % full_current_version
+    if not msi: msi = "python-%s.msi" % full_current_version
 for i, n in enumerate(modules):
     modules[i] = os.path.join(mod_dir, n)
 
