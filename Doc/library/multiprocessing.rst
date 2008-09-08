@@ -1859,7 +1859,7 @@ Joining processes that use queues
     Bear in mind that a process that has put items in a queue will wait before
     terminating until all the buffered items are fed by the "feeder" thread to
     the underlying pipe.  (The child process can call the
-    :meth:`Queue.cancel_join` method of the queue to avoid this behaviour.)
+    :meth:`Queue.cancel_join_thread` method of the queue to avoid this behaviour.)
 
     This means that whenever you use a queue you need to make sure that all
     items which have been put on the queue will eventually be removed before the

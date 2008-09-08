@@ -19,7 +19,7 @@ Configuration functions for the logging package for Python. The core package
 is based on PEP 282 and comments thereto in comp.lang.python, and influenced
 by Apache's log4j system.
 
-Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2008 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -98,6 +98,8 @@ def _resolve(name):
             found = getattr(found, n)
     return found
 
+def _strip_spaces(alist):
+    return map(lambda x: x.strip(), alist)
 
 def _create_formatters(cp):
     """Create and return formatters"""
@@ -105,9 +107,10 @@ def _create_formatters(cp):
     if not len(flist):
         return {}
     flist = flist.split(",")
+    flist = _strip_spaces(flist)
     formatters = {}
     for form in flist:
-        sectname = "formatter_%s" % form.strip()
+        sectname = "formatter_%s" % form
         opts = cp.options(sectname)
         if "format" in opts:
             fs = cp.get(sectname, "format", 1)
@@ -133,10 +136,11 @@ def _install_handlers(cp, formatters):
     if not len(hlist):
         return {}
     hlist = hlist.split(",")
+    hlist = _strip_spaces(hlist)
     handlers = {}
     fixups = [] #for inter-handler references
     for hand in hlist:
-        sectname = "handler_%s" % hand.strip()
+        sectname = "handler_%s" % hand
         klass = cp.get(sectname, "class")
         opts = cp.options(sectname)
         if "formatter" in opts:
@@ -189,8 +193,9 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
     hlist = cp.get(sectname, "handlers")
     if len(hlist):
         hlist = hlist.split(",")
+        hlist = _strip_spaces(hlist)
         for hand in hlist:
-            log.addHandler(handlers[hand.strip()])
+            log.addHandler(handlers[hand])
 
     #and now the others...
     #we don't want to lose the existing loggers,
@@ -240,8 +245,9 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
         hlist = cp.get(sectname, "handlers")
         if len(hlist):
             hlist = hlist.split(",")
+            hlist = _strip_spaces(hlist)
             for hand in hlist:
-                logger.addHandler(handlers[hand.strip()])
+                logger.addHandler(handlers[hand])
 
     #Disable any old loggers. There's no point deleting
     #them as other threads may continue to hold references

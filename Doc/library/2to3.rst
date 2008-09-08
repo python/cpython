@@ -7,15 +7,21 @@
 
 2to3 is a Python program that reads Python 2.x source code and applies a series
 of *fixers* to transform it into valid Python 3.x code.  The standard library
-contains a rich set of fixers that will handle almost all code.  It is, however,
-possible to write your own fixers.
+contains a rich set of fixers that will handle almost all code.  2to3 supporting
+library :mod:`lib2to3` is, however, a flexible and generic library, so it is
+possible to write your own fixers for 2to3.  :mod:`lib2to3` could also be
+adapted to custom applications in which Python code needs to be edited
+automatically.
 
 
 Using 2to3
 ----------
 
-2to3 can be run with a list of files to transform or a directory to recursively
-traverse looking for files with the ``.py`` extension.
+2to3 will usually be installed with the Python interpreter as a script.  It is
+also located in the :file:`Tools/scripts` directory of the Python root.
+
+2to3's basic arguments are a list of files or directories to transform.  The
+directories are to recursively traversed for Python sources.
 
 Here is a sample Python 2.x source file, :file:`example.py`::
 
@@ -29,13 +35,14 @@ It can be converted to Python 3.x code via 2to3 on the command line::
 
    $ 2to3 example.py
 
-A diff against the original source file will be printed.  2to3 can also write
-the needed modifications right back to the source file.  (A backup of the
-original file will also be made.)  This is done with the :option:`-w` flag::
+A diff against the original source file is printed.  2to3 can also write the
+needed modifications right back to the source file.  (Of course, a backup of the
+original is also be made.)  Writing the changes back is enabled with the
+:option:`-w` flag::
 
    $ 2to3 -w example.py
 
-:file:`example.py` will now look like this::
+After transformation, :file:`example.py` looks like this::
 
    def greet(name):
        print("Hello, {0}!".format(name))
@@ -43,10 +50,10 @@ original file will also be made.)  This is done with the :option:`-w` flag::
    name = input()
    greet(name)
 
-Comments and and exact indentation will be preserved throughout the translation
+Comments and and exact indentation are preserved throughout the translation
 process.
 
-By default, 2to3 will run a set of predefined fixers.  The :option:`-l` flag
+By default, 2to3 runs a set of predefined fixers.  The :option:`-l` flag
 lists all avaible fixers.  An explicit set of fixers to run can be given by use
 of the :option:`-f` flag.  The following example runs only the ``imports`` and
 ``has_key`` fixers::
@@ -54,16 +61,30 @@ of the :option:`-f` flag.  The following example runs only the ``imports`` and
    $ 2to3 -f imports -f has_key example.py
 
 Some fixers are *explicit*, meaning they aren't run be default and must be
-listed on the command line.  Here, in addition to the default fixers, the
-``idioms`` fixer is run::
+listed on the command line to be run.  Here, in addition to the default fixers,
+the ``idioms`` fixer is run::
 
    $ 2to3 -f all -f idioms example.py
 
-Notice how ``all`` enables all default fixers.
+Notice how passing ``all`` enables all default fixers.
 
 Sometimes 2to3 will find will find a place in your source code that needs to be
 changed, but 2to3 cannot fix automatically.  In this case, 2to3 will print a
-warning beneath the diff for a file.
+warning beneath the diff for a file.  You should address the warning in order to
+have compliant 3.x code.
+
+2to3 can also refactor doctests.  To enable this mode, use the :option:`-d`
+flag.  Note that *only* doctests will be refactored.
+
+The :option:`-v` option enables the output of more information on the
+translation process.
+
+When the :option:`-p` is passed to it, 2to3 treats ``print`` as a function
+instead of a statement.  This is useful when ``from __future__ import
+print_function`` is being used.  If this option is not given, the print fixer
+will surround print calls in an extra set of parentheses because it cannot
+differentiate between the and print statement with parentheses (such as ``print
+("a" + "b" + "c")``) and a true function call.
 
 
 :mod:`lib2to3` - 2to3's library

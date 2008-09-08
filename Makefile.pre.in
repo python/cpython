@@ -410,14 +410,14 @@ $(LIBRARY): $(LIBRARY_OBJS)
 
 libpython$(VERSION).so: $(LIBRARY_OBJS)
 	if test $(INSTSONAME) != $(LDLIBRARY); then \
-		$(LDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+		$(LDSHARED) $(LDFLAGS) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST); \
 		$(LN) -f $(INSTSONAME) $@; \
 	else\
-		$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+		$(LDSHARED) $(LDFLAGS) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST); \
 	fi
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
-	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM)
+	$(LDSHARED) $(LDFLAGS) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST)
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
@@ -451,8 +451,8 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 # for a shared core library; otherwise, this rule is a noop.
 $(DLLLIBRARY) libpython$(VERSION).dll.a: $(LIBRARY_OBJS)
 	if test -n "$(DLLLIBRARY)"; then \
-		$(LDSHARED) -Wl,--out-implib=$@ -o $(DLLLIBRARY) $^ \
-			$(LIBS) $(MODLIBS) $(SYSLIBS); \
+		$(LDSHARED) $(LDFLAGS) -Wl,--out-implib=$@ -o $(DLLLIBRARY) $^ \
+			$(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST); \
 	else true; \
 	fi
 
