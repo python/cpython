@@ -1030,6 +1030,127 @@ else:
                 server.join()
 
 
+        def testAllRecvAndSendMethods(self):
+
+            if test_support.verbose:
+                sys.stdout.write("\n")
+
+            server = ThreadedEchoServer(CERTFILE,
+                                        certreqs=ssl.CERT_NONE,
+                                        ssl_version=ssl.PROTOCOL_TLSv1,
+                                        cacerts=CERTFILE,
+                                        chatty=True,
+                                        connectionchatty=False)
+            flag = threading.Event()
+            server.start(flag)
+            # wait for it to start
+            flag.wait()
+            # try to connect
+            try:
+                s = ssl.wrap_socket(socket.socket(),
+                                    server_side=False,
+                                    certfile=CERTFILE,
+                                    ca_certs=CERTFILE,
+                                    cert_reqs=ssl.CERT_NONE,
+                                    ssl_version=ssl.PROTOCOL_TLSv1)
+                s.connect((HOST, server.port))
+            except ssl.SSLError as x:
+                raise support.TestFailed("Unexpected SSL error:  " + str(x))
+            except Exception as x:
+                raise support.TestFailed("Unexpected exception:  " + str(x))
+            else:
+                # helper methods for standardising recv* method signatures
+                def _recv_into():
+                    b = bytearray("\0"*100)
+                    count = s.recv_into(b)
+                    return b[:count]
+
+                def _recvfrom_into():
+                    b = bytearray("\0"*100)
+                    count, addr = s.recvfrom_into(b)
+                    return b[:count]
+
+                # (name, method, whether to expect success, *args)
+                send_methods = [
+                    ('send', s.send, True, []),
+                    ('sendto', s.sendto, False, ["some.address"]),
+                    ('sendall', s.sendall, True, []),
+                ]
+                recv_methods = [
+                    ('recv', s.recv, True, []),
+                    ('recvfrom', s.recvfrom, False, ["some.address"]),
+                    ('recv_into', _recv_into, True, []),
+                    ('recvfrom_into', _recvfrom_into, False, []),
+                ]
+                data_prefix = u"PREFIX_"
+
+                for meth_name, send_meth, expect_success, args in send_methods:
+                    indata = data_prefix + meth_name
+                    try:
+                        send_meth(indata.encode('ASCII', 'strict'), *args)
+                        outdata = s.read()
+                        outdata = outdata.decode('ASCII', 'strict')
+                        if outdata != indata.lower():
+                            raise support.TestFailed(
+                                "While sending with <<%s>> bad data "
+                                "<<%r>> (%d) received; "
+                                "expected <<%r>> (%d)\n" % (
+                                    meth_name, outdata[:20], len(outdata),
+                                    indata[:20], len(indata)
+                                )
+                            )
+                    except ValueError as e:
+                        if expect_success:
+                            raise support.TestFailed(
+                                "Failed to send with method <<%s>>; "
+                                "expected to succeed.\n" % (meth_name,)
+                            )
+                        if not str(e).startswith(meth_name):
+                            raise support.TestFailed(
+                                "Method <<%s>> failed with unexpected "
+                                "exception message: %s\n" % (
+                                    meth_name, e
+                                )
+                            )
+
+                for meth_name, recv_meth, expect_success, args in recv_methods:
+                    indata = data_prefix + meth_name
+                    try:
+                        s.send(indata.encode('ASCII', 'strict'))
+                        outdata = recv_meth(*args)
+                        outdata = outdata.decode('ASCII', 'strict')
+                        if outdata != indata.lower():
+                            raise support.TestFailed(
+                                "While receiving with <<%s>> bad data "
+                                "<<%r>> (%d) received; "
+                                "expected <<%r>> (%d)\n" % (
+                                    meth_name, outdata[:20], len(outdata),
+                                    indata[:20], len(indata)
+                                )
+                            )
+                    except ValueError as e:
+                        if expect_success:
+                            raise support.TestFailed(
+                                "Failed to receive with method <<%s>>; "
+                                "expected to succeed.\n" % (meth_name,)
+                            )
+                        if not str(e).startswith(meth_name):
+                            raise support.TestFailed(
+                                "Method <<%s>> failed with unexpected "
+                                "exception message: %s\n" % (
+                                    meth_name, e
+                                )
+                            )
+                        # consume data
+                        s.read()
+
+                s.write("over\n".encode("ASCII", "strict"))
+                s.close()
+            finally:
+                server.stop()
+                server.join()
+
+
 def test_main(verbose=False):
     if skip_expected:
         raise test_support.TestSkipped("No SSL support")

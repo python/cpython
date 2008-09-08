@@ -91,10 +91,12 @@ class SSLSocket (socket):
                  suppress_ragged_eofs=True):
         socket.__init__(self, _sock=sock._sock)
         # the initializer for socket trashes the methods (tsk, tsk), so...
-        self.send = lambda x, flags=0: SSLSocket.send(self, x, flags)
-        self.recv = lambda x, flags=0: SSLSocket.recv(self, x, flags)
+        self.send = lambda data, flags=0: SSLSocket.send(self, data, flags)
         self.sendto = lambda data, addr, flags=0: SSLSocket.sendto(self, data, addr, flags)
-        self.recvfrom = lambda addr, buflen, flags: SSLSocket.recvfrom(self, addr, buflen, flags)
+        self.recv = lambda buflen=1024, flags=0: SSLSocket.recv(self, buflen, flags)
+        self.recvfrom = lambda addr, buflen=1024, flags=0: SSLSocket.recvfrom(self, addr, buflen, flags)
+        self.recv_into = lambda buffer, nbytes=None, flags=0: SSLSocket.recv_into(self, buffer, nbytes, flags)
+        self.recvfrom_into = lambda buffer, nbytes=None, flags=0: SSLSocket.recvfrom_into(self, buffer, nbytes, flags)
 
         if certfile and not keyfile:
             keyfile = certfile
@@ -221,12 +223,43 @@ class SSLSocket (socket):
         else:
             return socket.recv(self, buflen, flags)
 
+    def recv_into (self, buffer, nbytes=None, flags=0):
+        if buffer and (nbytes is None):
+            nbytes = len(buffer)
+        elif nbytes is None:
+            nbytes = 1024
+        if self._sslobj:
+            if flags != 0:
+                raise ValueError(
+                  "non-zero flags not allowed in calls to recv_into() on %s" %
+                  self.__class__)
+            while True:
+                try:
+                    tmp_buffer = self.read(nbytes)
+                    v = len(tmp_buffer)
+                    buffer[:v] = tmp_buffer
+                    return v
+                except SSLError as x:
+                    if x.args[0] == SSL_ERROR_WANT_READ:
+                        continue
+                    else:
+                        raise x
+        else:
+            return socket.recv_into(self, buffer, nbytes, flags)
+
     def recvfrom (self, addr, buflen=1024, flags=0):
         if self._sslobj:
             raise ValueError("recvfrom not allowed on instances of %s" %
                              self.__class__)
         else:
             return socket.recvfrom(self, addr, buflen, flags)
+
+    def recvfrom_into (self, buffer, nbytes=None, flags=0):
+        if self._sslobj:
+            raise ValueError("recvfrom_into not allowed on instances of %s" %
+                             self.__class__)
+        else:
+            return socket.recvfrom_into(self, buffer, nbytes, flags)
 
     def pending (self):
         if self._sslobj:
@@ -295,8 +328,9 @@ class SSLSocket (socket):
 
     def makefile(self, mode='r', bufsize=-1):
 
-        """Ouch.  Need to make and return a file-like object that
-        works with the SSL connection."""
+        """Make and return a file-like object that
+        works with the SSL connection.  Just use the code
+        from the socket module."""
 
         self._makefile_refs += 1
         return _fileobject(self, mode, bufsize)
