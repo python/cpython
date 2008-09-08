@@ -56,10 +56,16 @@ class ReloadTests(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(
-                LockTests,
-                ReloadTests,
-            )
+    tests = [
+        ReloadTests,
+    ]
+    try:
+        import thread
+    except ImportError:
+        pass
+    else:
+        tests.append(LockTests)
+    test_support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main()
