@@ -23,9 +23,6 @@ be useful when inheriting directly from :class:`dict` or
 The specialized containers provided in this module provide alternatives
 to Python's general purpose built-in containers, :class:`dict`,
 :class:`list`, :class:`set`, and :class:`tuple`.
-Besides the containers provided here, the optional :mod:`bsddb`
-module offers the ability to create in-memory or file based ordered
-dictionaries with string keys using the :meth:`bsddb.btopen` method.
 
 In addition to containers, the collections module provides some ABCs
 (abstract base classes) that can be used to test whether a class
