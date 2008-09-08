@@ -189,7 +189,7 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
     """Parse a query given as a string argument."""
     warn("cgi.parse_qsl is deprecated, use urlparse.parse_qsl instead",
             PendingDeprecationWarning)
-    return urlparse.parse_qs(qs, keep_blank_values, strict_parsing)
+    return urlparse.parse_qsl(qs, keep_blank_values, strict_parsing)
 
 def parse_multipart(fp, pdict):
     """Parse multipart input.
