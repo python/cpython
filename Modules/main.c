@@ -287,7 +287,7 @@ Py_Main(int argc, wchar_t **argv)
 {
 	int c;
 	int sts;
-	wchar_t *command = NULL;
+	char *command = NULL;
 	wchar_t *filename = NULL;
 	wchar_t *module = NULL;
 	FILE *fp = stdin;
@@ -299,6 +299,7 @@ Py_Main(int argc, wchar_t **argv)
 	int version = 0;
 	int saw_unbuffered_flag = 0;
 	PyCompilerFlags cf;
+	char *oldloc;
 
 	cf.cf_flags = 0;
 
@@ -309,19 +310,30 @@ Py_Main(int argc, wchar_t **argv)
 
 	while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
 		if (c == 'c') {
-			size_t len;
+			size_t r1, r2;
+			oldloc = setlocale(LC_ALL, NULL);
+			setlocale(LC_ALL, "");
+			r1 = wcslen(_PyOS_optarg);
+			r2 = wcstombs(NULL, _PyOS_optarg, r1);
+			if (r2 == (size_t) -1)
+				Py_FatalError(
+				   "cannot convert character encoding of -c argument");
+			if (r2 > r1)
+				r1 = r2;
+			r1 += 2;
 			/* -c is the last option; following arguments
 			   that look like options are left for the
 			   command to interpret. */
-
-			len = wcslen(_PyOS_optarg) + 1 + 1;
-			command = (wchar_t *)malloc(sizeof(wchar_t) * len);
+			command = (char *)malloc(r1);
 			if (command == NULL)
 				Py_FatalError(
 				   "not enough memory to copy -c argument");
-			wcscpy(command, _PyOS_optarg);
-			command[len - 2] = '\n';
-			command[len - 1] = 0;
+			r2 = wcstombs(command, _PyOS_optarg, r1);
+			if (r2 > r1-1)
+				Py_FatalError(
+				    "not enough memory to copy -c argument");
+			strcat(command, "\n");
+			setlocale(LC_ALL, oldloc);
 			break;
 		}
 
@@ -531,18 +543,8 @@ Py_Main(int argc, wchar_t **argv)
 	}
 
 	if (command) {
-		PyObject *commandObj = PyUnicode_FromUnicode(
-		                           command, wcslen(command));
+		sts = PyRun_SimpleStringFlags(command, &cf) != 0;
 		free(command);
-		if (commandObj != NULL) {
-			sts = PyRun_SimpleStringFlags(
-				_PyUnicode_AsString(commandObj), &cf) != 0;
-		}
-		else {
-			PyErr_Print();
-			sts = 1;
-		}
-		Py_DECREF(commandObj);
 	} else if (module) {
 		sts = RunModule(module, 1);
 	}

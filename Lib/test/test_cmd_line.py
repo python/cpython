@@ -135,12 +135,6 @@ class CmdLineTest(unittest.TestCase):
             self.exit_code('-c', 'pass'),
             0)
 
-        # Test handling of non-ascii data
-        command = "assert(ord('\xe9') == 0xe9)"
-        self.assertEqual(
-            self.exit_code('-c', command),
-            0)
-
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
