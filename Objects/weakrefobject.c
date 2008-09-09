@@ -326,7 +326,7 @@ weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (parse_weakref_init_args("__init__", args, kwargs, &tmp, &tmp))
         return 0;
     else
-        return 1;
+        return -1;
 }
 
 

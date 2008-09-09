@@ -665,6 +665,14 @@ class ReferencesTestCase(TestBase):
 
         w = Target()
 
+    def test_init(self):
+        # Issue 3634
+        # <weakref to class>.__init__() doesn't check errors correctly
+        r = weakref.ref(Exception)
+        self.assertRaises(TypeError, r.__init__, 0, 0, 0, 0, 0)
+        # No exception should be raised here
+        gc.collect()
+
 
 class SubclassableWeakrefTestCase(TestBase):
 
