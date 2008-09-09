@@ -1105,6 +1105,13 @@ float_trunc(PyObject *v)
 }
 
 static PyObject *
+float_long(PyObject *v)
+{
+	double x = PyFloat_AsDouble(v);
+	return PyLong_FromDouble(x);
+}
+
+static PyObject *
 float_float(PyObject *v)
 {
 	if (PyFloat_CheckExact(v))
@@ -1897,7 +1904,7 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_or*/
 	float_coerce, 	/*nb_coerce*/
 	float_trunc, 	/*nb_int*/
-	float_trunc, 	/*nb_long*/
+	float_long, 	/*nb_long*/
 	float_float,	/*nb_float*/
 	0,		/* nb_oct */
 	0,		/* nb_hex */

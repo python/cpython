@@ -12,6 +12,11 @@ What's New in Python 2.6 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #3777: long() applied to a float object now always return a long
+  object; previously an int would be returned for small values. the __long__
+  method is allowed to return either an int or a long, but the behaviour of
+  float objects should not change to respect backward compatibility.
+
 - Issue #3751: str.rpartition would perform a left-partition when called with
   a unicode argument.
 
