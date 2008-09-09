@@ -165,6 +165,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #3812: Failed to build python if configure --without-threads.
+
 - Issue #3791: Remove the bsddb module from the Windows installer, and the
   core bsddb library from the Windows build files.
 
