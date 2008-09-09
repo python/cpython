@@ -13,8 +13,7 @@ Core and Builtins
 -----------------
 
 - Issue #3705: fix crash when given a non-ascii value on the command line for
-  the "-c" and "-m" parameters. Now the behaviour is as expected under Linux,
-  although under Windows it fails at a later point.
+  the "-c" and "-m" parameters.
 
 - Issue #3279: Importing site at interpreter was failing silently because the
   site module uses the open builtin which was not initialized at the time.

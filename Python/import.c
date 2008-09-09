@@ -2804,6 +2804,7 @@ call_find_module(char *name, PyObject *path)
 {
 	extern int fclose(FILE *);
 	PyObject *fob, *ret;
+	PyObject *pathobj;
 	struct filedescr *fdp;
 	char pathname[MAXPATHLEN+1];
 	FILE *fp = NULL;
@@ -2847,9 +2848,9 @@ call_find_module(char *name, PyObject *path)
 		fob = Py_None;
 		Py_INCREF(fob);
 	}
-	ret = Py_BuildValue("Os(ssi)",
-		      fob, pathname, fdp->suffix, fdp->mode, fdp->type);
-	Py_DECREF(fob);
+	pathobj = PyUnicode_DecodeFSDefault(pathname);
+	ret = Py_BuildValue("NN(ssi)",
+		      fob, pathobj, fdp->suffix, fdp->mode, fdp->type);
 	PyMem_FREE(found_encoding);
 
 	return ret;
@@ -2860,7 +2861,9 @@ imp_find_module(PyObject *self, PyObject *args)
 {
 	char *name;
 	PyObject *path = NULL;
-	if (!PyArg_ParseTuple(args, "s|O:find_module", &name, &path))
+	if (!PyArg_ParseTuple(args, "es|O:find_module", 
+		                  Py_FileSystemDefaultEncoding, &name, 
+						  &path))
 		return NULL;
 	return call_find_module(name, path);
 }
