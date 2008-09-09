@@ -7747,8 +7747,8 @@ unicode_upper(PyUnicodeObject *self)
 PyDoc_STRVAR(zfill__doc__,
 "S.zfill(width) -> unicode\n\
 \n\
-Pad a numeric string x with zeros on the left, to fill a field\n\
-of the specified width. The string x is never truncated.");
+Pad a numeric string S with zeros on the left, to fill a field\n\
+of the specified width. The string S is never truncated.");
 
 static PyObject *
 unicode_zfill(PyUnicodeObject *self, PyObject *args)
