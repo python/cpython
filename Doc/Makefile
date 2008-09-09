@@ -41,7 +41,7 @@ checkout:
 	fi
 	@if [ ! -d tools/pygments ]; then \
 	  echo "Checking out Pygments..."; \
-	  svn checkout $(SVNROOT)/external/Pygments-0.10/pygments tools/pygments; \
+	  svn checkout $(SVNROOT)/external/Pygments-0.11.1/pygments tools/pygments; \
 	fi
 
 update: checkout
