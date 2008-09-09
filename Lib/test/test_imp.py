@@ -85,10 +85,16 @@ class ImportTests(unittest.TestCase):
 
 
 def test_main():
-    support.run_unittest(
-                LockTests,
-                ImportTests,
-            )
+    tests = [
+        ImportTests,
+    ]
+    try:
+        import _thread
+    except ImportError:
+        pass
+    else:
+        tests.append(LockTests)
+    support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main()
