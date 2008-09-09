@@ -65,6 +65,8 @@ C-API
 Library
 -------
 
+- Issue #3809: Fixed spurious 'test.blah' file left behind by test_logging.
+
 - Issue 3781: Clean up the API for warnings.catch_warnings() by having it
   return a list or None rather than a custom object.
 
@@ -138,7 +140,7 @@ Build
 
 - Allow passing the MSI file name to merge.py.
 
-- Issue #3758: Rename the 'check' target to 'patchcheck' so as to not clash 
+- Issue #3758: Rename the 'check' target to 'patchcheck' so as to not clash
   with GNU build target guidelines.
 
 
