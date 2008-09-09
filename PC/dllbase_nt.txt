@@ -16,7 +16,7 @@ Python.dll                 - 1e000000 - 1e100000 (-1)
 
 Standard Extension Modules 1e100000 - 1e200000  ""
  - _symtable                 1e100000 - 1e110000    pyd removed in 2.4
- - bsddb                     1e180000 - 1e188000
+ - bsddb                     1e180000 - 1e188000    pyd removed in 3.0
  - _tkinter                  1e190000 - 1e1A0000
  - parser                    1e1A0000 - 1e1B0000    pyd removed in 2.4
  - zlib                      1e1B0000 - 1e1C0000

@@ -83,7 +83,6 @@ extensions = [
     'unicodedata.pyd',
     'winsound.pyd',
     '_elementtree.pyd',
-    '_bsddb.pyd',
     '_socket.pyd',
     '_ssl.pyd',
     '_testcapi.pyd',
@@ -951,7 +950,7 @@ def add_files(db):
                 continue
             tcltk.set_current()
         elif dir in ['test', 'tests', 'data', 'output']:
-            # test: Lib, Lib/email, Lib/bsddb, Lib/ctypes, Lib/sqlite3
+            # test: Lib, Lib/email, Lib/ctypes, Lib/sqlite3
             # tests: Lib/distutils
             # data: Lib/email/test
             # output: Lib/test
