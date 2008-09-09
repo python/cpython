@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from io import StringIO
+from warnings import catch_warnings, filterwarnings
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -308,13 +309,21 @@ this is the content of the fake file
 
     def test_deprecated_parse_qs(self):
         # this func is moved to urlparse, this is just a sanity check
-        self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
-                         cgi.parse_qs('a=A1&b=B2&B=B3'))
+        with catch_warnings():
+            filterwarnings('ignore',
+                'cgi.parse_qs is deprecated, use urllib.parse.parse_qs instead',
+                DeprecationWarning)
+            self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
+                             cgi.parse_qs('a=A1&b=B2&B=B3'))
 
     def test_deprecated_parse_qsl(self):
         # this func is moved to urlparse, this is just a sanity check
-        self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
-                         cgi.parse_qsl('a=A1&b=B2&B=B3'))
+        with catch_warnings():
+            filterwarnings('ignore',
+                'cgi.parse_qsl is deprecated, use urllib.parse.parse_qsl instead',
+                DeprecationWarning)
+            self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
+                             cgi.parse_qsl('a=A1&b=B2&B=B3'))
 
 def test_main():
     run_unittest(CgiTests)
