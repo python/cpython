@@ -4,9 +4,9 @@ import os
 import sys
 import unittest
 import pickle, cPickle
+import warnings
 
-from test.test_support import (TESTFN, unlink, run_unittest,
-                                catch_warning, captured_output)
+from test.test_support import TESTFN, unlink, run_unittest, captured_output
 from test.test_pep352 import ignore_message_warning
 
 # XXX This is not really enough, each *operation* should be tested!
@@ -274,7 +274,7 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        with catch_warning():
+        with warnings.catch_warnings():
             ignore_message_warning()
             for exc, args, expected in exceptionList:
                 try:

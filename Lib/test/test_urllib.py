@@ -641,7 +641,7 @@ class Pathname_Tests(unittest.TestCase):
 
 def test_main():
     import warnings
-    with test_support.catch_warning(record=False):
+    with warnings.catch_warnings():
         warnings.filterwarnings('ignore', ".*urllib\.urlopen.*Python 3.0",
                                 DeprecationWarning)
         test_support.run_unittest(

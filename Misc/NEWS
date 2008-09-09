@@ -60,6 +60,9 @@ C-API
 Library
 -------
 
+- Issue 3781: Clean up the API for warnings.catch_warnings() by having it
+  return a list or None rather than a custom object.
+
 - Issue #1638033: Cookie.Morsel gained the httponly attribute.
 
 - Issue #3535: zipfile couldn't read some zip files larger than 2GB.

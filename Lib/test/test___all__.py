@@ -1,5 +1,5 @@
 import unittest
-from test.test_support import run_unittest, catch_warning
+from test.test_support import run_unittest
 import sys
 import warnings
 
@@ -9,7 +9,7 @@ class AllTest(unittest.TestCase):
 
     def check_all(self, modname):
         names = {}
-        with catch_warning():
+        with warnings.catch_warnings():
             warnings.filterwarnings("ignore", ".* (module|package)",
                                     DeprecationWarning)
             try:
