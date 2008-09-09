@@ -160,6 +160,13 @@ Tools/Demos
 - Fix Misc/gdbinit so it works.
 
 
+Build
+-----
+
+- Issue #3791: Remove the bsddb module from the Windows installer, and the
+  core bsddb library from the Windows build files.
+
+
 What's new in Python 3.0b3?
 ===========================
 
