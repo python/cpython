@@ -1003,16 +1003,13 @@ pretty).
 
 The operators ``<``, ``>``, ``==``, ``>=``, ``<=``, and ``!=`` compare the
 values of two objects.  The objects need not have the same type. If both are
-numbers, they are converted to a common type.  Otherwise, objects of different
-types *always* compare unequal, and are ordered consistently but arbitrarily.
-You can control comparison behavior of objects of non-builtin types by defining
-a :meth:`__cmp__` method or rich comparison methods like :meth:`__gt__`,
-described in section :ref:`specialnames`.
-
-(This unusual definition of comparison was used to simplify the definition of
-operations like sorting and the :keyword:`in` and :keyword:`not in` operators.
-In the future, the comparison rules for objects of different types are likely to
-change.)
+numbers, they are converted to a common type.  Otherwise, the ``==`` and ``!=``
+operators *always* consider objects of different types to be unequal, while the
+``<``, ``>``, ``>=`` and ``<=`` operators raise a :exc:`TypeError` when
+comparing objects of different types that do not implement these operators for
+the given pair of types.  You can control comparison behavior of objects of
+non-builtin types by defining rich comparison methods like :meth:`__gt__`,
+described in section :ref:`customization`.
 
 Comparison of objects of the same type depends on the type:
 
