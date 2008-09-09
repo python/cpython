@@ -2231,6 +2231,97 @@ the particular object.
    mode the value of this attribute will be ``None``.
 
 
+.. _typememoryview:
+
+memoryview Types
+================
+
+:class:`memoryview`\s allow Python code to access the internal data of an object
+that supports the buffer protocol.  Memory can be interpreted as simple bytes or
+complex data structures.
+
+.. class:: memoryview(obj)
+
+   Create a :class:`memoryview`\s that references *obj*.  *obj* must support the
+   buffer protocol.  Builtin objects that support the buffer protocol include
+   :class:`bytes` and :class:`bytearray`.
+
+   A :class:`memoryview`\s supports slicing to expose its data.  Taking a single
+   index will return a single byte.  Full slicing will result in a subview/ ::
+
+      >>> v = memoryview(b'abcefg')
+      >>> v[1]
+      b'b'
+      >>> v[-1]
+      b'g'
+      >>> v[1:4]
+      <memory at 0x77ab28>
+      >>> bytes(v[1:4])
+      b'bce'
+      >>> v[3:-1]
+      <memory at 0x744f18>
+      >>> bytes(v[4:-1])
+
+   If the object the memoryview is over supports changing it's data, the
+   memoryview supports slice assignment. ::
+
+      >>> data = bytearray(b'abcefg')
+      >>> v = memoryview(data)
+      >>> v.readonly
+      False
+      >>> v[0] = 'z'
+      >>> data
+      bytearray(b'zbcefg')
+      >>> v[1:4] = b'123'
+      >>> data
+      bytearray(b'a123fg')
+      >>> v[2] = b'spam'
+      Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      ValueError: cannot modify size of memoryview object
+
+   Notice how the size of the memoryview object can not be changed.
+
+
+   :class:`memoryview` has one method:
+
+   .. method:: tobytes()
+
+      Convert the data in the buffer to a bytestring and return it.
+
+   There are also several readonly attributes available:
+
+   .. attribute:: format
+
+      A string containing the format (in :mod:`struct` module style) for each
+      element in the view.  This defaults to ``'B'``, a simple bytestring.
+
+   .. attribute:: itemsize
+
+      The size in bytes of each element of the memoryview.
+
+   .. attribute:: shape
+
+      A tuple of integers the length of :attr:`~memoryview.ndim` giving the
+      shape of the memory as a N-dimensional array.
+
+   .. attribute:: ndim
+
+      An integer indicating how many dimensions of a multi-dimensional array the
+      memory represents.
+
+   .. attribute:: strides
+
+      A tuple of integers the length of :attr:`~memoryview.ndim` giving the size
+      in bytes to access each element for each dimension of the array.
+
+   .. attribute:: size
+
+      The number of bytes in the buffer.  Also available as ``len(view)``.
+
+   .. memoryview.suboffsets isn't documented because it only seems useful for C
+
+
 .. _typecontextmanager:
 
 Context Manager Types
